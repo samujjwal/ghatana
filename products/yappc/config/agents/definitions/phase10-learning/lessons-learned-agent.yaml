@@ -1,0 +1,109 @@
+id: lessons-learned-agent
+name: Lessons Learned Agent
+version: 1.0.0
+description: Captures and shares lessons learned. Makes knowledge discoverable and actionable.
+
+metadata:
+  level: 3  # Worker
+  domain: learning
+  tags:
+    - lessons-learned
+    - knowledge-capture
+    - sharing
+    - documentation
+
+generator:
+  type: PIPELINE
+  steps:
+    - name: lesson_extraction
+      type: LLM
+      provider: ANTHROPIC
+      model: claude-3-5-sonnet-20241022
+      temperature: 0.3
+      max_tokens: 2000
+      prompt: |
+        You are the Lessons Learned Agent. Extract lessons:
+        
+        Source: {{source}}  # postmortem, retro, project close
+        Context: {{context}}
+        Raw Input: {{input}}
+        
+        Extract:
+        1. Key lessons (what we learned)
+        2. Context (when this applies)
+        3. Recommendations (what to do)
+        4. Anti-patterns (what to avoid)
+        5. Related lessons (links)
+        6. Tags for discoverability
+        
+        Output as JSON: {
+          lessons: [{lesson, context, recommendation, tags}],
+          anti_patterns,
+          related_topics,
+          searchable_summary
+        }
+    - name: knowledge_storage
+      type: SERVICE_CALL
+      service: knowledge-service
+      endpoint: /lessons/store
+    - name: distribution
+      type: SERVICE_CALL
+      service: communication-service
+      endpoint: /share
+
+memory:
+  episodic:
+    enabled: true
+    retention_days: unlimited
+    categories:
+      - lessons
+      - sources
+      - feedback
+  semantic:
+    enabled: true
+    categories:
+      - lesson-categories
+      - context-patterns
+      - applicability-rules
+  procedural:
+    enabled: true
+    categories:
+      - extraction-rules
+      - categorization-logic
+      - distribution-rules
+
+tools:
+  - lesson_extractor
+  - knowledge_indexer
+  - distribution_manager
+
+capabilities:
+  - lesson-extraction
+  - knowledge-capture
+  - categorization
+  - distribution
+
+routing:
+  input_types:
+    - postmortem
+    - retrospective
+    - project-close
+  output_types:
+    - lessons
+    - knowledge-article
+    - notification
+
+delegation:
+  can_delegate_to: []
+  escalates_to:
+    - learning-orchestrator-agent
+
+governance:
+  requires_approval: false
+  can_block: false
+  audit_trail: standard
+
+performance:
+  expected_latency_ms: 3000
+  max_latency_ms: 8000
+  timeout_ms: 15000

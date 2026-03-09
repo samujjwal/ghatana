@@ -1,0 +1,123 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://ghatana.ai/schemas/yappc/events/agent-dispatch-v1.json",
+  "title": "Agent Dispatch Event",
+  "description": "Event requesting agent execution with context and parameters",
+  "version": "1.0.0",
+  "type": "object",
+  "required": ["eventId", "eventType", "timestamp", "agentId", "context"],
+  "properties": {
+    "eventId": {
+      "type": "string",
+      "format": "uuid",
+      "description": "Unique identifier for this dispatch event"
+    },
+    "eventType": {
+      "type": "string",
+      "const": "agent.dispatch.requested"
+    },
+    "timestamp": {
+      "type": "string",
+      "format": "date-time",
+      "description": "When the dispatch was requested"
+    },
+    "correlationId": {
+      "type": "string",
+      "format": "uuid",
+      "description": "Correlation ID for workflow tracking"
+    },
+    "agentId": {
+      "type": "string",
+      "pattern": "^agent\\.yappc\\.[a-zA-Z0-9-]+$",
+      "description": "ID of the agent to execute"
+    },
+    "context": {
+      "type": "object",
+      "description": "Execution context for the agent",
+      "properties": {
+        "projectId": {
+          "type": "string",
+          "format": "uuid",
+          "description": "Project ID if agent operates on project context"
+        },
+        "taskId": {
+          "type": "string",
+          "format": "uuid",
+          "description": "Task ID if agent operates on specific task"
+        },
+        "stage": {
+          "type": "string",
+          "enum": ["intent", "context", "plan", "execute", "verify", "observe", "learn", "institutionalize"],
+          "description": "Current lifecycle stage"
+        },
+        "userId": {
+          "type": "string",
+          "format": "uuid",
+          "description": "User who triggered the dispatch"
+        },
+        "tenantId": {
+          "type": "string",
+          "description": "Tenant identifier for multi-tenancy"
+        },
+        "metadata": {
+          "type": "object",
+          "additionalProperties": true,
+          "description": "Additional context metadata"
+        }
+      },
+      "required": ["projectId"]
+    },
+    "input": {
+      "type": "object",
+      "description": "Input data for the agent",
+      "additionalProperties": true
+    },
+    "priority": {
+      "type": "string",
+      "enum": ["LOW", "MEDIUM", "HIGH", "CRITICAL"],
+      "default": "MEDIUM",
+      "description": "Execution priority"
+    },
+    "timeoutMs": {
+      "type": "integer",
+      "minimum": 1000,
+      "maximum": 300000,
+      "default": 60000,
+      "description": "Execution timeout in milliseconds"
+    },
+    "retryPolicy": {
+      "type": "object",
+      "properties": {
+        "maxRetries": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 10,
+          "default": 3
+        },
+        "backoffMs": {
+          "type": "integer",
+          "minimum": 100,
+          "default": 1000
+        },
+        "maxBackoffMs": {
+          "type": "integer",
+          "minimum": 1000,
+          "default": 10000
+        }
+      },
+      "description": "Retry policy configuration"
+    },
+    "expectedCapabilities": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      },
+      "description": "Capabilities expected from the agent"
+    },
+    "traceId": {
+      "type": "string",
+      "format": "uuid",
+      "description": "Distributed tracing identifier"
+    }
+  }
+}

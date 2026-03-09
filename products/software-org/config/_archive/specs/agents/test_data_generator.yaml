@@ -1,0 +1,27 @@
+---
+id: "test_data_generator"
+agent: "TestDataGeneratorAgent"
+role: "QA Automation"
+inputs_spec:
+- name: "test_execution_plan"
+  description: "Test execution plan defining test cases and data needs."
+  format: "Test execution plan artifact"
+outputs_spec:
+- name: "test_data_package"
+  description: "Generated, anonymized test data for all scenarios, positive/negative/edge/invalid\
+    \ cases."
+  format: "Test data package artifact"
+agent_tasks:
+- "Generate realistic, anonymized test data for all scenarios."
+- "Cover positive, negative, edge, invalid cases."
+- "Version and link data package to test plan."
+acceptance_criteria:
+- "Realistic, anonymized test data generated for all scenarios."
+- "Data covers all required cases."
+- "Data package is versioned/linked to plan."
+dependencies:
+- "test_execution_plan"
+failure_escalation:
+- "Escalate to QA/DevOps if test data is missing or incomplete."
+references: []
+hitl: false

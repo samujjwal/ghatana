@@ -1,0 +1,45 @@
+id: observability-integration-agent
+name: Observability Integration Agent
+version: 1.0.0
+description: Bridges to observability backends (Prometheus, Grafana, Jaeger, Loki). Provides metric queries, trace retrieval, log search, and alert management. No business logic.
+
+metadata:
+  level: 3
+  domain: integration
+  tags: [integration, observability, prometheus, grafana, jaeger, deterministic]
+
+generator:
+  type: SERVICE_CALL
+  service: observability-service
+  endpoint: /api/v1
+
+memory:
+  episodic:
+    enabled: true
+    retention_days: 90
+    categories: [metric-queries, alert-events]
+  semantic:
+    enabled: false
+
+tools: [metric_query, trace_query, log_search, alert_manager]
+
+capabilities:
+  - performance-analysis
+
+routing:
+  input_types: [metric-query, trace-query, log-query, alert-command]
+  output_types: [metric-result, trace-result, log-result, alert-status]
+
+delegation:
+  can_delegate_to: []
+  escalates_to: operations-orchestrator-agent
+
+governance:
+  requires_approval: false
+  can_block: false
+  audit_trail: standard
+
+performance:
+  expected_latency_ms: 500
+  max_latency_ms: 5000
+  timeout_ms: 15000

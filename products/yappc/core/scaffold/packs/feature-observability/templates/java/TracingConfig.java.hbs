@@ -1,0 +1,27 @@
+package {{packageName}}.config;
+
+import io.opentelemetry.api.OpenTelemetry;
+import io.opentelemetry.api.trace.Tracer;
+import org.springframework.beans.factory.annotation.Value;
+import org.springframework.context.annotation.Bean;
+import org.springframework.context.annotation.Configuration;
+
+/**
+* OpenTelemetry tracing configuration.
+*
+* @doc.type class
+* @doc.purpose Configures distributed tracing with OpenTelemetry
+* @doc.layer platform
+* @doc.pattern Configuration
+*/
+@Configuration
+public class TracingConfig {
+
+@Value("${spring.application.name:{{serviceName}}}")
+private String serviceName;
+
+@Bean
+public Tracer tracer(OpenTelemetry openTelemetry) {
+return openTelemetry.getTracer(serviceName);
+}
+}

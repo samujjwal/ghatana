@@ -1,0 +1,109 @@
+id: visual-regression-agent
+name: Visual Regression Agent
+version: 1.0.0
+description: Detects visual regressions. Compares screenshots and identifies UI changes.
+
+metadata:
+  level: 3  # Worker
+  domain: testing
+  tags:
+    - visual-testing
+    - regression
+    - screenshot
+    - ui-consistency
+
+generator:
+  type: PIPELINE
+  steps:
+    - name: screenshot_capture
+      type: SERVICE_CALL
+      service: screenshot-service
+      endpoint: /capture
+    - name: visual_comparison
+      type: SERVICE_CALL
+      service: visual-diff-service
+      endpoint: /compare
+    - name: diff_analysis
+      type: LLM
+      provider: ANTHROPIC
+      model: claude-3-5-sonnet-20241022
+      temperature: 0.2
+      max_tokens: 1500
+      prompt: |
+        You are the Visual Regression Agent. Analyze visual diff:
+        
+        Diff Results: {{diff}}
+        Page Context: {{context}}
+        Recent Changes: {{changes}}
+        
+        Analyze:
+        1. Intentional vs unintentional changes
+        2. Severity (layout break, color, spacing)
+        3. User impact
+        4. Affected components
+        5. Root cause hypothesis
+        6. Recommendation (approve/reject)
+        
+        Output as JSON: {
+          analysis,
+          changes: [{area, type, severity, intentional_probability}],
+          recommendation,
+          manual_review_needed
+        }
+
+memory:
+  episodic:
+    enabled: true
+    retention_days: 180
+    categories:
+      - comparisons
+      - approvals
+      - rejections
+  semantic:
+    enabled: true
+    categories:
+      - change-patterns
+      - acceptable-diffs
+      - component-baselines
+  procedural:
+    enabled: true
+    categories:
+      - comparison-rules
+      - threshold-settings
+      - approval-criteria
+
+tools:
+  - screenshot_capturer
+  - visual_differ
+  - baseline_manager
+
+capabilities:
+  - screenshot-capture
+  - visual-comparison
+  - diff-analysis
+  - baseline-management
+
+routing:
+  input_types:
+    - visual-test
+    - screenshot-comparison
+    - baseline-update
+  output_types:
+    - visual-report
+    - diff-results
+    - approval-request
+
+delegation:
+  can_delegate_to: []
+  escalates_to:
+    - testing-orchestrator-agent
+
+governance:
+  requires_approval: true  # Diffs reviewed
+  can_block: true  # Block on unexpected changes
+  audit_trail: comprehensive
+
+performance:
+  expected_latency_ms: 5000
+  max_latency_ms: 15000
+  timeout_ms: 30000

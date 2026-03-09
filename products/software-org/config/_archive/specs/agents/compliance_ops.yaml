@@ -1,0 +1,35 @@
+---
+id: "compliance_ops"
+agent: "ComplianceOpsAgent"
+role: "Compliance/Platform Analyst"
+inputs_spec:
+- name: "centralized_logs"
+  description: "Centralized logs for compliance audit."
+  format: "Centralized log artifact"
+- name: "slo_sli_reports"
+  description: "SLO/SLI reports for compliance audit."
+  format: "SLO/SLI report artifact"
+- name: "dr_backup_test_results"
+  description: "DR backup test results for compliance."
+  format: "Backup test results artifact"
+outputs_spec:
+- name: "compliance_audit_trail"
+  description: "Complete operational compliance audit trail."
+  format: "Compliance audit artifact"
+agent_tasks:
+- "List/map operational compliance requirements to evidence."
+- "Ensure audit trail is current and complete."
+- "Human review of compliance evidence."
+acceptance_criteria:
+- "Compliance requirements mapped to evidence."
+- "Audit trail complete/current."
+- "Compliance evidence reviewed by human."
+dependencies:
+- "centralized_logs"
+- "slo_sli_reports"
+- "dr_backup_test_results"
+failure_escalation:
+- "Escalate to Compliance/Platform Analyst if audit trail incomplete."
+references: []
+hitl: true
+hitl_reason: "Human ensures compliance audit trail is complete"

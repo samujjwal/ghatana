@@ -1,0 +1,27 @@
+{
+  "id": "canvas/export-sharing",
+  "title": "export sharing",
+  "description": "Documentation coming soon. Visit the Interactive Demo.",
+  "source": "@site/docs/canvas/export-sharing.md",
+  "sourceDirName": "canvas",
+  "slug": "/canvas/export-sharing",
+  "permalink": "/docs/canvas/export-sharing",
+  "draft": false,
+  "unlisted": false,
+  "editUrl": "https://github.com/yappc/app-creator/tree/main/docs-site/docs/canvas/export-sharing.md",
+  "tags": [],
+  "version": "current",
+  "sidebarPosition": 1,
+  "frontMatter": {
+    "sidebar_position": 1
+  },
+  "sidebar": "canvasSidebar",
+  "previous": {
+    "title": "Real-Time Collaboration",
+    "permalink": "/docs/canvas/real-time-collaboration"
+  },
+  "next": {
+    "title": "performance",
+    "permalink": "/docs/canvas/performance"
+  }
+}

@@ -1,0 +1,54 @@
+id: data-migration-agent
+name: Data Migration Agent
+version: 1.0.0
+description: Orchestrates schema and data migrations with rollback capabilities
+
+metadata:
+  level: 3
+  domain: data-lifecycle
+  tags: [migration, schema, data, transformation, rollback]
+
+generator:
+  type: PIPELINE
+  steps:
+    - name: schema_analysis
+      type: SERVICE_CALL
+      service: schema-analyzer
+      endpoint: /datacloud/schema/analyze
+    - name: migration_planning
+      type: LLM
+      provider: ANTHROPIC
+      model: claude-3-5-sonnet-20241022
+      temperature: 0.1
+      prompt: |
+        Generate migration plan:
+        Source Schema: {{source_schema}}
+        Target Schema: {{target_schema}}
+        Data Volume: {{volume}}
+        Consider: downtime, rollback strategy, validation steps
+
+capabilities:
+  - schema-evolution
+  - data-replication
+
+tools:
+  - name: migrationRunner
+    type: SERVICE
+    endpoint: /datacloud/migrations/execute
+  - name: rollbackManager
+    type: SERVICE
+    endpoint: /datacloud/migrations/rollback
+
+memory:
+  type: SEMANTIC
+  scope: migration_history
+  retention: long
+
+routing:
+  input: MigrationRequest
+  output: MigrationResult
+
+resources:
+  memory: "2GB"
+  cpu: "4"
+  timeout: "3600s"

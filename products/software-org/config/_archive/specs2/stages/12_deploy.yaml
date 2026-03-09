@@ -1,0 +1,823 @@
+name: Deploy (Cloud-Native, GitOps, Automated)
+workflow:
+  - id: policy_drift_detection
+    agent: PolicyDriftDetectionAgent
+    role: Security/Compliance Automation
+    inputs_spec:
+      - name: deployment_progress_dashboard
+        description: Deployment progress dashboard artifact.
+        format: Dashboard artifact
+    outputs_spec:
+      - name: drift_report
+        description: Policy/configuration drift report for deployed environments.
+        format: Drift report artifact
+    agent_tasks:
+      - Detect configuration or policy drift in all deployed environments.
+      - Generate a drift report with actionable remediation steps.
+      - Route drift findings to compliance and operations teams.
+    acceptance_criteria:
+      - Configuration/policy drift is detected and logged for all deployments.
+      - Drift report includes actionable remediation.
+      - Drift report is sent to compliance/ops and linked for audit.
+    dependencies:
+      - deployment_progress_dashboard
+    failure_escalation:
+      - Escalate to compliance or ops lead if critical drift is detected or remediation is not actionable.
+    references:
+      - "NIST SP 800-53 CM-6"
+      - "CIS Controls 5.5"
+    hitl: false
+
+  - id: release_notes_agent
+    agent: ReleaseNotesAgent
+    role: Release Manager/Automation
+    inputs_spec:
+      - name: release_package
+        description: Versioned release package with change log and artifacts.
+        format: Release package artifact
+    outputs_spec:
+      - name: release_notes
+        description: Versioned release notes with features, fixes, changes, and distribution log.
+        format: Release notes artifact
+    agent_tasks:
+      - Generate release notes for all new and changed features or fixes.
+      - Distribute notes to all relevant stakeholders.
+      - Attach notes to release artifacts and archive.
+    acceptance_criteria:
+      - Release notes are generated for all changes.
+      - Notes are distributed to stakeholders and attached to artifacts.
+      - Notes are versioned and archived.
+    dependencies:
+      - release_package
+    failure_escalation:
+      - Escalate to Release Manager if release notes are incomplete or not distributed.
+    references: []
+    hitl: false
+
+  - id: license_compliance
+    agent: LicenseComplianceAgent
+    role: Automation Tool
+    inputs_spec:
+      - name: release_package
+        description: Versioned release package with all dependencies and artifacts.
+        format: Release package artifact
+    outputs_spec:
+      - name: license_compliance_report
+        description: License compatibility report for all dependencies and artifacts.
+        format: Compliance report artifact
+    agent_tasks:
+      - Scan all dependencies and release artifacts for license compatibility.
+      - Flag all non-compliant licenses.
+      - Attach compliance report to release for audit and signoff.
+    acceptance_criteria:
+      - All dependencies and artifacts are checked for license compatibility.
+      - Non-compliant licenses are flagged.
+      - Compliance report is attached to the release.
+    dependencies:
+      - release_package
+    failure_escalation:
+      - Escalate to legal/compliance lead if non-compliance is detected or report is missing.
+    references:
+      - "OpenChain Specification"
+      - "SPDX License List"
+    hitl: false
+  - id: gitops_controller
+    agent: GitOpsControllerAgent
+    role: GitOps Engineer
+    inputs_spec:
+      - name: ready_for_deploy_bundle
+        description: Bundle approved for deployment via GitOps.
+        format: Deployable bundle artifact
+    outputs_spec:
+      - name: deployment_triggered
+        description: Status of deployment triggered by GitOps controller.
+        format: Deployment trigger artifact
+    agent_tasks:
+      - Monitor source control for changes.
+      - Trigger deployment on approved manifest updates.
+      - Apply only approved manifests.
+      - Log deployment status and enable rollback from Git history.
+    acceptance_criteria:
+      - Deployment is triggered from source control changes.
+      - Only approved manifests are applied.
+      - Deployment status is logged and accessible.
+      - Rollbacks can be initiated from Git history.
+    dependencies:
+      - ready_for_deploy_bundle
+    failure_escalation:
+      - Escalate to GitOps Engineer if deployment fails or manifests are not approved.
+    references: []
+    hitl: false
+
+  - id: deploy_best_practice_enforcement
+    agent: DeployBestPracticeAgent
+    role: Deploy QA Auditor
+    inputs_spec:
+      - name: deployment_triggered
+        description: Deployment status artifact.
+        format: Deployment trigger artifact
+    outputs_spec:
+      - name: deploy_best_practice_report
+        description: Report on deployment best practices and deviations.
+        format: Best practice report artifact
+    agent_tasks:
+      - Assess all deployment practices for compliance with org/industry standards.
+      - Consider canary, blue/green, or rolling deployments.
+      - Ensure security and compliance checks are integrated.
+      - Flag and review deviations from best practice.
+    acceptance_criteria:
+      - Deployment practices follow org/industry standards.
+      - Canary/blue-green/rolling strategies considered.
+      - Security/compliance checks are integrated.
+      - Deviations are flagged and reviewed.
+    dependencies:
+      - deployment_triggered
+    failure_escalation:
+      - Escalate to Deploy QA if deviations not reviewed.
+    references: []
+    hitl: true
+    hitl_reason: Human ensures deployment best practices are enforced
+
+  - id: deploy_milestone_tracker
+    agent: DeployMilestoneTrackerAgent
+    role: Deploy PM
+    inputs_spec:
+      - name: deploy_best_practice_report
+        description: Best practice report for milestone tracking.
+        format: Best practice report artifact
+    outputs_spec:
+      - name: deploy_stage_milestone
+        description: Deployment stage milestones and progress.
+        format: List of milestone objects
+    agent_tasks:
+      - Track all deployment milestones (QA, staging, prod).
+      - Assign owners and target dates.
+      - Escalate and resolve blockers and risks.
+      - Document milestone completion.
+    acceptance_criteria:
+      - All milestones are tracked.
+      - Owners and target dates assigned.
+      - Blockers/risks are escalated and resolved.
+      - Completion is documented.
+    dependencies:
+      - deploy_best_practice_report
+    failure_escalation:
+      - Escalate to Deploy PM if milestones unclear or blockers unresolved.
+    references: []
+    hitl: true
+    hitl_reason: Human oversight for deployment milestone tracking
+
+  - id: manifest_validation
+    agent: ManifestValidationAgent
+    role: DevOps/SRE
+    inputs_spec:
+      - name: deploy_stage_milestone
+        description: Milestone tracker artifact.
+        format: List of milestone objects
+    outputs_spec:
+      - name: manifest_validation_report
+        description: Validation report for deployment manifests.
+        format: Manifest validation report artifact
+    agent_tasks:
+      - Validate all deployment manifests for syntax and schema.
+      - Check environment-specific variables and secrets.
+      - Block deployment for invalid/incomplete manifests.
+      - Archive validation logs.
+    acceptance_criteria:
+      - All manifests validated for syntax/schema.
+      - Variables/secrets checked.
+      - Invalid/incomplete manifests block deployment.
+      - Validation logs are archived.
+    dependencies:
+      - deploy_stage_milestone
+    failure_escalation:
+      - Escalate to DevOps/SRE if manifests invalid or logs missing.
+    references: []
+    hitl: true
+    hitl_reason: Human reviews manifest validation report for errors
+
+  - id: deployment_strategy
+    agent: DeploymentStrategyAgent
+    role: Release/DevOps Engineer
+    inputs_spec:
+      - name: manifest_validation_report
+        description: Validation report for deployment strategy selection.
+        format: Manifest validation report artifact
+    outputs_spec:
+      - name: deployment_rollout_status
+        description: Status of deployment rollout and strategy selection.
+        format: Rollout status artifact
+    agent_tasks:
+      - Select deployment strategy (canary, rolling, blue/green, etc.).
+      - Document strategy and rationale.
+      - Define rollback/promotion paths.
+      - Obtain stakeholder signoff.
+    acceptance_criteria:
+      - Strategy is selected, documented, and signed off.
+      - Rollback/promotion paths defined.
+    dependencies:
+      - manifest_validation_report
+    failure_escalation:
+      - Escalate to Release/DevOps if strategy not documented/signed off.
+    references: []
+    hitl: true
+    hitl_reason: Human selects and validates deployment strategy
+
+  - id: service_mesh_config
+    agent: ServiceMeshConfigAgent
+    role: Platform/SRE
+    inputs_spec:
+      - name: deployment_rollout_status
+        description: Rollout status artifact for mesh configuration.
+        format: Rollout status artifact
+    outputs_spec:
+      - name: service_mesh_validation
+        description: Validation artifact for service mesh configuration.
+        format: Mesh validation artifact
+    agent_tasks:
+      - Apply and validate service mesh configurations.
+      - Test traffic policies/security settings.
+      - Report mesh metrics to observability tools.
+    acceptance_criteria:
+      - Mesh configs applied and validated.
+      - Traffic/security settings tested.
+      - Metrics reported to observability tools.
+    dependencies:
+      - deployment_rollout_status
+    failure_escalation:
+      - Escalate to Platform/SRE if mesh config invalid or metrics missing.
+    references: []
+    hitl: false
+
+  - id: health_check
+    agent: HealthCheckAgent
+    role: SRE
+    inputs_spec:
+      - name: service_mesh_validation
+        description: Mesh validation artifact.
+        format: Mesh validation artifact
+    outputs_spec:
+      - name: health_check_report
+        description: Report of health check outcomes for all services.
+        format: Health check report artifact
+    agent_tasks:
+      - Define and test health checks for all services.
+      - Block or rollback deployments on failing health checks.
+      - Report health status to dashboards/logs.
+    acceptance_criteria:
+      - Health checks defined and tested.
+      - Failing checks block/rollback deployments.
+      - Status reported to dashboards/logs.
+    dependencies:
+      - service_mesh_validation
+    failure_escalation:
+      - Escalate to SRE if health checks fail or status not reported.
+    references: []
+    hitl: true
+    hitl_reason: Human reviews health check report for anomalies
+
+  - id: automated_rollback
+    agent: AutomatedRollbackAgent
+    role: SRE/Release Engineer
+    inputs_spec:
+      - name: health_check_report
+        description: Health check report artifact.
+        format: Health check report artifact
+    outputs_spec:
+      - name: rollback_status
+        description: Rollback status and logs.
+        format: Rollback status artifact
+    agent_tasks:
+      - Define and monitor rollback conditions.
+      - Automatically trigger rollback on failure.
+      - Log rollback status/actions.
+    acceptance_criteria:
+      - Rollback conditions clearly defined/monitored.
+      - Rollback automatically triggered on failure.
+      - Status/logs reported.
+    dependencies:
+      - health_check_report
+    failure_escalation:
+      - Escalate to SRE/Release Engineer if rollback not triggered on failure.
+    references: []
+    hitl: true
+    hitl_reason: Human validates rollback actions and status
+
+  - id: deployment_logging
+    agent: DeploymentLoggingAgent
+    role: DevOps/Compliance
+    inputs_spec:
+      - name: deployment_rollout_status
+        description: Rollout status artifact for logging.
+        format: Rollout status artifact
+      - name: health_check_report
+        description: Health check report for logging.
+        format: Health check report artifact
+      - name: rollback_status
+        description: Rollback status artifact for logging.
+        format: Rollback status artifact
+    outputs_spec:
+      - name: deployment_event_log
+        description: Log of all deployment events (start, stop, errors).
+        format: Deployment event log artifact
+    agent_tasks:
+      - Log all deployment events (start, stop, errors).
+      - Aggregate logs centrally.
+      - Enforce retention policy.
+    acceptance_criteria:
+      - All deployment events logged and accessible.
+      - Logs aggregated centrally.
+      - Retention policy enforced.
+    dependencies:
+      - deployment_rollout_status
+      - health_check_report
+      - rollback_status
+    failure_escalation:
+      - Escalate to DevOps/Compliance if logs missing or retention not enforced.
+    references: []
+    hitl: false
+
+  - id: manual_rollback
+    agent: ManualRollbackAgent
+    role: Ops/Incident Lead
+    inputs_spec:
+      - name: deployment_event_log
+        description: Deployment event log for rollback.
+        format: Deployment event log artifact
+    outputs_spec:
+      - name: manual_rollback_report
+        description: Documentation of manual rollback procedure and actions.
+        format: Manual rollback report artifact
+    agent_tasks:
+      - Document and follow manual rollback procedure.
+      - Obtain human signoff.
+      - Record all rollback actions for audit.
+    acceptance_criteria:
+      - Manual rollback procedure is documented and followed.
+      - Human signoff required.
+      - Actions recorded for audit.
+    dependencies:
+      - deployment_event_log
+    failure_escalation:
+      - Escalate to Incident Lead if rollback not documented or signed off.
+    references: []
+    hitl: true
+    hitl_reason: Human performs and documents manual rollback
+
+  - id: deployment_dashboard
+    agent: DeploymentDashboardAgent
+    role: DevOps/Platform Engineer
+    inputs_spec:
+      - name: deployment_event_log
+        description: Deployment event log for dashboard.
+        format: Deployment event log artifact
+    outputs_spec:
+      - name: deployment_dashboard
+        description: Dashboard of deployment status, events, metrics.
+        format: Deployment dashboard artifact
+    agent_tasks:
+      - Visualize deployment status, events, and metrics.
+      - Update dashboards in real time.
+      - Grant stakeholder access.
+    acceptance_criteria:
+      - Status, events, metrics visualized.
+      - Dashboards updated real time.
+      - Stakeholders have access.
+    dependencies:
+      - deployment_event_log
+    failure_escalation:
+      - Escalate to DevOps/Platform if dashboard not updated or not accessible.
+    references: []
+    hitl: false
+
+  - id: deploy_observability_export
+    agent: ObservabilityExportAgent
+    role: SRE/Analytics
+    inputs_spec:
+      - name: deploy_progress_dashboard
+        description: Deploy progress dashboard for observability export.
+        format: Dashboard artifact
+    outputs_spec:
+      - name: deploy_observability_export
+        description: Exported deployment metrics/KPIs.
+        format: Export artifact
+    agent_tasks:
+      - Export deployment metrics/KPIs to analytics/monitoring.
+      - Flag gaps in observability.
+    acceptance_criteria:
+      - Metrics/KPIs exported.
+      - Gaps flagged.
+    dependencies:
+      - deploy_progress_dashboard
+    failure_escalation:
+      - Escalate to SRE/Analytics if metrics not exported/gaps not flagged.
+    references: []
+    hitl: false
+
+  - id: deploy_feedback_loop
+    agent: FeedbackLoopAgent
+    role: CI/CD Coach/Automation
+    inputs_spec:
+      - name: deploy_progress_dashboard
+        description: Deploy progress dashboard for feedback loop.
+        format: Dashboard artifact
+    outputs_spec:
+      - name: deploy_feedback_items
+        description: Issues and improvements for Retrospective.
+        format: List of feedback items
+    agent_tasks:
+      - Route all issues/improvements to Retrospective.
+      - Track feedback for action/resolution.
+    acceptance_criteria:
+      - All issues/improvements routed to Retrospective.
+      - Feedback tracked for action/resolution.
+    dependencies:
+      - deploy_progress_dashboard
+    failure_escalation:
+      - Escalate to CI/CD Coach if feedback not acted on.
+    references: []
+    hitl: false
+
+  - id: canary_rollout
+    agent: CanaryRolloutAgent
+    role: Deployment Automation
+    inputs_spec:
+      - name: deployment_rollout_status
+        description: Rollout status artifact for canary rollout.
+        format: Rollout status artifact
+    outputs_spec:
+      - name: canary_rollout_report
+        description: Report of canary rollout execution and results.
+        format: Canary rollout report artifact
+    agent_tasks:
+      - Plan and execute canary rollout.
+      - Monitor during canary period.
+      - Trigger rollback or pause on issues.
+    acceptance_criteria:
+      - Canary rollout planned/executed per strategy.
+      - Monitoring performed.
+      - Issues trigger rollback/pause.
+    dependencies:
+      - deployment_rollout_status
+    failure_escalation:
+      - Escalate to Deployment Automation if canary rollout fails or issues not handled.
+    references: []
+    hitl: false
+
+  - id: synthesis_deploy_combiner
+    agent: SynthesisDeployCombinerAgent
+    role: Release PM/Tech Lead
+    inputs_spec:
+      - name: deployment_event_log
+        description: Event log for deployment completion.
+        format: Deployment event log artifact
+      - name: deployment_dashboard
+        description: Deployment dashboard for deployment completion.
+        format: Deployment dashboard artifact
+      - name: manual_rollback_report
+        description: Manual rollback report for deployment completion.
+        format: Manual rollback report artifact
+    outputs_spec:
+      - name: deployment_complete_status
+        description: Combined status of deployment completion, logs, dashboards.
+        format: Deployment completion status artifact
+    agent_tasks:
+      - Combine outputs, logs, dashboards.
+      - Flag gaps/issues in deployment.
+      - Final status signed off by responsible parties.
+    acceptance_criteria:
+      - All outputs/logs/dashboards combined.
+      - Gaps/issues flagged.
+      - Final status signed off.
+    dependencies:
+      - deployment_event_log
+      - deployment_dashboard
+      - manual_rollback_report
+    failure_escalation:
+      - Escalate to Release PM/Tech Lead if status not complete or not reviewed.
+    references: []
+    hitl: true
+    hitl_reason: Human validates deployment completion status
+
+  - id: deploy_kpi_agent
+    agent: StageKPIAgent
+    role: Deploy KPI Analyst
+    inputs_spec:
+      - name: deploy_stage_milestone
+        description: Deployment stage milestone for KPI tracking.
+        format: List of milestone objects
+    outputs_spec:
+      - name: deploy_kpi_report
+        description: Deploy KPI report.
+        format: KPI report artifact
+    agent_tasks:
+      - Track deployment frequency, lead time, success/failure, MTTR, rollback events.
+      - Flag anomalies/trends.
+      - Ensure KPI data traceable to logs/artifacts.
+    acceptance_criteria:
+      - All KPIs tracked and flagged.
+      - KPI data traceable to logs/artifacts.
+      - Trends/anomalies flagged for review.
+    dependencies:
+      - deploy_stage_milestone
+    failure_escalation:
+      - Escalate to KPI Analyst if KPIs missing or not updated.
+    references: []
+    hitl: false
+
+  - id: deploy_success_criteria_tracker
+    agent: SuccessCriteriaTrackerAgent
+    role: Deploy Success Criteria Tracker
+    inputs_spec:
+      - name: deploy_stage_milestone
+        description: Deployment stage milestones for criteria tracking.
+        format: List of milestone objects
+    outputs_spec:
+      - name: deploy_success_criteria_status
+        description: Status of all deploy stage entry/exit criteria.
+        format: List of criteria status objects
+    agent_tasks:
+      - List/map all deploy stage entry/exit criteria.
+      - Mark criteria as Met/At Risk/Not Met.
+      - List blockers/failed criteria/owners.
+      - Tracker reviewed by HITL before prod cutover.
+    acceptance_criteria:
+      - All criteria tracked and status marked.
+      - Blockers, failed criteria, owners listed.
+      - Tracker reviewed before production.
+    dependencies:
+      - deploy_stage_milestone
+    failure_escalation:
+      - Escalate to Criteria Tracker if criteria not maintained or reviewed.
+    references: []
+    hitl: false
+
+  - id: deploy_progress_dashboard
+    agent: ProgressDashboardAgent
+    role: Deploy Progress Dashboard Owner
+    inputs_spec:
+      - name: deploy_kpi_report
+        description: Deploy KPI report for dashboard.
+        format: KPI report artifact
+      - name: deploy_success_criteria_status
+        description: Success criteria status for dashboard.
+        format: List of criteria status objects
+      - name: deploy_stage_milestone
+        description: Deployment stage milestones for dashboard.
+        format: List of milestone objects
+    outputs_spec:
+      - name: deploy_progress_dashboard
+        description: Dashboard visualizing RAG status, KPIs, rollbacks, open issues, and timeline.
+        format: Deploy progress dashboard artifact
+    agent_tasks:
+      - Visualize RAG status, KPIs, rollbacks, open issues, and timeline.
+      - Update dashboard in real time.
+      - Dashboard signed off before close.
+    acceptance_criteria:
+      - All required deployment status elements visualized and signed off.
+    dependencies:
+      - deploy_kpi_report
+      - deploy_success_criteria_status
+      - deploy_stage_milestone
+    failure_escalation:
+      - Escalate to Dashboard Owner if not current/signed off.
+    references: []
+    hitl: false
+
+
+  - id: deploy_otel_telemetry_agent
+    agent: OpenTelemetryAgent
+    role: Observability Automation
+    inputs_spec:
+      - name: deploy_progress_dashboard
+        description: Deploy progress dashboard for telemetry export.
+        format: Deploy progress dashboard artifact
+    outputs_spec:
+      - name: deploy_otel_telemetry_report
+        description: Distributed traces, metrics, and logs collected via OpenTelemetry.
+        format: Telemetry report artifact
+    agent_tasks:
+      - Collect distributed traces, metrics, and logs via OpenTelemetry.
+      - Send telemetry to central observability platforms (Grafana, Datadog, etc.).
+      - Flag trace gaps or SLO misses for follow-up.
+      - Link telemetry data to all key deployment artifacts.
+    acceptance_criteria:
+      - Distributed traces, metrics, and logs are collected via OpenTelemetry.
+      - Telemetry is sent to central observability platforms.
+      - Trace gaps or SLO misses are flagged and reported.
+      - Telemetry data is linked to all key deployment artifacts.
+    dependencies:
+      - deploy_progress_dashboard
+    failure_escalation:
+      - Escalate to Observability/Analytics lead if telemetry not collected or gaps unflagged.
+    references: []
+    hitl: false
+
+  - id: deploy_slo_monitor_agent
+    agent: SLOMonitorAgent
+    role: SRE/Automation
+    inputs_spec:
+      - name: deploy_otel_telemetry_report
+        description: Telemetry report with traces and SLO data.
+        format: Telemetry report artifact
+    outputs_spec:
+      - name: deploy_slo_status_report
+        description: Service-level objectives (SLOs) status, including breaches and near-misses.
+        format: SLO/SLA status report artifact
+    agent_tasks:
+      - Track and report on SLOs for deployments.
+      - Escalate breaches or near-misses to operations and product owners.
+      - Visualize compliance in dashboards and summary reports.
+    acceptance_criteria:
+      - SLOs are tracked and reported.
+      - Breaches or near-misses are escalated.
+      - Compliance status is visualized in dashboards and summary reports.
+    dependencies:
+      - deploy_otel_telemetry_report
+    failure_escalation:
+      - Escalate to SRE if SLOs are not tracked or breaches unreported.
+    references: []
+    hitl: false
+
+  - id: deploy_audit_log_agent
+    agent: AuditLogAgent
+    role: Compliance Bot
+    inputs_spec:
+      - name: deploy_progress_dashboard
+        description: Deploy progress dashboard for audit logging.
+        format: Dashboard artifact
+      - name: deploy_notification_agent
+        description: Notification agent delivery log.
+        format: List of notification objects
+    outputs_spec:
+      - name: deploy_audit_log
+        description: Audit log of all deployment actions, signoffs, escalations, notifications.
+        format: Audit log artifact
+    agent_tasks:
+      - Record every agent action and transition with timestamp, user/agent, and artifact link.
+      - Log major events (signoffs, escalations, notifications, exceptions).
+      - Cryptographically sign and archive logs in secure, tamper-evident storage.
+      - Ensure audit log is accessible for compliance review.
+    acceptance_criteria:
+      - Every agent action and transition is recorded with required details.
+      - Major events are explicitly logged.
+      - Logs are cryptographically signed and archived securely.
+      - Audit log is accessible for compliance review.
+    dependencies:
+      - deploy_progress_dashboard
+      - deploy_notification_agent
+    failure_escalation:
+      - Escalate to compliance or audit lead if audit log is incomplete or inaccessible.
+    references: []
+    hitl: false
+
+  - id: deploy_evidence_collector
+    agent: EvidenceCollectorAgent
+    role: Compliance Evidence Bot
+    inputs_spec:
+      - name: deploy_audit_log
+        description: Deploy audit log for evidence collection.
+        format: Audit log artifact
+      - name: deploy_success_criteria_status
+        description: Deploy stage success criteria status.
+        format: List of criteria status objects
+      - name: deploy_stage_milestone
+        description: Deployment stage milestone plan for evidence linkage.
+        format: List of milestone objects
+    outputs_spec:
+      - name: deploy_evidence_package
+        description: Evidence package with all signoffs, feedback, KPIs, and results.
+        format: Evidence package artifact
+    agent_tasks:
+      - Collect and hash all artifacts, audit logs, signoffs, and KPIs for the stage.
+      - Link evidence to compliance and regulatory requirements.
+      - Archive evidence package in tamper-evident storage and maintain access logs.
+    acceptance_criteria:
+      - All required artifacts and evidence are collected and hashed.
+      - Evidence is linked to compliance/regulatory requirements.
+      - Evidence package is archived and access logs are maintained.
+    dependencies:
+      - deploy_audit_log
+      - deploy_success_criteria_status
+      - deploy_stage_milestone
+    failure_escalation:
+      - Escalate to compliance evidence lead if evidence package is incomplete or not archived.
+    references: []
+    hitl: false
+
+  - id: deploy_risk_trend_analyzer
+    agent: RiskTrendAnalyzerAgent
+    role: Risk Intelligence Bot
+    inputs_spec:
+      - name: deploy_escalation_report
+        description: Deploy escalation report for risk trend analysis.
+        format: Escalation report artifact
+      - name: deploy_progress_dashboard
+        description: Deploy progress dashboard for risk trend data.
+        format: Dashboard artifact
+      - name: deploy_stage_milestone
+        description: Deployment stage milestone plan for risk trend context.
+        format: List of milestone objects
+    outputs_spec:
+      - name: deploy_risk_trend_report
+        description: Risk trend report for deployment stage (risks, escalations, blockers, recommendations).
+        format: Risk trend report artifact
+    agent_tasks:
+      - Trend all deployment stage risks, escalations, and blockers over time.
+      - Automatically flag and classify recurring/systemic risks.
+      - Share trend report with PMO and leadership.
+      - Recommend mitigation or process changes.
+    acceptance_criteria:
+      - All risks, escalations, and blockers are trended over time.
+      - Recurring or systemic risks are flagged and classified.
+      - Trend report shared with PMO/leadership with recommendations.
+    dependencies:
+      - deploy_escalation_report
+      - deploy_progress_dashboard
+      - deploy_stage_milestone
+    failure_escalation:
+      - Escalate to Risk Intelligence Lead if trends or recommendations are missing.
+    references: []
+    hitl: false
+
+  - id: deploy_policy_drift_detector
+    agent: PolicyDriftDetectorAgent
+    role: Compliance Automation
+    inputs_spec:
+      - name: deploy_milestone_tracker
+        description: Deploy milestone tracker for drift detection.
+        format: Milestone tracker artifact
+      - name: deploy_progress_dashboard
+        description: Deploy progress dashboard for drift status.
+        format: Dashboard artifact
+    outputs_spec:
+      - name: deploy_policy_drift_report
+        description: Report on policy/config drift and status for deployment stage.
+        format: Drift report artifact
+    agent_tasks:
+      - Compare actual deployed configs/policies to approved definitions.
+      - Flag, categorize, and timestamp all drift or changes.
+      - Escalate critical drift for review.
+      - Maintain drift detection history for trend analysis.
+    acceptance_criteria:
+      - Deployed configs/policies compared to approved definitions.
+      - Drift or changes flagged, categorized, and timestamped.
+      - Critical drift escalated for review.
+      - Drift detection history maintained.
+    dependencies:
+      - deploy_milestone_tracker
+      - deploy_progress_dashboard
+    failure_escalation:
+      - Escalate to compliance lead if drift not flagged or reported.
+    references: []
+    hitl: false
+
+  - id: deploy_policy_reconciliation
+    agent: PolicyReconciliationAgent
+    role: Compliance Automation
+    inputs_spec:
+      - name: deploy_progress_dashboard
+        description: Deploy progress dashboard for reconciliation triggers.
+        format: Dashboard artifact
+    outputs_spec:
+      - name: deploy_policy_recon_report
+        description: Report on deployment policy reconciliation actions and status.
+        format: Policy reconciliation report artifact
+    agent_tasks:
+      - Compare all live environment policies/configs to source of truth.
+      - Flag and report any drift to compliance.
+      - Assign remediation plans if mismatches found.
+    acceptance_criteria:
+      - All live environment policies/configs match source of truth.
+      - Any drift is flagged and reported to compliance.
+      - Remediation plans assigned if mismatches found.
+    dependencies:
+      - deploy_progress_dashboard
+    failure_escalation:
+      - Escalate to compliance automation if drift/mismatches are not remediated.
+    references: []
+    hitl: false
+
+  - id: deploy_lbom_agent
+    agent: LBOMAgent
+    role: Legal/Compliance
+    inputs_spec:
+      - name: deploy_sbom_files
+        description: SBOM files for license bill of materials generation.
+        format: SBOM file artifact
+    outputs_spec:
+      - name: deploy_lbom_report
+        description: License bill of materials for all deployment artifacts.
+        format: LBOM report artifact
+    agent_tasks:
+      - Generate license bill of materials for all deployment artifacts.
+      - Track and link all license risks to compliance.
+    acceptance_criteria:
+      - License bill of materials is generated for all artifacts.
+      - All license risks are tracked and linked to compliance.
+    dependencies:
+      - deploy_sbom_files
+    failure_escalation:
+      - Escalate to Legal/Compliance if LBOM is missing or incomplete.
+    references: []
+    hitl: false

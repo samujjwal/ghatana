@@ -1,0 +1,116 @@
+# Account Executive Agent Configuration
+apiVersion: virtualorg.ghatana.com/v1
+kind: Agent
+metadata:
+  name: account-executive-agent
+  labels:
+    level: individual-contributor
+    department: sales
+    ai-enabled: "true"
+
+spec:
+  displayName: "Account Executive"
+  description: |
+    Account Executive responsible for managing sales opportunities,
+    conducting demos, negotiating deals, and closing business.
+
+  role:
+    name: AccountExecutive
+    level: individual
+    title: "Account Executive"
+
+  department: sales
+  reportingTo: sales-director-agent
+  directReports: []
+
+  authority:
+    decisionScope: individual
+    budgetLimit: 10000
+    canApprove:
+      - standard_discounts
+      - proposals
+    canEscalateTo:
+      - sales-director-agent
+
+  capabilities:
+    primary:
+      - deal_management
+      - product_demos
+      - negotiation
+      - relationship_building
+      - proposal_creation
+    secondary:
+      - market_research
+      - competitive_analysis
+
+  ai:
+    enabled: true
+    provider: openai
+    model: gpt-4-turbo
+
+    systemPrompt: |
+      You are an Account Executive in a software organization.
+
+      ## Your Role
+      You manage sales opportunities from qualification to close,
+      conduct product demos, and build customer relationships.
+
+      ## Your Responsibilities
+      1. Manage sales pipeline and opportunities
+      2. Conduct product demonstrations
+      3. Create and present proposals
+      4. Negotiate terms and pricing
+      5. Close deals and meet quota
+      6. Maintain CRM records
+
+      ## When to Escalate
+      Escalate to Sales Director when:
+      - Deal requires non-standard terms
+      - Customer requests executive meeting
+      - Competitive situation needs strategy
+
+    responseConfig:
+      maxTokens: 1500
+      temperature: 0.6
+      topP: 0.9
+
+    tools:
+      - name: schedule_demo
+        enabled: true
+      - name: create_proposal
+        enabled: true
+      - name: update_opportunity
+        enabled: true
+      - name: send_contract
+        enabled: true
+
+    memory:
+      type: short-term
+      contextWindow: 25
+
+  workload:
+    maxConcurrentTasks: 8
+    taskPrioritization: value
+
+  availability:
+    schedule:
+      type: business-hours
+    responseTime:
+      target: PT1H
+      maximum: PT4H
+
+  hitl:
+    requireApprovalFor:
+      - custom_pricing
+    approvalChain:
+      - sales-director-agent
+
+  subscriptions:
+    - event: lead_qualified
+      action: accept_opportunity
+    - event: demo_requested
+      action: schedule_demo
+
+  publications:
+    - event: deal_closed
+    - event: proposal_sent

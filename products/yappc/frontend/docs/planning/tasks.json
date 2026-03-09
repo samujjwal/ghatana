@@ -1,0 +1,407 @@
+[
+  {
+    "id": "1.3.design",
+    "epicId": "1.3",
+    "title": "Design D Architecture",
+    "description": "Design the architecture and create TypeScript types for D",
+    "status": "todo",
+    "estimatedHours": 3,
+    "labels": [
+      "design",
+      "architecture"
+    ],
+    "dependencies": [],
+    "milestone": "Section 1"
+  },
+  {
+    "id": "1.3.implementation",
+    "epicId": "1.3",
+    "title": "Implement D",
+    "description": "Core implementation of D:\n\n1. Smart connectors\n2. Rich text\n3. Image import",
+    "status": "todo",
+    "estimatedHours": 7,
+    "labels": [
+      "implementation",
+      "feature"
+    ],
+    "dependencies": [
+      "1.3.design"
+    ],
+    "milestone": "Section 1"
+  },
+  {
+    "id": "1.3.docs",
+    "epicId": "1.3",
+    "title": "Document D",
+    "description": "Create comprehensive documentation for D including API reference, examples, and best practices",
+    "status": "todo",
+    "estimatedHours": 2,
+    "labels": [
+      "documentation"
+    ],
+    "dependencies": [
+      "1.3.implementation"
+    ],
+    "milestone": "Section 1"
+  },
+  {
+    "id": "1.5.design",
+    "epicId": "1.5",
+    "title": "Design R Architecture",
+    "description": "Design the architecture and create TypeScript types for R",
+    "status": "todo",
+    "estimatedHours": 3,
+    "labels": [
+      "design",
+      "architecture"
+    ],
+    "dependencies": [],
+    "milestone": "Section 1"
+  },
+  {
+    "id": "1.5.implementation",
+    "epicId": "1.5",
+    "title": "Implement R",
+    "description": "Core implementation of R:\n\n1. Presence broadcast\n2. Conflict merge\n3. Awareness throttling",
+    "status": "todo",
+    "estimatedHours": 7,
+    "labels": [
+      "implementation",
+      "feature"
+    ],
+    "dependencies": [
+      "1.5.design"
+    ],
+    "milestone": "Section 1"
+  },
+  {
+    "id": "1.5.docs",
+    "epicId": "1.5",
+    "title": "Document R",
+    "description": "Create comprehensive documentation for R including API reference, examples, and best practices",
+    "status": "todo",
+    "estimatedHours": 2,
+    "labels": [
+      "documentation"
+    ],
+    "dependencies": [
+      "1.5.implementation"
+    ],
+    "milestone": "Section 1"
+  },
+  {
+    "id": "1.6.design",
+    "epicId": "1.6",
+    "title": "Design C Architecture",
+    "description": "Design the architecture and create TypeScript types for C",
+    "status": "todo",
+    "estimatedHours": 3,
+    "labels": [
+      "design",
+      "architecture"
+    ],
+    "dependencies": [],
+    "milestone": "Section 1"
+  },
+  {
+    "id": "1.6.implementation",
+    "epicId": "1.6",
+    "title": "Implement C",
+    "description": "Core implementation of C:\n\n1. Thread attach\n2. Mentions\n3. Resolve flow",
+    "status": "todo",
+    "estimatedHours": 7,
+    "labels": [
+      "implementation",
+      "feature"
+    ],
+    "dependencies": [
+      "1.6.design"
+    ],
+    "milestone": "Section 1"
+  },
+  {
+    "id": "1.6.docs",
+    "epicId": "1.6",
+    "title": "Document C",
+    "description": "Create comprehensive documentation for C including API reference, examples, and best practices",
+    "status": "todo",
+    "estimatedHours": 2,
+    "labels": [
+      "documentation"
+    ],
+    "dependencies": [
+      "1.6.implementation"
+    ],
+    "milestone": "Section 1"
+  },
+  {
+    "id": "1.7.design",
+    "epicId": "1.7",
+    "title": "Design S Architecture",
+    "description": "Design the architecture and create TypeScript types for S",
+    "status": "todo",
+    "estimatedHours": 3,
+    "labels": [
+      "design",
+      "architecture"
+    ],
+    "dependencies": [],
+    "milestone": "Section 1"
+  },
+  {
+    "id": "1.7.implementation",
+    "epicId": "1.7",
+    "title": "Implement S",
+    "description": "Core implementation of S:\n\n1. Role enforcement\n2. Expiring links\n3. Audit trail",
+    "status": "todo",
+    "estimatedHours": 7,
+    "labels": [
+      "implementation",
+      "feature"
+    ],
+    "dependencies": [
+      "1.7.design"
+    ],
+    "milestone": "Section 1"
+  },
+  {
+    "id": "1.7.docs",
+    "epicId": "1.7",
+    "title": "Document S",
+    "description": "Create comprehensive documentation for S including API reference, examples, and best practices",
+    "status": "todo",
+    "estimatedHours": 2,
+    "labels": [
+      "documentation"
+    ],
+    "dependencies": [
+      "1.7.implementation"
+    ],
+    "milestone": "Section 1"
+  },
+  {
+    "id": "1.8.design",
+    "epicId": "1.8",
+    "title": "Design E Architecture",
+    "description": "Design the architecture and create TypeScript types for E",
+    "status": "todo",
+    "estimatedHours": 2,
+    "labels": [
+      "design",
+      "architecture"
+    ],
+    "dependencies": [],
+    "milestone": "Section 1"
+  },
+  {
+    "id": "1.8.implementation",
+    "epicId": "1.8",
+    "title": "Implement E",
+    "description": "Core implementation of E:\n\n",
+    "status": "todo",
+    "estimatedHours": 4,
+    "labels": [
+      "implementation",
+      "feature"
+    ],
+    "dependencies": [
+      "1.8.design"
+    ],
+    "milestone": "Section 1"
+  },
+  {
+    "id": "1.8.docs",
+    "epicId": "1.8",
+    "title": "Document E",
+    "description": "Create comprehensive documentation for E including API reference, examples, and best practices",
+    "status": "todo",
+    "estimatedHours": 1,
+    "labels": [
+      "documentation"
+    ],
+    "dependencies": [
+      "1.8.implementation"
+    ],
+    "milestone": "Section 1"
+  },
+  {
+    "id": "1.9.design",
+    "epicId": "1.9",
+    "title": "Design S Architecture",
+    "description": "Design the architecture and create TypeScript types for S",
+    "status": "todo",
+    "estimatedHours": 3,
+    "labels": [
+      "design",
+      "architecture"
+    ],
+    "dependencies": [],
+    "milestone": "Section 1"
+  },
+  {
+    "id": "1.9.implementation",
+    "epicId": "1.9",
+    "title": "Implement S",
+    "description": "Core implementation of S:\n\n1. Sanitization\n2. RBAC\n3. Audit",
+    "status": "todo",
+    "estimatedHours": 7,
+    "labels": [
+      "implementation",
+      "feature"
+    ],
+    "dependencies": [
+      "1.9.design"
+    ],
+    "milestone": "Section 1"
+  },
+  {
+    "id": "1.9.docs",
+    "epicId": "1.9",
+    "title": "Document S",
+    "description": "Create comprehensive documentation for S including API reference, examples, and best practices",
+    "status": "todo",
+    "estimatedHours": 2,
+    "labels": [
+      "documentation"
+    ],
+    "dependencies": [
+      "1.9.implementation"
+    ],
+    "milestone": "Section 1"
+  },
+  {
+    "id": "2.3.design",
+    "epicId": "2.3",
+    "title": "Design S Architecture",
+    "description": "Design the architecture and create TypeScript types for S",
+    "status": "todo",
+    "estimatedHours": 3,
+    "labels": [
+      "design",
+      "architecture"
+    ],
+    "dependencies": [],
+    "milestone": "Section 2"
+  },
+  {
+    "id": "2.3.implementation",
+    "epicId": "2.3",
+    "title": "Implement S",
+    "description": "Core implementation of S:\n\n1. Palette search\n2. Pack versioning\n3. Template spawn",
+    "status": "todo",
+    "estimatedHours": 7,
+    "labels": [
+      "implementation",
+      "feature"
+    ],
+    "dependencies": [
+      "2.3.design"
+    ],
+    "milestone": "Section 2"
+  },
+  {
+    "id": "2.3.docs",
+    "epicId": "2.3",
+    "title": "Document S",
+    "description": "Create comprehensive documentation for S including API reference, examples, and best practices",
+    "status": "todo",
+    "estimatedHours": 2,
+    "labels": [
+      "documentation"
+    ],
+    "dependencies": [
+      "2.3.implementation"
+    ],
+    "milestone": "Section 2"
+  },
+  {
+    "id": "2.17.design",
+    "epicId": "2.17",
+    "title": "Design R Architecture",
+    "description": "Design the architecture and create TypeScript types for R",
+    "status": "todo",
+    "estimatedHours": 3,
+    "labels": [
+      "design",
+      "architecture"
+    ],
+    "dependencies": [],
+    "milestone": "Section 2"
+  },
+  {
+    "id": "2.17.implementation",
+    "epicId": "2.17",
+    "title": "Implement R",
+    "description": "Core implementation of R:\n\n1. Layer ACL\n2. Audit\n3. Share respect",
+    "status": "todo",
+    "estimatedHours": 7,
+    "labels": [
+      "implementation",
+      "feature"
+    ],
+    "dependencies": [
+      "2.17.design"
+    ],
+    "milestone": "Section 2"
+  },
+  {
+    "id": "2.17.docs",
+    "epicId": "2.17",
+    "title": "Document R",
+    "description": "Create comprehensive documentation for R including API reference, examples, and best practices",
+    "status": "todo",
+    "estimatedHours": 2,
+    "labels": [
+      "documentation"
+    ],
+    "dependencies": [
+      "2.17.implementation"
+    ],
+    "milestone": "Section 2"
+  },
+  {
+    "id": "8.4.design",
+    "epicId": "8.4",
+    "title": "Design I Architecture",
+    "description": "Design the architecture and create TypeScript types for I",
+    "status": "todo",
+    "estimatedHours": 3,
+    "labels": [
+      "design",
+      "architecture"
+    ],
+    "dependencies": [],
+    "milestone": "Section 8"
+  },
+  {
+    "id": "8.4.implementation",
+    "epicId": "8.4",
+    "title": "Implement I",
+    "description": "Core implementation of I:\n\n1. Epic breakdown\n2. Dependencies\n3. Roadmap sync",
+    "status": "todo",
+    "estimatedHours": 7,
+    "labels": [
+      "implementation",
+      "feature"
+    ],
+    "dependencies": [
+      "8.4.design"
+    ],
+    "milestone": "Section 8"
+  },
+  {
+    "id": "8.4.docs",
+    "epicId": "8.4",
+    "title": "Document I",
+    "description": "Create comprehensive documentation for I including API reference, examples, and best practices",
+    "status": "todo",
+    "estimatedHours": 2,
+    "labels": [
+      "documentation"
+    ],
+    "dependencies": [
+      "8.4.implementation"
+    ],
+    "milestone": "Section 8"
+  }
+]

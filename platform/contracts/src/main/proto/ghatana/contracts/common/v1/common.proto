@@ -1,0 +1,76 @@
+/*
+ * Copyright (c) ${year} Ghatana Inc.
+ * All rights reserved.
+ *
+ * This source code and the accompanying materials are the confidential
+ * and proprietary information of Ghatana Inc. (“Confidential Information”).
+ * You shall not disclose such Confidential Information and shall use it
+ * only in accordance with the terms of the license agreement you entered
+ * into with Ghatana Inc.
+ *
+ * Unauthorized copying of this file, via any medium, is strictly prohibited.
+ * Proprietary and confidential.
+ */
+syntax = "proto3";
+
+package ghatana.contracts.common.v1;
+
+import "google/protobuf/timestamp.proto";
+import "google/api/field_behavior.proto";
+
+option java_multiple_files = true;
+option java_package = "com.ghatana.contracts.common.v1";
+option java_outer_classname = "CommonProto";
+option go_package = "github.com/ghatana/contracts/gen/go/common/v1;commonv1";
+option csharp_namespace = "Ghatana.Contracts.Common.V1";
+
+// Note: Error and ErrorSeverity types have been moved to error.proto
+// Please import them directly from there in new code
+
+// TimeInterval represents a time range with configurable inclusivity of endpoints.
+// Can represent open, closed, half-open, and unbounded intervals.
+//
+// Example:
+// ```json
+// {
+//   "interval_type": "CLOSED_OPEN",
+//   "start": "2023-01-01T00:00:00Z",
+//   "end": "2023-12-31T23:59:59Z"
+// }
+// ```
+message TimeIntervalProto {
+  // Type of interval (open, closed, etc.)
+  IntervalType interval_type = 1;
+
+  // Start of the interval (inclusive or exclusive based on interval_type).
+  google.protobuf.Timestamp start = 2;
+
+  // End of the interval (inclusive or exclusive based on interval_type).
+  google.protobuf.Timestamp end = 3;
+  // Reserved for future evolution
+  reserved 1000 to max;
+  reserved "reserved_field";
+}
+
+// IntervalType defines the inclusivity/exclusivity of interval boundaries.
+enum IntervalType {
+  CLOSED = 0;      // [a, b] - both endpoints included
+  OPEN = 1;        // (a, b) - both endpoints excluded
+  CLOSED_OPEN = 2; // [a, b) - start included, end excluded
+  OPEN_CLOSED = 3; // (a, b] - start excluded, end included
+}
+
+// Uuid represents a universally unique identifier (UUID)
+message UuidProto {
+  // The UUID string in standard format (e.g., "123e4567-e89b-12d3-a456-426614174000")
+  string value = 1 [(google.api.field_behavior) = REQUIRED];
+  // Reserved for future evolution
+  reserved 1000 to max;
+  reserved "reserved_field";
+}
+
+enum Status {
+  STATUS_UNSPECIFIED = 0;
+  STATUS_SUCCESS = 1;
+  STATUS_FAILURE = 2;
+}

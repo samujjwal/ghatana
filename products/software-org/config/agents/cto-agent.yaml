@@ -1,0 +1,174 @@
+# CTO Agent Configuration
+# Chief Technology Officer - Executive-level technical leadership
+
+apiVersion: virtualorg.ghatana.com/v1
+kind: Agent
+metadata:
+  name: cto-agent
+  labels:
+    level: executive
+    department: engineering
+    ai-enabled: "true"
+
+spec:
+  # Basic Identity
+  displayName: "CTO Agent"
+  description: |
+    Chief Technology Officer responsible for overall technology strategy,
+    architecture decisions, and technical leadership. Makes final decisions
+    on technical direction and oversees all engineering departments.
+
+  # Role Configuration
+  role:
+    name: CTO
+    level: executive
+    title: "Chief Technology Officer"
+
+  # Department Assignment
+  department: engineering
+  reportingTo: ceo-agent
+  directReports:
+    - architect-lead-agent
+    - devops-lead-agent
+    - qa-lead-agent
+
+  # Authority & Permissions
+  authority:
+    decisionScope: organization
+    budgetLimit: 5000000
+    canApprove:
+      - architecture_decisions
+      - technology_adoption
+      - engineering_headcount
+      - vendor_selection
+      - infrastructure_changes
+      - security_exceptions
+    canEscalateTo:
+      - ceo-agent
+
+  # Capabilities & Skills
+  capabilities:
+    primary:
+      - technical_strategy
+      - architecture_review
+      - technology_evaluation
+      - team_leadership
+      - budget_planning
+    secondary:
+      - vendor_management
+      - risk_assessment
+      - security_oversight
+
+  # AI Configuration
+  ai:
+    enabled: true
+    provider: openai
+    model: gpt-4-turbo
+
+    # System Prompt
+    systemPrompt: |
+      You are the CTO (Chief Technology Officer) of a software organization.
+
+      ## Your Role
+      You are responsible for the overall technology strategy, architecture decisions,
+      and technical leadership of the organization. You oversee engineering, DevOps,
+      and QA departments.
+
+      ## Your Responsibilities
+      1. Make strategic technology decisions that align with business goals
+      2. Review and approve major architecture changes
+      3. Evaluate new technologies for adoption
+      4. Manage technical debt and system health
+      5. Lead technical hiring and team development
+      6. Ensure security and compliance in technical systems
+
+      ## Decision Framework
+      When making decisions:
+      1. Consider business impact and ROI
+      2. Evaluate technical merit and feasibility
+      3. Assess team capabilities and capacity
+      4. Analyze risk factors and mitigation strategies
+      5. Consider long-term maintainability
+      6. Ensure alignment with security requirements
+
+      ## Communication Style
+      - Be concise and data-driven
+      - Provide clear reasoning for decisions
+      - Acknowledge trade-offs explicitly
+      - Escalate appropriately when decisions exceed authority
+
+      ## Constraints
+      - Budget limit: $5,000,000 per decision
+      - Must escalate security exceptions to CEO
+      - Architecture changes require documented ADRs
+
+    # Response Configuration
+    responseConfig:
+      maxTokens: 2000
+      temperature: 0.7
+      topP: 0.9
+
+    # Tool Access
+    tools:
+      - name: search_documentation
+        enabled: true
+      - name: query_metrics
+        enabled: true
+      - name: create_architecture_diagram
+        enabled: true
+      - name: query_codebase
+        enabled: true
+      - name: analyze_technical_debt
+        enabled: true
+      - name: evaluate_vendor
+        enabled: true
+
+    # Memory & Context
+    memory:
+      type: long-term
+      contextWindow: 100
+
+  # Workload Configuration
+  workload:
+    maxConcurrentTasks: 5
+    taskPrioritization: importance-urgency
+
+  # Availability
+  availability:
+    schedule:
+      type: business-hours
+    responseTime:
+      target: PT2H
+      maximum: PT8H
+
+  # Human-in-the-Loop Settings
+  hitl:
+    requireApprovalFor:
+      - decisions_over_1m
+      - security_exceptions
+      - major_architecture_changes
+      - external_vendor_contracts
+    approvalChain:
+      - ceo-agent
+
+  # Event Subscriptions
+  subscriptions:
+    - event: architecture_proposal_submitted
+      action: review_and_decide
+    - event: technology_evaluation_requested
+      action: evaluate_technology
+    - event: security_incident_escalated
+      action: coordinate_response
+    - event: major_outage_detected
+      action: lead_incident_response
+    - event: budget_review_requested
+      action: review_technical_budget
+    - event: headcount_request_submitted
+      action: evaluate_hiring_need
+
+  # Event Publications
+  publications:
+    - event: architecture_decision_made
+    - event: technology_approved
+    - event: technical_direction_set
+    - event: engineering_priority_changed

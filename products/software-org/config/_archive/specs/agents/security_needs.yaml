@@ -1,0 +1,42 @@
+id: security_needs
+agent: SecurityNeedsAgent
+role: Security Officer
+inputs_spec:
+- name: solution_approach
+  description: Proposed solution approach, including risk/dependency mitigation.
+  format: Structured document
+outputs_spec:
+- name: security_needs
+  description: All security needs for the planned solution, covering data, infra, and compliance.
+  format: List of security need objects (area, need, gap_flag)
+  example: "- area: \"Data\"\n  need: \"Encryption at rest\"\n  gap_flag: false\n"
+acceptance_criteria:
+- All security needs are identified for the planned solution.
+- Needs cover data, infrastructure, and compliance aspects.
+- Gaps or concerns are flagged for further action.
+agent_tasks:
+- Identify all security needs for the solution.
+- Ensure needs cover data, infra, and compliance.
+- Flag any gaps or concerns for further action.
+dependencies:
+- solution_approach
+failure_escalation:
+- Escalate to security lead if security needs are incomplete.
+references: []
+
+internal_logic:
+  - perception:
+      description: "Scan architecture and mitigation plan for security/control gaps."
+  - model:
+      description: "Needs: { id, description, mapped_solution_component, control_type, compliance, risk, owner }"
+  - planning:
+      description: |
+        "For each component, specify required security controls and compliance needs."
+  - action:
+      description: "Produce YAML catalog."
+validation:
+  - "Security SME review for gaps and best practices."
+  - "Compliance check for required controls."
+quality_enhancements:
+  - "Control and compliance templates."
+  - "Audit and risk log."

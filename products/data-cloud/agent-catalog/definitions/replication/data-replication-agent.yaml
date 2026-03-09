@@ -1,0 +1,38 @@
+id: data-replication-agent
+name: Data Replication Agent
+version: 1.0.0
+description: Manages cross-node data replication, consistency, and conflict resolution
+
+metadata:
+  level: 3
+  domain: data-lifecycle
+  tags: [replication, consistency, cross-node, conflict-resolution, sync]
+
+generator:
+  type: DETERMINISTIC
+
+capabilities:
+  - data-replication
+  - entity-storage
+
+tools:
+  - name: replicationManager
+    type: SERVICE
+    endpoint: /datacloud/replication/manage
+  - name: conflictResolver
+    type: SERVICE
+    endpoint: /datacloud/replication/resolve
+
+memory:
+  type: WORKING
+  scope: replication_state
+  retention: medium
+
+routing:
+  input: ReplicationRequest
+  output: ReplicationStatus
+
+resources:
+  memory: "1GB"
+  cpu: "2"
+  timeout: "300s"

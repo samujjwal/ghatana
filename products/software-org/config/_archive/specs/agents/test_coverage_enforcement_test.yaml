@@ -1,0 +1,25 @@
+---
+id: "test_coverage_enforcement_test"
+agent: "TestCoverageEnforcementAgent"
+role: "QA Lead"
+inputs_spec:
+- name: "test_aggregation_report"
+  description: "Aggregated test results for measuring coverage."
+  format: "Aggregation report artifact"
+outputs_spec:
+- name: "test_coverage_report"
+  description: "Code/test coverage report with threshold status."
+  format: "Coverage report artifact"
+agent_tasks:
+- "Measure and report test coverage for all key components."
+- "Enforce minimum thresholds."
+- "Flag and escalate coverage gaps."
+acceptance_criteria:
+- "Coverage measured, thresholds enforced, gaps flagged/escalated."
+dependencies:
+- "test_aggregation_report"
+failure_escalation:
+- "Escalate to QA Lead if coverage thresholds are not met."
+references: []
+hitl: true
+hitl_reason: "Human reviews test coverage report for adequacy"

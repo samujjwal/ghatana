@@ -1,0 +1,74 @@
+package {{packageName}}.observability;
+
+import io.micrometer.core.instrument.Counter;
+import io.micrometer.core.instrument.MeterRegistry;
+import io.micrometer.core.instrument.Timer;
+import org.springframework.stereotype.Service;
+
+import java.util.concurrent.TimeUnit;
+import java.util.function.Supplier;
+
+/**
+* Service for recording custom metrics.
+*
+* @doc.type class
+* @doc.purpose Provides utilities for recording custom metrics
+* @doc.layer platform
+* @doc.pattern Service
+*/
+@Service
+public class MetricsService {
+
+private final MeterRegistry meterRegistry;
+
+public MetricsService(MeterRegistry meterRegistry) {
+this.meterRegistry = meterRegistry;
+}
+
+/**
+* Increment a counter metric
+*/
+public void incrementCounter(String name, String... tags) {
+Counter.builder(name)
+.tags(tags)
+.register(meterRegistry)
+.increment();
+}
+
+/**
+* Record a timing metric
+*/
+public void recordTiming(String name, long duration, TimeUnit unit, String... tags) {
+Timer.builder(name)
+.tags(tags)
+.register(meterRegistry)
+.record(duration, unit);
+}
+
+/**
+* Time a supplier execution
+*/
+public <T> T timed(String name, Supplier<T> supplier, String... tags) {
+        Timer timer = Timer.builder(name)
+        .tags(tags)
+        .register(meterRegistry);
+        return timer.record(supplier);
+        }
+
+        /**
+        * Time a runnable execution
+        */
+        public void timed(String name, Runnable runnable, String... tags) {
+        Timer timer = Timer.builder(name)
+        .tags(tags)
+        .register(meterRegistry);
+        timer.record(runnable);
+        }
+
+        /**
+        * Record a gauge value
+        */
+        public void recordGauge(String name, Number value, String... tags) {
+        meterRegistry.gauge(name, io.micrometer.core.instrument.Tags.of(tags), value);
+        }
+        }

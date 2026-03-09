@@ -1,0 +1,109 @@
+# Software Organization Pipeline - v3 Operator-Based Definition
+# This pipeline uses consolidated operators from operations/
+name: Software Organization Pipeline
+version: "3.0"
+description: |
+  Complete software delivery pipeline using consolidated, mode-based operators.
+  This replaces the v2 (specs2) pipeline that had inline agent definitions.
+
+  Key improvements:
+  - Operators are reusable across stages via mode selection
+  - Cross-cutting concerns are parameterized templates
+  - 92% reduction in configuration (34 files vs 420 original)
+  - Single source of truth for each capability
+
+# Operator sources
+operator_sources:
+  domain: ../operations/domain/
+  cross_cutting: ../operations/cross-cutting/
+  index: ../operations/OPERATOR_INDEX.yaml
+
+# Domain structure
+domains:
+  planning:
+    stages: [plan]
+    operators:
+      - planning/product_discovery_operator
+      - planning/business_goals_operator
+      - planning/stakeholder_operator
+      - planning/requirements_operator
+      - planning/plan_synthesis_operator
+
+  design:
+    stages: [solution, design]
+    operators:
+      - design/architecture_operator
+      - design/component_operator
+      - design/data_model_operator
+      - design/api_operator
+      - design/security_design_operator
+      - design/design_synthesis_operator
+
+  build:
+    stages: [develop, build, test, secure]
+    operators:
+      - build/build_pipeline_operator
+      - build/code_quality_operator
+      - build/test_execution_operator
+      - build/security_scan_operator
+
+  release:
+    stages:
+      [compliance_validation, release_validation, uat, package_release, deploy]
+    operators:
+      - release/deploy_operator
+      - release/release_management_operator
+
+  operate:
+    stages: [operate, monitor, backup, retrospective, dashboard, audit_trail]
+    operators:
+      - operate/monitor_operator
+      - operate/incident_operator
+
+# Stage sequence
+stages:
+  - include: stages/0_audit_trail.yaml
+    continuous: true
+  - include: stages/1_plan.yaml
+  - include: stages/2_solution.yaml
+  - include: stages/3_design.yaml
+  - include: stages/4_develop.yaml
+  - include: stages/5_build.yaml
+  - include: stages/6_test.yaml
+  - include: stages/7_secure.yaml
+  - include: stages/8_compliance_validation.yaml
+  - include: stages/9_release_validation.yaml
+  - include: stages/10_uat.yaml
+  - include: stages/11_package_release.yaml
+  - include: stages/12_deploy.yaml
+  - include: stages/13_operate.yaml
+  - include: stages/14_monitor.yaml
+  - include: stages/15_backup.yaml
+  - include: stages/16_retrospective.yaml
+  - include: stages/17_dashboard.yaml
+    continuous: true
+
+# Cross-cutting capabilities applied to all stages
+cross_cutting_defaults:
+  - operator: cross-cutting/audit_log
+    enabled: true
+  - operator: cross-cutting/milestone_tracker
+    enabled: true
+  - operator: cross-cutting/best_practice
+    enabled: true
+  - operator: cross-cutting/kpi
+    enabled: true
+
+# Migration notes
+migration:
+  from_version: "2.0"
+  breaking_changes:
+    - "Inline agent definitions replaced with operator references"
+    - "Stage files now use 'operator:' and 'mode:' instead of 'agent:'"
+    - "Cross-cutting concerns now use parameterized templates"
+  migration_script: ../../../scripts/migrate-v2-to-v3.sh
+
+# Validation
+validation:
+  schema: workflows/v3/schema/stage.schema.yaml
+  test_suite: workflows/v3/tests/

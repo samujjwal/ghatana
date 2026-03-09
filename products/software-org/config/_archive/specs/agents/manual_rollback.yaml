@@ -1,0 +1,27 @@
+---
+id: "manual_rollback"
+agent: "ManualRollbackAgent"
+role: "Ops/Incident Lead"
+inputs_spec:
+- name: "deployment_event_log"
+  description: "Deployment event log for rollback."
+  format: "Deployment event log artifact"
+outputs_spec:
+- name: "manual_rollback_report"
+  description: "Documentation of manual rollback procedure and actions."
+  format: "Manual rollback report artifact"
+agent_tasks:
+- "Document and follow manual rollback procedure."
+- "Obtain human signoff."
+- "Record all rollback actions for audit."
+acceptance_criteria:
+- "Manual rollback procedure is documented and followed."
+- "Human signoff required."
+- "Actions recorded for audit."
+dependencies:
+- "deployment_event_log"
+failure_escalation:
+- "Escalate to Incident Lead if rollback not documented or signed off."
+references: []
+hitl: true
+hitl_reason: "Human performs and documents manual rollback"

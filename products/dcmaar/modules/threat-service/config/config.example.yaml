@@ -1,0 +1,182 @@
+# Example configuration file for the Query Service
+# Copy this file to config.yaml and adjust the values as needed.
+
+# Server configuration
+server:
+  # Network address to bind the gRPC server to
+  host: "0.0.0.0"
+  # Port to listen on
+  port: 8080
+  # Maximum time to wait for graceful shutdown
+  shutdown_timeout: 30s
+
+# Database configuration
+database:
+  # Database hostname or IP
+  host: "localhost"
+  # Database port
+  port: 9000
+  # Database username
+  user: "default"
+  # Database password
+  password: ""
+  # Database name
+  name: "default"
+  # Maximum number of open connections to the database
+  max_open_conns: 50
+  # Maximum number of idle connections to the database
+  max_idle_conns: 10
+  # Maximum amount of time a connection may be reused
+  conn_max_lifetime: 30m
+
+# Cache configuration
+cache:
+  # Enable or disable caching
+  enabled: true
+  # Cache backend to use ("memory" or "redis")
+  backend: "memory"
+  # Default time-to-live for cached items
+  ttl: 5m
+  # Maximum size of a single cache item in bytes
+  max_item_size: 1048576  # 1MB
+  
+  # Redis-specific configuration (only used when backend is "redis")
+  redis:
+    # Redis server address (host:port)
+    addr: "localhost:6379"
+    # Redis password (if required)
+    password: ""
+    # Redis database number
+    db: 0
+
+# Logging configuration
+logging:
+  # Log level (debug, info, warn, error, dpanic, panic, fatal)
+  level: "info"
+  # Log format ("json" or "console")
+  format: "json"
+  # Environment (affects some logging behaviors)
+  environment: "production"
+
+# Query service configuration
+query:
+  # Maximum number of rows to return in a single query
+  max_rows: 10000
+  # Default number of rows to return if not specified
+  default_limit: 100
+  # Maximum query execution time
+  timeout: 30s
+  # Enable query analysis
+  enable_analysis: true
+  # Sample rate for query analysis (0.0 to 1.0)
+  analysis_sample_rate: 0.1
+
+# Metrics configuration
+metrics:
+  # Enable Prometheus metrics endpoint
+  enabled: true
+  # Path for metrics endpoint
+  path: "/metrics"
+  # Namespace for metrics
+  namespace: "query_service"
+  # Enable Go runtime metrics
+  enable_go_metrics: true
+  # Enable process metrics
+  enable_process_metrics: true
+
+# Tracing configuration
+tracing:
+  # Enable distributed tracing
+  enabled: false
+  # Service name for traces
+  service_name: "query-service"
+  # Sampling rate (0.0 to 1.0)
+  sampling_rate: 0.1
+  # OTLP endpoint for the trace collector (e.g., "localhost:4317")
+  endpoint: ""
+  # Enable TLS for the trace collector (set to false for development)
+  insecure: true
+  # Additional resource attributes
+  resource_attributes:
+    # Add any additional resource attributes as key-value pairs
+    # environment: "production"
+    # version: "1.0.0"
+  # Batch configuration
+  batch:
+    # Maximum number of spans in a batch
+    max_export_batch_size: 1000
+    # Maximum queue size
+    max_queue_size: 10000
+    # Batch timeout
+    timeout: 5s
+
+# Health check configuration
+health:
+  # Enable gRPC health check service
+  enabled: true
+  # Health check timeout
+  timeout: 5s
+  # Additional checks to perform
+  checks:
+    # Check database connectivity
+    database: true
+    # Check cache connectivity (if enabled)
+    cache: true
+
+# Rate limiting configuration
+rate_limit:
+  # Enable rate limiting
+  enabled: true
+  # Requests per second per client
+  rps: 100
+  # Burst size
+  burst: 50
+  # Client IP header (for HTTP/1.1)
+  client_ip_header: "X-Forwarded-For"
+
+# Security configuration
+security:
+  # Enable CORS for HTTP endpoints
+  cors:
+    enabled: true
+    allowed_origins: ["*"]
+    allowed_methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"]
+    allowed_headers: ["Content-Type", "Authorization"]
+  
+  # Authentication settings
+  auth:
+    # Enable authentication
+    enabled: false
+    # JWT configuration (if using JWT auth)
+    jwt:
+      secret: "your-jwt-secret"
+      issuer: "query-service"
+      audience: ["query-service"]
+      expires_in: 1h
+
+# Feature flags
+features:
+  # Enable experimental features
+  experimental: false
+  # Enable debug endpoints
+  debug: false
+  # Enable development-only HTTP helpers (/whoami, /policy)
+  dev_helpers: true
+  # Enable pprof endpoints
+  pprof: false
+
+# Identity cache configuration
+identity:
+  # Time-to-live for cached identities (subject, roles)
+  ttl: 2m
+
+# Policy cache configuration
+policy:
+  # Time-to-live for cached policies loaded from storage
+  ttl: 1m
+  # If true, deny when no rules match or policy is missing/invalid (default: false)
+  deny_by_default: false
+  # Use OPA/Rego engine for policy evaluation (requires building with -tags=opa)
+  use_rego: false
+  # Path to the Rego policy file (used when use_rego=true)
+  rego_policy_file: ops/opa-policies/actions.rego

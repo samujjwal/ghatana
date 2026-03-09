@@ -1,0 +1,29 @@
+---
+id: "unit_test"
+agent: "UnitTestAgent"
+role: "Developer/QA"
+inputs_spec:
+- name: "test_stage_milestone"
+  description: "Test stage milestones to trigger unit tests."
+  format: "List of milestone objects"
+outputs_spec:
+- name: "unit_test_report"
+  description: "Unit test results, coverage, failures, documentation."
+  format: "Unit test report artifact"
+agent_tasks:
+- "Ensure all modules/components have associated unit tests."
+- "Test normal, edge, and error conditions."
+- "Store and link results to code version."
+- "Document failing/skipped tests with rationale."
+acceptance_criteria:
+- "All modules/components have associated unit tests."
+- "Test cases cover normal, edge, and error conditions."
+- "Test results are stored and linked to code version."
+- "Failing or skipped tests are documented with rationale."
+dependencies:
+- "test_stage_milestone"
+failure_escalation:
+- "Escalate to QA if coverage or critical failures not addressed."
+references: []
+hitl: true
+hitl_reason: "Human reviews unit test results for coverage and accuracy"

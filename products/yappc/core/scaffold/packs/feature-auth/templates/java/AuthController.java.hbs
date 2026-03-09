@@ -1,0 +1,81 @@
+package {{packageName}}.controller;
+
+import {{packageName}}.security.JwtService;
+import org.springframework.http.ResponseEntity;
+import org.springframework.security.authentication.AuthenticationManager;
+import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
+import org.springframework.security.core.Authentication;
+import org.springframework.web.bind.annotation.*;
+
+import java.util.Map;
+
+/**
+* Authentication controller.
+*
+* @doc.type class
+* @doc.purpose Handles authentication endpoints (login, refresh, logout)
+* @doc.layer product
+* @doc.pattern Controller
+*/
+@RestController
+@RequestMapping("/api/auth")
+public class AuthController {
+
+private final AuthenticationManager authenticationManager;
+private final JwtService jwtService;
+
+public AuthController(AuthenticationManager authenticationManager, JwtService jwtService) {
+this.authenticationManager = authenticationManager;
+this.jwtService = jwtService;
+}
+
+public record LoginRequest(String email, String password) {}
+public record TokenResponse(String accessToken, String refreshToken, String tokenType, long expiresIn) {}
+public record RefreshRequest(String refreshToken) {}
+
+@PostMapping("/login")
+public ResponseEntity<TokenResponse> login(@RequestBody LoginRequest request) {
+    Authentication auth = authenticationManager.authenticate(
+    new UsernamePasswordAuthenticationToken(request.email(), request.password())
+    );
+
+    String accessToken = jwtService.generateAccessToken(
+    request.email(),
+    Map.of("roles", auth.getAuthorities())
+    );
+    String refreshToken = jwtService.generateRefreshToken(request.email());
+
+    return ResponseEntity.ok(new TokenResponse(
+    accessToken,
+    refreshToken,
+    "Bearer",
+    86400 // 24 hours in seconds
+    ));
+    }
+
+    @PostMapping("/refresh")
+    public ResponseEntity<TokenResponse> refresh(@RequestBody RefreshRequest request) {
+        String subject = jwtService.extractSubject(request.refreshToken());
+
+        if (!jwtService.isTokenValid(request.refreshToken(), subject)) {
+        return ResponseEntity.status(401).build();
+        }
+
+        String accessToken = jwtService.generateAccessToken(subject, Map.of());
+        String refreshToken = jwtService.generateRefreshToken(subject);
+
+        return ResponseEntity.ok(new TokenResponse(
+        accessToken,
+        refreshToken,
+        "Bearer",
+        86400
+        ));
+        }
+
+        @PostMapping("/logout")
+        public ResponseEntity<Void> logout() {
+            // In a stateless JWT setup, logout is handled client-side
+            // For token revocation, implement a token blacklist
+            return ResponseEntity.ok().build();
+            }
+            }

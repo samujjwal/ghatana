@@ -1,0 +1,95 @@
+package database
+
+import (
+"context"
+"time"
+
+"github.com/google/uuid"
+"github.com/jackc/pgx/v5"
+)
+
+// BaseEntity contains common fields for all entities
+type BaseEntity struct {
+ID uuid.UUID `json:"id"`
+CreatedAt time.Time `json:"created_at"`
+UpdatedAt time.Time `json:"updated_at"`
+}
+
+// ExampleEntity represents an example database entity
+type ExampleEntity struct {
+BaseEntity
+Name string `json:"name"`
+Description *string `json:"description,omitempty"`
+}
+
+// ExampleRepository handles example entity database operations
+type ExampleRepository struct {
+pool *Pool
+}
+
+// NewExampleRepository creates a new example repository
+func NewExampleRepository(pool *Pool) *ExampleRepository {
+return &ExampleRepository{pool: pool}
+}
+
+// FindByID finds an entity by ID
+func (r *ExampleRepository) FindByID(ctx context.Context, id uuid.UUID) (*ExampleEntity, error) {
+var entity ExampleEntity
+err := r.pool.QueryRow(ctx,
+`SELECT id, name, description, created_at, updated_at
+FROM example_entity WHERE id = $1`,
+id,
+).Scan(&entity.ID, &entity.Name, &entity.Description, &entity.CreatedAt, &entity.UpdatedAt)
+
+if err == pgx.ErrNoRows {
+return nil, nil
+}
+if err != nil {
+return nil, err
+}
+return &entity, nil
+}
+
+// FindAll returns all entities with pagination
+func (r *ExampleRepository) FindAll(ctx context.Context, limit, offset int) ([]ExampleEntity, error) {
+rows, err := r.pool.Query(ctx,
+`SELECT id, name, description, created_at, updated_at
+FROM example_entity ORDER BY created_at DESC LIMIT $1 OFFSET $2`,
+limit, offset,
+)
+if err != nil {
+return nil, err
+}
+defer rows.Close()
+
+var entities []ExampleEntity
+for rows.Next() {
+var entity ExampleEntity
+if err := rows.Scan(&entity.ID, &entity.Name, &entity.Description, &entity.CreatedAt, &entity.UpdatedAt); err != nil {
+return nil, err
+}
+entities = append(entities, entity)
+}
+return entities, rows.Err()
+}
+
+// Create creates a new entity
+func (r *ExampleRepository) Create(ctx context.Context, name string, description *string) (*ExampleEntity, error) {
+var entity ExampleEntity
+err := r.pool.QueryRow(ctx,
+`INSERT INTO example_entity (name, description) VALUES ($1, $2)
+RETURNING id, name, description, created_at, updated_at`,
+name, description,
+).Scan(&entity.ID, &entity.Name, &entity.Description, &entity.CreatedAt, &entity.UpdatedAt)
+
+if err != nil {
+return nil, err
+}
+return &entity, nil
+}
+
+// Delete deletes an entity by ID
+func (r *ExampleRepository) Delete(ctx context.Context, id uuid.UUID) error {
+_, err := r.pool.Exec(ctx, `DELETE FROM example_entity WHERE id = $1`, id)
+return err
+}

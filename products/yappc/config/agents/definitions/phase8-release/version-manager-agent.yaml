@@ -1,0 +1,109 @@
+id: version-manager-agent
+name: Version Manager Agent
+version: 1.0.0
+description: Manages versioning and tagging. Handles semantic versioning and release branches.
+
+metadata:
+  level: 3  # Worker
+  domain: release
+  tags:
+    - versioning
+    - semver
+    - tagging
+    - branching
+
+generator:
+  type: PIPELINE
+  steps:
+    - name: version_analysis
+      type: LLM
+      provider: ANTHROPIC
+      model: claude-3-5-sonnet-20241022
+      temperature: 0.1
+      max_tokens: 1500
+      prompt: |
+        You are the Version Manager Agent. Determine version:
+        
+        Current Version: {{current}}
+        Changes: {{changes}}
+        Breaking Changes: {{breaking}}
+        Deprecations: {{deprecations}}
+        
+        Determine:
+        1. Version bump type (major, minor, patch)
+        2. New version number
+        3. Changelog entries
+        4. Breaking change notes
+        5. Migration notes if needed
+        
+        Semantic Versioning Rules:
+        - MAJOR: Breaking/incompatible API changes
+        - MINOR: New backward-compatible features
+        - PATCH: Backward-compatible bug fixes
+        
+        Output as JSON: {bump_type, new_version, changelog_entries, breaking_notes, migration_notes, rationale}
+    - name: tag_creation
+      type: SERVICE_CALL
+      service: git-service
+      endpoint: /tags/create
+    - name: branch_management
+      type: SERVICE_CALL
+      service: git-service
+      endpoint: /branches/manage
+
+memory:
+  episodic:
+    enabled: true
+    retention_days: unlimited
+    categories:
+      - versions
+      - releases
+      - changelogs
+  semantic:
+    enabled: true
+    categories:
+      - versioning-rules
+      - change-categorization
+      - breaking-change-patterns
+  procedural:
+    enabled: true
+    categories:
+      - semver-rules
+      - branching-strategies
+      - tagging-conventions
+
+tools:
+  - version_calculator
+  - git_tagger
+  - changelog_generator
+
+capabilities:
+  - version-calculation
+  - semantic-versioning
+  - tag-management
+  - branch-management
+
+routing:
+  input_types:
+    - version-request
+    - release-changes
+    - tag-request
+  output_types:
+    - version-info
+    - tag
+    - changelog
+
+delegation:
+  can_delegate_to: []
+  escalates_to:
+    - release-orchestrator-agent
+
+governance:
+  requires_approval: false
+  can_block: false
+  audit_trail: comprehensive
+
+performance:
+  expected_latency_ms: 2000
+  max_latency_ms: 5000
+  timeout_ms: 10000

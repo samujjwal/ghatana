@@ -1,0 +1,1028 @@
+// Flashit Web API Prisma Schema
+// This schema mirrors the PostgreSQL tables created by Flyway migrations
+// Used for the Node.js Fastify API layer
+
+generator client {
+  provider   = "prisma-client-js"
+  output     = "../generated/prisma"
+  engineType = "library"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+enum UserRole {
+  USER
+  OPERATOR
+  ADMIN
+  SUPER_ADMIN
+}
+
+enum AuditEventType {
+  USER_REGISTERED
+  USER_LOGIN
+  USER_LOGOUT
+  SPHERE_CREATED
+  SPHERE_UPDATED
+  SPHERE_DELETED
+  SPHERE_ACCESS_GRANTED
+  SPHERE_ACCESS_REVOKED
+  MOMENT_CREATED
+  MOMENT_UPDATED
+  MOMENT_DELETED
+  MOMENT_SEARCHED
+  MEDIA_UPLOAD_INITIATED
+  MEDIA_UPLOAD_COMPLETED
+  MEDIA_UPLOAD_FAILED
+  MEDIA_DELETED
+  MEDIA_TRANSCRIBED
+  MOMENT_LINK_CREATED
+  MOMENT_LINK_DELETED
+  EMBEDDING_GENERATED
+  EMBEDDING_FAILED
+  SEMANTIC_SEARCH_PERFORMED
+}
+
+model User {
+  id                   String    @id @default(uuid()) @db.Uuid
+  email                String    @unique @db.VarChar(255)
+  passwordHash         String    @map("password_hash") @db.VarChar(255)
+  displayName          String?   @map("display_name") @db.VarChar(255)
+  twoFactorEnabled     Boolean   @default(false) @map("two_factor_enabled")
+  lastLoginAt          DateTime? @map("last_login_at") @db.Timestamptz
+  failedLoginAttempts  Int       @default(0) @map("failed_login_attempts")
+  lockedUntil          DateTime? @map("locked_until") @db.Timestamptz
+  createdAt            DateTime  @default(now()) @map("created_at") @db.Timestamptz
+  updatedAt            DateTime  @updatedAt @map("updated_at") @db.Timestamptz
+  deletedAt            DateTime? @map("deleted_at") @db.Timestamptz
+
+  // Email verification
+  emailVerified        Boolean   @default(false) @map("email_verified")
+
+  // System Role (RBAC)
+  role                 UserRole  @default(USER)
+
+  // Billing & Subscription
+  stripeCustomerId     String?   @unique @map("stripe_customer_id") @db.VarChar(255)
+  stripeSubscriptionId String?   @unique @map("stripe_subscription_id") @db.VarChar(255)
+  subscriptionTier     String    @default("free") @map("subscription_tier") @db.VarChar(50)
+  subscriptionStatus   String    @default("active") @map("subscription_status") @db.VarChar(50)
+  subscriptionEndsAt   DateTime? @map("subscription_ends_at") @db.Timestamptz
+
+  // Relations
+  spheres             Sphere[]
+  moments             Moment[]
+  sphereAccess        SphereAccess[]
+  auditEvents         AuditEvent[]
+  linksCreated        MomentLink[]          @relation("LinkCreator")
+  accessGranted       SphereAccess[]        @relation("AccessGrantor")
+  refreshTokens       RefreshToken[]
+  twoFactorAuth       TwoFactorAuth?
+  sessions            UserSession[]
+  passwordResetTokens PasswordResetToken[]
+  tierSettings        UserTierSettings?
+  securityAuditLogs   SecurityAuditLog[]
+  pushSubscriptions   PushSubscription[]
+  transcriptionUsage  TranscriptionUsage[]
+  aiInsights          AIInsight[]
+  memoryExpansions    MemoryExpansion[]
+  aiTokenUsage        AITokenUsage[]
+  comments             Comment[]
+  reactions            Reaction[]
+  followersRel         Follow[]              @relation("FollowTarget")
+  followingRel         Follow[]              @relation("FollowSource")
+  invitationsSent      Invitation[]          @relation("InvitationSender")
+  invitationsReceived  Invitation[]          @relation("InvitationRecipient")
+  notifications        Notification[]
+  templates            Template[]
+  reports              Report[]
+  dataExports          DataExportRequest[]
+  dataDeletions        DeletionRequest[]
+  apiKeys              ApiKey[]
+  emailVerificationTokens EmailVerificationToken[]
+  recommendations           Recommendation[]
+  recommendationFeedback    RecommendationFeedback[]
+  topicNodes                TopicNode[]
+  entityNodes               EntityNode[]
+  graphEdges                GraphEdge[]
+  knowledgeProfile          UserKnowledgeProfile?
+  insightFeedback           InsightFeedback[]
+
+  @@index([email])
+  @@index([role])
+  @@index([deletedAt])
+  @@index([twoFactorEnabled])
+  @@index([lockedUntil])
+  @@map("users")
+}
+
+model Sphere {
+  id          String    @id @default(uuid()) @db.Uuid
+  userId      String    @map("user_id") @db.Uuid
+  name        String    @db.VarChar(255)
+  description String?   @db.Text
+  type        String    @db.VarChar(50)
+  visibility  String    @db.VarChar(50)
+  createdAt   DateTime  @default(now()) @map("created_at") @db.Timestamptz
+  updatedAt   DateTime  @updatedAt @map("updated_at") @db.Timestamptz
+  deletedAt   DateTime? @map("deleted_at") @db.Timestamptz
+
+  // Relations
+  user         User              @relation(fields: [userId], references: [id], onDelete: Cascade)
+  moments      Moment[]
+  sphereAccess SphereAccess[]
+  embeddings   SphereEmbedding[]
+  auditEvents  AuditEvent[]
+
+  @@index([userId])
+  @@index([deletedAt])
+  @@map("spheres")
+}
+
+model SphereAccess {
+  id        String    @id @default(uuid()) @db.Uuid
+  sphereId  String    @map("sphere_id") @db.Uuid
+  userId    String    @map("user_id") @db.Uuid
+  role      String    @db.VarChar(50)
+  grantedAt DateTime  @default(now()) @map("granted_at") @db.Timestamptz
+  grantedBy String?   @map("granted_by") @db.Uuid
+  revokedAt DateTime? @map("revoked_at") @db.Timestamptz
+
+  // Relations
+  sphere  Sphere @relation(fields: [sphereId], references: [id], onDelete: Cascade)
+  user    User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+  grantor User?  @relation("AccessGrantor", fields: [grantedBy], references: [id])
+
+  @@unique([sphereId, userId])
+  @@index([sphereId])
+  @@index([userId])
+  @@index([sphereId, userId, revokedAt])
+  @@map("sphere_access")
+}
+
+model MediaReference {
+  id             String    @id @default(uuid()) @db.Uuid
+  momentId       String    @map("moment_id") @db.Uuid
+  s3Bucket       String    @map("s3_bucket") @db.VarChar(255)
+  s3Key          String    @map("s3_key") @db.VarChar(500)
+  fileName       String    @map("file_name") @db.VarChar(255)
+  mimeType       String    @map("mime_type") @db.VarChar(100)
+  sizeBytes      BigInt    @map("size_bytes")
+  uploadStatus   String    @map("upload_status") @db.VarChar(50) // PENDING, COMPLETED, FAILED
+  uploadedAt     DateTime? @map("uploaded_at") @db.Timestamptz
+  expiresAt      DateTime? @map("expires_at") @db.Timestamptz
+  s3ETag         String?   @map("s3_etag") @db.VarChar(255)
+  s3LastModified DateTime? @map("s3_last_modified") @db.Timestamptz
+  createdAt      DateTime  @default(now()) @map("created_at") @db.Timestamptz
+  updatedAt      DateTime  @updatedAt @map("updated_at") @db.Timestamptz
+
+  // Relations
+  moment      Moment        @relation(fields: [momentId], references: [id], onDelete: Cascade)
+  momentMedia MomentMedia[]
+
+  @@unique([s3Bucket, s3Key])
+  @@index([momentId])
+  @@index([uploadStatus])
+  @@index([expiresAt])
+  @@map("media_references")
+}
+
+model Moment {
+  id                String    @id @default(uuid()) @db.Uuid
+  userId            String    @map("user_id") @db.Uuid
+  sphereId          String    @map("sphere_id") @db.Uuid
+  contentText       String    @map("content_text") @db.Text
+  contentTranscript String?   @map("content_transcript") @db.Text
+  contentType       String    @map("content_type") @db.VarChar(50)
+  emotions          String[]
+  tags              String[]
+  intent            String?   @db.VarChar(500)
+  sentimentScore    Decimal?  @map("sentiment_score") @db.Decimal(3, 2)
+  importance        Int?
+  entities          String[]
+  capturedAt        DateTime  @map("captured_at") @db.Timestamptz
+  ingestedAt        DateTime  @default(now()) @map("ingested_at") @db.Timestamptz
+  updatedAt         DateTime  @updatedAt @map("updated_at") @db.Timestamptz
+  deletedAt         DateTime? @map("deleted_at") @db.Timestamptz
+  metadata          Json?     @db.JsonB
+  version           Int       @default(1)
+
+  // Relations
+  user            User              @relation(fields: [userId], references: [id], onDelete: Cascade)
+  sphere          Sphere            @relation(fields: [sphereId], references: [id], onDelete: Cascade)
+  media           MomentMedia[]
+  mediaReferences MediaReference[]
+  embeddings      MomentEmbedding[]
+  auditEvents     AuditEvent[]
+  linksAsSource   MomentLink[]      @relation("SourceMoment")
+  linksAsTarget   MomentLink[]      @relation("TargetMoment")
+
+  @@index([userId])
+  @@index([sphereId])
+  @@index([capturedAt(sort: Desc)])
+  @@index([ingestedAt(sort: Desc)])
+  @@index([deletedAt])
+  @@map("moments")
+}
+
+model MomentMedia {
+  momentId         String   @map("moment_id") @db.Uuid
+  mediaReferenceId String   @map("media_reference_id") @db.Uuid
+  mediaType        String   @map("media_type") @db.VarChar(50) // AUDIO, VIDEO, IMAGE
+  order            Int      @default(1)
+  createdAt        DateTime @default(now()) @map("created_at") @db.Timestamptz
+
+  // Relations
+  moment         Moment         @relation(fields: [momentId], references: [id], onDelete: Cascade)
+  mediaReference MediaReference @relation(fields: [mediaReferenceId], references: [id], onDelete: Cascade)
+
+  @@id([momentId, mediaReferenceId])
+  @@index([momentId])
+  @@index([mediaReferenceId])
+  @@map("moment_media")
+}
+
+model MomentLink {
+  id             String    @id @default(uuid()) @db.Uuid
+  sourceMomentId String    @map("source_moment_id") @db.Uuid
+  targetMomentId String    @map("target_moment_id") @db.Uuid
+  linkType       String    @map("link_type") @db.VarChar(50)
+  createdAt      DateTime  @default(now()) @map("created_at") @db.Timestamptz
+  createdBy      String    @map("created_by") @db.Uuid
+  deletedAt      DateTime? @map("deleted_at") @db.Timestamptz
+
+  // Relations
+  sourceMoment Moment @relation("SourceMoment", fields: [sourceMomentId], references: [id], onDelete: Cascade)
+  targetMoment Moment @relation("TargetMoment", fields: [targetMomentId], references: [id], onDelete: Cascade)
+  creator      User   @relation("LinkCreator", fields: [createdBy], references: [id])
+
+  @@unique([sourceMomentId, targetMomentId, linkType])
+  @@index([sourceMomentId])
+  @@index([targetMomentId])
+  @@index([deletedAt])
+  @@map("moment_links")
+}
+
+model EmbeddingModel {
+  id              String   @id @default(uuid()) @db.Uuid
+  name            String   @unique @db.VarChar(100)
+  provider        String   @db.VarChar(50)
+  modelName       String   @map("model_name") @db.VarChar(255)
+  dimensions      Int
+  maxInputTokens  Int?     @map("max_input_tokens")
+  costPer1kTokens Decimal? @map("cost_per_1k_tokens") @db.Decimal(10, 6)
+  isActive        Boolean  @default(true) @map("is_active")
+  createdAt       DateTime @default(now()) @map("created_at") @db.Timestamptz
+  updatedAt       DateTime @updatedAt @map("updated_at") @db.Timestamptz
+
+  // Relations
+  momentEmbeddings MomentEmbedding[]
+  sphereEmbeddings SphereEmbedding[]
+
+  @@index([isActive, name])
+  @@index([provider])
+  @@map("embedding_models")
+}
+
+model MomentEmbedding {
+  id                String   @id @default(uuid()) @db.Uuid
+  momentId          String   @map("moment_id") @db.Uuid
+  embeddingModelId  String   @map("embedding_model_id") @db.Uuid
+  contentType       String   @map("content_type") @db.VarChar(50)
+  embeddingVector   Bytes    @map("embedding_vector") // pgvector stored as bytes
+  textContent       String   @map("text_content") @db.Text
+  tokenCount        Int?     @map("token_count")
+  embeddingMetadata Json?    @map("embedding_metadata") @db.JsonB
+  createdAt         DateTime @default(now()) @map("created_at") @db.Timestamptz
+  updatedAt         DateTime @updatedAt @map("updated_at") @db.Timestamptz
+
+  // Relations
+  moment         Moment         @relation(fields: [momentId], references: [id], onDelete: Cascade)
+  embeddingModel EmbeddingModel @relation(fields: [embeddingModelId], references: [id])
+
+  @@unique([momentId, embeddingModelId, contentType])
+  @@index([momentId])
+  @@index([embeddingModelId])
+  @@index([contentType])
+  @@index([createdAt])
+  @@map("moment_embeddings")
+}
+
+model SphereEmbedding {
+  id                String   @id @default(uuid()) @db.Uuid
+  sphereId          String   @map("sphere_id") @db.Uuid
+  embeddingModelId  String   @map("embedding_model_id") @db.Uuid
+  contentType       String   @map("content_type") @db.VarChar(50)
+  embeddingVector   Bytes    @map("embedding_vector")
+  textContent       String   @map("text_content") @db.Text
+  tokenCount        Int?     @map("token_count")
+  embeddingMetadata Json?    @map("embedding_metadata") @db.JsonB
+  createdAt         DateTime @default(now()) @map("created_at") @db.Timestamptz
+  updatedAt         DateTime @updatedAt @map("updated_at") @db.Timestamptz
+
+  // Relations
+  sphere         Sphere         @relation(fields: [sphereId], references: [id], onDelete: Cascade)
+  embeddingModel EmbeddingModel @relation(fields: [embeddingModelId], references: [id])
+
+  @@unique([sphereId, embeddingModelId, contentType])
+  @@index([sphereId])
+  @@index([embeddingModelId])
+  @@map("sphere_embeddings")
+}
+
+model AuditEvent {
+  id           String         @id @default(uuid()) @db.Uuid
+  eventType    AuditEventType @map("event_type")
+  userId       String?        @map("user_id") @db.Uuid
+  momentId     String?        @map("moment_id") @db.Uuid
+  sphereId     String?        @map("sphere_id") @db.Uuid
+  actor        String         @db.VarChar(255)
+  action       String         @db.VarChar(100)
+  resourceType String?        @map("resource_type") @db.VarChar(100)
+  resourceId   String?        @map("resource_id") @db.Uuid
+  details      Json?          @db.JsonB
+  ipAddress    String?        @map("ip_address") @db.Inet
+  userAgent    String?        @map("user_agent") @db.Text
+  createdAt    DateTime       @default(now()) @map("created_at") @db.Timestamptz
+
+  // Relations
+  user   User?   @relation(fields: [userId], references: [id])
+  moment Moment? @relation(fields: [momentId], references: [id])
+  sphere Sphere? @relation(fields: [sphereId], references: [id])
+
+  @@index([userId])
+  @@index([momentId])
+  @@index([sphereId])
+  @@index([createdAt(sort: Desc)])
+  @@index([eventType])
+  @@map("audit_events")
+}
+
+model RefreshToken {
+  id            String    @id @default(uuid()) @db.Uuid
+  userId        String    @map("user_id") @db.Uuid
+  tokenHash     String    @unique @map("token_hash") @db.VarChar(255)
+  deviceName    String?   @map("device_name") @db.VarChar(255)
+  deviceType    String?   @map("device_type") @db.VarChar(50)
+  ipAddress     String?   @map("ip_address") @db.Inet
+  userAgent     String?   @map("user_agent") @db.Text
+  expiresAt     DateTime  @map("expires_at") @db.Timestamptz
+  revokedAt     DateTime? @map("revoked_at") @db.Timestamptz
+  revokedReason String?   @map("revoked_reason") @db.VarChar(255)
+  lastUsedAt    DateTime? @map("last_used_at") @db.Timestamptz
+  createdAt     DateTime  @default(now()) @map("created_at") @db.Timestamptz
+  updatedAt     DateTime  @updatedAt @map("updated_at") @db.Timestamptz
+
+  // Relations
+  user     User          @relation(fields: [userId], references: [id], onDelete: Cascade)
+  sessions UserSession[]
+
+  @@index([userId])
+  @@index([tokenHash])
+  @@index([expiresAt])
+  @@index([revokedAt])
+  @@map("refresh_tokens")
+}
+
+model TwoFactorAuth {
+  id          String    @id @default(uuid()) @db.Uuid
+  userId      String    @unique @map("user_id") @db.Uuid
+  enabled     Boolean   @default(false)
+  secretKey   String?   @map("secret_key") @db.VarChar(255)
+  backupCodes String[]  @map("backup_codes")
+  verifiedAt  DateTime? @map("verified_at") @db.Timestamptz
+  createdAt   DateTime  @default(now()) @map("created_at") @db.Timestamptz
+  updatedAt   DateTime  @updatedAt @map("updated_at") @db.Timestamptz
+
+  // Relations
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([enabled])
+  @@map("two_factor_auth")
+}
+
+model UserSession {
+  id             String    @id @default(uuid()) @db.Uuid
+  userId         String    @map("user_id") @db.Uuid
+  refreshTokenId String?   @map("refresh_token_id") @db.Uuid
+  deviceName     String?   @map("device_name") @db.VarChar(255)
+  deviceType     String?   @map("device_type") @db.VarChar(50)
+  osName         String?   @map("os_name") @db.VarChar(100)
+  osVersion      String?   @map("os_version") @db.VarChar(50)
+  browserName    String?   @map("browser_name") @db.VarChar(100)
+  browserVersion String?   @map("browser_version") @db.VarChar(50)
+  ipAddress      String?   @map("ip_address") @db.Inet
+  location       String?   @db.VarChar(255)
+  isActive       Boolean   @default(true) @map("is_active")
+  lastActivityAt DateTime  @default(now()) @map("last_activity_at") @db.Timestamptz
+  expiresAt      DateTime  @map("expires_at") @db.Timestamptz
+  revokedAt      DateTime? @map("revoked_at") @db.Timestamptz
+  revokedReason  String?   @map("revoked_reason") @db.VarChar(255)
+  createdAt      DateTime  @default(now()) @map("created_at") @db.Timestamptz
+
+  // Relations
+  user         User          @relation(fields: [userId], references: [id], onDelete: Cascade)
+  refreshToken RefreshToken? @relation(fields: [refreshTokenId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([isActive])
+  @@index([lastActivityAt])
+  @@index([expiresAt])
+  @@map("user_sessions")
+}
+
+model PasswordResetToken {
+  id        String    @id @default(uuid()) @db.Uuid
+  userId    String    @map("user_id") @db.Uuid
+  tokenHash String    @unique @map("token_hash") @db.VarChar(255)
+  expiresAt DateTime  @map("expires_at") @db.Timestamptz
+  usedAt    DateTime? @map("used_at") @db.Timestamptz
+  ipAddress String?   @map("ip_address") @db.Inet
+  userAgent String?   @map("user_agent") @db.Text
+  createdAt DateTime  @default(now()) @map("created_at") @db.Timestamptz
+
+  // Relations
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([tokenHash])
+  @@index([expiresAt])
+  @@map("password_reset_tokens")
+}
+
+model EmailVerificationToken {
+  id        String    @id @default(uuid()) @db.Uuid
+  userId    String    @map("user_id") @db.Uuid
+  tokenHash String    @unique @map("token_hash") @db.VarChar(255)
+  expiresAt DateTime  @map("expires_at") @db.Timestamptz
+  usedAt    DateTime? @map("used_at") @db.Timestamptz
+  createdAt DateTime  @default(now()) @map("created_at") @db.Timestamptz
+
+  // Relations
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([tokenHash])
+  @@index([expiresAt])
+  @@map("email_verification_tokens")
+}
+
+model UserTierSettings {
+  id                 String   @id @default(uuid()) @db.Uuid
+  userId             String   @unique @map("user_id") @db.Uuid
+  tier               String   @default("FREE") @db.VarChar(50)
+  requestsPerMinute  Int      @default(10) @map("requests_per_minute")
+  requestsPerHour    Int      @default(100) @map("requests_per_hour")
+  requestsPerDay     Int      @default(1000) @map("requests_per_day")
+  maxSessions        Int      @default(3) @map("max_sessions")
+  storageLimitBytes  BigInt   @default(1073741824) @map("storage_limit_bytes")
+  createdAt          DateTime @default(now()) @map("created_at") @db.Timestamptz
+  updatedAt          DateTime @updatedAt @map("updated_at") @db.Timestamptz
+
+  // Relations
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([tier])
+  @@map("user_tier_settings")
+}
+
+model SecurityAuditLog {
+  id         String   @id @default(uuid()) @db.Uuid
+  userId     String?  @map("user_id") @db.Uuid
+  eventType  String   @map("event_type") @db.VarChar(100)
+  severity   String   @default("INFO") @db.VarChar(20)
+  ipAddress  String?  @map("ip_address") @db.Inet
+  userAgent  String?  @map("user_agent") @db.Text
+  deviceType String?  @map("device_type") @db.VarChar(50)
+  location   String?  @db.VarChar(255)
+  details    Json?    @db.JsonB
+  success    Boolean  @default(true)
+  createdAt  DateTime @default(now()) @map("created_at") @db.Timestamptz
+
+  // Relations
+  user User? @relation(fields: [userId], references: [id], onDelete: SetNull)
+
+  @@index([userId])
+  @@index([eventType])
+  @@index([severity])
+  @@index([createdAt])
+  @@index([ipAddress])
+  @@map("security_audit_log")
+}
+
+model PushSubscription {
+  id         String    @id @default(uuid()) @db.Uuid
+  userId     String    @map("user_id") @db.Uuid
+  endpoint   String    @unique @db.Text
+  p256dh     String    @db.Text
+  auth       String    @db.Text
+  deviceName String?   @map("device_name") @db.VarChar(255)
+  deviceType String?   @map("device_type") @db.VarChar(50)
+  userAgent  String?   @map("user_agent") @db.Text
+  enabled    Boolean   @default(true)
+  createdAt  DateTime  @default(now()) @map("created_at") @db.Timestamptz
+  updatedAt  DateTime  @updatedAt @map("updated_at") @db.Timestamptz
+  lastUsedAt DateTime? @map("last_used_at") @db.Timestamptz
+
+  // Relations
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([enabled])
+  @@index([userId, enabled])
+  @@map("push_subscriptions")
+}
+
+model TranscriptionUsage {
+  id              String   @id @default(uuid()) @db.Uuid
+  userId          String   @map("user_id") @db.Uuid
+  momentId        String?  @map("moment_id") @db.Uuid
+  durationSeconds Int      @map("duration_seconds")
+  model           String   @db.VarChar(100)
+  costUsd         Decimal? @map("cost_usd") @db.Decimal(10, 4)
+  status          String   @db.VarChar(50)
+  errorMessage    String?  @map("error_message") @db.Text
+  createdAt       DateTime @default(now()) @map("created_at") @db.Timestamptz
+
+  // Relations
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([createdAt])
+  @@index([userId, createdAt])
+  @@map("transcription_usage")
+}
+
+model AIInsight {
+  id                String     @id @default(uuid()) @db.Uuid
+  userId            String     @map("user_id") @db.Uuid
+  insightType       String     @map("insight_type") @db.VarChar(100)
+  title             String     @db.VarChar(500)
+  content           String     @db.Text
+  confidence        Decimal    @db.Decimal(3, 2)
+  relatedMoments    String[]   @map("related_moments")
+  metadata          Json?      @db.JsonB
+  version           Int        @default(1)
+  previousInsightId String?    @unique @map("previous_insight_id") @db.Uuid
+  createdAt         DateTime   @default(now()) @map("created_at") @db.Timestamptz
+
+  // Relations
+  user            User       @relation(fields: [userId], references: [id], onDelete: Cascade)
+  previousInsight AIInsight? @relation("InsightVersionChain", fields: [previousInsightId], references: [id])
+  nextInsight     AIInsight? @relation("InsightVersionChain")
+  feedback        InsightFeedback[]
+
+  @@index([userId])
+  @@index([createdAt])
+  @@index([insightType])
+  @@index([previousInsightId])
+  @@map("ai_insights")
+}
+
+model MemoryExpansion {
+  id           String   @id @default(uuid()) @db.Uuid
+  userId       String   @map("user_id") @db.Uuid
+  momentId     String   @map("moment_id") @db.Uuid
+  expansionType String  @map("expansion_type") @db.VarChar(100)
+  content      String   @db.Text
+  metadata     Json?    @db.JsonB
+  createdAt    DateTime @default(now()) @map("created_at") @db.Timestamptz
+
+  // Relations
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([momentId])
+  @@index([createdAt])
+  @@map("memory_expansions")
+}
+
+model AITokenUsage {
+  id            String   @id @default(uuid()) @db.Uuid
+  userId        String   @map("user_id") @db.Uuid
+  operationType String   @map("operation_type") @db.VarChar(100)
+  model         String   @db.VarChar(100)
+  inputTokens   Int      @map("input_tokens")
+  outputTokens  Int      @map("output_tokens")
+  totalTokens   Int      @map("total_tokens")
+  costUsd       Decimal  @map("cost_usd") @db.Decimal(10, 6)
+  cached        Boolean  @default(false)
+  momentId      String?  @map("moment_id") @db.Uuid
+  sphereId      String?  @map("sphere_id") @db.Uuid
+  metadata      String?  @db.Text
+  createdAt     DateTime @default(now()) @map("created_at") @db.Timestamptz
+
+  // Relations
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([createdAt])
+  @@index([operationType])
+  @@index([model])
+  @@index([userId, createdAt])
+  @@map("ai_token_usage")
+}
+
+// ==========================================================================
+// Missing Models (Phase 2 Gap Fix)
+// ==========================================================================
+
+model Comment {
+  id        String    @id @default(uuid()) @db.Uuid
+  momentId  String    @map("moment_id") @db.Uuid
+  userId    String    @map("user_id") @db.Uuid
+  content   String    @db.Text
+  parentId  String?   @map("parent_id") @db.Uuid
+  createdAt DateTime  @default(now()) @map("created_at") @db.Timestamptz
+  updatedAt DateTime  @updatedAt @map("updated_at") @db.Timestamptz
+  deletedAt DateTime? @map("deleted_at") @db.Timestamptz
+
+  user    User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  parent  Comment?  @relation("CommentThread", fields: [parentId], references: [id])
+  replies Comment[] @relation("CommentThread")
+
+  @@index([momentId])
+  @@index([userId])
+  @@index([parentId])
+  @@index([deletedAt])
+  @@map("comments")
+}
+
+model Reaction {
+  id        String   @id @default(uuid()) @db.Uuid
+  momentId  String   @map("moment_id") @db.Uuid
+  userId    String   @map("user_id") @db.Uuid
+  emoji     String   @db.VarChar(20)
+  createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([momentId, userId, emoji])
+  @@index([momentId])
+  @@index([userId])
+  @@map("reactions")
+}
+
+model Follow {
+  id          String    @id @default(uuid()) @db.Uuid
+  followerId  String    @map("follower_id") @db.Uuid
+  followingId String    @map("following_id") @db.Uuid
+  createdAt   DateTime  @default(now()) @map("created_at") @db.Timestamptz
+  unfollowedAt DateTime? @map("unfollowed_at") @db.Timestamptz
+
+  follower  User @relation("FollowSource", fields: [followerId], references: [id], onDelete: Cascade)
+  following User @relation("FollowTarget", fields: [followingId], references: [id], onDelete: Cascade)
+
+  @@unique([followerId, followingId])
+  @@index([followerId])
+  @@index([followingId])
+  @@map("follows")
+}
+
+model Invitation {
+  id          String    @id @default(uuid()) @db.Uuid
+  sphereId    String    @map("sphere_id") @db.Uuid
+  senderId    String    @map("sender_id") @db.Uuid
+  recipientId String?   @map("recipient_id") @db.Uuid
+  email       String    @db.VarChar(255)
+  role        String    @db.VarChar(50)
+  token       String    @unique @db.VarChar(255)
+  status      String    @default("pending") @db.VarChar(50)
+  expiresAt   DateTime  @map("expires_at") @db.Timestamptz
+  acceptedAt  DateTime? @map("accepted_at") @db.Timestamptz
+  createdAt   DateTime  @default(now()) @map("created_at") @db.Timestamptz
+
+  sender    User  @relation("InvitationSender", fields: [senderId], references: [id])
+  recipient User? @relation("InvitationRecipient", fields: [recipientId], references: [id])
+
+  @@index([sphereId])
+  @@index([senderId])
+  @@index([recipientId])
+  @@index([email])
+  @@index([token])
+  @@index([status])
+  @@map("invitations")
+}
+
+model Notification {
+  id          String    @id @default(uuid()) @db.Uuid
+  userId      String    @map("user_id") @db.Uuid
+  type        String    @db.VarChar(100)
+  title       String    @db.VarChar(500)
+  body        String    @db.Text
+  data        Json?     @db.JsonB
+  channel     String    @default("in_app") @db.VarChar(50)
+  read        Boolean   @default(false)
+  readAt      DateTime? @map("read_at") @db.Timestamptz
+  sentAt      DateTime? @map("sent_at") @db.Timestamptz
+  dismissedAt DateTime? @map("dismissed_at") @db.Timestamptz
+  createdAt   DateTime  @default(now()) @map("created_at") @db.Timestamptz
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([read])
+  @@index([type])
+  @@index([userId, read])
+  @@index([createdAt(sort: Desc)])
+  @@map("notifications")
+}
+
+model Template {
+  id          String    @id @default(uuid()) @db.Uuid
+  userId      String    @map("user_id") @db.Uuid
+  name        String    @db.VarChar(255)
+  description String?   @db.Text
+  category    String    @db.VarChar(100)
+  content     Json      @db.JsonB
+  isPublic    Boolean   @default(false) @map("is_public")
+  usageCount  Int       @default(0) @map("usage_count")
+  createdAt   DateTime  @default(now()) @map("created_at") @db.Timestamptz
+  updatedAt   DateTime  @updatedAt @map("updated_at") @db.Timestamptz
+  deletedAt   DateTime? @map("deleted_at") @db.Timestamptz
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([category])
+  @@index([isPublic])
+  @@index([deletedAt])
+  @@map("templates")
+}
+
+model Report {
+  id          String    @id @default(uuid()) @db.Uuid
+  userId      String    @map("user_id") @db.Uuid
+  reportType  String    @map("report_type") @db.VarChar(50)
+  format      String    @db.VarChar(20)
+  status      String    @default("pending") @db.VarChar(50)
+  parameters  Json?     @db.JsonB
+  fileUrl     String?   @map("file_url") @db.Text
+  fileSize    BigInt?   @map("file_size")
+  errorMsg    String?   @map("error_msg") @db.Text
+  startedAt   DateTime? @map("started_at") @db.Timestamptz
+  completedAt DateTime? @map("completed_at") @db.Timestamptz
+  createdAt   DateTime  @default(now()) @map("created_at") @db.Timestamptz
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([status])
+  @@index([createdAt])
+  @@map("reports")
+}
+
+model DataExportRequest {
+  id          String    @id @default(uuid()) @db.Uuid
+  userId      String    @map("user_id") @db.Uuid
+  format      String    @default("json") @db.VarChar(20)
+  scope       String    @default("full") @db.VarChar(50)
+  status      String    @default("pending") @db.VarChar(50)
+  fileUrl     String?   @map("file_url") @db.Text
+  fileSize    BigInt?   @map("file_size")
+  errorMsg    String?   @map("error_msg") @db.Text
+  startedAt   DateTime? @map("started_at") @db.Timestamptz
+  completedAt DateTime? @map("completed_at") @db.Timestamptz
+  expiresAt   DateTime? @map("expires_at") @db.Timestamptz
+  createdAt   DateTime  @default(now()) @map("created_at") @db.Timestamptz
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([status])
+  @@map("data_export_requests")
+}
+
+model DeletionRequest {
+  id            String    @id @default(uuid()) @db.Uuid
+  userId        String    @map("user_id") @db.Uuid
+  scope         String    @default("full") @db.VarChar(50)
+  reason        String?   @db.Text
+  status        String    @default("pending") @db.VarChar(50)
+  scheduledFor  DateTime  @map("scheduled_for") @db.Timestamptz
+  confirmedAt   DateTime? @map("confirmed_at") @db.Timestamptz
+  executedAt    DateTime? @map("executed_at") @db.Timestamptz
+  cancelledAt   DateTime? @map("cancelled_at") @db.Timestamptz
+  createdAt     DateTime  @default(now()) @map("created_at") @db.Timestamptz
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([status])
+  @@index([scheduledFor])
+  @@map("deletion_requests")
+}
+
+model ApiKey {
+  id          String    @id @default(uuid()) @db.Uuid
+  userId      String    @map("user_id") @db.Uuid
+  name        String    @db.VarChar(255)
+  keyHash     String    @unique @map("key_hash") @db.VarChar(255)
+  keyPrefix   String    @map("key_prefix") @db.VarChar(12)
+  scopes      String[]  @default(["read"])
+  lastUsedAt  DateTime? @map("last_used_at") @db.Timestamptz
+  expiresAt   DateTime? @map("expires_at") @db.Timestamptz
+  revokedAt   DateTime? @map("revoked_at") @db.Timestamptz
+  createdAt   DateTime  @default(now()) @map("created_at") @db.Timestamptz
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([keyHash])
+  @@index([expiresAt])
+  @@map("api_keys")
+}
+
+// ==========================================================================
+// Recommendation Engine (P0 Remediation)
+// ==========================================================================
+
+enum RecommendationType {
+  REVISIT
+  CONNECT
+  HABIT
+  WELLBEING
+  EXPLORE
+}
+
+enum RecommendationStatus {
+  ACTIVE
+  DISMISSED
+  ACTED
+  EXPIRED
+}
+
+model Recommendation {
+  id                String               @id @default(uuid()) @db.Uuid
+  userId            String               @map("user_id") @db.Uuid
+  type              RecommendationType
+  strategy          String               @db.VarChar(100)
+  title             String               @db.VarChar(500)
+  content           String               @db.Text
+  score             Decimal              @db.Decimal(5, 4)
+  status            RecommendationStatus @default(ACTIVE)
+  relatedMomentIds  String[]             @map("related_moment_ids")
+  relatedSphereIds  String[]             @map("related_sphere_ids")
+  metadata          Json?                @db.JsonB
+  expiresAt         DateTime?            @map("expires_at") @db.Timestamptz
+  actedAt           DateTime?            @map("acted_at") @db.Timestamptz
+  dismissedAt       DateTime?            @map("dismissed_at") @db.Timestamptz
+  createdAt         DateTime             @default(now()) @map("created_at") @db.Timestamptz
+  updatedAt         DateTime             @updatedAt @map("updated_at") @db.Timestamptz
+
+  // Relations
+  user     User                   @relation(fields: [userId], references: [id], onDelete: Cascade)
+  feedback RecommendationFeedback[]
+
+  @@index([userId])
+  @@index([status])
+  @@index([type])
+  @@index([userId, status])
+  @@index([score(sort: Desc)])
+  @@index([expiresAt])
+  @@index([createdAt(sort: Desc)])
+  @@map("recommendations")
+}
+
+model RecommendationFeedback {
+  id               String   @id @default(uuid()) @db.Uuid
+  recommendationId String   @map("recommendation_id") @db.Uuid
+  userId           String   @map("user_id") @db.Uuid
+  action           String   @db.VarChar(50) // clicked, dismissed, helpful, not_helpful
+  rating           Int?     // 1-5 star rating
+  comment          String?  @db.Text
+  createdAt        DateTime @default(now()) @map("created_at") @db.Timestamptz
+
+  // Relations
+  recommendation Recommendation @relation(fields: [recommendationId], references: [id], onDelete: Cascade)
+  user           User           @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([recommendationId, userId])
+  @@index([recommendationId])
+  @@index([userId])
+  @@index([action])
+  @@map("recommendation_feedback")
+}
+
+// ==========================================================================
+// Knowledge Intelligence Layer (P0 Remediation)
+// ==========================================================================
+
+model TopicNode {
+  id           String   @id @default(uuid()) @db.Uuid
+  userId       String   @map("user_id") @db.Uuid
+  name         String   @db.VarChar(255)
+  normalizedName String @map("normalized_name") @db.VarChar(255)
+  description  String?  @db.Text
+  momentCount  Int      @default(0) @map("moment_count")
+  lastSeenAt   DateTime @default(now()) @map("last_seen_at") @db.Timestamptz
+  metadata     Json?    @db.JsonB
+  createdAt    DateTime @default(now()) @map("created_at") @db.Timestamptz
+  updatedAt    DateTime @updatedAt @map("updated_at") @db.Timestamptz
+
+  // Relations — edges are tracked via GraphEdge
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, normalizedName])
+  @@index([userId])
+  @@index([normalizedName])
+  @@index([momentCount(sort: Desc)])
+  @@index([userId, lastSeenAt])
+  @@map("topic_nodes")
+}
+
+model EntityNode {
+  id             String   @id @default(uuid()) @db.Uuid
+  userId         String   @map("user_id") @db.Uuid
+  name           String   @db.VarChar(255)
+  normalizedName String   @map("normalized_name") @db.VarChar(255)
+  entityType     String   @map("entity_type") @db.VarChar(50) // person, place, org, concept
+  wikidataId     String?  @map("wikidata_id") @db.VarChar(50)
+  mentionCount   Int      @default(0) @map("mention_count")
+  lastSeenAt     DateTime @default(now()) @map("last_seen_at") @db.Timestamptz
+  metadata       Json?    @db.JsonB
+  createdAt      DateTime @default(now()) @map("created_at") @db.Timestamptz
+  updatedAt      DateTime @updatedAt @map("updated_at") @db.Timestamptz
+
+  // Relations — edges are tracked via GraphEdge
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, normalizedName, entityType])
+  @@index([userId])
+  @@index([normalizedName])
+  @@index([entityType])
+  @@index([mentionCount(sort: Desc)])
+  @@index([userId, lastSeenAt])
+  @@map("entity_nodes")
+}
+
+model GraphEdge {
+  id          String   @id @default(uuid()) @db.Uuid
+  userId      String   @map("user_id") @db.Uuid
+  sourceType  String   @map("source_type") @db.VarChar(50) // topic, entity, moment, sphere
+  sourceId    String   @map("source_id") @db.Uuid
+  targetType  String   @map("target_type") @db.VarChar(50)
+  targetId    String   @map("target_id") @db.Uuid
+  edgeType    String   @map("edge_type") @db.VarChar(100) // related_to, mentioned_in, co_occurs, part_of
+  weight      Decimal  @default(1.0) @db.Decimal(5, 4)
+  occurrences Int      @default(1)
+  metadata    Json?    @db.JsonB
+  createdAt   DateTime @default(now()) @map("created_at") @db.Timestamptz
+  updatedAt   DateTime @updatedAt @map("updated_at") @db.Timestamptz
+
+  // Relations
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, sourceType, sourceId, targetType, targetId, edgeType])
+  @@index([userId])
+  @@index([sourceType, sourceId])
+  @@index([targetType, targetId])
+  @@index([edgeType])
+  @@index([weight(sort: Desc)])
+  @@map("graph_edges")
+}
+
+// ==========================================================================
+// Intelligence Accumulation (P1 Remediation)
+// ==========================================================================
+
+model UserKnowledgeProfile {
+  id              String   @id @default(uuid()) @db.Uuid
+  userId          String   @unique @map("user_id") @db.Uuid
+  topTopics       Json     @default("[]") @map("top_topics") @db.JsonB
+  topEntities     Json     @default("[]") @map("top_entities") @db.JsonB
+  emotionProfile  Json     @default("{}") @map("emotion_profile") @db.JsonB
+  activityPattern Json     @default("{}") @map("activity_pattern") @db.JsonB
+  profileVersion  Int      @default(1) @map("profile_version")
+  lastComputedAt  DateTime @default(now()) @map("last_computed_at") @db.Timestamptz
+  createdAt       DateTime @default(now()) @map("created_at") @db.Timestamptz
+  updatedAt       DateTime @updatedAt @map("updated_at") @db.Timestamptz
+
+  // Relations
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([lastComputedAt])
+  @@map("user_knowledge_profiles")
+}
+
+model InsightFeedback {
+  id        String   @id @default(uuid()) @db.Uuid
+  insightId String   @map("insight_id") @db.Uuid
+  userId    String   @map("user_id") @db.Uuid
+  action    String   @db.VarChar(50) // helpful, not_helpful, saved, dismissed
+  rating    Int?     // 1-5
+  comment   String?  @db.Text
+  createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz
+
+  // Relations
+  insight AIInsight @relation(fields: [insightId], references: [id], onDelete: Cascade)
+  user    User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([insightId])
+  @@index([userId])
+  @@index([action])
+  @@map("insight_feedback")
+}

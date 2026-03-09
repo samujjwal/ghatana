@@ -1,0 +1,53 @@
+{
+  "name": "@ghatana/yappc-canvas-core",
+  "version": "1.0.0",
+  "description": "YAPPC Canvas Extensions - Low-code application development canvas",
+  "type": "module",
+  "main": "dist/index.js",
+  "exports": {
+    ".": "./src/index.ts",
+    "./config": "./src/yappc-config.ts",
+    "./elements": "./src/yappc-elements.ts",
+    "./actions": "./src/yappc-actions.ts",
+    "./canvas": "./src/yappc-canvas.ts",
+    "./package.json": "./package.json"
+  },
+  "files": [
+    "src",
+    "dist"
+  ],
+  "scripts": {
+    "build": "tsc",
+    "dev": "tsc --watch",
+    "test": "vitest",
+    "typecheck": "tsc --noEmit",
+    "lint": "eslint src --max-warnings=0",
+    "clean": "rm -rf dist tsconfig.tsbuildinfo"
+  },
+  "dependencies": {
+    "@ghatana/canvas": "workspace:*",
+    "jotai": "^2.16.0",
+    "nanoid": "^5.1.6",
+    "zod": "^3.25.76"
+  },
+  "devDependencies": {
+    "@types/node": "^20.0.0",
+    "typescript": "^5.0.0",
+    "vitest": "^1.0.0",
+    "eslint": "^9.0.0"
+  },
+  "peerDependencies": {
+    "react": "^19.1.0",
+    "react-dom": "^19.1.0"
+  },
+  "keywords": [
+    "canvas",
+    "yappc",
+    "low-code",
+    "application-development",
+    "visualization",
+    "ghatana"
+  ],
+  "author": "Ghatana Team",
+  "license": "MIT"
+}

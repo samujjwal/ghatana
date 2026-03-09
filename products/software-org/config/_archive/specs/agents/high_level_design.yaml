@@ -1,0 +1,47 @@
+id: high_level_design
+agent: SolutionApproachAgent
+role: Solution Architect
+inputs_spec:
+- name: ready_for_design_package
+  description: Complete Solution stage package, versioned and ready for Design handoff, with checklist.
+  format: Package artifact (documents, version_info, handoff_checklist)
+outputs_spec:
+- name: high_level_design
+  description: High-level design covering all major system components, their relationships, interfaces, constraints, assumptions, and design risks.
+  format: 'Structured design document (sections: components, interfaces, constraints, assumptions, risks, mitigation)'
+  example: 'components: ["User Service", "Auth Service"]
+
+    interfaces: ["REST API"]
+
+    constraints: ["OAuth2 only"]
+
+    assumptions: ["Cloud DB available"]
+
+    risks: ["API ambiguity"]
+
+    mitigation: ["API review"]
+
+    '
+agent_tasks:
+- Develop a high-level design covering all major system components and their relationships.
+- Clearly describe each component's role and boundaries.
+- Define interfaces between modules.
+- Ensure high-level design aligns with architecture and threat model.
+- Address constraints and assumptions from previous stages.
+- Include major design risks and mitigation strategies.
+acceptance_criteria:
+- High-level design covers all major system components and their relationships.
+- Each component's role and boundaries are clearly described.
+- Interfaces between modules are defined.
+- High-level design aligns with architecture and threat model.
+- Constraints and assumptions from previous stages are addressed.
+- Major design risks and mitigation strategies are included.
+dependencies:
+- ready_for_design_package
+failure_escalation:
+- Escalate to Solution Architect or PM if alignment or completeness is lacking.
+references: []
+hitl: true
+hitl_reason: Human validates high-level design for alignment and completeness
+
+# [!!] No custom enhancement found.

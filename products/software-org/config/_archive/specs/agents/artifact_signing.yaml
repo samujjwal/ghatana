@@ -1,0 +1,27 @@
+---
+id: "artifact_signing"
+agent: "ArtifactSigningAgent"
+role: "Release Engineer"
+inputs_spec:
+- name: "container_images"
+  description: "Container images/artifacts for signing."
+  format: "Container image artifact/registry"
+outputs_spec:
+- name: "signed_artifacts"
+  description: "Cryptographically signed release artifacts."
+  format: "Signed artifact or signature manifest"
+agent_tasks:
+- "Sign all release artifacts cryptographically."
+- "Document signature verification process."
+- "Prevent unsigned artifacts from promotion."
+acceptance_criteria:
+- "All release artifacts are cryptographically signed."
+- "Signature verification process is documented."
+- "Unsigned artifacts are not promoted."
+dependencies:
+- "container_images"
+failure_escalation:
+- "Escalate to Release Engineer or Security if signing process is incomplete."
+references: []
+hitl: true
+hitl_reason: "Human ensures artifact signing is performed and validated"

@@ -1,0 +1,519 @@
+tasks:
+  # Developer Persona Tasks
+  - id: "feature-implementation"
+    name: "Feature Implementation"
+    type: "development"
+    description: "Implement new feature based on requirements with AI assistance"
+    persona: "developer"
+    domain: "development"
+    phase: "develop"
+    agent: "code-development-agent"
+    priority: "high"
+    estimated_duration: "2-5 days"
+    complexity: "medium"
+    inputs:
+      - name: "feature-requirements"
+        type: "document"
+        required: true
+        description: "Detailed feature requirements and acceptance criteria"
+      - name: "design-mockups"
+        type: "files"
+        required: false
+        description: "UI/UX design files and wireframes"
+      - name: "existing-codebase"
+        type: "repository"
+        required: true
+        description: "Current codebase context"
+    outputs:
+      - name: "implemented-code"
+        type: "code"
+        description: "Feature implementation with unit tests"
+      - name: "documentation"
+        type: "markdown"
+        description: "Feature documentation and API specs"
+    success_criteria:
+      - "feature-meets-requirements"
+      - "unit-tests-passing"
+      - "code-review-approved"
+      - "documentation-complete"
+
+  - id: "code-refactoring"
+    name: "Intelligent Code Refactoring"
+    type: "optimization"
+    description: "AI-powered code refactoring with pattern detection and improvement suggestions"
+    persona: "developer"
+    domain: "development"
+    phase: "develop"
+    agent: "code-development-agent"
+    priority: "medium"
+    estimated_duration: "1-2 days"
+    complexity: "low"
+    inputs:
+      - name: "target-modules"
+        type: "code-selection"
+        required: true
+        description: "Code modules or files to refactor"
+      - name: "refactoring-goals"
+        type: "configuration"
+        required: true
+        description: "Specific refactoring objectives (performance, maintainability, etc.)"
+    outputs:
+      - name: "refactored-code"
+        type: "code"
+        description: "Refactored code with improvements"
+      - name: "refactoring-report"
+        type: "analysis"
+        description: "Summary of changes and improvements made"
+    success_criteria:
+      - "code-quality-improved"
+      - "performance-maintained-or-improved"
+      - "tests-still-passing"
+
+  # Security Engineer Tasks
+  - id: "security-vulnerability-assessment"
+    name: "Comprehensive Security Assessment"
+    type: "security"
+    description: "Deep security analysis with vulnerability scanning and threat modeling"
+    persona: "security-engineer"
+    domain: "security"
+    phase: "secure"
+    agent: "security-guardian-agent"
+    priority: "critical"
+    estimated_duration: "1-2 days"
+    complexity: "high"
+    inputs:
+      - name: "application-code"
+        type: "repository"
+        required: true
+        description: "Complete application codebase for analysis"
+      - name: "infrastructure-config"
+        type: "configuration"
+        required: true
+        description: "Infrastructure and deployment configurations"
+      - name: "threat-model"
+        type: "document"
+        required: false
+        description: "Existing threat model documentation"
+    outputs:
+      - name: "vulnerability-report"
+        type: "security-report"
+        description: "Detailed vulnerability assessment with severity ratings"
+      - name: "threat-analysis"
+        type: "threat-model"
+        description: "Updated threat model with risk assessments"
+      - name: "remediation-plan"
+        type: "action-plan"
+        description: "Prioritized remediation steps"
+    success_criteria:
+      - "all-critical-vulnerabilities-identified"
+      - "threat-model-updated"
+      - "remediation-plan-approved"
+
+  - id: "compliance-validation"
+    name: "Compliance Standards Validation"
+    type: "compliance"
+    description: "Validate application against compliance standards (OWASP, SOC2, etc.)"
+    persona: "compliance-officer"
+    domain: "security"
+    phase: "govern"
+    agent: "security-guardian-agent"
+    priority: "high"
+    estimated_duration: "2-3 days"
+    complexity: "high"
+    inputs:
+      - name: "compliance-requirements"
+        type: "standards"
+        required: true
+        description: "Required compliance standards (OWASP, NIST, SOC2, etc.)"
+      - name: "security-controls"
+        type: "configuration"
+        required: true
+        description: "Implemented security controls and policies"
+    outputs:
+      - name: "compliance-report"
+        type: "compliance-assessment"
+        description: "Detailed compliance gap analysis"
+      - name: "certification-readiness"
+        type: "readiness-matrix"
+        description: "Certification readiness assessment"
+    success_criteria:
+      - "compliance-gaps-identified"
+      - "remediation-timeline-defined"
+      - "certification-path-clear"
+
+  # DevOps Engineer Tasks
+  - id: "ci-cd-pipeline-optimization"
+    name: "CI/CD Pipeline Optimization"
+    type: "infrastructure"
+    description: "Optimize deployment pipelines for speed, reliability, and security"
+    persona: "devops-engineer"
+    domain: "operations"
+    phase: "deploy"
+    agent: "infrastructure-orchestrator"
+    priority: "high"
+    estimated_duration: "2-4 days"
+    complexity: "medium"
+    inputs:
+      - name: "current-pipeline"
+        type: "pipeline-config"
+        required: true
+        description: "Existing CI/CD pipeline configuration"
+      - name: "performance-metrics"
+        type: "metrics"
+        required: true
+        description: "Current pipeline performance data"
+      - name: "requirements"
+        type: "requirements"
+        required: true
+        description: "Performance and reliability requirements"
+    outputs:
+      - name: "optimized-pipeline"
+        type: "pipeline-config"
+        description: "Optimized CI/CD pipeline configuration"
+      - name: "performance-improvement"
+        type: "metrics"
+        description: "Expected performance improvements"
+      - name: "rollback-strategy"
+        type: "procedure"
+        description: "Enhanced rollback and recovery procedures"
+    success_criteria:
+      - "deployment-time-reduced"
+      - "reliability-improved"
+      - "security-checks-integrated"
+
+  - id: "infrastructure-provisioning"
+    name: "Automated Infrastructure Provisioning"
+    type: "infrastructure"
+    description: "Set up and configure infrastructure using Infrastructure as Code"
+    persona: "infrastructure-architect"
+    domain: "operations"
+    phase: "deploy"
+    agent: "infrastructure-orchestrator"
+    priority: "high"
+    estimated_duration: "1-3 days"
+    complexity: "high"
+    inputs:
+      - name: "infrastructure-requirements"
+        type: "specification"
+        required: true
+        description: "Infrastructure sizing and configuration requirements"
+      - name: "environment-config"
+        type: "configuration"
+        required: true
+        description: "Environment-specific configurations"
+      - name: "security-policies"
+        type: "policies"
+        required: true
+        description: "Security and compliance policies"
+    outputs:
+      - name: "infrastructure-code"
+        type: "iac-templates"
+        description: "Terraform/CloudFormation templates"
+      - name: "deployment-scripts"
+        type: "automation"
+        description: "Automated deployment and configuration scripts"
+      - name: "monitoring-setup"
+        type: "monitoring-config"
+        description: "Infrastructure monitoring configuration"
+    success_criteria:
+      - "infrastructure-deployed-successfully"
+      - "security-policies-enforced"
+      - "monitoring-active"
+
+  # QA Engineer Tasks
+  - id: "automated-testing-suite"
+    name: "Comprehensive Test Automation"
+    type: "testing"
+    description: "Create and execute automated testing suite with AI-generated test cases"
+    persona: "qa-engineer"
+    domain: "quality"
+    phase: "test"
+    agent: "quality-validator"
+    priority: "high"
+    estimated_duration: "3-5 days"
+    complexity: "medium"
+    inputs:
+      - name: "application-features"
+        type: "feature-specs"
+        required: true
+        description: "Feature specifications and user stories"
+      - name: "existing-tests"
+        type: "test-suite"
+        required: false
+        description: "Existing test cases and coverage reports"
+      - name: "test-requirements"
+        type: "requirements"
+        required: true
+        description: "Testing requirements and coverage goals"
+    outputs:
+      - name: "automated-test-suite"
+        type: "test-code"
+        description: "Comprehensive automated test suite"
+      - name: "test-reports"
+        type: "test-results"
+        description: "Test execution results and coverage reports"
+      - name: "performance-benchmarks"
+        type: "performance-data"
+        description: "Performance testing results and benchmarks"
+    success_criteria:
+      - "test-coverage-above-90%"
+      - "all-critical-paths-tested"
+      - "performance-benchmarks-met"
+
+  - id: "quality-gate-validation"
+    name: "Quality Gate Validation"
+    type: "validation"
+    description: "Validate application against quality gates and acceptance criteria"
+    persona: "qa-engineer"
+    domain: "quality"
+    phase: "verify"
+    agent: "quality-validator"
+    priority: "critical"
+    estimated_duration: "1-2 days"
+    complexity: "medium"
+    inputs:
+      - name: "quality-criteria"
+        type: "criteria"
+        required: true
+        description: "Quality gates and acceptance criteria"
+      - name: "application-build"
+        type: "artifact"
+        required: true
+        description: "Application build to validate"
+    outputs:
+      - name: "quality-assessment"
+        type: "assessment"
+        description: "Quality gate validation results"
+      - name: "defect-report"
+        type: "defect-list"
+        description: "Issues and defects found during validation"
+    success_criteria:
+      - "all-quality-gates-passed"
+      - "acceptance-criteria-met"
+      - "defects-below-threshold"
+
+  # Product Manager Tasks
+  - id: "requirements-analysis"
+    name: "AI-Powered Requirements Analysis"
+    type: "analysis"
+    description: "Analyze and prioritize product requirements using user data and market insights"
+    persona: "product-manager"
+    domain: "product"
+    phase: "intake"
+    agent: "product-intelligence-agent"
+    priority: "high"
+    estimated_duration: "2-3 days"
+    complexity: "medium"
+    inputs:
+      - name: "user-feedback"
+        type: "feedback-data"
+        required: true
+        description: "User feedback, surveys, and support tickets"
+      - name: "market-research"
+        type: "research-data"
+        required: false
+        description: "Market research and competitive analysis"
+      - name: "business-objectives"
+        type: "objectives"
+        required: true
+        description: "Business goals and strategic objectives"
+    outputs:
+      - name: "prioritized-requirements"
+        type: "requirements"
+        description: "Prioritized product requirements with rationale"
+      - name: "user-stories"
+        type: "stories"
+        description: "Detailed user stories with acceptance criteria"
+      - name: "impact-analysis"
+        type: "analysis"
+        description: "Expected business impact and success metrics"
+    success_criteria:
+      - "requirements-stakeholder-approved"
+      - "user-stories-ready-for-development"
+      - "success-metrics-defined"
+
+  - id: "feature-impact-prediction"
+    name: "Feature Impact Prediction"
+    type: "prediction"
+    description: "Predict user adoption and business impact of proposed features"
+    persona: "product-owner"
+    domain: "product"
+    phase: "analyze"
+    agent: "product-intelligence-agent"
+    priority: "medium"
+    estimated_duration: "1-2 days"
+    complexity: "low"
+    inputs:
+      - name: "feature-specifications"
+        type: "specs"
+        required: true
+        description: "Detailed feature specifications"
+      - name: "user-behavior-data"
+        type: "analytics"
+        required: true
+        description: "Historical user behavior and engagement data"
+    outputs:
+      - name: "impact-prediction"
+        type: "prediction-model"
+        description: "Predicted user adoption and business impact"
+      - name: "risk-assessment"
+        type: "risk-analysis"
+        description: "Potential risks and mitigation strategies"
+    success_criteria:
+      - "impact-prediction-confidence-above-85%"
+      - "risks-identified-and-mitigated"
+
+  # SRE Tasks
+  - id: "incident-response-automation"
+    name: "Intelligent Incident Response"
+    type: "operations"
+    description: "Automated incident detection, analysis, and initial response"
+    persona: "sre"
+    domain: "operations"
+    phase: "operate"
+    agent: "infrastructure-orchestrator"
+    priority: "critical"
+    estimated_duration: "Immediate + 1-2 hours"
+    complexity: "high"
+    inputs:
+      - name: "monitoring-alerts"
+        type: "alerts"
+        required: true
+        description: "System alerts and monitoring data"
+      - name: "system-logs"
+        type: "logs"
+        required: true
+        description: "Application and infrastructure logs"
+      - name: "runbooks"
+        type: "procedures"
+        required: false
+        description: "Existing incident response procedures"
+    outputs:
+      - name: "incident-analysis"
+        type: "analysis"
+        description: "Root cause analysis and impact assessment"
+      - name: "response-actions"
+        type: "actions"
+        description: "Automated and manual response actions taken"
+      - name: "post-incident-report"
+        type: "report"
+        description: "Post-incident review and improvement recommendations"
+    success_criteria:
+      - "incident-resolved-within-sla"
+      - "root-cause-identified"
+      - "prevention-measures-implemented"
+
+  # Cross-Functional Tasks
+  - id: "cross-team-coordination"
+    name: "Cross-Team Workflow Coordination"
+    type: "coordination"
+    description: "Coordinate work across development, security, ops, and product teams"
+    persona: "tech-lead"
+    domain: "all"
+    phase: "all"
+    agent: "collaboration-facilitator"
+    priority: "medium"
+    estimated_duration: "Ongoing"
+    complexity: "low"
+    inputs:
+      - name: "team-progress"
+        type: "progress-data"
+        required: true
+        description: "Progress updates from all teams"
+      - name: "dependencies"
+        type: "dependency-map"
+        required: true
+        description: "Inter-team dependencies and blockers"
+    outputs:
+      - name: "coordination-plan"
+        type: "plan"
+        description: "Coordinated work plan with timeline"
+      - name: "blocker-resolution"
+        type: "actions"
+        description: "Actions to resolve blockers and dependencies"
+    success_criteria:
+      - "all-teams-synchronized"
+      - "blockers-resolved-timely"
+      - "delivery-timeline-met"
+
+# Task Dependencies and Workflow
+task_workflows:
+  developer_flow:
+    - "requirements-analysis" → "feature-implementation" → "code-refactoring"
+  security_flow:
+    - "security-vulnerability-assessment" → "compliance-validation"
+  devops_flow:
+    - "infrastructure-provisioning" → "ci-cd-pipeline-optimization"
+  qa_flow:
+    - "automated-testing-suite" → "quality-gate-validation"
+  product_flow:
+    - "requirements-analysis" → "feature-impact-prediction"
+
+# Task Automation Rules
+automation_rules:
+  triggers:
+    - event: "code-commit"
+      auto_start: ["automated-testing-suite", "security-vulnerability-assessment"]
+    - event: "security-scan-complete"
+      auto_start: ["compliance-validation"]
+    - event: "tests-passed"
+      auto_start: ["ci-cd-pipeline-optimization"]
+    - event: "deployment-complete"
+      auto_start: ["incident-response-automation"]
+
+  escalation_matrix:
+    failed_task:
+      priority_critical: "immediate-escalation-to-lead"
+      priority_high: "escalate-within-2-hours"
+      priority_medium: "escalate-within-24-hours"
+    blocked_task:
+      cross_team_dependency: "trigger-cross-team-coordination"
+      resource_constraint: "escalate-to-resource-manager"
+
+  - id: "apply-transformation"
+    name: "Apply Code Transformation"
+    type: "transformation"
+    description: "Apply approved code transformations"
+    agent: "refactoring-assistant"
+    priority: "high"
+    estimated-duration: "30s-2 minutes"
+    inputs:
+      - name: "transformation"
+        type: "refactoring"
+        required: true
+        description: "Approved transformation to apply"
+      - name: "target-files"
+        type: "array"
+        required: true
+        description: "Files to transform"
+    outputs:
+      - name: "changed-files"
+        type: "file-list"
+        description: "List of files that were modified"
+      - name: "backup-info"
+        type: "backup"
+        description: "Backup information for rollback"
+
+  - id: "validate-changes"
+    name: "Validate Code Changes"
+    type: "validation"
+    description: "Validate that changes maintain code quality"
+    agent: "quality-guardian"
+    priority: "high"
+    estimated-duration: "1-5 minutes"
+    inputs:
+      - name: "changed-files"
+        type: "file-list"
+        required: true
+        description: "Files that were modified"
+      - name: "validation-rules"
+        type: "rules"
+        required: false
+        description: "Custom validation rules"
+    outputs:
+      - name: "validation-report"
+        type: "report"
+        description: "Validation results and any issues found"
+      - name: "quality-metrics"
+        type: "metrics"
+        description: "Code quality metrics after changes"

@@ -1,0 +1,335 @@
+/*
+ * Copyright (c) ${year} Ghatana Inc.
+ * All rights reserved.
+ *
+ * This source code and the accompanying materials are the confidential
+ * and proprietary information of Ghatana Inc. (“Confidential Information”).
+ * You shall not disclose such Confidential Information and shall use it
+ * only in accordance with the terms of the license agreement you entered
+ * into with Ghatana Inc.
+ *
+ * Unauthorized copying of this file, via any medium, is strictly prohibited.
+ * Proprietary and confidential.
+ */
+syntax = "proto3";
+
+package ghatana.contracts.common.v1;
+
+import "google/protobuf/descriptor.proto";
+import "google/protobuf/timestamp.proto";
+import "ghatana/contracts/common/v1/error.proto";
+
+option java_package = "com.ghatana.contracts.common.v1";
+option java_multiple_files = true;
+option java_outer_classname = "ValidationProto";
+option go_package = "github.com/ghatana/contracts/gen/go/common/v1;commonv1";
+option csharp_namespace = "Ghatana.Contracts.Common.V1";
+
+
+// RangeConstraint defines a numeric range constraint
+message RangeConstraintProto {
+  optional double min = 1;  // Optional minimum value (inclusive)
+  optional double max = 2;  // Optional maximum value (inclusive)
+  bool min_exclusive = 3;   // If true, min is exclusive
+  bool max_exclusive = 4;   // If true, max is exclusive
+
+  // Optional error messages
+  string min_message = 10;
+  string max_message = 11;
+  // Reserved for future evolution
+  reserved 1000 to max;
+  reserved "reserved_field";
+}
+
+// SizeConstraint defines size constraints for collections/strings
+message SizeConstraintProto {
+  optional int32 min = 1;  // Optional minimum size
+  optional int32 max = 2;  // Optional maximum size
+  optional int32 exact = 3; // Required exact size
+
+  // Optional error messages
+  string min_message = 10;
+  string max_message = 11;
+  string exact_message = 12;
+  // Reserved for future evolution
+  reserved 1000 to max;
+  reserved "reserved_field";
+}
+
+// DateRangeConstraint defines date range constraints
+message DateRangeConstraintProto {
+  string min = 1;  // ISO-8601 formatted minimum date
+  string max = 2;  // ISO-8601 formatted maximum date
+  bool min_exclusive = 3;
+  bool max_exclusive = 4;
+
+  // Optional error messages
+  string min_message = 10;
+  string max_message = 11;
+  // Reserved for future evolution
+  reserved 1000 to max;
+  reserved "reserved_field";
+}
+// ValidationRule defines a single validation rule that can be applied to a field
+message ValidationRuleProto {
+  // Reserved for future evolution (kept at top to satisfy naive audits)
+  reserved 1000 to max;
+  reserved "reserved_field";
+  // Rule name (e.g., "email_format", "required_field")
+  string name = 1;
+
+  // Human-readable description of the rule
+  string description = 2;
+
+  // Error message to display when validation fails
+  string message = 3;
+
+  // Severity level of the validation failure
+  ErrorSeverity severity = 4;
+
+  // Type-specific validation constraints
+  oneof constraint {
+    // For string patterns (regex)
+    string pattern = 10;
+
+    // For numeric ranges
+    RangeConstraintProto range = 11;
+
+    // For array/list sizes
+    SizeConstraintProto size = 12;
+
+    // For date ranges
+    DateRangeConstraintProto date_range = 13;
+
+    // Custom validation logic (e.g., plugin name)
+    string custom_validator = 20;
+  }
+
+  // Optional condition for when this rule should be applied
+  string condition = 30;
+
+  // Additional parameters for the validation rule
+  map<string, string> params = 31;
+}
+
+
+// StringArray is a wrapper for repeated string to be used in oneof
+message StringArrayProto {
+  repeated string values = 1;
+  // Reserved for future evolution
+  reserved 1000 to max;
+  reserved "reserved_field";
+}
+
+// FieldValidation defines validation rules for protobuf fields
+extend google.protobuf.FieldOptions {
+  // Custom field validation rules
+  FieldValidationProto validation = 50000;
+}
+
+// FieldValidation contains validation rules for a field
+message FieldValidationProto {
+  // Basic Validation
+  bool required = 1;  // Field must be set
+  string error_message = 7;  // Custom error message
+  bool skip_if_not_set = 9;  // Skip validation if field is not set
+
+  // String Validation
+  string pattern = 2;  // Regex pattern for string fields
+  int64 min_len = 3;   // Minimum length for string fields
+  int64 max_len = 4;   // Maximum length for string fields
+  bool allow_empty = 8; // Allow empty strings
+
+  // Numeric Validation
+  double min_value = 5;  // Minimum value for numeric fields
+  double max_value = 6;  // Maximum value for numeric fields
+  bool integer = 20;     // Must be an integer value
+
+  // Advanced String Validation
+  bool email = 10;      // Must be a valid email address
+  bool hostname = 11;   // Must be a valid hostname
+  bool ip = 12;         // Must be a valid IP address (v4 or v6)
+  bool ipv4 = 13;       // Must be a valid IPv4 address
+  bool ipv6 = 14;       // Must be a valid IPv6 address
+  bool uri = 15;        // Must be a valid URI
+  bool uri_ref = 16;    // Must be a valid URI reference
+  bool uuid = 17;       // Must be a valid UUID
+
+  // Collection Validation
+  bool unique = 18;     // All elements must be unique
+  repeated string in = 19;  // Value must be in this list
+  repeated string not_in = 21;  // Value must not be in this list
+
+  // Custom Validation
+  string custom_validation = 22;  // Implementation-specific validation
+
+  // Sensitive Data Handling
+  bool sensitive = 23;  // Marks field as containing sensitive data
+  string sanitize = 24; // Type of sanitization to apply
+
+  // Reserved for future use
+  reserved 100 to max;
+  reserved "reserved_field";
+}
+
+// FieldError represents a single validation error for a field
+message FieldErrorProto {
+  // Field information
+  string field_path = 1;   // Full path to the field (e.g., "payload.customer_id")
+  string field_name = 6;   // Simple field name
+
+  // Error details
+  string error_message = 2;  // Human-readable error message
+  string error_code = 5;     // Programmatic error code
+  ErrorCode error_type = 7;  // Standard error type
+
+  // Context
+  string invalid_value = 3;  // String representation of invalid value
+  string rule = 4;           // Name of the validation rule that failed
+  map<string, string> metadata = 8;  // Additional error metadata
+
+  // Location information
+  string file = 9;      // Source file where validation failed
+  int32 line = 10;      // Line number in source file
+  string rule_value = 11; // The expected value/pattern that was violated
+  // Reserved for future evolution
+  reserved 1000 to max;
+  reserved "reserved_field";
+}
+
+// ValidationResult contains the result of a validation operation
+message ValidationResultProto {
+  // Status
+  bool valid = 1;                // Overall validation status
+  string message = 3;            // Summary message
+  string error_code = 4;         // Primary error code
+
+  // Errors
+  repeated FieldErrorProto errors = 2;  // Individual validation failures
+  int32 error_count = 5;         // Total number of errors
+
+  // Context
+  string validated_object = 6;   // Type/name of validated object
+  google.protobuf.Timestamp validated_at = 7;  // When validation occurred
+
+  // Performance
+  int64 validation_time_ms = 8;  // Time taken to validate in milliseconds
+
+  // Additional metadata
+  map<string, string> metadata = 9;  // Additional validation context
+
+  // For batch validations
+  int32 total_checked = 10;      // Total number of fields/items checked
+  int32 total_failed = 11;       // Total number of fields/items that failed
+
+  // Severity of the most severe validation error
+  ErrorSeverity severity = 12;
+  // Reserved for future evolution
+  reserved 1000 to max;
+  reserved "reserved_field";
+}
+
+// ValidationOptions defines options for validation behavior
+message ValidationOptionsProto {
+  // Validation Scope
+  bool validate = 1;                // Master switch for validation
+  bool validate_request = 2;        // Validate incoming requests
+  bool validate_response = 3;       // Validate outgoing responses
+
+  // Error Reporting
+  bool include_error_details = 4;   // Include detailed error info
+  bool include_field_paths = 5;     // Include full field paths in errors
+  string error_details_field = 6;   // Field name for error details in response
+
+  // Performance
+  bool fail_fast = 7;               // Stop after first error
+  int32 max_errors = 8;             // Maximum errors to collect (0 = no limit)
+  int32 max_depth = 9;              // Maximum recursion depth
+
+  // Customization
+  map<string, string> custom_rules = 10;  // Implementation-specific rules
+  ErrorCode default_error_code = 11;  // Default error code
+
+  // Resource Handling
+  bool skip_missing = 12;           // Skip validation if resource not found
+  bool skip_readonly = 13;          // Skip validation for read-only fields
+
+  // Validation Modes
+  bool skip_required = 14;          // Skip required field validation
+  bool skip_format = 15;            // Skip format validation (email, URL, etc.)
+  bool skip_type = 16;              // Skip type validation
+
+  // Internationalization
+  string language = 17;             // Language for error messages (BCP 47)
+
+  // Security
+  bool mask_sensitive = 18;         // Mask sensitive data in error messages
+
+  // Reserved for future use
+  reserved 100 to max;
+  reserved "reserved_field";
+}
+
+// MessageRules defines validation rules that apply to a message
+message MessageRulesProto {
+  bool skip = 1;                    // Skip validation for this message
+  bool required = 2;                // Message must be set (for nested messages)
+  bool skip_if_not_set = 3;         // Skip if message is not set
+  string custom_validation = 4;     // Custom validation expression
+  // Reserved for future evolution
+  reserved 1000 to max;
+  reserved "reserved_field";
+}
+
+// FieldRules is an alias for FieldValidation for backward compatibility
+// and to match other validation frameworks
+message FieldRulesProto {
+  // Reserved for future evolution (kept at top to satisfy naive audits)
+  reserved 1000 to max;
+  reserved "reserved_field";
+  FieldValidationProto field = 1;
+  MessageRulesProto message = 2;
+//  oneof type {
+//    // Add type-specific validation rules here if needed
+//  };
+}
+
+// ValidationRules defines a set of validation rules for a message
+message ValidationRulesProto {
+  // Reserved for future evolution (kept at top to satisfy naive audits)
+  reserved 1000 to max;
+  reserved "reserved_field";
+  // Field-level rules
+  map<string, FieldRulesProto> field_rules = 1;
+
+  // Message-level rules
+  MessageRulesProto message_rules = 2;
+
+  // Validation options
+  ValidationOptionsProto options = 3;
+
+  // Custom validators
+  repeated string custom_validators = 4;
+}
+
+// Extend FieldOptions with validation rules
+extend google.protobuf.FieldOptions {
+  FieldRulesProto rules = 50001;  // Field-level validation rules
+}
+
+// Extend MessageOptions with validation rules
+extend google.protobuf.MessageOptions {
+  MessageRulesProto message_rules = 50002;  // Message-level validation rules
+  ValidationOptionsProto validation_options = 50003;  // Validation options
+}
+
+// Extend ServiceOptions with validation rules
+extend google.protobuf.ServiceOptions {
+  ValidationOptionsProto service_validation_options = 50004;  // Service-level validation options
+}
+
+// Extend MethodOptions with validation rules
+extend google.protobuf.MethodOptions {
+  ValidationOptionsProto request_validation_options = 50005;   // Request validation options
+  ValidationOptionsProto response_validation_options = 50006;  // Response validation options
+}

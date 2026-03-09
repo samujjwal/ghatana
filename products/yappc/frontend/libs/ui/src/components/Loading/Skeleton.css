@@ -1,0 +1,223 @@
+/**
+ * Skeleton Component Styles
+ * 
+ * CSS for skeleton loading placeholders
+ */
+
+/* ============================================================================
+   Base Skeleton
+   ========================================================================== */
+
+.skeleton {
+  display: block;
+  background-color: #e5e7eb;
+  border-radius: 4px;
+}
+
+/* Variant styles */
+.skeleton--text {
+  height: 1em;
+  margin-bottom: 0.5rem;
+  transform-origin: 0 55%;
+  transform: scale(1, 0.6);
+  border-radius: 4px;
+}
+
+.skeleton--text:last-child {
+  margin-bottom: 0;
+}
+
+.skeleton--circular {
+  border-radius: 50%;
+}
+
+.skeleton--rectangular {
+  border-radius: 0;
+}
+
+.skeleton--rounded {
+  border-radius: 8px;
+}
+
+/* ============================================================================
+   Animations
+   ========================================================================== */
+
+.skeleton--animation-pulse {
+  animation: skeleton-pulse 1.5s ease-in-out infinite;
+}
+
+.skeleton--animation-wave {
+  position: relative;
+  overflow: hidden;
+}
+
+.skeleton--animation-wave::after {
+  content: '';
+  position: absolute;
+  top: 0;
+  right: 0;
+  bottom: 0;
+  left: 0;
+  transform: translateX(-100%);
+  background: linear-gradient(
+    90deg,
+    rgba(255, 255, 255, 0) 0%,
+    rgba(255, 255, 255, 0.2) 20%,
+    rgba(255, 255, 255, 0.5) 60%,
+    rgba(255, 255, 255, 0) 100%
+  );
+  animation: skeleton-wave 1.5s ease-in-out infinite;
+}
+
+@keyframes skeleton-pulse {
+  0%,
+  100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.4;
+  }
+}
+
+@keyframes skeleton-wave {
+  0% {
+    transform: translateX(-100%);
+  }
+  50%,
+  100% {
+    transform: translateX(100%);
+  }
+}
+
+/* ============================================================================
+   Skeleton Card
+   ========================================================================== */
+
+.skeleton-card {
+  display: flex;
+  gap: 1rem;
+  padding: 1rem;
+  border: 1px solid #e5e7eb;
+  border-radius: 8px;
+  background-color: #ffffff;
+}
+
+.skeleton-card__content {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+/* ============================================================================
+   Skeleton Table
+   ========================================================================== */
+
+.skeleton-table {
+  width: 100%;
+  border: 1px solid #e5e7eb;
+  border-radius: 8px;
+  overflow: hidden;
+  background-color: #ffffff;
+}
+
+.skeleton-table__header {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(0, 1fr));
+  gap: 1rem;
+  padding: 1rem;
+  background-color: #f9fafb;
+  border-bottom: 1px solid #e5e7eb;
+}
+
+.skeleton-table__body {
+  display: flex;
+  flex-direction: column;
+}
+
+.skeleton-table__row {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(0, 1fr));
+  gap: 1rem;
+  padding: 1rem;
+  border-bottom: 1px solid #e5e7eb;
+}
+
+.skeleton-table__row:last-child {
+  border-bottom: none;
+}
+
+/* ============================================================================
+   Skeleton List
+   ========================================================================== */
+
+.skeleton-list {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+.skeleton-list__item {
+  display: flex;
+  gap: 0.75rem;
+  align-items: center;
+  padding: 0.75rem;
+  border: 1px solid #e5e7eb;
+  border-radius: 8px;
+  background-color: #ffffff;
+}
+
+.skeleton-list__content {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+/* ============================================================================
+   Dark Mode
+   ========================================================================== */
+
+@media (prefers-color-scheme: dark) {
+  .skeleton {
+    background-color: #374151;
+  }
+
+  .skeleton--animation-wave::after {
+    background: linear-gradient(
+      90deg,
+      rgba(255, 255, 255, 0) 0%,
+      rgba(255, 255, 255, 0.05) 20%,
+      rgba(255, 255, 255, 0.1) 60%,
+      rgba(255, 255, 255, 0) 100%
+    );
+  }
+
+  .skeleton-card,
+  .skeleton-table,
+  .skeleton-list__item {
+    background-color: #1f2937;
+    border-color: #374151;
+  }
+
+  .skeleton-table__header {
+    background-color: #111827;
+    border-color: #374151;
+  }
+
+  .skeleton-table__row {
+    border-color: #374151;
+  }
+}
+
+/* ============================================================================
+   Reduced Motion
+   ========================================================================== */
+
+@media (prefers-reduced-motion: reduce) {
+  .skeleton--animation-pulse,
+  .skeleton--animation-wave::after {
+    animation-duration: 3s;
+  }
+}

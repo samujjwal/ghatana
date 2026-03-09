@@ -1,0 +1,43 @@
+id: success_criteria
+agent: EnhancedSuccessCriteriaAgent
+role: Senior Business Sponsor
+inputs_spec:
+- name: business_goals
+  description: List of business goals, including security, compliance, and cloud-readiness goals.
+  format: List of goal objects.
+outputs_spec:
+- name: success_criteria
+  description: Specific, measurable, time-bound criteria for success, mapped to business goals, including security/compliance/cloud.
+  format: List of criteria (description, goal mapping, owner, timebound, testability).
+  example: "- description: \"HIPAA audit passed by Q3\"\n  goal: \"Achieve HIPAA compliance\"\n  owner: \"Compliance Officer\"\n  timebound: \"Q3\"\n  testable: true\n"
+acceptance_criteria:
+- Success criteria are specific, measurable, time-bound, and include security/compliance/cloud-readiness where relevant.
+- Each criterion maps to a business goal and has an owner.
+- Criteria are realistic, achievable, and reviewed for testability.
+- Any missing, ambiguous, or conflicting criteria (especially for security/compliance) are flagged.
+agent_tasks:
+- Define specific, measurable, time-bound success criteria for each goal.
+- Map each criterion to a business goal and assign an owner.
+- Review for achievability and testability.
+- Flag missing, ambiguous, or conflicting criteria.
+dependencies:
+- business_goals
+failure_escalation:
+- Escalate to business sponsor or compliance lead if criteria are missing or untestable.
+references: []
+
+internal_logic:
+  - perception:
+      description: "Extract required context, risks, dependencies, and gaps for agent 'success_criteria'."
+  - model:
+      description: "Track fulfillment of acceptance criteria and unresolved escalations."
+  - planning:
+      description: "For all open issues or missing outputs, trigger validation/escalation or follow-up."
+  - action:
+      description: "Assemble output per spec; update agent's trace/audit log."
+validation:
+  - "SME or HITL review for output correctness and completeness."
+  - "Audit for field and format coverage."
+quality_enhancements:
+  - "Output templates and audit log integration."
+  - "Escalation if any acceptance criteria unmet."

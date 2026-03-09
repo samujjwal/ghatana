@@ -1,0 +1,23 @@
+import type { ReactNode } from "react";
+
+interface LayoutProps {
+children: ReactNode;
+}
+
+export function Layout({ children }: LayoutProps) {
+return (
+<div style={{ maxWidth: "800px" , margin: "0 auto" , padding: "20px" }}>
+    <header style={{ marginBottom: "20px" , borderBottom: "1px solid #eee" , paddingBottom: "10px" }}>
+        <nav>
+            <a href="/" style={{ textDecoration: "none" , color: "#333" }}>
+                {{projectName}}
+            </a>
+        </nav>
+    </header>
+    <main>{children}</main>
+    <footer style={{ marginTop: "40px" , borderTop: "1px solid #eee" , paddingTop: "10px" , color: "#666" }}>
+        <p>&copy; {new Date().getFullYear()} {{projectName}}</p>
+    </footer>
+</div>
+);
+}

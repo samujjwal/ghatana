@@ -1,0 +1,25 @@
+{
+    "id": "rust-cli",
+    "name": "Rust CLI Application",
+    "description": "Rust command-line application with clap",
+    "version": "1.0.0",
+    "type": "application",
+    "language": "rust",
+    "buildSystem": "cargo",
+    "requiredVariables": [
+        "projectName",
+        "rustEdition"
+    ],
+    "optionalVariables": [
+        "description",
+        "author"
+    ],
+    "defaults": {
+        "rustEdition": "2021"
+    },
+    "features": [],
+    "dependencies": {
+        "clap": "4.4",
+        "anyhow": "1.0"
+    }
+}

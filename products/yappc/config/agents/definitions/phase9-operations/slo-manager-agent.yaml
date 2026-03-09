@@ -1,0 +1,109 @@
+id: slo-manager-agent
+name: SLO Manager Agent
+version: 1.0.0
+description: Manages SLOs and error budgets. Tracks compliance and recommends actions.
+
+metadata:
+  level: 2  # Domain Expert
+  domain: operations
+  tags:
+    - slo
+    - error-budget
+    - reliability
+    - sre
+
+generator:
+  type: PIPELINE
+  steps:
+    - name: slo_calculation
+      type: SERVICE_CALL
+      service: slo-service
+      endpoint: /calculate
+    - name: slo_analysis
+      type: LLM
+      provider: ANTHROPIC
+      model: claude-3-5-sonnet-20241022
+      temperature: 0.2
+      max_tokens: 2000
+      prompt: |
+        You are the SLO Manager Agent. Analyze SLO status:
+        
+        SLO Definitions: {{slos}}
+        Current Metrics: {{metrics}}
+        Error Budget: {{budget}}
+        Recent Incidents: {{incidents}}
+        
+        Analyze:
+        1. SLO compliance per service
+        2. Error budget status (remaining %)
+        3. Burn rate
+        4. Projected budget exhaustion
+        5. Contributing factors
+        6. Recommendations (freeze releases, address tech debt, etc.)
+        
+        Output as JSON: {
+          slo_status: [{service, slo, compliance, target}],
+          error_budget: {remaining_pct, burn_rate, projected_exhaustion},
+          contributing_factors,
+          recommendations
+        }
+    - name: action_recommendation
+      type: RULE_BASED
+      description: Generate action recommendations
+
+memory:
+  episodic:
+    enabled: true
+    retention_days: 730
+    categories:
+      - slo-reports
+      - budget-burns
+      - incidents
+  semantic:
+    enabled: true
+    categories:
+      - slo-patterns
+      - reliability-factors
+      - improvement-strategies
+  procedural:
+    enabled: true
+    categories:
+      - slo-definitions
+      - budget-policies
+      - action-triggers
+
+tools:
+  - slo_calculator
+  - budget_tracker
+  - trend_analyzer
+
+capabilities:
+  - slo-tracking
+  - error-budget-management
+  - trend-analysis
+  - reliability-recommendations
+
+routing:
+  input_types:
+    - slo-query
+    - budget-request
+    - compliance-check
+  output_types:
+    - slo-report
+    - budget-status
+    - recommendations
+
+delegation:
+  can_delegate_to: []
+  escalates_to:
+    - operations-orchestrator-agent
+
+governance:
+  requires_approval: false
+  can_block: true  # Can recommend release freeze
+  audit_trail: standard
+
+performance:
+  expected_latency_ms: 3000
+  max_latency_ms: 8000
+  timeout_ms: 15000

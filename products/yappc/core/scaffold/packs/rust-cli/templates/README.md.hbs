@@ -1,0 +1,67 @@
+# {{projectName}}
+
+{{#if description}}
+{{description}}
+{{else}}
+A Rust CLI application built with clap.
+{{/if}}
+
+## Features
+
+- Command-line argument parsing with clap
+- Error handling with anyhow
+- Fast and memory-safe
+
+## Prerequisites
+
+- Rust {{rustEdition}} or higher
+- Cargo
+
+## Installation
+
+```bash
+cargo build --release
+```
+
+## Usage
+
+```bash
+cargo run -- --help
+```
+
+Or after building:
+
+```bash
+./target/release/{{kebabCase projectName}} --help
+```
+
+## Development
+
+### Build
+```bash
+cargo build
+```
+
+### Run
+```bash
+cargo run
+```
+
+### Test
+```bash
+cargo test
+```
+
+### Format
+```bash
+cargo fmt
+```
+
+### Lint
+```bash
+cargo clippy
+```
+
+## License
+
+MIT

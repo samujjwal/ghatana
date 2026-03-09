@@ -1,0 +1,141 @@
+groups:
+  - name: ghatana_service_alerts
+    interval: 30s
+    rules:
+      # Service availability
+      - alert: ServiceDown
+        expr: up == 0
+        for: 2m
+        labels:
+          severity: critical
+          category: availability
+        annotations:
+          summary: "Service {{ $labels.job }} is down"
+          description: "{{ $labels.instance }} has been down for 2 minutes"
+          runbook: "Check service logs and restart if needed"
+
+      # High error rate
+      - alert: HighErrorRate
+        expr: |
+          (
+            rate(http_requests_total{status_code=~"5.."}[5m])
+            / rate(http_requests_total[5m])
+          ) > 0.05
+        for: 5m
+        labels:
+          severity: critical
+          category: errors
+        annotations:
+          summary: "High error rate on {{ $labels.service }}"
+          description: "Error rate is {{ $value | humanizePercentage }} (threshold 5%)"
+          runbook: "Check application logs for errors"
+
+      # High latency
+      - alert: HighLatency
+        expr: |
+          histogram_quantile(0.95, 
+            rate(http_request_duration_seconds_bucket[5m])
+          ) > 1
+        for: 10m
+        labels:
+          severity: warning
+          category: performance
+        annotations:
+          summary: "High P95 latency on {{ $labels.service }}"
+          description: "P95 latency is {{ $value }}s (threshold 1s)"
+          runbook: "Review slow queries and optimize bottlenecks"
+
+  - name: ghatana_jvm_alerts
+    interval: 30s
+    rules:
+      # High JVM memory usage
+      - alert: HighJVMMemory
+        expr: |
+          (
+            jvm_memory_used_bytes{area="heap"} 
+            / jvm_memory_max_bytes{area="heap"}
+          ) > 0.9
+        for: 5m
+        labels:
+          severity: warning
+          category: resource
+        annotations:
+          summary: "High JVM heap usage on {{ $labels.service }}"
+          description: "Heap usage is {{ $value | humanizePercentage }}"
+          runbook: "Consider increasing heap size or investigate memory leaks"
+
+      # High GC time
+      - alert: HighGCTime
+        expr: |
+          rate(jvm_gc_pause_seconds_sum[5m]) > 0.1
+        for: 5m
+        labels:
+          severity: warning
+          category: resource
+        annotations:
+          summary: "High GC time on {{ $labels.service }}"
+          description: "GC is consuming {{ $value | humanizePercentage }} of CPU time"
+          runbook: "Tune GC settings or reduce heap pressure"
+
+  - name: ghatana_activej_alerts
+    interval: 30s
+    rules:
+      # ActiveJ event loop lag
+      - alert: EventLoopLag
+        expr: activej_eventloop_lag_seconds > 0.1
+        for: 5m
+        labels:
+          severity: warning
+          category: performance
+        annotations:
+          summary: "Event loop lag on {{ $labels.service }}"
+          description: "Event loop is lagging {{ $value }}s behind"
+          runbook: "Identify blocking operations in event loop"
+
+      # ActiveJ task queue saturation
+      - alert: TaskQueueSaturation
+        expr: |
+          activej_eventloop_tasks_queued 
+          / activej_eventloop_tasks_capacity > 0.8
+        for: 5m
+        labels:
+          severity: warning
+          category: performance
+        annotations:
+          summary: "Task queue saturation on {{ $labels.service }}"
+          description: "Task queue is {{ $value | humanizePercentage }} full"
+          runbook: "Scale service or optimize task processing"
+
+  - name: ghatana_database_alerts
+    interval: 30s
+    rules:
+      # High connection pool usage
+      - alert: HighConnectionPoolUsage
+        expr: |
+          (
+            hikaricp_connections_active
+            / hikaricp_connections_max
+          ) > 0.8
+        for: 5m
+        labels:
+          severity: warning
+          category: resource
+        annotations:
+          summary: "High connection pool usage on {{ $labels.pool }}"
+          description: "Pool usage is {{ $value | humanizePercentage }}"
+          runbook: "Increase pool size or optimize query patterns"
+
+      # Slow queries
+      - alert: SlowQueries
+        expr: |
+          histogram_quantile(0.95,
+            rate(jdbc_query_duration_seconds_bucket[5m])
+          ) > 1
+        for: 10m
+        labels:
+          severity: warning
+          category: performance
+        annotations:
+          summary: "Slow database queries detected"
+          description: "P95 query time is {{ $value }}s"
+          runbook: "Review slow query log and add indexes"

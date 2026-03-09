@@ -1,0 +1,1353 @@
+[
+  {
+    "id": "1.1",
+    "title": "V",
+    "description": "As a diagram editor I need smooth pan/zoom so I can traverse large canvases effortlessly.",
+    "section": "1",
+    "status": "complete",
+    "priority": "low",
+    "estimatedHours": 0,
+    "dependencies": [],
+    "acceptanceCriteria": [
+      "Smooth zooming",
+      "Fit view",
+      "State persistence"
+    ],
+    "tests": {},
+    "deliverables": []
+  },
+  {
+    "id": "1.2",
+    "title": "E",
+    "description": "As a designer I want reliable selection, drag, resize, rotate, and z-ordering to model systems precisely.",
+    "section": "1",
+    "status": "complete",
+    "priority": "low",
+    "estimatedHours": 0,
+    "dependencies": [],
+    "acceptanceCriteria": [
+      "Multi-select drag",
+      "Rotation snap",
+      "Layer updates"
+    ],
+    "tests": {},
+    "deliverables": []
+  },
+  {
+    "id": "1.3",
+    "title": "D",
+    "description": "As an author I need shapes, connectors, text, freehand, and image import to represent any component.",
+    "section": "1",
+    "status": "blocked",
+    "priority": "high",
+    "estimatedHours": 14,
+    "dependencies": [],
+    "acceptanceCriteria": [
+      "Smart connectors",
+      "Rich text",
+      "Image import"
+    ],
+    "tests": {},
+    "deliverables": []
+  },
+  {
+    "id": "1.5",
+    "title": "R",
+    "description": "As a collaborator I need live co-editing with presence signals.",
+    "section": "1",
+    "status": "not-started",
+    "priority": "high",
+    "estimatedHours": 14,
+    "dependencies": [],
+    "acceptanceCriteria": [
+      "Presence broadcast",
+      "Conflict merge",
+      "Awareness throttling"
+    ],
+    "tests": {},
+    "deliverables": []
+  },
+  {
+    "id": "1.6",
+    "title": "C",
+    "description": "As a reviewer I need threaded comments with mentions.",
+    "section": "1",
+    "status": "blocked",
+    "priority": "high",
+    "estimatedHours": 14,
+    "dependencies": [],
+    "acceptanceCriteria": [
+      "Thread attach",
+      "Mentions",
+      "Resolve flow"
+    ],
+    "tests": {},
+    "deliverables": []
+  },
+  {
+    "id": "1.7",
+    "title": "S",
+    "description": "As an admin I need granular share controls to secure diagrams.",
+    "section": "1",
+    "status": "not-started",
+    "priority": "high",
+    "estimatedHours": 14,
+    "dependencies": [],
+    "acceptanceCriteria": [
+      "Role enforcement",
+      "Expiring links",
+      "Audit trail"
+    ],
+    "tests": {},
+    "deliverables": []
+  },
+  {
+    "id": "1.8",
+    "title": "E",
+    "description": "As an architect I need exports (PNG/SVG/PDF/React) for downstream tooling.",
+    "section": "1",
+    "status": "not-started",
+    "priority": "high",
+    "estimatedHours": 8,
+    "dependencies": [],
+    "acceptanceCriteria": [],
+    "tests": {},
+    "deliverables": []
+  },
+  {
+    "id": "1.9",
+    "title": "S",
+    "description": "As security I require sanitization, RBAC, and audit logging.",
+    "section": "1",
+    "status": "blocked",
+    "priority": "high",
+    "estimatedHours": 14,
+    "dependencies": [],
+    "acceptanceCriteria": [
+      "Sanitization",
+      "RBAC",
+      "Audit"
+    ],
+    "tests": {},
+    "deliverables": []
+  },
+  {
+    "id": "1.10",
+    "title": "R",
+    "description": "As a performance engineer I need virtualization to keep FPS ≥60.",
+    "section": "1",
+    "status": "complete",
+    "priority": "low",
+    "estimatedHours": 0,
+    "dependencies": [],
+    "acceptanceCriteria": [
+      "Virtual viewport",
+      "LOD",
+      "WebGL toggle"
+    ],
+    "tests": {},
+    "deliverables": [
+      "virtualViewport.ts",
+      "lodSystem.ts",
+      "webglRenderer.ts",
+      "virtualization.test.ts",
+      "webglRenderer.test.ts"
+    ]
+  },
+  {
+    "id": "1.11",
+    "title": "S",
+    "description": "As a developer I want batched updates and worker offload.",
+    "section": "1",
+    "status": "complete",
+    "priority": "low",
+    "estimatedHours": 0,
+    "dependencies": [],
+    "acceptanceCriteria": [
+      "Batching",
+      "Debounced autosave",
+      "Worker layout"
+    ],
+    "tests": {},
+    "deliverables": []
+  },
+  {
+    "id": "1.12",
+    "title": "K",
+    "description": "As an accessibility tester I need full keyboard parity.",
+    "section": "1",
+    "status": "complete",
+    "priority": "low",
+    "estimatedHours": 0,
+    "dependencies": [],
+    "acceptanceCriteria": [
+      "Focus order",
+      "Shortcut coverage",
+      "Screen reader"
+    ],
+    "tests": {},
+    "deliverables": []
+  },
+  {
+    "id": "1.13",
+    "title": "A",
+    "description": "As an accessibility engineer I need ARIA roles and reduced-motion compliance.",
+    "section": "1",
+    "status": "complete",
+    "priority": "low",
+    "estimatedHours": 0,
+    "dependencies": [],
+    "acceptanceCriteria": [
+      "Graph semantics",
+      "Reduced motion",
+      "Zoom resiliency"
+    ],
+    "tests": {},
+    "deliverables": []
+  },
+  {
+    "id": "1.14",
+    "title": "V",
+    "description": "As a brand owner I need theme switching and custom plugins.",
+    "section": "1",
+    "status": "complete",
+    "priority": "low",
+    "estimatedHours": 0,
+    "dependencies": [],
+    "acceptanceCriteria": [
+      "Theme switch",
+      "Custom theme",
+      "Plugin hooks"
+    ],
+    "tests": {},
+    "deliverables": []
+  },
+  {
+    "id": "1.15",
+    "title": "C",
+    "description": "As an embedder I need a composable `CanvasFlow` API.",
+    "section": "1",
+    "status": "complete",
+    "priority": "low",
+    "estimatedHours": 0,
+    "dependencies": [],
+    "acceptanceCriteria": [
+      "Controlled mode",
+      "Normalized callbacks",
+      "Type safety"
+    ],
+    "tests": {},
+    "deliverables": []
+  },
+  {
+    "id": "1.16",
+    "title": "D",
+    "description": "As a platform engineer I need REST/GraphQL/WebSocket sync and offline.",
+    "section": "1",
+    "status": "complete",
+    "priority": "low",
+    "estimatedHours": 0,
+    "dependencies": [],
+    "acceptanceCriteria": [
+      "REST sync",
+      "WebSocket",
+      "Offline cache"
+    ],
+    "tests": {},
+    "deliverables": []
+  },
+  {
+    "id": "1.17",
+    "title": "D",
+    "description": "As a maintainer I need devtools, tests, and CI.",
+    "section": "1",
+    "status": "complete",
+    "priority": "low",
+    "estimatedHours": 0,
+    "dependencies": [],
+    "acceptanceCriteria": [
+      "Dev inspector",
+      "Test gates",
+      "Bundle audit"
+    ],
+    "tests": {},
+    "deliverables": []
+  },
+  {
+    "id": "2.1",
+    "title": "E",
+    "description": "As an analyst I need orthogonal/spline routing with waypoints.",
+    "section": "2",
+    "status": "complete",
+    "priority": "low",
+    "estimatedHours": 0,
+    "dependencies": [],
+    "acceptanceCriteria": [],
+    "tests": {},
+    "deliverables": [
+      "routeEdge()"
+    ]
+  },
+  {
+    "id": "2.2",
+    "title": "A",
+    "description": "As an architect I need presets (dagre, force, grid).",
+    "section": "2",
+    "status": "complete",
+    "priority": "low",
+    "estimatedHours": 0,
+    "dependencies": [],
+    "acceptanceCriteria": [],
+    "tests": {},
+    "deliverables": [
+      "applyLayout()",
+      "getLayoutPreset()"
+    ]
+  },
+  {
+    "id": "2.3",
+    "title": "S",
+    "description": "As a designer I need UML/BPMN/Cloud packs with search.",
+    "section": "2",
+    "status": "blocked",
+    "priority": "high",
+    "estimatedHours": 14,
+    "dependencies": [],
+    "acceptanceCriteria": [
+      "Palette search",
+      "Pack versioning",
+      "Template spawn"
+    ],
+    "tests": {},
+    "deliverables": []
+  },
+  {
+    "id": "2.4",
+    "title": "G",
+    "description": "As an editor I want configurable grids, guides, and smart alignment.",
+    "section": "2",
+    "status": "complete",
+    "priority": "low",
+    "estimatedHours": 0,
+    "dependencies": [],
+    "acceptanceCriteria": [
+      "Grid spacing",
+      "Snap tolerance",
+      "Distribution controls",
+      "Smart guides",
+      "Spacing visualization",
+      "Grid hierarchy"
+    ],
+    "tests": {},
+    "deliverables": []
+  },
+  {
+    "id": "2.5",
+    "title": "I",
+    "description": "As a strategist I want unbounded pan/zoom.",
+    "section": "2",
+    "status": "complete",
+    "priority": "low",
+    "estimatedHours": 0,
+    "dependencies": [],
+    "acceptanceCriteria": [
+      "Origin shift",
+      "Tiled background",
+      "Performance"
+    ],
+    "tests": {},
+    "deliverables": []
+  },
+  {
+    "id": "2.6",
+    "title": "L",
+    "description": "As a PM I want layers, tags, saved viewpoints.",
+    "section": "2",
+    "status": "complete",
+    "priority": "low",
+    "estimatedHours": 0,
+    "dependencies": [],
+    "acceptanceCriteria": [],
+    "tests": {},
+    "deliverables": [
+      "createLayerStore()"
+    ]
+  },
+  {
+    "id": "2.7",
+    "title": "S",
+    "description": "As a stakeholder I want detail revealed on zoom and click-through.",
+    "section": "2",
+    "status": "complete",
+    "priority": "low",
+    "estimatedHours": 0,
+    "dependencies": [],
+    "acceptanceCriteria": [],
+    "tests": {},
+    "deliverables": [
+      "createSemanticZoomConfig()"
+    ]
+  },
+  {
+    "id": "2.8",
+    "title": "G",
+    "description": "As a facilitator I need containers, swimlanes, sticky notes.",
+    "section": "2",
+    "status": "complete",
+    "priority": "low",
+    "estimatedHours": 0,
+    "dependencies": [],
+    "acceptanceCriteria": [],
+    "tests": {},
+    "deliverables": [
+      "createConstraintEngine()"
+    ]
+  },
+  {
+    "id": "2.9",
+    "title": "M",
+    "description": "As a navigator I need minimap + zoom shortcuts.",
+    "section": "2",
+    "status": "complete",
+    "priority": "low",
+    "estimatedHours": 0,
+    "dependencies": [],
+    "acceptanceCriteria": [],
+    "tests": {},
+    "deliverables": []
+  },
+  {
+    "id": "2.10",
+    "title": "M",
+    "description": "As a documenter I want multiple pages and node deep links.",
+    "section": "2",
+    "status": "complete",
+    "priority": "low",
+    "estimatedHours": 0,
+    "dependencies": [],
+    "acceptanceCriteria": [],
+    "tests": {},
+    "deliverables": [
+      "pageManager.ts"
+    ]
+  },
+  {
+    "id": "2.11",
+    "title": "U",
+    "description": "As an author I want timeline and checkpoints.",
+    "section": "2",
+    "status": "complete",
+    "priority": "low",
+    "estimatedHours": 0,
+    "dependencies": [],
+    "acceptanceCriteria": [],
+    "tests": {},
+    "deliverables": [
+      "checkpointManager.ts"
+    ]
+  },
+  {
+    "id": "2.12",
+    "title": "T",
+    "description": "As a lead I need reusable template gallery.",
+    "section": "2",
+    "status": "complete",
+    "priority": "low",
+    "estimatedHours": 0,
+    "dependencies": [],
+    "acceptanceCriteria": [],
+    "tests": {},
+    "deliverables": [
+      "templateManager.ts"
+    ]
+  },
+  {
+    "id": "2.13",
+    "title": "I",
+    "description": "As an integrator I need robust adapters.",
+    "section": "2",
+    "status": "complete",
+    "priority": "low",
+    "estimatedHours": 0,
+    "dependencies": [],
+    "acceptanceCriteria": [],
+    "tests": {},
+    "deliverables": [
+      "formatAdapters.ts"
+    ]
+  },
+  {
+    "id": "2.14",
+    "title": "D",
+    "description": "As a DevOps engineer I need text-based sync.",
+    "section": "2",
+    "status": "complete",
+    "priority": "low",
+    "estimatedHours": 0,
+    "dependencies": [],
+    "acceptanceCriteria": [],
+    "tests": {},
+    "deliverables": [
+      "dslSync.ts"
+    ]
+  },
+  {
+    "id": "2.15",
+    "title": "S",
+    "description": "As a reviewer I want deterministic IDs and semantic diffs.",
+    "section": "2",
+    "status": "complete",
+    "priority": "low",
+    "estimatedHours": 0,
+    "dependencies": [],
+    "acceptanceCriteria": [],
+    "tests": {},
+    "deliverables": [
+      "idStrategy.ts",
+      "semanticDiff.ts"
+    ]
+  },
+  {
+    "id": "2.16",
+    "title": "L",
+    "description": "As an enterprise user I need chunked loading.",
+    "section": "2",
+    "status": "complete",
+    "priority": "low",
+    "estimatedHours": 0,
+    "dependencies": [],
+    "acceptanceCriteria": [],
+    "tests": {},
+    "deliverables": [
+      "createChunkStore()"
+    ]
+  },
+  {
+    "id": "2.17",
+    "title": "R",
+    "description": "As an admin I need per-layer/page ACLs.",
+    "section": "2",
+    "status": "blocked",
+    "priority": "high",
+    "estimatedHours": 14,
+    "dependencies": [],
+    "acceptanceCriteria": [
+      "Layer ACL",
+      "Audit",
+      "Share respect"
+    ],
+    "tests": {},
+    "deliverables": []
+  },
+  {
+    "id": "2.18",
+    "title": "P",
+    "description": "As a presenter I need frame sequencing and notes.",
+    "section": "2",
+    "status": "complete",
+    "priority": "low",
+    "estimatedHours": 0,
+    "dependencies": [],
+    "acceptanceCriteria": [],
+    "tests": {},
+    "deliverables": [
+      "frameStore.ts"
+    ]
+  },
+  {
+    "id": "2.19",
+    "title": "R",
+    "description": "As engineering I want checklists and spec bundles.",
+    "section": "2",
+    "status": "complete",
+    "priority": "low",
+    "estimatedHours": 0,
+    "dependencies": [],
+    "acceptanceCriteria": [],
+    "tests": {},
+    "deliverables": [
+      "checklistStore.ts"
+    ]
+  },
+  {
+    "id": "2.20",
+    "title": "T",
+    "description": "As security I want STRIDE/LINDDUN automation.",
+    "section": "2",
+    "status": "complete",
+    "priority": "low",
+    "estimatedHours": 0,
+    "dependencies": [],
+    "acceptanceCriteria": [],
+    "tests": {},
+    "deliverables": [
+      "threatEngine.ts"
+    ]
+  },
+  {
+    "id": "2.21",
+    "title": "C",
+    "description": "As an architect I want Structurizr sync.",
+    "section": "2",
+    "status": "complete",
+    "priority": "low",
+    "estimatedHours": 0,
+    "dependencies": [],
+    "acceptanceCriteria": [],
+    "tests": {},
+    "deliverables": [
+      "c4Sync.ts"
+    ]
+  },
+  {
+    "id": "2.22",
+    "title": "P",
+    "description": "As DevOps I want CI/CD DAG renders.",
+    "section": "2",
+    "status": "complete",
+    "priority": "low",
+    "estimatedHours": 0,
+    "dependencies": [],
+    "acceptanceCriteria": [],
+    "tests": {},
+    "deliverables": [
+      "pipelineParser.ts"
+    ]
+  },
+  {
+    "id": "2.23",
+    "title": "S",
+    "description": "As a security analyst I need SBOM graphs with CVEs.",
+    "section": "2",
+    "status": "complete",
+    "priority": "low",
+    "estimatedHours": 0,
+    "dependencies": [],
+    "acceptanceCriteria": [],
+    "tests": {},
+    "deliverables": [
+      "sbomParser.ts"
+    ]
+  },
+  {
+    "id": "2.24",
+    "title": "C",
+    "description": "As platform I need Terraform import and drift detection.",
+    "section": "2",
+    "status": "complete",
+    "priority": "low",
+    "estimatedHours": 0,
+    "dependencies": [],
+    "acceptanceCriteria": [],
+    "tests": {},
+    "deliverables": []
+  },
+  {
+    "id": "2.25",
+    "title": "R",
+    "description": "As SRE I want runbooks and incidents attached to nodes.",
+    "section": "2",
+    "status": "complete",
+    "priority": "low",
+    "estimatedHours": 0,
+    "dependencies": [],
+    "acceptanceCriteria": [],
+    "tests": {},
+    "deliverables": [
+      "runbookLinks.ts"
+    ]
+  },
+  {
+    "id": "2.26",
+    "title": "C",
+    "description": "As compliance I need control tagging and reports.",
+    "section": "2",
+    "status": "complete",
+    "priority": "low",
+    "estimatedHours": 0,
+    "dependencies": [],
+    "acceptanceCriteria": [],
+    "tests": {},
+    "deliverables": [
+      "complianceStore.ts"
+    ]
+  },
+  {
+    "id": "2.27",
+    "title": "R",
+    "description": "As performance I want DOM/SVG and WebGL renderers to swap.",
+    "section": "2",
+    "status": "complete",
+    "priority": "low",
+    "estimatedHours": 0,
+    "dependencies": [],
+    "acceptanceCriteria": [],
+    "tests": {},
+    "deliverables": []
+  },
+  {
+    "id": "2.28",
+    "title": "W",
+    "description": "As developer I want heavy compute in workers.",
+    "section": "2",
+    "status": "complete",
+    "priority": "low",
+    "estimatedHours": 0,
+    "dependencies": [],
+    "acceptanceCriteria": [],
+    "tests": {},
+    "deliverables": [
+      "workerManager.ts"
+    ]
+  },
+  {
+    "id": "2.29",
+    "title": "P",
+    "description": "As PM I want in-app telemetry overlays.",
+    "section": "2",
+    "status": "complete",
+    "priority": "low",
+    "estimatedHours": 0,
+    "dependencies": [],
+    "acceptanceCriteria": [],
+    "tests": {},
+    "deliverables": [
+      "telemetryDashboard.ts"
+    ]
+  },
+  {
+    "id": "2.30",
+    "title": "S",
+    "description": "As power user I want searchable command palette.",
+    "section": "2",
+    "status": "complete",
+    "priority": "low",
+    "estimatedHours": 0,
+    "dependencies": [],
+    "acceptanceCriteria": [],
+    "tests": {},
+    "deliverables": [
+      "createCommandPalette()"
+    ]
+  },
+  {
+    "id": "2.31",
+    "title": "S",
+    "description": "As accessibility reviewer I need narrated relationships.",
+    "section": "2",
+    "status": "complete",
+    "priority": "low",
+    "estimatedHours": 0,
+    "dependencies": [],
+    "acceptanceCriteria": [],
+    "tests": {},
+    "deliverables": [
+      "screenReaderEnhancements.ts"
+    ]
+  },
+  {
+    "id": "2.32",
+    "title": "C",
+    "description": "As QA I need automated WCAG contrast checks.",
+    "section": "2",
+    "status": "complete",
+    "priority": "low",
+    "estimatedHours": 0,
+    "dependencies": [],
+    "acceptanceCriteria": [],
+    "tests": {},
+    "deliverables": [
+      "contrastTester.ts"
+    ]
+  },
+  {
+    "id": "2.33",
+    "title": "P",
+    "description": "As compliance I need redaction and watermark policies.",
+    "section": "2",
+    "status": "complete",
+    "priority": "low",
+    "estimatedHours": 0,
+    "dependencies": [],
+    "acceptanceCriteria": [],
+    "tests": {},
+    "deliverables": [
+      "exportPolicy.ts"
+    ]
+  },
+  {
+    "id": "2.34",
+    "title": "A",
+    "description": "As compliance I want append-only audit with hash chain.",
+    "section": "2",
+    "status": "complete",
+    "priority": "low",
+    "estimatedHours": 0,
+    "dependencies": [],
+    "acceptanceCriteria": [],
+    "tests": {},
+    "deliverables": [
+      "auditLedger.ts"
+    ]
+  },
+  {
+    "id": "2.35",
+    "title": "E",
+    "description": "As enterprise admin I need SSO/SCIM integration.",
+    "section": "2",
+    "status": "complete",
+    "priority": "low",
+    "estimatedHours": 0,
+    "dependencies": [],
+    "acceptanceCriteria": [],
+    "tests": {},
+    "deliverables": [
+      "enterpriseRBAC.ts"
+    ]
+  },
+  {
+    "id": "3.1",
+    "title": "C",
+    "description": "As collab engineer I need Yjs documents to stay canonical.",
+    "section": "3",
+    "status": "complete",
+    "priority": "low",
+    "estimatedHours": 0,
+    "dependencies": [],
+    "acceptanceCriteria": [],
+    "tests": {},
+    "deliverables": []
+  },
+  {
+    "id": "3.2",
+    "title": "P",
+    "description": "As ops I need websocket/WebRTC providers with auth.",
+    "section": "3",
+    "status": "complete",
+    "priority": "low",
+    "estimatedHours": 0,
+    "dependencies": [],
+    "acceptanceCriteria": [],
+    "tests": {},
+    "deliverables": [
+      "providerManager.ts"
+    ]
+  },
+  {
+    "id": "3.3",
+    "title": "A",
+    "description": "As UX I want bounded awareness payloads.",
+    "section": "3",
+    "status": "complete",
+    "priority": "low",
+    "estimatedHours": 0,
+    "dependencies": [],
+    "acceptanceCriteria": [],
+    "tests": {},
+    "deliverables": []
+  },
+  {
+    "id": "3.4",
+    "title": "O",
+    "description": "As field engineer I need offline queueing and conflict resolution.",
+    "section": "3",
+    "status": "complete",
+    "priority": "low",
+    "estimatedHours": 0,
+    "dependencies": [],
+    "acceptanceCriteria": [],
+    "tests": {},
+    "deliverables": [
+      "offlineQueue.ts"
+    ]
+  },
+  {
+    "id": "3.5",
+    "title": "A",
+    "description": "As reviewer I want advisory locks on high-risk edits.",
+    "section": "3",
+    "status": "complete",
+    "priority": "low",
+    "estimatedHours": 0,
+    "dependencies": [],
+    "acceptanceCriteria": [],
+    "tests": {},
+    "deliverables": []
+  },
+  {
+    "id": "3.6",
+    "title": "C",
+    "description": "As security I need rate limiting and payload validation.",
+    "section": "3",
+    "status": "complete",
+    "priority": "low",
+    "estimatedHours": 0,
+    "dependencies": [],
+    "acceptanceCriteria": [],
+    "tests": {},
+    "deliverables": []
+  },
+  {
+    "id": "3.7",
+    "title": "C",
+    "description": "As support I need diagnostics/runbooks.",
+    "section": "3",
+    "status": "complete",
+    "priority": "low",
+    "estimatedHours": 0,
+    "dependencies": [],
+    "acceptanceCriteria": [],
+    "tests": {},
+    "deliverables": []
+  },
+  {
+    "id": "4.1",
+    "title": "E",
+    "description": "As security I need sanitized exports.",
+    "section": "4",
+    "status": "complete",
+    "priority": "low",
+    "estimatedHours": 0,
+    "dependencies": [],
+    "acceptanceCriteria": [],
+    "tests": {},
+    "deliverables": []
+  },
+  {
+    "id": "4.2",
+    "title": "S",
+    "description": "As security I need sandboxed previews for untrusted markup.",
+    "section": "4",
+    "status": "complete",
+    "priority": "low",
+    "estimatedHours": 0,
+    "dependencies": [],
+    "acceptanceCriteria": [],
+    "tests": {},
+    "deliverables": []
+  },
+  {
+    "id": "4.3",
+    "title": "A",
+    "description": "As platform I need secure asset storage.",
+    "section": "4",
+    "status": "complete",
+    "priority": "low",
+    "estimatedHours": 0,
+    "dependencies": [],
+    "acceptanceCriteria": [],
+    "tests": {},
+    "deliverables": []
+  },
+  {
+    "id": "4.4",
+    "title": "R",
+    "description": "As security I need server-side RBAC checks.",
+    "section": "4",
+    "status": "complete",
+    "priority": "low",
+    "estimatedHours": 0,
+    "dependencies": [],
+    "acceptanceCriteria": [],
+    "tests": {},
+    "deliverables": []
+  },
+  {
+    "id": "4.5",
+    "title": "D",
+    "description": "As compliance I need outbound links controlled.",
+    "section": "4",
+    "status": "complete",
+    "priority": "low",
+    "estimatedHours": 0,
+    "dependencies": [],
+    "acceptanceCriteria": [],
+    "tests": {},
+    "deliverables": []
+  },
+  {
+    "id": "4.6",
+    "title": "A",
+    "description": "As compliance I need immutable audit logs.",
+    "section": "4",
+    "status": "complete",
+    "priority": "low",
+    "estimatedHours": 0,
+    "dependencies": [],
+    "acceptanceCriteria": [],
+    "tests": {},
+    "deliverables": []
+  },
+  {
+    "id": "4.7",
+    "title": "D",
+    "description": "As security I want dependency scanning.",
+    "section": "4",
+    "status": "complete",
+    "priority": "low",
+    "estimatedHours": 0,
+    "dependencies": [],
+    "acceptanceCriteria": [],
+    "tests": {},
+    "deliverables": []
+  },
+  {
+    "id": "4.8",
+    "title": "C",
+    "description": "As auditor I need controls mapped to nodes.",
+    "section": "4",
+    "status": "complete",
+    "priority": "low",
+    "estimatedHours": 0,
+    "dependencies": [],
+    "acceptanceCriteria": [],
+    "tests": {},
+    "deliverables": []
+  },
+  {
+    "id": "5.1",
+    "title": "S",
+    "description": "As SRE I need nightly full and hourly diff snapshots.",
+    "section": "5",
+    "status": "complete",
+    "priority": "low",
+    "estimatedHours": 0,
+    "dependencies": [],
+    "acceptanceCriteria": [],
+    "tests": {},
+    "deliverables": []
+  },
+  {
+    "id": "5.2",
+    "title": "R",
+    "description": "As compliance I need retention/archival rules.",
+    "section": "5",
+    "status": "complete",
+    "priority": "low",
+    "estimatedHours": 0,
+    "dependencies": [],
+    "acceptanceCriteria": [],
+    "tests": {},
+    "deliverables": []
+  },
+  {
+    "id": "5.3",
+    "title": "R",
+    "description": "As SRE I need a safe restore flow.",
+    "section": "5",
+    "status": "complete",
+    "priority": "low",
+    "estimatedHours": 0,
+    "dependencies": [],
+    "acceptanceCriteria": [],
+    "tests": {},
+    "deliverables": [
+      "restoreRunbook.ts"
+    ]
+  },
+  {
+    "id": "5.4",
+    "title": "A",
+    "description": "As compliance I need restore actions logged and approved.",
+    "section": "5",
+    "status": "complete",
+    "priority": "low",
+    "estimatedHours": 0,
+    "dependencies": [],
+    "acceptanceCriteria": [],
+    "tests": {},
+    "deliverables": [
+      "accessAudit.ts"
+    ]
+  },
+  {
+    "id": "6.1",
+    "title": "S",
+    "description": "As QA I need stable test selectors.",
+    "section": "6",
+    "status": "complete",
+    "priority": "low",
+    "estimatedHours": 0,
+    "dependencies": [],
+    "acceptanceCriteria": [],
+    "tests": {},
+    "deliverables": [
+      "selectorStandardization.ts",
+      "__tests__/selectorStandardization.test.ts",
+      "testing/README.md",
+      "testing/index.ts"
+    ]
+  },
+  {
+    "id": "6.2",
+    "title": "T",
+    "description": "As QA I want shared mocks/helpers.",
+    "section": "6",
+    "status": "complete",
+    "priority": "low",
+    "estimatedHours": 0,
+    "dependencies": [],
+    "acceptanceCriteria": [],
+    "tests": {},
+    "deliverables": [
+      "apps/web/src/test-utils/mocks.ts",
+      "apps/web/src/test-utils/helpers.ts",
+      "apps/web/src/test-utils/fixtures.ts",
+      "apps/web/src/test-utils/__tests__/mocks.test.ts"
+    ]
+  },
+  {
+    "id": "6.3",
+    "title": "U",
+    "description": "As engineering I want >90% coverage for core helpers.",
+    "section": "6",
+    "status": "complete",
+    "priority": "low",
+    "estimatedHours": 0,
+    "dependencies": [],
+    "acceptanceCriteria": [],
+    "tests": {},
+    "deliverables": []
+  },
+  {
+    "id": "6.4",
+    "title": "I",
+    "description": "As QA I need integration specs for CanvasScene and palette.",
+    "section": "6",
+    "status": "complete",
+    "priority": "low",
+    "estimatedHours": 0,
+    "dependencies": [],
+    "acceptanceCriteria": [],
+    "tests": {},
+    "deliverables": []
+  },
+  {
+    "id": "6.5",
+    "title": "S",
+    "description": "As QA I need automated drag smoke test.",
+    "section": "6",
+    "status": "complete",
+    "priority": "low",
+    "estimatedHours": 0,
+    "dependencies": [],
+    "acceptanceCriteria": [],
+    "tests": {},
+    "deliverables": []
+  },
+  {
+    "id": "6.6",
+    "title": "O",
+    "description": "As developer I need debug logs and artifacts.",
+    "section": "6",
+    "status": "complete",
+    "priority": "low",
+    "estimatedHours": 0,
+    "dependencies": [],
+    "acceptanceCriteria": [],
+    "tests": {},
+    "deliverables": []
+  },
+  {
+    "id": "7.1",
+    "title": "D",
+    "description": "As release manager I need blue/green deploys with feature flags.",
+    "section": "7",
+    "status": "complete",
+    "priority": "low",
+    "estimatedHours": 0,
+    "dependencies": [],
+    "acceptanceCriteria": [
+      "Implementation",
+      "Slot Management",
+      "Inactive Deployment",
+      "Traffic Routing",
+      "API",
+      "Implementation",
+      "Targeting Options",
+      "A/B Testing",
+      "API",
+      "Implementation",
+      "Speed",
+      "Documentation"
+    ],
+    "tests": {},
+    "deliverables": []
+  },
+  {
+    "id": "7.2",
+    "title": "M",
+    "description": "As SRE I need dashboards for render latency, collaboration, exports.",
+    "section": "7",
+    "status": "complete",
+    "priority": "low",
+    "estimatedHours": 0,
+    "dependencies": [],
+    "acceptanceCriteria": [
+      "Implementation",
+      "Canvas Metrics",
+      "Collaboration Metrics",
+      "Export Metrics",
+      "Format Support",
+      "Test Coverage",
+      "Implementation",
+      "Canvas Performance Dashboard",
+      "Collaboration Dashboard",
+      "Export Dashboard",
+      "Custom Dashboards",
+      "Test Coverage",
+      "Implementation",
+      "Threshold Management",
+      "Alert Checking",
+      "Event Subscriptions",
+      "Alert Queries",
+      "Auto-Resolution",
+      "Test Coverage"
+    ],
+    "tests": {},
+    "deliverables": []
+  },
+  {
+    "id": "7.3",
+    "title": "I",
+    "description": "As on-call I need runbooks for outages.",
+    "section": "7",
+    "status": "complete",
+    "priority": "low",
+    "estimatedHours": 0,
+    "dependencies": [],
+    "acceptanceCriteria": [
+      "Runbooks",
+      "Pager duty",
+      "Postmortem"
+    ],
+    "tests": {},
+    "deliverables": []
+  },
+  {
+    "id": "7.4",
+    "title": "C",
+    "description": "As PM I need roadmap alignment and ADR tracking.",
+    "section": "7",
+    "status": "complete",
+    "priority": "low",
+    "estimatedHours": 0,
+    "dependencies": [],
+    "acceptanceCriteria": [
+      "ADR",
+      "Release notes",
+      "Review board"
+    ],
+    "tests": {},
+    "deliverables": []
+  },
+  {
+    "id": "7.5",
+    "title": "U",
+    "description": "As enablement lead I need demos/tests up to date.",
+    "section": "7",
+    "status": "complete",
+    "priority": "low",
+    "estimatedHours": 0,
+    "dependencies": [],
+    "acceptanceCriteria": [
+      "Demo route",
+      "Docs sync",
+      "Quick Start",
+      "Core Concepts",
+      "Features",
+      "API Reference",
+      "Tutorials",
+      "Deployment",
+      "Operational Excellence",
+      "Change Management",
+      "Migration Guides",
+      "Training"
+    ],
+    "tests": {},
+    "deliverables": []
+  },
+  {
+    "id": "8.1",
+    "title": "P",
+    "description": "As a developer I need a comprehensive plugin system to extend Canvas functionality with custom features, tools, renderers, and behaviors.",
+    "section": "8",
+    "status": "complete",
+    "priority": "low",
+    "estimatedHours": 0,
+    "dependencies": [],
+    "acceptanceCriteria": [
+      "Plugin Lifecycle",
+      "Sandboxed APIs",
+      "Dependency Management",
+      "Event System",
+      "Storage Isolation",
+      "Permission System",
+      "Error Handling",
+      "UI Extensions"
+    ],
+    "tests": {},
+    "deliverables": [
+      "libs/canvas/src/plugins/types.ts",
+      "libs/canvas/src/plugins/pluginManager.ts",
+      "libs/canvas/src/plugins/__tests__/pluginManager.test.ts",
+      "libs/canvas/src/plugins/README.md"
+    ]
+  },
+  {
+    "id": "8.2",
+    "title": "E",
+    "description": "As a user I need to discover, install, and manage third-party plugins.",
+    "section": "8",
+    "status": "complete",
+    "priority": "low",
+    "estimatedHours": 0,
+    "dependencies": [],
+    "acceptanceCriteria": [
+      "Plugin Discovery",
+      "Installation",
+      "Version Management",
+      "Security",
+      "Uninstallation"
+    ],
+    "tests": {},
+    "deliverables": []
+  },
+  {
+    "id": "8.3",
+    "title": "C",
+    "description": "As a developer I need to register custom element types with custom rendering.",
+    "section": "8",
+    "status": "complete",
+    "priority": "low",
+    "estimatedHours": 0,
+    "dependencies": [],
+    "acceptanceCriteria": [
+      "Type Registration",
+      "Custom Rendering",
+      "Event Handlers",
+      "Property Validation",
+      "Hit Testing",
+      "Connection Points"
+    ],
+    "tests": {},
+    "deliverables": []
+  },
+  {
+    "id": "8.4",
+    "title": "I",
+    "description": "As planner I need Phase 1 tickets broken down with epic breakdown and dependency tracking.",
+    "section": "8",
+    "status": "not-started",
+    "priority": "high",
+    "estimatedHours": 14,
+    "dependencies": [],
+    "acceptanceCriteria": [
+      "Epic breakdown",
+      "Dependencies",
+      "Roadmap sync"
+    ],
+    "tests": {},
+    "deliverables": []
+  }
+]

@@ -1,0 +1,81 @@
+[package]
+name = "agent-http"
+version.workspace = true
+authors.workspace = true
+description = "HTTP server for agent admin API and metrics"
+edition.workspace = true
+license.workspace = true
+publish = false
+repository = "https://github.com/your-org/agent-http"
+readme = "README.md"
+keywords = ["http", "server", "metrics", "admin", "api"]
+categories = ["web-programming::http-server", "network-programming"]
+
+[features]
+default = ["metrics"]
+metrics = ["metrics-exporter-prometheus"]
+
+[dependencies]
+# Internal crates
+agent-metrics = { workspace = true, features = ["prometheus"] }
+agent-storage = { workspace = true }
+agent-types = { workspace = true }
+
+# Web framework
+axum = { version = "0.7", features = ["macros", "ws"] }
+hyper = { version = "1.0", features = ["server", "http1", "http2"] }
+tokio = { workspace = true, features = ["rt-multi-thread", "sync", "macros", "signal"] }
+tower = { workspace = true, features = ["util", "timeout", "load-shed", "limit", "steer"] }
+tower-http = { version = "0.5", features = [
+    "cors", 
+    "trace", 
+    "compression-br", 
+    "compression-gzip",
+    "decompression-br",
+    "decompression-gzip",
+    "sensitive-headers",
+    "set-header",
+    "timeout"
+] }
+
+# Serialization
+serde = { workspace = true, features = ["derive"] }
+serde_json = { workspace = true }
+
+# Logging
+tracing = { workspace = true }
+tracing-subscriber = { workspace = true, features = ["env-filter"] }
+
+# Metrics
+metrics = { workspace = true }
+metrics-exporter-prometheus = { workspace = true, optional = true, features = ["http-listener"] }
+
+# Error handling
+anyhow = { workspace = true }
+thiserror = { workspace = true }
+
+# TLS and security
+tokio-rustls = { version = "0.25", features = ["logging"] }
+rustls = { version = "0.22", features = ["tls12"] }
+rustls-pemfile = "2.0"
+rcgen = { version = "0.13", features = ["pem"] }
+webpki = { version = "0.22", features = ["std"] }
+parking_lot = { version = "0.12", features = ["serde"] }
+rand = { version = "0.8", features = ["std_rng"] }
+
+[dev-dependencies]
+tempfile = "3.3"
+tokio = { workspace = true, features = ["rt-multi-thread", "macros", "test-util"] }
+
+# Async runtime
+futures = { workspace = true }
+
+# System information
+sysinfo = { workspace = true }
+
+# Time handling
+chrono = { workspace = true, features = ["serde"] }
+
+# UUID
+time = { workspace = true }
+uuid = { workspace = true, features = ["v4", "serde"] }

@@ -1,0 +1,108 @@
+# {{.Name}} API Reference
+{{.Description}}
+
+## Table of Contents
+{{range .Services}}
+- [{{.LongName}}](#{{.LongName | sanitizeAnchor}})
+{{- range .Methods}}
+  - [{{.Name}}](#{{.LongName | sanitizeAnchor}})
+{{- end}}
+{{- end}}
+
+{{range .MessageTypes}}
+- [{{.LongName}}](#{{.LongName | sanitizeAnchor}})
+{{- end}}
+
+{{range .Enums}}
+- [{{.LongName}}](#{{.LongName | sanitizeAnchor}})
+{{- end}}
+
+## Services
+{{range .Services}}
+### {{.LongName}}
+{{.Description}}
+
+**Methods:**
+{{range .Methods}}
+#### {{.Name}}
+{{.Description}}
+
+**Request:** `{{.RequestType.LongName}}`  
+**Response:** `{{.ResponseType.LongName}}`  
+**Streaming:** {{if .ServerStreaming}}Server{{end}}{{if .ClientStreaming}}Client{{end}}{{if not .ServerStreaming and not .ClientStreaming}}No{{end}}
+
+{{if .RequestType.Fields}}
+**Request Fields:**
+| Field | Type | Description |
+|-------|------|-------------|
+{{range .RequestType.Fields}}| {{.Name}} | `{{.TypeDescription}}` | {{.Description}} |
+{{end}}
+{{end}}
+
+{{if .ResponseType.Fields}}
+**Response Fields:**
+| Field | Type | Description |
+|-------|------|-------------|
+{{range .ResponseType.Fields}}| {{.Name}} | `{{.TypeDescription}}` | {{.Description}} |
+{{end}}
+{{end}}
+
+---
+{{end}}
+{{end}}
+
+## Message Types
+{{range .MessageTypes}}
+### {{.LongName}}
+{{.Description}}
+
+{{if .Fields}}
+**Fields:**
+| Field | Type | Description |
+|-------|------|-------------|
+{{range .Fields}}| {{.Name}} | `{{.TypeDescription}}` | {{.Description}} |
+{{end}}
+{{end}}
+
+{{if .NestedTypes}}
+**Nested Types:**
+{{range .NestedTypes}}
+- [{{.LongName}}](#{{.LongName | sanitizeAnchor}})
+{{end}}
+{{end}}
+
+---
+{{end}}
+
+## Enums
+{{range .Enums}}
+### {{.LongName}}
+{{.Description}}
+
+| Name | Number | Description |
+|------|--------|-------------|
+{{range .Values}}| {{.Name}} | {{.Number}} | {{.Description}} |
+{{end}}
+
+---
+{{end}}
+
+## Scalar Value Types
+
+| .proto Type | Notes | Java Type |
+|-------------|-------|-----------|
+| double |  | double |
+| float |  | float |
+| int32 | Uses variable-length encoding. Inefficient for encoding negative numbers – if your field is likely to have negative values, use sint32 instead. | int |
+| int64 | Uses variable-length encoding. Inefficient for encoding negative numbers – if your field is likely to have negative values, use sint64 instead. | long |
+| uint32 | Uses variable-length encoding. | int |
+| uint64 | Uses variable-length encoding. | long |
+| sint32 | Uses variable-length encoding. Signed int value. These more efficiently encode negative numbers than regular int32s. | int |
+| sint64 | Uses variable-length encoding. Signed int value. These more efficiently encode negative numbers than regular int64s. | long |
+| fixed32 | Always four bytes. More efficient than uint32 if values are often greater than 2^28. | int |
+| fixed64 | Always eight bytes. More efficient than uint64 if values are often greater than 2^56. | long |
+| sfixed32 | Always four bytes. | int |
+| sfixed64 | Always eight bytes. | long |
+| bool |  | boolean |
+| string | A string must always contain UTF-8 encoded or 7-bit ASCII text. | String |
+| bytes | May contain any arbitrary sequence of bytes. | ByteString |

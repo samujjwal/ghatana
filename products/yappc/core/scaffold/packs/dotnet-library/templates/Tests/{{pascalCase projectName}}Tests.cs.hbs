@@ -1,0 +1,13 @@
+namespace {{pascalCase projectName}}.Tests;
+
+public class {{pascalCase projectName}}Tests
+{
+[Fact]
+public void GetVersion_ReturnsExpectedVersion()
+{
+var library = new {{pascalCase projectName}}();
+var version = library.GetVersion();
+
+Assert.Equal("0.1.0", version);
+}
+}

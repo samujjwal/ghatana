@@ -1,0 +1,721 @@
+name: Design
+workflow:
+  - id: high_level_design
+    agent: SolutionApproachAgent
+    role: Solution Architect
+    inputs_spec:
+      - name: ready_for_design_package
+        description: Complete Solution stage package, versioned and ready for Design handoff, with checklist.
+        format: Package artifact (documents, version_info, handoff_checklist)
+    outputs_spec:
+      - name: high_level_design
+        description: High-level design covering all major system components, their relationships, interfaces, constraints, assumptions, and design risks.
+        format: "Structured design document (sections: components, interfaces, constraints, assumptions, risks, mitigation)"
+        example: |
+          components: ["User Service", "Auth Service"]
+          interfaces: ["REST API"]
+          constraints: ["OAuth2 only"]
+          assumptions: ["Cloud DB available"]
+          risks: ["API ambiguity"]
+          mitigation: ["API review"]
+    agent_tasks:
+      - Develop a high-level design covering all major system components and their relationships.
+      - Clearly describe each component's role and boundaries.
+      - Define interfaces between modules.
+      - Ensure high-level design aligns with architecture and threat model.
+      - Address constraints and assumptions from previous stages.
+      - Include major design risks and mitigation strategies.
+    acceptance_criteria:
+      - High-level design covers all major system components and their relationships.
+      - Each component's role and boundaries are clearly described.
+      - Interfaces between modules are defined.
+      - High-level design aligns with architecture and threat model.
+      - Constraints and assumptions from previous stages are addressed.
+      - Major design risks and mitigation strategies are included.
+    dependencies:
+      - ready_for_design_package
+    failure_escalation:
+      - Escalate to Solution Architect or PM if alignment or completeness is lacking.
+    references: []
+    hitl: true
+    hitl_reason: Human validates high-level design for alignment and completeness
+  - id: design_best_practice_enforcement
+    agent: DesignBestPracticeAgent
+    role: Design QA Reviewer
+    inputs_spec:
+      - name: high_level_design
+        description: High-level design covering all major system components and interfaces.
+        format: Structured design document
+    outputs_spec:
+      - name: design_best_practice_report
+        description: Report on compliance of design artifacts with org standards, design patterns, documentation quality, and justification of deviations.
+        format: "Structured report (sections: compliance, patterns, documentation, security, performance, deviations)"
+        example: |
+          compliance: true
+          patterns: ["MVC"]
+          documentation: "Complete"
+          security: "Reviewed"
+          performance: "Considered"
+          deviations: []
+    agent_tasks:
+      - Review design artifacts for compliance with org standards.
+      - Ensure design patterns used are consistent with organization best practices.
+      - Verify documentation quality and completeness.
+      - Explicitly consider security and performance aspects.
+      - Justify and track any deviations from best practices.
+    acceptance_criteria:
+      - Design artifacts are reviewed for compliance with org standards.
+      - Design patterns used are consistent with organization best practices.
+      - Documentation quality and completeness is verified.
+      - Security and performance aspects are explicitly considered.
+      - Deviations from best practices are justified and tracked.
+    dependencies:
+      - high_level_design
+    failure_escalation:
+      - Escalate to QA reviewer or architect if critical best practices are not met or deviations are unjustified.
+    references: []
+    hitl: true
+    hitl_reason: Human ensures design best practices are enforced
+  - id: design_milestone_tracker
+    agent: DesignMilestoneTrackerAgent
+    role: Design PM
+    inputs_spec:
+      - name: design_best_practice_report
+        description: Best practice review report for the design.
+        format: Structured report
+    outputs_spec:
+      - name: design_stage_milestone
+        description: List of all design stage milestones, with targets, owners, dependencies, and status.
+        format: List of milestone objects (id, description, target_date, owner, dependencies, entry_criteria, exit_criteria, status)
+        example: |
+          - id: D1
+            description: "API contract defined"
+            target_date: "2024-09-01"
+            owner: "API Architect"
+            dependencies: []
+            entry_criteria: ["Best practice report complete"]
+            exit_criteria: ["API reviewed"]
+            status: "planned"
+    agent_tasks:
+      - List all design milestones explicitly.
+      - Record target completion dates and responsible owners.
+      - Map dependencies and prerequisites.
+      - Make status of each milestone visible and updated.
+      - Flag risks or blockers to progress.
+    acceptance_criteria:
+      - All design milestones are explicitly listed.
+      - Target completion dates and responsible owners are recorded.
+      - Dependencies and prerequisites are mapped.
+      - Status of each milestone is visible and updated.
+      - Risks or blockers to progress are flagged.
+    dependencies:
+      - design_best_practice_report
+    failure_escalation:
+      - Escalate to Design PM if milestones are missing or unclear.
+    references: []
+    hitl: true
+    hitl_reason: Human oversight for tracking design milestones
+  - id: api_contract
+    agent: APIContractAgent
+    role: API Architect
+    inputs_spec:
+      - name: design_stage_milestone
+        description: Design stage milestone plan.
+        format: List of milestone objects
+    outputs_spec:
+      - name: api_contracts
+        description: API contracts describing all public APIs, endpoints, methods, payloads, security, and versioning.
+        format: List of API contract objects (endpoint, method, payload, security, versioning, examples)
+        example: |
+          - endpoint: "/users"
+            method: "POST"
+            payload: "{name, email}"
+            security: "OAuth2"
+            versioning: "v1"
+            examples: ["{name: 'Alice', email: 'a@b.com'}"]
+    agent_tasks:
+      - Describe all public APIs with endpoints, methods, and expected payloads.
+      - Specify input/output data formats and provide examples.
+      - Document security requirements for APIs.
+      - Address versioning strategy and backward compatibility.
+      - Review APIs for completeness and ambiguity.
+    acceptance_criteria:
+      - All public APIs are described with endpoints, methods, and expected payloads.
+      - Input/output data formats are specified and examples are included.
+      - Security requirements for APIs are documented.
+      - Versioning strategy and backward compatibility considerations are addressed.
+      - APIs are reviewed for completeness and ambiguity.
+    dependencies:
+      - design_stage_milestone
+    failure_escalation:
+      - Escalate to API Architect or PM if APIs are incomplete or ambiguous.
+    references: []
+    hitl: true
+    hitl_reason: Human reviews API contracts for accuracy and completeness
+  - id: data_model_design
+    agent: SolutionApproachAgent
+    role: Data Architect
+    inputs_spec:
+      - name: design_stage_milestone
+        description: Design stage milestone plan.
+        format: List of milestone objects
+    outputs_spec:
+      - name: data_models
+        description: Data models for all key entities, with types, relationships, constraints, normalization, and sensitive data flags.
+        format: List of data model objects (entity, fields, relationships, constraints, normalization, sensitive_fields)
+        example: |
+          - entity: "User"
+            fields: ["id", "name", "email"]
+            relationships: ["User-Role"]
+            constraints: ["email unique"]
+            normalization: "3NF"
+            sensitive_fields: ["email"]
+    agent_tasks:
+      - Define and document data models for all key entities.
+      - Specify data types, relationships, and constraints.
+      - Justify normalization and denormalization choices.
+      - Identify and flag sensitive data fields.
+      - Ensure data model aligns with API contracts and business logic.
+    acceptance_criteria:
+      - Data models for all key entities are defined and documented.
+      - Data types, relationships, and constraints are specified.
+      - Normalization and denormalization choices are justified.
+      - Sensitive data fields are identified and flagged.
+      - Data model aligns with API contracts and business logic.
+    dependencies:
+      - design_stage_milestone
+    failure_escalation:
+      - Escalate to Data Architect or PM if data models are incomplete or incorrect.
+    references: []
+    hitl: true
+    hitl_reason: Human reviews data models for correctness and normalization
+  - id: design_review
+    agent: SolutionApproachAgent
+    role: Lead Architect
+    inputs_spec:
+      - name: api_contracts
+        description: API contracts for all public APIs.
+        format: List of API contract objects
+      - name: data_models
+        description: Data models for all key entities.
+        format: List of data model objects
+    outputs_spec:
+      - name: design_signoff
+        description: Final review and signoff on entire design (API, data model, component diagrams), with feedback and open issues tracked.
+        format: "Structured signoff document (sections: review, feedback, open_issues, compliance, signoff_status)"
+        example: |
+          review: "All components reviewed"
+          feedback: ["Clarify API /users"]
+          open_issues: []
+          compliance: "Meets architecture"
+          signoff_status: "approved"
+    agent_tasks:
+      - Review the entire design (API, data model, component diagrams).
+      - Track review feedback and open issues.
+      - Confirm compliance with architecture and business goals.
+      - Clearly record final signoff or required follow-ups.
+    acceptance_criteria:
+      - Entire design (API, data model, component diagrams) is reviewed.
+      - Review feedback and open issues are tracked.
+      - Compliance with architecture and business goals is confirmed.
+      - Final signoff or required follow-ups are clearly recorded.
+    dependencies:
+      - api_contracts
+      - data_models
+    failure_escalation:
+      - Escalate to Lead Architect or PM if signoff is withheld or issues unresolved.
+    references: []
+    hitl: true
+    hitl_reason: Human provides final review and signoff on design
+  - id: design_lint
+    agent: DesignLintAgent
+    role: Automation Tool
+    inputs_spec:
+      - name: design_stage_milestone
+        description: Design stage milestone plan.
+        format: List of milestone objects
+    outputs_spec:
+      - name: design_lint_report
+        description: Automated lint report on design documents for formatting, anti-patterns, and documentation errors.
+        format: Lint report artifact (findings, errors, warnings, distribution)
+        example: |
+          findings: ["No anti-patterns"]
+          errors: []
+          warnings: []
+          distribution: ["Design team"]
+    agent_tasks:
+      - Check design documents for formatting and consistency.
+      - Flag known anti-patterns and documentation errors.
+      - Ensure automated checks pass for all design deliverables.
+      - Distribute lint report to the design team.
+    acceptance_criteria:
+      - Design documents are checked for formatting and consistency.
+      - Known anti-patterns and documentation errors are flagged.
+      - Automated checks pass for all design deliverables.
+      - Lint report is distributed to the design team.
+    dependencies:
+      - design_stage_milestone
+    failure_escalation:
+      - Escalate to design automation lead if lint errors are not resolved.
+    references: []
+    hitl: false
+  - id: design_kpi_agent
+    agent: StageKPIAgent
+    role: Design KPI Analyst
+    inputs_spec:
+      - name: design_stage_milestone
+        description: Design stage milestone plan.
+        format: List of milestone objects
+    outputs_spec:
+      - name: design_kpi_report
+        description: KPI report for Design stage (completeness, review cycle time, issue closure rate, trends, anomalies).
+        format: "Structured KPI report (sections: completeness, review_cycle_time, issue_closure_rate, trends, anomalies, visualization)"
+        example: |
+          completeness: 95
+          review_cycle_time: "2 days"
+          issue_closure_rate: "80%"
+          trends: ["Improving"]
+          anomalies: []
+    agent_tasks:
+      - Define and update key Design stage KPIs (e.g., design completeness, review cycle time, issue closure rate).
+      - Report KPI data for each design milestone.
+      - Flag trends, anomalies, or deviations in design KPIs.
+      - Visualize KPI trends over time and compare to past project baselines.
+      - Flag outliers and deviations for review.
+    acceptance_criteria:
+      - Key Design stage KPIs are defined (e.g., design completeness, review cycle time, issue closure rate).
+      - KPI data is updated and reported for each design milestone.
+      - Trends, anomalies, or deviations in design KPIs are flagged for review.
+      - KPI trends are visualized over time and compared to past project baselines.
+      - Outliers and deviations are flagged for review.
+    dependencies:
+      - design_stage_milestone
+    failure_escalation:
+      - Escalate to KPI analyst or PM if KPIs are missing, unclear, or not up to date.
+    references: []
+    hitl: false
+  - id: design_success_criteria_tracker
+    agent: SuccessCriteriaTrackerAgent
+    role: Design Success Criteria Tracker
+    inputs_spec:
+      - name: design_stage_milestone
+        description: Design stage milestone plan.
+        format: List of milestone objects
+    outputs_spec:
+      - name: design_success_criteria_status
+        description: Status of design stage success criteria, progress, blockers, and risks.
+        format: List of criteria status objects (criterion, status, blockers, risks)
+        example: |
+          - criterion: "API contract defined"
+            status: "complete"
+            blockers: []
+            risks: []
+    agent_tasks:
+      - Define and track design stage success criteria.
+      - Report progress and blockers for each criterion.
+      - Flag any risks or issues affecting design success criteria.
+    acceptance_criteria:
+      - Design stage success criteria are clearly defined and tracked.
+      - Progress and blockers for each criterion are reported.
+      - Any risks or issues affecting design success criteria are flagged.
+    dependencies:
+      - design_stage_milestone
+    failure_escalation:
+      - Escalate to criteria tracker or PM if criteria are unclear or not met.
+    references: []
+    hitl: false
+  - id: design_escalation_handler
+    agent: EscalationHandlerAgent
+    role: Project Escalation Manager
+    inputs_spec:
+      - name: design_success_criteria_status
+        description: Status of design stage success criteria.
+        format: List of criteria status objects
+    outputs_spec:
+      - name: design_escalation_report
+        description: Escalation report for unresolved blockers, owners, deadlines, and dashboard visibility.
+        format: "Structured escalation report (sections: at_risk_criteria, owners, deadlines, status)"
+        example: |
+          at_risk_criteria: ["API contract defined"]
+          owners: ["API Architect"]
+          deadlines: ["2024-09-05"]
+          status: "escalated"
+    agent_tasks:
+      - Review all "At Risk" or "Not Met" criteria for escalation.
+      - Assign owners and deadlines for resolution.
+      - Make escalation status visible in dashboard and audit log.
+    acceptance_criteria:
+      - All "At Risk" or "Not Met" criteria are reviewed for escalation.
+      - Owners and deadlines for resolution are assigned.
+      - Escalation status is visible in the dashboard and audit log.
+    dependencies:
+      - design_success_criteria_status
+    failure_escalation:
+      - Escalate to escalation manager or PM if blockers are not resolved.
+    references: []
+    hitl: true
+    hitl_reason: Human ensures appropriate escalation/action for unresolved blockers
+  - id: design_readiness_checker
+    agent: ReadinessCheckerAgent
+    role: Gatekeeper Bot
+    inputs_spec:
+      - name: design_stage_milestone
+        description: Design stage milestone plan.
+        format: List of milestone objects
+      - name: design_best_practice_report
+        description: Best practice review report for design.
+        format: Structured report
+      - name: design_kpi_report
+        description: KPI report for Design stage.
+        format: Structured KPI report
+    outputs_spec:
+      - name: design_readiness_status
+        description: Readiness status for Design stage, including criteria, issues, approvals, and evidence.
+        format: Structured status object (criteria_met, issues, approvals, evidence, ready_for_next_stage)
+        example: |
+          criteria_met: true
+          issues: []
+          approvals: ["Lead Architect"]
+          evidence: ["Audit log"]
+          ready_for_next_stage: true
+    agent_tasks:
+      - Check all mandatory design criteria are met.
+      - Ensure no open critical issues in milestones, best practice, or KPI.
+      - Verify all required approvals and evidence are present.
+      - Mark stage "Ready for next stage" only if above are true.
+    acceptance_criteria:
+      - All mandatory design criteria are met.
+      - No open critical issues in milestones, best practice, or KPI.
+      - All required approvals and evidence are present.
+      - Stage is marked "Ready for next stage" only if above are true.
+    dependencies:
+      - design_stage_milestone
+      - design_best_practice_report
+      - design_kpi_report
+    failure_escalation:
+      - Escalate to gatekeeper or PM if readiness is not achieved.
+    references: []
+    hitl: false
+  - id: design_go_nogo
+    agent: GoNoGoDecisionAgent
+    role: Stage Owner/Stakeholders
+    inputs_spec:
+      - name: design_readiness_status
+        description: Readiness status for Design stage.
+        format: Structured status object
+    outputs_spec:
+      - name: design_go_nogo_decision
+        description: Go/No-Go decision with rationale and review of blockers, risks, and criteria.
+        format: Structured decision object (decision, rationale, reviewed_items)
+        example: |
+          decision: "Go"
+          rationale: "All criteria met"
+          reviewed_items: ["Blockers", "Risks"]
+    agent_tasks:
+      - Review all blockers, risks, and criteria.
+      - Record Go/No-Go decision and rationale.
+    acceptance_criteria:
+      - All blockers, risks, and criteria reviewed.
+      - Go/No-Go decision and rationale recorded.
+    dependencies:
+      - design_readiness_status
+    failure_escalation:
+      - Escalate to stage owner if decision cannot be made.
+    references: []
+    hitl: true
+    hitl_reason: Human review required for Go/No-Go decision
+  - id: design_progress_dashboard
+    agent: ProgressDashboardAgent
+    role: Design Progress Dashboard Owner
+    inputs_spec:
+      - name: design_kpi_report
+        description: KPI report for Design stage.
+        format: Structured KPI report
+      - name: design_success_criteria_status
+        description: Status of design stage success criteria.
+        format: List of criteria status objects
+      - name: design_stage_milestone
+        description: Design stage milestone plan.
+        format: List of milestone objects
+    outputs_spec:
+      - name: design_progress_dashboard
+        description: Dashboard visualizing Design KPIs, success criteria, milestones, highlighting gaps, bottlenecks, and critical paths.
+        format: "Dashboard artifact (sections: KPIs, criteria, milestones, gaps, bottlenecks, critical_path)"
+        example: |
+          KPIs: ["completeness", "review_cycle_time"]
+          criteria: ["API contract defined"]
+          milestones: ["D1"]
+          gaps: []
+          bottlenecks: []
+          critical_path: ["D1"]
+    agent_tasks:
+      - Visualize Design KPIs, success criteria, and milestones in dashboard.
+      - Update dashboard in real time and ensure accessibility.
+      - Highlight gaps, issues, critical path, blocked dependencies, bottlenecks, and overdue milestones.
+    acceptance_criteria:
+      - Design KPIs, success criteria, and milestones are visualized in a dashboard.
+      - Dashboard is updated in real time and accessible to stakeholders.
+      - Gaps or issues in design progress are highlighted for action.
+      - Critical path milestones are highlighted.
+      - Blocked dependencies and downstream impacts are flagged.
+      - Bottlenecks or overdue milestones are visually emphasized.
+    dependencies:
+      - design_kpi_report
+      - design_success_criteria_status
+      - design_stage_milestone
+    failure_escalation:
+      - Escalate to dashboard owner or PM if dashboard is not current or actionable.
+    references: []
+    hitl: false
+  - id: design_observability_export
+    agent: ObservabilityExportAgent
+    role: SRE/Analytics
+    inputs_spec:
+      - name: design_progress_dashboard
+        description: Design progress dashboard artifact.
+        format: Dashboard artifact
+    outputs_spec:
+      - name: design_observability_export
+        description: Exported pipeline metrics/KPIs for external analytics/monitoring, with flagged observability gaps.
+        format: Export artifact (metrics, flagged_gaps)
+        example: |
+          metrics: ["completeness"]
+          flagged_gaps: []
+    agent_tasks:
+      - Export pipeline metrics/KPIs to external analytics or monitoring.
+      - Flag any gaps in observability.
+    acceptance_criteria:
+      - Pipeline metrics/KPIs exported to external analytics/monitoring.
+      - Gaps in observability are flagged.
+    dependencies:
+      - design_progress_dashboard
+    failure_escalation:
+      - Escalate to SRE or analytics lead if observability is incomplete.
+    references: []
+    hitl: false
+  - id: design_feedback_loop
+    agent: FeedbackLoopAgent
+    role: CI/CD Coach/Automation
+    inputs_spec:
+      - name: design_progress_dashboard
+        description: Design progress dashboard artifact.
+        format: Dashboard artifact
+    outputs_spec:
+      - name: design_feedback_items
+        description: List of issues and improvement suggestions routed to Retrospective, tracked for resolution.
+        format: List of feedback objects (issue, suggestion, status, resolution)
+        example: |
+          - issue: "Milestone delay"
+            suggestion: "Increase code reviews"
+            status: "open"
+            resolution: ""
+    agent_tasks:
+      - Route all issues and improvement suggestions to Retrospective.
+      - Track feedback for action and resolution.
+    acceptance_criteria:
+      - All issues and improvement suggestions are routed to Retrospective.
+      - Feedback is tracked for action and resolution.
+    dependencies:
+      - design_progress_dashboard
+    failure_escalation:
+      - Escalate to CI/CD coach if feedback is not acted on.
+    references: []
+    hitl: false
+  - id: design_notification_agent
+    agent: NotificationAgent
+    role: PMO Communications
+    inputs_spec:
+      - name: design_progress_dashboard
+        description: Design progress dashboard artifact.
+        format: Dashboard artifact
+      - name: design_escalation_report
+        description: Design escalation report artifact.
+        format: Structured escalation report
+    outputs_spec:
+      - name: design_notifications
+        description: Notifications to stakeholders on key stage events, blockers, escalations, risks, with audit log.
+        format: List of notification objects (recipient, event, detail, timestamp)
+        example: |
+          - recipient: "Stakeholders"
+            event: "Milestone completed"
+            detail: "API contract defined"
+            timestamp: "2024-09-01T10:00:00Z"
+    agent_tasks:
+      - Notify all stakeholders on key stage events.
+      - Communicate blockers, escalations, and major risks in real time.
+      - Log notification delivery for audit.
+    acceptance_criteria:
+      - All stakeholders receive updates on key stage events.
+      - Blockers, escalations, and major risks are communicated in real time.
+      - Notification delivery is logged for audit.
+    dependencies:
+      - design_progress_dashboard
+      - design_escalation_report
+    failure_escalation:
+      - Escalate to PMO if notifications are not delivered or logged.
+    references: []
+    hitl: false
+  - id: design_audit_log_agent
+    agent: AuditLogAgent
+    role: Compliance Bot
+    inputs_spec:
+      - name: design_progress_dashboard
+        description: Design progress dashboard artifact.
+        format: Dashboard artifact
+      - name: design_notification_agent
+        description: Design notification delivery log.
+        format: List of notification objects
+    outputs_spec:
+      - name: design_audit_log
+        description: Complete audit log of agent actions, transitions, signoffs, escalations, notifications, cryptographically signed and archived.
+        format: Audit log artifact (entries, signature, archive_location, access)
+        example: |
+          entries: ["Milestone completed", "Escalation raised"]
+          signature: "abc123"
+          archive_location: "s3://audit-logs/"
+          access: "compliance"
+    agent_tasks:
+      - Record every agent action and transition with timestamp, user/agent, and artifact link.
+      - Log major events (signoffs, escalations, notifications, exceptions).
+      - Cryptographically sign and archive logs in secure, tamper-evident location.
+      - Ensure audit log is accessible for compliance review.
+    acceptance_criteria:
+      - Every agent action and transition is recorded with timestamp, user/agent, and artifact link.
+      - Major events (signoffs, escalations, notifications, exceptions) are explicitly logged.
+      - Logs are cryptographically signed and archived in a secure, tamper-evident location.
+      - Audit log is accessible for compliance review.
+    dependencies:
+      - design_progress_dashboard
+      - design_notification_agent
+    failure_escalation:
+      - Escalate to compliance or audit lead if logs are incomplete or inaccessible.
+    references: []
+    hitl: false
+  - id: design_evidence_collector
+    agent: EvidenceCollectorAgent
+    role: Compliance Evidence Bot
+    inputs_spec:
+      - name: design_audit_log
+        description: Design stage audit log artifact.
+        format: Audit log artifact
+      - name: design_success_criteria_status
+        description: Status of design stage success criteria.
+        format: List of criteria status objects
+      - name: design_stage_milestone
+        description: Design stage milestone plan.
+        format: List of milestone objects
+    outputs_spec:
+      - name: design_evidence_package
+        description: Evidence package for Design stage, including all artifacts, audit logs, signoffs, and KPIs, linked to compliance requirements.
+        format: Evidence package artifact (artifacts, hashes, compliance_links, archive_location, access_logs)
+        example: |
+          artifacts: ["api_contracts.yaml", "audit_log.json"]
+          hashes: ["abc123", "def456"]
+          compliance_links: ["GDPR", "HIPAA"]
+          archive_location: "s3://evidence/"
+          access_logs: ["2024-09-01T10:00:00Z - user1"]
+    agent_tasks:
+      - Collect and hash all artifacts, audit logs, signoffs, and KPIs for the Design stage.
+      - Link evidence to compliance and regulatory requirements.
+      - Archive evidence package in tamper-evident storage.
+      - Maintain access logs for evidence package.
+    acceptance_criteria:
+      - Collects and hashes all artifacts, audit logs, signoffs, and KPIs for the stage.
+      - Evidence is linked to compliance and regulatory requirements.
+      - Evidence package is archived in tamper-evident storage.
+      - Access logs for evidence package are maintained.
+    dependencies:
+      - design_audit_log
+      - design_success_criteria_status
+      - design_stage_milestone
+    failure_escalation:
+      - Escalate to compliance lead if evidence package is incomplete or not archived securely.
+    references: []
+    hitl: false
+  - id: design_risk_trend_analyzer
+    agent: RiskTrendAnalyzerAgent
+    role: Risk Intelligence Bot
+    inputs_spec:
+      - name: design_escalation_report
+        description: Design escalation report artifact.
+        format: Structured escalation report
+      - name: design_progress_dashboard
+        description: Design progress dashboard artifact.
+        format: Dashboard artifact
+      - name: design_stage_milestone
+        description: Design stage milestone plan.
+        format: List of milestone objects
+    outputs_spec:
+      - name: design_risk_trend_report
+        description: Trend report of all design risks, escalations, and blockers, with recurring/systemic risks flagged and mitigation recommendations.
+        format: Risk trend report artifact (risks, escalations, blockers, trends, flagged_systemic, recommendations)
+        example: |
+          risks: ["API ambiguity"]
+          escalations: ["API contract delay"]
+          blockers: []
+          trends: ["Improving"]
+          flagged_systemic: ["Recurring ambiguity"]
+          recommendations: ["Improve API review process"]
+    agent_tasks:
+      - Trend all risks, escalations, and blockers over time.
+      - Automatically flag and classify recurring or systemic risks.
+      - Share risk trend report with PMO and leadership.
+      - Include recommendations for mitigation or process changes.
+    acceptance_criteria:
+      - All risks, escalations, and blockers are trended over time.
+      - Recurring or systemic risks are automatically flagged and classified.
+      - Risk trend report is shared with PMO and leadership.
+      - Recommendations for mitigation or process changes are included.
+    dependencies:
+      - design_escalation_report
+      - design_progress_dashboard
+      - design_stage_milestone
+    failure_escalation:
+      - Escalate to risk intelligence lead if trends or recommendations are missing.
+    references: []
+    hitl: false
+  - id: design_combiner
+    agent: SynthesisCombinerAgent
+    role: PM/Stage Lead
+    inputs_spec:
+      - name: design_evidence_package
+        description: Evidence package for Design stage.
+        format: Evidence package artifact
+      - name: design_risk_trend_report
+        description: Design risk trend report.
+        format: Risk trend report artifact
+      - name: design_signoff
+        description: Final design signoff artifact.
+        format: Structured signoff document
+      - name: api_contracts
+        description: API contracts for all public APIs.
+        format: List of API contract objects
+      - name: data_models
+        description: Data models for all key entities.
+        format: List of data model objects
+    outputs_spec:
+      - name: ready_for_develop_package
+        description: Complete, versioned package of all required Design stage outputs, with handoff checklist for next stage.
+        format: Package (documents, version, approvals, handoff_checklist)
+        example: |
+          documents: ["api_contracts.yaml", "data_models.yaml", "evidence.zip"]
+          version: "v1.0"
+          approvals: ["Lead Architect", "QA"]
+          handoff_checklist: ["All signoffs complete", "Evidence archived"]
+    agent_tasks:
+      - Package all required outputs from the Design stage, ensuring completeness and versioning.
+      - Include a handoff checklist for entry into the next stage.
+      - Validate that all approvals and signoffs are present.
+    acceptance_criteria:
+      - All required outputs from the stage are packaged and versioned for handoff.
+      - Handoff checklist for next stage entry is included.
+    dependencies:
+      - design_evidence_package
+      - design_risk_trend_report
+      - design_signoff
+      - api_contracts
+      - data_models
+    failure_escalation:
+      - Escalate to PM if design package is incomplete or handoff checklist is missing.
+    references: []
+    hitl: false

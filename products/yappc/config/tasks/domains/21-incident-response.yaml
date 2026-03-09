@@ -1,0 +1,118 @@
+domain:
+  id: incident-response-recovery
+  name: "Incident Response & Recovery"
+  description: "Respond to and recover from incidents."
+  order: 21
+  icon: "warning"
+  color: "#FF7043"
+  agent_personas:
+    - "IncidentCommander"
+    - "RCAAgent"
+    - "Responder"
+  audit_artifacts:
+    - "IncidentTimeline"
+    - "RCAReport"
+    - "IncidentLog"
+  inputs:
+    - "Alerts"
+    - "Logs"
+    - "Telemetry"
+  outputs:
+    - "Restored service"
+    - "Postmortem"
+    - "Action items"
+
+tasks:
+  # Core ICS incident tasks
+  - id: d21-t1
+    name: "Incident triage"
+    description: "Assess incident severity."
+    personas: ["DevOps", "Developer"]
+    lifecycle_stages: ["observe"]
+    automation_level: "assisted"
+  - id: d21-t2
+    name: "Mitigation"
+    description: "Restore service health."
+    personas: ["DevOps", "Developer"]
+    lifecycle_stages: ["execute"]
+    automation_level: "assisted"
+  - id: d21-t3
+    name: "Communication"
+    description: "Update stakeholders."
+    personas: ["DevOps", "Tech Lead"]
+    lifecycle_stages: ["execute"]
+    automation_level: "manual"
+  - id: d21-t4
+    name: "Root cause analysis"
+    description: "Identify root cause."
+    personas: ["Developer", "DevOps"]
+    lifecycle_stages: ["learn"]
+    automation_level: "assisted"
+  - id: d21-t5
+    name: "Postmortems"
+    description: "Document lessons learned."
+    personas: ["Developer", "DevOps", "Tech Lead"]
+    lifecycle_stages: ["learn"]
+    automation_level: "assisted"
+
+  # Additional incident tasks
+  - id: inc-001
+    name: "Incident Detection"
+    description: "Detect and acknowledge incidents."
+    personas: ["DevOps"]
+    lifecycle_stages: ["observe"]
+    automation_level: "automated"
+  - id: inc-002
+    name: "Severity Classification"
+    description: "Classify incident severity level."
+    personas: ["DevOps", "Developer"]
+    lifecycle_stages: ["observe"]
+    automation_level: "assisted"
+  - id: inc-003
+    name: "Escalation"
+    description: "Escalate to appropriate teams."
+    personas: ["DevOps"]
+    lifecycle_stages: ["observe"]
+    automation_level: "assisted"
+  - id: inc-004
+    name: "Impact Assessment"
+    description: "Assess customer and business impact."
+    personas: ["DevOps", "Tech Lead"]
+    lifecycle_stages: ["observe"]
+    automation_level: "assisted"
+  - id: inc-005
+    name: "Service Restoration"
+    description: "Execute recovery procedures."
+    personas: ["DevOps", "Developer"]
+    lifecycle_stages: ["execute"]
+    automation_level: "assisted"
+  - id: inc-006
+    name: "Status Page Updates"
+    description: "Update public status communications."
+    personas: ["DevOps"]
+    lifecycle_stages: ["execute"]
+    automation_level: "assisted"
+  - id: inc-007
+    name: "Timeline Documentation"
+    description: "Document incident timeline."
+    personas: ["DevOps", "Developer"]
+    lifecycle_stages: ["execute", "learn"]
+    automation_level: "assisted"
+  - id: inc-008
+    name: "Follow-up Action Tracking"
+    description: "Track post-incident action items."
+    personas: ["DevOps", "Tech Lead"]
+    lifecycle_stages: ["learn", "institutionalize"]
+    automation_level: "assisted"
+  - id: inc-009
+    name: "Runbook Updates"
+    description: "Update runbooks based on learnings."
+    personas: ["DevOps"]
+    lifecycle_stages: ["institutionalize"]
+    automation_level: "assisted"
+  - id: inc-010
+    name: "Preventive Measures"
+    description: "Implement measures to prevent recurrence."
+    personas: ["Developer", "DevOps"]
+    lifecycle_stages: ["execute", "institutionalize"]
+    automation_level: "assisted"

@@ -1,0 +1,93 @@
+{{!--
+  Event Consumer Template
+  Generates event consumer for event-driven architecture
+--}}
+{{#if (eq to.language "go")}}
+package events
+
+import (
+    "context"
+    "encoding/json"
+    "fmt"
+    "log"
+
+    "github.com/segmentio/kafka-go"
+)
+
+// EventConsumer handles event consumption
+type EventConsumer struct {
+    reader  *kafka.Reader
+    handler EventHandler
+}
+
+// EventHandler processes events
+type EventHandler interface {
+    Handle(ctx context.Context, event Event) error
+}
+
+// NewEventConsumer creates a new event consumer
+func NewEventConsumer(brokers []string, topic, groupID string, handler EventHandler) *EventConsumer {
+    reader := kafka.NewReader(kafka.ReaderConfig{
+        Brokers:  brokers,
+        Topic:    topic,
+        GroupID:  groupID,
+        MinBytes: 10e3, // 10KB
+        MaxBytes: 10e6, // 10MB
+    })
+
+    return &EventConsumer{
+        reader:  reader,
+        handler: handler,
+    }
+}
+
+// Start starts consuming events
+func (c *EventConsumer) Start(ctx context.Context) error {
+    for {
+        select {
+        case <-ctx.Done():
+            return ctx.Err()
+        default:
+            message, err := c.reader.ReadMessage(ctx)
+            if err != nil {
+                log.Printf("error reading message: %v", err)
+                continue
+            }
+
+            if err := c.processMessage(ctx, message); err != nil {
+                log.Printf("error processing message: %v", err)
+            }
+        }
+    }
+}
+
+// processMessage processes a single message
+func (c *EventConsumer) processMessage(ctx context.Context, message kafka.Message) error {
+    var event GenericEvent
+    if err := json.Unmarshal(message.Value, &event); err != nil {
+        return fmt.Errorf("failed to unmarshal event: %w", err)
+    }
+
+    return c.handler.Handle(ctx, &event)
+}
+
+// Close closes the consumer
+func (c *EventConsumer) Close() error {
+    return c.reader.Close()
+}
+
+// GenericEvent represents a generic event
+type GenericEvent struct {
+    EventID        string                 `json:"id"`
+    EventType      string                 `json:"type"`
+    EventVersion   string                 `json:"version"`
+    EventTimestamp time.Time              `json:"timestamp"`
+    EventData      map[string]interface{} `json:"data"`
+}
+
+func (e *GenericEvent) ID() string                 { return e.EventID }
+func (e *GenericEvent) Type() string               { return e.EventType }
+func (e *GenericEvent) Version() string            { return e.EventVersion }
+func (e *GenericEvent) Timestamp() time.Time       { return e.EventTimestamp }
+func (e *GenericEvent) Data() interface{}          { return e.EventData }
+{{/if}}

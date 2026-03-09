@@ -1,0 +1,52 @@
+{
+"$schema": "https://biomejs.dev/schemas/1.9.4/schema.json",
+"organizeImports": {
+"enabled": true
+},
+"linter": {
+"enabled": true,
+"rules": {
+"recommended": true,
+"complexity": {
+"noExtraBooleanCast": "error",
+"noUselessTypeConstraint": "error"
+},
+"correctness": {
+"noUnusedVariables": "error",
+"useExhaustiveDependencies": "warn",
+"useHookAtTopLevel": "error"
+},
+"style": {
+"noNonNullAssertion": "warn",
+"useConst": "error",
+"useImportType": "error"
+},
+"suspicious": {
+"noExplicitAny": "error"
+}
+}
+},
+"formatter": {
+"enabled": true,
+"indentStyle": "space",
+"indentWidth": 2,
+"lineWidth": 100
+},
+"javascript": {
+"formatter": {
+"quoteStyle": "double",
+"semicolons": "always",
+"trailingCommas": "es5"
+}
+},
+"files": {
+"ignore": [
+"node_modules",
+"dist",
+"src-tauri/target",
+"coverage",
+"*.min.js",
+"*.d.ts"
+]
+}
+}

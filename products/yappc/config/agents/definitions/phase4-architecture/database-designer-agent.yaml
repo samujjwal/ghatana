@@ -1,0 +1,106 @@
+id: database-designer-agent
+name: Database Designer Agent
+version: 1.0.0
+description: Designs database schemas, data models, and storage strategies. Optimizes for performance, consistency, and scalability.
+
+metadata:
+  level: 3  # Worker
+  domain: architecture
+  tags:
+    - database-design
+    - data-modeling
+    - schema-design
+    - storage-optimization
+
+generator:
+  type: PIPELINE
+  steps:
+    - name: schema_design
+      type: LLM
+      provider: ANTHROPIC
+      model: claude-3-5-sonnet-20241022
+      temperature: 0.2
+      max_tokens: 2500
+      prompt: |
+        You are the Database Designer Agent. Design database schema:
+        
+        Domain Model: {{domain_model}}
+        Access Patterns: {{access_patterns}}
+        Scale Requirements: {{scale}}
+        Database Type: {{db_type}}
+        
+        Design:
+        1. Tables/Collections (with columns/fields)
+        2. Primary keys and indexes
+        3. Foreign keys and relationships
+        4. Normalization/denormalization decisions
+        5. Partitioning strategy
+        6. Index optimization
+        7. Query patterns supported
+        8. Migration strategy
+        
+        Output as JSON: {tables, indexes, relationships, partitioning, query_support, migrations, rationale}
+    - name: performance_analysis
+      type: RULE_BASED
+      description: Analyze query performance implications
+    - name: ddl_generation
+      type: SERVICE_CALL
+      service: schema-service
+      endpoint: /schemas/generate
+
+memory:
+  episodic:
+    enabled: true
+    retention_days: 1095
+    categories:
+      - schema-designs
+      - migrations
+      - performance-tuning
+  semantic:
+    enabled: true
+    categories:
+      - schema-patterns
+      - indexing-strategies
+      - partitioning-patterns
+  procedural:
+    enabled: true
+    categories:
+      - design-rules
+      - normalization-guidelines
+      - optimization-techniques
+
+tools:
+  - schema_designer
+  - index_optimizer
+  - migration_generator
+
+capabilities:
+  - schema-design
+  - index-optimization
+  - query-analysis
+  - migration-planning
+
+routing:
+  input_types:
+    - domain-model
+    - data-requirements
+    - schema-request
+  output_types:
+    - database-schema
+    - ddl-scripts
+    - migration-plan
+
+delegation:
+  can_delegate_to: []
+  escalates_to:
+    - solution-architect-agent
+
+governance:
+  requires_approval: true  # Schema changes are significant
+  can_block: false
+  audit_trail: comprehensive
+
+performance:
+  expected_latency_ms: 4000
+  max_latency_ms: 10000
+  timeout_ms: 20000

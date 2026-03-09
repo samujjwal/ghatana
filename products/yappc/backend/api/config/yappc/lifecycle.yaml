@@ -1,0 +1,240 @@
+lifecycle:
+  phases:
+    # Intake Phase - Product & Business Focus
+    - id: "intake"
+      name: "Intake & Requirements"
+      description: "Capture business requirements, user stories, and acceptance criteria"
+      duration: "1-2 days"
+      primary_personas: ["product-manager", "business-analyst", "product-owner"]
+      secondary_personas: ["tech-lead", "architect"]
+      activities:
+        - "requirement-gathering"
+        - "user-story-creation"
+        - "acceptance-criteria-definition"
+        - "stakeholder-alignment"
+      gates:
+        - "requirements-approved"
+        - "story-ready"
+        - "acceptance-criteria-clear"
+      metrics:
+        - "story-points-estimated"
+        - "stakeholder-sign-off"
+        - "technical-feasibility"
+
+    # Planning Phase - Cross-functional Planning
+    - id: "plan"
+      name: "Planning & Architecture"
+      description: "Technical planning, architecture design, and sprint planning"
+      duration: "2-3 days"
+      primary_personas: ["tech-lead", "architect", "product-manager"]
+      secondary_personas: ["developer", "security-engineer", "devops-engineer"]
+      activities:
+        - "architecture-design"
+        - "technical-planning"
+        - "security-considerations"
+        - "infrastructure-planning"
+        - "sprint-planning"
+      gates:
+        - "architecture-approved"
+        - "security-reviewed"
+        - "sprint-committed"
+      metrics:
+        - "planning-velocity"
+        - "architecture-complexity"
+        - "security-risk-assessment"
+
+    # Development Phase - Implementation Focus
+    - id: "develop"
+      name: "Development & Implementation"
+      description: "Code implementation, unit testing, and peer reviews"
+      duration: "1-2 weeks"
+      primary_personas: ["developer", "tech-lead"]
+      secondary_personas: ["qa-engineer", "security-engineer"]
+      activities:
+        - "feature-implementation"
+        - "unit-testing"
+        - "code-reviews"
+        - "static-analysis"
+        - "documentation"
+      gates:
+        - "code-complete"
+        - "tests-passing"
+        - "peer-reviewed"
+        - "documentation-updated"
+      metrics:
+        - "code-coverage"
+        - "review-cycle-time"
+        - "defect-density"
+        - "technical-debt"
+
+    # Security Phase - Security & Compliance
+    - id: "secure"
+      name: "Security & Compliance"
+      description: "Security scanning, threat modeling, and compliance validation"
+      duration: "1-2 days"
+      primary_personas: ["security-engineer", "compliance-officer"]
+      secondary_personas: ["developer", "devops-engineer"]
+      activities:
+        - "security-scanning"
+        - "vulnerability-assessment"
+        - "threat-modeling"
+        - "compliance-checking"
+        - "security-documentation"
+      gates:
+        - "security-scan-passed"
+        - "vulnerabilities-resolved"
+        - "compliance-validated"
+      metrics:
+        - "security-score"
+        - "vulnerability-count"
+        - "compliance-percentage"
+
+    # Testing Phase - Quality Assurance
+    - id: "test"
+      name: "Testing & Quality Assurance"
+      description: "Integration testing, system testing, and quality validation"
+      duration: "2-3 days"
+      primary_personas: ["qa-engineer"]
+      secondary_personas: ["developer", "product-manager", "security-engineer"]
+      activities:
+        - "integration-testing"
+        - "system-testing"
+        - "performance-testing"
+        - "security-testing"
+        - "user-acceptance-testing"
+      gates:
+        - "integration-tests-passed"
+        - "performance-benchmarks-met"
+        - "security-tests-passed"
+        - "user-acceptance-approved"
+      metrics:
+        - "test-coverage"
+        - "defect-escape-rate"
+        - "performance-metrics"
+        - "user-satisfaction"
+
+    # Deployment Phase - Operations Focus
+    - id: "deploy"
+      name: "Deployment & Release"
+      description: "Production deployment, infrastructure provisioning, and release management"
+      duration: "1-2 hours"
+      primary_personas: ["devops-engineer", "release-manager"]
+      secondary_personas: ["sre", "infrastructure-architect"]
+      activities:
+        - "infrastructure-provisioning"
+        - "deployment-automation"
+        - "smoke-testing"
+        - "rollback-preparation"
+        - "release-communication"
+      gates:
+        - "deployment-successful"
+        - "smoke-tests-passed"
+        - "rollback-tested"
+      metrics:
+        - "deployment-time"
+        - "deployment-success-rate"
+        - "rollback-time"
+
+    # Monitoring Phase - Operational Excellence
+    - id: "monitor"
+      name: "Monitoring & Observability"
+      description: "Production monitoring, alerting, and performance tracking"
+      duration: "Continuous"
+      primary_personas: ["sre", "devops-engineer"]
+      secondary_personas: ["developer", "product-manager"]
+      activities:
+        - "metrics-collection"
+        - "alerting-setup"
+        - "log-aggregation"
+        - "dashboard-configuration"
+        - "incident-detection"
+      gates:
+        - "monitoring-active"
+        - "alerts-configured"
+        - "dashboards-available"
+      metrics:
+        - "system-availability"
+        - "response-time"
+        - "error-rate"
+        - "alert-accuracy"
+
+    # Operations Phase - Production Support
+    - id: "operate"
+      name: "Operations & Support"
+      description: "Production support, incident response, and maintenance"
+      duration: "Continuous"
+      primary_personas: ["sre", "support-lead", "customer-success"]
+      secondary_personas: ["developer", "devops-engineer"]
+      activities:
+        - "incident-response"
+        - "customer-support"
+        - "performance-optimization"
+        - "capacity-planning"
+        - "maintenance-windows"
+      gates:
+        - "sla-compliance"
+        - "incident-resolution"
+        - "customer-satisfaction"
+      metrics:
+        - "uptime-percentage"
+        - "mttr" # Mean Time To Resolution
+        - "customer-satisfaction"
+        - "support-ticket-volume"
+
+    # Governance Phase - Compliance & Oversight
+    - id: "govern"
+      name: "Governance & Compliance"
+      description: "Audit, compliance reporting, and governance oversight"
+      duration: "Ongoing"
+      primary_personas: ["compliance-officer", "executive"]
+      secondary_personas: ["security-engineer", "product-manager"]
+      activities:
+        - "compliance-auditing"
+        - "risk-assessment"
+        - "policy-enforcement"
+        - "governance-reporting"
+        - "continuous-improvement"
+      gates:
+        - "audit-passed"
+        - "compliance-certified"
+        - "risk-mitigated"
+      metrics:
+        - "compliance-score"
+        - "audit-findings"
+        - "risk-level"
+        - "policy-adherence"
+
+  # Cross-phase triggers and automation
+  triggers:
+    - event: "code-commit"
+      phases: ["develop", "secure", "test"]
+      action: "trigger-pipeline"
+    - event: "security-vulnerability"
+      phases: ["secure", "govern"]
+      action: "escalate-to-security-team"
+    - event: "production-incident"
+      phases: ["operate", "monitor"]
+      action: "trigger-incident-response"
+    - event: "compliance-violation"
+      phases: ["govern", "secure"]
+      action: "trigger-audit-review"
+    - event: "deployment-failure"
+      phases: ["deploy", "operate"]
+      action: "trigger-rollback"
+
+  # Phase dependencies and flow control
+  flow:
+    sequential_required:
+      - ["intake", "plan"]
+      - ["plan", "develop"]
+      - ["develop", "test"]
+      - ["test", "deploy"]
+    parallel_allowed:
+      - ["secure", "test"] # Security and testing can happen in parallel
+      - ["monitor", "operate"] # Monitoring and operations are continuous
+    conditional:
+      - phase: "govern"
+        condition: "compliance-required"
+        trigger: "security-scan-critical-findings"
+    - event: "user-request"
+      action: "start-workflow"

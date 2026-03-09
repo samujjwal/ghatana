@@ -1,0 +1,261 @@
+openapi: 3.1.0
+info:
+  title: Ghatana Auth Gateway API
+  description: |
+    Authentication and authorization gateway for the Ghatana platform.
+    Provides JWT-based authentication, token validation, refresh, and tenant context extraction.
+  version: 1.0.0
+  contact:
+    name: Ghatana Platform Team
+  license:
+    name: Proprietary
+
+servers:
+  - url: http://localhost:8081
+    description: Local development
+
+paths:
+  /health:
+    get:
+      operationId: healthCheck
+      summary: Service health check
+      description: Returns the health status of the auth gateway service.
+      tags:
+        - Health
+      responses:
+        '200':
+          description: Service is healthy
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HealthResponse'
+
+  /auth/login:
+    post:
+      operationId: login
+      summary: Authenticate user
+      description: |
+        Authenticates a user with email and password credentials.
+        Returns JWT access and refresh tokens on success.
+      tags:
+        - Authentication
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/LoginRequest'
+      responses:
+        '200':
+          description: Authentication successful
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/LoginResponse'
+        '400':
+          description: Missing or malformed request body
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '401':
+          description: Invalid credentials
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /auth/validate:
+    get:
+      operationId: validateToken
+      summary: Validate JWT token
+      description: |
+        Validates a JWT token from the Authorization header.
+        Returns the decoded user ID and roles if the token is valid.
+      tags:
+        - Authentication
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: Token is valid
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ValidateResponse'
+        '401':
+          description: Missing, malformed, or invalid token
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ValidateErrorResponse'
+
+  /auth/refresh:
+    post:
+      operationId: refreshToken
+      summary: Refresh JWT access token
+      description: |
+        Issues a new access token using a valid refresh token.
+        The refresh token must be provided in the Authorization header.
+      tags:
+        - Authentication
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: Token refreshed successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RefreshResponse'
+        '401':
+          description: Missing or invalid refresh token
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /auth/tenant:
+    get:
+      operationId: extractTenant
+      summary: Extract tenant context
+      description: |
+        Extracts the tenant ID from the authenticated request context.
+        Useful for multi-tenant routing and context propagation.
+      tags:
+        - Tenant
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: Tenant context extracted
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TenantResponse'
+
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+      description: JWT token obtained from /auth/login
+
+  schemas:
+    HealthResponse:
+      type: object
+      properties:
+        status:
+          type: string
+          example: UP
+        service:
+          type: string
+          example: auth-gateway
+      required:
+        - status
+
+    LoginRequest:
+      type: object
+      properties:
+        email:
+          type: string
+          format: email
+          description: User email address
+          example: admin@ghatana.com
+        password:
+          type: string
+          format: password
+          description: User password
+          example: '********'
+      required:
+        - email
+        - password
+
+    LoginResponse:
+      type: object
+      properties:
+        accessToken:
+          type: string
+          description: JWT access token
+        refreshToken:
+          type: string
+          description: JWT refresh token for obtaining new access tokens
+        expiresIn:
+          type: integer
+          description: Access token expiration time in seconds
+          example: 3600
+        userId:
+          type: string
+          description: Authenticated user ID
+        roles:
+          type: array
+          items:
+            type: string
+          description: User roles
+          example: ['ADMIN', 'USER']
+      required:
+        - accessToken
+        - refreshToken
+        - expiresIn
+
+    ValidateResponse:
+      type: object
+      properties:
+        valid:
+          type: boolean
+          example: true
+        userId:
+          type: string
+          description: ID of the token owner
+        roles:
+          type: array
+          items:
+            type: string
+          description: Roles from the token claims
+      required:
+        - valid
+
+    ValidateErrorResponse:
+      type: object
+      properties:
+        valid:
+          type: boolean
+          example: false
+        error:
+          type: string
+          example: Invalid token
+
+    RefreshResponse:
+      type: object
+      properties:
+        accessToken:
+          type: string
+          description: New JWT access token
+        expiresIn:
+          type: integer
+          description: Token expiration time in seconds
+          example: 3600
+      required:
+        - accessToken
+        - expiresIn
+
+    TenantResponse:
+      type: object
+      properties:
+        tenantId:
+          type: string
+          description: Extracted tenant identifier
+          example: tenant-abc-123
+      required:
+        - tenantId
+
+    ErrorResponse:
+      type: object
+      properties:
+        error:
+          type: string
+          description: Error message
+          example: Invalid credentials
+      required:
+        - error

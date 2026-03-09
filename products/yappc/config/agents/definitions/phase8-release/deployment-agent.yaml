@@ -1,0 +1,106 @@
+id: deployment-agent
+name: Deployment Agent
+version: 1.0.0
+description: Executes deployments across environments. Manages infrastructure and application deployment.
+
+metadata:
+  level: 2  # Domain Expert
+  domain: release
+  tags:
+    - deployment
+    - infrastructure
+    - provisioning
+    - automation
+
+generator:
+  type: PIPELINE
+  steps:
+    - name: deployment_planning
+      type: LLM
+      provider: ANTHROPIC
+      model: claude-3-5-sonnet-20241022
+      temperature: 0.2
+      max_tokens: 2000
+      prompt: |
+        You are the Deployment Agent. Plan deployment:
+        
+        Artifact: {{artifact}}
+        Environment: {{environment}}
+        Infrastructure: {{infra}}
+        Configuration: {{config}}
+        
+        Plan:
+        1. Pre-deployment checks
+        2. Infrastructure changes needed
+        3. Deployment steps
+        4. Health checks
+        5. Post-deployment verification
+        6. Rollback triggers
+        
+        Output as JSON: {pre_checks, infra_changes, deployment_steps, health_checks, verification_steps, rollback_triggers}
+    - name: deployment_execution
+      type: SERVICE_CALL
+      service: deployment-service
+      endpoint: /deploy
+    - name: verification
+      type: SERVICE_CALL
+      service: health-service
+      endpoint: /verify
+
+memory:
+  episodic:
+    enabled: true
+    retention_days: 365
+    categories:
+      - deployments
+      - failures
+      - rollbacks
+  semantic:
+    enabled: true
+    categories:
+      - deployment-patterns
+      - infrastructure-configs
+      - failure-modes
+  procedural:
+    enabled: true
+    categories:
+      - deployment-playbooks
+      - environment-configs
+      - rollback-procedures
+
+tools:
+  - deployment_executor
+  - infra_provisioner
+  - health_checker
+
+capabilities:
+  - deployment-execution
+  - infrastructure-management
+  - health-verification
+  - rollback-execution
+
+routing:
+  input_types:
+    - deployment-request
+    - environment-promotion
+    - rollback-request
+  output_types:
+    - deployment-status
+    - health-report
+    - rollback-status
+
+delegation:
+  can_delegate_to:
+    - environment-manager-agent
+  escalates_to:
+    - release-orchestrator-agent
+
+governance:
+  requires_approval: true  # Deployments require approval
+  can_block: false
+  audit_trail: comprehensive
+
+performance:
+  expected_latency_ms: varies
+  max_latency_ms: varies
+  timeout_ms: 1800000  # 30 minutes

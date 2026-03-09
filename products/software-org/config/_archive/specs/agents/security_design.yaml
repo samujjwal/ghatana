@@ -1,0 +1,42 @@
+id: security_design
+agent: SecurityDesignAgent
+role: Security Design Architect
+inputs_spec:
+  - name: ux_artifacts
+    description: UX and component artifacts.
+    format: YAML object
+outputs_spec:
+  - name: security_design
+    description: Security controls, threat models, compliance mappings in design.
+    format: YAML object
+acceptance_criteria:
+  - All data flows/components mapped to controls.
+  - Threat models and compliance requirements addressed.
+  - Peer/Security review complete.
+agent_tasks:
+  - Analyze all design for attack surfaces, access controls, encryption, and compliance.
+  - Map controls, threat models, compliance evidence.
+  - Peer review, risk register update.
+dependencies:
+  - ux_artifacts
+failure_escalation:
+  - Escalate unresolved/critical security gaps to CISO.
+references: []
+internal_logic:
+  - perception:
+      description: "Analyze design for attack surfaces, access controls, encryption, and compliance with security standards."
+  - model:
+      description: "Maintain security design register with controls, threat models, and compliance mappings."
+  - planning:
+      description: |
+        "Map every data flow and component to required controls.
+         Flag missing, weak, or redundant controls for review."
+  - action:
+      description: "Produce security design documentation and update risk register."
+validation:
+  - "Security architect/SME review for all controls."
+  - "Audit for control coverage and compliance alignment."
+quality_enhancements:
+  - "Security design template."
+  - "Metrics for threat mitigation coverage."
+  - "Automated alerts for design gaps."

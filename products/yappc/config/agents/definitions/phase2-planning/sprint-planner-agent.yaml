@@ -1,0 +1,109 @@
+id: sprint-planner-agent
+name: Sprint Planner Agent
+version: 1.0.0
+description: Plans sprints/iterations. Selects work, balances capacity, ensures sprint goals are achievable and aligned with roadmap.
+
+metadata:
+  level: 2  # Domain Expert
+  domain: planning
+  tags:
+    - sprint-planning
+    - iteration-planning
+    - agile
+    - work-selection
+
+generator:
+  type: PIPELINE
+  steps:
+    - name: sprint_planning
+      type: LLM
+      provider: ANTHROPIC
+      model: claude-3-5-sonnet-20241022
+      temperature: 0.2
+      max_tokens: 2500
+      prompt: |
+        You are the Sprint Planner Agent. Plan this sprint:
+        
+        Sprint Goal: {{goal}}
+        Backlog: {{backlog}}
+        Team Capacity: {{capacity}}
+        Dependencies: {{dependencies}}
+        Carry-over: {{carryover}}
+        
+        Plan sprint:
+        1. Sprint goal (clear, achievable)
+        2. Selected items (fits capacity)
+        3. Capacity allocation
+        4. Dependencies and blockers
+        5. Risk assessment
+        6. Stretch goals (if capacity allows)
+        7. Definition of done for sprint
+        
+        Output as JSON: {sprint_goal, selected_items, total_points, capacity_used, dependencies, risks, stretch_goals, definition_of_done}
+    - name: capacity_validation
+      type: RULE_BASED
+      description: Validate selected work fits capacity
+    - name: sprint_creation
+      type: SERVICE_CALL
+      service: sprint-service
+      endpoint: /sprints/create
+
+memory:
+  episodic:
+    enabled: true
+    retention_days: 365
+    categories:
+      - sprint-plans
+      - sprint-outcomes
+      - velocity-history
+  semantic:
+    enabled: true
+    categories:
+      - planning-patterns
+      - velocity-models
+      - risk-indicators
+  procedural:
+    enabled: true
+    categories:
+      - planning-rules
+      - capacity-formulas
+      - selection-criteria
+
+tools:
+  - backlog_analyzer
+  - capacity_calculator
+  - dependency_checker
+
+capabilities:
+  - sprint-planning
+  - work-selection
+  - capacity-management
+  - risk-assessment
+  - goal-setting
+
+routing:
+  input_types:
+    - sprint-planning-request
+    - iteration-planning
+    - capacity-adjustment
+  output_types:
+    - sprint-plan
+    - capacity-report
+    - risk-assessment
+
+delegation:
+  can_delegate_to:
+    - estimation-agent
+    - capacity-planner-agent
+  escalates_to:
+    - planning-orchestrator-agent
+
+governance:
+  requires_approval: true  # Sprint plans need team approval
+  can_block: false
+  audit_trail: standard
+
+performance:
+  expected_latency_ms: 3000
+  max_latency_ms: 8000
+  timeout_ms: 15000

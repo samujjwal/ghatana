@@ -1,0 +1,1805 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+// ============================================================================
+// USER & WORKSPACE MANAGEMENT
+// ============================================================================
+
+///
+/// User entity representing a system user.
+/// @doc.type model
+/// @doc.purpose User identity and profile
+/// @doc.layer product
+/// @doc.pattern Value Object
+///
+model User {
+  id                 String  @id @default(cuid())
+  email              String  @unique
+  name               String
+  avatar             String?
+  role               Role    @default(EDITOR)
+  passwordHash       String?
+  passwordResetToken String?
+
+  // Relations
+  workspaces      WorkspaceMember[]
+  projects        Project[]
+  canvasDocuments CanvasDocument[]
+  pages           Page[]
+  ownedItems      ItemOwner[]
+  aiPreferences   UserAIPreferences?
+
+  // Timestamps
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([email])
+}
+
+///
+/// Workspace entity representing an organizational container.
+/// Workspaces are simple containers - project ownership determines permissions.
+/// @doc.type model
+/// @doc.purpose Workspace container for projects
+/// @doc.layer product
+/// @doc.pattern Value Object
+///
+model Workspace {
+  id          String  @id @default(cuid())
+  name        String
+  description String?
+  ownerId     String
+
+  /// Is this the user's default workspace (auto-created on registration)
+  isDefault Boolean @default(false)
+
+  /// AI-generated workspace summary based on projects
+  aiSummary String?
+
+  /// AI-suggested tags for categorization
+  aiTags String[] @default([])
+
+  // Relations
+  members          WorkspaceMember[]
+  ownedProjects    Project[]          @relation("OwnedProjects")
+  includedProjects WorkspaceProject[] @relation("IncludedProjects")
+
+  // Timestamps
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([ownerId])
+}
+
+///
+/// WorkspaceMember entity representing membership in a workspace.
+/// @doc.type model
+/// @doc.purpose Workspace membership
+/// @doc.layer product
+/// @doc.pattern Value Object
+///
+model WorkspaceMember {
+  id          String @id @default(cuid())
+  userId      String
+  workspaceId String
+  role        Role   @default(EDITOR)
+
+  // Relations
+  user      User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  workspace Workspace @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+
+  // Timestamps
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@unique([userId, workspaceId])
+  @@index([workspaceId])
+}
+
+// ============================================================================
+// PROJECT MANAGEMENT
+// ============================================================================
+
+///
+/// Project entity representing a top-level project container.
+/// Projects are OWNED by exactly one workspace (full CRUD access).
+/// Projects can be INCLUDED in other workspaces (read-only access).
+/// @doc.type model
+/// @doc.purpose Project container with ownership model
+/// @doc.layer product
+/// @doc.pattern Value Object
+///
+model Project {
+  id               String         @id @default(cuid())
+  ownerWorkspaceId String
+  createdById      String
+  name             String
+  description      String?
+  type             ProjectType
+  status           ProjectStatus  @default(DRAFT)
+  lifecyclePhase   LifecyclePhase @default(SHAPE)
+
+  /// Is this the default project in owner workspace (auto-created)
+  isDefault Boolean @default(false)
+
+  /// AI-generated project summary
+  aiSummary String?
+
+  /// AI-suggested next actions
+  aiNextActions String[] @default([])
+
+  /// AI health score (0-100)
+  aiHealthScore Int?
+
+  // Relations - OWNERSHIP
+  ownerWorkspace Workspace @relation("OwnedProjects", fields: [ownerWorkspaceId], references: [id], onDelete: Cascade)
+  createdBy      User      @relation(fields: [createdById], references: [id])
+
+  // Relations - INCLUSION (read-only in other workspaces)
+  includedIn WorkspaceProject[] @relation("ProjectInclusions")
+
+  // Content relations
+  documents CanvasDocument[]
+  pages     Page[]
+
+  // Lifecycle Hub (project-scoped)
+  lifecycleArtifacts    LifecycleArtifact[]
+  lifecycleItems        LifecycleItem[]
+  lifecycleAIInsights   LifecycleAIInsight[]
+  lifecycleActivityLogs LifecycleActivityLog[]
+
+  // Timestamps
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  // Note: Partial unique index "only ONE isDefault=true per workspace" is created via migration
+  // Cannot express in Prisma schema: CREATE UNIQUE INDEX ... WHERE "isDefault" = true
+  @@index([ownerWorkspaceId])
+  @@index([createdById])
+}
+
+///
+/// WorkspaceProject junction table for including projects in workspaces.
+/// Projects included via this table are READ-ONLY in the including workspace.
+/// @doc.type model
+/// @doc.purpose Many-to-many project inclusion (read-only)
+/// @doc.layer product
+/// @doc.pattern Junction Table
+///
+model WorkspaceProject {
+  id          String @id @default(cuid())
+  workspaceId String
+  projectId   String
+  addedById   String
+
+  /// AI-generated reason for inclusion
+  aiInclusionReason String?
+
+  // Relations
+  workspace Workspace @relation("IncludedProjects", fields: [workspaceId], references: [id], onDelete: Cascade)
+  project   Project   @relation("ProjectInclusions", fields: [projectId], references: [id], onDelete: Cascade)
+
+  // Timestamps
+  addedAt DateTime @default(now())
+
+  @@unique([workspaceId, projectId])
+  @@index([workspaceId])
+  @@index([projectId])
+}
+
+// ============================================================================
+// CANVAS DOCUMENTS
+// ============================================================================
+
+///
+/// CanvasDocument entity representing a canvas diagram.
+/// @doc.type model
+/// @doc.purpose Canvas document container
+/// @doc.layer product
+/// @doc.pattern Value Object
+///
+model CanvasDocument {
+  id          String  @id @default(cuid())
+  projectId   String
+  createdById String
+  name        String
+  description String?
+
+  // Content stored as JSON
+  // Structure: { nodes: CanvasNode[], edges: CanvasEdge[], viewport: CanvasViewport }
+  content Json @default("{\"nodes\": [], \"edges\": [], \"viewport\": {\"zoom\": 1, \"x\": 0, \"y\": 0}}")
+
+  // Relations
+  project   Project           @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  createdBy User              @relation(fields: [createdById], references: [id])
+  versions  CanvasVersion[]
+
+  // Timestamps
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@unique([projectId, name])
+  @@index([projectId])
+  @@index([createdById])
+}
+
+///
+/// CanvasVersion entity for version history and conflict resolution.
+/// @doc.type model
+/// @doc.purpose Canvas version history for undo/redo and collaboration
+/// @doc.layer product
+/// @doc.pattern Value Object
+///
+model CanvasVersion {
+  id         String @id @default(cuid())
+  canvasId   String
+  version    Int
+  content    Json
+  changeType String @default("MANUAL_SAVE") // MANUAL_SAVE, AUTO_SAVE, RESTORE, MERGE
+  changedBy  String?
+  changeSummary String? // Optional description of what changed
+  
+  // Conflict resolution metadata
+  baseVersion Int? // For merge conflict resolution
+  mergedFrom  String[] @default([]) // Version IDs that were merged
+  
+  // Relations
+  canvas CanvasDocument @relation(fields: [canvasId], references: [id], onDelete: Cascade)
+  
+  // Timestamps
+  createdAt DateTime @default(now())
+  
+  @@unique([canvasId, version])
+  @@index([canvasId])
+  @@index([createdAt])
+}
+
+// ============================================================================
+// PAGES
+// ============================================================================
+
+///
+/// Page entity representing a page in the page builder.
+/// @doc.type model
+/// @doc.purpose Page builder page
+/// @doc.layer product
+/// @doc.pattern Value Object
+///
+model Page {
+  id          String @id @default(cuid())
+  projectId   String
+  createdById String
+  name        String
+  path        String
+  layout      String @default("flex")
+
+  // Content stored as JSON
+  // Structure: { components: PageComponent[] }
+  content Json @default("{\"components\": []}")
+
+  // Relations
+  project   Project @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  createdBy User    @relation(fields: [createdById], references: [id])
+
+  // Timestamps
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@unique([projectId, path])
+  @@index([projectId])
+  @@index([createdById])
+}
+
+// ============================================================================
+// ENUMERATIONS
+// ============================================================================
+
+///
+/// User role enumeration.
+/// @doc.type enum
+/// @doc.purpose User role classification
+/// @doc.layer product
+/// @doc.pattern Value Object
+///
+enum Role {
+  VIEWER
+  EDITOR
+  ADMIN
+  OWNER
+}
+
+///
+/// Project type enumeration.
+/// @doc.type enum
+/// @doc.purpose Project type classification
+/// @doc.layer product
+/// @doc.pattern Value Object
+///
+enum ProjectType {
+  UI
+  BACKEND
+  MOBILE
+  DESKTOP
+  FULL_STACK
+}
+
+///
+/// Project status enumeration.
+/// @doc.type enum
+/// @doc.purpose Project status classification
+/// @doc.layer product
+/// @doc.pattern Value Object
+///
+enum ProjectStatus {
+  DRAFT
+  ACTIVE
+  COMPLETED
+  ARCHIVED
+}
+
+///
+/// Lifecycle phase enumeration.
+/// Represents the 7-phase YAPPC product lifecycle.
+/// @doc.type enum
+/// @doc.purpose Lifecycle phase classification
+/// @doc.layer product
+/// @doc.pattern Value Object
+///
+enum LifecyclePhase {
+  INTENT
+  SHAPE
+  VALIDATE
+  GENERATE
+  RUN
+  OBSERVE
+  IMPROVE
+}
+
+// ============================================================================
+// WORKFLOW MANAGEMENT
+// ============================================================================
+
+///
+/// Workflow type enumeration.
+/// @doc.type enum
+/// @doc.purpose Workflow type classification
+/// @doc.layer product
+/// @doc.pattern Value Object
+///
+enum WorkflowType {
+  BUG_FIX
+  FEATURE
+  INCIDENT
+  REFACTOR
+  MIGRATION
+  SECURITY_UPDATE
+  AI_ASSIST
+  DOCUMENTATION
+  TESTING
+  INFRASTRUCTURE
+}
+
+///
+/// Workflow status enumeration.
+/// @doc.type enum
+/// @doc.purpose Workflow status classification
+/// @doc.layer product
+/// @doc.pattern Value Object
+///
+enum WorkflowStatus {
+  DRAFT
+  IN_PROGRESS
+  BLOCKED
+  COMPLETED
+  CANCELLED
+}
+
+///
+/// Workflow step enumeration.
+/// @doc.type enum
+/// @doc.purpose Workflow lifecycle step
+/// @doc.layer product
+/// @doc.pattern Value Object
+///
+enum WorkflowStep {
+  INTENT
+  CONTEXT
+  PLAN
+  EXECUTE
+  VERIFY
+  OBSERVE
+  LEARN
+  INSTITUTIONALIZE
+}
+
+///
+/// Step status enumeration.
+/// @doc.type enum
+/// @doc.purpose Step status within workflow
+/// @doc.layer product
+/// @doc.pattern Value Object
+///
+enum StepStatus {
+  NOT_STARTED
+  IN_PROGRESS
+  COMPLETED
+  REVISITED
+  BLOCKED
+}
+
+///
+/// AI mode enumeration.
+/// @doc.type enum
+/// @doc.purpose AI assistance mode
+/// @doc.layer product
+/// @doc.pattern Value Object
+///
+enum AIMode {
+  ASSIST
+  RESTRICTED
+  SIMULATE
+  AGENT_READY
+}
+
+///
+/// Audit action enumeration.
+/// @doc.type enum
+/// @doc.purpose Audit action types
+/// @doc.layer product
+/// @doc.pattern Value Object
+///
+enum AuditAction {
+  CREATED
+  STEP_STARTED
+  STEP_COMPLETED
+  STEP_REVISITED
+  DATA_UPDATED
+  AI_SUGGESTION_ACCEPTED
+  AI_SUGGESTION_REJECTED
+  STATUS_CHANGED
+  OWNER_CHANGED
+}
+
+///
+/// Workflow entity representing a software engineering workflow.
+/// @doc.type model
+/// @doc.purpose Workflow container
+/// @doc.layer product
+/// @doc.pattern Value Object
+///
+model Workflow {
+  id           String         @id @default(cuid())
+  name         String
+  description  String?
+  workflowType WorkflowType
+  currentStep  WorkflowStep   @default(INTENT)
+  status       WorkflowStatus @default(DRAFT)
+  aiMode       AIMode         @default(ASSIST)
+  ownerId      String
+  ownerName    String
+  projectId    String?
+  templateId   String?
+
+  // Step data stored as JSON
+  steps Json @default("{}")
+
+  // Metrics stored as JSON
+  metrics Json @default("{}")
+
+  // Relations
+  auditEntries WorkflowAudit[]
+  contributors WorkflowContributor[]
+  template     WorkflowTemplate?     @relation(fields: [templateId], references: [id])
+  aiPlan       AIGeneratedPlan?
+
+  // Timestamps
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([ownerId])
+  @@index([projectId])
+  @@index([status])
+  @@index([workflowType])
+}
+
+///
+/// WorkflowContributor entity representing a contributor to a workflow.
+/// @doc.type model
+/// @doc.purpose Workflow contributor
+/// @doc.layer product
+/// @doc.pattern Value Object
+///
+model WorkflowContributor {
+  id         String @id @default(cuid())
+  workflowId String
+  userId     String
+  userName   String
+  role       String @default("CONTRIBUTOR")
+
+  // Relations
+  workflow Workflow @relation(fields: [workflowId], references: [id], onDelete: Cascade)
+
+  // Timestamps
+  joinedAt DateTime @default(now())
+
+  @@unique([workflowId, userId])
+  @@index([workflowId])
+  @@index([userId])
+}
+
+///
+/// WorkflowAudit entity representing an audit entry for a workflow.
+/// @doc.type model
+/// @doc.purpose Workflow audit trail
+/// @doc.layer product
+/// @doc.pattern Value Object
+///
+model WorkflowAudit {
+  id            String        @id @default(cuid())
+  workflowId    String
+  action        AuditAction
+  step          WorkflowStep?
+  userId        String
+  userName      String
+  details       Json?
+  previousValue Json?
+  newValue      Json?
+
+  // Relations
+  workflow Workflow @relation(fields: [workflowId], references: [id], onDelete: Cascade)
+
+  // Timestamps
+  timestamp DateTime @default(now())
+
+  @@index([workflowId])
+  @@index([userId])
+  @@index([action])
+}
+
+///
+/// WorkflowTemplate entity representing a workflow template.
+/// @doc.type model
+/// @doc.purpose Workflow template definition
+/// @doc.layer product
+/// @doc.pattern Value Object
+///
+model WorkflowTemplate {
+  id             String       @id @default(cuid())
+  name           String
+  description    String
+  workflowType   WorkflowType
+  defaultIntent  Json         @default("{}")
+  requiredFields Json         @default("{}")
+  defaultRisks   Json         @default("[]")
+  defaultMetrics Json         @default("[]")
+  isSystem       Boolean      @default(false)
+
+  // Relations
+  workflows Workflow[]
+
+  // Timestamps
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([workflowType])
+  @@index([isSystem])
+}
+
+// ============================================================================
+// DEVSECOPS LIFECYCLE MANAGEMENT
+// ============================================================================
+
+///
+/// Phase entity representing a DevSecOps lifecycle phase.
+/// @doc.type model
+/// @doc.purpose Lifecycle phase container
+/// @doc.layer product
+/// @doc.pattern Value Object
+///
+model Phase {
+  id          String      @id @default(cuid())
+  key         String      @unique
+  title       String
+  description String?
+  order       Int
+  color       String
+  icon        String?
+  status      PhaseStatus @default(ACTIVE)
+
+  // AI-enhanced fields
+  healthScore      Float?
+  riskScore        Float?
+  predictedEndDate DateTime?
+
+  // Relations
+  items       Item[]
+  milestones  Milestone[]
+  kpis        PhaseKPI[]
+  predictions PhasePrediction[]
+
+  // Timestamps
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([key])
+  @@index([order])
+}
+
+///
+/// Phase status enumeration.
+///
+enum PhaseStatus {
+  ACTIVE
+  INACTIVE
+  COMPLETED
+  AT_RISK
+}
+
+///
+/// Milestone entity within a phase.
+/// @doc.type model
+/// @doc.purpose Phase milestone tracking
+/// @doc.layer product
+/// @doc.pattern Value Object
+///
+model Milestone {
+  id          String          @id @default(cuid())
+  phaseId     String
+  title       String
+  description String?
+  dueDate     DateTime
+  status      MilestoneStatus @default(PENDING)
+  ownerId     String?
+  progress    Int             @default(0)
+
+  // AI predictions
+  predictedCompletionDate DateTime?
+  riskScore               Float?
+
+  // Relations
+  phase Phase @relation(fields: [phaseId], references: [id], onDelete: Cascade)
+
+  // Timestamps
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([phaseId])
+  @@index([status])
+}
+
+///
+/// Milestone status enumeration.
+///
+enum MilestoneStatus {
+  PENDING
+  IN_PROGRESS
+  COMPLETED
+  DELAYED
+  AT_RISK
+}
+
+///
+/// Item entity representing a work item (feature, task, bug, etc.).
+/// @doc.type model
+/// @doc.purpose Work item tracking
+/// @doc.layer product
+/// @doc.pattern Value Object
+///
+model Item {
+  id             String       @id @default(cuid())
+  title          String
+  description    String?
+  type           ItemType
+  priority       ItemPriority @default(MEDIUM)
+  status         ItemStatus   @default(NOT_STARTED)
+  phaseId        String
+  workflowId     String?
+  progress       Int          @default(0)
+  startDate      DateTime?
+  dueDate        DateTime?
+  completedAt    DateTime?
+  estimatedHours Int?
+  actualHours    Int?
+
+  // AI-enhanced fields
+  aiPriorityScore  Float?
+  riskScore        Float?
+  predictedDueDate DateTime?
+  sentimentScore   Float?
+
+  // Parent-child hierarchy
+  parentId String?
+  parent   Item?   @relation("ItemHierarchy", fields: [parentId], references: [id])
+  children Item[]  @relation("ItemHierarchy")
+
+  // Relations
+  phase          Phase             @relation(fields: [phaseId], references: [id], onDelete: Cascade)
+  owners         ItemOwner[]
+  tags           ItemTag[]
+  artifacts      Artifact[]
+  integrations   ItemIntegration[]
+  dependencies   ItemDependency[]  @relation("DependentItem")
+  dependents     ItemDependency[]  @relation("BlockingItem")
+  aiInsights     AIInsight[]
+  embedding      VectorEmbedding?
+  itemEmbeddings ItemEmbedding[]
+  comments       ItemComment[]
+
+  // Timestamps
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([phaseId])
+  @@index([type])
+  @@index([status])
+  @@index([priority])
+  @@index([workflowId])
+}
+
+///
+/// Item type enumeration.
+///
+enum ItemType {
+  FEATURE
+  STORY
+  TASK
+  BUG
+  EPIC
+  SPIKE
+  SECURITY_ISSUE
+  TECH_DEBT
+}
+
+///
+/// Item priority enumeration.
+///
+enum ItemPriority {
+  LOW
+  MEDIUM
+  HIGH
+  CRITICAL
+}
+
+///
+/// Item status enumeration.
+///
+enum ItemStatus {
+  NOT_STARTED
+  IN_PROGRESS
+  BLOCKED
+  IN_REVIEW
+  COMPLETED
+  ARCHIVED
+}
+
+///
+/// Item owner join table.
+///
+model ItemOwner {
+  id     String @id @default(cuid())
+  itemId String
+  userId String
+  role   String @default("OWNER")
+
+  item Item @relation(fields: [itemId], references: [id], onDelete: Cascade)
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([itemId, userId])
+  @@index([itemId])
+  @@index([userId])
+}
+
+///
+/// Item tag join table.
+///
+model ItemTag {
+  id     String @id @default(cuid())
+  itemId String
+  tag    String
+
+  item Item @relation(fields: [itemId], references: [id], onDelete: Cascade)
+
+  @@unique([itemId, tag])
+  @@index([itemId])
+  @@index([tag])
+}
+
+///
+/// Item dependency tracking.
+///
+model ItemDependency {
+  id          String         @id @default(cuid())
+  dependentId String
+  blockingId  String
+  type        DependencyType @default(BLOCKS)
+
+  dependent Item @relation("DependentItem", fields: [dependentId], references: [id], onDelete: Cascade)
+  blocking  Item @relation("BlockingItem", fields: [blockingId], references: [id], onDelete: Cascade)
+
+  @@unique([dependentId, blockingId])
+  @@index([dependentId])
+  @@index([blockingId])
+}
+
+///
+/// Dependency type enumeration.
+///
+enum DependencyType {
+  BLOCKS
+  DEPENDS_ON
+  RELATED_TO
+}
+
+///
+/// Item comment with sentiment tracking.
+///
+model ItemComment {
+  id      String @id @default(cuid())
+  itemId  String
+  userId  String
+  content String
+
+  // AI-enhanced fields
+  sentimentScore Float?
+  sentimentLabel String?
+
+  item Item @relation(fields: [itemId], references: [id], onDelete: Cascade)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([itemId])
+  @@index([userId])
+}
+
+///
+/// Artifact entity for files and documents.
+/// @doc.type model
+/// @doc.purpose File/document attachment
+/// @doc.layer product
+/// @doc.pattern Value Object
+///
+model Artifact {
+  id          String       @id @default(cuid())
+  itemId      String
+  type        ArtifactType
+  title       String
+  description String?
+  url         String?
+  content     String?
+  format      String?
+  version     String?
+  createdById String
+
+  // Relations
+  item                      Item               @relation(fields: [itemId], references: [id], onDelete: Cascade)
+  artifactAssociations      CodeAssociation[]  @relation("ArtifactAssociations")
+  codeArtifactAssociations  CodeAssociation[]  @relation("CodeArtifactAssociations")
+
+  // Timestamps
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([itemId])
+  @@index([type])
+}
+
+///
+/// Artifact type enumeration.
+///
+enum ArtifactType {
+  DIAGRAM
+  DOCUMENT
+  CODE
+  TEST
+  DESIGN
+  SCRIPT
+  REPORT
+  PRESENTATION
+}
+
+///
+/// CodeAssociation entity for linking code implementations to artifacts.
+/// @doc.type model
+/// @doc.purpose Link code artifacts to business artifacts
+/// @doc.layer product
+/// @doc.pattern Value Object
+///
+model CodeAssociation {
+  id              String                @id @default(cuid())
+  artifactId      String
+  codeArtifactId  String
+  relationship    CodeRelationshipType
+  metadata        Json                  @default("{}")
+
+  // Relations
+  artifact     Artifact @relation("ArtifactAssociations", fields: [artifactId], references: [id], onDelete: Cascade)
+  codeArtifact Artifact @relation("CodeArtifactAssociations", fields: [codeArtifactId], references: [id], onDelete: Cascade)
+
+  // Timestamps
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@unique([artifactId, codeArtifactId, relationship])
+  @@index([artifactId])
+  @@index([codeArtifactId])
+  @@index([relationship])
+}
+
+///
+/// Code relationship type enumeration.
+/// @doc.type enum
+/// @doc.purpose Types of code-artifact relationships
+/// @doc.layer product
+/// @doc.pattern Value Object
+///
+enum CodeRelationshipType {
+  IMPLEMENTATION
+  TEST
+  DOCUMENTATION
+  MOCK
+}
+
+///
+/// Item integration with external systems.
+///
+model ItemIntegration {
+  id          String              @id @default(cuid())
+  itemId      String
+  provider    IntegrationProvider
+  externalId  String
+  externalUrl String?
+  metadata    Json                @default("{}")
+
+  item Item @relation(fields: [itemId], references: [id], onDelete: Cascade)
+
+  syncedAt DateTime @default(now())
+
+  @@unique([itemId, provider, externalId])
+  @@index([itemId])
+  @@index([provider])
+}
+
+///
+/// Integration provider enumeration.
+///
+enum IntegrationProvider {
+  JIRA
+  GITHUB
+  GITLAB
+  SONARQUBE
+  JENKINS
+  CUSTOM
+}
+
+///
+/// Phase KPI tracking.
+///
+model PhaseKPI {
+  id                String          @id @default(cuid())
+  phaseId           String
+  name              String
+  description       String?
+  category          KPICategory
+  value             Float
+  unit              String?
+  target            Float?
+  warningThreshold  Float?
+  criticalThreshold Float?
+  trendDirection    TrendDirection?
+  trendPercentage   Float?
+
+  phase Phase @relation(fields: [phaseId], references: [id], onDelete: Cascade)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([phaseId])
+  @@index([category])
+}
+
+///
+/// KPI category enumeration.
+///
+enum KPICategory {
+  VELOCITY
+  QUALITY
+  SECURITY
+  OPERATIONS
+  CUSTOM
+}
+
+///
+/// Trend direction enumeration.
+///
+enum TrendDirection {
+  UP
+  DOWN
+  NEUTRAL
+}
+
+// ============================================================================
+// AI/ML MODELS
+// ============================================================================
+
+///
+/// AI Insight entity for ML-generated recommendations.
+/// @doc.type model
+/// @doc.purpose AI-generated insight/recommendation
+/// @doc.layer product
+/// @doc.pattern Value Object
+///
+model AIInsight {
+  id              String          @id @default(cuid())
+  itemId          String?
+  phaseId         String?
+  workflowId      String?
+  type            InsightType
+  title           String
+  description     String
+  confidence      Float
+  severity        InsightSeverity @default(INFO)
+  status          InsightStatus   @default(ACTIVE)
+  actionable      Boolean         @default(true)
+  suggestedAction Json?
+  metadata        Json            @default("{}")
+
+  // Agent that generated this insight
+  agentName    String
+  modelVersion String?
+
+  // User interaction
+  acknowledged    Boolean   @default(false)
+  acknowledgedBy  String?
+  acknowledgedAt  DateTime?
+  feedbackScore   Int?
+  feedbackComment String?
+
+  // Relations
+  item Item? @relation(fields: [itemId], references: [id], onDelete: SetNull)
+
+  createdAt DateTime  @default(now())
+  expiresAt DateTime?
+
+  @@index([itemId])
+  @@index([phaseId])
+  @@index([type])
+  @@index([status])
+  @@index([agentName])
+}
+
+///
+/// Insight type enumeration.
+///
+enum InsightType {
+  RECOMMENDATION
+  WARNING
+  OPTIMIZATION
+  RISK_ALERT
+  TREND_ANALYSIS
+  ANOMALY
+  PREDICTION
+  SUGGESTION
+}
+
+///
+/// Insight severity enumeration.
+///
+enum InsightSeverity {
+  INFO
+  LOW
+  MEDIUM
+  HIGH
+  CRITICAL
+}
+
+///
+/// Insight status enumeration.
+///
+enum InsightStatus {
+  ACTIVE
+  ACKNOWLEDGED
+  DISMISSED
+  RESOLVED
+  EXPIRED
+}
+
+///
+/// Prediction entity for ML forecasts.
+/// @doc.type model
+/// @doc.purpose ML-generated prediction
+/// @doc.layer product
+/// @doc.pattern Value Object
+///
+model Prediction {
+  id                  String           @id @default(cuid())
+  targetType          PredictionTarget
+  targetId            String
+  type                PredictionType
+  probability         Float
+  timeline            String?
+  affectedItems       Json             @default("[]")
+  suggestedMitigation Json             @default("[]")
+  confidence          Float
+  modelName           String
+  modelVersion        String
+  metadata            Json             @default("{}")
+
+  // Accuracy tracking
+  actualOutcome     Boolean?
+  outcomeRecordedAt DateTime?
+
+  createdAt DateTime  @default(now())
+  expiresAt DateTime?
+
+  @@index([targetType, targetId])
+  @@index([type])
+  @@index([probability])
+}
+
+///
+/// Prediction target enumeration.
+///
+enum PredictionTarget {
+  ITEM
+  PHASE
+  MILESTONE
+  WORKFLOW
+  TEAM
+}
+
+///
+/// Prediction type enumeration.
+///
+enum PredictionType {
+  DEADLINE_RISK
+  BLOCKER_LIKELIHOOD
+  SCOPE_CREEP
+  RESOURCE_CONSTRAINT
+  QUALITY_RISK
+  VELOCITY_CHANGE
+  COMPLETION_DATE
+}
+
+///
+/// Phase prediction for timeline forecasting.
+///
+model PhasePrediction {
+  id                 String   @id @default(cuid())
+  phaseId            String
+  predictedEndDate   DateTime
+  confidenceInterval Float
+  riskFactors        Json     @default("[]")
+  recommendations    Json     @default("[]")
+  modelVersion       String
+
+  phase Phase @relation(fields: [phaseId], references: [id], onDelete: Cascade)
+
+  createdAt DateTime @default(now())
+
+  @@index([phaseId])
+}
+
+///
+/// Anomaly alert for real-time monitoring.
+/// @doc.type model
+/// @doc.purpose Anomaly detection alert
+/// @doc.layer product
+/// @doc.pattern Value Object
+///
+model AnomalyAlert {
+  id               String          @id @default(cuid())
+  type             AnomalyType
+  severity         AnomalySeverity
+  title            String
+  description      String
+  affectedItems    Json            @default("[]")
+  baselineValue    Float
+  currentValue     Float
+  deviationPercent Float
+  suggestedActions Json            @default("[]")
+  confidence       Float
+  modelVersion     String
+
+  // Status tracking
+  acknowledged   Boolean   @default(false)
+  acknowledgedBy String?
+  acknowledgedAt DateTime?
+  resolved       Boolean   @default(false)
+  resolvedAt     DateTime?
+  falsePositive  Boolean   @default(false)
+
+  detectedAt DateTime @default(now())
+
+  @@index([type])
+  @@index([severity])
+  @@index([acknowledged])
+}
+
+///
+/// Anomaly type enumeration.
+///
+enum AnomalyType {
+  VELOCITY
+  PATTERN
+  SECURITY
+  QUALITY
+  RESOURCE
+}
+
+///
+/// Anomaly severity enumeration.
+///
+enum AnomalySeverity {
+  INFO
+  WARNING
+  CRITICAL
+}
+
+///
+/// Item embedding for vector search.
+/// @doc.type model
+/// @doc.purpose Vector embedding for semantic search
+/// @doc.layer product
+/// @doc.pattern Value Object
+///
+model ItemEmbedding {
+  id          String @id @default(cuid())
+  itemId      String
+  model       String
+  embedding   Bytes // Store as binary, use pgvector extension in production
+  dimensions  Int
+  contentHash String
+
+  item Item @relation(fields: [itemId], references: [id], onDelete: Cascade)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@unique([itemId, model])
+  @@index([itemId])
+  @@index([model])
+}
+
+///
+/// User AI preferences.
+/// @doc.type model
+/// @doc.purpose User AI customization settings
+/// @doc.layer product
+/// @doc.pattern Value Object
+///
+model UserAIPreferences {
+  id                  String  @id @default(cuid())
+  userId              String  @unique
+  user                User    @relation(fields: [userId], references: [id], onDelete: Cascade)
+  enableAISuggestions Boolean @default(true)
+  enablePredictions   Boolean @default(true)
+  enableCopilot       Boolean @default(true)
+  preferredModel      String  @default("gpt-4")
+  temperature         Float   @default(0.7)
+  maxTokens           Int     @default(2048)
+  autoAcceptLow       Boolean @default(false)
+  notificationLevel   String  @default("all")
+  customPromptPrefix  String?
+  excludedAgents      Json    @default("[]")
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([userId])
+}
+
+///
+/// Copilot session for conversation history.
+/// @doc.type model
+/// @doc.purpose AI copilot conversation session
+/// @doc.layer product
+/// @doc.pattern Value Object
+///
+model CopilotSession {
+  id                 String           @id @default(cuid())
+  userId             String
+  title              String?
+  status             SessionStatus    @default(ACTIVE)
+  context            Json             @default("{}")
+  messages           Json             @default("[]")
+  actionsExecuted    Json             @default("[]")
+  tokensUsed         Int              @default(0)
+  modelUsed          String
+  persona            String?
+  costUSD            Float?
+  satisfactionRating Int?
+  feedback           SessionFeedback?
+
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+  endedAt   DateTime?
+
+  @@index([userId])
+  @@index([status])
+}
+
+///
+/// Session status enumeration.
+///
+enum SessionStatus {
+  ACTIVE
+  COMPLETED
+  ABANDONED
+  ERROR
+}
+
+///
+/// Session feedback enumeration.
+///
+enum SessionFeedback {
+  HELPFUL
+  NOT_HELPFUL
+  NEUTRAL
+}
+
+///
+/// AI Agent execution log.
+/// @doc.type model
+/// @doc.purpose Agent execution audit trail
+/// @doc.layer product
+/// @doc.pattern Value Object
+///
+model AgentExecution {
+  id           String          @id @default(cuid())
+  agentName    String
+  requestId    String          @unique
+  userId       String
+  workspaceId  String?
+  input        Json
+  output       Json?
+  status       ExecutionStatus
+  latencyMs    Int
+  tokensUsed   Int?
+  modelVersion String?
+  errorMessage String?
+  metadata     Json            @default("{}")
+
+  startedAt   DateTime  @default(now())
+  completedAt DateTime?
+
+  @@index([agentName])
+  @@index([userId])
+  @@index([status])
+  @@index([startedAt])
+}
+
+///
+/// Execution status enumeration.
+///
+enum ExecutionStatus {
+  PENDING
+  RUNNING
+  SUCCESS
+  FAILED
+  TIMEOUT
+  CANCELLED
+}
+
+// ============================================================================
+// ACTIVITY & AUDIT
+// ============================================================================
+
+// ============================================================================
+// LIFECYCLE HUB (PROJECT-SCOPED)
+// ============================================================================
+
+///
+/// LifecycleArtifact entity for the Lifecycle Hub feature.
+/// This is distinct from the core `Artifact` model (which is item-scoped).
+/// @doc.type model
+/// @doc.purpose Project-scoped lifecycle artifact
+/// @doc.layer product
+/// @doc.pattern Value Object
+///
+model LifecycleArtifact {
+  id              String         @id @default(cuid())
+  projectId       String
+  title           String
+  type            String
+  description     String?
+  content         String?
+  status          String         @default("draft")
+  phase           LifecyclePhase @default(SHAPE)
+  fowStage        Int            @default(1)
+  createdBy       String         @default("system")
+  linkedArtifacts String[]       @default([])
+
+  metadata Json @default("{}")
+
+  project Project @relation(fields: [projectId], references: [id], onDelete: Cascade)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([projectId])
+  @@index([phase])
+  @@index([fowStage])
+  @@index([status])
+}
+
+///
+/// LifecycleItem entity for the Lifecycle Hub tasks.
+/// Distinct from the core `Item` model.
+/// @doc.type model
+/// @doc.purpose Project-scoped lifecycle task item
+/// @doc.layer product
+/// @doc.pattern Value Object
+///
+model LifecycleItem {
+  id              String         @id @default(cuid())
+  projectId       String
+  title           String
+  description     String?
+  status          String         @default("TODO")
+  priority        String         @default("MEDIUM")
+  estimatedEffort Int?
+  phase           LifecyclePhase @default(SHAPE)
+  fowStage        Int            @default(1)
+  assignedPersona String?
+
+  project Project @relation(fields: [projectId], references: [id], onDelete: Cascade)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([projectId])
+  @@index([status])
+  @@index([priority])
+  @@index([phase])
+}
+
+///
+/// LifecycleAIInsight entity for AI recommendations in the Lifecycle Hub.
+/// Distinct from the core `AIInsight` model.
+/// @doc.type model
+/// @doc.purpose Project-scoped lifecycle AI insights
+/// @doc.layer product
+/// @doc.pattern Value Object
+///
+model LifecycleAIInsight {
+  id          String         @id @default(cuid())
+  projectId   String
+  title       String
+  description String?
+  confidence  Float          @default(0.5)
+  severity    String         @default("INFO")
+  status      String         @default("PENDING")
+  phase       LifecyclePhase @default(SHAPE)
+  fowStage    Int            @default(1)
+  agentName   String         @default("AI Assistant")
+  metadata    Json           @default("{}")
+
+  project Project @relation(fields: [projectId], references: [id], onDelete: Cascade)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([projectId])
+  @@index([phase])
+  @@index([status])
+  @@index([severity])
+}
+
+///
+/// LifecycleActivityLog entity for audit/evidence in the Lifecycle Hub.
+/// Distinct from the core `ActivityLog` model.
+/// @doc.type model
+/// @doc.purpose Project-scoped lifecycle activity log
+/// @doc.layer product
+/// @doc.pattern Audit Log
+///
+model LifecycleActivityLog {
+  id          String   @id @default(cuid())
+  projectId   String
+  userId      String
+  action      String
+  description String?
+  metadata    Json     @default("{}")
+  timestamp   DateTime @default(now())
+
+  project Project @relation(fields: [projectId], references: [id], onDelete: Cascade)
+
+  @@index([projectId])
+  @@index([userId])
+  @@index([timestamp])
+  @@index([action])
+}
+
+///
+/// Activity log for system-wide tracking.
+///
+model ActivityLog {
+  id          String  @id @default(cuid())
+  userId      String
+  itemId      String?
+  phaseId     String?
+  workflowId  String?
+  action      String
+  description String
+  metadata    Json    @default("{}")
+
+  timestamp DateTime @default(now())
+
+  @@index([userId])
+  @@index([itemId])
+  @@index([phaseId])
+  @@index([timestamp])
+}
+
+// ============================================================================
+// ADDITIONAL AI MODELS
+// ============================================================================
+
+///
+/// AI-generated plan for workflows.
+/// @doc.type model
+/// @doc.purpose Store AI-generated execution plans
+/// @doc.layer product
+/// @doc.pattern Value Object
+///
+model AIGeneratedPlan {
+  id         String   @id @default(cuid())
+  workflowId String   @unique
+  workflow   Workflow @relation(fields: [workflowId], references: [id], onDelete: Cascade)
+
+  intent  String
+  context Json   @default("{}")
+
+  tasks             Json   @default("[]") // Array of PlannedTask objects
+  estimatedDuration String
+  riskFactors       Json   @default("[]")
+  dependencies      Json   @default("[]")
+
+  suggestedAssignments Json @default("[]")
+  alternativePlans     Json @default("[]")
+
+  confidence Float
+  reasoning  String
+
+  model       String
+  generatedAt DateTime @default(now())
+
+  accepted   Boolean   @default(false)
+  acceptedAt DateTime?
+
+  @@index([workflowId])
+  @@index([generatedAt])
+}
+
+///
+/// Vector embeddings for semantic search.
+/// @doc.type model
+/// @doc.purpose Store vector embeddings for items
+/// @doc.layer product
+/// @doc.pattern Value Object
+///
+model VectorEmbedding {
+  id     String @id @default(cuid())
+  itemId String @unique
+  item   Item   @relation(fields: [itemId], references: [id], onDelete: Cascade)
+
+  embedding  Float[] // Vector representation
+  dimensions Int // Usually 1536 for OpenAI
+
+  model       String // Embedding model used
+  generatedAt DateTime @default(now())
+
+  @@index([itemId])
+}
+
+///
+/// AI metric tracking for observability.
+/// @doc.type model
+/// @doc.purpose Track AI model performance and cost
+/// @doc.layer product
+/// @doc.pattern Value Object
+///
+model AIMetric {
+  id        String @id @default(cuid())
+  agentName String
+  model     String
+  operation String // 'completion', 'embedding', 'prediction', etc.
+
+  tokensUsed Int
+  latencyMs  Int
+  costUSD    Float
+
+  success      Boolean
+  errorMessage String?
+
+  userId    String?
+  sessionId String?
+
+  timestamp DateTime @default(now())
+
+  @@index([agentName])
+  @@index([model])
+  @@index([operation])
+  @@index([timestamp])
+}
+
+// ============================================================================
+// AUDIT & COMPLIANCE (ADDED BY AI)
+// ============================================================================
+
+model AuditLogEntry {
+  id                String   @id @default(cuid())
+  timestamp         DateTime @default(now())
+  action            String
+  actor             String
+  actorRole         String
+  resource          String?
+  severity          String   @default("info")
+  details           String?
+  ipAddress         String?
+  userAgent         String?
+  method            String?
+  status            Int?
+  responseTime      Int?
+  snapshotId        String?
+  environment       String?
+  approvalRequestId String?
+  reason            String?
+  success           Boolean?
+  error             String?
+  metadata          Json?
+  tenantId          String?
+
+  @@index([timestamp])
+  @@index([actor])
+  @@index([action])
+  @@index([resource])
+  @@index([severity])
+}
+
+model RateLimitConfig {
+  id                 String    @id @default(cuid())
+  userId             String    @unique
+  tier               String    @default("free")
+  userTiers          Json // { free: {...}, pro: {...} }
+  enableAuditLog     Boolean   @default(true)
+  maxAuditLogEntries Int       @default(10000)
+  alertConfig        Json?
+  upgradedAt         DateTime?
+  createdAt          DateTime  @default(now())
+  updatedAt          DateTime  @updatedAt
+}
+
+model UpgradeRequest {
+  id            String    @id @default(cuid())
+  userId        String
+  tier          String
+  requestedTier String
+  currentTier   String
+  reason        String?
+  status        String    @default("PENDING") // PENDING, APPROVED, REJECTED
+  processedAt   DateTime?
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+
+  @@index([userId])
+}
+
+model ComplianceAssessment {
+  id          String   @id @default(cuid())
+  title       String
+  description String?
+  framework   String
+  status      String   @default("DRAFT")
+  riskScore   Float?
+  findings    Json?
+  controls    Json?
+  gaps        Json?
+  auditTrail  Json?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  remediationPlans RemediationPlan[]
+  reports          ComplianceReport[]
+  schedules        ReportSchedule[]
+}
+
+model RemediationPlan {
+  id               String    @id @default(cuid())
+  assessmentId     String
+  totalEffort      Int?
+  completionTarget DateTime?
+  riskScore        Float?
+  status           String    @default("DRAFT")
+  createdAt        DateTime  @default(now())
+  updatedAt        DateTime  @updatedAt
+
+  assessment ComplianceAssessment @relation(fields: [assessmentId], references: [id])
+  steps      RemediationStep[]
+}
+
+model RemediationStep {
+  id              String    @id @default(cuid())
+  planId          String
+  controlId       String
+  title           String
+  description     String?
+  priority        String    @default("MEDIUM")
+  estimatedEffort Int?
+  owner           String?
+  deadline        DateTime?
+  status          String    @default("OPEN")
+  evidence        String[]
+
+  dependencies RemediationStep[] @relation("StepDependencies")
+  dependents   RemediationStep[] @relation("StepDependencies")
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  plan RemediationPlan @relation(fields: [planId], references: [id])
+}
+
+model ComplianceReport {
+  id           String   @id @default(cuid())
+  assessmentId String
+  title        String
+  summary      String?
+  generatedBy  String
+  format       String   @default("PDF")
+  url          String?
+  framework    String?
+  metrics      Json?
+  filename     String?
+  generatedAt  DateTime @default(now())
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  assessment ComplianceAssessment @relation(fields: [assessmentId], references: [id])
+}
+
+model ReportSchedule {
+  id           String    @id @default(cuid())
+  assessmentId String
+  name         String
+  frequency    String // DAILY, WEEKLY, MONTHLY
+  recipients   String[]
+  config       Json?
+  nextRun      DateTime?
+  createdAt    DateTime  @default(now())
+  updatedAt    DateTime  @updatedAt
+
+  assessment ComplianceAssessment @relation(fields: [assessmentId], references: [id])
+}
+
+///
+/// Flow State for Golden Flows.
+/// @doc.type model
+/// @doc.purpose Persist workflow state
+/// @doc.layer product
+/// @doc.pattern Value Object
+///
+model FlowState {
+  id           String @id @default(cuid())
+  flowId       String
+  currentState String
+  context      Json   @default("{}")
+  history      Json   @default("[]")
+  artifacts    Json   @default("[]")
+  activeTasks  Json   @default("[]")
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([flowId])
+  @@index([currentState])
+}

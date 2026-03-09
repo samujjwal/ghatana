@@ -1,0 +1,30 @@
+---
+id: "release_artifact"
+agent: "ReleaseArtifactAgent"
+role: "Release Engineer"
+inputs_spec:
+- name: "secure_for_release_package"
+  description: "Security-approved package for release artifact creation."
+  format: "Package artifact"
+outputs_spec:
+- name: "signed_release_artifacts"
+  description: "Signed and integrity-checked release artifacts."
+  format: "Release artifact bundle"
+agent_tasks:
+- "Sign release artifact and verify integrity."
+- "Ensure artifact contains all required deliverables (binaries, docs, manifests,\
+  \ etc.)."
+- "Make artifact traceable to source commit, build, and requirements."
+- "Ensure compatibility with target deployment platforms."
+acceptance_criteria:
+- "Release artifact is signed and integrity-checked."
+- "Contains all required deliverables."
+- "Traceable to source, build, requirements."
+- "Compatible with target platforms."
+dependencies:
+- "secure_for_release_package"
+failure_escalation:
+- "Escalate to Release Engineer if artifact fails integrity or is incomplete."
+references: []
+hitl: true
+hitl_reason: "Human validates release artifact signing and integrity"

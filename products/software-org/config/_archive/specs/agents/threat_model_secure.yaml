@@ -1,0 +1,29 @@
+---
+id: "threat_model_secure"
+agent: "ThreatModelAgent"
+role: "Security Architect"
+inputs_spec:
+- name: "exception_approvals"
+  description: "Security exceptions for threat model update."
+  format: "Exception approval artifact"
+outputs_spec:
+- name: "threat_model_report"
+  description: "Updated threat model and signoffs."
+  format: "Threat model report artifact"
+agent_tasks:
+- "Review/update threat model for new/changed assets/policies."
+- "Map threats to controls/mitigations."
+- "Document residual/accepted risks."
+- "Obtain stakeholder review/signoff."
+acceptance_criteria:
+- "Threat model reviewed/updated for new/changed assets/policies."
+- "Threats mapped to controls/mitigations."
+- "Residual/accepted risks documented."
+- "Stakeholders review/sign off."
+dependencies:
+- "exception_approvals"
+failure_escalation:
+- "Escalate to Security Architect if threat model is not updated after exceptions."
+references: []
+hitl: true
+hitl_reason: "Human reviews updated threat model after exceptions"

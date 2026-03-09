@@ -1,0 +1,24 @@
+---
+id: "deploy_lbom_agent"
+agent: "LBOMAgent"
+role: "Legal/Compliance"
+inputs_spec:
+- name: "deploy_sbom_files"
+  description: "SBOM files for license bill of materials generation."
+  format: "SBOM file artifact"
+outputs_spec:
+- name: "deploy_lbom_report"
+  description: "License bill of materials for all deployment artifacts."
+  format: "LBOM report artifact"
+agent_tasks:
+- "Generate license bill of materials for all deployment artifacts."
+- "Track and link all license risks to compliance."
+acceptance_criteria:
+- "License bill of materials is generated for all artifacts."
+- "All license risks are tracked and linked to compliance."
+dependencies:
+- "deploy_sbom_files"
+failure_escalation:
+- "Escalate to Legal/Compliance if LBOM is missing or incomplete."
+references: []
+hitl: false

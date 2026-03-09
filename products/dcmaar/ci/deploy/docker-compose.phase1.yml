@@ -1,0 +1,74 @@
+version: '3.8'
+
+services:
+  # ClickHouse for storage
+  clickhouse:
+    image: clickhouse/clickhouse-server:latest
+    ports:
+      - "8123:8123"
+      - "9000:9000"
+    environment:
+      CLICKHOUSE_DB: dcmaar
+    volumes:
+      - clickhouse-data:/var/lib/clickhouse
+    networks:
+      - dcmaar
+
+  # Tracing Service
+  tracing-service:
+    build:
+      context: ./services/tracing-service
+      dockerfile: Dockerfile
+    ports:
+      - "8080:8080"
+    environment:
+      CLICKHOUSE_URL: jdbc:clickhouse://clickhouse:8123
+      CLICKHOUSE_DB: dcmaar
+      TRACES_TABLE: traces
+      PORT: 8080
+    depends_on:
+      - clickhouse
+    networks:
+      - dcmaar
+
+  # Logs Service
+  logs-service:
+    build:
+      context: ./services/logs-service
+      dockerfile: Dockerfile
+    ports:
+      - "8081:8081"
+    environment:
+      CLICKHOUSE_URL: jdbc:clickhouse://clickhouse:8123
+      CLICKHOUSE_DB: dcmaar
+      LOGS_TABLE: logs
+      PORT: 8081
+      LOG_PATHS: /var/log/*.log
+    depends_on:
+      - clickhouse
+    volumes:
+      - /var/log:/var/log:ro
+    networks:
+      - dcmaar
+
+  # Agent (Rust)
+  agent:
+    build:
+      context: ./services/agent-rs
+      dockerfile: Dockerfile
+    environment:
+      OTLP_ENDPOINT: http://tracing-service:8080
+      METRICS_INTERVAL: 60
+    depends_on:
+      - tracing-service
+    networks:
+      - dcmaar
+    pid: host
+    privileged: true
+
+volumes:
+  clickhouse-data:
+
+networks:
+  dcmaar:
+    driver: bridge

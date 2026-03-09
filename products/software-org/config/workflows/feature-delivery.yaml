@@ -1,0 +1,1081 @@
+# Feature Delivery Workflow Configuration
+# End-to-end feature development from requirements to deployment
+apiVersion: virtualorg.ghatana.com/v1
+kind: Workflow
+metadata:
+  name: feature-delivery
+  namespace: software-org
+  labels:
+    domain: development
+    type: feature
+    autonomy-level: medium-high
+  annotations:
+    description: "Autonomous feature delivery workflow from requirements gathering to production deployment"
+    owner: engineering-department
+    avg-cycle-time: "5-10 days"
+
+spec:
+  # Workflow trigger conditions
+  trigger:
+    events:
+      - type: feature.approved
+        source: product-backlog
+      - type: feature.started
+        source: jira
+      - type: epic.ready-for-development
+        source: product-management
+    manual:
+      enabled: true
+      authorizedRoles:
+        - product-manager
+        - cto
+        - architect-lead
+
+  # Workflow execution configuration
+  execution:
+    mode: sequential
+    timeout: 14d # Maximum 2 weeks for a feature
+    retryPolicy:
+      maxRetries: 2
+      backoffMultiplier: 2
+      initialDelay: 1h
+
+  # Workflow context
+  context:
+    inputs:
+      - name: feature_id
+        type: string
+        source: trigger
+      - name: feature_title
+        type: string
+        source: trigger
+      - name: feature_description
+        type: string
+        source: trigger
+      - name: acceptance_criteria
+        type: string_list
+        source: trigger
+      - name: priority
+        type: enum
+        values: [p0, p1, p2, p3]
+        source: trigger
+      - name: target_release
+        type: string
+        source: trigger
+
+    outputs:
+      - name: implementation_complete
+        type: boolean
+      - name: deployment_url
+        type: string
+      - name: documentation_url
+        type: string
+
+  # Workflow stages
+  stages:
+    - id: requirements-analysis
+      name: "Analyze & Refine Requirements"
+      description: "AI analyzes requirements, identifies ambiguities, and creates technical specifications"
+
+      agent: product-manager-agent
+
+      action:
+        type: ai-decision
+        operation: requirements-analysis
+        tools:
+          - fetch-feature-details
+          - analyze-similar-features
+          - identify-stakeholders
+          - generate-questions
+
+        prompt: |
+          Analyze feature request and refine requirements:
+
+          Feature: {{feature_title}}
+          Description: {{feature_description}}
+          Acceptance Criteria: {{acceptance_criteria}}
+
+          Perform:
+          1. Identify ambiguous or incomplete requirements
+          2. Research similar features in our system
+          3. Identify impacted systems and stakeholders
+          4. Generate clarifying questions if needed
+          5. Draft user stories with clear acceptance criteria
+
+          Output:
+          - Refined requirements document
+          - List of clarifying questions (if any)
+          - Impacted systems analysis
+          - Preliminary scope assessment
+
+      outputs:
+        - name: refined_requirements
+          type: document
+        - name: clarifying_questions
+          type: question_list
+        - name: impacted_systems
+          type: string_list
+        - name: scope_assessment
+          type: map
+
+      # HITL for ambiguous requirements
+      hitl:
+        required: false
+        conditionalRequired:
+          - condition:
+              field: clarifying_questions
+              operator: length_gt
+              value: 0
+            checkpoint: "requirements-clarification"
+        approvers:
+          - role: product-manager
+        timeout: 48h
+
+      transitions:
+        - on: success
+          conditions:
+            - field: clarifying_questions
+              operator: length_eq
+              value: 0
+          goto: technical-design
+        - on: approved
+          goto: technical-design
+        - on: rejected
+          goto: requirements-analysis # Loop with feedback
+
+    - id: technical-design
+      name: "Create Technical Design"
+      description: "AI architects creates technical design based on requirements"
+
+      agent: architect-lead-agent
+
+      action:
+        type: ai-decision
+        operation: technical-design
+        tools:
+          - analyze-codebase
+          - identify-patterns
+          - check-architecture-guidelines
+          - estimate-complexity
+          - generate-design-doc
+
+        prompt: |
+          Create technical design for feature:
+
+          Feature: {{feature_title}}
+          Requirements: {{refined_requirements}}
+          Impacted systems: {{impacted_systems}}
+
+          Design considerations:
+          1. Follow existing architecture patterns
+          2. Minimize blast radius
+          3. Design for testability
+          4. Consider backward compatibility
+          5. Plan for rollback
+
+          Produce:
+          - High-level design document
+          - Component diagram
+          - API contracts (if applicable)
+          - Database schema changes (if applicable)
+          - Integration points
+          - Risk assessment
+          - Estimated effort (story points)
+
+      outputs:
+        - name: design_document
+          type: document
+        - name: api_contracts
+          type: api_spec_list
+        - name: schema_changes
+          type: migration_list
+        - name: estimated_effort
+          type: integer
+        - name: risks
+          type: risk_list
+
+      # Design review checkpoint
+      hitl:
+        required: true
+        checkpoint: "design-review"
+        approvers:
+          - role: architect-lead
+          - role: senior-engineer
+        timeout: 72h
+        presentation:
+          format: design-review
+          highlights:
+            - design_document
+            - api_contracts
+            - risks
+
+      transitions:
+        - on: approved
+          goto: task-breakdown
+        - on: rejected
+          goto: technical-design # Revise design
+
+    - id: task-breakdown
+      name: "Break Down into Tasks"
+      description: "Break feature into implementable tasks and create tickets"
+
+      agent: senior-engineer-agent
+
+      action:
+        type: ai-decision
+        operation: task-breakdown
+        tools:
+          - create-jira-tasks
+          - estimate-tasks
+          - identify-dependencies
+          - assign-tasks
+
+        prompt: |
+          Break down feature into development tasks:
+
+          Feature: {{feature_title}}
+          Design: {{design_document}}
+          Estimated effort: {{estimated_effort}} points
+
+          Create tasks for:
+          1. Backend implementation
+          2. Frontend implementation (if applicable)
+          3. Database migrations
+          4. API development
+          5. Unit tests
+          6. Integration tests
+          7. Documentation
+
+          For each task:
+          - Clear description and scope
+          - Acceptance criteria
+          - Estimated hours
+          - Dependencies
+          - Suggested assignee based on expertise
+
+      outputs:
+        - name: tasks
+          type: task_list
+        - name: task_dependencies
+          type: dependency_graph
+        - name: assignments
+          type: map
+        - name: total_estimated_hours
+          type: integer
+
+      transitions:
+        - on: success
+          goto: parallel-implementation
+        - on: failure
+          goto: escalate-to-lead
+
+    - id: parallel-implementation
+      name: "Parallel Implementation"
+      description: "Execute implementation tasks in parallel where possible"
+
+      parallel:
+        strategy: dependency-aware # Respect task dependencies
+        maxConcurrency: 3
+
+      # Dynamic task execution based on breakdown
+      dynamicStages:
+        source: tasks
+        template:
+          agent: "{{task.assignee_agent}}"
+          action:
+            type: ai-decision
+            operation: implement-task
+            tools:
+              - read-code
+              - write-code
+              - run-tests
+              - commit-code
+            prompt: |
+              Implement task: {{task.title}}
+
+              Description: {{task.description}}
+              Acceptance criteria: {{task.acceptance_criteria}}
+              Design context: {{design_document}}
+
+              Steps:
+              1. Understand the codebase context
+              2. Implement the required changes
+              3. Write unit tests
+              4. Ensure all tests pass
+              5. Commit with descriptive message
+
+          hitl:
+            required: false
+            conditionalRequired:
+              - condition:
+                  field: task.complexity
+                  operator: eq
+                  value: high
+                checkpoint: "complex-task-review"
+
+      outputs:
+        - name: completed_tasks
+          type: task_list
+        - name: code_changes
+          type: commit_list
+        - name: test_results
+          type: test_report
+
+      transitions:
+        - on: all_success
+          goto: code-review
+        - on: any_failure
+          goto: handle-implementation-failure
+
+    - id: handle-implementation-failure
+      name: "Handle Implementation Failure"
+      description: "AI analyzes and attempts to resolve implementation failures"
+
+      agent: senior-engineer-agent
+
+      action:
+        type: ai-decision
+        operation: failure-analysis
+        tools:
+          - analyze-test-failures
+          - analyze-build-errors
+          - suggest-fixes
+
+        prompt: |
+          Analyze implementation failure:
+
+          Failed tasks: {{failed_tasks}}
+          Error details: {{error_details}}
+
+          Determine:
+          1. Root cause of failure
+          2. Whether it's fixable by AI
+          3. Specific fix actions
+          4. Whether human intervention needed
+
+      outputs:
+        - name: failure_analysis
+          type: document
+        - name: suggested_fixes
+          type: fix_list
+        - name: needs_human
+          type: boolean
+
+      transitions:
+        - on: success
+          conditions:
+            - field: needs_human
+              operator: eq
+              value: false
+          goto: parallel-implementation # Retry with fixes
+        - on: success
+          goto: escalate-to-lead
+
+    - id: code-review
+      name: "Automated Code Review"
+      description: "AI performs comprehensive code review"
+
+      agent: senior-engineer-agent
+
+      action:
+        type: ai-decision
+        operation: code-review
+        tools:
+          - analyze-code-quality
+          - check-security
+          - check-performance
+          - check-test-coverage
+          - analyze-diff
+
+        prompt: |
+          Perform comprehensive code review:
+
+          Feature: {{feature_title}}
+          Changes: {{code_changes}}
+
+          Review criteria:
+          1. Code quality and readability
+          2. Adherence to coding standards
+          3. Security vulnerabilities
+          4. Performance implications
+          5. Test coverage adequacy
+          6. Documentation completeness
+          7. Error handling
+          8. Edge cases
+
+          Provide:
+          - Overall assessment (approve/request-changes)
+          - Specific feedback items
+          - Suggested improvements
+          - Blocking issues (if any)
+
+      outputs:
+        - name: review_result
+          type: enum
+          values: [approved, request-changes, blocked]
+        - name: review_comments
+          type: comment_list
+        - name: blocking_issues
+          type: issue_list
+        - name: test_coverage_percent
+          type: float
+
+      # Human review for significant changes
+      hitl:
+        required: true
+        checkpoint: "human-code-review"
+        approvers:
+          - role: senior-engineer
+          - role: architect-lead
+        timeout: 48h
+        minApprovals: 1
+        presentation:
+          format: pull-request
+          highlights:
+            - review_result
+            - blocking_issues
+            - test_coverage_percent
+
+      transitions:
+        - on: approved
+          conditions:
+            - field: blocking_issues
+              operator: length_eq
+              value: 0
+          goto: run-ci-pipeline
+        - on: rejected
+          goto: address-review-feedback
+
+    - id: address-review-feedback
+      name: "Address Review Feedback"
+      description: "AI addresses code review feedback"
+
+      agent: engineer-agent
+
+      action:
+        type: ai-decision
+        operation: address-feedback
+        tools:
+          - parse-review-comments
+          - apply-fixes
+          - run-tests
+          - update-pr
+
+        prompt: |
+          Address code review feedback:
+
+          Review comments: {{review_comments}}
+          Blocking issues: {{blocking_issues}}
+
+          For each item:
+          1. Understand the feedback
+          2. Implement the fix
+          3. Add tests if needed
+          4. Update the PR
+
+          Respond to each comment with actions taken.
+
+      maxIterations: 3
+
+      transitions:
+        - on: success
+          goto: code-review # Re-review
+        - on: max_iterations_exceeded
+          goto: escalate-to-lead
+
+    - id: run-ci-pipeline
+      name: "Run CI Pipeline"
+      description: "Execute full CI pipeline including all tests"
+
+      agent: devops-engineer-agent
+
+      action:
+        type: automated
+        operation: ci-pipeline
+
+        steps:
+          - name: trigger-ci
+            tool: trigger-github-action
+            params:
+              workflow: ci-pipeline
+              branch: "{{feature_branch}}"
+
+          - name: wait-for-ci
+            tool: wait-for-workflow
+            params:
+              workflow_run_id: "{{steps.trigger-ci.output.run_id}}"
+              timeout: 30m
+
+          - name: collect-results
+            tool: get-ci-results
+            params:
+              run_id: "{{steps.trigger-ci.output.run_id}}"
+
+      outputs:
+        - name: ci_status
+          type: enum
+          values: [success, failure]
+        - name: test_results
+          type: test_report
+        - name: coverage_report
+          type: coverage_report
+        - name: security_scan
+          type: security_report
+
+      transitions:
+        - on: success
+          conditions:
+            - field: ci_status
+              operator: eq
+              value: success
+          goto: merge-pr
+        - on: success
+          goto: fix-ci-failures
+
+    - id: fix-ci-failures
+      name: "Fix CI Failures"
+      description: "AI analyzes and fixes CI failures"
+
+      agent: engineer-agent
+
+      action:
+        type: ai-decision
+        operation: fix-ci
+        tools:
+          - analyze-ci-logs
+          - identify-failures
+          - apply-fixes
+          - run-local-tests
+
+        prompt: |
+          Analyze and fix CI failures:
+
+          CI Results: {{test_results}}
+          Coverage: {{coverage_report}}
+          Security: {{security_scan}}
+
+          For each failure:
+          1. Identify root cause
+          2. Implement fix
+          3. Verify locally
+          4. Push fix
+
+      maxIterations: 3
+
+      transitions:
+        - on: success
+          goto: run-ci-pipeline
+        - on: max_iterations_exceeded
+          goto: escalate-to-lead
+
+    - id: merge-pr
+      name: "Merge Pull Request"
+      description: "Merge approved PR to main branch"
+
+      agent: devops-engineer-agent
+
+      action:
+        type: automated
+        operation: merge
+
+        steps:
+          - name: merge
+            tool: merge-pr
+            params:
+              pr_number: "{{pr_number}}"
+              strategy: squash
+              delete_branch: true
+
+      outputs:
+        - name: merge_commit
+          type: string
+
+      transitions:
+        - on: success
+          goto: deploy-staging
+        - on: failure
+          goto: escalate-to-lead
+
+    - id: deploy-staging
+      name: "Deploy to Staging"
+      description: "Deploy feature to staging environment"
+
+      agent: devops-engineer-agent
+
+      action:
+        type: automated
+        operation: staging-deployment
+        tools:
+          - deploy-to-staging
+          - run-smoke-tests
+          - verify-deployment
+
+        steps:
+          - name: deploy
+            tool: deploy-to-staging
+            params:
+              commit: "{{merge_commit}}"
+              environment: staging
+
+          - name: smoke-tests
+            tool: run-smoke-tests
+            params:
+              environment: staging
+              feature: "{{feature_id}}"
+
+          - name: verify
+            tool: verify-deployment
+            params:
+              environment: staging
+              expected_version: "{{merge_commit}}"
+
+      outputs:
+        - name: staging_url
+          type: string
+        - name: smoke_test_results
+          type: test_report
+        - name: staging_healthy
+          type: boolean
+
+      transitions:
+        - on: success
+          conditions:
+            - field: staging_healthy
+              operator: eq
+              value: true
+          goto: qa-validation
+        - on: success
+          goto: rollback-staging
+
+    - id: qa-validation
+      name: "QA Validation"
+      description: "QA validates feature in staging"
+
+      agent: qa-engineer-agent
+
+      action:
+        type: ai-decision
+        operation: qa-validation
+        tools:
+          - run-e2e-tests
+          - run-regression-tests
+          - validate-acceptance-criteria
+          - exploratory-testing
+
+        prompt: |
+          Perform QA validation for feature:
+
+          Feature: {{feature_title}}
+          Staging URL: {{staging_url}}
+          Acceptance Criteria: {{acceptance_criteria}}
+
+          Validation steps:
+          1. Execute automated E2E tests
+          2. Run regression suite
+          3. Validate each acceptance criterion
+          4. Perform exploratory testing
+          5. Check cross-browser compatibility
+          6. Verify mobile responsiveness (if applicable)
+
+          Report:
+          - Test results summary
+          - Acceptance criteria status
+          - Bugs found (if any)
+          - QA sign-off recommendation
+
+      outputs:
+        - name: qa_result
+          type: enum
+          values: [passed, failed, blocked]
+        - name: e2e_results
+          type: test_report
+        - name: acceptance_status
+          type: map
+        - name: bugs_found
+          type: bug_list
+
+      # QA sign-off
+      hitl:
+        required: true
+        checkpoint: "qa-sign-off"
+        approvers:
+          - role: qa-engineer
+          - role: product-manager
+        timeout: 48h
+        presentation:
+          format: qa-report
+          highlights:
+            - qa_result
+            - acceptance_status
+            - bugs_found
+
+      transitions:
+        - on: approved
+          goto: production-readiness
+        - on: rejected
+          goto: fix-qa-issues
+
+    - id: fix-qa-issues
+      name: "Fix QA Issues"
+      description: "Address bugs found during QA"
+
+      agent: engineer-agent
+
+      action:
+        type: ai-decision
+        operation: fix-bugs
+        tools:
+          - analyze-bug
+          - implement-fix
+          - write-regression-test
+
+        prompt: |
+          Fix bugs found during QA:
+
+          Bugs: {{bugs_found}}
+
+          For each bug:
+          1. Analyze and reproduce
+          2. Implement fix
+          3. Add regression test
+          4. Submit for review
+
+      transitions:
+        - on: success
+          goto: code-review # Full review cycle for fixes
+        - on: failure
+          goto: escalate-to-lead
+
+    - id: rollback-staging
+      name: "Rollback Staging"
+      description: "Rollback staging deployment due to issues"
+
+      agent: devops-engineer-agent
+
+      action:
+        type: automated
+        operation: staging-rollback
+
+        steps:
+          - name: rollback
+            tool: rollback-deployment
+            params:
+              environment: staging
+
+      transitions:
+        - on: success
+          goto: fix-ci-failures # Investigate and fix
+        - on: failure
+          goto: escalate-to-lead
+
+    - id: production-readiness
+      name: "Production Readiness Check"
+      description: "Final checks before production deployment"
+
+      agent: devops-lead-agent
+
+      action:
+        type: ai-decision
+        operation: prod-readiness
+        tools:
+          - check-monitoring
+          - check-alerts
+          - check-runbooks
+          - check-feature-flags
+          - generate-deployment-plan
+
+        prompt: |
+          Perform production readiness check:
+
+          Feature: {{feature_title}}
+
+          Verify:
+          1. Monitoring dashboards updated
+          2. Alerts configured
+          3. Runbooks available
+          4. Feature flags configured
+          5. Rollback plan documented
+          6. Communication plan ready
+
+          Generate deployment plan with:
+          - Deployment steps
+          - Rollback criteria
+          - Monitoring checkpoints
+          - Communication timeline
+
+      outputs:
+        - name: readiness_status
+          type: enum
+          values: [ready, not-ready]
+        - name: deployment_plan
+          type: document
+        - name: missing_items
+          type: checklist
+
+      # Production deployment approval
+      hitl:
+        required: true
+        checkpoint: "production-approval"
+        approvers:
+          - role: devops-lead
+          - role: cto
+        timeout: 24h
+        presentation:
+          format: deployment-checklist
+          highlights:
+            - readiness_status
+            - deployment_plan
+            - missing_items
+
+      transitions:
+        - on: approved
+          goto: deploy-production
+        - on: rejected
+          goto: address-readiness-gaps
+
+    - id: address-readiness-gaps
+      name: "Address Readiness Gaps"
+      description: "Fix items blocking production readiness"
+
+      agent: devops-engineer-agent
+
+      action:
+        type: ai-decision
+        operation: fix-readiness
+        tools:
+          - create-dashboards
+          - create-alerts
+          - update-runbooks
+          - configure-feature-flags
+
+      transitions:
+        - on: success
+          goto: production-readiness
+        - on: failure
+          goto: escalate-to-lead
+
+    - id: deploy-production
+      name: "Deploy to Production"
+      description: "Deploy feature to production with monitoring"
+
+      agent: devops-engineer-agent
+
+      action:
+        type: automated
+        operation: production-deployment
+
+        steps:
+          - name: announce
+            tool: send-notification
+            params:
+              channel: "#deployments"
+              message: "🚀 Starting production deployment: {{feature_title}}"
+
+          - name: deploy
+            tool: deploy-to-production
+            params:
+              commit: "{{merge_commit}}"
+              strategy: canary
+              initial_percentage: 5
+
+          - name: monitor-canary
+            tool: monitor-deployment
+            params:
+              duration: 15m
+              error_threshold: 0.01
+
+          - name: expand-canary
+            tool: expand-canary
+            condition: "{{steps.monitor-canary.output.healthy}} == true"
+            params:
+              percentage: 25
+
+          - name: monitor-25
+            tool: monitor-deployment
+            params:
+              duration: 15m
+
+          - name: full-rollout
+            tool: expand-canary
+            condition: "{{steps.monitor-25.output.healthy}} == true"
+            params:
+              percentage: 100
+
+          - name: final-verify
+            tool: verify-deployment
+            params:
+              environment: production
+
+      outputs:
+        - name: deployment_status
+          type: enum
+          values: [success, rolled-back]
+        - name: production_url
+          type: string
+
+      transitions:
+        - on: success
+          conditions:
+            - field: deployment_status
+              operator: eq
+              value: success
+          goto: post-deployment
+        - on: success
+          goto: production-rollback
+
+    - id: production-rollback
+      name: "Production Rollback"
+      description: "Rollback production deployment due to issues"
+
+      agent: devops-engineer-agent
+
+      action:
+        type: automated
+        operation: production-rollback
+
+        steps:
+          - name: alert
+            tool: send-notification
+            params:
+              channel: "#incidents"
+              message: "🔴 Rolling back production deployment: {{feature_title}}"
+
+          - name: rollback
+            tool: rollback-deployment
+            params:
+              environment: production
+
+          - name: verify
+            tool: verify-rollback
+            params:
+              environment: production
+
+      hitl:
+        required: true
+        checkpoint: "post-rollback-review"
+        approvers:
+          - role: devops-lead
+          - role: cto
+        timeout: 24h
+
+      transitions:
+        - on: any
+          goto: post-deployment
+
+    - id: post-deployment
+      name: "Post-Deployment Tasks"
+      description: "Complete post-deployment activities"
+
+      agent: product-manager-agent
+
+      action:
+        type: automated
+        operation: post-deployment
+
+        steps:
+          - name: update-docs
+            tool: update-documentation
+            params:
+              feature: "{{feature_id}}"
+
+          - name: notify-stakeholders
+            tool: send-notification
+            params:
+              channel: "#product-updates"
+              message: "✅ Feature deployed: {{feature_title}}"
+
+          - name: close-tickets
+            tool: close-jira-tickets
+            params:
+              feature_id: "{{feature_id}}"
+
+          - name: record-metrics
+            tool: record-feature-metrics
+            params:
+              feature_id: "{{feature_id}}"
+              cycle_time: "{{workflow.duration}}"
+              deployment_status: "{{deployment_status}}"
+
+      outputs:
+        - name: documentation_url
+          type: string
+        - name: feature_metrics
+          type: map
+
+    - id: escalate-to-lead
+      name: "Escalate to Engineering Lead"
+      description: "Escalate blockers to engineering leadership"
+
+      agent: architect-lead-agent
+
+      action:
+        type: escalation
+        operation: lead-escalation
+
+        notification:
+          channels:
+            - slack: "#engineering-leads"
+          urgency: high
+
+        context:
+          include:
+            - feature_context
+            - blocker_details
+            - attempted_actions
+            - recommended_resolution
+
+      hitl:
+        required: true
+        checkpoint: "lead-intervention"
+        approvers:
+          - role: senior-engineer
+          - role: architect-lead
+        timeout: 48h
+
+      transitions:
+        - on: resolved
+          goto: "{{escalation_return_stage}}"
+        - on: cancelled
+          goto: feature-cancelled
+
+    - id: feature-cancelled
+      name: "Feature Cancelled"
+      description: "Handle feature cancellation"
+
+      action:
+        type: automated
+        operation: cancellation
+
+        steps:
+          - name: close-pr
+            tool: close-pr
+            params:
+              pr_number: "{{pr_number}}"
+              reason: "Feature cancelled"
+
+          - name: update-jira
+            tool: update-jira
+            params:
+              feature_id: "{{feature_id}}"
+              status: cancelled
+
+  # Post-workflow actions
+  postActions:
+    - type: metrics
+      data:
+        feature_id: "{{feature_id}}"
+        cycle_time: "{{workflow.duration}}"
+        time_in_review: "{{review_time}}"
+        deployment_attempts: "{{deployment_attempts}}"
+        rollback_occurred: "{{rollback_occurred}}"
+        human_interventions: "{{hitl_count}}"
+
+    - type: retrospective
+      trigger:
+        conditions:
+          - field: cycle_time
+            operator: gt
+            value: 10d
+          - field: rollback_occurred
+            operator: eq
+            value: true

@@ -1,0 +1,46 @@
+id: database-integration-agent
+name: Database Integration Agent
+version: 1.0.0
+description: Bridges to PostgreSQL databases. Provides schema introspection, query execution, migration running, and connection pool health. No business logic.
+
+metadata:
+  level: 3
+  domain: integration
+  tags: [integration, database, postgresql, prisma, deterministic]
+
+generator:
+  type: SERVICE_CALL
+  service: database-service
+  endpoint: /api/v1
+
+memory:
+  episodic:
+    enabled: true
+    retention_days: 90
+    categories: [db-operations, migration-runs]
+  semantic:
+    enabled: false
+
+tools: [db_query, db_schema_inspect, db_migrate, db_pool_health]
+
+capabilities:
+  - schema-design
+  - query-optimization
+
+routing:
+  input_types: [db-command, schema-query, migration-request]
+  output_types: [query-result, schema-info, migration-status]
+
+delegation:
+  can_delegate_to: []
+  escalates_to: master-orchestrator-agent
+
+governance:
+  requires_approval: false
+  can_block: false
+  audit_trail: standard
+
+performance:
+  expected_latency_ms: 500
+  max_latency_ms: 5000
+  timeout_ms: 15000

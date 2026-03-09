@@ -1,0 +1,111 @@
+domain:
+  id: knowledge-management
+  name: "Knowledge Management & Institutionalization"
+  description: "Capture and share organizational knowledge."
+  order: 25
+  icon: "library_books"
+  color: "#8D6E63"
+  agent_personas:
+    - "KnowledgeSynthesizer"
+    - "PatternMiner"
+    - "LearningAgent"
+  audit_artifacts:
+    - "KnowledgeRecord"
+    - "StandardUpdate"
+    - "LearningLog"
+  inputs:
+    - "Learnings"
+    - "Outcomes"
+    - "Experience"
+  outputs:
+    - "Organizational knowledge"
+    - "Updated standards"
+
+tasks:
+  # Core ICS knowledge tasks
+  - id: d25-t1
+    name: "Capture lessons learned"
+    description: "Document post-project learnings."
+    personas: ["Developer", "Tech Lead"]
+    lifecycle_stages: ["learn"]
+    automation_level: "assisted"
+  - id: d25-t2
+    name: "Maintain standards"
+    description: "Update coding and process standards."
+    personas: ["Tech Lead"]
+    lifecycle_stages: ["institutionalize"]
+    automation_level: "assisted"
+  - id: d25-t3
+    name: "Update playbooks"
+    description: "Refine operational guides."
+    personas: ["DevOps", "Developer"]
+    lifecycle_stages: ["institutionalize"]
+    automation_level: "assisted"
+  - id: d25-t4
+    name: "Curate best practices"
+    description: "Highlight effective methods."
+    personas: ["Tech Lead", "Developer"]
+    lifecycle_stages: ["learn", "institutionalize"]
+    automation_level: "assisted"
+
+  # Migrated from legacy learning domain
+  - id: learn-001
+    name: "Learn New Technologies"
+    description: "Study and understand new technologies."
+    personas: ["Developer"]
+    lifecycle_stages: ["learn"]
+    automation_level: "manual"
+  - id: learn-002
+    name: "Attend Training"
+    description: "Participate in training programs."
+    personas: ["Developer"]
+    lifecycle_stages: ["learn"]
+    automation_level: "manual"
+  - id: learn-003
+    name: "Read Technical Literature"
+    description: "Stay current with technical publications."
+    personas: ["Developer"]
+    lifecycle_stages: ["learn"]
+    automation_level: "manual"
+  - id: learn-004
+    name: "Experiment with Tools"
+    description: "Try new development tools and techniques."
+    personas: ["Developer"]
+    lifecycle_stages: ["learn"]
+    automation_level: "assisted"
+  - id: learn-005
+    name: "Contribute to Open Source"
+    description: "Contribute to open source projects."
+    personas: ["Developer"]
+    lifecycle_stages: ["learn"]
+    automation_level: "manual"
+  - id: learn-006
+    name: "Attend Conferences"
+    description: "Attend technical conferences and meetups."
+    personas: ["Developer"]
+    lifecycle_stages: ["learn"]
+    automation_level: "manual"
+  - id: learn-007
+    name: "Write Blog Posts"
+    description: "Share knowledge through writing."
+    personas: ["Developer"]
+    lifecycle_stages: ["learn", "institutionalize"]
+    automation_level: "assisted"
+  - id: learn-008
+    name: "Create Internal Talks"
+    description: "Present to team or organization."
+    personas: ["Developer", "Tech Lead"]
+    lifecycle_stages: ["learn", "institutionalize"]
+    automation_level: "manual"
+  - id: learn-009
+    name: "Build Learning Path"
+    description: "Create personal development plan."
+    personas: ["Developer"]
+    lifecycle_stages: ["learn"]
+    automation_level: "assisted"
+  - id: learn-010
+    name: "Certification Study"
+    description: "Prepare for professional certifications."
+    personas: ["Developer"]
+    lifecycle_stages: ["learn"]
+    automation_level: "manual"

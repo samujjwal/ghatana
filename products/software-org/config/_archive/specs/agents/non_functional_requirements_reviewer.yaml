@@ -1,0 +1,44 @@
+id: non_functional_requirements_reviewer
+agent: NonFunctionalRequirementsReviewerAgent
+role: Systems Analyst
+inputs_spec:
+- name: non_functional_requirements
+  description: List of non-functional requirements (NFRs).
+  format: List of NFR objects
+outputs_spec:
+- name: reviewed_nfr
+  description: Reviewed and validated NFRs, with risks and gaps flagged.
+  format: List of reviewed NFR objects (description, issues, risks)
+  example: "- category: \"Performance\"\n  description: \"System handles 1000 concurrent users\"\n  risks: []\n"
+acceptance_criteria:
+- All NFRs are reviewed for completeness and correctness.
+- Missing or conflicting NFRs are flagged.
+- Risks related to NFRs are identified.
+agent_tasks:
+- Review NFRs for completeness and correctness.
+- Identify and flag missing or conflicting NFRs.
+- Identify risks related to NFRs.
+dependencies:
+- non_functional_requirements
+hitl: true
+hitl_reason: Human reviews non-functional requirements for risks and omissions
+failure_escalation:
+- Escalate to solution architect if NFR risks are not addressed.
+references: []
+
+internal_logic:
+  - perception:
+      description: "Analyze NFRs for completeness and risk."
+  - model:
+      description: "NFRs: {id, description, category, metric, risk, status, issues}"
+  - planning:
+      description: |
+        "For each NFR, assign review status and risk."
+  - action:
+      description: "Output reviewed NFRs YAML."
+validation:
+  - "QA/SME review."
+  - "Audit for flagged issues."
+quality_enhancements:
+  - "Templates for review, status, and audit."
+  - "Change log for NFR reviews."

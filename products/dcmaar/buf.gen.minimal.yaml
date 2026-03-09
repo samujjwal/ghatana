@@ -1,0 +1,21 @@
+version: v1
+managed:
+  enabled: true
+  go_package_prefix:
+    default: github.com/samujjwal/dcmaar/core/proto/gen/go/pb
+    except:
+      - buf.build/googleapis/googleapis
+      - buf.build/grpc-ecosystem/grpc-gateway
+
+plugins:
+  # Generate Go code
+  - name: go
+    out: core/proto/gen/go
+    opt: paths=source_relative
+  
+  # Generate gRPC code for Go
+  - name: go-grpc
+    out: core/proto/gen/go
+    opt: 
+      - paths=source_relative
+      - require_unimplemented_servers=false

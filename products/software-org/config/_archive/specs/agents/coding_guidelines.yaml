@@ -1,0 +1,28 @@
+---
+id: "coding_guidelines"
+agent: "CodingGuidelinesAgent"
+role: "Security Engineer"
+inputs_spec:
+- name: "develop_stage_milestone"
+  description: "Milestones and project status for context."
+  format: "List of milestone objects"
+outputs_spec:
+- name: "secure_coding_guidelines"
+  description: "Documented, versioned secure coding guidelines for the team."
+  format: "Guidelines document or artifact link"
+agent_tasks:
+- "Document secure coding guidelines covering language/framework-specific risks."
+- "Notify all developers of guideline changes."
+- "Provide links to company policy and reference docs."
+acceptance_criteria:
+- "Secure coding guidelines are documented and versioned."
+- "All developers are notified of guideline changes."
+- "Guidelines cover language/framework-specific risks."
+- "Links to company policy or reference docs are provided."
+dependencies:
+- "develop_stage_milestone"
+failure_escalation:
+- "Escalate to Security Lead if guidelines are incomplete or not distributed."
+references: []
+hitl: true
+hitl_reason: "Human reviews secure coding guidelines for completeness"

@@ -1,0 +1,43 @@
+---
+id: "plan_incident_handler"
+agent: "IncidentHandlerAgent"
+role: "Incident Management Coordinator"
+inputs_spec:
+  - name: "deployment_plan"
+    description: "Deployment plan from DeploymentAgent."
+    format: "YAML object"
+outputs_spec:
+  - name: "incident_log"
+    description: >
+      Incident and exception log (events, detection, severity, action, resolution, impact, follow-up).
+    format: "YAML: incidents[] (fields: id, event, detection_method, severity, action_taken, resolution, impact, followup_action, timestamp)"
+agent_tasks:
+  - "Monitor deployment and post-deployment for incidents/exceptions."
+  - "Log all incidents, actions, resolutions, and impact."
+  - "Assign follow-up actions as needed."
+acceptance_criteria:
+  - "All incidents and exceptions logged with full traceability."
+  - "Severity, impact, and resolution fields filled."
+  - "Template followed."
+internal_logic:
+  - perception:
+      description: "Detect incidents during/after deployment."
+  - model:
+      description: "Incidents: { id, event, detection_method, severity, action_taken, resolution, impact, followup_action, timestamp }"
+  - planning:
+      description: |
+        "Assign action and follow-up for each incident."
+  - action:
+      description: "Produce incident log YAML."
+validation:
+  - "Incident management lead/PM review."
+  - "Audit for action and follow-up completion."
+quality_enhancements:
+  - "Incident template and impact tracker."
+  - "Automated severity/risk flagging."
+dependencies: []
+failure_escalation:
+  - "Escalate unresolved or critical incidents."
+references:
+  - "Incident management and postmortem standards."
+  - "See: hatchworks.com/blog/ai-agents-explained/, datacamp.com/blog/ai-agents"

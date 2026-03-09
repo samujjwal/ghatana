@@ -1,0 +1,28 @@
+---
+id: "build_otel_telemetry_agent"
+agent: "OpenTelemetryAgent"
+role: "Observability Automation"
+inputs_spec:
+- name: "build_progress_dashboard"
+  description: "Build progress dashboard containing metrics, traces, and logs."
+  format: "Dashboard artifact"
+outputs_spec:
+- name: "build_otel_telemetry_report"
+  description: "Distributed traces, metrics, and logs collected via OpenTelemetry."
+  format: "Telemetry report artifact"
+agent_tasks:
+- "Collect distributed traces, metrics, and logs via OpenTelemetry instrumentation."
+- "Send telemetry to central observability platforms (Grafana, Datadog, etc.)."
+- "Flag trace gaps or SLO misses for follow-up."
+- "Link telemetry data to key build artifacts."
+acceptance_criteria:
+- "Distributed traces, metrics, and logs are collected via OpenTelemetry."
+- "Telemetry is sent to central observability platforms."
+- "Trace gaps or SLO misses are flagged and reported."
+- "Telemetry data is linked to all key build artifacts."
+dependencies:
+- "build_progress_dashboard"
+failure_escalation:
+- "Escalate to Observability/Analytics lead if telemetry not collected or gaps unflagged."
+references: []
+hitl: false

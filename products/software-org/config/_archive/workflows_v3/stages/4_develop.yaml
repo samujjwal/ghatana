@@ -1,0 +1,132 @@
+# Develop Stage - v3 Operator-Based Definition
+# Uses consolidated operators from operations/domain/build/
+name: Develop
+description: Code implementation, quality checks, and development-time testing
+domain: build
+
+# Operators used in this stage (development focuses on code quality and unit tests)
+operators:
+  - ref: build/code_quality_operator
+    modes: [static_analysis, duplication, formatting, tech_debt]
+  - ref: build/test_execution_operator
+    modes: [unit, coverage]
+
+# Cross-cutting operators
+cross_cutting:
+  - ref: cross-cutting/milestone_tracker
+    params:
+      stage: develop
+  - ref: cross-cutting/best_practice
+    params:
+      stage: develop
+  - ref: cross-cutting/kpi
+    params:
+      stage: develop
+  - ref: cross-cutting/audit_log
+    params:
+      stage: develop
+
+# Workflow sequence
+workflow:
+  # Code Implementation (manual dev work tracked via milestones)
+  - step: code_implementation
+    type: manual
+    description: Developers implement code based on design specifications
+    inputs:
+      - name: ready_for_develop_package
+    outputs:
+      - name: source_code
+    hitl: true
+    hitl_reason: Human developers write code
+
+  # Code Quality Checks
+  - step: static_analysis
+    operator: build/code_quality_operator
+    mode: static_analysis
+    inputs:
+      - name: source_code
+    outputs:
+      - name: static_analysis_report
+    depends_on: [code_implementation]
+
+  - step: duplication_check
+    operator: build/code_quality_operator
+    mode: duplication
+    inputs:
+      - name: source_code
+    outputs:
+      - name: duplication_report
+    depends_on: [code_implementation]
+
+  - step: formatting_check
+    operator: build/code_quality_operator
+    mode: formatting
+    inputs:
+      - name: source_code
+    outputs:
+      - name: formatting_report
+    depends_on: [code_implementation]
+
+  - step: tech_debt_analysis
+    operator: build/code_quality_operator
+    mode: tech_debt
+    inputs:
+      - name: source_code
+      - name: static_analysis_report
+    outputs:
+      - name: tech_debt_report
+    depends_on: [static_analysis]
+
+  # Unit Testing
+  - step: unit_tests
+    operator: build/test_execution_operator
+    mode: unit
+    inputs:
+      - name: source_code
+    outputs:
+      - name: unit_test_results
+    depends_on: [code_implementation]
+
+  - step: coverage_analysis
+    operator: build/test_execution_operator
+    mode: coverage
+    inputs:
+      - name: source_code
+      - name: unit_test_results
+    outputs:
+      - name: coverage_report
+    depends_on: [unit_tests]
+
+  # Cross-cutting
+  - step: best_practice_check
+    operator: cross-cutting/best_practice
+    params:
+      stage: develop
+    inputs:
+      - name: static_analysis_report
+      - name: coverage_report
+    outputs:
+      - name: best_practice_report
+    depends_on: [coverage_analysis, tech_debt_analysis]
+
+  - step: track_milestones
+    operator: cross-cutting/milestone_tracker
+    params:
+      stage: develop
+    inputs:
+      - name: best_practice_report
+    outputs:
+      - name: develop_stage_milestone
+    depends_on: [best_practice_check]
+
+# Stage entry/exit criteria
+entry_criteria:
+  - Design stage complete
+  - Design package available
+  - Development environment ready
+
+exit_criteria:
+  - Code implemented per design
+  - Unit tests passing
+  - Code quality gates met
+  - Coverage thresholds met

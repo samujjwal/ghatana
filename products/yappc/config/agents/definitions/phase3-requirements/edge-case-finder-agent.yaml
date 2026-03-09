@@ -1,0 +1,106 @@
+id: edge-case-finder-agent
+name: Edge Case Finder Agent
+version: 1.0.0
+description: Identifies edge cases, boundary conditions, and corner cases for features. Ensures comprehensive test coverage.
+
+metadata:
+  level: 3  # Worker
+  domain: requirements
+  tags:
+    - edge-cases
+    - boundary-conditions
+    - test-coverage
+    - corner-cases
+
+generator:
+  type: PIPELINE
+  steps:
+    - name: edge_case_identification
+      type: LLM
+      provider: ANTHROPIC
+      model: claude-3-5-sonnet-20241022
+      temperature: 0.4
+      max_tokens: 2500
+      prompt: |
+        You are the Edge Case Finder Agent. Identify edge cases:
+        
+        Feature: {{feature}}
+        Input Types: {{inputs}}
+        Business Rules: {{rules}}
+        User Scenarios: {{scenarios}}
+        
+        Find edge cases in:
+        1. Input boundaries (min, max, empty, null)
+        2. Data types (formats, encoding, special chars)
+        3. State transitions (concurrent, race conditions)
+        4. User behaviors (back button, refresh, timeout)
+        5. System conditions (network, load, failure)
+        6. Business rules (combinations, exceptions)
+        7. Time-based (timezones, DST, leap year)
+        8. Integration points (API failures, timeouts)
+        
+        Output as JSON: {edge_cases: [{id, category, description, input_conditions, expected_behavior, risk_level}], coverage_matrix}
+    - name: risk_assessment
+      type: RULE_BASED
+      description: Assess risk of each edge case
+    - name: test_case_linkage
+      type: SERVICE_CALL
+      service: test-service
+      endpoint: /edge-cases/link
+
+memory:
+  episodic:
+    enabled: true
+    retention_days: 365
+    categories:
+      - identified-edge-cases
+      - production-incidents
+      - missed-cases
+  semantic:
+    enabled: true
+    categories:
+      - edge-case-patterns
+      - boundary-conditions
+      - failure-modes
+  procedural:
+    enabled: true
+    categories:
+      - identification-techniques
+      - categorization-rules
+      - risk-assessment
+
+tools:
+  - boundary_analyzer
+  - pattern_matcher
+  - risk_scorer
+
+capabilities:
+  - edge-case-identification
+  - boundary-analysis
+  - risk-assessment
+  - coverage-analysis
+
+routing:
+  input_types:
+    - feature-specification
+    - story
+    - test-coverage-request
+  output_types:
+    - edge-case-list
+    - coverage-matrix
+    - risk-report
+
+delegation:
+  can_delegate_to: []
+  escalates_to:
+    - acceptance-criteria-agent
+
+governance:
+  requires_approval: false
+  can_block: false
+  audit_trail: standard
+
+performance:
+  expected_latency_ms: 3000
+  max_latency_ms: 8000
+  timeout_ms: 15000

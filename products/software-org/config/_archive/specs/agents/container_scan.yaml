@@ -1,0 +1,29 @@
+---
+id: "container_scan"
+agent: "ContainerScanAgent"
+role: "Security Engineer"
+inputs_spec:
+- name: "container_images"
+  description: "Container images for vulnerability scanning."
+  format: "Container image artifact/registry"
+outputs_spec:
+- name: "image_scan_report"
+  description: "Scan report for vulnerabilities in container images."
+  format: "Container scan report artifact"
+agent_tasks:
+- "Scan all container images for known vulnerabilities."
+- "Include OS, language, and third-party components in scan."
+- "Block promotion on critical findings unless approved."
+- "Store container scan report for audit."
+acceptance_criteria:
+- "All container images are scanned for known vulnerabilities."
+- "Scan includes OS, language, and third-party components."
+- "Critical findings block promotion unless approved."
+- "Container scan report is stored for audit."
+dependencies:
+- "container_images"
+failure_escalation:
+- "Escalate to Security Lead if critical findings are not resolved or report is missing."
+references: []
+hitl: true
+hitl_reason: "Human reviews container scan results for actionable issues"

@@ -1,0 +1,58 @@
+{
+  "compilerOptions": {
+    "target": "ES2022",
+    "lib": [
+      "ES2022",
+      "DOM",
+      "DOM.Iterable"
+    ],
+    "module": "ESNext",
+    "skipLibCheck": true,
+    "skipDefaultLibCheck": true,
+    "types": [
+      "@testing-library/jest-dom"
+    ],
+    "moduleResolution": "bundler",
+    "allowImportingTsExtensions": true,
+    "resolveJsonModule": true,
+    "isolatedModules": true,
+    "noEmit": true,
+    "jsx": "react-jsx",
+    "strict": true,
+    "noUnusedLocals": false,
+    "noUnusedParameters": false,
+    "noFallthroughCasesInSwitch": true,
+    "baseUrl": ".",
+    "paths": {
+      "@/*": [
+        "./src/*"
+      ]
+    }
+  },
+  "include": [
+    "src"
+  ],
+  "exclude": [
+    "src/components/simulation/**",
+    "src/components/offline/**",
+    "src/pages/VRLabsPage.tsx",
+    "src/pages/VRSessionPage.tsx",
+    "src/pages/StudyGroupsPage.tsx",
+    "src/pages/ChatPage.tsx",
+    "src/pages/StudyGroupDetailPage.tsx",
+    "src/features/simulation-authoring/**",
+    "src/features/simulation-tutor/**",
+    "src/features/assessments/**",
+    "src/hooks/useOffline.ts",
+    "../../../yappc/**",
+    "src/**/*.test.ts",
+    "src/**/*.test.tsx",
+    "src/**/*.spec.ts",
+    "src/**/*.spec.tsx"
+  ],
+  "references": [
+    {
+      "path": "./tsconfig.node.json"
+    }
+  ]
+}

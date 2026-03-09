@@ -1,0 +1,27 @@
+---
+id: "monitor_kpi_agent"
+agent: "StageKPIAgent"
+role: "Monitor KPI Analyst"
+inputs_spec:
+- name: "monitor_stage_milestone"
+  description: "Monitor stage milestone for KPI tracking."
+  format: "List of milestone objects"
+outputs_spec:
+- name: "monitor_kpi_report"
+  description: "Monitor KPI report, including MTTD/MTTR, postmortem rates, log/alert\
+    \ coverage."
+  format: "KPI report artifact"
+agent_tasks:
+- "Track MTTD, MTTR for incident detection/response."
+- "Track postmortem completion/action closure rates."
+- "Track security log/alert coverage."
+- "Flag trends/recurring incidents."
+acceptance_criteria:
+- "All KPIs tracked/reported."
+- "Trends/recurring incidents flagged."
+dependencies:
+- "monitor_stage_milestone"
+failure_escalation:
+- "Escalate to Monitor KPI Analyst if KPIs missing or unreviewed."
+references: []
+hitl: false

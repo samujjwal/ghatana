@@ -1,0 +1,30 @@
+---
+id: "package_best_practice_enforcement"
+agent: "PackageBestPracticeAgent"
+role: "Release QA Auditor"
+inputs_spec:
+- name: "signed_release_artifacts"
+  description: "Signed release artifacts for best practice enforcement."
+  format: "Release artifact bundle"
+outputs_spec:
+- name: "package_best_practice_report"
+  description: "Best practice compliance report for packaging."
+  format: "Best practice report artifact"
+agent_tasks:
+- "Verify all packaging steps comply with best practices."
+- "Check security and reproducibility."
+- "Review package for completeness and consistency."
+- "Justify any deviations from best practice."
+acceptance_criteria:
+- "All packaging steps comply with best practices."
+- "Security and reproducibility enforced."
+- "Package reviewed for completeness and consistency."
+- "Deviations from best practice justified."
+dependencies:
+- "signed_release_artifacts"
+failure_escalation:
+- "Escalate to QA Auditor if best practices are not followed or deviations are not\
+  \ justified."
+references: []
+hitl: true
+hitl_reason: "Human ensures package best practices are enforced"

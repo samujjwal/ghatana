@@ -1,0 +1,50 @@
+{{#if enableTracing}}
+use opentelemetry::global;
+use opentelemetry::sdk::trace::{self, Sampler};
+use opentelemetry::sdk::Resource;
+use opentelemetry::KeyValue;
+use opentelemetry_otlp::WithExportConfig;
+use tracing_opentelemetry::OpenTelemetryLayer;
+use tracing_subscriber::layer::SubscriberExt;
+
+/// Initialize OpenTelemetry tracing
+pub fn init_tracing() -> Result<(), Box<dyn std::error::Error>> {
+    let tracer = opentelemetry_otlp::new_pipeline()
+    .tracing()
+    .with_exporter(
+    opentelemetry_otlp::new_exporter()
+    .http()
+    .with_endpoint("{{otlpEndpoint}}")
+    )
+    .with_trace_config(
+    trace::config()
+    .with_sampler(Sampler::AlwaysOn)
+    .with_resource(Resource::new(vec![
+    KeyValue::new("service.name", "{{serviceName}}"),
+    ]))
+    )
+    .install_batch(opentelemetry::runtime::Tokio)?;
+
+    let telemetry_layer = OpenTelemetryLayer::new(tracer);
+
+    tracing::subscriber::set_global_default(
+    tracing_subscriber::registry().with(telemetry_layer),
+    )?;
+
+    tracing::info!("OpenTelemetry tracing initialized");
+    Ok(())
+    }
+
+    /// Shutdown OpenTelemetry tracing
+    pub fn shutdown_tracing() {
+    global::shutdown_tracer_provider();
+    }
+    {{else}}
+    /// Tracing is disabled
+    pub fn init_tracing() -> Result<(), Box<dyn std::error::Error>> {
+        tracing::info!("Tracing disabled");
+        Ok(())
+        }
+
+        pub fn shutdown_tracing() {}
+        {{/if}}

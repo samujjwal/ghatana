@@ -1,0 +1,2 @@
+// This file is included by the root build.gradle and subprojects
+// PMD is configured in the root build.gradle for all subprojects

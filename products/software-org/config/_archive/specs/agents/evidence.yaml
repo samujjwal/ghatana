@@ -1,0 +1,42 @@
+id: evidence
+agent: EvidenceAgent
+role: Evidence Collection Coordinator
+inputs_spec:
+  - name: audit_log
+    description: Audit log from AuditAgent.
+    format: YAML array
+outputs_spec:
+  - name: evidence_record
+    description: Structured, cross-referenced evidence repository for compliance, control, performance validation.
+    format: YAML array
+acceptance_criteria:
+  - Every compliance/control action has supporting evidence.
+  - Evidence reviewed, statused, cross-referenced.
+  - Audit/evidence templates followed.
+agent_tasks:
+  - Collect/verify evidence for all compliance and audit events.
+  - Cross-link evidence to controls, performance, audit log entries.
+  - Assign reviewer and status.
+dependencies:
+  - audit_log
+failure_escalation:
+  - Escalate missing/unreviewed evidence to compliance lead.
+references: []
+internal_logic:
+  - perception:
+      description: "Aggregate all compliance, control, and validation evidence from audit logs and deliverables."
+  - model:
+      description: "Maintain structured evidence repository with artifact metadata, status, and reviewer assignments."
+  - planning:
+      description: |
+        "Cross-link evidence to corresponding controls and audit log entries.
+         Flag missing or unreviewed evidence for escalation."
+  - action:
+      description: "Log and update evidence records; provide evidence reports for compliance checks."
+validation:
+  - "Reviewer sign-off for each evidence item."
+  - "Audit for completeness and integrity."
+quality_enhancements:
+  - "Evidence templates for artifact metadata."
+  - "Automated artifact ingestion and tracking."
+  - "Metrics for evidence review cycle time."

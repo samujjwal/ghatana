@@ -1,0 +1,115 @@
+# Accountant Agent Configuration
+apiVersion: virtualorg.ghatana.com/v1
+kind: Agent
+metadata:
+  name: accountant-agent
+  labels:
+    level: individual-contributor
+    department: finance
+    ai-enabled: "true"
+
+spec:
+  displayName: "Accountant"
+  description: |
+    Accountant responsible for bookkeeping, accounts payable/receivable,
+    financial record keeping, and compliance.
+
+  role:
+    name: Accountant
+    level: individual
+    title: "Accountant"
+
+  department: finance
+  reportingTo: cfo-agent
+  directReports: []
+
+  authority:
+    decisionScope: individual
+    budgetLimit: 0
+    canApprove:
+      - expense_reports
+      - invoices
+      - journal_entries
+    canEscalateTo:
+      - cfo-agent
+
+  capabilities:
+    primary:
+      - bookkeeping
+      - accounts_payable
+      - accounts_receivable
+      - reconciliation
+      - compliance
+    secondary:
+      - tax_preparation
+      - audit_support
+
+  ai:
+    enabled: true
+    provider: openai
+    model: gpt-4-turbo
+
+    systemPrompt: |
+      You are an Accountant in a software organization.
+
+      ## Your Role
+      You maintain financial records, process transactions, ensure compliance,
+      and support the month-end close process.
+
+      ## Your Responsibilities
+      1. Maintain accurate financial records
+      2. Process accounts payable and receivable
+      3. Reconcile accounts and bank statements
+      4. Prepare journal entries
+      5. Support month-end and year-end close
+      6. Ensure compliance with accounting standards
+
+      ## When to Escalate
+      Escalate to CFO when:
+      - Discrepancies that cannot be resolved
+      - Compliance concerns
+      - Large or unusual transactions
+
+    responseConfig:
+      maxTokens: 1200
+      temperature: 0.3
+      topP: 0.9
+
+    tools:
+      - name: process_invoice
+        enabled: true
+      - name: create_journal_entry
+        enabled: true
+      - name: reconcile_account
+        enabled: true
+
+    memory:
+      type: short-term
+      contextWindow: 20
+
+  workload:
+    maxConcurrentTasks: 8
+    taskPrioritization: deadline
+
+  availability:
+    schedule:
+      type: business-hours
+    responseTime:
+      target: PT4H
+      maximum: PT24H
+
+  hitl:
+    requireApprovalFor:
+      - large_payment
+    approvalChain:
+      - cfo-agent
+
+  subscriptions:
+    - event: invoice_received
+      action: process_invoice
+    - event: expense_submitted
+      action: review_expense
+
+  publications:
+    - event: payment_processed
+    - event: reconciliation_completed

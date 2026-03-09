@@ -1,0 +1,162 @@
+{
+  "id": "oob-web-vitals-monitoring",
+  "metadata": {
+    "name": "OOB Web Vitals & Performance Monitoring",
+    "description": "Monitors Core Web Vitals (LCP, INP, CLS), page load performance, and generates health reports",
+    "version": "1.0.0",
+    "author": "DCMAAR Team",
+    "tags": ["oob", "web-vitals", "performance", "health", "lcp", "inp", "cls"],
+    "createdAt": 1706832000000,
+    "updatedAt": 1706832000000
+  },
+  "collect": {
+    "id": "collect",
+    "sources": [
+      {
+        "id": "core-web-vitals",
+        "type": "web-vitals",
+        "strategy": "event-driven",
+        "config": {
+          "metrics": ["LCP", "INP", "CLS", "TTFB", "FCP", "TTI", "TBT"],
+          "collectOnPageLoad": true,
+          "collectOnVisibilityChange": false
+        },
+        "filters": [
+          {
+            "field": "payload.url",
+            "operator": "regex",
+            "value": "^https?://"
+          }
+        ],
+        "samplingRate": 1.0,
+        "batchSize": 50
+      }
+    ],
+    "mergeStrategy": "union",
+    "timeoutMs": 10000
+  },
+  "analyze": {
+    "id": "analyze",
+    "operations": [
+      {
+        "id": "vitals-rating-summary",
+        "strategy": "aggregate",
+        "config": {
+          "groupBy": "payload.url",
+          "metrics": ["count"],
+          "fields": ["payload.lcp.value", "payload.inp.value", "payload.cls.value"]
+        },
+        "order": 100
+      },
+      {
+        "id": "performance-classification",
+        "strategy": "classify",
+        "config": {
+          "categories": {
+            "excellent": ["payload.overallRating === 'good'"],
+            "good": ["payload.lcp.rating === 'good' && payload.inp.rating === 'good'"],
+            "needs-improvement": ["payload.overallRating === 'needs-improvement'"],
+            "poor": ["payload.overallRating === 'poor'"]
+          }
+        },
+        "order": 200
+      },
+      {
+        "id": "identify-slow-pages",
+        "strategy": "filter",
+        "config": {
+          "conditions": [
+            {
+              "field": "payload.lcp.value",
+              "operator": "gt",
+              "value": 4000
+            }
+          ]
+        },
+        "order": 300
+      }
+    ],
+    "parallel": false,
+    "timeoutMs": 15000
+  },
+  "report": {
+    "id": "report",
+    "destinations": [
+      {
+        "id": "vitals-storage",
+        "type": "store",
+        "delivery": "store",
+        "config": {
+          "storageType": "indexeddb",
+          "key": "web-vitals-data",
+          "maxReports": 500
+        },
+        "format": "json"
+      },
+      {
+        "id": "poor-performance-alert",
+        "type": "notification",
+        "delivery": "notification",
+        "config": {
+          "title": "Poor Web Performance Detected",
+          "icon": "warning",
+          "priority": "high",
+          "requireAction": true
+        },
+        "format": "markdown",
+        "when": {
+          "operator": "or",
+          "conditions": [
+            {
+              "field": "data.poor",
+              "operator": "exists"
+            },
+            {
+              "field": "summary.eventsAnalyzed",
+              "operator": "gt",
+              "value": 10
+            }
+          ]
+        }
+      }
+    ],
+    "aggregate": true,
+    "includeMetadata": true,
+    "includeSummary": true,
+    "timeoutMs": 5000
+  },
+  "security": {
+    "maxExecutionTimeMs": 30000,
+    "maxMemoryBytes": 52428800,
+    "maxEventsPerBatch": 500,
+    "allowedNetworkPatterns": [],
+    "deniedNetworkPatterns": ["*"],
+    "allowedBrowserAPIs": ["storage", "tabs", "runtime", "notifications"],
+    "sandboxed": true
+  },
+  "privacy": {
+    "redactionRules": [
+      {
+        "pattern": "password|token|secret|key",
+        "replacement": "[REDACTED]",
+        "fields": ["payload.url"]
+      }
+    ],
+    "encryptFields": [],
+    "retentionPeriodMs": 604800000,
+    "anonymize": false,
+    "requireConsent": false
+  },
+  "enabled": true,
+  "schedule": "*/10 * * * *",
+  "priority": 300,
+  "maxConcurrentExecutions": 1,
+  "timeoutMs": 60000,
+  "onError": "continue",
+  "variables": {
+    "lcpThreshold": 2500,
+    "inpThreshold": 200,
+    "clsThreshold": 0.1,
+    "alertOnPoor": true
+  }
+}

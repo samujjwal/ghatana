@@ -1,0 +1,88 @@
+personas:
+  - id: product_manager
+    display_name: "Product Manager / Product Owner"
+    tags: [product, strategy, leadership]
+  - id: ux_researcher
+    display_name: "UX Researcher"
+    tags: [ux, research]
+  - id: ux_designer
+    display_name: "UX / Interaction Designer"
+    tags: [ux, design]
+  - id: service_designer
+    display_name: "Service Designer"
+    tags: [service_design, systems_thinking]
+  - id: business_sme
+    display_name: "Business / Domain SME"
+    tags: [domain, business]
+  - id: data_analyst
+    display_name: "Data Analyst / Product Analyst"
+    tags: [data, analytics]
+  - id: solution_architect
+    display_name: "Solution Architect / Lead Engineer"
+    tags: [architecture, engineering]
+  - id: security_architect
+    display_name: "Security Architect / Privacy Officer"
+    tags: [security, privacy]
+  - id: customer_success
+    display_name: "Customer Success / Support Representative"
+    tags: [support, customer]
+  - id: marketing_strategist
+    display_name: "Marketing / Growth Strategist"
+    tags: [marketing, growth]
+  - id: compliance_officer
+    display_name: "Compliance / Risk Officer"
+    tags: [compliance, risk]
+  - id: innovation_lead
+    display_name: "Innovation / Strategy Lead"
+    tags: [strategy, innovation]
+  - id: executive_sponsor
+    display_name: "Executive Sponsor / Stakeholder"
+    tags: [executive, stakeholder]
+  - id: release_program_manager
+    display_name: "Release / Program Manager"
+    tags: [release, program]
+  - id: product_designer
+    display_name: "Product Designer / Business Analyst"
+    tags: [product, analysis]
+  - id: technical_architect
+    display_name: "Technical Architect / Infrastructure Architect"
+    tags: [architecture, infrastructure]
+  - id: data_architect
+    display_name: "Data Architect"
+    tags: [data, architecture]
+  - id: devops_engineer
+    display_name: "DevOps / Platform Engineer"
+    tags: [devops, platform]
+  - id: software_engineering_lead
+    display_name: "Software / Engineering Lead"
+    tags: [engineering, leadership]
+  - id: performance_reliability_engineer
+    display_name: "Performance & Reliability Engineer"
+    tags: [performance, reliability]
+  - id: backend_engineer
+    display_name: "Backend Engineer"
+    tags: [backend, engineering]
+  - id: frontend_engineer
+    display_name: "Frontend Engineer"
+    tags: [frontend, engineering]
+  - id: fullstack_engineer
+    display_name: "Full-Stack Engineer"
+    tags: [fullstack, engineering]
+  - id: mobile_engineer
+    display_name: "Mobile Engineer"
+    tags: [mobile, engineering]
+  - id: data_engineer
+    display_name: "Data Engineer"
+    tags: [data, engineering]
+  - id: security_engineer
+    display_name: "Security Engineer / AppSec"
+    tags: [security, appsec]
+  - id: qa_engineer
+    display_name: "QA / Test Automation Engineer"
+    tags: [qa, testing]
+  - id: sre
+    display_name: "Site Reliability Engineer (SRE)"
+    tags: [reliability, operations]
+  - id: build_release_engineer
+    display_name: "Build / Release Engineer"
+    tags: [build, release]

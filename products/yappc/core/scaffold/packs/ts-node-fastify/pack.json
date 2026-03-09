@@ -1,0 +1,215 @@
+{
+    "name": "ts-node-fastify",
+    "version": "1.0.0",
+    "description": "TypeScript Node.js service with Fastify, Prisma, and production-ready features",
+    "author": "Ghatana YAPPC Team",
+    "license": "Apache-2.0",
+    "tags": [
+        "typescript",
+        "nodejs",
+        "fastify",
+        "backend",
+        "api",
+        "prisma",
+        "server"
+    ],
+    "type": "service",
+    "language": "typescript",
+    "framework": "fastify",
+    "buildSystem": "pnpm",
+    "platform": "server",
+    "archetype": "service",
+    "dependencies": {
+        "runtime": [
+            "fastify:^4.28.1",
+            "@fastify/cors:^9.0.1",
+            "@fastify/helmet:^11.1.1",
+            "@fastify/sensible:^5.6.0",
+            "@fastify/swagger:^8.15.0",
+            "@fastify/swagger-ui:^4.1.0",
+            "@prisma/client:^5.22.0",
+            "pino:^9.5.0",
+            "pino-pretty:^11.3.0",
+            "zod:^3.23.8",
+            "dotenv:^16.4.5"
+        ],
+        "build": [
+            "node:20+",
+            "pnpm:9+"
+        ],
+        "devDependencies": [
+            "typescript:^5.6.3",
+            "tsx:^4.19.2",
+            "@types/node:^22.9.1",
+            "prisma:^5.22.0",
+            "vitest:^2.1.5",
+            "@vitest/coverage-v8:^2.1.5",
+            "supertest:^7.0.0",
+            "@types/supertest:^6.0.2",
+            "eslint:^9.15.0",
+            "@typescript-eslint/eslint-plugin:^8.15.0",
+            "@typescript-eslint/parser:^8.15.0",
+            "prettier:^3.3.3",
+            "@biomejs/biome:^1.9.4"
+        ]
+    },
+    "templates": {
+        "package-json": {
+            "source": "templates/package.json.hbs",
+            "target": "package.json",
+            "merge": "replace"
+        },
+        "tsconfig": {
+            "source": "templates/tsconfig.json.hbs",
+            "target": "tsconfig.json",
+            "merge": "replace"
+        },
+        "biome-config": {
+            "source": "templates/biome.json.hbs",
+            "target": "biome.json",
+            "merge": "replace"
+        },
+        "env-example": {
+            "source": "templates/.env.example.hbs",
+            "target": ".env.example",
+            "merge": "replace"
+        },
+        "gitignore": {
+            "source": "templates/.gitignore.hbs",
+            "target": ".gitignore",
+            "merge": "replace"
+        },
+        "main": {
+            "source": "templates/src/index.ts.hbs",
+            "target": "src/index.ts",
+            "merge": "replace"
+        },
+        "app": {
+            "source": "templates/src/app.ts.hbs",
+            "target": "src/app.ts",
+            "merge": "replace"
+        },
+        "config": {
+            "source": "templates/src/config.ts.hbs",
+            "target": "src/config.ts",
+            "merge": "replace"
+        },
+        "prisma-schema": {
+            "source": "templates/prisma/schema.prisma.hbs",
+            "target": "prisma/schema.prisma",
+            "merge": "replace"
+        },
+        "routes-index": {
+            "source": "templates/src/routes/index.ts.hbs",
+            "target": "src/routes/index.ts",
+            "merge": "replace"
+        },
+        "routes-health": {
+            "source": "templates/src/routes/health.ts.hbs",
+            "target": "src/routes/health.ts",
+            "merge": "replace"
+        },
+        "routes-api": {
+            "source": "templates/src/routes/api.ts.hbs",
+            "target": "src/routes/api.ts",
+            "merge": "replace"
+        },
+        "plugins-prisma": {
+            "source": "templates/src/plugins/prisma.ts.hbs",
+            "target": "src/plugins/prisma.ts",
+            "merge": "replace"
+        },
+        "schemas-common": {
+            "source": "templates/src/schemas/common.ts.hbs",
+            "target": "src/schemas/common.ts",
+            "merge": "replace"
+        },
+        "types": {
+            "source": "templates/src/types.ts.hbs",
+            "target": "src/types.ts",
+            "merge": "replace"
+        },
+        "test-setup": {
+            "source": "templates/tests/setup.ts.hbs",
+            "target": "tests/setup.ts",
+            "merge": "replace"
+        },
+        "test-health": {
+            "source": "templates/tests/health.test.ts.hbs",
+            "target": "tests/health.test.ts",
+            "merge": "replace"
+        },
+        "vitest-config": {
+            "source": "templates/vitest.config.ts.hbs",
+            "target": "vitest.config.ts",
+            "merge": "replace"
+        },
+        "dockerfile": {
+            "source": "templates/Dockerfile.hbs",
+            "target": "Dockerfile",
+            "merge": "replace"
+        },
+        "docker-compose": {
+            "source": "templates/docker-compose.yml.hbs",
+            "target": "docker-compose.yml",
+            "merge": "replace"
+        },
+        "makefile": {
+            "source": "templates/Makefile.hbs",
+            "target": "Makefile",
+            "merge": "replace"
+        },
+        "readme": {
+            "source": "templates/README.md.hbs",
+            "target": "README.md",
+            "merge": "replace"
+        }
+    },
+    "variables": {
+        "projectName": {
+            "description": "Name of the project",
+            "required": true,
+            "default": "my-fastify-service"
+        },
+        "description": {
+            "description": "Project description",
+            "required": false,
+            "default": "A TypeScript Fastify service"
+        },
+        "author": {
+            "description": "Author name",
+            "required": false,
+            "default": "Ghatana Team"
+        },
+        "port": {
+            "description": "Server port",
+            "required": false,
+            "default": "3000"
+        },
+        "databaseUrl": {
+            "description": "Database connection URL",
+            "required": false,
+            "default": "postgresql://postgres:postgres@localhost:5432/mydb"
+        },
+        "enableSwagger": {
+            "description": "Enable Swagger documentation",
+            "required": false,
+            "default": "true"
+        },
+        "enableMetrics": {
+            "description": "Enable Prometheus metrics",
+            "required": false,
+            "default": "true"
+        }
+    },
+    "hooks": {
+        "postGenerate": [
+            "pnpm install",
+            "pnpm prisma generate"
+        ]
+    },
+    "requirements": {
+        "node": ">=20.0.0",
+        "pnpm": ">=9.0.0"
+    }
+}

@@ -1,0 +1,167 @@
+# Complete Software Organization Configuration
+# This demonstrates how an entire software organization can be defined purely through configuration
+# No Java code required beyond the framework
+
+apiVersion: virtualorg.ghatana.com/v1
+kind: Organization
+metadata:
+  name: acme-software-org
+  namespace: ${TENANT_ID:acme-corp}
+  labels:
+    environment: ${ENV:production}
+    version: "2.0.0"
+    industry: software-development
+  annotations:
+    created-by: config-system
+    template-version: "1.0"
+
+spec:
+  # Basic Information
+  displayName: "Acme Software Inc."
+  description: "Full-stack software development organization with AI-powered agents"
+
+  # Organization Structure
+  structure:
+    type: hierarchical
+    maxDepth: 4
+    governanceModel: distributed # centralized | distributed | hybrid
+
+  # Global Settings
+  settings:
+    defaultTimezone: "America/New_York"
+    defaultLocale: "en-US"
+
+    workingHours:
+      start: "09:00"
+      end: "18:00"
+      days: [MONDAY, TUESDAY, WEDNESDAY, THURSDAY, FRIDAY]
+      holidays:
+        - ref: calendars/us-federal-holidays.yaml
+
+    # Event Configuration
+    events:
+      enabled: true
+      publishTo: aep
+      eventBusConfig:
+        type: kafka
+        topic: org.acme.events
+        partitions: 12
+
+    # KPI Tracking
+    kpis:
+      enabled: true
+      aggregationInterval: PT1H
+      dashboardUrl: ${METRICS_DASHBOARD_URL}
+
+    # Human-in-the-Loop Configuration
+    hitl:
+      enabled: true
+      defaultApprovalTimeout: PT24H
+      escalationPolicy: manager-chain
+      notificationChannels: [slack, email]
+
+    # AI Configuration Defaults
+    aiDefaults:
+      provider: ${AI_PROVIDER:openai}
+      model: ${AI_MODEL:gpt-4-turbo}
+      maxTokens: 4096
+      temperature: 0.7
+      rateLimit:
+        requestsPerMinute: 60
+        tokensPerMinute: 100000
+
+    # Security Settings
+    security:
+      dataClassification: internal
+      encryptionRequired: true
+      auditLogRetention: P2Y
+
+  # Department References
+  departments:
+    - ref: departments/executive.yaml
+    - ref: departments/engineering.yaml
+    - ref: departments/qa.yaml
+    - ref: departments/devops.yaml
+    - ref: departments/product.yaml
+    - ref: departments/support.yaml
+    - ref: departments/security.yaml
+
+  # Cross-Department Workflow References
+  workflows:
+    - ref: workflows/sprint-planning.yaml
+    - ref: workflows/incident-response.yaml
+    - ref: workflows/release-management.yaml
+    - ref: workflows/feature-delivery.yaml
+    - ref: workflows/onboarding.yaml
+
+  # Interaction Protocol References
+  interactions:
+    - ref: interactions/eng-qa-handoff.yaml
+    - ref: interactions/support-engineering-escalation.yaml
+    - ref: interactions/product-engineering-requirements.yaml
+    - ref: interactions/security-review.yaml
+
+  # Global Action Library
+  actions:
+    - ref: actions/code-review.yaml
+    - ref: actions/security-scan.yaml
+    - ref: actions/deploy.yaml
+    - ref: actions/test-suite.yaml
+    - ref: actions/documentation.yaml
+    - ref: actions/incident-response.yaml
+
+  # Persona Library
+  personas:
+    - ref: personas/executive.yaml
+    - ref: personas/senior-engineer.yaml
+    - ref: personas/engineer.yaml
+    - ref: personas/qa-engineer.yaml
+    - ref: personas/devops-engineer.yaml
+    - ref: personas/product-manager.yaml
+    - ref: personas/support-engineer.yaml
+
+  # Task Type Library
+  tasks:
+    - ref: tasks/feature-implementation.yaml
+    - ref: tasks/bug-fix.yaml
+    - ref: tasks/code-review.yaml
+    - ref: tasks/testing.yaml
+    - ref: tasks/documentation.yaml
+    - ref: tasks/deployment.yaml
+    - ref: tasks/incident-investigation.yaml
+
+  # Result Processor Library
+  results:
+    - ref: results/code-review-results.yaml
+    - ref: results/test-results.yaml
+    - ref: results/deployment-results.yaml
+    - ref: results/security-scan-results.yaml
+
+  # Lifecycle Configurations
+  lifecycles:
+    - ref: lifecycle/engineering-agent-lifecycle.yaml
+    - ref: lifecycle/devops-agent-lifecycle.yaml
+    - ref: lifecycle/executive-agent-lifecycle.yaml
+
+  # Integration Points
+  integrations:
+    github:
+      enabled: true
+      org: ${GITHUB_ORG}
+      defaultBranch: main
+      webhookSecret: ${GITHUB_WEBHOOK_SECRET}
+
+    slack:
+      enabled: true
+      workspace: ${SLACK_WORKSPACE}
+      defaultChannel: "#general"
+      botToken: ${SLACK_BOT_TOKEN}
+
+    jira:
+      enabled: true
+      baseUrl: ${JIRA_BASE_URL}
+      projectKey: ${JIRA_PROJECT_KEY}
+
+    pagerduty:
+      enabled: ${PAGERDUTY_ENABLED:false}
+      serviceKey: ${PAGERDUTY_SERVICE_KEY}

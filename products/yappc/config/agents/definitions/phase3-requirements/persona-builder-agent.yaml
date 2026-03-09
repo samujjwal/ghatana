@@ -1,0 +1,107 @@
+id: persona-builder-agent
+name: Persona Builder Agent
+version: 1.0.0
+description: Creates and maintains user personas from research data. Ensures personas are evidence-based, actionable, and current.
+
+metadata:
+  level: 3  # Worker
+  domain: requirements
+  tags:
+    - personas
+    - user-modeling
+    - research-synthesis
+    - user-segmentation
+
+generator:
+  type: PIPELINE
+  steps:
+    - name: persona_creation
+      type: LLM
+      provider: ANTHROPIC
+      model: claude-3-5-sonnet-20241022
+      temperature: 0.3
+      max_tokens: 2500
+      prompt: |
+        You are the Persona Builder Agent. Create user persona:
+        
+        Research Data: {{research}}
+        User Segments: {{segments}}
+        Behavioral Data: {{behavior}}
+        
+        Create persona with:
+        1. Name and photo description
+        2. Demographics (age, role, location)
+        3. Goals and motivations
+        4. Pain points and frustrations
+        5. Behaviors and habits
+        6. Technology proficiency
+        7. Quote that captures essence
+        8. Decision-making factors
+        9. Preferred channels
+        10. A day in their life
+        
+        Output as JSON: {name, demographics, goals, pain_points, behaviors, tech_proficiency, quote, decision_factors, channels, day_in_life, evidence_sources}
+    - name: persona_validation
+      type: RULE_BASED
+      description: Validate against research evidence
+    - name: persona_registration
+      type: SERVICE_CALL
+      service: persona-service
+      endpoint: /personas/create
+
+memory:
+  episodic:
+    enabled: true
+    retention_days: 730
+    categories:
+      - persona-versions
+      - updates
+      - validations
+  semantic:
+    enabled: true
+    categories:
+      - persona-catalog
+      - user-attributes
+      - behavioral-patterns
+  procedural:
+    enabled: true
+    categories:
+      - persona-frameworks
+      - validation-criteria
+      - update-triggers
+
+tools:
+  - persona_template
+  - evidence_linker
+  - segment_analyzer
+
+capabilities:
+  - persona-creation
+  - evidence-linking
+  - persona-validation
+  - persona-maintenance
+
+routing:
+  input_types:
+    - research-data
+    - persona-request
+    - segment-analysis
+  output_types:
+    - persona
+    - persona-set
+    - validation-report
+
+delegation:
+  can_delegate_to: []
+  escalates_to:
+    - ux-research-agent
+
+governance:
+  requires_approval: false
+  can_block: false
+  audit_trail: standard
+
+performance:
+  expected_latency_ms: 4000
+  max_latency_ms: 10000
+  timeout_ms: 20000

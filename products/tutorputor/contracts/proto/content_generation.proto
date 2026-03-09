@@ -1,0 +1,244 @@
+syntax = "proto3";
+
+package tutorputor.content_generation;
+
+import "google/protobuf/timestamp.proto";
+
+// =============================================================================
+// Content Generation Service Definition
+// =============================================================================
+
+service ContentGenerationService {
+  // Generate claims for a given topic
+  rpc GenerateClaims(GenerateClaimsRequest) returns (GenerateClaimsResponse);
+  
+  // Analyze content needs for claims
+  rpc AnalyzeContentNeeds(AnalyzeContentNeedsRequest) returns (AnalyzeContentNeedsResponse);
+  
+  // Generate examples for claims
+  rpc GenerateExamples(GenerateExamplesRequest) returns (GenerateExamplesResponse);
+  
+  // Generate simulation content
+  rpc GenerateSimulation(GenerateSimulationRequest) returns (GenerateSimulationResponse);
+  
+  // Validate generated content
+  rpc ValidateContent(ValidateContentRequest) returns (ValidateContentResponse);
+  
+  // Health check
+  rpc HealthCheck(HealthCheckRequest) returns (HealthCheckResponse);
+}
+
+// =============================================================================
+// Common Types
+// =============================================================================
+
+message RequestContext {
+  string request_id = 1;
+  string tenant_id = 2;
+  google.protobuf.Timestamp timestamp = 3;
+  map<string, string> metadata = 4;
+}
+
+message ContentClaim {
+  string claim_id = 1;
+  string claim_text = 2;
+  string claim_ref = 3;
+  repeated string keywords = 4;
+  string difficulty_level = 5;
+  string domain = 6;
+  map<string, string> metadata = 7;
+}
+
+message ContentExample {
+  string example_id = 1;
+  string claim_ref = 2;
+  string scenario = 3;
+  string question = 4;
+  string answer = 5;
+  string explanation = 6;
+  string difficulty = 7;
+  repeated string concepts = 8;
+}
+
+message SimulationContent {
+  string simulation_id = 1;
+  string claim_ref = 2;
+  string title = 3;
+  string description = 4;
+  repeated SimulationStep steps = 5;
+  map<string, string> parameters = 6;
+  string difficulty = 7;
+  int32 estimated_duration_minutes = 8;
+}
+
+message SimulationStep {
+  string step_id = 1;
+  int32 order_index = 2;
+  string title = 3;
+  string description = 4;
+  string action_type = 5;
+  map<string, string> parameters = 6;
+  repeated string expected_outcomes = 7;
+}
+
+// =============================================================================
+// Generate Claims
+// =============================================================================
+
+message GenerateClaimsRequest {
+  RequestContext context = 1;
+  string topic = 2;
+  string grade_level = 3;
+  string domain = 4;
+  int32 max_claims = 5;
+  map<string, string> context_params = 6;
+  string language = 7;
+}
+
+message GenerateClaimsResponse {
+  RequestContext context = 1;
+  repeated ContentClaim claims = 2;
+  string generation_model = 3;
+  google.protobuf.Timestamp generated_at = 4;
+  float confidence_score = 5;
+  repeated string warnings = 6;
+}
+
+// =============================================================================
+// Analyze Content Needs
+// =============================================================================
+
+message AnalyzeContentNeedsRequest {
+  RequestContext context = 1;
+  repeated ContentClaim claims = 2;
+  string target_grade_level = 3;
+  string learning_objective = 4;
+  repeated string available_resources = 5;
+}
+
+message AnalyzeContentNeedsResponse {
+  RequestContext context = 1;
+  ContentNeedsAnalysis analysis = 2;
+  google.protobuf.Timestamp analyzed_at = 3;
+}
+
+message ContentNeedsAnalysis {
+  repeated ContentGap gaps = 1;
+  repeated ContentSuggestion suggestions = 2;
+  int32 recommended_examples_count = 3;
+  int32 recommended_simulations_count = 4;
+  float complexity_score = 5;
+}
+
+message ContentGap {
+  string gap_type = 1;
+  string description = 2;
+  string severity = 3;
+  repeated string affected_claims = 4;
+}
+
+message ContentSuggestion {
+  string suggestion_type = 1;
+  string description = 2;
+  string priority = 3;
+  repeated string target_claims = 4;
+}
+
+// =============================================================================
+// Generate Examples
+// =============================================================================
+
+message GenerateExamplesRequest {
+  RequestContext context = 1;
+  string claim_ref = 2;
+  string claim_text = 3;
+  string grade_level = 4;
+  int32 count = 5;
+  repeated string example_types = 6;
+  map<string, string> context_params = 7;
+}
+
+message GenerateExamplesResponse {
+  RequestContext context = 1;
+  repeated ContentExample examples = 2;
+  string generation_model = 3;
+  google.protobuf.Timestamp generated_at = 4;
+  float confidence_score = 5;
+  repeated string warnings = 6;
+}
+
+// =============================================================================
+// Generate Simulation
+// =============================================================================
+
+message GenerateSimulationRequest {
+  RequestContext context = 1;
+  string claim_ref = 2;
+  string claim_text = 3;
+  string grade_level = 4;
+  string simulation_type = 5;
+  int32 max_steps = 6;
+  int32 duration_minutes = 7;
+  map<string, string> context_params = 8;
+}
+
+message GenerateSimulationResponse {
+  RequestContext context = 1;
+  SimulationContent simulation = 2;
+  string generation_model = 3;
+  google.protobuf.Timestamp generated_at = 4;
+  float confidence_score = 5;
+  repeated string warnings = 6;
+}
+
+// =============================================================================
+// Validate Content
+// =============================================================================
+
+message ValidateContentRequest {
+  RequestContext context = 1;
+  oneof content {
+    ContentClaim claim = 2;
+    ContentExample example = 3;
+    SimulationContent simulation = 4;
+  }
+  string validation_type = 5;
+  repeated string validation_rules = 6;
+}
+
+message ValidateContentResponse {
+  RequestContext context = 1;
+  ValidationResult result = 2;
+  google.protobuf.Timestamp validated_at = 3;
+}
+
+message ValidationResult {
+  bool is_valid = 1;
+  float confidence_score = 2;
+  repeated ValidationIssue issues = 3;
+  repeated string suggestions = 4;
+  string overall_assessment = 5;
+}
+
+message ValidationIssue {
+  string issue_type = 1;
+  string severity = 2;
+  string description = 3;
+  string location = 4;
+  repeated string suggested_fixes = 5;
+}
+
+// =============================================================================
+// Health Check
+// =============================================================================
+
+message HealthCheckRequest {
+  string service_name = 1;
+}
+
+message HealthCheckResponse {
+  string status = 1;
+  google.protobuf.Timestamp timestamp = 2;
+  map<string, string> service_details = 3;
+  repeated string dependencies = 4;
+}

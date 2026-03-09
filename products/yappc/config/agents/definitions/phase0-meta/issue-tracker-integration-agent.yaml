@@ -1,0 +1,45 @@
+id: issue-tracker-integration-agent
+name: Issue Tracker Integration Agent
+version: 1.0.0
+description: Bridges to issue trackers (Jira, Linear, GitHub Issues). Provides issue creation, status updates, query, linking, and sprint management. No business logic.
+
+metadata:
+  level: 3
+  domain: integration
+  tags: [integration, issue-tracker, jira, linear, deterministic]
+
+generator:
+  type: SERVICE_CALL
+  service: issue-tracker-service
+  endpoint: /api/v1
+
+memory:
+  episodic:
+    enabled: true
+    retention_days: 90
+    categories: [issue-operations, sprint-events]
+  semantic:
+    enabled: false
+
+tools: [issue_create, issue_update, issue_query, issue_link, sprint_manage]
+
+capabilities:
+  - research
+
+routing:
+  input_types: [issue-command, issue-query, sprint-command]
+  output_types: [issue-response, issue-list, sprint-status]
+
+delegation:
+  can_delegate_to: []
+  escalates_to: master-orchestrator-agent
+
+governance:
+  requires_approval: false
+  can_block: false
+  audit_trail: standard
+
+performance:
+  expected_latency_ms: 500
+  max_latency_ms: 5000
+  timeout_ms: 15000

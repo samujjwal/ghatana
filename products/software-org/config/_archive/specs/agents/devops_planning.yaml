@@ -1,0 +1,54 @@
+id: devops_planning
+agent: DevOpsPlanningAgent
+role: DevOps/Cloud Architect
+inputs_spec:
+- name: security_needs
+  description: List of security needs for the planned solution.
+  format: List of security need objects
+outputs_spec:
+- name: devops_plan
+  description: DevOps plan covering CI/CD, automation, cloud readiness, and security/compliance.
+  format: 'Structured plan (sections: CI/CD, automation, cloud, security, compliance, risks/gaps)'
+  example: 'ci_cd: "GitHub Actions"
+
+    automation: "Terraform for infra"
+
+    cloud: "AWS"
+
+    security: ["SAST", "Container scanning"]
+
+    compliance: ["HIPAA"]
+
+    risks: ["Pipeline lacks DAST"]
+
+    '
+acceptance_criteria:
+- DevOps plan covers CI/CD, automation, and cloud readiness.
+- Security and compliance considerations are included.
+- Gaps or risks in the plan are identified.
+agent_tasks:
+- Develop DevOps plan covering all required areas.
+- Include security and compliance considerations.
+- Identify and flag gaps or risks.
+dependencies:
+- security_needs
+failure_escalation:
+- Escalate to DevOps lead if critical gaps are not addressed.
+references: []
+
+iinternal_logic:
+  - perception:
+      description: "Extract DevOps/control opportunities from security needs."
+  - model:
+      description: "DevOps steps: { id, description, related_security_need, control_point, automation, compliance, owner, status }"
+  - planning:
+      description: |
+        "For each security need, design and map automated DevOps steps."
+  - action:
+      description: "Produce YAML DevOps plan."
+validation:
+  - "DevOps and security SME review."
+  - "Audit for automation and compliance coverage."
+quality_enhancements:
+  - "Templates for CI/CD and compliance gates."
+  - "Automation status tracking."

@@ -1,0 +1,77 @@
+[package]
+name = "dcmaer-desktop"
+version = "0.1.0"
+description = "DCMAR Desktop Application"
+authors = ["Your Name <your.email@example.com>"]
+license = ""
+repository = ""
+default-run = "dcmaer-desktop"
+edition = "2021"
+rust-version = "1.70"
+
+[build-dependencies]
+tauri-build = { version = "2.0.0", features = [] }
+tonic-build = "0.11"
+prost-build = "0.12"
+
+[dependencies]
+tauri = { version = "2.0.0", features = [
+  "tray-icon",
+  "image-png",
+  "image-ico",
+  "unstable"
+] }
+tauri-plugin-updater = { git = "https://github.com/tauri-apps/plugins-workspace", branch = "v2" }
+tauri-plugin-positioner = { git = "https://github.com/tauri-apps/plugins-workspace", branch = "v2" }
+serde = { version = "1.0", features = ["derive"] }
+serde_json = "1.0"
+log = "0.4"
+env_logger = "0.10"
+thiserror = "1.0"
+anyhow = "1.0"
+tokio = { version = "1.47", features = ["full"] }
+serde_with = "3.12"
+
+# gRPC and Protocol Buffers
+tonic = { version = "0.11", features = ["tls", "tls-roots"] }
+prost = "0.12"
+prost-types = "0.12"
+tower = { version = "0.4", features = ["retry", "timeout", "limit"] }
+
+# Observability
+tracing = "0.1"
+tracing-subscriber = { version = "0.3", features = ["env-filter", "json"] }
+opentelemetry = { version = "0.21", features = ["trace", "metrics"] }
+opentelemetry-otlp = "0.14"
+
+# Database
+sqlx = { version = "0.8.6", features = ["runtime-tokio-rustls", "sqlite", "migrate", "macros", "json", "chrono", "uuid"] }
+
+# WebSocket
+tokio-tungstenite = "0.21"
+futures-util = "0.3"
+
+# JWT Authentication
+jsonwebtoken = "9.2"
+
+# Configuration
+config = "0.14"
+toml = "0.8"
+
+# Utilities
+uuid = { version = "1.6", features = ["v4", "serde"] }
+chrono = { version = "0.4", features = ["serde"] }
+async-trait = "0.1"
+
+# Shared agent libraries
+dcmaar-agent-common = { workspace = true, features = ["storage", "config"] }
+
+[target.'cfg(target_os = "macos")'.dependencies]
+objc = "0.2.7"
+objc-foundation = "0.1.1"
+cocoa = "0.25.0"
+
+[features]
+# this feature is used for development builds
+# !DO NOT enable it in production
+custom-protocol = ["tauri/custom-protocol"]

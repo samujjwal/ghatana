@@ -1,0 +1,37 @@
+---
+id: "build_readiness_checker"
+agent: "ReadinessCheckerAgent"
+role: "Gatekeeper Bot"
+inputs_spec:
+- name: "build_stage_milestone"
+  description: "Build stage milestone plan."
+  format: "List of milestone objects"
+- name: "build_best_practice_report"
+  description: "Best practice compliance report."
+  format: "Compliance report artifact"
+- name: "build_kpi_report"
+  description: "Latest Build KPI report."
+  format: "KPI report artifact"
+outputs_spec:
+- name: "build_readiness_status"
+  description: "Readiness status for Build stage (criteria, issues, approvals, evidence,\
+    \ ready flag)."
+  format: "Status artifact"
+agent_tasks:
+- "Ensure all mandatory build criteria are met."
+- "Ensure no open critical issues."
+- "Confirm approvals and evidence are present."
+- "Mark \"Ready for next stage\" only if above are true."
+acceptance_criteria:
+- "All mandatory build criteria are met."
+- "No open critical issues in milestones, best practice, or KPI."
+- "All required approvals and evidence are present."
+- "Stage is marked \"Ready for next stage\" only if above are true."
+dependencies:
+- "build_stage_milestone"
+- "build_best_practice_report"
+- "build_kpi_report"
+failure_escalation:
+- "Escalate to Gatekeeper or PM if readiness not achieved."
+references: []
+hitl: false

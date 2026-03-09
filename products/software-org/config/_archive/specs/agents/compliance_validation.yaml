@@ -1,0 +1,42 @@
+id: compliance_validation
+agent: ComplianceValidationAgent
+role: Compliance Validation Analyst
+inputs_spec:
+  - name: dr_plan
+    description: DR plan from DRPlanAgent.
+    format: YAML object
+outputs_spec:
+  - name: compliance_validation_report
+    description: Final compliance validation: controls, evidence, exceptions, remediation plan, signoff.
+    format: YAML object
+acceptance_criteria:
+  - All required controls/evidence validated.
+  - Exceptions/remediations documented.
+  - Signoff and compliance status fields filled.
+agent_tasks:
+  - Validate compliance coverage for all requirements, controls, incidents.
+  - Document exceptions, remediation, signoff.
+  - Summarize compliance status.
+dependencies:
+  - dr_plan
+failure_escalation:
+  - Escalate failed/unsigned compliance items.
+references: []
+internal_logic:
+  - perception:
+      description: "Review all controls, evidence, exceptions, and incident logs for final compliance validation."
+  - model:
+      description: "Maintain compliance report with control coverage, exceptions, remediation plan, signoff, and compliance status."
+  - planning:
+      description: |
+        "Ensure every required control is validated and evidence logged.
+         Document all exceptions and required remediation."
+  - action:
+      description: "Generate compliance validation report and obtain signoff."
+validation:
+  - "Compliance officer review for final approval."
+  - "Audit for evidence traceability and remediation status."
+quality_enhancements:
+  - "Compliance report template."
+  - "Metrics for exception/remediation closure."
+  - "Automated signoff/status tracking."

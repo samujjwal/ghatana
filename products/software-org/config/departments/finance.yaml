@@ -1,0 +1,200 @@
+# Finance Department Configuration
+# Part of Software-Org plugin for Virtual-Org framework
+
+apiVersion: virtualorg.ghatana.com/v1
+kind: Department
+metadata:
+  name: finance
+  labels:
+    category: business-operations
+    cost-center: "FIN-001"
+
+spec:
+  displayName: "Finance"
+  type: FINANCE
+  description: |
+    Finance department responsible for financial planning, budgeting, accounting,
+    and financial reporting. Manages company finances, ensures compliance with
+    financial regulations, and provides financial insights for decision-making.
+
+  hierarchy:
+    parent: null
+    reportingTo: ceo-agent
+    children: []
+
+  settings:
+    maxAgents: 8
+    autoScaleAgents: false
+    taskAssignment:
+      strategy: capability-match
+      loadBalancing: true
+      maxTasksPerAgent: 6
+
+  agents:
+    - ref: agents/cfo-agent.yaml
+    - ref: agents/financial-analyst-agent.yaml
+    - ref: agents/accountant-agent.yaml
+
+  workflows:
+    - name: budget-planning
+      displayName: "Annual Budget Planning"
+      steps:
+        - name: historical-analysis
+          agent: financial-analyst
+          action: analyze_historical_data
+          timeout: PT48H
+        - name: department-requests
+          agent: financial-analyst
+          action: collect_department_requests
+          timeout: PT168H
+          waitFor: [historical-analysis]
+        - name: budget-draft
+          agent: cfo
+          action: create_budget_draft
+          timeout: PT72H
+          waitFor: [department-requests]
+        - name: executive-review
+          agent: cfo
+          action: executive_budget_review
+          timeout: PT48H
+          waitFor: [budget-draft]
+          hitl:
+            required: true
+            approvers: [ceo-agent]
+        - name: budget-finalization
+          agent: cfo
+          action: finalize_budget
+          timeout: PT24H
+          waitFor: [executive-review]
+
+    - name: monthly-close
+      displayName: "Monthly Financial Close"
+      steps:
+        - name: transaction-reconciliation
+          agent: accountant
+          action: reconcile_transactions
+          timeout: PT48H
+        - name: accruals-adjustments
+          agent: accountant
+          action: post_accruals
+          timeout: PT24H
+          waitFor: [transaction-reconciliation]
+        - name: report-generation
+          agent: financial-analyst
+          action: generate_financial_reports
+          timeout: PT24H
+          waitFor: [accruals-adjustments]
+        - name: variance-analysis
+          agent: financial-analyst
+          action: analyze_variances
+          timeout: PT16H
+          waitFor: [report-generation]
+        - name: executive-summary
+          agent: cfo
+          action: prepare_executive_summary
+          timeout: PT8H
+          waitFor: [variance-analysis]
+
+  kpis:
+    - name: revenue_growth
+      displayName: "Revenue Growth"
+      type: percentage
+      target: 30
+      warningThreshold: 20
+      criticalThreshold: 10
+      aggregationPeriod: P1Y
+
+    - name: gross_margin
+      displayName: "Gross Margin"
+      type: percentage
+      target: 70
+      warningThreshold: 60
+      criticalThreshold: 50
+
+    - name: operating_margin
+      displayName: "Operating Margin"
+      type: percentage
+      target: 20
+      warningThreshold: 10
+      criticalThreshold: 0
+
+    - name: burn_rate
+      displayName: "Monthly Burn Rate"
+      type: gauge
+      unit: usd
+      target: 500000
+      warningThreshold: 750000
+      criticalThreshold: 1000000
+
+    - name: runway_months
+      displayName: "Cash Runway"
+      type: gauge
+      unit: months
+      target: 18
+      warningThreshold: 12
+      criticalThreshold: 6
+
+    - name: arr
+      displayName: "Annual Recurring Revenue"
+      type: gauge
+      unit: usd
+      target: 10000000
+      warningThreshold: 8000000
+      criticalThreshold: 5000000
+
+    - name: close_accuracy
+      displayName: "Financial Close Accuracy"
+      type: percentage
+      target: 99
+      warningThreshold: 97
+      criticalThreshold: 95
+
+  taskTypes:
+    - name: financial_report
+      priority: high
+      slaHours: 48
+      requiredCapabilities: [accounting, reporting, analysis]
+
+    - name: budget_analysis
+      priority: normal
+      slaHours: 72
+      requiredCapabilities: [budgeting, forecasting]
+
+    - name: invoice_processing
+      priority: normal
+      slaHours: 24
+      requiredCapabilities: [accounting, ap_ar]
+
+    - name: audit_preparation
+      priority: high
+      slaHours: 168
+      requiredCapabilities: [accounting, compliance, documentation]
+
+    - name: expense_approval
+      priority: normal
+      slaHours: 24
+      requiredCapabilities: [budget_review, approval]
+
+  subscriptions:
+    - event: deal_closed
+      source: sales
+      action: recognize_revenue
+    - event: invoice_received
+      source: procurement
+      action: process_invoice
+    - event: expense_submitted
+      source: all
+      action: review_expense
+    - event: contract_signed
+      source: sales
+      action: update_forecast
+
+  publications:
+    - event: budget_approved
+      targets: [all]
+    - event: financial_report_ready
+      targets: [ceo-agent, board]
+    - event: pricing_changed
+      targets: [sales, product]
+    - event: budget_alert
+      targets: [department_heads]

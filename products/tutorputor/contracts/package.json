@@ -1,0 +1,87 @@
+{
+  "name": "@ghatana/tutorputor-contracts",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "description": "Shared TutorPutor contracts for frontend, API gateway, and backend services",
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js"
+    },
+    "./v1": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js"
+    },
+    "./v1/types": {
+      "types": "./dist/types.d.ts",
+      "import": "./dist/types.js"
+    },
+    "./v1/services": {
+      "types": "./dist/services.d.ts",
+      "import": "./dist/services.js"
+    },
+    "./v1/simulation": {
+      "types": "./dist/simulation/index.d.ts",
+      "import": "./dist/simulation/index.js"
+    },
+    "./v1/simulation/types": {
+      "types": "./dist/simulation/types.d.ts",
+      "import": "./dist/simulation/types.js"
+    },
+    "./v1/simulation/services": {
+      "types": "./dist/simulation/services.d.ts",
+      "import": "./dist/simulation/services.js"
+    },
+    "./v1/social": {
+      "types": "./dist/social.d.ts",
+      "import": "./dist/social.js"
+    },
+    "./v1/curriculum": {
+      "types": "./dist/curriculum/index.d.ts",
+      "import": "./dist/curriculum/index.js"
+    },
+    "./v1/curriculum/types": {
+      "types": "./dist/curriculum/types.d.ts",
+      "import": "./dist/curriculum/types.js"
+    },
+    "./v1/assessments": {
+      "types": "./dist/assessments/index.d.ts",
+      "import": "./dist/assessments/index.js"
+    },
+    "./v1/assessments/types": {
+      "types": "./dist/assessments/types.d.ts",
+      "import": "./dist/assessments/types.js"
+    },
+    "./v1/plugin-interfaces": {
+      "types": "./dist/plugin-interfaces.d.ts",
+      "import": "./dist/plugin-interfaces.js"
+    },
+    "./v1/learning-unit": {
+      "types": "./dist/learning-unit.d.ts",
+      "import": "./dist/learning-unit.js"
+    },
+    "./v1/telemetry-events": {
+      "types": "./dist/telemetry-events.d.ts",
+      "import": "./dist/telemetry-events.js"
+    }
+  },
+  "files": [
+    "dist",
+    "v1",
+    "README.md"
+  ],
+  "scripts": {
+    "build": "tsc -p tsconfig.json",
+    "dev": "tsc -p tsconfig.json --watch",
+    "clean": "rm -rf dist tsconfig.tsbuildinfo",
+    "test": "vitest run"
+  },
+  "devDependencies": {
+    "@types/node": "^25.2.0",
+    "typescript": "^5.9.3",
+    "vitest": "^4.0.18"
+  }
+}

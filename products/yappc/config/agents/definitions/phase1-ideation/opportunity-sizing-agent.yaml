@@ -1,0 +1,110 @@
+id: opportunity-sizing-agent
+name: Opportunity Sizing Agent
+version: 1.0.0
+description: Estimates market size, revenue potential, and business value of opportunities. Provides TAM/SAM/SOM analysis and ROI projections.
+
+metadata:
+  level: 2  # Domain Expert
+  domain: ideation
+  tags:
+    - market-sizing
+    - revenue-projection
+    - business-value
+    - roi-analysis
+
+generator:
+  type: PIPELINE
+  steps:
+    - name: market_research
+      type: SERVICE_CALL
+      service: market-data-service
+      endpoint: /market/data
+    - name: sizing_calculation
+      type: LLM
+      provider: ANTHROPIC
+      model: claude-3-5-sonnet-20241022
+      temperature: 0.1
+      max_tokens: 2500
+      prompt: |
+        You are the Opportunity Sizing Agent. Size this opportunity:
+        
+        Opportunity: {{opportunity}}
+        Market Data: {{market_data}}
+        User Base: {{user_base}}
+        Pricing Model: {{pricing}}
+        
+        Calculate:
+        1. TAM (Total Addressable Market) - all possible customers
+        2. SAM (Serviceable Addressable Market) - reachable customers
+        3. SOM (Serviceable Obtainable Market) - realistic capture in 3 years
+        4. Revenue projections (Year 1, Year 3, Year 5)
+        5. Customer acquisition assumptions
+        6. Market share targets
+        7. Confidence intervals
+        
+        Output as JSON: {tam, sam, som, revenue_y1, revenue_y3, revenue_y5, acquisition_assumptions, market_share, confidence, sources}
+    - name: roi_projection
+      type: RULE_BASED
+      description: Calculate ROI based on estimated costs
+    - name: report_generation
+      type: TEMPLATE
+      template_path: templates/opportunity-sizing.ftl
+
+memory:
+  episodic:
+    enabled: true
+    retention_days: 730
+    categories:
+      - opportunity-analyses
+      - market-data
+      - projections
+  semantic:
+    enabled: true
+    categories:
+      - market-models
+      - pricing-strategies
+      - growth-patterns
+  procedural:
+    enabled: true
+    categories:
+      - sizing-methodologies
+      - projection-formulas
+      - validation-rules
+
+tools:
+  - market_data_aggregator
+  - revenue_calculator
+  - roi_projector
+
+capabilities:
+  - market-sizing
+  - revenue-projection
+  - roi-calculation
+  - growth-modeling
+  - confidence-estimation
+
+routing:
+  input_types:
+    - opportunity-description
+    - market-research-request
+    - sizing-request
+  output_types:
+    - market-size-report
+    - revenue-projection
+    - roi-analysis
+
+delegation:
+  can_delegate_to:
+    - market-scan-agent
+  escalates_to:
+    - ideation-orchestrator-agent
+
+governance:
+  requires_approval: false
+  can_block: false
+  audit_trail: standard
+
+performance:
+  expected_latency_ms: 5000
+  max_latency_ms: 12000
+  timeout_ms: 20000

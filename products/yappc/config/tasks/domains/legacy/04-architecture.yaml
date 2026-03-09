@@ -1,0 +1,308 @@
+# Architecture & Design Tasks
+# Domain 4 of 22 - Developer Task Universe
+# Reference: developer-tasks.md Part I, Section 4
+
+domain:
+  id: architecture
+  name: "Architecture & Design"
+  description: "Tasks related to designing system architecture, APIs, and data models"
+  order: 4
+  icon: "architecture"
+  color: "#96CEB4"
+  lifecycle_stages:
+    - context
+    - plan
+
+tasks:
+  - id: arch-001
+    name: "Design System Architecture"
+    description: "Create high-level system architecture with components and interactions"
+    personas:
+      - Tech Lead
+      - Developer
+    lifecycle_stages:
+      - plan
+    automation_level: assisted
+    required_capabilities:
+      - architecture-design
+      - system-thinking
+    input_schema: arch-001-input
+    output_schema: arch-001-output
+    audit_artifacts:
+      - InputSnapshot
+      - OutputSnapshot
+      - DecisionRecord
+    ui:
+      icon: "account_tree"
+      color: "#96CEB4"
+      tags:
+        - architecture
+        - design
+        - system
+
+  - id: arch-002
+    name: "Define Component and Service Boundaries"
+    description: "Establish clear boundaries between components and services"
+    personas:
+      - Tech Lead
+      - Developer
+    lifecycle_stages:
+      - plan
+    automation_level: assisted
+    required_capabilities:
+      - architecture-design
+      - modularization
+    input_schema: arch-002-input
+    output_schema: arch-002-output
+    audit_artifacts:
+      - InputSnapshot
+      - OutputSnapshot
+      - DecisionRecord
+    ui:
+      icon: "view_module"
+      color: "#96CEB4"
+      tags:
+        - boundaries
+        - components
+        - services
+
+  - id: arch-003
+    name: "Design APIs"
+    description: "Design REST, GraphQL, or gRPC APIs with proper contracts"
+    personas:
+      - Developer
+      - Tech Lead
+    lifecycle_stages:
+      - plan
+    automation_level: assisted
+    required_capabilities:
+      - api-design
+      - contract-definition
+    input_schema: arch-003-input
+    output_schema: arch-003-output
+    audit_artifacts:
+      - InputSnapshot
+      - OutputSnapshot
+      - ChangeSet
+    ui:
+      icon: "api"
+      color: "#96CEB4"
+      tags:
+        - api
+        - design
+        - contracts
+
+  - id: arch-004
+    name: "Design Data Models and Schemas"
+    description: "Create data models, database schemas, and entity relationships"
+    personas:
+      - Developer
+      - Tech Lead
+    lifecycle_stages:
+      - plan
+    automation_level: assisted
+    required_capabilities:
+      - data-modeling
+      - database-design
+    input_schema: arch-004-input
+    output_schema: arch-004-output
+    audit_artifacts:
+      - InputSnapshot
+      - OutputSnapshot
+      - ChangeSet
+    ui:
+      icon: "table_chart"
+      color: "#96CEB4"
+      tags:
+        - data-model
+        - schema
+        - database
+
+  - id: arch-005
+    name: "Define State Management Strategies"
+    description: "Design how state will be managed across the application"
+    personas:
+      - Developer
+      - Tech Lead
+    lifecycle_stages:
+      - plan
+    automation_level: assisted
+    required_capabilities:
+      - state-management
+      - architecture-design
+    input_schema: arch-005-input
+    output_schema: arch-005-output
+    audit_artifacts:
+      - InputSnapshot
+      - OutputSnapshot
+      - DecisionRecord
+    ui:
+      icon: "storage"
+      color: "#96CEB4"
+      tags:
+        - state
+        - management
+        - patterns
+
+  - id: arch-006
+    name: "Design Integration Points"
+    description: "Define how the system integrates with external services"
+    personas:
+      - Developer
+      - Tech Lead
+      - DevOps
+    lifecycle_stages:
+      - plan
+    automation_level: assisted
+    required_capabilities:
+      - integration-design
+      - api-knowledge
+    input_schema: arch-006-input
+    output_schema: arch-006-output
+    audit_artifacts:
+      - InputSnapshot
+      - OutputSnapshot
+      - DecisionRecord
+    ui:
+      icon: "settings_input_component"
+      color: "#96CEB4"
+      tags:
+        - integration
+        - external
+        - interfaces
+
+  - id: arch-007
+    name: "Define Error-Handling Strategy"
+    description: "Design comprehensive error handling and recovery patterns"
+    personas:
+      - Developer
+      - Tech Lead
+    lifecycle_stages:
+      - plan
+    automation_level: assisted
+    required_capabilities:
+      - error-handling
+      - resilience-design
+    input_schema: arch-007-input
+    output_schema: arch-007-output
+    audit_artifacts:
+      - InputSnapshot
+      - OutputSnapshot
+      - DecisionRecord
+    ui:
+      icon: "error_outline"
+      color: "#96CEB4"
+      tags:
+        - errors
+        - handling
+        - recovery
+
+  - id: arch-008
+    name: "Design Security Model"
+    description: "Create security architecture including auth, authorization, and data protection"
+    personas:
+      - Tech Lead
+      - Security
+      - Developer
+    lifecycle_stages:
+      - plan
+    automation_level: assisted
+    required_capabilities:
+      - security-design
+      - threat-modeling
+    input_schema: arch-008-input
+    output_schema: arch-008-output
+    audit_artifacts:
+      - InputSnapshot
+      - OutputSnapshot
+      - DecisionRecord
+      - PolicyCheck
+    ui:
+      icon: "shield"
+      color: "#96CEB4"
+      tags:
+        - security
+        - auth
+        - protection
+
+  - id: arch-009
+    name: "Design Scalability and Resilience"
+    description: "Plan for horizontal scaling, fault tolerance, and disaster recovery"
+    personas:
+      - Tech Lead
+      - DevOps
+      - Developer
+    lifecycle_stages:
+      - plan
+    automation_level: assisted
+    required_capabilities:
+      - scalability-design
+      - resilience-design
+    input_schema: arch-009-input
+    output_schema: arch-009-output
+    audit_artifacts:
+      - InputSnapshot
+      - OutputSnapshot
+      - DecisionRecord
+    ui:
+      icon: "trending_up"
+      color: "#96CEB4"
+      tags:
+        - scalability
+        - resilience
+        - availability
+
+  - id: arch-010
+    name: "Create Architecture Diagrams"
+    description: "Create visual diagrams (C4, sequence, ER) to communicate architecture"
+    personas:
+      - Developer
+      - Tech Lead
+    lifecycle_stages:
+      - plan
+      - institutionalize
+    automation_level: assisted
+    required_capabilities:
+      - diagramming
+      - documentation
+    input_schema: arch-010-input
+    output_schema: arch-010-output
+    audit_artifacts:
+      - InputSnapshot
+      - OutputSnapshot
+      - ChangeSet
+    ui:
+      icon: "schema"
+      color: "#96CEB4"
+      tags:
+        - diagrams
+        - visualization
+        - documentation
+
+  - id: arch-011
+    name: "Review and Iterate Designs"
+    description: "Conduct design reviews and incorporate feedback"
+    personas:
+      - Developer
+      - Tech Lead
+    lifecycle_stages:
+      - plan
+      - verify
+    automation_level: manual
+    required_capabilities:
+      - design-review
+      - collaboration
+    input_schema: arch-011-input
+    output_schema: arch-011-output
+    audit_artifacts:
+      - InputSnapshot
+      - OutputSnapshot
+      - DecisionRecord
+      - ActorLog
+    ui:
+      icon: "rate_review"
+      color: "#96CEB4"
+      tags:
+        - review
+        - iteration
+        - feedback

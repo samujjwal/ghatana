@@ -1,0 +1,371 @@
+apiVersion: ghatana.yappc/v2
+kind: DomainAgentCatalog
+
+metadata:
+  name: integration
+  version: 1.0.0
+  description: "Third-party integrations, notifications, and external system connectors"
+  domain: integration
+  agentCount: 20
+
+spec:
+  agents:
+    # Level 1: Integration Orchestrators
+    - id: integration-hub-orchestrator
+      name: Integration Hub Orchestrator
+      level: 1
+      type: orchestrator
+      description: "Coordinates all third-party integrations and data flows"
+      domain: integration
+      capabilities:
+        - integration-orchestration
+        - data-flow-coordination
+        - connector-management
+      routing:
+        input_types: [integration_request, data_sync]
+        output_types: [sync_result, webhook_trigger]
+      governance:
+        requires_approval: false
+        audit_trail: comprehensive
+      tags: [integration, orchestration, hub]
+
+    # Level 2: Integration Specialists
+    - id: notification-coordinator
+      name: Notification Coordinator Agent
+      level: 2
+      type: domain-expert
+      description: "Manages and routes notifications across all channels"
+      domain: integration
+      capabilities:
+        - notification-routing
+        - channel-management
+        - preference-handling
+      routing:
+        input_types: [notification_request, alert]
+        output_types: [delivery_status, channel_selection]
+      tags: [integration, notifications, coordination]
+
+    - id: webhook-manager
+      name: Webhook Manager Agent
+      level: 2
+      type: domain-expert
+      description: "Manages webhook endpoints and event subscriptions"
+      domain: integration
+      capabilities:
+        - webhook-management
+        - event-subscription
+        - payload-validation
+      tools:
+        - webhook_validator
+        - subscription_manager
+      tags: [integration, webhooks, events]
+
+    - id: api-gateway-coordinator
+      name: API Gateway Coordinator Agent
+      level: 2
+      type: domain-expert
+      description: "Manages external API integrations and rate limiting"
+      domain: integration
+      capabilities:
+        - api-management
+        - rate-limit-handling
+        - quota-tracking
+      tools:
+        - gateway_manager
+        - rate_limiter
+      tags: [integration, api-gateway, management]
+
+    # Level 3: Integration Workers
+    - id: notification-agent
+      name: Notification Agent
+      level: 3
+      type: worker
+      description: "Sends notifications via various channels (email, SMS, push)"
+      domain: integration
+      capabilities:
+        - notification-delivery
+        - multi-channel-messaging
+        - delivery-tracking
+      memory:
+        episodic:
+          enabled: true
+          retention_days: 30
+      tools:
+        - email_sender
+        - sms_gateway
+        - push_notifier
+      tags: [integration, notifications, delivery]
+
+    - id: feature-flag-integration-agent
+      name: Feature Flag Integration Agent
+      level: 3
+      type: worker
+      description: "Manages feature flag integrations with LaunchDarkly, Unleash, etc."
+      domain: integration
+      capabilities:
+        - feature-flag-management
+        - toggle-coordination
+        - rollout-orchestration
+      tools:
+        - flag_manager
+        - toggle_sync
+      tags: [integration, feature-flags, toggles]
+
+    - id: slack-integration-agent
+      name: Slack Integration Agent
+      level: 3
+      type: worker
+      description: "Integrates with Slack for notifications and commands"
+      domain: integration
+      capabilities:
+        - slack-messaging
+        - command-handling
+        - channel-management
+      tools:
+        - slack_client
+        - command_parser
+      tags: [integration, slack, messaging]
+
+    - id: teams-integration-agent
+      name: Microsoft Teams Integration Agent
+      level: 3
+      type: worker
+      description: "Integrates with Microsoft Teams for notifications and collaboration"
+      domain: integration
+      capabilities:
+        - teams-messaging
+        - tab-management
+        - bot-interactions
+      tools:
+        - teams_client
+        - bot_framework
+      tags: [integration, teams, microsoft]
+
+    - id: discord-integration-agent
+      name: Discord Integration Agent
+      level: 3
+      type: worker
+      description: "Integrates with Discord for notifications and bot commands"
+      domain: integration
+      capabilities:
+        - discord-messaging
+        - bot-command-handling
+        - server-management
+      tools:
+        - discord_client
+        - bot_manager
+      tags: [integration, discord, gaming]
+
+    - id: github-integration-agent
+      name: GitHub Integration Agent
+      level: 3
+      type: worker
+      description: "Integrates with GitHub for repository management and workflows"
+      domain: integration
+      capabilities:
+        - github-management
+        - pr-coordination
+        - workflow-triggering
+      tools:
+        - github_client
+        - pr_manager
+      tags: [integration, github, git]
+
+    - id: gitlab-integration-agent
+      name: GitLab Integration Agent
+      level: 3
+      type: worker
+      description: "Integrates with GitLab for repository and CI/CD management"
+      domain: integration
+      capabilities:
+        - gitlab-management
+        - ci-cd-integration
+        - merge-request-handling
+      tools:
+        - gitlab_client
+        - ci_manager
+      tags: [integration, gitlab, git]
+
+    - id: jira-integration-agent
+      name: Jira Integration Agent
+      level: 3
+      type: worker
+      description: "Integrates with Jira for issue tracking and project management"
+      domain: integration
+      capabilities:
+        - jira-management
+        - issue-sync
+        - sprint-coordination
+      tools:
+        - jira_client
+        - issue_sync
+      tags: [integration, jira, project-management]
+
+    - id: confluence-integration-agent
+      name: Confluence Integration Agent
+      level: 3
+      type: worker
+      description: "Integrates with Confluence for documentation management"
+      domain: integration
+      capabilities:
+        - confluence-management
+        - doc-sync
+        - page-management
+      tools:
+        - confluence_client
+        - doc_manager
+      tags: [integration, confluence, documentation]
+
+    - id: datadog-integration-agent
+      name: Datadog Integration Agent
+      level: 3
+      type: worker
+      description: "Integrates with Datadog for monitoring and metrics"
+      domain: integration
+      capabilities:
+        - datadog-integration
+        - metric-pushing
+        - dashboard-sync
+      tools:
+        - datadog_client
+        - metric_pusher
+      tags: [integration, datadog, monitoring]
+
+    - id: pagerduty-integration-agent
+      name: PagerDuty Integration Agent
+      level: 3
+      type: worker
+      description: "Integrates with PagerDuty for incident management"
+      domain: integration
+      capabilities:
+        - pagerduty-integration
+        - incident-creation
+        - oncall-management
+      tools:
+        - pagerduty_client
+        - incident_manager
+      tags: [integration, pagerduty, incident-management]
+
+    - id: opsgenie-integration-agent
+      name: OpsGenie Integration Agent
+      level: 3
+      type: worker
+      description: "Integrates with OpsGenie for alert and on-call management"
+      domain: integration
+      capabilities:
+        - opsgenie-integration
+        - alert-routing
+        - oncall-sync
+      tools:
+        - opsgenie_client
+        - alert_router
+      tags: [integration, opsgenie, alerting]
+
+    - id: stripe-integration-agent
+      name: Stripe Integration Agent
+      level: 3
+      type: worker
+      description: "Integrates with Stripe for payment processing"
+      domain: integration
+      capabilities:
+        - stripe-integration
+        - payment-processing
+        - subscription-management
+      tools:
+        - stripe_client
+        - payment_handler
+      tags: [integration, stripe, payments]
+
+    - id: twilio-integration-agent
+      name: Twilio Integration Agent
+      level: 3
+      type: worker
+      description: "Integrates with Twilio for SMS, voice, and messaging"
+      domain: integration
+      capabilities:
+        - twilio-integration
+        - sms-messaging
+        - voice-calls
+      tools:
+        - twilio_client
+        - sms_sender
+      tags: [integration, twilio, messaging]
+
+    - id: sendgrid-integration-agent
+      name: SendGrid Integration Agent
+      level: 3
+      type: worker
+      description: "Integrates with SendGrid for email delivery"
+      domain: integration
+      capabilities:
+        - sendgrid-integration
+        - email-delivery
+        -template-management
+      tools:
+        - sendgrid_client
+        - email_sender
+      tags: [integration, sendgrid, email]
+
+    - id: s3-integration-agent
+      name: S3 Integration Agent
+      level: 3
+      type: worker
+      description: "Integrates with AWS S3 for object storage operations"
+      domain: integration
+      capabilities:
+        - s3-integration
+        - object-storage
+        - file-operations
+      tools:
+        - s3_client
+        - transfer_manager
+      tags: [integration, s3, storage]
+
+  hierarchy:
+    level1:
+      - integration-hub-orchestrator
+    level2:
+      - notification-coordinator
+      - webhook-manager
+      - api-gateway-coordinator
+    level3:
+      - notification-agent
+      - feature-flag-integration-agent
+      - slack-integration-agent
+      - teams-integration-agent
+      - discord-integration-agent
+      - github-integration-agent
+      - gitlab-integration-agent
+      - jira-integration-agent
+      - confluence-integration-agent
+      - datadog-integration-agent
+      - pagerduty-integration-agent
+      - opsgenie-integration-agent
+      - stripe-integration-agent
+      - twilio-integration-agent
+      - sendgrid-integration-agent
+      - s3-integration-agent
+
+  capability_routing:
+    integration-orchestration:
+      primary: integration-hub-orchestrator
+    notification:
+      primary: notification-agent
+    feature-flag-management:
+      primary: feature-flag-integration-agent
+    slack-integration:
+      primary: slack-integration-agent
+    teams-integration:
+      primary: teams-integration-agent
+    github-integration:
+      primary: github-integration-agent
+    gitlab-integration:
+      primary: gitlab-integration-agent
+    jira-integration:
+      primary: jira-integration-agent
+    datadog-integration:
+      primary: datadog-integration-agent
+    pagerduty-integration:
+      primary: pagerduty-integration-agent
+    stripe-integration:
+      primary: stripe-integration-agent

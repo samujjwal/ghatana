@@ -1,0 +1,49 @@
+version: "3.8"
+
+services:
+  # ============================================================================
+  # PostgreSQL Database - Persistence Layer
+  # ============================================================================
+  postgres:
+    image: postgres:16-alpine
+    container_name: yappc-postgres
+    environment:
+      POSTGRES_USER: ghatana
+      POSTGRES_PASSWORD: ghatana123
+      POSTGRES_DB: yappc
+      PGDATA: /var/lib/postgresql/data
+    ports:
+      - "5434:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+      - ./init-scripts:/docker-entrypoint-initdb.d
+    networks:
+      - yappc-network
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ghatana -d yappc"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    restart: unless-stopped
+
+  # ============================================================================
+  # Flyway Migration Tool - Schema Management
+  # ============================================================================
+  flyway:
+    image: flyway/flyway:10
+    container_name: yappc-flyway
+    command: -connectRetries=60 -url=jdbc:postgresql://postgres:5432/yappc -user=ghatana -password=ghatana123 -locations=filesystem:/flyway/sql migrate
+    volumes:
+      - ../../backend/api/migrations:/flyway/sql
+    networks:
+      - yappc-network
+    depends_on:
+      postgres:
+        condition: service_healthy
+
+volumes:
+  postgres_data:
+
+networks:
+  yappc-network:
+    driver: bridge

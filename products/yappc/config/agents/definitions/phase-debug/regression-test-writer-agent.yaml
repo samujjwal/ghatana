@@ -1,0 +1,67 @@
+id: regression-test-writer-agent
+name: Regression Test Writer Agent
+version: 1.0.0
+description: Generates regression tests that verify a bug fix and prevent re-introduction. Produces JUnit/Jest tests targeting the specific failure path.
+
+metadata:
+  level: 3
+  domain: debugging
+  tags: [debugging, regression-testing, test-generation]
+
+generator:
+  type: PIPELINE
+  steps:
+    - name: test_generation
+      type: LLM
+      provider: ANTHROPIC
+      model: claude-3-5-sonnet-20241022
+      temperature: 0.3
+      max_tokens: 3000
+      prompt: |
+        Generate a regression test for this fix:
+        
+        Root Cause: {{root_cause}}
+        Fix Patch: {{input}}
+        Original Failure: {{original_failure}}
+        
+        Requirements:
+        1. Test must FAIL without the fix, PASS with the fix
+        2. Use the project's existing test framework (JUnit 5 for Java, Jest/Vitest for TS)
+        3. Include meaningful assertion messages
+        4. Name the test descriptively (e.g. shouldNotThrowWhen_<scenario>)
+        5. Add the test to the appropriate test class/directory
+        
+        Output as JSON: {test_code, test_file_path, framework, assertions, setup_required}
+
+memory:
+  episodic:
+    enabled: true
+    retention_days: 365
+    categories: [regression-tests, test-outcomes]
+  semantic:
+    enabled: true
+    categories: [test-patterns, assertion-strategies]
+
+tools: [test_runner, source_reader]
+
+capabilities:
+  - test-generation
+  - root-cause-analysis
+
+routing:
+  input_types: [fix-patch, root-cause-report]
+  output_types: [regression-test, test-suite-update]
+
+delegation:
+  can_delegate_to: []
+  escalates_to: debug-orchestrator
+
+governance:
+  requires_approval: false
+  can_block: false
+  audit_trail: standard
+
+performance:
+  expected_latency_ms: 5000
+  max_latency_ms: 20000
+  timeout_ms: 45000

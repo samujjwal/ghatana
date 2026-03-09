@@ -1,0 +1,26 @@
+---
+id: "slo_violation_alert"
+agent: "SLOViolationAlertAgent"
+role: "SRE Automation"
+inputs_spec:
+- name: "slo_sli_reports"
+  description: "SLO/SLI reports for violation alerting."
+  format: "SLO/SLI report artifact"
+outputs_spec:
+- name: "slo_violation_alerts"
+  description: "SLO violation alerts for tracked recurrence."
+  format: "Alert artifact"
+agent_tasks:
+- "Trigger automated alerts for SLO violations."
+- "Route alerts to the right team/channel."
+- "Track violation recurrence."
+acceptance_criteria:
+- "SLO violations trigger automated alerts."
+- "Alerts routed to right team/channel."
+- "Violations tracked for recurrence."
+dependencies:
+- "slo_sli_reports"
+failure_escalation:
+- "Escalate to SRE Automation if alerts not triggered/routed."
+references: []
+hitl: false

@@ -1,0 +1,275 @@
+# {{projectName}}
+
+A federated GraphQL Gateway built with GraphQL Mesh, featuring schema stitching, source aggregation, and enterprise
+features.
+
+## Features
+
+- ✅ **Schema Federation** - Combine multiple GraphQL sources into one unified API
+- ✅ **Source Handlers** - Support for GraphQL, REST (OpenAPI), gRPC, and more
+- ✅ **Schema Transforms** - Prefix, rename, filter, and customize schemas
+- ✅ **Type Stitching** - Cross-source relationships and computed fields
+{{#if enableAuth}}
+- ✅ **JWT Authentication** - Secure API access with JWT tokens
+{{/if}}
+{{#if enableCaching}}
+- ✅ **Response Caching** - In-memory LRU cache for performance
+{{/if}}
+{{#if enableRateLimiting}}
+- ✅ **Rate Limiting** - Protect upstream services
+{{/if}}
+{{#if enableMetrics}}
+- ✅ **Prometheus Metrics** - Monitor gateway performance
+{{/if}}
+{{#if enablePlayground}}
+- ✅ **GraphQL Playground** - Interactive API explorer
+{{/if}}
+
+## Quick Start
+
+### Prerequisites
+
+- Node.js 22+
+- pnpm 9+
+
+### Installation
+
+```bash
+pnpm install
+```
+
+### Build Mesh
+
+```bash
+pnpm mesh:build
+```
+
+### Development
+
+```bash
+pnpm dev
+```
+
+The gateway will start at [http://localhost:{{port}}/graphql](http://localhost:{{port}}/graphql).
+
+### Production
+
+```bash
+pnpm build
+pnpm start
+```
+
+## Configuration
+
+### Mesh Configuration
+
+Edit `.meshrc.yaml` to configure sources, transforms, and plugins:
+
+```yaml
+sources:
+- name: Users
+handler:
+graphql:
+endpoint: http://users-service:4001/graphql
+
+- name: Products
+handler:
+graphql:
+endpoint: http://products-service:4002/graphql
+
+additionalTypeDefs: |
+extend type Product {
+createdBy: User
+}
+```
+
+### Environment Variables
+
+| Variable | Description | Default |
+|----------|-------------|---------|
+| `PORT` | Server port | `{{port}}` |
+| `LOG_LEVEL` | Log level | `{{logLevel}}` |
+{{#if enableAuth}}
+| `JWT_SECRET` | JWT signing secret | Required |
+{{/if}}
+| `USERS_SERVICE_URL` | Users service URL | `http://localhost:4001/graphql` |
+| `PRODUCTS_SERVICE_URL` | Products service URL | `http://localhost:4002/graphql` |
+
+## Adding Sources
+
+### GraphQL Source
+
+```yaml
+sources:
+- name: MyService
+handler:
+graphql:
+endpoint: http://service:4000/graphql
+```
+
+### REST/OpenAPI Source
+
+```yaml
+sources:
+- name: RestAPI
+handler:
+openapi:
+source: ./openapi.yaml
+baseUrl: http://api.example.com
+```
+
+### gRPC Source
+
+```yaml
+sources:
+- name: GrpcService
+handler:
+grpc:
+endpoint: localhost:50051
+protoFilePath: ./service.proto
+```
+
+## Schema Transforms
+
+### Prefix Types
+
+```yaml
+transforms:
+- prefix:
+value: MyService_
+includeRootOperations: false
+```
+
+### Rename Fields
+
+```yaml
+transforms:
+- rename:
+mode: wrap
+renames:
+- from:
+type: User
+field: internalId
+to:
+type: User
+field: id
+```
+
+### Filter Schema
+
+```yaml
+transforms:
+- filterSchema:
+filters:
+- Query.!internalQuery
+- Mutation.!dangerousMutation
+```
+
+## Custom Resolvers
+
+Add cross-source relationships in `src/resolvers/custom.ts`:
+
+```typescript
+export const customResolvers = {
+Product: {
+createdBy: {
+selectionSet: `{ createdById }`,
+resolve: async (product, _args, context, info) => {
+return context.Users.Query.user({
+args: { id: product.createdById },
+context,
+info,
+});
+},
+},
+},
+};
+```
+
+## Docker
+
+### Build & Run
+
+```bash
+make docker-build
+make docker-run
+```
+
+### Docker Compose
+
+```bash
+docker compose up -d
+```
+
+## Testing
+
+```bash
+# Run tests
+pnpm test
+
+# Watch mode
+pnpm test:watch
+
+# Coverage
+pnpm test:coverage
+```
+
+## Project Structure
+
+```
+├── .meshrc.yaml # Mesh configuration
+├── sources/ # Source schema definitions
+│ ├── users.graphql
+│ └── products.graphql
+├── src/
+│ ├── index.ts # Entry point
+│ ├── server.ts # Server factory
+│ ├── config.ts # Configuration
+│ ├── types.ts # TypeScript types
+│ ├── plugins/ # Yoga plugins
+│ │ ├── auth.ts
+│ │ ├── caching.ts
+│ │ ├── logging.ts
+│ │ └── rate-limit.ts
+│ ├── resolvers/ # Custom resolvers
+│ │ └── custom.ts
+│ └── transforms/ # Custom transforms
+│ └── filter-schema.ts
+├── tests/
+├── Dockerfile
+└── docker-compose.yml
+```
+
+## Architecture
+
+```
+┌─────────────────────────────────────────────────────────────┐
+│ GraphQL Mesh Gateway │
+├─────────────────────────────────────────────────────────────┤
+│ ┌─────────┐ ┌───────────┐ ┌──────────┐ ┌────────────┐ │
+│ │ Auth │→ │Rate Limit │→ │ Caching │→ │ Logging │ │
+│ └─────────┘ └───────────┘ └──────────┘ └────────────┘ │
+├─────────────────────────────────────────────────────────────┤
+│ Unified GraphQL Schema │
+│ ┌──────────────────────────────────────────────────────┐ │
+│ │ Query { users, products, orders, ... } │ │
+│ │ Mutation { createUser, updateProduct, ... } │ │
+│ │ Subscription { onOrderCreated, ... } │ │
+│ └──────────────────────────────────────────────────────┘ │
+├─────────────────────────────────────────────────────────────┤
+│ Source Handlers & Transforms │
+│ ┌──────────┐ ┌──────────┐ ┌──────────┐ ┌──────────┐ │
+│ │ GraphQL │ │ OpenAPI │ │ gRPC │ │ JSON │ │
+│ │ Source │ │ Source │ │ Source │ │ Source │ │
+│ └──────────┘ └──────────┘ └──────────┘ └──────────┘ │
+├─────────────────────────────────────────────────────────────┤
+│ Upstream Services │
+│ ┌──────────┐ ┌──────────┐ ┌──────────┐ ┌──────────┐ │
+│ │ Users │ │ Products │ │ Orders │ │Inventory │ │
+│ └──────────┘ └──────────┘ └──────────┘ └──────────┘ │
+└─────────────────────────────────────────────────────────────┘
+```
+
+## License
+
+MIT

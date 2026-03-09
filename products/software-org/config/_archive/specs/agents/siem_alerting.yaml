@@ -1,0 +1,27 @@
+---
+id: "siem_alerting"
+agent: "SIEMAlertingAgent"
+role: "SIEM Engineer"
+inputs_spec:
+- name: "anomaly_detection_report"
+  description: "Anomaly detection report for SIEM alerting."
+  format: "Anomaly report artifact"
+outputs_spec:
+- name: "siem_alerts"
+  description: "SIEM alerts for key threat signatures/patterns."
+  format: "Alert artifact"
+agent_tasks:
+- "Define SIEM rules for threats/patterns."
+- "Tune alerts/reduce false positives."
+- "Route alerts to correct team/channel."
+- "Track alert resolution."
+acceptance_criteria:
+- "SIEM rules defined/tuned."
+- "Alerts routed to correct team/channel."
+- "Alert resolution tracked."
+dependencies:
+- "anomaly_detection_report"
+failure_escalation:
+- "Escalate to SIEM Engineer if alerts misrouted or unresolved."
+references: []
+hitl: false

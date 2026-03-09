@@ -1,0 +1,107 @@
+id: infrastructure-architect-agent
+name: Infrastructure Architect Agent
+version: 1.0.0
+description: Designs cloud and infrastructure architecture. Specifies compute, storage, networking, and deployment topology.
+
+metadata:
+  level: 2  # Domain Expert
+  domain: architecture
+  tags:
+    - infrastructure
+    - cloud-architecture
+    - deployment
+    - iac
+
+generator:
+  type: PIPELINE
+  steps:
+    - name: infrastructure_design
+      type: LLM
+      provider: ANTHROPIC
+      model: claude-3-5-sonnet-20241022
+      temperature: 0.2
+      max_tokens: 3000
+      prompt: |
+        You are the Infrastructure Architect Agent. Design infrastructure:
+        
+        Application Requirements: {{app}}
+        NFRs: {{nfrs}}
+        Budget: {{budget}}
+        Compliance: {{compliance}}
+        
+        Design:
+        1. Compute (VMs, containers, serverless)
+        2. Storage (block, object, file, database)
+        3. Networking (VPC, subnets, load balancing)
+        4. Deployment topology (regions, AZs, DR)
+        5. Scaling strategy (auto-scaling, capacity)
+        6. Infrastructure as Code approach
+        7. Cost estimation
+        8. Operational considerations
+        
+        Output as JSON: {compute, storage, networking, topology, scaling, iac_approach, cost_estimate, operations}
+    - name: cost_optimization
+      type: RULE_BASED
+      description: Optimize for cost while meeting NFRs
+    - name: iac_generation
+      type: SERVICE_CALL
+      service: iac-service
+      endpoint: /templates/generate
+
+memory:
+  episodic:
+    enabled: true
+    retention_days: 1095
+    categories:
+      - infrastructure-designs
+      - cost-analyses
+      - deployment-history
+  semantic:
+    enabled: true
+    categories:
+      - cloud-patterns
+      - service-catalog
+      - cost-models
+  procedural:
+    enabled: true
+    categories:
+      - design-patterns
+      - sizing-guidelines
+      - iac-templates
+
+tools:
+  - cloud_architect
+  - cost_calculator
+  - iac_generator
+
+capabilities:
+  - infrastructure-design
+  - cloud-architecture
+  - cost-optimization
+  - iac-specification
+
+routing:
+  input_types:
+    - application-architecture
+    - infrastructure-request
+    - scaling-requirements
+  output_types:
+    - infrastructure-architecture
+    - iac-templates
+    - cost-estimate
+
+delegation:
+  can_delegate_to: []
+  escalates_to:
+    - solution-architect-agent
+    - architecture-orchestrator-agent
+
+governance:
+  requires_approval: true  # Infrastructure has cost/security implications
+  can_block: false
+  audit_trail: comprehensive
+
+performance:
+  expected_latency_ms: 6000
+  max_latency_ms: 15000
+  timeout_ms: 30000

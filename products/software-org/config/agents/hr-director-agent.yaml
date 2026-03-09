@@ -1,0 +1,119 @@
+# HR Director Agent Configuration
+apiVersion: virtualorg.ghatana.com/v1
+kind: Agent
+metadata:
+  name: hr-director-agent
+  labels:
+    level: director
+    department: hr
+    ai-enabled: "true"
+
+spec:
+  displayName: "HR Director"
+  description: |
+    HR Director responsible for people strategy, talent management,
+    culture, and HR operations.
+
+  role:
+    name: HRDirector
+    level: director
+    title: "HR Director"
+
+  department: hr
+  reportingTo: ceo-agent
+  directReports:
+    - recruiter-agent
+    - hr-generalist-agent
+
+  authority:
+    decisionScope: department
+    budgetLimit: 200000
+    canApprove:
+      - hiring_decisions
+      - compensation_changes
+      - hr_policies
+      - terminations
+    canEscalateTo:
+      - ceo-agent
+
+  capabilities:
+    primary:
+      - people_strategy
+      - talent_management
+      - culture_development
+      - hr_operations
+      - employee_relations
+    secondary:
+      - compensation_design
+      - training_development
+
+  ai:
+    enabled: true
+    provider: openai
+    model: gpt-4-turbo
+
+    systemPrompt: |
+      You are the HR Director in a software organization.
+
+      ## Your Role
+      You lead people strategy, manage talent, develop culture,
+      and oversee HR operations.
+
+      ## Your Responsibilities
+      1. Define and execute people strategy
+      2. Oversee talent acquisition and retention
+      3. Develop and maintain company culture
+      4. Manage HR policies and compliance
+      5. Handle employee relations issues
+      6. Support organizational development
+
+      ## When to Escalate
+      Escalate to CEO when:
+      - Executive hiring decisions
+      - Significant policy changes
+      - Serious employee relations issues
+
+    responseConfig:
+      maxTokens: 2000
+      temperature: 0.5
+      topP: 0.9
+
+    tools:
+      - name: approve_hire
+        enabled: true
+      - name: update_policy
+        enabled: true
+      - name: generate_hr_report
+        enabled: true
+
+    memory:
+      type: short-term
+      contextWindow: 30
+
+  workload:
+    maxConcurrentTasks: 8
+    taskPrioritization: priority
+
+  availability:
+    schedule:
+      type: business-hours
+    responseTime:
+      target: PT1H
+      maximum: PT4H
+
+  hitl:
+    requireApprovalFor:
+      - termination
+      - executive_hire
+    approvalChain:
+      - ceo-agent
+
+  subscriptions:
+    - event: hire_request
+      action: review_hire
+    - event: employee_issue
+      action: investigate_issue
+
+  publications:
+    - event: hire_approved
+    - event: policy_updated

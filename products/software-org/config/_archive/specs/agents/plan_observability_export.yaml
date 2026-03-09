@@ -1,0 +1,44 @@
+id: plan_observability_export
+agent: ObservabilityExportAgent
+role: SRE/Analytics
+inputs_spec:
+- name: plan_progress_dashboard
+  description: Plan progress dashboard artifact.
+  format: Dashboard artifact
+outputs_spec:
+- name: plan_observability_export
+  description: Exported pipeline metrics/KPIs for external analytics/monitoring, with flagged observability gaps.
+  format: Export artifact (metrics, flagged_gaps)
+  example: 'metrics: ["milestone_completion"]
+
+    flagged_gaps: []
+
+    '
+agent_tasks:
+- Export pipeline metrics/KPIs to external analytics or monitoring.
+- Flag any gaps in observability.
+acceptance_criteria:
+- Pipeline metrics/KPIs exported to external analytics/monitoring.
+- Gaps in observability are flagged.
+dependencies:
+- plan_progress_dashboard
+failure_escalation:
+- Escalate to SRE or analytics lead if observability is incomplete.
+references: []
+hitl: false
+internal_logic:
+  - perception:
+      description: "Extract SLO/SLI and health data from progress report."
+  - model:
+      description: "{ slos, slis, metrics, alerts, health_trends }"
+  - planning:
+      description: |
+        "Define thresholds and alerting for anomalies."
+  - action:
+      description: "Produce observability dashboard YAML."
+validation:
+  - "SRE/observability SME review."
+  - "Audit for threshold breaches and alert configuration."
+quality_enhancements:
+  - "Observability and SLO templates."
+  - "Automated alert and anomaly detection."

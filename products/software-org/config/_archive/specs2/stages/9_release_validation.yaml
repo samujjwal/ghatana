@@ -1,0 +1,282 @@
+name: Release Validation
+workflow:
+    - id: release_candidate_validation
+      agent: ReleaseCandidateValidationAgent
+      role: Release Manager
+      inputs_spec:
+        - name: ready_for_release_package
+          description: Package indicating readiness for release (all previous checks passed).
+          format: Release package artifact
+      outputs_spec:
+        - name: release_candidate_validation_report
+          description: Validation report confirming release candidate meets all functional, non-functional, security, and compliance criteria.
+          format: Validation report artifact
+      agent_tasks:
+        - Validate release candidate for all functional, non-functional, security, and compliance criteria.
+        - Ensure all critical/blocker issues are resolved or signed off by responsible parties.
+      acceptance_criteria:
+        - Release candidate meets all required criteria.
+        - All critical/blocker issues are resolved or signed off.
+      dependencies:
+        - ready_for_release_package
+      failure_escalation:
+        - Escalate to Release Manager if candidate fails criteria or issues remain unresolved.
+      references: []
+      hitl: false
+
+    - id: release_notes_agent
+      agent: ReleaseNotesAgent
+      role: Technical Writer
+      inputs_spec:
+        - name: release_candidate_validation_report
+          description: Validation report for generating release notes.
+          format: Validation report artifact
+      outputs_spec:
+        - name: release_notes
+          description: Release notes including new features, bug fixes, known issues, and upgrade instructions.
+          format: Release notes artifact
+      agent_tasks:
+        - Generate release notes from artifacts, tests, and change logs.
+        - Include all new features, bug fixes, known issues, and upgrade instructions.
+      acceptance_criteria:
+        - Release notes are generated with all required content.
+      dependencies:
+        - release_candidate_validation_report
+      failure_escalation:
+        - Escalate to Technical Writer or Release Manager if notes are incomplete or missing.
+      references: []
+      hitl: false
+
+    - id: license_compliance_scan
+      agent: LicenseComplianceAgent
+      role: Automation Tool
+      inputs_spec:
+        - name: release_candidate_validation_report
+          description: Validation report for license compliance check.
+          format: Validation report artifact
+      outputs_spec:
+        - name: license_compliance_report
+          description: Report of license compliance for all dependencies before release.
+          format: License compliance report artifact
+      agent_tasks:
+        - Check all dependencies for license compliance.
+        - Flag and remediate or sign off any non-compliant licenses.
+      acceptance_criteria:
+        - All dependencies checked for compliance before release.
+        - Non-compliant licenses are remediated or signed off.
+      dependencies:
+        - release_candidate_validation_report
+      failure_escalation:
+        - Escalate to Legal/Compliance if non-compliance is detected.
+      references: []
+      hitl: false
+
+    - id: release_readiness_checker
+      agent: ReadinessCheckerAgent
+      role: Gatekeeper Bot
+      inputs_spec:
+        - name: release_candidate_validation_report
+          description: Validation report.
+          format: Validation report artifact
+        - name: release_notes
+          description: Release notes for readiness review.
+          format: Release notes artifact
+        - name: license_compliance_report
+          description: License compliance report.
+          format: License compliance report artifact
+      outputs_spec:
+        - name: release_readiness_status
+          description: Readiness status for release, including signoffs and approvals.
+          format: Readiness status artifact
+      agent_tasks:
+        - Ensure all release criteria, signoffs, and documentation are met and attached.
+        - Verify stakeholder approvals and completeness.
+      acceptance_criteria:
+        - All criteria are met, with signoffs and approvals complete.
+      dependencies:
+        - release_candidate_validation_report
+        - release_notes
+        - license_compliance_report
+      failure_escalation:
+        - Escalate to Gatekeeper or Release Manager if readiness criteria are not met.
+      references: []
+      hitl: false
+
+    - id: release_go_nogo
+      agent: GoNoGoDecisionAgent
+      role: Stage Owner/Stakeholders
+      inputs_spec:
+        - name: release_readiness_status
+          description: Readiness status artifact for Go/No-Go review.
+          format: Readiness status artifact
+      outputs_spec:
+        - name: release_go_nogo_decision
+          description: Go/No-Go decision and rationale for release.
+          format: Go/No-Go decision artifact
+      agent_tasks:
+        - Review all blockers, risks, and criteria.
+        - Record Go/No-Go decision and rationale.
+      acceptance_criteria:
+        - All blockers, risks, and criteria reviewed.
+        - Go/No-Go decision and rationale recorded.
+      dependencies:
+        - release_readiness_status
+      failure_escalation:
+        - Escalate to stakeholders if decision or rationale is not recorded.
+      references: []
+      hitl: true
+      hitl_reason: Human review required for Go/No-Go decision
+
+    - id: release_progress_dashboard
+      agent: ProgressDashboardAgent
+      role: Release Dashboard Owner
+      inputs_spec:
+        - name: release_candidate_validation_report
+          description: Validation report for dashboard visualization.
+          format: Validation report artifact
+        - name: release_notes
+          description: Release notes for dashboard visualization.
+          format: Release notes artifact
+        - name: license_compliance_report
+          description: License compliance report for dashboard visualization.
+          format: License compliance report artifact
+      outputs_spec:
+        - name: release_progress_dashboard
+          description: Dashboard visualizing release readiness, approvals, and compliance.
+          format: Dashboard artifact
+      agent_tasks:
+        - Visualize release readiness, documentation, signoffs, and compliance.
+        - Update dashboard for team and leadership visibility.
+      acceptance_criteria:
+        - Dashboard is updated with all release readiness data and compliance status.
+      dependencies:
+        - release_candidate_validation_report
+        - release_notes
+        - license_compliance_report
+      failure_escalation:
+        - Escalate to dashboard owner if dashboard is not current.
+      references: []
+      hitl: false
+
+    - id: release_observability_export
+      agent: ObservabilityExportAgent
+      role: SRE/Analytics
+      inputs_spec:
+        - name: release_progress_dashboard
+          description: Release progress dashboard for observability export.
+          format: Dashboard artifact
+      outputs_spec:
+        - name: release_observability_export
+          description: Exported pipeline metrics/KPIs for release to analytics/monitoring.
+          format: Export artifact
+      agent_tasks:
+        - Export pipeline metrics/KPIs to external analytics/monitoring.
+        - Flag any gaps in observability.
+      acceptance_criteria:
+        - Pipeline metrics/KPIs exported to analytics/monitoring.
+        - Gaps in observability are flagged.
+      dependencies:
+        - release_progress_dashboard
+      failure_escalation:
+        - Escalate to SRE/Analytics if metrics not exported or gaps missed.
+      references: []
+      hitl: false
+
+    - id: release_feedback_loop
+      agent: FeedbackLoopAgent
+      role: CI/CD Coach/Automation
+      inputs_spec:
+        - name: release_progress_dashboard
+          description: Release progress dashboard for collecting feedback.
+          format: Dashboard artifact
+      outputs_spec:
+        - name: release_feedback_items
+          description: Issues and improvement suggestions from release routed to Retrospective.
+          format: List of feedback items
+      agent_tasks:
+        - Route all release issues and improvement suggestions to Retrospective.
+        - Track feedback for action and resolution.
+      acceptance_criteria:
+        - All issues and improvement suggestions are routed to Retrospective.
+        - Feedback is tracked for action and resolution.
+      dependencies:
+        - release_progress_dashboard
+      failure_escalation:
+        - Escalate to CI/CD coach if feedback is not acted on.
+      references: []
+      hitl: false
+
+    - id: release_notification_agent
+      agent: NotificationAgent
+      role: PMO Communications
+      inputs_spec:
+        - name: release_progress_dashboard
+          description: Release progress dashboard for notification triggers.
+          format: Dashboard artifact
+      outputs_spec:
+        - name: release_notifications
+          description: Notifications to release stakeholders on events and approvals.
+          format: List of notification objects
+      agent_tasks:
+        - Notify release stakeholders on key events and approvals.
+        - Log notification delivery for audit.
+      acceptance_criteria:
+        - Stakeholders are notified on key events and approvals.
+        - Notification delivery is logged for audit.
+      dependencies:
+        - release_progress_dashboard
+      failure_escalation:
+        - Escalate to PMO if notifications not delivered or logged.
+      references: []
+      hitl: false
+
+    - id: release_audit_log_agent
+      agent: AuditLogAgent
+      role: Compliance Bot
+      inputs_spec:
+        - name: release_progress_dashboard
+          description: Release progress dashboard for audit logging.
+          format: Dashboard artifact
+        - name: release_notification_agent
+          description: Notification agent delivery log.
+          format: List of notification objects
+      outputs_spec:
+        - name: release_audit_log
+          description: Audit log of all release actions, signoffs, and notifications.
+          format: Audit log artifact
+      agent_tasks:
+        - Log all release actions, signoffs, and notifications.
+        - Version and archive logs for compliance.
+      acceptance_criteria:
+        - All release actions, signoffs, and notifications are logged and versioned.
+      dependencies:
+        - release_progress_dashboard
+        - release_notification_agent
+      failure_escalation:
+        - Escalate to Compliance if audit log is incomplete.
+      references: []
+      hitl: false
+
+    - id: release_lbom_agent
+      agent: LBOMAgent
+      role: Legal/Compliance
+      inputs_spec:
+        - name: release_sbom_files
+          description: SBOM files for license bill of materials generation.
+          format: SBOM file artifact
+      outputs_spec:
+        - name: release_lbom_report
+          description: License bill of materials for all artifacts.
+          format: LBOM report artifact
+      agent_tasks:
+        - Generate license bill of materials for all artifacts.
+        - Track and link all license risks to compliance.
+      acceptance_criteria:
+        - License bill of materials is generated for all artifacts.
+        - All license risks tracked and linked to compliance.
+      dependencies:
+        - release_sbom_files
+      failure_escalation:
+        - Escalate to Legal/Compliance if LBOM is missing or incomplete.
+      references: []
+      hitl: false

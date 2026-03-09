@@ -1,0 +1,46 @@
+/**
+* Application configuration
+*/
+
+type Environment = "development" | "staging" | "production";
+
+interface Config {
+version: string;
+buildNumber: string;
+environment: Environment;
+apiBaseUrl: string;
+enableAnalytics: boolean;
+enableCrashReporting: boolean;
+}
+
+const getEnvironment = (): Environment => {
+if (__DEV__) {
+return "development";
+}
+// In production builds, you could check for staging vs production
+// based on environment variables or build configuration
+return "production";
+};
+
+const getApiBaseUrl = (): string => {
+const env = getEnvironment();
+switch (env) {
+case "development":
+return "http://localhost:3000/api";
+case "staging":
+return "https://staging-api.example.com";
+case "production":
+return "https://api.example.com";
+default:
+return "http://localhost:3000/api";
+}
+};
+
+export const config: Config = {
+version: "{{version}}",
+buildNumber: "1",
+environment: getEnvironment(),
+apiBaseUrl: getApiBaseUrl(),
+enableAnalytics: !__DEV__,
+enableCrashReporting: !__DEV__,
+};

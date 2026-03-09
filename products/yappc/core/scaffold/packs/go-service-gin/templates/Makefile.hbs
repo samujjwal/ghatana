@@ -1,0 +1,36 @@
+.PHONY: build run test clean docker-build docker-run
+
+APP_NAME={{projectName}}
+VERSION?=0.1.0
+
+build:
+go build -o bin/$(APP_NAME) .
+
+run:
+go run .
+
+test:
+go test -v ./...
+
+test-coverage:
+go test -v -coverprofile=coverage.out ./...
+go tool cover -html=coverage.out
+
+clean:
+rm -rf bin/
+rm -f coverage.out
+
+docker-build:
+docker build -t $(APP_NAME):$(VERSION) .
+
+docker-run:
+docker run -p 8080:8080 $(APP_NAME):$(VERSION)
+
+lint:
+golangci-lint run
+
+fmt:
+go fmt ./...
+
+vet:
+go vet ./...

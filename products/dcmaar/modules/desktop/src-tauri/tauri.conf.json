@@ -1,0 +1,48 @@
+{
+  "$schema": "../node_modules/@tauri-apps/cli/schema.json",
+  "identifier": "com.dcmaer.app",
+  "productName": "DCMAR",
+  "version": "0.1.0",
+  "build": {
+    "beforeDevCommand": "pnpm dev",
+    "beforeBuildCommand": "pnpm build",
+    "devUrl": "http://localhost:3001",
+    "frontendDist": "../dist"
+  },
+  "app": {
+    "security": {
+      "csp": null
+    },
+    "windows": [
+      {
+        "title": "DCMAR",
+        "width": 1200,
+        "height": 800,
+        "resizable": true
+      }
+    ]
+  },
+  "bundle": {
+    "active": true,
+    "targets": "all",
+    "icon": [
+      "icons/icon.png",
+      "icons/tray-icon.png",
+      "icons/tray-icon.ico"
+    ],
+    "windows": {
+      "certificateThumbprint": null,
+      "digestAlgorithm": "sha256"
+    }
+  },
+  "plugins": {
+    "updater": {
+      "active": false,
+      "endpoints": [
+        "http://localhost:3001/update/{{target}}/{{current_version}}"
+      ],
+      "dialog": true,
+      "pubkey": "dW50cnVzdGVkIGNvbW1lbnQ6IHJzaWduIGVuY3J5cHRlZCBzZWNyZXQga2V5ClJXUlRZMEl5KzRoS05jUkU0UE5NUDF3c1U1ZVNmMzg1VThtYXNpZmwva2JUcUs3Nzg5VUFBQkFBQUFBQUFBQUFBQUlBQUFBQUFOZ2gxeUZlUHp3dCtLTDg2N1IrT3dlMnk3UEIyOWR3YmZRQTgxUGZGei9VbmNUZU4zNk41T0tURlhVcDV4UEc3L0RjcUdzclBNYWZOVmpiUXN5WWlUSnJNSlNXOUViNTZwSDQ4UjE0MnlrZDJweFJieFZWU0pjT3pJNCs2dFlLdGN3OTNaem9kcUU9Cg=="
+    }
+  }
+}

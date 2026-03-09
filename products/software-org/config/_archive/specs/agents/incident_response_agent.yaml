@@ -1,0 +1,26 @@
+---
+id: "incident_response_agent"
+agent: "IncidentResponseAgent"
+role: "Incident Manager"
+inputs_spec:
+- name: "infrastructure_progress_dashboard"
+  description: "Infrastructure progress dashboard for incident detection."
+  format: "Dashboard artifact"
+outputs_spec:
+- name: "incident_report"
+  description: "Incident detection and response report."
+  format: "Incident report artifact"
+agent_tasks:
+- "Detect and triage incidents promptly."
+- "Document all response actions."
+- "Record incident resolution and lessons learned."
+acceptance_criteria:
+- "Incidents detected and triaged promptly."
+- "Response actions documented."
+- "Incident resolution and lessons learned recorded."
+dependencies:
+- "infrastructure_progress_dashboard"
+failure_escalation:
+- "Escalate to Incident Manager if incidents not detected/triaged."
+references: []
+hitl: false

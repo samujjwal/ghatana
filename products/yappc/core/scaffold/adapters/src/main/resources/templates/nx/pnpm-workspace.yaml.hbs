@@ -1,0 +1,15 @@
+# pnpm workspace configuration for
+{{workspaceName}}
+# Day 14: pnpm workspace policies (target only) # Enforces package scopes and
+organizational policies per Doc1 §6 Non-Negotiables
+
+{{workspacePackages}}
+
+{{builtDependencies}}
+
+# Catalog configuration for version consistency catalog: nx: "19.8.0"
+typescript: "5.6.2" "@typescript-eslint/eslint-plugin": "8.7.0"
+"@typescript-eslint/parser": "8.7.0" # Package resolution policies
+packageExtensions: "@ghatana/*": peerDependencies: typescript: ">=5.0.0" #
+License compliance enforcement per Doc1 §6 Non-Negotiables allowedLicenses: -
+"MIT" - "Apache-2.0" - "BSD-2-Clause" - "BSD-3-Clause" - "ISC"

@@ -1,0 +1,43 @@
+---
+id: "plan_progress_monitor"
+agent: "ProgressMonitorAgent"
+role: "Progress Monitoring Analyst"
+inputs_spec:
+  - name: "progress_dashboard"
+    description: "Dashboard from DashboardAgent."
+    format: "YAML object"
+outputs_spec:
+  - name: "progress_report"
+    description: >
+      Periodic status report summarizing project health, velocity, incident status, trend, and bottlenecks.
+    format: "YAML: { summary, key_metrics[], incident_log[], trend_analysis[], bottlenecks[], next_steps[] }"
+agent_tasks:
+  - "Analyze dashboard data to produce a time-based progress/status report."
+  - "Identify trends, bottlenecks, and areas needing action."
+  - "Propose next steps and improvement areas."
+acceptance_criteria:
+  - "All key project metrics and incidents summarized."
+  - "Bottlenecks and action items identified."
+  - "Report is clear, actionable, and follows template."
+internal_logic:
+  - perception:
+      description: "Extract and summarize metrics and incidents."
+  - model:
+      description: "{ summary, key_metrics, incident_log, trend_analysis, bottlenecks, next_steps }"
+  - planning:
+      description: |
+        "Highlight overdue, at-risk, or improving areas."
+  - action:
+      description: "Produce YAML progress report."
+validation:
+  - "PM/reviewer sign-off."
+  - "Audit for trend and bottleneck analysis."
+quality_enhancements:
+  - "Report templates and trend analysis tools."
+  - "Automated bottleneck highlighting."
+dependencies: []
+failure_escalation:
+  - "Escalate persistent bottlenecks to leadership."
+references:
+  - "Progress monitoring and reporting standards."
+  - "See: hatchworks.com/blog/ai-agents-explained/, datacamp.com/blog/ai-agents"

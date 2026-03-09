@@ -1,0 +1,356 @@
+{
+    "$schema": "https://json-schema.org/draft/2020-12/schema",
+    "$id": "https://schemas.dcmaar.dev/runtime-config.schema.json",
+    "title": "DcmaarRuntimeConfiguration",
+    "description": "Authoritative schema for bootstrap, source, sink, and runtime configuration shared across all runtimes (Rust agent, desktop, browser extension, mobile).",
+    "type": "object",
+    "required": [
+        "bootstrap"
+    ],
+    "properties": {
+        "bootstrap": {
+            "$ref": "#/definitions/BootstrapConfig"
+        },
+        "runtime": {
+            "$ref": "#/definitions/RuntimeConfig"
+        }
+    },
+    "additionalProperties": false,
+    "definitions": {
+        "ConnectionOptions": {
+            "type": "object",
+            "required": [
+                "id",
+                "type"
+            ],
+            "properties": {
+                "id": {
+                    "type": "string",
+                    "minLength": 1
+                },
+                "type": {
+                    "type": "string",
+                    "minLength": 1
+                },
+                "maxRetries": {
+                    "type": "integer",
+                    "minimum": 0,
+                    "default": 3
+                },
+                "timeout": {
+                    "type": "integer",
+                    "minimum": 1,
+                    "default": 30000,
+                    "description": "Timeout in milliseconds"
+                },
+                "secure": {
+                    "type": "boolean",
+                    "default": true
+                },
+                "headers": {
+                    "type": "object",
+                    "additionalProperties": {
+                        "type": "string"
+                    }
+                },
+                "auth": {
+                    "description": "Authentication payload (opaque to the schema)",
+                    "type": [
+                        "object",
+                        "string",
+                        "number",
+                        "array",
+                        "boolean",
+                        "null"
+                    ]
+                },
+                "debug": {
+                    "type": "boolean",
+                    "default": false
+                }
+            },
+            "additionalProperties": false
+        },
+        "SourceConfig": {
+            "type": "object",
+            "required": [
+                "sourceId",
+                "sourceType",
+                "connectionOptions"
+            ],
+            "properties": {
+                "sourceId": {
+                    "type": "string",
+                    "minLength": 1
+                },
+                "sourceType": {
+                    "type": "string",
+                    "enum": [
+                        "ipc",
+                        "http",
+                        "websocket",
+                        "custom"
+                    ]
+                },
+                "connectionOptions": {
+                    "$ref": "#/definitions/ConnectionOptions"
+                },
+                "autoReconnect": {
+                    "type": "boolean",
+                    "default": true
+                },
+                "reconnectDelayMs": {
+                    "type": "integer",
+                    "minimum": 1,
+                    "default": 5000
+                },
+                "maxReconnectAttempts": {
+                    "type": "integer",
+                    "minimum": 1,
+                    "default": 10
+                }
+            },
+            "additionalProperties": false
+        },
+        "SinkBatchConfig": {
+            "type": "object",
+            "properties": {
+                "size": {
+                    "type": "integer",
+                    "minimum": 1,
+                    "default": 20
+                },
+                "flushIntervalMs": {
+                    "type": "integer",
+                    "minimum": 1,
+                    "default": 5000
+                }
+            },
+            "additionalProperties": false
+        },
+        "SinkRetryPolicy": {
+            "type": "object",
+            "properties": {
+                "maxRetries": {
+                    "type": "integer",
+                    "minimum": 0,
+                    "default": 3
+                },
+                "backoffMs": {
+                    "type": "integer",
+                    "minimum": 1,
+                    "default": 1000
+                },
+                "maxBackoffMs": {
+                    "type": "integer",
+                    "minimum": 1,
+                    "default": 30000
+                }
+            },
+            "additionalProperties": false
+        },
+        "SinkConfig": {
+            "type": "object",
+            "required": [
+                "sinkId",
+                "sinkType",
+                "connectionOptions"
+            ],
+            "properties": {
+                "sinkId": {
+                    "type": "string",
+                    "minLength": 1
+                },
+                "sinkType": {
+                    "type": "string",
+                    "enum": [
+                        "http",
+                        "websocket",
+                        "file",
+                        "memory",
+                        "ipc",
+                        "custom"
+                    ]
+                },
+                "connectionOptions": {
+                    "$ref": "#/definitions/ConnectionOptions"
+                },
+                "enabled": {
+                    "type": "boolean",
+                    "default": true
+                },
+                "batch": {
+                    "$ref": "#/definitions/SinkBatchConfig"
+                },
+                "retryPolicy": {
+                    "$ref": "#/definitions/SinkRetryPolicy"
+                }
+            },
+            "additionalProperties": false
+        },
+        "BootstrapConfig": {
+            "type": "object",
+            "required": [
+                "source"
+            ],
+            "properties": {
+                "version": {
+                    "type": "string",
+                    "default": "1.0.0"
+                },
+                "source": {
+                    "$ref": "#/definitions/SourceConfig"
+                },
+                "fallbackSources": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/SourceConfig"
+                    },
+                    "default": []
+                },
+                "waitForSourceConnection": {
+                    "type": "boolean",
+                    "default": true
+                },
+                "sourceConnectionTimeoutMs": {
+                    "type": "integer",
+                    "minimum": 1,
+                    "default": 30000
+                }
+            },
+            "additionalProperties": false
+        },
+        "RedactionRule": {
+            "type": "object",
+            "required": [
+                "pattern"
+            ],
+            "properties": {
+                "pattern": {
+                    "type": "string",
+                    "minLength": 1
+                },
+                "replacement": {
+                    "type": "string",
+                    "default": "[REDACTED]"
+                }
+            },
+            "additionalProperties": false
+        },
+        "ExtensionSettings": {
+            "type": "object",
+            "properties": {
+                "captureEnabled": {
+                    "type": "boolean",
+                    "default": true
+                },
+                "captureTypes": {
+                    "type": "array",
+                    "items": {
+                        "type": "string",
+                        "enum": [
+                            "network",
+                            "performance",
+                            "user-interaction",
+                            "custom"
+                        ]
+                    },
+                    "default": [
+                        "network",
+                        "performance"
+                    ]
+                },
+                "samplingRate": {
+                    "type": "number",
+                    "minimum": 0,
+                    "maximum": 1,
+                    "default": 1
+                },
+                "redactionRules": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/RedactionRule"
+                    }
+                }
+            },
+            "additionalProperties": false
+        },
+        "MonitoringSettings": {
+            "type": "object",
+            "properties": {
+                "enabled": {
+                    "type": "boolean",
+                    "default": true
+                },
+                "logLevel": {
+                    "type": "string",
+                    "enum": [
+                        "debug",
+                        "info",
+                        "warn",
+                        "error"
+                    ],
+                    "default": "info"
+                },
+                "metricsEnabled": {
+                    "type": "boolean",
+                    "default": true
+                },
+                "tracingEnabled": {
+                    "type": "boolean",
+                    "default": false
+                }
+            },
+            "additionalProperties": false
+        },
+        "SecuritySettings": {
+            "type": "object",
+            "properties": {
+                "tlsEnabled": {
+                    "type": "boolean",
+                    "default": true
+                },
+                "tlsVerify": {
+                    "type": "boolean",
+                    "default": true
+                },
+                "allowedDomains": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
+                }
+            },
+            "additionalProperties": false
+        },
+        "RuntimeConfig": {
+            "type": "object",
+            "required": [
+                "sinks"
+            ],
+            "properties": {
+                "version": {
+                    "type": "string",
+                    "default": "1.0.0"
+                },
+                "sinks": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/SinkConfig"
+                    },
+                    "minItems": 1
+                },
+                "extension": {
+                    "$ref": "#/definitions/ExtensionSettings"
+                },
+                "monitoring": {
+                    "$ref": "#/definitions/MonitoringSettings"
+                },
+                "security": {
+                    "$ref": "#/definitions/SecuritySettings"
+                }
+            },
+            "additionalProperties": false
+        }
+    }
+}

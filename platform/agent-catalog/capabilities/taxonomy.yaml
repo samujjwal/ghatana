@@ -1,0 +1,107 @@
+# Ghatana Platform Capability Taxonomy
+#
+# Defines the base hierarchy of capability categories used across all
+# product catalogs. Product catalogs may extend this taxonomy with their
+# own subcategories (via "extends: platform" in their catalog YAML).
+
+capability_categories:
+
+  - id: "data-processing"
+    name: "Data Processing"
+    description: "Capabilities for data manipulation and transformation"
+    subcategories:
+      - "validation"
+      - "transformation"
+      - "aggregation"
+      - "filtering"
+      - "enrichment"
+
+  - id: "event-processing"
+    name: "Event Processing"
+    description: "Capabilities for event stream processing"
+    subcategories:
+      - "ingestion"       # kafka, http, file — added to fix mis-categorization
+      - "routing"
+      - "transformation"
+      - "aggregation"
+      - "filtering"
+      - "pattern-matching"
+      - "correlation"
+      - "flow-control"    # backpressure, rate-limiting
+
+  - id: "analytics"
+    name: "Analytics"
+    description: "Capabilities for data analysis and insights"
+    subcategories:
+      - "statistical-analysis"
+      - "machine-learning"
+      - "anomaly-detection"
+      - "forecasting"
+      - "reporting"
+
+  - id: "integration"
+    name: "Integration"
+    description: "Capabilities for system integration"
+    subcategories:
+      - "database-connectors"
+      - "api-integrations"
+      - "message-queues"
+      - "file-systems"
+      - "external-services"
+
+  - id: "monitoring"
+    name: "Monitoring"
+    description: "Capabilities for system monitoring and alerting"
+    subcategories:
+      - "health-checks"
+      - "metrics-collection"
+      - "log-analysis"
+      - "alerting"
+      - "performance-monitoring"
+
+  - id: "security"
+    name: "Security"
+    description: "Capabilities for security analysis and enforcement"
+    subcategories:
+      - "vulnerability-scanning"
+      - "access-control"
+      - "audit-logging"
+      - "compliance-checking"
+      - "threat-detection"
+
+  - id: "code-generation"
+    name: "Code Generation"
+    description: "Capabilities for source code generation and transformation"
+    subcategories:
+      - "source-generation"
+      - "test-generation"
+      - "refactoring"
+      - "documentation"
+
+  - id: "orchestration"
+    name: "Orchestration"
+    description: "Capabilities for multi-agent coordination"
+    subcategories:
+      - "task-routing"
+      - "lifecycle-management"
+      - "delegation"
+      - "escalation"
+
+  - id: "data-management"
+    name: "Data Management"
+    description: "Capabilities for entity storage, querying, and data lifecycle (Data-Cloud domain)"
+    subcategories:
+      - "entity-storage"
+      - "event-record-storage"
+      - "query-processing"
+      - "data-lifecycle"
+      - "data-observability"
+
+  - id: "governance"
+    name: "Governance"
+    description: "Capabilities for cost, resource, sustainability, and policy governance"
+    subcategories:
+      - "cost-optimization"
+      - "resource-optimization"
+      - "sustainability"
+      - "policy-enforcement"

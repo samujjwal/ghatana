@@ -1,0 +1,45 @@
+use sqlx::{postgres::PgPoolOptions, PgPool};
+use std::time::Duration;
+
+/// Database connection pool configuration
+pub struct DatabaseConfig {
+pub url: String,
+pub max_connections: u32,
+pub min_connections: u32,
+pub connect_timeout: Duration,
+pub idle_timeout: Duration,
+}
+
+impl Default for DatabaseConfig {
+fn default() -> Self {
+Self {
+url: std::env::var("DATABASE_URL")
+.unwrap_or_else(|_| "postgres://{{databaseHost}}:{{databasePort}}/{{databaseName}}".to_string()),
+max_connections: {{connectionPoolSize}},
+min_connections: 5,
+connect_timeout: Duration::from_secs(30),
+idle_timeout: Duration::from_secs(600),
+}
+}
+}
+
+/// Create a new database connection pool
+pub async fn create_pool(config: &DatabaseConfig) -> Result<PgPool, sqlx::Error> {
+    let pool = PgPoolOptions::new()
+    .max_connections(config.max_connections)
+    .min_connections(config.min_connections)
+    .acquire_timeout(config.connect_timeout)
+    .idle_timeout(Some(config.idle_timeout))
+    .connect(&config.url)
+    .await?;
+
+    tracing::info!("✅ Database pool created with {} max connections", config.max_connections);
+    Ok(pool)
+    }
+
+    /// Test database connection
+    pub async fn test_connection(pool: &PgPool) -> Result<(), sqlx::Error> {
+        sqlx::query("SELECT 1").execute(pool).await?;
+        tracing::info!("✅ Database connection test successful");
+        Ok(())
+        }

@@ -1,0 +1,25 @@
+---
+id: "test_suite"
+agent: "TestSuiteAgent"
+role: "QA Engineer"
+inputs_spec:
+- name: "modularized_codebase"
+  description: "Codebase/modules to generate and run tests for."
+  format: "Source repo or artifact"
+outputs_spec:
+- name: "test_suites"
+  description: "Test suites covering unit, integration, and edge cases."
+  format: "Test suite artifact"
+agent_tasks:
+- "Create unit and integration tests for all modules."
+- "Ensure test cases cover positive, negative, and edge cases."
+- "Set up CI to run tests automatically."
+acceptance_criteria:
+- "All modules have unit and/or integration tests."
+- "Test cases cover positive, negative, and edge cases."
+- "Tests run automatically in CI."
+dependencies:
+- "modularized_codebase"
+failure_escalation:
+- "Escalate to QA Lead if major test gaps found."
+references: []

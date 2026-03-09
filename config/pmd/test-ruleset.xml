@@ -1,0 +1,38 @@
+<?xml version="1.0"?>
+<ruleset name="Test Ruleset"
+         xmlns="http://pmd.sourceforge.net/ruleset/2.0.0"
+         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://pmd.sourceforge.net/ruleset/2.0.0 https://pmd.sourceforge.io/ruleset_2_0_0.xsd">
+    <description>PMD ruleset for test code</description>
+
+    <!-- Exclude generated code -->
+    <exclude-pattern>.*/generated/.*</exclude-pattern>
+    <exclude-pattern>.*/build/generated/.*</exclude-pattern>
+    <exclude-pattern>.*/target/generated-sources/.*</exclude-pattern>
+    <exclude-pattern>.*/target/generated-test-sources/.*</exclude-pattern>
+
+    <!-- Include standard rule sets -->
+    <rule ref="category/java/bestpractices.xml">
+        <exclude name="JUnit4TestShouldUseTestAnnotation"/>
+        <exclude name="JUnit5TestShouldBePackagePrivate"/>
+        <exclude name="JUnitAssertionsShouldIncludeMessage"/>
+    </rule>
+    <rule ref="category/java/codestyle.xml">
+        <exclude name="ClassNamingConventions"/>
+        <exclude name="MethodNamingConventions"/>
+        <exclude name="LocalVariableNamingConventions"/>
+        <exclude name="MethodArgumentCouldBeFinal"/>
+    </rule>
+    <rule ref="category/java/design.xml">
+        <exclude name="LawOfDemeter"/>
+        <exclude name="ExcessiveParameterList"/>
+        <exclude name="ExcessiveClassLength"/>
+        <exclude name="NPathComplexity"/>
+        <exclude name="CyclomaticComplexity"/>
+    </rule>
+    <rule ref="category/java/errorprone.xml">
+        <exclude name="AvoidLiteralsInIfCondition"/>
+        <exclude name="AvoidDuplicateLiterals"/>
+        <exclude name="DataClass"/>
+    </rule>
+</ruleset>

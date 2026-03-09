@@ -1,0 +1,89 @@
+# Compliance to DevOps Security Interaction
+apiVersion: virtualorg.ghatana.com/v1
+kind: Interaction
+metadata:
+  name: compliance-devops-security
+  namespace: software-org
+  labels:
+    type: review
+    departments: [compliance, devops]
+
+spec:
+  displayName: "Compliance DevOps Security Review"
+  description: |
+    Defines the interaction pattern for security reviews
+    and compliance checks on infrastructure changes.
+
+  participants:
+    source:
+      department: compliance
+      agents:
+        - security-analyst-agent
+        - compliance-officer-agent
+    target:
+      department: devops
+      agents:
+        - devops-lead-agent
+        - sre-agent
+
+  trigger:
+    events:
+      - type: infrastructure.change.proposed
+      - type: security.review.requested
+      - type: compliance.audit.scheduled
+      - type: vulnerability.detected
+
+  protocol:
+    type: sync
+    timeout: PT48H
+
+  review:
+    types:
+      - security_review
+      - compliance_check
+      - vulnerability_assessment
+      - access_audit
+
+    requirements:
+      - name: change_description
+        description: "Description of infrastructure change"
+        mandatory: true
+      - name: risk_assessment
+        description: "Initial risk assessment"
+        mandatory: true
+      - name: rollback_plan
+        description: "Rollback plan if issues arise"
+        mandatory: true
+
+    checkpoints:
+      - name: security_scan
+        description: "Automated security scan completed"
+        mandatory: true
+      - name: compliance_check
+        description: "Compliance requirements verified"
+        mandatory: true
+      - name: access_review
+        description: "Access controls reviewed"
+        mandatory: false
+
+    artifacts:
+      - type: change_request
+        required: true
+      - type: security_scan_report
+        required: true
+      - type: compliance_checklist
+        required: true
+
+  notifications:
+    onTrigger:
+      - channel: slack
+        target: "#security"
+        template: "Security review requested: {{change_title}}"
+    onComplete:
+      - channel: slack
+        target: "#devops"
+        template: "Security review completed: {{change_title}} - {{status}}"
+
+  sla:
+    acknowledgment: PT2H
+    completion: PT48H

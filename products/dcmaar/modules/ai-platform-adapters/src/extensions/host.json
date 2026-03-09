@@ -1,0 +1,14 @@
+{
+  "name": "com.dcmaar.agent",
+  "description": "DCMAR Agent Native Messaging Host",
+  "path": "/path/to/agent/dcmaar-agent",
+  "type": "stdio",
+  "allowed_extensions": [
+    "dcmar@example.com"
+  ],
+  "allowed_origins": [
+    "chrome-extension://[YOUR_EXTENSION_ID]/",
+    "moz-extension://[YOUR_EXTENSION_ID]/",
+    "ms-browser-extension://[YOUR_EXTENSION_ID]/"
+  ]
+}

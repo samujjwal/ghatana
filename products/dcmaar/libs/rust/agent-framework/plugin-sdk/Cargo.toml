@@ -1,0 +1,9 @@
+
+[package]
+name = "dcmaar-plugin-sdk"
+version = "0.1.0"
+edition = "2021"
+description = "Plugin SDK for DCMAAR agent framework"
+
+[lib]
+crate-type = ["rlib"]

@@ -1,0 +1,172 @@
+import pino from "pino";
+import type { FastifyRequest, FastifyReply } from "fastify";
+
+const LOG_LEVEL = process.env.LOG_LEVEL ?? "{{logLevel}}";
+
+/**
+* Application logger instance
+*/
+export const logger = pino({
+level: LOG_LEVEL,
+transport:
+process.env.NODE_ENV === "development"
+? {
+target: "pino-pretty",
+options: {
+colorize: true,
+translateTime: "SYS:standard",
+ignore: "pid,hostname",
+},
+}
+: undefined,
+formatters: {
+level: (label) => ({ level: label }),
+},
+base: {
+service: "{{projectName}}",
+version: process.env.npm_package_version ?? "0.0.0",
+},
+});
+
+/**
+* Create a child logger with additional context
+*/
+export function createChildLogger(context: Record<string, unknown>) {
+    return logger.child(context);
+    }
+
+    /**
+    * Request logging context
+    */
+    export interface RequestLogContext {
+    requestId: string;
+    method: string;
+    url: string;
+    ip: string;
+    userAgent?: string;
+    userId?: string;
+    }
+
+    /**
+    * Extract logging context from request
+    */
+    export function getRequestLogContext(request: FastifyRequest): RequestLogContext {
+    return {
+    requestId: request.id,
+    method: request.method,
+    url: request.url,
+    ip: request.ip,
+    userAgent: request.headers["user-agent"],
+    userId: (request as FastifyRequest & { user?: { id: string } }).user?.id,
+    };
+    }
+
+    /**
+    * Log request completion with timing
+    */
+    export function logRequestComplete(
+    request: FastifyRequest,
+    reply: FastifyReply,
+    startTime: bigint
+    ) {
+    const duration = Number(process.hrtime.bigint() - startTime) / 1_000_000;
+    const context = getRequestLogContext(request);
+
+    const logData = {
+    ...context,
+    statusCode: reply.statusCode,
+    duration: Math.round(duration * 100) / 100,
+    };
+
+    if (reply.statusCode >= 500) {
+    logger.error(logData, "Request failed");
+    } else if (reply.statusCode >= 400) {
+    logger.warn(logData, "Request error");
+    } else {
+    logger.info(logData, "Request completed");
+    }
+    }
+
+    /**
+    * Log upstream request
+    */
+    export function logUpstreamRequest(
+    upstream: string,
+    method: string,
+    path: string,
+    requestId: string
+    ) {
+    logger.debug(
+    {
+    upstream,
+    method,
+    path,
+    requestId,
+    },
+    "Proxying request to upstream"
+    );
+    }
+
+    /**
+    * Log upstream response
+    */
+    export function logUpstreamResponse(
+    upstream: string,
+    statusCode: number,
+    duration: number,
+    requestId: string
+    ) {
+    const logData = {
+    upstream,
+    statusCode,
+    duration: Math.round(duration * 100) / 100,
+    requestId,
+    };
+
+    if (statusCode >= 500) {
+    logger.warn(logData, "Upstream error");
+    } else {
+    logger.debug(logData, "Upstream response");
+    }
+    }
+
+    /**
+    * Structured error logging
+    */
+    export function logError(
+    error: Error,
+    context?: Record<string, unknown>
+        ): void {
+        logger.error(
+        {
+        err: {
+        message: error.message,
+        name: error.name,
+        stack: error.stack,
+        },
+        ...context,
+        },
+        "Error occurred"
+        );
+        }
+
+        /**
+        * Audit log for security events
+        */
+        export function auditLog(
+        action: string,
+        userId: string | undefined,
+        resource: string,
+        details?: Record<string, unknown>
+            ) {
+            logger.info(
+            {
+            audit: true,
+            action,
+            userId: userId ?? "anonymous",
+            resource,
+            ...details,
+            },
+            `Audit: ${action}`
+            );
+            }

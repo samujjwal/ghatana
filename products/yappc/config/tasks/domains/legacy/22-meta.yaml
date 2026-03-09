@@ -1,0 +1,253 @@
+# Meta Tasks
+# Domain 22 of 22 - Developer Task Universe
+# Reference: developer-tasks.md Part I, Section 22
+
+domain:
+  id: meta
+  name: "Meta Tasks"
+  description: "Tasks about managing tasks, context, and workflow"
+  order: 22
+  icon: "hub"
+  color: "#607D8B"
+  lifecycle_stages:
+    - intent
+    - context
+    - observe
+
+tasks:
+  - id: meta-001
+    name: "Context Switching"
+    description: "Manage transitions between different work contexts"
+    personas:
+      - Developer
+    lifecycle_stages:
+      - context
+    automation_level: assisted
+    required_capabilities:
+      - context-management
+      - organization
+    input_schema: meta-001-input
+    output_schema: meta-001-output
+    audit_artifacts:
+      - ContextRecord
+    ui:
+      icon: "swap_calls"
+      color: "#607D8B"
+      tags:
+        - context
+        - switching
+        - focus
+
+  - id: meta-002
+    name: "Time Management"
+    description: "Manage time allocation across tasks"
+    personas:
+      - Developer
+    lifecycle_stages:
+      - plan
+    automation_level: assisted
+    required_capabilities:
+      - time-management
+      - prioritization
+    input_schema: meta-002-input
+    output_schema: meta-002-output
+    audit_artifacts:
+      - TimeRecord
+    ui:
+      icon: "schedule"
+      color: "#607D8B"
+      tags:
+        - time
+        - management
+        - productivity
+
+  - id: meta-003
+    name: "Priority Balancing"
+    description: "Balance competing priorities and deadlines"
+    personas:
+      - Developer
+      - Tech Lead
+    lifecycle_stages:
+      - plan
+    automation_level: assisted
+    required_capabilities:
+      - prioritization
+      - decision-making
+    input_schema: meta-003-input
+    output_schema: meta-003-output
+    audit_artifacts:
+      - PriorityRecord
+    ui:
+      icon: "low_priority"
+      color: "#607D8B"
+      tags:
+        - priorities
+        - balancing
+        - planning
+
+  - id: meta-004
+    name: "Track Work Progress"
+    description: "Monitor progress on current work items"
+    personas:
+      - Developer
+      - Tech Lead
+    lifecycle_stages:
+      - observe
+    automation_level: automated
+    required_capabilities:
+      - tracking
+      - reporting
+    input_schema: meta-004-input
+    output_schema: meta-004-output
+    audit_artifacts:
+      - ProgressRecord
+    ui:
+      icon: "query_stats"
+      color: "#607D8B"
+      tags:
+        - progress
+        - tracking
+        - status
+
+  - id: meta-005
+    name: "Manage Interruptions"
+    description: "Handle and minimize work interruptions"
+    personas:
+      - Developer
+    lifecycle_stages:
+      - context
+    automation_level: manual
+    required_capabilities:
+      - focus-management
+      - communication
+    input_schema: meta-005-input
+    output_schema: meta-005-output
+    audit_artifacts:
+      - InterruptionRecord
+    ui:
+      icon: "do_not_disturb_on"
+      color: "#607D8B"
+      tags:
+        - interruptions
+        - focus
+        - productivity
+
+  - id: meta-006
+    name: "Define Work Boundaries"
+    description: "Set and maintain healthy work boundaries"
+    personas:
+      - Developer
+    lifecycle_stages:
+      - plan
+    automation_level: manual
+    required_capabilities:
+      - self-management
+    input_schema: meta-006-input
+    output_schema: meta-006-output
+    audit_artifacts:
+      - BoundaryRecord
+    ui:
+      icon: "fence"
+      color: "#607D8B"
+      tags:
+        - boundaries
+        - work-life
+        - balance
+
+  - id: meta-007
+    name: "Workflow Optimization"
+    description: "Improve personal and team workflows"
+    personas:
+      - Developer
+      - Tech Lead
+    lifecycle_stages:
+      - learn
+      - institutionalize
+    automation_level: assisted
+    required_capabilities:
+      - process-improvement
+      - analysis
+    input_schema: meta-007-input
+    output_schema: meta-007-output
+    audit_artifacts:
+      - WorkflowRecord
+    ui:
+      icon: "tune"
+      color: "#607D8B"
+      tags:
+        - workflow
+        - optimization
+        - improvement
+
+  - id: meta-008
+    name: "Tool Selection"
+    description: "Evaluate and select development tools"
+    personas:
+      - Developer
+      - Tech Lead
+    lifecycle_stages:
+      - plan
+    automation_level: manual
+    required_capabilities:
+      - evaluation
+      - research
+    input_schema: meta-008-input
+    output_schema: meta-008-output
+    audit_artifacts:
+      - EvaluationRecord
+      - DecisionRecord
+    ui:
+      icon: "handyman"
+      color: "#607D8B"
+      tags:
+        - tools
+        - selection
+        - evaluation
+
+  - id: meta-009
+    name: "Process Reflection"
+    description: "Reflect on and improve development processes"
+    personas:
+      - Developer
+      - Tech Lead
+    lifecycle_stages:
+      - learn
+    automation_level: manual
+    required_capabilities:
+      - reflection
+      - process-improvement
+    input_schema: meta-009-input
+    output_schema: meta-009-output
+    audit_artifacts:
+      - ReflectionRecord
+    ui:
+      icon: "psychology"
+      color: "#607D8B"
+      tags:
+        - reflection
+        - process
+        - improvement
+
+  - id: meta-010
+    name: "Task Delegation"
+    description: "Delegate tasks to appropriate team members"
+    personas:
+      - Tech Lead
+    lifecycle_stages:
+      - plan
+      - execute
+    automation_level: manual
+    required_capabilities:
+      - leadership
+      - coordination
+    input_schema: meta-010-input
+    output_schema: meta-010-output
+    audit_artifacts:
+      - DelegationRecord
+    ui:
+      icon: "assignment_ind"
+      color: "#607D8B"
+      tags:
+        - delegation
+        - leadership
+        - coordination

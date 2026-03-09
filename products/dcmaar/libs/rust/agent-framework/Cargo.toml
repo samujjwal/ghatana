@@ -1,0 +1,61 @@
+[workspace]
+members = [
+    "agent-common",
+    "common",
+    "plugin-sdk",
+    "agent-connectors",
+]
+resolver = "2"
+
+[workspace.package]
+version = "0.1.0"
+authors = ["DCMAAR Team"]
+edition = "2021"
+license = "Apache-2.0"
+rust-version = "1.70"
+
+[workspace.dependencies]
+# Core dependencies
+anyhow = "1.0"
+thiserror = "1.0"
+tracing = "0.1"
+tracing-subscriber = { version = "0.3", features = ["env-filter", "fmt", "json"] }
+async-trait = "0.1"
+
+# Serialization
+serde = "1.0"
+serde_json = "1.0"
+serde_yaml = "0.9"
+
+# Database
+sqlx = { version = "0.7", features = ["runtime-tokio", "sqlite"] }
+
+# Time handling
+chrono = "0.4"
+time = "0.3"
+
+# UUID
+uuid = "1.0"
+
+# Validation
+validator = "0.16"
+
+# Configuration
+toml = "0.8"
+figment = "0.10"
+
+# Async runtime
+tokio = { version = "1.0", features = ["full"] }
+futures = "0.3"
+
+# Protocol Buffers
+prost = "0.12"
+prost-types = "0.12"
+tonic = "0.11"
+
+# WebAssembly
+wasmtime = "16.0"
+
+# Testing
+tempfile = "3.0"
+pretty_assertions = "1.0"

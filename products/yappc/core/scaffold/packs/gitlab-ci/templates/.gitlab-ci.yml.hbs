@@ -1,0 +1,94 @@
+image: {{dockerImage}}
+
+stages:
+- build
+- test
+- deploy
+
+variables:
+PROJECT_NAME: "{{projectName}}"
+
+{{#if (eq language "node")}}
+cache:
+paths:
+- node_modules/
+
+before_script:
+- npm ci
+
+build:
+stage: build
+script:
+- npm run build
+artifacts:
+paths:
+- dist/
+expire_in: 1 week
+
+test:
+stage: test
+script:
+- npm test
+coverage: '/Lines\s*:\s*(\d+\.\d+)%/'
+
+lint:
+stage: test
+script:
+- npm run lint
+
+deploy:
+stage: deploy
+script:
+- echo "Deploying {{projectName}}"
+only:
+- main
+{{else if (eq language "python")}}
+cache:
+paths:
+- .venv/
+
+before_script:
+- python -m venv .venv
+- source .venv/bin/activate
+- pip install -r requirements.txt
+
+build:
+stage: build
+script:
+- python -m build
+
+test:
+stage: test
+script:
+- pytest --cov
+coverage: '/TOTAL.*\s+(\d+%)$/'
+
+lint:
+stage: test
+script:
+- ruff check .
+
+deploy:
+stage: deploy
+script:
+- echo "Deploying {{projectName}}"
+only:
+- main
+{{else}}
+build:
+stage: build
+script:
+- echo "Building {{projectName}}"
+
+test:
+stage: test
+script:
+- echo "Testing {{projectName}}"
+
+deploy:
+stage: deploy
+script:
+- echo "Deploying {{projectName}}"
+only:
+- main
+{{/if}}

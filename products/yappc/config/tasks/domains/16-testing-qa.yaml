@@ -1,0 +1,150 @@
+domain:
+  id: testing-qa
+  name: "Testing & Quality Assurance"
+  description: "Ensure quality through testing and verification."
+  order: 16
+  icon: "bug_report"
+  color: "#7E57C2"
+  agent_personas:
+    - "TestDesigner"
+    - "QualityVerifier"
+    - "CodeReviewer"
+  audit_artifacts:
+    - "TestEvidence"
+    - "DefectLog"
+    - "ReviewRecord"
+  inputs:
+    - "Code"
+    - "Requirements"
+    - "Acceptance criteria"
+  outputs:
+    - "Test results"
+    - "Quality reports"
+    - "Review feedback"
+
+tasks:
+  # Core ICS testing tasks
+  - id: d16-t1
+    name: "Test planning"
+    description: "Plan testing strategy."
+    personas: ["QA", "Developer", "Tech Lead"]
+    lifecycle_stages: ["plan"]
+    automation_level: "assisted"
+  - id: d16-t2
+    name: "Test automation"
+    description: "Write automated tests."
+    personas: ["Developer", "QA"]
+    lifecycle_stages: ["execute", "verify"]
+    automation_level: "assisted"
+  - id: d16-t3
+    name: "Manual testing"
+    description: "Execute manual test cases."
+    personas: ["QA"]
+    lifecycle_stages: ["verify"]
+    automation_level: "manual"
+  - id: d16-t4
+    name: "Defect triage"
+    description: "Prioritize and assign bugs."
+    personas: ["QA", "Tech Lead"]
+    lifecycle_stages: ["verify", "observe"]
+    automation_level: "assisted"
+  - id: d16-t5
+    name: "Quality sign-off"
+    description: "Approve release quality."
+    personas: ["QA", "Tech Lead"]
+    lifecycle_stages: ["verify"]
+    automation_level: "manual"
+
+  # Migrated from legacy testing domain
+  - id: test-001
+    name: "Write Unit Tests"
+    description: "Create unit tests with good coverage."
+    personas: ["Developer"]
+    lifecycle_stages: ["execute", "verify"]
+    automation_level: "assisted"
+  - id: test-002
+    name: "Write Integration Tests"
+    description: "Test component interactions."
+    personas: ["Developer", "QA"]
+    lifecycle_stages: ["verify"]
+    automation_level: "assisted"
+  - id: test-003
+    name: "Write E2E Tests"
+    description: "Create end-to-end test scenarios."
+    personas: ["Developer", "QA"]
+    lifecycle_stages: ["verify"]
+    automation_level: "assisted"
+  - id: test-004
+    name: "Performance Testing"
+    description: "Test system performance under load."
+    personas: ["Developer", "QA", "DevOps"]
+    lifecycle_stages: ["verify"]
+    automation_level: "assisted"
+  - id: test-005
+    name: "Security Testing"
+    description: "Test for security vulnerabilities."
+    personas: ["Security", "QA"]
+    lifecycle_stages: ["verify"]
+    automation_level: "assisted"
+  - id: test-006
+    name: "Regression Testing"
+    description: "Verify existing functionality still works."
+    personas: ["QA", "Developer"]
+    lifecycle_stages: ["verify"]
+    automation_level: "automated"
+  - id: test-007
+    name: "Test Data Management"
+    description: "Create and manage test data."
+    personas: ["QA", "Developer"]
+    lifecycle_stages: ["verify"]
+    automation_level: "assisted"
+  - id: test-008
+    name: "Test Flakiness Resolution"
+    description: "Fix flaky or unreliable tests."
+    personas: ["Developer", "QA"]
+    lifecycle_stages: ["verify"]
+    automation_level: "assisted"
+  - id: test-009
+    name: "Accessibility Testing"
+    description: "Verify accessibility compliance."
+    personas: ["QA", "Developer"]
+    lifecycle_stages: ["verify"]
+    automation_level: "assisted"
+  - id: test-010
+    name: "Cross-Browser Testing"
+    description: "Test across different browsers."
+    personas: ["QA"]
+    lifecycle_stages: ["verify"]
+    automation_level: "assisted"
+
+  # Migrated from legacy code-review domain
+  - id: review-001
+    name: "Conduct Code Review"
+    description: "Review code for quality and correctness."
+    personas: ["Developer", "Tech Lead"]
+    lifecycle_stages: ["verify"]
+    automation_level: "manual"
+  - id: review-002
+    name: "Provide Review Feedback"
+    description: "Give constructive feedback on code."
+    personas: ["Developer", "Tech Lead"]
+    lifecycle_stages: ["verify"]
+    automation_level: "manual"
+  - id: review-003
+    name: "Security Review"
+    description: "Review for security best practices."
+    personas: ["Security", "Developer"]
+    lifecycle_stages: ["verify"]
+    automation_level: "assisted"
+  - id: review-004
+    name: "Architecture Review"
+    description: "Review architectural decisions."
+    personas: ["Tech Lead"]
+    lifecycle_stages: ["verify"]
+    automation_level: "manual"
+  - id: review-005
+    name: "Performance Review"
+    description: "Review for performance implications."
+    personas: ["Developer", "Tech Lead"]
+    lifecycle_stages: ["verify"]
+    automation_level: "assisted"

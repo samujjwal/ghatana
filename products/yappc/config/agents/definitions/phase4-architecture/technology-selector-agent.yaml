@@ -1,0 +1,107 @@
+id: technology-selector-agent
+name: Technology Selector Agent
+version: 1.0.0
+description: Evaluates and recommends technologies for projects. Assesses fit, maturity, community, and long-term viability.
+
+metadata:
+  level: 2  # Domain Expert
+  domain: architecture
+  tags:
+    - technology-selection
+    - tech-stack
+    - evaluation
+    - build-vs-buy
+
+generator:
+  type: PIPELINE
+  steps:
+    - name: technology_evaluation
+      type: LLM
+      provider: ANTHROPIC
+      model: claude-3-5-sonnet-20241022
+      temperature: 0.2
+      max_tokens: 3000
+      prompt: |
+        You are the Technology Selector Agent. Evaluate technologies:
+        
+        Requirements: {{requirements}}
+        Constraints: {{constraints}}
+        Existing Stack: {{existing}}
+        Candidate Technologies: {{candidates}}
+        
+        Evaluate each candidate on:
+        1. Functional fit (meets requirements)
+        2. Technical maturity
+        3. Community and ecosystem
+        4. Learning curve
+        5. Performance characteristics
+        6. Scalability
+        7. Operational complexity
+        8. Cost (licensing, infrastructure, maintenance)
+        9. Long-term viability
+        10. Integration with existing stack
+        
+        Output as JSON: {evaluations: [{technology, scores, pros, cons, risks, fit_assessment}], recommendation, rationale, migration_considerations}
+    - name: scoring_aggregation
+      type: RULE_BASED
+      description: Aggregate scores and rank technologies
+    - name: recommendation_generation
+      type: TEMPLATE
+      template_path: templates/tech-evaluation.ftl
+
+memory:
+  episodic:
+    enabled: true
+    retention_days: 730
+    categories:
+      - evaluations
+      - selections
+      - outcomes
+  semantic:
+    enabled: true
+    categories:
+      - technology-catalog
+      - evaluation-criteria
+      - market-trends
+  procedural:
+    enabled: true
+    categories:
+      - evaluation-framework
+      - scoring-rubrics
+      - selection-process
+
+tools:
+  - technology_database
+  - evaluation_scorer
+  - trend_analyzer
+
+capabilities:
+  - technology-evaluation
+  - build-vs-buy-analysis
+  - stack-recommendation
+  - risk-assessment
+
+routing:
+  input_types:
+    - technology-request
+    - evaluation-request
+    - build-vs-buy-question
+  output_types:
+    - technology-recommendation
+    - evaluation-report
+    - comparison-matrix
+
+delegation:
+  can_delegate_to: []
+  escalates_to:
+    - architecture-orchestrator-agent
+
+governance:
+  requires_approval: true  # Technology choices are significant
+  can_block: false
+  audit_trail: comprehensive
+
+performance:
+  expected_latency_ms: 5000
+  max_latency_ms: 12000
+  timeout_ms: 25000

@@ -1,0 +1,109 @@
+id: solution-architect-agent
+name: Solution Architect Agent
+version: 1.0.0
+description: Creates solution architectures for features and systems. Designs component structure, integrations, and technology stack.
+
+metadata:
+  level: 2  # Domain Expert
+  domain: architecture
+  tags:
+    - solution-architecture
+    - system-design
+    - component-design
+    - technical-design
+
+generator:
+  type: PIPELINE
+  steps:
+    - name: solution_design
+      type: LLM
+      provider: ANTHROPIC
+      model: claude-3-5-sonnet-20241022
+      temperature: 0.2
+      max_tokens: 3500
+      prompt: |
+        You are the Solution Architect Agent. Design a solution architecture:
+        
+        Requirements: {{requirements}}
+        Constraints: {{constraints}}
+        Existing Systems: {{existing}}
+        NFRs: {{nfrs}}
+        
+        Design:
+        1. Context diagram (system boundaries, actors)
+        2. Container diagram (major components, technologies)
+        3. Component diagram (internal structure)
+        4. Data flow (how data moves through system)
+        5. Integration points (APIs, events, data stores)
+        6. Technology stack (languages, frameworks, infrastructure)
+        7. Key design decisions and rationale
+        8. Trade-offs and alternatives considered
+        
+        Output as JSON: {context, containers, components, data_flow, integrations, tech_stack, decisions, trade_offs, risks}
+    - name: architecture_documentation
+      type: TEMPLATE
+      template_path: templates/solution-architecture.ftl
+    - name: architecture_registration
+      type: SERVICE_CALL
+      service: architecture-service
+      endpoint: /solutions/register
+
+memory:
+  episodic:
+    enabled: true
+    retention_days: 1095
+    categories:
+      - solution-designs
+      - design-reviews
+      - evolution-history
+  semantic:
+    enabled: true
+    categories:
+      - architecture-patterns
+      - component-catalog
+      - technology-options
+  procedural:
+    enabled: true
+    categories:
+      - design-methodologies
+      - review-criteria
+      - documentation-standards
+
+tools:
+  - architecture_modeler
+  - diagram_generator
+  - technology_analyzer
+
+capabilities:
+  - solution-design
+  - c4-modeling
+  - technology-selection
+  - trade-off-analysis
+
+routing:
+  input_types:
+    - requirements-package
+    - design-request
+    - architecture-review
+  output_types:
+    - solution-architecture
+    - design-document
+    - architecture-diagram
+
+delegation:
+  can_delegate_to:
+    - api-designer
+    - database-designer-agent
+    - infrastructure-architect-agent
+  escalates_to:
+    - architecture-orchestrator-agent
+
+governance:
+  requires_approval: true  # Architecture decisions need approval
+  can_block: false
+  audit_trail: comprehensive
+
+performance:
+  expected_latency_ms: 8000
+  max_latency_ms: 20000
+  timeout_ms: 40000

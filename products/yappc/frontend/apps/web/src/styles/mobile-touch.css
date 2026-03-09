@@ -1,0 +1,244 @@
+/**
+ * Mobile Touch Target Utilities
+ * 
+ * Ensures all interactive elements meet minimum touch target size (44px)
+ * for better mobile usability and accessibility.
+ * 
+ * @doc.type styles
+ * @doc.purpose Mobile touch target utilities
+ * @doc.layer ui
+ * @doc.pattern Utility Classes
+ */
+
+/* ============================================================================
+   Touch Target Utilities
+   ============================================================================ */
+
+/* Minimum touch target size (44px) */
+.touch-target {
+    min-height: 44px;
+    min-width: 44px;
+}
+
+.touch-target-min {
+    min-height: 44px;
+}
+
+.touch-target-min-w {
+    min-width: 44px;
+}
+
+/* Touch-friendly padding */
+.touch-padding {
+    padding: 12px;
+}
+
+.touch-padding-sm {
+    padding: 10px;
+}
+
+.touch-padding-lg {
+    padding: 16px;
+}
+
+/* Touch-friendly margins */
+.touch-margin {
+    margin: 8px;
+}
+
+.touch-margin-sm {
+    margin: 4px;
+}
+
+.touch-margin-lg {
+    margin: 12px;
+}
+
+/* ============================================================================
+   Mobile-Specific Touch Improvements
+   ============================================================================ */
+
+/* Ensure buttons are touch-friendly on mobile */
+@media (max-width: 768px) {
+    .mobile-touch-target {
+        min-height: 44px;
+        min-width: 44px;
+        padding: 12px 16px;
+    }
+
+    .mobile-touch-target-sm {
+        min-height: 44px;
+        min-width: 44px;
+        padding: 10px 14px;
+    }
+
+    .mobile-touch-target-lg {
+        min-height: 48px;
+        min-width: 48px;
+        padding: 16px 20px;
+    }
+
+    /* Increase spacing between touch targets on mobile */
+    .mobile-touch-spacing>* {
+        margin-bottom: 12px;
+    }
+
+    .mobile-touch-spacing>*:last-child {
+        margin-bottom: 0;
+    }
+}
+
+/* ============================================================================
+   Icon Button Touch Targets
+   ============================================================================ */
+
+.icon-touch-target {
+    min-height: 44px;
+    min-width: 44px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    padding: 10px;
+}
+
+.icon-touch-target-sm {
+    min-height: 40px;
+    min-width: 40px;
+    padding: 8px;
+}
+
+.icon-touch-target-lg {
+    min-height: 48px;
+    min-width: 48px;
+    padding: 12px;
+}
+
+/* ============================================================================
+   Link Touch Targets
+   ============================================================================ */
+
+.link-touch-target {
+    display: inline-block;
+    min-height: 44px;
+    padding: 12px 16px;
+    text-decoration: none;
+}
+
+.link-touch-target-sm {
+    min-height: 40px;
+    padding: 10px 14px;
+}
+
+.link-touch-target-lg {
+    min-height: 48px;
+    padding: 16px 20px;
+}
+
+/* ============================================================================
+   Form Input Touch Targets
+   ============================================================================ */
+
+.input-touch-target {
+    min-height: 44px;
+    padding: 12px 16px;
+    font-size: 16px;
+    /* Prevents zoom on iOS */
+}
+
+.input-touch-target-sm {
+    min-height: 40px;
+    padding: 10px 14px;
+    font-size: 16px;
+}
+
+.input-touch-target-lg {
+    min-height: 48px;
+    padding: 16px 20px;
+    font-size: 16px;
+}
+
+/* ============================================================================
+   Touch Feedback
+   ============================================================================ */
+
+.touch-feedback {
+    transition: transform 0.1s ease-in-out, opacity 0.1s ease-in-out;
+}
+
+.touch-feedback:active {
+    transform: scale(0.95);
+    opacity: 0.8;
+}
+
+/* ============================================================================
+   Focus Management for Touch
+   ============================================================================ */
+
+.touch-focus {
+    position: relative;
+}
+
+.touch-focus:focus {
+    outline: 2px solid var(--color-primary-500);
+    outline-offset: 2px;
+}
+
+.touch-focus:focus:not(:focus-visible) {
+    outline: none;
+}
+
+/* ============================================================================
+   Gesture Support
+   ============================================================================ */
+
+.swipeable {
+    touch-action: pan-y;
+}
+
+.swipeable-x {
+    touch-action: pan-x;
+}
+
+.swipeable-xy {
+    touch-action: none;
+}
+
+/* ============================================================================
+   High Touch Density Areas
+   ============================================================================ */
+
+.touch-dense {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+@media (max-width: 768px) {
+    .touch-dense {
+        gap: 12px;
+    }
+}
+
+/* ============================================================================
+   Safe Area for Notch Phones
+   ============================================================================ */
+
+.safe-area-top {
+    padding-top: env(safe-area-inset-top);
+}
+
+.safe-area-bottom {
+    padding-bottom: env(safe-area-inset-bottom);
+}
+
+.safe-area-left {
+    padding-left: env(safe-area-inset-left);
+}
+
+.safe-area-right {
+    padding-right: env(safe-area-inset-right);
+}
+
+.safe-area-all {
+    padding: env(safe-area-inset-top) env(safe-area-inset-right) env(safe-area-inset-bottom) env(safe-area-inset-left);
+}

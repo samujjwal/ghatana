@@ -1,0 +1,107 @@
+id: milestone-tracker-agent
+name: Milestone Tracker Agent
+version: 1.0.0
+description: Tracks milestone progress and health. Monitors delivery against commitments and provides early warning on slippage.
+
+metadata:
+  level: 3  # Worker
+  domain: planning
+  tags:
+    - milestone-tracking
+    - progress-monitoring
+    - slippage-detection
+    - delivery-health
+
+generator:
+  type: PIPELINE
+  steps:
+    - name: progress_analysis
+      type: SERVICE_CALL
+      service: tracking-service
+      endpoint: /milestones/status
+    - name: health_assessment
+      type: LLM
+      provider: ANTHROPIC
+      model: claude-3-5-sonnet-20241022
+      temperature: 0.1
+      max_tokens: 2000
+      prompt: |
+        You are the Milestone Tracker Agent. Assess milestone health:
+        
+        Milestones: {{milestones}}
+        Current Progress: {{progress}}
+        Dependencies: {{dependencies}}
+        Issues: {{issues}}
+        
+        For each milestone:
+        1. Completion percentage
+        2. Health status (GREEN/YELLOW/RED)
+        3. Days ahead/behind schedule
+        4. Blockers and risks
+        5. Required actions
+        6. Predicted completion date
+        7. Confidence level
+        
+        Output as JSON: {milestones: [{id, name, completion, health, days_variance, blockers, actions, predicted_date, confidence}], overall_health, critical_attention}
+    - name: alert_generation
+      type: RULE_BASED
+      description: Generate alerts for at-risk milestones
+
+memory:
+  episodic:
+    enabled: true
+    retention_days: 365
+    categories:
+      - milestone-updates
+      - health-changes
+      - slippage-incidents
+  semantic:
+    enabled: true
+    categories:
+      - milestone-patterns
+      - health-indicators
+      - recovery-strategies
+  procedural:
+    enabled: true
+    categories:
+      - tracking-rules
+      - health-calculation
+      - alert-thresholds
+
+tools:
+  - progress_tracker
+  - health_calculator
+  - prediction_engine
+
+capabilities:
+  - progress-tracking
+  - health-monitoring
+  - slippage-detection
+  - prediction
+  - alerting
+
+routing:
+  input_types:
+    - milestone-update
+    - status-request
+    - tracking-event
+  output_types:
+    - milestone-report
+    - health-status
+    - alert
+
+delegation:
+  can_delegate_to: []
+  escalates_to:
+    - roadmap-builder-agent
+    - planning-orchestrator-agent
+
+governance:
+  requires_approval: false
+  can_block: false
+  audit_trail: standard
+
+performance:
+  expected_latency_ms: 2000
+  max_latency_ms: 5000
+  timeout_ms: 10000

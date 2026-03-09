@@ -1,0 +1,51 @@
+{
+    "name": "k8s-manifests",
+    "version": "1.0.0",
+    "description": "Kubernetes manifests and Helm chart",
+    "language": "yaml",
+    "category": "infrastructure",
+    "platform": "kubernetes",
+    "buildSystem": "helm",
+    "author": "YAPPC Team",
+    "tags": [
+        "kubernetes",
+        "k8s",
+        "helm",
+        "deployment",
+        "infrastructure"
+    ],
+    "requiredVariables": [
+        "projectName",
+        "namespace"
+    ],
+    "optionalVariables": [
+        "replicas",
+        "enableIngress",
+        "enableHPA",
+        "enablePDB"
+    ],
+    "defaults": {
+        "namespace": "default",
+        "replicas": "3",
+        "enableIngress": "true",
+        "enableHPA": "true",
+        "enablePDB": "true"
+    },
+    "templates": [
+        "k8s/deployment.yaml.hbs",
+        "k8s/service.yaml.hbs",
+        "k8s/ingress.yaml.hbs",
+        "k8s/configmap.yaml.hbs",
+        "k8s/secret.yaml.hbs",
+        "k8s/hpa.yaml.hbs",
+        "k8s/pdb.yaml.hbs",
+        "helm/Chart.yaml.hbs",
+        "helm/values.yaml.hbs",
+        "helm/values-dev.yaml.hbs",
+        "helm/values-prod.yaml.hbs",
+        "helm/templates/deployment.yaml.hbs",
+        "helm/templates/service.yaml.hbs",
+        "helm/templates/ingress.yaml.hbs",
+        "README.md.hbs"
+    ]
+}

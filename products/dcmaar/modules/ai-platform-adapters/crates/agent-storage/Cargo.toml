@@ -1,0 +1,84 @@
+[package]
+name = "agent-storage"
+version.workspace = true
+edition.workspace = true
+authors.workspace = true
+license.workspace = true
+description = "Persistence layer for the DCMaar agent"
+publish = false
+
+[features]
+# Enable all features for testing
+__test = ["default"]
+
+default = ["sqlite", "queue"]
+
+# Core database features
+sqlite = ["sqlx/sqlite"]
+
+# Queue implementation
+queue = ["dep:zstd", "dep:aes-gcm", "dep:ring", "dep:tokio-metrics"]
+
+# Enable compression for queue storage
+compression = ["dep:zstd"]
+
+# Enable encryption for queue storage
+encryption = ["dep:aes-gcm", "dep:ring"]
+
+# Enable metrics for the queue
+metrics = ["dep:tokio-metrics", "tokio-metrics/rt"]
+
+[dependencies]
+# Internal crates
+agent-types = { workspace = true, features = ["serde"] }
+
+# Database
+sqlx = { workspace = true, features = [
+    "runtime-tokio",
+    "sqlite",
+    "migrate",
+    "chrono",
+    "json",
+    "uuid",
+    "time",
+    "derive"
+], default-features = false }
+
+# Async runtime
+tokio = { workspace = true, features = ["rt-multi-thread", "sync", "time", "macros"] }
+
+# Compression
+zstd = { version = "0.13", optional = true }
+
+# Encryption
+aes-gcm = { version = "0.10", features = ["aes", "std"], optional = true }
+ring = { version = "0.17", optional = true }
+
+# Metrics
+tokio-metrics = { workspace = true, features = ["rt"], optional = true }
+
+# Serialization
+serde = { workspace = true, features = ["derive"] }
+serde_json = { workspace = true }
+
+# Error handling
+thiserror = { workspace = true }
+anyhow = { workspace = true }
+
+# Async trait support
+async-trait = { workspace = true }
+
+# Logging
+tracing = { workspace = true }
+
+# UUID support
+uuid = { workspace = true }
+
+# Time handling
+time = { workspace = true }
+chrono = { workspace = true }
+
+[dev-dependencies]
+tempfile = "3.10"
+pretty_assertions = "1.4"
+tokio = { workspace = true, features = ["rt-multi-thread", "macros"] }

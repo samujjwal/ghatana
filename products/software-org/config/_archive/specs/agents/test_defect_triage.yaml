@@ -1,0 +1,24 @@
+---
+id: "test_defect_triage"
+agent: "TestDefectTriageAgent"
+role: "QA/Dev Lead"
+inputs_spec:
+- name: "test_aggregation_report"
+  description: "Aggregated report with test defects."
+  format: "Aggregation report artifact"
+outputs_spec:
+- name: "test_defect_log"
+  description: "Triage log for defects found in test runs."
+  format: "Defect log artifact"
+agent_tasks:
+- "Triage all test defects (severity, owners, status)."
+- "Assign remediation actions or escalate as needed."
+acceptance_criteria:
+- "All defects triaged, owners/status/remediation assigned."
+dependencies:
+- "test_aggregation_report"
+failure_escalation:
+- "Escalate to QA/Dev Lead if defects are not triaged or owners not assigned."
+references: []
+hitl: true
+hitl_reason: "Human ensures appropriate triage and ownership of test defects"

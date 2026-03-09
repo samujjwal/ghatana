@@ -1,0 +1,46 @@
+packages:
+  # Platform TypeScript libraries
+  - 'platform/typescript/*'
+  
+  # Product UIs
+  - 'products/data-cloud/ui'
+  - 'products/aep/ui'
+  
+  # YAPPC frontend (existing)
+  - 'products/yappc/frontend/libs/*'
+  - 'products/yappc/frontend/apps/*'
+  - 'products/yappc/tools/*'
+  
+  # Shared services
+  - 'shared-services/*/ui'
+  
+  # dcmaar product
+  - 'products/dcmaar/apps/*'
+  - 'products/dcmaar/libs/typescript/*'
+  - 'products/dcmaar/libs/guardian-dashboard-core'
+  
+  # audio-video product
+  - 'products/audio-video/apps/*'
+  - 'products/audio-video/libs/*'
+  - 'products/audio-video/modules/intelligence/ai-voice/apps/*'
+  - 'products/audio-video/modules/intelligence/ai-voice/libs/*'
+
+  # flashit product
+  - 'products/flashit/client/*'
+  - 'products/flashit/backend/gateway'
+  - 'products/flashit/libs/ts/*'
+
+  # tutorputor product
+  - 'products/tutorputor/contracts'
+  - 'products/tutorputor/libs/*'
+  - 'products/tutorputor/apps/*'
+  - 'products/tutorputor/services/*'
+
+  # software-org product
+  - 'products/software-org/client/*'
+  - 'products/software-org/services/*'
+
+  # YAPPC frontend extras (nested packages)
+  - 'products/yappc/frontend/docs-site'
+  - 'products/yappc/frontend/packages/*'
+  - 'products/yappc/frontend/libs/canvas/yappc-canvas'

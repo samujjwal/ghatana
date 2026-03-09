@@ -1,0 +1,451 @@
+/*
+ * Copyright (c) ${year} Ghatana Inc.
+ * All rights reserved.
+ *
+ * This source code and the accompanying materials are the confidential
+ * and proprietary information of Ghatana Inc. (“Confidential Information”).
+ * You shall not disclose such Confidential Information and shall use it
+ * only in accordance with the terms of the license agreement you entered
+ * into with Ghatana Inc.
+ *
+ * Unauthorized copying of this file, via any medium, is strictly prohibited.
+ * Proprietary and confidential.
+ */
+syntax = "proto3";
+
+package ghatana.contracts.event.v1;
+
+// Standard imports
+import "google/protobuf/timestamp.proto";
+import "google/api/field_behavior.proto";
+import "google/protobuf/field_mask.proto";
+import "google/api/annotations.proto";
+
+// Local imports
+import "ghatana/contracts/common/v1/validation.proto";
+import "ghatana/contracts/common/v1/policy.proto";
+
+option java_multiple_files = true;
+option java_package = "com.ghatana.contracts.event.v1";
+option java_outer_classname = "EventTypeOuterClass";
+option go_package = "github.com/ghatana/contracts/gen/go/event/v1;eventv1";
+option csharp_namespace = "Ghatana.Contracts.Event.V1";
+
+// EventParameterTypeProto defines the supported data types for event parameters.
+// Each type corresponds to a specific data format and validation rules.
+enum EventParameterTypeProto {
+  EVENT_PARAMETER_TYPE_UNSPECIFIED = 0;
+
+  // Standard primitive types
+  STRING = 1;    // UTF-8 encoded string
+  CHARACTER = 2; // Single Unicode character
+  BYTE = 3;      // 8-bit signed integer (-128 to 127)
+  SHORT = 4;     // 16-bit signed integer
+  INTEGER = 5;   // 32-bit signed integer
+  LONG = 6;      // 64-bit signed integer
+  FLOAT = 7;     // 32-bit IEEE 754 floating point
+  DOUBLE = 8;    // 64-bit IEEE 754 floating point
+  BIG_DECIMAL = 9;  // Arbitrary-precision decimal
+  BIG_INTEGER = 10; // Arbitrary-precision integer
+  BOOLEAN = 11;     // true/false
+  DATE = 12;        // ISO-8601 date (YYYY-MM-DD)
+  DATE_TIME = 13;   // ISO-8601 datetime with timezone
+  TIME = 14;        // 24-hour time (HH:MM:SS)
+  TIMESTAMP = 15;   // Unix epoch timestamp in milliseconds
+  NUMBER = 16;      // Generic number type
+
+  // Complex types
+  ARRAY = 20;  // Ordered collection of values
+  LIST = 21;   // Ordered collection (alias for ARRAY)
+  MAP = 22;    // Key-value pairs
+  ENUM = 23;   // Enumerated type
+  JSON = 24;   // Arbitrary JSON structure
+  SET = 25;    // Unique value collection
+}
+
+// LifecycleStatusProto represents the current state of an event type in its lifecycle
+enum LifecycleStatusProto {
+  LIFECYCLE_STATUS_UNSPECIFIED = 0;
+  DRAFT = 1;       // Initial draft, not yet active
+  EXPERIMENTAL = 2; // In testing/experimentation
+  ACTIVE = 3;      // Actively in use
+  DEPRECATED = 4;   // Scheduled for retirement
+  RETIRED = 5;      // No longer in use
+}
+
+// EventContextTypeProto defines the primary context of the event
+enum EventContextTypeProto {
+  EVENT_CONTEXT_TYPE_UNSPECIFIED = 0;
+  TEMPORAL = 1;      // Time-based events
+  SPATIAL = 2;       // Location-based events
+  SPATIOTEMPORAL = 3; // Both time and location based
+}
+
+// =============================================================================
+// Value Objects
+// =============================================================================
+
+// Governance and policy messages
+message GovernanceProto {
+  reserved 1000 to max;
+  reserved "reserved_field";
+  int32 retention_days = 1;
+  bool legal_hold_allowed = 2;
+
+  ghatana.contracts.common.v1.AuditPolicyProto audit_policy = 50;
+  ghatana.contracts.common.v1.ProvenancePolicyProto provenance_policy = 51;
+  ghatana.contracts.common.v1.AdaptationPolicyProto adaptation_policy = 52;
+  ghatana.contracts.common.v1.StatsCollectionPolicyProto stats_collection_policy = 53;
+}
+
+// SemanticVersion represents a version number following semantic versioning (semver)
+message SemanticVersionProto {
+  reserved 1000 to max;
+  reserved "reserved_field";
+  int32 major = 1;  // Increment for incompatible API changes
+  int32 minor = 2;  // Increment for backward-compatible functionality
+  int32 patch = 3;  // Increment for backward-compatible bug fixes
+  string version = 4; // String representation (e.g., "1.0.0")
+
+  // Optional pre-release and build metadata
+  string pre_release = 5; // e.g., "alpha", "beta.1"
+  string build_metadata = 6; // e.g., "build.1"
+}
+
+// DeprecationInfo contains information about a deprecated field or type
+message DeprecationInfoProto {
+  reserved 1000 to max;
+  reserved "reserved_field";
+// Whether the field is deprecated
+  bool deprecated = 1;
+
+  // Deprecation message
+  string message = 2;
+
+  // Date when the field was deprecated (ISO-8601)
+  string since_date = 3;
+
+  // Planned removal date (ISO-8601)
+  string removal_date = 4;
+
+  // Recommended alternative
+  string replacement = 5;
+}
+
+// EventParameterSpec defines the schema for an event parameter
+message EventParameterSpecProto {
+  reserved 1000 to max;
+  reserved "reserved_field";
+// Name of the parameter (must be unique within the event type)
+  string name = 1;
+
+  // Data type of the parameter
+  EventParameterTypeProto type = 2;
+
+  // Human-readable description
+  string description = 3;
+
+  // Whether the parameter is required
+  bool required = 4;
+
+  // Default value as string (will be parsed according to type)
+  string default_value = 5;
+
+  // For ENUM type: allowed values
+  repeated string enum_values = 6;
+
+  // Data classification level
+  ghatana.contracts.common.v1.DataClassificationProto data_classification = 7;
+
+  // Whether the parameter is deprecated
+  DeprecationInfoProto deprecation = 8;
+
+  // Collection of validation rules
+  repeated ghatana.contracts.common.v1.ValidationRuleProto validation_rules = 9 [
+    (google.api.field_behavior) = OPTIONAL
+  ];
+  bool indexed = 10;
+  string format = 11; // example "email", "uri", "date", "time", "timestamp"
+
+  // For complex types (objects)
+  map<string, EventParameterSpecProto> properties = 20;
+
+  // For array/collection types: specification of array items
+  EventParameterSpecProto items_spec = 21;
+
+  // For MAP types: specification of value schema
+  EventParameterSpecProto value_spec = 22;
+}
+
+message EventStorageHintsProto {
+  reserved 1000 to max;
+  reserved "reserved_field";
+
+  bool hot_storage = 1;  // Keep in cache
+  int32 ttl_days = 2;    // Automatic archival
+  repeated string partition_keys = 3;
+}
+
+// EventType represents a specific type of event with a defined schema
+message EventTypeProto {
+  reserved 1000 to max;
+  reserved "reserved_field";
+
+  string tenant_id = 1;
+  string namespace = 2;
+  string name = 3;
+  SemanticVersionProto version = 4;
+
+  // Primary context of the event
+  EventContextTypeProto context_type = 6;
+  // point based or interval based
+  bool interval_based = 7;
+  int64 granularity = 8;
+
+  // location, stats, relations ..
+
+  bool supports_confidence = 9;
+
+
+  // Human-readable description
+  string description = 20;
+
+  // Tags for categorization and discovery
+  repeated string tags = 21;
+
+  // Example payloads
+  repeated string examples = 22;
+
+  // Category within the domain (e.g., "payment", "shipping")
+  string category = 23;
+
+  // Inline schema definition
+  map<string, EventParameterSpecProto> payload_schema = 30;
+
+  // Compatibility policy for schema evolution
+  ghatana.contracts.common.v1.CompatibilityPolicyProto compatibility = 40;
+
+  // Current lifecycle status of the event type
+  LifecycleStatusProto status = 15;
+
+  // Status message (e.g., reason for deprecation)
+  string status_message = 42;
+
+  // Governance and compliance settings
+  GovernanceProto governance = 43;
+  // Storage hints
+  EventStorageHintsProto storage_hints = 44;
+
+  map<string, EventParameterSpecProto> headers_schema = 70;
+
+  // Timestamp when the event type was created
+  google.protobuf.Timestamp created_at = 90;
+
+  // Timestamp when the event type was last updated
+  google.protobuf.Timestamp updated_at = 91;
+}
+
+// =============================================================================
+// Service Definitions
+// =============================================================================
+
+// Request to register or update an event type
+message RegisterEventTypeRequestProto {
+  reserved 1000 to max;
+  reserved "reserved_field";
+// The event type to register or update
+  EventTypeProto event_type = 1;
+
+  // If true, validates the schema but doesn't save it
+  bool validate_only = 2;
+
+  // Optional comment about the change
+  string comment = 3;
+}
+
+// Response from registering an event type
+message RegisterEventTypeResponseProto {
+  reserved 1000 to max;
+  reserved "reserved_field";
+// The registered event type
+  EventTypeProto event_type = 1;
+
+  // Warnings, if any
+  repeated string warnings = 2;
+}
+
+// Request to get an event type
+message GetEventTypeRequestProto {
+  reserved 1000 to max;
+  reserved "reserved_field";
+// Event type ID
+  string id = 1;
+
+  // Alternative lookup by name and version
+  oneof version_spec {
+    // Version string (e.g., "1.0.0")
+    string version = 2;
+
+    // Individual version components
+    int32 major = 3;
+    int32 minor = 4;
+    int32 patch = 5;
+  }
+
+  // Include deprecated types
+  bool include_deprecated = 6;
+}
+
+// Request to list event types
+message ListEventTypesRequestProto {
+  reserved 1000 to max;
+  reserved "reserved_field";
+// Maximum number of results per page
+  int32 page_size = 1;
+
+  // Token for pagination
+  string page_token = 2;
+
+  // Filter expression
+  string filter = 3;
+
+  // Fields to include in the response
+  string view = 4;
+
+  // Include deprecated types
+  bool include_deprecated = 5;
+}
+
+// Response containing a single event type
+message GetEventTypeResponseProto {
+  reserved 1000 to max;
+  reserved "reserved_field";
+
+  // The requested event type
+  EventTypeProto event_type = 1;
+}
+
+// Response with a list of event types
+message ListEventTypesResponseProto {
+  reserved 1000 to max;
+  reserved "reserved_field";
+// The list of event types
+  repeated EventTypeProto event_types = 1;
+
+  // Token for the next page of results
+  string next_page_token = 2;
+
+  // Total number of event types matching the filter
+  int32 total_size = 3;
+}
+
+// Request to update an event type
+message UpdateEventTypeRequestProto {
+  reserved 1000 to max;
+  reserved "reserved_field";
+// The updated event type
+  EventTypeProto event_type = 1;
+
+  // Field mask for partial updates
+  google.protobuf.FieldMask update_mask = 2;
+
+  // Optional comment about the update
+  string comment = 3;
+
+  // If true, validates the update but doesn't apply it
+  bool validate_only = 4;
+}
+
+// Request to deprecate an event type
+message DeprecateEventTypeRequestProto {
+  reserved 1000 to max;
+  reserved "reserved_field";
+// Event type ID
+  string id = 1;
+
+  // Deprecation message
+  string message = 2;
+
+  // Planned removal date (ISO-8601)
+  string removal_date = 3;
+
+  // Recommended alternative
+  string replacement = 4;
+
+  // Optional comment
+  string comment = 5;
+}
+
+// EventCatalogService provides operations for managing event types
+service EventCatalogService {
+  // Registers a new event type or updates an existing one
+  rpc RegisterEventType(RegisterEventTypeRequestProto) returns (RegisterEventTypeResponseProto) {
+    option (google.api.http) = {
+      post: "/v1/event-types:register"
+      body: "*"
+    };
+  }
+
+  // Retrieves an event type by ID or name/version
+  rpc GetEventType(GetEventTypeRequestProto) returns (GetEventTypeResponseProto) {
+    option (google.api.http) = {
+      get: "/v1/{name=event-types/*}"
+    };
+  }
+
+  // Lists event types with optional filtering and pagination
+  rpc ListEventTypes(ListEventTypesRequestProto) returns (ListEventTypesResponseProto) {
+    option (google.api.http) = {
+      get: "/v1/event-types"
+    };
+  }
+
+  // Updates an existing event type
+  rpc UpdateEventType(UpdateEventTypeRequestProto) returns (EventTypeProto) {
+    option (google.api.http) = {
+      patch: "/v1/{event_type.name=event-types/*}"
+      body: "event_type"
+    };
+  }
+
+  // Marks an event type as deprecated
+  rpc DeprecateEventType(DeprecateEventTypeRequestProto) returns (EventTypeProto) {
+    option (google.api.http) = {
+      post: "/v1/{name=event-types/*}:deprecate"
+      body: "*"
+    };
+  }
+
+  // Lists all versions for a given event type ID
+  rpc ListEventTypeVersions(ListEventTypeVersionsRequestProto) returns (ListEventTypeVersionsResponseProto) {
+    option (google.api.http) = {
+      get: "/v1/{id=event-types/*}:versions"
+    };
+  }
+}
+
+// Request to list versions of a specific event type
+message ListEventTypeVersionsRequestProto {
+  reserved 1000 to max;
+  reserved "reserved_field";
+  // Event type ID to list versions for
+  string id = 1;
+
+  // Pagination controls
+  int32 page_size = 2;
+  string page_token = 3;
+}
+
+// Response containing versions of a specific event type
+message ListEventTypeVersionsResponseProto {
+  reserved 1000 to max;
+  reserved "reserved_field";
+  // All versions of the event type (paged)
+  repeated EventTypeProto event_types = 1;
+  string next_page_token = 2;
+  int32 total_size = 3;
+}
+
+// =============================================================================
+// End of Event Type Schema
+// =============================================================================

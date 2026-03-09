@@ -1,0 +1,26 @@
+---
+id: "backup_validation"
+agent: "BackupValidationAgent"
+role: "Infra Ops Engineer"
+inputs_spec:
+- name: "operate_progress_dashboard"
+  description: "Operate progress dashboard for backup validation."
+  format: "Dashboard artifact"
+outputs_spec:
+- name: "backup_validation_report"
+  description: "Backup validation results."
+  format: "Backup validation report artifact"
+agent_tasks:
+- "Test backups for completeness/restorability."
+- "Validate RPO/RTO."
+- "Version and link results to relevant incidents."
+acceptance_criteria:
+- "Backups tested for completeness/restorability."
+- "RPO/RTO validated."
+- "Results versioned and linked to incidents."
+dependencies:
+- "operate_progress_dashboard"
+failure_escalation:
+- "Escalate to Infra Ops if backups incomplete or RPO/RTO not met."
+references: []
+hitl: false

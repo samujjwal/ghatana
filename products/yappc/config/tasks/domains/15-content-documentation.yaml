@@ -1,0 +1,112 @@
+domain:
+  id: content-documentation-production
+  name: "Content & Documentation Production"
+  description: "Create technical and user documentation."
+  order: 15
+  icon: "article"
+  color: "#AB47BC"
+  agent_personas:
+    - "DocumentationAgent"
+    - "KnowledgeCurator"
+    - "TechnicalWriter"
+  audit_artifacts:
+    - "DocVersion"
+    - "ReviewLog"
+    - "DocSnapshot"
+  inputs:
+    - "System knowledge"
+    - "Change artifacts"
+    - "Code"
+  outputs:
+    - "Documentation"
+    - "Guides"
+    - "API docs"
+
+tasks:
+  # Core ICS documentation tasks
+  - id: d15-t1
+    name: "Write technical docs"
+    description: "Document APIs and architecture."
+    personas: ["Developer", "Tech Lead"]
+    lifecycle_stages: ["execute", "verify"]
+    automation_level: "assisted"
+  - id: d15-t2
+    name: "Write user docs"
+    description: "Create guides for end users."
+    personas: ["Developer"]
+    lifecycle_stages: ["execute"]
+    automation_level: "assisted"
+  - id: d15-t3
+    name: "Maintain runbooks"
+    description: "Update operational procedures."
+    personas: ["DevOps", "Developer"]
+    lifecycle_stages: ["execute"]
+    automation_level: "assisted"
+  - id: d15-t4
+    name: "Update knowledge base"
+    description: "Add to the collective knowledge."
+    personas: ["Developer"]
+    lifecycle_stages: ["learn", "institutionalize"]
+    automation_level: "assisted"
+
+  # Migrated from legacy documentation domain
+  - id: doc-001
+    name: "Write Code Comments"
+    description: "Add meaningful comments to code."
+    personas: ["Developer"]
+    lifecycle_stages: ["execute"]
+    automation_level: "assisted"
+  - id: doc-002
+    name: "Write API Documentation"
+    description: "Document APIs with examples."
+    personas: ["Developer"]
+    lifecycle_stages: ["execute"]
+    automation_level: "assisted"
+  - id: doc-003
+    name: "Write README Files"
+    description: "Create project README documentation."
+    personas: ["Developer"]
+    lifecycle_stages: ["execute"]
+    automation_level: "assisted"
+  - id: doc-004
+    name: "Write Architecture Docs"
+    description: "Document system architecture."
+    personas: ["Tech Lead", "Developer"]
+    lifecycle_stages: ["plan", "execute"]
+    automation_level: "assisted"
+  - id: doc-005
+    name: "Write Onboarding Docs"
+    description: "Create onboarding guides for new developers."
+    personas: ["Developer", "Tech Lead"]
+    lifecycle_stages: ["execute"]
+    automation_level: "assisted"
+  - id: doc-006
+    name: "Write Troubleshooting Guides"
+    description: "Document common issues and solutions."
+    personas: ["Developer", "DevOps"]
+    lifecycle_stages: ["execute"]
+    automation_level: "assisted"
+  - id: doc-007
+    name: "Generate API Docs"
+    description: "Auto-generate API documentation."
+    personas: ["Developer"]
+    lifecycle_stages: ["execute"]
+    automation_level: "automated"
+  - id: doc-008
+    name: "Write Change Logs"
+    description: "Maintain change history documentation."
+    personas: ["Developer"]
+    lifecycle_stages: ["execute"]
+    automation_level: "assisted"
+  - id: doc-009
+    name: "Review Documentation"
+    description: "Review and update existing docs."
+    personas: ["Developer", "Tech Lead"]
+    lifecycle_stages: ["verify"]
+    automation_level: "manual"
+  - id: doc-010
+    name: "Document Decisions"
+    description: "Record technical and design decisions."
+    personas: ["Tech Lead", "Developer"]
+    lifecycle_stages: ["plan", "execute"]
+    automation_level: "assisted"

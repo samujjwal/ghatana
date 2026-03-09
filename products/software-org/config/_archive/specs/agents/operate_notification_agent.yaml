@@ -1,0 +1,29 @@
+---
+id: "operate_notification_agent"
+agent: "NotificationAgent"
+role: "Ops Communications"
+inputs_spec:
+- name: "operate_progress_dashboard"
+  description: "Operations dashboard with key events and incidents."
+  format: "Dashboard artifact"
+- name: "operate_incident_report"
+  description: "Incident reports for notification distribution."
+  format: "Incident report artifact"
+outputs_spec:
+- name: "operate_notifications"
+  description: "Notifications sent to stakeholders about incidents, risks, SLO/SLA\
+    \ breaches, and audit log."
+  format: "List of notification objects"
+agent_tasks:
+- "Notify stakeholders about incidents, SLO/SLA breaches, major ops risks."
+- "Log notification delivery for audit."
+acceptance_criteria:
+- "Stakeholders are notified of key incidents, risks, SLO/SLA breaches."
+- "Notification delivery is logged for audit."
+dependencies:
+- "operate_progress_dashboard"
+- "operate_incident_report"
+failure_escalation:
+- "Escalate to ops lead if notifications are not delivered/logged."
+references: []
+hitl: false

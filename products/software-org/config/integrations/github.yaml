@@ -1,0 +1,12 @@
+integration:
+  id: int-github
+  name: "GitHub"
+  type: vcs
+  description: "Source code management"
+  enabled: true
+  department_ids: [engineering]
+  service_ids: [svc-api-gateway]
+  external_url: "https://github.com"
+  icon: "github"
+  status: active
+  capabilities: [scm, issues]

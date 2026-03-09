@@ -1,0 +1,117 @@
+domain:
+  id: customer-internal-support
+  name: "Customer & Internal Support"
+  description: "Support customers and internal users with issues, feedback, and guidance."
+  order: 22
+  icon: "support_agent"
+  color: "#78909C"
+  agent_personas:
+    - "SupportAgent"
+    - "FeedbackCollector"
+    - "EscalationManager"
+    - "KnowledgeHelper"
+  audit_artifacts:
+    - "TicketHistory"
+    - "EscalationLog"
+    - "FeedbackReport"
+    - "ResolutionSummary"
+  inputs:
+    - "Support tickets"
+    - "User feedback"
+    - "Product documentation"
+    - "Known issues"
+  outputs:
+    - "Resolved issues"
+    - "Feedback reports"
+    - "Knowledge articles"
+    - "Feature requests"
+
+tasks:
+  # Core support tasks
+  - id: d22-t1
+    name: "Issue reproduction"
+    description: "Reproduce reported issues to verify and diagnose problems."
+    personas: ["Developer", "Support"]
+    lifecycle_stages: ["observe"]
+    automation_level: "manual"
+  - id: d22-t2
+    name: "Customer communication"
+    description: "Interact with customers professionally and helpfully."
+    personas: ["Support", "PM"]
+    lifecycle_stages: ["observe"]
+    automation_level: "manual"
+  - id: d22-t3
+    name: "Escalation handling"
+    description: "Escalate complex issues to appropriate teams."
+    personas: ["Support", "Tech Lead"]
+    lifecycle_stages: ["observe"]
+    automation_level: "assisted"
+  - id: d22-t4
+    name: "Feedback capture"
+    description: "Collect and categorize user feedback systematically."
+    personas: ["Support", "PM"]
+    lifecycle_stages: ["observe", "learn"]
+    automation_level: "assisted"
+
+  # Extended support tasks
+  - id: sup-001
+    name: "Triage Support Tickets"
+    description: "Categorize and prioritize incoming support requests."
+    personas: ["Support"]
+    lifecycle_stages: ["observe"]
+    automation_level: "assisted"
+  - id: sup-002
+    name: "Create Knowledge Base Articles"
+    description: "Document solutions for common issues."
+    personas: ["Support", "Developer"]
+    lifecycle_stages: ["learn", "institutionalize"]
+    automation_level: "assisted"
+  - id: sup-003
+    name: "Root Cause Analysis"
+    description: "Investigate underlying causes of recurring issues."
+    personas: ["Developer", "Tech Lead"]
+    lifecycle_stages: ["observe", "learn"]
+    automation_level: "assisted"
+  - id: sup-004
+    name: "Feature Request Collection"
+    description: "Gather and document feature requests from users."
+    personas: ["Support", "PM"]
+    lifecycle_stages: ["observe"]
+    automation_level: "assisted"
+  - id: sup-005
+    name: "User Training Support"
+    description: "Help users understand product features and best practices."
+    personas: ["Support"]
+    lifecycle_stages: ["observe"]
+    automation_level: "manual"
+  - id: sup-006
+    name: "SLA Monitoring"
+    description: "Track and ensure support SLAs are met."
+    personas: ["Support", "PM"]
+    lifecycle_stages: ["observe"]
+    automation_level: "automated"
+  - id: sup-007
+    name: "Customer Satisfaction Survey"
+    description: "Collect and analyze customer satisfaction data."
+    personas: ["Support", "PM"]
+    lifecycle_stages: ["observe", "learn"]
+    automation_level: "assisted"
+  - id: sup-008
+    name: "Internal Tooling Support"
+    description: "Support internal teams with development tools and processes."
+    personas: ["Developer", "Support"]
+    lifecycle_stages: ["observe"]
+    automation_level: "manual"
+  - id: sup-009
+    name: "Workaround Documentation"
+    description: "Document temporary workarounds for known issues."
+    personas: ["Support", "Developer"]
+    lifecycle_stages: ["observe", "learn"]
+    automation_level: "assisted"
+  - id: sup-010
+    name: "Support Metrics Reporting"
+    description: "Generate reports on support volume, resolution times, and trends."
+    personas: ["Support", "PM"]
+    lifecycle_stages: ["observe", "learn"]
+    automation_level: "automated"
+

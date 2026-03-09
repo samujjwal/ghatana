@@ -1,0 +1,68 @@
+name: Shared Build Workflow
+
+on:
+  workflow_call:
+    inputs:
+      module-path:
+        required: true
+        type: string
+      java-version:
+        required: false
+        type: string
+        default: '21'
+    secrets:
+      OSSRH_USERNAME:
+        required: false
+      OSSRH_PASSWORD:
+        required: false
+      OSSRH_SIGNING_KEY:
+        required: false
+      OSSRH_SIGNING_PASSWORD:
+        required: false
+
+env:
+  GRADLE_OPTS: -Dorg.gradle.daemon=false -Dorg.gradle.parallel=true -Dorg.gradle.caching=true
+  GRADLE_BUILD_OPTS: --no-daemon --stacktrace --info
+
+jobs:
+  build:
+    name: Build ${{ inputs.module-path }}
+    runs-on: ubuntu-latest
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+      
+    - name: Set up JDK ${{ inputs.java-version }}
+      uses: actions/setup-java@v4
+      with:
+        distribution: 'temurin'
+        java-version: ${{ inputs.java-version }}
+        cache: 'gradle'
+        
+    - name: Grant execute permission for gradlew
+      run: chmod +x gradlew
+      
+    - name: Build and Test
+      run: |
+        ./gradlew :${{ inputs.module-path }}:build $GRADLE_BUILD_OPTS
+        
+    - name: Upload test results
+      if: always()
+      uses: actions/upload-artifact@v4
+      with:
+        name: test-results-${{ inputs.module-path }}
+        path: |
+          **/build/test-results/**/*.xml
+          **/build/reports/tests/**/*
+        retention-days: 7
+        
+    - name: Upload build reports
+      if: always()
+      uses: actions/upload-artifact@v4
+      with:
+        name: build-reports-${{ inputs.module-path }}
+        path: |
+          **/build/reports/**/*
+          **/build/libs/*
+        retention-days: 7

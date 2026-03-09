@@ -1,0 +1,24 @@
+---
+id: "operate_incident_feedback_handler"
+agent: "IncidentFeedbackHandlerAgent"
+role: "Postmortem Owner/Automation"
+inputs_spec:
+- name: "operate_incident_report"
+  description: "Incident reports for feedback loop."
+  format: "Incident report artifact"
+outputs_spec:
+- name: "operate_incident_feedback_items"
+  description: "Incident feedback for Retrospective."
+  format: "List of feedback items"
+agent_tasks:
+- "Log all incidents/exceptions for learning."
+- "Feed systemic issues to Retrospective."
+acceptance_criteria:
+- "Incidents/exceptions logged for learning."
+- "Systemic issues routed to Retrospective."
+dependencies:
+- "operate_incident_report"
+failure_escalation:
+- "Escalate to Postmortem Owner if feedback not tracked."
+references: []
+hitl: false

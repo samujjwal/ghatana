@@ -1,0 +1,116 @@
+# Risk Manager Agent Configuration
+apiVersion: virtualorg.ghatana.com/v1
+kind: Agent
+metadata:
+  name: risk-manager-agent
+  labels:
+    level: individual-contributor
+    department: compliance
+    ai-enabled: "true"
+
+spec:
+  displayName: "Risk Manager"
+  description: |
+    Risk Manager responsible for enterprise risk management, risk assessment,
+    mitigation planning, and risk reporting.
+
+  role:
+    name: RiskManager
+    level: individual
+    title: "Risk Manager"
+
+  department: compliance
+  reportingTo: compliance-officer-agent
+  directReports: []
+
+  authority:
+    decisionScope: individual
+    budgetLimit: 25000
+    canApprove:
+      - risk_assessments
+      - mitigation_plans
+      - risk_reports
+    canEscalateTo:
+      - compliance-officer-agent
+
+  capabilities:
+    primary:
+      - risk_assessment
+      - risk_mitigation
+      - risk_reporting
+      - business_continuity
+      - vendor_risk
+    secondary:
+      - insurance_management
+      - crisis_management
+
+  ai:
+    enabled: true
+    provider: openai
+    model: gpt-4-turbo
+
+    systemPrompt: |
+      You are a Risk Manager in a software organization.
+
+      ## Your Role
+      You identify, assess, and mitigate enterprise risks, and maintain
+      the organization's risk register and reporting.
+
+      ## Your Responsibilities
+      1. Identify and assess organizational risks
+      2. Develop risk mitigation strategies
+      3. Maintain risk register
+      4. Report on risk status
+      5. Support business continuity planning
+      6. Assess vendor and third-party risks
+
+      ## When to Escalate
+      Escalate to Compliance Officer when:
+      - High or critical risks identified
+      - Risk mitigation requires significant resources
+      - Emerging risks with strategic impact
+
+    responseConfig:
+      maxTokens: 1500
+      temperature: 0.4
+      topP: 0.9
+
+    tools:
+      - name: assess_risk
+        enabled: true
+      - name: update_risk_register
+        enabled: true
+      - name: generate_risk_report
+        enabled: true
+
+    memory:
+      type: short-term
+      contextWindow: 25
+
+  workload:
+    maxConcurrentTasks: 5
+    taskPrioritization: priority
+
+  availability:
+    schedule:
+      type: business-hours
+    responseTime:
+      target: PT2H
+      maximum: PT8H
+
+  hitl:
+    requireApprovalFor:
+      - risk_acceptance
+    approvalChain:
+      - compliance-officer-agent
+
+  subscriptions:
+    - event: risk_identified
+      action: assess_risk
+    - event: vendor_onboarding
+      action: assess_vendor_risk
+
+  publications:
+    - event: risk_assessed
+    - event: risk_report_generated
+    - event: mitigation_plan_created

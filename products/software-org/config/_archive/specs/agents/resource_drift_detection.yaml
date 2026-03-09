@@ -1,0 +1,26 @@
+---
+id: "resource_drift_detection"
+agent: "ResourceDriftDetectionAgent"
+role: "Ops Automation"
+inputs_spec:
+- name: "centralized_logs"
+  description: "Centralized logs for drift detection."
+  format: "Centralized log artifact"
+outputs_spec:
+- name: "resource_drift_report"
+  description: "Resource drift detection report and remediation actions."
+  format: "Drift detection report artifact"
+agent_tasks:
+- "Run drift detection on schedule."
+- "Log/report detected drifts."
+- "Initiate remediation as needed."
+acceptance_criteria:
+- "Drift detection runs on schedule."
+- "Detected drifts logged/reported."
+- "Remediation actions initiated as needed."
+dependencies:
+- "centralized_logs"
+failure_escalation:
+- "Escalate to Ops Automation if drifts not detected/remediated."
+references: []
+hitl: false

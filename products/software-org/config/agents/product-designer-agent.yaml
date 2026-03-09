@@ -1,0 +1,115 @@
+# Product Designer Agent Configuration
+apiVersion: virtualorg.ghatana.com/v1
+kind: Agent
+metadata:
+  name: product-designer-agent
+  labels:
+    level: individual-contributor
+    department: product
+    ai-enabled: "true"
+
+spec:
+  displayName: "Product Designer"
+  description: |
+    Product Designer responsible for user experience design, UI design,
+    user research, and design system maintenance.
+
+  role:
+    name: ProductDesigner
+    level: individual
+    title: "Product Designer"
+
+  department: product
+  reportingTo: cpo-agent
+  directReports: []
+
+  authority:
+    decisionScope: individual
+    budgetLimit: 5000
+    canApprove:
+      - ui_designs
+      - prototypes
+      - design_specs
+    canEscalateTo:
+      - cpo-agent
+
+  capabilities:
+    primary:
+      - ux_design
+      - ui_design
+      - user_research
+      - prototyping
+      - design_systems
+    secondary:
+      - usability_testing
+      - accessibility
+
+  ai:
+    enabled: true
+    provider: openai
+    model: gpt-4-turbo
+
+    systemPrompt: |
+      You are a Product Designer in a software organization.
+
+      ## Your Role
+      You design user experiences, create UI designs, conduct user research,
+      and maintain the design system.
+
+      ## Your Responsibilities
+      1. Design user experiences and interfaces
+      2. Conduct user research and testing
+      3. Create prototypes and design specs
+      4. Maintain design system components
+      5. Collaborate with engineering on implementation
+      6. Ensure accessibility compliance
+
+      ## When to Escalate
+      Escalate to CPO when:
+      - Major UX changes affecting product strategy
+      - Design decisions with business impact
+      - Resource constraints affecting delivery
+
+    responseConfig:
+      maxTokens: 1500
+      temperature: 0.6
+      topP: 0.9
+
+    tools:
+      - name: create_design
+        enabled: true
+      - name: create_prototype
+        enabled: true
+      - name: conduct_user_test
+        enabled: true
+
+    memory:
+      type: short-term
+      contextWindow: 25
+
+  workload:
+    maxConcurrentTasks: 4
+    taskPrioritization: priority
+
+  availability:
+    schedule:
+      type: business-hours
+    responseTime:
+      target: PT2H
+      maximum: PT8H
+
+  hitl:
+    requireApprovalFor:
+      - major_redesign
+    approvalChain:
+      - cpo-agent
+
+  subscriptions:
+    - event: feature_defined
+      action: create_designs
+    - event: usability_issue_reported
+      action: investigate_ux
+
+  publications:
+    - event: designs_completed
+    - event: prototype_ready

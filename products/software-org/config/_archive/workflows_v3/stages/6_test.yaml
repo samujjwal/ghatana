@@ -1,0 +1,100 @@
+# Test Stage - v3 Operator-Based Definition
+# Uses consolidated operators from operations/domain/build/
+name: Test
+description: Integration testing, E2E testing, and comprehensive test orchestration
+domain: build
+
+# Operators used in this stage
+operators:
+  - ref: build/test_execution_operator
+    modes: [integration, orchestrate, coverage, analyze]
+
+# Cross-cutting operators
+cross_cutting:
+  - ref: cross-cutting/milestone_tracker
+    params:
+      stage: test
+  - ref: cross-cutting/best_practice
+    params:
+      stage: test
+  - ref: cross-cutting/kpi
+    params:
+      stage: test
+  - ref: cross-cutting/audit_log
+    params:
+      stage: test
+
+# Workflow sequence
+workflow:
+  # Integration Testing
+  - step: integration_tests
+    operator: build/test_execution_operator
+    mode: integration
+    inputs:
+      - name: build_stage_milestone
+      - name: build_artifacts
+    outputs:
+      - name: integration_test_results
+
+  # Test Orchestration
+  - step: orchestrate_tests
+    operator: build/test_execution_operator
+    mode: orchestrate
+    inputs:
+      - name: integration_test_results
+    outputs:
+      - name: test_orchestration_results
+    depends_on: [integration_tests]
+
+  # Coverage Analysis
+  - step: test_coverage
+    operator: build/test_execution_operator
+    mode: coverage
+    inputs:
+      - name: integration_test_results
+    outputs:
+      - name: test_coverage_report
+    depends_on: [orchestrate_tests]
+
+  # Test Analysis
+  - step: analyze_tests
+    operator: build/test_execution_operator
+    mode: analyze
+    inputs:
+      - name: integration_test_results
+      - name: test_coverage_report
+    outputs:
+      - name: test_analysis_report
+    depends_on: [test_coverage]
+
+  # Cross-cutting
+  - step: best_practice_check
+    operator: cross-cutting/best_practice
+    params:
+      stage: test
+    inputs:
+      - name: test_analysis_report
+    outputs:
+      - name: best_practice_report
+    depends_on: [analyze_tests]
+
+  - step: track_milestones
+    operator: cross-cutting/milestone_tracker
+    params:
+      stage: test
+    inputs:
+      - name: best_practice_report
+    outputs:
+      - name: test_stage_milestone
+    depends_on: [best_practice_check]
+
+# Stage entry/exit criteria
+entry_criteria:
+  - Build stage complete
+  - Artifacts available
+  - Test environment ready
+
+exit_criteria:
+  - Integration tests passing
+  - Coverage thresholds met
+  - Test analysis complete

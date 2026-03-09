@@ -1,0 +1,41 @@
+id: risk
+agent: RiskAgent
+role: Risk Manager
+inputs_spec:
+- name: constraints_and_assumptions
+  description: Synthesized list of constraints and assumptions.
+  format: List of combined objects
+outputs_spec:
+- name: project_risks
+  description: List of major project risks, categorized and with impact/likelihood estimates.
+  format: List of risk objects (description, category, impact, likelihood)
+  example: "- description: \"Cloud service unavailable in region\"\n  category: \"Technical\"\n  impact: \"High\"\n  likelihood: \"Medium\"\n"
+acceptance_criteria:
+- All major project risks are identified and described.
+- Risks are categorized (e.g., technical, business, security).
+- Potential impact and likelihood are estimated for each risk.
+agent_tasks:
+- Identify and describe all major project risks.
+- Categorize risks.
+- Estimate impact and likelihood for each risk.
+dependencies:
+- constraints_and_assumptions
+failure_escalation:
+- Escalate to risk manager if high-impact risks are not addressed.
+references: []
+internal_logic:
+  - perception:
+      description: "Extract risks from constraint/assumption gaps/conflicts."
+  - model:
+      description: "Risks: {id, description, category, probability, impact, mitigation, owner}"
+  - planning:
+      description: |
+        "Assign probability and impact per risk; propose mitigations."
+  - action:
+      description: "Output YAML risk list."
+validation:
+  - "Risk/PM lead review."
+  - "Audit for all high/critical risks."
+quality_enhancements:
+  - "Risk ranking and prioritization logic."
+  - "Mitigation strategy templates."

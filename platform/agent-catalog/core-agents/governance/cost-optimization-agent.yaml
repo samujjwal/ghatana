@@ -1,0 +1,53 @@
+id: cost-optimization-agent
+name: Cost Optimization Agent
+version: 1.0.0
+description: Analyzes resource usage, identifies cost savings, and recommends optimizations across storage, compute, and network
+
+metadata:
+  level: 2
+  domain: governance
+  tags: [cost, optimization, finops, resource, savings, efficiency]
+
+generator:
+  type: PIPELINE
+  steps:
+    - name: usage_analysis
+      type: SERVICE_CALL
+      service: cost-analyzer
+      endpoint: /platform/cost/analyze
+    - name: optimization_recommendations
+      type: LLM
+      provider: ANTHROPIC
+      model: claude-3-5-sonnet-20241022
+      temperature: 0.2
+      prompt: |
+        Analyze cost optimization opportunities:
+        Usage Data: {{usage}}
+        Resource Breakdown: {{resources}}
+        Identify savings: storage tiers, reserved capacity, right-sizing
+
+capabilities:
+  - cost-optimization
+  - resource-governance
+
+tools:
+  - name: costAnalyzer
+    type: SERVICE
+    endpoint: /platform/cost/analyze
+  - name: optimizationEngine
+    type: SERVICE
+    endpoint: /platform/cost/optimize
+
+memory:
+  type: EPISODIC
+  scope: cost_history
+  retention: long
+
+routing:
+  input: CostOptimizationRequest
+  output: OptimizationRecommendations
+
+resources:
+  memory: "1GB"
+  cpu: "2"
+  timeout: "120s"

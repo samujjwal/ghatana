@@ -1,0 +1,145 @@
+name: ci
+on: [push, pull_request]
+jobs:
+  rust-workspace:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Setup Rust
+        uses: dtolnay/rust-toolchain@stable
+      - name: Build Rust workspace
+        run: |
+          cargo build --workspace --verbose
+      - name: Rust format and clippy (strict)
+        run: |
+          rustup component add rustfmt clippy
+          cargo fmt --all --check
+          cargo clippy --workspace --all-features -- -D warnings
+      - name: Cargo audit (soft)
+        run: |
+          cargo install cargo-audit || true
+          cargo audit || true
+  proto-codegen:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install protoc and Go plugins
+        run: |
+          sudo apt-get update && sudo apt-get install -y protobuf-compiler
+          echo "$(go env GOPATH)/bin" >> $GITHUB_PATH
+          go install google.golang.org/protobuf/cmd/protoc-gen-go@latest
+          go install google.golang.org/grpc/cmd/protoc-gen-go-grpc@latest
+      - run: bash scripts/codegen/proto-gen.sh
+      - name: Build Go server (ensures generated pb compiles)
+        run: |
+          cd services/server
+          go build ./cmd/server
+  proto-validate:
+    name: Protocol Buffers Validation
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0 # Required for buf breaking change detection
+      - name: Setup Node (for npx)
+        uses: actions/setup-node@v4
+        with:
+          node-version: 18
+
+      - name: Install buf
+        uses: bufbuild/buf-setup-action@v1
+        with:
+          github_token: ${{ github.token }}
+
+      - name: Cache buf modules
+        uses: actions/cache@v3
+        with:
+          path: |
+            ~/.cache/buf
+            ~/Library/Caches/buf
+          key: ${{ runner.os }}-buf-${{ hashFiles('**/buf.lock') }}
+          restore-keys: |
+            ${{ runner.os }}-buf-
+
+      - name: Run buf lint and breaking change detection (using proto/buf.yaml)
+        run: |
+          # Run linting
+          buf lint --config proto/buf.yaml
+          # Always check for breaking changes against main
+          echo "Checking for breaking changes against main..."
+          buf breaking --against '.git#branch=main' --config proto/buf.yaml
+  schema-validate:
+    runs-on: ubuntu-latest
+    needs: proto-validate
+    steps:
+      - uses: actions/checkout@v4
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20.x
+      - name: Install dependencies
+        run: |
+          pnpm -C services/desktop install
+          pnpm -C services/extension install
+      - name: Generate schemas
+        run: make schema-generate
+      - name: Validate schemas (desktop)
+        run: pnpm -C services/desktop test
+  web-ci:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 18
+          cache: "npm"
+      - name: Install extension deps
+        working-directory: ./services/extension
+        run: npm ci
+      - name: Lint extension
+        working-directory: ./services/extension
+        run: npm run lint
+      - name: Check formatting (extension)
+        working-directory: ./services/extension
+        run: npm run format:check
+      - name: Install dashboards deps
+        working-directory: ./services/dashboards
+        run: npm ci
+      - name: Lint dashboards
+        working-directory: ./services/dashboards
+        run: npm run lint
+      - name: Check formatting (dashboards)
+        working-directory: ./services/dashboards
+        run: npm run format:check
+  smoke:
+    runs-on: ubuntu-latest
+    needs: [rust-workspace, proto-codegen, web-ci]
+    steps:
+      - uses: actions/checkout@v4
+      - name: Setup Rust
+        uses: dtolnay/rust-toolchain@stable
+      - name: Run end-to-end smoke
+        run: |
+          make smoke
+  go-ci:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install Go tooling
+        run: |
+          sudo apt-get update && sudo apt-get install -y curl
+          go version
+      - name: Install golangci-lint
+        run: |
+          curl -sSfL https://raw.githubusercontent.com/golangci/golangci-lint/master/install.sh | sh -s -- -b $(go env GOPATH)/bin v1.56.2
+      - name: Lint server
+        run: |
+          cd services/server
+          $(go env GOPATH)/bin/golangci-lint run ./...
+
+      - name: Govulncheck server
+        run: |
+          cd services/server
+          go install golang.org/x/vuln/cmd/govulncheck@latest
+          $(go env GOPATH)/bin/govulncheck ./...

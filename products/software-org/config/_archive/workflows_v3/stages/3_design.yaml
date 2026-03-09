@@ -1,0 +1,312 @@
+# Design Stage - v3 Operator-Based Definition
+# Uses consolidated operators from operations/domain/design/
+name: Design
+description: Detailed design including components, data models, APIs, and security
+domain: design
+
+# Operators used in this stage
+operators:
+  - ref: design/architecture_operator
+    modes: [high_level_design, review]
+  - ref: design/component_operator
+    modes: [identify, design, patterns, interfaces, analyze_coupling]
+  - ref: design/data_model_operator
+    modes:
+      [entity_modeling, relationship_mapping, schema_design, data_dictionary]
+  - ref: design/api_operator
+    modes: [contract_design, schema_design, security_design, documentation]
+  - ref: design/security_design_operator
+    modes:
+      [threat_modeling, control_design, security_architecture, security_review]
+  - ref: design/design_synthesis_operator
+    modes: [validate, lint, package, handoff]
+
+# Cross-cutting operators
+cross_cutting:
+  - ref: cross-cutting/milestone_tracker
+    params:
+      stage: design
+  - ref: cross-cutting/best_practice
+    params:
+      stage: design
+  - ref: cross-cutting/kpi
+    params:
+      stage: design
+  - ref: cross-cutting/audit_log
+    params:
+      stage: design
+
+# Workflow sequence
+workflow:
+  # High Level Design
+  - step: high_level_design
+    operator: design/architecture_operator
+    mode: high_level_design
+    inputs:
+      - name: ready_for_design_package
+    outputs:
+      - name: high_level_design
+    hitl: true
+    hitl_reason: Human validates design direction
+
+  # Component Design
+  - step: identify_components
+    operator: design/component_operator
+    mode: identify
+    inputs:
+      - name: high_level_design
+    outputs:
+      - name: component_list
+    depends_on: [high_level_design]
+
+  - step: design_components
+    operator: design/component_operator
+    mode: design
+    inputs:
+      - name: component_list
+    outputs:
+      - name: component_designs
+    depends_on: [identify_components]
+
+  - step: define_patterns
+    operator: design/component_operator
+    mode: patterns
+    inputs:
+      - name: component_designs
+    outputs:
+      - name: design_patterns
+    depends_on: [design_components]
+
+  - step: define_interfaces
+    operator: design/component_operator
+    mode: interfaces
+    inputs:
+      - name: component_designs
+    outputs:
+      - name: interface_definitions
+    depends_on: [design_components]
+
+  - step: analyze_coupling
+    operator: design/component_operator
+    mode: analyze_coupling
+    inputs:
+      - name: component_designs
+      - name: interface_definitions
+    outputs:
+      - name: coupling_analysis
+    depends_on: [define_interfaces]
+
+  # Data Model Design
+  - step: entity_modeling
+    operator: design/data_model_operator
+    mode: entity_modeling
+    inputs:
+      - name: high_level_design
+      - name: component_designs
+    outputs:
+      - name: entity_models
+    depends_on: [design_components]
+
+  - step: relationship_mapping
+    operator: design/data_model_operator
+    mode: relationship_mapping
+    inputs:
+      - name: entity_models
+    outputs:
+      - name: relationship_maps
+    depends_on: [entity_modeling]
+
+  - step: schema_design
+    operator: design/data_model_operator
+    mode: schema_design
+    inputs:
+      - name: entity_models
+      - name: relationship_maps
+    outputs:
+      - name: database_schemas
+    depends_on: [relationship_mapping]
+
+  - step: data_dictionary
+    operator: design/data_model_operator
+    mode: data_dictionary
+    inputs:
+      - name: entity_models
+      - name: database_schemas
+    outputs:
+      - name: data_dictionary
+    depends_on: [schema_design]
+
+  # API Design
+  - step: api_contract_design
+    operator: design/api_operator
+    mode: contract_design
+    inputs:
+      - name: component_designs
+      - name: interface_definitions
+    outputs:
+      - name: api_contracts
+    depends_on: [define_interfaces]
+
+  - step: api_schema_design
+    operator: design/api_operator
+    mode: schema_design
+    inputs:
+      - name: api_contracts
+      - name: entity_models
+    outputs:
+      - name: api_schemas
+    depends_on: [api_contract_design, entity_modeling]
+
+  - step: api_security_design
+    operator: design/api_operator
+    mode: security_design
+    inputs:
+      - name: api_contracts
+    outputs:
+      - name: api_security_design
+    depends_on: [api_schema_design]
+
+  - step: api_documentation
+    operator: design/api_operator
+    mode: documentation
+    inputs:
+      - name: api_contracts
+      - name: api_schemas
+      - name: api_security_design
+    outputs:
+      - name: api_documentation
+    depends_on: [api_security_design]
+
+  # Security Design
+  - step: detailed_threat_model
+    operator: design/security_design_operator
+    mode: threat_modeling
+    inputs:
+      - name: high_level_design
+      - name: component_designs
+      - name: api_contracts
+    outputs:
+      - name: detailed_threat_model
+    depends_on: [api_contract_design]
+
+  - step: security_control_design
+    operator: design/security_design_operator
+    mode: control_design
+    inputs:
+      - name: detailed_threat_model
+    outputs:
+      - name: security_controls
+    depends_on: [detailed_threat_model]
+
+  - step: security_architecture
+    operator: design/security_design_operator
+    mode: security_architecture
+    inputs:
+      - name: high_level_design
+      - name: security_controls
+    outputs:
+      - name: security_architecture
+    depends_on: [security_control_design]
+
+  - step: security_review
+    operator: design/security_design_operator
+    mode: security_review
+    inputs:
+      - name: security_architecture
+      - name: detailed_threat_model
+      - name: security_controls
+    outputs:
+      - name: security_review_report
+    depends_on: [security_architecture]
+    hitl: true
+    hitl_reason: Human reviews security design
+
+  # Cross-cutting
+  - step: best_practice_check
+    operator: cross-cutting/best_practice
+    params:
+      stage: design
+    inputs:
+      - name: high_level_design
+      - name: component_designs
+      - name: api_contracts
+      - name: security_architecture
+    outputs:
+      - name: best_practice_report
+    depends_on: [security_review]
+
+  - step: track_milestones
+    operator: cross-cutting/milestone_tracker
+    params:
+      stage: design
+    inputs:
+      - name: best_practice_report
+    outputs:
+      - name: design_stage_milestone
+    depends_on: [best_practice_check]
+
+  # Design Validation
+  - step: validate_design
+    operator: design/design_synthesis_operator
+    mode: validate
+    inputs:
+      - name: high_level_design
+      - name: component_designs
+      - name: database_schemas
+      - name: api_contracts
+      - name: security_architecture
+    outputs:
+      - name: design_validation_report
+    depends_on: [track_milestones]
+
+  - step: lint_design
+    operator: design/design_synthesis_operator
+    mode: lint
+    inputs:
+      - name: design_validation_report
+    outputs:
+      - name: design_lint_report
+    depends_on: [validate_design]
+
+  # Package and Handoff
+  - step: package_design
+    operator: design/design_synthesis_operator
+    mode: package
+    inputs:
+      - name: high_level_design
+      - name: component_designs
+      - name: design_patterns
+      - name: interface_definitions
+      - name: coupling_analysis
+      - name: entity_models
+      - name: database_schemas
+      - name: data_dictionary
+      - name: api_contracts
+      - name: api_documentation
+      - name: security_architecture
+      - name: design_validation_report
+    outputs:
+      - name: design_package
+    depends_on: [lint_design]
+
+  - step: handoff_to_develop
+    operator: design/design_synthesis_operator
+    mode: handoff
+    inputs:
+      - name: design_package
+    outputs:
+      - name: ready_for_develop_package
+    depends_on: [package_design]
+
+# Stage entry/exit criteria
+entry_criteria:
+  - Solution stage complete
+  - Architecture defined
+  - Initial threat model exists
+
+exit_criteria:
+  - All components designed
+  - Data models defined
+  - API contracts documented
+  - Security design complete
+  - Design package ready for development

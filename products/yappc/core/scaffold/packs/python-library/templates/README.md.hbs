@@ -1,0 +1,58 @@
+# {{projectName}}
+
+{{#if description}}
+{{description}}
+{{else}}
+A Python library.
+{{/if}}
+
+## Installation
+
+```bash
+pip install {{kebabCase projectName}}
+```
+
+## Development
+
+### Setup
+
+```bash
+{{#if (eq buildTool "uv")}}
+uv venv
+source .venv/bin/activate
+uv pip install -e ".[dev]"
+{{else}}
+poetry install
+{{/if}}
+```
+
+### Testing
+
+```bash
+pytest
+```
+
+### Linting
+
+```bash
+ruff check .
+```
+
+### Type Checking
+
+```bash
+mypy {{snakeCase projectName}}
+```
+
+## Usage
+
+```python
+from {{snakeCase projectName}} import {{pascalCase projectName}}
+
+lib = {{pascalCase projectName}}()
+print(lib.get_version())
+```
+
+## License
+
+MIT

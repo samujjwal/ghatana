@@ -1,0 +1,124 @@
+# Prometheus ServiceMonitor for YAPPC Agents
+# Requires Prometheus Operator to be installed
+apiVersion: monitoring.coreos.com/v1
+kind: ServiceMonitor
+metadata:
+  name: yappc-agents-monitor
+  namespace: yappc
+  labels:
+    app: yappc-agents
+    prometheus: kube-prometheus
+spec:
+  selector:
+    matchLabels:
+      app: yappc-agents
+  endpoints:
+    - port: metrics
+      path: /metrics
+      interval: 30s
+      scrapeTimeout: 10s
+---
+apiVersion: monitoring.coreos.com/v1
+kind: ServiceMonitor
+metadata:
+  name: ollama-monitor
+  namespace: yappc
+  labels:
+    app: ollama
+    prometheus: kube-prometheus
+spec:
+  selector:
+    matchLabels:
+      app: ollama
+  endpoints:
+    - port: http
+      path: /metrics
+      interval: 30s
+      scrapeTimeout: 10s
+---
+# PrometheusRule for YAPPC Alerts
+apiVersion: monitoring.coreos.com/v1
+kind: PrometheusRule
+metadata:
+  name: yappc-alerts
+  namespace: yappc
+  labels:
+    app: yappc-agents
+    prometheus: kube-prometheus
+spec:
+  groups:
+    - name: yappc.rules
+      interval: 30s
+      rules:
+        # High Error Rate Alert
+        - alert: YAPPCHighErrorRate
+          expr: |
+            rate(http_requests_total{status=~"5.."}[5m]) / rate(http_requests_total[5m]) > 0.05
+          for: 5m
+          labels:
+            severity: warning
+            component: yappc-agents
+          annotations:
+            summary: "YAPPC high error rate"
+            description: "Error rate is {{ $value | humanizePercentage }} (threshold: 5%)"
+        
+        # High Latency Alert
+        - alert: YAPPCHighLatency
+          expr: |
+            histogram_quantile(0.95, rate(http_request_duration_seconds_bucket[5m])) > 30
+          for: 5m
+          labels:
+            severity: warning
+            component: yappc-agents
+          annotations:
+            summary: "YAPPC high latency"
+            description: "P95 latency is {{ $value }}s (threshold: 30s)"
+        
+        # Pod Down Alert
+        - alert: YAPPCPodDown
+          expr: |
+            kube_pod_status_phase{namespace="yappc",pod=~"yappc-agents-.*",phase!="Running"} > 0
+          for: 5m
+          labels:
+            severity: critical
+            component: yappc-agents
+          annotations:
+            summary: "YAPPC pod not running"
+            description: "Pod {{ $labels.pod }} is in {{ $labels.phase }} state"
+        
+        # GPU Utilization Alert
+        - alert: GPULowUtilization
+          expr: |
+            nvidia_gpu_duty_cycle < 30
+          for: 10m
+          labels:
+            severity: info
+            component: ollama
+          annotations:
+            summary: "GPU underutilized"
+            description: "GPU utilization is {{ $value }}% (threshold: 30%)"
+        
+        # Model Loading Failed
+        - alert: OllamaModelLoadFailed
+          expr: |
+            up{job="ollama"} == 0
+          for: 2m
+          labels:
+            severity: critical
+            component: ollama
+          annotations:
+            summary: "Ollama service down"
+            description: "Ollama service is not responding"
+        
+        # HPA at Max Capacity
+        - alert: YAPPCHPAAtMax
+          expr: |
+            kube_horizontalpodautoscaler_status_current_replicas{namespace="yappc"} 
+            >= kube_horizontalpodautoscaler_spec_max_replicas{namespace="yappc"}
+          for: 15m
+          labels:
+            severity: warning
+            component: yappc-agents
+          annotations:
+            summary: "YAPPC HPA at maximum replicas"
+            description: "HPA has scaled to maximum {{ $value }} replicas"

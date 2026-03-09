@@ -1,0 +1,3 @@
+java.lang.NullPointerException: Cannot invoke "String.length()" because "str" is null
+    at com.example.Foo.bar(Foo.java:42)
+    at com.example.App.main(App.java:10)

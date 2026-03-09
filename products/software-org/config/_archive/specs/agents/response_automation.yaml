@@ -1,0 +1,27 @@
+---
+id: "response_automation"
+agent: "ResponseAutomationAgent"
+role: "IR Automation Engineer"
+inputs_spec:
+- name: "triaged_incidents"
+  description: "Triaged incidents for automated response."
+  format: "Incident artifact"
+outputs_spec:
+- name: "automated_response_log"
+  description: "Automated response log and human signoff."
+  format: "Response log artifact"
+agent_tasks:
+- "Define/version automated response playbooks."
+- "Log/review response actions for effectiveness."
+- "Require human signoff for critical automated responses."
+acceptance_criteria:
+- "Playbooks defined/versioned."
+- "Actions logged/reviewed."
+- "Human signoff on critical responses."
+dependencies:
+- "triaged_incidents"
+failure_escalation:
+- "Escalate to IR Automation Engineer if actions unreviewed or not logged."
+references: []
+hitl: true
+hitl_reason: "Human signoff required for critical automated responses"

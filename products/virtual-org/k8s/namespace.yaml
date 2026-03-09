@@ -1,0 +1,8 @@
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: virtualorg
+  labels:
+    name: virtualorg
+    environment: production
+    managed-by: kubectl

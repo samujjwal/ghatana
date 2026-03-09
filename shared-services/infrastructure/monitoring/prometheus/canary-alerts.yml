@@ -1,0 +1,279 @@
+groups:
+  - name: canary_deployment
+    interval: 30s
+    rules:
+      # ========================================
+      # ERROR RATE ALERTS
+      # ========================================
+      
+      - alert: CanaryErrorRateHigh
+        expr: |
+          (
+            rate(http_requests_total{status=~"5..",version=~".*-canary"}[5m])
+            / 
+            rate(http_requests_total{version=~".*-canary"}[5m])
+          ) > 0.01
+        for: 5m
+        labels:
+          severity: critical
+          component: canary
+          action: rollback
+        annotations:
+          summary: "Canary error rate exceeds threshold"
+          description: "Canary version {{ $labels.version }} has error rate {{ $value | humanizePercentage }} (threshold: 1%)"
+          runbook: "https://docs.ghatana.com/runbooks/canary-rollback"
+          dashboard: "https://grafana.ghatana.com/d/canary-dashboard"
+      
+      - alert: CanaryErrorRateHigherThanProduction
+        expr: |
+          (
+            rate(http_requests_total{status=~"5..",version=~".*-canary"}[5m])
+            / 
+            rate(http_requests_total{version=~".*-canary"}[5m])
+          )
+          >
+          (
+            rate(http_requests_total{status=~"5..",version!~".*-canary"}[5m])
+            / 
+            rate(http_requests_total{version!~".*-canary"}[5m])
+          ) * 1.5
+        for: 5m
+        labels:
+          severity: warning
+          component: canary
+          action: investigate
+        annotations:
+          summary: "Canary error rate 50% higher than production"
+          description: "Canary error rate is significantly higher than production baseline"
+      
+      # ========================================
+      # LATENCY ALERTS
+      # ========================================
+      
+      - alert: CanaryLatencyHigh
+        expr: |
+          histogram_quantile(0.95,
+            rate(http_request_duration_seconds_bucket{version=~".*-canary"}[5m])
+          ) > 2
+        for: 5m
+        labels:
+          severity: critical
+          component: canary
+          action: rollback
+        annotations:
+          summary: "Canary P95 latency exceeds threshold"
+          description: "Canary version P95 latency is {{ $value }}s (threshold: 2s)"
+          runbook: "https://docs.ghatana.com/runbooks/canary-rollback"
+      
+      - alert: CanaryLatencyHigherThanProduction
+        expr: |
+          histogram_quantile(0.95,
+            rate(http_request_duration_seconds_bucket{version=~".*-canary"}[5m])
+          )
+          >
+          histogram_quantile(0.95,
+            rate(http_request_duration_seconds_bucket{version!~".*-canary"}[5m])
+          ) * 1.3
+        for: 10m
+        labels:
+          severity: warning
+          component: canary
+          action: investigate
+        annotations:
+          summary: "Canary latency 30% higher than production"
+          description: "Canary P95 latency is significantly higher than production baseline"
+      
+      # ========================================
+      # RESOURCE UTILIZATION ALERTS
+      # ========================================
+      
+      - alert: CanaryCPUHigh
+        expr: |
+          rate(container_cpu_usage_seconds_total{
+            pod=~"data-cloud-canary.*"
+          }[5m]) > 0.95
+        for: 5m
+        labels:
+          severity: warning
+          component: canary
+          action: investigate
+        annotations:
+          summary: "Canary CPU usage exceeds 95%"
+          description: "Pod {{ $labels.pod }} CPU usage is {{ $value | humanizePercentage }}"
+      
+      - alert: CanaryMemoryHigh
+        expr: |
+          container_memory_usage_bytes{pod=~"data-cloud-canary.*"}
+          /
+          container_spec_memory_limit_bytes{pod=~"data-cloud-canary.*"}
+          > 0.95
+        for: 5m
+        labels:
+          severity: critical
+          component: canary
+          action: rollback
+        annotations:
+          summary: "Canary memory usage exceeds 95%"
+          description: "Pod {{ $labels.pod }} memory usage is {{ $value | humanizePercentage }}"
+          runbook: "https://docs.ghatana.com/runbooks/memory-leak"
+      
+      # ========================================
+      # HEALTH CHECK ALERTS
+      # ========================================
+      
+      - alert: CanaryHealthCheckFailing
+        expr: |
+          probe_success{job="canary-health-check"} == 0
+        for: 2m
+        labels:
+          severity: critical
+          component: canary
+          action: rollback
+        annotations:
+          summary: "Canary health check failing"
+          description: "Health check for {{ $labels.instance }} has been failing for 2 minutes"
+      
+      - alert: CanaryPodsNotReady
+        expr: |
+          kube_deployment_status_replicas_ready{deployment="data-cloud-canary"}
+          <
+          kube_deployment_spec_replicas{deployment="data-cloud-canary"}
+        for: 5m
+        labels:
+          severity: warning
+          component: canary
+          action: investigate
+        annotations:
+          summary: "Canary pods not ready"
+          description: "{{ $value }} canary pods are not ready"
+      
+      # ========================================
+      # BUSINESS METRICS ALERTS
+      # ========================================
+      
+      - alert: CanaryConversionRateLow
+        expr: |
+          rate(business_conversions_total{version=~".*-canary"}[10m])
+          /
+          rate(business_page_views_total{version=~".*-canary"}[10m])
+          <
+          (
+            rate(business_conversions_total{version!~".*-canary"}[10m])
+            /
+            rate(business_page_views_total{version!~".*-canary"}[10m])
+          ) * 0.8
+        for: 15m
+        labels:
+          severity: warning
+          component: canary
+          action: investigate
+        annotations:
+          summary: "Canary conversion rate 20% lower than production"
+          description: "Canary may have usability issues affecting conversions"
+      
+      # ========================================
+      # ROLLBACK SUCCESS MONITORING
+      # ========================================
+      
+      - alert: RollbackRequired
+        expr: |
+          ALERTS{alertname=~"Canary.*",severity="critical",action="rollback"}
+        for: 1m
+        labels:
+          severity: critical
+          component: canary
+          action: execute_rollback
+        annotations:
+          summary: "Automatic rollback triggered"
+          description: "Critical canary alert detected, initiating automatic rollback"
+          webhook: "https://api.ghatana.com/webhooks/rollback"
+
+  - name: canary_traffic
+    interval: 30s
+    rules:
+      # ========================================
+      # TRAFFIC MONITORING
+      # ========================================
+      
+      - alert: CanaryTrafficImbalance
+        expr: |
+          abs(
+            (
+              rate(http_requests_total{version=~".*-canary"}[5m])
+              /
+              (
+                rate(http_requests_total{version=~".*-canary"}[5m])
+                +
+                rate(http_requests_total{version!~".*-canary"}[5m])
+              )
+            )
+            - on() group_left
+            label_replace(
+              kube_ingress_path{ingress="data-cloud-canary"},
+              "canary_weight",
+              "$1",
+              "annotation_nginx_ingress_kubernetes_io_canary_weight",
+              "(.*)"
+            )
+          ) > 0.05
+        for: 10m
+        labels:
+          severity: warning
+          component: canary
+        annotations:
+          summary: "Canary traffic distribution imbalanced"
+          description: "Actual canary traffic differs from configured weight by more than 5%"
+      
+      - alert: CanaryNoTraffic
+        expr: |
+          rate(http_requests_total{version=~".*-canary"}[5m]) == 0
+          and
+          kube_deployment_spec_replicas{deployment="data-cloud-canary"} > 0
+        for: 5m
+        labels:
+          severity: warning
+          component: canary
+        annotations:
+          summary: "Canary receiving no traffic"
+          description: "Canary deployment exists but is not receiving any traffic"
+
+  - name: canary_comparison
+    interval: 1m
+    rules:
+      # ========================================
+      # RECORDING RULES FOR COMPARISON
+      # ========================================
+      
+      - record: canary:error_rate:5m
+        expr: |
+          rate(http_requests_total{status=~"5..",version=~".*-canary"}[5m])
+          /
+          rate(http_requests_total{version=~".*-canary"}[5m])
+      
+      - record: production:error_rate:5m
+        expr: |
+          rate(http_requests_total{status=~"5..",version!~".*-canary"}[5m])
+          /
+          rate(http_requests_total{version!~".*-canary"}[5m])
+      
+      - record: canary:latency_p95:5m
+        expr: |
+          histogram_quantile(0.95,
+            rate(http_request_duration_seconds_bucket{version=~".*-canary"}[5m])
+          )
+      
+      - record: production:latency_p95:5m
+        expr: |
+          histogram_quantile(0.95,
+            rate(http_request_duration_seconds_bucket{version!~".*-canary"}[5m])
+          )
+      
+      - record: canary:traffic_percentage:5m
+        expr: |
+          rate(http_requests_total{version=~".*-canary"}[5m])
+          /
+          (
+            rate(http_requests_total{version=~".*-canary"}[5m])
+            +
+            rate(http_requests_total{version!~".*-canary"}[5m])
+          ) * 100

@@ -1,0 +1,25 @@
+.PHONY: install dev build start lint type-check docker-build docker-run
+
+install:
+pnpm install
+
+dev:
+pnpm dev
+
+build:
+pnpm build
+
+start:
+pnpm start
+
+lint:
+pnpm lint
+
+type-check:
+pnpm type-check
+
+docker-build:
+docker build -t {{kebabCase projectName}} .
+
+docker-run:
+docker run -p 3000:3000 {{kebabCase projectName}}

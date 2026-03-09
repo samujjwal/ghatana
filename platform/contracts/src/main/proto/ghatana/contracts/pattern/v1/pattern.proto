@@ -1,0 +1,692 @@
+/*
+ * Copyright (c) ${year} Ghatana Inc.
+ * All rights reserved.
+ *
+ * This source code and the accompanying materials are the confidential
+ * and proprietary information of Ghatana Inc. (“Confidential Information”).
+ * You shall not disclose such Confidential Information and shall use it
+ * only in accordance with the terms of the license agreement you entered
+ * into with Ghatana Inc.
+ *
+ * Unauthorized copying of this file, via any medium, is strictly prohibited.
+ * Proprietary and confidential.
+ */
+syntax = "proto3";
+
+package ghatana.contracts.pattern.v1;
+
+// Standard imports
+import "google/protobuf/duration.proto";
+import "google/protobuf/timestamp.proto";
+import "google/protobuf/struct.proto";
+
+// Google API imports
+import "google/api/field_behavior.proto";
+
+// Local imports
+import "ghatana/contracts/event/v1/event.proto";
+
+option java_package = "com.ghatana.contracts.pattern.v1";
+option java_multiple_files = true;
+option java_outer_classname = "PatternOuterClass";
+option go_package = "github.com/ghatana/contracts/gen/go/pattern/v1;patternv1";
+option csharp_namespace = "Ghatana.Contracts.Pattern.V1";
+
+// PatternType defines the type of pattern that can be used for matching events.
+// Each type represents a different matching strategy or operator.
+enum PatternType {
+  // Default value. This value is unused.
+  PATTERN_TYPE_UNSPECIFIED = 0;
+
+  // Logical patterns
+  PATTERN_TYPE_AND = 1;  // Matches when all child patterns match (logical AND)
+  PATTERN_TYPE_OR = 2;   // Matches when any child pattern matches (logical OR)
+  PATTERN_TYPE_NOT = 3;  // Matches when the child pattern does not match (logical NOT)
+
+  // Sequence patterns
+  PATTERN_TYPE_SEQ = 10;    // Strict sequence of patterns
+  PATTERN_TYPE_OSEQ = 11;   // Ordered sequence (allows gaps)
+  PATTERN_TYPE_SOSEQ = 12;  // Strictly ordered sequence
+  PATTERN_TYPE_WOSEQ = 13;  // Weakly ordered sequence
+
+  // Temporal patterns (time-based relationships)
+  PATTERN_TYPE_BEFORE = 20;    // First event occurs before second
+  PATTERN_TYPE_AFTER = 21;     // First event occurs after second
+  PATTERN_TYPE_MEETS = 22;     // First event ends when second starts
+  PATTERN_TYPE_OVERLAPS = 23;  // Events overlap in time
+  PATTERN_TYPE_STARTS = 24;    // Events start at the same time
+  PATTERN_TYPE_DURING = 25;    // First event occurs during second
+  PATTERN_TYPE_ENDS = 26;      // Events end at the same time
+  PATTERN_TYPE_EQUALS = 27;    // Events have the same start and end times
+  PATTERN_TYPE_WITHIN = 28;    // First event is completely within second
+
+  // Repetition patterns
+  PATTERN_TYPE_TIMES_DEFERRED = 30;    // Matches pattern N times (lazy)
+  PATTERN_TYPE_TIMES_IMMEDIATE = 31;   // Matches pattern N times (greedy)
+  PATTERN_TYPE_PLUS = 32;              // Matches pattern one or more times
+
+  // Primitive patterns
+  PATTERN_TYPE_PRIMARY = 101;  // Base pattern type for primitive patterns
+  PATTERN_TYPE_CUSTOM = 102;   // Custom pattern type
+  PATTERN_TYPE_NOW = 103;      // Matches current time
+  PATTERN_TYPE_TEMPORAL = 104; // Temporal pattern
+  PATTERN_TYPE_LOCATION = 105; // Location-based pattern
+  PATTERN_TYPE_INTEGER = 106;  // Integer pattern
+  PATTERN_TYPE_GROUP = 107;    // Group of patterns
+  PATTERN_TYPE_WITH = 108;     // With pattern (for joins)
+  PATTERN_TYPE_WITHOUT = 109;  // Without pattern (for exclusions)
+  PATTERN_TYPE_AT = 110;       // At pattern (for specific points)
+  PATTERN_TYPE_EXPRESSION = 111; // Expression pattern
+
+  // Reserved ranges for future use
+  reserved 4 to 9, 14 to 19, 29, 33 to 100, 200 to max;
+}
+
+// PatternStatus defines the lifecycle state of a pattern.
+enum PatternStatus {
+  // Default value. This value is unused.
+  PATTERN_STATUS_UNSPECIFIED = 0;
+
+  // Active patterns are available for use in matching.
+  PATTERN_STATUS_ACTIVE = 1;
+
+  // Inactive patterns are not used for matching but are kept for reference.
+  PATTERN_STATUS_INACTIVE = 2;
+
+  // Deleted patterns are marked for deletion and will be removed.
+  PATTERN_STATUS_DELETED = 3;
+
+  // Draft patterns are still being defined and are not yet active.
+  PATTERN_STATUS_DRAFT = 4;
+
+  // Deprecated patterns should not be used in new configurations.
+  PATTERN_STATUS_DEPRECATED = 5;
+
+  // Additional statuses for more granular control
+  PATTERN_STATUS_PENDING = 6;      // Pending approval
+  PATTERN_STATUS_REJECTED = 7;     // Rejected during review
+  PATTERN_STATUS_ARCHIVED = 8;     // Archived for historical purposes
+  PATTERN_STATUS_EXPERIMENTAL = 9; // Experimental/untested
+  PATTERN_STATUS_MAINTENANCE = 10; // In maintenance mode
+
+  // Reserved for future use
+  reserved 11 to 100, 1000 to max;
+}
+
+// SelectionMode defines how pattern matches are selected when multiple matches exist.
+enum SelectionMode {
+  // Default value. This value is unused.
+  SELECTION_MODE_UNSPECIFIED = 0;
+
+  // Select the first match found.
+  SELECTION_MODE_FIRST = 1;
+
+  // Select the last match found.
+  SELECTION_MODE_LAST = 2;
+
+  // Select all matches.
+  SELECTION_MODE_ALL = 3;
+
+  // Select the best match based on some heuristic.
+  SELECTION_MODE_BEST = 4;
+
+  // Additional selection modes
+  SELECTION_MODE_RANDOM = 5;       // Select a random match
+  SELECTION_MODE_STRICT = 6;       // Fail if more than one match
+  SELECTION_MODE_STRICT_FIRST = 7; // Take first if multiple, fail if none
+  SELECTION_MODE_STRICT_LAST = 8;  // Take last if multiple, fail if none
+
+  // Reserved for future use
+  reserved 9 to 100, 1000 to max;
+}
+
+// PatternView defines the level of detail to return for a pattern
+enum PatternView {
+  // Default view. Includes basic metadata and configuration.
+  PATTERN_VIEW_BASIC = 0;
+
+  // Standard view. Includes all fields in BASIC view plus additional metadata.
+  PATTERN_VIEW_STANDARD = 1;
+
+  // Full view. Includes all fields in STANDARD view plus configuration details.
+  PATTERN_VIEW_FULL = 2;
+
+  // Includes all fields including system-generated and internal fields.
+  // This view is typically only available to administrators.
+  PATTERN_VIEW_UNSPECIFIED = 3;
+}
+
+// TimeRange represents a time window for pattern matching
+message TimeRangeProto {
+  // Reserved for future use
+  reserved 3 to 1000;
+  reserved "reserved_3_to_1000";
+
+  // Start time of the range
+  google.protobuf.Timestamp start_time = 1 [
+    (google.api.field_behavior) = OPTIONAL
+  ];
+
+  // End time of the range
+  google.protobuf.Timestamp end_time = 2 [
+    (google.api.field_behavior) = OPTIONAL
+  ];
+}
+
+// StatusProto represents the status of a pattern match or operation
+enum StatusProto {
+  // Default status, should not be used
+  STATUS_UNSPECIFIED = 0;
+
+  // The pattern is active and being processed
+  ACTIVE = 1;
+
+  // The pattern has been matched successfully
+  MATCHED = 2;
+
+  // The pattern matching has timed out
+  TIMEOUT = 3;
+
+  // The pattern matching failed due to an error
+  ERROR = 4;
+
+  // The pattern was canceled
+  CANCELED = 5;
+}
+
+// PatternProto represents a pattern specification
+message PatternProto {
+  // Reserved field numbers for future use
+  reserved 12 to 29, 31 to 100, 1000 to max;
+
+  // Unique identifier for the pattern
+  string id = 1 [
+    (google.api.field_behavior) = IMMUTABLE
+  ];
+
+  // Type of the pattern
+  PatternType type = 2 [
+    (google.api.field_behavior) = REQUIRED
+  ];
+
+  // Human-readable name of the pattern
+  string name = 3 [
+    (google.api.field_behavior) = REQUIRED
+  ];
+
+  // Optional description of the pattern
+  string description = 4 [
+    (google.api.field_behavior) = OPTIONAL
+  ];
+
+  // Current status of the pattern
+  PatternStatus status = 5 [
+    (google.api.field_behavior) = OUTPUT_ONLY
+  ];
+
+  // Selection mode for pattern matching
+  SelectionMode selection_mode = 6 [
+    (google.api.field_behavior) = OPTIONAL
+  ];
+
+  // Version of the pattern (semver)
+  string version = 7 [
+    (google.api.field_behavior) = REQUIRED
+  ];
+
+  // When the pattern was created
+  google.protobuf.Timestamp create_time = 8 [
+    (google.api.field_behavior) = OUTPUT_ONLY
+  ];
+
+  // When the pattern was last updated
+  google.protobuf.Timestamp update_time = 9 [
+    (google.api.field_behavior) = OUTPUT_ONLY
+  ];
+
+  // Who last updated the pattern
+  string updated_by = 10 [
+    (google.api.field_behavior) = OUTPUT_ONLY
+  ];
+
+  // Owner of the pattern (email format)
+  string owner = 11 [
+    (google.api.field_behavior) = REQUIRED
+  ];
+
+  // Key-value pairs for storing additional metadata.
+  // This can be used for custom attributes and extensions.
+  map<string, string> labels = 101 [
+    (google.api.field_behavior) = OPTIONAL
+  ];
+
+  // Time window for pattern matching.
+  BoundingWindowProto bounding_window = 102 [
+    (google.api.field_behavior) = OPTIONAL
+  ];
+
+  // Custom metadata as a structured object.
+  // Useful for storing configuration specific to the pattern type.
+  google.protobuf.Struct metadata = 103 [
+    (google.api.field_behavior) = OPTIONAL
+  ];
+
+  // Optional documentation URL with more information about the pattern.
+  string documentation_uri = 104 [
+    (google.api.field_behavior) = OPTIONAL
+  ];
+
+  // Tags for categorizing and organizing patterns.
+  // Max 50 tags, each 1-63 characters, alphanumeric with hyphens and underscores
+  repeated string tags = 105 [
+    (google.api.field_behavior) = OPTIONAL
+  ];
+
+  // Oneof field for pattern-specific configuration.
+  // Using field numbers starting from 200 to avoid conflicts with top-level fields
+  oneof pattern_spec {
+    // Composite pattern (AND, OR, NOT)
+    CompositePatternProto composite = 200;
+
+    // Custom pattern for user-defined pattern matching logic
+    CustomPatternProto custom = 201;
+
+    // Sequence pattern
+    SequencePatternProto sequence = 202;
+
+    // Temporal pattern
+    TemporalPatternProto temporal = 203;
+
+    // Repetition pattern
+    RepetitionPatternProto repetition = 204;
+
+    // Expression pattern
+    ExpressionPatternProto expression = 205;
+
+    // Constant pattern
+    ConstantPatternProto constant = 206;
+  }
+}
+
+// CompositePatternProto represents a pattern composed of other patterns
+message CompositePatternProto {
+  // Reserved field numbers for future use
+  reserved 5 to 10, 100 to 200;
+
+  // Type of composite pattern (AND, OR, etc.)
+  PatternType type = 1;
+
+  // Sub-patterns that make up this composite pattern
+  repeated PatternProto patterns = 2;
+
+  // Minimum number of sub-patterns that must match (for AND/OR patterns)
+  int32 min_matches = 3;
+
+  // Maximum number of sub-patterns that can match (for AND/OR patterns)
+  int32 max_matches = 4;
+}
+
+// CustomPatternProto represents a user-defined pattern with custom matching logic
+message CustomPatternProto {
+  // Reserved field numbers for future use
+  reserved 5 to 10, 100 to 200;
+
+  // Unique identifier for the custom pattern type
+  string type = 1 [
+    (google.api.field_behavior) = REQUIRED
+  ];
+
+  // Custom configuration for the pattern as a structured object
+  google.protobuf.Struct config = 2 [
+    (google.api.field_behavior) = OPTIONAL
+  ];
+
+  // Optional description of the custom pattern
+  string description = 3 [
+    (google.api.field_behavior) = OPTIONAL
+  ];
+
+  // Version of the custom pattern implementation
+  string version = 4 [
+    (google.api.field_behavior) = OPTIONAL
+  ];
+}
+
+message BoundingWindowProto {
+  // Reserved field numbers for future use
+  reserved 5 to 10, 100 to 200;
+  // Type of bounding window (absolute, relative, etc.)
+  PatternType type = 1;
+  // TODO: Add bounding window parameters
+}
+// SequencePatternProto represents a sequence of patterns
+message SequencePatternProto {
+  // Reserved field numbers for future use
+  reserved 6 to 10, 100 to 200;
+
+  // Patterns in the sequence
+  repeated PatternProto patterns = 1;
+
+  // Whether the sequence is ordered
+  bool ordered = 2;
+
+  // Maximum time allowed between events in the sequence
+  google.protobuf.Duration max_interval = 3;
+
+  // Whether to allow overlapping matches
+  bool allow_overlaps = 4;
+
+  // Whether to include partial matches
+  bool include_partial = 5;
+}
+
+// TemporalPatternProto represents a temporal relationship between patterns
+message TemporalPatternProto {
+  // Reserved field numbers for future use
+  reserved 6 to 9, 100 to 199;
+
+  // Type of temporal relationship
+  PatternType type = 1;
+
+  // First pattern in the temporal relationship
+  PatternProto first = 2;
+
+  // Second pattern in the temporal relationship
+  PatternProto second = 3;
+
+  // Time window for the temporal relationship.
+  // The second pattern must occur within this time window after the first pattern.
+  google.protobuf.Duration window = 4 [
+    (google.api.field_behavior) = REQUIRED
+  ];
+
+  // Whether to allow overlapping matches.
+  // If true, a single event can be part of multiple temporal relationships.
+  bool allow_overlaps = 5 [
+    (google.api.field_behavior) = OPTIONAL
+  ];
+
+  // Whether to include partial matches where the time window is not fully contained.
+  bool include_partial = 10 [
+    (google.api.field_behavior) = OPTIONAL
+  ];
+
+  // Custom metadata for the temporal pattern.
+  // Can be used to store additional configuration specific to the temporal type.
+  google.protobuf.Struct metadata = 20 [
+    (google.api.field_behavior) = OPTIONAL
+  ];
+
+  // Field numbers 11-19 reserved for future use.
+  reserved 11 to 19;
+
+  // Field numbers 21-49 reserved for future use.
+  reserved 21 to 49;
+
+  // Field numbers 50-99 reserved for extensions.
+  reserved 50 to 99;
+}
+
+// RepetitionPatternProto defines a pattern that repeats a specified number of times.
+// It's used to match sequences where a pattern occurs multiple times.
+message RepetitionPatternProto {
+  // Reserved field numbers for future use
+  reserved 6 to 9, 100 to 199;
+
+  // Type of repetition pattern.
+  // Must be one of: TIMES_DEFERRED, TIMES_IMMEDIATE, or PLUS.
+  PatternType type = 1 [
+    (google.api.field_behavior) = REQUIRED
+  ];
+
+  // The pattern to repeat
+  PatternProto pattern = 2;
+
+  // Minimum number of repetitions (inclusive)
+  int32 min = 3 [
+    (google.api.field_behavior) = REQUIRED
+  ];
+
+  // Maximum number of repetitions (exclusive).
+  // If not set, there is no upper bound on repetitions.
+  // Must be greater than or equal to min if specified.
+  int32 max = 4 [
+    (google.api.field_behavior) = OPTIONAL
+  ];
+
+  // Whether to be greedy in matching repetitions.
+  // If true, matches as many repetitions as possible; otherwise, as few as possible.
+  bool greedy = 5 [
+    (google.api.field_behavior) = OPTIONAL
+  ];
+
+  // Time range for the repetition pattern
+  TimeRangeProto time_range = 10 [
+    (google.api.field_behavior) = OPTIONAL
+  ];
+
+  // Number of events in the repetition
+  int32 event_count = 11 [
+    (google.api.field_behavior) = OUTPUT_ONLY
+  ];
+
+  // Raw events that matched the repetition
+  repeated ghatana.contracts.event.v1.EventProto raw_events = 12 [
+    (google.api.field_behavior) = OUTPUT_ONLY
+  ];
+
+  // Status of the repetition
+  StatusProto status = 13 [
+    (google.api.field_behavior) = OUTPUT_ONLY
+  ];
+}
+
+// DeletePatternRequest is used to request deletion of a pattern
+message DeletePatternRequestProto {
+  // Reserved field numbers for future use
+  reserved 4 to 9, 100 to 199;
+
+  // The name of the pattern to delete
+  // Format: patterns/{pattern_id}
+  string name = 1 [
+    (google.api.field_behavior) = REQUIRED
+  ];
+
+  // If set to true, any child patterns will also be deleted.
+  // Otherwise, the request will fail if the pattern has any children.
+  bool force = 2 [
+    (google.api.field_behavior) = OPTIONAL
+  ];
+
+  // A unique identifier for this request. This is used for idempotency.
+  string request_id = 10 [
+    (google.api.field_behavior) = OPTIONAL
+  ];
+}
+
+// EvaluatePatternRequest is used to request evaluation of a pattern against events
+message EvaluatePatternRequestProto {
+  // Reserved field numbers for future use
+  reserved 5 to 9, 100 to 199;
+
+  // The pattern to evaluate
+  PatternProto pattern = 1 [
+    (google.api.field_behavior) = REQUIRED
+  ];
+
+  // The events to evaluate against the pattern
+  repeated ghatana.contracts.event.v1.EventProto events = 2 [
+    (google.api.field_behavior) = REQUIRED
+  ];
+
+  // Optional: The ID of the tenant that owns the pattern
+  string tenant_id = 3 [
+    (google.api.field_behavior) = OPTIONAL
+  ];
+
+  // Optional: Timeout for the evaluation
+  google.protobuf.Duration timeout = 4 [
+    (google.api.field_behavior) = OPTIONAL
+  ];
+
+  // Optional. Additional context for the evaluation
+  map<string, string> context = 11 [
+    (google.api.field_behavior) = OPTIONAL
+  ];
+}
+
+// ExpressionPatternProto represents a pattern defined by a logical or mathematical expression
+message ExpressionPatternProto {
+  // Reserved field numbers for future use
+  reserved 5 to 9, 100 to 199;
+
+  // The expression string that defines the pattern
+  // The syntax depends on the expression language used
+  string expression = 1 [
+    (google.api.field_behavior) = REQUIRED
+  ];
+
+  // The language or syntax of the expression
+  // Examples: "cel", "jsonpath", "jmespath", "xpath", etc.
+  string language = 2 [
+    (google.api.field_behavior) = REQUIRED
+  ];
+
+  // Optional parameters for the expression evaluation
+  map<string, string> parameters = 3 [
+    (google.api.field_behavior) = OPTIONAL
+  ];
+
+  // Whether to cache the compiled expression for better performance
+  bool cache_compiled = 4 [
+    (google.api.field_behavior) = OPTIONAL
+  ];
+}
+
+// ConstantPatternProto represents a pattern that always matches with a fixed result.
+// Used for testing and as a building block for more complex patterns.
+message ConstantPatternProto {
+  // Reserved field numbers for future use
+  reserved 5 to 9, 100 to 199;
+
+  // Whether the pattern should match (true) or not match (false)
+  bool match = 1 [
+    (google.api.field_behavior) = REQUIRED
+  ];
+
+  // Optional metadata to include in the match result
+  map<string, string> metadata = 2 [
+    (google.api.field_behavior) = OPTIONAL
+  ];
+
+  // Optional delay to simulate processing time
+  google.protobuf.Duration delay = 3 [
+    (google.api.field_behavior) = OPTIONAL
+  ];
+
+  // Whether to normalize the match result
+  bool normalize = 4 [
+    (google.api.field_behavior) = OPTIONAL
+  ];
+
+  // Parameters for pattern matching
+  map<string, string> match_params = 10 [
+    (google.api.field_behavior) = OPTIONAL
+  ];
+}
+
+message EnablePatternRequestProto {
+  // Reserved field numbers for future use
+  reserved 5 to 9, 100 to 199;
+
+  // The ID of the pattern to enable
+  string pattern_id = 1 [
+    (google.api.field_behavior) = REQUIRED
+  ];
+
+  // The ID of the tenant that owns the pattern
+  string tenant_id = 2 [
+    (google.api.field_behavior) = REQUIRED
+  ];
+
+  // Optional: If true, the pattern will be validated but not actually enabled
+  bool validate_only = 3 [
+    (google.api.field_behavior) = OPTIONAL
+  ];
+
+  // Optional: The version of the pattern to enable. If not specified, the latest version will be used.
+  string version = 4 [
+    (google.api.field_behavior) = OPTIONAL
+  ];
+}
+
+message EnablePatternResponseProto {
+  // Reserved field numbers for future use
+  reserved 4 to 10, 100 to 200;
+
+  // The enabled pattern
+  PatternProto pattern = 1 [(google.api.field_behavior) = OUTPUT_ONLY];
+
+  // The time at which the pattern was enabled
+  google.protobuf.Timestamp enable_time = 2 [
+    (google.api.field_behavior) = OUTPUT_ONLY
+  ];
+
+  // The previous status of the pattern before enabling
+  PatternStatus previous_status = 3 [
+    (google.api.field_behavior) = OUTPUT_ONLY
+  ];
+}
+
+message DisablePatternRequestProto {
+  // Reserved field numbers for future use
+  reserved 6 to 10, 100 to 200;
+
+  // The ID of the pattern to disable
+  string pattern_id = 1 [
+    (google.api.field_behavior) = REQUIRED
+  ];
+
+  // The ID of the tenant that owns the pattern
+  string tenant_id = 2 [
+    (google.api.field_behavior) = REQUIRED
+  ];
+
+  // Optional: If true, the pattern will be validated but not actually disabled
+  bool validate_only = 3 [
+    (google.api.field_behavior) = OPTIONAL
+  ];
+
+  // Optional: The reason for disabling the pattern
+  string reason = 4 [
+    (google.api.field_behavior) = OPTIONAL
+  ];
+
+  // Optional: If true, the pattern will be disabled even if it's currently in use
+  bool force = 5 [
+    (google.api.field_behavior) = OPTIONAL
+  ];
+}
+
+message DisablePatternResponseProto {
+  // Reserved field numbers for future use
+  reserved 5 to 10, 100 to 200;
+
+  // The disabled pattern
+  PatternProto pattern = 1 [(google.api.field_behavior) = OUTPUT_ONLY];
+
+  // The time at which the pattern was disabled
+  google.protobuf.Timestamp disable_time = 2 [
+    (google.api.field_behavior) = OUTPUT_ONLY
+  ];
+
+  // The previous status of the pattern before disabling
+  PatternStatus previous_status = 3 [
+    (google.api.field_behavior) = OUTPUT_ONLY
+  ];
+
+  // The number of active pattern matches that were terminated
+  int32 terminated_matches = 4 [
+    (google.api.field_behavior) = OUTPUT_ONLY
+  ];
+}

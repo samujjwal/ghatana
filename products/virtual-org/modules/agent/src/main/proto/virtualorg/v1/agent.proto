@@ -1,0 +1,81 @@
+syntax = "proto3";
+
+package com.ghatana.virtualorg.v1;
+
+// Configure Java package and class name
+option java_package = "com.ghatana.virtualorg.v1";
+option java_outer_classname = "AgentProto";
+option java_multiple_files = true;
+
+message VirtualOrgAgentProto {
+  string agent_id = 1;
+  string name = 2;
+  AgentStateProto state = 3;
+  AgentPerformanceProto performance = 4;
+}
+
+message AgentStateProto {
+  enum State {
+    AGENT_STATE_UNSPECIFIED = 0;
+    AGENT_STATE_IDLE = 1;
+    AGENT_STATE_BUSY = 2;
+    AGENT_STATE_ERROR = 3;
+    AGENT_STATE_TERMINATED = 4;
+  }
+  State state = 1;
+  string status_message = 2;
+}
+
+message AgentPerformanceProto {
+  int64 tasks_processed = 1;
+  double average_processing_time_ms = 2;
+  int64 error_count = 3;
+}
+
+message TaskRequestProto {
+  string task_id = 1;
+  string description = 2;
+  map<string, string> parameters = 3;
+}
+
+message TaskResponseProto {
+  string task_id = 1;
+  bool success = 2;
+  string result = 3;
+  string error_message = 4;
+  AgentMetricsProto metrics = 5;
+}
+
+message AgentMetricsProto {
+  double cpu_usage = 1;
+  int64 memory_usage_bytes = 2;
+  int64 queue_size = 3;
+}
+
+message ToolProto {
+  string name = 1;
+  string description = 2;
+  map<string, string> parameters = 3;
+}
+
+enum TaskStatusProto {
+  TASK_STATUS_UNSPECIFIED = 0;
+  TASK_STATUS_PENDING = 1;
+  TASK_STATUS_RUNNING = 2;
+  TASK_STATUS_COMPLETED = 3;
+  TASK_STATUS_FAILED = 4;
+}
+
+enum TaskPriorityProto {
+  TASK_PRIORITY_UNSPECIFIED = 0;
+  TASK_PRIORITY_LOW = 1;
+  TASK_PRIORITY_MEDIUM = 2;
+  TASK_PRIORITY_HIGH = 3;
+}
+
+enum TaskTypeProto {
+  TASK_TYPE_UNKNOWN = 0;
+  TASK_TYPE_PROCESSING = 1;
+  TASK_TYPE_ANALYSIS = 2;
+  TASK_TYPE_REPORTING = 3;
+}

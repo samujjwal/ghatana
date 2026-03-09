@@ -1,0 +1,49 @@
+{
+    "compilerOptions": {
+        "target": "ES2020",
+        "module": "ESNext",
+        "lib": [
+            "ES2020"
+        ],
+        "declaration": true,
+        "declarationMap": true,
+        "outDir": "./dist",
+        "rootDir": "./src",
+        "strict": true,
+        "esModuleInterop": true,
+        "skipLibCheck": true,
+        "forceConsistentCasingInFileNames": true,
+        "moduleResolution": "node",
+        "resolveJsonModule": true,
+        "baseUrl": "./src",
+        "paths": {
+            "@ghatana/dcmaar-browser-extension-core": [
+                "../../../../libs/typescript/browser-extension-core/src"
+            ],
+            "@ghatana/dcmaar-types": [
+                "../../../../libs/typescript/types/src"
+            ],
+            "@ghatana/dcmaar-plugin-abstractions": [
+                "../../../../libs/typescript/plugin-abstractions/src"
+            ],
+            "@ghatana/dcmaar-plugin-extension": [
+                "../../../../libs/typescript/plugin-extension/src"
+            ],
+            "@ghatana/dcmaar-guardian-plugins": [
+                "../../../../apps/guardian/packages/guardian-plugins/src"
+            ]
+        },
+        "noUnusedLocals": true,
+        "noUnusedParameters": true,
+        "noImplicitReturns": true,
+        "noFallthroughCasesInSwitch": true
+    },
+    "include": [
+        "src/**/*"
+    ],
+    "exclude": [
+        "node_modules",
+        "dist",
+        "**/*.test.ts"
+    ]
+}

@@ -1,0 +1,19 @@
+#!/bin/bash
+# Guardian macOS preinstall script
+set -e
+
+# Check for macOS version
+if [[ $OSTYPE == darwin* ]]; then
+    MACOS_VERSION=$(sw_vers -productVersion | cut -d. -f1)
+    if [[ $MACOS_VERSION -lt 10 ]]; then
+        echo "Error: Guardian requires macOS 10.13 or later"
+        exit 1
+    fi
+fi
+
+# Check for required browsers
+if ! command -v google-chrome &>/dev/null && ! command -v /Applications/Google\ Chrome.app/Contents/MacOS/Google\ Chrome &>/dev/null; then
+    echo "Warning: Chrome not found. Guardian requires Chrome to run."
+fi
+
+echo "Pre-install checks passed"

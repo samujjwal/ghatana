@@ -1,0 +1,49 @@
+---
+id: "develop_combiner"
+agent: "SynthesisCombinerAgent"
+role: "PM/Stage Lead"
+inputs_spec:
+- name: "develop_evidence_package"
+  description: "Evidence package from develop stage (logs, docs, KPIs)."
+  format: "Evidence package artifact"
+- name: "develop_risk_trend_report"
+  description: "Risk trend analysis report."
+  format: "Risk trend report"
+- name: "modularized_codebase"
+  description: "Final codebase for build handoff."
+  format: "Source repo or artifact"
+- name: "containerized_services"
+  description: "Built container images/services."
+  format: "Container registry artifact"
+- name: "test_suites"
+  description: "Test suites for build handoff."
+  format: "Test suite artifact"
+- name: "api_contracts_docs"
+  description: "API documentation for build handoff."
+  format: "API doc artifact"
+- name: "updated_tech_docs"
+  description: "Latest technical documentation."
+  format: "Documentation artifact"
+outputs_spec:
+- name: "ready_for_build_package"
+  description: "Versioned, complete package for Build stage, with checklist."
+  format: "Package artifact"
+agent_tasks:
+- "Package all required outputs, reviews, and artifacts for Build stage."
+- "Version package and include handoff checklist for Build entry."
+acceptance_criteria:
+- "All required outputs from the stage are packaged and versioned for handoff."
+- "Handoff checklist for next stage entry is included."
+dependencies:
+- "develop_evidence_package"
+- "develop_risk_trend_report"
+- "modularized_codebase"
+- "containerized_services"
+- "test_suites"
+- "api_contracts_docs"
+- "updated_tech_docs"
+failure_escalation:
+- "Escalate to PM or Stage Lead if package or checklist is incomplete."
+references: []
+hitl: true
+hitl_reason: "Human signoff on development synthesis and readiness for Build"

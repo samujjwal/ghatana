@@ -1,0 +1,112 @@
+domain:
+  id: security-engineering
+  name: "Security Engineering"
+  description: "Secure the system through design and testing."
+  order: 17
+  icon: "security"
+  color: "#F44336"
+  agent_personas:
+    - "SecurityAnalyzer"
+    - "ThreatModeler"
+    - "VulnerabilityScanner"
+  audit_artifacts:
+    - "SecurityFinding"
+    - "MitigationRecord"
+    - "ThreatModel"
+  inputs:
+    - "Architecture"
+    - "Code"
+    - "Dependencies"
+  outputs:
+    - "Security fixes"
+    - "Risk assessments"
+    - "Threat models"
+
+tasks:
+  # Core ICS security tasks
+  - id: d17-t1
+    name: "Threat modeling"
+    description: "Identify potential threats."
+    personas: ["Security", "Tech Lead"]
+    lifecycle_stages: ["plan"]
+    automation_level: "assisted"
+  - id: d17-t2
+    name: "Secure design review"
+    description: "Review designs for security."
+    personas: ["Security", "Tech Lead"]
+    lifecycle_stages: ["plan", "verify"]
+    automation_level: "assisted"
+  - id: d17-t3
+    name: "Vulnerability remediation"
+    description: "Fix security vulnerabilities."
+    personas: ["Developer", "Security"]
+    lifecycle_stages: ["execute"]
+    automation_level: "assisted"
+  - id: d17-t4
+    name: "Security testing"
+    description: "Penetration testing and scanning."
+    personas: ["Security", "QA"]
+    lifecycle_stages: ["verify"]
+    automation_level: "assisted"
+
+  # Migrated from legacy security domain
+  - id: sec-001
+    name: "Secure Coding Practices"
+    description: "Apply secure coding standards and best practices."
+    personas: ["Developer"]
+    lifecycle_stages: ["execute"]
+    automation_level: "assisted"
+  - id: sec-002
+    name: "Input Validation"
+    description: "Validate and sanitize all inputs."
+    personas: ["Developer"]
+    lifecycle_stages: ["execute"]
+    automation_level: "assisted"
+  - id: sec-003
+    name: "Authentication Implementation"
+    description: "Implement secure authentication mechanisms."
+    personas: ["Developer", "Security"]
+    lifecycle_stages: ["execute"]
+    automation_level: "assisted"
+  - id: sec-004
+    name: "Authorization Implementation"
+    description: "Implement proper access control."
+    personas: ["Developer", "Security"]
+    lifecycle_stages: ["execute"]
+    automation_level: "assisted"
+  - id: sec-005
+    name: "Encryption Implementation"
+    description: "Encrypt sensitive data at rest and in transit."
+    personas: ["Developer", "Security"]
+    lifecycle_stages: ["execute"]
+    automation_level: "assisted"
+  - id: sec-006
+    name: "Secrets Management"
+    description: "Securely manage credentials and secrets."
+    personas: ["Developer", "DevOps", "Security"]
+    lifecycle_stages: ["execute"]
+    automation_level: "assisted"
+  - id: sec-007
+    name: "Dependency Vulnerability Scanning"
+    description: "Scan dependencies for known vulnerabilities."
+    personas: ["Developer", "Security"]
+    lifecycle_stages: ["verify"]
+    automation_level: "automated"
+  - id: sec-008
+    name: "Security Audit"
+    description: "Conduct security audits and reviews."
+    personas: ["Security"]
+    lifecycle_stages: ["verify"]
+    automation_level: "assisted"
+  - id: sec-009
+    name: "Incident Response Planning"
+    description: "Plan for security incident response."
+    personas: ["Security", "DevOps"]
+    lifecycle_stages: ["plan"]
+    automation_level: "manual"
+  - id: sec-010
+    name: "Security Documentation"
+    description: "Document security controls and procedures."
+    personas: ["Security", "Developer"]
+    lifecycle_stages: ["verify"]
+    automation_level: "assisted"

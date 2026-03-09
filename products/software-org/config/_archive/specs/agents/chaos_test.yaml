@@ -1,0 +1,26 @@
+---
+id: "chaos_test"
+agent: "ChaosTestAgent"
+role: "SRE/Resilience Engineer"
+inputs_spec:
+- name: "test_environment_url"
+  description: "Test environment for chaos and resilience testing."
+  format: "Environment URL/credentials"
+outputs_spec:
+- name: "chaos_test_report"
+  description: "Chaos test execution, system recovery, lessons learned."
+  format: "Chaos test report artifact"
+agent_tasks:
+- "Run chaos/resilience/failure scenario tests."
+- "Observe system recovery and document findings."
+- "Identify system weaknesses and improvement actions."
+acceptance_criteria:
+- "Chaos/resilience/failure scenario tests performed."
+- "System recovery and weaknesses are documented."
+- "Improvement actions identified and tracked."
+dependencies:
+- "test_environment_url"
+failure_escalation:
+- "Escalate to SRE or Lead Engineer if system does not recover as expected."
+references: []
+hitl: false

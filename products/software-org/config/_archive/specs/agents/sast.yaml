@@ -1,0 +1,29 @@
+---
+id: "sast"
+agent: "SASTAgent"
+role: "Security Engineer"
+inputs_spec:
+- name: "build_artifacts"
+  description: "Artifacts to be scanned with static analysis tools."
+  format: "Artifact repo/package"
+outputs_spec:
+- name: "sast_report"
+  description: "Static Application Security Testing (SAST) scan report."
+  format: "SAST report artifact"
+agent_tasks:
+- "Run SAST scan on all build artifacts."
+- "Report all findings with severity."
+- "Block promotion on critical/high issues unless approved."
+- "Store SAST report for traceability."
+acceptance_criteria:
+- "Static application security tests are executed on all build artifacts."
+- "All findings are reported with severity."
+- "Critical and high issues block promotion unless approved."
+- "SAST report is stored for traceability."
+dependencies:
+- "build_artifacts"
+failure_escalation:
+- "Escalate to Security Lead if scan is incomplete or findings not addressed."
+references: []
+hitl: true
+hitl_reason: "Human reviews SAST scan results for critical vulnerabilities"

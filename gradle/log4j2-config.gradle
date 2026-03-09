@@ -1,0 +1,47 @@
+// Global Log4j2 configuration for all projects
+configurations.all {
+    // Exclude Logback and other conflicting logging implementations
+    exclude group: 'ch.qos.logback', module: 'logback-classic'
+    exclude group: 'org.slf4j', module: 'slf4j-log4j12'
+    
+    // Force consistent logging versions
+    resolutionStrategy {
+        force "org.apache.logging.log4j:log4j-core:${libs.versions.log4j.get()}"
+        force "org.apache.logging.log4j:log4j-api:${libs.versions.log4j.get()}"
+        force "org.apache.logging.log4j:log4j-slf4j2-impl:${libs.versions.log4j.get()}"
+        force "org.apache.logging.log4j:log4j-jul:${libs.versions.log4j.get()}"
+        force "org.apache.logging.log4j:log4j-jcl:${libs.versions.log4j.get()}"
+    }
+}
+
+dependencies {
+    // Log4j2 Core
+    implementation libs.log4j.core
+    implementation libs.log4j.api
+    
+    // SLF4J to Log4j2 bridge
+    runtimeOnly libs.log4j.slf4j.impl
+    
+    // JUL to Log4j2 bridge
+    runtimeOnly libs.log4j.jul
+    
+    // JCL (Apache Commons Logging) to Log4j2 bridge
+    runtimeOnly libs.log4j.jcl
+}
+
+// Copy log4j2 configuration to test resources if it doesn't exist
+tasks.register('copyLog4j2Config', Copy) {
+    from rootProject.file('gradle/templates/log4j2-test.xml')
+    into 'src/test/resources'
+    rename 'log4j2-test.xml', 'log4j2.xml'
+    onlyIf { !file('src/test/resources/log4j2.xml').exists() }
+}
+
+// Ensure the config is copied before processing test resources and running tests
+tasks.named('processTestResources') {
+    dependsOn 'copyLog4j2Config'
+}
+
+tasks.named('test') {
+    dependsOn 'copyLog4j2Config'
+}

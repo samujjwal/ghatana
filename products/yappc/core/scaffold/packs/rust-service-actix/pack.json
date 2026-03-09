@@ -1,0 +1,61 @@
+{
+    "name": "rust-service-actix",
+    "version": "1.0.0",
+    "description": "Rust HTTP service with Actix-Web framework",
+    "language": "rust",
+    "category": "backend",
+    "platform": "server",
+    "buildSystem": "cargo",
+    "author": "YAPPC Team",
+    "tags": [
+        "rust",
+        "actix",
+        "http",
+        "rest",
+        "api",
+        "async"
+    ],
+    "requiredVariables": [
+        "projectName",
+        "rustEdition"
+    ],
+    "optionalVariables": [
+        "description",
+        "author",
+        "enableSwagger",
+        "enableCors",
+        "enableMetrics"
+    ],
+    "defaults": {
+        "rustEdition": "2021",
+        "description": "Rust service with Actix-Web framework",
+        "enableSwagger": "true",
+        "enableCors": "true",
+        "enableMetrics": "true"
+    },
+    "templates": [
+        "Cargo.toml.hbs",
+        "src/main.rs.hbs",
+        "src/config.rs.hbs",
+        "src/routes/mod.rs.hbs",
+        "src/routes/health.rs.hbs",
+        "src/routes/api.rs.hbs",
+        "src/middleware/mod.rs.hbs",
+        "src/middleware/cors.rs.hbs",
+        "src/middleware/logger.rs.hbs",
+        "src/models/mod.rs.hbs",
+        "src/error.rs.hbs",
+        "tests/integration_test.rs.hbs",
+        "Makefile.hbs",
+        "Dockerfile.hbs",
+        ".dockerignore.hbs",
+        ".gitignore.hbs",
+        "README.md.hbs"
+    ],
+    "supportedFeatures": [
+        "database",
+        "auth",
+        "observability",
+        "messaging"
+    ]
+}

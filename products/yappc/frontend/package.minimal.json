@@ -1,0 +1,12 @@
+{
+  "name": "app-creator",
+  "private": true,
+  "dependencies": {
+    "typescript": "^5.0.0"
+  },
+  "devDependencies": {
+    "@types/node": "^20.0.0",
+    "eslint": "^8.57.1",
+    "prettier": "^3.0.0"
+  }
+}

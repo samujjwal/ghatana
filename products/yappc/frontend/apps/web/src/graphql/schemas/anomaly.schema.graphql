@@ -1,0 +1,802 @@
+"""
+Anomaly Detection GraphQL Schema
+
+Defines types and operations for security anomaly detection, threat intelligence,
+and automated response orchestration.
+
+Integrates with:
+- AnomalyDetectionService for anomaly pattern matching
+- ThreatIntelligenceService for threat data
+- RiskScoringService for risk calculations
+- AutomatedResponseService for response automation
+
+@see AnomalyDetectionService
+@see ThreatIntelligenceService
+@see RiskScoringService
+"""
+
+"""
+Detected security anomaly representing deviation from normal patterns.
+"""
+type SecurityAnomaly {
+  """Unique identifier for this anomaly"""
+  id: ID!
+
+  """Associated tenant ID"""
+  tenantId: String!
+
+  """Type of anomaly (LOGIN_FAILURE, DATA_ACCESS, NETWORK_TRAFFIC, etc.)"""
+  type: AnomalyType!
+
+  """Severity level of the anomaly"""
+  severity: AnomalySeverity!
+
+  """Confidence level of detection (0-100)"""
+  confidence: Float!
+
+  """Risk score calculated from anomaly"""
+  riskScore: RiskScore!
+
+  """Source system where anomaly was detected"""
+  sourceSystem: String!
+
+  """Affected component or resource"""
+  affectedComponent: String!
+
+  """Associated user or account"""
+  user: String
+
+  """Associated IP address"""
+  ipAddress: String
+
+  """Geo-location of anomaly source"""
+  geoLocation: GeoLocation
+
+  """Event baseline information"""
+  baseline: EventBaseline!
+
+  """Deviation from normal pattern (%)"""
+  deviation: Float!
+
+  """Timeline of related events"""
+  timeline: [TimelineEvent!]!
+
+  """Threat intelligence data related to this anomaly"""
+  threatIntel: [ThreatIntelligence!]!
+
+  """Indicators of compromise found"""
+  indicators: [Indicator!]!
+
+  """Current status"""
+  status: AnomalyStatus!
+
+  """Investigation details"""
+  investigation: Investigation
+
+  """Associated incident"""
+  incident: IncidentReference
+
+  """When anomaly was detected"""
+  detectedAt: DateTime!
+
+  """When anomaly record was created"""
+  createdAt: DateTime!
+
+  """When anomaly record was last updated"""
+  updatedAt: DateTime!
+}
+
+"""
+Risk score for anomaly assessment.
+"""
+type RiskScore {
+  """Risk score value (0-100)"""
+  score: Float!
+
+  """Risk severity level"""
+  severity: RiskSeverity!
+
+  """Risk categories identified"""
+  categories: [RiskCategory!]!
+
+  """Contributing risk factors"""
+  factors: [RiskFactor!]!
+
+  """Risk trend direction"""
+  trend: TrendDirection!
+
+  """Risk change rate"""
+  changeRate: Float!
+
+  """Recommended actions"""
+  recommendations: [String!]!
+
+  """When score was calculated"""
+  calculatedAt: DateTime!
+}
+
+"""
+Risk factor contributing to risk score.
+"""
+type RiskFactor {
+  """Factor name"""
+  name: String!
+
+  """Factor weight in calculation (0-1)"""
+  weight: Float!
+
+  """Factor value (0-100)"""
+  value: Float!
+
+  """Contribution to total score"""
+  contribution: Float!
+}
+
+"""
+Geo-location information.
+"""
+type GeoLocation {
+  """Country code"""
+  countryCode: String!
+
+  """Country name"""
+  countryName: String!
+
+  """City name"""
+  city: String
+
+  """Geographic coordinates"""
+  coordinates: Coordinates
+
+  """Is this location known for this user"""
+  isKnownLocation: Boolean!
+
+  """Risk level of this location"""
+  riskLevel: LocationRiskLevel!
+}
+
+"""
+Geographic coordinates.
+"""
+type Coordinates {
+  latitude: Float!
+  longitude: Float!
+}
+
+"""
+Event baseline for anomaly comparison.
+"""
+type EventBaseline {
+  """Normal event count in time period"""
+  normalCount: Int!
+
+  """Expected values for this event type"""
+  expectedValues: [String!]!
+
+  """Historical standard deviation"""
+  standardDeviation: Float!
+
+  """Historical average"""
+  historicalAverage: Float!
+
+  """Baseline confidence (0-100)"""
+  confidence: Float!
+}
+
+"""
+Timeline event related to anomaly.
+"""
+type TimelineEvent {
+  """Event timestamp"""
+  timestamp: DateTime!
+
+  """Event type"""
+  type: String!
+
+  """Event description"""
+  description: String!
+
+  """Event severity"""
+  severity: AnomalySeverity!
+
+  """Related resource"""
+  resource: String
+
+  """Event metadata"""
+  metadata: String
+}
+
+"""
+Threat intelligence information.
+"""
+type ThreatIntelligence {
+  """Threat intel ID"""
+  id: ID!
+
+  """Threat type"""
+  type: ThreatType!
+
+  """Threat name or campaign"""
+  threatName: String!
+
+  """Threat actors involved"""
+  actors: [String!]!
+
+  """Attack techniques (MITRE ATT&CK)"""
+  techniques: [MitreAttackTechnique!]!
+
+  """Threat severity"""
+  severity: ThreatSeverity!
+
+  """Threat description"""
+  description: String!
+
+  """Known affected platforms"""
+  affectedPlatforms: [String!]!
+
+  """Detection patterns"""
+  detectionPatterns: [String!]!
+
+  """Related CVEs"""
+  relatedCVEs: [String!]!
+
+  """Remediation guidance"""
+  remediationGuidance: String
+
+  """Source of threat intel"""
+  source: String!
+
+  """Confidence in threat assessment"""
+  confidence: Float!
+
+  """Publish date"""
+  publishedAt: DateTime!
+}
+
+"""
+MITRE ATT&CK Framework technique.
+"""
+type MitreAttackTechnique {
+  """Technique ID (e.g., T1566)"""
+  id: String!
+
+  """Technique name"""
+  name: String!
+
+  """Tactic category"""
+  tactic: String!
+
+  """Technique description"""
+  description: String
+}
+
+"""
+Indicator of compromise.
+"""
+type Indicator {
+  """Indicator ID"""
+  id: ID!
+
+  """Indicator type (IP, DOMAIN, FILE_HASH, etc.)"""
+  type: IndicatorType!
+
+  """Indicator value"""
+  value: String!
+
+  """Indicator severity"""
+  severity: IndicatorSeverity!
+
+  """Known malicious: true if known to be malicious"""
+  knownMalicious: Boolean!
+
+  """Detection count across systems"""
+  detectionCount: Int!
+
+  """Associated threat"""
+  associatedThreat: String
+
+  """First seen date"""
+  firstSeen: DateTime
+
+  """Last seen date"""
+  lastSeen: DateTime
+}
+
+"""
+Investigation details for anomaly.
+"""
+type Investigation {
+  """Investigation ID"""
+  id: ID!
+
+  """Investigation status"""
+  status: InvestigationStatus!
+
+  """Investigator assigned"""
+  assignedTo: String
+
+  """Investigation findings"""
+  findings: String
+
+  """Root cause analysis"""
+  rootCause: String
+
+  """Remediation actions taken"""
+  remediationActions: [RemediationAction!]!
+
+  """Investigation start time"""
+  startedAt: DateTime!
+
+  """Investigation completion time"""
+  completedAt: DateTime
+}
+
+"""
+Remediation action taken.
+"""
+type RemediationAction {
+  """Action ID"""
+  id: ID!
+
+  """Action type"""
+  type: ActionType!
+
+  """Action status"""
+  status: ActionStatus!
+
+  """Action description"""
+  description: String!
+
+  """When action was initiated"""
+  initiatedAt: DateTime!
+
+  """When action completed"""
+  completedAt: DateTime
+
+  """Action result"""
+  result: String
+}
+
+"""
+Reference to related incident.
+"""
+type IncidentReference {
+  """Incident ID"""
+  id: ID!
+
+  """Incident number"""
+  number: String!
+
+  """Incident severity"""
+  severity: IncidentSeverity!
+
+  """Link to incident details"""
+  url: String
+}
+
+"""
+Anomaly baseline for anomaly detection.
+"""
+type AnomalyBaseline {
+  """Baseline ID"""
+  id: ID!
+
+  """Tenant ID"""
+  tenantId: String!
+
+  """System or component"""
+  system: String!
+
+  """Metric being tracked"""
+  metric: String!
+
+  """Normal/expected value"""
+  normalValue: Float!
+
+  """Standard deviation"""
+  standardDeviation: Float!
+
+  """Lower control limit"""
+  lowerControlLimit: Float!
+
+  """Upper control limit"""
+  upperControlLimit: Float!
+
+  """Detection sensitivity (1-10)"""
+  sensitivity: Int!
+
+  """Baseline is active"""
+  isActive: Boolean!
+
+  """Last updated"""
+  updatedAt: DateTime!
+}
+
+"""
+Threat intelligence panel data.
+"""
+type ThreatIntelligencePanel {
+  """Panel ID"""
+  id: ID!
+
+  """Active threats count"""
+  activeThreatsCount: Int!
+
+  """Critical threats"""
+  criticalThreats: [ThreatIntelligence!]!
+
+  """Emerging threats"""
+  emergingThreats: [ThreatIntelligence!]!
+
+  """Top threat actors"""
+  topThreatActors: [String!]!
+
+  """Top attack techniques"""
+  topAttackTechniques: [MitreAttackTechnique!]!
+
+  """Affected systems summary"""
+  affectedSystemsSummary: String!
+
+  """Last updated"""
+  updatedAt: DateTime!
+}
+
+# ===== ENUMS =====
+
+"""Anomaly type enumeration"""
+enum AnomalyType {
+  """Login failure patterns"""
+  LOGIN_FAILURE
+
+  """Unauthorized data access"""
+  DATA_ACCESS
+
+  """Unusual network traffic"""
+  NETWORK_TRAFFIC
+
+  """Resource consumption spike"""
+  RESOURCE_SPIKE
+
+  """Configuration change"""
+  CONFIG_CHANGE
+
+  """Process execution anomaly"""
+  PROCESS_EXECUTION
+
+  """File system activity anomaly"""
+  FILE_SYSTEM_ACTIVITY
+
+  """API call anomaly"""
+  API_CALL
+
+  """Database query anomaly"""
+  DATABASE_QUERY
+
+  """Authentication anomaly"""
+  AUTHENTICATION
+}
+
+"""Anomaly severity enumeration"""
+enum AnomalySeverity {
+  LOW
+  MEDIUM
+  HIGH
+  CRITICAL
+}
+
+"""Anomaly status enumeration"""
+enum AnomalyStatus {
+  """New anomaly detected"""
+  NEW
+
+  """Under investigation"""
+  INVESTIGATING
+
+  """Confirmed as threat"""
+  CONFIRMED_THREAT
+
+  """Confirmed as false positive"""
+  FALSE_POSITIVE
+
+  """Resolved"""
+  RESOLVED
+
+  """Archived"""
+  ARCHIVED
+}
+
+"""Risk severity enumeration"""
+enum RiskSeverity {
+  LOW
+  MEDIUM
+  HIGH
+  CRITICAL
+}
+
+"""Risk category enumeration"""
+enum RiskCategory {
+  SECURITY
+  COMPLIANCE
+  OPERATIONAL
+  REPUTATIONAL
+  FINANCIAL
+}
+
+"""Trend direction enumeration"""
+enum TrendDirection {
+  INCREASING
+  DECREASING
+  STABLE
+}
+
+"""Location risk level enumeration"""
+enum LocationRiskLevel {
+  VERY_LOW
+  LOW
+  MEDIUM
+  HIGH
+  VERY_HIGH
+  UNKNOWN
+}
+
+"""Threat type enumeration"""
+enum ThreatType {
+  MALWARE
+  RANSOMWARE
+  APT
+  EXPLOIT
+  VULNERABILITY
+  PHISHING
+  SOCIAL_ENGINEERING
+  INSIDER_THREAT
+  DATA_BREACH
+  DDoS
+  ZERO_DAY
+}
+
+"""Threat severity enumeration"""
+enum ThreatSeverity {
+  LOW
+  MEDIUM
+  HIGH
+  CRITICAL
+  ZERO_DAY
+}
+
+"""Indicator type enumeration"""
+enum IndicatorType {
+  IP_ADDRESS
+  DOMAIN
+  FILE_HASH
+  URL
+  EMAIL
+  CERTIFICATE
+  PROCESS
+  REGISTRY_KEY
+}
+
+"""Indicator severity enumeration"""
+enum IndicatorSeverity {
+  LOW
+  MEDIUM
+  HIGH
+  CRITICAL
+}
+
+"""Investigation status enumeration"""
+enum InvestigationStatus {
+  OPEN
+  IN_PROGRESS
+  SUSPENDED
+  RESOLVED
+  CLOSED
+}
+
+"""Action type enumeration"""
+enum ActionType {
+  ISOLATE_SYSTEM
+  DISABLE_ACCOUNT
+  REVOKE_CREDENTIALS
+  BLOCK_IP
+  QUARANTINE_FILE
+  KILL_PROCESS
+  RESET_PASSWORD
+  NOTIFY_STAKEHOLDER
+  ESCALATE
+  OTHER
+}
+
+"""Action status enumeration"""
+enum ActionStatus {
+  PENDING
+  IN_PROGRESS
+  COMPLETED
+  FAILED
+  CANCELLED
+}
+
+"""Incident severity enumeration"""
+enum IncidentSeverity {
+  LOW
+  MEDIUM
+  HIGH
+  CRITICAL
+}
+
+# ===== QUERIES =====
+
+type Query {
+  """
+  Get anomalies detected in time range.
+  
+  Args:
+    tenantId: Tenant identifier
+    startDate: Start of time range
+    endDate: End of time range
+    severity: Optional - filter by severity
+    status: Optional - filter by status
+    type: Optional - filter by anomaly type
+  """
+  getAnomalies(
+    tenantId: String!
+    startDate: DateTime!
+    endDate: DateTime!
+    severity: AnomalySeverity
+    status: AnomalyStatus
+    type: AnomalyType
+  ): [SecurityAnomaly!]!
+
+  """Get single anomaly by ID"""
+  getAnomalyById(id: ID!): SecurityAnomaly
+
+  """
+  Get critical anomalies (CRITICAL + HIGH severity).
+  
+  Args:
+    tenantId: Tenant identifier
+    limit: Max results
+  """
+  getCriticalAnomalies(tenantId: String!, limit: Int): [SecurityAnomaly!]!
+
+  """
+  Get anomalies by user.
+  
+  Args:
+    tenantId: Tenant identifier
+    userId: User identifier
+  """
+  getAnomaliesByUser(tenantId: String!, userId: String!): [SecurityAnomaly!]!
+
+  """
+  Get threat intelligence data.
+  
+  Args:
+    tenantId: Tenant identifier
+    threatType: Optional - filter by threat type
+  """
+  getThreatIntelligence(
+    tenantId: String!
+    threatType: ThreatType
+  ): [ThreatIntelligence!]!
+
+  """Get threat intel by ID"""
+  getThreatIntelligenceById(id: ID!): ThreatIntelligence
+
+  """Get threat intelligence panel summary"""
+  getThreatIntelligencePanel(tenantId: String!): ThreatIntelligencePanel!
+
+  """
+  Get indicators of compromise.
+  
+  Args:
+    tenantId: Tenant identifier
+    indicatorType: Optional - filter by type
+  """
+  getIndicators(
+    tenantId: String!
+    indicatorType: IndicatorType
+  ): [Indicator!]!
+
+  """Get indicator by ID"""
+  getIndicatorById(id: ID!): Indicator
+
+  """Get anomaly baseline"""
+  getAnomalyBaseline(tenantId: String!, system: String!): AnomalyBaseline
+
+  """Get all baselines for tenant"""
+  getAnomalyBaselines(tenantId: String!): [AnomalyBaseline!]!
+
+  """Get anomaly statistics"""
+  getAnomalyStatistics(
+    tenantId: String!
+    timeRange: TimeRange!
+  ): AnomalyStatistics!
+}
+
+"""Time range for queries"""
+enum TimeRange {
+  LAST_HOUR
+  LAST_DAY
+  LAST_WEEK
+  LAST_MONTH
+}
+
+"""Anomaly statistics"""
+type AnomalyStatistics {
+  totalAnomalies: Int!
+  criticalCount: Int!
+  highCount: Int!
+  mediumCount: Int!
+  lowCount: Int!
+  falsePositiveRate: Float!
+  avgConfidence: Float!
+  topAnomalyTypes: [String!]!
+  topAffectedSystems: [String!]!
+}
+
+# ===== MUTATIONS =====
+
+type Mutation {
+  """Update anomaly status"""
+  updateAnomalyStatus(
+    id: ID!
+    status: AnomalyStatus!
+    notes: String
+  ): SecurityAnomaly!
+
+  """Create investigation for anomaly"""
+  createInvestigation(id: ID!, assignedTo: String!): Investigation!
+
+  """Update investigation"""
+  updateInvestigation(
+    id: ID!
+    status: InvestigationStatus!
+    findings: String
+    rootCause: String
+  ): Investigation!
+
+  """Add remediation action"""
+  addRemediationAction(
+    anomalyId: ID!
+    type: ActionType!
+    description: String!
+  ): RemediationAction!
+
+  """Update anomaly baseline"""
+  updateAnomalyBaseline(
+    id: ID!
+    normalValue: Float
+    sensitivity: Int
+  ): AnomalyBaseline!
+
+  """Create new anomaly baseline"""
+  createAnomalyBaseline(
+    tenantId: String!
+    system: String!
+    metric: String!
+    normalValue: Float!
+    sensitivity: Int!
+  ): AnomalyBaseline!
+
+  """Acknowledge threat intelligence"""
+  acknowledgeThreatIntelligence(id: ID!): ThreatIntelligence!
+}
+
+# ===== SUBSCRIPTIONS =====
+
+type Subscription {
+  """Subscribe to new anomalies"""
+  onAnomalyDetected(tenantId: String!): SecurityAnomaly!
+
+  """Subscribe to high/critical anomalies"""
+  onCriticalAnomaly(tenantId: String!): SecurityAnomaly!
+
+  """Subscribe to anomaly status changes"""
+  onAnomalyStatusChanged(tenantId: String!): SecurityAnomaly!
+
+  """Subscribe to threat intelligence updates"""
+  onThreatIntelligenceUpdate(tenantId: String!): ThreatIntelligence!
+
+  """Subscribe to investigation updates"""
+  onInvestigationUpdate(anomalyId: ID!): Investigation!
+}

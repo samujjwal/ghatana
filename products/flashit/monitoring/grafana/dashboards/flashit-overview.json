@@ -1,0 +1,262 @@
+{
+  "annotations": { "list": [] },
+  "editable": true,
+  "fiscalYearStartMonth": 0,
+  "graphTooltip": 1,
+  "id": null,
+  "links": [],
+  "liveNow": false,
+  "panels": [
+    {
+      "collapsed": false,
+      "gridPos": { "h": 1, "w": 24, "x": 0, "y": 0 },
+      "id": 100,
+      "title": "Overview",
+      "type": "row"
+    },
+    {
+      "datasource": { "type": "prometheus", "uid": "PBFA97CFB590B2093" },
+      "fieldConfig": {
+        "defaults": { "color": { "mode": "thresholds" }, "thresholds": { "steps": [{ "color": "green", "value": null }, { "color": "yellow", "value": 500 }, { "color": "red", "value": 1000 }] } }
+      },
+      "gridPos": { "h": 4, "w": 6, "x": 0, "y": 1 },
+      "id": 1,
+      "options": { "reduceOptions": { "calcs": ["lastNotNull"] } },
+      "title": "HTTP Request Rate (1m)",
+      "type": "stat",
+      "targets": [{ "expr": "sum(rate(http_requests_total[1m]))", "legendFormat": "req/s" }]
+    },
+    {
+      "datasource": { "type": "prometheus", "uid": "PBFA97CFB590B2093" },
+      "fieldConfig": {
+        "defaults": { "unit": "ms", "color": { "mode": "thresholds" }, "thresholds": { "steps": [{ "color": "green", "value": null }, { "color": "yellow", "value": 200 }, { "color": "red", "value": 500 }] } }
+      },
+      "gridPos": { "h": 4, "w": 6, "x": 6, "y": 1 },
+      "id": 2,
+      "options": { "reduceOptions": { "calcs": ["lastNotNull"] } },
+      "title": "Avg Response Time",
+      "type": "stat",
+      "targets": [{ "expr": "histogram_quantile(0.95, sum(rate(http_request_duration_seconds_bucket[5m])) by (le)) * 1000", "legendFormat": "p95" }]
+    },
+    {
+      "datasource": { "type": "prometheus", "uid": "PBFA97CFB590B2093" },
+      "fieldConfig": {
+        "defaults": { "unit": "percent", "color": { "mode": "thresholds" }, "thresholds": { "steps": [{ "color": "green", "value": null }, { "color": "yellow", "value": 1 }, { "color": "red", "value": 5 }] } }
+      },
+      "gridPos": { "h": 4, "w": 6, "x": 12, "y": 1 },
+      "id": 3,
+      "options": { "reduceOptions": { "calcs": ["lastNotNull"] } },
+      "title": "Error Rate (%)",
+      "type": "stat",
+      "targets": [{ "expr": "sum(rate(http_requests_total{status=~\"5..\"}[5m])) / sum(rate(http_requests_total[5m])) * 100", "legendFormat": "errors" }]
+    },
+    {
+      "datasource": { "type": "prometheus", "uid": "PBFA97CFB590B2093" },
+      "fieldConfig": {
+        "defaults": { "color": { "mode": "thresholds" }, "thresholds": { "steps": [{ "color": "green", "value": null }] } }
+      },
+      "gridPos": { "h": 4, "w": 6, "x": 18, "y": 1 },
+      "id": 4,
+      "options": { "reduceOptions": { "calcs": ["lastNotNull"] } },
+      "title": "Active Connections",
+      "type": "stat",
+      "targets": [{ "expr": "sum(http_active_connections)", "legendFormat": "connections" }]
+    },
+    {
+      "collapsed": false,
+      "gridPos": { "h": 1, "w": 24, "x": 0, "y": 5 },
+      "id": 101,
+      "title": "Gateway API",
+      "type": "row"
+    },
+    {
+      "datasource": { "type": "prometheus", "uid": "PBFA97CFB590B2093" },
+      "fieldConfig": { "defaults": { "custom": { "lineWidth": 1, "fillOpacity": 10 } } },
+      "gridPos": { "h": 8, "w": 12, "x": 0, "y": 6 },
+      "id": 10,
+      "title": "Requests by Status Code",
+      "type": "timeseries",
+      "targets": [
+        { "expr": "sum(rate(http_requests_total{status=~\"2..\"}[5m]))", "legendFormat": "2xx" },
+        { "expr": "sum(rate(http_requests_total{status=~\"4..\"}[5m]))", "legendFormat": "4xx" },
+        { "expr": "sum(rate(http_requests_total{status=~\"5..\"}[5m]))", "legendFormat": "5xx" }
+      ]
+    },
+    {
+      "datasource": { "type": "prometheus", "uid": "PBFA97CFB590B2093" },
+      "fieldConfig": { "defaults": { "custom": { "lineWidth": 1 }, "unit": "s" } },
+      "gridPos": { "h": 8, "w": 12, "x": 12, "y": 6 },
+      "id": 11,
+      "title": "Response Latency Percentiles",
+      "type": "timeseries",
+      "targets": [
+        { "expr": "histogram_quantile(0.50, sum(rate(http_request_duration_seconds_bucket[5m])) by (le))", "legendFormat": "p50" },
+        { "expr": "histogram_quantile(0.95, sum(rate(http_request_duration_seconds_bucket[5m])) by (le))", "legendFormat": "p95" },
+        { "expr": "histogram_quantile(0.99, sum(rate(http_request_duration_seconds_bucket[5m])) by (le))", "legendFormat": "p99" }
+      ]
+    },
+    {
+      "datasource": { "type": "prometheus", "uid": "PBFA97CFB590B2093" },
+      "fieldConfig": { "defaults": { "custom": { "lineWidth": 1, "fillOpacity": 10 } } },
+      "gridPos": { "h": 8, "w": 12, "x": 0, "y": 14 },
+      "id": 12,
+      "title": "Requests by Route (Top 10)",
+      "type": "timeseries",
+      "targets": [{ "expr": "topk(10, sum(rate(http_requests_total[5m])) by (route))", "legendFormat": "{{ route }}" }]
+    },
+    {
+      "datasource": { "type": "prometheus", "uid": "PBFA97CFB590B2093" },
+      "fieldConfig": { "defaults": { "custom": { "lineWidth": 1, "fillOpacity": 10 }, "unit": "bytes" } },
+      "gridPos": { "h": 8, "w": 12, "x": 12, "y": 14 },
+      "id": 13,
+      "title": "Node.js Memory Usage",
+      "type": "timeseries",
+      "targets": [
+        { "expr": "process_resident_memory_bytes{job=\"flashit-gateway\"}", "legendFormat": "RSS" },
+        { "expr": "nodejs_heap_size_used_bytes{job=\"flashit-gateway\"}", "legendFormat": "Heap Used" },
+        { "expr": "nodejs_heap_size_total_bytes{job=\"flashit-gateway\"}", "legendFormat": "Heap Total" }
+      ]
+    },
+    {
+      "collapsed": false,
+      "gridPos": { "h": 1, "w": 24, "x": 0, "y": 22 },
+      "id": 102,
+      "title": "Java Agent Service",
+      "type": "row"
+    },
+    {
+      "datasource": { "type": "prometheus", "uid": "PBFA97CFB590B2093" },
+      "fieldConfig": {
+        "defaults": { "color": { "mode": "thresholds" }, "thresholds": { "steps": [{ "color": "red", "value": null }, { "color": "green", "value": 1 }] } },
+        "overrides": []
+      },
+      "gridPos": { "h": 4, "w": 6, "x": 0, "y": 23 },
+      "id": 20,
+      "options": { "reduceOptions": { "calcs": ["lastNotNull"] } },
+      "title": "Java Agent Up",
+      "type": "stat",
+      "targets": [{ "expr": "up{job=\"flashit-agent\"}", "legendFormat": "" }]
+    },
+    {
+      "datasource": { "type": "prometheus", "uid": "PBFA97CFB590B2093" },
+      "fieldConfig": { "defaults": { "unit": "ms", "color": { "mode": "thresholds" }, "thresholds": { "steps": [{ "color": "green", "value": null }, { "color": "yellow", "value": 500 }, { "color": "red", "value": 2000 }] } } },
+      "gridPos": { "h": 4, "w": 6, "x": 6, "y": 23 },
+      "id": 21,
+      "options": { "reduceOptions": { "calcs": ["lastNotNull"] } },
+      "title": "Agent Avg Latency",
+      "type": "stat",
+      "targets": [{ "expr": "avg(rate(flashit_agent_request_duration_milliseconds_sum[5m]) / rate(flashit_agent_request_duration_milliseconds_count[5m]))", "legendFormat": "ms" }]
+    },
+    {
+      "datasource": { "type": "prometheus", "uid": "PBFA97CFB590B2093" },
+      "fieldConfig": { "defaults": { "unit": "bytes", "custom": { "lineWidth": 1 } } },
+      "gridPos": { "h": 8, "w": 12, "x": 0, "y": 27 },
+      "id": 22,
+      "title": "JVM Memory",
+      "type": "timeseries",
+      "targets": [
+        { "expr": "jvm_memory_used_bytes{job=\"flashit-agent\", area=\"heap\"}", "legendFormat": "Heap Used" },
+        { "expr": "jvm_memory_committed_bytes{job=\"flashit-agent\", area=\"heap\"}", "legendFormat": "Heap Committed" },
+        { "expr": "jvm_memory_max_bytes{job=\"flashit-agent\", area=\"heap\"}", "legendFormat": "Heap Max" }
+      ]
+    },
+    {
+      "datasource": { "type": "prometheus", "uid": "PBFA97CFB590B2093" },
+      "fieldConfig": { "defaults": { "custom": { "lineWidth": 1, "fillOpacity": 10 } } },
+      "gridPos": { "h": 8, "w": 12, "x": 12, "y": 27 },
+      "id": 23,
+      "title": "Agent Requests by Endpoint",
+      "type": "timeseries",
+      "targets": [
+        { "expr": "sum(rate(flashit_agent_requests_total{endpoint=\"classification\"}[5m]))", "legendFormat": "Classification" },
+        { "expr": "sum(rate(flashit_agent_requests_total{endpoint=\"embedding\"}[5m]))", "legendFormat": "Embedding" },
+        { "expr": "sum(rate(flashit_agent_requests_total{endpoint=\"reflection\"}[5m]))", "legendFormat": "Reflection" },
+        { "expr": "sum(rate(flashit_agent_requests_total{endpoint=\"transcription\"}[5m]))", "legendFormat": "Transcription" },
+        { "expr": "sum(rate(flashit_agent_requests_total{endpoint=\"nlp\"}[5m]))", "legendFormat": "NLP" }
+      ]
+    },
+    {
+      "collapsed": false,
+      "gridPos": { "h": 1, "w": 24, "x": 0, "y": 35 },
+      "id": 103,
+      "title": "Infrastructure",
+      "type": "row"
+    },
+    {
+      "datasource": { "type": "prometheus", "uid": "PBFA97CFB590B2093" },
+      "fieldConfig": {
+        "defaults": { "color": { "mode": "thresholds" }, "thresholds": { "steps": [{ "color": "red", "value": null }, { "color": "green", "value": 1 }] } }
+      },
+      "gridPos": { "h": 4, "w": 4, "x": 0, "y": 36 },
+      "id": 30,
+      "options": { "reduceOptions": { "calcs": ["lastNotNull"] } },
+      "title": "PostgreSQL Up",
+      "type": "stat",
+      "targets": [{ "expr": "up{job=\"flashit-postgres\"}", "legendFormat": "" }]
+    },
+    {
+      "datasource": { "type": "prometheus", "uid": "PBFA97CFB590B2093" },
+      "fieldConfig": {
+        "defaults": { "color": { "mode": "thresholds" }, "thresholds": { "steps": [{ "color": "red", "value": null }, { "color": "green", "value": 1 }] } }
+      },
+      "gridPos": { "h": 4, "w": 4, "x": 4, "y": 36 },
+      "id": 31,
+      "options": { "reduceOptions": { "calcs": ["lastNotNull"] } },
+      "title": "Redis Up",
+      "type": "stat",
+      "targets": [{ "expr": "up{job=\"flashit-redis\"}", "legendFormat": "" }]
+    },
+    {
+      "datasource": { "type": "prometheus", "uid": "PBFA97CFB590B2093" },
+      "fieldConfig": { "defaults": { "custom": { "lineWidth": 1, "fillOpacity": 10 } } },
+      "gridPos": { "h": 8, "w": 12, "x": 0, "y": 40 },
+      "id": 32,
+      "title": "Redis Commands/sec",
+      "type": "timeseries",
+      "targets": [{ "expr": "rate(redis_commands_processed_total[5m])", "legendFormat": "cmds/s" }]
+    },
+    {
+      "datasource": { "type": "prometheus", "uid": "PBFA97CFB590B2093" },
+      "fieldConfig": { "defaults": { "unit": "bytes", "custom": { "lineWidth": 1 } } },
+      "gridPos": { "h": 8, "w": 12, "x": 12, "y": 40 },
+      "id": 33,
+      "title": "Redis Memory",
+      "type": "timeseries",
+      "targets": [{ "expr": "redis_memory_used_bytes", "legendFormat": "Used" }, { "expr": "redis_memory_max_bytes", "legendFormat": "Max" }]
+    },
+    {
+      "collapsed": false,
+      "gridPos": { "h": 1, "w": 24, "x": 0, "y": 48 },
+      "id": 104,
+      "title": "Circuit Breakers",
+      "type": "row"
+    },
+    {
+      "datasource": { "type": "prometheus", "uid": "PBFA97CFB590B2093" },
+      "fieldConfig": { "defaults": { "custom": { "lineWidth": 1, "fillOpacity": 20 } } },
+      "gridPos": { "h": 6, "w": 12, "x": 0, "y": 49 },
+      "id": 40,
+      "title": "Circuit Breaker Failures",
+      "type": "timeseries",
+      "targets": [{ "expr": "sum(rate(circuit_breaker_failures_total[5m])) by (breaker)", "legendFormat": "{{ breaker }}" }]
+    },
+    {
+      "datasource": { "type": "prometheus", "uid": "PBFA97CFB590B2093" },
+      "fieldConfig": { "defaults": { "custom": { "lineWidth": 1, "fillOpacity": 20 } } },
+      "gridPos": { "h": 6, "w": 12, "x": 12, "y": 49 },
+      "id": 41,
+      "title": "Circuit Breaker State Changes",
+      "type": "timeseries",
+      "targets": [{ "expr": "sum(rate(circuit_breaker_state_changes_total[5m])) by (breaker, to_state)", "legendFormat": "{{ breaker }} → {{ to_state }}" }]
+    }
+  ],
+  "schemaVersion": 39,
+  "tags": ["flashit", "overview"],
+  "templating": { "list": [] },
+  "time": { "from": "now-1h", "to": "now" },
+  "timepicker": {},
+  "timezone": "browser",
+  "title": "FlashIt Platform Overview",
+  "uid": "flashit-overview",
+  "version": 1
+}

@@ -1,0 +1,75 @@
+.PHONY: dev build test clean docker-build docker-up docker-down
+
+# Default target
+all: build
+
+# Development
+dev:
+@echo "Starting development servers..."
+@concurrently \
+"cd backend && air" \
+"cd frontend && pnpm dev"
+
+dev-backend:
+cd backend && air
+
+dev-frontend:
+cd frontend && pnpm dev
+
+# Build
+build: build-backend build-frontend
+
+build-backend:
+cd backend && go build -o bin/server .
+
+build-frontend:
+cd frontend && pnpm build
+
+# Test
+test: test-backend test-frontend
+
+test-backend:
+cd backend && go test ./...
+
+test-frontend:
+cd frontend && pnpm test
+
+# Clean
+clean:
+rm -rf backend/bin
+cd frontend && rm -rf dist node_modules
+
+# Install dependencies
+install:
+cd backend && go mod download
+pnpm install
+
+{{#if enableDocker}}
+# Docker
+docker-build:
+docker compose build
+
+docker-up:
+docker compose up -d
+
+docker-down:
+docker compose down
+{{/if}}
+
+# Format
+format:
+cd backend && go fmt ./...
+cd frontend && pnpm format
+
+# Lint
+lint:
+cd backend && golangci-lint run
+cd frontend && pnpm lint
+
+help:
+@echo "Available targets:"
+@echo " dev - Run both backend and frontend"
+@echo " build - Build all projects"
+@echo " test - Run all tests"
+@echo " clean - Clean build outputs"
+@echo " install - Install all dependencies"

@@ -1,0 +1,28 @@
+---
+id: "secure_notification_agent"
+agent: "NotificationAgent"
+role: "PMO Communications"
+inputs_spec:
+- name: "secure_progress_dashboard"
+  description: "Secure progress dashboard for notification triggers."
+  format: "Dashboard artifact"
+- name: "secure_escalation_report"
+  description: "Secure escalation report for notification triggers."
+  format: "Escalation report artifact"
+outputs_spec:
+- name: "secure_notifications"
+  description: "Notifications sent to stakeholders on events, blockers, and risks."
+  format: "List of notification objects"
+agent_tasks:
+- "Notify stakeholders of key Secure events, blockers, and escalations."
+- "Log notification delivery for audit."
+acceptance_criteria:
+- "Stakeholders receive updates on Secure events and risks."
+- "Notification delivery is logged for audit."
+dependencies:
+- "secure_progress_dashboard"
+- "secure_escalation_report"
+failure_escalation:
+- "Escalate to PMO if notifications not delivered or logged."
+references: []
+hitl: false

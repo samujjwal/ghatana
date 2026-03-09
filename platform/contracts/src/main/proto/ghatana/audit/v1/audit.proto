@@ -1,0 +1,44 @@
+syntax = "proto3";
+
+package ghatana.audit.v1;
+
+import "google/protobuf/timestamp.proto";
+import "google/protobuf/struct.proto";
+
+option java_package = "com.ghatana.contracts.audit.v1";
+option java_outer_classname = "AuditProto";
+option java_multiple_files = true;
+
+// AuditEvent represents a security or compliance relevant event.
+message AuditEvent {
+  // Unique identifier for the event
+  string id = 1;
+
+  // Tenant identifier
+  string tenant_id = 2;
+
+  // Type of event (e.g., "USER_LOGIN", "PIPELINE_EXECUTION")
+  string event_type = 3;
+
+  // When the event occurred
+  google.protobuf.Timestamp timestamp = 4;
+
+  // Who performed the action
+  string principal = 5;
+
+  // Type of resource affected
+  string resource_type = 6;
+
+  // Identifier of resource affected
+  string resource_id = 7;
+
+  // Whether the action was successful
+  bool success = 8;
+
+  // Additional context details
+  map<string, string> details = 9;
+
+  // Structured metadata (optional)
+  google.protobuf.Struct metadata = 10;
+}
+

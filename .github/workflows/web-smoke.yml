@@ -1,0 +1,52 @@
+name: "Web app smoke tests (MSW)"
+
+on:
+  workflow_dispatch:
+  pull_request:
+    paths:
+      - "products/software-org/apps/web/**"
+
+jobs:
+  smoke:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js 20
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+          cache: "pnpm"
+
+      - name: Enable pnpm via corepack
+        run: |
+          corepack enable
+          corepack prepare pnpm@10 --activate
+
+      - name: Install workspace dependencies (pnpm)
+        run: pnpm install --frozen-lockfile
+
+      - name: Start web dev server (background)
+        working-directory: products/software-org/apps/web
+        run: |
+          export VITE_USE_MOCKS=true
+          # Start Vite dev server in background and redirect logs
+          nohup pnpm dev > /tmp/web-dev.log 2>&1 &
+          # Wait for server to be available on port 3000
+          n=0; until curl -sS http://localhost:3000/ >/dev/null 2>&1 || [ $n -ge 30 ]; do n=$((n+1)); sleep 1; done
+          if [ $n -ge 30 ]; then cat /tmp/web-dev.log; exit 1; fi
+
+      - name: Run smoke test
+        working-directory: products/software-org/apps/web
+        run: node scripts/smoke-test.cjs
+
+      - name: Upload smoke test logs
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: web-smoke-logs
+          path: |
+            products/software-org/apps/web/scripts/smoke-test.cjs
+            /tmp/web-dev.log

@@ -1,0 +1,52 @@
+plugins {
+    id 'groovy'
+    id 'java-gradle-plugin'
+}
+
+repositories {
+    mavenCentral()
+}
+
+dependencies {
+    implementation gradleApi()
+    implementation localGroovy()
+    // Provide Saxon-HE on the buildSrc classpath for build-time tasks that need XSLT support
+    implementation 'net.sf.saxon:Saxon-HE:12.4'
+}
+
+gradlePlugin {
+    plugins {
+        javaConventions {
+            id = 'com.ghatana.java-conventions'
+            implementationClass = 'com.ghatana.gradle.JavaConventionsPlugin'
+        }
+        spotbugsConventions {
+            id = 'com.ghatana.spotbugs-conventions'
+            implementationClass = 'com.ghatana.gradle.SpotBugsConventionsPlugin'
+        }
+        spotlessConventions {
+            id = 'com.ghatana.spotless-conventions'
+            implementationClass = 'com.ghatana.gradle.SpotlessConventionsPlugin'
+        }
+        checkstyleConventions {
+            id = 'com.ghatana.checkstyle-conventions'
+            implementationClass = 'com.ghatana.gradle.CheckstyleConventionsPlugin'
+        }
+        jacocoConventions {
+            id = 'com.ghatana.jacoco-conventions'
+            implementationClass = 'com.ghatana.gradle.JacocoConventionsPlugin'
+        }
+        testDependencyAudit {
+            id = 'com.ghatana.testing.test-dependency-audit'
+            implementationClass = 'com.ghatana.testing.TestDependencyAuditPlugin'
+        }
+        testFailureTolerance {
+            id = 'com.ghatana.test-failure-tolerance'
+            implementationClass = 'com.ghatana.gradle.TestFailureTolerancePlugin'
+        }
+        integrationTestProfile {
+            id = 'com.ghatana.integration-test-profile'
+            implementationClass = 'com.ghatana.gradle.IntegrationTestProfilePlugin'
+        }
+    }
+}

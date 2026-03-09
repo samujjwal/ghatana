@@ -1,0 +1,320 @@
+# ============================================================================
+# Extended Alert Rules for All Ghatana Services
+# ============================================================================
+
+groups:
+  # ==========================================================================
+  # EVENTCLOUD ALERTS
+  # ==========================================================================
+  - name: eventcloud-alerts
+    interval: 30s
+    rules:
+      - alert: EventCloudHighIngestionLatency
+        expr: histogram_quantile(0.99, rate(eventcloud_ingestion_duration_seconds_bucket[5m])) > 0.1
+        for: 5m
+        labels:
+          severity: warning
+          service: eventcloud
+          category: performance
+        annotations:
+          summary: "EventCloud ingestion latency is high"
+          description: "p99 ingestion latency is {{ $value }}s (threshold: 100ms)"
+
+      - alert: EventCloudAppendFailureRate
+        expr: rate(eventcloud_append_errors_total[5m]) > 0.01
+        for: 2m
+        labels:
+          severity: critical
+          service: eventcloud
+          category: reliability
+        annotations:
+          summary: "EventCloud append failures detected"
+          description: "Append failure rate is {{ $value | humanizePercentage }}"
+
+      - alert: EventCloudPartitionLag
+        expr: eventcloud_partition_lag_seconds > 300
+        for: 10m
+        labels:
+          severity: warning
+          service: eventcloud
+          category: replication
+        annotations:
+          summary: "EventCloud partition lag is high"
+          description: "Partition {{ $labels.partition }} lag is {{ $value }}s"
+
+  # ==========================================================================
+  # VIRTUAL-ORG FRAMEWORK ALERTS
+  # ==========================================================================
+  - name: virtual-org-alerts
+    interval: 30s
+    rules:
+      - alert: TaskExecutionFailureRate
+        expr: rate(virtualorg_task_execution_failures_total[10m]) > 0.05
+        for: 5m
+        labels:
+          severity: warning
+          service: virtual-org
+          category: reliability
+        annotations:
+          summary: "High task execution failure rate"
+          description: "Task failure rate is {{ $value | humanizePercentage }} for {{ $labels.department }}"
+
+      - alert: AgentUnresponsive
+        expr: time() - virtualorg_agent_last_heartbeat_seconds > 300
+        for: 5m
+        labels:
+          severity: critical
+          service: virtual-org
+          category: availability
+        annotations:
+          summary: "Agent {{ $labels.agent_id }} is unresponsive"
+          description: "No heartbeat for {{ $value }}s"
+
+      - alert: WorkflowStalled
+        expr: virtualorg_workflow_duration_seconds{status="in_progress"} > 3600
+        for: 10m
+        labels:
+          severity: warning
+          service: virtual-org
+          category: performance
+        annotations:
+          summary: "Workflow {{ $labels.workflow_id }} is stalled"
+          description: "Workflow running for {{ $value | humanizeDuration }}"
+
+  # ==========================================================================
+  # AI PLATFORM ALERTS
+  # ==========================================================================
+  - name: ai-platform-alerts
+    interval: 30s
+    rules:
+      - alert: ModelInferenceHighLatency
+        expr: histogram_quantile(0.99, rate(ai_inference_duration_seconds_bucket[5m])) > 2.0
+        for: 5m
+        labels:
+          severity: warning
+          service: ai-platform
+          category: performance
+        annotations:
+          summary: "Model {{ $labels.model_id }} inference latency is high"
+          description: "p99 latency is {{ $value }}s (threshold: 2s)"
+
+      - alert: ModelDriftDetected
+        expr: ai_model_drift_score > 0.15
+        for: 10m
+        labels:
+          severity: warning
+          service: ai-platform
+          category: data-quality
+        annotations:
+          summary: "Model drift detected for {{ $labels.model_id }}"
+          description: "Drift score: {{ $value }} (threshold: 0.15)"
+
+      - alert: FeatureStoreUnavailable
+        expr: up{service="feature-store"} == 0
+        for: 1m
+        labels:
+          severity: critical
+          service: ai-platform
+          category: availability
+        annotations:
+          summary: "Feature Store is unavailable"
+          description: "Cannot serve features for model inference"
+
+      - alert: ModelRegistryHighErrorRate
+        expr: rate(modelregistry_errors_total[5m]) > 0.05
+        for: 5m
+        labels:
+          severity: warning
+          service: ai-platform
+          category: reliability
+        annotations:
+          summary: "Model Registry error rate is high"
+          description: "Error rate: {{ $value | humanizePercentage }}"
+
+  # ==========================================================================
+  # AUTH GATEWAY ALERTS
+  # ==========================================================================
+  - name: auth-gateway-alerts
+    interval: 30s
+    rules:
+      - alert: AuthFailureRateSpike
+        expr: rate(auth_authentication_failures_total[5m]) > 10
+        for: 2m
+        labels:
+          severity: warning
+          service: auth-gateway
+          category: security
+        annotations:
+          summary: "High authentication failure rate"
+          description: "{{ $value }} failures/sec - possible brute force attack"
+
+      - alert: JWTValidationErrors
+        expr: rate(auth_jwt_validation_errors_total[5m]) > 1
+        for: 5m
+        labels:
+          severity: warning
+          service: auth-gateway
+          category: security
+        annotations:
+          summary: "JWT validation errors increasing"
+          description: "{{ $value }} validation errors/sec"
+
+      - alert: RateLimitExceeded
+        expr: rate(auth_rate_limit_exceeded_total[5m]) > 50
+        for: 5m
+        labels:
+          severity: warning
+          service: auth-gateway
+          category: protection
+        annotations:
+          summary: "High rate limit violations"
+          description: "{{ $value }} rate limit violations/sec for tenant {{ $labels.tenant }}"
+
+  # ==========================================================================
+  # DATABASE ALERTS
+  # ==========================================================================
+  - name: database-alerts
+    interval: 30s
+    rules:
+      - alert: DatabaseConnectionPoolExhausted
+        expr: hikaricp_connections_active / hikaricp_connections_max > 0.9
+        for: 5m
+        labels:
+          severity: critical
+          service: database
+          category: resource
+        annotations:
+          summary: "Database connection pool near exhaustion"
+          description: "{{ $value | humanizePercentage }} connections in use"
+
+      - alert: DatabaseSlowQueries
+        expr: rate(database_query_duration_seconds_count{query_time=">1s"}[5m]) > 10
+        for: 5m
+        labels:
+          severity: warning
+          service: database
+          category: performance
+        annotations:
+          summary: "High number of slow database queries"
+          description: "{{ $value }} slow queries/sec"
+
+      - alert: DatabaseReplicationLag
+        expr: pg_replication_lag_seconds > 30
+        for: 5m
+        labels:
+          severity: warning
+          service: database
+          category: replication
+        annotations:
+          summary: "PostgreSQL replication lag is high"
+          description: "Replication lag: {{ $value }}s"
+
+  # ==========================================================================
+  # REDIS CACHE ALERTS
+  # ==========================================================================
+  - name: redis-alerts
+    interval: 30s
+    rules:
+      - alert: RedisHighMemoryUsage
+        expr: redis_memory_used_bytes / redis_memory_max_bytes > 0.9
+        for: 5m
+        labels:
+          severity: warning
+          service: redis
+          category: resource
+        annotations:
+          summary: "Redis memory usage is high"
+          description: "Memory usage: {{ $value | humanizePercentage }}"
+
+      - alert: RedisCacheMissRate
+        expr: rate(redis_cache_misses_total[5m]) / rate(redis_cache_requests_total[5m]) > 0.5
+        for: 10m
+        labels:
+          severity: warning
+          service: redis
+          category: performance
+        annotations:
+          summary: "High Redis cache miss rate"
+          description: "Cache miss rate: {{ $value | humanizePercentage }}"
+
+  # ==========================================================================
+  # SYSTEM RESOURCE ALERTS
+  # ==========================================================================
+  - name: system-alerts
+    interval: 30s
+    rules:
+      - alert: HighCPUUsage
+        expr: 100 - (avg by(instance) (rate(node_cpu_seconds_total{mode="idle"}[5m])) * 100) > 80
+        for: 10m
+        labels:
+          severity: warning
+          category: resource
+        annotations:
+          summary: "High CPU usage on {{ $labels.instance }}"
+          description: "CPU usage: {{ $value }}%"
+
+      - alert: HighMemoryUsage
+        expr: (1 - (node_memory_MemAvailable_bytes / node_memory_MemTotal_bytes)) * 100 > 90
+        for: 5m
+        labels:
+          severity: critical
+          category: resource
+        annotations:
+          summary: "High memory usage on {{ $labels.instance }}"
+          description: "Memory usage: {{ $value }}%"
+
+      - alert: DiskSpaceWarning
+        expr: (1 - (node_filesystem_avail_bytes / node_filesystem_size_bytes)) * 100 > 80
+        for: 10m
+        labels:
+          severity: warning
+          category: resource
+        annotations:
+          summary: "Disk space running low on {{ $labels.instance }}"
+          description: "Disk usage: {{ $value }}% on {{ $labels.mountpoint }}"
+
+      - alert: DiskSpaceCritical
+        expr: (1 - (node_filesystem_avail_bytes / node_filesystem_size_bytes)) * 100 > 95
+        for: 5m
+        labels:
+          severity: critical
+          category: resource
+        annotations:
+          summary: "Disk space critically low on {{ $labels.instance }}"
+          description: "Disk usage: {{ $value }}% on {{ $labels.mountpoint }}"
+
+  # ==========================================================================
+  # SLO/SLA ALERTS
+  # ==========================================================================
+  - name: slo-alerts
+    interval: 1m
+    rules:
+      - alert: SLOViolationP99Latency
+        expr: histogram_quantile(0.99, rate(http_request_duration_seconds_bucket[5m])) > 1.0
+        for: 10m
+        labels:
+          severity: critical
+          category: slo
+        annotations:
+          summary: "SLO violation: p99 latency > 1s"
+          description: "Service {{ $labels.service }} p99 latency: {{ $value }}s"
+
+      - alert: SLOViolationErrorRate
+        expr: rate(http_requests_total{status=~"5.."}[5m]) / rate(http_requests_total[5m]) > 0.01
+        for: 10m
+        labels:
+          severity: critical
+          category: slo
+        annotations:
+          summary: "SLO violation: error rate > 1%"
+          description: "Service {{ $labels.service }} error rate: {{ $value | humanizePercentage }}"
+
+      - alert: SLOViolationAvailability
+        expr: avg_over_time(up{service=~".+"}[5m]) < 0.999
+        for: 5m
+        labels:
+          severity: critical
+          category: slo
+        annotations:
+          summary: "SLO violation: availability < 99.9%"
+          description: "Service {{ $labels.service }} availability: {{ $value | humanizePercentage }}"

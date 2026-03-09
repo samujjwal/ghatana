@@ -1,0 +1,62 @@
+catalog:
+  id: yappc
+  name: YAPPC Agent Catalog
+  version: "2.1.0"
+  description: >
+    Comprehensive YAPPC agent catalog covering the full SDLC lifecycle across
+    13 phases (142+ agents) — from ideation through scaling and DevSecOps.
+  extends:
+    - platform
+  metadata:
+    product: yappc
+    domain: software-development-lifecycle
+    maintainer: ghatana-platform-team
+
+  agents:
+    # Phase 0 — Meta / Governance
+    - definitions/phase0-meta/*.yaml
+
+    # Phase 1 — Ideation
+    - definitions/phase1-ideation/*.yaml
+
+    # Phase 2 — Planning
+    - definitions/phase2-planning/*.yaml
+
+    # Phase 3 — Requirements
+    - definitions/phase3-requirements/*.yaml
+
+    # Phase 4 — Architecture
+    - definitions/phase4-architecture/*.yaml
+
+    # Phase 5 — Delivery
+    - definitions/phase5-delivery/*.yaml
+
+    # Phase 6 — Build
+    - definitions/phase6-build/*.yaml
+
+    # Phase 7 — Testing
+    - definitions/phase7-testing/*.yaml
+
+    # Phase 8 — Release
+    - definitions/phase8-release/*.yaml
+
+    # Phase 9 — Operations
+    - definitions/phase9-operations/*.yaml
+
+    # Phase 10 — Learning
+    - definitions/phase10-learning/*.yaml
+
+    # Phase 11 — Enhancement
+    - definitions/phase11-enhancement/*.yaml
+
+    # Phase 12 — Scaling
+    - definitions/phase12-scaling/*.yaml
+
+    # Phase 13 — DevSecOps
+    - definitions/phase13-devsecops/*.yaml
+
+    # Phase Debug — Debug Orchestrator + 12 Micro-Agents
+    - definitions/phase-debug/*.yaml
+
+    # Orchestrators
+    - definitions/orchestrators/*.yaml

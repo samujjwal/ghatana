@@ -1,0 +1,94 @@
+id: release-governance-agent
+name: Release Governance Agent
+version: 1.0.0
+description: Gates release artifacts against security, compliance, and quality requirements simultaneously. Enforces multi-dimensional release readiness criteria before allowing artifact promotion.
+
+metadata:
+  level: 2
+  domain: governance
+  tags:
+    - release-gate
+    - security
+    - compliance
+    - quality
+    - guardrail
+
+generator:
+  type: PIPELINE
+  steps:
+    - name: security_check
+      type: SERVICE_CALL
+      service: sentinel
+      endpoint: /scan/release-artifact
+    - name: compliance_check
+      type: SERVICE_CALL
+      service: compliance-audit
+      endpoint: /evaluate/release
+    - name: quality_check
+      type: SERVICE_CALL
+      service: quality-guard
+      endpoint: /evaluate/release
+    - name: gate_decision
+      type: RULE_BASED
+      description: >
+        Aggregate security, compliance, and quality results.
+        ALL must pass for ALLOW.
+        Any critical security finding: BLOCK.
+        Any compliance gap: BLOCK.
+        Quality below hard threshold: BLOCK.
+        Non-critical issues: WARN + attach to release notes.
+
+memory:
+  episodic:
+    enabled: true
+    retention_days: 730
+    categories:
+      - release-gate-decisions
+      - block-reasons
+      - override-requests
+  semantic:
+    enabled: true
+    categories:
+      - release-criteria-history
+      - common-block-causes
+  procedural:
+    enabled: true
+    categories:
+      - release-policies
+      - gate-rules
+
+tools:
+  - security_scanner
+  - compliance_evaluator
+  - quality_metric_reader
+
+capabilities:
+  - security-analysis
+  - code-analysis
+  - deployment-automation
+
+routing:
+  input_types:
+    - release-artifact
+    - release-manifest
+  output_types:
+    - release-gate-decision
+    - release-readiness-report
+
+delegation:
+  can_delegate_to:
+    - sentinel
+    - quality-guard-agent
+    - compliance-audit-orchestrator
+  escalates_to:
+    - human-in-the-loop-coordinator
+
+governance:
+  requires_approval: false
+  can_block: true
+  audit_trail: comprehensive
+
+performance:
+  expected_latency_ms: 5000
+  max_latency_ms: 30000
+  timeout_ms: 60000

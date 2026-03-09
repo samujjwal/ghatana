@@ -1,0 +1,162 @@
+syntax = "proto3";
+
+package dcmaar.v1;
+option java_multiple_files = true;
+option java_outer_classname = "INGESTProto";
+option java_package = "com.dcmaar.v1";
+option csharp_namespace = "Dcmaar.V1";
+option objc_class_prefix = "DCX";
+option php_namespace = "Dcmaar\\V1";
+option ruby_package = "Dcmaar::V1";
+option go_package = "github.com/samujjwal/dcmaar/proto/gen/go/pb/dcmaar/v1;dcmaarv1";
+
+// Import required proto files
+import "dcmaar/v1/common.proto";
+import "dcmaar/v1/metrics.proto";
+import "dcmaar/v1/events.proto";
+import "validate/validate.proto";
+
+// IngestService defines RPCs for sending metrics and events to the central server.
+service IngestService {
+  // Legacy RPCs (deprecated, use envelope-based)
+  rpc SendMetrics (MetricBatch) returns (IngestResponse) { option deprecated = true; };
+  rpc SendEvents (EventBatch) returns (IngestResponse) { option deprecated = true; };
+  
+  // Envelope-based RPCs with required identity and schema metadata
+  rpc SendMetricEnvelopes (MetricEnvelopeBatch) returns (IngestResponse);
+  rpc SendEventEnvelopes (EventEnvelopeBatch) returns (IngestResponse);
+  
+  // Health check endpoint
+  rpc Health (HealthCheckRequest) returns (HealthCheckResponse);
+  
+  // IngestEvents ingests a batch of events
+  rpc IngestEvents(IngestRequest) returns (IngestResponse);
+  
+  // StreamEvents streams events for real-time processing
+  rpc StreamEvents(stream EventEnvelope) returns (stream IngestResponse);
+  
+  // HealthCheck checks the health of the ingest service
+  rpc HealthCheck(HealthCheckRequest) returns (HealthCheckResponse);
+}
+
+// IngestResponse is returned by ingestion RPCs.
+message IngestResponse {
+  bool success = 1;             // Whether the request was processed successfully
+  string message = 2;           // Human-readable status message
+  string request_id = 3;        // For correlating with client logs
+  int64 received_at = 4;        // Server timestamp when request was received
+  int32 items_processed = 5;    // Number of items successfully processed
+  int32 items_rejected = 6;     // Number of items that were rejected
+  repeated string errors = 7;   // Detailed error messages for rejected items
+  string next_retry_in = 8;     // Suggested retry interval (e.g., "5s", "1m")
+  
+  // Whether the ingestion was successful
+  bool ingestion_success = 9;
+  
+  // Message describing the result
+  string ingestion_message = 10;
+  
+  // Number of events successfully processed
+  int32 ingestion_processed_count = 11;
+  
+  // Number of events that failed validation
+  int32 ingestion_failed_count = 12;
+  
+  // Detailed error messages for failed events
+  repeated string ingestion_errors = 13;
+  
+  // Timestamp when the request was processed (Unix epoch in milliseconds)
+  int64 ingestion_processed_at = 14;
+  
+  // Request ID for tracking
+  string ingestion_request_id = 15;
+  
+  // Additional metadata
+  map<string, string> ingestion_metadata = 100;
+}
+
+// HealthCheckRequest is used for checking service health
+message HealthCheckRequest {
+  // If true, performs a deep health check including dependencies
+  bool deep = 1;
+  
+  // Optional service-specific health check parameters
+  map<string, string> params = 2;
+  
+  // Optional service name to check
+  string service = 3;
+  
+  // Additional metadata
+  map<string, string> metadata = 100;
+}
+
+// HealthCheckResponse contains health check results
+message HealthCheckResponse {
+  // Overall service status (e.g., "SERVING", "NOT_SERVING")
+  enum ServingStatus {
+    UNKNOWN = 0;
+    SERVING = 1;
+    NOT_SERVING = 2;
+    SERVICE_UNKNOWN = 3;  // Used when the service is unknown
+  }
+  
+  // Status of the service
+  ServingStatus status = 1;
+  
+  // Message describing the health status
+  string message = 2;
+  
+  // Timestamp of the health check
+  int64 timestamp = 3;
+  
+  // Service version
+  string version = 4;
+  
+  // Uptime in seconds
+  int64 uptime = 5;
+  
+  // Additional health metrics
+  map<string, string> metrics = 10;
+  
+  // Additional metadata
+  map<string, string> metadata = 100;
+}
+
+// IngestRequest contains a batch of events to ingest
+message IngestRequest {
+  // The batch of events to ingest
+  EventEnvelopeBatch batch = 1 [
+    (validate.rules).message.required = true
+  ];
+  
+  // Schema version (semver, e.g., "1.0.0")
+  string schema_version = 2 [
+    (validate.rules).string = {min_len: 1, max_len: 20}
+  ];
+  
+  // Idempotency key to prevent duplicate processing
+  string idempotency_key = 3 [
+    (validate.rules).string = {min_len: 1, max_len: 100}
+  ];
+  
+  // Operating system where the request originated
+  string source_os = 4 [
+    (validate.rules).string = {max_len: 50}
+  ];
+  
+  // CPU architecture where the request originated
+  string source_arch = 5 [
+    (validate.rules).string = {max_len: 20}
+  ];
+  
+  // Optional client-provided batching hints (advisory)
+  BatchHints batch_hints = 6;
+  
+  // Additional metadata
+  map<string, string> metadata = 100;
+}
+
+// NOTE (Milestone 5 Architecture Clarification):
+// Ingestion flows ONLY via the agent/daemon to the server using the existing
+// IngestService envelope RPCs. The browser extension and desktop do NOT ingest
+// directly to the server. No extension-specific ingest RPCs are defined here.

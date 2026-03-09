@@ -1,0 +1,133 @@
+//! Application State Management
+//!
+//! This module provides thread-safe state management for the Tauri application.
+
+use std::collections::HashMap;
+use std::sync::RwLock;
+
+use crate::error::AppError;
+
+/// Application state container
+///
+/// Provides thread-safe storage for application data that persists
+/// across IPC calls.
+pub struct AppState {
+/// Key-value store for arbitrary data
+store: RwLock<HashMap<String, String>>,
+    }
+
+    impl AppState {
+    /// Create a new AppState instance
+    pub fn new() -> Self {
+    Self {
+    store: RwLock::new(HashMap::new()),
+    }
+    }
+
+    /// Store a key-value pair
+    pub fn store(&self, key: &str, value: String) -> Result<(), AppError> {
+        let mut store = self.store.write().map_err(|_| AppError::LockError)?;
+        store.insert(key.to_string(), value);
+        Ok(())
+        }
+
+        /// Retrieve a value by key
+        pub fn get(&self, key: &str) -> Option<String> {
+            self.store
+            .read()
+            .ok()
+            .and_then(|store| store.get(key).cloned())
+            }
+
+            /// Remove a key-value pair
+            pub fn remove(&self, key: &str) -> Result<Option<String>, AppError> {
+                let mut store = self.store.write().map_err(|_| AppError::LockError)?;
+                Ok(store.remove(key))
+                }
+
+                /// Check if a key exists
+                pub fn contains(&self, key: &str) -> bool {
+                self.store
+                .read()
+                .ok()
+                .map(|store| store.contains_key(key))
+                .unwrap_or(false)
+                }
+
+                /// Get all keys
+                pub fn keys(&self) -> Vec<String> {
+                    self.store
+                    .read()
+                    .ok()
+                    .map(|store| store.keys().cloned().collect())
+                    .unwrap_or_default()
+                    }
+
+                    /// Clear all stored data
+                    pub fn clear(&self) -> Result<(), AppError> {
+                        let mut store = self.store.write().map_err(|_| AppError::LockError)?;
+                        store.clear();
+                        Ok(())
+                        }
+                        }
+
+                        impl Default for AppState {
+                        fn default() -> Self {
+                        Self::new()
+                        }
+                        }
+
+                        #[cfg(test)]
+                        mod tests {
+                        use super::*;
+
+                        #[test]
+                        fn test_store_and_get() {
+                        let state = AppState::new();
+                        state.store("key1", "value1".to_string()).unwrap();
+
+                        assert_eq!(state.get("key1"), Some("value1".to_string()));
+                        assert_eq!(state.get("nonexistent"), None);
+                        }
+
+                        #[test]
+                        fn test_remove() {
+                        let state = AppState::new();
+                        state.store("key1", "value1".to_string()).unwrap();
+
+                        let removed = state.remove("key1").unwrap();
+                        assert_eq!(removed, Some("value1".to_string()));
+                        assert_eq!(state.get("key1"), None);
+                        }
+
+                        #[test]
+                        fn test_contains() {
+                        let state = AppState::new();
+                        state.store("key1", "value1".to_string()).unwrap();
+
+                        assert!(state.contains("key1"));
+                        assert!(!state.contains("key2"));
+                        }
+
+                        #[test]
+                        fn test_keys() {
+                        let state = AppState::new();
+                        state.store("a", "1".to_string()).unwrap();
+                        state.store("b", "2".to_string()).unwrap();
+
+                        let keys = state.keys();
+                        assert_eq!(keys.len(), 2);
+                        assert!(keys.contains(&"a".to_string()));
+                        assert!(keys.contains(&"b".to_string()));
+                        }
+
+                        #[test]
+                        fn test_clear() {
+                        let state = AppState::new();
+                        state.store("key1", "value1".to_string()).unwrap();
+                        state.store("key2", "value2".to_string()).unwrap();
+
+                        state.clear().unwrap();
+                        assert!(state.keys().is_empty());
+                        }
+                        }

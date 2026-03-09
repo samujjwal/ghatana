@@ -1,0 +1,122 @@
+id: test-generator-agent
+name: Test Generator Agent
+version: 1.0.0
+description: Generates test cases from specifications and code. Creates unit, integration, and e2e tests.
+
+metadata:
+  level: 3  # Worker
+  domain: testing
+  tags:
+    - test-generation
+    - unit-tests
+    - integration-tests
+    - automation
+
+generator:
+  type: PIPELINE
+  steps:
+    - name: analysis
+      type: LLM
+      provider: ANTHROPIC
+      model: claude-3-5-sonnet-20241022
+      temperature: 0.2
+      max_tokens: 2000
+      prompt: |
+        Analyze code for test generation:
+        
+        Code: {{code}}
+        Specification: {{spec}}
+        Existing Tests: {{existing}}
+        
+        Identify:
+        1. Functions/methods to test
+        2. Edge cases
+        3. Error conditions
+        4. Integration points
+        5. Coverage gaps
+    - name: test_generation
+      type: LLM
+      provider: ANTHROPIC
+      model: claude-3-5-sonnet-20241022
+      temperature: 0.3
+      max_tokens: 4000
+      prompt: |
+        You are the Test Generator Agent. Generate tests:
+        
+        Analysis: {{analysis}}
+        Framework: {{framework}}
+        Patterns: {{patterns}}
+        
+        Generate:
+        1. Unit tests (positive cases)
+        2. Unit tests (edge cases)
+        3. Unit tests (error cases)
+        4. Integration tests
+        5. Mocking strategy
+        6. Test data
+        
+        Follow:
+        - AAA pattern (Arrange, Act, Assert)
+        - Clear naming
+        - Single assertion focus
+        - Independent tests
+        
+        Output as JSON: {tests: [{file, name, type, code, coverage_target}], mocking, test_data}
+
+memory:
+  episodic:
+    enabled: true
+    retention_days: 365
+    categories:
+      - generations
+      - feedback
+      - failures
+  semantic:
+    enabled: true
+    categories:
+      - test-patterns
+      - edge-case-patterns
+      - framework-idioms
+  procedural:
+    enabled: true
+    categories:
+      - generation-rules
+      - naming-conventions
+      - assertion-patterns
+
+tools:
+  - test_generator
+  - mock_generator
+  - coverage_analyzer
+
+capabilities:
+  - test-generation
+  - edge-case-identification
+  - mock-creation
+  - coverage-targeting
+
+routing:
+  input_types:
+    - code
+    - specification
+    - coverage-gap
+  output_types:
+    - test-suite
+    - test-cases
+    - mocking-code
+
+delegation:
+  can_delegate_to:
+    - test-data-agent
+  escalates_to:
+    - testing-orchestrator-agent
+
+governance:
+  requires_approval: false
+  can_block: false
+  audit_trail: standard
+
+performance:
+  expected_latency_ms: 5000
+  max_latency_ms: 15000
+  timeout_ms: 30000

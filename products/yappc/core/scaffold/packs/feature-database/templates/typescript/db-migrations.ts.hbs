@@ -1,0 +1,49 @@
+import { exec } from 'child_process';
+import { promisify } from 'util';
+
+const execAsync = promisify(exec);
+
+export async function runMigrations(): Promise<void> {
+    console.log('🔄 Running database migrations...');
+
+    try {
+    const { stdout, stderr } = await execAsync('pnpm prisma migrate deploy');
+
+    if (stdout) {
+    console.log(stdout);
+    }
+
+    if (stderr) {
+    console.error(stderr);
+    }
+
+    console.log('✅ Migrations completed successfully');
+    } catch (error) {
+    console.error('❌ Migration failed:', error);
+    throw error;
+    }
+    }
+
+    export async function generateClient(): Promise<void> {
+        console.log('🔄 Generating Prisma client...');
+
+        try {
+        await execAsync('pnpm prisma generate');
+        console.log('✅ Prisma client generated');
+        } catch (error) {
+        console.error('❌ Client generation failed:', error);
+        throw error;
+        }
+        }
+
+        export async function resetDatabase(): Promise<void> {
+            console.log('⚠️ Resetting database...');
+
+            try {
+            await execAsync('pnpm prisma migrate reset --force');
+            console.log('✅ Database reset completed');
+            } catch (error) {
+            console.error('❌ Database reset failed:', error);
+            throw error;
+            }
+            }

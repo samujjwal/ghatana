@@ -1,0 +1,26 @@
+---
+id: "continuous_improvement"
+agent: "ContinuousImprovementAgent"
+role: "Security/Process Engineer"
+inputs_spec:
+- name: "postmortem_report"
+  description: "Postmortem report for continuous improvement."
+  format: "Postmortem report artifact"
+outputs_spec:
+- name: "improvement_actions"
+  description: "Captured and tracked improvement actions."
+  format: "Improvement actions artifact"
+agent_tasks:
+- "Capture/review lessons learned from incidents."
+- "Propose/track process/tooling improvements."
+- "Monitor/report status of improvement actions."
+acceptance_criteria:
+- "Lessons learned captured/reviewed."
+- "Process/tooling improvements proposed/tracked."
+- "Status monitored/reported."
+dependencies:
+- "postmortem_report"
+failure_escalation:
+- "Escalate to Security/Process Engineer if actions not tracked."
+references: []
+hitl: false

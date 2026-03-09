@@ -1,0 +1,45 @@
+id: design_best_practice_enforcement
+agent: DesignBestPracticeAgent
+role: Design QA Reviewer
+inputs_spec:
+- name: high_level_design
+  description: High-level design covering all major system components and interfaces.
+  format: Structured design document
+outputs_spec:
+- name: design_best_practice_report
+  description: Report on compliance of design artifacts with org standards, design patterns, documentation quality, and justification of deviations.
+  format: 'Structured report (sections: compliance, patterns, documentation, security, performance, deviations)'
+  example: 'compliance: true
+
+    patterns: ["MVC"]
+
+    documentation: "Complete"
+
+    security: "Reviewed"
+
+    performance: "Considered"
+
+    deviations: []
+
+    '
+agent_tasks:
+- Review design artifacts for compliance with org standards.
+- Ensure design patterns used are consistent with organization best practices.
+- Verify documentation quality and completeness.
+- Explicitly consider security and performance aspects.
+- Justify and track any deviations from best practices.
+acceptance_criteria:
+- Design artifacts are reviewed for compliance with org standards.
+- Design patterns used are consistent with organization best practices.
+- Documentation quality and completeness is verified.
+- Security and performance aspects are explicitly considered.
+- Deviations from best practices are justified and tracked.
+dependencies:
+- high_level_design
+failure_escalation:
+- Escalate to QA reviewer or architect if critical best practices are not met or deviations are unjustified.
+references: []
+hitl: true
+hitl_reason: Human ensures design best practices are enforced
+
+# [!!] No custom enhancement found.

@@ -1,0 +1,42 @@
+id: non_functional_requirements_combiner
+agent: NonFunctionalRequirementsCombiner
+role: Analyst/Combiner
+inputs_spec:
+- name: reviewed_nfr
+  description: Reviewed and validated NFRs.
+  format: List of reviewed NFR objects
+outputs_spec:
+- name: final_non_functional_requirements
+  description: Final consolidated list of NFRs, with overlaps/contradictions resolved.
+  format: List of consolidated NFR objects
+  example: "- category: \"Performance\"\n  description: \"System handles 1000 concurrent users\"\n"
+acceptance_criteria:
+- All reviewed NFRs are consolidated into a single list.
+- Overlaps or contradictions are resolved or flagged.
+- Ensure all referenced artifacts are current and versioned.
+agent_tasks:
+- Consolidate reviewed NFRs.
+- Resolve or flag overlaps and contradictions.
+- Ensure all references are current and versioned.
+dependencies:
+- reviewed_nfr
+failure_escalation:
+- Escalate to systems analyst if contradictions remain unresolved.
+references: []
+
+internal_logic:
+  - perception:
+      description: "Scan for duplicate, conflicting, or unresolved NFRs."
+  - model:
+      description: "NFRs: {id, description, category, metric, risk, status, resolution}"
+  - planning:
+      description: |
+        "For flagged issues, resolve or escalate as appropriate."
+  - action:
+      description: "Produce final NFR YAML."
+validation:
+  - "SME/peer review of final NFR list."
+  - "Audit trail for consolidations."
+quality_enhancements:
+  - "Automated similarity/conflict detection."
+  - "Change log for all consolidations."

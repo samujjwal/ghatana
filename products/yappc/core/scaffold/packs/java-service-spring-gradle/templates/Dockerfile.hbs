@@ -1,0 +1,41 @@
+# Build stage
+FROM eclipse-temurin:{{javaVersion}}-jdk-alpine AS builder
+
+WORKDIR /app
+
+# Copy Gradle wrapper and build files
+COPY gradle gradle
+COPY gradlew build.gradle.kts settings.gradle.kts gradle.properties ./
+
+# Download dependencies
+RUN ./gradlew dependencies --no-daemon
+
+# Copy source code
+COPY src src
+
+# Build the application
+RUN ./gradlew bootJar --no-daemon
+
+# Runtime stage
+FROM eclipse-temurin:{{javaVersion}}-jre-alpine AS runner
+
+WORKDIR /app
+
+# Create non-root user
+RUN addgroup --system --gid 1001 spring && \
+    adduser --system --uid 1001 --ingroup spring spring
+
+# Copy the built artifact
+COPY --from=builder --chown=spring:spring /app/build/libs/*.jar app.jar
+
+USER spring
+
+ENV JAVA_OPTS="-XX:+UseContainerSupport -XX:MaxRAMPercentage=75.0"
+ENV SERVER_PORT={{port}}
+
+EXPOSE {{port}}
+
+HEALTHCHECK --interval=30s --timeout=3s --start-period=30s --retries=3 \
+    CMD wget --no-verbose --tries=1 --spider http://localhost:{{port}}/actuator/health || exit 1
+
+ENTRYPOINT ["sh", "-c", "java $JAVA_OPTS -jar app.jar"]

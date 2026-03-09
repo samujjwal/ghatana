@@ -1,0 +1,1181 @@
+{
+    "$schema": "http://json-schema.org/draft-07/schema#",
+    "$id": "https://ghatana.com/schemas/virtual-org/v1/organization.json",
+    "title": "Virtual-Org Organization Schema",
+    "description": "JSON Schema for Virtual-Org organization configuration files",
+    "definitions": {
+        "metadata": {
+            "type": "object",
+            "description": "Configuration metadata",
+            "properties": {
+                "name": {
+                    "type": "string",
+                    "description": "Unique identifier for the resource",
+                    "pattern": "^[a-z][a-z0-9-]*$"
+                },
+                "namespace": {
+                    "type": "string",
+                    "description": "Tenant or namespace identifier"
+                },
+                "labels": {
+                    "type": "object",
+                    "description": "Key-value labels for categorization",
+                    "additionalProperties": {
+                        "type": "string"
+                    }
+                },
+                "annotations": {
+                    "type": "object",
+                    "description": "Key-value annotations for additional metadata",
+                    "additionalProperties": {
+                        "type": "string"
+                    }
+                }
+            },
+            "required": [
+                "name"
+            ]
+        },
+        "departmentType": {
+            "type": "string",
+            "enum": [
+                "ENGINEERING",
+                "QA",
+                "DEVOPS",
+                "SUPPORT",
+                "SALES",
+                "MARKETING",
+                "PRODUCT",
+                "FINANCE",
+                "HR",
+                "COMPLIANCE",
+                "CUSTOM"
+            ]
+        },
+        "agentLevel": {
+            "type": "string",
+            "enum": [
+                "executive",
+                "manager",
+                "lead",
+                "senior",
+                "junior",
+                "intern"
+            ]
+        },
+        "decisionScope": {
+            "type": "string",
+            "enum": [
+                "organization",
+                "department",
+                "team",
+                "individual"
+            ]
+        },
+        "assignmentStrategy": {
+            "type": "string",
+            "enum": [
+                "round-robin",
+                "least-loaded",
+                "capability-match",
+                "custom"
+            ]
+        },
+        "aiProvider": {
+            "type": "string",
+            "enum": [
+                "openai",
+                "anthropic",
+                "bedrock",
+                "azure",
+                "local"
+            ]
+        },
+        "kpiType": {
+            "type": "string",
+            "enum": [
+                "gauge",
+                "counter",
+                "percentage",
+                "duration",
+                "rate"
+            ]
+        },
+        "triggerType": {
+            "type": "string",
+            "enum": [
+                "event",
+                "schedule",
+                "manual",
+                "api"
+            ]
+        },
+        "executionStatus": {
+            "type": "string",
+            "enum": [
+                "pending",
+                "in_progress",
+                "completed",
+                "failed",
+                "awaiting_approval",
+                "cancelled"
+            ]
+        },
+        "workingHours": {
+            "type": "object",
+            "properties": {
+                "start": {
+                    "type": "string",
+                    "pattern": "^([01]?[0-9]|2[0-3]):[0-5][0-9]$"
+                },
+                "end": {
+                    "type": "string",
+                    "pattern": "^([01]?[0-9]|2[0-3]):[0-5][0-9]$"
+                },
+                "days": {
+                    "type": "array",
+                    "items": {
+                        "type": "string",
+                        "enum": [
+                            "MONDAY",
+                            "TUESDAY",
+                            "WEDNESDAY",
+                            "THURSDAY",
+                            "FRIDAY",
+                            "SATURDAY",
+                            "SUNDAY"
+                        ]
+                    }
+                }
+            }
+        },
+        "duration": {
+            "type": "string",
+            "description": "ISO-8601 duration format",
+            "pattern": "^P(?:\\d+Y)?(?:\\d+M)?(?:\\d+W)?(?:\\d+D)?(?:T(?:\\d+H)?(?:\\d+M)?(?:\\d+S)?)?$"
+        },
+        "cronExpression": {
+            "type": "string",
+            "description": "Cron expression for scheduling"
+        },
+        "configReference": {
+            "type": "object",
+            "properties": {
+                "ref": {
+                    "type": "string",
+                    "description": "Relative path to configuration file"
+                }
+            },
+            "required": [
+                "ref"
+            ]
+        },
+        "inlineOrReference": {
+            "oneOf": [
+                {
+                    "$ref": "#/definitions/configReference"
+                },
+                {
+                    "type": "object",
+                    "properties": {
+                        "inline": {
+                            "type": "object",
+                            "description": "Inline configuration"
+                        }
+                    },
+                    "required": [
+                        "inline"
+                    ]
+                }
+            ]
+        },
+        "kpiDefinition": {
+            "type": "object",
+            "properties": {
+                "name": {
+                    "type": "string"
+                },
+                "displayName": {
+                    "type": "string"
+                },
+                "type": {
+                    "$ref": "#/definitions/kpiType"
+                },
+                "unit": {
+                    "type": "string"
+                },
+                "target": {
+                    "type": "number"
+                },
+                "warningThreshold": {
+                    "type": "number"
+                },
+                "criticalThreshold": {
+                    "type": "number"
+                }
+            },
+            "required": [
+                "name",
+                "type"
+            ]
+        },
+        "taskTypeDefinition": {
+            "type": "object",
+            "properties": {
+                "name": {
+                    "type": "string"
+                },
+                "priority": {
+                    "type": "string",
+                    "enum": [
+                        "low",
+                        "normal",
+                        "high",
+                        "critical"
+                    ]
+                },
+                "slaHours": {
+                    "type": "number"
+                },
+                "requiredCapabilities": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
+                }
+            },
+            "required": [
+                "name"
+            ]
+        },
+        "aiConfig": {
+            "type": "object",
+            "properties": {
+                "enabled": {
+                    "type": "boolean",
+                    "default": false
+                },
+                "provider": {
+                    "$ref": "#/definitions/aiProvider"
+                },
+                "model": {
+                    "type": "string"
+                },
+                "systemPrompt": {
+                    "type": "string"
+                },
+                "responseConfig": {
+                    "type": "object",
+                    "properties": {
+                        "maxTokens": {
+                            "type": "integer",
+                            "minimum": 1
+                        },
+                        "temperature": {
+                            "type": "number",
+                            "minimum": 0,
+                            "maximum": 2
+                        },
+                        "topP": {
+                            "type": "number",
+                            "minimum": 0,
+                            "maximum": 1
+                        }
+                    }
+                },
+                "tools": {
+                    "type": "array",
+                    "items": {
+                        "type": "object",
+                        "properties": {
+                            "name": {
+                                "type": "string"
+                            },
+                            "enabled": {
+                                "type": "boolean",
+                                "default": true
+                            }
+                        },
+                        "required": [
+                            "name"
+                        ]
+                    }
+                },
+                "memory": {
+                    "type": "object",
+                    "properties": {
+                        "type": {
+                            "type": "string",
+                            "enum": [
+                                "short-term",
+                                "long-term",
+                                "hybrid"
+                            ]
+                        },
+                        "contextWindow": {
+                            "type": "integer",
+                            "minimum": 1
+                        }
+                    }
+                }
+            }
+        },
+        "roleConfig": {
+            "type": "object",
+            "properties": {
+                "name": {
+                    "type": "string"
+                },
+                "level": {
+                    "$ref": "#/definitions/agentLevel"
+                },
+                "title": {
+                    "type": "string"
+                }
+            },
+            "required": [
+                "level"
+            ]
+        },
+        "authorityConfig": {
+            "type": "object",
+            "properties": {
+                "decisionScope": {
+                    "$ref": "#/definitions/decisionScope"
+                },
+                "budgetLimit": {
+                    "type": "number"
+                },
+                "canApprove": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
+                },
+                "canEscalateTo": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
+                }
+            }
+        },
+        "capabilitiesConfig": {
+            "type": "object",
+            "properties": {
+                "primary": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
+                },
+                "secondary": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
+                }
+            },
+            "required": [
+                "primary"
+            ]
+        },
+        "workloadConfig": {
+            "type": "object",
+            "properties": {
+                "maxConcurrentTasks": {
+                    "type": "integer",
+                    "minimum": 1
+                },
+                "taskPrioritization": {
+                    "type": "string",
+                    "enum": [
+                        "fifo",
+                        "lifo",
+                        "importance-urgency",
+                        "deadline"
+                    ]
+                }
+            }
+        },
+        "availabilityConfig": {
+            "type": "object",
+            "properties": {
+                "schedule": {
+                    "type": "object",
+                    "properties": {
+                        "type": {
+                            "type": "string",
+                            "enum": [
+                                "always",
+                                "business-hours",
+                                "custom"
+                            ]
+                        }
+                    }
+                },
+                "responseTime": {
+                    "type": "object",
+                    "properties": {
+                        "target": {
+                            "$ref": "#/definitions/duration"
+                        },
+                        "maximum": {
+                            "$ref": "#/definitions/duration"
+                        }
+                    }
+                }
+            }
+        },
+        "hitlConfig": {
+            "type": "object",
+            "properties": {
+                "enabled": {
+                    "type": "boolean",
+                    "default": true
+                },
+                "requireApprovalFor": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
+                },
+                "approvalChain": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
+                },
+                "defaultApprovalTimeout": {
+                    "$ref": "#/definitions/duration"
+                },
+                "escalationPolicy": {
+                    "type": "string"
+                }
+            }
+        },
+        "eventSubscription": {
+            "type": "object",
+            "properties": {
+                "event": {
+                    "type": "string"
+                },
+                "action": {
+                    "type": "string"
+                },
+                "conditions": {
+                    "type": "array",
+                    "items": {
+                        "type": "object",
+                        "properties": {
+                            "field": {
+                                "type": "string"
+                            },
+                            "operator": {
+                                "type": "string"
+                            },
+                            "value": {}
+                        }
+                    }
+                }
+            },
+            "required": [
+                "event",
+                "action"
+            ]
+        },
+        "workflowStep": {
+            "type": "object",
+            "properties": {
+                "id": {
+                    "type": "string"
+                },
+                "name": {
+                    "type": "string"
+                },
+                "department": {
+                    "type": "string"
+                },
+                "agent": {
+                    "type": "string"
+                },
+                "action": {
+                    "type": "string"
+                },
+                "waitFor": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
+                },
+                "parallel": {
+                    "type": "boolean",
+                    "default": false
+                },
+                "inputs": {
+                    "type": "object"
+                },
+                "outputs": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
+                },
+                "timeout": {
+                    "$ref": "#/definitions/duration"
+                },
+                "condition": {
+                    "type": "string"
+                },
+                "hitl": {
+                    "type": "object",
+                    "properties": {
+                        "required": {
+                            "type": "boolean"
+                        },
+                        "approvers": {
+                            "type": "array",
+                            "items": {
+                                "type": "string"
+                            }
+                        }
+                    }
+                }
+            },
+            "required": [
+                "id",
+                "name"
+            ]
+        },
+        "notification": {
+            "type": "object",
+            "properties": {
+                "event": {
+                    "type": "string"
+                },
+                "channels": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
+                },
+                "recipients": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
+                },
+                "template": {
+                    "type": "string"
+                },
+                "message": {
+                    "type": "string"
+                },
+                "when": {
+                    "type": "string"
+                }
+            }
+        },
+        "escalationRule": {
+            "type": "object",
+            "properties": {
+                "after": {
+                    "$ref": "#/definitions/duration"
+                },
+                "if": {
+                    "type": "string"
+                },
+                "action": {
+                    "type": "string"
+                },
+                "to": {
+                    "type": "string"
+                }
+            },
+            "required": [
+                "after",
+                "to"
+            ]
+        }
+    },
+    "type": "object",
+    "properties": {
+        "apiVersion": {
+            "type": "string",
+            "const": "virtualorg.ghatana.com/v1"
+        },
+        "kind": {
+            "type": "string",
+            "enum": [
+                "Organization",
+                "Department",
+                "Agent",
+                "Workflow",
+                "DepartmentInteraction",
+                "AgentTemplate"
+            ]
+        },
+        "metadata": {
+            "$ref": "#/definitions/metadata"
+        },
+        "spec": {
+            "type": "object",
+            "description": "Resource specification (varies by kind)"
+        }
+    },
+    "required": [
+        "apiVersion",
+        "kind",
+        "metadata",
+        "spec"
+    ],
+    "allOf": [
+        {
+            "if": {
+                "properties": {
+                    "kind": {
+                        "const": "Organization"
+                    }
+                }
+            },
+            "then": {
+                "properties": {
+                    "spec": {
+                        "type": "object",
+                        "properties": {
+                            "displayName": {
+                                "type": "string"
+                            },
+                            "description": {
+                                "type": "string"
+                            },
+                            "structure": {
+                                "type": "object",
+                                "properties": {
+                                    "type": {
+                                        "type": "string",
+                                        "enum": [
+                                            "hierarchical",
+                                            "flat",
+                                            "matrix"
+                                        ]
+                                    },
+                                    "maxDepth": {
+                                        "type": "integer",
+                                        "minimum": 1
+                                    }
+                                }
+                            },
+                            "settings": {
+                                "type": "object",
+                                "properties": {
+                                    "defaultTimezone": {
+                                        "type": "string"
+                                    },
+                                    "workingHours": {
+                                        "$ref": "#/definitions/workingHours"
+                                    },
+                                    "events": {
+                                        "type": "object",
+                                        "properties": {
+                                            "enabled": {
+                                                "type": "boolean"
+                                            },
+                                            "publishTo": {
+                                                "type": "string"
+                                            }
+                                        }
+                                    },
+                                    "kpis": {
+                                        "type": "object",
+                                        "properties": {
+                                            "enabled": {
+                                                "type": "boolean"
+                                            },
+                                            "aggregationInterval": {
+                                                "$ref": "#/definitions/duration"
+                                            }
+                                        }
+                                    },
+                                    "hitl": {
+                                        "$ref": "#/definitions/hitlConfig"
+                                    }
+                                }
+                            },
+                            "departments": {
+                                "type": "array",
+                                "items": {
+                                    "$ref": "#/definitions/inlineOrReference"
+                                }
+                            },
+                            "workflows": {
+                                "type": "array",
+                                "items": {
+                                    "$ref": "#/definitions/inlineOrReference"
+                                }
+                            },
+                            "interactions": {
+                                "type": "array",
+                                "items": {
+                                    "$ref": "#/definitions/inlineOrReference"
+                                }
+                            }
+                        },
+                        "required": [
+                            "displayName"
+                        ]
+                    }
+                }
+            }
+        },
+        {
+            "if": {
+                "properties": {
+                    "kind": {
+                        "const": "Department"
+                    }
+                }
+            },
+            "then": {
+                "properties": {
+                    "spec": {
+                        "type": "object",
+                        "properties": {
+                            "displayName": {
+                                "type": "string"
+                            },
+                            "type": {
+                                "$ref": "#/definitions/departmentType"
+                            },
+                            "description": {
+                                "type": "string"
+                            },
+                            "customTypeDefinition": {
+                                "type": "object",
+                                "properties": {
+                                    "code": {
+                                        "type": "string"
+                                    },
+                                    "displayName": {
+                                        "type": "string"
+                                    },
+                                    "description": {
+                                        "type": "string"
+                                    },
+                                    "capabilities": {
+                                        "type": "array",
+                                        "items": {
+                                            "type": "string"
+                                        }
+                                    }
+                                }
+                            },
+                            "hierarchy": {
+                                "type": "object",
+                                "properties": {
+                                    "parent": {
+                                        "type": [
+                                            "string",
+                                            "null"
+                                        ]
+                                    },
+                                    "children": {
+                                        "type": "array",
+                                        "items": {
+                                            "type": "string"
+                                        }
+                                    },
+                                    "reportingTo": {
+                                        "type": "string"
+                                    }
+                                }
+                            },
+                            "settings": {
+                                "type": "object",
+                                "properties": {
+                                    "maxAgents": {
+                                        "type": "integer",
+                                        "minimum": 1
+                                    },
+                                    "autoScaleAgents": {
+                                        "type": "boolean"
+                                    },
+                                    "taskAssignment": {
+                                        "type": "object",
+                                        "properties": {
+                                            "strategy": {
+                                                "$ref": "#/definitions/assignmentStrategy"
+                                            },
+                                            "customStrategyClass": {
+                                                "type": [
+                                                    "string",
+                                                    "null"
+                                                ]
+                                            }
+                                        }
+                                    }
+                                }
+                            },
+                            "agents": {
+                                "type": "array",
+                                "items": {
+                                    "$ref": "#/definitions/inlineOrReference"
+                                }
+                            },
+                            "workflows": {
+                                "type": "array",
+                                "items": {
+                                    "type": "object",
+                                    "properties": {
+                                        "name": {
+                                            "type": "string"
+                                        },
+                                        "steps": {
+                                            "type": "array",
+                                            "items": {
+                                                "$ref": "#/definitions/workflowStep"
+                                            }
+                                        }
+                                    }
+                                }
+                            },
+                            "kpis": {
+                                "type": "array",
+                                "items": {
+                                    "$ref": "#/definitions/kpiDefinition"
+                                }
+                            },
+                            "taskTypes": {
+                                "type": "array",
+                                "items": {
+                                    "$ref": "#/definitions/taskTypeDefinition"
+                                }
+                            }
+                        },
+                        "required": [
+                            "displayName",
+                            "type"
+                        ]
+                    }
+                }
+            }
+        },
+        {
+            "if": {
+                "properties": {
+                    "kind": {
+                        "const": "Agent"
+                    }
+                }
+            },
+            "then": {
+                "properties": {
+                    "spec": {
+                        "type": "object",
+                        "properties": {
+                            "template": {
+                                "type": "string"
+                            },
+                            "displayName": {
+                                "type": "string"
+                            },
+                            "description": {
+                                "type": "string"
+                            },
+                            "role": {
+                                "$ref": "#/definitions/roleConfig"
+                            },
+                            "department": {
+                                "type": "string"
+                            },
+                            "reportingTo": {
+                                "type": "string"
+                            },
+                            "directReports": {
+                                "type": "array",
+                                "items": {
+                                    "type": "string"
+                                }
+                            },
+                            "authority": {
+                                "$ref": "#/definitions/authorityConfig"
+                            },
+                            "capabilities": {
+                                "$ref": "#/definitions/capabilitiesConfig"
+                            },
+                            "ai": {
+                                "$ref": "#/definitions/aiConfig"
+                            },
+                            "workload": {
+                                "$ref": "#/definitions/workloadConfig"
+                            },
+                            "availability": {
+                                "$ref": "#/definitions/availabilityConfig"
+                            },
+                            "hitl": {
+                                "$ref": "#/definitions/hitlConfig"
+                            },
+                            "subscriptions": {
+                                "type": "array",
+                                "items": {
+                                    "$ref": "#/definitions/eventSubscription"
+                                }
+                            }
+                        },
+                        "required": [
+                            "displayName",
+                            "role"
+                        ]
+                    }
+                }
+            }
+        },
+        {
+            "if": {
+                "properties": {
+                    "kind": {
+                        "const": "Workflow"
+                    }
+                }
+            },
+            "then": {
+                "properties": {
+                    "spec": {
+                        "type": "object",
+                        "properties": {
+                            "displayName": {
+                                "type": "string"
+                            },
+                            "description": {
+                                "type": "string"
+                            },
+                            "trigger": {
+                                "type": "object",
+                                "properties": {
+                                    "type": {
+                                        "$ref": "#/definitions/triggerType"
+                                    },
+                                    "event": {
+                                        "type": "string"
+                                    },
+                                    "cron": {
+                                        "$ref": "#/definitions/cronExpression"
+                                    },
+                                    "conditions": {
+                                        "type": "array"
+                                    }
+                                },
+                                "required": [
+                                    "type"
+                                ]
+                            },
+                            "context": {
+                                "type": "object"
+                            },
+                            "steps": {
+                                "type": "array",
+                                "items": {
+                                    "$ref": "#/definitions/workflowStep"
+                                }
+                            },
+                            "errorHandling": {
+                                "type": "object",
+                                "properties": {
+                                    "strategy": {
+                                        "type": "string",
+                                        "enum": [
+                                            "fail-fast",
+                                            "retry",
+                                            "compensate",
+                                            "continue"
+                                        ]
+                                    },
+                                    "maxRetries": {
+                                        "type": "integer",
+                                        "minimum": 0
+                                    },
+                                    "retryDelay": {
+                                        "$ref": "#/definitions/duration"
+                                    },
+                                    "compensationSteps": {
+                                        "type": "array"
+                                    }
+                                }
+                            },
+                            "approvals": {
+                                "type": "array",
+                                "items": {
+                                    "type": "object",
+                                    "properties": {
+                                        "before": {
+                                            "type": "string"
+                                        },
+                                        "approvers": {
+                                            "type": "array",
+                                            "items": {
+                                                "type": "string"
+                                            }
+                                        },
+                                        "timeout": {
+                                            "$ref": "#/definitions/duration"
+                                        },
+                                        "onTimeout": {
+                                            "type": "string"
+                                        }
+                                    }
+                                }
+                            },
+                            "escalation": {
+                                "type": "array",
+                                "items": {
+                                    "$ref": "#/definitions/escalationRule"
+                                }
+                            },
+                            "completion": {
+                                "type": "object",
+                                "properties": {
+                                    "successCondition": {
+                                        "type": "string"
+                                    },
+                                    "artifacts": {
+                                        "type": "array"
+                                    }
+                                }
+                            }
+                        },
+                        "required": [
+                            "displayName",
+                            "trigger",
+                            "steps"
+                        ]
+                    }
+                }
+            }
+        },
+        {
+            "if": {
+                "properties": {
+                    "kind": {
+                        "const": "DepartmentInteraction"
+                    }
+                }
+            },
+            "then": {
+                "properties": {
+                    "spec": {
+                        "type": "object",
+                        "properties": {
+                            "displayName": {
+                                "type": "string"
+                            },
+                            "description": {
+                                "type": "string"
+                            },
+                            "participants": {
+                                "type": "object",
+                                "properties": {
+                                    "source": {
+                                        "type": "object",
+                                        "properties": {
+                                            "department": {
+                                                "type": "string"
+                                            },
+                                            "agents": {
+                                                "type": "array",
+                                                "items": {
+                                                    "type": "string"
+                                                }
+                                            }
+                                        },
+                                        "required": [
+                                            "department"
+                                        ]
+                                    },
+                                    "target": {
+                                        "type": "object",
+                                        "properties": {
+                                            "department": {
+                                                "type": "string"
+                                            },
+                                            "agents": {
+                                                "type": "array",
+                                                "items": {
+                                                    "type": "string"
+                                                }
+                                            }
+                                        },
+                                        "required": [
+                                            "department"
+                                        ]
+                                    }
+                                },
+                                "required": [
+                                    "source",
+                                    "target"
+                                ]
+                            },
+                            "triggers": {
+                                "type": "array",
+                                "items": {
+                                    "type": "object",
+                                    "properties": {
+                                        "type": {
+                                            "$ref": "#/definitions/triggerType"
+                                        },
+                                        "event": {
+                                            "type": "string"
+                                        },
+                                        "cron": {
+                                            "$ref": "#/definitions/cronExpression"
+                                        },
+                                        "conditions": {
+                                            "type": "array"
+                                        }
+                                    }
+                                }
+                            },
+                            "process": {
+                                "type": "object",
+                                "properties": {
+                                    "steps": {
+                                        "type": "array",
+                                        "items": {
+                                            "$ref": "#/definitions/workflowStep"
+                                        }
+                                    }
+                                }
+                            },
+                            "notifications": {
+                                "type": "array",
+                                "items": {
+                                    "$ref": "#/definitions/notification"
+                                }
+                            },
+                            "sla": {
+                                "type": "object",
+                                "properties": {
+                                    "acknowledgmentTime": {
+                                        "$ref": "#/definitions/duration"
+                                    },
+                                    "completionTime": {
+                                        "$ref": "#/definitions/duration"
+                                    },
+                                    "escalationPolicy": {
+                                        "type": "array",
+                                        "items": {
+                                            "$ref": "#/definitions/escalationRule"
+                                        }
+                                    }
+                                }
+                            }
+                        },
+                        "required": [
+                            "displayName",
+                            "participants"
+                        ]
+                    }
+                }
+            }
+        }
+    ]
+}

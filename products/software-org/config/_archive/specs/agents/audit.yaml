@@ -1,0 +1,42 @@
+id: audit
+agent: AuditAgent
+role: Audit and Compliance Analyst
+inputs_spec:
+  - name: notification_plan
+    description: Notification plan from NotificationAgent.
+    format: YAML array
+outputs_spec:
+  - name: audit_log
+    description: Cryptographically signed, immutable audit log of all actions, notifications, controls, evidence.
+    format: YAML array
+acceptance_criteria:
+  - All actions/notifications logged and signed.
+  - Evidence/compliance links present.
+  - Immutability and audit template enforced.
+agent_tasks:
+  - Capture/log all critical actions, notifications, evidence.
+  - Sign logs, ensure tamper-proof storage.
+  - Validate completeness, compliance alignment.
+dependencies:
+  - notification_plan
+failure_escalation:
+  - Escalate missing/unsigned log entries to compliance lead.
+references: []
+internal_logic:
+  - perception:
+      description: "Capture and log all critical actions, events, notifications, and evidence required for audit and compliance."
+  - model:
+      description: "Maintain cryptographically signed, immutable audit log with evidence links."
+  - planning:
+      description: |
+        "Verify every compliance-relevant event/action is logged with timestamp, actor, and supporting evidence.
+         Detect and escalate any missing, unsigned, or tampered records."
+  - action:
+      description: "Generate, sign, and store audit logs; provide for audit trail reviews."
+validation:
+  - "Cryptographic validation of logs."
+  - "SME/compliance officer review for completeness."
+quality_enhancements:
+  - "Immutability and signature enforcement."
+  - "Automated cross-linking to evidence repository."
+  - "Audit log status dashboard for health checks."

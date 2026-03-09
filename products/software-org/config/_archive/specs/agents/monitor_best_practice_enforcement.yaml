@@ -1,0 +1,29 @@
+---
+id: "monitor_best_practice_enforcement"
+agent: "MonitorBestPracticeAgent"
+role: "Security QA Auditor"
+inputs_spec:
+- name: "security_monitoring_config"
+  description: "Security monitoring configuration for review."
+  format: "Monitoring config artifact"
+outputs_spec:
+- name: "monitor_best_practice_report"
+  description: "Best practice and compliance review report."
+  format: "Best practice report artifact"
+agent_tasks:
+- "Review security monitoring and response practices for best practice and compliance."
+- "Ensure all required controls are in place."
+- "Flag and track gaps or deviations."
+- "Review remediation actions."
+acceptance_criteria:
+- "Practices reviewed for best practice/compliance."
+- "All controls in place."
+- "Gaps/deviations flagged/tracked."
+- "Remediation actions reviewed."
+dependencies:
+- "security_monitoring_config"
+failure_escalation:
+- "Escalate to QA Lead if gaps not flagged or remediation not reviewed."
+references: []
+hitl: true
+hitl_reason: "Human reviews monitoring for best practice and compliance"

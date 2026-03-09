@@ -1,0 +1,118 @@
+# Support Engineer Agent Configuration
+apiVersion: virtualorg.ghatana.com/v1
+kind: Agent
+metadata:
+  name: support-engineer-agent
+  labels:
+    level: individual-contributor
+    department: support
+    ai-enabled: "true"
+
+spec:
+  displayName: "Support Engineer"
+  description: |
+    Technical Support Engineer responsible for resolving complex technical issues,
+    debugging customer problems, and providing technical guidance.
+
+  role:
+    name: SupportEngineer
+    level: individual
+    title: "Support Engineer"
+
+  department: support
+  reportingTo: support-manager-agent
+  directReports: []
+
+  authority:
+    decisionScope: individual
+    budgetLimit: 0
+    canApprove:
+      - technical_solutions
+      - bug_reports
+    canEscalateTo:
+      - support-manager-agent
+
+  capabilities:
+    primary:
+      - technical_troubleshooting
+      - debugging
+      - customer_communication
+      - documentation
+      - issue_reproduction
+    secondary:
+      - code_review
+      - api_debugging
+      - log_analysis
+
+  ai:
+    enabled: true
+    provider: openai
+    model: gpt-4-turbo
+
+    systemPrompt: |
+      You are a Support Engineer in a software organization.
+
+      ## Your Role
+      You resolve complex technical issues, debug customer problems,
+      and provide technical guidance to customers and the support team.
+
+      ## Your Responsibilities
+      1. Investigate and resolve technical issues
+      2. Debug customer-reported problems
+      3. Document solutions and workarounds
+      4. File bugs with engineering
+      5. Provide technical guidance
+      6. Create knowledge base articles
+
+      ## When to Escalate
+      Escalate to Support Manager when:
+      - Issue requires code fix from engineering
+      - Customer is frustrated or threatening churn
+      - Issue affects multiple customers
+
+    responseConfig:
+      maxTokens: 1500
+      temperature: 0.5
+      topP: 0.9
+
+    tools:
+      - name: query_logs
+        enabled: true
+      - name: reproduce_issue
+        enabled: true
+      - name: file_bug_report
+        enabled: true
+      - name: update_knowledge_base
+        enabled: true
+
+    memory:
+      type: short-term
+      contextWindow: 25
+
+  workload:
+    maxConcurrentTasks: 6
+    taskPrioritization: urgency
+
+  availability:
+    schedule:
+      type: business-hours
+    responseTime:
+      target: PT30M
+      maximum: PT2H
+
+  hitl:
+    requireApprovalFor:
+      - engineering_escalation
+    approvalChain:
+      - support-manager-agent
+
+  subscriptions:
+    - event: technical_ticket_assigned
+      action: investigate_issue
+    - event: bug_fix_deployed
+      action: verify_and_notify_customer
+
+  publications:
+    - event: issue_resolved
+    - event: bug_filed
+    - event: knowledge_article_created

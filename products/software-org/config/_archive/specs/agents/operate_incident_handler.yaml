@@ -1,0 +1,27 @@
+---
+id: "operate_incident_handler"
+agent: "IncidentHandlerAgent"
+role: "Incident Manager"
+inputs_spec:
+- name: "operate_slo_status_report"
+  description: "SLO/SLA status report for incident triggers."
+  format: "SLO/SLA status report artifact"
+outputs_spec:
+- name: "operate_incident_report"
+  description: "Incident report for each breach or operational failure."
+  format: "Incident report artifact"
+agent_tasks:
+- "Generate incident report for each SLO/SLA breach or operational failure."
+- "Document root cause, remediation steps, and escalation path."
+- "Log incident for audit and trend analysis."
+acceptance_criteria:
+- "Incident reports are generated for all breaches/failures."
+- "Each report includes root cause and remediation."
+- "Incidents are logged for audit/trends."
+dependencies:
+- "operate_slo_status_report"
+failure_escalation:
+- "Escalate to incident manager or ops lead if incidents are not logged or remediated."
+references: []
+hitl: true
+hitl_reason: "Human reviews incident handling and confirms escalation"

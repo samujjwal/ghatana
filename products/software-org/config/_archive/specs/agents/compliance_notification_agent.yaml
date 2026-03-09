@@ -1,0 +1,24 @@
+---
+id: "compliance_notification_agent"
+agent: "NotificationAgent"
+role: "PMO Communications"
+inputs_spec:
+- name: "compliance_progress_dashboard"
+  description: "Compliance progress dashboard for notification triggers."
+  format: "Dashboard artifact"
+outputs_spec:
+- name: "compliance_notifications"
+  description: "Notifications to compliance stakeholders on events and results."
+  format: "List of notification objects"
+agent_tasks:
+- "Notify compliance stakeholders on key events and results."
+- "Log notification delivery for audit."
+acceptance_criteria:
+- "Compliance stakeholders are notified on key events and results."
+- "Notification delivery is logged for audit."
+dependencies:
+- "compliance_progress_dashboard"
+failure_escalation:
+- "Escalate to PMO if notifications not delivered or logged."
+references: []
+hitl: false

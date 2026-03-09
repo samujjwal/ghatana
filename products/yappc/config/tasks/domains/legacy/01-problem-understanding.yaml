@@ -1,0 +1,297 @@
+# Problem Understanding & Intent Clarification Tasks
+# Domain 1 of 22 - Developer Task Universe
+# Reference: developer-tasks.md Part I, Section 1
+
+domain:
+  id: problem-understanding
+  name: "Problem Understanding & Intent Clarification"
+  description: "Tasks related to understanding business/user problems and clarifying goals"
+  order: 1
+  icon: "psychology"
+  color: "#FF6B6B"
+  lifecycle_stages:
+    - intent
+    - context
+
+tasks:
+  - id: prob-001
+    name: "Understand Business/User Problem"
+    description: "Analyze and comprehend the core business or user problem that needs solving"
+    personas:
+      - Developer
+      - Tech Lead
+      - PM
+    lifecycle_stages:
+      - intent
+    automation_level: assisted
+    required_capabilities:
+      - domain-understanding
+      - requirement-analysis
+    input_schema: prob-001-input
+    output_schema: prob-001-output
+    audit_artifacts:
+      - InputSnapshot
+      - OutputSnapshot
+      - DecisionRecord
+    ui:
+      icon: "lightbulb"
+      color: "#FF6B6B"
+      tags:
+        - problem
+        - understanding
+        - analysis
+      input_hints:
+        - "Describe the business context and stakeholders"
+        - "Include any user feedback or pain points"
+      output_hints:
+        - "Review the problem statement for clarity"
+        - "Verify all stakeholders are identified"
+
+  - id: prob-002
+    name: "Clarify Ambiguous Goals"
+    description: "Identify and resolve ambiguous or unclear goals through stakeholder engagement"
+    personas:
+      - Developer
+      - Tech Lead
+      - PM
+    lifecycle_stages:
+      - intent
+    automation_level: manual
+    required_capabilities:
+      - communication
+      - requirement-analysis
+    input_schema: prob-002-input
+    output_schema: prob-002-output
+    audit_artifacts:
+      - InputSnapshot
+      - OutputSnapshot
+      - DecisionRecord
+      - ActorLog
+    ui:
+      icon: "question_answer"
+      color: "#FF6B6B"
+      tags:
+        - clarification
+        - goals
+        - stakeholder
+      input_hints:
+        - "List the ambiguous or unclear goals"
+        - "Identify who can provide clarification"
+
+  - id: prob-003
+    name: "Ask Clarifying Questions"
+    description: "Formulate and ask targeted questions to gather missing information"
+    personas:
+      - Developer
+      - Tech Lead
+    lifecycle_stages:
+      - intent
+      - context
+    automation_level: assisted
+    required_capabilities:
+      - communication
+      - critical-thinking
+    input_schema: prob-003-input
+    output_schema: prob-003-output
+    audit_artifacts:
+      - InputSnapshot
+      - OutputSnapshot
+    ui:
+      icon: "help_outline"
+      color: "#FF6B6B"
+      tags:
+        - questions
+        - clarification
+        - discovery
+
+  - id: prob-004
+    name: "Identify Constraints"
+    description: "Document time, cost, technology, and legal constraints affecting the solution"
+    personas:
+      - Developer
+      - Tech Lead
+      - PM
+      - Security
+    lifecycle_stages:
+      - intent
+      - context
+    automation_level: assisted
+    required_capabilities:
+      - domain-understanding
+      - risk-analysis
+    input_schema: prob-004-input
+    output_schema: prob-004-output
+    audit_artifacts:
+      - InputSnapshot
+      - OutputSnapshot
+      - DecisionRecord
+    ui:
+      icon: "block"
+      color: "#FF6B6B"
+      tags:
+        - constraints
+        - limitations
+        - planning
+
+  - id: prob-005
+    name: "Validate Problem Statement"
+    description: "Confirm the problem statement with stakeholders before proceeding"
+    personas:
+      - Developer
+      - Tech Lead
+      - PM
+    lifecycle_stages:
+      - intent
+    automation_level: manual
+    required_capabilities:
+      - communication
+      - validation
+    input_schema: prob-005-input
+    output_schema: prob-005-output
+    audit_artifacts:
+      - InputSnapshot
+      - OutputSnapshot
+      - ActorLog
+      - VerificationResult
+    ui:
+      icon: "verified"
+      color: "#FF6B6B"
+      tags:
+        - validation
+        - stakeholder
+        - approval
+
+  - id: prob-006
+    name: "Identify Non-Goals and Exclusions"
+    description: "Document what is explicitly out of scope to prevent scope creep"
+    personas:
+      - Developer
+      - Tech Lead
+      - PM
+    lifecycle_stages:
+      - intent
+    automation_level: assisted
+    required_capabilities:
+      - scope-management
+      - requirement-analysis
+    input_schema: prob-006-input
+    output_schema: prob-006-output
+    audit_artifacts:
+      - InputSnapshot
+      - OutputSnapshot
+      - DecisionRecord
+    ui:
+      icon: "do_not_disturb"
+      color: "#FF6B6B"
+      tags:
+        - scope
+        - exclusions
+        - boundaries
+
+  - id: prob-007
+    name: "Capture Assumptions"
+    description: "Document all assumptions being made about the problem and solution"
+    personas:
+      - Developer
+      - Tech Lead
+    lifecycle_stages:
+      - intent
+      - context
+    automation_level: assisted
+    required_capabilities:
+      - critical-thinking
+      - documentation
+    input_schema: prob-007-input
+    output_schema: prob-007-output
+    audit_artifacts:
+      - InputSnapshot
+      - OutputSnapshot
+    ui:
+      icon: "psychology_alt"
+      color: "#FF6B6B"
+      tags:
+        - assumptions
+        - documentation
+        - risk
+
+  - id: prob-008
+    name: "Identify Risks and Unknowns"
+    description: "Document known risks and areas of uncertainty that need investigation"
+    personas:
+      - Developer
+      - Tech Lead
+      - Security
+    lifecycle_stages:
+      - intent
+      - context
+    automation_level: assisted
+    required_capabilities:
+      - risk-analysis
+      - critical-thinking
+    input_schema: prob-008-input
+    output_schema: prob-008-output
+    audit_artifacts:
+      - InputSnapshot
+      - OutputSnapshot
+      - DecisionRecord
+    ui:
+      icon: "warning"
+      color: "#FF6B6B"
+      tags:
+        - risks
+        - unknowns
+        - mitigation
+
+  - id: prob-009
+    name: "Review Historical Context"
+    description: "Analyze prior solutions and historical context to inform current approach"
+    personas:
+      - Developer
+      - Tech Lead
+    lifecycle_stages:
+      - context
+    automation_level: assisted
+    required_capabilities:
+      - research
+      - code-analysis
+    input_schema: prob-009-input
+    output_schema: prob-009-output
+    audit_artifacts:
+      - InputSnapshot
+      - OutputSnapshot
+      - LineageLinks
+    ui:
+      icon: "history"
+      color: "#FF6B6B"
+      tags:
+        - history
+        - context
+        - research
+
+  - id: prob-010
+    name: "Define Success Criteria"
+    description: "Establish measurable criteria to determine if the solution is successful"
+    personas:
+      - Developer
+      - Tech Lead
+      - PM
+      - QA
+    lifecycle_stages:
+      - intent
+    automation_level: assisted
+    required_capabilities:
+      - metrics-definition
+      - requirement-analysis
+    input_schema: prob-010-input
+    output_schema: prob-010-output
+    audit_artifacts:
+      - InputSnapshot
+      - OutputSnapshot
+      - DecisionRecord
+    ui:
+      icon: "emoji_events"
+      color: "#FF6B6B"
+      tags:
+        - success
+        - criteria
+        - metrics

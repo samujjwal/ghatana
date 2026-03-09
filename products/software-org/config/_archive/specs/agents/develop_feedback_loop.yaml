@@ -1,0 +1,24 @@
+---
+id: "develop_feedback_loop"
+agent: "FeedbackLoopAgent"
+role: "CI/CD Coach/Automation"
+inputs_spec:
+- name: "develop_progress_dashboard"
+  description: "Develop dashboard for feedback collection."
+  format: "Dashboard artifact"
+outputs_spec:
+- name: "develop_feedback_items"
+  description: "Issues/improvements routed to Retrospective, tracked for closure."
+  format: "List of feedback items"
+agent_tasks:
+- "Route all issues and improvement suggestions to Retrospective."
+- "Track feedback for closure/action."
+acceptance_criteria:
+- "All issues and improvement suggestions are routed to Retrospective."
+- "Feedback tracked for closure/action."
+dependencies:
+- "develop_progress_dashboard"
+failure_escalation:
+- "Escalate to CI/CD coach if feedback is not acted on."
+references: []
+hitl: false

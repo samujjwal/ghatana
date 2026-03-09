@@ -1,0 +1,31 @@
+---
+id: "test_best_practice"
+agent: "TestBestPracticeAgent"
+role: "QA Standards Lead"
+inputs_spec:
+- name: "consolidated_test_results"
+  description: "Consolidated test results for best practice review."
+  format: "Consolidated test results artifact"
+- name: "test_audit_report"
+  description: "Audit report for best practice alignment."
+  format: "Audit report artifact"
+outputs_spec:
+- name: "test_best_practices_report"
+  description: "Report of all test best practice findings and remediation."
+  format: "Best practice compliance report"
+agent_tasks:
+- "Review all executed tests for adherence to best practice."
+- "Track and close issues."
+- "Update test documentation as needed."
+acceptance_criteria:
+- "All executed tests are reviewed for adherence to best practice."
+- "Issues found are tracked to closure."
+- "Test documentation is updated as needed."
+dependencies:
+- "consolidated_test_results"
+- "test_audit_report"
+failure_escalation:
+- "Escalate to QA Standards Lead if best practices are not followed."
+references: []
+hitl: true
+hitl_reason: "Human ensures all test best practices are followed"

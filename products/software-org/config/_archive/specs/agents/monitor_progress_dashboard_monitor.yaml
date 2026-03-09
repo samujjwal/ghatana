@@ -1,0 +1,34 @@
+---
+id: "monitor_progress_dashboard_monitor"
+agent: "ProgressDashboardAgent"
+role: "Monitor Progress Dashboard Owner"
+inputs_spec:
+- name: "monitor_kpi_report"
+  description: "Monitor KPI report for dashboard visualization."
+  format: "KPI report artifact"
+- name: "monitor_success_criteria_status"
+  description: "Monitor success criteria status for dashboard visualization."
+  format: "List of criteria status objects"
+- name: "monitor_stage_milestone"
+  description: "Monitor stage milestone plan for dashboard visualization."
+  format: "List of milestone objects"
+outputs_spec:
+- name: "monitor_progress_dashboard"
+  description: "Real-time incident, detection, and KPI status dashboard."
+  format: "Dashboard artifact"
+agent_tasks:
+- "Visualize incident, detection, and KPI status in real time."
+- "Track postmortem and improvement actions."
+- "Ensure dashboard reviewed and signed by Security/SOC lead."
+acceptance_criteria:
+- "Incident, detection, and KPI status visualized in real time."
+- "Postmortem and improvement actions tracked."
+- "Dashboard reviewed and signed by Security/SOC lead."
+dependencies:
+- "monitor_kpi_report"
+- "monitor_success_criteria_status"
+- "monitor_stage_milestone"
+failure_escalation:
+- "Escalate to Dashboard Owner if dashboard not current or not signed off."
+references: []
+hitl: false

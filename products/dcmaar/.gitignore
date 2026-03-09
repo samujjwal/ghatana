@@ -1,0 +1,140 @@
+# Binaries for programs and plugins
+*.exe
+*.exe~
+*.dll
+*.so
+*.dylib
+bin/
+
+# Test binary, built with `go test -c`
+*.test
+
+# Output of the go coverage tool, specifically when used with LiteIDE
+*.out
+
+# Dependency directories (remove the comment below to include it)
+# vendor/
+
+# Go workspace file
+go.work
+
+# IDE specific files
+.idea/
+.vscode/
+*.swp
+*.swo
+
+# Environment files
+.env
+.env.local
+
+# Test data directory
+testdata/
+
+# Generated protobuf files
+*.pb.go
+*.pb.gw.go
+*.pb.validate.go
+
+# Generated gRPC files
+*_grpc.pb.go
+
+# Generated mock files
+mock_*_test.go
+
+# Log files
+*.log
+
+# OS generated files
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db
+
+# Build output
+dist/
+build/
+.turbo/
+
+# Local development certificates
+certs/
+
+# Local development data
+data/
+
+# Editor directories and files
+.idea
+.vscode
+*.suo
+*.ntvs*
+*.njsproj
+*.sln
+*.sw?
+
+# Dependencies
+node_modules/
+.pnpm-store/
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+develop-eggs/
+downloads/
+eggs/
+.eggs/
+lib/
+lib64/
+parts/
+sdist/
+var/
+wheels/
+*.egg-info/
+.installed.cfg
+*.egg
+
+# Rust
+target/
+**/*.rs.bk
+Cargo.lock
+*.pdb
+
+# Node.js
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+.pnpm-debug.log*
+.pnp.*
+
+# .NET
+.next/
+.out/
+.nuxt/
+.cache/
+.temp/
+.tmp/
+.vercel/
+.netlify/
+
+# Tauri
+/src-tauri/target/
+/src-tauri/Cargo.lock
+
+# Extension
+!services/extension/dist/
+services/extension/*.log
+# Allow committed desktop mock library modules for the desktop app
+!services/desktop/src/lib/
+!services/desktop/src/lib/**
+
+# Repository cleanup: ignore generated/cache artifacts
+npm-cache/
+logs/
+tmp/
+experiments/ml/mlruns/
+tools/test-runner/mock-server-log.*.log
+*.bak
+experiments/frontend/src-tauri/gen/schemas/*.json

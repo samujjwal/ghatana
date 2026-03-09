@@ -1,0 +1,433 @@
+apiVersion: virtualorg.ghatana.com/v1
+kind: TaskDefinition
+metadata:
+  name: feature-implementation
+  namespace: engineering
+  labels:
+    category: development
+    type: feature
+    complexity: medium
+  annotations:
+    author: "platform-team"
+    version: "1.0.0"
+
+spec:
+  displayName: "Feature Implementation Task"
+  description: |
+    Standard task for implementing new features. Includes design review,
+    implementation, testing, and code review phases.
+  category: development
+  type: feature
+  version: "1.0.0"
+
+  # Priority configuration
+  priority:
+    default: medium
+    allowOverride: true
+    overrideRoles:
+      - tech-lead
+      - product-manager
+    escalationRules:
+      - name: age-escalation
+        condition: "age > 4h && priority == 'medium'"
+        from: medium
+        to: high
+        notify:
+          - tech-lead
+      - name: critical-escalation
+        condition: "age > 8h && priority == 'high'"
+        from: high
+        to: critical
+        notify:
+          - engineering-manager
+          - product-manager
+    factors:
+      - name: customer-impact
+        weight: 0.4
+        source: "task.metadata.customerTier"
+        mapping:
+          enterprise: 3
+          business: 2
+          standard: 1
+      - name: deadline-proximity
+        weight: 0.3
+        source: "daysUntilDeadline(task.dueDate)"
+        mapping:
+          "<=1": 3
+          "<=3": 2
+          ">3": 1
+
+  # Assignment rules
+  assignment:
+    strategy: skill-match
+    requiredCapabilities:
+      - software-development
+    preferredCapabilities:
+      - ${task.inputs.technology}
+    requiredRoles:
+      - developer
+    departmentRestriction:
+      - engineering
+    loadBalancing:
+      enabled: true
+      algorithm: least-loaded
+      maxConcurrentTasks: 3
+      weightByCapacity: true
+    affinity:
+      sameAgent:
+        enabled: true
+        affinityKey: "task.inputs.repository"
+        window: "7d"
+      sameDepartment: true
+      context:
+        - repository
+        - technology-stack
+    fallback:
+      enabled: true
+      strategy: any-available
+      notifyOnFallback: true
+      escalateTo: tech-lead
+    timeout: "30m"
+
+  # Execution configuration
+  execution:
+    timeout: "5d"
+    retryPolicy:
+      enabled: true
+      maxRetries: 2
+      backoff: exponential
+      initialDelay: "1h"
+      maxDelay: "8h"
+      retryableErrors:
+        - EXTERNAL_SERVICE_UNAVAILABLE
+        - RATE_LIMIT_EXCEEDED
+      nonRetryableErrors:
+        - VALIDATION_ERROR
+        - PERMISSION_DENIED
+    isolation: shared
+    resourceLimits:
+      maxTokens: 100000
+      maxApiCalls: 500
+      maxCost: 50.0
+      maxTime: "5d"
+    checkpointing:
+      enabled: true
+      interval: "1h"
+      onMilestones:
+        - design-complete
+        - implementation-complete
+        - tests-passing
+      resumable: true
+    preExecution:
+      - name: validate-requirements
+        type: action
+        action: validate-task-requirements
+        timeout: "5m"
+        failurePolicy: abort
+    postExecution:
+      - name: update-metrics
+        type: action
+        action: update-task-metrics
+        condition: "status == 'completed'"
+    onFailure:
+      - name: notify-stakeholders
+        type: notification
+        action: send-failure-notification
+        condition: "retryCount >= maxRetries"
+
+  # Task dependencies
+  dependencies:
+    required:
+      - taskType: design-review
+        status: [completed, approved]
+        dataMapping:
+          designDoc: "outputs.designDocument"
+    optional:
+      - taskType: security-review
+        status: [completed]
+    produces:
+      - feature-code
+      - unit-tests
+      - documentation
+    consumes:
+      - design-document
+      - requirements
+    blocking: true
+    timeout: "2h"
+
+  # Input parameters
+  inputs:
+    - name: featureId
+      type: string
+      description: "Unique feature identifier"
+      required: true
+    - name: requirements
+      type: object
+      description: "Feature requirements document"
+      required: true
+      schema:
+        type: object
+        properties:
+          title: { type: string }
+          description: { type: string }
+          acceptanceCriteria: { type: array }
+    - name: repository
+      type: string
+      description: "Target repository"
+      required: true
+    - name: technology
+      type: string
+      description: "Primary technology stack"
+      required: true
+      validation:
+        enum: [java, python, typescript, go]
+    - name: deadline
+      type: datetime
+      description: "Target completion date"
+      required: false
+    - name: estimatedHours
+      type: number
+      description: "Estimated effort in hours"
+      required: false
+      default: 40
+
+  # Output parameters
+  outputs:
+    - name: pullRequest
+      type: object
+      description: "Created pull request"
+      schema:
+        type: object
+        properties:
+          url: { type: string }
+          number: { type: integer }
+          status: { type: string }
+    - name: codeChanges
+      type: object
+      description: "Summary of code changes"
+    - name: testResults
+      type: object
+      description: "Test execution results"
+      validation:
+        required: true
+        customValidator: validate-test-coverage
+
+  # SLA configuration
+  sla:
+    responseTime: "1h"
+    completionTime: "5d"
+    byPriority:
+      critical:
+        responseTime: "15m"
+        completionTime: "1d"
+      high:
+        responseTime: "30m"
+        completionTime: "2d"
+      medium:
+        responseTime: "1h"
+        completionTime: "5d"
+      low:
+        responseTime: "4h"
+        completionTime: "10d"
+    tracking:
+      enabled: true
+      excludeWeekends: true
+      businessHours:
+        enabled: true
+        start: "09:00"
+        end: "18:00"
+        timezone: "America/New_York"
+        days: [monday, tuesday, wednesday, thursday, friday]
+      pauseOnBlocked: true
+    breachActions:
+      - name: sla-warning
+        type: notification
+        threshold: "80%"
+        action: send-warning
+        notify:
+          - assignee
+          - tech-lead
+      - name: sla-breach
+        type: escalation
+        threshold: "100%"
+        action: escalate
+        escalateTo: engineering-manager
+        notify:
+          - assignee
+          - tech-lead
+          - product-manager
+
+  # Lifecycle configuration
+  lifecycle:
+    statuses:
+      - name: created
+        displayName: "Created"
+        type: initial
+        terminal: false
+        slaCountsHere: false
+      - name: assigned
+        displayName: "Assigned"
+        type: active
+        terminal: false
+        slaCountsHere: true
+      - name: in-progress
+        displayName: "In Progress"
+        type: active
+        terminal: false
+        slaCountsHere: true
+      - name: blocked
+        displayName: "Blocked"
+        type: blocked
+        terminal: false
+        slaCountsHere: false
+      - name: in-review
+        displayName: "In Review"
+        type: review
+        terminal: false
+        slaCountsHere: true
+      - name: completed
+        displayName: "Completed"
+        type: success
+        terminal: true
+        slaCountsHere: false
+      - name: cancelled
+        displayName: "Cancelled"
+        type: cancelled
+        terminal: true
+        slaCountsHere: false
+    transitions:
+      - from: created
+        to: assigned
+        name: assign
+        requiredRoles: [tech-lead, engineering-manager]
+      - from: assigned
+        to: in-progress
+        name: start
+        requiredRoles: [assignee]
+      - from: in-progress
+        to: blocked
+        name: block
+        requiresComment: true
+      - from: blocked
+        to: in-progress
+        name: unblock
+      - from: in-progress
+        to: in-review
+        name: submit-for-review
+        condition: "outputs.pullRequest != null"
+      - from: in-review
+        to: completed
+        name: approve
+        requiredRoles: [tech-lead]
+      - from: in-review
+        to: in-progress
+        name: request-changes
+        requiresComment: true
+      - from: "*"
+        to: cancelled
+        name: cancel
+        requiredRoles: [tech-lead, engineering-manager]
+        requiresComment: true
+    autoTransitions:
+      - name: auto-unblock
+        from: blocked
+        to: in-progress
+        condition: "blockedReason.resolved == true"
+        delay: "5m"
+
+  # Subtask configuration
+  subtasks:
+    enabled: true
+    maxDepth: 2
+    inheritPriority: true
+    inheritAssignment: false
+    propagateStatus: true
+    templates:
+      - name: design-review
+        taskType: design-review
+        auto: true
+      - name: code-review
+        taskType: code-review
+        auto: true
+      - name: testing
+        taskType: testing
+        defaultInputs:
+          coverageThreshold: 80
+
+  # Approval configuration
+  approval:
+    required: true
+    stages:
+      - name: code-review
+        order: 1
+        approverRoles: [developer, tech-lead]
+        minApprovals: 1
+      - name: tech-lead-review
+        order: 2
+        approverRoles: [tech-lead]
+        minApprovals: 1
+        unanimous: false
+    timeout: "48h"
+    onTimeout: escalate
+    autoApprove:
+      enabled: true
+      conditions:
+        - "task.inputs.estimatedHours < 4"
+        - "task.metadata.riskLevel == 'low'"
+
+  # Notification configuration
+  notifications:
+    onCreated:
+      - channel: slack
+        recipients: ["#engineering-tasks"]
+        template: task-created
+    onAssigned:
+      - channel: email
+        recipients: ["${task.assignee.email}"]
+        template: task-assigned
+    onCompleted:
+      - channel: slack
+        recipients: ["#engineering-tasks"]
+        template: task-completed
+    onFailed:
+      - channel: slack
+        recipients: ["#engineering-alerts"]
+        template: task-failed
+      - channel: email
+        recipients: ["${task.assignee.email}", "${task.reporter.email}"]
+        template: task-failed
+    onSlaWarning:
+      - channel: slack
+        recipients: ["${task.assignee.slackId}"]
+        template: sla-warning
+    onSlaBreach:
+      - channel: pagerduty
+        recipients: ["engineering-oncall"]
+        template: sla-breach
+
+  # Metrics configuration
+  metrics:
+    enabled: true
+    counters:
+      - tasks_created_total
+      - tasks_completed_total
+      - tasks_failed_total
+      - tasks_blocked_total
+    timers:
+      - name: task_response_time
+        from: created
+        to: assigned
+        slo: "1h"
+      - name: task_completion_time
+        from: assigned
+        to: completed
+        slo: "5d"
+      - name: review_time
+        from: in-review
+        to: completed
+        slo: "4h"
+    labels:
+      - priority
+      - assignee
+      - technology
+      - department

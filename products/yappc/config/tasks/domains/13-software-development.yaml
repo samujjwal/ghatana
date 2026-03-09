@@ -1,0 +1,206 @@
+domain:
+  id: software-development
+  name: "Software Development"
+  description: "Write code, refactor, and fix bugs."
+  order: 13
+  icon: "code"
+  color: "#EF5350"
+  agent_personas:
+    - "CodeExecutor"
+    - "RefactorAgent"
+    - "EnvironmentSetup"
+  audit_artifacts:
+    - "ChangeSet"
+    - "CommitHistory"
+    - "CodeSnapshot"
+  inputs:
+    - "Design specs"
+    - "Tasks"
+    - "Requirements"
+  outputs:
+    - "Source code"
+    - "Configurations"
+    - "Unit tests"
+
+tasks:
+  # Core ICS development tasks
+  - id: d13-t1
+    name: "Implement features"
+    description: "Write code for new features."
+    personas: ["Developer"]
+    lifecycle_stages: ["execute"]
+    automation_level: "assisted"
+  - id: d13-t2
+    name: "Refactor code"
+    description: "Improve code structure."
+    personas: ["Developer", "Tech Lead"]
+    lifecycle_stages: ["execute"]
+    automation_level: "assisted"
+  - id: d13-t3
+    name: "Fix defects"
+    description: "Resolve bugs."
+    personas: ["Developer"]
+    lifecycle_stages: ["execute"]
+    automation_level: "assisted"
+  - id: d13-t4
+    name: "Implement integrations"
+    description: "Connect systems."
+    personas: ["Developer", "Tech Lead"]
+    lifecycle_stages: ["execute"]
+    automation_level: "assisted"
+
+  # Migrated from legacy implementation domain
+  - id: impl-001
+    name: "Write Production Code"
+    description: "Write clean, maintainable production code."
+    personas: ["Developer"]
+    lifecycle_stages: ["execute"]
+    automation_level: "assisted"
+  - id: impl-002
+    name: "Implement Error Handling"
+    description: "Add proper error handling and recovery."
+    personas: ["Developer"]
+    lifecycle_stages: ["execute"]
+    automation_level: "assisted"
+  - id: impl-003
+    name: "Write Unit Tests"
+    description: "Create unit tests for new code."
+    personas: ["Developer"]
+    lifecycle_stages: ["execute", "verify"]
+    automation_level: "assisted"
+  - id: impl-004
+    name: "Create Reusable Components"
+    description: "Build modular, reusable code components."
+    personas: ["Developer", "Tech Lead"]
+    lifecycle_stages: ["execute"]
+    automation_level: "assisted"
+  - id: impl-005
+    name: "Refactor Existing Code"
+    description: "Improve code quality without changing behavior."
+    personas: ["Developer"]
+    lifecycle_stages: ["execute"]
+    automation_level: "assisted"
+  - id: impl-006
+    name: "Implement Caching"
+    description: "Add caching for performance optimization."
+    personas: ["Developer"]
+    lifecycle_stages: ["execute"]
+    automation_level: "assisted"
+  - id: impl-007
+    name: "Implement Logging"
+    description: "Add structured logging for observability."
+    personas: ["Developer"]
+    lifecycle_stages: ["execute"]
+    automation_level: "assisted"
+  - id: impl-008
+    name: "Code Review Feedback"
+    description: "Address feedback from code reviews."
+    personas: ["Developer"]
+    lifecycle_stages: ["execute", "verify"]
+    automation_level: "manual"
+  - id: impl-009
+    name: "Pair Programming"
+    description: "Collaborate through pair programming."
+    personas: ["Developer"]
+    lifecycle_stages: ["execute"]
+    automation_level: "manual"
+  - id: impl-010
+    name: "Implement Configurations"
+    description: "Create configuration files and settings."
+    personas: ["Developer", "DevOps"]
+    lifecycle_stages: ["execute"]
+    automation_level: "assisted"
+
+  # Migrated from legacy dev-environment domain
+  - id: env-001
+    name: "Setup Development Environment"
+    description: "Configure local development environment."
+    personas: ["Developer"]
+    lifecycle_stages: ["execute"]
+    automation_level: "assisted"
+  - id: env-002
+    name: "Configure IDE/Editor"
+    description: "Set up IDE with proper extensions and settings."
+    personas: ["Developer"]
+    lifecycle_stages: ["execute"]
+    automation_level: "assisted"
+  - id: env-003
+    name: "Setup Dependencies"
+    description: "Install and configure project dependencies."
+    personas: ["Developer"]
+    lifecycle_stages: ["execute"]
+    automation_level: "automated"
+  - id: env-004
+    name: "Configure Containers"
+    description: "Set up Docker containers for development."
+    personas: ["Developer", "DevOps"]
+    lifecycle_stages: ["execute"]
+    automation_level: "assisted"
+  - id: env-005
+    name: "Setup Local Database"
+    description: "Configure local database for development."
+    personas: ["Developer"]
+    lifecycle_stages: ["execute"]
+    automation_level: "assisted"
+
+  # Migrated from legacy ai-augmented domain
+  - id: ai-001
+    name: "AI Code Generation"
+    description: "Generate code using AI assistants."
+    personas: ["Developer"]
+    lifecycle_stages: ["execute"]
+    automation_level: "assisted"
+  - id: ai-002
+    name: "AI Code Completion"
+    description: "Use AI for intelligent code completion."
+    personas: ["Developer"]
+    lifecycle_stages: ["execute"]
+    automation_level: "automated"
+  - id: ai-003
+    name: "AI Code Review"
+    description: "Get AI-powered code review feedback."
+    personas: ["Developer"]
+    lifecycle_stages: ["verify"]
+    automation_level: "assisted"
+  - id: ai-004
+    name: "AI Bug Detection"
+    description: "Use AI to detect potential bugs."
+    personas: ["Developer"]
+    lifecycle_stages: ["verify"]
+    automation_level: "assisted"
+  - id: ai-005
+    name: "AI Documentation Generation"
+    description: "Generate documentation using AI."
+    personas: ["Developer"]
+    lifecycle_stages: ["execute"]
+    automation_level: "assisted"
+  - id: ai-006
+    name: "AI Test Generation"
+    description: "Generate test cases using AI."
+    personas: ["Developer"]
+    lifecycle_stages: ["execute", "verify"]
+    automation_level: "assisted"
+  - id: ai-007
+    name: "AI Refactoring Suggestions"
+    description: "Get AI-powered refactoring recommendations."
+    personas: ["Developer"]
+    lifecycle_stages: ["execute"]
+    automation_level: "assisted"
+  - id: ai-008
+    name: "AI Security Analysis"
+    description: "Use AI for security vulnerability detection."
+    personas: ["Developer", "Security"]
+    lifecycle_stages: ["verify"]
+    automation_level: "assisted"
+  - id: ai-009
+    name: "AI Performance Optimization"
+    description: "Get AI-powered performance improvement suggestions."
+    personas: ["Developer"]
+    lifecycle_stages: ["verify"]
+    automation_level: "assisted"
+  - id: ai-010
+    name: "AI Code Explanation"
+    description: "Use AI to understand complex code."
+    personas: ["Developer"]
+    lifecycle_stages: ["context"]
+    automation_level: "assisted"

@@ -1,0 +1,90 @@
+.PHONY: all dev build build-release clean test lint format typecheck install icons help
+
+# Default target
+all: install build
+
+# Install dependencies
+install:
+pnpm install
+cd src-tauri && cargo fetch
+
+# Run development server
+dev:
+pnpm tauri:dev
+
+# Build for development (with debug symbols)
+build:
+pnpm tauri:build:debug
+
+# Build for production release
+build-release:
+pnpm tauri:build
+
+# Clean all build artifacts
+clean:
+rm -rf dist/
+rm -rf node_modules/
+cd src-tauri && cargo clean
+
+# Run frontend tests
+test:
+pnpm test
+
+# Run tests with coverage
+test-coverage:
+pnpm test:coverage
+
+# Lint code
+lint:
+pnpm lint
+cd src-tauri && cargo clippy -- -D warnings
+
+# Fix linting issues
+lint-fix:
+pnpm lint:fix
+cd src-tauri && cargo clippy --fix --allow-dirty
+
+# Format code
+format:
+pnpm format
+cd src-tauri && cargo fmt
+
+# Check formatting
+format-check:
+pnpm biome check --no-fix .
+cd src-tauri && cargo fmt --check
+
+# TypeScript type checking
+typecheck:
+pnpm typecheck
+
+# Check Rust code
+rust-check:
+cd src-tauri && cargo check
+
+# Generate app icons from a 1024x1024 source image
+icons:
+@echo "Usage: pnpm tauri icon <path-to-1024x1024-image.png>"
+
+    # Update dependencies
+    update:
+    pnpm update
+    cd src-tauri && cargo update
+
+    # Help
+    help:
+    @echo "Available commands:"
+    @echo " make install - Install all dependencies"
+    @echo " make dev - Run development server"
+    @echo " make build - Build debug version"
+    @echo " make build-release - Build production release"
+    @echo " make clean - Clean build artifacts"
+    @echo " make test - Run frontend tests"
+    @echo " make test-coverage - Run tests with coverage"
+    @echo " make lint - Lint all code"
+    @echo " make lint-fix - Fix linting issues"
+    @echo " make format - Format all code"
+    @echo " make typecheck - Check TypeScript types"
+    @echo " make rust-check - Check Rust code"
+    @echo " make update - Update dependencies"
+    @echo " make help - Show this help"

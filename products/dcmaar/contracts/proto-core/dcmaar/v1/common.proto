@@ -1,0 +1,467 @@
+syntax = "proto3";
+
+package dcmaar.v1;
+
+option go_package = "github.com/samujjwal/dcmaar/proto/gen/go/pb/dcmaar/v1;dcmaarv1";
+option java_multiple_files = true;
+option java_outer_classname = "CommonProto";
+option java_package = "com.dcmaar.v1";
+option csharp_namespace = "Dcmaar.V1";
+option objc_class_prefix = "DCX";
+option php_namespace = "Dcmaar\\V1";
+option ruby_package = "Dcmaar::V1";
+
+import "google/protobuf/any.proto";
+import "google/protobuf/struct.proto";
+import "google/protobuf/timestamp.proto";
+import "validate/validate.proto";
+
+// Common metadata envelope for all payloads (additive; do not remove or reuse numbers)
+// Compression algorithm used for the message payload
+enum CompressionType {
+  COMPRESSION_TYPE_UNSPECIFIED = 0;
+  COMPRESSION_TYPE_NONE = 1;
+  COMPRESSION_TYPE_GZIP = 2;
+  COMPRESSION_TYPE_ZSTD = 3;
+  COMPRESSION_TYPE_SNAPPY = 4;
+}
+
+// Common status codes for API responses
+enum StatusCode {
+  STATUS_CODE_UNSPECIFIED = 0;
+  STATUS_CODE_SUCCESS = 1;
+  STATUS_CODE_BAD_REQUEST = 2;
+  STATUS_CODE_UNAUTHORIZED = 3;
+  STATUS_CODE_FORBIDDEN = 4;
+  STATUS_CODE_NOT_FOUND = 5;
+  STATUS_CODE_INTERNAL_ERROR = 6;
+  STATUS_CODE_SERVICE_UNAVAILABLE = 7;
+  STATUS_CODE_ALREADY_EXISTS = 8;
+  STATUS_CODE_INVALID_ARGUMENT = 9;
+  STATUS_CODE_DEADLINE_EXCEEDED = 10;
+  STATUS_CODE_PERMISSION_DENIED = 11;
+  STATUS_CODE_RESOURCE_EXHAUSTED = 12;
+  STATUS_CODE_FAILED_PRECONDITION = 13;
+  STATUS_CODE_ABORTED = 14;
+  STATUS_CODE_OUT_OF_RANGE = 15;
+  STATUS_CODE_UNIMPLEMENTED = 16;
+  STATUS_CODE_UNAVAILABLE = 17;
+  STATUS_CODE_DATA_LOSS = 18;
+  STATUS_CODE_UNAUTHENTICATED = 19;
+}
+
+// A generic response message
+message Status {
+  // Status code
+  StatusCode code = 1;
+  // Human-readable message
+  string message = 2;
+  // Additional metadata
+  map<string, string> metadata = 3;
+}
+
+// Metric value type
+message MetricValue {
+  oneof value {
+    // A simple counter value
+    int64 counter = 1;
+    // A floating-point gauge value
+    double gauge = 2;
+    // A histogram with bucket counts
+    Histogram histogram = 3;
+    // A summary with quantiles
+    Summary summary = 4;
+  }
+}
+
+// A histogram metric
+message Histogram {
+  // Upper bounds of the buckets
+  repeated double bounds = 1;
+  // Count of values in each bucket
+  repeated uint64 counts = 2;
+  // Sum of all observed values
+  double sum = 3;
+  // Total number of observations
+  uint64 count = 4;
+}
+
+// A summary metric
+message Summary {
+  // Quantile values
+  repeated Quantile quantiles = 1;
+  // Sum of all observed values
+  double sum = 2;
+  // Total number of observations
+  uint64 count = 3;
+}
+
+// A quantile value
+message Quantile {
+  // Quantile value (0.0 to 1.0)
+  double quantile = 1;
+  // Value at the quantile
+  double value = 2;
+}
+
+// A system or application metric
+message Metric {
+  // Unique identifier for the metric
+  string id = 1;
+  // Name of the metric
+  string name = 2;
+  // Metric value
+  MetricValue value = 3;
+  // When the metric was recorded
+  google.protobuf.Timestamp timestamp = 4;
+  // Additional metadata
+  google.protobuf.Struct metadata = 5;
+  // When the metric was created
+  google.protobuf.Timestamp created_at = 6;
+}
+
+// Event type
+enum EventType {
+  EVENT_TYPE_UNSPECIFIED = 0;
+  EVENT_TYPE_SYSTEM = 1;
+  EVENT_TYPE_USER = 2;
+  EVENT_TYPE_AUTOMATED = 3;
+  EVENT_TYPE_ERROR = 4;
+  EVENT_TYPE_AUDIT = 5;
+}
+
+// An event in the system
+message Event {
+  // Event ID (UUID)
+  string id = 1;
+  // Event type
+  EventType type = 2;
+  // Event source (e.g., "browser_extension", "desktop_app")
+  string source = 3;
+  // Event timestamp
+  google.protobuf.Timestamp timestamp = 4;
+  // Event data (opaque binary)
+  bytes data = 5;
+  // Event metadata (JSON)
+  google.protobuf.Struct metadata = 6;
+  // When the event was created
+  google.protobuf.Timestamp created_at = 7;
+  // When the event was last updated
+  google.protobuf.Timestamp updated_at = 8;
+}
+
+// A pagination request message
+message PaginationRequest {
+  // Maximum number of items to return
+  uint32 limit = 1;
+  // Token for the next page of results
+  string page_token = 2;
+  // Sort field
+  string sort_by = 3;
+  // Sort direction (asc/desc)
+  string sort_order = 4;
+}
+
+// A pagination response message
+message PaginationResponse {
+  // Token for the next page of results
+  string next_page_token = 1;
+  // Total number of items across all pages
+  uint32 total_items = 2;
+  // Total number of pages
+  uint32 total_pages = 3;
+}
+
+// A time range filter
+message TimeRange {
+  // Start time (inclusive)
+  google.protobuf.Timestamp start_time = 1;
+  // End time (inclusive)
+  google.protobuf.Timestamp end_time = 2;
+}
+
+// A field filter
+message FieldFilter {
+  // Field name
+  string field = 1;
+  // Comparison operator
+  string operator = 2; // eq, neq, gt, gte, lt, lte, in, contains, starts_with, ends_with
+  // Field value (as JSON)
+  string value = 3;
+}
+
+// ValidationError represents a single validation error
+message ValidationError {
+  // The field that failed validation
+  string field = 1;
+  // A description of the validation error
+  string message = 2;
+  // The value that caused the validation error
+  string value = 3;
+  // The validation rule that was violated
+  string rule = 4;
+  // Additional metadata about the error
+  map<string, string> metadata = 5;
+}
+
+// A filter expression
+message Filter {
+  oneof filter {
+    // A single field filter
+    FieldFilter field_filter = 1;
+    // A logical AND of multiple filters
+    FilterAnd and = 2;
+    // A logical OR of multiple filters
+    FilterOr or = 3;
+    // A logical NOT of a filter
+    FilterNot not = 4;
+  }
+}
+
+// A logical AND of multiple filters
+message FilterAnd {
+  repeated Filter filters = 1;
+}
+
+// A logical OR of multiple filters
+message FilterOr {
+  repeated Filter filters = 1;
+}
+
+// A logical NOT of a filter
+message FilterNot {
+  Filter filter = 1;
+}
+
+// Batch metadata for tracking and correlation
+message BatchMetadata {
+  string batch_id = 1;         // Unique identifier for the batch
+  int32 item_count = 2;        // Number of items in the batch
+  int64 first_event_ts = 3;    // Timestamp of first event in batch
+  int64 last_event_ts = 4;     // Timestamp of last event in batch
+  bool is_compressed = 5;      // Whether the payload is compressed
+  CompressionType compression = 6; // Compression algorithm used
+  int32 original_size = 7;     // Original size before compression (bytes)
+  int32 compressed_size = 8;   // Size after compression (bytes)
+}
+
+message EnvelopeMeta {
+  // Identity fields
+  string tenant_id = 1;       // Required: Tenant/account identifier
+  string device_id = 2;       // Required: Device/agent identifier
+  string session_id = 3;      // Required: Session/request correlation ID
+  int64 timestamp = 4;        // Required: Unix timestamp in milliseconds
+  string schema_version = 5;  // Required: Schema version (e.g., "1.0.0")
+  
+  // Batching information
+  BatchMetadata batch_meta = 10; // Metadata about the batch
+  
+  // Additional metadata
+  string source = 11;         // Optional: Source system or component
+  map<string, string> tags = 12; // Optional: Additional metadata
+  
+  // Transport metadata
+  string idempotency_key = 20;  // For deduplication
+  int32 retry_count = 21;       // Number of retry attempts
+  string request_id = 22;       // For request correlation
+}
+
+// Common message for metadata that can be attached to any entity
+message Metadata {
+  // When the resource was created
+  google.protobuf.Timestamp created_at = 1;
+  
+  // When the resource was last updated
+  google.protobuf.Timestamp updated_at = 2;
+  
+  // Who created this resource
+  string created_by = 3 [
+    (validate.rules).string = {max_len: 255}
+  ];
+  
+  // Who last updated this resource
+  string updated_by = 4 [
+    (validate.rules).string = {max_len: 255}
+  ];
+  
+  // Resource version for optimistic concurrency control
+  int32 version = 5;
+  
+  // Additional metadata
+  map<string, string> annotations = 100;
+}
+
+// Standard error response
+message Error {
+  // Error code (e.g., "INVALID_ARGUMENT")
+  string code = 1;
+  // Human-readable error message
+  string message = 2;
+  // HTTP status code
+  int32 http_status_code = 3;
+  // Request ID for correlation
+  string request_id = 4;
+  // Component that generated the error
+  string component = 5;
+  // Operation that failed
+  string operation = 6;
+  
+  // Additional metadata
+  map<string, string> metadata = 100;
+}
+message ListResponse {
+  // The list of items
+  repeated google.protobuf.Any items = 1;
+  
+  // The total number of items available
+  int32 total_count = 2;
+  
+  // The current page number (1-based)
+  int32 page_number = 3;
+  
+  // The number of items per page
+  int32 page_size = 4;
+  
+  // Whether there are more items available
+  bool has_more = 5;
+  
+  // The token to use to get the next page of results
+  string next_page_token = 6;
+  
+  // Additional metadata
+  map<string, string> metadata = 100;
+}
+
+// Standard request for list operations
+message ListRequest {
+  // The maximum number of items to return
+  int32 page_size = 1 [
+    (validate.rules).int32 = {
+      gte: 1,
+      lte: 1000
+    }
+  ];
+  
+  // The token to use to get the next page of results
+  string page_token = 2;
+  
+  // The field to sort by
+  string sort_by = 3;
+  
+  // Whether to sort in descending order
+  bool sort_desc = 4;
+  
+  // Filter criteria as a JSON string
+  string filter = 5;
+  
+  // Additional metadata
+  map<string, string> metadata = 100;
+}
+
+
+// Batch hints provided by clients to guide batching behavior (optional, advisory)
+message BatchHints {
+  // Maximum number of items to batch before sending
+  int32 max_count = 1;
+  // Maximum total bytes to batch before sending
+  int64 max_bytes = 2;
+  // Maximum age (in milliseconds) before sending regardless of size
+  int64 max_age_ms = 3;
+}
+
+// PII redaction metadata for sensitive data handling
+message RedactionMetaProto {
+  // Type of redaction rule applied
+  RedactionRuleProto rule = 1;
+  // Confidence score (0.0 to 1.0)
+  double confidence = 2;
+  // Non-reversible hash of original data for audit
+  string hash = 3;
+  // Type of PII detected
+  PiiTypeProto pii_type = 4;
+  // Original data length before redaction
+  int32 original_length = 5;
+  // When the redaction was performed
+  google.protobuf.Timestamp redaction_timestamp = 6;
+  // Processing time in milliseconds
+  int32 processing_time_ms = 7;
+}
+
+// Types of redaction rules
+enum RedactionRuleProto {
+  REDACTION_RULE_UNSPECIFIED = 0;
+  REDACTION_RULE_REGEX = 1;
+  REDACTION_RULE_ML = 2;
+  REDACTION_RULE_COMBINED = 3;
+  REDACTION_RULE_MANUAL = 4;
+}
+
+// Types of PII that can be detected and redacted
+enum PiiTypeProto {
+  PII_TYPE_UNSPECIFIED = 0;
+  PII_TYPE_PERSON_NAME = 1;
+  PII_TYPE_EMAIL_ADDRESS = 2;
+  PII_TYPE_PHONE_NUMBER = 3;
+  PII_TYPE_CREDIT_CARD = 4;
+  PII_TYPE_SOCIAL_SECURITY = 5;
+  PII_TYPE_ADDRESS = 6;
+  PII_TYPE_IP_ADDRESS = 7;
+  PII_TYPE_URL = 8;
+  PII_TYPE_TICKET_ID = 9;
+  PII_TYPE_SESSION_ID = 10;
+  PII_TYPE_ACCESS_TOKEN = 11;
+  PII_TYPE_API_KEY = 12;
+  PII_TYPE_PASSWORD = 13;
+  PII_TYPE_OTHER = 14;
+}
+
+// Adaptive sampling metadata for tracking sampling decisions
+message SamplingMetaProto {
+  double sample_rate = 1;
+  double novelty_score = 2;
+  SamplingAlgorithm algorithm = 3;
+  SamplingDecisionReason reason = 4;
+  ResourcePressure resource_pressure = 5;
+  BackpressureSignals backpressure = 6;
+  google.protobuf.Timestamp sampled_at = 7;
+  string source_id = 8;
+}
+
+// Resource pressure indicators
+message ResourcePressure {
+  double cpu_pressure = 1;
+  double memory_pressure = 2;
+  double disk_pressure = 3;
+  double network_pressure = 4;
+}
+
+// Backpressure signals from downstream systems
+message BackpressureSignals {
+  optional uint32 buffer_size = 1;
+  optional uint64 latency_ms = 2;
+  optional double error_rate = 3;
+  double pressure_score = 4;
+}
+
+// Sampling algorithm types
+enum SamplingAlgorithm {
+  SAMPLING_ALGORITHM_UNSPECIFIED = 0;
+  SAMPLING_ALGORITHM_EPSILON_GREEDY = 1;
+  SAMPLING_ALGORITHM_LINUCB = 2;
+  SAMPLING_ALGORITHM_THOMPSON_SAMPLING = 3;
+  SAMPLING_ALGORITHM_UCB1 = 4;
+  SAMPLING_ALGORITHM_HEURISTIC = 5;
+}
+
+// Reason for sampling decision
+enum SamplingDecisionReason {
+  SAMPLING_DECISION_REASON_UNSPECIFIED = 0;
+  SAMPLING_DECISION_REASON_HIGH_NOVELTY = 1;
+  SAMPLING_DECISION_REASON_CRITICAL_LEVEL = 2;
+  SAMPLING_DECISION_REASON_RESOURCE_PRESSURE = 3;
+  SAMPLING_DECISION_REASON_BACKPRESSURE = 4;
+  SAMPLING_DECISION_REASON_BANDIT_EXPLORATION = 5;
+  SAMPLING_DECISION_REASON_BANDIT_EXPLOITATION = 6;
+  SAMPLING_DECISION_REASON_GUARDRAIL_OVERRIDE = 7;
+  SAMPLING_DECISION_REASON_RATE_LIMITING = 8;
+}

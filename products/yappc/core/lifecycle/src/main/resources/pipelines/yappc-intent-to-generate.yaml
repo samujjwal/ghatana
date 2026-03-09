@@ -1,0 +1,71 @@
+# YAPPC Partial Pipeline: Intent to Generate
+# Useful for design and planning phases without execution
+
+name: yappc-intent-to-generate
+version: 1.0.0
+description: YAPPC lifecycle from Intent to Generate (design phase only)
+
+metadata:
+  author: YAPPC Platform
+  created: 2025-01-07
+  tags:
+    - design
+    - planning
+    - ai-assisted
+
+operators:
+  - id: intent
+    type: PhaseOperator
+    config:
+      phase: INTENT
+      service: com.ghatana.yappc.services.intent.IntentServiceImpl
+    metadata:
+      description: Capture product intent with AI assistance
+      timeout: 30s
+      
+  - id: shape
+    type: PhaseOperator
+    config:
+      phase: SHAPE
+      service: com.ghatana.yappc.services.shape.ShapeServiceImpl
+    dependencies:
+      - intent
+    metadata:
+      description: Transform intent into system design
+      timeout: 45s
+      
+  - id: validate
+    type: PhaseOperator
+    config:
+      phase: VALIDATE
+      service: com.ghatana.yappc.services.validate.ValidationServiceImpl
+    dependencies:
+      - shape
+    metadata:
+      description: Validate design before generation
+      timeout: 20s
+      
+  - id: generate
+    type: PhaseOperator
+    config:
+      phase: GENERATE
+      service: com.ghatana.yappc.services.generate.GenerationServiceImpl
+    dependencies:
+      - validate
+    metadata:
+      description: Generate artifacts from validated design
+      timeout: 60s
+
+execution:
+  mode: production
+  parallelism: 2
+  timeout: 180s
+  
+observability:
+  metrics:
+    enabled: true
+  traces:
+    enabled: true
+  logs:
+    enabled: true
+    level: INFO

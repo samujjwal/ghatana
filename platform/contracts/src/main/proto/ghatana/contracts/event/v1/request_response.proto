@@ -1,0 +1,210 @@
+/*
+ * Copyright (c) ${year} Ghatana Inc.
+ * All rights reserved.
+ *
+ * This source code and the accompanying materials are the confidential
+ * and proprietary information of Ghatana Inc. (“Confidential Information”).
+ * You shall not disclose such Confidential Information and shall use it
+ * only in accordance with the terms of the license agreement you entered
+ * into with Ghatana Inc.
+ *
+ * Unauthorized copying of this file, via any medium, is strictly prohibited.
+ * Proprietary and confidential.
+ */
+syntax = "proto3";
+
+package ghatana.contracts.event.v1;
+
+import "ghatana/contracts/event/v1/event.proto";
+import "google/protobuf/timestamp.proto";
+import "ghatana/contracts/event/v1/enums.proto";
+import "ghatana/contracts/common/v1/error.proto";
+import "ghatana/contracts/common/v1/status.proto";
+import "ghatana/contracts/common/v1/validation.proto";
+import "ghatana/contracts/common/v1/common.proto";
+
+option java_package = "com.ghatana.contracts.event.v1";
+option java_multiple_files = true;
+option java_outer_classname = "EventRequestResponseProto";
+option go_package = "github.com/ghatana/contracts/gen/go/event/v1;eventv1";
+option csharp_namespace = "Ghatana.Contracts.Event.V1";
+
+// Request to ingest a single event
+message IngestRequestProto {
+  // Event data (id, type, headers, payload required)
+  EventProto event = 1;
+
+  // Optional idempotency key to prevent duplicate processing
+  string idempotency_key = 2;
+  // Reserved for future evolution
+  reserved 1000 to max;
+  reserved "reserved_field";
+}
+
+// Response from single event ingestion
+message IngestResponseProto {
+  // The ingested event with system-generated fields populated
+  EventProto event = 1;
+
+  // Whether the event was a duplicate of a previously ingested event
+  bool duplicate = 2;
+  // Reserved for future evolution
+  reserved 1000 to max;
+  reserved "reserved_field";
+}
+
+// Request to ingest multiple events in a batch
+message IngestBatchRequestProto {
+  // List of events to ingest
+  repeated EventProto events = 1;
+
+  // Optional idempotency key for the entire batch
+  string idempotency_key = 2;
+
+  // If true, all events in the batch must succeed or none will be processed
+  bool atomic = 3;
+  // Reserved for future evolution
+  reserved 1000 to max;
+  reserved "reserved_field";
+}
+
+// Response from batch ingestion
+message IngestBatchResponseProto {
+  // Successfully ingested events with system-generated fields populated
+  repeated EventProto events = 1;
+
+  // Details of any errors that occurred during ingestion
+  repeated IngestErrorProto errors = 2;
+
+  // Count of successfully ingested events
+  int32 success_count = 3;
+
+  // Count of events that failed ingestion
+  int32 error_count = 4;
+
+  // Count of duplicate events that were skipped
+  int32 duplicate_count = 5;
+
+  // Common status information
+  ghatana.contracts.common.v1.StatusProto status = 6;
+
+  // The ID of the batch operation (for tracking)
+  string batch_id = 7;
+
+  // The time the batch was processed
+  google.protobuf.Timestamp processed_at = 8;
+  // Reserved for future evolution
+  reserved 1000 to max;
+  reserved "reserved_field";
+}
+
+// Request to query events with filters
+message QueryEventsRequestProto {
+  // Filter by event type prefix (case-sensitive)
+  string type_prefix = 1;
+
+  // Filter by tenant ID
+  string tenant_id = 2;
+
+  // Filter by partition key
+  string partition_key = 3;
+
+  // Start of time range filter
+  google.protobuf.Timestamp start_time = 4;
+
+  // End of time range filter
+  google.protobuf.Timestamp end_time = 5;
+
+  // Filter expression (e.g., "payload.customer_id = '123'")
+  string where_expression = 6;
+
+  // Maximum number of events to return
+  int32 limit = 7;
+
+  // Pagination token for the next page of results
+  string page_token = 8;
+
+  // Sort order for results
+  SortOrderProto sort_order = 9;
+  // Reserved for future evolution
+  reserved 1000 to max;
+  reserved "reserved_field";
+}
+
+// Response from event query
+message QueryEventsResponseProto {
+  // Matching events with pagination
+  repeated EventProto events = 1;
+
+  // Token for the next page of results
+  string next_page_token = 2;
+
+  // Total number of events matching the query
+  int64 total_count = 3;
+
+  // Time taken to execute the query in milliseconds
+  int64 execution_time_ms = 4;
+
+  // Common status information
+  ghatana.contracts.common.v1.StatusProto status = 5;
+
+  // The query that was executed
+  string query = 6;
+
+  // The time the query was executed
+  google.protobuf.Timestamp executed_at = 7;
+  // Reserved for future evolution
+  reserved 1000 to max;
+  reserved "reserved_field";
+}
+
+// Request to get a specific event by ID
+message GetEventRequestProto {
+  // ID of the event to retrieve
+  string event_id = 1;
+
+  // Tenant ID for the event
+  string tenant_id = 2;
+  // Reserved for future evolution
+  reserved 1000 to max;
+  reserved "reserved_field";
+}
+
+// Response with a single event
+message GetEventResponseProto {
+  // The requested event
+  EventProto event = 1;
+  // Reserved for future evolution
+  reserved 1000 to max;
+  reserved "reserved_field";
+}
+
+// Error details for failed ingestion
+message IngestErrorProto {
+  // Index of the event in the batch that failed
+  int32 index = 1;
+
+  // Error code
+  IngestErrorCodeProto code = 2;
+
+  // Human-readable error message
+  string message = 3;
+
+  // Field-level validation errors (using common FieldError type)
+  repeated ghatana.contracts.common.v1.FieldErrorProto field_errors = 4;
+
+  // The common error details
+  ghatana.contracts.common.v1.ErrorProto error = 5;
+
+  // The event ID that failed (if available)
+  string event_id = 6;
+
+  // The event type that failed (if available)
+  string event_type = 7;
+
+  // The source of the event (if available)
+  string source = 8;
+  // Reserved for future evolution
+  reserved 1000 to max;
+  reserved "reserved_field";
+}

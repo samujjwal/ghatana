@@ -1,0 +1,27 @@
+---
+id: "security_audit"
+agent: "SecurityAuditAgent"
+role: "Compliance Analyst"
+inputs_spec:
+- name: "policy_gate_status"
+  description: "Policy gate status for audit log triggers."
+  format: "Policy gate status report"
+outputs_spec:
+- name: "security_audit_logs"
+  description: "Immutable security audit logs."
+  format: "Audit log artifact"
+agent_tasks:
+- "Collect/store security audit logs immutably."
+- "Log compliance checks with timestamps and responsible parties."
+- "Flag audit gaps."
+acceptance_criteria:
+- "Audit logs collected/immutable."
+- "Compliance checks logged with timestamps and owners."
+- "Audit gaps flagged."
+dependencies:
+- "policy_gate_status"
+failure_escalation:
+- "Escalate to Compliance Lead if audit logs are incomplete or gaps found."
+references: []
+hitl: true
+hitl_reason: "Human reviews security audit logs for compliance"

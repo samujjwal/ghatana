@@ -1,0 +1,31 @@
+---
+id: "develop_milestone_tracker"
+agent: "DevelopMilestoneTrackerAgent"
+role: "DevOps PM"
+inputs_spec:
+- name: "develop_best_practice_report"
+  description: "Output report from best practice enforcement."
+  format: "Structured report"
+outputs_spec:
+- name: "develop_stage_milestone"
+  description: "List of development milestones, owners, status, dependencies, completion\
+    \ criteria."
+  format: "List of milestone objects"
+agent_tasks:
+- "List and track all development milestones."
+- "Ensure each milestone has clear completion criteria, owner, and dependencies."
+- "Update milestone status in project tracker."
+- "Flag blockers and delays for escalation."
+acceptance_criteria:
+- "All development milestones are listed and tracked."
+- "Completion criteria for each milestone are clear."
+- "Blockers and delays are flagged and escalated."
+- "Dependencies between milestones are captured."
+- "Milestone status is up to date in project tracker."
+dependencies:
+- "develop_best_practice_report"
+failure_escalation:
+- "If milestones are blocked or missing, escalate to Dev PM and Product Owner."
+references: []
+hitl: true
+hitl_reason: "Human oversight for development milestone tracking"

@@ -1,0 +1,27 @@
+{
+  "id": "examples/basic-canvas",
+  "title": "Basic Canvas",
+  "description": "Documentation coming soon.",
+  "source": "@site/docs/examples/basic-canvas.md",
+  "sourceDirName": "examples",
+  "slug": "/examples/basic-canvas",
+  "permalink": "/docs/examples/basic-canvas",
+  "draft": false,
+  "unlisted": false,
+  "editUrl": "https://github.com/yappc/app-creator/tree/main/docs-site/docs/examples/basic-canvas.md",
+  "tags": [],
+  "version": "current",
+  "sidebarPosition": 1,
+  "frontMatter": {
+    "sidebar_position": 1
+  },
+  "sidebar": "guidesSidebar",
+  "previous": {
+    "title": "Theming",
+    "permalink": "/docs/guides/theming"
+  },
+  "next": {
+    "title": "Collaborative Editing",
+    "permalink": "/docs/examples/collaborative-editing"
+  }
+}

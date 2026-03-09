@@ -1,0 +1,168 @@
+{
+    "name": "rust-service-axum-cargo",
+    "version": "1.0.0",
+    "description": "Rust HTTP service with Axum framework, Tokio runtime, and Cargo build",
+    "author": "Ghatana YAPPC Team",
+    "license": "Apache-2.0",
+    "tags": [
+        "rust",
+        "axum",
+        "tokio",
+        "service",
+        "microservice",
+        "rest",
+        "api",
+        "async"
+    ],
+    "type": "service",
+    "language": "rust",
+    "framework": "axum",
+    "dependencies": {
+        "runtime": [
+            "axum:0.7",
+            "tokio:1.0",
+            "tower:0.4",
+            "tower-http:0.5",
+            "serde:1.0",
+            "serde_json:1.0",
+            "tracing:0.1",
+            "tracing-subscriber:0.3"
+        ],
+        "build": [
+            "rust:1.75+",
+            "cargo"
+        ],
+        "test": [
+            "tokio-test",
+            "tower-test"
+        ],
+        "devDependencies": [
+            "cargo-watch"
+        ]
+    },
+    "templates": {
+        "cargo-toml": {
+            "source": "templates/Cargo.toml.hbs",
+            "target": "Cargo.toml",
+            "merge": "replace"
+        },
+        "main-rs": {
+            "source": "templates/src/main.rs.hbs",
+            "target": "src/main.rs",
+            "merge": "skip-if-exists"
+        },
+        "lib-rs": {
+            "source": "templates/src/lib.rs.hbs",
+            "target": "src/lib.rs",
+            "merge": "skip-if-exists"
+        },
+        "config-rs": {
+            "source": "templates/src/config.rs.hbs",
+            "target": "src/config.rs",
+            "merge": "skip-if-exists"
+        },
+        "router-rs": {
+            "source": "templates/src/router.rs.hbs",
+            "target": "src/router.rs",
+            "merge": "skip-if-exists"
+        },
+        "handlers-rs": {
+            "source": "templates/src/handlers.rs.hbs",
+            "target": "src/handlers.rs",
+            "merge": "skip-if-exists"
+        },
+        "error-rs": {
+            "source": "templates/src/error.rs.hbs",
+            "target": "src/error.rs",
+            "merge": "skip-if-exists"
+        },
+        "makefile": {
+            "source": "templates/Makefile.hbs",
+            "target": "Makefile",
+            "merge": "replace"
+        },
+        "dockerfile": {
+            "source": "templates/Dockerfile.hbs",
+            "target": "Dockerfile",
+            "merge": "replace"
+        },
+        "docker-compose": {
+            "source": "templates/docker-compose.yml.hbs",
+            "target": "docker-compose.yml",
+            "merge": "skip-if-exists"
+        },
+        "gitignore": {
+            "source": "templates/.gitignore.hbs",
+            "target": ".gitignore",
+            "merge": "skip-if-exists"
+        },
+        "rustfmt-toml": {
+            "source": "templates/rustfmt.toml.hbs",
+            "target": "rustfmt.toml",
+            "merge": "skip-if-exists"
+        },
+        "clippy-toml": {
+            "source": "templates/clippy.toml.hbs",
+            "target": "clippy.toml",
+            "merge": "skip-if-exists"
+        },
+        "readme": {
+            "source": "templates/README.md.hbs",
+            "target": "README.md",
+            "merge": "skip-if-exists"
+        }
+    },
+    "hooks": {
+        "pre-generation": [],
+        "post-generation": [
+            "cargo fmt",
+            "cargo check"
+        ]
+    },
+    "variables": {
+        "projectName": {
+            "type": "string",
+            "description": "Project/crate name (lowercase, hyphens allowed)",
+            "required": true,
+            "validation": "^[a-z][a-z0-9-]*$"
+        },
+        "description": {
+            "type": "string",
+            "description": "Project description",
+            "default": "A Rust service built with Axum"
+        },
+        "port": {
+            "type": "number",
+            "description": "HTTP server port",
+            "default": 3000
+        },
+        "rustVersion": {
+            "type": "string",
+            "description": "Minimum Rust version",
+            "default": "1.75"
+        },
+        "edition": {
+            "type": "string",
+            "description": "Rust edition",
+            "default": "2021"
+        },
+        "enableTracing": {
+            "type": "boolean",
+            "description": "Enable OpenTelemetry tracing",
+            "default": true
+        },
+        "enableMetrics": {
+            "type": "boolean",
+            "description": "Enable Prometheus metrics",
+            "default": false
+        }
+    },
+    "requirements": {
+        "rust-version": "1.75+",
+        "docker": true,
+        "tools": [
+            "cargo",
+            "git"
+        ]
+    }
+}

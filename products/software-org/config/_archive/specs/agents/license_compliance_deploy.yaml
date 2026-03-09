@@ -1,0 +1,28 @@
+---
+id: "license_compliance_deploy"
+agent: "LicenseComplianceAgent"
+role: "Automation Tool"
+inputs_spec:
+- name: "release_package"
+  description: "Versioned release package with all dependencies and artifacts."
+  format: "Release package artifact"
+outputs_spec:
+- name: "license_compliance_report"
+  description: "License compatibility report for all dependencies and artifacts."
+  format: "Compliance report artifact"
+agent_tasks:
+- "Scan all dependencies and release artifacts for license compatibility."
+- "Flag all non-compliant licenses."
+- "Attach compliance report to release for audit and signoff."
+acceptance_criteria:
+- "All dependencies and artifacts are checked for license compatibility."
+- "Non-compliant licenses are flagged."
+- "Compliance report is attached to the release."
+dependencies:
+- "release_package"
+failure_escalation:
+- "Escalate to legal/compliance lead if non-compliance is detected or report is missing."
+references:
+- "OpenChain Specification"
+- "SPDX License List"
+hitl: false

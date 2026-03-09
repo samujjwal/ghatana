@@ -1,0 +1,27 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: datacloud-config
+  namespace: ghatana
+  labels:
+    app: datacloud
+    component: data-platform
+data:
+  # Data-Cloud Configuration
+  DATACLOUD_ENABLE_CACHING: "true"
+  DATACLOUD_ENABLE_METRICS: "true"
+  DATACLOUD_CACHE_SIZE_MB: "512"
+  
+  # Storage Configuration
+  STORAGE_BACKEND: "postgresql"
+  STORAGE_POOL_SIZE: "20"
+  STORAGE_TIMEOUT_MS: "5000"
+  
+  # Logging Configuration
+  LOG_LEVEL: "INFO"
+  LOG_FORMAT: "json"
+  
+  # Performance Tuning
+  BATCH_SIZE: "100"
+  BATCH_TIMEOUT_MS: "1000"
+  QUERY_TIMEOUT_MS: "30000"

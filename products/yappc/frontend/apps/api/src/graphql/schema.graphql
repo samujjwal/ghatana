@@ -1,0 +1,335 @@
+# YAPPC GraphQL Schema
+# Defines all queries, mutations, and subscriptions for the YAPPC API.
+
+# ============================================================================
+# SCALARS
+# ============================================================================
+
+# ISO 8601 DateTime string
+scalar DateTime
+
+# JSON object
+scalar JSON
+
+# ============================================================================
+# ENUMS
+# ============================================================================
+
+#
+# User role enumeration
+#
+enum Role {
+  ADMIN
+  EDITOR
+  VIEWER
+}
+
+#
+# Project type enumeration
+#
+enum ProjectType {
+  UI
+  BACKEND
+  MOBILE
+  DESKTOP
+  FULL_STACK
+}
+
+#
+# Project status enumeration
+#
+enum ProjectStatus {
+  DRAFT
+  ACTIVE
+  COMPLETED
+  ARCHIVED
+}
+
+# ============================================================================
+# TYPES
+# ============================================================================
+
+# Core types are defined in dedicated schema files under ./schemas (e.g. yappc-core.graphql)
+# and are loaded at runtime by src/index.ts. This file only contains the root types and
+# cross-cutting extensions.
+
+type Query {
+  # Current user
+  me: User
+
+  # User by ID
+  user(id: ID!): User
+
+  # Get all users
+  users: [User!]!
+
+  #
+  workspace(id: ID!): Workspace
+
+  #
+  # Get all workspaces for current user
+  #
+  workspaces: [Workspace!]!
+
+  #
+  # Get project by ID
+  #
+  project(id: ID!): Project
+
+  #
+  # Get all projects in workspace
+  #
+  projects(workspaceId: ID!): [Project!]!
+
+  #
+  # Get canvas document by ID
+  #
+  canvasDocument(id: ID!): CanvasDocument
+
+  #
+  # Get all canvas documents in project
+  #
+  canvasDocuments(projectId: ID!): [CanvasDocument!]!
+
+  #
+  # Get page by ID
+  #
+  page(id: ID!): Page
+
+  #
+  # Get all pages in project
+  #
+  pages(projectId: ID!): [Page!]!
+
+  #
+  # Get page by project and path
+  #
+  pageByPath(projectId: ID!, path: String!): Page
+
+  # ============================================================================
+  # YAPPC CORE QUERIES
+  # ============================================================================
+
+  personas: [Persona!]!
+  persona(id: ID!): Persona
+  domains: [Domain!]!
+  domain(id: ID!): Domain
+  dashboard(id: ID!): Dashboard
+  dashboards(domainId: String): [Dashboard!]!
+  flowState(instanceId: String!): FlowState
+}
+
+# ============================================================================
+# MUTATIONS
+# ============================================================================
+
+type Mutation {
+  #
+  # Create a new workspace
+  #
+  createWorkspace(name: String!, description: String): Workspace!
+
+  #
+  # Update workspace
+  #
+  updateWorkspace(id: ID!, name: String, description: String): Workspace!
+
+  #
+  # Delete workspace
+  #
+  deleteWorkspace(id: ID!): Boolean!
+
+  #
+  # Create a new project
+  #
+  createProject(
+    workspaceId: ID!
+    name: String!
+    description: String
+    type: ProjectType!
+  ): Project!
+
+  #
+  # Update project
+  #
+  updateProject(
+    id: ID!
+    name: String
+    description: String
+    status: ProjectStatus
+  ): Project!
+
+  #
+  # Delete project
+  #
+  deleteProject(id: ID!): Boolean!
+
+  #
+  # Create canvas document
+  #
+  createCanvasDocument(
+    projectId: ID!
+    name: String!
+    description: String
+  ): CanvasDocument!
+
+  #
+  # Update canvas document
+  #
+  updateCanvasDocument(
+    id: ID!
+    name: String
+    description: String
+    content: JSON
+  ): CanvasDocument!
+
+  #
+  # Delete canvas document
+  #
+  deleteCanvasDocument(id: ID!): Boolean!
+
+  #
+  # Create page
+  #
+  createPage(
+    projectId: ID!
+    name: String!
+    path: String!
+    layout: String
+  ): Page!
+
+  #
+  # Update page
+  #
+  updatePage(
+    id: ID!
+    name: String
+    path: String
+    layout: String
+    content: JSON
+  ): Page!
+
+  #
+  # Delete page
+  #
+  deletePage(id: ID!): Boolean!
+}
+
+# ============================================================================
+# SUBSCRIPTIONS
+# ============================================================================
+
+type Subscription {
+  #
+  # Subscribe to canvas document updates
+  #
+  canvasDocumentUpdated(id: ID!): CanvasDocument!
+
+  #
+  # Subscribe to page updates
+  #
+  pageUpdated(id: ID!): Page!
+}
+
+# ==========================================================================
+# BASE APP TYPES
+# ============================================================================
+
+type User {
+  id: ID!
+  email: String
+  name: String
+  role: Role
+}
+
+type Workspace {
+  id: ID!
+  name: String!
+  description: String
+  ownerId: ID!
+  owner: User!
+  members: [User!]!
+  projects: [Project!]!
+  createdAt: DateTime!
+  updatedAt: DateTime!
+}
+
+type Project {
+  id: ID!
+  workspaceId: ID!
+  workspace: Workspace!
+  createdById: ID!
+  createdBy: User!
+  name: String!
+  description: String
+  type: ProjectType!
+  status: ProjectStatus!
+  documents: [CanvasDocument!]!
+  pages: [Page!]!
+  createdAt: DateTime!
+  updatedAt: DateTime!
+}
+
+type CanvasDocument {
+  id: ID!
+  projectId: ID!
+  name: String!
+  description: String
+  content: JSON
+  createdAt: DateTime!
+  updatedAt: DateTime!
+}
+
+type Page {
+  id: ID!
+  projectId: ID!
+  name: String!
+  path: String!
+  layout: String
+  content: JSON
+  createdAt: DateTime!
+  updatedAt: DateTime!
+}
+
+# ============================================================================
+# YAPPC CORE TYPES
+# ============================================================================
+
+# Core entity types (Persona/Domain/Capability/Dashboard/etc) are defined in ./schemas
+# (e.g. yappc-core.graphql) to keep this root schema focused and avoid SDL redefinitions.
+
+# ============================================================================
+# FLOW MUTATIONS (Golden Flows)
+# ============================================================================
+
+extend type Mutation {
+  # Start a new flow instance
+  startFlow(flowId: String!, input: JSON): FlowState!
+
+  # Transition an existing flow to a new state
+  transitionFlow(instanceId: String!, event: String!, payload: JSON): FlowState!
+
+  # Cancel a flow
+  cancelFlow(instanceId: String!, reason: String): FlowState!
+}
+
+extend type Query {
+  # Get all policies
+  policies: [Policy!]!
+
+  # Get policy by ID
+  policy(id: ID!): Policy
+
+  # Get all flow definitions
+  flowDefinitions: [FlowDefinition!]!
+
+  # Get flow definition by ID
+  flowDefinition(id: String!): FlowDefinition
+}
+
+type FlowDefinition {
+  id: String!
+  initialState: String!
+  states: JSON!
+  guards: [String!]
+}

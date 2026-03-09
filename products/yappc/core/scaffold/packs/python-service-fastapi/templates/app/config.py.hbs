@@ -1,0 +1,23 @@
+"""Application configuration."""
+from pydantic_settings import BaseSettings
+from typing import List
+
+
+class Settings(BaseSettings):
+"""Application settings."""
+
+app_name: str = "{{projectName}}"
+version: str = "0.1.0"
+debug: bool = False
+port: int = 8000
+
+{{#if enableCors}}
+cors_origins: List[str] = ["*"]
+{{/if}}
+
+class Config:
+env_file = ".env"
+case_sensitive = False
+
+
+settings = Settings()

@@ -1,0 +1,25 @@
+---
+id: "test_audit"
+agent: "TestAuditAgent"
+role: "Compliance Analyst"
+inputs_spec:
+- name: "consolidated_test_results"
+  description: "Consolidated test results for audit."
+  format: "Consolidated test results artifact"
+outputs_spec:
+- name: "test_audit_report"
+  description: "Test audit compliance report."
+  format: "Audit report artifact"
+agent_tasks:
+- "Collect all test artifacts and evidence for each run."
+- "Satisfy compliance requirements and store audit logs."
+acceptance_criteria:
+- "Test artifacts and evidence are collected for each run."
+- "All compliance requirements are satisfied."
+- "Audit logs are stored securely."
+dependencies:
+- "consolidated_test_results"
+failure_escalation:
+- "Escalate to Compliance Analyst if audit evidence is incomplete."
+references: []
+hitl: false

@@ -1,0 +1,81 @@
+server:
+  http_listen_port: 9080
+  grpc_listen_port: 0
+
+positions:
+  filename: /tmp/positions.yaml
+
+clients:
+  - url: http://loki:3100/loki/api/v1/push
+
+scrape_configs:
+  # Java/ActiveJ services logs
+  - job_name: yappc-services
+    static_configs:
+      - targets:
+          - localhost
+        labels:
+          job: yappc-services
+          product: yappc
+          __path__: /tmp/ghatana-logs/yappc-*.log
+    pipeline_stages:
+      - json:
+          expressions:
+            timestamp: timestamp
+            level: level
+            message: message
+            service: service
+            thread: thread
+      - timestamp:
+          source: timestamp
+          format: RFC3339
+      - labels:
+          level:
+          service:
+      - output:
+          source: message
+
+  # Node.js backend API logs
+  - job_name: backend-api
+    static_configs:
+      - targets:
+          - localhost
+        labels:
+          job: backend-api
+          product: yappc
+          layer: api
+          __path__: /tmp/ghatana-logs/backend-api.log
+    pipeline_stages:
+      - json:
+          expressions:
+            timestamp: time
+            level: level
+            message: msg
+      - timestamp:
+          source: timestamp
+          format: RFC3339
+      - labels:
+          level:
+
+  # AEP services logs
+  - job_name: aep-services
+    static_configs:
+      - targets:
+          - localhost
+        labels:
+          job: aep-services
+          product: aep
+          __path__: /tmp/ghatana-logs/aep-*.log
+    pipeline_stages:
+      - json:
+          expressions:
+            timestamp: timestamp
+            level: level
+            message: message
+            service: service
+      - timestamp:
+          source: timestamp
+          format: RFC3339
+      - labels:
+          level:
+          service:

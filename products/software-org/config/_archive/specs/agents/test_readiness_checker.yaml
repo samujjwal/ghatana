@@ -1,0 +1,37 @@
+---
+id: "test_readiness_checker"
+agent: "ReadinessCheckerAgent"
+role: "Gatekeeper Bot"
+inputs_spec:
+- name: "test_execution_plan"
+  description: "Test execution plan with all test types, coverage, and owner assignments."
+  format: "Test execution plan artifact"
+- name: "test_best_practice_report"
+  description: "Test best practice report confirming test readiness."
+  format: "Test practice compliance report"
+- name: "test_coverage_report"
+  description: "Latest code/test coverage report."
+  format: "Coverage report artifact"
+outputs_spec:
+- name: "test_readiness_status"
+  description: "Readiness status for Test stage (criteria, issues, approvals, evidence,\
+    \ ready flag)."
+  format: "Status artifact"
+agent_tasks:
+- "Check all mandatory Test stage criteria are met."
+- "Ensure no open critical issues in plan, coverage, or best practices."
+- "Verify all required approvals and evidence are present."
+- "Mark \"Ready for next stage\" only if above are true."
+acceptance_criteria:
+- "All mandatory test criteria are met."
+- "No open critical issues in plan, coverage, or best practices."
+- "All required approvals and evidence are present."
+- "Stage is marked \"Ready for next stage\" only if above are true."
+dependencies:
+- "test_execution_plan"
+- "test_best_practice_report"
+- "test_coverage_report"
+failure_escalation:
+- "Escalate to Gatekeeper/PM if readiness is not achieved."
+references: []
+hitl: false

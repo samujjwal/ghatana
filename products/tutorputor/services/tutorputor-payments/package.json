@@ -1,0 +1,29 @@
+{
+    "name": "@ghatana/tutorputor-payments",
+    "version": "0.1.0",
+    "private": true,
+    "type": "module",
+    "main": "./dist/index.js",
+    "types": "./dist/index.d.ts",
+    "scripts": {
+        "build": "tsc",
+        "dev": "tsc --watch",
+        "test": "vitest",
+        "test:coverage": "vitest --coverage",
+        "lint": "eslint src --ext .ts"
+    },
+    "dependencies": {
+        "@ghatana/tutorputor-contracts": "workspace:*",
+        "@ghatana/tutorputor-db": "workspace:*",
+        "stripe": "^20.3.0",
+        "zod": "^4.3.6"
+    },
+    "devDependencies": {
+        "@types/node": "^25.2.0",
+        "typescript": "^5.9.3",
+        "vitest": "^4.0.18"
+    },
+    "peerDependencies": {
+        "@prisma/client": "^5.7.0"
+    }
+}

@@ -1,0 +1,38 @@
+id: query-optimization-agent
+name: Query Optimization Agent
+version: 1.0.0
+description: Optimizes query plans, indexes, and execution strategies for data retrieval
+
+metadata:
+  level: 3
+  domain: data-management
+  tags: [query, optimization, indexing, performance, planning]
+
+generator:
+  type: ADAPTIVE
+  
+capabilities:
+  - query-processing
+  - data-quality
+
+tools:
+  - name: queryAnalyzer
+    type: SERVICE
+    endpoint: /datacloud/query/analyze
+  - name: indexOptimizer
+    type: SERVICE
+    endpoint: /datacloud/indexes/optimize
+
+memory:
+  type: EPISODIC
+  scope: query_history
+  retention: medium
+
+routing:
+  input: QueryOptimizationRequest
+  output: OptimizedQueryPlan
+
+resources:
+  memory: "1GB"
+  cpu: "2"
+  timeout: "60s"

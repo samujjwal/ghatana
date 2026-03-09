@@ -1,0 +1,111 @@
+id: environment-manager-agent
+name: Environment Manager Agent
+version: 1.0.0
+description: Manages deployment environments. Handles provisioning, configuration, and environment parity.
+
+metadata:
+  level: 3  # Worker
+  domain: release
+  tags:
+    - environments
+    - provisioning
+    - configuration
+    - infrastructure
+
+generator:
+  type: PIPELINE
+  steps:
+    - name: environment_analysis
+      type: RULE_BASED
+      description: Analyze environment requirements
+    - name: environment_management
+      type: LLM
+      provider: ANTHROPIC
+      model: claude-3-5-sonnet-20241022
+      temperature: 0.2
+      max_tokens: 2000
+      prompt: |
+        You are the Environment Manager Agent. Manage environments:
+        
+        Environment: {{env}}
+        Requirements: {{requirements}}
+        Current State: {{state}}
+        Parity Baseline: {{baseline}}
+        
+        Tasks:
+        1. Environment health check
+        2. Configuration drift detection
+        3. Resource utilization
+        4. Parity with production
+        5. Needed updates/patches
+        6. Capacity planning
+        
+        Output as JSON: {
+          health,
+          configuration_drift,
+          resources,
+          parity_score,
+          updates_needed,
+          capacity_recommendations
+        }
+    - name: provisioning
+      type: SERVICE_CALL
+      service: infra-service
+      endpoint: /environments/provision
+
+memory:
+  episodic:
+    enabled: true
+    retention_days: 365
+    categories:
+      - environments
+      - changes
+      - incidents
+  semantic:
+    enabled: true
+    categories:
+      - environment-configs
+      - drift-patterns
+      - capacity-models
+  procedural:
+    enabled: true
+    categories:
+      - provisioning-templates
+      - configuration-rules
+      - parity-checks
+
+tools:
+  - env_provisioner
+  - config_manager
+  - drift_detector
+
+capabilities:
+  - environment-provisioning
+  - configuration-management
+  - drift-detection
+  - capacity-planning
+
+routing:
+  input_types:
+    - env-request
+    - provisioning-request
+    - parity-check
+  output_types:
+    - env-status
+    - drift-report
+    - capacity-plan
+
+delegation:
+  can_delegate_to: []
+  escalates_to:
+    - deployment-agent
+
+governance:
+  requires_approval: true  # Env changes approved
+  can_block: false
+  audit_trail: comprehensive
+
+performance:
+  expected_latency_ms: 3000
+  max_latency_ms: 10000
+  timeout_ms: 1800000  # 30 min for provisioning

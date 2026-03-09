@@ -1,0 +1,567 @@
+openapi: 3.0.3
+info:
+  title: Ghatana Observability HTTP API
+  description: |
+    Distributed tracing HTTP API for the Ghatana platform.
+    
+    This API provides endpoints for ingesting spans, querying traces,
+    and obtaining system statistics and health information.
+  version: 1.0.0
+  contact:
+    name: Ghatana Platform Team
+    url: https://github.com/samujjwal/ghatana
+  license:
+    name: Apache 2.0
+    url: https://www.apache.org/licenses/LICENSE-2.0.html
+
+servers:
+  - url: http://localhost:8080
+    description: Local development server
+  - url: https://api.observability.local
+    description: Production API
+
+paths:
+  /api/v1/traces/spans:
+    post:
+      summary: Ingest a single span
+      description: |
+        Accepts a single span for ingestion into the trace storage.
+        The span will be stored and associated with its trace ID.
+      operationId: ingestSingleSpan
+      tags:
+        - Spans
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/SpanRequest'
+            examples:
+              basicSpan:
+                summary: Basic HTTP request span
+                value:
+                  spanId: "span-001"
+                  traceId: "trace-123"
+                  operationName: "http.request"
+                  serviceName: "api-gateway"
+                  startTime: "2024-01-01T12:00:00Z"
+                  endTime: "2024-01-01T12:00:01Z"
+                  status: "OK"
+      responses:
+        '201':
+          description: Span ingested successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  totalSpans:
+                    type: integer
+                    description: Total spans ingested
+                  message:
+                    type: string
+                    description: Success message
+        '400':
+          description: Invalid request body or missing required fields
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '500':
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /api/v1/traces/spans/batch:
+    post:
+      summary: Ingest multiple spans in batch
+      description: |
+        Accepts multiple spans for batch ingestion.
+        Returns success/failure counts for the batch.
+      operationId: ingestBatchSpans
+      tags:
+        - Spans
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/BatchSpanRequest'
+            examples:
+              batchSpans:
+                summary: Batch of 3 spans
+                value:
+                  spans:
+                    - spanId: "span-001"
+                      traceId: "trace-123"
+                      operationName: "db.query"
+                      serviceName: "database"
+                      startTime: "2024-01-01T12:00:00Z"
+                      endTime: "2024-01-01T12:00:01Z"
+                      status: "OK"
+                    - spanId: "span-002"
+                      traceId: "trace-123"
+                      parentSpanId: "span-001"
+                      operationName: "cache.get"
+                      serviceName: "cache"
+                      startTime: "2024-01-01T12:00:00.5Z"
+                      endTime: "2024-01-01T12:00:00.7Z"
+                      status: "OK"
+                    - spanId: "span-003"
+                      traceId: "trace-123"
+                      parentSpanId: "span-001"
+                      operationName: "auth.verify"
+                      serviceName: "auth-service"
+                      startTime: "2024-01-01T12:00:00.2Z"
+                      endTime: "2024-01-01T12:00:00.3Z"
+                      status: "ERROR"
+      responses:
+        '201':
+          description: Batch processed successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  totalSpans:
+                    type: integer
+                  successCount:
+                    type: integer
+                  failureCount:
+                    type: integer
+                  message:
+                    type: string
+        '400':
+          description: Invalid batch request
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '500':
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /api/v1/traces/{traceId}:
+    get:
+      summary: Get trace by ID
+      description: |
+        Retrieves complete trace information including all spans
+        and their relationships.
+      operationId: getTraceById
+      tags:
+        - Traces
+      parameters:
+        - name: traceId
+          in: path
+          required: true
+          description: Unique trace identifier
+          schema:
+            type: string
+            minLength: 1
+            maxLength: 256
+          example: "trace-123abc"
+      responses:
+        '200':
+          description: Trace found and returned
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TraceInfo'
+        '400':
+          description: Invalid trace ID format
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '404':
+          description: Trace not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '500':
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /api/v1/traces:
+    get:
+      summary: Search traces
+      description: |
+        Search for traces using various filters.
+        Supports pagination and complex filtering.
+      operationId: searchTraces
+      tags:
+        - Traces
+      parameters:
+        - name: serviceName
+          in: query
+          description: Filter by service name
+          schema:
+            type: string
+            maxLength: 256
+          example: "api-gateway"
+        - name: operationName
+          in: query
+          description: Filter by operation name
+          schema:
+            type: string
+            maxLength: 256
+          example: "http.request"
+        - name: status
+          in: query
+          description: Filter by span status (OK, ERROR, UNSET)
+          schema:
+            type: string
+            enum: ["OK", "ERROR", "UNSET"]
+        - name: startTime
+          in: query
+          description: Filter traces started after this timestamp (RFC3339)
+          schema:
+            type: string
+            format: date-time
+          example: "2024-01-01T00:00:00Z"
+        - name: endTime
+          in: query
+          description: Filter traces started before this timestamp (RFC3339)
+          schema:
+            type: string
+            format: date-time
+          example: "2024-12-31T23:59:59Z"
+        - name: minDuration
+          in: query
+          description: Filter traces with minimum duration (milliseconds)
+          schema:
+            type: integer
+            minimum: 0
+          example: 100
+        - name: maxDuration
+          in: query
+          description: Filter traces with maximum duration (milliseconds)
+          schema:
+            type: integer
+            minimum: 0
+          example: 5000
+        - name: limit
+          in: query
+          description: Maximum number of results (default 100, max 1000)
+          schema:
+            type: integer
+            minimum: 1
+            maximum: 1000
+            default: 100
+        - name: offset
+          in: query
+          description: Pagination offset
+          schema:
+            type: integer
+            minimum: 0
+            default: 0
+      responses:
+        '200':
+          description: Search results
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/TraceInfo'
+        '400':
+          description: Invalid query parameters
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '500':
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /api/v1/traces/stats:
+    get:
+      summary: Get trace statistics
+      description: |
+        Retrieves aggregated statistics for traces matching the query.
+        Returns metrics like total spans, error count, duration percentiles.
+      operationId: getStatistics
+      tags:
+        - Statistics
+      parameters:
+        - name: serviceName
+          in: query
+          description: Filter statistics by service name
+          schema:
+            type: string
+        - name: status
+          in: query
+          description: Filter statistics by status
+          schema:
+            type: string
+            enum: ["OK", "ERROR", "UNSET"]
+        - name: startTime
+          in: query
+          description: Start of time window (RFC3339)
+          schema:
+            type: string
+            format: date-time
+        - name: endTime
+          in: query
+          description: End of time window (RFC3339)
+          schema:
+            type: string
+            format: date-time
+      responses:
+        '200':
+          description: Statistics computed successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Statistics'
+        '400':
+          description: Invalid query parameters
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '500':
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /health:
+    get:
+      summary: Health check (liveness probe)
+      description: |
+        Returns whether the service is alive and running.
+        Used by Kubernetes liveness probes.
+      operationId: healthLiveness
+      tags:
+        - Health
+      responses:
+        '200':
+          description: Service is healthy
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HealthStatus'
+
+  /health/ready:
+    get:
+      summary: Readiness check (readiness probe)
+      description: |
+        Returns whether the service is ready to accept traffic.
+        Checks storage availability.
+        Used by Kubernetes readiness probes.
+      operationId: healthReadiness
+      tags:
+        - Health
+      responses:
+        '200':
+          description: Service is ready
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HealthStatus'
+        '503':
+          description: Service is not ready (e.g., storage unavailable)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HealthStatus'
+
+components:
+  schemas:
+    SpanRequest:
+      type: object
+      required:
+        - spanId
+        - traceId
+        - operationName
+        - serviceName
+        - startTime
+        - endTime
+        - status
+      properties:
+        spanId:
+          type: string
+          description: Unique span identifier within the trace
+          example: "span-001"
+        traceId:
+          type: string
+          description: Trace identifier this span belongs to
+          example: "trace-123"
+        parentSpanId:
+          type: string
+          description: Parent span ID (for nested spans)
+          nullable: true
+          example: "span-000"
+        operationName:
+          type: string
+          description: Name of the operation performed
+          example: "http.request"
+        serviceName:
+          type: string
+          description: Service that produced this span
+          example: "api-gateway"
+        startTime:
+          type: string
+          format: date-time
+          description: Span start time (RFC3339)
+          example: "2024-01-01T12:00:00Z"
+        endTime:
+          type: string
+          format: date-time
+          description: Span end time (RFC3339)
+          example: "2024-01-01T12:00:01Z"
+        status:
+          type: string
+          enum: ["OK", "ERROR", "UNSET"]
+          description: Span execution status
+        tags:
+          type: object
+          additionalProperties:
+            type: string
+          description: Arbitrary key-value tags
+          example:
+            http.method: "POST"
+            http.url: "/api/users"
+        logs:
+          type: array
+          description: Structured logs within the span
+          items:
+            type: object
+            additionalProperties: true
+
+    BatchSpanRequest:
+      type: object
+      required:
+        - spans
+      properties:
+        spans:
+          type: array
+          description: List of spans to ingest
+          minItems: 1
+          maxItems: 1000
+          items:
+            $ref: '#/components/schemas/SpanRequest'
+
+    TraceInfo:
+      type: object
+      properties:
+        traceId:
+          type: string
+        serviceName:
+          type: string
+        operationName:
+          type: string
+        startTime:
+          type: string
+          format: date-time
+        endTime:
+          type: string
+          format: date-time
+        duration:
+          type: integer
+          description: Duration in milliseconds
+        status:
+          type: string
+          enum: ["OK", "ERROR", "UNSET"]
+        spanCount:
+          type: integer
+        spans:
+          type: array
+          items:
+            type: object
+
+    Statistics:
+      type: object
+      properties:
+        totalTraces:
+          type: integer
+          description: Total number of traces
+        totalSpans:
+          type: integer
+          description: Total number of spans
+        errorCount:
+          type: integer
+          description: Number of error spans
+        avgDurationMs:
+          type: number
+          format: double
+          description: Average span duration in milliseconds
+        minDurationMs:
+          type: number
+          format: double
+        maxDurationMs:
+          type: number
+          format: double
+        p50DurationMs:
+          type: number
+          format: double
+          description: 50th percentile (median) duration
+        p95DurationMs:
+          type: number
+          format: double
+          description: 95th percentile duration
+        p99DurationMs:
+          type: number
+          format: double
+          description: 99th percentile duration
+        mostCommonService:
+          type: string
+          nullable: true
+        mostCommonOperation:
+          type: string
+          nullable: true
+
+    HealthStatus:
+      type: object
+      properties:
+        status:
+          type: string
+          enum: ["UP", "DOWN"]
+          description: Overall service status
+        timestamp:
+          type: string
+          format: date-time
+          description: Status check timestamp
+        uptime:
+          type: integer
+          description: Service uptime in seconds
+
+    ErrorResponse:
+      type: object
+      properties:
+        error:
+          type: string
+          description: Error message
+        code:
+          type: string
+          description: Error code
+        path:
+          type: string
+          description: Request path
+        timestamp:
+          type: string
+          format: date-time
+
+tags:
+  - name: Spans
+    description: Span ingestion endpoints
+  - name: Traces
+    description: Trace retrieval and search endpoints
+  - name: Statistics
+    description: Statistics and metrics endpoints
+  - name: Health
+    description: Health check endpoints

@@ -1,0 +1,116 @@
+{
+    "name": "@ghatana/yappc-canvas-sync",
+    "displayName": "YAPPC Canvas Sync",
+    "description": "VS Code extension for bidirectional sync between code and YAPPC canvas",
+    "version": "1.0.0",
+    "publisher": "yappc",
+    "engines": {
+        "vscode": "^1.85.0"
+    },
+    "categories": [
+        "Visualization",
+        "Other"
+    ],
+    "activationEvents": [
+        "onView:yappcCanvasTree",
+        "onCommand:yappc.openCanvas",
+        "onCommand:yappc.openInCanvas",
+        "onCommand:yappc.scaffoldCode"
+    ],
+    "main": "./out/extension.js",
+    "contributes": {
+        "views": {
+            "explorer": [
+                {
+                    "id": "yappcCanvasTree",
+                    "name": "YAPPC Canvas"
+                }
+            ]
+        },
+        "commands": [
+            {
+                "command": "yappc.openCanvas",
+                "title": "YAPPC: Open Canvas Webview",
+                "category": "YAPPC"
+            },
+            {
+                "command": "yappc.openInCanvas",
+                "title": "YAPPC: Open in Canvas",
+                "category": "YAPPC"
+            },
+            {
+                "command": "yappc.scaffoldCode",
+                "title": "YAPPC: Scaffold Code from Canvas",
+                "category": "YAPPC",
+                "icon": "$(file-code)"
+            },
+            {
+                "command": "yappc.refreshCanvasTree",
+                "title": "YAPPC: Refresh Canvas Tree",
+                "category": "YAPPC",
+                "icon": "$(refresh)"
+            },
+            {
+                "command": "yappc.syncToCanvas",
+                "title": "YAPPC: Sync to Canvas",
+                "category": "YAPPC",
+                "icon": "$(cloud-upload)"
+            }
+        ],
+        "menus": {
+            "view/title": [
+                {
+                    "command": "yappc.refreshCanvasTree",
+                    "when": "view == yappcCanvasTree",
+                    "group": "navigation"
+                },
+                {
+                    "command": "yappc.syncToCanvas",
+                    "when": "view == yappcCanvasTree",
+                    "group": "navigation"
+                }
+            ],
+            "editor/context": [
+                {
+                    "command": "yappc.openInCanvas",
+                    "group": "yappc"
+                }
+            ]
+        },
+        "configuration": {
+            "title": "YAPPC Canvas Sync",
+            "properties": {
+                "yappc.canvasUrl": {
+                    "type": "string",
+                    "default": "http://localhost:3000",
+                    "description": "URL of the YAPPC canvas application"
+                },
+                "yappc.enableAutoSync": {
+                    "type": "boolean",
+                    "default": false,
+                    "description": "Enable automatic file sync to canvas"
+                },
+                "yappc.syncInterval": {
+                    "type": "number",
+                    "default": 5000,
+                    "description": "Auto-sync interval in milliseconds"
+                }
+            }
+        }
+    },
+    "scripts": {
+        "vscode:prepublish": "npm run compile",
+        "compile": "tsc -p ./",
+        "watch": "tsc -watch -p ./",
+        "package": "vsce package"
+    },
+    "devDependencies": {
+        "@types/node": "^20.0.0",
+        "@types/vscode": "^1.85.0",
+        "@types/ws": "^8.5.10",
+        "typescript": "^5.3.3"
+    },
+    "dependencies": {
+        "ws": "^8.16.0"
+    }
+}

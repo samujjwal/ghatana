@@ -1,0 +1,88 @@
+package observability
+
+import (
+"net/http"
+"strconv"
+"time"
+
+"github.com/prometheus/client_golang/prometheus"
+"github.com/prometheus/client_golang/prometheus/promauto"
+"github.com/prometheus/client_golang/prometheus/promhttp"
+)
+
+var (
+httpRequestsTotal = promauto.NewCounterVec(
+prometheus.CounterOpts{
+Name: "{{serviceName}}_http_requests_total",
+Help: "Total number of HTTP requests",
+},
+[]string{"method", "path", "status"},
+)
+
+httpRequestDuration = promauto.NewHistogramVec(
+prometheus.HistogramOpts{
+Name: "{{serviceName}}_http_request_duration_seconds",
+Help: "Duration of HTTP requests in seconds",
+Buckets: prometheus.DefBuckets,
+},
+[]string{"method", "path", "status"},
+)
+
+activeConnections = promauto.NewGauge(
+prometheus.GaugeOpts{
+Name: "{{serviceName}}_active_connections",
+Help: "Number of active connections",
+},
+)
+)
+
+// MetricsHandler returns the Prometheus metrics handler
+func MetricsHandler() http.Handler {
+return promhttp.Handler()
+}
+
+// RecordHTTPRequest records HTTP request metrics
+func RecordHTTPRequest(method, path string, status int, duration time.Duration) {
+statusStr := strconv.Itoa(status)
+httpRequestsTotal.WithLabelValues(method, path, statusStr).Inc()
+httpRequestDuration.WithLabelValues(method, path, statusStr).Observe(duration.Seconds())
+}
+
+// SetActiveConnections sets the number of active connections
+func SetActiveConnections(count float64) {
+activeConnections.Set(count)
+}
+
+// IncrementActiveConnections increments the active connection count
+func IncrementActiveConnections() {
+activeConnections.Inc()
+}
+
+// DecrementActiveConnections decrements the active connection count
+func DecrementActiveConnections() {
+activeConnections.Dec()
+}
+
+// MetricsMiddleware returns a middleware that records HTTP metrics
+func MetricsMiddleware(next http.Handler) http.Handler {
+return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+start := time.Now()
+
+// Wrap response writer to capture status code
+wrapped := &responseWriter{ResponseWriter: w, status: http.StatusOK}
+
+next.ServeHTTP(wrapped, r)
+
+RecordHTTPRequest(r.Method, r.URL.Path, wrapped.status, time.Since(start))
+})
+}
+
+type responseWriter struct {
+http.ResponseWriter
+status int
+}
+
+func (w *responseWriter) WriteHeader(status int) {
+w.status = status
+w.ResponseWriter.WriteHeader(status)
+}

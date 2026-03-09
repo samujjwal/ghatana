@@ -1,0 +1,281 @@
+# Research & Discovery Tasks
+# Domain 3 of 22 - Developer Task Universe
+# Reference: developer-tasks.md Part I, Section 3
+
+domain:
+  id: research
+  name: "Research & Discovery"
+  description: "Tasks related to exploring codebases, researching tools, and prototyping"
+  order: 3
+  icon: "search"
+  color: "#45B7D1"
+  lifecycle_stages:
+    - context
+    - plan
+
+tasks:
+  - id: res-001
+    name: "Explore Existing Codebases"
+    description: "Navigate and understand existing code to find relevant patterns and dependencies"
+    personas:
+      - Developer
+      - Tech Lead
+    lifecycle_stages:
+      - context
+    automation_level: assisted
+    required_capabilities:
+      - code-analysis
+      - navigation
+    input_schema: res-001-input
+    output_schema: res-001-output
+    audit_artifacts:
+      - InputSnapshot
+      - OutputSnapshot
+    ui:
+      icon: "folder_open"
+      color: "#45B7D1"
+      tags:
+        - codebase
+        - exploration
+        - analysis
+
+  - id: res-002
+    name: "Analyze System Documentation"
+    description: "Review existing system documentation to understand architecture and design"
+    personas:
+      - Developer
+      - Tech Lead
+    lifecycle_stages:
+      - context
+    automation_level: assisted
+    required_capabilities:
+      - documentation-analysis
+      - architecture-knowledge
+    input_schema: res-002-input
+    output_schema: res-002-output
+    audit_artifacts:
+      - InputSnapshot
+      - OutputSnapshot
+    ui:
+      icon: "description"
+      color: "#45B7D1"
+      tags:
+        - documentation
+        - analysis
+        - architecture
+
+  - id: res-003
+    name: "Research Libraries/Frameworks/Tools"
+    description: "Evaluate external libraries, frameworks, and tools for potential use"
+    personas:
+      - Developer
+      - Tech Lead
+    lifecycle_stages:
+      - context
+      - plan
+    automation_level: assisted
+    required_capabilities:
+      - research
+      - evaluation
+    input_schema: res-003-input
+    output_schema: res-003-output
+    audit_artifacts:
+      - InputSnapshot
+      - OutputSnapshot
+      - DecisionRecord
+    ui:
+      icon: "library_books"
+      color: "#45B7D1"
+      tags:
+        - libraries
+        - frameworks
+        - evaluation
+
+  - id: res-004
+    name: "Compare Alternative Designs"
+    description: "Analyze and compare different design approaches for the solution"
+    personas:
+      - Developer
+      - Tech Lead
+    lifecycle_stages:
+      - context
+      - plan
+    automation_level: assisted
+    required_capabilities:
+      - design-analysis
+      - critical-thinking
+    input_schema: res-004-input
+    output_schema: res-004-output
+    audit_artifacts:
+      - InputSnapshot
+      - OutputSnapshot
+      - DecisionRecord
+    ui:
+      icon: "compare"
+      color: "#45B7D1"
+      tags:
+        - comparison
+        - design
+        - alternatives
+
+  - id: res-005
+    name: "Prototype/Spike Solutions"
+    description: "Create quick prototypes to validate technical approaches"
+    personas:
+      - Developer
+      - Tech Lead
+    lifecycle_stages:
+      - plan
+      - execute
+    automation_level: assisted
+    required_capabilities:
+      - code-generation
+      - rapid-development
+    input_schema: res-005-input
+    output_schema: res-005-output
+    audit_artifacts:
+      - InputSnapshot
+      - OutputSnapshot
+      - ChangeSet
+    ui:
+      icon: "science"
+      color: "#45B7D1"
+      tags:
+        - prototype
+        - spike
+        - validation
+
+  - id: res-006
+    name: "Evaluate Feasibility"
+    description: "Assess technical feasibility of proposed solutions"
+    personas:
+      - Developer
+      - Tech Lead
+    lifecycle_stages:
+      - context
+      - plan
+    automation_level: assisted
+    required_capabilities:
+      - feasibility-analysis
+      - risk-analysis
+    input_schema: res-006-input
+    output_schema: res-006-output
+    audit_artifacts:
+      - InputSnapshot
+      - OutputSnapshot
+      - DecisionRecord
+    ui:
+      icon: "fact_check"
+      color: "#45B7D1"
+      tags:
+        - feasibility
+        - analysis
+        - evaluation
+
+  - id: res-007
+    name: "Analyze Performance Implications"
+    description: "Research and document performance implications of design choices"
+    personas:
+      - Developer
+      - Tech Lead
+      - DevOps
+    lifecycle_stages:
+      - context
+      - plan
+    automation_level: assisted
+    required_capabilities:
+      - performance-analysis
+      - architecture-knowledge
+    input_schema: res-007-input
+    output_schema: res-007-output
+    audit_artifacts:
+      - InputSnapshot
+      - OutputSnapshot
+    ui:
+      icon: "speed"
+      color: "#45B7D1"
+      tags:
+        - performance
+        - analysis
+        - optimization
+
+  - id: res-008
+    name: "Analyze Security Implications"
+    description: "Research and document security implications of design choices"
+    personas:
+      - Developer
+      - Tech Lead
+      - Security
+    lifecycle_stages:
+      - context
+      - plan
+    automation_level: assisted
+    required_capabilities:
+      - security-analysis
+      - threat-modeling
+    input_schema: res-008-input
+    output_schema: res-008-output
+    audit_artifacts:
+      - InputSnapshot
+      - OutputSnapshot
+      - PolicyCheck
+    ui:
+      icon: "security"
+      color: "#45B7D1"
+      tags:
+        - security
+        - analysis
+        - threats
+
+  - id: res-009
+    name: "Research Similar Systems"
+    description: "Analyze competitor or similar systems for insights and patterns"
+    personas:
+      - Developer
+      - Tech Lead
+      - PM
+    lifecycle_stages:
+      - context
+    automation_level: assisted
+    required_capabilities:
+      - research
+      - competitive-analysis
+    input_schema: res-009-input
+    output_schema: res-009-output
+    audit_artifacts:
+      - InputSnapshot
+      - OutputSnapshot
+    ui:
+      icon: "compare_arrows"
+      color: "#45B7D1"
+      tags:
+        - competitors
+        - research
+        - patterns
+
+  - id: res-010
+    name: "Validate Architectural Assumptions"
+    description: "Test and verify assumptions made about the system architecture"
+    personas:
+      - Developer
+      - Tech Lead
+    lifecycle_stages:
+      - context
+      - verify
+    automation_level: assisted
+    required_capabilities:
+      - architecture-knowledge
+      - validation
+    input_schema: res-010-input
+    output_schema: res-010-output
+    audit_artifacts:
+      - InputSnapshot
+      - OutputSnapshot
+      - VerificationResult
+    ui:
+      icon: "architecture"
+      color: "#45B7D1"
+      tags:
+        - architecture
+        - assumptions
+        - validation

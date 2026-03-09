@@ -1,0 +1,290 @@
+/*
+ * Copyright (c) 2025 Ghatana Inc.
+ * All rights reserved.
+ *
+ * Virtual Organization - Task definitions for AI agent system
+ */
+syntax = "proto3";
+
+package virtualorg.v1;
+
+import "google/protobuf/timestamp.proto";
+import "google/protobuf/duration.proto";
+
+option java_package = "com.ghatana.virtualorg.v1";
+option java_multiple_files = true;
+option java_outer_classname = "TaskOuterClass";
+
+// TaskProto represents a unit of work assigned to an agent
+message TaskProto {
+  reserved 100 to max;
+
+  // Unique identifier for the task
+  string task_id = 1;
+
+  // Title of the task
+  string title = 2;
+
+  // Detailed description of the task
+  string description = 3;
+
+  // Type of task
+  TaskTypeProto type = 4;
+
+  // Priority level
+  TaskPriorityProto priority = 5;
+
+  // Current status
+  TaskStatusProto status = 6;
+
+  // Agent ID this task is assigned to
+  string assigned_to = 7;
+
+  // Agent ID or human ID who created this task
+  string created_by = 8;
+
+  // Agent ID this task was escalated to (if applicable)
+  string escalated_to = 9;
+
+  // Contextual information as key-value pairs
+  map<string, string> context = 10;
+
+  // IDs of tasks this task depends on
+  repeated string dependencies = 11;
+
+  // Acceptance criteria for task completion
+  repeated AcceptanceCriterionProto acceptance_criteria = 12;
+
+  // Timestamps
+  google.protobuf.Timestamp created_at = 13;
+  google.protobuf.Timestamp started_at = 14;
+  google.protobuf.Timestamp completed_at = 15;
+  google.protobuf.Timestamp deadline = 16;
+
+  // Result of task execution (serialized JSON or protobuf)
+  string result = 17;
+
+  // Error message if task failed
+  string error = 18;
+
+  // Estimated effort in person-hours
+  double estimated_effort_hours = 19;
+
+  // Actual effort in person-hours
+  double actual_effort_hours = 20;
+
+  // Confidence score (0.0 to 1.0)
+  float confidence = 21;
+
+  // Tags for categorization
+  repeated string tags = 22;
+
+  // Metadata
+  map<string, string> metadata = 23;
+}
+
+// Type of task
+enum TaskTypeProto {
+  TASK_TYPE_UNKNOWN = 0;
+  TASK_TYPE_FEATURE_IMPLEMENTATION = 1;
+  TASK_TYPE_BUG_FIX = 2;
+  TASK_TYPE_CODE_REVIEW = 3;
+  TASK_TYPE_REFACTORING = 4;
+  TASK_TYPE_TESTING = 5;
+  TASK_TYPE_DEPLOYMENT = 6;
+  TASK_TYPE_ARCHITECTURE_DESIGN = 7;
+  TASK_TYPE_REQUIREMENTS_ANALYSIS = 8;
+  TASK_TYPE_RESEARCH = 9;
+  TASK_TYPE_DOCUMENTATION = 10;
+  TASK_TYPE_SECURITY_AUDIT = 11;
+  TASK_TYPE_PERFORMANCE_OPTIMIZATION = 12;
+  TASK_TYPE_BUDGET_APPROVAL = 13;           // Budget approval request
+}
+
+// Priority level
+enum TaskPriorityProto {
+  TASK_PRIORITY_UNKNOWN = 0;
+  TASK_PRIORITY_LOW = 1;
+  TASK_PRIORITY_MEDIUM = 2;
+  TASK_PRIORITY_HIGH = 3;
+  TASK_PRIORITY_CRITICAL = 4;
+}
+
+// Task status
+enum TaskStatusProto {
+  TASK_STATUS_UNKNOWN = 0;
+  TASK_STATUS_PENDING = 1;
+  TASK_STATUS_IN_PROGRESS = 2;
+  TASK_STATUS_BLOCKED = 3;
+  TASK_STATUS_REVIEW = 4;
+  TASK_STATUS_COMPLETED = 5;
+  TASK_STATUS_FAILED = 6;
+  TASK_STATUS_CANCELLED = 7;
+}
+
+// Acceptance criterion for task completion
+message AcceptanceCriterionProto {
+  reserved 100 to max;
+
+  // Description of the criterion
+  string criterion = 1;
+
+  // Whether the criterion has been met
+  bool met = 2;
+
+  // Evidence that criterion was met
+  string evidence = 3;
+
+  // Timestamp when criterion was verified
+  google.protobuf.Timestamp verified_at = 4;
+
+  // Who verified the criterion
+  string verified_by = 5;
+}
+
+// Task execution request
+message TaskRequestProto {
+  reserved 100 to max;
+
+  // The task to execute
+  TaskProto task = 1;
+
+  // Execution options
+  ExecutionOptionsProto options = 2;
+}
+
+// Execution options
+message ExecutionOptionsProto {
+  reserved 100 to max;
+
+  // Execute asynchronously
+  bool async = 1;
+
+  // Timeout for execution
+  google.protobuf.Duration timeout = 2;
+
+  // Skip cached results
+  bool skip_cache = 3;
+
+  // Hints for execution
+  map<string, string> hints = 4;
+
+  // Maximum retries
+  int32 max_retries = 5;
+
+  // Retry delay
+  google.protobuf.Duration retry_delay = 6;
+}
+
+// Task execution response
+message TaskResponseProto {
+  reserved 100 to max;
+
+  // Task ID
+  string task_id = 1;
+
+  // Success indicator
+  bool success = 2;
+
+  // Result of execution
+  string result = 3;
+  
+  // Agent ID that produced this response
+  string agent_id = 8;
+
+  // Reasoning/explanation
+  string reasoning = 4;
+
+  // Tool calls made during execution
+  repeated ToolCallProto tool_calls = 5;
+
+  // Execution metrics
+  AgentMetricsProto metrics = 6;
+
+  // Artifacts produced
+  repeated ArtifactProto artifacts = 7;
+}
+
+// Tool call made by agent
+message ToolCallProto {
+  reserved 100 to max;
+
+  // Name of the tool
+  string tool_name = 1;
+
+  // Arguments passed to tool
+  map<string, string> arguments = 2;
+
+  // Result from tool
+  string result = 3;
+
+  // Success indicator
+  bool success = 4;
+
+  // Duration in milliseconds
+  int64 duration_ms = 5;
+
+  // Error message if failed
+  string error = 6;
+
+  // Timestamp
+  google.protobuf.Timestamp timestamp = 7;
+}
+
+// Agent execution metrics
+message AgentMetricsProto {
+  reserved 100 to max;
+
+  // Total processing time
+  int64 processing_time_ms = 1;
+
+  // LLM reasoning time
+  int64 llm_time_ms = 2;
+
+  // Tool execution time
+  int64 tool_time_ms = 3;
+
+  // Tokens used
+  int32 tokens_used = 4;
+
+  // Confidence score
+  float confidence_score = 5;
+
+  // Number of retries
+  int32 retries = 6;
+}
+
+// Artifact produced during task execution
+message ArtifactProto {
+  reserved 100 to max;
+
+  // Unique identifier
+  string artifact_id = 1;
+
+  // Type of artifact
+  string type = 2;
+
+  // Name/title
+  string name = 3;
+
+  // Content or reference
+  string content = 4;
+
+  // MIME type
+  string mime_type = 5;
+
+  // Size in bytes
+  int64 size_bytes = 6;
+
+  // Checksum
+  string checksum = 7;
+
+  // Storage location
+  string location = 8;
+
+  // Metadata
+  map<string, string> metadata = 9;
+
+  // Created timestamp
+  google.protobuf.Timestamp created_at = 10;
+}

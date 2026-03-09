@@ -1,0 +1,21 @@
+{
+    "id": "gitlab-ci",
+    "name": "GitLab CI/CD",
+    "description": "GitLab CI/CD pipeline configuration",
+    "version": "1.0.0",
+    "type": "infrastructure",
+    "language": "yaml",
+    "buildSystem": "gitlab-ci",
+    "requiredVariables": [
+        "projectName"
+    ],
+    "optionalVariables": [
+        "language",
+        "dockerImage"
+    ],
+    "defaults": {
+        "language": "node",
+        "dockerImage": "node:20"
+    },
+    "features": []
+}

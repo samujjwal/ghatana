@@ -1,0 +1,19 @@
+package middleware
+
+import (
+"net/http"
+"time"
+
+"github.com/go-chi/chi/v5/middleware"
+)
+
+// Metrics middleware records request durations. Replace with real metrics exporter as needed.
+func Metrics(next http.Handler) http.Handler {
+return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+start := time.Now()
+ww := middleware.NewWrapResponseWriter(w, r.ProtoMajor)
+next.ServeHTTP(ww, r)
+_ = time.Since(start)
+// Hook: record metrics here (duration, status, path)
+})
+}

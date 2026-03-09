@@ -1,0 +1,67 @@
+id: fix-generator-agent
+name: Fix Generator Agent
+version: 1.0.0
+description: Generates code fixes based on root cause analysis. Produces minimal, targeted patches that address the identified root cause without introducing regressions.
+
+metadata:
+  level: 3
+  domain: debugging
+  tags: [debugging, fix-generation, code-patching]
+
+generator:
+  type: PIPELINE
+  steps:
+    - name: fix_generation
+      type: LLM
+      provider: ANTHROPIC
+      model: claude-3-5-sonnet-20241022
+      temperature: 0.3
+      max_tokens: 4000
+      prompt: |
+        Generate a minimal fix for this root cause:
+        
+        Root Cause: {{input}}
+        Source Code: {{source_code}}
+        Test Context: {{test_context}}
+        
+        Requirements:
+        1. Minimal change — touch as few lines as possible
+        2. Follow existing code style and patterns
+        3. Include inline comment explaining the fix rationale
+        4. Do NOT introduce new dependencies unless absolutely required
+        5. Ensure fix is backward-compatible
+        
+        Output as JSON: {fix_patch, files_changed, rationale, backward_compatible, risk_assessment}
+
+memory:
+  episodic:
+    enabled: true
+    retention_days: 365
+    categories: [generated-fixes, fix-outcomes, rejected-fixes]
+  semantic:
+    enabled: true
+    categories: [fix-patterns, code-style-rules]
+
+tools: [source_reader, patch_generator, style_checker]
+
+capabilities:
+  - code-generation
+  - root-cause-analysis
+
+routing:
+  input_types: [root-cause-report, fix-request]
+  output_types: [code-patch, fix-proposal]
+
+delegation:
+  can_delegate_to: []
+  escalates_to: debug-orchestrator
+
+governance:
+  requires_approval: true
+  can_block: false
+  audit_trail: comprehensive
+
+performance:
+  expected_latency_ms: 8000
+  max_latency_ms: 30000
+  timeout_ms: 60000

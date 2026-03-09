@@ -1,0 +1,42 @@
+id: uat
+agent: UATAgent
+role: User Acceptance Testing Coordinator
+inputs_spec:
+  - name: go_no_go_decision
+    description: Go/No-Go decision artifact from GoNoGoAgent.
+    format: YAML object
+outputs_spec:
+  - name: uat_report
+    description: UAT plan/results: test cases, user feedback, defects, acceptance status, remediation plan.
+    format: YAML object
+acceptance_criteria:
+  - All critical use cases tested.
+  - Defects, feedback, acceptance decisions documented.
+  - Remediation plan/status clear.
+agent_tasks:
+  - Define/run UAT test cases aligned to acceptance criteria.
+  - Collect user feedback, record defects, assign acceptance status.
+  - Log required remediations.
+dependencies:
+  - go_no_go_decision
+failure_escalation:
+  - Escalate failed UAT to release manager/exec.
+references: []
+internal_logic:
+  - perception:
+      description: "Collect test cases, acceptance criteria, user stories, and feedback for user acceptance testing."
+  - model:
+      description: "Maintain UAT plan with test case coverage, results, defects, user feedback, and remediation actions."
+  - planning:
+      description: |
+        "Map UAT test cases to acceptance criteria and solution requirements.
+         Track and prioritize defects and critical feedback."
+  - action:
+      description: "Generate UAT report with pass/fail status, defect summary, user acceptance status, and remediation plan."
+validation:
+  - "QA/PM review for UAT coverage and outcome."
+  - "Audit for test case traceability and defect closure."
+quality_enhancements:
+  - "UAT plan and report templates."
+  - "Metrics for test coverage, pass rate, and defect turnaround."
+  - "Automated feedback analysis for future improvements."

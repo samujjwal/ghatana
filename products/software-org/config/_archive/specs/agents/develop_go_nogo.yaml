@@ -1,0 +1,25 @@
+---
+id: "develop_go_nogo"
+agent: "GoNoGoDecisionAgent"
+role: "Stage Owner/Stakeholders"
+inputs_spec:
+- name: "develop_readiness_status"
+  description: "Readiness status for Develop stage."
+  format: "Status artifact"
+outputs_spec:
+- name: "develop_go_nogo_decision"
+  description: "Go/No-Go decision with rationale."
+  format: "Go/No-Go decision artifact"
+agent_tasks:
+- "Review all blockers, risks, and criteria."
+- "Record Go/No-Go decision and rationale."
+acceptance_criteria:
+- "All blockers, risks, and criteria reviewed."
+- "Go/No-Go decision and rationale recorded."
+dependencies:
+- "develop_readiness_status"
+failure_escalation:
+- "Escalate to Stage Owner if decision cannot be made."
+references: []
+hitl: true
+hitl_reason: "Human review required for Go/No-Go decision"

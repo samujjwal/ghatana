@@ -1,0 +1,23 @@
+{
+  "id": "deployment/overview",
+  "title": "Overview",
+  "description": "Documentation coming soon.",
+  "source": "@site/docs/deployment/overview.md",
+  "sourceDirName": "deployment",
+  "slug": "/deployment/overview",
+  "permalink": "/docs/deployment/overview",
+  "draft": false,
+  "unlisted": false,
+  "editUrl": "https://github.com/yappc/app-creator/tree/main/docs-site/docs/deployment/overview.md",
+  "tags": [],
+  "version": "current",
+  "sidebarPosition": 1,
+  "frontMatter": {
+    "sidebar_position": 1
+  },
+  "sidebar": "deploymentSidebar",
+  "next": {
+    "title": "Blue Green",
+    "permalink": "/docs/deployment/blue-green"
+  }
+}

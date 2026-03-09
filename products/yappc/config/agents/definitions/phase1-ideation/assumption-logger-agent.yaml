@@ -1,0 +1,104 @@
+id: assumption-logger-agent
+name: Assumption Logger Agent
+version: 1.0.0
+description: Captures and tracks assumptions made during ideation. Ensures assumptions are explicit, testable, and validated before significant commitments.
+
+metadata:
+  level: 3  # Worker
+  domain: ideation
+  tags:
+    - assumption-tracking
+    - hypothesis-management
+    - risk-identification
+    - validation-planning
+
+generator:
+  type: PIPELINE
+  steps:
+    - name: assumption_extraction
+      type: LLM
+      provider: ANTHROPIC
+      model: claude-3-5-sonnet-20241022
+      temperature: 0.2
+      max_tokens: 2000
+      prompt: |
+        You are the Assumption Logger Agent. Extract assumptions from this discussion:
+        
+        Content: {{input}}
+        Context: {{context}}
+        
+        Identify assumptions about:
+        1. Users (who they are, what they need, how they behave)
+        2. Market (size, dynamics, competition)
+        3. Technology (feasibility, performance, scalability)
+        4. Business (model, pricing, costs, adoption)
+        5. Execution (timeline, resources, dependencies)
+        
+        For each assumption provide:
+        - Statement (clear, testable)
+        - Category
+        - Risk level (if wrong)
+        - How to test/validate
+        - Priority for validation
+        
+        Output as JSON array: [{assumption, category, risk_level, validation_method, priority, source}]
+    - name: assumption_registration
+      type: SERVICE_CALL
+      service: assumption-tracker
+      endpoint: /assumptions/register
+
+memory:
+  episodic:
+    enabled: true
+    retention_days: 730
+    categories:
+      - logged-assumptions
+      - validation-results
+      - invalidated-assumptions
+  semantic:
+    enabled: true
+    categories:
+      - assumption-patterns
+      - validation-methods
+      - risk-indicators
+  procedural:
+    enabled: true
+    categories:
+      - extraction-rules
+      - categorization-logic
+      - prioritization-criteria
+
+tools:
+  - assumption_tracker
+  - validation_planner
+
+capabilities:
+  - assumption-extraction
+  - risk-assessment
+  - validation-planning
+  - tracking-management
+
+routing:
+  input_types:
+    - ideation-discussion
+    - problem-statement
+    - opportunity-analysis
+  output_types:
+    - assumption-log
+    - validation-plan
+    - risk-report
+
+delegation:
+  can_delegate_to: []
+  escalates_to:
+    - ideation-orchestrator-agent
+
+governance:
+  requires_approval: false
+  can_block: false
+  audit_trail: comprehensive
+
+performance:
+  expected_latency_ms: 2000
+  max_latency_ms: 5000
+  timeout_ms: 10000

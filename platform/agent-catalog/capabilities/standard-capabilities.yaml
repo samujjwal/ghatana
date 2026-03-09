@@ -1,0 +1,180 @@
+# Standard Capability Definitions
+#
+# Concrete capability definitions that agents can declare. Each maps to
+# a category in taxonomy.yaml. Product catalogs inherit and extend these.
+
+standard_capabilities:
+
+  # ── Data Processing ──────────────────────────────────────────────────
+  - id: "json-schema-validation"
+    name: "JSON Schema Validation"
+    category: "data-processing.validation"
+    version: "1.0"
+    description: "Validates JSON data against JSON Schema specification"
+    parameters:
+      - name: "strictMode"
+        type: "boolean"
+        default: false
+        description: "Enable strict validation mode"
+      - name: "collectErrors"
+        type: "boolean"
+        default: true
+        description: "Collect all validation errors vs fail-fast"
+
+  - id: "data-transformation"
+    name: "Data Transformation"
+    category: "data-processing.transformation"
+    version: "1.0"
+    description: "Transforms data between formats and schemas"
+    parameters:
+      - name: "sourceFormat"
+        type: "string"
+        required: true
+      - name: "targetFormat"
+        type: "string"
+        required: true
+
+  - id: "data-quality-check"
+    name: "Data Quality Check"
+    category: "data-processing.validation"
+    version: "1.0"
+    description: "Assesses data quality across multiple dimensions"
+
+  # ── Event Processing ─────────────────────────────────────────────────
+  - id: "event-routing"
+    name: "Event Routing"
+    category: "event-processing.routing"
+    version: "1.0"
+    description: "Routes events based on content-based rules"
+    parameters:
+      - name: "routingRules"
+        type: "array"
+        required: true
+        description: "List of routing rules"
+      - name: "defaultRoute"
+        type: "string"
+        description: "Default route when no rules match"
+
+  - id: "event-correlation"
+    name: "Event Correlation"
+    category: "event-processing.correlation"
+    version: "1.0"
+    description: "Correlates related events across streams"
+
+  - id: "pattern-detection"
+    name: "Pattern Detection"
+    category: "event-processing.pattern-matching"
+    version: "1.0"
+    description: "Detects temporal and structural patterns in event streams"
+
+  # ── Analytics ────────────────────────────────────────────────────────
+  - id: "statistical-analysis"
+    name: "Statistical Analysis"
+    category: "analytics.statistical-analysis"
+    version: "1.0"
+    description: "Performs statistical analysis on numeric data"
+    parameters:
+      - name: "analysisType"
+        type: "enum"
+        values: ["descriptive", "inferential", "regression"]
+        required: true
+      - name: "confidenceLevel"
+        type: "float"
+        default: 0.95
+        description: "Confidence level for statistical tests"
+
+  - id: "anomaly-detection"
+    name: "Anomaly Detection"
+    category: "analytics.anomaly-detection"
+    version: "1.0"
+    description: "Detects anomalous data points or patterns"
+
+  # ── Security ─────────────────────────────────────────────────────────
+  - id: "vulnerability-scanning"
+    name: "Vulnerability Scanning"
+    category: "security.vulnerability-scanning"
+    version: "1.0"
+    description: "Scans for security vulnerabilities in code and dependencies"
+
+  - id: "compliance-checking"
+    name: "Compliance Checking"
+    category: "security.compliance-checking"
+    version: "1.0"
+    description: "Validates compliance against regulatory frameworks"
+
+  - id: "access-control"
+    name: "Access Control"
+    category: "security.access-control"
+    version: "1.0"
+    description: "Manages and enforces access control policies"
+
+  # ── Monitoring ───────────────────────────────────────────────────────
+  - id: "health-monitoring"
+    name: "Health Monitoring"
+    category: "monitoring.health-checks"
+    version: "1.0"
+    description: "Monitors system and agent health status"
+
+  - id: "metrics-collection"
+    name: "Metrics Collection"
+    category: "monitoring.metrics-collection"
+    version: "1.0"
+    description: "Collects and aggregates operational metrics"
+
+  # ── Code Generation ──────────────────────────────────────────────────
+  - id: "source-code-generation"
+    name: "Source Code Generation"
+    category: "code-generation.source-generation"
+    version: "1.0"
+    description: "Generates source code from specifications"
+
+  - id: "test-generation"
+    name: "Test Generation"
+    category: "code-generation.test-generation"
+    version: "1.0"
+    description: "Generates test cases and test suites"
+
+  # ── Orchestration ────────────────────────────────────────────────────
+  - id: "task-routing"
+    name: "Task Routing"
+    category: "orchestration.task-routing"
+    version: "1.0"
+    description: "Routes tasks to appropriate agents based on capabilities"
+
+  - id: "lifecycle-orchestration"
+    name: "Lifecycle Orchestration"
+    category: "orchestration.lifecycle-management"
+    version: "1.0"
+    description: "Coordinates multi-stage agent lifecycle workflows"
+
+  # ── Governance ────────────────────────────────────────────────────────
+  - id: "cost-optimization"
+    name: "Cost Optimization"
+    category: "governance.cost-optimization"
+    version: "1.0"
+    description: "Analyzes resource usage and recommends cost savings across infrastructure"
+
+  - id: "resource-governance"
+    name: "Resource Governance"
+    category: "governance.resource-optimization"
+    version: "1.0"
+    description: "Enforces resource quotas, budgets, and utilization policies"
+
+  - id: "sustainability"
+    name: "Sustainability"
+    category: "governance.sustainability"
+    version: "1.0"
+    description: "Monitors carbon footprint, energy efficiency, and green computing metrics"
+
+  - id: "policy-enforcement"
+    name: "Policy Enforcement"
+    category: "governance.policy-enforcement"
+    version: "1.0"
+    description: "Validates and enforces organizational and regulatory policies"
+
+  # ── Data Validation ───────────────────────────────────────────────────
+  - id: "data-validation"
+    name: "Data Validation"
+    category: "data-processing.validation"
+    version: "1.0"
+    description: "Validates data against rules, schemas, and business constraints"

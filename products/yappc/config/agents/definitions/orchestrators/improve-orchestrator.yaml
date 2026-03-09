@@ -1,0 +1,107 @@
+id: improve-orchestrator
+name: Improve Orchestrator
+version: 1.0.0
+description: Orchestrates continuous improvement cycles — coordinates code quality analysis, performance profiling, tech debt reduction, dependency upgrades, and architectural fitness checks across the YAPPC codebase.
+
+metadata:
+  level: 2
+  domain: improvement
+  tags: [orchestrator, improvement, quality, tech-debt, performance]
+
+generator:
+  type: PIPELINE
+  steps:
+    - name: improvement_assessment
+      type: LLM
+      provider: ANTHROPIC
+      model: claude-3-5-sonnet-20241022
+      temperature: 0.3
+      max_tokens: 3000
+      prompt: |
+        You are the Improvement Orchestrator. Assess the codebase for improvement opportunities:
+        
+        Trigger: {{input}}
+        Recent metrics: {{context.metrics}}
+        Known tech debt: {{context.tech_debt}}
+        
+        Analyze and prioritize:
+        1. Code quality hotspots (complexity, duplication, test coverage gaps)
+        2. Performance bottlenecks (latency, memory, throughput)
+        3. Tech debt items (deprecated APIs, outdated patterns, TODO/FIXME)
+        4. Dependency health (outdated, vulnerable, unmaintained)
+        5. Architectural fitness (coupling, cohesion, layer violations)
+        
+        For each area, determine which specialist agent to delegate to.
+        
+        Output as JSON: {
+          quality_issues, performance_issues, tech_debt_items,
+          dependency_issues, architecture_issues,
+          delegation_plan, priority_order, estimated_effort
+        }
+    - name: delegate_improvements
+      type: SERVICE_CALL
+      service: agent-dispatcher
+      endpoint: /dispatch/batch
+    - name: improvement_report
+      type: LLM
+      provider: ANTHROPIC
+      model: claude-3-5-sonnet-20241022
+      temperature: 0.2
+      max_tokens: 2000
+      prompt: |
+        Compile improvement cycle results:
+        Delegated results: {{delegate_outputs}}
+        
+        Produce a structured improvement report with:
+        - Completed improvements with diffs
+        - Remaining items for next cycle
+        - Metrics delta (before/after)
+        - Recommendations for architectural evolution
+        
+        Output as JSON: {completed, remaining, metrics_delta, recommendations}
+
+memory:
+  episodic:
+    enabled: true
+    retention_days: 365
+    categories: [improvement-cycles, quality-trends, debt-reduction]
+  semantic:
+    enabled: true
+    categories: [improvement-patterns, quality-baselines, debt-inventory]
+  procedural:
+    enabled: true
+    categories: [improvement-workflows, prioritization-heuristics]
+
+tools: [source_reader, metrics_collector, dependency_scanner, complexity_analyzer]
+
+capabilities:
+  - code-quality-orchestration
+  - performance-improvement
+  - tech-debt-management
+  - dependency-management
+
+routing:
+  input_types: [improvement-trigger, quality-report, debt-review-request]
+  output_types: [improvement-report, quality-delta, debt-reduction-plan]
+
+delegation:
+  can_delegate_to:
+    - quality-guard-agent
+    - activej-expert-agent
+    - fastify-expert-agent
+    - react-expert-agent
+    - prisma-expert-agent
+    - fix-generator-agent
+    - regression-test-writer-agent
+    - diff-analyzer-agent
+  escalates_to: master-orchestrator-agent
+
+governance:
+  requires_approval: false
+  can_block: false
+  audit_trail: comprehensive
+
+performance:
+  expected_latency_ms: 30000
+  max_latency_ms: 300000
+  timeout_ms: 600000

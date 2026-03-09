@@ -1,0 +1,27 @@
+{
+  "id": "canvas/monitoring",
+  "title": "monitoring",
+  "description": "Documentation coming soon. Visit the Interactive Demo.",
+  "source": "@site/docs/canvas/monitoring.md",
+  "sourceDirName": "canvas",
+  "slug": "/canvas/monitoring",
+  "permalink": "/docs/canvas/monitoring",
+  "draft": false,
+  "unlisted": false,
+  "editUrl": "https://github.com/yappc/app-creator/tree/main/docs-site/docs/canvas/monitoring.md",
+  "tags": [],
+  "version": "current",
+  "sidebarPosition": 1,
+  "frontMatter": {
+    "sidebar_position": 1
+  },
+  "sidebar": "canvasSidebar",
+  "previous": {
+    "title": "security",
+    "permalink": "/docs/canvas/security"
+  },
+  "next": {
+    "title": "extensiuility",
+    "permalink": "/docs/canvas/extensibility"
+  }
+}

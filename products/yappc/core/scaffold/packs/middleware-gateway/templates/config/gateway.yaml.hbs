@@ -1,0 +1,29 @@
+# Gateway Configuration
+# YAML configuration for {{projectName}}
+
+port: {{port}}
+logLevel: {{logLevel}}
+
+{{#if enableCors}}
+# CORS Configuration
+corsOrigin: "{{corsOrigin}}"
+{{/if}}
+
+{{#if enableRateLimiting}}
+# Rate Limiting
+rateLimiting:
+max: {{rateLimitMax}}
+timeWindow: "{{rateLimitTimeWindow}}"
+{{/if}}
+
+{{#if enableCircuitBreaker}}
+# Circuit Breaker
+circuitBreaker:
+threshold: {{circuitBreakerThreshold}}
+timeout: {{circuitBreakerTimeout}}
+{{/if}}
+
+# Service Discovery (optional)
+# discovery:
+# type: static # static | consul | kubernetes
+# refreshInterval: 30000

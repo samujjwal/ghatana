@@ -1,0 +1,33 @@
+id: agent.yappc.head-of-devops
+name: Head of DevOps
+description: DevOps leadership and infrastructure management agent
+version: 1.0.0
+type: worker
+category: devops
+
+capabilities:
+  - infrastructure-design
+  - ci-cd-pipeline
+  - monitoring-setup
+  - security-hardening
+
+requirements:
+  - cloud-platforms
+  - containerization
+  - monitoring-tools
+
+parameters:
+  cloud_provider:
+    type: string
+    default: "aws"
+    description: Primary cloud provider
+  
+  orchestration:
+    type: string
+    default: "kubernetes"
+    description: Container orchestration platform
+
+metadata:
+  author: "YAPPC Team"
+  level: 1
+  tags: [devops, infrastructure, ci-cd, cloud]

@@ -1,0 +1,8 @@
+version: v1
+plugins:
+  - name: doc
+    out: .
+    opt: "exclude-json,source-relative"
+  - name: markdown
+    out: .
+    opt: "exclude-json,source-relative"

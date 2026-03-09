@@ -1,0 +1,244 @@
+{
+  "id": "oob-complete-analytics",
+  "metadata": {
+    "name": "Complete Out-of-Box Web Analytics",
+    "description": "Comprehensive analytics tracking: page visits, web vitals, network monitoring, engagement, and performance",
+    "version": "1.0.0",
+    "author": "DCMAAR Team",
+    "tags": ["oob", "analytics", "web-vitals", "engagement", "performance"],
+    "createdAt": 1706832000000,
+    "updatedAt": 1706832000000
+  },
+  "collect": {
+    "id": "collect",
+    "sources": [
+      {
+        "id": "page-visits",
+        "type": "page-visits",
+        "strategy": "streaming",
+        "config": {
+          "trackActiveTime": true,
+          "updateInterval": 5000
+        },
+        "samplingRate": 1.0,
+        "batchSize": 100
+      },
+      {
+        "id": "web-vitals",
+        "type": "web-vitals",
+        "strategy": "event-driven",
+        "config": {
+          "metrics": ["LCP", "INP", "CLS", "TTFB", "FCP"],
+          "collectOnPageLoad": true
+        },
+        "samplingRate": 1.0,
+        "batchSize": 50
+      },
+      {
+        "id": "network-monitoring",
+        "type": "network",
+        "strategy": "streaming",
+        "config": {
+          "includeStats": true,
+          "trackTiming": true,
+          "trackSizes": true
+        },
+        "samplingRate": 0.1,
+        "batchSize": 200
+      },
+      {
+        "id": "engagement-tracking",
+        "type": "engagement",
+        "strategy": "event-driven",
+        "config": {
+          "trackClicks": true,
+          "trackScrolls": true,
+          "trackInputs": true,
+          "detectRageClicks": true,
+          "sessionTimeout": 1800000
+        },
+        "samplingRate": 1.0,
+        "batchSize": 500
+      }
+    ],
+    "mergeStrategy": "union",
+    "timeoutMs": 15000
+  },
+  "analyze": {
+    "id": "analyze",
+    "operations": [
+      {
+        "id": "visit-statistics",
+        "strategy": "custom",
+        "config": {
+          "analysisType": "visit-stats",
+          "groupBy": "domain"
+        },
+        "order": 100,
+        "continueOnError": false
+      },
+      {
+        "id": "engagement-metrics",
+        "strategy": "custom",
+        "config": {
+          "analysisType": "engagement-stats",
+          "timeWindow": {
+            "start": 0,
+            "end": 9999999999999
+          }
+        },
+        "order": 200,
+        "continueOnError": false
+      },
+      {
+        "id": "top-pages-analysis",
+        "strategy": "custom",
+        "config": {
+          "analysisType": "top-pages",
+          "limit": 20
+        },
+        "order": 300,
+        "continueOnError": true
+      },
+      {
+        "id": "web-vitals-summary",
+        "strategy": "aggregate",
+        "config": {
+          "groupBy": "payload.overallRating",
+          "metrics": ["count"],
+          "fields": ["payload.lcp.value", "payload.inp.value", "payload.cls.value"]
+        },
+        "order": 400,
+        "continueOnError": true
+      },
+      {
+        "id": "performance-classification",
+        "strategy": "classify",
+        "config": {
+          "categories": {
+            "excellent": {
+              "condition": {
+                "field": "payload.overallRating",
+                "operator": "eq",
+                "value": "good"
+              }
+            },
+            "needs-work": {
+              "condition": {
+                "field": "payload.overallRating",
+                "operator": "in",
+                "value": ["needs-improvement", "poor"]
+              }
+            }
+          }
+        },
+        "order": 500,
+        "continueOnError": true
+      }
+    ],
+    "parallel": false,
+    "timeoutMs": 20000
+  },
+  "report": {
+    "id": "report",
+    "destinations": [
+      {
+        "id": "analytics-storage",
+        "type": "store",
+        "delivery": "store",
+        "config": {
+          "storageType": "indexeddb",
+          "key": "oob-analytics-data",
+          "maxReports": 1000,
+          "compress": true
+        },
+        "format": "json"
+      },
+      {
+        "id": "visit-stats-storage",
+        "type": "store",
+        "delivery": "store",
+        "config": {
+          "storageType": "local",
+          "key": "visit-statistics",
+          "maxReports": 100
+        },
+        "format": "json"
+      },
+      {
+        "id": "daily-summary-notification",
+        "type": "notification",
+        "delivery": "notification",
+        "config": {
+          "title": "Daily Analytics Summary",
+          "icon": "info",
+          "priority": "low"
+        },
+        "format": "markdown",
+        "when": {
+          "field": "summary.eventsCollected",
+          "operator": "gt",
+          "value": 50
+        }
+      }
+    ],
+    "aggregate": true,
+    "includeMetadata": true,
+    "includeSummary": true,
+    "timeoutMs": 10000
+  },
+  "security": {
+    "maxExecutionTimeMs": 60000,
+    "maxMemoryBytes": 104857600,
+    "maxEventsPerBatch": 2000,
+    "allowedNetworkPatterns": [],
+    "deniedNetworkPatterns": ["file://*", "chrome://*", "chrome-extension://*"],
+    "allowedBrowserAPIs": [
+      "storage",
+      "tabs",
+      "webNavigation",
+      "webRequest",
+      "runtime",
+      "history",
+      "notifications"
+    ],
+    "sandboxed": true
+  },
+  "privacy": {
+    "redactionRules": [
+      {
+        "pattern": "\\b[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\\.[A-Z|a-z]{2,}\\b",
+        "replacement": "[EMAIL]",
+        "fields": ["payload.url", "payload.title"]
+      },
+      {
+        "pattern": "password|token|secret|api[_-]?key|auth",
+        "replacement": "[REDACTED]",
+        "fields": ["payload.url", "payload.referrer"]
+      },
+      {
+        "pattern": "\\b\\d{3}-\\d{2}-\\d{4}\\b",
+        "replacement": "[SSN]"
+      },
+      {
+        "pattern": "\\b\\d{4}[\\s-]?\\d{4}[\\s-]?\\d{4}[\\s-]?\\d{4}\\b",
+        "replacement": "[CARD]"
+      }
+    ],
+    "encryptFields": [],
+    "retentionPeriodMs": 2592000000,
+    "anonymize": false,
+    "requireConsent": false
+  },
+  "enabled": true,
+  "schedule": "*/15 * * * *",
+  "priority": 200,
+  "maxConcurrentExecutions": 1,
+  "timeoutMs": 120000,
+  "onError": "continue",
+  "variables": {
+    "collectionInterval": "15m",
+    "minEventsForReport": 50,
+    "enableDetailedLogging": false
+  }
+}

@@ -1,0 +1,28 @@
+---
+id: "uat_audit_log_agent"
+agent: "AuditLogAgent"
+role: "Compliance Bot"
+inputs_spec:
+- name: "uat_progress_dashboard"
+  description: "UAT dashboard for audit log correlation."
+  format: "Dashboard artifact"
+- name: "uat_notification_agent"
+  description: "Notification agent delivery log."
+  format: "List of notification objects"
+outputs_spec:
+- name: "uat_audit_log"
+  description: "Audit log of UAT agent actions, results, notifications, and signoffs."
+  format: "Audit log artifact"
+agent_tasks:
+- "Log all UAT agent actions, results, notifications, and signoffs."
+- "Track approval/rejection and defect signoff."
+acceptance_criteria:
+- "All UAT agent actions, results, and notifications are logged."
+- "Approval/rejection and defect signoff are tracked."
+dependencies:
+- "uat_progress_dashboard"
+- "uat_notification_agent"
+failure_escalation:
+- "Escalate to compliance or audit lead if audit log is incomplete or inaccessible."
+references: []
+hitl: false

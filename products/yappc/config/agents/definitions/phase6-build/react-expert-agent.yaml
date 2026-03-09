@@ -1,0 +1,71 @@
+id: react-expert-agent
+name: React Expert Agent
+version: 1.0.0
+description: Specialized code generation and review for React+Vite frontend patterns — functional components, hooks, state management, Tailwind CSS, shadcn/ui, and accessibility best practices.
+
+metadata:
+  level: 3
+  domain: build
+  tags: [build, react, vite, typescript, frontend, framework-specific]
+
+generator:
+  type: PIPELINE
+  steps:
+    - name: react_code_generation
+      type: LLM
+      provider: ANTHROPIC
+      model: claude-3-5-sonnet-20241022
+      temperature: 0.3
+      max_tokens: 4000
+      prompt: |
+        You are a React expert. Generate or review code following React+Vite patterns:
+        
+        Request: {{input}}
+        Context: {{context}}
+        
+        React conventions:
+        - TypeScript with strict mode
+        - Functional components only (no class components)
+        - React hooks for state and effects
+        - Tailwind CSS for styling (no CSS modules)
+        - shadcn/ui for component library
+        - Lucide for icons
+        - React Router for navigation
+        - Tanstack Query for server state
+        - Follow YAPPC's existing frontend/ directory structure
+        - Ensure WCAG 2.1 AA accessibility compliance
+        
+        Output as JSON: {code, file_path, explanation, react_patterns_used, a11y_notes, warnings}
+
+memory:
+  episodic:
+    enabled: true
+    retention_days: 180
+    categories: [react-code-generations, react-reviews]
+  semantic:
+    enabled: true
+    categories: [react-patterns, component-library-catalog]
+
+tools: [source_reader, npm_doc_search]
+
+capabilities:
+  - code-generation
+  - ui-generation
+
+routing:
+  input_types: [code-request, review-request, design-spec]
+  output_types: [source-code, review-report]
+
+delegation:
+  can_delegate_to: []
+  escalates_to: react-expert
+
+governance:
+  requires_approval: false
+  can_block: false
+  audit_trail: standard
+
+performance:
+  expected_latency_ms: 5000
+  max_latency_ms: 20000
+  timeout_ms: 45000

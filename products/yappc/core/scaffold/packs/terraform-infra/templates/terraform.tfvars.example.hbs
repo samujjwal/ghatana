@@ -1,0 +1,7 @@
+project_name = "{{kebabCase projectName}}"
+environment = "dev"
+region = "{{region}}"
+
+{{#if (eq cloudProvider "gcp")}}
+project_id = "your-gcp-project-id"
+{{/if}}

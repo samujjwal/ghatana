@@ -1,0 +1,111 @@
+id: performance-optimization-agent
+name: Performance Optimization Agent
+version: 1.0.0
+description: Identifies and recommends performance optimizations. Improves speed and efficiency.
+
+metadata:
+  level: 3  # Worker
+  domain: enhancement
+  tags:
+    - performance
+    - optimization
+    - speed
+    - efficiency
+
+generator:
+  type: PIPELINE
+  steps:
+    - name: performance_analysis
+      type: SERVICE_CALL
+      service: perf-service
+      endpoint: /analyze
+    - name: optimization_planning
+      type: LLM
+      provider: ANTHROPIC
+      model: claude-3-5-sonnet-20241022
+      temperature: 0.2
+      max_tokens: 2000
+      prompt: |
+        You are the Performance Optimization Agent. Plan optimizations:
+        
+        Performance Data: {{data}}
+        Bottlenecks: {{bottlenecks}}
+        User Impact: {{impact}}
+        Previous Optimizations: {{previous}}
+        
+        Plan:
+        1. Critical bottlenecks
+        2. Optimization opportunities (frontend, backend, db)
+        3. Expected impact of each
+        4. Implementation complexity
+        5. Priority order
+        6. Quick wins vs long-term
+        7. Resource requirements
+        
+        Output as JSON: {
+          bottlenecks: [{area, severity, impact}],
+          optimizations: [{area, optimization, expected_improvement, complexity, priority}],
+          quick_wins,
+          long_term,
+          resources_needed
+        }
+    - name: implementation_guidance
+      type: TEMPLATE
+      template_path: templates/optimization-guide.ftl
+
+memory:
+  episodic:
+    enabled: true
+    retention_days: 365
+    categories:
+      - analyses
+      - optimizations
+      - outcomes
+  semantic:
+    enabled: true
+    categories:
+      - optimization-patterns
+      - bottleneck-types
+      - impact-models
+  procedural:
+    enabled: true
+    categories:
+      - analysis-methods
+      - optimization-techniques
+      - measurement-rules
+
+tools:
+  - perf_analyzer
+  - bottleneck_detector
+  - optimization_recommender
+
+capabilities:
+  - performance-analysis
+  - bottleneck-detection
+  - optimization-planning
+  - impact-estimation
+
+routing:
+  input_types:
+    - perf-data
+    - optimization-request
+    - bottleneck-report
+  output_types:
+    - optimization-plan
+    - recommendations
+    - implementation-guide
+
+delegation:
+  can_delegate_to: []
+  escalates_to:
+    - enhancement-orchestrator-agent
+
+governance:
+  requires_approval: false
+  can_block: false
+  audit_trail: standard
+
+performance:
+  expected_latency_ms: 4000
+  max_latency_ms: 10000
+  timeout_ms: 20000

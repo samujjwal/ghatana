@@ -1,0 +1,28 @@
+---
+id: "gitops_controller"
+agent: "GitOpsControllerAgent"
+role: "GitOps Engineer"
+inputs_spec:
+- name: "ready_for_deploy_bundle"
+  description: "Bundle approved for deployment via GitOps."
+  format: "Deployable bundle artifact"
+outputs_spec:
+- name: "deployment_triggered"
+  description: "Status of deployment triggered by GitOps controller."
+  format: "Deployment trigger artifact"
+agent_tasks:
+- "Monitor source control for changes."
+- "Trigger deployment on approved manifest updates."
+- "Apply only approved manifests."
+- "Log deployment status and enable rollback from Git history."
+acceptance_criteria:
+- "Deployment is triggered from source control changes."
+- "Only approved manifests are applied."
+- "Deployment status is logged and accessible."
+- "Rollbacks can be initiated from Git history."
+dependencies:
+- "ready_for_deploy_bundle"
+failure_escalation:
+- "Escalate to GitOps Engineer if deployment fails or manifests are not approved."
+references: []
+hitl: false

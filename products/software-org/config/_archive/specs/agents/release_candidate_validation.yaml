@@ -1,0 +1,26 @@
+---
+id: "release_candidate_validation"
+agent: "ReleaseCandidateValidationAgent"
+role: "Release Manager"
+inputs_spec:
+- name: "ready_for_release_package"
+  description: "Package indicating readiness for release (all previous checks passed)."
+  format: "Release package artifact"
+outputs_spec:
+- name: "release_candidate_validation_report"
+  description: "Validation report confirming release candidate meets all functional,\
+    \ non-functional, security, and compliance criteria."
+  format: "Validation report artifact"
+agent_tasks:
+- "Validate release candidate for all functional, non-functional, security, and compliance\
+  \ criteria."
+- "Ensure all critical/blocker issues are resolved or signed off by responsible parties."
+acceptance_criteria:
+- "Release candidate meets all required criteria."
+- "All critical/blocker issues are resolved or signed off."
+dependencies:
+- "ready_for_release_package"
+failure_escalation:
+- "Escalate to Release Manager if candidate fails criteria or issues remain unresolved."
+references: []
+hitl: false

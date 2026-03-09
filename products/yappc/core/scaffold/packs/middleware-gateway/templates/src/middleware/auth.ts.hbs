@@ -1,0 +1,135 @@
+{{#if enableAuth}}
+import type { FastifyRequest, FastifyReply } from "fastify";
+import type { AuthUser, JwtPayload } from "../types.js";
+import { logger } from "./logging.js";
+
+/**
+* JWT authentication middleware
+*/
+export async function authMiddleware(
+request: FastifyRequest,
+reply: FastifyReply
+): Promise<void> {
+    try {
+    // Extract token from Authorization header
+    const authHeader = request.headers.authorization;
+
+    if (!authHeader) {
+    return reply.status(401).send({
+    error: "Unauthorized",
+    message: "Missing authorization header",
+    });
+    }
+
+    if (!authHeader.startsWith("Bearer ")) {
+    return reply.status(401).send({
+    error: "Unauthorized",
+    message: "Invalid authorization format. Use: Bearer <token>",
+        });
+        }
+
+        // Verify the token
+        const token = authHeader.slice(7);
+        const decoded = await request.jwtVerify<JwtPayload>();
+
+            // Attach user to request
+            request.user = {
+            id: decoded.sub,
+            roles: decoded.roles ?? [],
+            permissions: decoded.permissions ?? [],
+            };
+
+            logger.debug({ userId: decoded.sub }, "User authenticated");
+            } catch (err) {
+            logger.warn({ err }, "Authentication failed");
+
+            if (err instanceof Error) {
+            if (err.message.includes("expired")) {
+            return reply.status(401).send({
+            error: "Unauthorized",
+            message: "Token has expired",
+            code: "TOKEN_EXPIRED",
+            });
+            }
+
+            if (err.message.includes("invalid")) {
+            return reply.status(401).send({
+            error: "Unauthorized",
+            message: "Invalid token",
+            code: "INVALID_TOKEN",
+            });
+            }
+            }
+
+            return reply.status(401).send({
+            error: "Unauthorized",
+            message: "Authentication failed",
+            });
+            }
+            }
+
+            /**
+            * Role-based access control middleware factory
+            */
+            export function requireRoles(...roles: string[]) {
+            return async (request: FastifyRequest, reply: FastifyReply): Promise<void> => {
+                if (!request.user) {
+                return reply.status(401).send({
+                error: "Unauthorized",
+                message: "Authentication required",
+                });
+                }
+
+                const hasRole = roles.some((role) => request.user?.roles.includes(role));
+
+                if (!hasRole) {
+                logger.warn(
+                { userId: request.user.id, requiredRoles: roles, userRoles: request.user.roles },
+                "Access denied: insufficient roles"
+                );
+
+                return reply.status(403).send({
+                error: "Forbidden",
+                message: "Insufficient permissions",
+                });
+                }
+                };
+                }
+
+                /**
+                * Permission-based access control middleware factory
+                */
+                export function requirePermissions(...permissions: string[]) {
+                return async (request: FastifyRequest, reply: FastifyReply): Promise<void> => {
+                    if (!request.user) {
+                    return reply.status(401).send({
+                    error: "Unauthorized",
+                    message: "Authentication required",
+                    });
+                    }
+
+                    const hasPermission = permissions.some((perm) =>
+                    request.user?.permissions.includes(perm)
+                    );
+
+                    if (!hasPermission) {
+                    logger.warn(
+                    {
+                    userId: request.user.id,
+                    requiredPermissions: permissions,
+                    userPermissions: request.user.permissions
+                    },
+                    "Access denied: insufficient permissions"
+                    );
+
+                    return reply.status(403).send({
+                    error: "Forbidden",
+                    message: "Insufficient permissions",
+                    });
+                    }
+                    };
+                    }
+                    {{else}}
+                    // Authentication is disabled. Enable it in pack.json to use auth middleware.
+                    export {};
+                    {{/if}}

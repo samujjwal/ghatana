@@ -1,0 +1,116 @@
+domain:
+  id: product-experience-design
+  name: "Product & Experience Design"
+  description: "Design user flows, interaction models, and delightful user experiences."
+  order: 7
+  icon: "design_services"
+  color: "#66BB6A"
+  agent_personas:
+    - "UXDesignerAgent"
+    - "FlowOptimizer"
+    - "AccessibilityChecker"
+    - "UsabilityExpert"
+  audit_artifacts:
+    - "DesignVersion"
+    - "ReviewFeedback"
+    - "UsabilityReport"
+    - "AccessibilityAudit"
+  inputs:
+    - "Requirements"
+    - "Personas"
+    - "User research"
+    - "Business goals"
+  outputs:
+    - "UX flows"
+    - "Design specs"
+    - "Wireframes"
+    - "Interaction patterns"
+
+tasks:
+  # Core design tasks
+  - id: d7-t1
+    name: "Design user flows"
+    description: "Map out comprehensive user journeys and task flows."
+    personas: ["Designer", "PM"]
+    lifecycle_stages: ["plan", "execute"]
+    automation_level: "assisted"
+  - id: d7-t2
+    name: "Interaction design"
+    description: "Define how users interact with the system components."
+    personas: ["Designer", "Developer"]
+    lifecycle_stages: ["execute"]
+    automation_level: "manual"
+  - id: d7-t3
+    name: "Information architecture"
+    description: "Structure content, navigation, and system organization."
+    personas: ["Designer", "PM"]
+    lifecycle_stages: ["plan", "execute"]
+    automation_level: "assisted"
+  - id: d7-t4
+    name: "Content strategy"
+    description: "Plan content creation, delivery, and governance."
+    personas: ["PM", "Writer"]
+    lifecycle_stages: ["plan"]
+    automation_level: "manual"
+  - id: d7-t5
+    name: "UX validation"
+    description: "Test designs with users and validate usability."
+    personas: ["Designer", "PM"]
+    lifecycle_stages: ["verify"]
+    automation_level: "manual"
+  - id: d7-t6
+    name: "Design iteration"
+    description: "Refine designs based on feedback and testing."
+    personas: ["Designer"]
+    lifecycle_stages: ["execute", "learn"]
+    automation_level: "manual"
+
+  # Extended UX tasks
+  - id: ux-001
+    name: "Create Wireframes"
+    description: "Develop low-fidelity wireframes for key screens."
+    personas: ["Designer"]
+    lifecycle_stages: ["execute"]
+    automation_level: "assisted"
+  - id: ux-002
+    name: "Design High-Fidelity Mockups"
+    description: "Create detailed visual mockups for implementation."
+    personas: ["Designer"]
+    lifecycle_stages: ["execute"]
+    automation_level: "manual"
+  - id: ux-003
+    name: "Define Interaction Patterns"
+    description: "Establish consistent interaction patterns across the product."
+    personas: ["Designer", "Developer"]
+    lifecycle_stages: ["execute"]
+    automation_level: "assisted"
+  - id: ux-004
+    name: "Accessibility Review"
+    description: "Ensure designs meet accessibility standards (WCAG)."
+    personas: ["Designer", "Developer"]
+    lifecycle_stages: ["verify"]
+    automation_level: "assisted"
+  - id: ux-005
+    name: "Responsive Design"
+    description: "Design for multiple screen sizes and devices."
+    personas: ["Designer", "Developer"]
+    lifecycle_stages: ["execute"]
+    automation_level: "assisted"
+  - id: ux-006
+    name: "Micro-interaction Design"
+    description: "Design subtle animations and feedback for user actions."
+    personas: ["Designer"]
+    lifecycle_stages: ["execute"]
+    automation_level: "manual"
+  - id: ux-007
+    name: "Error State Design"
+    description: "Design user-friendly error states and recovery flows."
+    personas: ["Designer", "Developer"]
+    lifecycle_stages: ["execute"]
+    automation_level: "assisted"
+  - id: ux-008
+    name: "Onboarding Flow Design"
+    description: "Create engaging onboarding experiences for new users."
+    personas: ["Designer", "PM"]
+    lifecycle_stages: ["execute"]
+    automation_level: "assisted"

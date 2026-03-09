@@ -1,0 +1,29 @@
+---
+id: "deployment_manifest"
+agent: "DeploymentManifestAgent"
+role: "DevOps Engineer"
+inputs_spec:
+- name: "package_stage_milestone"
+  description: "Package milestone for manifest generation."
+  format: "Milestone object"
+outputs_spec:
+- name: "deployment_manifests"
+  description: "Generated deployment manifests (YAML/JSON)."
+  format: "List of deployment manifest artifacts"
+agent_tasks:
+- "Generate deployment manifests from release artifacts."
+- "Ensure manifests are valid YAML/JSON and follow org standards."
+- "Include all services, configs, secrets."
+- "Review for completeness and correctness."
+acceptance_criteria:
+- "Deployment manifests generated from release artifacts."
+- "Valid YAML/JSON, org standards followed."
+- "All services/configs/secrets included."
+- "Manifests reviewed for correctness."
+dependencies:
+- "package_stage_milestone"
+failure_escalation:
+- "Escalate to DevOps Engineer if manifests are invalid or incomplete."
+references: []
+hitl: true
+hitl_reason: "Human reviews deployment manifests for correctness"

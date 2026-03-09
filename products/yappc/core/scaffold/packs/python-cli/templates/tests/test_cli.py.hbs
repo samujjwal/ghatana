@@ -1,0 +1,14 @@
+from click.testing import CliRunner
+from {{snakeCase projectName}}.cli import main
+
+def test_hello_command():
+runner = CliRunner()
+result = runner.invoke(main, ["hello", "World"])
+assert result.exit_code == 0
+assert "Hello, World!" in result.output
+
+def test_info_command():
+runner = CliRunner()
+result = runner.invoke(main, ["info"])
+assert result.exit_code == 0
+assert "{{projectName}}" in result.output

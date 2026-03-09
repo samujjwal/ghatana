@@ -1,0 +1,227 @@
+name: User Acceptance Testing (UAT)
+workflow:
+  - id: uat_plan
+    agent: UATPlanAgent
+    role: QA Lead
+    inputs_spec:
+      - name: ready_for_uat_package
+        description: Input package indicating readiness for UAT, including scenarios and test data.
+        format: Package artifact
+    outputs_spec:
+      - name: uat_plan
+        description: Defined UAT scenarios and acceptance tests with user stories, test users, and prepared test data.
+        format: UAT plan artifact
+    agent_tasks:
+      - Define UAT scenarios and acceptance tests based on user stories.
+      - Prepare and verify test users and test data.
+    acceptance_criteria:
+      - UAT scenarios and acceptance tests are defined with user stories.
+      - Test users and test data are prepared and verified.
+    dependencies:
+      - ready_for_uat_package
+    failure_escalation:
+      - Escalate to QA Lead if UAT plan is incomplete or test data/users not ready.
+    references: []
+    hitl: true
+    hitl_reason: Human ensures UAT plan covers all acceptance scenarios and test data
+  - id: uat_execution
+    agent: UATExecutionAgent
+    role: Test User/QA
+    inputs_spec:
+      - name: uat_plan
+        description: UAT plan with defined scenarios, test users, and test data.
+        format: UAT plan artifact
+    outputs_spec:
+      - name: uat_results
+        description: Results from UAT execution including feedback and defect reports.
+        format: UAT results artifact
+    agent_tasks:
+      - Execute all UAT scenarios.
+      - Capture user feedback and defect reports.
+    acceptance_criteria:
+      - All UAT scenarios are executed.
+      - User feedback and defect reports are captured.
+    dependencies:
+      - uat_plan
+    failure_escalation:
+      - Escalate to QA or PM if UAT scenarios cannot be executed or feedback not captured.
+    references: []
+    hitl: true
+    hitl_reason: Human validation of UAT execution and feedback capture
+  - id: uat_readiness_checker
+    agent: ReadinessCheckerAgent
+    role: Gatekeeper Bot
+    inputs_spec:
+      - name: uat_plan
+        description: UAT plan artifact.
+        format: UAT plan artifact
+      - name: uat_results
+        description: UAT execution results artifact.
+        format: UAT results artifact
+    outputs_spec:
+      - name: uat_readiness_status
+        description: Readiness status for UAT exit including defect/criteria review.
+        format: Readiness status artifact
+    agent_tasks:
+      - Review UAT exit criteria, defect resolution, and acceptance.
+      - Confirm all exit criteria met and critical defects resolved or accepted with risk.
+    acceptance_criteria:
+      - All UAT exit criteria are met.
+      - Critical defects are resolved or accepted with risk.
+    dependencies:
+      - uat_plan
+      - uat_results
+    failure_escalation:
+      - Escalate to gatekeeper or PM if exit criteria not met.
+    references: []
+    hitl: false
+  - id: uat_progress_dashboard
+    agent: ProgressDashboardAgent
+    role: UAT Dashboard Owner
+    inputs_spec:
+      - name: uat_plan
+        description: UAT plan for dashboard visualization.
+        format: UAT plan artifact
+      - name: uat_results
+        description: UAT results for dashboard visualization.
+        format: UAT results artifact
+    outputs_spec:
+      - name: uat_progress_dashboard
+        description: Dashboard visualizing UAT scenarios, execution, blockers, and status.
+        format: Dashboard artifact
+    agent_tasks:
+      - Visualize UAT scenarios, execution results, and blockers.
+      - Update dashboard for team visibility and action.
+    acceptance_criteria:
+      - Dashboard is updated with UAT plan, execution, blockers, and status.
+      - Status is visible to UAT team and leadership.
+    dependencies:
+      - uat_plan
+      - uat_results
+    failure_escalation:
+      - Escalate to dashboard owner if not current or visible.
+    references: []
+    hitl: false
+  - id: user_observability_export
+    agent: ObservabilityExportAgent
+    role: SRE/Analytics
+    inputs_spec:
+      - name: user_progress_dashboard
+        description: User/UAT progress dashboard.
+        format: Dashboard artifact
+    outputs_spec:
+      - name: user_observability_export
+        description: Exported pipeline metrics/KPIs for UAT to analytics/monitoring.
+        format: Export artifact
+    agent_tasks:
+      - Export pipeline metrics/KPIs to external analytics/monitoring.
+      - Flag any gaps in observability.
+    acceptance_criteria:
+      - Pipeline metrics/KPIs exported to external analytics/monitoring.
+      - Gaps in observability are flagged.
+    dependencies:
+      - user_progress_dashboard
+    failure_escalation:
+      - Escalate to SRE/Analytics if metrics not exported or gaps missed.
+    references: []
+    hitl: false
+  - id: user_feedback_loop
+    agent: FeedbackLoopAgent
+    role: CI/CD Coach/Automation
+    inputs_spec:
+      - name: user_progress_dashboard
+        description: User/UAT progress dashboard for collecting feedback.
+        format: Dashboard artifact
+    outputs_spec:
+      - name: user_feedback_items
+        description: Issues and improvement suggestions from UAT routed to Retrospective.
+        format: List of feedback items
+    agent_tasks:
+      - Route all UAT/user issues and improvement suggestions to Retrospective.
+      - Track feedback for action and resolution.
+    acceptance_criteria:
+      - All issues and improvement suggestions are routed to Retrospective.
+      - Feedback is tracked for action and resolution.
+    dependencies:
+      - user_progress_dashboard
+    failure_escalation:
+      - Escalate to CI/CD coach if feedback is not acted on.
+    references: []
+    hitl: false
+  - id: uat_notification_agent
+    agent: NotificationAgent
+    role: QA/PMO Communications
+    inputs_spec:
+      - name: uat_progress_dashboard
+        description: UAT dashboard for notification triggers.
+        format: Dashboard artifact
+    outputs_spec:
+      - name: uat_notifications
+        description: Notifications to UAT stakeholders on key events and results.
+        format: List of notification objects
+    agent_tasks:
+      - Notify UAT stakeholders of key events and results.
+      - Track notification delivery for audit.
+    acceptance_criteria:
+      - Stakeholders are notified on key UAT events and results.
+      - Notification delivery is logged for audit.
+    dependencies:
+      - uat_progress_dashboard
+    failure_escalation:
+      - Escalate to QA/PMO if notifications not delivered or logged.
+    references: []
+    hitl: false
+  - id: uat_audit_log_agent
+    agent: AuditLogAgent
+    role: Compliance Bot
+    inputs_spec:
+      - name: uat_progress_dashboard
+        description: UAT dashboard for audit log correlation.
+        format: Dashboard artifact
+      - name: uat_notification_agent
+        description: Notification agent delivery log.
+        format: List of notification objects
+    outputs_spec:
+      - name: uat_audit_log
+        description: Audit log of UAT agent actions, results, notifications, and signoffs.
+        format: Audit log artifact
+    agent_tasks:
+      - Log all UAT agent actions, results, notifications, and signoffs.
+      - Track approval/rejection and defect signoff.
+    acceptance_criteria:
+      - All UAT agent actions, results, and notifications are logged.
+      - Approval/rejection and defect signoff are tracked.
+    dependencies:
+      - uat_progress_dashboard
+      - uat_notification_agent
+    failure_escalation:
+      - Escalate to compliance or audit lead if audit log is incomplete or inaccessible.
+    references: []
+    hitl: false
+  - id: uat_evidence_collector
+    agent: EvidenceCollectorAgent
+    role: Compliance Evidence Bot
+    inputs_spec:
+      - name: uat_audit_log
+        description: UAT audit log for evidence package.
+        format: Audit log artifact
+      - name: uat_results
+        description: UAT execution results for evidence.
+        format: UAT results artifact
+    outputs_spec:
+      - name: uat_evidence_package
+        description: Evidence package with all UAT signoffs, feedback, and results.
+        format: Evidence package artifact
+    agent_tasks:
+      - Collect all signoffs, feedback, and test results as evidence.
+      - Archive UAT results and link for traceability.
+    acceptance_criteria:
+      - UAT evidence package includes all signoffs, feedback, and test results.
+      - UAT results are archived and linked for traceability.
+    dependencies:
+      - uat_audit_log
+      - uat_results
+    failure_escalation:
+      - Escalate to compliance evidence lead if evidence package is incomplete or not archived.
+    references: []
+    hitl: false

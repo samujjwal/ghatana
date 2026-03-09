@@ -1,0 +1,111 @@
+id: training-needs-agent
+name: Training Needs Agent
+version: 1.0.0
+description: Identifies training and skill development needs. Recommends learning paths.
+
+metadata:
+  level: 3  # Worker
+  domain: learning
+  tags:
+    - training
+    - skill-development
+    - learning-paths
+    - capability-building
+
+generator:
+  type: PIPELINE
+  steps:
+    - name: gap_analysis
+      type: LLM
+      provider: ANTHROPIC
+      model: claude-3-5-sonnet-20241022
+      temperature: 0.3
+      max_tokens: 2000
+      prompt: |
+        You are the Training Needs Agent. Identify training needs:
+        
+        Current Skills: {{skills}}
+        Required Skills: {{required}}
+        Gaps Observed: {{gaps}}
+        Team Feedback: {{feedback}}
+        Industry Trends: {{trends}}
+        
+        Analyze:
+        1. Skill gaps (current vs required)
+        2. Priority areas (impact, urgency)
+        3. Learning resources available
+        4. Recommended training
+        5. Learning paths by role
+        6. Success metrics
+        
+        Output as JSON: {
+          skill_gaps: [{skill, current_level, required_level, priority}],
+          priority_areas,
+          training_recommendations: [{topic, format, resources}],
+          learning_paths: [{role, path}],
+          success_metrics
+        }
+    - name: plan_creation
+      type: TEMPLATE
+      template_path: templates/training-plan.ftl
+    - name: resource_mapping
+      type: SERVICE_CALL
+      service: learning-service
+      endpoint: /resources/match
+
+memory:
+  episodic:
+    enabled: true
+    retention_days: 365
+    categories:
+      - assessments
+      - plans
+      - outcomes
+  semantic:
+    enabled: true
+    categories:
+      - skill-frameworks
+      - learning-resources
+      - effectiveness-patterns
+  procedural:
+    enabled: true
+    categories:
+      - assessment-methods
+      - gap-analysis-rules
+      - path-design-rules
+
+tools:
+  - skill_assessor
+  - resource_finder
+  - path_builder
+
+capabilities:
+  - gap-analysis
+  - training-recommendation
+  - learning-path-design
+  - resource-matching
+
+routing:
+  input_types:
+    - skill-assessment
+    - training-request
+    - gap-report
+  output_types:
+    - training-plan
+    - learning-path
+    - resource-list
+
+delegation:
+  can_delegate_to: []
+  escalates_to:
+    - learning-orchestrator-agent
+
+governance:
+  requires_approval: false
+  can_block: false
+  audit_trail: standard
+
+performance:
+  expected_latency_ms: 3000
+  max_latency_ms: 8000
+  timeout_ms: 15000

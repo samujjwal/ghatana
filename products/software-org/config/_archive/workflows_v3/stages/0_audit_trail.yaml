@@ -1,0 +1,58 @@
+# Audit Trail Stage - v3 Operator-Based Definition
+# Uses cross-cutting operators for audit and compliance tracking
+name: Audit Trail
+description: Comprehensive audit logging across all stages
+domain: operate
+
+# Cross-cutting operators
+cross_cutting:
+  - ref: cross-cutting/audit_log
+    params:
+      stage: audit_trail
+  - ref: cross-cutting/evidence_collector
+    params:
+      stage: audit_trail
+
+# Workflow sequence (audit trail runs continuously)
+workflow:
+  # Audit Log Aggregation
+  - step: aggregate_audit_logs
+    operator: cross-cutting/audit_log
+    params:
+      stage: audit_trail
+    inputs:
+      - name: all_stage_events
+    outputs:
+      - name: aggregated_audit_log
+
+  # Evidence Aggregation
+  - step: aggregate_evidence
+    operator: cross-cutting/evidence_collector
+    params:
+      stage: audit_trail
+    inputs:
+      - name: all_evidence_packages
+    outputs:
+      - name: aggregated_evidence
+    depends_on: [aggregate_audit_logs]
+
+  # Audit Report Generation
+  - step: generate_audit_report
+    type: automated
+    description: Generate comprehensive audit report
+    inputs:
+      - name: aggregated_audit_log
+      - name: aggregated_evidence
+    outputs:
+      - name: audit_report
+    depends_on: [aggregate_evidence]
+
+# Stage entry/exit criteria
+entry_criteria:
+  - Audit logging enabled
+  - Events flowing
+
+exit_criteria:
+  - Audit logs aggregated
+  - Evidence collected
+  - Audit report available

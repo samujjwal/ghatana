@@ -1,0 +1,89 @@
+version: '3.8'
+
+services:
+  # Frontend Dashboard
+  dashboard:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      target: production
+    container_name: guardian-dashboard
+    ports:
+      - "8080:8080"
+    environment:
+      - NODE_ENV=production
+    networks:
+      - guardian-network
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "wget", "--quiet", "--tries=1", "--spider", "http://localhost:8080"]
+      interval: 30s
+      timeout: 3s
+      retries: 3
+      start_period: 5s
+    depends_on:
+      - backend
+
+  # Backend API (placeholder - configure path to backend)
+  backend:
+    build:
+      context: ../backend
+      dockerfile: Dockerfile
+    container_name: guardian-backend
+    ports:
+      - "3000:3000"
+    environment:
+      - NODE_ENV=production
+      - DATABASE_URL=${DATABASE_URL:-postgresql://guardian:guardian@db:5432/guardian}
+      - JWT_SECRET=${JWT_SECRET:-change-this-secret-in-production}
+    networks:
+      - guardian-network
+    restart: unless-stopped
+    depends_on:
+      - db
+
+  # PostgreSQL Database
+  db:
+    image: postgres:15-alpine
+    container_name: guardian-db
+    environment:
+      - POSTGRES_USER=${POSTGRES_USER:-guardian}
+      - POSTGRES_PASSWORD=${POSTGRES_PASSWORD:-guardian}
+      - POSTGRES_DB=${POSTGRES_DB:-guardian}
+    volumes:
+      - postgres-data:/var/lib/postgresql/data
+      - ./init-db.sql:/docker-entrypoint-initdb.d/init.sql
+    networks:
+      - guardian-network
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U guardian"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # Redis (for caching and sessions)
+  redis:
+    image: redis:7-alpine
+    container_name: guardian-redis
+    command: redis-server --appendonly yes
+    volumes:
+      - redis-data:/data
+    networks:
+      - guardian-network
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 3s
+      retries: 3
+
+networks:
+  guardian-network:
+    driver: bridge
+
+volumes:
+  postgres-data:
+    driver: local
+  redis-data:
+    driver: local

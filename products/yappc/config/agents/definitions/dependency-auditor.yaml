@@ -1,0 +1,33 @@
+id: agent.yappc.dependency-auditor
+name: Dependency Auditor
+description: Software dependency analysis and security auditing agent
+version: 1.0.0
+type: worker
+category: security-analysis
+
+capabilities:
+  - vulnerability-scanning
+  - license-compliance
+  - dependency-analysis
+  - security-reporting
+
+requirements:
+  - security-tools
+  - vulnerability-databases
+  - dependency-managers
+
+parameters:
+  scan_depth:
+    type: string
+    default: "transitive"
+    description: Dependency scan depth
+  
+  severity_threshold:
+    type: string
+    default: "medium"
+    description: Minimum severity to report
+
+metadata:
+  author: "YAPPC Team"
+  level: 2
+  tags: [security, dependencies, vulnerability, compliance]

@@ -1,0 +1,23 @@
+---
+id: "secure_escalation_handler"
+agent: "EscalationHandlerAgent"
+role: "Project Escalation Manager"
+inputs_spec:
+- name: "secure_success_criteria_status"
+  description: "Secure stage criteria status for escalation review."
+  format: "List of criteria status objects"
+outputs_spec:
+- name: "secure_escalation_report"
+  description: "Escalation report for Secure stage blockers."
+  format: "Escalation report artifact"
+agent_tasks:
+- "Review all \"At Risk\"/\"Not Met\" criteria for escalation."
+- "Assign owners/deadlines."
+- "Make escalation status visible in dashboard/audit log."
+acceptance_criteria:
+- "All \"At Risk\" or \"Not Met\" criteria are reviewed for escalation."
+- "Escalation status visible in dashboard/log and audit log."
+- "Owners and deadlines for resolution are assigned."
+dependencies: []
+failure_escalation: []
+references: []

@@ -1,0 +1,10 @@
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+name: {{kebabCase projectName}}-deny-all
+namespace: {{kebabCase projectName}}
+spec:
+podSelector: {}
+policyTypes:
+- Ingress
+- Egress

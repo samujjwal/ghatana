@@ -1,0 +1,105 @@
+id: knowledge-canonicalization-agent
+name: Knowledge Canonicalization Agent
+version: 1.0.0
+description: Deduplicates, normalizes, and canonicalizes knowledge across agent memories. Prevents knowledge fragmentation and ensures single source of truth.
+
+metadata:
+  level: 2  # Domain Expert
+  domain: knowledge-management
+  tags:
+    - knowledge-dedup
+    - normalization
+    - canonicalization
+    - data-quality
+
+generator:
+  type: PIPELINE
+  steps:
+    - name: knowledge_extraction
+      type: SERVICE_CALL
+      service: memory-service
+      endpoint: /knowledge/recent
+    - name: similarity_detection
+      type: SERVICE_CALL
+      service: embedding-service
+      endpoint: /embeddings/similarity
+      description: Find duplicate/similar knowledge entries
+    - name: canonical_form_generation
+      type: LLM
+      provider: ANTHROPIC
+      model: claude-3-5-sonnet-20241022
+      temperature: 0.1
+      max_tokens: 2000
+      prompt: |
+        You are the Knowledge Canonicalization Agent. Merge these duplicate/similar knowledge entries:
+        
+        Entries: {{similar_entries}}
+        
+        Create a canonical form that:
+        1. Preserves all unique information
+        2. Resolves conflicts using most recent/authoritative source
+        3. Uses standard terminology and format
+        4. Links to original sources
+        
+        Output as JSON: {canonical_entry, merged_sources, conflicts_resolved, confidence}
+    - name: knowledge_update
+      type: SERVICE_CALL
+      service: memory-service
+      endpoint: /knowledge/update
+
+memory:
+  episodic:
+    enabled: true
+    retention_days: 180
+    categories:
+      - canonicalization-runs
+      - merge-decisions
+      - conflict-resolutions
+  semantic:
+    enabled: true
+    categories:
+      - canonical-knowledge
+      - terminology-standards
+      - knowledge-schemas
+  procedural:
+    enabled: true
+    categories:
+      - canonicalization-rules
+      - conflict-resolution-policies
+      - merge-strategies
+
+tools:
+  - embedding_similarity_search
+  - knowledge_graph_query
+  - term_normalization
+
+capabilities:
+  - knowledge-deduplication
+  - conflict-resolution
+  - terminology-standardization
+  - source-linking
+
+routing:
+  input_types:
+    - knowledge-batch
+    - memory-snapshot
+    - scheduled-trigger
+  output_types:
+    - canonical-knowledge
+    - merge-report
+    - conflict-resolution-log
+
+delegation:
+  can_delegate_to: []
+  escalates_to:
+    - ontology-management-agent
+
+governance:
+  requires_approval: false
+  can_block: false
+  audit_trail: standard
+
+performance:
+  expected_latency_ms: 5000
+  max_latency_ms: 15000
+  timeout_ms: 30000

@@ -1,0 +1,38 @@
+const { dirname, join } = require('path');
+const { mergeConfig } = require('vite');
+
+const __dirnamePath = __dirname;
+
+module.exports = {
+  stories: [
+    '../src/**/*.mdx',
+    '../src/**/*.stories.@(mjs|ts|tsx)',
+    '../../canvas/src/**/*.stories.@(mjs|ts|tsx)',
+    '../../diagram/src/**/*.stories.@(mjs|ts|tsx)',
+    '../../designer/src/**/*.stories.@(mjs|ts|tsx)',
+    '../../../apps/web/src/**/*.stories.@(mjs|ts|tsx)',
+  ],
+  addons: [
+    '@storybook/addon-links',
+    '@storybook/addon-a11y',
+    '@storybook/addon-themes',
+    '@storybook/addon-docs',
+  ],
+  framework: {
+    name: '@storybook/react-vite',
+    options: {},
+  },
+  viteFinal: async (configArg) => {
+    return mergeConfig(configArg, {
+      resolve: {
+        alias: {
+          '@yappc/ui': join(__dirnamePath, '../src'),
+          '@yappc/canvas': join(__dirnamePath, '../../canvas/src'),
+          '@yappc/diagram': join(__dirnamePath, '../../diagram/src'),
+          '@yappc/designer': join(__dirnamePath, '../../designer/src'),
+          'vitest': join(__dirnamePath, './vitest-stub.js'),
+        },
+      },
+    });
+  },
+};

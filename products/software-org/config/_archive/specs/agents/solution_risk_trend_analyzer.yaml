@@ -1,0 +1,46 @@
+id: solution_risk_trend_analyzer
+agent: RiskTrendAnalyzerAgent
+role: Risk Intelligence Bot
+inputs_spec:
+- name: solution_escalation_report
+  description: Solution escalation report artifact.
+  format: Structured escalation report
+- name: solution_progress_dashboard
+  description: Solution progress dashboard artifact.
+  format: Dashboard artifact
+- name: solution_stage_milestone
+  description: Solution stage milestone plan.
+  format: List of milestone objects
+outputs_spec:
+- name: solution_risk_trend_report
+  description: Trend report on risks, escalations, and blockers over time, with recommendations.
+  format: Structured risk trend report (trends, recurring_risks, classification, recommendations)
+  example: 'trends: ["Escalations decreasing"]
+
+    recurring_risks: ["Latency"]
+
+    classification: ["Technical"]
+
+    recommendations: ["Add caching"]
+
+    '
+agent_tasks:
+- Trend all risks, escalations, and blockers over time.
+- Automatically flag and classify recurring or systemic risks.
+- Share risk trend report with PMO and leadership.
+- Include recommendations for mitigation or process changes.
+acceptance_criteria:
+- All risks, escalations, and blockers are trended over time.
+- Recurring or systemic risks are automatically flagged and classified.
+- Risk trend report is shared with PMO and leadership.
+- Recommendations for mitigation or process changes are included.
+dependencies:
+- solution_escalation_report
+- solution_progress_dashboard
+- solution_stage_milestone
+failure_escalation:
+- Escalate to risk intelligence lead if trends are not actionable.
+references: []
+hitl: false
+
+# [!!] No custom enhancement found.

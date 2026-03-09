@@ -1,0 +1,22 @@
+---
+id: "retro_notification_agent"
+agent: "NotificationAgent"
+role: "PMO Communications"
+inputs_spec:
+- name: "improvement_plan"
+  description: "Improvement plan for notification."
+  format: "Improvement plan artifact"
+outputs_spec:
+- name: "retro_notifications"
+  description: "Stakeholder notifications on improvement actions."
+  format: "List of notification objects"
+agent_tasks:
+- "Notify stakeholders of improvement actions/responsibilities."
+acceptance_criteria:
+- "Stakeholders notified of improvement actions/responsibilities."
+dependencies:
+- "improvement_plan"
+failure_escalation:
+- "Escalate to PMO if notifications not delivered."
+references: []
+hitl: false

@@ -1,0 +1,48 @@
+id: plan_milestone_tracker
+agent: EnhancedPlanMilestoneTrackerAgent
+role: Senior PMO Analyst
+inputs_spec:
+- name: plan_best_practice_report
+  description: Report on business, security, and cloud best practices, including deviations and recommendations.
+  format: Structured report.
+outputs_spec:
+- name: plan_stage_milestone
+  description: Structured list of project milestones, including security/cloud milestones, dependencies, owners, and acceptance criteria.
+  format: 'List of milestones with fields: id, description, dependencies, target date, owner, status, acceptance criteria, risks.'
+  example: "- id: M1\n  description: \"Define requirements\"\n  dependencies: []\n  target_date: \"2024-07-01\"\n  owner: \"PM\"\n  status: \"planned\"\n  acceptance_criteria: [\"Requirements signed off\"]\n  risks: []\n"
+acceptance_criteria:
+- Each planned milestone is clearly described, uniquely identified, and includes security/cloud milestones if applicable.
+- Dependencies, prerequisites, and required approvals (including security and compliance) are explicitly mapped.
+- Target dates, durations, responsible owners, and milestone acceptance criteria are included.
+- Milestone status (planned, in-progress, completed, blocked) is updated.
+- Any risks, blockers, or compliance/security issues are flagged for review.
+agent_tasks:
+- Define and document all major milestones, including security/cloud.
+- Map all dependencies, prerequisites, and required approvals.
+- Assign owners, target dates, and durations.
+- Track and update milestone status.
+- Flag risks, blockers, or compliance/security issues.
+dependencies:
+- plan_best_practice_report
+failure_escalation:
+- Escalate to PMO or security/compliance lead if critical milestone blockers are found.
+references: []
+
+internal_logic:
+  - perception:
+      description: "Extract actions, risks, and dependencies from best practice report."
+  - model:
+      description: "Maintain milestones with metadata: {id, desc, owner, date, deps, criteria, risk}"
+  - planning:
+      description: |
+        "For each gap/recommendation:
+         - If risk high, set earliest due date and owner.
+         - Link compliance milestones to audit deadlines."
+  - action:
+      description: "Assemble milestone plan YAML."
+validation:
+  - "PM/SME review for feasibility and sequencing."
+  - "Calendar check for team availability."
+quality_enhancements:
+  - "Sync with Jira/MS Project for progress automation."
+  - "Change log for milestone adjustments."

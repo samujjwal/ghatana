@@ -1,0 +1,39 @@
+---
+id: "operate_audit_log_agent"
+agent: "AuditLogAgent"
+role: "Compliance Bot"
+inputs_spec:
+- name: "operate_progress_dashboard"
+  description: "Operations progress dashboard for audit logging."
+  format: "Dashboard artifact"
+- name: "operate_notification_agent"
+  description: "Notification logs for audit."
+  format: "List of notification objects"
+- name: "operate_success_criteria_status"
+  description: "Operational success criteria status for audit correlation."
+  format: "List of criteria status objects"
+- name: "operate_stage_milestone"
+  description: "Operational milestone plan for audit completeness."
+  format: "List of milestone objects"
+outputs_spec:
+- name: "operate_audit_log"
+  description: "Audit log of agent actions, incidents, notifications, and signoffs."
+  format: "Audit log artifact"
+agent_tasks:
+- "Record every action, transition, and event with timestamp, user/agent, and artifact\
+  \ link."
+- "Log major events, incidents, signoffs, escalations, and notifications."
+- "Cryptographically sign and archive logs for compliance."
+acceptance_criteria:
+- "All actions and events are logged and archived for compliance."
+- "Major events and signoffs are included in audit log."
+- "Logs are signed and archived securely."
+dependencies:
+- "operate_progress_dashboard"
+- "operate_notification_agent"
+- "operate_success_criteria_status"
+- "operate_stage_milestone"
+failure_escalation:
+- "Escalate to compliance/audit lead if logs are incomplete/inaccessible."
+references: []
+hitl: false

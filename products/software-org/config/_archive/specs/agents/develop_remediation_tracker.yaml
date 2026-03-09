@@ -1,0 +1,30 @@
+---
+id: "develop_remediation_tracker"
+agent: "RemediationTrackerAgent"
+role: "Exception Bot"
+inputs_spec:
+- name: "develop_success_criteria_status"
+  description: "Success criteria status report."
+  format: "List of criteria status objects"
+- name: "develop_escalation_report"
+  description: "Escalation report."
+  format: "Escalation report artifact"
+outputs_spec:
+- name: "develop_remediation_status"
+  description: "Remediation tracker/status for failed or at-risk items."
+  format: "Remediation status artifact"
+agent_tasks:
+- "Track all failed or at-risk items for remediation."
+- "Assign owners, deadlines, actions."
+- "Update status until resolution or final escalation."
+acceptance_criteria:
+- "All failed or at-risk items are tracked for remediation."
+- "Owners, deadlines, and actions are recorded."
+- "Remediation status is updated until resolution or final escalation."
+dependencies:
+- "develop_success_criteria_status"
+- "develop_escalation_report"
+failure_escalation:
+- "Escalate to Dev Lead or PM if remediation is not completed."
+references: []
+hitl: false

@@ -1,0 +1,12 @@
+{
+  "manifest": {
+    "id": "example-addon",
+    "name": "Example Addon",
+    "version": "0.1.0",
+    "entry": "index.js",
+    "capabilities": ["page-analysis"]
+  },
+  "files": {
+    "index.js": "(function(){\n  console.log('Example addon injected');\n  window.__dcmaar_example = true;\n})();"
+  }
+}

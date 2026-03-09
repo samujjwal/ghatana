@@ -1,0 +1,33 @@
+//! Database migrations module
+//!
+//! Uses sqlx embedded migrations
+
+use sqlx::PgPool;
+
+/// Run database migrations
+pub async fn run_migrations(pool: &PgPool) -> Result<(), sqlx::migrate::MigrateError> {
+    tracing::info!("🔄 Running database migrations...");
+
+    sqlx::migrate!("./migrations")
+    .run(pool)
+    .await?;
+
+    tracing::info!("✅ Migrations completed successfully");
+    Ok(())
+    }
+
+    /// Check migration status
+    pub async fn check_migrations(pool: &PgPool) -> Result<Vec<sqlx::migrate::AppliedMigration>, sqlx::Error> {
+        let applied = sqlx::query_as::<_, (i64, String)>(
+            "SELECT version, description FROM _sqlx_migrations ORDER BY version"
+            )
+            .fetch_all(pool)
+            .await?;
+
+            tracing::info!("📋 Found {} applied migrations", applied.len());
+            for (version, description) in &applied {
+            tracing::debug!(" - V{}: {}", version, description);
+            }
+
+            Ok(vec![]) // Return proper type in real implementation
+            }

@@ -1,0 +1,121 @@
+# SDR Agent Configuration
+apiVersion: virtualorg.ghatana.com/v1
+kind: Agent
+metadata:
+  name: sdr-agent
+  labels:
+    level: individual-contributor
+    department: sales
+    ai-enabled: "true"
+
+spec:
+  displayName: "Sales Development Representative"
+  description: |
+    SDR responsible for lead generation, outbound prospecting,
+    lead qualification, and booking meetings for Account Executives.
+
+  role:
+    name: SDR
+    level: individual
+    title: "Sales Development Representative"
+
+  department: sales
+  reportingTo: sales-director-agent
+  directReports: []
+
+  authority:
+    decisionScope: individual
+    budgetLimit: 0
+    canApprove:
+      - lead_qualification
+      - meeting_scheduling
+    canEscalateTo:
+      - account-executive-agent
+      - sales-director-agent
+
+  capabilities:
+    primary:
+      - lead_generation
+      - outbound_prospecting
+      - lead_qualification
+      - meeting_scheduling
+      - crm_management
+    secondary:
+      - market_research
+      - email_campaigns
+
+  ai:
+    enabled: true
+    provider: openai
+    model: gpt-4-turbo
+
+    systemPrompt: |
+      You are a Sales Development Representative in a software organization.
+
+      ## Your Role
+      You generate and qualify leads, conduct outbound prospecting,
+      and book meetings for Account Executives.
+
+      ## Your Responsibilities
+      1. Research and identify prospects
+      2. Conduct outbound outreach (email, phone, social)
+      3. Qualify leads using BANT criteria
+      4. Book meetings for Account Executives
+      5. Maintain accurate CRM data
+      6. Meet activity and meeting quotas
+
+      ## Lead Qualification (BANT)
+      - Budget: Can they afford the solution?
+      - Authority: Are they a decision maker?
+      - Need: Do they have a problem we solve?
+      - Timeline: When do they need a solution?
+
+      ## When to Escalate
+      Escalate to Account Executive when:
+      - Lead is qualified and ready for demo
+      - Prospect requests pricing information
+      - Inbound lead from target account
+
+    responseConfig:
+      maxTokens: 1200
+      temperature: 0.6
+      topP: 0.9
+
+    tools:
+      - name: research_prospect
+        enabled: true
+      - name: send_outreach
+        enabled: true
+      - name: qualify_lead
+        enabled: true
+      - name: book_meeting
+        enabled: true
+
+    memory:
+      type: short-term
+      contextWindow: 20
+
+  workload:
+    maxConcurrentTasks: 10
+    taskPrioritization: fifo
+
+  availability:
+    schedule:
+      type: business-hours
+    responseTime:
+      target: PT30M
+      maximum: PT2H
+
+  hitl:
+    requireApprovalFor: []
+    approvalChain: []
+
+  subscriptions:
+    - event: inbound_lead_created
+      action: qualify_lead
+    - event: campaign_launched
+      action: execute_outreach
+
+  publications:
+    - event: lead_qualified
+    - event: meeting_booked

@@ -1,0 +1,78 @@
+/**
+* Tauri bridge module - Type-safe wrappers for Tauri IPC commands
+*/
+import { invoke } from "@tauri-apps/api/core";
+import { getVersion, getTauriVersion } from "@tauri-apps/api/app";
+import { platform, arch } from "@tauri-apps/plugin-os";
+
+/**
+* Greeting request payload
+*/
+export interface GreetRequest {
+name: string;
+}
+
+/**
+* Greeting response from Rust backend
+*/
+export interface GreetResponse {
+message: string;
+}
+
+/**
+* Application information
+*/
+export interface AppInfo {
+appVersion: string;
+tauriVersion: string;
+platform: string;
+arch: string;
+}
+
+/**
+* Invoke the greet command on the Rust backend
+*/
+export async function greet(name: string): Promise<string> {
+    const response = await invoke<string>("greet", { name });
+        return response;
+        }
+
+        /**
+        * Get application and system information
+        */
+        export async function getAppInfo(): Promise<AppInfo> {
+            const [appVersion, tauriVersion, platformName, archName] = await Promise.all([
+            getVersion(),
+            getTauriVersion(),
+            platform(),
+            arch(),
+            ]);
+
+            return {
+            appVersion,
+            tauriVersion,
+            platform: platformName,
+            arch: archName,
+            };
+            }
+
+            /**
+            * Example of a custom command that returns complex data
+            */
+            export async function getSystemStats(): Promise<Record<string, unknown>> {
+                return invoke<Record<string, unknown>>("get_system_stats");
+                    }
+
+                    /**
+                    * Store data in the Rust backend state
+                    */
+                    export async function storeData(key: string, value: string): Promise<void> {
+                        await invoke("store_data", { key, value });
+                        }
+
+                        /**
+                        * Retrieve data from the Rust backend state
+                        */
+                        export async function retrieveData(key: string): Promise<string | null> {
+                            return invoke<string | null>("retrieve_data", { key });
+                                }

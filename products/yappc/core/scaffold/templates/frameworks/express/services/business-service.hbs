@@ -1,0 +1,183 @@
+{{!--
+  Express.js Business Service Template
+  
+  Variables:
+  - serviceName: Name of the service
+  - entityName: Name of the entity
+  - modelName: Name of the model/repository
+  - hasCache: Whether to include caching
+  - hasLogging: Whether to include logging
+--}}
+{{#if hasLogging}}
+import { logger } from '../utils/logger';
+{{/if}}
+{{#if hasCache}}
+import { cache } from '../utils/cache';
+{{/if}}
+import { {{modelName}} } from '../models/{{kebabCase modelName}}';
+import { {{entityName}} } from '../types/{{kebabCase entityName}}';
+
+/**
+ * Business service for {{entityName}} operations.
+ * 
+ * @doc.type service
+ * @doc.purpose Business logic for {{entityName}} management
+ * @doc.layer business
+ * @doc.pattern Service Layer
+ */
+export class {{serviceName}} {
+  {{#if hasCache}}
+  private readonly cachePrefix = '{{kebabCase entityName}}:';
+  private readonly cacheTTL = 3600; // 1 hour
+
+  {{/if}}
+  /**
+   * Create a new {{entityName}}.
+   */
+  async create(data: Omit<{{entityName}}, 'id'>): Promise<{{entityName}}> {
+    {{#if hasLogging}}
+    logger.info('Creating new {{entityName}}', { data });
+    {{/if}}
+
+    try {
+      const {{camelCase entityName}} = await {{modelName}}.create(data);
+      
+      {{#if hasCache}}
+      await cache.del(`${this.cachePrefix}list`);
+      {{/if}}
+      
+      {{#if hasLogging}}
+      logger.info('{{entityName}} created', { id: {{camelCase entityName}}.id });
+      {{/if}}
+      
+      return {{camelCase entityName}};
+    } catch (error) {
+      {{#if hasLogging}}
+      logger.error('Failed to create {{entityName}}', { error, data });
+      {{/if}}
+      throw error;
+    }
+  }
+
+  /**
+   * Find {{entityName}} by ID.
+   */
+  async findById(id: string): Promise<{{entityName}} | null> {
+    {{#if hasCache}}
+    const cacheKey = `${this.cachePrefix}${id}`;
+    const cached = await cache.get<{{entityName}}>(cacheKey);
+    if (cached) {
+      {{#if hasLogging}}
+      logger.debug('{{entityName}} found in cache', { id });
+      {{/if}}
+      return cached;
+    }
+
+    {{/if}}
+    const {{camelCase entityName}} = await {{modelName}}.findById(id);
+    
+    {{#if hasCache}}
+    if ({{camelCase entityName}}) {
+      await cache.set(cacheKey, {{camelCase entityName}}, this.cacheTTL);
+    }
+    {{/if}}
+    
+    return {{camelCase entityName}};
+  }
+
+  /**
+   * Find all {{entityName}}s with pagination.
+   */
+  async findAll(options: {
+    page: number;
+    limit: number;
+    search?: string;
+  }): Promise<{ data: {{entityName}}[]; total: number; page: number; totalPages: number }> {
+    {{#if hasLogging}}
+    logger.debug('Finding all {{entityName}}s', { options });
+    {{/if}}
+
+    const skip = (options.page - 1) * options.limit;
+    
+    const query = options.search
+      ? { $text: { $search: options.search } }
+      : {};
+
+    const [data, total] = await Promise.all([
+      {{modelName}}.find(query).skip(skip).limit(options.limit),
+      {{modelName}}.countDocuments(query),
+    ]);
+
+    return {
+      data,
+      total,
+      page: options.page,
+      totalPages: Math.ceil(total / options.limit),
+    };
+  }
+
+  /**
+   * Update {{entityName}}.
+   */
+  async update(id: string, data: Partial<{{entityName}}>): Promise<{{entityName}} | null> {
+    {{#if hasLogging}}
+    logger.info('Updating {{entityName}}', { id, data });
+    {{/if}}
+
+    try {
+      const {{camelCase entityName}} = await {{modelName}}.findByIdAndUpdate(id, data, {
+        new: true,
+        runValidators: true,
+      });
+
+      {{#if hasCache}}
+      if ({{camelCase entityName}}) {
+        await cache.del(`${this.cachePrefix}${id}`);
+        await cache.del(`${this.cachePrefix}list`);
+      }
+      {{/if}}
+
+      {{#if hasLogging}}
+      logger.info('{{entityName}} updated', { id });
+      {{/if}}
+
+      return {{camelCase entityName}};
+    } catch (error) {
+      {{#if hasLogging}}
+      logger.error('Failed to update {{entityName}}', { error, id, data });
+      {{/if}}
+      throw error;
+    }
+  }
+
+  /**
+   * Delete {{entityName}}.
+   */
+  async delete(id: string): Promise<boolean> {
+    {{#if hasLogging}}
+    logger.info('Deleting {{entityName}}', { id });
+    {{/if}}
+
+    try {
+      const result = await {{modelName}}.findByIdAndDelete(id);
+      
+      {{#if hasCache}}
+      if (result) {
+        await cache.del(`${this.cachePrefix}${id}`);
+        await cache.del(`${this.cachePrefix}list`);
+      }
+      {{/if}}
+
+      {{#if hasLogging}}
+      logger.info('{{entityName}} deleted', { id, success: !!result });
+      {{/if}}
+
+      return !!result;
+    } catch (error) {
+      {{#if hasLogging}}
+      logger.error('Failed to delete {{entityName}}', { error, id });
+      {{/if}}
+      throw error;
+    }
+  }
+}

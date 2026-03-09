@@ -1,0 +1,44 @@
+plugins {
+    id 'java-library'
+}
+
+description = 'AI Platform - LLM Gateway with routing, caching, and rate limiting'
+
+dependencies {
+    // AI Integration (embeddings, completions)
+    api project(':libs:ai-integration')
+
+    // State (for prompt cache)
+    api project(':libs:state')
+
+    // Observability
+    api project(':libs:observability')
+
+    // Common Utils
+    api project(':libs:common-utils')
+
+    // ActiveJ
+    implementation libs.activej.promise
+    implementation libs.activej.eventloop
+
+    // Jackson
+    implementation libs.jackson.databind
+    implementation libs.jackson.datatype.jsr310
+
+    // Logging
+    implementation libs.log4j.core
+    implementation libs.log4j.slf4j.impl
+
+    // Testing
+    testImplementation project(':libs:activej-test-utils')
+    testImplementation project(':libs:test-utils')
+    testImplementation libs.junit.jupiter.api
+    testImplementation libs.junit.jupiter.engine
+    testImplementation libs.assertj.core
+    testImplementation libs.mockito.core
+}
+
+test {
+    useJUnitPlatform()
+}
+

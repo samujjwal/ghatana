@@ -1,0 +1,30 @@
+---
+id: "compliance_readiness_checker"
+agent: "ReadinessCheckerAgent"
+role: "Gatekeeper Bot"
+inputs_spec:
+- name: "compliance_validation_report"
+  description: "Compliance validation report for readiness assessment."
+  format: "Compliance validation report artifact"
+- name: "regulatory_evidence_package"
+  description: "Regulatory evidence package for readiness check."
+  format: "Evidence package artifact"
+outputs_spec:
+- name: "compliance_readiness_status"
+  description: "Status showing if all mandatory compliance criteria are met and all\
+    \ audit findings are closed."
+  format: "Readiness status artifact"
+agent_tasks:
+- "Assess whether all mandatory compliance criteria are met."
+- "Verify that no open audit findings remain."
+acceptance_criteria:
+- "All mandatory compliance criteria are met."
+- "No open audit findings remain."
+dependencies:
+- "compliance_validation_report"
+- "regulatory_evidence_package"
+failure_escalation:
+- "Escalate to Compliance or Audit Lead if criteria are not met or audit findings\
+  \ remain."
+references: []
+hitl: false

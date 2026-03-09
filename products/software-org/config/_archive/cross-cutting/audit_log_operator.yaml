@@ -1,0 +1,121 @@
+---
+# Cross-Cutting Audit Log Operator Template
+# Replaces 16 stage-specific files: build_audit_log_agent.yaml, test_audit_log_agent.yaml, etc.
+#
+# Usage: Instantiate with stage parameter to create stage-specific audit logger
+# Parameters:
+#   - stage: The stage name (plan, solution, design, develop, build, test, secure,
+#            compliance, uat, package, deploy, operate, monitor, dr, release, retro)
+#
+# @doc.type operator-template
+# @doc.purpose Cross-cutting audit logging for all DevSecOps stages
+# @doc.layer operations
+# @doc.pattern Template
+
+template:
+  id: "${stage}_audit_log_agent"
+  version: "1.0.0"
+
+operator:
+  type: "AuditLogOperator"
+  role: "Compliance Bot"
+  category: "cross-cutting"
+
+parameters:
+  stage:
+    type: "string"
+    required: true
+    description: "Stage name for which to create audit log operator"
+    allowed_values:
+      - "plan"
+      - "solution"
+      - "design"
+      - "develop"
+      - "build"
+      - "test"
+      - "secure"
+      - "compliance"
+      - "uat"
+      - "package"
+      - "deploy"
+      - "operate"
+      - "monitor"
+      - "dr"
+      - "release"
+      - "retro"
+
+inputs_spec:
+  - name: "${stage}_progress_dashboard"
+    description: "${stage} progress dashboard for audit logging."
+    format: "Dashboard artifact"
+    required: true
+
+  - name: "${stage}_notification_agent"
+    description: "Notification delivery logs for ${stage} stage."
+    format: "List of notification objects"
+    required: true
+
+  - name: "${stage}_success_criteria_status"
+    description: "Status for all ${stage} stage success criteria."
+    format: "List of criteria status objects"
+    required: true
+
+  - name: "${stage}_stage_milestone"
+    description: "${stage} milestone plan for audit completeness."
+    format: "List of milestone objects"
+    required: false
+
+outputs_spec:
+  - name: "${stage}_audit_log"
+    description: "Complete, cryptographically signed audit log of ${stage} stage agent actions, transitions, signoffs, escalations, and notifications."
+    format: "Audit log artifact"
+    retention: "7 years" # Compliance requirement
+
+  - name: "${stage}_audit_events"
+    description: "Stream of audit events for real-time monitoring"
+    format: "Event stream"
+    event_type: "ghatana.operations.audit.${stage}"
+
+agent_tasks:
+  - "Record every agent action and transition with timestamp, user/agent, and artifact link."
+  - "Log major events (signoffs, escalations, notifications, exceptions)."
+  - "Cryptographically sign and archive logs in a secure, tamper-evident location."
+  - "Ensure audit log is accessible for compliance review."
+  - "Emit audit events to EventCloud for real-time observability."
+
+acceptance_criteria:
+  - "Every agent action and transition is recorded."
+  - "Major events are explicitly logged."
+  - "Logs are cryptographically signed and archived."
+  - "Audit log is accessible for compliance review."
+  - "All audit events are emitted to EventCloud."
+
+dependencies:
+  - "${stage}_progress_dashboard"
+  - "${stage}_notification_agent"
+  - "${stage}_success_criteria_status"
+
+failure_escalation:
+  - "Escalate to Compliance/Audit Lead if logs are incomplete or inaccessible."
+  - "Emit ${stage}.audit.failure event to EventCloud."
+
+config:
+  # Cryptographic settings
+  signature_algorithm: "SHA-256"
+  archive_format: "JSONL"
+
+  # Retention settings
+  retention_days: 2555 # ~7 years for compliance
+  archive_location: "s3://ghatana-audit-logs/${stage}/"
+
+  # Observability
+  metrics_enabled: true
+  tracing_enabled: true
+  event_cloud_topic: "ghatana.operations.audit"
+
+references:
+  - "SOC 2 Type II - Audit Logging Requirements"
+  - "ISO 27001 - Information Security Controls"
+  - "GDPR Article 30 - Records of Processing Activities"
+
+hitl: false # Human-in-the-loop not required for logging

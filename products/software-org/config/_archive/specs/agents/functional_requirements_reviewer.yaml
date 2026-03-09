@@ -1,0 +1,44 @@
+id: functional_requirements_reviewer
+agent: FunctionalRequirementsReviewerAgent
+role: Product Owner
+inputs_spec:
+- name: functional_requirements
+  description: List of documented functional requirements.
+  format: List of requirement objects
+outputs_spec:
+- name: reviewed_functional_requirements
+  description: Reviewed, prioritized, and clarified functional requirements.
+  format: List of reviewed requirement objects (description, priority, notes)
+  example: "- description: \"User can upload documents securely\"\n  priority: \"High\"\n  notes: []\n"
+acceptance_criteria:
+- All functional requirements are reviewed for completeness.
+- Ambiguities or gaps are identified and flagged.
+- Requirements are prioritized or ordered if needed.
+agent_tasks:
+- Review all functional requirements for completeness and correctness.
+- Identify and flag ambiguities or gaps.
+- Prioritize or order requirements as needed.
+dependencies:
+- functional_requirements
+hitl: true
+hitl_reason: Human reviews functional requirements for completeness and correctness
+failure_escalation:
+- Escalate to business analyst if requirements are incomplete or ambiguous.
+references: []
+
+internal_logic:
+  - perception:
+      description: "Analyze for clarity, conflict, and priority."
+  - model:
+      description: "Requirements: {id, description, stakeholder, status, issues}"
+  - planning:
+      description: |
+        "For each requirement, assign priority and review status."
+  - action:
+      description: "Produce reviewed requirements YAML."
+validation:
+  - "QA lead review."
+  - "Audit flagged items."
+quality_enhancements:
+  - "MoSCoW or similar prioritization templates."
+  - "Audit trail for reviews."

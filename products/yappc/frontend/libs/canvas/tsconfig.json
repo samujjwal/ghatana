@@ -1,0 +1,57 @@
+{
+  "extends": "../../tsconfig.base.json",
+  "compilerOptions": {
+    "outDir": "./dist",
+    "rootDir": "./src",
+    "baseUrl": ".",
+    "paths": {
+      "@ghatana/canvas/examples/*": ["./examples/*"],
+      "@ghatana/yappc-ai": ["../ai/src/index.ts"],
+      "@ghatana/yappc-ai/*": ["../ai/src/*"]
+    },
+    "composite": true,
+    "declaration": true,
+    "declarationMap": true,
+    "sourceMap": true,
+    "strict": true,
+    "noImplicitAny": true,
+    "strictNullChecks": true,
+    "strictFunctionTypes": true,
+    "noImplicitThis": true,
+    "noImplicitReturns": true,
+    // Relaxed for workspace verification: many files still carry legacy typings
+    "exactOptionalPropertyTypes": false,
+    "noUnusedLocals": false,
+    "noUnusedParameters": false,
+    "skipLibCheck": true,
+    "jsx": "react-jsx",
+    "noEmit": false,
+    "emitDeclarationOnly": false,
+    "incremental": true,
+    "tsBuildInfoFile": "../../node_modules/.cache/tsbuildinfo/canvas.tsbuildinfo",
+    "allowImportingTsExtensions": false
+  },
+  "typeRoots": ["dist/types", "src/types", "../../node_modules/@types"],
+  "include": ["src/**/*"],
+  "exclude": [
+    "node_modules",
+    "dist",
+    "examples",
+    "src/ux/index-old.ts",
+    "**/*.test.ts",
+    "**/*.test.tsx",
+    "**/*.spec.ts",
+    "**/*.spec.tsx"
+  ],
+  "references": [
+    {
+      "path": "../ui"
+    },
+    {
+      "path": "../ai"
+    },
+    {
+      "path": "../types"
+    }
+  ]
+}

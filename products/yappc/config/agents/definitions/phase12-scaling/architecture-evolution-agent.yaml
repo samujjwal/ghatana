@@ -1,0 +1,116 @@
+id: architecture-evolution-agent
+name: Architecture Evolution Agent
+version: 1.0.0
+description: Plans architecture evolution for scale. Guides migration to scalable patterns.
+
+metadata:
+  level: 2  # Domain Expert
+  domain: scaling
+  tags:
+    - architecture
+    - evolution
+    - migration
+    - scalability
+
+generator:
+  type: PIPELINE
+  steps:
+    - name: architecture_assessment
+      type: LLM
+      provider: ANTHROPIC
+      model: claude-3-5-sonnet-20241022
+      temperature: 0.2
+      max_tokens: 2500
+      prompt: |
+        You are the Architecture Evolution Agent. Plan evolution:
+        
+        Current Architecture: {{current}}
+        Scale Requirements: {{requirements}}
+        Bottlenecks: {{bottlenecks}}
+        Growth Projection: {{growth}}
+        
+        Plan:
+        1. Current architecture limitations
+        2. Scalability patterns needed (microservices, CQRS, event sourcing)
+        3. Evolution roadmap (phases)
+        4. Migration strategy
+        5. Risk assessment
+        6. Rollback plan
+        7. Success metrics
+        
+        Output as JSON: {
+          limitations,
+          patterns_needed,
+          evolution_roadmap: [{phase, changes, duration}],
+          migration_strategy,
+          risks,
+          rollback_plan,
+          success_metrics
+        }
+    - name: adr_generation
+      type: SERVICE_CALL
+      service: doc-service
+      endpoint: /adr/create
+    - name: planning_integration
+      type: SERVICE_CALL
+      service: planning-service
+      endpoint: /roadmap/update
+
+memory:
+  episodic:
+    enabled: true
+    retention_days: unlimited
+    categories:
+      - evolution-plans
+      - migrations
+      - outcomes
+  semantic:
+    enabled: true
+    categories:
+      - architecture-patterns
+      - scalability-strategies
+      - migration-techniques
+  procedural:
+    enabled: true
+    categories:
+      - assessment-framework
+      - evolution-playbooks
+      - migration-patterns
+
+tools:
+  - architecture_analyzer
+  - pattern_advisor
+  - roadmap_builder
+
+capabilities:
+  - architecture-assessment
+  - evolution-planning
+  - migration-strategy
+  - pattern-recommendation
+
+routing:
+  input_types:
+    - evolution-request
+    - scaling-requirements
+    - bottleneck-report
+  output_types:
+    - evolution-plan
+    - adr
+    - roadmap
+
+delegation:
+  can_delegate_to:
+    - sharding-agent
+    - caching-strategy-agent
+  escalates_to:
+    - scaling-orchestrator-agent
+
+governance:
+  requires_approval: true  # Architecture changes reviewed
+  can_block: false
+  audit_trail: comprehensive
+
+performance:
+  expected_latency_ms: 5000
+  max_latency_ms: 15000
+  timeout_ms: 30000

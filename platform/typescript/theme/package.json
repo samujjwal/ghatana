@@ -1,0 +1,76 @@
+{
+  "name": "@ghatana/theme",
+  "version": "0.1.0",
+  "description": "Unified theme system for Ghatana platform",
+  "type": "module",
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js"
+    },
+    "./provider": {
+      "types": "./dist/provider.d.ts",
+      "import": "./dist/provider.js"
+    },
+    "./hooks": {
+      "types": "./dist/hooks.d.ts",
+      "import": "./dist/hooks.js"
+    },
+    "./types": {
+      "types": "./dist/types.d.ts",
+      "import": "./dist/types.js"
+    },
+    "./theme": {
+      "types": "./dist/theme.d.ts",
+      "import": "./dist/theme.js"
+    },
+    "./schema": {
+      "types": "./dist/schema/index.d.ts",
+      "import": "./dist/schema/index.js"
+    },
+    "./brandPresets": {
+      "types": "./dist/brandPresets.d.ts",
+      "import": "./dist/brandPresets.js"
+    },
+    "./themeManager": {
+      "types": "./dist/themeManager.d.ts",
+      "import": "./dist/themeManager.js"
+    }
+  },
+  "files": [
+    "dist",
+    "src",
+    "README.md"
+  ],
+  "scripts": {
+    "build": "tsc",
+    "dev": "tsc --watch",
+    "clean": "rm -rf dist",
+    "type-check": "tsc --noEmit"
+  },
+  "peerDependencies": {
+    "react": "^19.1.0",
+    "@mui/material": "^6.3.0"
+  },
+  "dependencies": {
+    "@ghatana/tokens": "workspace:*",
+    "zod": "^4.3.6"
+  },
+  "devDependencies": {
+    "@types/react": "^19.2.10",
+    "@mui/material": "^7.3.7",
+    "typescript": "^5.9.3",
+    "react": "^19.2.4"
+  },
+  "keywords": [
+    "ghatana",
+    "theme",
+    "dark-mode",
+    "light-mode",
+    "theming"
+  ],
+  "author": "Ghatana Team",
+  "license": "MIT"
+}

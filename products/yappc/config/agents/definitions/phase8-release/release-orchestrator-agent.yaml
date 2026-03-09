@@ -1,0 +1,113 @@
+id: release-orchestrator-agent
+name: Release Orchestrator Agent
+version: 1.0.0
+description: Orchestrates release activities. Coordinates versioning, deployment, rollout, and communication.
+
+metadata:
+  level: 1  # Strategic Orchestrator
+  domain: release
+  tags:
+    - phase-orchestration
+    - release-management
+    - deployment
+    - rollout
+
+generator:
+  type: PIPELINE
+  steps:
+    - name: release_planning
+      type: LLM
+      provider: ANTHROPIC
+      model: claude-3-5-sonnet-20241022
+      temperature: 0.2
+      max_tokens: 2500
+      prompt: |
+        You are the Release Orchestrator Agent. Plan release:
+        
+        Release Scope: {{scope}}
+        Quality Gates: {{gates}}
+        Deployment Targets: {{targets}}
+        Risk Assessment: {{risks}}
+        
+        Orchestrate:
+        1. Release readiness checklist
+        2. Deployment sequence
+        3. Rollout strategy (canary, blue-green, etc.)
+        4. Monitoring setup
+        5. Rollback criteria
+        6. Communication plan
+        7. Agent delegation plan
+        
+        Output as JSON: {readiness_checklist, deployment_sequence, rollout_strategy, monitoring, rollback_criteria, communication_plan, delegation_plan}
+    - name: agent_coordination
+      type: SERVICE_CALL
+      service: agent-registry
+      endpoint: /agents/delegate
+    - name: release_tracking
+      type: RULE_BASED
+      description: Track release progress
+
+memory:
+  episodic:
+    enabled: true
+    retention_days: 730
+    categories:
+      - releases
+      - incidents
+      - rollbacks
+  semantic:
+    enabled: true
+    categories:
+      - release-patterns
+      - risk-models
+      - rollout-strategies
+  procedural:
+    enabled: true
+    categories:
+      - orchestration-rules
+      - quality-gates
+      - rollback-procedures
+
+tools:
+  - release_coordinator
+  - deployment_manager
+  - rollout_controller
+
+capabilities:
+  - release-orchestration
+  - deployment-coordination
+  - rollout-management
+  - incident-response
+
+routing:
+  input_types:
+    - release-request
+    - deployment-trigger
+    - rollback-request
+  output_types:
+    - release-plan
+    - deployment-status
+    - release-report
+
+delegation:
+  can_delegate_to:
+    - version-manager-agent
+    - deployment-agent
+    - rollout-agent
+    - release-notes-agent
+    - environment-manager-agent
+    - post-deployment-validation-agent
+    - rollback-agent
+    - hotfix-agent
+  escalates_to:
+    - master-orchestrator-agent
+
+governance:
+  requires_approval: true  # Releases require approval
+  can_block: true  # Can block bad releases
+  audit_trail: comprehensive
+
+performance:
+  expected_latency_ms: 2000
+  max_latency_ms: 5000
+  timeout_ms: 10000

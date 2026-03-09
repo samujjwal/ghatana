@@ -1,0 +1,180 @@
+/*
+ * Copyright (c) 2026 Ghatana Inc.
+ * All rights reserved.
+ *
+ * Generic Adaptive Agent (GAA) - Memory Service API
+ * Version: 1.0.0
+ *
+ * Defines the gRPC service APIs for the memory plane.
+ */
+syntax = "proto3";
+
+package ghatana.contracts.agent.v1;
+
+import "google/protobuf/timestamp.proto";
+import "google/protobuf/struct.proto";
+import "ghatana/contracts/agent/v1/memory_item.proto";
+
+option go_package = "github.com/ghatana/contracts/gen/go/agent/v1;agentv1";
+option java_multiple_files = true;
+option java_package = "com.ghatana.contracts.agent.v1";
+option java_outer_classname = "MemoryServiceProtos";
+option csharp_namespace = "Ghatana.Contracts.Agent.V1";
+
+// ============================================================================
+// MEMORY SERVICE
+// ============================================================================
+
+service MemoryService {
+  /** Write a typed artifact or memory item to the memory plane. */
+  rpc WriteArtifact(WriteArtifactRequest) returns (WriteArtifactResponse);
+
+  /** Read memory items by query. */
+  rpc ReadMemory(ReadMemoryRequest) returns (ReadMemoryResponse);
+
+  /** Semantic search across memory items using vector similarity. */
+  rpc SearchMemory(SearchMemoryRequest) returns (SearchMemoryResponse);
+
+  /** Create a checkpoint for a task or session. */
+  rpc Checkpoint(CheckpointRequest) returns (CheckpointResponse);
+
+  /** Trigger consolidation from episodic to semantic/procedural. */
+  rpc Consolidate(ConsolidateRequest) returns (ConsolidateResponse);
+
+  /** Apply retention policies to manage memory lifecycle. */
+  rpc ApplyRetention(RetentionRequest) returns (RetentionResponse);
+
+  /** Retrieve memory plane statistics. */
+  rpc GetMemoryStats(MemoryStatsRequest) returns (MemoryStatsResponse);
+}
+
+// ============================================================================
+// REQUEST / RESPONSE MESSAGES
+// ============================================================================
+
+message WriteArtifactRequest {
+  string tenant_id = 1;
+  string agent_id = 2;
+  MemoryItemProto item = 3;
+  bool generate_embedding = 4;
+}
+
+message WriteArtifactResponse {
+  MemoryItemProto item = 1;
+  bool embedding_generated = 2;
+}
+
+message ReadMemoryRequest {
+  string tenant_id = 1;
+  string agent_id = 2;
+  repeated MemoryItemType item_types = 3;
+  string sphere_id = 4;
+  google.protobuf.Timestamp start_time = 5;
+  google.protobuf.Timestamp end_time = 6;
+  repeated string tags = 7;
+  double min_confidence = 8;
+  repeated ValidityStatus validity_statuses = 9;
+  string text_query = 10;
+  int32 limit = 11;
+  int32 offset = 12;
+}
+
+message ReadMemoryResponse {
+  repeated MemoryItemProto items = 1;
+  int32 total_count = 2;
+  bool has_more = 3;
+}
+
+message SearchMemoryRequest {
+  string tenant_id = 1;
+  string agent_id = 2;
+  string query = 3;
+  repeated MemoryItemType item_types = 4;
+  int32 top_k = 5;
+  google.protobuf.Timestamp start_time = 6;
+  google.protobuf.Timestamp end_time = 7;
+  double min_confidence = 8;
+  bool include_explanation = 9;
+}
+
+message SearchMemoryResponse {
+  repeated ScoredMemoryItemProto results = 1;
+  int32 total_candidates = 2;
+  int64 retrieval_time_ms = 3;
+  string strategy_used = 4;
+}
+
+message ScoredMemoryItemProto {
+  MemoryItemProto item = 1;
+  double score = 2;
+  map<string, string> retrieval_metadata = 3;
+}
+
+message CheckpointRequest {
+  string tenant_id = 1;
+  string task_id = 2;
+  string description = 3;
+  google.protobuf.Struct snapshot = 4;
+}
+
+message CheckpointResponse {
+  string checkpoint_id = 1;
+  google.protobuf.Timestamp created_at = 2;
+}
+
+message ConsolidateRequest {
+  string tenant_id = 1;
+  string agent_id = 2;
+  MemoryItemType source_tier = 3;
+  MemoryItemType target_tier = 4;
+  google.protobuf.Timestamp start_time = 5;
+  google.protobuf.Timestamp end_time = 6;
+  int32 min_episode_count = 7;
+}
+
+message ConsolidateResponse {
+  int32 items_processed = 1;
+  int32 patterns_detected = 2;
+  int32 facts_extracted = 3;
+  int32 procedures_proposed = 4;
+  int32 conflicts_detected = 5;
+  int64 consolidation_time_ms = 6;
+}
+
+message RetentionRequest {
+  string tenant_id = 1;
+  MemoryItemType item_type = 2;
+  int32 max_items = 3;
+  int64 max_storage_bytes = 4;
+  google.protobuf.Timestamp max_age = 5;
+  double min_utility_score = 6;
+  bool archive_before_delete = 7;
+  repeated string immune_labels = 8;
+}
+
+message RetentionResponse {
+  int32 items_evaluated = 1;
+  int32 items_archived = 2;
+  int32 items_deleted = 3;
+  int32 items_retained = 4;
+  int64 storage_freed_bytes = 5;
+}
+
+message MemoryStatsRequest {
+  string tenant_id = 1;
+  string agent_id = 2;
+}
+
+message MemoryStatsResponse {
+  int64 episode_count = 1;
+  int64 fact_count = 2;
+  int64 procedure_count = 3;
+  int64 preference_count = 4;
+  int64 task_state_count = 5;
+  int64 working_count = 6;
+  int64 artifact_count = 7;
+  int64 total_storage_bytes = 8;
+  map<string, int64> storage_bytes_per_tier = 9;
+  google.protobuf.Timestamp last_consolidation = 10;
+  string index_health = 11;
+}

@@ -1,0 +1,167 @@
+# Prometheus Alert Rules for Phase 4 Load Testing
+#
+# Purpose: Alert on performance SLA violations during load testing
+# Location: monitoring/alert-rules.yml
+# References: PHASE_4_IMPLEMENTATION_TRACKER.md success criteria
+#
+# SLA Targets:
+# - Throughput: ≥100k events/sec
+# - p99 Latency: <10ms
+# - Error rate: 0%
+# - Memory: <4 GB heap
+# - GC: <1% time in GC
+
+groups:
+  - name: phase4_performance_sla
+    interval: 15s
+    rules:
+      # Throughput SLA
+      - alert: ThroughputBelowTarget
+        expr: rate(eventcloud_events_appended_total[1m]) < 100000
+        for: 2m
+        labels:
+          severity: warning
+          phase: "4"
+          metric: "throughput"
+        annotations:
+          summary: "Throughput below 100k events/sec target"
+          description: "Current throughput: {{ $value | humanize }} events/sec (target: 100k)"
+
+      - alert: ThroughputCriticallyLow
+        expr: rate(eventcloud_events_appended_total[1m]) < 50000
+        for: 1m
+        labels:
+          severity: critical
+          phase: "4"
+          metric: "throughput"
+        annotations:
+          summary: "Throughput critically low (<50% of target)"
+          description: "Current throughput: {{ $value | humanize }} events/sec (target: 100k)"
+
+      # Latency SLA
+      - alert: P99LatencyHigh
+        expr: histogram_quantile(0.99, rate(operator_process_duration_seconds_bucket[1m])) > 0.010
+        for: 2m
+        labels:
+          severity: warning
+          phase: "4"
+          metric: "latency"
+        annotations:
+          summary: "p99 latency exceeds 10ms SLA"
+          description: "Current p99: {{ $value | humanize }}s (target: <10ms)"
+
+      - alert: P99LatencyCritical
+        expr: histogram_quantile(0.99, rate(operator_process_duration_seconds_bucket[1m])) > 0.050
+        for: 1m
+        labels:
+          severity: critical
+          phase: "4"
+          metric: "latency"
+        annotations:
+          summary: "p99 latency critically high (>50ms)"
+          description: "Current p99: {{ $value | humanize }}s (target: <10ms)"
+
+      # Error Rate SLA
+      - alert: ErrorRateAboveZero
+        expr: rate(operator_process_errors_total[1m]) > 0
+        for: 1m
+        labels:
+          severity: warning
+          phase: "4"
+          metric: "errors"
+        annotations:
+          summary: "Error rate above 0% SLA"
+          description: "Current error rate: {{ $value | humanize }} errors/sec (target: 0%)"
+
+      - alert: ErrorRateHigh
+        expr: rate(operator_process_errors_total[1m]) / rate(operator_process_count_total[1m]) > 0.01
+        for: 1m
+        labels:
+          severity: critical
+          phase: "4"
+          metric: "errors"
+        annotations:
+          summary: "Error rate >1% (critical)"
+          description: "Current error rate: {{ $value | humanizPercent }} (target: 0%)"
+
+      # Memory SLA
+      - alert: HeapUsageHigh
+        expr: jvm_memory_used_bytes{area="heap"} / jvm_memory_max_bytes{area="heap"} > 0.80
+        for: 5m
+        labels:
+          severity: warning
+          phase: "4"
+          metric: "memory"
+        annotations:
+          summary: "Heap usage >80%"
+          description: "Current heap: {{ $value | humanize1024 }}B used (target: <4GB, <80%)"
+
+      - alert: HeapUsageCritical
+        expr: jvm_memory_used_bytes{area="heap"} / jvm_memory_max_bytes{area="heap"} > 0.95
+        for: 2m
+        labels:
+          severity: critical
+          phase: "4"
+          metric: "memory"
+        annotations:
+          summary: "Heap usage >95% (OOM risk)"
+          description: "Current heap: {{ $value | humanize1024 }}B used (target: <4GB)"
+
+      # GC SLA
+      - alert: GCTimeHigh
+        expr: rate(jvm_gc_pause_seconds_sum[1m]) / rate(jvm_gc_pause_seconds_count[1m]) > 0.01
+        for: 5m
+        labels:
+          severity: warning
+          phase: "4"
+          metric: "gc"
+        annotations:
+          summary: "GC time >1% (target: <1%)"
+          description: "Current GC time: {{ $value | humanizePercentage }} of runtime"
+
+      - alert: GCFrequencyHigh
+        expr: rate(jvm_gc_pause_seconds_count[1m]) > 10
+        for: 2m
+        labels:
+          severity: warning
+          phase: "4"
+          metric: "gc"
+        annotations:
+          summary: "GC frequency high (>10/sec)"
+          description: "Current GC frequency: {{ $value | humanize }} collections/sec"
+
+      # EventCloud State
+      - alert: EventCloudDown
+        expr: up{job="eventcloud"} == 0
+        for: 1m
+        labels:
+          severity: critical
+          phase: "4"
+          metric: "availability"
+        annotations:
+          summary: "EventCloud instance is down"
+          description: "EventCloud not responding to Prometheus scrapes"
+
+      # Operator Health
+      - alert: OperatorDown
+        expr: up{job="operators"} == 0
+        for: 1m
+        labels:
+          severity: critical
+          phase: "4"
+          metric: "availability"
+        annotations:
+          summary: "Operator service is down"
+          description: "Operator service not responding to Prometheus scrapes"
+
+      # State Store Performance
+      - alert: CacheHitRateLow
+        expr: rate(state_store_cache_hits_total[1m]) / (rate(state_store_cache_hits_total[1m]) + rate(state_store_cache_misses_total[1m])) < 0.80
+        for: 5m
+        labels:
+          severity: warning
+          phase: "4"
+          metric: "cache"
+        annotations:
+          summary: "State store cache hit rate <80%"
+          description: "Current hit rate: {{ $value | humanizePercentage }} (target: >90%)"

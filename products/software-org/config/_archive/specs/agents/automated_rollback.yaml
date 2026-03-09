@@ -1,0 +1,27 @@
+---
+id: "automated_rollback"
+agent: "AutomatedRollbackAgent"
+role: "SRE/Release Engineer"
+inputs_spec:
+- name: "health_check_report"
+  description: "Health check report artifact."
+  format: "Health check report artifact"
+outputs_spec:
+- name: "rollback_status"
+  description: "Rollback status and logs."
+  format: "Rollback status artifact"
+agent_tasks:
+- "Define and monitor rollback conditions."
+- "Automatically trigger rollback on failure."
+- "Log rollback status/actions."
+acceptance_criteria:
+- "Rollback conditions clearly defined/monitored."
+- "Rollback automatically triggered on failure."
+- "Status/logs reported."
+dependencies:
+- "health_check_report"
+failure_escalation:
+- "Escalate to SRE/Release Engineer if rollback not triggered on failure."
+references: []
+hitl: true
+hitl_reason: "Human validates rollback actions and status"

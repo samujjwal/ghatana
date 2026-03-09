@@ -1,0 +1,287 @@
+# Domain Operator Index
+# Purpose: Catalog of all consolidated domain operators
+# Version: 1.0.0
+
+# Overview
+# This index documents all domain operators that replace the 420+ individual
+# devsecops/specs/agents/*.yaml files with consolidated, mode-based operators.
+
+metadata:
+  version: "1.0.0"
+  last_updated: "2025-01-XX"
+  consolidation_ratio: "420 files -> ~20 operators (95% reduction)"
+
+# Domain Structure
+domains:
+  - planning
+  - design
+  - build
+  - release
+  - operate
+
+# Operator Catalog by Domain
+
+planning:
+  description: "Requirements gathering, stakeholder management, and planning synthesis"
+  operators:
+    - id: product_discovery_operator
+      file: domain/planning/product_discovery_operator.yaml
+      modes: [clarify, generate_questions, refine]
+      consolidates:
+        - clarify_product_idea.yaml
+        - clarification_questions.yaml
+
+    - id: business_goals_operator
+      file: domain/planning/business_goals_operator.yaml
+      modes:
+        [
+          define_goals,
+          define_criteria,
+          identify_constraints,
+          document_assumptions,
+          combine,
+        ]
+      consolidates:
+        - business_goals.yaml
+        - constraints.yaml
+        - assumptions.yaml
+        - goals_criteria_combiner.yaml
+        - constraints_assumptions_combiner.yaml
+
+    - id: stakeholder_operator
+      file: domain/planning/stakeholder_operator.yaml
+      modes: [identify, map, engage, simulate_review]
+      consolidates:
+        - stakeholder_list.yaml
+        - stakeholder_engagement.yaml
+        - stakeholder_mapping_combiner.yaml
+        - stakeholder_review_simulation.yaml
+
+    - id: requirements_operator
+      file: domain/planning/requirements_operator.yaml
+      modes: [gather, analyze_functional, analyze_nfr, trace]
+      consolidates:
+        - requirements_gathering.yaml
+        - functional_requirements.yaml
+        - non_functional_requirements.yaml
+        - requirements_traceability.yaml
+        - functional_requirements_combiner.yaml
+        - functional_requirements_reviewer.yaml
+        - non_functional_requirements_combiner.yaml
+        - non_functional_requirements_reviewer.yaml
+
+    - id: plan_synthesis_operator
+      file: domain/planning/plan_synthesis_operator.yaml
+      modes: [validate, package, handoff]
+      consolidates:
+        - plan_combiner.yaml
+
+design:
+  description: "Architecture, component design, data modeling, and security design"
+  operators:
+    - id: architecture_operator
+      file: domain/design/architecture_operator.yaml
+      modes: [solution_approach, architecture, high_level_design, review]
+      consolidates:
+        - solution_architecture.yaml
+        - solution_approach.yaml
+        - high_level_design.yaml
+        - architecture_review.yaml
+
+    - id: component_operator
+      file: domain/design/component_operator.yaml
+      modes: [identify, design, patterns, interfaces, analyze_coupling]
+      consolidates:
+        - component_design.yaml
+        - design_patterns.yaml
+        - interface_spec.yaml
+
+    - id: data_model_operator
+      file: domain/design/data_model_operator.yaml
+      modes:
+        [
+          entity_modeling,
+          relationship_mapping,
+          schema_design,
+          data_dictionary,
+          privacy_compliance,
+        ]
+      consolidates:
+        - data_model.yaml
+        - data_model_design.yaml
+
+    - id: api_operator
+      file: domain/design/api_operator.yaml
+      modes:
+        [
+          contract_design,
+          schema_design,
+          security_design,
+          versioning,
+          documentation,
+        ]
+      consolidates:
+        - api_contract.yaml
+        - api_contract_develop.yaml
+
+    - id: security_design_operator
+      file: domain/design/security_design_operator.yaml
+      modes:
+        [
+          threat_modeling,
+          control_design,
+          compliance_mapping,
+          security_architecture,
+          security_review,
+        ]
+      consolidates:
+        - security_design.yaml
+        - compliance_design.yaml
+        - threat_model.yaml
+
+    - id: design_synthesis_operator
+      file: domain/design/design_synthesis_operator.yaml
+      modes: [validate, lint, package, handoff]
+      consolidates:
+        - design_combiner.yaml
+        - design_lint.yaml
+        - design_review.yaml
+
+build:
+  description: "Build automation, code quality, testing, and security scanning"
+  operators:
+    - id: build_pipeline_operator
+      file: domain/build/build_pipeline_operator.yaml
+      modes: [configure, execute, artifacts, container, metrics]
+      consolidates:
+        - build_pipeline.yaml
+        - build_artifacts.yaml
+        - container_build.yaml
+        - build_metrics.yaml
+
+    - id: code_quality_operator
+      file: domain/build/code_quality_operator.yaml
+      modes: [static_analysis, duplication, formatting, quality_gate, tech_debt]
+      consolidates:
+        - code_quality_gate.yaml
+        - code_duplication.yaml
+        - static_analysis.yaml
+
+    - id: test_execution_operator
+      file: domain/build/test_execution_operator.yaml
+      modes: [unit, integration, orchestrate, coverage, analyze]
+      consolidates:
+        - unit_test.yaml
+        - integration_test.yaml
+        - test_execution.yaml
+        - test_suite.yaml
+        - test_coverage_enforcement.yaml
+        - test_orchestration.yaml
+        - test_results_aggregation.yaml
+
+    - id: security_scan_operator
+      file: domain/build/security_scan_operator.yaml
+      modes: [sast, sca, secrets, dast, supply_chain]
+      consolidates:
+        - security_test.yaml
+        - sast_scan.yaml
+        - dependency_scan.yaml
+        - secret_scan.yaml
+        - build_supply_chain_risk.yaml
+
+release:
+  description: "Deployment, release management, and go-live coordination"
+  operators:
+    - id: deploy_operator
+      file: domain/release/deploy_operator.yaml
+      modes: [validate, plan, execute, rollback, verify]
+      consolidates:
+        - deployment.yaml
+        - release_validation.yaml
+        - rollback.yaml
+        - environment_promotion.yaml
+
+    - id: release_management_operator
+      file: domain/release/release_management_operator.yaml
+      modes: [plan, uat, go_nogo, communicate, document]
+      consolidates:
+        - release_planning.yaml
+        - uat.yaml
+        - go_nogo.yaml
+        - release_notes.yaml
+        - release_communication.yaml
+
+operate:
+  description: "Monitoring, incident management, and operational excellence"
+  operators:
+    - id: monitor_operator
+      file: domain/operate/monitor_operator.yaml
+      modes: [metrics, logs, traces, alert, slo]
+      consolidates:
+        - monitoring.yaml
+        - alerting.yaml
+        - observability.yaml
+        - slo_tracking.yaml
+
+    - id: incident_operator
+      file: domain/operate/incident_operator.yaml
+      modes: [detect, respond, communicate, resolve, postmortem, dr]
+      consolidates:
+        - incident_handler.yaml
+        - incident_communication.yaml
+        - postmortem.yaml
+        - disaster_recovery.yaml
+
+# Cross-Cutting Operators
+# These are parameterized templates that apply to ALL stages
+cross_cutting:
+  location: operations/cross-cutting/
+  operators:
+    - audit_log_operator.yaml
+    - progress_dashboard_operator.yaml
+    - observability_export_operator.yaml
+    - feedback_loop_operator.yaml
+    - evidence_collector_operator.yaml
+    - notification_operator.yaml
+    - kpi_operator.yaml
+    - success_criteria_operator.yaml
+    - milestone_tracker_operator.yaml
+    - risk_trend_operator.yaml
+    - best_practice_operator.yaml
+    - readiness_operator.yaml
+    - go_nogo_operator.yaml
+    - escalation_operator.yaml
+  registry: CrossCuttingOperatorRegistry.java
+
+# Usage Guidelines
+
+usage:
+  selecting_operator:
+    - "Choose domain based on SDLC stage"
+    - "Select operator based on activity type"
+    - "Use mode for specific operation"
+
+  mode_execution:
+    - "Modes are independent but can be chained"
+    - "Each mode has specific inputs/outputs"
+    - "Validation rules apply per mode"
+
+  cross_cutting_integration:
+    - "Cross-cutting operators apply to all stages"
+    - "Use CrossCuttingOperatorRegistry.java for programmatic instantiation"
+    - "Parameters customize for stage context"
+
+# Migration Notes
+
+migration:
+  from_legacy:
+    - "Legacy operators in devsecops/specs/agents/ are deprecated"
+    - "Migrate to domain operators by mapping to consolidates list"
+    - "Cross-cutting functionality uses parameterized templates"
+
+  benefits:
+    - "95% reduction in configuration files"
+    - "Consistent structure across domains"
+    - "Mode-based flexibility"
+    - "Better maintainability"
+    - "Clear stage transitions"

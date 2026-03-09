@@ -1,0 +1,134 @@
+import {
+Pressable,
+Text,
+StyleSheet,
+type PressableProps,
+type ViewStyle,
+type TextStyle,
+ActivityIndicator,
+} from "react-native";
+import { useColorScheme } from "@/hooks/useColorScheme";
+import { Colors } from "@/constants/Colors";
+
+interface ButtonProps extends Omit<PressableProps, "style"> {
+    title: string;
+    variant?: "primary" | "secondary" | "outline" | "ghost";
+    size?: "small" | "medium" | "large";
+    loading?: boolean;
+    style?: ViewStyle;
+    textStyle?: TextStyle;
+    }
+
+    export function Button({
+    title,
+    variant = "primary",
+    size = "medium",
+    loading = false,
+    disabled,
+    style,
+    textStyle,
+    ...props
+    }: ButtonProps) {
+    const colorScheme = useColorScheme();
+    const theme = Colors[colorScheme ?? "light"];
+
+    const getVariantStyles = (): { container: ViewStyle; text: TextStyle } => {
+    switch (variant) {
+    case "secondary":
+    return {
+    container: {
+    backgroundColor: theme.card,
+    borderWidth: 1,
+    borderColor: theme.border,
+    },
+    text: { color: theme.text },
+    };
+    case "outline":
+    return {
+    container: {
+    backgroundColor: "transparent",
+    borderWidth: 1,
+    borderColor: theme.tint,
+    },
+    text: { color: theme.tint },
+    };
+    case "ghost":
+    return {
+    container: { backgroundColor: "transparent" },
+    text: { color: theme.tint },
+    };
+    case "primary":
+    default:
+    return {
+    container: { backgroundColor: theme.tint },
+    text: { color: "#FFFFFF" },
+    };
+    }
+    };
+
+    const getSizeStyles = (): { container: ViewStyle; text: TextStyle } => {
+    switch (size) {
+    case "small":
+    return {
+    container: { paddingVertical: 8, paddingHorizontal: 12 },
+    text: { fontSize: 14 },
+    };
+    case "large":
+    return {
+    container: { paddingVertical: 16, paddingHorizontal: 24 },
+    text: { fontSize: 18 },
+    };
+    case "medium":
+    default:
+    return {
+    container: { paddingVertical: 12, paddingHorizontal: 20 },
+    text: { fontSize: 16 },
+    };
+    }
+    };
+
+    const variantStyles = getVariantStyles();
+    const sizeStyles = getSizeStyles();
+    const isDisabled = disabled || loading;
+
+    return (
+    <Pressable style={({ pressed })=> [
+        styles.button,
+        variantStyles.container,
+        sizeStyles.container,
+        pressed && styles.pressed,
+        isDisabled && styles.disabled,
+        style,
+        ]}
+        disabled={isDisabled}
+        {...props}
+        >
+        {loading ? (
+        <ActivityIndicator size="small" color={variantStyles.text.color as string} />
+        ) : (
+        <Text style={[ styles.text, variantStyles.text, sizeStyles.text, textStyle, ]}>
+            {title}
+        </Text>
+        )}
+    </Pressable>
+    );
+    }
+
+    const styles = StyleSheet.create({
+    button: {
+    alignItems: "center",
+    justifyContent: "center",
+    borderRadius: 12,
+    flexDirection: "row",
+    },
+    text: {
+    fontWeight: "600",
+    },
+    pressed: {
+    opacity: 0.8,
+    transform: [{ scale: 0.98 }],
+    },
+    disabled: {
+    opacity: 0.5,
+    },
+    });

@@ -1,0 +1,131 @@
+id: chaos-engineering-agent
+name: Chaos Engineering Agent
+version: 1.0.0
+description: Plans and executes chaos experiments. Tests system resilience and failure handling.
+
+metadata:
+  level: 2  # Domain Expert
+  domain: testing
+  tags:
+    - chaos-engineering
+    - resilience
+    - fault-injection
+    - reliability
+
+generator:
+  type: PIPELINE
+  steps:
+    - name: experiment_design
+      type: LLM
+      provider: ANTHROPIC
+      model: claude-3-5-sonnet-20241022
+      temperature: 0.3
+      max_tokens: 2000
+      prompt: |
+        You are the Chaos Engineering Agent. Design experiment:
+        
+        System Architecture: {{architecture}}
+        Failure Modes: {{failure_modes}}
+        Previous Experiments: {{previous}}
+        SLOs: {{slos}}
+        
+        Design:
+        1. Hypothesis (what we expect)
+        2. Blast radius (scope of impact)
+        3. Fault types (network, compute, data)
+        4. Injection method
+        5. Monitoring points
+        6. Abort conditions
+        7. Rollback plan
+        
+        Output as JSON: {
+          hypothesis,
+          experiment: {fault_type, target, parameters, duration},
+          blast_radius,
+          monitoring,
+          abort_conditions,
+          rollback_plan,
+          safety_score
+        }
+    - name: experiment_execution
+      type: SERVICE_CALL
+      service: chaos-service
+      endpoint: /experiment/run
+    - name: results_analysis
+      type: LLM
+      provider: ANTHROPIC
+      model: claude-3-5-sonnet-20241022
+      temperature: 0.2
+      max_tokens: 2000
+      prompt: |
+        Analyze chaos experiment results:
+        
+        Experiment: {{experiment}}
+        Results: {{results}}
+        SLO Impact: {{slo_impact}}
+        
+        Analyze:
+        1. Hypothesis validated?
+        2. System behavior observed
+        3. Resilience gaps found
+        4. Recovery time
+        5. SLO impact
+        6. Recommendations
+
+memory:
+  episodic:
+    enabled: true
+    retention_days: 730
+    categories:
+      - experiments
+      - findings
+      - improvements
+  semantic:
+    enabled: true
+    categories:
+      - failure-patterns
+      - resilience-strategies
+      - architecture-weaknesses
+  procedural:
+    enabled: true
+    categories:
+      - experiment-templates
+      - safety-rules
+      - rollback-procedures
+
+tools:
+  - chaos_injector
+  - experiment_runner
+  - resilience_analyzer
+
+capabilities:
+  - experiment-design
+  - fault-injection
+  - resilience-analysis
+  - recovery-testing
+
+routing:
+  input_types:
+    - chaos-request
+    - resilience-test
+    - failure-simulation
+  output_types:
+    - experiment-results
+    - resilience-report
+    - recommendations
+
+delegation:
+  can_delegate_to: []
+  escalates_to:
+    - testing-orchestrator-agent
+    - human-in-the-loop-coordinator
+
+governance:
+  requires_approval: true  # Chaos requires approval
+  can_block: false
+  audit_trail: comprehensive
+
+performance:
+  expected_latency_ms: varies
+  max_latency_ms: varies
+  timeout_ms: 3600000  # 1 hour

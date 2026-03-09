@@ -1,0 +1,24 @@
+---
+id: "release_notification_agent"
+agent: "NotificationAgent"
+role: "PMO Communications"
+inputs_spec:
+- name: "release_progress_dashboard"
+  description: "Release progress dashboard for notification triggers."
+  format: "Dashboard artifact"
+outputs_spec:
+- name: "release_notifications"
+  description: "Notifications to release stakeholders on events and approvals."
+  format: "List of notification objects"
+agent_tasks:
+- "Notify release stakeholders on key events and approvals."
+- "Log notification delivery for audit."
+acceptance_criteria:
+- "Stakeholders are notified on key events and approvals."
+- "Notification delivery is logged for audit."
+dependencies:
+- "release_progress_dashboard"
+failure_escalation:
+- "Escalate to PMO if notifications not delivered or logged."
+references: []
+hitl: false

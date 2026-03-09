@@ -1,0 +1,293 @@
+{
+    "dashboard": {
+        "title": "Phase 4 Load Testing - Throughput & Latency",
+        "description": "Real-time throughput and latency metrics for Phase 4 load testing",
+        "tags": [
+            "phase4",
+            "load-testing",
+            "performance"
+        ],
+        "timezone": "browser",
+        "schemaVersion": 36,
+        "version": 1,
+        "refresh": "5s",
+        "panels": [
+            {
+                "title": "Throughput (events/sec)",
+                "type": "graph",
+                "gridPos": {
+                    "x": 0,
+                    "y": 0,
+                    "w": 12,
+                    "h": 8
+                },
+                "targets": [
+                    {
+                        "expr": "rate(eventcloud_events_appended_total[1m])",
+                        "legendFormat": "EventCloud Append Rate",
+                        "refId": "A"
+                    },
+                    {
+                        "expr": "rate(operator_process_count_total[1m])",
+                        "legendFormat": "Operator Process Rate",
+                        "refId": "B"
+                    }
+                ],
+                "yaxes": [
+                    {
+                        "format": "ops",
+                        "label": "Events/sec"
+                    },
+                    {
+                        "format": "short"
+                    }
+                ],
+                "thresholds": [
+                    {
+                        "value": 100000,
+                        "colorMode": "critical",
+                        "op": "lt",
+                        "fill": false,
+                        "line": true,
+                        "lineColor": "green"
+                    }
+                ],
+                "alert": {
+                    "name": "Throughput Below Target",
+                    "message": "Throughput below 100k events/sec",
+                    "conditions": [
+                        {
+                            "evaluator": {
+                                "params": [
+                                    100000
+                                ],
+                                "type": "lt"
+                            },
+                            "operator": {
+                                "type": "and"
+                            },
+                            "query": {
+                                "params": [
+                                    "A",
+                                    "1m",
+                                    "now"
+                                ]
+                            },
+                            "reducer": {
+                                "params": [],
+                                "type": "avg"
+                            },
+                            "type": "query"
+                        }
+                    ]
+                }
+            },
+            {
+                "title": "Latency Percentiles (ms)",
+                "type": "graph",
+                "gridPos": {
+                    "x": 12,
+                    "y": 0,
+                    "w": 12,
+                    "h": 8
+                },
+                "targets": [
+                    {
+                        "expr": "histogram_quantile(0.50, rate(operator_process_duration_seconds_bucket[1m])) * 1000",
+                        "legendFormat": "p50",
+                        "refId": "A"
+                    },
+                    {
+                        "expr": "histogram_quantile(0.95, rate(operator_process_duration_seconds_bucket[1m])) * 1000",
+                        "legendFormat": "p95",
+                        "refId": "B"
+                    },
+                    {
+                        "expr": "histogram_quantile(0.99, rate(operator_process_duration_seconds_bucket[1m])) * 1000",
+                        "legendFormat": "p99 (SLA: <10ms)",
+                        "refId": "C"
+                    },
+                    {
+                        "expr": "histogram_quantile(0.999, rate(operator_process_duration_seconds_bucket[1m])) * 1000",
+                        "legendFormat": "p999",
+                        "refId": "D"
+                    }
+                ],
+                "yaxes": [
+                    {
+                        "format": "ms",
+                        "label": "Latency"
+                    },
+                    {
+                        "format": "short"
+                    }
+                ],
+                "thresholds": [
+                    {
+                        "value": 10,
+                        "colorMode": "critical",
+                        "op": "gt",
+                        "fill": false,
+                        "line": true,
+                        "lineColor": "red"
+                    }
+                ]
+            },
+            {
+                "title": "Memory Usage (heap)",
+                "type": "graph",
+                "gridPos": {
+                    "x": 0,
+                    "y": 8,
+                    "w": 12,
+                    "h": 8
+                },
+                "targets": [
+                    {
+                        "expr": "jvm_memory_used_bytes{area=\"heap\"} / 1024 / 1024 / 1024",
+                        "legendFormat": "Used Heap (GB)",
+                        "refId": "A"
+                    },
+                    {
+                        "expr": "jvm_memory_max_bytes{area=\"heap\"} / 1024 / 1024 / 1024",
+                        "legendFormat": "Max Heap (GB)",
+                        "refId": "B"
+                    }
+                ],
+                "yaxes": [
+                    {
+                        "format": "decgbytes",
+                        "label": "Memory (GB)"
+                    },
+                    {
+                        "format": "short"
+                    }
+                ],
+                "thresholds": [
+                    {
+                        "value": 4,
+                        "colorMode": "critical",
+                        "op": "gt",
+                        "fill": false,
+                        "line": true,
+                        "lineColor": "orange"
+                    }
+                ]
+            },
+            {
+                "title": "Error Rate (%)",
+                "type": "graph",
+                "gridPos": {
+                    "x": 12,
+                    "y": 8,
+                    "w": 12,
+                    "h": 8
+                },
+                "targets": [
+                    {
+                        "expr": "(rate(operator_process_errors_total[1m]) / rate(operator_process_count_total[1m])) * 100",
+                        "legendFormat": "Error Rate (SLA: 0%)",
+                        "refId": "A"
+                    }
+                ],
+                "yaxes": [
+                    {
+                        "format": "percent",
+                        "label": "Error Rate"
+                    },
+                    {
+                        "format": "short"
+                    }
+                ],
+                "thresholds": [
+                    {
+                        "value": 0,
+                        "colorMode": "critical",
+                        "op": "gt",
+                        "fill": true,
+                        "line": true,
+                        "lineColor": "red"
+                    }
+                ]
+            },
+            {
+                "title": "GC Activity",
+                "type": "graph",
+                "gridPos": {
+                    "x": 0,
+                    "y": 16,
+                    "w": 12,
+                    "h": 8
+                },
+                "targets": [
+                    {
+                        "expr": "rate(jvm_gc_pause_seconds_sum[1m]) * 100",
+                        "legendFormat": "GC Time % (SLA: <1%)",
+                        "refId": "A"
+                    },
+                    {
+                        "expr": "rate(jvm_gc_pause_seconds_count[1m])",
+                        "legendFormat": "GC Collections/sec",
+                        "refId": "B"
+                    }
+                ],
+                "yaxes": [
+                    {
+                        "format": "percent",
+                        "label": "GC %"
+                    },
+                    {
+                        "format": "ops",
+                        "label": "Collections/sec"
+                    }
+                ],
+                "thresholds": [
+                    {
+                        "value": 1,
+                        "colorMode": "critical",
+                        "op": "gt",
+                        "fill": false,
+                        "line": true,
+                        "lineColor": "orange"
+                    }
+                ]
+            },
+            {
+                "title": "Cache Hit Rate (%)",
+                "type": "graph",
+                "gridPos": {
+                    "x": 12,
+                    "y": 16,
+                    "w": 12,
+                    "h": 8
+                },
+                "targets": [
+                    {
+                        "expr": "(rate(state_store_cache_hits_total[1m]) / (rate(state_store_cache_hits_total[1m]) + rate(state_store_cache_misses_total[1m]))) * 100",
+                        "legendFormat": "Hit Rate (target: >90%)",
+                        "refId": "A"
+                    }
+                ],
+                "yaxes": [
+                    {
+                        "format": "percent",
+                        "label": "Hit Rate"
+                    },
+                    {
+                        "format": "short"
+                    }
+                ],
+                "thresholds": [
+                    {
+                        "value": 90,
+                        "colorMode": "custom",
+                        "op": "lt",
+                        "fill": false,
+                        "line": true,
+                        "lineColor": "yellow"
+                    }
+                ]
+            }
+        ]
+    }
+}

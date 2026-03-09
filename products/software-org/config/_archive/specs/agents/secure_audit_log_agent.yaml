@@ -1,0 +1,30 @@
+---
+id: "secure_audit_log_agent"
+agent: "AuditLogAgent"
+role: "Compliance Bot"
+inputs_spec:
+- name: "secure_progress_dashboard"
+  description: "Secure progress dashboard for audit logging."
+  format: "Dashboard artifact"
+- name: "secure_notification_agent"
+  description: "Notification agent delivery log."
+  format: "List of notification objects"
+outputs_spec:
+- name: "secure_audit_log"
+  description: "Audit log of Secure agent actions, results, notifications, and signoffs."
+  format: "Audit log artifact"
+agent_tasks:
+- "Log all Secure agent actions, results, notifications, and signoffs."
+- "Track approval/rejection and defect signoff."
+- "Ensure cryptographic integrity and secure archive."
+acceptance_criteria:
+- "All Secure agent actions, results, and notifications are logged."
+- "Approval/rejection and defect signoff are tracked."
+- "Audit log is archived and cryptographically signed."
+dependencies:
+- "secure_progress_dashboard"
+- "secure_notification_agent"
+failure_escalation:
+- "Escalate to compliance or audit lead if audit log is incomplete or inaccessible."
+references: []
+hitl: false

@@ -1,0 +1,53 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<Configuration status="WARN" monitorInterval="30">
+    <Properties>
+        <Property name="LOG_PATTERN">%d{yyyy-MM-dd HH:mm:ss.SSS} [%t] %-5level %logger{36} - %msg%n</Property>
+        <Property name="LOG_FILE">${sys:java.io.tmpdir}/test-logs/test.log</Property>
+    </Properties>
+
+    <Appenders>
+        <!-- Console Appender -->
+        <Console name="Console" target="SYSTEM_OUT">
+            <PatternLayout pattern="${LOG_PATTERN}" />
+        </Console>
+
+        <!-- File Appender -->
+        <RollingFile name="File" fileName="${LOG_FILE}"
+                     filePattern="${LOG_FILE}-%d{yyyy-MM-dd}-%i.log.gz">
+            <PatternLayout>
+                <Pattern>${LOG_PATTERN}</Pattern>
+            </PatternLayout>
+            <Policies>
+                <TimeBasedTriggeringPolicy interval="1" modulate="true" />
+                <SizeBasedTriggeringPolicy size="10 MB" />
+            </Policies>
+            <DefaultRolloverStrategy max="10" />
+        </RollingFile>
+    </Appenders>
+
+    <Loggers>
+        <!-- Default logger -->
+        <Root level="info">
+            <AppenderRef ref="Console" />
+            <!-- Uncomment to enable file logging for tests -->
+            <!-- <AppenderRef ref="File" /> -->
+        </Root>
+
+        <!-- Test-specific loggers with different log levels -->
+        <Logger name="com.ghatana.testing" level="debug" additivity="false">
+            <AppenderRef ref="Console" />
+        </Logger>
+
+        <!-- Suppress verbose logging from dependencies -->
+        <Logger name="org.testcontainers" level="warn" />
+        <Logger name="org.testcontainers.containers" level="info" />
+        <Logger name="org.testcontainers.containers.output.Slf4jLogConsumer" level="info" />
+        <Logger name="org.testcontainers.utility.ResourceReaper" level="warn" />
+        <Logger name="org.hibernate" level="warn" />
+        <Logger name="org.jdbi" level="warn" />
+        <Logger name="org.reflections" level="warn" />
+        <Logger name="com.zaxxer.hikari" level="warn" />
+        <Logger name="io.netty" level="warn" />
+        <Logger name="org.apache" level="warn" />
+    </Loggers>
+</Configuration>

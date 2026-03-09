@@ -1,0 +1,31 @@
+---
+id: "build_success_criteria_tracker"
+agent: "SuccessCriteriaTrackerAgent"
+role: "Build Success Criteria Tracker"
+inputs_spec:
+- name: "build_stage_milestone"
+  description: "Build stage milestones."
+  format: "List of milestone objects"
+outputs_spec:
+- name: "build_success_criteria_status"
+  description: "Status for all build stage entry/exit criteria."
+  format: "List of criteria status objects"
+agent_tasks:
+- "List/map all build stage entry/exit criteria."
+- "Track status, owner, remediation."
+- "Escalate at-risk/failed criteria."
+- "Version tracker for audit/handoff."
+acceptance_criteria:
+- "All build stage entry/exit criteria are explicitly listed and mapped to pipeline/milestone\
+  \ artifacts."
+- "{For each criterion=status (Met/Not Met/At Risk), owner, and required remediation\
+  \ documented.}"
+- "At-risk or failed criteria are escalated for review."
+- "Tracker is versioned for audit and handoff."
+dependencies:
+- "build_stage_milestone"
+failure_escalation:
+- "Escalate to Build Success Criteria Tracker or PM if status is unclear or criteria\
+  \ not met."
+references: []
+hitl: false

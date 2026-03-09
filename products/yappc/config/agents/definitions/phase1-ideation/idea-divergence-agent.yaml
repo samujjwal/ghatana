@@ -1,0 +1,107 @@
+id: idea-divergence-agent
+name: Idea Divergence Agent
+version: 1.0.0
+description: Generates diverse solution ideas through creative thinking techniques. Encourages quantity, wild ideas, and exploration without judgment.
+
+metadata:
+  level: 3  # Worker
+  domain: ideation
+  tags:
+    - idea-generation
+    - creative-thinking
+    - brainstorming
+    - divergent-thinking
+
+generator:
+  type: PIPELINE
+  steps:
+    - name: creative_idea_generation
+      type: LLM
+      provider: ANTHROPIC
+      model: claude-3-5-sonnet-20241022
+      temperature: 0.8  # High for creativity
+      max_tokens: 3500
+      prompt: |
+        You are the Idea Divergence Agent. Generate diverse solution ideas:
+        
+        Problem: {{problem}}
+        Constraints: {{constraints}}
+        Inspiration: {{inspiration}}
+        
+        Use multiple creative techniques:
+        1. Analogy (how do other domains solve this?)
+        2. Inversion (what if we did the opposite?)
+        3. Exaggeration (what if we 10x the solution?)
+        4. Combination (merge existing ideas)
+        5. Elimination (remove key constraints)
+        6. Random stimulus (apply unrelated concepts)
+        
+        Generate 20+ diverse ideas including:
+        - Obvious/conventional
+        - Wild/unconventional
+        - Technology-driven
+        - Process/behavioral changes
+        - Hybrid combinations
+        
+        NO JUDGMENT. Focus on quantity and diversity.
+        
+        Output as JSON array: [{idea, technique_used, novelty_score, description}]
+    - name: idea_cataloging
+      type: SERVICE_CALL
+      service: idea-bank
+      endpoint: /ideas/add-batch
+
+memory:
+  episodic:
+    enabled: true
+    retention_days: 365
+    categories:
+      - generated-ideas
+      - generation-sessions
+      - techniques-applied
+  semantic:
+    enabled: true
+    categories:
+      - idea-patterns
+      - creative-techniques
+      - inspiration-sources
+  procedural:
+    enabled: true
+    categories:
+      - generation-methods
+      - prompting-strategies
+      - cataloging-rules
+
+tools:
+  - idea_bank_manager
+  - novelty_scorer
+
+capabilities:
+  - creative-idea-generation
+  - divergent-thinking
+  - technique-application
+  - idea-cataloging
+
+routing:
+  input_types:
+    - problem-statement
+    - brainstorming-request
+    - innovation-challenge
+  output_types:
+    - idea-batch
+    - generation-report
+
+delegation:
+  can_delegate_to: []
+  escalates_to:
+    - ideation-orchestrator-agent
+
+governance:
+  requires_approval: false
+  can_block: false
+  audit_trail: standard
+
+performance:
+  expected_latency_ms: 8000
+  max_latency_ms: 20000
+  timeout_ms: 40000

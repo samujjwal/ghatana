@@ -1,0 +1,27 @@
+{
+  "id": "canvas/quick-start",
+  "title": "Quick Start Guide",
+  "description": "Get up and running with YAPPC Canvas in 5 minutes.",
+  "source": "@site/docs/canvas/quick-start.md",
+  "sourceDirName": "canvas",
+  "slug": "/canvas/quick-start",
+  "permalink": "/docs/canvas/quick-start",
+  "draft": false,
+  "unlisted": false,
+  "editUrl": "https://github.com/yappc/app-creator/tree/main/docs-site/docs/canvas/quick-start.md",
+  "tags": [],
+  "version": "current",
+  "sidebarPosition": 2,
+  "frontMatter": {
+    "sidebar_position": 2
+  },
+  "sidebar": "canvasSidebar",
+  "previous": {
+    "title": "Canvas Overview",
+    "permalink": "/docs/canvas/overview"
+  },
+  "next": {
+    "title": "Real-Time Collaboration",
+    "permalink": "/docs/canvas/real-time-collaboration"
+  }
+}

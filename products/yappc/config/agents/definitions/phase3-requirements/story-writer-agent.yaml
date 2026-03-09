@@ -1,0 +1,114 @@
+id: story-writer-agent
+name: Story Writer Agent
+version: 1.0.0
+description: Writes well-structured user stories from requirements. Ensures INVEST criteria, clear user perspective, and appropriate granularity.
+
+metadata:
+  level: 3  # Worker
+  domain: requirements
+  tags:
+    - user-stories
+    - invest
+    - story-writing
+    - requirements-capture
+
+generator:
+  type: PIPELINE
+  steps:
+    - name: story_generation
+      type: LLM
+      provider: ANTHROPIC
+      model: claude-3-5-sonnet-20241022
+      temperature: 0.3
+      max_tokens: 2500
+      prompt: |
+        You are the Story Writer Agent. Write user stories:
+        
+        Requirement: {{requirement}}
+        User Persona: {{persona}}
+        Context: {{context}}
+        
+        Write stories following INVEST:
+        - Independent (can be developed separately)
+        - Negotiable (details can be discussed)
+        - Valuable (delivers user value)
+        - Estimable (clear enough to estimate)
+        - Small (fits in a sprint)
+        - Testable (acceptance criteria possible)
+        
+        Story Format: "As a [persona], I want to [action], so that [benefit]"
+        
+        Include:
+        1. Story title
+        2. Story statement
+        3. Context/background
+        4. INVEST validation
+        5. Suggested acceptance criteria
+        6. Technical notes
+        
+        Output as JSON: {stories: [{title, statement, context, invest_check, suggested_ac, technical_notes}]}
+    - name: invest_validation
+      type: RULE_BASED
+      description: Validate against INVEST criteria
+    - name: story_registration
+      type: SERVICE_CALL
+      service: backlog-service
+      endpoint: /stories/create
+
+memory:
+  episodic:
+    enabled: true
+    retention_days: 365
+    categories:
+      - written-stories
+      - feedback
+      - revisions
+  semantic:
+    enabled: true
+    categories:
+      - story-patterns
+      - persona-catalog
+      - value-themes
+  procedural:
+    enabled: true
+    categories:
+      - invest-criteria
+      - writing-guidelines
+      - splitting-techniques
+
+tools:
+  - story_template
+  - invest_validator
+  - backlog_integrator
+
+capabilities:
+  - story-writing
+  - invest-validation
+  - story-splitting
+  - backlog-integration
+
+routing:
+  input_types:
+    - requirement
+    - feature-description
+    - story-request
+  output_types:
+    - user-story
+    - story-set
+    - validation-report
+
+delegation:
+  can_delegate_to:
+    - acceptance-criteria-agent
+  escalates_to:
+    - requirements-orchestrator-agent
+
+governance:
+  requires_approval: true  # Stories need PO approval
+  can_block: false
+  audit_trail: standard
+
+performance:
+  expected_latency_ms: 3000
+  max_latency_ms: 8000
+  timeout_ms: 15000

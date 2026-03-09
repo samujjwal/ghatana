@@ -1,0 +1,174 @@
+/*
+ * Copyright (c) ${year} Ghatana Inc.
+ * All rights reserved.
+ *
+ * This source code and the accompanying materials are the confidential
+ * and proprietary information of Ghatana Inc. (“Confidential Information”).
+ * You shall not disclose such Confidential Information and shall use it
+ * only in accordance with the terms of the license agreement you entered
+ * into with Ghatana Inc.
+ *
+ * Unauthorized copying of this file, via any medium, is strictly prohibited.
+ * Proprietary and confidential.
+ */
+syntax = "proto3";
+
+package ghatana.contracts.common.v1;
+
+import "google/api/field_behavior.proto";
+import "google/protobuf/field_mask.proto";
+import "google/protobuf/any.proto";
+
+import "ghatana/contracts/common/v1/error.proto";
+
+option java_multiple_files = true;
+option java_package = "com.ghatana.contracts.common.v1";
+option java_outer_classname = "PaginationProto";
+option go_package = "github.com/ghatana/contracts/gen/go/common/v1;commonv1";
+option csharp_namespace = "Ghatana.Contracts.Common.V1";
+
+// PageRequest represents a request for a paginated list of resources
+//
+// This message is used to request a paginated list of resources with optional
+// filtering, sorting, and field selection.
+//
+// Example:
+//   {
+//     "page_size": 20,
+//     "page_token": "Cg0IARICCAESAigBMAA=",
+//     "filter": "status=ACTIVE",
+//     "order_by": "create_time desc, name"
+//   }
+message PageRequestProto {
+  // The maximum number of items to return. The service may return fewer than
+  // this value. If unspecified, at most 50 items will be returned.
+  // The maximum value is 1000; values above 1000 will be coerced to 1000.
+  int32 page_size = 1 [(google.api.field_behavior) = OPTIONAL];
+
+  // A page token, received from a previous `List` call. Provide this to
+  // retrieve the subsequent page.
+  //
+  // When paginating, all other parameters provided to `List` must match
+  // the call that provided the page token.
+  string page_token = 2 [(google.api.field_behavior) = OPTIONAL];
+
+  // A filter expression that filters the list results. The expression must specify
+  // the field name, a comparison operator, and the value that you want to use
+  // for filtering. The value must be a string, a number, or a boolean. The
+  // comparison operator must be either `=`, `!=`, `>`, `<`, `>=`, `<=`, `:`, `>`, `<`,
+  // `>=`, `<=`, `!=`, or `NOT`. The `:` operator can be used with string
+  // fields to match substrings. For string fields, the `=` operator is case-sensitive.
+  //
+  // Example: `create_time > "2020-01-01T00:00:00Z" AND status=ACTIVE`
+  string filter = 3 [(google.api.field_behavior) = OPTIONAL];
+
+  // A comma-separated list of fields to order by, sorted in ascending order.
+  // Use "desc" after a field name for descending. For example:
+  // `create_time desc, name`
+  string order_by = 4 [(google.api.field_behavior) = OPTIONAL];
+
+  // A field mask to specify which fields to include in the response.
+  // If not specified, all fields are returned.
+  google.protobuf.FieldMask field_mask = 5 [(google.api.field_behavior) = OPTIONAL];
+
+  // If true, the server will return all available fields, ignoring field_mask.
+  // This is useful for administrative operations where you need all fields.
+  bool view_all = 6 [(google.api.field_behavior) = OPTIONAL];
+
+  // Reserved for future use
+  reserved 1000 to max;
+  reserved "reserved_field";
+}
+
+// PageInfo contains metadata about a paginated response.
+//
+// This message provides pagination details such as the current page, page size,
+// and total number of items. It's included in paginated responses to help
+// clients navigate through the result set.
+//
+// Example:
+//   {
+//     "total_items": 42,
+//     "page_size": 10,
+//     "next_page_token": "Cg0IARICCAESAigBMAA="
+//   }
+message PageInfoProto {
+  // The total number of items across all pages
+  int64 total_items = 1 [(google.api.field_behavior) = OUTPUT_ONLY];
+
+  // The number of items in this page (may be less than page_size)
+  int32 page_size = 2 [(google.api.field_behavior) = OUTPUT_ONLY];
+
+  // Token to retrieve the next page of results, or empty if there are no more
+  // results in the list.
+  string next_page_token = 3 [(google.api.field_behavior) = OUTPUT_ONLY];
+
+  // Token to retrieve the previous page of results, or empty if this is the first page.
+  string previous_page_token = 4 [(google.api.field_behavior) = OUTPUT_ONLY];
+
+  // The current page number (1-based index)
+  int32 current_page = 5 [(google.api.field_behavior) = OUTPUT_ONLY];
+
+  // The total number of pages available
+  int32 total_pages = 6 [(google.api.field_behavior) = OUTPUT_ONLY];
+
+  // Whether there are more pages after the current page
+  bool has_next = 7 [(google.api.field_behavior) = OUTPUT_ONLY];
+
+  // Whether there are pages before the current page
+  bool has_previous = 8 [(google.api.field_behavior) = OUTPUT_ONLY];
+
+  // Reserved for future use
+  reserved 1000 to max;
+  reserved "reserved_field";
+}
+
+// PagedResponse is a standard response for paginated list operations.
+//
+// This message wraps a list of resources along with pagination metadata.
+// It follows the Google API design guidelines for pagination.
+//
+// Example:
+//   {
+//     "items": [
+//       {"id": "1", "name": "Item 1"},
+//       {"id": "2", "name": "Item 2"}
+//     ],
+//     "page_info": {
+//       "total_items": 42,
+//       "page_size": 10,
+//       "next_page_token": "Cg0IARICCAESAigBMAA="
+//     }
+//   }
+message PagedResponseProto {
+  // The list of items in this page
+  repeated google.protobuf.Any items = 1 [(google.api.field_behavior) = OUTPUT_ONLY];
+
+  // Pagination metadata
+  PageInfoProto page_info = 2 [(google.api.field_behavior) = OUTPUT_ONLY];
+
+  // Error details if the operation failed
+  // This field is only present if there was an error processing the request
+  ErrorProto error = 3 [(google.api.field_behavior) = OUTPUT_ONLY];
+
+  // Reserved for future use
+  reserved 1000 to max;
+  reserved "reserved_field";
+}
+
+// PagedResponseAny is a type-erased version of PagedResponse that can be used
+// when the item type is not known at compile time.
+message PagedResponseAnyProto {
+  // The list of items in this page as Any messages
+  repeated google.protobuf.Any items = 1 [(google.api.field_behavior) = OUTPUT_ONLY];
+
+  // Pagination metadata
+  PageInfoProto page_info = 2 [(google.api.field_behavior) = OUTPUT_ONLY];
+
+  // Error details if the operation failed
+  ErrorProto error = 3 [(google.api.field_behavior) = OUTPUT_ONLY];
+
+  // Reserved for future use
+  reserved 1000 to max;
+  reserved "reserved_field";
+}

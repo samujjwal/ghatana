@@ -1,0 +1,32 @@
+name: CI (OPA Build)
+
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
+
+jobs:
+  build-opa:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Go
+        uses: actions/setup-go@v5
+        with:
+          go-version: '1.25.x'
+          cache: true
+
+      - name: Go env
+        run: go env
+
+      - name: Build server with -tags=opa
+        working-directory: services/server
+        run: go build -tags=opa -v ./cmd/server
+
+      - name: Run unit tests (opa tag)
+        working-directory: services/server
+        run: go test -tags=opa -v ./...
+

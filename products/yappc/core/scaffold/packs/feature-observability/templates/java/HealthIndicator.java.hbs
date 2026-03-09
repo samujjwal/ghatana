@@ -1,0 +1,41 @@
+package {{packageName}}.observability;
+
+import org.springframework.boot.actuate.health.Health;
+import org.springframework.boot.actuate.health.HealthIndicator;
+import org.springframework.stereotype.Component;
+
+/**
+* Custom health indicator for application-specific health checks.
+*
+* @doc.type class
+* @doc.purpose Provides custom health check logic
+* @doc.layer platform
+* @doc.pattern HealthIndicator
+*/
+@Component
+public class CustomHealthIndicator implements HealthIndicator {
+
+@Override
+public Health health() {
+// Add custom health check logic here
+boolean healthy = checkCustomHealth();
+
+if (healthy) {
+return Health.up()
+.withDetail("service", "{{serviceName}}")
+.withDetail("status", "All systems operational")
+.build();
+}
+
+return Health.down()
+.withDetail("service", "{{serviceName}}")
+.withDetail("error", "Service unhealthy")
+.build();
+}
+
+private boolean checkCustomHealth() {
+// Implement custom health checks
+// Examples: check database connection, external service availability, etc.
+return true;
+}
+}

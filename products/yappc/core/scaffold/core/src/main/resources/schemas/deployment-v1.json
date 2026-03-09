@@ -1,0 +1,194 @@
+{
+    "$schema": "http://json-schema.org/draft-07/schema#",
+    "$id": "https://yappc.dev/schemas/deployment/v1.json",
+    "title": "YAPPC Deployment Configuration Schema",
+    "description": "Schema for deployment configurations",
+    "type": "object",
+    "required": [
+        "version",
+        "pattern"
+    ],
+    "properties": {
+        "version": {
+            "type": "string",
+            "pattern": "^\\d+\\.\\d+$",
+            "description": "Schema version"
+        },
+        "pattern": {
+            "type": "string",
+            "enum": [
+                "library",
+                "api-layer",
+                "service",
+                "hosted-application"
+            ],
+            "description": "Deployment pattern"
+        },
+        "target": {
+            "type": "string",
+            "enum": [
+                "docker",
+                "kubernetes",
+                "cloud-run",
+                "ecs",
+                "app-engine",
+                "none"
+            ],
+            "description": "Deployment target"
+        },
+        "environment": {
+            "type": "string",
+            "enum": [
+                "development",
+                "staging",
+                "production"
+            ],
+            "description": "Target environment"
+        },
+        "region": {
+            "type": "string",
+            "description": "Cloud region"
+        },
+        "cloud": {
+            "type": "string",
+            "enum": [
+                "aws",
+                "gcp",
+                "azure",
+                "on-premises"
+            ],
+            "description": "Cloud provider"
+        },
+        "docker": {
+            "type": "object",
+            "properties": {
+                "baseImage": {
+                    "type": "string",
+                    "description": "Base Docker image"
+                },
+                "multiarch": {
+                    "type": "boolean",
+                    "description": "Multi-architecture support"
+                },
+                "ports": {
+                    "type": "array",
+                    "items": {
+                        "type": "integer",
+                        "minimum": 1,
+                        "maximum": 65535
+                    }
+                }
+            }
+        },
+        "kubernetes": {
+            "type": "object",
+            "properties": {
+                "namespace": {
+                    "type": "string",
+                    "description": "Kubernetes namespace"
+                },
+                "replicas": {
+                    "type": "integer",
+                    "minimum": 1,
+                    "description": "Number of replicas"
+                },
+                "resources": {
+                    "type": "object",
+                    "properties": {
+                        "requests": {
+                            "type": "object",
+                            "properties": {
+                                "cpu": {
+                                    "type": "string"
+                                },
+                                "memory": {
+                                    "type": "string"
+                                }
+                            }
+                        },
+                        "limits": {
+                            "type": "object",
+                            "properties": {
+                                "cpu": {
+                                    "type": "string"
+                                },
+                                "memory": {
+                                    "type": "string"
+                                }
+                            }
+                        }
+                    }
+                },
+                "autoscaling": {
+                    "type": "object",
+                    "properties": {
+                        "enabled": {
+                            "type": "boolean"
+                        },
+                        "minReplicas": {
+                            "type": "integer"
+                        },
+                        "maxReplicas": {
+                            "type": "integer"
+                        },
+                        "targetCPU": {
+                            "type": "integer"
+                        }
+                    }
+                }
+            }
+        },
+        "capabilities": {
+            "type": "object",
+            "properties": {
+                "authentication": {
+                    "type": "array",
+                    "items": {
+                        "type": "string",
+                        "enum": [
+                            "jwt",
+                            "oauth2",
+                            "api-key",
+                            "mutual-tls"
+                        ]
+                    }
+                },
+                "monitoring": {
+                    "type": "boolean",
+                    "description": "Enable monitoring"
+                },
+                "logging": {
+                    "type": "boolean",
+                    "description": "Enable logging"
+                },
+                "tracing": {
+                    "type": "boolean",
+                    "description": "Enable distributed tracing"
+                }
+            }
+        },
+        "hooks": {
+            "type": "object",
+            "properties": {
+                "pre-deploy": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
+                },
+                "post-deploy": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
+                },
+                "rollback": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
+                }
+            }
+        }
+    }
+}

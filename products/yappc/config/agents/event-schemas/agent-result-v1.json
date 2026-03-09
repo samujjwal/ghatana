@@ -1,0 +1,174 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://ghatana.ai/schemas/yappc/events/agent-result-v1.json",
+  "title": "Agent Result Event",
+  "description": "Event published when an agent completes execution",
+  "version": "1.0.0",
+  "type": "object",
+  "required": ["eventId", "eventType", "timestamp", "agentId", "status", "executionTimeMs"],
+  "properties": {
+    "eventId": {
+      "type": "string",
+      "format": "uuid",
+      "description": "Unique identifier for this result event"
+    },
+    "eventType": {
+      "type": "string",
+      "const": "agent.result.produced"
+    },
+    "timestamp": {
+      "type": "string",
+      "format": "date-time",
+      "description": "When the result was produced"
+    },
+    "correlationId": {
+      "type": "string",
+      "format": "uuid",
+      "description": "Correlation ID matching the dispatch event"
+    },
+    "agentId": {
+      "type": "string",
+      "pattern": "^agent\\.yappc\\.[a-zA-Z0-9-]+$",
+      "description": "ID of the agent that produced the result"
+    },
+    "status": {
+      "type": "string",
+      "enum": ["SUCCESS", "FAILURE", "TIMEOUT", "CANCELLED"],
+      "description": "Execution status"
+    },
+    "executionTimeMs": {
+      "type": "integer",
+      "minimum": 0,
+      "description": "Total execution time in milliseconds"
+    },
+    "output": {
+      "type": "object",
+      "description": "Agent output data (present for SUCCESS status)",
+      "additionalProperties": true
+    },
+    "error": {
+      "type": "object",
+      "description": "Error details (present for FAILURE status)",
+      "properties": {
+        "code": {
+          "type": "string",
+          "description": "Error code"
+        },
+        "message": {
+          "type": "string",
+          "description": "Error message"
+        },
+        "details": {
+          "type": "object",
+          "additionalProperties": true,
+          "description": "Additional error details"
+        },
+        "stackTrace": {
+          "type": "string",
+          "description": "Stack trace for debugging"
+        }
+      },
+      "required": ["code", "message"]
+    },
+    "context": {
+      "type": "object",
+      "description": "Execution context from the dispatch",
+      "properties": {
+        "projectId": {
+          "type": "string",
+          "format": "uuid"
+        },
+        "taskId": {
+          "type": "string",
+          "format": "uuid"
+        },
+        "stage": {
+          "type": "string",
+          "enum": ["intent", "context", "plan", "execute", "verify", "observe", "learn", "institutionalize"]
+        },
+        "userId": {
+          "type": "string",
+          "format": "uuid"
+        },
+        "tenantId": {
+          "type": "string"
+        }
+      }
+    },
+    "metrics": {
+      "type": "object",
+      "description": "Execution metrics",
+      "properties": {
+        "inputTokens": {
+          "type": "integer",
+          "minimum": 0,
+          "description": "Number of input tokens processed"
+        },
+        "outputTokens": {
+          "type": "integer",
+          "minimum": 0,
+          "description": "Number of output tokens generated"
+        },
+        "costEstimate": {
+          "type": "number",
+          "minimum": 0,
+          "description": "Estimated cost in USD"
+        },
+        "memoryUsageMb": {
+          "type": "number",
+          "minimum": 0,
+          "description": "Peak memory usage in MB"
+        },
+        "cacheHitRate": {
+          "type": "number",
+          "minimum": 0,
+          "maximum": 1,
+          "description": "Cache hit rate"
+        }
+      }
+    },
+    "artifacts": {
+      "type": "array",
+      "description": "Artifacts produced during execution",
+      "items": {
+        "type": "object",
+        "required": ["id", "type", "name"],
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "type": {
+            "type": "string",
+            "enum": ["document", "code", "test", "diagram", "config", "other"]
+          },
+          "name": {
+            "type": "string"
+          },
+          "size": {
+            "type": "integer",
+            "minimum": 0
+          },
+          "checksum": {
+            "type": "string",
+            "description": "SHA-256 checksum"
+          },
+          "location": {
+            "type": "string",
+            "description": "Storage location reference"
+          }
+        }
+      }
+    },
+    "checkpointId": {
+      "type": "string",
+      "format": "uuid",
+      "description": "Agent execution checkpoint ID"
+    },
+    "traceId": {
+      "type": "string",
+      "format": "uuid",
+      "description": "Distributed tracing identifier"
+    }
+  }
+}

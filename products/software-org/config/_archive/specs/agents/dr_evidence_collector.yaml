@@ -1,0 +1,26 @@
+---
+id: "dr_evidence_collector"
+agent: "EvidenceCollectorAgent"
+role: "Compliance Evidence Bot"
+inputs_spec:
+- name: "dr_audit_log"
+  description: "DR audit log for evidence."
+  format: "Audit log artifact"
+- name: "dr_test_report"
+  description: "DR test report for evidence."
+  format: "DR test report artifact"
+outputs_spec:
+- name: "dr_evidence_package"
+  description: "DR and backup validation results for compliance."
+  format: "Evidence package artifact"
+agent_tasks:
+- "Archive DR and backup validation results for compliance."
+acceptance_criteria:
+- "DR and backup validation results archived for compliance."
+dependencies:
+- "dr_audit_log"
+- "dr_test_report"
+failure_escalation:
+- "Escalate to Compliance Evidence Bot if evidence not archived."
+references: []
+hitl: false

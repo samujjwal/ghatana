@@ -1,0 +1,82 @@
+# {{projectName}}
+
+Full-stack application with Rust Axum backend and React TypeScript frontend.
+
+## Architecture
+
+```
+{{projectName}}/
+├── backend/ # Rust Axum API
+│ ├── src/
+│ └── Cargo.toml
+├── frontend/ # React TypeScript SPA
+│ ├── src/
+│ └── package.json
+├── docker-compose.yml
+└── Makefile
+```
+
+## Prerequisites
+
+- Rust {{rustVersion}}+
+- Node.js {{nodeVersion}}+
+- pnpm 9+
+- cargo-watch (for hot reload): `cargo install cargo-watch`
+
+## Quick Start
+
+### Install Dependencies
+
+```bash
+pnpm install
+```
+
+### Development
+
+Run both backend and frontend:
+
+```bash
+make dev
+```
+
+Or run separately:
+
+```bash
+# Backend only (http://localhost:{{backendPort}})
+make dev-backend
+
+# Frontend only (http://localhost:{{frontendPort}})
+make dev-frontend
+```
+
+### Build
+
+```bash
+make build
+```
+
+### Test
+
+```bash
+make test
+```
+
+{{#if enableDocker}}
+## Docker
+
+```bash
+make docker-build
+make docker-up
+```
+{{/if}}
+
+## API Endpoints
+
+| Method | Path | Description |
+|--------|------|-------------|
+| GET | `/api/health` | Health check |
+| GET | `/api/example` | Example endpoint |
+
+## License
+
+MIT

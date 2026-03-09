@@ -1,0 +1,42 @@
+id: incident_handler
+agent: IncidentHandlerAgent
+role: Incident Management Coordinator
+inputs_spec:
+  - name: deployment_plan
+    description: Deployment plan from DeploymentAgent.
+    format: YAML object
+outputs_spec:
+  - name: incident_log
+    description: Incident/exception log (events, detection, severity, action, resolution, impact, follow-up).
+    format: YAML array
+acceptance_criteria:
+  - All incidents/exceptions logged with traceability.
+  - Severity, impact, resolution fields filled.
+  - Template followed.
+agent_tasks:
+  - Monitor deployment/post-deployment for incidents/exceptions.
+  - Log all incidents/actions/resolutions/impact.
+  - Assign follow-up actions as needed.
+dependencies:
+  - deployment_plan
+failure_escalation:
+  - Escalate unresolved/critical incidents to lead/exec.
+references: []
+internal_logic:
+  - perception:
+      description: "Monitor deployment and operations for incidents, exceptions, and errors."
+  - model:
+      description: "Maintain incident log with severity, detection, actions, impact, and follow-up."
+  - planning:
+      description: |
+        "For every incident, trigger response workflow and assign owners.
+         Track status through to resolution and capture impact."
+  - action:
+      description: "Update incident log and report to dashboard/stakeholders."
+validation:
+  - "Incident manager review for completeness and response."
+  - "Audit for incident closure, follow-up, and root cause."
+quality_enhancements:
+  - "Incident log template."
+  - "Metrics for incident response/resolution time."
+  - "Automated alerts for new/critical incidents."

@@ -1,0 +1,21 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: virtual-org
+  namespace: ghatana
+  labels:
+    app: virtual-org
+    component: agent-simulation
+spec:
+  type: ClusterIP
+  ports:
+  - name: http
+    port: 80
+    targetPort: http
+    protocol: TCP
+  - name: metrics
+    port: 9097
+    targetPort: metrics
+    protocol: TCP
+  selector:
+    app: virtual-org

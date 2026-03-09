@@ -1,0 +1,16 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: yappc-config
+  namespace: ghatana
+  labels:
+    app: yappc
+data:
+  YAPPC_ENV: "production"
+  YAPPC_LOG_LEVEL: "INFO"
+  YAPPC_DB_HOST: "postgres.ghatana.svc.cluster.local"
+  YAPPC_DB_PORT: "5432"
+  YAPPC_DB_NAME: "yappc"
+  YAPPC_LLM_GATEWAY_URL: "http://ai-inference.ghatana.svc.cluster.local:80"
+  YAPPC_AUTH_GATEWAY_URL: "http://auth-gateway.ghatana.svc.cluster.local:80"
+  YAPPC_DATACLOUD_URL: "http://datacloud.ghatana.svc.cluster.local:80"

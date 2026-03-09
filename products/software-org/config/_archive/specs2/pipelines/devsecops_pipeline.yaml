@@ -1,0 +1,18 @@
+stages:
+  - include: ../stages/1_plan.yaml
+  - include: ../stages/2_solution.yaml
+  - include: ../stages/3_design.yaml
+  - include: ../stages/4_develop.yaml
+  - include: ../stages/5_build.yaml
+  - include: ../stages/6_test.yaml
+  - include: ../stages/7_secure.yaml
+  - include: ../stages/8_compliance_validation.yaml
+  - include: ../stages/9_release_validation.yaml
+  - include: ../stages/10_uat.yaml
+  - include: ../stages/11_package_release.yaml
+  - include: ../stages/12_deploy.yaml
+  - include: ../stages/13_operate.yaml
+  - include: ../stages/14_monitor.yaml
+  - include: ../stages/15_backup.yaml
+  - include: ../stages/16_retrospective.yaml
+

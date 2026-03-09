@@ -1,0 +1,228 @@
+# Testing Domain Tasks
+# These tasks support test generation and execution
+
+tasks:
+  - id: generate-tests
+    name: Generate Unit Tests
+    description: Generate comprehensive unit tests for classes and methods
+    domain: testing
+    phase: TESTING
+    complexity: MEDIUM
+    requiredCapabilities:
+      - test-generation
+      - unit-testing
+      - java
+    parameters:
+      targetClasses:
+        type: array
+        required: true
+        description: Classes to generate tests for
+      testFramework:
+        type: string
+        required: false
+        default: "junit5"
+        description: Test framework to use
+      coverageGoal:
+        type: number
+        required: false
+        default: 80
+        description: Target code coverage percentage
+      includeMocks:
+        type: boolean
+        required: false
+        default: true
+        description: Include mock objects for dependencies
+    metadata:
+      version: "1.0"
+      tags: ["testing", "unit-tests", "junit"]
+
+  - id: generate-integration-tests
+    name: Generate Integration Tests
+    description: Generate integration tests for API endpoints and service interactions
+    domain: testing
+    phase: TESTING
+    complexity: COMPLEX
+    requiredCapabilities:
+      - test-generation
+      - integration-testing
+      - rest-api
+    parameters:
+      apiEndpoints:
+        type: array
+        required: true
+        description: API endpoints to test
+      testScenarios:
+        type: array
+        required: false
+        description: Specific scenarios to cover
+      includeDatabase:
+        type: boolean
+        required: false
+        default: true
+        description: Include database integration
+    metadata:
+      version: "1.0"
+      tags: ["testing", "integration", "api"]
+
+  - id: run-tests
+    name: Run Test Suite
+    description: Execute test suite and generate reports
+    domain: testing
+    phase: TESTING
+    complexity: SIMPLE
+    requiredCapabilities:
+      - test-execution
+      - ci-cd
+    parameters:
+      testScope:
+        type: string
+        required: false
+        default: "all"
+        description: Scope of tests to run (unit/integration/all)
+      parallelExecution:
+        type: boolean
+        required: false
+        default: true
+        description: Run tests in parallel
+      generateReport:
+        type: boolean
+        required: false
+        default: true
+        description: Generate test report
+    metadata:
+      version: "1.0"
+      tags: ["testing", "execution", "ci-cd"]
+
+  - id: coverage-analysis
+    name: Analyze Code Coverage
+    description: Analyze test coverage and identify gaps
+    domain: testing
+    phase: TESTING
+    complexity: SIMPLE
+    requiredCapabilities:
+      - code-coverage
+      - analysis
+    parameters:
+      coverageReport:
+        type: string
+        required: false
+        description: Path to coverage report
+      threshold:
+        type: number
+        required: false
+        default: 80
+        description: Minimum coverage threshold
+    metadata:
+      version: "1.0"
+      tags: ["coverage", "analysis", "quality"]
+
+  - id: mutation-testing
+    name: Run Mutation Testing
+    description: Perform mutation testing to assess test quality
+    domain: testing
+    phase: TESTING
+    complexity: COMPLEX
+    requiredCapabilities:
+      - mutation-testing
+      - test-quality
+    parameters:
+      targetClasses:
+        type: array
+        required: true
+        description: Classes to mutate
+      mutators:
+        type: array
+        required: false
+        description: Specific mutators to use
+      threshold:
+        type: number
+        required: false
+        default: 75
+        description: Minimum mutation score threshold
+    metadata:
+      version: "1.0"
+      tags: ["mutation", "test-quality", "pitest"]
+
+  - id: e2e-tests
+    name: Generate E2E Tests
+    description: Generate end-to-end tests for critical user journeys
+    domain: testing
+    phase: TESTING
+    complexity: COMPLEX
+    requiredCapabilities:
+      - e2e-testing
+      - test-automation
+      - selenium
+    parameters:
+      userJourneys:
+        type: array
+        required: true
+        description: User journeys to test
+      testTool:
+        type: string
+        required: false
+        default: "selenium"
+        description: E2E testing tool (selenium/playwright/cypress)
+      browsers:
+        type: array
+        required: false
+        default: ["chrome"]
+        description: Browsers to test on
+    metadata:
+      version: "1.0"
+      tags: ["e2e", "selenium", "automation"]
+
+  - id: performance-tests
+    name: Generate Performance Tests
+    description: Generate load and performance tests
+    domain: testing
+    phase: TESTING
+    complexity: COMPLEX
+    requiredCapabilities:
+      - performance-testing
+      - load-testing
+      - jmeter
+    parameters:
+      endpoints:
+        type: array
+        required: true
+        description: Endpoints to test
+      loadProfile:
+        type: object
+        required: true
+        description: Load profile (users, duration, ramp-up)
+      thresholds:
+        type: object
+        required: false
+        description: Performance thresholds (latency, throughput)
+    metadata:
+      version: "1.0"
+      tags: ["performance", "load-testing", "jmeter"]
+
+  - id: security-tests
+    name: Run Security Tests
+    description: Perform security scanning and vulnerability testing
+    domain: testing
+    phase: TESTING
+    complexity: COMPLEX
+    requiredCapabilities:
+      - security-testing
+      - vulnerability-scanning
+      - owasp
+    parameters:
+      scanType:
+        type: string
+        required: false
+        default: "full"
+        description: Type of scan (quick/full/custom)
+      targetUrls:
+        type: array
+        required: false
+        description: Specific URLs to scan
+      authConfig:
+        type: object
+        required: false
+        description: Authentication configuration for scanning
+    metadata:
+      version: "1.0"
+      tags: ["security", "vulnerability", "owasp"]

@@ -1,0 +1,12 @@
+pub mod health;
+pub mod api;
+
+use actix_web::{HttpResponse, Responder};
+use serde_json::json;
+
+pub async fn not_found() -> impl Responder {
+HttpResponse::NotFound().json(json!({
+"error": "Not Found",
+"message": "The requested resource was not found"
+}))
+}

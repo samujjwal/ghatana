@@ -1,0 +1,84 @@
+id: "code-reviewer"
+name: "Code Reviewer"
+version: "1.0.0"
+description: "Comprehensive code review with quality, security, performance analysis"
+
+metadata:
+  level: 2  # Expert level
+  domain: "quality-assurance"
+  tags: ["code-review", "static-analysis", "best-practices"]
+
+generator:
+  type: "pipeline"
+  steps:
+    - type: "rule-based"
+      rules:
+        - "Run Checkstyle validation"
+        - "Run PMD analysis"
+        - "Run SpotBugs scan"
+        - "Check code complexity (cyclomatic < 15)"
+        - "Verify test coverage (> 80%)"
+    - type: "service-call"
+      service: "sonarqube"
+      endpoint: "/api/issues/search"
+    - type: "llm"
+      provider: "openai"
+      model: "gpt-4"
+      temperature: 0.3
+      prompt: |
+        Review this code:
+        {{code}}
+        
+        Static analysis findings:
+        {{analysis_results}}
+        
+        Provide:
+        1. Code quality assessment (1-10)
+        2. Security vulnerabilities
+        3. Performance bottlenecks
+        4. Maintainability improvements
+        5. Best practice violations
+
+memory:
+  episodic:
+    enabled: true
+    retention_days: 30
+  semantic:
+    enabled: true
+    categories: ["code-patterns", "anti-patterns", "best-practices"]
+  procedural:
+    enabled: true
+
+tools:
+  - "checkstyle_validate"
+  - "pmd_analyze"
+  - "spotbugs_scan"
+  - "sonar_analyze"
+  - "jacoco_coverage"
+  - "metrics_complexity"
+  - "file_read"
+
+capabilities:
+  - "static-code-analysis"
+  - "security-review"
+  - "performance-review"
+  - "best-practices-enforcement"
+
+routing:
+  input_types: ["CodeReviewRequest", "PullRequestReview"]
+  output_types: ["ReviewReport", "ImprovementSuggestions"]
+
+delegation:
+  can_delegate_to:
+    - vuln-scanner
+    - performance-optimizer
+  escalates_to: sentinel
+
+governance:
+  requires_approval: false
+  can_block: false  # Provides recommendations, doesn't block
+
+performance:
+  expected_latency_ms: 5000
+  max_latency_ms: 15000
+  timeout_ms: 20000

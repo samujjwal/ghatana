@@ -1,0 +1,48 @@
+id: solution_evidence_collector
+agent: EvidenceCollectorAgent
+role: Compliance Evidence Bot
+inputs_spec:
+- name: solution_audit_log
+  description: Solution audit log artifact.
+  format: Audit log artifact
+- name: solution_success_criteria_status
+  description: Status of solution stage success criteria.
+  format: List of criteria status objects
+- name: solution_stage_milestone
+  description: Solution stage milestone plan.
+  format: List of milestone objects
+outputs_spec:
+- name: solution_evidence_package
+  description: Evidence package for Solution stage, including artifacts, audit logs, signoffs, KPIs, compliance links, and access logs.
+  format: Evidence package artifact (artifacts, hashes, compliance_links, archive_location, access_logs)
+  example: 'artifacts: ["architecture.pdf", "audit.log"]
+
+    hashes: ["sha256:abc123"]
+
+    compliance_links: ["GDPR", "HIPAA"]
+
+    archive_location: "s3://evidence/"
+
+    access_logs: ["accessed by compliance"]
+
+    '
+agent_tasks:
+- Collect and hash all artifacts, audit logs, signoffs, and KPIs for the stage.
+- Link evidence to compliance and regulatory requirements.
+- Archive evidence package in tamper-evident storage.
+- Maintain access logs for evidence package.
+acceptance_criteria:
+- Collects and hashes all artifacts, audit logs, signoffs, and KPIs for the stage.
+- Evidence is linked to compliance and regulatory requirements.
+- Evidence package is archived in tamper-evident storage.
+- Access logs for evidence package are maintained.
+dependencies:
+- solution_audit_log
+- solution_success_criteria_status
+- solution_stage_milestone
+failure_escalation:
+- Escalate to compliance or evidence lead if evidence is incomplete or not archived.
+references: []
+hitl: false
+
+# [!!] No custom enhancement found.

@@ -1,0 +1,40 @@
+version: v1
+name: buf.build/samujjwal/dcmaar
+deps:
+  - buf.build/envoyproxy/protoc-gen-validate
+
+build:
+  excludes:
+    - node_modules
+    - '**/node_modules/**'
+    - '**/gen/**'
+    - 'proto_backup'
+
+breaking:
+  use:
+    - FILE
+  ignore:
+    - '**/*_test.proto'
+    - '**/validate/**'  # Ignore breaking changes in validate directory
+
+lint:
+  use:
+    - STANDARD
+  except:
+    # Keep current schema without mass renames
+    - ENUM_ZERO_VALUE_SUFFIX
+    - ENUM_VALUE_PREFIX
+    - RPC_REQUEST_STANDARD_NAME
+    - RPC_RESPONSE_STANDARD_NAME
+    - RPC_REQUEST_RESPONSE_UNIQUE
+  ignore_only:
+    PACKAGE_VERSION_SUFFIX:
+      - '**/google/**'
+      - '**/validate/**'
+    ENUM_VALUE_PREFIX:
+      - '**/validate/**'
+    ENUM_ZERO_VALUE_SUFFIX:
+      - '**/validate/**'
+  ignore:
+    - 'validate'  # Skip linting for validate directory
+    - 'proto_backup' # Ignore backup protos which duplicate current sources

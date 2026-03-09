@@ -1,0 +1,13 @@
+[
+  {
+    "path": "dist/**/*.js",
+    "limit": "100 KB",
+    "webpack": false,
+    "gzip": true
+  },
+  {
+    "path": "dist/**/*.js",
+    "limit": "10 s",
+    "running": true
+  }
+]

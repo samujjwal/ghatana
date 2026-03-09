@@ -1,0 +1,1027 @@
+name: Operate (Resilient & Observable Infrastructure)
+workflow:
+  - id: monitor_progress_dashboard
+    agent: ProgressDashboardAgent
+    role: Operations Dashboard Owner
+    inputs_spec:
+      - name: operate_kpi_report
+        description: Latest KPIs for operational and security performance.
+        format: KPI report artifact
+      - name: operate_success_criteria_status
+        description: Operational success criteria status for dashboard visualization.
+        format: List of criteria status objects
+      - name: operate_stage_milestone
+        description: Operational milestone plan for dashboard visualization.
+        format: List of milestone objects
+    outputs_spec:
+      - name: operate_progress_dashboard
+        description: Dashboard visualizing operational KPIs, SLO/SLA status, blockers, incidents, and trends.
+        format: Dashboard artifact
+    agent_tasks:
+      - Visualize operational KPIs, SLO/SLA, and incident trends in a dashboard.
+      - Show open incidents, SLO breaches, critical risks, and blockers.
+      - Update dashboard in real time and link to logs, incident reports, and milestone status.
+      - Highlight critical path, blocked dependencies, and bottlenecks.
+    acceptance_criteria:
+      - Dashboard visualizes all KPIs, incidents, SLOs, blockers, and trends.
+      - Updated in real time, accessible to ops, security, and leadership.
+      - Critical paths and bottlenecks are visually emphasized.
+    dependencies:
+      - operate_kpi_report
+      - operate_success_criteria_status
+      - operate_stage_milestone
+    failure_escalation:
+      - Escalate to dashboard owner or ops lead if dashboard is not current or actionable.
+    references: []
+    hitl: false
+
+  - id: operate_otel_telemetry_agent
+    agent: OpenTelemetryAgent
+    role: Observability Automation
+    inputs_spec:
+      - name: operate_progress_dashboard
+        description: Operational dashboard containing real-time metrics, traces, and logs.
+        format: Dashboard artifact
+    outputs_spec:
+      - name: operate_otel_telemetry_report
+        description: Distributed traces, metrics, logs collected via OpenTelemetry.
+        format: Telemetry report artifact
+    agent_tasks:
+      - Collect distributed traces, metrics, and logs from production/ops environments via OpenTelemetry.
+      - Send telemetry to central observability platforms (e.g., Grafana, Datadog).
+      - Flag trace gaps or SLO/SLA breaches for follow-up.
+    acceptance_criteria:
+      - Distributed telemetry is collected, linked to SLO/SLA and incident data.
+      - Telemetry sent to observability platforms.
+      - Gaps/SLO breaches are flagged.
+    dependencies:
+      - operate_progress_dashboard
+    failure_escalation:
+      - Escalate to SRE/observability lead if telemetry is missing or incomplete.
+    references: []
+    hitl: false
+
+  - id: operate_slo_monitor_agent
+    agent: SLOMonitorAgent
+    role: SRE/Automation
+    inputs_spec:
+      - name: operate_otel_telemetry_report
+        description: Telemetry report with traces and SLO data.
+        format: Telemetry report artifact
+    outputs_spec:
+      - name: operate_slo_status_report
+        description: SLO/SLA compliance status, breaches, and near-misses.
+        format: SLO/SLA status report artifact
+    agent_tasks:
+      - Monitor and report on operational SLO/SLA compliance.
+      - Escalate breaches or near-misses to ops and product owners.
+      - Visualize compliance in dashboards/reports.
+    acceptance_criteria:
+      - SLO/SLA compliance is tracked and reported.
+      - Breaches and near-misses are escalated.
+      - Compliance status is visible to all stakeholders.
+    dependencies:
+      - operate_otel_telemetry_report
+    failure_escalation:
+      - Escalate to SRE or product owner if SLO/SLA compliance is not monitored or reported.
+    references: []
+    hitl: false
+
+  - id: operate_incident_handler
+    agent: IncidentHandlerAgent
+    role: Incident Manager
+    inputs_spec:
+      - name: operate_slo_status_report
+        description: SLO/SLA status report for incident triggers.
+        format: SLO/SLA status report artifact
+    outputs_spec:
+      - name: operate_incident_report
+        description: Incident report for each breach or operational failure.
+        format: Incident report artifact
+    agent_tasks:
+      - Generate incident report for each SLO/SLA breach or operational failure.
+      - Document root cause, remediation steps, and escalation path.
+      - Log incident for audit and trend analysis.
+    acceptance_criteria:
+      - Incident reports are generated for all breaches/failures.
+      - Each report includes root cause and remediation.
+      - Incidents are logged for audit/trends.
+    dependencies:
+      - operate_slo_status_report
+    failure_escalation:
+      - Escalate to incident manager or ops lead if incidents are not logged or remediated.
+    references: []
+    hitl: true
+    hitl_reason: Human reviews incident handling and confirms escalation
+
+  - id: operate_observability_export
+    agent: ObservabilityExportAgent
+    role: SRE/Analytics
+    inputs_spec:
+      - name: operate_progress_dashboard
+        description: Operations progress dashboard for observability export.
+        format: Dashboard artifact
+    outputs_spec:
+      - name: operate_observability_export
+        description: Pipeline metrics/KPIs exported to analytics/monitoring.
+        format: Export artifact
+    agent_tasks:
+      - Export operational pipeline metrics/KPIs to external analytics or monitoring.
+      - Flag gaps in observability.
+    acceptance_criteria:
+      - Pipeline metrics/KPIs exported to analytics/monitoring.
+      - Gaps in observability flagged.
+    dependencies:
+      - operate_progress_dashboard
+    failure_escalation:
+      - Escalate to SRE/Analytics if metrics are not exported or gaps missed.
+    references: []
+    hitl: false
+
+  - id: operate_feedback_loop
+    agent: FeedbackLoopAgent
+    role: Ops Coach/Automation
+    inputs_spec:
+      - name: operate_progress_dashboard
+        description: Operations dashboard for collecting issues and improvement suggestions.
+        format: Dashboard artifact
+    outputs_spec:
+      - name: operate_feedback_items
+        description: List of ops feedback/improvement suggestions routed to Retrospective and tracked for closure.
+        format: List of feedback items
+    agent_tasks:
+      - Route all operational issues/improvement suggestions to Retrospective.
+      - Track feedback for closure/action.
+    acceptance_criteria:
+      - Issues/improvements are routed to Retrospective.
+      - Feedback is tracked for closure.
+    dependencies:
+      - operate_progress_dashboard
+    failure_escalation:
+      - Escalate to ops coach if feedback is not acted on or routed.
+    references: []
+    hitl: false
+
+  - id: operate_notification_agent
+    agent: NotificationAgent
+    role: Ops Communications
+    inputs_spec:
+      - name: operate_progress_dashboard
+        description: Operations dashboard with key events and incidents.
+        format: Dashboard artifact
+      - name: operate_incident_report
+        description: Incident reports for notification distribution.
+        format: Incident report artifact
+    outputs_spec:
+      - name: operate_notifications
+        description: Notifications sent to stakeholders about incidents, risks, SLO/SLA breaches, and audit log.
+        format: List of notification objects
+    agent_tasks:
+      - Notify stakeholders about incidents, SLO/SLA breaches, major ops risks.
+      - Log notification delivery for audit.
+    acceptance_criteria:
+      - Stakeholders are notified of key incidents, risks, SLO/SLA breaches.
+      - Notification delivery is logged for audit.
+    dependencies:
+      - operate_progress_dashboard
+      - operate_incident_report
+    failure_escalation:
+      - Escalate to ops lead if notifications are not delivered/logged.
+    references: []
+    hitl: false
+
+  - id: operate_audit_log_agent
+    agent: AuditLogAgent
+    role: Compliance Bot
+    inputs_spec:
+      - name: operate_progress_dashboard
+        description: Operations progress dashboard for audit logging.
+        format: Dashboard artifact
+      - name: operate_notification_agent
+        description: Notification logs for audit.
+        format: List of notification objects
+      - name: operate_success_criteria_status
+        description: Operational success criteria status for audit correlation.
+        format: List of criteria status objects
+      - name: operate_stage_milestone
+        description: Operational milestone plan for audit completeness.
+        format: List of milestone objects
+    outputs_spec:
+      - name: operate_audit_log
+        description: Audit log of agent actions, incidents, notifications, and signoffs.
+        format: Audit log artifact
+    agent_tasks:
+      - Record every action, transition, and event with timestamp, user/agent, and artifact link.
+      - Log major events, incidents, signoffs, escalations, and notifications.
+      - Cryptographically sign and archive logs for compliance.
+    acceptance_criteria:
+      - All actions and events are logged and archived for compliance.
+      - Major events and signoffs are included in audit log.
+      - Logs are signed and archived securely.
+    dependencies:
+      - operate_progress_dashboard
+      - operate_notification_agent
+      - operate_success_criteria_status
+      - operate_stage_milestone
+    failure_escalation:
+      - Escalate to compliance/audit lead if logs are incomplete/inaccessible.
+    references: []
+    hitl: false
+
+  - id: operate_evidence_collector
+    agent: EvidenceCollectorAgent
+    role: Compliance Evidence Bot
+    inputs_spec:
+      - name: operate_audit_log
+        description: Operations stage audit log for evidence package.
+        format: Audit log artifact
+      - name: operate_success_criteria_status
+        description: Status of operational success criteria.
+        format: List of criteria status objects
+      - name: operate_stage_milestone
+        description: Operations stage milestone plan.
+        format: List of milestone objects
+      - name: operate_progress_dashboard
+        description: Operations dashboard for evidence package.
+        format: Dashboard artifact
+    outputs_spec:
+      - name: operate_evidence_package
+        description: Evidence package for Operate/Monitor stage (artifacts, logs, signoffs, KPIs, compliance links).
+        format: Evidence package artifact
+    agent_tasks:
+      - Collect and hash all artifacts, logs, signoffs, KPIs for stage.
+      - Link evidence to compliance/regulatory requirements.
+      - Archive package in tamper-evident storage and maintain access logs.
+    acceptance_criteria:
+      - All evidence/artifacts are collected and hashed.
+      - Evidence is linked to compliance/regulatory requirements.
+      - Package is archived and access logs maintained.
+    dependencies:
+      - operate_audit_log
+      - operate_success_criteria_status
+      - operate_stage_milestone
+      - operate_progress_dashboard
+    failure_escalation:
+      - Escalate to compliance/evidence lead if evidence package is incomplete or not archived.
+    references: []
+    hitl: false
+  
+  - id: operate_risk_trend_analyzer
+    agent: RiskTrendAnalyzerAgent
+    role: Risk Intelligence Bot
+    inputs_spec:
+      - name: operate_escalation_report
+        description: Operate escalation report for risk trend analysis.
+        format: Escalation report artifact
+      - name: operate_progress_dashboard
+        description: Operate progress dashboard for risk trend data.
+        format: Dashboard artifact
+      - name: operate_stage_milestone
+        description: Operate milestone plan for risk trend context.
+        format: List of milestone objects
+    outputs_spec:
+      - name: operate_risk_trend_report
+        description: Risk trend report (risks, escalations, blockers, recommendations).
+        format: Risk trend report artifact
+    agent_tasks:
+      - Trend all operate-stage risks, escalations, blockers over time.
+      - Automatically flag/classify recurring/systemic risks.
+      - Share trend report with PMO and leadership.
+      - Recommend mitigation or process changes.
+    acceptance_criteria:
+      - All risks, escalations, blockers are trended over time.
+      - Recurring/systemic risks are flagged/classified.
+      - Trend report shared with PMO/leadership.
+      - Recommendations included.
+    dependencies:
+      - operate_escalation_report
+      - operate_progress_dashboard
+      - operate_stage_milestone
+    failure_escalation:
+      - Escalate to Risk Intelligence Lead if risk trends or recommendations missing.
+    references: []
+    hitl: false
+
+  - id: operate_policy_drift_detector
+    agent: PolicyDriftDetectorAgent
+    role: Compliance Automation
+    inputs_spec:
+      - name: operate_milestone_tracker
+        description: Operate milestone tracker for drift detection.
+        format: Milestone tracker artifact
+      - name: operate_progress_dashboard
+        description: Operate progress dashboard for drift status.
+        format: Dashboard artifact
+    outputs_spec:
+      - name: operate_policy_drift_report
+        description: Report on policy/config drift and status.
+        format: Drift report artifact
+    agent_tasks:
+      - Compare actual deployed configs/policies to approved definitions.
+      - Flag, categorize, and timestamp all drift/changes.
+      - Escalate critical drift for review.
+      - Maintain drift detection history for trend analysis.
+    acceptance_criteria:
+      - Deployed configs/policies compared to approved definitions.
+      - Drift/changes flagged, categorized, timestamped.
+      - Critical drift escalated.
+      - Drift detection history maintained.
+    dependencies:
+      - operate_milestone_tracker
+      - operate_progress_dashboard
+    failure_escalation:
+      - Escalate to compliance lead if drift not flagged/reported.
+    references: []
+    hitl: false
+
+  - id: operate_sla_reporter
+    agent: SLAComplianceReporterAgent
+    role: Service Quality Bot
+    inputs_spec:
+      - name: operate_progress_dashboard
+        description: Operate progress dashboard for SLA monitoring.
+        format: Dashboard artifact
+      - name: operate_kpi_report
+        description: KPI report for SLA monitoring.
+        format: KPI report artifact
+    outputs_spec:
+      - name: operate_sla_report
+        description: SLA compliance report for all services.
+        format: SLA compliance report artifact
+    agent_tasks:
+      - Monitor SLO/SLA metrics for breaches/trends.
+      - Trigger notification and root cause entry on breach.
+      - Archive report for audit/share with stakeholders.
+      - Recommend improvements if trends worsen.
+    acceptance_criteria:
+      - All SLO/SLA metrics monitored for breaches/trends.
+      - Breach triggers notification/root cause entry.
+      - Report archived/audited.
+      - Improvements recommended if trends worsen.
+    dependencies:
+      - operate_progress_dashboard
+      - operate_kpi_report
+    failure_escalation:
+      - Escalate to Service Quality Bot if SLA report not archived or breaches unaddressed.
+    references: []
+    hitl: false
+
+  - id: operate_policy_reconciliation
+    agent: PolicyReconciliationAgent
+    role: Compliance Automation
+    inputs_spec:
+      - name: operate_progress_dashboard
+        description: Operate progress dashboard for reconciliation triggers.
+        format: Dashboard artifact
+    outputs_spec:
+      - name: operate_policy_recon_report
+        description: Report on policy reconciliation actions/status.
+        format: Policy reconciliation report artifact
+    agent_tasks:
+      - Compare live env policies/configs to source-of-truth.
+      - Flag/report any drift to compliance.
+      - Assign remediation if mismatches found.
+    acceptance_criteria:
+      - All live env policies/configs match source-of-truth.
+      - Drift is flagged/reported to compliance.
+      - Remediation assigned if mismatches found.
+    dependencies:
+      - operate_progress_dashboard
+    failure_escalation:
+      - Escalate to compliance automation if drift/mismatches not remediated.
+    references: []
+    hitl: false
+  - id: monitoring_config
+    agent: MonitoringConfigAgent
+    role: SRE/Observability Engineer
+    inputs_spec:
+      - name: deployment_complete_status
+        description: Deployment completion status artifact.
+        format: Deployment status artifact
+    outputs_spec:
+      - name: monitoring_dashboards
+        description: Monitoring dashboards for all key infrastructure/services.
+        format: List of dashboard artifacts
+    agent_tasks:
+      - Configure monitoring for all critical infrastructure/services.
+      - Create dashboards for SLO, availability, and error rates.
+      - Define and test alerts for critical metrics.
+      - Version control monitoring configuration.
+    acceptance_criteria:
+      - Monitoring configuration covers all key infrastructure/services.
+      - Dashboards are created for SLO, availability, and error rates.
+      - Alerts are defined for critical metrics.
+      - Configuration is version-controlled.
+    dependencies:
+      - deployment_complete_status
+    failure_escalation:
+      - Escalate to SRE/Observability Engineer if monitoring is incomplete or misconfigured.
+    references: []
+    hitl: false
+
+  - id: operate_best_practice_enforcement
+    agent: OperateBestPracticeAgent
+    role: Ops QA Auditor
+    inputs_spec:
+      - name: monitoring_dashboards
+        description: Monitoring dashboards for best practice review.
+        format: List of dashboard artifacts
+    outputs_spec:
+      - name: operate_best_practice_report
+        description: Best practice compliance report for Operate stage.
+        format: Best practice report artifact
+    agent_tasks:
+      - Assess all operational practices for org and industry best practices.
+      - Ensure backups, patching, incident response plans are documented.
+      - Flag deviations and provide evidence of compliance.
+    acceptance_criteria:
+      - Practices align with org and industry best practices.
+      - Backups, patching, and incident response are documented.
+      - Deviations are flagged and justified.
+      - Compliance evidence provided.
+    dependencies:
+      - monitoring_dashboards
+    failure_escalation:
+      - Escalate to QA Auditor if best practices are not followed.
+    references: []
+    hitl: true
+    hitl_reason: Human ensures operational best practices are enforced
+
+  - id: operate_milestone_tracker
+    agent: OperateMilestoneTrackerAgent
+    role: Ops PM
+    inputs_spec:
+      - name: operate_best_practice_report
+        description: Operate best practice report for milestone tracking.
+        format: Best practice report artifact
+    outputs_spec:
+      - name: operate_stage_milestone
+        description: Milestones for Operate stage, with owner and due dates.
+        format: List of milestone objects
+    agent_tasks:
+      - List all Operate stage milestones.
+      - Assign owners and due dates.
+      - Update blockers and risks regularly.
+      - Log milestone completion.
+    acceptance_criteria:
+      - All milestones listed and tracked.
+      - Owners and due dates assigned.
+      - Blockers and risks updated.
+      - Completion logged.
+    dependencies:
+      - operate_best_practice_report
+    failure_escalation:
+      - Escalate to Ops PM if milestones unclear or not updated.
+    references: []
+    hitl: true
+    hitl_reason: Human oversight for operate milestone tracking
+
+  - id: logging_aggregation
+    agent: LoggingAggregationAgent
+    role: DevOps/Observability Engineer
+    inputs_spec:
+      - name: operate_stage_milestone
+        description: Operate stage milestones for log aggregation trigger.
+        format: List of milestone objects
+    outputs_spec:
+      - name: centralized_logs
+        description: Centralized log storage and aggregation.
+        format: Centralized log artifact
+    agent_tasks:
+      - Set up centralized logging for all critical infra.
+      - Ensure reliable log ingestion and retention.
+      - Ensure logs accessible for incident review.
+    acceptance_criteria:
+      - Centralized logging set up for all critical infrastructure.
+      - Log ingestion reliable and monitored.
+      - Retention policy applied.
+      - Logs accessible for incident review.
+    dependencies:
+      - operate_stage_milestone
+    failure_escalation:
+      - Escalate to DevOps/Observability Engineer if logs missing or not accessible.
+    references: []
+    hitl: false
+
+  - id: slosli_tracking
+    agent: SLOSLITrackingAgent
+    role: SRE/Platform Engineer
+    inputs_spec:
+      - name: centralized_logs
+        description: Centralized logs for SLO/SLI tracking.
+        format: Centralized log artifact
+    outputs_spec:
+      - name: slo_sli_reports
+        description: SLO/SLI tracking reports for all key services.
+        format: SLO/SLI report artifact
+    agent_tasks:
+      - Define and track SLOs/SLIs for key services.
+      - Report and store actual SLO/SLI data.
+      - Flag violations and trends for review.
+    acceptance_criteria:
+      - SLOs/SLIs defined and tracked.
+      - Actual data reported and stored.
+      - Violations and trends flagged for review.
+    dependencies:
+      - centralized_logs
+    failure_escalation:
+      - Escalate to SRE/Platform Engineer if SLO/SLI tracking incomplete.
+    references: []
+    hitl: true
+    hitl_reason: Human reviews SLO/SLI tracking for reliability
+
+  - id: self_healing
+    agent: SelfHealingAgent
+    role: Platform Engineer
+    inputs_spec:
+      - name: centralized_logs
+        description: Centralized logs for self-healing trigger.
+        format: Centralized log artifact
+    outputs_spec:
+      - name: self_healing_events
+        description: Self-healing actions/events and logs.
+        format: Self-healing event artifact
+    agent_tasks:
+      - Define/test self-healing actions.
+      - Version-control remediation scripts.
+      - Log and analyze events.
+    acceptance_criteria:
+      - Self-healing actions defined/tested.
+      - Scripts version-controlled.
+      - Events logged and analyzed.
+    dependencies:
+      - centralized_logs
+    failure_escalation:
+      - Escalate to Platform Engineer if self-healing actions ineffective.
+    references: []
+    hitl: true
+    hitl_reason: Human reviews self-healing events for effectiveness
+
+  - id: synthetic_monitoring
+    agent: SyntheticMonitoringAgent
+    role: QA/SRE
+    inputs_spec:
+      - name: centralized_logs
+        description: Centralized logs for synthetic check execution.
+        format: Centralized log artifact
+    outputs_spec:
+      - name: synthetic_monitoring_reports
+        description: Synthetic monitoring reports and alert results.
+        format: Synthetic monitoring report artifact
+    agent_tasks:
+      - Configure synthetic checks for user journeys.
+      - Schedule and execute checks.
+      - Alert on failures and incidents.
+    acceptance_criteria:
+      - Synthetic checks configured for major user journeys.
+      - Checks run at scheduled intervals.
+      - Failures trigger alerts/incidents.
+    dependencies:
+      - centralized_logs
+    failure_escalation:
+      - Escalate to QA/SRE if checks missing or failures not alerted.
+    references: []
+    hitl: false
+
+  - id: dr_backup
+    agent: DRBackupAgent
+    role: Ops/SRE
+    inputs_spec:
+      - name: centralized_logs
+        description: Centralized logs for backup validation.
+        format: Centralized log artifact
+    outputs_spec:
+      - name: dr_backup_test_results
+        description: DR backup test results for compliance.
+        format: Backup test results artifact
+    agent_tasks:
+      - Enforce/monitor DR backup schedule.
+      - Test backups regularly for restore.
+      - Log and review backup failures.
+    acceptance_criteria:
+      - Backup schedule enforced/monitored.
+      - Backups tested regularly for restore.
+      - Failures logged and reviewed.
+    dependencies:
+      - centralized_logs
+    failure_escalation:
+      - Escalate to Ops/SRE if DR backups fail or are untested.
+    references: []
+    hitl: true
+    hitl_reason: Human validates DR backup tests
+
+  - id: incident_response
+    agent: IncidentResponseAgent
+    role: SRE/Incident Lead
+    inputs_spec:
+      - name: centralized_logs
+        description: Centralized logs for incident detection.
+        format: Centralized log artifact
+    outputs_spec:
+      - name: incident_tickets
+        description: Incident response tickets, root cause, and postmortem.
+        format: List of incident ticket artifacts
+    agent_tasks:
+      - Track and prioritize all incidents.
+      - Assign and follow up response actions.
+      - Record root cause and postmortem for each incident.
+    acceptance_criteria:
+      - All incidents tracked and prioritized.
+      - Response actions assigned/followed up.
+      - Root cause/postmortem recorded.
+    dependencies:
+      - centralized_logs
+    failure_escalation:
+      - Escalate to Incident Lead if incidents untracked or postmortem missing.
+    references: []
+    hitl: true
+    hitl_reason: Human reviews and manages incident response tickets
+
+  - id: operate_incident_feedback_handler
+    agent: IncidentFeedbackHandlerAgent
+    role: Postmortem Owner/Automation
+    inputs_spec:
+      - name: operate_incident_report
+        description: Incident reports for feedback loop.
+        format: Incident report artifact
+    outputs_spec:
+      - name: operate_incident_feedback_items
+        description: Incident feedback for Retrospective.
+        format: List of feedback items
+    agent_tasks:
+      - Log all incidents/exceptions for learning.
+      - Feed systemic issues to Retrospective.
+    acceptance_criteria:
+      - Incidents/exceptions logged for learning.
+      - Systemic issues routed to Retrospective.
+    dependencies:
+      - operate_incident_report
+    failure_escalation:
+      - Escalate to Postmortem Owner if feedback not tracked.
+    references: []
+    hitl: false
+
+  - id: resource_optimization
+    agent: ResourceOptimizationAgent
+    role: FinOps/Platform Engineer
+    inputs_spec:
+      - name: centralized_logs
+        description: Centralized logs for resource optimization.
+        format: Centralized log artifact
+      - name: slo_sli_reports
+        description: SLO/SLI reports for resource usage.
+        format: SLO/SLI report artifact
+    outputs_spec:
+      - name: optimization_report
+        description: Resource usage, cost optimization, and recommendations.
+        format: Optimization report artifact
+    agent_tasks:
+      - Collect usage/cost data.
+      - Generate optimization recommendations.
+      - Track changes/results.
+    acceptance_criteria:
+      - Usage/cost data collected.
+      - Optimization recommendations generated.
+      - Changes/results tracked.
+    dependencies:
+      - centralized_logs
+      - slo_sli_reports
+    failure_escalation:
+      - Escalate to FinOps/Platform Engineer if optimization incomplete.
+    references: []
+    hitl: true
+    hitl_reason: Human reviews resource optimization recommendations
+
+  - id: compliance_ops
+    agent: ComplianceOpsAgent
+    role: Compliance/Platform Analyst
+    inputs_spec:
+      - name: centralized_logs
+        description: Centralized logs for compliance audit.
+        format: Centralized log artifact
+      - name: slo_sli_reports
+        description: SLO/SLI reports for compliance audit.
+        format: SLO/SLI report artifact
+      - name: dr_backup_test_results
+        description: DR backup test results for compliance.
+        format: Backup test results artifact
+    outputs_spec:
+      - name: compliance_audit_trail
+        description: Complete operational compliance audit trail.
+        format: Compliance audit artifact
+    agent_tasks:
+      - List/map operational compliance requirements to evidence.
+      - Ensure audit trail is current and complete.
+      - Human review of compliance evidence.
+    acceptance_criteria:
+      - Compliance requirements mapped to evidence.
+      - Audit trail complete/current.
+      - Compliance evidence reviewed by human.
+    dependencies:
+      - centralized_logs
+      - slo_sli_reports
+      - dr_backup_test_results
+    failure_escalation:
+      - Escalate to Compliance/Platform Analyst if audit trail incomplete.
+    references: []
+    hitl: true
+    hitl_reason: Human ensures compliance audit trail is complete
+
+  - id: chaos_exercise
+    agent: ChaosExerciseAgent
+    role: SRE/Platform Engineer
+    inputs_spec:
+      - name: centralized_logs
+        description: Centralized logs for chaos exercise execution.
+        format: Centralized log artifact
+    outputs_spec:
+      - name: chaos_exercise_report
+        description: Report on executed chaos exercises and findings.
+        format: Chaos exercise report artifact
+    agent_tasks:
+      - Schedule and execute chaos exercises.
+      - Document and share findings.
+      - Create and track remediation plans.
+    acceptance_criteria:
+      - Chaos exercises scheduled/executed.
+      - Findings documented/shared.
+      - Remediation plans tracked.
+    dependencies:
+      - centralized_logs
+    failure_escalation:
+      - Escalate to SRE/Platform Engineer if chaos exercises not performed.
+    references: []
+    hitl: true
+    hitl_reason: Human reviews chaos exercise results for system resilience
+
+  - id: runbook_update
+    agent: RunbookUpdateAgent
+    role: SRE/Tech Writer
+    inputs_spec:
+      - name: incident_tickets
+        description: Incident tickets for runbook update.
+        format: List of incident ticket artifacts
+    outputs_spec:
+      - name: updated_runbooks
+        description: Updated runbooks incorporating lessons from incidents.
+        format: Updated runbook artifact
+    agent_tasks:
+      - Update runbooks after each incident or chaos event.
+      - Ensure all updates peer-reviewed and distributed to the team.
+    acceptance_criteria:
+      - Runbooks updated after incidents/chaos events.
+      - Updates peer-reviewed/distributed.
+    dependencies:
+      - incident_tickets
+    failure_escalation:
+      - Escalate to SRE/Tech Writer if updates not performed or reviewed.
+    references: []
+    hitl: true
+    hitl_reason: Human reviews and updates runbooks based on incidents
+
+  - id: resource_drift_detection
+    agent: ResourceDriftDetectionAgent
+    role: Ops Automation
+    inputs_spec:
+      - name: centralized_logs
+        description: Centralized logs for drift detection.
+        format: Centralized log artifact
+    outputs_spec:
+      - name: resource_drift_report
+        description: Resource drift detection report and remediation actions.
+        format: Drift detection report artifact
+    agent_tasks:
+      - Run drift detection on schedule.
+      - Log/report detected drifts.
+      - Initiate remediation as needed.
+    acceptance_criteria:
+      - Drift detection runs on schedule.
+      - Detected drifts logged/reported.
+      - Remediation actions initiated as needed.
+    dependencies:
+      - centralized_logs
+    failure_escalation:
+      - Escalate to Ops Automation if drifts not detected/remediated.
+    references: []
+    hitl: false
+
+  - id: slo_violation_alert
+    agent: SLOViolationAlertAgent
+    role: SRE Automation
+    inputs_spec:
+      - name: slo_sli_reports
+        description: SLO/SLI reports for violation alerting.
+        format: SLO/SLI report artifact
+    outputs_spec:
+      - name: slo_violation_alerts
+        description: SLO violation alerts for tracked recurrence.
+        format: Alert artifact
+    agent_tasks:
+      - Trigger automated alerts for SLO violations.
+      - Route alerts to the right team/channel.
+      - Track violation recurrence.
+    acceptance_criteria:
+      - SLO violations trigger automated alerts.
+      - Alerts routed to right team/channel.
+      - Violations tracked for recurrence.
+    dependencies:
+      - slo_sli_reports
+    failure_escalation:
+      - Escalate to SRE Automation if alerts not triggered/routed.
+    references: []
+    hitl: false
+
+  - id: synthesis_operate_combiner
+    agent: SynthesisOperateCombinerAgent
+    role: Ops PM/SRE Lead
+    inputs_spec:
+      - name: monitoring_dashboards
+        description: Monitoring dashboards for combine step.
+        format: List of dashboard artifacts
+      - name: centralized_logs
+        description: Centralized logs for combine step.
+        format: Centralized log artifact
+      - name: slo_sli_reports
+        description: SLO/SLI reports for combine step.
+        format: SLO/SLI report artifact
+      - name: self_healing_events
+        description: Self-healing events for combine step.
+        format: Self-healing event artifact
+      - name: synthetic_monitoring_reports
+        description: Synthetic monitoring reports for combine step.
+        format: Synthetic monitoring report artifact
+      - name: dr_backup_test_results
+        description: DR backup test results for combine step.
+        format: Backup test results artifact
+      - name: incident_tickets
+        description: Incident tickets for combine step.
+        format: List of incident ticket artifacts
+      - name: optimization_report
+        description: Optimization report for combine step.
+        format: Optimization report artifact
+      - name: compliance_audit_trail
+        description: Compliance audit trail for combine step.
+        format: Compliance audit artifact
+      - name: chaos_exercise_report
+        description: Chaos exercise report for combine step.
+        format: Chaos exercise report artifact
+      - name: updated_runbooks
+        description: Updated runbooks for combine step.
+        format: Updated runbook artifact
+    outputs_spec:
+      - name: ops_readiness_status
+        description: Overall operational readiness status, signed off.
+        format: Readiness status artifact
+    agent_tasks:
+      - Collect all operate-stage outputs and audit evidence.
+      - Flag gaps/missing evidence.
+      - Review and sign off readiness status.
+    acceptance_criteria:
+      - All outputs/audit evidence collected.
+      - Gaps flagged.
+      - Ops readiness status reviewed and signed off.
+    dependencies:
+      - monitoring_dashboards
+      - centralized_logs
+      - slo_sli_reports
+      - self_healing_events
+      - synthetic_monitoring_reports
+      - dr_backup_test_results
+      - incident_tickets
+      - optimization_report
+      - compliance_audit_trail
+      - chaos_exercise_report
+      - updated_runbooks
+    failure_escalation:
+      - Escalate to Ops PM/SRE Lead if readiness status not reviewed/signed off.
+    references: []
+    hitl: true
+    hitl_reason: Human validates operational readiness
+
+  - id: operate_kpi_agent
+    agent: StageKPIAgent
+    role: Operate KPI Analyst
+    inputs_spec:
+      - name: operate_stage_milestone
+        description: Operate stage milestones for KPI tracking.
+        format: List of milestone objects
+    outputs_spec:
+      - name: operate_kpi_report
+        description: Operate KPI report, including all required metrics.
+        format: KPI report artifact
+    agent_tasks:
+      - Track SLO/SLA attainment (%) for core services.
+      - Track MTTR and incident count by severity.
+      - Track uptime/availability per service.
+      - Track capacity and cost optimization status.
+      - Flag trends or outages for further analysis.
+    acceptance_criteria:
+      - All KPIs tracked and reported for operate stage.
+      - Trends or outages flagged for further analysis.
+    dependencies:
+      - operate_stage_milestone
+    failure_escalation:
+      - Escalate to Operate KPI Analyst if KPIs are not tracked or reported.
+    references: []
+    hitl: false
+
+  - id: operate_success_criteria_tracker
+    agent: SuccessCriteriaTrackerAgent
+    role: Operate Success Criteria Tracker
+    inputs_spec:
+      - name: operate_stage_milestone
+        description: Operate stage milestones for criteria tracking.
+        format: List of milestone objects
+    outputs_spec:
+      - name: operate_success_criteria_status
+        description: Operate stage success criteria mapped to SLOs and audit logs.
+        format: List of criteria status objects
+    agent_tasks:
+      - Map operate stage success criteria to SLOs and audit logs.
+      - Track service coverage and observability completeness.
+      - Flag gaps or unmonitored areas.
+      - Criteria reviewed by SRE or Ops lead before next stage.
+    acceptance_criteria:
+      - Success criteria mapped to SLOs/audit logs.
+      - Service coverage and observability tracked.
+      - Gaps/unmonitored areas flagged.
+      - Criteria reviewed before next stage.
+    dependencies:
+      - operate_stage_milestone
+    failure_escalation:
+      - Escalate to Ops lead if criteria not reviewed or mapped.
+    references: []
+    hitl: false
+
+  - id: operate_progress_dashboard
+    agent: ProgressDashboardAgent
+    role: Operate Progress Dashboard Owner
+    inputs_spec:
+      - name: operate_kpi_report
+        description: Operate KPI report for dashboard visualization.
+        format: KPI report artifact
+      - name: operate_success_criteria_status
+        description: Operate success criteria status for dashboard visualization.
+        format: List of criteria status objects
+      - name: operate_stage_milestone
+        description: Operate milestone plan for dashboard visualization.
+        format: List of milestone objects
+    outputs_spec:
+      - name: operate_progress_dashboard
+        description: Dashboard visualizing SLO status, incident heatmap, capacity trends, criteria, and open issues.
+        format: Dashboard artifact
+    agent_tasks:
+      - Visualize SLO status, incident heatmap, capacity trends.
+      - Surface all criteria and open issues.
+      - Provide access to stakeholders and management.
+      - Sign off dashboard at end of Operate stage.
+    acceptance_criteria:
+      - SLO status, incident heatmap, and capacity trends visualized.
+      - All criteria and open issues surfaced.
+      - Stakeholders and management have access.
+      - Dashboard signed off at end of Operate stage.
+    dependencies:
+      - operate_kpi_report
+      - operate_success_criteria_status
+      - operate_stage_milestone
+    failure_escalation:
+      - Escalate to dashboard owner if dashboard not current or not signed off.
+    references: []
+    hitl: false
+
+  - id: pipeline_self_healing_agent
+    agent: PipelineSelfHealingAgent
+    role: SRE/Automation
+    inputs_spec:
+      - name: operate_observability_metrics
+        description: Real-time observability metrics for self-healing.
+        format: Metrics artifact
+      - name: monitoring_report
+        description: Monitoring report for incident detection.
+        format: Monitoring report artifact
+      - name: incident_report
+        description: Incident reports for known failure types.
+        format: Incident report artifact
+    outputs_spec:
+      - name: self_healing_actions_report
+        description: Actions, outcomes, and escalations from automated pipeline self-healing.
+        format: Self-healing actions report
+    agent_tasks:
+      - Detect recurring or automated-fixable incidents (e.g., restarts, config rollbacks, scaling).
+      - Execute remediation scripts/playbooks for known failure types.
+      - Log actions, outcomes, and manual escalation required.
+      - Notify team of auto-healed and unhealed incidents.
+    acceptance_criteria:
+      - Recurring or automated-fixable incidents detected.
+      - Remediation scripts/playbooks executed for known failures.
+      - Actions and outcomes logged, escalations tracked.
+      - Team notified of all auto-healed and unhealed incidents.
+    dependencies:
+      - operate_observability_metrics
+      - monitoring_report
+      - incident_report
+    failure_escalation:
+      - Escalate to SRE/Automation if self-healing fails or incidents are not logged/escalated.
+    references: []
+    hitl: false
+

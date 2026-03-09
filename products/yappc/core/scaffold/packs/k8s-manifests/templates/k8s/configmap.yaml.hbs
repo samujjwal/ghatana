@@ -1,0 +1,7 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+name: {{kebabCase projectName}}-config
+namespace: {{kebabCase projectName}}
+data:
+APP_ENV: "production"

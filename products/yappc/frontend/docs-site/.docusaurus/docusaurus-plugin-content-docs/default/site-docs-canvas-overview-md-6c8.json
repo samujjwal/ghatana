@@ -1,0 +1,27 @@
+{
+  "id": "canvas/overview",
+  "title": "Canvas Overview",
+  "description": "The YAPPC Canvas is a comprehensive system for creating, editing, and managing interactive diagrams. Built with performance, scalability, and user experience in mind, it provides enterprise-grade features for both individual developers and large teams.",
+  "source": "@site/docs/canvas/overview.md",
+  "sourceDirName": "canvas",
+  "slug": "/canvas/overview",
+  "permalink": "/docs/canvas/overview",
+  "draft": false,
+  "unlisted": false,
+  "editUrl": "https://github.com/yappc/app-creator/tree/main/docs-site/docs/canvas/overview.md",
+  "tags": [],
+  "version": "current",
+  "sidebarPosition": 1,
+  "frontMatter": {
+    "sidebar_position": 1
+  },
+  "sidebar": "canvasSidebar",
+  "previous": {
+    "title": "Getting Started with YAPPC Canvas",
+    "permalink": "/docs/"
+  },
+  "next": {
+    "title": "Quick Start Guide",
+    "permalink": "/docs/canvas/quick-start"
+  }
+}

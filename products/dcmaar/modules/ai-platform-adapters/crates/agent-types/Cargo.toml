@@ -1,0 +1,47 @@
+[package]
+name = "agent-types"
+version.workspace = true
+edition.workspace = true
+authors.workspace = true
+license.workspace = true
+description = "Common types for the DCMaar agent"
+publish = false
+
+[features]
+default = ["serde", "sqlx"]
+serde = ["dep:serde"]
+
+[dependencies]
+# Async traits
+async-trait = { workspace = true }
+
+# Serialization
+serde = { workspace = true, features = ["derive"], optional = true }
+serde_json = { workspace = true, optional = true }
+
+# UUID support
+uuid = { workspace = true, features = ["v4", "serde"] }
+
+# Time handling
+time = { workspace = true }
+chrono = { workspace = true, features = ["serde"] }
+
+# Error handling
+thiserror = { workspace = true }
+
+# Logging
+tracing = { workspace = true }
+
+# Database
+sqlx = { workspace = true, features = [
+    "runtime-tokio",
+    "sqlite",
+    "chrono",
+    "json",
+    "uuid",
+    "time",
+], optional = true, default-features = false }
+
+[dev-dependencies]
+tempfile = "3.10"
+pretty_assertions = "1.4"

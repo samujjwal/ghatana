@@ -1,0 +1,1077 @@
+{
+    "domain": "Biology",
+    "levels": {
+        "Foundational": {
+            "concepts": [
+                {
+                    "id": "bio_F_1",
+                    "name": "Cell Structure & Function (Prokaryotes and Eukaryotes)",
+                    "description": "Introduction to biology via the concept of cell — difference between prokaryotic and eukaryotic cells; sub-cellular organelles (nucleus, mitochondria, ribosome, membrane, cytoplasm), cell membrane structure, basic functions of each organelle.",
+                    "prerequisites": [],
+                    "audience_tags": [
+                        "K-12",
+                        "Independent_Study"
+                    ],
+                    "keywords": [
+                        "cell",
+                        "organelles",
+                        "prokaryote",
+                        "eukaryote",
+                        "membrane",
+                        "cytoplasm",
+                        "nucleus",
+                        "mitochondria",
+                        "ribosome"
+                    ],
+                    "simulation_metadata": {
+                        "simulation_type": "interactive_visualization",
+                        "recommended_interactivity": "low",
+                        "purpose": "Visualize a cell in 2D/3D, toggle organelles, see structure and labels; allow user to compare prokaryotic vs eukaryotic cells; highlight organelle functions.",
+                        "estimated_time": "15 min"
+                    },
+                    "cross_domain_links": [],
+                    "learning_object_metadata": {
+                        "author": "TutorPutor Team",
+                        "version": "1.0.0",
+                        "status": "published",
+                        "intended_end_user_role": [
+                            "student",
+                            "self-learner"
+                        ],
+                        "context": [
+                            "self-study",
+                            "classroom"
+                        ],
+                        "difficulty": "easy",
+                        "typical_learning_time": "20 min",
+                        "learning_object_type": "conceptual_explanation",
+                        "creation_date": "2025-12-05",
+                        "last_modified": "2025-12-05"
+                    },
+                    "pedagogical_metadata": {
+                        "learning_objectives": [
+                            "Identify major cell types (prokaryotic vs eukaryotic).",
+                            "Recognize and name key organelles and their functions.",
+                            "Explain the role of the cell membrane and cytoplasm."
+                        ],
+                        "competencies": [
+                            "biological literacy",
+                            "visualization",
+                            "cellular reasoning"
+                        ],
+                        "scaffolding_level": "standalone",
+                        "accessibility_notes": ""
+                    }
+                },
+                {
+                    "id": "bio_F_2",
+                    "name": "Basic Genetics: DNA, Genes, and Heredity (intro)",
+                    "description": "Introduction to DNA as genetic material, structure of DNA (double helix, nucleotides), concept of genes, chromosomes, inheritance basics, basic idea of dominant and recessive traits, simple Mendelian inheritance.",
+                    "prerequisites": [
+                        "bio_F_1"
+                    ],
+                    "audience_tags": [
+                        "K-12",
+                        "Independent_Study"
+                    ],
+                    "keywords": [
+                        "DNA",
+                        "gene",
+                        "chromosome",
+                        "inheritance",
+                        "heredity",
+                        "allele",
+                        "dominant",
+                        "recessive",
+                        "trait",
+                        "genetics"
+                    ],
+                    "simulation_metadata": {
+                        "simulation_type": "interactive_visualization + simple_exercise",
+                        "recommended_interactivity": "low",
+                        "purpose": "Visualize DNA double helix, show gene on chromosome; allow “cross-pollination” of alleles and simulate simple Mendelian inheritance across generations to observe trait inheritance.",
+                        "estimated_time": "20 min"
+                    },
+                    "cross_domain_links": [],
+                    "learning_object_metadata": {
+                        "author": "TutorPutor Team",
+                        "version": "1.0.0",
+                        "status": "published",
+                        "intended_end_user_role": [
+                            "student",
+                            "self-learner"
+                        ],
+                        "context": [
+                            "self-study",
+                            "classroom"
+                        ],
+                        "difficulty": "easy",
+                        "typical_learning_time": "25 min",
+                        "learning_object_type": "exercise + conceptual_explanation",
+                        "creation_date": "2025-12-05",
+                        "last_modified": "2025-12-05"
+                    },
+                    "pedagogical_metadata": {
+                        "learning_objectives": [
+                            "Describe DNA structure and its role as genetic material.",
+                            "Define genes, alleles, chromosomes and basic heredity terms.",
+                            "Simulate simple inheritance of traits using Mendelian model."
+                        ],
+                        "competencies": [
+                            "genetic reasoning",
+                            "visualization",
+                            "logical thinking"
+                        ],
+                        "scaffolding_level": "scaffolded",
+                        "accessibility_notes": ""
+                    }
+                },
+                {
+                    "id": "bio_F_3",
+                    "name": "Photosynthesis & Cellular Respiration (intro)",
+                    "description": "Basic processes of photosynthesis (in plants) and cellular respiration (in all cells) — understand energy capture, conversion, usage; basic overall chemical equations; role of chloroplasts / mitochondria.",
+                    "prerequisites": [
+                        "bio_F_1"
+                    ],
+                    "audience_tags": [
+                        "K-12",
+                        "Independent_Study"
+                    ],
+                    "keywords": [
+                        "photosynthesis",
+                        "cellular respiration",
+                        "chloroplast",
+                        "mitochondria",
+                        "energy conversion",
+                        "glucose",
+                        "oxygen",
+                        "ATP",
+                        "carbon dioxide",
+                        "sunlight"
+                    ],
+                    "simulation_metadata": {
+                        "simulation_type": "interactive_visualization + simple_exercise",
+                        "recommended_interactivity": "low",
+                        "purpose": "Visualize plant cell / leaf chloroplasts doing photosynthesis, and animal cell mitochondria doing respiration; animate exchange of gases and energy flow; show energy output/consumption.",
+                        "estimated_time": "20 min"
+                    },
+                    "cross_domain_links": [
+                        {
+                            "target_concept_id": "chem_F_3",
+                            "relation": "uses",
+                            "notes": "Chemical understanding of molecules and energy helps in understanding reaction basics"
+                        }
+                    ],
+                    "learning_object_metadata": {
+                        "author": "TutorPutor Team",
+                        "version": "1.0.0",
+                        "status": "published",
+                        "intended_end_user_role": [
+                            "student",
+                            "self-learner"
+                        ],
+                        "context": [
+                            "self-study",
+                            "classroom"
+                        ],
+                        "difficulty": "easy",
+                        "typical_learning_time": "25 min",
+                        "learning_object_type": "conceptual_explanation + simulation",
+                        "creation_date": "2025-12-05",
+                        "last_modified": "2025-12-05"
+                    },
+                    "pedagogical_metadata": {
+                        "learning_objectives": [
+                            "Explain basic steps and purpose of photosynthesis and respiration.",
+                            "Identify organelles involved (chloroplast, mitochondria).",
+                            "Recognize the role of these processes in energy flow for organisms."
+                        ],
+                        "competencies": [
+                            "biochemical reasoning",
+                            "energy flow understanding",
+                            "visualization"
+                        ],
+                        "scaffolding_level": "scaffolded",
+                        "accessibility_notes": ""
+                    }
+                },
+                {
+                    "id": "bio_F_4",
+                    "name": "Ecology & Ecosystems (intro to living systems)",
+                    "description": "Introduction to ecological concepts: organism, population, community, ecosystem; energy flow, producers/consumers/decomposers, food chains/webs; basic ecosystem balance and human impact idea.",
+                    "prerequisites": [
+                        "bio_F_1"
+                    ],
+                    "audience_tags": [
+                        "K-12",
+                        "Independent_Study"
+                    ],
+                    "keywords": [
+                        "ecosystem",
+                        "population",
+                        "community",
+                        "food chain",
+                        "food web",
+                        "producer",
+                        "consumer",
+                        "decomposer",
+                        "energy flow",
+                        "biodiversity"
+                    ],
+                    "simulation_metadata": {
+                        "simulation_type": "interactive_visualization + simple_exercise",
+                        "recommended_interactivity": "low",
+                        "purpose": "Visualize a simple ecosystem (plants, herbivores, carnivores, decomposers), animate energy flow and matter cycling, simulate perturbations (e.g. species removal) to show ecosystem balance effects.",
+                        "estimated_time": "20 min"
+                    },
+                    "cross_domain_links": [],
+                    "learning_object_metadata": {
+                        "author": "TutorPutor Team",
+                        "version": "1.0.0",
+                        "status": "published",
+                        "intended_end_user_role": [
+                            "student",
+                            "self-learner"
+                        ],
+                        "context": [
+                            "self-study",
+                            "classroom"
+                        ],
+                        "difficulty": "easy",
+                        "typical_learning_time": "25 min",
+                        "learning_object_type": "conceptual_explanation + simulation",
+                        "creation_date": "2025-12-05",
+                        "last_modified": "2025-12-05"
+                    },
+                    "pedagogical_metadata": {
+                        "learning_objectives": [
+                            "Define organism, population, community, ecosystem.",
+                            "Explain energy flow and trophic levels (producers, consumers, decomposers).",
+                            "Illustrate how ecosystem balance can be affected by changes in species or environment."
+                        ],
+                        "competencies": [
+                            "systems thinking",
+                            "ecological reasoning",
+                            "visualization"
+                        ],
+                        "scaffolding_level": "scaffolded",
+                        "accessibility_notes": ""
+                    }
+                },
+                {
+                    "id": "bio_F_5",
+                    "name": "Basic Human Anatomy & Physiology (cells → organs) — introduction",
+                    "description": "Introduce idea that multicellular organisms have specialized organs & tissues — overview of major tissue types (epithelial, muscle, nerve, connective) and major organ systems (digestive, circulatory, respiratory) at a high level.",
+                    "prerequisites": [
+                        "bio_F_1"
+                    ],
+                    "audience_tags": [
+                        "K-12",
+                        "Independent_Study"
+                    ],
+                    "keywords": [
+                        "tissue",
+                        "organ",
+                        "organ system",
+                        "anatomy",
+                        "physiology",
+                        "circulatory system",
+                        "respiratory system",
+                        "digestive system",
+                        "nervous system",
+                        "muscle"
+                    ],
+                    "simulation_metadata": {
+                        "simulation_type": "interactive_visualization",
+                        "recommended_interactivity": "low",
+                        "purpose": "Show simplified human body schematic, allow toggling organ systems and tissues; show basic flow (e.g. blood circulation, respiration, digestion flow), to build structural understanding.",
+                        "estimated_time": "25 min"
+                    },
+                    "cross_domain_links": [],
+                    "learning_object_metadata": {
+                        "author": "TutorPutor Team",
+                        "version": "1.0.0",
+                        "status": "published",
+                        "intended_end_user_role": [
+                            "student",
+                            "self-learner"
+                        ],
+                        "context": [
+                            "self-study",
+                            "classroom"
+                        ],
+                        "difficulty": "easy",
+                        "typical_learning_time": "30 min",
+                        "learning_object_type": "conceptual_explanation + visualization",
+                        "creation_date": "2025-12-05",
+                        "last_modified": "2025-12-05"
+                    },
+                    "pedagogical_metadata": {
+                        "learning_objectives": [
+                            "Recognize major tissue types and their roles.",
+                            "Identify major organ systems and their basic function.",
+                            "Understand that body functions rely on coordinated organ/tissue systems."
+                        ],
+                        "competencies": [
+                            "anatomical literacy",
+                            "physiological reasoning",
+                            "visualization"
+                        ],
+                        "scaffolding_level": "scaffolded",
+                        "accessibility_notes": ""
+                    }
+                }
+            ]
+        },
+        "Intermediate": {
+            "concepts": [
+                {
+                    "id": "bio_I_1",
+                    "name": "Cell Division, Mitosis & Meiosis",
+                    "description": "Understand how cells reproduce — details of mitosis and meiosis, cell cycle phases, chromosome duplication/separation, genetic variation via meiosis, basics of gametes vs somatic cells.",
+                    "prerequisites": [
+                        "bio_F_1",
+                        "bio_F_2"
+                    ],
+                    "audience_tags": [
+                        "College",
+                        "Independent_Study"
+                    ],
+                    "keywords": [
+                        "mitosis",
+                        "meiosis",
+                        "cell division",
+                        "cell cycle",
+                        "chromosome segregation",
+                        "genetic variation",
+                        "gamete",
+                        "somatic cell"
+                    ],
+                    "simulation_metadata": {
+                        "simulation_type": "cell_simulation + animation",
+                        "recommended_interactivity": "medium",
+                        "purpose": "Animate cell division cycles, visualize chromosome duplication/separation, simulate meiosis with crossing over and show resulting variation in gametes.",
+                        "estimated_time": "25 min"
+                    },
+                    "cross_domain_links": [],
+                    "learning_object_metadata": {
+                        "author": "TutorPutor Team",
+                        "version": "1.0.0",
+                        "status": "draft",
+                        "intended_end_user_role": [
+                            "student",
+                            "self-learner"
+                        ],
+                        "context": [
+                            "self-study",
+                            "classroom",
+                            "lab simulation"
+                        ],
+                        "difficulty": "intermediate",
+                        "typical_learning_time": "30 min",
+                        "learning_object_type": "simulation + conceptual_explanation",
+                        "creation_date": "2025-12-05",
+                        "last_modified": "2025-12-05"
+                    },
+                    "pedagogical_metadata": {
+                        "learning_objectives": [
+                            "Describe steps of mitosis and meiosis and distinguish between them.",
+                            "Understand chromosome duplication and segregation.",
+                            "Explain how meiosis introduces genetic variation."
+                        ],
+                        "competencies": [
+                            "genetic reasoning",
+                            "biological process understanding",
+                            "visualization"
+                        ],
+                        "scaffolding_level": "scaffolded",
+                        "accessibility_notes": ""
+                    }
+                },
+                {
+                    "id": "bio_I_2",
+                    "name": "Molecular Biology: Transcription, Translation & Gene Expression",
+                    "description": "Explain central dogma: DNA → RNA → Protein; processes of transcription and translation, role of mRNA, tRNA, ribosomes; basics of gene regulation (on/off), basic mutations and effect on protein function.",
+                    "prerequisites": [
+                        "bio_F_2"
+                    ],
+                    "audience_tags": [
+                        "College",
+                        "Independent_Study"
+                    ],
+                    "keywords": [
+                        "transcription",
+                        "translation",
+                        "mRNA",
+                        "tRNA",
+                        "ribosome",
+                        "protein synthesis",
+                        "gene expression",
+                        "mutation",
+                        "central dogma"
+                    ],
+                    "simulation_metadata": {
+                        "simulation_type": "molecular_simulation + animation",
+                        "recommended_interactivity": "medium",
+                        "purpose": "Animate transcription and translation processes in a cell; allow user to modify DNA sequence and observe how mutations affect mRNA and resulting amino-acid chain, visualize protein synthesis.",
+                        "estimated_time": "30 min"
+                    },
+                    "cross_domain_links": [],
+                    "learning_object_metadata": {
+                        "author": "TutorPutor Team",
+                        "version": "1.0.0",
+                        "status": "draft",
+                        "intended_end_user_role": [
+                            "student",
+                            "self-learner"
+                        ],
+                        "context": [
+                            "self-study",
+                            "molecular biology lab simulation"
+                        ],
+                        "difficulty": "intermediate",
+                        "typical_learning_time": "35 min",
+                        "learning_object_type": "simulation + conceptual_explanation",
+                        "creation_date": "2025-12-05",
+                        "last_modified": "2025-12-05"
+                    },
+                    "pedagogical_metadata": {
+                        "learning_objectives": [
+                            "Describe transcription and translation steps in detail.",
+                            "Understand how genes encode proteins and how mutations can affect protein sequences.",
+                            "Relate gene expression changes to potential phenotype changes."
+                        ],
+                        "competencies": [
+                            "molecular reasoning",
+                            "biochemistry",
+                            "genetic literacy",
+                            "visualization"
+                        ],
+                        "scaffolding_level": "scaffolded",
+                        "accessibility_notes": ""
+                    }
+                },
+                {
+                    "id": "bio_I_3",
+                    "name": "Evolution & Natural Selection (intro to evolutionary biology)",
+                    "description": "Basics of evolution: variation, heritability, natural selection; population genetics ideas; adaptation; speciation concept; basic ecological and evolutionary pressures.",
+                    "prerequisites": [
+                        "bio_F_2",
+                        "bio_F_4"
+                    ],
+                    "audience_tags": [
+                        "College",
+                        "Independent_Study"
+                    ],
+                    "keywords": [
+                        "evolution",
+                        "natural selection",
+                        "adaptation",
+                        "variation",
+                        "heritability",
+                        "speciation",
+                        "population genetics",
+                        "fitness",
+                        "mutation"
+                    ],
+                    "simulation_metadata": {
+                        "simulation_type": "population_simulator + animation",
+                        "recommended_interactivity": "medium",
+                        "purpose": "Simulate a population over generations under selective pressures; show trait distribution change over time; allow user to vary mutation rate, selection pressure, environment to observe adaptation and possible speciation.",
+                        "estimated_time": "30 min"
+                    },
+                    "cross_domain_links": [],
+                    "learning_object_metadata": {
+                        "author": "TutorPutor Team",
+                        "version": "1.0.0",
+                        "status": "draft",
+                        "intended_end_user_role": [
+                            "student",
+                            "self-learner"
+                        ],
+                        "context": [
+                            "self-study",
+                            "evolutionary biology lab simulation"
+                        ],
+                        "difficulty": "intermediate",
+                        "typical_learning_time": "40 min",
+                        "learning_object_type": "simulation + conceptual_explanation",
+                        "creation_date": "2025-12-05",
+                        "last_modified": "2025-12-05"
+                    },
+                    "pedagogical_metadata": {
+                        "learning_objectives": [
+                            "Explain principles of natural selection, variation, heritability.",
+                            "Model how populations evolve over time under selective pressures.",
+                            "Understand how adaptation and speciation can occur through evolutionary mechanisms."
+                        ],
+                        "competencies": [
+                            "evolutionary reasoning",
+                            "statistical thinking",
+                            "systems thinking",
+                            "biological modeling"
+                        ],
+                        "scaffolding_level": "scaffolded",
+                        "accessibility_notes": ""
+                    }
+                },
+                {
+                    "id": "bio_I_4",
+                    "name": "Physiology & Homeostasis (organ systems regulation)",
+                    "description": "Deeper look at organ systems (nervous, circulatory, respiratory, endocrine), how they maintain homeostasis, feedback loops, basics of regulation (e.g. hormonal, neural), overview of system interactions.",
+                    "prerequisites": [
+                        "bio_F_5"
+                    ],
+                    "audience_tags": [
+                        "College",
+                        "Independent_Study"
+                    ],
+                    "keywords": [
+                        "homeostasis",
+                        "physiology",
+                        "organ system",
+                        "feedback loop",
+                        "nervous system",
+                        "endocrine system",
+                        "circulatory system",
+                        "respiratory system",
+                        "regulation",
+                        "hormone"
+                    ],
+                    "simulation_metadata": {
+                        "simulation_type": "system_dynamics_simulator + visualization",
+                        "recommended_interactivity": "medium",
+                        "purpose": "Simulate interacting organ-systems; model how changes (e.g. oxygen intake, hormone levels, stress) affect homeostasis; visualize feedback loops and regulation over time.",
+                        "estimated_time": "30 min"
+                    },
+                    "cross_domain_links": [],
+                    "learning_object_metadata": {
+                        "author": "TutorPutor Team",
+                        "version": "0.1.0",
+                        "status": "draft",
+                        "intended_end_user_role": [
+                            "student",
+                            "self-learner"
+                        ],
+                        "context": [
+                            "self-study",
+                            "physiology lab simulation"
+                        ],
+                        "difficulty": "intermediate",
+                        "typical_learning_time": "35 min",
+                        "learning_object_type": "simulation + conceptual_explanation",
+                        "creation_date": "2025-12-05",
+                        "last_modified": "2025-12-05"
+                    },
+                    "pedagogical_metadata": {
+                        "learning_objectives": [
+                            "Explain how organ systems work together to maintain homeostasis.",
+                            "Model feedback loops and regulatory mechanisms in physiology.",
+                            "Understand effects of perturbations (e.g. stress, environment change) on body regulation."
+                        ],
+                        "competencies": [
+                            "physiological reasoning",
+                            "systems thinking",
+                            "biological modeling",
+                            "regulation mechanisms"
+                        ],
+                        "scaffolding_level": "scaffolded",
+                        "accessibility_notes": ""
+                    }
+                }
+            ]
+        },
+        "Advanced": {
+            "concepts": [
+                {
+                    "id": "bio_A_1",
+                    "name": "Molecular & Cellular Signaling Pathways",
+                    "description": "Study of how cells communicate: receptor-ligand binding, signal transduction cascades, second messengers, gene expression regulation via signaling, cell-to-cell communication, feedback regulation in signaling pathways.",
+                    "prerequisites": [
+                        "bio_I_2",
+                        "bio_I_4"
+                    ],
+                    "audience_tags": [
+                        "University_Advanced",
+                        "Independent_Study",
+                        "Research"
+                    ],
+                    "keywords": [
+                        "signal transduction",
+                        "receptor",
+                        "ligand",
+                        "second messenger",
+                        "gene regulation",
+                        "cell signaling",
+                        "feedback loop",
+                        "cell communication",
+                        "pathway"
+                    ],
+                    "simulation_metadata": {
+                        "simulation_type": "network_simulator + interactive_visualization",
+                        "recommended_interactivity": "medium",
+                        "purpose": "Allow user to build signaling pathways (receptors, ligands, cascades), simulate activation/inhibition, propagate signals, observe downstream effects (gene expression, cellular responses).",
+                        "estimated_time": "45 min"
+                    },
+                    "cross_domain_links": [],
+                    "learning_object_metadata": {
+                        "author": "TutorPutor Team",
+                        "version": "0.1.0",
+                        "status": "draft",
+                        "intended_end_user_role": [
+                            "student",
+                            "advanced student",
+                            "self-learner"
+                        ],
+                        "context": [
+                            "self-study",
+                            "cell biology coursework",
+                            "lab simulation"
+                        ],
+                        "difficulty": "hard",
+                        "typical_learning_time": "50 min",
+                        "learning_object_type": "simulation + conceptual module",
+                        "creation_date": "2025-12-05",
+                        "last_modified": "2025-12-05"
+                    },
+                    "pedagogical_metadata": {
+                        "learning_objectives": [
+                            "Construct and interpret cellular signaling pathways.",
+                            "Simulate how signals propagate and regulate cell behavior or gene expression.",
+                            "Understand feedback and regulation in cellular communication."
+                        ],
+                        "competencies": [
+                            "molecular reasoning",
+                            "systems biology",
+                            "regulation understanding",
+                            "biological modeling"
+                        ],
+                        "scaffolding_level": "scaffolded",
+                        "accessibility_notes": ""
+                    }
+                },
+                {
+                    "id": "bio_A_2",
+                    "name": "Population Genetics, Evolutionary Dynamics & Speciation Modeling",
+                    "description": "Quantitative and simulation-based analysis of population genetics: allele frequency dynamics, genetic drift, selection, mutation, migration; modeling speciation, population bottlenecks, Hardy–Weinberg equilibrium, genetic variation over time under different pressures.",
+                    "prerequisites": [
+                        "bio_I_3"
+                    ],
+                    "audience_tags": [
+                        "University_Advanced",
+                        "Independent_Study",
+                        "Research"
+                    ],
+                    "keywords": [
+                        "population genetics",
+                        "genetic drift",
+                        "selection",
+                        "mutation",
+                        "migration",
+                        "Hardy–Weinberg",
+                        "speciation",
+                        "allele frequency",
+                        "evolutionary dynamics",
+                        "bottleneck"
+                    ],
+                    "simulation_metadata": {
+                        "simulation_type": "population_dynamics_simulator",
+                        "recommended_interactivity": "medium",
+                        "purpose": "Allow user to simulate populations over many generations, set parameters (selection coefficients, mutation rates, population size, migration), track allele frequencies, observe effects like drift, fixation, speciation over time.",
+                        "estimated_time": "45 min"
+                    },
+                    "cross_domain_links": [],
+                    "learning_object_metadata": {
+                        "author": "TutorPutor Team",
+                        "version": "0.1.0",
+                        "status": "draft",
+                        "intended_end_user_role": [
+                            "student",
+                            "advanced student",
+                            "researcher",
+                            "self-learner"
+                        ],
+                        "context": [
+                            "evolutionary biology coursework",
+                            "self-study",
+                            "research modeling"
+                        ],
+                        "difficulty": "hard",
+                        "typical_learning_time": "1 hr",
+                        "learning_object_type": "simulation + conceptual module",
+                        "creation_date": "2025-12-05",
+                        "last_modified": "2025-12-05"
+                    },
+                    "pedagogical_metadata": {
+                        "learning_objectives": [
+                            "Model allele-frequency changes over time under different evolutionary forces.",
+                            "Understand and apply population-genetics concepts (drift, selection, mutation, migration, bottleneck).",
+                            "Simulate potential speciation events and analyze evolutionary dynamics quantitatively."
+                        ],
+                        "competencies": [
+                            "population reasoning",
+                            "statistical thinking",
+                            "evolutionary modeling",
+                            "systems analysis"
+                        ],
+                        "scaffolding_level": "scaffolded",
+                        "accessibility_notes": ""
+                    }
+                },
+                {
+                    "id": "bio_A_3",
+                    "name": "Developmental Biology & Tissue Differentiation",
+                    "description": "Study of how multicellular organisms develop: cell differentiation, developmental stages, stem cells, gene regulation during development, tissue formation, pattern formation, morphogenesis, regulatory networks guiding development.",
+                    "prerequisites": [
+                        "bio_F_1",
+                        "bio_I_2"
+                    ],
+                    "audience_tags": [
+                        "University_Advanced",
+                        "Independent_Study",
+                        "Research"
+                    ],
+                    "keywords": [
+                        "developmental biology",
+                        "differentiation",
+                        "stem cell",
+                        "tissue formation",
+                        "morphogenesis",
+                        "gene regulation",
+                        "pattern formation",
+                        "embryogenesis",
+                        "cell fate",
+                        "development"
+                    ],
+                    "simulation_metadata": {
+                        "simulation_type": "developmental_simulator + interactive_visualization",
+                        "recommended_interactivity": "medium",
+                        "purpose": "Simulate cell lineage differentiation, tissue formation over developmental time, allow toggling gene-regulation rules to see effects on differentiation, visualize morphology and pattern development.",
+                        "estimated_time": "1 hr"
+                    },
+                    "cross_domain_links": [],
+                    "learning_object_metadata": {
+                        "author": "TutorPutor Team",
+                        "version": "0.1.0",
+                        "status": "draft",
+                        "intended_end_user_role": [
+                            "student",
+                            "advanced student",
+                            "self-learner",
+                            "researcher"
+                        ],
+                        "context": [
+                            "developmental biology coursework",
+                            "self-study",
+                            "research modeling"
+                        ],
+                        "difficulty": "hard",
+                        "typical_learning_time": "1 hr",
+                        "learning_object_type": "simulation + conceptual module",
+                        "creation_date": "2025-12-05",
+                        "last_modified": "2025-12-05"
+                    },
+                    "pedagogical_metadata": {
+                        "learning_objectives": [
+                            "Understand how cells differentiate and form tissues and organs.",
+                            "Model developmental processes including gene regulation, lineage decisions and morphogenesis.",
+                            "Visualize how developmental rules affect final organism structure and function."
+                        ],
+                        "competencies": [
+                            "developmental reasoning",
+                            "systems biology",
+                            "morphogenesis modeling",
+                            "gene regulation understanding"
+                        ],
+                        "scaffolding_level": "scaffolded",
+                        "accessibility_notes": ""
+                    }
+                },
+                {
+                    "id": "bio_A_4",
+                    "name": "Immunology & Host-Pathogen Interactions (intro to immune system)",
+                    "description": "Study of basic immune system: innate immunity, adaptive immunity, cells involved (white blood cells, lymphocytes), antibodies, antigens, immune response cascade; basics of infection, immunity, vaccination, and host-pathogen dynamics.",
+                    "prerequisites": [
+                        "bio_I_2",
+                        "bio_I_4"
+                    ],
+                    "audience_tags": [
+                        "University_Advanced",
+                        "Independent_Study",
+                        "Research"
+                    ],
+                    "keywords": [
+                        "immunology",
+                        "innate immunity",
+                        "adaptive immunity",
+                        "pathogen",
+                        "antigen",
+                        "antibody",
+                        "immune response",
+                        "vaccination",
+                        "infection",
+                        "host-pathogen"
+                    ],
+                    "simulation_metadata": {
+                        "simulation_type": "system_dynamics_simulator + visualization",
+                        "recommended_interactivity": "medium",
+                        "purpose": "Simulate infection and immune response dynamics — introduce pathogen, simulate immune cell responses, antibody production, pathogen clearance, immune memory; allow varying pathogen virulence or immune strength to observe outcomes.",
+                        "estimated_time": "45 min"
+                    },
+                    "cross_domain_links": [],
+                    "learning_object_metadata": {
+                        "author": "TutorPutor Team",
+                        "version": "0.1.0",
+                        "status": "draft",
+                        "intended_end_user_role": [
+                            "student",
+                            "advanced student",
+                            "self-learner",
+                            "researcher"
+                        ],
+                        "context": [
+                            "immunology coursework",
+                            "self-study",
+                            "research modeling"
+                        ],
+                        "difficulty": "hard",
+                        "typical_learning_time": "1 hr",
+                        "learning_object_type": "simulation + conceptual module",
+                        "creation_date": "2025-12-05",
+                        "last_modified": "2025-12-05"
+                    },
+                    "pedagogical_metadata": {
+                        "learning_objectives": [
+                            "Describe key components and pathways of innate and adaptive immunity.",
+                            "Simulate immune response to pathogen invasion and understand dynamics of infection and clearance.",
+                            "Understand principles of immunity, vaccination, immune memory, and host-pathogen interactions."
+                        ],
+                        "competencies": [
+                            "immunological reasoning",
+                            "systems biology",
+                            "disease modeling",
+                            "biological simulation"
+                        ],
+                        "scaffolding_level": "scaffolded",
+                        "accessibility_notes": ""
+                    }
+                }
+            ]
+        },
+        "Research_Independent": {
+            "concepts": [
+                {
+                    "id": "bio_R_1",
+                    "name": "Systems Biology & Multi-Scale Modeling (cell → tissue → organism)",
+                    "description": "Use computational modeling to simulate biological systems across scales: gene regulatory networks, cell signaling networks, tissue systems, organ systems, whole-organism behavior; integrate molecular, cellular, physiological data to model complex behavior and emergent properties.",
+                    "prerequisites": [
+                        "bio_A_1",
+                        "bio_A_2",
+                        "bio_A_3"
+                    ],
+                    "audience_tags": [
+                        "University_Advanced",
+                        "Research",
+                        "Independent_Study"
+                    ],
+                    "keywords": [
+                        "systems biology",
+                        "multi-scale modeling",
+                        "gene regulatory network",
+                        "cell signaling network",
+                        "tissue simulation",
+                        "organ simulation",
+                        "emergent behavior",
+                        "computational biology",
+                        "simulation"
+                    ],
+                    "simulation_metadata": {
+                        "simulation_type": "multi_scale_simulator + network_engine + visualization",
+                        "recommended_interactivity": "high",
+                        "purpose": "Allow user to define networks at multiple scales (molecular, cellular, tissue), simulate dynamic behavior over time, visualize emergent outcomes, perturb system (e.g. gene knock-out, environmental change) and observe systemic effects.",
+                        "estimated_time": "2–3 hours",
+                        "resources_needed": [
+                            "computational biology engine / backend"
+                        ]
+                    },
+                    "cross_domain_links": [],
+                    "learning_object_metadata": {
+                        "author": "TutorPutor Team",
+                        "version": "0.1.0",
+                        "status": "draft",
+                        "intended_end_user_role": [
+                            "researcher",
+                            "advanced student",
+                            "self-learner"
+                        ],
+                        "context": [
+                            "research simulation",
+                            "computational biology lab",
+                            "self-study"
+                        ],
+                        "difficulty": "very_hard",
+                        "typical_learning_time": "3 hr",
+                        "learning_object_type": "project + simulation",
+                        "creation_date": "2025-12-05",
+                        "last_modified": "2025-12-05"
+                    },
+                    "pedagogical_metadata": {
+                        "learning_objectives": [
+                            "Construct and simulate biological systems at multiple scales (gene, cell, tissue, organ).",
+                            "Analyze emergent behavior from complex interactions.",
+                            "Use simulations to test hypotheses, predict outcomes of perturbations (genetic, environmental)."
+                        ],
+                        "competencies": [
+                            "computational modeling",
+                            "systems thinking",
+                            "biological reasoning",
+                            "multi-scale analysis"
+                        ],
+                        "scaffolding_level": "scaffolded",
+                        "accessibility_notes": ""
+                    }
+                },
+                {
+                    "id": "bio_R_2",
+                    "name": "Evolutionary Genomics & Computational Phylogenetics",
+                    "description": "Use large-scale genomic data, bioinformatics and computational methods to study evolution — comparative genomics, phylogenetic tree construction, molecular evolution, gene family evolution, population genomics analyses, speciation events, genomic adaptation to environment.",
+                    "prerequisites": [
+                        "bio_I_2",
+                        "bio_A_2"
+                    ],
+                    "audience_tags": [
+                        "Research",
+                        "Independent_Study",
+                        "University_Advanced"
+                    ],
+                    "keywords": [
+                        "genomics",
+                        "phylogenetics",
+                        "comparative genomics",
+                        "molecular evolution",
+                        "bioinformatics",
+                        "population genomics",
+                        "speciation",
+                        "sequence alignment",
+                        "tree building",
+                        "genome analysis"
+                    ],
+                    "simulation_metadata": {
+                        "simulation_type": "bioinformatics_pipeline + data_visualization",
+                        "recommended_interactivity": "high",
+                        "purpose": "Allow user to load or generate genomic sequence data, perform alignment, construct phylogenetic trees, compute evolutionary distances, simulate speciation or divergence under different evolutionary models, visualize genomic variation across populations or species.",
+                        "estimated_time": "2–4 hours",
+                        "resources_needed": [
+                            "bioinformatics backend / pipeline"
+                        ]
+                    },
+                    "cross_domain_links": [],
+                    "learning_object_metadata": {
+                        "author": "TutorPutor Team",
+                        "version": "0.1.0",
+                        "status": "draft",
+                        "intended_end_user_role": [
+                            "researcher",
+                            "graduate student",
+                            "self-learner"
+                        ],
+                        "context": [
+                            "evolutionary biology research",
+                            "bioinformatics lab simulation",
+                            "self-study"
+                        ],
+                        "difficulty": "very_hard",
+                        "typical_learning_time": "3–4 hr",
+                        "learning_object_type": "project + simulation",
+                        "creation_date": "2025-12-05",
+                        "last_modified": "2025-12-05"
+                    },
+                    "pedagogical_metadata": {
+                        "learning_objectives": [
+                            "Perform sequence alignment and comparative genomics analyses.",
+                            "Construct and interpret phylogenetic trees.",
+                            "Model evolutionary divergence and speciation computationally.",
+                            "Analyze genome-level adaptation and variation across species/populations."
+                        ],
+                        "competencies": [
+                            "bioinformatics",
+                            "computational biology",
+                            "evolutionary reasoning",
+                            "data analysis"
+                        ],
+                        "scaffolding_level": "scaffolded",
+                        "accessibility_notes": ""
+                    }
+                },
+                {
+                    "id": "bio_R_3",
+                    "name": "Epidemiology & Population Health Modeling",
+                    "description": "Use computational models to simulate disease spread, host population interactions, epidemiological dynamics; model infectious disease outbreaks, herd immunity, intervention strategies; integrate biology, environment, population behavior to study public-health phenomena.",
+                    "prerequisites": [
+                        "bio_A_4",
+                        "bio_F_4"
+                    ],
+                    "audience_tags": [
+                        "Research",
+                        "Independent_Study",
+                        "University_Advanced"
+                    ],
+                    "keywords": [
+                        "epidemiology",
+                        "disease modeling",
+                        "population dynamics",
+                        "SIR model",
+                        "infection spread",
+                        "herd immunity",
+                        "public health",
+                        "intervention",
+                        "statistical modeling",
+                        "simulation"
+                    ],
+                    "simulation_metadata": {
+                        "simulation_type": "system_dynamics_simulator + population_model + visualization",
+                        "recommended_interactivity": "medium",
+                        "purpose": "Allow user to define population parameters (susceptible, infected, recovered), transmission rates, interventions (vaccination, isolation), simulate outbreak over time, visualize curves, explore impact of parameters and control strategies.",
+                        "estimated_time": "45 min"
+                    },
+                    "cross_domain_links": [],
+                    "learning_object_metadata": {
+                        "author": "TutorPutor Team",
+                        "version": "0.1.0",
+                        "status": "draft",
+                        "intended_end_user_role": [
+                            "researcher",
+                            "graduate student",
+                            "self-learner"
+                        ],
+                        "context": [
+                            "epidemiology research",
+                            "public health modeling",
+                            "self-study"
+                        ],
+                        "difficulty": "very_hard",
+                        "typical_learning_time": "1 hr",
+                        "learning_object_type": "simulation + conceptual module",
+                        "creation_date": "2025-12-05",
+                        "last_modified": "2025-12-05"
+                    },
+                    "pedagogical_metadata": {
+                        "learning_objectives": [
+                            "Construct epidemiological models (SIR, SEIR etc.) and simulate disease spread.",
+                            "Analyze effects of interventions (vaccination, isolation, social measures) on outbreak dynamics.",
+                            "Understand population-level health dynamics and factors influencing disease propagation."
+                        ],
+                        "competencies": [
+                            "epidemiological reasoning",
+                            "systems modeling",
+                            "public health",
+                            "statistical analysis"
+                        ],
+                        "scaffolding_level": "scaffolded",
+                        "accessibility_notes": ""
+                    }
+                }
+            ]
+        }
+    }
+}

@@ -1,0 +1,1105 @@
+name: Develop (Secure Code in Modular Components)
+workflow:
+  - id: modularization
+    agent: ModularizationAgent
+    role: Lead Developer
+    inputs_spec:
+      - name: ready_for_develop_package
+        description: Output package from previous stage with design, requirements, checklists, and codebase starter.
+        format: Package artifact
+    outputs_spec:
+      - name: modularized_codebase
+        description: Codebase split into logical, independently testable modules, fully documented.
+        format: Source repo or artifact reference
+    agent_tasks:
+      - Analyze input package for intended module boundaries and architecture.
+      - Split codebase into logical, independently testable modules.
+      - Ensure module boundaries match design and architecture specs.
+      - Document module dependencies explicitly.
+      - Add basic documentation (README or code comments) for each module.
+      - Review to ensure no module contains unrelated responsibilities.
+    acceptance_criteria:
+      - Codebase is split into logical, independently testable modules.
+      - Module boundaries match design and architecture specs.
+      - Module dependencies are explicitly documented.
+      - Each module includes basic documentation (README or code comments).
+      - No module contains unrelated responsibilities.
+    dependencies:
+      - ready_for_develop_package
+    failure_escalation:
+      - If architecture is not followed or modules are unclear, escalate to Solution Architect.
+    references: 
+      -| "Modular Monoliths" by Simon Brown
+    hitl: true
+    hitl_reason: Human ensures modularization aligns with architectural intent
+  - id: develop_best_practice_enforcement
+    agent: DevelopBestPracticeAgent
+    role: Dev Standards Auditor
+    inputs_spec:
+      - name: modularized_codebase
+        description: Output codebase from modularization step.
+        format: Source repo or artifact reference
+    outputs_spec:
+      - name: develop_best_practice_report
+        description: Review report for coding standards, linting, static analysis, secure coding, testing, and technical debt.
+        format: Structured report
+    agent_tasks:
+      - Review code for adherence to coding standards and best practices.
+      - Run and check all linting/static analysis tools.
+      - Ensure secure coding guidelines are followed.
+      - Check tests exist for all major features.
+      - Document or remediate technical debt.
+    acceptance_criteria:
+      - Code is reviewed for coding standards and best practices.
+      - All new code passes linting/static analysis.
+      - Secure coding guidelines are followed.
+      - Tests exist for all major features.
+      - Technical debt is documented or remediated.
+    dependencies:
+      - modularized_codebase
+    failure_escalation:
+      - If violations are found and not remediated, escalate to Dev Lead.
+    references:
+      - OWASP Secure Coding Guidelines
+    hitl: true
+    hitl_reason: Human ensures development best practices are enforced
+  - id: develop_milestone_tracker
+    agent: DevelopMilestoneTrackerAgent
+    role: DevOps PM
+    inputs_spec:
+      - name: develop_best_practice_report
+        description: Output report from best practice enforcement.
+        format: Structured report
+    outputs_spec:
+      - name: develop_stage_milestone
+        description: List of development milestones, owners, status, dependencies, completion criteria.
+        format: List of milestone objects
+    agent_tasks:
+      - List and track all development milestones.
+      - Ensure each milestone has clear completion criteria, owner, and dependencies.
+      - Update milestone status in project tracker.
+      - Flag blockers and delays for escalation.
+    acceptance_criteria:
+      - All development milestones are listed and tracked.
+      - Completion criteria for each milestone are clear.
+      - Blockers and delays are flagged and escalated.
+      - Dependencies between milestones are captured.
+      - Milestone status is up to date in project tracker.
+    dependencies:
+      - develop_best_practice_report
+    failure_escalation:
+      - If milestones are blocked or missing, escalate to Dev PM and Product Owner.
+    references: []
+    hitl: true
+    hitl_reason: Human oversight for development milestone tracking
+  - id: coding_guidelines
+    agent: CodingGuidelinesAgent
+    role: Security Engineer
+    inputs_spec:
+      - name: develop_stage_milestone
+        description: Milestones and project status for context.
+        format: List of milestone objects
+    outputs_spec:
+      - name: secure_coding_guidelines
+        description: Documented, versioned secure coding guidelines for the team.
+        format: Guidelines document or artifact link
+    agent_tasks:
+      - Document secure coding guidelines covering language/framework-specific risks.
+      - Notify all developers of guideline changes.
+      - Provide links to company policy and reference docs.
+    acceptance_criteria:
+      - Secure coding guidelines are documented and versioned.
+      - All developers are notified of guideline changes.
+      - Guidelines cover language/framework-specific risks.
+      - Links to company policy or reference docs are provided.
+    dependencies:
+      - develop_stage_milestone
+    failure_escalation:
+      - Escalate to Security Lead if guidelines are incomplete or not distributed.
+    references: []
+    hitl: true
+    hitl_reason: Human reviews secure coding guidelines for completeness
+
+  - id: dev_onboarding
+    agent: DevOnboardingAgent
+    role: Team Lead
+    inputs_spec:
+      - name: secure_coding_guidelines
+        description: Secure coding guidelines for onboarding.
+        format: Guidelines document
+    outputs_spec:
+      - name: onboarding_session
+        description: Record of onboarding session, including completion and topics covered.
+        format: Onboarding session record
+    agent_tasks:
+      - Provide onboarding materials and walkthroughs for new team members.
+      - Ensure access to all repos, docs, tools.
+      - Highlight team-specific best practices.
+      - Record onboarding completion.
+    acceptance_criteria:
+      - Onboarding materials are complete and current.
+      - New team members have access to all repos, docs, and tools.
+      - Introductory walkthroughs are provided.
+      - Team-specific best practices are highlighted.
+      - Onboarding completion is recorded.
+    dependencies:
+      - secure_coding_guidelines
+    failure_escalation:
+      - Escalate to Team Lead or PM if onboarding is not complete for new members.
+    references: []
+    hitl: true
+    hitl_reason: Human ensures onboarding quality and addresses team questions
+
+  - id: repo_setup
+    agent: RepoSetupAgent
+    role: DevOps Engineer
+    inputs_spec:
+      - name: onboarding_session
+        description: Completion record of onboarding session.
+        format: Onboarding session record
+    outputs_spec:
+      - name: configured_repo
+        description: Initialized repository with structure, permissions, branches, and CI/CD hooks.
+        format: Repo URL or configuration artifact
+    agent_tasks:
+      - Initialize repo with required structure and branches.
+      - Enforce access controls and permissions.
+      - Set branch protection rules.
+      - Configure CI/CD hooks or integrations.
+    acceptance_criteria:
+      - Repo is initialized with required structure and branches.
+      - Access controls and permissions are enforced.
+      - Branch protection rules are set.
+      - CI/CD hooks or integrations are configured.
+    dependencies:
+      - onboarding_session
+    failure_escalation:
+      - Escalate to DevOps or Security if repo misconfigured.
+    references: []
+
+  - id: precommit_automation
+    agent: PreCommitAutomationAgent
+    role: Tooling Engineer
+    inputs_spec:
+      - name: configured_repo
+        description: Configured repository for pre-commit hook setup.
+        format: Repo URL or artifact
+    outputs_spec:
+      - name: precommit_hooks
+        description: Enabled pre-commit hooks (lint, format, basic tests, secret scan).
+        format: List of hook types
+    agent_tasks:
+      - Configure pre-commit hooks for lint, format, and basic tests.
+      - Block sensitive data or secrets in commits.
+      - Test all hooks for effectiveness.
+      - Notify team of required hooks.
+    acceptance_criteria:
+      - Pre-commit hooks check for lint, format, and basic tests.
+      - Sensitive data or secrets are blocked in commits.
+      - All hooks are tested for effectiveness.
+      - Team is notified of required hooks.
+    dependencies:
+      - configured_repo
+    failure_escalation:
+      - Escalate to Tooling Engineer or Dev Lead if hooks are missing or ineffective.
+    references: []
+
+  - id: dependency_scan
+    agent: DependencyScanAgent
+    role: Security Engineer
+    inputs_spec:
+      - name: configured_repo
+        description: Configured repository to scan dependencies.
+        format: Repo URL or manifest
+    outputs_spec:
+      - name: dependency_scan_report
+        description: Report of known vulnerabilities in project dependencies.
+        format: Scan report artifact
+    agent_tasks:
+      - Scan all dependencies for known vulnerabilities.
+      - Flag high and critical issues.
+      - Make reports available to all developers.
+      - Configure automated alerts for new risks.
+    acceptance_criteria:
+      - All dependencies are scanned for known vulnerabilities.
+      - High and critical issues are flagged.
+      - Reports are available to all developers.
+      - Automated alerts are configured for new risks.
+    dependencies:
+      - configured_repo
+    failure_escalation:
+      - Escalate to Security Lead if critical issues not resolved.
+    references: []
+    hitl: true
+    hitl_reason: Human reviews dependency scan results for critical issues
+
+  - id: best_practice_enforcement
+    agent: BestPracticeEnforcementAgent
+    role: Dev Standards Lead
+    inputs_spec:
+      - name: modularized_codebase
+        description: Modularized codebase to check for standards.
+        format: Source repo or artifact reference
+    outputs_spec:
+      - name: best_practices_report
+        description: Report on adherence to coding standards and best practices.
+        format: Best practice compliance report
+    agent_tasks:
+      - Check all modules for adherence to project coding standards.
+      - Ensure peer review process is followed.
+      - Run automated best practice checks.
+      - Log and track deviations for remediation.
+    acceptance_criteria:
+      - All modules are checked for adherence to project coding standards.
+      - Peer review process is followed.
+      - Automated best practice checks pass.
+      - Deviations are logged and remediated.
+    dependencies:
+      - modularized_codebase
+    failure_escalation:
+      - Escalate to Dev Standards Lead if major deviations persist.
+    references: []
+    hitl: true
+    hitl_reason: Human ensures all best practices are enforced in codebase
+
+  - id: code_quality_gate
+    agent: CodeQualityGateAgent
+    role: Static Analysis/CI Tool
+    inputs_spec:
+      - name: modularized_codebase
+        description: Codebase to check for code quality.
+        format: Source repo or artifact reference
+    outputs_spec:
+      - name: code_quality_passed
+        description: Code quality status after static analysis and QA signoff.
+        format: Boolean flag or code quality report
+    agent_tasks:
+      - Run static analysis and code quality checks.
+      - Confirm code coverage meets/exceeds threshold.
+      - Confirm no critical/blocker-level issues remain.
+      - Ensure QA signoff is recorded.
+    acceptance_criteria:
+      - Static analysis and code quality checks pass.
+      - Code coverage meets or exceeds the threshold.
+      - No critical or blocker-level issues remain.
+      - QA signoff is recorded.
+    dependencies:
+      - modularized_codebase
+    failure_escalation:
+      - Escalate to QA Lead if critical issues remain after static analysis.
+    references: []
+    hitl: true
+    hitl_reason: Human reviews code quality gate output for false negatives/positives
+
+  - id: security_best_practice
+    agent: SecurityBestPracticeAgent
+    role: Security Champion
+    inputs_spec:
+      - name: modularized_codebase
+        description: Codebase to check for security best practices.
+        format: Source repo or artifact reference
+    outputs_spec:
+      - name: security_practices_report
+        description: Report on application of security standards and secure data handling.
+        format: Security compliance report
+    agent_tasks:
+      - Review code for all security standards (OWASP, company, etc.).
+      - Review sensitive data handling.
+      - Document and escalate potential security issues.
+      - Ensure security review signoff.
+    acceptance_criteria:
+      - All security standards (OWASP, company, etc.) are applied.
+      - Sensitive data handling is reviewed.
+      - Potential security issues are documented and escalated.
+      - Security review is signed off by responsible team member.
+    dependencies:
+      - modularized_codebase
+    failure_escalation:
+      - Escalate to Security Champion or Sec Lead if risks are not addressed.
+    references: []
+    hitl: true
+    hitl_reason: Human ensures security best practices are enforced in code
+
+  - id: documentation_best_practice
+    agent: DocumentationBestPracticeAgent
+    role: Technical Writer
+    inputs_spec:
+      - name: modularized_codebase
+        description: Codebase for documentation quality checks.
+        format: Source repo or artifact reference
+    outputs_spec:
+      - name: documentation_compliance_report
+        description: Documentation compliance report for codebase.
+        format: Documentation compliance report
+    agent_tasks:
+      - Review all new/changed modules for documentation.
+      - Ensure docstrings/comments are present and meaningful.
+      - Update project documentation for major changes.
+      - Ensure docs follow company templates or guidelines.
+    acceptance_criteria:
+      - All new/changed modules are documented.
+      - Docstrings/comments are present and meaningful.
+      - Project documentation is updated for major changes.
+      - Docs follow company templates or guidelines.
+    dependencies:
+      - modularized_codebase
+    failure_escalation:
+      - Escalate to Documentation Lead if documentation is insufficient.
+    references: []
+    hitl: true
+    hitl_reason: Human ensures documentation meets required standards
+
+  - id: code_duplication
+    agent: CodeDuplicationAgent
+    role: Automation Tool
+    inputs_spec:
+      - name: modularized_codebase
+        description: Codebase for duplication analysis.
+        format: Source repo or artifact reference
+    outputs_spec:
+      - name: code_duplication_report
+        description: Report highlighting duplicate code blocks and hotspots.
+        format: Duplication scan report
+    agent_tasks:
+      - Scan codebase for duplicate code blocks.
+      - Flag duplication hotspots for refactoring.
+      - Share summary report with developers.
+    acceptance_criteria:
+      - Codebase is scanned for duplicate code blocks.
+      - Duplication hotspots are flagged for refactoring.
+      - A summary report is available to devs.
+    dependencies:
+      - modularized_codebase
+    failure_escalation:
+      - Escalate to Dev Lead if duplication issues persist.
+    references: []
+    hitl: false
+  - id: license_compliance
+    agent: LicenseComplianceAgent
+    role: Automation Tool
+    inputs_spec:
+      - name: modularized_codebase
+        description: Codebase with all dependencies to check for license compatibility.
+        format: Source repo or dependency manifest
+    outputs_spec:
+      - name: license_compliance_report
+        description: Compliance report for all dependencies and artifacts.
+        format: License compliance report artifact
+    agent_tasks:
+      - Check all dependencies for license compatibility.
+      - Flag non-compliant licenses.
+      - Attach compliance report to build/release.
+    acceptance_criteria:
+      - All dependencies are checked for license compatibility.
+      - Non-compliant licenses are flagged.
+      - A compliance report is attached to the build/release.
+    dependencies:
+      - modularized_codebase
+    failure_escalation:
+      - Escalate to Compliance or DevOps if non-compliance found.
+    references: []
+    hitl: false
+
+  - id: test_suite
+    agent: TestSuiteAgent
+    role: QA Engineer
+    inputs_spec:
+      - name: modularized_codebase
+        description: Codebase/modules to generate and run tests for.
+        format: Source repo or artifact
+    outputs_spec:
+      - name: test_suites
+        description: Test suites covering unit, integration, and edge cases.
+        format: Test suite artifact
+    agent_tasks:
+      - Create unit and integration tests for all modules.
+      - Ensure test cases cover positive, negative, and edge cases.
+      - Set up CI to run tests automatically.
+    acceptance_criteria:
+      - All modules have unit and/or integration tests.
+      - Test cases cover positive, negative, and edge cases.
+      - Tests run automatically in CI.
+    dependencies:
+      - modularized_codebase
+    failure_escalation:
+      - Escalate to QA Lead if major test gaps found.
+    references: []
+
+  - id: test_coverage_enforcement
+    agent: TestCoverageEnforcementAgent
+    role: QA Lead
+    inputs_spec:
+      - name: test_suites
+        description: Test suites to measure code coverage.
+        format: Test suite artifact
+    outputs_spec:
+      - name: test_coverage_report
+        description: Coverage report for all major modules.
+        format: Test coverage report
+    agent_tasks:
+      - Measure coverage for all major modules.
+      - Enforce thresholds for acceptable coverage.
+      - Flag areas with low coverage for remediation.
+    acceptance_criteria:
+      - Coverage is measured for all major modules.
+      - Thresholds for acceptable coverage are enforced.
+      - Areas with low coverage are flagged for remediation.
+    dependencies:
+      - test_suites
+    failure_escalation:
+      - Escalate to QA Lead/Dev Lead if thresholds are not met.
+    references: []
+    hitl: true
+    hitl_reason: Human reviews test coverage report for adequacy
+
+  - id: containerization
+    agent: ContainerizationAgent
+    role: Platform Engineer
+    inputs_spec:
+      - name: modularized_codebase
+        description: Codebase to be containerized for deployment.
+        format: Source repo or artifact
+    outputs_spec:
+      - name: containerized_services
+        description: Built/tested container images for all major services.
+        format: Container registry artifact or image list
+    agent_tasks:
+      - Package major services as containers (Docker, etc.).
+      - Ensure container files follow security best practices.
+      - Test containers for startup and health.
+      - Verify registry push/pull permissions.
+    acceptance_criteria:
+      - All major services are packaged as containers.
+      - Container files (Dockerfile, etc.) follow security best practices.
+      - Containers are tested for correct startup and health.
+      - Container registry push/pull permissions are verified.
+    dependencies:
+      - modularized_codebase
+    failure_escalation:
+      - Escalate to Platform Engineer/DevOps if containers do not build or pass health checks.
+    references: []
+    hitl: true
+    hitl_reason: Human validates containerization workflow and output
+
+  - id: secrets_management
+    agent: SecretsManagementAgent
+    role: Security/DevOps Engineer
+    inputs_spec:
+      - name: containerized_services
+        description: Container images and configs for secrets review.
+        format: Container registry artifact or config manifest
+    outputs_spec:
+      - name: secrets_management_report
+        description: Report on secrets externalization, management, and audit.
+        format: Secrets management report
+    agent_tasks:
+      - Externalize all secrets from code/configs.
+      - Store secrets in approved manager (Vault, AWS Secrets, etc.).
+      - Ensure access to secrets is audited.
+      - Document secrets rotation policies.
+    acceptance_criteria:
+      - All secrets are externalized from code and configs.
+      - Secrets are stored in an approved manager.
+      - Access to secrets is audited.
+      - Secrets rotation policies are documented.
+    dependencies:
+      - containerized_services
+    failure_escalation:
+      - Escalate to Security/DevOps if secrets are found in code or not audited.
+    references: []
+    hitl: true
+    hitl_reason: Human reviews secrets management implementation and report
+
+  - id: api_contract
+    agent: APIContractAgent
+    role: API Architect
+    inputs_spec:
+      - name: modularized_codebase
+        description: Codebase for API contracts/doc generation.
+        format: Source repo or artifact
+    outputs_spec:
+      - name: api_contracts_docs
+        description: API documentation and contracts.
+        format: API doc artifact or spec file
+    agent_tasks:
+      - Publish and version API documentation.
+      - Ensure docs are in sync with implementation.
+    acceptance_criteria:
+      - API documentation is published and accessible.
+      - All changes are versioned.
+      - Docs are in sync with implementation.
+    dependencies:
+      - modularized_codebase
+    failure_escalation:
+      - Escalate to API Architect/QA if docs are outdated or missing.
+    references: []
+    hitl: true
+    hitl_reason: Human reviews API contracts documentation for completeness
+
+  - id: peer_review
+    agent: PeerReviewAgent
+    role: Assigned Reviewer
+    inputs_spec:
+      - name: modularized_codebase
+        description: Codebase for peer review.
+        format: Source repo or artifact
+    outputs_spec:
+      - name: peer_review_report
+        description: Report documenting review feedback and approval.
+        format: Peer review report
+    agent_tasks:
+      - Review all major changes before merge.
+      - Document feedback and ensure issues are addressed.
+      - Approve or reject changes.
+    acceptance_criteria:
+      - All major changes receive peer review.
+      - Reviewer feedback is documented and addressed.
+      - No code is merged without review approval.
+    dependencies:
+      - modularized_codebase
+    failure_escalation:
+      - Escalate to Dev Lead if review not performed.
+    references: []
+    hitl: true
+    hitl_reason: Human peer review required for code quality and knowledge sharing
+
+  - id: dependency_update
+    agent: DependencyUpdateAgent
+    role: Tooling Engineer
+    inputs_spec:
+      - name: modularized_codebase
+        description: Codebase with dependencies to update.
+        format: Source repo or manifest
+    outputs_spec:
+      - name: updated_dependencies
+        description: Log/report of updated dependencies.
+        format: Update log
+    agent_tasks:
+      - Identify outdated or vulnerable dependencies.
+      - Apply/test updates.
+      - Maintain update logs.
+    acceptance_criteria:
+      - Outdated/vulnerable dependencies are updated.
+      - Updates are tested before merging.
+      - Update logs are maintained.
+    dependencies:
+      - modularized_codebase
+    failure_escalation:
+      - Escalate to Dev Lead if updates are not applied or tested.
+    references: []
+
+  - id: doc_update
+    agent: DocUpdateAgent
+    role: Technical Writer
+    inputs_spec:
+      - name: modularized_codebase
+        description: Codebase for doc updates.
+        format: Source repo or artifact
+      - name: api_contracts_docs
+        description: API docs for update cross-ref.
+        format: API doc artifact
+      - name: test_suites
+        description: Test suite artifact for documentation.
+        format: Test suite artifact
+    outputs_spec:
+      - name: updated_tech_docs
+        description: Updated technical documentation.
+        format: Documentation artifact or repo
+    agent_tasks:
+      - Ensure documentation reflects latest code, API, and test changes.
+      - Record architectural/design changes.
+      - Version docs with releases.
+    acceptance_criteria:
+      - Documentation reflects latest code and feature changes.
+      - Major architectural/design changes are recorded.
+      - Docs are versioned with releases.
+    dependencies:
+      - modularized_codebase
+      - api_contracts_docs
+      - test_suites
+    failure_escalation:
+      - Escalate to Tech Writer Lead if docs are outdated or incomplete.
+    references: []
+  
+  - id: develop_combiner
+    agent: SynthesisCombinerAgent
+    role: PM/Stage Lead
+    inputs_spec:
+      - name: develop_evidence_package
+        description: Evidence package from develop stage (logs, docs, KPIs).
+        format: Evidence package artifact
+      - name: develop_risk_trend_report
+        description: Risk trend analysis report.
+        format: Risk trend report
+      - name: modularized_codebase
+        description: Final codebase for build handoff.
+        format: Source repo or artifact
+      - name: containerized_services
+        description: Built container images/services.
+        format: Container registry artifact
+      - name: test_suites
+        description: Test suites for build handoff.
+        format: Test suite artifact
+      - name: api_contracts_docs
+        description: API documentation for build handoff.
+        format: API doc artifact
+      - name: updated_tech_docs
+        description: Latest technical documentation.
+        format: Documentation artifact
+    outputs_spec:
+      - name: ready_for_build_package
+        description: Versioned, complete package for Build stage, with checklist.
+        format: Package artifact
+    agent_tasks:
+      - Package all required outputs, reviews, and artifacts for Build stage.
+      - Version package and include handoff checklist for Build entry.
+    acceptance_criteria:
+      - All required outputs from the stage are packaged and versioned for handoff.
+      - Handoff checklist for next stage entry is included.
+    dependencies:
+      - develop_evidence_package
+      - develop_risk_trend_report
+      - modularized_codebase
+      - containerized_services
+      - test_suites
+      - api_contracts_docs
+      - updated_tech_docs
+    failure_escalation:
+      - Escalate to PM or Stage Lead if package or checklist is incomplete.
+    references: []
+    hitl: true
+    hitl_reason: Human signoff on development synthesis and readiness for Build
+
+  - id: develop_kpi_agent
+    agent: StageKPIAgent
+    role: Develop KPI Analyst
+    inputs_spec:
+      - name: develop_stage_milestone
+        description: Milestones for KPI tracking.
+        format: List of milestone objects
+    outputs_spec:
+      - name: develop_kpi_report
+        description: Full KPI report (code quality, test coverage, review times, defect rates, technical debt, trends).
+        format: KPI report artifact
+    agent_tasks:
+      - Track and report code quality score, test coverage %, code review turnaround, peer review rate, vulnerability density, technical debt.
+      - Flag trends, anomalies, and negative movements.
+      - Ensure KPI data is linked to codebase versions and milestones.
+      - Visualize KPI trends over time.
+    acceptance_criteria:
+      - KPI: Code quality score (static analysis, linting pass rate)
+      - KPI: Test coverage % (unit, integration, e2e)
+      - KPI: Mean code review turnaround time (hours/days)
+      - KPI: Peer review pass rate and defect escape rate
+      - KPI: Vulnerability density (per 1k lines of code)
+      - KPI: Technical debt (issues/complexity metrics)
+      - Trends, anomalies, or negative movements are flagged for action.
+      - KPI data is traceable to codebase versions and milestone reports.
+      - KPI trends are visualized over time and compared to past project baselines.
+      - Outliers and deviations are flagged for review.
+    dependencies:
+      - develop_stage_milestone
+    failure_escalation:
+      - Escalate to KPI Analyst or Dev Lead if KPIs not updated or acted on.
+    references: []
+    hitl: false
+
+  - id: develop_success_criteria_tracker
+    agent: SuccessCriteriaTrackerAgent
+    role: Develop Success Criteria Tracker
+    inputs_spec:
+      - name: develop_stage_milestone
+        description: Milestones and entry/exit criteria.
+        format: List of milestone objects
+    outputs_spec:
+      - name: develop_success_criteria_status
+        description: Success criteria status (met/not met/at risk, owner, remediation).
+        format: List of criteria status objects
+    agent_tasks:
+      - List all development stage entry/exit criteria, map to milestone or code review artifacts.
+      - Assign status, owner, and required remediation for each.
+      - Escalate at-risk or failed criteria for review.
+      - Version tracker for audit/handoff.
+    acceptance_criteria:
+      - All development stage entry/exit criteria are explicitly listed and mapped.
+      - For each criterion: status, owner, remediation.
+      - At-risk or failed criteria are escalated for review.
+      - Tracker is versioned for audit and handoff.
+    dependencies:
+      - develop_stage_milestone
+    failure_escalation:
+      - Escalate to Dev Lead or PM if success criteria are not tracked or resolved.
+    references: []
+    hitl: false
+
+  - id: develop_escalation_handler
+    agent: EscalationHandlerAgent
+    role: Project Escalation Manager
+    inputs_spec:
+      - name: develop_success_criteria_status
+        description: Success criteria status report.
+        format: List of criteria status objects
+    outputs_spec:
+      - name: develop_escalation_report
+        description: Escalation report for unresolved blockers.
+        format: Escalation report artifact
+    agent_tasks:
+      - Review all "At Risk" or "Not Met" criteria.
+      - Assign owners and deadlines for resolution.
+      - Make escalation status visible in dashboard and audit log.
+    acceptance_criteria:
+      - All "At Risk" or "Not Met" criteria are reviewed for escalation.
+      - Owners and deadlines for resolution are assigned.
+      - Escalation status is visible in the dashboard and audit log.
+    dependencies:
+      - develop_success_criteria_status
+    failure_escalation:
+      - Escalate to escalation manager or PM if blockers remain unresolved.
+    references: []
+    hitl: true
+    hitl_reason: Human ensures appropriate escalation/action for unresolved blockers
+
+  - id: develop_remediation_tracker
+    agent: RemediationTrackerAgent
+    role: Exception Bot
+    inputs_spec:
+      - name: develop_success_criteria_status
+        description: Success criteria status report.
+        format: List of criteria status objects
+      - name: develop_escalation_report
+        description: Escalation report.
+        format: Escalation report artifact
+    outputs_spec:
+      - name: develop_remediation_status
+        description: Remediation tracker/status for failed or at-risk items.
+        format: Remediation status artifact
+    agent_tasks:
+      - Track all failed or at-risk items for remediation.
+      - Assign owners, deadlines, actions.
+      - Update status until resolution or final escalation.
+    acceptance_criteria:
+      - All failed or at-risk items are tracked for remediation.
+      - Owners, deadlines, and actions are recorded.
+      - Remediation status is updated until resolution or final escalation.
+    dependencies:
+      - develop_success_criteria_status
+      - develop_escalation_report
+    failure_escalation:
+      - Escalate to Dev Lead or PM if remediation is not completed.
+    references: []
+    hitl: false
+
+  - id: develop_readiness_checker
+    agent: ReadinessCheckerAgent
+    role: Gatekeeper Bot
+    inputs_spec:
+      - name: develop_stage_milestone
+        description: Development milestones.
+        format: List of milestone objects
+      - name: develop_best_practice_report
+        description: Best practice review report.
+        format: Compliance report
+      - name: develop_kpi_report
+        description: Latest KPI report.
+        format: KPI report artifact
+    outputs_spec:
+      - name: develop_readiness_status
+        description: Readiness status for Develop stage.
+        format: Status artifact
+    agent_tasks:
+      - Check all mandatory develop criteria are met.
+      - Ensure no open critical issues in milestones, best practice, or KPI.
+      - Verify all required approvals and evidence are present.
+      - Mark stage ready only if above are true.
+    acceptance_criteria:
+      - All mandatory develop criteria are met.
+      - No open critical issues in milestones, best practice, or KPI.
+      - All required approvals and evidence are present.
+      - Stage is marked "Ready for next stage" only if above are true.
+    dependencies:
+      - develop_stage_milestone
+      - develop_best_practice_report
+      - develop_kpi_report
+    failure_escalation:
+      - Escalate to Gatekeeper or PM if readiness not achieved.
+    references: []
+    hitl: false
+
+  - id: develop_go_nogo
+    agent: GoNoGoDecisionAgent
+    role: Stage Owner/Stakeholders
+    inputs_spec:
+      - name: develop_readiness_status
+        description: Readiness status for Develop stage.
+        format: Status artifact
+    outputs_spec:
+      - name: develop_go_nogo_decision
+        description: Go/No-Go decision with rationale.
+        format: Go/No-Go decision artifact
+    agent_tasks:
+      - Review all blockers, risks, and criteria.
+      - Record Go/No-Go decision and rationale.
+    acceptance_criteria:
+      - All blockers, risks, and criteria reviewed.
+      - Go/No-Go decision and rationale recorded.
+    dependencies:
+      - develop_readiness_status
+    failure_escalation:
+      - Escalate to Stage Owner if decision cannot be made.
+    references: []
+    hitl: true
+    hitl_reason: Human review required for Go/No-Go decision
+
+  - id: develop_progress_dashboard
+    agent: ProgressDashboardAgent
+    role: Develop Progress Dashboard Owner
+    inputs_spec:
+      - name: develop_kpi_report
+        description: Latest KPI report.
+        format: KPI report artifact
+      - name: develop_success_criteria_status
+        description: Success criteria status.
+        format: List of criteria status objects
+      - name: develop_stage_milestone
+        description: Milestones for progress tracking.
+        format: List of milestone objects
+    outputs_spec:
+      - name: develop_progress_dashboard
+        description: Dashboard visualizing code quality, coverage, cycle, vulnerabilities, KPIs, blockers.
+        format: Dashboard artifact
+    agent_tasks:
+      - Visualize KPIs, code quality, coverage, review cycle, vulnerability findings, and blockers.
+      - Update dashboard in real time.
+      - Highlight critical path milestones, blocked dependencies, and bottlenecks.
+    acceptance_criteria:
+      - Dashboard visualizes code quality, test coverage, review cycle, vulnerability findings, and all KPIs.
+      - Shows open code review, security, or quality blockers.
+      - Links to peer review, static analysis, and milestone status.
+      - Dashboard is updated in real time and reviewed before Build handoff.
+      - Critical path, blocked dependencies, and bottlenecks are visible.
+    dependencies:
+      - develop_kpi_report
+      - develop_success_criteria_status
+      - develop_stage_milestone
+    failure_escalation:
+      - Escalate to Dashboard Owner or PM if dashboard is outdated or not actionable.
+    references: []
+    hitl: false
+
+  - id: develop_observability_export
+    agent: ObservabilityExportAgent
+    role: SRE/Analytics
+    inputs_spec:
+      - name: develop_progress_dashboard
+        description: Dashboard with KPIs and blockers.
+        format: Dashboard artifact
+    outputs_spec:
+      - name: develop_observability_export
+        description: Metrics/KPIs export for analytics/monitoring.
+        format: Export artifact
+    agent_tasks:
+      - Export metrics/KPIs to analytics/monitoring platform.
+      - Flag any gaps in observability.
+    acceptance_criteria:
+      - Pipeline metrics/KPIs exported to external analytics/monitoring.
+      - Gaps in observability are flagged.
+    dependencies:
+      - develop_progress_dashboard
+    failure_escalation:
+      - Escalate to SRE or Analytics if metrics are missing or gaps are not flagged.
+    references: []
+    hitl: false
+
+  - id: develop_feedback_loop
+    agent: FeedbackLoopAgent
+    role: CI/CD Coach/Automation
+    inputs_spec:
+      - name: develop_progress_dashboard
+        description: Develop dashboard for feedback collection.
+        format: Dashboard artifact
+    outputs_spec:
+      - name: develop_feedback_items
+        description: Issues/improvements routed to Retrospective, tracked for closure.
+        format: List of feedback items
+    agent_tasks:
+      - Route all issues and improvement suggestions to Retrospective.
+      - Track feedback for closure/action.
+    acceptance_criteria:
+      - All issues and improvement suggestions are routed to Retrospective.
+      - Feedback tracked for closure/action.
+    dependencies:
+      - develop_progress_dashboard
+    failure_escalation:
+      - Escalate to CI/CD coach if feedback is not acted on.
+    references: []
+    hitl: false
+
+  - id: develop_notification_agent
+    agent: NotificationAgent
+    role: PMO Communications
+    inputs_spec:
+      - name: develop_progress_dashboard
+        description: Dashboard of key events and issues.
+        format: Dashboard artifact
+      - name: develop_escalation_report
+        description: Escalation report for notifications.
+        format: Escalation report artifact
+    outputs_spec:
+      - name: develop_notifications
+        description: Stakeholder notifications (events, blockers, risks) with audit log.
+        format: List of notification objects
+    agent_tasks:
+      - Notify all stakeholders on key stage events.
+      - Communicate blockers, escalations, and major risks.
+      - Log notification delivery for audit.
+    acceptance_criteria:
+      - All stakeholders receive updates on key stage events.
+      - Blockers, escalations, and major risks are communicated in real time.
+      - Notification delivery is logged for audit.
+    dependencies:
+      - develop_progress_dashboard
+      - develop_escalation_report
+    failure_escalation:
+      - Escalate to PMO if notifications are not delivered or logged.
+    references: []
+    hitl: false
+
+  - id: develop_audit_log_agent
+    agent: AuditLogAgent
+    role: Compliance Bot
+    inputs_spec:
+      - name: develop_progress_dashboard
+        description: Develop progress dashboard artifact.
+        format: Dashboard artifact
+      - name: develop_notification_agent
+        description: Notification agent delivery log.
+        format: List of notification objects
+      - name: develop_success_criteria_status
+        description: Status of develop stage success criteria.
+        format: List of criteria status objects
+      - name: develop_stage_milestone
+        description: Develop stage milestone plan.
+        format: List of milestone objects
+    outputs_spec:
+      - name: develop_audit_log
+        description: Complete audit log of agent actions, transitions, signoffs, escalations, notifications, cryptographically signed and archived.
+        format: Audit log artifact
+    agent_tasks:
+      - Record every agent action and transition with timestamp, user/agent, and artifact link.
+      - Log major events (signoffs, escalations, notifications, exceptions).
+      - Cryptographically sign and archive logs in secure, tamper-evident location.
+      - Ensure audit log is accessible for compliance review.
+    acceptance_criteria:
+      - Every agent action and transition is recorded with timestamp, user/agent, and artifact link.
+      - Major events (signoffs, escalations, notifications, exceptions) are explicitly logged.
+      - Logs are cryptographically signed and archived in a secure, tamper-evident location.
+      - Audit log is accessible for compliance review.
+    dependencies:
+      - develop_progress_dashboard
+      - develop_notification_agent
+      - develop_success_criteria_status
+      - develop_stage_milestone
+    failure_escalation:
+      - Escalate to compliance or audit lead if logs are incomplete or inaccessible.
+    references: []
+    hitl: false
+
+  - id: develop_evidence_collector
+    agent: EvidenceCollectorAgent
+    role: Compliance Evidence Bot
+    inputs_spec:
+      - name: develop_audit_log
+        description: Develop stage audit log artifact.
+        format: Audit log artifact
+      - name: develop_success_criteria_status
+        description: Status of develop stage success criteria.
+        format: List of criteria status objects
+      - name: develop_stage_milestone
+        description: Develop stage milestone plan.
+        format: List of milestone objects
+      - name: develop_progress_dashboard
+        description: Develop progress dashboard artifact.
+        format: Dashboard artifact
+    outputs_spec:
+      - name: develop_evidence_package
+        description: Evidence package for Develop stage (artifacts, audit logs, signoffs, KPIs, compliance links, archive location, access logs).
+        format: Evidence package artifact
+    agent_tasks:
+      - Collect and hash all artifacts, audit logs, signoffs, and KPIs for the stage.
+      - Link evidence to compliance and regulatory requirements.
+      - Archive evidence package in tamper-evident storage.
+      - Maintain access logs for evidence package.
+    acceptance_criteria:
+      - Collects and hashes all artifacts, audit logs, signoffs, and KPIs for the stage.
+      - Evidence is linked to compliance and regulatory requirements.
+      - Evidence package is archived in tamper-evident storage.
+      - Access logs for evidence package are maintained.
+    dependencies:
+      - develop_audit_log
+      - develop_success_criteria_status
+      - develop_stage_milestone
+      - develop_progress_dashboard
+    failure_escalation:
+      - Escalate to compliance or evidence lead if evidence is incomplete or not archived.
+    references: []
+    hitl: false
+
+  - id: documentation_generator
+    agent: DocumentationGeneratorAgent
+    role: Tech Writer/Automation
+    inputs_spec:
+      - name: modularized_codebase
+        description: Final modularized codebase.
+        format: Source repo or artifact
+    outputs_spec:
+      - name: generated_documentation
+        description: Auto-generated and/or updated documentation for all modules and APIs.
+        format: Documentation artifact
+    agent_tasks:
+      - Generate or update documentation for all modules and APIs.
+      - Ensure docs are accessible, versioned, and up-to-date.
+    acceptance_criteria:
+      - Documentation is generated/updated for all modules and APIs.
+      - All docs are accessible, versioned, and up-to-date.
+    dependencies:
+      - modularized_codebase
+    failure_escalation:
+      - Escalate to Tech Writer or Doc Owner if docs are incomplete or out of date.
+    references: []
+    hitl: false
+
+  - id: develop_risk_trend_analyzer
+    agent: RiskTrendAnalyzerAgent
+    role: Risk Intelligence Bot
+    inputs_spec:
+      - name: develop_escalation_report
+        description: Escalation report from the Develop stage.
+        format: Escalation report artifact
+      - name: develop_progress_dashboard
+        description: Develop progress dashboard artifact.
+        format: Dashboard artifact
+      - name: develop_stage_milestone
+        description: Develop stage milestone plan.
+        format: List of milestone objects
+    outputs_spec:
+      - name: develop_risk_trend_report
+        description: Trend report on risks, escalations, blockers, with recommendations.
+        format: Risk trend report artifact
+    agent_tasks:
+      - Trend all risks, escalations, and blockers over time.
+      - Automatically flag and classify recurring or systemic risks.
+      - Share risk trend report with PMO and leadership.
+      - Include recommendations for mitigation or process changes.
+    acceptance_criteria:
+      - All risks, escalations, and blockers are trended over time.
+      - Recurring or systemic risks are automatically flagged and classified.
+      - Risk trend report is shared with PMO and leadership.
+      - Recommendations for mitigation or process changes are included.
+    dependencies:
+      - develop_escalation_report
+      - develop_progress_dashboard
+      - develop_stage_milestone
+    failure_escalation:
+      - Escalate to risk intelligence lead if trends are not actionable.
+    references: []
+    hitl: false

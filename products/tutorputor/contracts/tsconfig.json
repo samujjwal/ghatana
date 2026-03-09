@@ -1,0 +1,31 @@
+{
+  "compilerOptions": {
+    "target": "ES2022",
+    "module": "ES2022",
+    "moduleResolution": "bundler",
+    "lib": [
+      "ES2022"
+    ],
+    "declaration": true,
+    "declarationMap": true,
+    "sourceMap": true,
+    "outDir": "./dist",
+    "rootDir": "./v1",
+    "strict": true,
+    "esModuleInterop": true,
+    "forceConsistentCasingInFileNames": true,
+    "skipLibCheck": true,
+    "composite": true,
+    "types": [
+      "node"
+    ]
+  },
+  "include": [
+    "v1/**/*.ts"
+  ],
+  "exclude": [
+    "dist",
+    "node_modules",
+    "**/seed-manifests.ts"
+  ]
+}

@@ -1,0 +1,35 @@
+use axum::Json;
+use serde::{Deserialize, Serialize};
+use std::time::SystemTime;
+
+#[derive(Serialize)]
+pub struct HealthResponse {
+status: String,
+timestamp: String,
+service: String,
+}
+
+#[derive(Serialize)]
+pub struct ApiResponse<T> {
+    success: bool,
+    data: T,
+    }
+
+    pub async fn health() -> Json<HealthResponse> {
+        Json(HealthResponse {
+        status: "healthy".to_string(),
+        timestamp: format!("{:?}", SystemTime::now()),
+        service: "{{projectName}}-backend".to_string(),
+        })
+        }
+
+        pub async fn get_example() -> Json<ApiResponse<Vec<String>>> {
+            Json(ApiResponse {
+            success: true,
+            data: vec![
+            "Item 1".to_string(),
+            "Item 2".to_string(),
+            "Item 3".to_string(),
+            ],
+            })
+            }

@@ -1,0 +1,33 @@
+id: agent.yappc.e2e-test-runner
+name: E2E Test Runner
+description: End-to-end test generation and execution agent
+version: 1.0.0
+type: worker
+category: testing
+
+capabilities:
+  - e2e-test-generation
+  - test-automation
+  - browser-testing
+  - test-reporting
+
+requirements:
+  - testing-frameworks
+  - browser-automation
+  - test-environments
+
+parameters:
+  framework:
+    type: string
+    default: "playwright"
+    description: E2E testing framework
+  
+  browser:
+    type: string
+    default: "chromium"
+    description: Target browser
+
+metadata:
+  author: "YAPPC Team"
+  level: 3
+  tags: [testing, e2e, automation, quality]

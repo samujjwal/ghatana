@@ -1,0 +1,107 @@
+id: regulatory-scan-agent
+name: Regulatory Scan Agent
+version: 1.0.0
+description: Scans regulatory landscape for compliance requirements, upcoming changes, and risks. Ensures product ideas are regulatorily viable.
+
+metadata:
+  level: 3  # Worker
+  domain: ideation
+  tags:
+    - regulatory-compliance
+    - legal-scan
+    - compliance-risk
+    - policy-monitoring
+
+generator:
+  type: PIPELINE
+  steps:
+    - name: regulatory_research
+      type: SERVICE_CALL
+      service: regulatory-service
+      endpoint: /regulations/relevant
+    - name: compliance_analysis
+      type: LLM
+      provider: ANTHROPIC
+      model: claude-3-5-sonnet-20241022
+      temperature: 0.1
+      max_tokens: 2500
+      prompt: |
+        You are the Regulatory Scan Agent. Analyze regulatory requirements:
+        
+        Product/Feature: {{product}}
+        Geographies: {{geographies}}
+        Data Types: {{data_types}}
+        Industries: {{industries}}
+        
+        Identify:
+        1. Applicable regulations (GDPR, CCPA, HIPAA, SOX, etc.)
+        2. Specific requirements
+        3. Compliance costs and effort
+        4. Risks of non-compliance
+        5. Upcoming regulatory changes
+        6. Regulatory uncertainty
+        7. Recommended compliance approach
+        
+        Output as JSON: {applicable_regulations, requirements, compliance_costs, non_compliance_risks, upcoming_changes, uncertainties, compliance_approach}
+    - name: risk_assessment
+      type: RULE_BASED
+      description: Score regulatory risk
+
+memory:
+  episodic:
+    enabled: true
+    retention_days: 730
+    categories:
+      - regulatory-scans
+      - compliance-assessments
+      - regulatory-changes
+  semantic:
+    enabled: true
+    categories:
+      - regulatory-frameworks
+      - compliance-requirements
+      - jurisdiction-rules
+  procedural:
+    enabled: true
+    categories:
+      - scan-protocols
+      - compliance-checklists
+      - risk-scoring
+
+tools:
+  - regulatory_database
+  - compliance_checker
+  - risk_scorer
+
+capabilities:
+  - regulatory-scanning
+  - compliance-assessment
+  - risk-analysis
+  - change-monitoring
+  - compliance-planning
+
+routing:
+  input_types:
+    - regulatory-scan-request
+    - compliance-check
+    - risk-assessment-request
+  output_types:
+    - regulatory-report
+    - compliance-checklist
+    - risk-assessment
+
+delegation:
+  can_delegate_to: []
+  escalates_to:
+    - market-scan-agent
+    - policy-guard-agent
+
+governance:
+  requires_approval: false
+  can_block: true  # Can block non-compliant features
+  audit_trail: comprehensive
+
+performance:
+  expected_latency_ms: 5000
+  max_latency_ms: 12000
+  timeout_ms: 25000

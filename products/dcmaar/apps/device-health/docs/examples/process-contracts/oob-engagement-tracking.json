@@ -1,0 +1,201 @@
+{
+  "id": "oob-engagement-tracking",
+  "metadata": {
+    "name": "OOB User Engagement & Session Tracking",
+    "description": "Tracks user engagement metrics: clicks, scrolls, inputs, sessions, active time, and generates engagement statistics",
+    "version": "1.0.0",
+    "author": "DCMAAR Team",
+    "tags": ["oob", "engagement", "sessions", "interactions", "analytics"],
+    "createdAt": 1706832000000,
+    "updatedAt": 1706832000000
+  },
+  "collect": {
+    "id": "collect",
+    "sources": [
+      {
+        "id": "user-interactions",
+        "type": "engagement",
+        "strategy": "event-driven",
+        "config": {
+          "trackClicks": true,
+          "trackScrolls": true,
+          "trackInputs": true,
+          "trackHovers": false,
+          "detectRageClicks": true,
+          "detectDeadClicks": true,
+          "sessionTimeout": 1800000,
+          "idleThreshold": 5000
+        },
+        "samplingRate": 1.0,
+        "batchSize": 500
+      }
+    ],
+    "mergeStrategy": "union",
+    "timeoutMs": 10000
+  },
+  "analyze": {
+    "id": "analyze",
+    "operations": [
+      {
+        "id": "engagement-statistics",
+        "strategy": "custom",
+        "config": {
+          "analysisType": "engagement-stats",
+          "timeWindow": {
+            "start": 0,
+            "end": 9999999999999
+          }
+        },
+        "order": 100
+      },
+      {
+        "id": "session-analysis",
+        "strategy": "custom",
+        "config": {
+          "analysisType": "session-analysis"
+        },
+        "order": 200
+      },
+      {
+        "id": "bounce-rate-calculation",
+        "strategy": "custom",
+        "config": {
+          "analysisType": "bounce-rate"
+        },
+        "order": 300
+      },
+      {
+        "id": "high-engagement-pages",
+        "strategy": "filter",
+        "config": {
+          "conditions": [
+            {
+              "operator": "and",
+              "conditions": [
+                {
+                  "field": "payload.activeTime",
+                  "operator": "gt",
+                  "value": 30000
+                },
+                {
+                  "field": "payload.clickCount",
+                  "operator": "gt",
+                  "value": 5
+                }
+              ]
+            }
+          ]
+        },
+        "order": 400
+      },
+      {
+        "id": "interaction-heatmap",
+        "strategy": "aggregate",
+        "config": {
+          "groupBy": "payload.url",
+          "metrics": ["sum", "avg"],
+          "fields": ["payload.clickCount", "payload.scrollDepth", "payload.activeTime"]
+        },
+        "order": 500
+      }
+    ],
+    "parallel": false,
+    "timeoutMs": 20000
+  },
+  "report": {
+    "id": "report",
+    "destinations": [
+      {
+        "id": "engagement-data-storage",
+        "type": "store",
+        "delivery": "store",
+        "config": {
+          "storageType": "indexeddb",
+          "key": "engagement-data",
+          "maxReports": 1000
+        },
+        "format": "json"
+      },
+      {
+        "id": "session-statistics",
+        "type": "store",
+        "delivery": "store",
+        "config": {
+          "storageType": "local",
+          "key": "session-statistics",
+          "maxReports": 100
+        },
+        "format": "json"
+      },
+      {
+        "id": "low-engagement-alert",
+        "type": "notification",
+        "delivery": "notification",
+        "config": {
+          "title": "Low Engagement Detected",
+          "icon": "info",
+          "priority": "low"
+        },
+        "format": "markdown",
+        "when": {
+          "operator": "and",
+          "conditions": [
+            {
+              "field": "data.engagementRate",
+              "operator": "lt",
+              "value": 0.3
+            },
+            {
+              "field": "data.totalSessions",
+              "operator": "gt",
+              "value": 10
+            }
+          ]
+        }
+      }
+    ],
+    "aggregate": true,
+    "includeMetadata": true,
+    "includeSummary": true,
+    "timeoutMs": 10000
+  },
+  "security": {
+    "maxExecutionTimeMs": 45000,
+    "maxMemoryBytes": 104857600,
+    "maxEventsPerBatch": 2000,
+    "allowedNetworkPatterns": [],
+    "deniedNetworkPatterns": ["*"],
+    "allowedBrowserAPIs": ["storage", "tabs", "runtime", "notifications"],
+    "sandboxed": true
+  },
+  "privacy": {
+    "redactionRules": [
+      {
+        "pattern": "\\b[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\\.[A-Z|a-z]{2,}\\b",
+        "replacement": "[EMAIL]",
+        "fields": ["payload.url", "payload.target"]
+      },
+      {
+        "pattern": "password|secret|token|key|auth",
+        "replacement": "[REDACTED]",
+        "fields": ["payload.url", "payload.target"]
+      }
+    ],
+    "encryptFields": [],
+    "retentionPeriodMs": 2592000000,
+    "anonymize": true,
+    "requireConsent": false
+  },
+  "enabled": true,
+  "schedule": "*/5 * * * *",
+  "priority": 200,
+  "maxConcurrentExecutions": 1,
+  "timeoutMs": 90000,
+  "onError": "continue",
+  "variables": {
+    "engagementThreshold": 0.5,
+    "sessionTimeoutMinutes": 30,
+    "trackDetailedInteractions": true,
+    "anonymizeUserData": true
+  }
+}

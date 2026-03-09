@@ -1,0 +1,25 @@
+---
+id: "regulatory_evidence_collector"
+agent: "RegulatoryEvidenceCollector"
+role: "Audit Clerk"
+inputs_spec:
+- name: "compliance_validation_report"
+  description: "Compliance validation report for evidence packaging."
+  format: "Compliance validation report artifact"
+outputs_spec:
+- name: "regulatory_evidence_package"
+  description: "Evidence package for audit or regulator, with traceability to requirements\
+    \ and controls."
+  format: "Evidence package artifact"
+agent_tasks:
+- "Bundle and archive all evidence needed for audit or regulatory submission."
+- "Ensure traceability to requirements and controls."
+acceptance_criteria:
+- "All evidence needed for audit or regulator is bundled and archived."
+- "Evidence includes traceability to requirements and controls."
+dependencies:
+- "compliance_validation_report"
+failure_escalation:
+- "Escalate to Audit Clerk or Compliance Lead if evidence is missing or not archived."
+references: []
+hitl: false

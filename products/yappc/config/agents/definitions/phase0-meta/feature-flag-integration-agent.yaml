@@ -1,0 +1,63 @@
+id: feature-flag-integration-agent
+name: Feature Flag Integration Agent
+version: 1.0.0
+description: Bridges the feature-flag-agent to runtime flag management systems (LaunchDarkly, Unleash). Manages flag creation, targeting rules, and progressive rollout percentages.
+
+metadata:
+  level: 3
+  domain: integration
+  tags: [integration, feature-flags, launchdarkly, unleash, deterministic]
+
+generator:
+  type: PIPELINE
+  steps:
+    - name: provider_resolution
+      type: RULE_BASED
+      description: >
+        Resolve the active feature flag provider from project config.
+        Supported: LaunchDarkly, Unleash, in-memory (dev).
+    - name: flag_sync
+      type: SERVICE_CALL
+      service: feature-flag-provider
+      endpoint: /flags/sync
+    - name: targeting_rules
+      type: RULE_BASED
+      description: >
+        Apply targeting rules: percentage rollout, user segment targeting,
+        environment-specific overrides. Validate rule consistency.
+    - name: audit_log
+      type: SERVICE_CALL
+      service: audit-trail
+      endpoint: /log/flag-change
+
+memory:
+  episodic:
+    enabled: true
+    retention_days: 365
+    categories: [flag-changes, rollout-events, targeting-updates]
+  semantic:
+    enabled: true
+    categories: [flag-naming-conventions, rollout-strategies]
+
+tools: [launchdarkly_client, unleash_client, flag_validator]
+
+capabilities:
+  - deployment-automation
+
+routing:
+  input_types: [feature-flag-request, rollout-config]
+  output_types: [flag-sync-result, rollout-status]
+
+delegation:
+  can_delegate_to: []
+  escalates_to: deploy-orchestrator
+
+governance:
+  requires_approval: false
+  can_block: false
+  audit_trail: comprehensive
+
+performance:
+  expected_latency_ms: 500
+  max_latency_ms: 3000
+  timeout_ms: 5000

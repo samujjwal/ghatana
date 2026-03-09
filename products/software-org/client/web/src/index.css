@@ -1,0 +1,46 @@
+@import "tailwindcss";
+@custom-variant dark (&:where(.dark, .dark *));
+
+/**
+ * Base styles with dark mode support
+ * Uses CSS variables from tokens.css for consistency
+ */
+
+body {
+  @apply bg-white text-slate-900;
+  font-family: var(--font-family-base);
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+/* Dark mode uses CSS variables from tokens.css */
+html.dark body {
+  background-color: var(--color-bg-primary);
+  color: var(--color-text-primary);
+}
+
+/* Smooth color transitions for theme switching */
+* {
+  @apply transition-colors duration-150;
+}
+
+/* Focus styles for accessibility - visible focus rings */
+:focus-visible {
+  @apply outline-none ring-2 ring-indigo-400 ring-offset-2 dark:ring-offset-neutral-950;
+}
+
+/* Skip link for keyboard navigation */
+.skip-link {
+  @apply sr-only focus:not-sr-only focus:absolute focus:top-4 focus:left-4 focus:z-50 focus:px-4 focus:py-2 focus:bg-blue-600 focus:text-white focus:rounded-md;
+}
+
+/* Reduced motion preference */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+}

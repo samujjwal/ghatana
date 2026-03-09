@@ -1,0 +1,82 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: aep-service-manager
+  namespace: aep
+  labels:
+    app: aep-service-manager
+    app.kubernetes.io/name: aep-service-manager
+    app.kubernetes.io/component: service-manager
+    app.kubernetes.io/part-of: ghatana-aep
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: aep-service-manager
+  template:
+    metadata:
+      labels:
+        app: aep-service-manager
+        app.kubernetes.io/name: aep-service-manager
+      annotations:
+        prometheus.io/scrape: "true"
+        prometheus.io/port: "8090"
+        prometheus.io/path: "/metrics"
+    spec:
+      serviceAccountName: aep-service-manager
+      terminationGracePeriodSeconds: 30
+      containers:
+        - name: service-manager
+          image: ghcr.io/ghatana/aep-service-manager:latest
+          imagePullPolicy: IfNotPresent
+          ports:
+            - name: http-health
+              containerPort: 8090
+              protocol: TCP
+          env:
+            - name: AEP_HEALTH_PORT
+              value: "8090"
+            - name: AEP_WORKER_THREADS
+              valueFrom:
+                resourceFieldRef:
+                  resource: limits.cpu
+                  divisor: "1"
+            - name: AEP_DEV_MODE
+              value: "false"
+            - name: AEP_CONNECTOR_TOKEN
+              valueFrom:
+                secretKeyRef:
+                  name: aep-connector-secrets
+                  key: connector-token
+                  optional: true
+          resources:
+            requests:
+              cpu: "250m"
+              memory: "512Mi"
+            limits:
+              cpu: "2"
+              memory: "2Gi"
+          livenessProbe:
+            httpGet:
+              path: /health
+              port: http-health
+            initialDelaySeconds: 30
+            periodSeconds: 15
+            failureThreshold: 3
+          readinessProbe:
+            httpGet:
+              path: /ready
+              port: http-health
+            initialDelaySeconds: 10
+            periodSeconds: 10
+            failureThreshold: 3
+          securityContext:
+            runAsNonRoot: true
+            runAsUser: 1000
+            readOnlyRootFilesystem: true
+            allowPrivilegeEscalation: false
+            capabilities:
+              drop:
+                - ALL
+      securityContext:
+        fsGroup: 1000

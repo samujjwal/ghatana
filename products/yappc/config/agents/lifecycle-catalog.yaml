@@ -1,0 +1,604 @@
+apiVersion: ghatana.yappc/v2
+kind: DomainAgentCatalog
+
+metadata:
+  name: lifecycle
+  version: 1.0.0
+  description: "SDLC phase-specific agents covering all 8 development phases"
+  domain: lifecycle
+  agentCount: 45
+
+spec:
+  agents:
+    # Phase 0: Meta/Intent (3 agents)
+    - id: context-gathering-agent
+      name: Context Gathering Agent
+      level: 3
+      type: worker
+      description: "Gathers context from codebase, requirements, and stakeholder input"
+      domain: lifecycle
+      capabilities:
+        - context-gathering
+        - requirement-parsing
+        - stakeholder-analysis
+      memory:
+        episodic:
+          enabled: true
+          retention_days: 30
+        semantic:
+          enabled: true
+          categories: [business-context, user-needs]
+      tools:
+        - codebase_explorer
+        - requirement_parser
+        - stakeholder_interview
+      tags: [phase0, context, research]
+
+    - id: requirements-analyzer
+      name: Requirements Analyzer
+      level: 3
+      type: worker
+      description: "Analyzes and structures requirements from various sources"
+      domain: lifecycle
+      capabilities:
+        - requirements-analysis
+        - requirement-structuring
+        - ambiguity-detection
+      tools:
+        - requirement_analyzer
+        - ambiguity_detector
+      tags: [phase0, requirements, analysis]
+
+    - id: project-scoping-agent
+      name: Project Scoping Agent
+      level: 2
+      type: domain-expert
+      description: "Defines project scope, boundaries, and deliverables"
+      domain: lifecycle
+      capabilities:
+        - project-scoping
+        - boundary-definition
+        - deliverable-planning
+      tags: [phase0, scoping, planning]
+
+    # Phase 1: Shape (6 agents)
+    - id: architecture-design-agent
+      name: Architecture Design Agent
+      level: 2
+      type: domain-expert
+      description: "Designs system architecture and high-level component structure"
+      domain: lifecycle
+      capabilities:
+        - architecture-design
+        - system-modeling
+        - pattern-selection
+      memory:
+        semantic:
+          enabled: true
+          categories: [architectural-patterns, design-decisions]
+      tools:
+        - architecture_designer
+        - pattern_matcher
+      tags: [phase1, architecture, design]
+
+    - id: component-planner
+      name: Component Planner
+      level: 3
+      type: worker
+      description: "Plans component hierarchy and interfaces"
+      domain: lifecycle
+      capabilities:
+        - component-planning
+        - interface-design
+        - dependency-mapping
+      tools:
+        - component_designer
+        - interface_planner
+      tags: [phase1, components, planning]
+
+    - id: data-model-designer
+      name: Data Model Designer
+      level: 3
+      type: worker
+      description: "Designs database schemas and data models"
+      domain: lifecycle
+      capabilities:
+        - data-modeling
+        - schema-design
+        - relationship-mapping
+      tools:
+        - schema_designer
+        - model_validator
+      tags: [phase1, data, modeling]
+
+    - id: api-design-agent
+      name: API Design Agent
+      level: 3
+      type: worker
+      description: "Designs REST and GraphQL APIs"
+      domain: lifecycle
+      capabilities:
+        - api-design
+        - contract-definition
+        - endpoint-planning
+      tools:
+        - api_designer
+        - contract_generator
+      tags: [phase1, api, design]
+
+    - id: ui-ux-designer
+      name: UI/UX Designer Agent
+      level: 3
+      type: worker
+      description: "Creates UI wireframes and UX flows"
+      domain: lifecycle
+      capabilities:
+        - ui-design
+        - ux-flows
+        - wireframe-generation
+      tools:
+        - wireframe_generator
+        - flow_designer
+      tags: [phase1, ui-ux, design]
+
+    - id: technical-writer
+      name: Technical Writer Agent
+      level: 3
+      type: worker
+      description: "Creates technical documentation and specifications"
+      domain: lifecycle
+      capabilities:
+        - documentation
+        - specification-writing
+        - diagram-generation
+      memory:
+        semantic:
+          enabled: true
+          categories: [templates, standards]
+      tools:
+        - doc_generator
+        - diagram_creator
+      tags: [phase1, documentation, writing]
+
+    # Phase 2: Validate (4 agents)
+    - id: validation-agent
+      name: Validation Agent
+      level: 3
+      type: worker
+      description: "Validates designs against requirements and constraints"
+      domain: lifecycle
+      capabilities:
+        - design-validation
+        - constraint-checking
+        - requirement-verification
+      tools:
+        - design_validator
+        - constraint_checker
+      tags: [phase2, validation, verification]
+
+    - id: risk-assessment-agent
+      name: Risk Assessment Agent
+      level: 2
+      type: domain-expert
+      description: "Assesses technical and business risks in designs"
+      domain: lifecycle
+      capabilities:
+        - risk-assessment
+        - mitigation-planning
+        - tradeoff-analysis
+      memory:
+        semantic:
+          enabled: true
+          categories: [risk-patterns, mitigations]
+      tags: [phase2, risk, assessment]
+
+    - id: feasibility-analyzer
+      name: Feasibility Analyzer
+      level: 3
+      type: worker
+      description: "Analyzes technical and economic feasibility"
+      domain: lifecycle
+      capabilities:
+        - feasibility-analysis
+        - cost-estimation
+        - resource-planning
+      tools:
+        - feasibility_calculator
+        - cost_estimator
+      tags: [phase2, feasibility, analysis]
+
+    - id: stakeholder-reviewer
+      name: Stakeholder Reviewer
+      level: 3
+      type: worker
+      description: "Coordinates stakeholder reviews and feedback"
+      domain: lifecycle
+      capabilities:
+        - review-coordination
+        - feedback-collection
+        - approval-tracking
+      tools:
+        - review_coordinator
+      tags: [phase2, review, stakeholders]
+
+    # Phase 3: Generate (8 agents)
+    - id: code-generator
+      name: Code Generator Agent
+      level: 3
+      type: worker
+      description: "Generates production-ready code from designs"
+      domain: lifecycle
+      capabilities:
+        - code-generation
+        - implementation
+        - pattern-application
+      tools:
+        - code_generator
+        - template_engine
+      tags: [phase3, code-generation, implementation]
+
+    - id: test-generator
+      name: Test Generator Agent
+      level: 3
+      type: worker
+      description: "Generates unit, integration, and E2E tests"
+      domain: lifecycle
+      capabilities:
+        - test-generation
+        - coverage-analysis
+        - test-design
+      tools:
+        - test_generator
+        - coverage_analyzer
+      tags: [phase3, testing, generation]
+
+    - id: documentation-generator
+      name: Documentation Generator
+      level: 3
+      type: worker
+      description: "Generates API docs, READMEs, and inline documentation"
+      domain: lifecycle
+      capabilities:
+        - doc-generation
+        - api-documentation
+        - code-commenting
+      tools:
+        - doc_generator
+        - comment_generator
+      tags: [phase3, documentation, generation]
+
+    - id: deployment-config-generator
+      name: Deployment Config Generator
+      level: 3
+      type: worker
+      description: "Generates Kubernetes, Docker, and CI/CD configs"
+      domain: lifecycle
+      capabilities:
+        - config-generation
+        - deployment-planning
+        - infrastructure-code
+      tools:
+        - k8s_generator
+        - dockerfile_generator
+        - cicd_generator
+      tags: [phase3, deployment, configuration]
+
+    # Phase 4: Run (4 agents)
+    - id: deployment-executor
+      name: Deployment Executor Agent
+      level: 3
+      type: worker
+      description: "Executes deployments to various environments"
+      domain: lifecycle
+      capabilities:
+        - deployment-execution
+        - environment-management
+        - rollout-coordination
+      tools:
+        - deployer
+        - environment_manager
+      tags: [phase4, deployment, execution]
+
+    - id: migration-runner
+      name: Migration Runner Agent
+      level: 3
+      type: worker
+      description: "Executes database and data migrations"
+      domain: lifecycle
+      capabilities:
+        - migration-execution
+        - data-transformation
+        - rollback-capability
+      tools:
+        - migration_runner
+        - data_transformer
+      tags: [phase4, migration, data]
+
+    - id: integration-executor
+      name: Integration Executor Agent
+      level: 3
+      type: worker
+      description: "Executes third-party integrations and connections"
+      domain: lifecycle
+      capabilities:
+        - integration-execution
+        - connection-management
+        - sync-coordination
+      tags: [phase4, integration, execution]
+
+    - id: smoke-test-runner
+      name: Smoke Test Runner Agent
+      level: 3
+      type: worker
+      description: "Runs post-deployment smoke tests"
+      domain: lifecycle
+      capabilities:
+        - smoke-testing
+        - health-checks
+        - validation-execution
+      tools:
+        - smoke_tester
+      tags: [phase4, testing, smoke-tests]
+
+    # Phase 5: Observe (5 agents)
+    - id: monitoring-agent
+      name: Monitoring Agent
+      level: 3
+      type: worker
+      description: "Monitors application metrics and health"
+      domain: lifecycle
+      capabilities:
+        - monitoring
+        - metric-collection
+        - health-tracking
+      tools:
+        - metric_collector
+        - health_checker
+      tags: [phase5, monitoring, observability]
+
+    - id: log-analyzer
+      name: Log Analyzer Agent
+      level: 3
+      type: worker
+      description: "Analyzes logs for errors and patterns"
+      domain: lifecycle
+      capabilities:
+        - log-analysis
+        - error-detection
+        - pattern-recognition
+      tools:
+        - log_analyzer
+        - pattern_detector
+      tags: [phase5, logs, analysis]
+
+    - id: performance-monitor
+      name: Performance Monitor Agent
+      level: 3
+      type: worker
+      description: "Tracks application performance metrics"
+      domain: lifecycle
+      capabilities:
+        - performance-monitoring
+        - latency-tracking
+        - throughput-analysis
+      tools:
+        - performance_tracker
+        - latency_analyzer
+      tags: [phase5, performance, monitoring]
+
+    - id: user-behavior-analyzer
+      name: User Behavior Analyzer Agent
+      level: 3
+      type: worker
+      description: "Analyzes user behavior and interaction patterns"
+      domain: lifecycle
+      capabilities:
+        - behavior-analysis
+        - funnel-tracking
+        - usage-analytics
+      memory:
+        episodic:
+          enabled: true
+          retention_days: 90
+      tags: [phase5, analytics, behavior]
+
+    - id: anomaly-detector
+      name: Anomaly Detector Agent
+      level: 3
+      type: worker
+      description: "Detects anomalies in metrics and behavior"
+      domain: lifecycle
+      capabilities:
+        - anomaly-detection
+        - alerting
+        - trend-analysis
+      tools:
+        - anomaly_detector
+        - alert_generator
+      tags: [phase5, anomaly-detection, alerting]
+
+    # Phase 6: Improve (5 agents)
+    - id: optimization-agent
+      name: Optimization Agent
+      level: 3
+      type: worker
+      description: "Suggests and implements performance optimizations"
+      domain: lifecycle
+      capabilities:
+        - optimization
+        - performance-tuning
+        - resource-optimization
+      tools:
+        - optimizer
+        - profiler
+      tags: [phase6, optimization, performance]
+
+    - id: refactoring-agent
+      name: Refactoring Agent
+      level: 3
+      type: worker
+      description: "Performs safe code refactoring"
+      domain: lifecycle
+      capabilities:
+        - refactoring
+        - code-cleanup
+        - modernization
+      tools:
+        - refactoring_engine
+        - code_cleaner
+      tags: [phase6, refactoring, code-quality]
+
+    - id: bug-fix-agent
+      name: Bug Fix Agent
+      level: 3
+      type: worker
+      description: "Analyzes and fixes bugs automatically"
+      domain: lifecycle
+      capabilities:
+        - bug-analysis
+        - automated-fixing
+        - regression-prevention
+      tools:
+        - bug_analyzer
+        - fix_generator
+      tags: [phase6, bug-fixing, quality]
+
+    - id: accessibility-improver
+      name: Accessibility Improver Agent
+      level: 3
+      type: worker
+      description: "Improves application accessibility"
+      domain: lifecycle
+      capabilities:
+        - accessibility-improvement
+        - a11y-fixes
+        - compliance-checking
+      tools:
+        - a11y_checker
+        - fix_suggester
+      tags: [phase6, accessibility, a11y]
+
+    - id: security-patcher
+      name: Security Patcher Agent
+      level: 3
+      type: worker
+      description: "Applies security patches and updates"
+      domain: lifecycle
+      capabilities:
+        - security-patching
+        - vulnerability-fixing
+        - dependency-updates
+      tools:
+        - patch_applier
+        - vulnerability_scanner
+      tags: [phase6, security, patching]
+
+    # Phase 7: Deprecate (3 agents)
+    - id: deprecation-planner
+      name: Deprecation Planner Agent
+      level: 3
+      type: worker
+      description: "Plans safe deprecation of features and APIs"
+      domain: lifecycle
+      capabilities:
+        - deprecation-planning
+        - migration-path-design
+        - communication-planning
+      tools:
+        - deprecation_planner
+        - migration_path_designer
+      tags: [phase7, deprecation, planning]
+
+    - id: migration-assistant
+      name: Migration Assistant Agent
+      level: 3
+      type: worker
+      description: "Assists users with feature migrations"
+      domain: lifecycle
+      capabilities:
+        - migration-assistance
+        - documentation-generation
+        - support-coordination
+      tools:
+        - migration_assistant
+        - doc_generator
+      tags: [phase7, migration, assistance]
+
+    - id: sunset-executor
+      name: Sunset Executor Agent
+      level: 3
+      type: worker
+      description: "Executes feature and API sunsets safely"
+      domain: lifecycle
+      capabilities:
+        - sunset-execution
+        - cleanup-operations
+        - notification-management
+      tools:
+        - sunset_executor
+        - cleanup_manager
+      tags: [phase7, sunset, execution]
+
+    # Phase 8: Archive (2 agents)
+    - id: archivist
+      name: Archivist Agent
+      level: 3
+      type: worker
+      description: "Archives project data and artifacts"
+      domain: lifecycle
+      capabilities:
+        - archiving
+        - data-preservation
+        - artifact-management
+      tools:
+        - archiver
+        - artifact_manager
+      tags: [phase8, archiving, data]
+
+    - id: knowledge-capture-final
+      name: Final Knowledge Capture Agent
+      level: 3
+      type: worker
+      description: "Captures final project knowledge and lessons"
+      domain: lifecycle
+      capabilities:
+        - knowledge-capture
+        - lessons-learned
+        - retrospective-documentation
+      memory:
+        semantic:
+          enabled: true
+          categories: [lessons-learned, best-practices]
+      tools:
+        - knowledge_capture
+        - retrospective_generator
+      tags: [phase8, knowledge, retrospectives]
+
+  hierarchy:
+    level1: []
+    level2:
+      - project-scoping-agent
+      - architecture-design-agent
+      - risk-assessment-agent
+    level3:
+      - all-other-lifecycle-agents
+
+  capability_routing:
+    context-gathering:
+      primary: context-gathering-agent
+    requirements-analysis:
+      primary: requirements-analyzer
+    architecture-design:
+      primary: architecture-design-agent
+    code-generation:
+      primary: code-generator
+    test-generation:
+      primary: test-generator
+    deployment-execution:
+      primary: deployment-executor
+    monitoring:
+      primary: monitoring-agent
+    optimization:
+      primary: optimization-agent
+    bug-fixing:
+      primary: bug-fix-agent

@@ -1,0 +1,79 @@
+# Sales to Product Feedback Interaction
+apiVersion: virtualorg.ghatana.com/v1
+kind: Interaction
+metadata:
+  name: sales-product-feedback
+  namespace: software-org
+  labels:
+    type: feedback
+    departments: [sales, product]
+
+spec:
+  displayName: "Sales to Product Feedback"
+  description: |
+    Defines the interaction pattern when sales provides
+    customer feedback and feature requests to product.
+
+  participants:
+    source:
+      department: sales
+      agents:
+        - account-executive-agent
+        - sales-director-agent
+    target:
+      department: product
+      agents:
+        - product-manager-agent
+        - cpo-agent
+
+  trigger:
+    events:
+      - type: customer.feedback.submitted
+      - type: feature.request.created
+      - type: deal.lost.feedback
+
+  protocol:
+    type: async
+    timeout: PT48H
+
+  feedback:
+    categories:
+      - feature_request
+      - competitive_gap
+      - usability_issue
+      - pricing_feedback
+      - integration_need
+
+    requirements:
+      - name: customer_context
+        description: "Customer name and context"
+        mandatory: true
+      - name: feedback_description
+        description: "Detailed feedback description"
+        mandatory: true
+      - name: business_impact
+        description: "Potential business impact"
+        mandatory: true
+      - name: urgency
+        description: "Urgency level"
+        mandatory: false
+
+    artifacts:
+      - type: customer_conversation
+        required: false
+      - type: competitive_analysis
+        required: false
+
+  notifications:
+    onTrigger:
+      - channel: slack
+        target: "#product-feedback"
+        template: "New feedback from sales: {{feedback_title}}"
+    onComplete:
+      - channel: slack
+        target: "#sales"
+        template: "Product responded to feedback: {{feedback_title}}"
+
+  sla:
+    acknowledgment: PT24H
+    completion: PT1W

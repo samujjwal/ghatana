@@ -1,0 +1,49 @@
+id: stakeholder_list
+agent: StakeholderListAgent
+role: Business Analyst
+inputs_spec:
+- name: goals_and_criteria
+  description: Combined business goals and mapped success criteria, providing the context for identifying relevant stakeholders.
+  format: List of mappings (goal, criteria, milestone reference, notes)
+  example: "- goal: \"Achieve HIPAA compliance\"\n  criteria: [\"HIPAA audit passed by Q3\"]\n  milestone: \"M2\"\n"
+outputs_spec:
+- name: stakeholder_list
+  description: List of stakeholders, their roles, and areas of interest.
+  format: List of stakeholder objects (name, role, interest/area, mapping to goal/criteria)
+  example: "- name: \"Jane Doe\"\n  role: \"Security Officer\"\n  interest: \"Data protection, compliance\"\n  mapped_goal: \"Achieve HIPAA compliance\"\n"
+acceptance_criteria:
+- All relevant stakeholders are identified, with roles and interests described.
+- Stakeholder mapping is based on business goals and success criteria.
+- Missing or ambiguous stakeholders are flagged for review.
+- Stakeholder list is versioned and available for downstream agents.
+agent_tasks:
+- Review combined goals and criteria to identify stakeholder roles and interest areas.
+- Consult organizational directory and previous project records as needed.
+- Document stakeholders, their roles, areas of concern, and mapped goals.
+- Flag missing, unclear, or high-risk stakeholders for review/escalation.
+dependencies:
+- goals_and_criteria
+failure_escalation:
+- If stakeholder mapping is incomplete or ambiguous, escalate to project sponsor or business owner.
+references:
+- RACI matrix template
+- Previous project stakeholder lists
+
+iinternal_logic:
+  - perception:
+      description: "Extract roles and participants from goal/criteria mapping."
+  - model:
+      description: "Maintain: {name, role, mapped_goals, notes}"
+  - planning:
+      description: |
+        "For each goal/criteria:
+         - Assign a stakeholder.
+         - If none, flag as gap."
+  - action:
+      description: "Output YAML stakeholder list."
+validation:
+  - "Review with project owner/PM for coverage and accuracy."
+  - "Audit for mapping and exclusions."
+quality_enhancements:
+  - "Auto-suggest missing roles based on common gaps (e.g., security, compliance, legal)."
+  - "Template for consistent documentation."

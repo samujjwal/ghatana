@@ -1,0 +1,26 @@
+---
+id: "service_mesh_config"
+agent: "ServiceMeshConfigAgent"
+role: "Platform/SRE"
+inputs_spec:
+- name: "deployment_rollout_status"
+  description: "Rollout status artifact for mesh configuration."
+  format: "Rollout status artifact"
+outputs_spec:
+- name: "service_mesh_validation"
+  description: "Validation artifact for service mesh configuration."
+  format: "Mesh validation artifact"
+agent_tasks:
+- "Apply and validate service mesh configurations."
+- "Test traffic policies/security settings."
+- "Report mesh metrics to observability tools."
+acceptance_criteria:
+- "Mesh configs applied and validated."
+- "Traffic/security settings tested."
+- "Metrics reported to observability tools."
+dependencies:
+- "deployment_rollout_status"
+failure_escalation:
+- "Escalate to Platform/SRE if mesh config invalid or metrics missing."
+references: []
+hitl: false

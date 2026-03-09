@@ -1,0 +1,6 @@
+packages:
+  - "apps/desktop"
+  - "libs/js/*"
+  - "modules/**/libs/*"
+  - "modules/**/clients/*"
+  - "libs/*"

@@ -1,0 +1,104 @@
+id: confidence-threshold-agent
+name: Confidence Threshold Agent
+version: 1.0.0
+description: Dynamically adjusts confidence thresholds for agent autonomy. Determines when agents should act autonomously vs. seek human input.
+
+metadata:
+  level: 2  # Domain Expert
+  domain: human-boundary
+  tags:
+    - confidence-management
+    - autonomy-control
+    - risk-calibration
+    - adaptive-thresholds
+
+generator:
+  type: PIPELINE
+  steps:
+    - name: context_analysis
+      type: RULE_BASED
+      description: Analyze decision context, risk, impact
+    - name: threshold_calculation
+      type: LLM
+      provider: ANTHROPIC
+      model: claude-3-5-sonnet-20241022
+      temperature: 0.1
+      max_tokens: 1500
+      prompt: |
+        You are the Confidence Threshold Agent. Determine confidence threshold for this decision:
+        
+        Decision Type: {{decision_type}}
+        Risk Level: {{risk}}
+        Impact: {{impact}}
+        Agent Track Record: {{track_record}}
+        Context: {{context}}
+        
+        Calculate:
+        1. Minimum confidence for autonomous action (0-100)
+        2. Confidence for conditional action (needs review)
+        3. Factors increasing threshold (risk, impact, novelty)
+        4. Factors decreasing threshold (routine, proven, low-risk)
+        5. Recommended threshold
+        
+        Output as JSON: {autonomous_threshold, review_threshold, risk_factors, routine_factors, recommended, rationale}
+    - name: threshold_application
+      type: RULE_BASED
+      description: Compare agent confidence to threshold, decide autonomy level
+
+memory:
+  episodic:
+    enabled: true
+    retention_days: 365
+    categories:
+      - threshold-decisions
+      - autonomy-outcomes
+      - calibration-adjustments
+  semantic:
+    enabled: true
+    categories:
+      - threshold-models
+      - risk-factors
+      - calibration-rules
+  procedural:
+    enabled: true
+    categories:
+      - threshold-calculation-logic
+      - adjustment-policies
+      - escalation-rules
+
+tools:
+  - risk_assessor
+  - impact_calculator
+  - track_record_analyzer
+
+capabilities:
+  - confidence-threshold-calculation
+  - risk-based-calibration
+  - autonomy-determination
+  - dynamic-adjustment
+  - track-record-analysis
+
+routing:
+  input_types:
+    - agent-decision-pending
+    - threshold-review-request
+    - calibration-event
+  output_types:
+    - autonomy-decision
+    - threshold-recommendation
+    - escalation-trigger
+
+delegation:
+  can_delegate_to: []
+  escalates_to:
+    - human-in-the-loop-coordinator
+
+governance:
+  requires_approval: false
+  can_block: true  # Can require human review
+  audit_trail: comprehensive
+
+performance:
+  expected_latency_ms: 800
+  max_latency_ms: 2000
+  timeout_ms: 4000

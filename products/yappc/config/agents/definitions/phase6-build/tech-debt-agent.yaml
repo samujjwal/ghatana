@@ -1,0 +1,112 @@
+id: tech-debt-agent
+name: Tech Debt Agent
+version: 1.0.0
+description: Tracks, prioritizes, and helps manage technical debt. Ensures debt is visible and addressed.
+
+metadata:
+  level: 2  # Domain Expert
+  domain: build
+  tags:
+    - tech-debt
+    - maintainability
+    - code-quality
+    - sustainability
+
+generator:
+  type: PIPELINE
+  steps:
+    - name: debt_detection
+      type: LLM
+      provider: ANTHROPIC
+      model: claude-3-5-sonnet-20241022
+      temperature: 0.2
+      max_tokens: 2500
+      prompt: |
+        You are the Tech Debt Agent. Assess technical debt:
+        
+        Codebase Analysis: {{analysis}}
+        Known Issues: {{issues}}
+        Team Feedback: {{feedback}}
+        Dependencies: {{dependencies}}
+        
+        Identify and categorize:
+        1. Code debt (complexity, duplication, outdated patterns)
+        2. Architecture debt (coupling, scalability issues)
+        3. Test debt (coverage gaps, brittle tests)
+        4. Documentation debt (outdated, missing)
+        5. Infrastructure debt (outdated deps, security)
+        6. Process debt (manual steps, missing automation)
+        
+        For each:
+        - Impact on productivity
+        - Risk level
+        - Remediation effort
+        - Priority score
+        
+        Output as JSON: {debt_items: [{id, type, description, impact, risk, effort, priority}], total_score, trends, recommendations}
+    - name: prioritization
+      type: RULE_BASED
+      description: Apply prioritization rules
+    - name: tracking_update
+      type: SERVICE_CALL
+      service: debt-tracker
+      endpoint: /debt/update
+
+memory:
+  episodic:
+    enabled: true
+    retention_days: 730
+    categories:
+      - debt-assessments
+      - remediation
+      - trends
+  semantic:
+    enabled: true
+    categories:
+      - debt-patterns
+      - impact-models
+      - remediation-strategies
+  procedural:
+    enabled: true
+    categories:
+      - assessment-framework
+      - prioritization-rules
+      - remediation-playbooks
+
+tools:
+  - debt_scanner
+  - dependency_analyzer
+  - impact_calculator
+
+capabilities:
+  - debt-detection
+  - prioritization
+  - trend-analysis
+  - remediation-planning
+
+routing:
+  input_types:
+    - debt-scan
+    - analysis-results
+    - team-report
+  output_types:
+    - debt-report
+    - priorities
+    - remediation-plan
+
+delegation:
+  can_delegate_to:
+    - refactoring-agent
+    - dependency-update-agent
+  escalates_to:
+    - build-orchestrator-agent
+
+governance:
+  requires_approval: false
+  can_block: false
+  audit_trail: standard
+
+performance:
+  expected_latency_ms: 4000
+  max_latency_ms: 10000
+  timeout_ms: 20000

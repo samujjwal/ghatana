@@ -1,0 +1,196 @@
+# Marketing Department Configuration
+# Part of Software-Org plugin for Virtual-Org framework
+
+apiVersion: virtualorg.ghatana.com/v1
+kind: Department
+metadata:
+  name: marketing
+  labels:
+    category: customer-facing
+    cost-center: "MKT-001"
+
+spec:
+  displayName: "Marketing"
+  type: MARKETING
+  description: |
+    Marketing department responsible for brand awareness, lead generation,
+    content creation, and market positioning. Drives demand generation and
+    supports the sales team with qualified leads and marketing materials.
+
+  hierarchy:
+    parent: null
+    reportingTo: cpo-agent
+    children: []
+
+  settings:
+    maxAgents: 15
+    autoScaleAgents: false
+    taskAssignment:
+      strategy: capability-match
+      loadBalancing: true
+      maxTasksPerAgent: 8
+
+  agents:
+    - ref: agents/marketing-director-agent.yaml
+    - ref: agents/content-manager-agent.yaml
+    - ref: agents/demand-gen-agent.yaml
+
+  workflows:
+    - name: campaign-execution
+      displayName: "Campaign Execution"
+      steps:
+        - name: campaign-planning
+          agent: marketing-director
+          action: plan_campaign
+          timeout: PT24H
+        - name: content-creation
+          agent: content-manager
+          action: create_campaign_content
+          timeout: PT72H
+          waitFor: [campaign-planning]
+        - name: channel-setup
+          agent: demand-gen
+          action: setup_channels
+          timeout: PT24H
+          waitFor: [content-creation]
+        - name: campaign-launch
+          agent: demand-gen
+          action: launch_campaign
+          timeout: PT8H
+          waitFor: [channel-setup]
+        - name: performance-tracking
+          agent: demand-gen
+          action: track_performance
+          timeout: PT168H
+          waitFor: [campaign-launch]
+        - name: campaign-optimization
+          agent: marketing-director
+          action: optimize_campaign
+          timeout: PT48H
+          waitFor: [performance-tracking]
+
+    - name: product-launch
+      displayName: "Product Launch"
+      steps:
+        - name: launch-planning
+          agent: marketing-director
+          action: create_launch_plan
+          timeout: PT72H
+        - name: messaging-development
+          agent: content-manager
+          action: develop_messaging
+          timeout: PT48H
+          waitFor: [launch-planning]
+        - name: asset-creation
+          agent: content-manager
+          action: create_launch_assets
+          timeout: PT120H
+          waitFor: [messaging-development]
+        - name: press-outreach
+          agent: marketing-director
+          action: conduct_press_outreach
+          timeout: PT168H
+          waitFor: [asset-creation]
+        - name: launch-execution
+          agent: demand-gen
+          action: execute_launch
+          timeout: PT24H
+          waitFor: [press-outreach]
+
+  kpis:
+    - name: mql_volume
+      displayName: "Marketing Qualified Leads"
+      type: gauge
+      unit: leads
+      target: 500
+      warningThreshold: 400
+      criticalThreshold: 300
+      aggregationPeriod: P1M
+
+    - name: mql_to_sql_rate
+      displayName: "MQL to SQL Conversion"
+      type: percentage
+      target: 40
+      warningThreshold: 30
+      criticalThreshold: 20
+
+    - name: cost_per_lead
+      displayName: "Cost per Lead"
+      type: gauge
+      unit: usd
+      target: 50
+      warningThreshold: 75
+      criticalThreshold: 100
+
+    - name: website_traffic
+      displayName: "Website Traffic"
+      type: gauge
+      unit: visits
+      target: 100000
+      warningThreshold: 75000
+      criticalThreshold: 50000
+      aggregationPeriod: P1M
+
+    - name: brand_awareness
+      displayName: "Brand Awareness Score"
+      type: percentage
+      target: 60
+      warningThreshold: 50
+      criticalThreshold: 40
+
+    - name: content_engagement
+      displayName: "Content Engagement Rate"
+      type: percentage
+      target: 5
+      warningThreshold: 3
+      criticalThreshold: 2
+
+  taskTypes:
+    - name: content_creation
+      priority: normal
+      slaHours: 48
+      requiredCapabilities: [writing, design, seo]
+
+    - name: campaign_management
+      priority: normal
+      slaHours: 24
+      requiredCapabilities: [analytics, campaign_management]
+
+    - name: event_planning
+      priority: normal
+      slaHours: 168
+      requiredCapabilities: [event_management, coordination]
+
+    - name: press_release
+      priority: high
+      slaHours: 24
+      requiredCapabilities: [writing, pr]
+
+    - name: social_media
+      priority: normal
+      slaHours: 8
+      requiredCapabilities: [social_media, content]
+
+  subscriptions:
+    - event: feature_released
+      source: product
+      action: create_launch_content
+    - event: deal_closed
+      source: sales
+      action: create_case_study_opportunity
+    - event: competitive_intelligence
+      source: sales
+      action: update_competitive_analysis
+    - event: customer_testimonial
+      source: support
+      action: capture_testimonial
+
+  publications:
+    - event: marketing_qualified_lead
+      targets: [sales]
+    - event: product_launch_ready
+      targets: [sales, support]
+    - event: content_published
+      targets: [sales]
+    - event: campaign_results
+      targets: [sales, product]

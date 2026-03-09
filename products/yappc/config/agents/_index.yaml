@@ -1,0 +1,70 @@
+apiVersion: ghatana.yappc/v2
+kind: AgentRegistryIndex
+
+metadata:
+  version: 3.0.0
+  description: "Aggregated agent registry index - split from monolithic registry.yaml"
+  migration:
+    from: registry.yaml (monolithic)
+    date: "2026-03-08"
+
+spec:
+  # Catalogs are loaded in priority order and merged
+  # Lower priority = loaded first, can be overridden by higher priority
+  catalogs:
+    - name: platform
+      file: platform-catalog.yaml
+      priority: 1
+      description: "Platform-level orchestration agents"
+      agentCount: 14
+      
+    - name: devsecops
+      file: devsecops-catalog.yaml
+      priority: 2
+      description: "Security and DevOps agents"
+      agentCount: 39
+      
+    - name: lifecycle
+      file: lifecycle-catalog.yaml
+      priority: 3
+      description: "SDLC phase agents"
+      agentCount: 45
+      
+    - name: compliance
+      file: compliance-catalog.yaml
+      priority: 4
+      description: "Compliance and auditing agents"
+      agentCount: 24
+      
+    - name: cloud
+      file: cloud-catalog.yaml
+      priority: 5
+      description: "Cloud infrastructure agents"
+      agentCount: 32
+      
+    - name: integration
+      file: integration-catalog.yaml
+      priority: 6
+      description: "Third-party integration agents"
+      agentCount: 20
+      
+    - name: governance
+      file: governance-catalog.yaml
+      priority: 7
+      description: "Governance and guardrail agents"
+      agentCount: 20
+
+  aggregation:
+    mode: merge
+    deduplicate: true
+    validate: true
+    
+  statistics:
+    totalAgents: 194
+    totalCatalogs: 7
+    
+  # Backward compatibility - provides aggregated view
+  compatibility:
+    legacyRegistry: registry.yaml
+    status: deprecated
+    sunsetDate: "2026-06-06"

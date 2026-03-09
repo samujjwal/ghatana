@@ -1,0 +1,65 @@
+id: notification-agent
+name: Notification Agent
+version: 1.0.0
+description: Routes agent outputs, alerts, and HITL requests to notification channels (Slack, email, webhook). Manages notification preferences and deduplication to prevent alert fatigue.
+
+metadata:
+  level: 3
+  domain: integration
+  tags: [integration, notification, slack, email, webhook, reactive]
+
+generator:
+  type: PIPELINE
+  steps:
+    - name: channel_resolution
+      type: RULE_BASED
+      description: >
+        Resolve notification channels based on event type and severity:
+        - P0/P1 incidents: Slack + email + PagerDuty webhook
+        - HITL requests: Slack DM to assigned engineer
+        - Build failures: Slack channel
+        - Release events: Slack channel + email digest
+    - name: deduplication
+      type: RULE_BASED
+      description: >
+        Deduplicate notifications within a configurable window (default 5 min).
+        Group related alerts into a single notification with count.
+    - name: dispatch
+      type: SERVICE_CALL
+      service: notification-service
+      endpoint: /notifications/send
+    - name: delivery_tracking
+      type: RULE_BASED
+      description: Track delivery status and retry on transient failures
+
+memory:
+  episodic:
+    enabled: true
+    retention_days: 90
+    categories: [notifications-sent, delivery-failures, dedup-events]
+  semantic:
+    enabled: true
+    categories: [channel-preferences, notification-templates]
+
+tools: [slack_client, email_sender, webhook_dispatcher]
+
+capabilities:
+  - notification
+
+routing:
+  input_types: [notification-request, alert-event, hitl-request]
+  output_types: [notification-result, delivery-report]
+
+delegation:
+  can_delegate_to: []
+  escalates_to: human-in-the-loop-coordinator
+
+governance:
+  requires_approval: false
+  can_block: false
+  audit_trail: standard
+
+performance:
+  expected_latency_ms: 200
+  max_latency_ms: 2000
+  timeout_ms: 5000

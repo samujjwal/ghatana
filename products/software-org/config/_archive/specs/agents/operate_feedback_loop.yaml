@@ -1,0 +1,25 @@
+---
+id: "operate_feedback_loop"
+agent: "FeedbackLoopAgent"
+role: "Ops Coach/Automation"
+inputs_spec:
+- name: "operate_progress_dashboard"
+  description: "Operations dashboard for collecting issues and improvement suggestions."
+  format: "Dashboard artifact"
+outputs_spec:
+- name: "operate_feedback_items"
+  description: "List of ops feedback/improvement suggestions routed to Retrospective\
+    \ and tracked for closure."
+  format: "List of feedback items"
+agent_tasks:
+- "Route all operational issues/improvement suggestions to Retrospective."
+- "Track feedback for closure/action."
+acceptance_criteria:
+- "Issues/improvements are routed to Retrospective."
+- "Feedback is tracked for closure."
+dependencies:
+- "operate_progress_dashboard"
+failure_escalation:
+- "Escalate to ops coach if feedback is not acted on or routed."
+references: []
+hitl: false

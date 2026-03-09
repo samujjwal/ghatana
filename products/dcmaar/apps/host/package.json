@@ -1,0 +1,26 @@
+{
+    "name": "@ghatana/dcmaar-browser-extension-host",
+    "version": "0.1.0",
+    "description": "Optional unified DCMAAR browser extension host that bundles shared runtime and plugin packs",
+    "private": true,
+    "type": "module",
+    "main": "dist/background/index.js",
+    "scripts": {
+        "build": "tsc",
+        "type-check": "tsc --noEmit",
+        "test": "vitest run",
+        "test:watch": "vitest"
+    },
+    "dependencies": {
+        "@ghatana/dcmaar-browser-extension-core": "workspace:*",
+        "@ghatana/dcmaar-types": "workspace:*",
+        "@ghatana/dcmaar-plugin-abstractions": "workspace:*",
+        "@ghatana/dcmaar-guardian-plugins": "workspace:*",
+        "@ghatana/dcmaar-plugin-extension": "workspace:*"
+    },
+    "devDependencies": {
+        "@types/node": "^25.2.0",
+        "typescript": "^5.9.3",
+        "vitest": "^4.0.18"
+    }
+}

@@ -1,0 +1,110 @@
+domain:
+  id: operations-monitoring
+  name: "Operations & Monitoring"
+  description: "Monitor system health and manage operations."
+  order: 20
+  icon: "monitor_heart"
+  color: "#26A69A"
+  agent_personas:
+    - "OpsMonitor"
+    - "SignalAnalyzer"
+    - "IncidentResponder"
+  audit_artifacts:
+    - "AlertLog"
+    - "OpsMetrics"
+    - "DebugLog"
+  inputs:
+    - "Telemetry"
+    - "Alerts"
+  outputs:
+    - "Operational metrics"
+    - "Incident reports"
+
+tasks:
+  # Core ICS operations tasks
+  - id: d20-t1
+    name: "Monitor systems"
+    description: "Watch system health."
+    personas: ["DevOps"]
+    lifecycle_stages: ["observe"]
+    automation_level: "automated"
+  - id: d20-t2
+    name: "Manage alerts"
+    description: "Respond to alerts."
+    personas: ["DevOps", "Developer"]
+    lifecycle_stages: ["observe"]
+    automation_level: "assisted"
+  - id: d20-t3
+    name: "Tune thresholds"
+    description: "Adjust alert sensitivity."
+    personas: ["DevOps"]
+    lifecycle_stages: ["observe"]
+    automation_level: "assisted"
+  - id: d20-t4
+    name: "Maintain uptime"
+    description: "Ensure service availability."
+    personas: ["DevOps"]
+    lifecycle_stages: ["observe"]
+    automation_level: "assisted"
+
+  # Migrated from legacy debugging domain
+  - id: debug-001
+    name: "Reproduce Issues"
+    description: "Reproduce reported bugs in development."
+    personas: ["Developer"]
+    lifecycle_stages: ["execute"]
+    automation_level: "manual"
+  - id: debug-002
+    name: "Analyze Stack Traces"
+    description: "Analyze error stack traces."
+    personas: ["Developer"]
+    lifecycle_stages: ["execute"]
+    automation_level: "assisted"
+  - id: debug-003
+    name: "Debug with Breakpoints"
+    description: "Use debugger to inspect state."
+    personas: ["Developer"]
+    lifecycle_stages: ["execute"]
+    automation_level: "manual"
+  - id: debug-004
+    name: "Analyze Logs"
+    description: "Review logs to diagnose issues."
+    personas: ["Developer", "DevOps"]
+    lifecycle_stages: ["execute", "observe"]
+    automation_level: "assisted"
+  - id: debug-005
+    name: "Profile Performance"
+    description: "Use profilers to identify bottlenecks."
+    personas: ["Developer"]
+    lifecycle_stages: ["execute", "verify"]
+    automation_level: "assisted"
+  - id: debug-006
+    name: "Memory Leak Detection"
+    description: "Identify and fix memory leaks."
+    personas: ["Developer"]
+    lifecycle_stages: ["execute"]
+    automation_level: "assisted"
+  - id: debug-007
+    name: "Root Cause Analysis"
+    description: "Identify root cause of issues."
+    personas: ["Developer", "Tech Lead"]
+    lifecycle_stages: ["execute", "learn"]
+    automation_level: "assisted"
+  - id: debug-008
+    name: "Fix Production Issues"
+    description: "Resolve issues in production."
+    personas: ["Developer", "DevOps"]
+    lifecycle_stages: ["execute"]
+    automation_level: "assisted"
+  - id: debug-009
+    name: "Write Bug Fixes"
+    description: "Implement fixes for identified bugs."
+    personas: ["Developer"]
+    lifecycle_stages: ["execute"]
+    automation_level: "assisted"
+  - id: debug-010
+    name: "Validate Fixes"
+    description: "Verify bug fixes resolve the issue."
+    personas: ["Developer", "QA"]
+    lifecycle_stages: ["verify"]
+    automation_level: "assisted"

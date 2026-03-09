@@ -1,0 +1,36 @@
+{
+  "name": "@ghatana/yappc-ai",
+  "version": "0.1.0",
+  "type": "module",
+  "exports": {
+    ".": "./src/index.ts",
+    "./core": "./src/core/index.ts",
+    "./agents": "./src/agents/index.ts",
+    "./requirements": "./src/requirements/index.ts",
+    "./nlp": "./src/nlp/index.ts",
+    "./ml": "./src/ml/index.ts",
+    "./ui": "./src/ui/index.ts",
+    "./hooks": "./src/hooks/index.ts",
+    "./providers": "./src/core/providers/index.ts",
+    "./cache": "./src/core/cache/index.ts",
+    "./security": "./src/core/security/index.ts",
+    "./testing": "./src/ml/testing/index.ts"
+  },
+  "dependencies": {
+    "@ghatana/yappc-types": "workspace:*",
+    "@ghatana/yappc-ui": "workspace:*"
+  },
+  "peerDependencies": {
+    "react": "^19.0.0"
+  },
+  "keywords": [
+    "ai",
+    "agents",
+    "requirements",
+    "llm",
+    "natural-language-processing",
+    "machine-learning",
+    "personalization",
+    "recommendations"
+  ]
+}

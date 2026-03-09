@@ -1,0 +1,159 @@
+//! HTTP request handlers.
+
+use axum::{
+extract::{Path, State},
+http::StatusCode,
+response::IntoResponse,
+Json,
+};
+use serde::{Deserialize, Serialize};
+
+use crate::error::AppError;
+use crate::router::AppState;
+
+/// Health check response.
+#[derive(Serialize)]
+pub struct HealthResponse {
+status: String,
+version: String,
+}
+
+/// Health check handler.
+pub async fn health() -> Json<HealthResponse> {
+    Json(HealthResponse {
+    status: "ok".to_string(),
+    version: env!("CARGO_PKG_VERSION").to_string(),
+    })
+    }
+
+    /// Readiness check response.
+    #[derive(Serialize)]
+    pub struct ReadyResponse {
+    status: String,
+    checks: std::collections::HashMap<String, String>,
+        }
+
+        /// Readiness check handler.
+        pub async fn ready() -> Json<ReadyResponse> {
+            // TODO: Add actual readiness checks (database, cache, etc.)
+            Json(ReadyResponse {
+            status: "ready".to_string(),
+            checks: std::collections::HashMap::new(),
+            })
+            }
+
+            /// Liveness check handler.
+            pub async fn live() -> Json<serde_json::Value> {
+                Json(serde_json::json!({ "status": "alive" }))
+                }
+
+                /// Welcome message response.
+                #[derive(Serialize)]
+                pub struct WelcomeResponse {
+                message: String,
+                version: String,
+                }
+
+                /// Welcome handler.
+                pub async fn welcome() -> Json<WelcomeResponse> {
+                    Json(WelcomeResponse {
+                    message: "Welcome to {{projectName}} API".to_string(),
+                    version: "v1".to_string(),
+                    })
+                    }
+
+                    /// Item model.
+                    #[derive(Debug, Serialize, Deserialize, Clone)]
+                    pub struct Item {
+                    pub id: String,
+                    pub name: String,
+                    #[serde(skip_serializing_if = "Option::is_none")]
+                    pub description: Option<String>,
+                        #[serde(skip_serializing_if = "Option::is_none")]
+                        pub created_at: Option<String>,
+                            }
+
+                            /// Create item request.
+                            #[derive(Debug, Deserialize)]
+                            pub struct CreateItemRequest {
+                            pub name: String,
+                            pub description: Option<String>,
+                                }
+
+                                /// List items response.
+                                #[derive(Serialize)]
+                                pub struct ListItemsResponse {
+                                items: Vec<Item>,
+                                    total: usize,
+                                    }
+
+                                    /// List all items.
+                                    pub async fn list_items() -> Json<ListItemsResponse> {
+                                        // TODO: Implement actual database query
+                                        let items = vec![
+                                        Item {
+                                        id: "1".to_string(),
+                                        name: "Sample Item 1".to_string(),
+                                        description: Some("A sample item".to_string()),
+                                        created_at: Some("2024-01-01T00:00:00Z".to_string()),
+                                        },
+                                        Item {
+                                        id: "2".to_string(),
+                                        name: "Sample Item 2".to_string(),
+                                        description: Some("Another sample item".to_string()),
+                                        created_at: Some("2024-01-02T00:00:00Z".to_string()),
+                                        },
+                                        ];
+                                        let total = items.len();
+                                        Json(ListItemsResponse { items, total })
+                                        }
+
+                                        /// Create a new item.
+                                        pub async fn create_item(
+                                        Json(payload): Json<CreateItemRequest>,
+                                            ) -> Result<impl IntoResponse, AppError> {
+                                                // TODO: Implement actual database insert
+                                                let item = Item {
+                                                id: uuid::Uuid::new_v4().to_string(),
+                                                name: payload.name,
+                                                description: payload.description,
+                                                created_at: Some(chrono::Utc::now().to_rfc3339()),
+                                                };
+
+                                                Ok((StatusCode::CREATED, Json(item)))
+                                                }
+
+                                                /// Get a single item by ID.
+                                                pub async fn get_item(Path(id): Path<String>) -> Result<Json<Item>,
+                                                        AppError> {
+                                                        // TODO: Implement actual database query
+                                                        Ok(Json(Item {
+                                                        id,
+                                                        name: "Sample Item".to_string(),
+                                                        description: Some("This is a sample item".to_string()),
+                                                        created_at: Some("2024-01-01T00:00:00Z".to_string()),
+                                                        }))
+                                                        }
+
+                                                        /// Update an existing item.
+                                                        pub async fn update_item(
+                                                        Path(id): Path<String>,
+                                                            Json(payload): Json<CreateItemRequest>,
+                                                                ) -> Result<Json<Item>, AppError> {
+                                                                    // TODO: Implement actual database update
+                                                                    Ok(Json(Item {
+                                                                    id,
+                                                                    name: payload.name,
+                                                                    description: payload.description,
+                                                                    created_at:
+                                                                    Some("2024-01-01T00:00:00Z".to_string()),
+                                                                    }))
+                                                                    }
+
+                                                                    /// Delete an item.
+                                                                    pub async fn delete_item(Path(id): Path<String>) ->
+                                                                        Result<StatusCode, AppError> {
+                                                                            // TODO: Implement actual database delete
+                                                                            tracing::info!("Deleting item: {}", id);
+                                                                            Ok(StatusCode::NO_CONTENT)
+                                                                            }

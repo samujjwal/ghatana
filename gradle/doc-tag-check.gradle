@@ -1,0 +1,76 @@
+/**
+ * Gradle task: checkDocTags
+ *
+ * Scans all public Java source files for the required @doc tags:
+ *   @doc.type, @doc.purpose, @doc.layer, @doc.pattern
+ *
+ * Reports violations as warnings (not build-failures) to support
+ * incremental adoption. Promote to error once migration is complete.
+ *
+ * Usage:
+ *   ./gradlew checkDocTags
+ *
+ * Apply from root build.gradle.kts:
+ *   apply(from = file("gradle/doc-tag-check.gradle"))
+ *
+ * @since 2.4.0
+ * @see copilot-instructions.md § Documentation
+ * @see docs/CODEBASE_AUDIT_AND_REMEDIATION_PLAN_V2.md Task 4.8
+ */
+
+def REQUIRED_TAGS = ['@doc.type', '@doc.purpose', '@doc.layer', '@doc.pattern']
+def PUBLIC_TYPE_PATTERN = ~/(?:public\s+(?:abstract\s+|final\s+|sealed\s+)*)(?:class|interface|record|enum)\s+\w+/
+
+tasks.register('checkDocTags') {
+    group = 'verification'
+    description = 'Check that all public Java classes have required @doc tags'
+
+    doLast {
+        def violations = []
+        def scanned = 0
+
+        // Scan all main Java source directories
+        subprojects.each { proj ->
+            def srcDir = proj.file('src/main/java')
+            if (!srcDir.exists()) return
+
+            srcDir.eachFileRecurse(groovy.io.FileType.FILES) { file ->
+                if (!file.name.endsWith('.java')) return
+                if (file.name == 'package-info.java') return
+                if (file.name == 'module-info.java') return
+
+                def content = file.text
+                scanned++
+
+                // Skip deprecated files
+                if (content.contains('@Deprecated(since')) return
+
+                // Check if file contains a public type declaration
+                def matcher = PUBLIC_TYPE_PATTERN.matcher(content)
+                if (!matcher.find()) return
+
+                // Check for required tags
+                def missingTags = REQUIRED_TAGS.findAll { tag -> !content.contains(tag) }
+                if (!missingTags.isEmpty()) {
+                    def relativePath = rootDir.toPath().relativize(file.toPath())
+                    violations << "  ${relativePath}  — missing: ${missingTags.join(', ')}"
+                }
+            }
+        }
+
+        if (violations.isEmpty()) {
+            logger.lifecycle("✓ checkDocTags: All ${scanned} scanned files have required @doc tags.")
+        } else {
+            logger.warn("┌──────────────────────────────────────────────────────────────")
+            logger.warn("│ @doc Tag Violations (${violations.size()} files missing tags)")
+            logger.warn("│")
+            logger.warn("│ Required tags: ${REQUIRED_TAGS.join(', ')}")
+            logger.warn("│")
+            violations.each { logger.warn("│ ${it}") }
+            logger.warn("│")
+            logger.warn("│ See: copilot-instructions.md § Documentation")
+            logger.warn("└──────────────────────────────────────────────────────────────")
+            logger.warn("checkDocTags: ${violations.size()} violations found across ${scanned} files (WARNING)")
+        }
+    }
+}

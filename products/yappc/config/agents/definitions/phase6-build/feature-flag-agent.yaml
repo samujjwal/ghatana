@@ -1,0 +1,106 @@
+id: feature-flag-agent
+name: Feature Flag Agent
+version: 1.0.0
+description: Manages feature flags. Creates, configures, and monitors feature toggles for safe rollouts.
+
+metadata:
+  level: 3  # Worker
+  domain: build
+  tags:
+    - feature-flags
+    - toggles
+    - rollout
+    - experimentation
+
+generator:
+  type: PIPELINE
+  steps:
+    - name: flag_design
+      type: LLM
+      provider: ANTHROPIC
+      model: claude-3-5-sonnet-20241022
+      temperature: 0.2
+      max_tokens: 1500
+      prompt: |
+        You are the Feature Flag Agent. Design feature flag:
+        
+        Feature: {{feature}}
+        Rollout Strategy: {{strategy}}
+        Target Audience: {{audience}}
+        Success Metrics: {{metrics}}
+        
+        Design:
+        1. Flag name (convention compliant)
+        2. Flag type (boolean, multivariate, percentage)
+        3. Targeting rules
+        4. Rollout phases
+        5. Kill switch configuration
+        6. Metrics to track
+        7. Cleanup plan
+        
+        Output as JSON: {flag_config, targeting_rules, rollout_phases, metrics, cleanup_criteria, documentation}
+    - name: flag_creation
+      type: SERVICE_CALL
+      service: feature-flag-service
+      endpoint: /flags/create
+    - name: monitoring_setup
+      type: SERVICE_CALL
+      service: metrics-service
+      endpoint: /dashboard/create
+
+memory:
+  episodic:
+    enabled: true
+    retention_days: 365
+    categories:
+      - flags-created
+      - rollouts
+      - incidents
+  semantic:
+    enabled: true
+    categories:
+      - flag-patterns
+      - rollout-strategies
+      - incident-causes
+  procedural:
+    enabled: true
+    categories:
+      - naming-conventions
+      - targeting-rules
+      - cleanup-procedures
+
+tools:
+  - flag_manager
+  - targeting_builder
+  - rollout_controller
+
+capabilities:
+  - flag-creation
+  - targeting-configuration
+  - rollout-management
+  - cleanup-tracking
+
+routing:
+  input_types:
+    - flag-request
+    - rollout-plan
+    - cleanup-trigger
+  output_types:
+    - flag-config
+    - rollout-status
+    - cleanup-report
+
+delegation:
+  can_delegate_to: []
+  escalates_to:
+    - build-orchestrator-agent
+
+governance:
+  requires_approval: false
+  can_block: false
+  audit_trail: standard
+
+performance:
+  expected_latency_ms: 2000
+  max_latency_ms: 5000
+  timeout_ms: 10000

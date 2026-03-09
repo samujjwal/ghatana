@@ -1,0 +1,29 @@
+---
+id: "monitor_milestone_tracker"
+agent: "MonitorMilestoneTrackerAgent"
+role: "Security PM"
+inputs_spec:
+- name: "monitor_best_practice_report"
+  description: "Best practice report for milestone tracking."
+  format: "Best practice report artifact"
+outputs_spec:
+- name: "monitor_stage_milestone"
+  description: "Monitoring/response milestones with owners and due dates."
+  format: "List of milestone objects"
+agent_tasks:
+- "Define/track all milestones."
+- "Assign owners/due dates."
+- "Track/escalate blockers/delays."
+- "Log/validate milestone completion."
+acceptance_criteria:
+- "All milestones tracked."
+- "Owners/due dates assigned."
+- "Blockers/delays escalated."
+- "Completion logged/validated."
+dependencies:
+- "monitor_best_practice_report"
+failure_escalation:
+- "Escalate to Security PM if milestones untracked or incomplete."
+references: []
+hitl: true
+hitl_reason: "Human oversight for monitoring milestone tracking"

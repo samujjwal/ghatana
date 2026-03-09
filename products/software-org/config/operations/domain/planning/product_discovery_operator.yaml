@@ -1,0 +1,231 @@
+# Product Discovery Operator - Consolidated Planning Domain
+# Consolidates: clarify_product_idea, clarification_questions, product inception operators
+# Purpose: Product ideation from initial concept through clarification to refined vision
+
+id: product_discovery_operator
+version: "1.0.0"
+domain: planning
+category: product_discovery
+
+description: |
+  Unified product discovery operator handling early product definition:
+  - Product idea clarification and refinement
+  - Ambiguity identification and resolution
+  - Clarification question generation
+  - Value proposition definition
+  - Security and compliance context extraction
+
+# Operator Modes
+modes:
+  clarify:
+    description: "Clarify and refine initial product idea"
+    role: Senior Product Analyst
+    inputs:
+      - name: user_input
+        description: Initial product idea from user
+        format: free_text
+        required: true
+      - name: domain_context
+        description: Industry or domain context
+        required: false
+    outputs:
+      - name: clarified_product_idea
+        description: Refined product concept with identified gaps
+        format: yaml_structured
+        schema:
+          - summary: string # 1-2 sentence description
+          - value_proposition: string
+          - differentiators: list
+          - target_users: list
+          - compliance_context: list
+          - cloud_context: object
+          - open_questions: list
+          - ambiguities: list
+    tasks:
+      - Rephrase product idea for clarity
+      - Identify security and cloud context
+      - Extract compliance requirements (HIPAA, GDPR, etc.)
+      - List target user groups and personas
+      - Summarize value proposition
+      - Flag ambiguities and open questions
+    extraction_focus:
+      - user_intent
+      - target_market
+      - compliance_requirements
+      - sensitive_data_types
+      - deployment_model
+
+  generate_questions:
+    description: "Generate prioritized clarification questions"
+    role: Business Analyst
+    inputs:
+      - name: clarified_product_idea
+        description: Initial clarified product concept
+        required: true
+      - name: constraints_and_assumptions
+        description: Identified constraints and assumptions
+        required: false
+    outputs:
+      - name: clarification_questions
+        description: Prioritized list of clarification questions
+        format: yaml_list
+        schema:
+          - id: string
+          - question: string
+          - category: "business|technical|compliance|user|integration"
+          - related_item: string # Related constraint, assumption, or ambiguity
+          - priority: "critical|high|medium|low"
+          - risk_if_unanswered: string
+          - suggested_respondent: string
+    question_categories:
+      business: "Market, revenue, business model questions"
+      technical: "Architecture, platform, integration questions"
+      compliance: "Regulatory, security, privacy questions"
+      user: "User needs, personas, journeys questions"
+      integration: "External systems, data flow questions"
+    tasks:
+      - Identify all unclear points
+      - Generate specific, actionable questions
+      - Prioritize by risk and importance
+      - Assign to appropriate stakeholders
+      - Track question resolution
+
+  refine:
+    description: "Refine product vision based on answers"
+    role: Product Owner
+    inputs:
+      - name: clarified_product_idea
+        description: Initial clarified concept
+        required: true
+      - name: clarification_answers
+        description: Answers to clarification questions
+        required: true
+    outputs:
+      - name: refined_product_vision
+        description: Complete product vision document
+        format: yaml_document
+        schema:
+          - product_name: string
+          - vision_statement: string
+          - problem_statement: string
+          - solution_overview: string
+          - target_audience: list
+          - key_features: list
+          - success_metrics: list
+          - constraints: list
+          - out_of_scope: list
+          - risks: list
+    tasks:
+      - Incorporate clarification answers
+      - Resolve remaining ambiguities
+      - Document final product vision
+      - Define success metrics
+      - Identify risks and constraints
+      - Mark items as out of scope
+
+# Internal Logic
+internal_logic:
+  perception:
+    description: "Extract intent, context, and ambiguities from user input"
+    techniques:
+      - nlp_extraction
+      - pattern_matching
+      - domain_keyword_detection
+    sources:
+      - user_input
+      - domain_context
+      - historical_clarifications
+  model:
+    description: "Product discovery knowledge tracking"
+    entities:
+      - product_idea: "{summary, status, confidence}"
+      - clarification: "{question, answer, resolved}"
+      - ambiguity: "{term, context, resolution}"
+    relationships:
+      - ambiguity_generates_question
+      - answer_resolves_question
+      - clarification_refines_idea
+  planning:
+    strategy: |
+      1. Parse and understand initial input
+      2. Identify compliance and security context early
+      3. Prioritize questions by risk
+      4. Iterate until confidence threshold met
+      5. Escalate if blocked after 2 rounds
+  action:
+    description: "Output structured YAML artifacts"
+    validation: "User or sponsor confirmation required"
+
+# Quality Assurance
+quality:
+  templates:
+    - product_summary_template
+    - clarification_question_template
+    - vision_document_template
+  checklists:
+    - completeness_checklist
+    - clarity_checklist
+    - compliance_coverage_checklist
+  automated_checks:
+    - ambiguity_detection
+    - compliance_keyword_scan
+    - question_duplication_check
+
+# Clarification Iteration Rules
+iteration:
+  max_rounds: 3
+  escalation_trigger: "2 rounds without resolution"
+  confidence_threshold: 0.85
+  auto_suggestion: true
+
+# Validation Rules
+validation:
+  rules:
+    - "Product summary must be 1-2 sentences"
+    - "All ambiguities must generate questions"
+    - "Critical questions must have respondent"
+    - "Vision document must address all open questions"
+  review_gates:
+    - user_confirmation
+    - sponsor_approval
+
+# Escalation
+escalation:
+  triggers:
+    - "Unable to clarify after max rounds"
+    - "Conflicting user inputs"
+    - "Critical compliance gap"
+  paths:
+    - role: Project Sponsor
+      for: "Vision clarity, scope decisions"
+    - role: Compliance Lead
+      for: "Regulatory uncertainty"
+    - role: User/Customer
+      for: "Feature and need clarification"
+
+# HITL (Human-in-the-Loop) Configuration
+hitl:
+  enabled: true
+  touchpoints:
+    - clarification_question_review
+    - vision_document_approval
+  reason: "User input required for product direction"
+
+# Dependencies
+dependencies:
+  upstream: [] # First operator in planning pipeline
+  downstream:
+    - business_goals_operator
+    - stakeholder_operator
+
+# Metrics
+metrics:
+  - name: clarification_efficiency
+    description: "Questions resolved in first round"
+    target: ">= 70%"
+  - name: vision_completeness
+    description: "Vision document fields populated"
+    target: "100%"
+  - name: iteration_count
+    description: "Average clarification rounds"
+    target: "<= 2"

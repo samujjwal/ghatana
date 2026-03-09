@@ -1,0 +1,818 @@
+# YAPPC Agent Capabilities Configuration
+#
+# Defines the capabilities that agents can provide for task execution.
+# Each capability maps to one or more AgentCapability types from the
+# agent infrastructure.
+#
+# Capabilities are referenced in:
+# - Task definitions (requiredCapabilities field)
+# - Agent mappings (capabilities field)
+# - Agent registration
+
+# ============================================================================
+# Capability Definitions
+# ============================================================================
+
+capabilities:
+  # ---------------------------------------------------------------------------
+  # Code Generation Capabilities
+  # ---------------------------------------------------------------------------
+  - id: code-generation
+    name: Code Generation
+    description: Generate source code from specifications
+    category: generation
+    agent_capability: CodeGeneration
+    input_types:
+      - specification
+      - requirements
+      - schema
+    output_types:
+      - source_code
+      - file
+    quality_metrics:
+      - syntax_correctness
+      - test_coverage
+      - style_compliance
+
+  - id: component-generation
+    name: Component Generation
+    description: Generate UI/frontend components
+    category: generation
+    agent_capability: CodeGeneration
+    specialization: frontend
+    input_types:
+      - design
+      - wireframe
+      - component_spec
+    output_types:
+      - react_component
+      - vue_component
+      - angular_component
+
+  - id: api-generation
+    name: API Generation
+    description: Generate API endpoints and handlers
+    category: generation
+    agent_capability: CodeGeneration
+    specialization: backend
+    input_types:
+      - openapi_spec
+      - graphql_schema
+      - api_requirements
+    output_types:
+      - api_handler
+      - controller
+      - resolver
+
+  # ---------------------------------------------------------------------------
+  # Testing Capabilities
+  # ---------------------------------------------------------------------------
+  - id: test-generation
+    name: Test Generation
+    description: Generate test cases and test suites
+    category: testing
+    agent_capability: TestGeneration
+    input_types:
+      - source_code
+      - requirements
+      - test_plan
+    output_types:
+      - unit_test
+      - integration_test
+      - e2e_test
+    quality_metrics:
+      - coverage
+      - mutation_score
+
+  - id: test-execution
+    name: Test Execution
+    description: Execute test suites and collect results
+    category: testing
+    agent_capability: TestGeneration
+    input_types:
+      - test_suite
+      - source_code
+    output_types:
+      - test_results
+      - coverage_report
+
+  # ---------------------------------------------------------------------------
+  # Analysis Capabilities
+  # ---------------------------------------------------------------------------
+  - id: code-analysis
+    name: Code Analysis
+    description: Analyze code for quality, patterns, and issues
+    category: analysis
+    agent_capability: CodeAnalysis
+    input_types:
+      - source_code
+      - repository
+    output_types:
+      - analysis_report
+      - issue_list
+      - metrics
+
+  - id: security-analysis
+    name: Security Analysis
+    description: Analyze code for security vulnerabilities
+    category: analysis
+    agent_capability: SecurityAnalysis
+    input_types:
+      - source_code
+      - dependencies
+      - configuration
+    output_types:
+      - vulnerability_report
+      - security_findings
+      - remediation_plan
+
+  - id: performance-analysis
+    name: Performance Analysis
+    description: Analyze performance characteristics
+    category: analysis
+    agent_capability: PerformanceAnalysis
+    input_types:
+      - metrics
+      - traces
+      - profiles
+    output_types:
+      - performance_report
+      - bottleneck_analysis
+      - optimization_recommendations
+
+  - id: dependency-analysis
+    name: Dependency Analysis
+    description: Analyze project dependencies
+    category: analysis
+    agent_capability: CodeAnalysis
+    specialization: dependencies
+    input_types:
+      - package_manifest
+      - lock_file
+    output_types:
+      - dependency_tree
+      - vulnerability_scan
+      - update_recommendations
+
+  # ---------------------------------------------------------------------------
+  # Documentation Capabilities
+  # ---------------------------------------------------------------------------
+  - id: documentation-generation
+    name: Documentation Generation
+    description: Generate documentation from code and specs
+    category: documentation
+    agent_capability: Documentation
+    input_types:
+      - source_code
+      - api_spec
+      - architecture
+    output_types:
+      - api_documentation
+      - readme
+      - user_guide
+      - adr
+
+  - id: diagram-generation
+    name: Diagram Generation
+    description: Generate architectural and flow diagrams
+    category: documentation
+    agent_capability: Documentation
+    specialization: diagrams
+    input_types:
+      - architecture
+      - flow_description
+      - code_structure
+    output_types:
+      - architecture_diagram
+      - sequence_diagram
+      - flowchart
+
+  # ---------------------------------------------------------------------------
+  # Debugging Capabilities
+  # ---------------------------------------------------------------------------
+  - id: root-cause-analysis
+    name: Root Cause Analysis
+    description: Analyze errors and identify root causes
+    category: debugging
+    agent_capability: Debugging
+    input_types:
+      - error_log
+      - stack_trace
+      - metrics
+      - source_code
+    output_types:
+      - root_cause_report
+      - fix_suggestions
+
+  - id: log-analysis
+    name: Log Analysis
+    description: Analyze log files for patterns and issues
+    category: debugging
+    agent_capability: Debugging
+    specialization: logs
+    input_types:
+      - log_file
+      - log_stream
+    output_types:
+      - pattern_report
+      - anomaly_detection
+      - correlation_analysis
+
+  # ---------------------------------------------------------------------------
+  # Deployment Capabilities
+  # ---------------------------------------------------------------------------
+  - id: deployment-automation
+    name: Deployment Automation
+    description: Automate deployment processes
+    category: deployment
+    agent_capability: Deployment
+    input_types:
+      - deployment_config
+      - infrastructure_spec
+      - artifacts
+    output_types:
+      - deployment_plan
+      - execution_log
+      - rollback_plan
+
+  - id: infrastructure-provisioning
+    name: Infrastructure Provisioning
+    description: Provision cloud infrastructure
+    category: deployment
+    agent_capability: Deployment
+    specialization: infrastructure
+    input_types:
+      - iac_template
+      - resource_requirements
+    output_types:
+      - infrastructure_state
+      - resource_ids
+
+  # ---------------------------------------------------------------------------
+  # Data & Database Capabilities
+  # ---------------------------------------------------------------------------
+  - id: schema-design
+    name: Schema Design
+    description: Design database schemas
+    category: data
+    agent_capability: DataPipeline
+    specialization: schema
+    input_types:
+      - data_requirements
+      - entity_relationships
+    output_types:
+      - schema_definition
+      - migration_script
+      - prisma_schema
+
+  - id: data-pipeline
+    name: Data Pipeline
+    description: Build and manage data pipelines
+    category: data
+    agent_capability: DataPipeline
+    input_types:
+      - data_source
+      - transformation_rules
+      - destination
+    output_types:
+      - pipeline_definition
+      - dag
+
+  - id: query-optimization
+    name: Query Optimization
+    description: Optimize database queries
+    category: data
+    agent_capability: DataPipeline
+    specialization: optimization
+    input_types:
+      - query
+      - explain_plan
+      - table_stats
+    output_types:
+      - optimized_query
+      - index_recommendations
+
+  # ---------------------------------------------------------------------------
+  # Research & Analysis Capabilities
+  # ---------------------------------------------------------------------------
+  - id: research
+    name: Research
+    description: Research topics and gather information
+    category: research
+    agent_capability: Research
+    input_types:
+      - query
+      - topic
+      - constraints
+    output_types:
+      - research_report
+      - findings
+      - recommendations
+
+  - id: technology-evaluation
+    name: Technology Evaluation
+    description: Evaluate and compare technologies
+    category: research
+    agent_capability: Research
+    specialization: technology
+    input_types:
+      - requirements
+      - candidates
+      - criteria
+    output_types:
+      - evaluation_matrix
+      - recommendation
+
+  # ---------------------------------------------------------------------------
+  # AI/ML Capabilities
+  # ---------------------------------------------------------------------------
+  - id: ai-code-assist
+    name: AI Code Assistance
+    description: AI-powered coding assistance
+    category: ai
+    agent_capability: CodeGeneration
+    specialization: ai-assisted
+    input_types:
+      - prompt
+      - context
+      - examples
+    output_types:
+      - code_suggestion
+      - explanation
+      - alternatives
+
+  - id: prompt-engineering
+    name: Prompt Engineering
+    description: Design and optimize AI prompts
+    category: ai
+    agent_capability: Research
+    specialization: prompts
+    input_types:
+      - task_description
+      - examples
+      - constraints
+    output_types:
+      - optimized_prompt
+      - prompt_template
+
+  # ---------------------------------------------------------------------------
+  # Cloud Security Capabilities (Phase 13 — DevSecOps)
+  # ---------------------------------------------------------------------------
+  - id: cloud-resource-discovery
+    name: Cloud Resource Discovery
+    description: Discover and inventory cloud infrastructure resources
+    category: cloud-security
+    agent_capability: CloudSecurity
+    specialization: discovery
+    input_types:
+      - cloud_account
+      - region_config
+      - resource_filters
+    output_types:
+      - resource_inventory
+      - resource_graph
+
+  - id: cloud-resource-risk-assessment
+    name: Cloud Resource Risk Assessment
+    description: Assess security risk of cloud resources
+    category: cloud-security
+    agent_capability: CloudSecurity
+    specialization: risk
+    input_types:
+      - resource_inventory
+      - security_policy
+    output_types:
+      - risk_report
+      - risk_score
+
+  - id: vulnerability-scoring
+    name: Vulnerability Scoring
+    description: Score and prioritize security vulnerabilities
+    category: cloud-security
+    agent_capability: CloudSecurity
+    specialization: vulnerability
+    input_types:
+      - vulnerability_scan
+      - asset_context
+    output_types:
+      - scored_vulnerabilities
+      - remediation_priority
+
+  # ---------------------------------------------------------------------------
+  # Compliance Capabilities (Phase 13 — DevSecOps)
+  # ---------------------------------------------------------------------------
+  - id: compliance-control-evaluation
+    name: Compliance Control Evaluation
+    description: Evaluate compliance controls against regulatory frameworks
+    category: compliance
+    agent_capability: Compliance
+    specialization: control-evaluation
+    input_types:
+      - control_framework
+      - evidence
+      - policy
+    output_types:
+      - control_assessment
+      - gap_report
+
+  - id: compliance-gap-analysis
+    name: Compliance Gap Analysis
+    description: Identify gaps between current state and compliance requirements
+    category: compliance
+    agent_capability: Compliance
+    specialization: gap-analysis
+    input_types:
+      - compliance_requirements
+      - current_state
+    output_types:
+      - gap_analysis
+      - remediation_plan
+
+  # ---------------------------------------------------------------------------
+  # Project Lifecycle Capabilities (Phase 13 — DevSecOps)
+  # ---------------------------------------------------------------------------
+  - id: project-onboarding
+    name: Project Onboarding
+    description: Automate project onboarding and setup workflows
+    category: lifecycle
+    agent_capability: Lifecycle
+    specialization: onboarding
+    input_types:
+      - project_spec
+      - team_info
+      - environment_config
+    output_types:
+      - onboarded_project
+      - setup_report
+
+  - id: context-gathering
+    name: Context Gathering
+    description: Gather and synthesize project/domain context
+    category: lifecycle
+    agent_capability: Lifecycle
+    specialization: context
+    input_types:
+      - project_id
+      - domain_hints
+    output_types:
+      - context_package
+      - knowledge_graph
+
+  - id: institutionalize
+    name: Institutionalize
+    description: Capture learnings and institutionalize best practices
+    category: lifecycle
+    agent_capability: Lifecycle
+    specialization: institutionalize
+    input_types:
+      - execution_results
+      - learnings
+    output_types:
+      - knowledge_update
+      - policy_update
+
+  # ---------------------------------------------------------------------------
+  # Debug Capabilities (Phase Debug)
+  # ---------------------------------------------------------------------------
+  - id: stack-trace-analysis
+    name: Stack Trace Analysis
+    description: Parse and analyze stack traces to identify failure points
+    category: debugging
+    agent_capability: Debugging
+    specialization: stack-trace
+    input_types:
+      - stack_trace
+      - exception_report
+    output_types:
+      - parsed_stack_trace
+      - failure_location
+
+  - id: heap-dump-analysis
+    name: Heap Dump Analysis
+    description: Analyze JVM heap dumps for memory leaks and GC pressure
+    category: debugging
+    agent_capability: Debugging
+    specialization: heap
+    input_types:
+      - heap_dump_path
+      - heap_summary
+    output_types:
+      - heap_analysis_report
+      - memory_leak_report
+
+  - id: thread-dump-analysis
+    name: Thread Dump Analysis
+    description: Analyze JVM thread dumps for deadlocks and concurrency issues
+    category: debugging
+    agent_capability: Debugging
+    specialization: threads
+    input_types:
+      - thread_dump
+    output_types:
+      - thread_analysis_report
+      - deadlock_report
+
+  - id: network-trace-analysis
+    name: Network Trace Analysis
+    description: Analyze network traces and distributed tracing spans
+    category: debugging
+    agent_capability: Debugging
+    specialization: network
+    input_types:
+      - trace_id
+      - span_query
+    output_types:
+      - network_analysis_report
+      - latency_breakdown
+
+  - id: diff-analysis
+    name: Diff Analysis
+    description: Analyze code diffs to identify changes that introduced a bug
+    category: debugging
+    agent_capability: Debugging
+    specialization: diff
+    input_types:
+      - commit_range
+      - error_timeframe
+    output_types:
+      - diff_analysis_report
+      - suspect_commit_list
+
+  - id: reproduction
+    name: Bug Reproduction
+    description: Construct minimal reproduction cases for reported bugs
+    category: debugging
+    agent_capability: Debugging
+    specialization: reproduction
+    input_types:
+      - bug_report
+      - error_context
+    output_types:
+      - reproduction_case
+      - minimal_test
+
+  - id: fix-generation
+    name: Fix Generation
+    description: Generate minimal code fixes for identified root causes
+    category: debugging
+    agent_capability: Debugging
+    specialization: fix
+    input_types:
+      - root_cause_report
+    output_types:
+      - code_patch
+      - fix_proposal
+
+  - id: regression-test-generation
+    name: Regression Test Generation
+    description: Generate regression tests that verify a bug fix
+    category: debugging
+    agent_capability: Debugging
+    specialization: regression-test
+    input_types:
+      - fix_patch
+      - root_cause_report
+    output_types:
+      - regression_test
+      - test_suite_update
+
+  - id: debug-orchestration
+    name: Debug Orchestration
+    description: Orchestrate end-to-end debugging from triage to fix verification
+    category: orchestration
+    agent_capability: Orchestration
+    specialization: debugging
+    input_types:
+      - test_failure
+      - build_error
+      - incident_debug_request
+    output_types:
+      - debug_report
+      - fix_patch
+      - regression_test
+
+  # ---------------------------------------------------------------------------
+  # Orchestration Capabilities (Phase 13 — DevSecOps)
+  # ---------------------------------------------------------------------------
+  - id: security-posture-orchestration
+    name: Security Posture Orchestration
+    description: Orchestrate end-to-end security posture assessment
+    category: orchestration
+    agent_capability: Orchestration
+    specialization: security-posture
+    input_types:
+      - scope_definition
+      - security_policy
+    output_types:
+      - posture_report
+      - action_items
+
+  - id: compliance-audit-orchestration
+    name: Compliance Audit Orchestration
+    description: Orchestrate multi-framework compliance audits
+    category: orchestration
+    agent_capability: Orchestration
+    specialization: compliance-audit
+    input_types:
+      - audit_scope
+      - compliance_frameworks
+    output_types:
+      - audit_report
+      - findings
+
+  - id: full-lifecycle-orchestration
+    name: Full Lifecycle Orchestration
+    description: Orchestrate the complete agent lifecycle from intent to institutionalize
+    category: orchestration
+    agent_capability: Orchestration
+    specialization: full-lifecycle
+    input_types:
+      - intent
+      - project_context
+    output_types:
+      - lifecycle_result
+      - learnings
+
+  - id: continuous-improvement
+    name: Continuous Improvement
+    description: Orchestrate improvement cycles including code quality, performance, and tech debt reduction
+    category: orchestration
+    agent_capability: Orchestration
+    specialization: improvement
+    input_types:
+      - improvement_request
+      - quality_report
+    output_types:
+      - improvement_plan
+      - improvement_result
+
+  - id: deployment-orchestration
+    name: Deployment Orchestration
+    description: Orchestrate end-to-end deployment pipelines including artifact building, SBOM, rollout, and rollback
+    category: deployment
+    agent_capability: Orchestration
+    specialization: deployment
+    input_types:
+      - release_artifact
+      - deployment_config
+    output_types:
+      - deployment_result
+      - rollout_status
+
+  - id: supply-chain-security
+    name: Supply Chain Security
+    description: Verify supply chain provenance, sign SBOMs and artifacts, validate SLSA attestations
+    category: cloud-security
+    agent_capability: SecurityAnalysis
+    specialization: supply-chain
+    input_types:
+      - release_artifact
+      - sbom
+    output_types:
+      - verification_report
+      - signed_artifact
+
+  - id: cost-governance
+    name: Cost Governance
+    description: Pre-flight cost estimation and budget gating for LLM-heavy orchestration runs
+    category: orchestration
+    agent_capability: CostOptimization
+    specialization: budget-gate
+    input_types:
+      - orchestration_request
+    output_types:
+      - budget_decision
+      - cost_estimate
+
+  - id: dependency-governance
+    name: Dependency Governance
+    description: Block builds with known-vulnerable or license-incompatible dependencies
+    category: cloud-security
+    agent_capability: SecurityAnalysis
+    specialization: dependency-gate
+    input_types:
+      - dependency_lockfile
+      - build_artifact
+    output_types:
+      - dependency_gate_decision
+      - vulnerability_report
+
+  - id: release-governance
+    name: Release Governance
+    description: Gate release artifacts against security, compliance, and quality requirements simultaneously
+    category: compliance
+    agent_capability: SecurityAnalysis
+    specialization: release-gate
+    input_types:
+      - release_artifact
+      - release_manifest
+    output_types:
+      - release_gate_decision
+      - readiness_report
+
+  - id: notification
+    name: Notification
+    description: Route agent outputs and alerts to notification channels (Slack, email, webhook)
+    category: orchestration
+    agent_capability: Integration
+    specialization: notification
+    input_types:
+      - notification_request
+      - alert_event
+    output_types:
+      - notification_result
+
+  - id: feature-flag-management
+    name: Feature Flag Management
+    description: Bridge feature flag agents to runtime flag management systems
+    category: deployment
+    agent_capability: Integration
+    specialization: feature-flags
+    input_types:
+      - feature_flag_request
+      - rollout_config
+    output_types:
+      - flag_sync_result
+
+# ============================================================================
+# Capability Categories
+# ============================================================================
+
+categories:
+  - id: generation
+    name: Generation
+    description: Capabilities for generating code and content
+    icon: auto_fix_high
+    color: "#10B981"
+
+  - id: testing
+    name: Testing
+    description: Capabilities for testing and quality assurance
+    icon: bug_report
+    color: "#F59E0B"
+
+  - id: analysis
+    name: Analysis
+    description: Capabilities for code and system analysis
+    icon: analytics
+    color: "#3B82F6"
+
+  - id: documentation
+    name: Documentation
+    description: Capabilities for documentation generation
+    icon: description
+    color: "#8B5CF6"
+
+  - id: debugging
+    name: Debugging
+    description: Capabilities for debugging and troubleshooting
+    icon: pest_control
+    color: "#EF4444"
+
+  - id: deployment
+    name: Deployment
+    description: Capabilities for deployment and operations
+    icon: cloud_upload
+    color: "#06B6D4"
+
+  - id: data
+    name: Data & Database
+    description: Capabilities for data management
+    icon: storage
+    color: "#EC4899"
+
+  - id: research
+    name: Research
+    description: Capabilities for research and exploration
+    icon: search
+    color: "#6366F1"
+
+  - id: ai
+    name: AI/ML
+    description: AI and machine learning capabilities
+    icon: psychology
+    color: "#14B8A6"
+
+  - id: cloud-security
+    name: Cloud Security
+    description: Capabilities for cloud security assessment and risk management
+    icon: shield
+    color: "#DC2626"
+
+  - id: compliance
+    name: Compliance
+    description: Capabilities for regulatory compliance evaluation
+    icon: verified
+    color: "#7C3AED"
+
+  - id: lifecycle
+    name: Project Lifecycle
+    description: Capabilities for project lifecycle management
+    icon: cycle
+    color: "#0EA5E9"
+
+  - id: orchestration
+    name: Orchestration
+    description: Capabilities for multi-agent orchestration and coordination
+    icon: hub
+    color: "#F97316"

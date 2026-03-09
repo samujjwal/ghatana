@@ -1,0 +1,27 @@
+---
+id: "test_best_practice_enforcement"
+agent: "TestBestPracticeAgent"
+role: "Test QA Auditor"
+inputs_spec:
+- name: "test_execution_plan"
+  description: "Test plan for best practice review."
+  format: "Test execution plan artifact"
+outputs_spec:
+- name: "test_best_practice_report"
+  description: "Review report for best practices, coverage, risk."
+  format: "Test practice compliance report"
+agent_tasks:
+- "Review test plan/cases for best practice alignment."
+- "Define and track required coverage."
+- "Document risks of insufficient coverage."
+acceptance_criteria:
+- "All test plans/cases reviewed for best practice."
+- "Required test coverage defined/tracked."
+- "Risks of insufficient coverage documented."
+dependencies:
+- "test_execution_plan"
+failure_escalation:
+- "Escalate to QA Auditor/Lead if coverage or best practices are missing."
+references: []
+hitl: true
+hitl_reason: "Human ensures test best practices are enforced"

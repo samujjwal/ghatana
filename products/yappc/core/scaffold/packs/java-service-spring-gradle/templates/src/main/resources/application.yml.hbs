@@ -1,0 +1,52 @@
+# {{projectName}} - Application Configuration
+spring:
+application:
+name: {{projectName}}
+
+profiles:
+active: ${SPRING_PROFILES_ACTIVE:dev}
+
+datasource:
+url: ${DATABASE_URL:{{databaseUrl}}}
+username: ${DATABASE_USERNAME:postgres}
+password: ${DATABASE_PASSWORD:postgres}
+driver-class-name: org.postgresql.Driver
+hikari:
+maximum-pool-size: 10
+minimum-idle: 5
+connection-timeout: 30000
+idle-timeout: 600000
+max-lifetime: 1800000
+
+jpa:
+open-in-view: false
+hibernate:
+ddl-auto: validate
+properties:
+hibernate:
+format_sql: false
+generate_statistics: false
+
+server:
+port: ${PORT:{{port}}}
+shutdown: graceful
+
+management:
+endpoints:
+web:
+exposure:
+include: health,info,prometheus,metrics
+endpoint:
+health:
+show-details: when_authorized
+probes:
+enabled: true
+prometheus:
+metrics:
+export:
+enabled: true
+
+logging:
+level:
+root: INFO
+{{packageName}}: INFO

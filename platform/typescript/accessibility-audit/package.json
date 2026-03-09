@@ -1,0 +1,50 @@
+{
+  "name": "@ghatana/accessibility-audit",
+  "version": "0.1.0",
+  "type": "module",
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "browser": "./dist/browser-index.js",
+  "exports": {
+    ".": {
+      "browser": {
+        "types": "./dist/browser-index.d.ts",
+        "import": "./dist/browser-index.js",
+        "default": "./dist/browser-index.js"
+      },
+      "import": {
+        "types": "./dist/index.d.ts",
+        "default": "./dist/index.js"
+      },
+      "default": "./dist/index.js"
+    },
+    "./*": "./dist/*"
+  },
+  "files": [
+    "dist"
+  ],
+  "scripts": {
+    "build": "tsc && node scripts/fix-imports.mjs",
+    "dev": "tsc --watch",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "cli": "pnpm dlx tsx ./examples/cli.ts",
+    "lint": "eslint src --ext .ts,.tsx --ignore-pattern 'archive/**' --ignore-pattern 'examples/**' --ignore-pattern 'src/AccessibilityAuditor.old.ts' --ignore-pattern 'src/AccessibilityReportViewer.old.tsx'",
+    "typecheck": "tsc --noEmit"
+  },
+  "dependencies": {
+    "@axe-core/react": "^4.11.1",
+    "axe-core": "^4.11.1"
+  },
+  "devDependencies": {
+    "@types/react": "^19.2.10",
+    "@types/react-dom": "^19.2.3",
+    "typescript": "^5.9.3",
+    "vite": "^7.3.1",
+    "vitest": "^4.0.18"
+  },
+  "peerDependencies": {
+    "react": ">=16.8.0",
+    "react-dom": ">=16.8.0"
+  }
+}

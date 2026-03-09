@@ -1,0 +1,152 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Accessibility Audit Demo</title>
+  <style>
+    body {
+      font-family: system-ui, -apple-system, sans-serif;
+      max-width: 1200px;
+      margin: 0 auto;
+      padding: 2rem;
+      line-height: 1.6;
+    }
+    h1 {
+      color: #2563eb;
+      border-bottom: 3px solid #2563eb;
+      padding-bottom: 0.5rem;
+    }
+    .demo-section {
+      background: #f8fafc;
+      border: 1px solid #e2e8f0;
+      border-radius: 8px;
+      padding: 1.5rem;
+      margin: 1.5rem 0;
+    }
+    .issue {
+      background: #fef2f2;
+      border-left: 4px solid #ef4444;
+      padding: 1rem;
+      margin: 1rem 0;
+    }
+    button {
+      background: #2563eb;
+      color: white;
+      border: none;
+      padding: 0.75rem 1.5rem;
+      border-radius: 6px;
+      font-size: 1rem;
+      cursor: pointer;
+      margin: 0.5rem;
+    }
+    button:hover {
+      background: #1d4ed8;
+    }
+    .btn-bad {
+      background: #999;
+      color: #ccc;
+    }
+    #results {
+      background: white;
+      border: 1px solid #e2e8f0;
+      border-radius: 8px;
+      padding: 1.5rem;
+      margin-top: 2rem;
+      white-space: pre-wrap;
+      font-family: 'Courier New', monospace;
+      font-size: 0.875rem;
+      max-height: 600px;
+      overflow-y: auto;
+    }
+  </style>
+</head>
+<body>
+  <h1>🔍 Accessibility Audit Demo</h1>
+
+  <div class="demo-section">
+    <h2>What This Demo Does</h2>
+    <p>
+      This page intentionally contains accessibility issues to demonstrate 
+      the auditing library. Click "Run Audit" to analyze the page.
+    </p>
+  </div>
+
+  <div class="demo-section">
+    <h2>Intentional Accessibility Issues</h2>
+    
+    <div class="issue">
+      <strong>Issue 1: Low Contrast Button</strong>
+      <button class="btn-bad">Bad Contrast</button>
+    </div>
+
+    <div class="issue">
+      <strong>Issue 2: Button Without Text</strong>
+      <button></button>
+    </div>
+
+    <div class="issue">
+      <strong>Issue 3: Image Without Alt Text</strong>
+      <img src="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='100' height='100'%3E%3Crect fill='%23ddd' width='100' height='100'/%3E%3C/svg%3E" width="100" height="100">
+    </div>
+
+    <div class="issue">
+      <strong>Issue 4: Form Input Without Label</strong>
+      <input type="text" placeholder="Enter your name">
+    </div>
+
+    <div class="issue">
+      <strong>Issue 5: Invalid ARIA</strong>
+      <div role="button">Click Me</div>
+    </div>
+  </div>
+
+  <div class="demo-section">
+    <h2>Run Audit</h2>
+    <button id="runAudit" onclick="runAudit()">▶️ Run Accessibility Audit</button>
+    <button onclick="clearResults()">🗑️ Clear Results</button>
+  </div>
+
+  <div id="results"></div>
+
+  <script type="module">
+    import { AccessibilityAuditor } from '../dist/index.js';
+
+    window.runAudit = async function() {
+      const resultsDiv = document.getElementById('results');
+      resultsDiv.textContent = 'Running audit...\n';
+
+      try {
+        const auditor = new AccessibilityAuditor({
+          mode: 'comprehensive',
+          wcagLevel: 'AA',
+        });
+
+        const report = await auditor.audit();
+
+        // Generate formatted console report
+        const consoleReport = auditor.generateReport(report);
+        resultsDiv.textContent = consoleReport;
+
+        // Also log detailed report
+        console.log('Detailed Report:', report);
+        console.log('Export as JSON:', auditor.exportReport(report, 'json'));
+        console.log('Export as HTML:', auditor.exportReport(report, 'html'));
+        
+      } catch (error) {
+        resultsDiv.textContent = `Error running audit:\n${error.message}\n\n${error.stack}`;
+        console.error('Audit error:', error);
+      }
+    };
+
+    window.clearResults = function() {
+      document.getElementById('results').textContent = '';
+    };
+
+    // Auto-run on page load
+    console.log('%c📋 Accessibility Audit Library Demo', 'font-size: 1.5em; color: #2563eb; font-weight: bold;');
+    console.log('Click "Run Audit" button or call runAudit() to analyze this page.');
+    console.log('This page intentionally contains accessibility issues for testing.');
+  </script>
+</body>
+</html>

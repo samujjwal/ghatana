@@ -1,0 +1,27 @@
+// Common Checkstyle configuration for all projects
+apply plugin: 'checkstyle'
+
+checkstyle {
+    toolVersion = '10.12.3'
+    configFile = rootProject.file('config/checkstyle/checkstyle.xml')
+    configProperties = [
+        'checkstyle.header.file': rootProject.file('config/checkstyle/header.java')
+    ]
+    ignoreFailures = false
+    showViolations = true
+}
+
+tasks.withType(Checkstyle) {
+    reports {
+        xml.required = true
+        html.required = true
+        html.stylesheet = rootProject.resources.text.fromFile('config/checkstyle/checkstyle-noframes-severity-sorted.xsl')
+    }
+}
+
+// Only apply Checkstyle to source sets that have Java code
+afterEvaluate {
+    if (project.plugins.hasPlugin('java')) {
+        check.dependsOn 'checkstyleMain', 'checkstyleTest'
+    }
+}

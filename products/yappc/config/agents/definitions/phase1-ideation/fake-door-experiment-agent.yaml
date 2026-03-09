@@ -1,0 +1,104 @@
+id: fake-door-experiment-agent
+name: Fake Door Experiment Agent
+version: 1.0.0
+description: Designs and executes fake door experiments to validate demand before building. Measures interest through click-through, signups, and waitlists.
+
+metadata:
+  level: 3  # Worker
+  domain: ideation
+  tags:
+    - demand-validation
+    - fake-door-testing
+    - mvt
+    - experiment-design
+
+generator:
+  type: PIPELINE
+  steps:
+    - name: experiment_design
+      type: LLM
+      provider: ANTHROPIC
+      model: claude-3-5-sonnet-20241022
+      temperature: 0.3
+      max_tokens: 2000
+      prompt: |
+        You are the Fake Door Experiment Agent. Design a fake door experiment:
+        
+        Feature/Product: {{feature}}
+        Target Audience: {{audience}}
+        Traffic Source: {{traffic}}
+        
+        Design:
+        1. Door placement (where users will see it)
+        2. Door copy (headline, description, CTA)
+        3. Conversion action (click, signup, waitlist)
+        4. Follow-up experience
+        5. Sample size needed for significance
+        6. Success criteria (conversion threshold)
+        7. Duration
+        
+        Output as JSON: {placement, copy, cta, follow_up, sample_size, success_threshold, duration, tracking_plan}
+    - name: experiment_execution
+      type: SERVICE_CALL
+      service: experiment-service
+      endpoint: /experiments/fake-door
+    - name: results_analysis
+      type: RULE_BASED
+      description: Analyze conversion rates and significance
+
+memory:
+  episodic:
+    enabled: true
+    retention_days: 365
+    categories:
+      - experiments
+      - results
+      - learnings
+  semantic:
+    enabled: true
+    categories:
+      - experiment-patterns
+      - copy-templates
+      - conversion-benchmarks
+  procedural:
+    enabled: true
+    categories:
+      - experiment-protocols
+      - analysis-methods
+      - significance-rules
+
+tools:
+  - experiment_designer
+  - ab_test_analyzer
+  - significance_calculator
+
+capabilities:
+  - experiment-design
+  - demand-validation
+  - conversion-analysis
+  - significance-testing
+
+routing:
+  input_types:
+    - validation-request
+    - feature-idea
+    - demand-test-request
+  output_types:
+    - experiment-plan
+    - validation-results
+    - demand-report
+
+delegation:
+  can_delegate_to: []
+  escalates_to:
+    - problem-validation-agent
+
+governance:
+  requires_approval: true  # User-facing experiments need approval
+  can_block: false
+  audit_trail: comprehensive
+
+performance:
+  expected_latency_ms: 3000
+  max_latency_ms: 8000
+  timeout_ms: 15000

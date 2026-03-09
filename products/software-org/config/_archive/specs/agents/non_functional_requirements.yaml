@@ -1,0 +1,40 @@
+id: non_functional_requirements
+agent: NonFunctionalRequirementsAgent
+role: Solution Architect
+inputs_spec:
+- name: final_functional_requirements
+  description: Final list of consolidated functional requirements.
+  format: List of requirement objects
+outputs_spec:
+- name: non_functional_requirements
+  description: List of non-functional requirements (NFRs) covering key quality attributes.
+  format: List of NFR objects (category, description, measurable)
+  example: "- category: \"Performance\"\n  description: \"System handles 1000 concurrent users\"\n  measurable: true\n"
+acceptance_criteria:
+- All relevant non-functional requirements (NFRs) are identified.
+- NFRs cover performance, security, scalability, reliability, etc.
+- NFRs are clear and measurable where possible.
+agent_tasks:
+- Identify and document all relevant NFRs.
+- Ensure NFRs are clear and measurable where possible.
+dependencies:
+- final_functional_requirements
+failure_escalation:
+- Escalate to solution architect if NFRs are missing or unclear.
+references: []
+internal_logic:
+  - perception:
+      description: "Identify implicit/explicit NFRs from functional requirements."
+  - model:
+      description: "NFRs: {id, description, category, stakeholder, metric, risk}"
+  - planning:
+      description: |
+        "For each function, extract supporting NFRs (performance, reliability, etc.)."
+  - action:
+      description: "Produce NFRs YAML."
+validation:
+  - "SME review for completeness and relevance."
+  - "Checklist for common NFR categories."
+quality_enhancements:
+  - "Standard category templates (performance, security, etc.)."
+  - "Audit and risk log."

@@ -1,0 +1,174 @@
+import { config } from "@/constants/config";
+
+/**
+* HTTP client configuration
+*/
+interface RequestConfig extends RequestInit {
+params?: Record<string, string>;
+    timeout?: number;
+    }
+
+    /**
+    * API response wrapper
+    */
+    interface ApiResponse<T> {
+        data: T;
+        status: number;
+        headers: Headers;
+        }
+
+        /**
+        * API error
+        */
+        export class ApiError extends Error {
+        constructor(
+        message: string,
+        public status: number,
+        public data?: unknown
+        ) {
+        super(message);
+        this.name = "ApiError";
+        }
+        }
+
+        /**
+        * Base HTTP client for API calls
+        */
+        class ApiClient {
+        private baseUrl: string;
+        private defaultHeaders: HeadersInit;
+
+        constructor(baseUrl: string) {
+        this.baseUrl = baseUrl;
+        this.defaultHeaders = {
+        "Content-Type": "application/json",
+        Accept: "application/json",
+        };
+        }
+
+        private buildUrl(path: string, params?: Record<string, string>): string {
+            const url = new URL(path, this.baseUrl);
+            if (params) {
+            Object.entries(params).forEach(([key, value]) => {
+            url.searchParams.append(key, value);
+            });
+            }
+            return url.toString();
+            }
+
+            async request<T>(
+                path: string,
+                options: RequestConfig = {}
+                ): Promise<ApiResponse<T>> {
+                    const { params, timeout = 30000, ...fetchOptions } = options;
+
+                    const url = this.buildUrl(path, params);
+                    const controller = new AbortController();
+                    const timeoutId = setTimeout(() => controller.abort(), timeout);
+
+                    try {
+                    const response = await fetch(url, {
+                    ...fetchOptions,
+                    headers: {
+                    ...this.defaultHeaders,
+                    ...fetchOptions.headers,
+                    },
+                    signal: controller.signal,
+                    });
+
+                    clearTimeout(timeoutId);
+
+                    if (!response.ok) {
+                    const errorData = await response.json().catch(() => null);
+                    throw new ApiError(
+                    response.statusText || "Request failed",
+                    response.status,
+                    errorData
+                    );
+                    }
+
+                    const data = (await response.json()) as T;
+
+                    return {
+                    data,
+                    status: response.status,
+                    headers: response.headers,
+                    };
+                    } catch (error) {
+                    clearTimeout(timeoutId);
+
+                    if (error instanceof ApiError) {
+                    throw error;
+                    }
+
+                    if (error instanceof Error && error.name === "AbortError") {
+                    throw new ApiError("Request timeout", 408);
+                    }
+
+                    throw new ApiError(
+                    error instanceof Error ? error.message : "Network error",
+                    0
+                    );
+                    }
+                    }
+
+                    async get<T>(path: string, options?: RequestConfig): Promise<T> {
+                            const response = await this.request<T>(path, {
+                                ...options,
+                                method: "GET",
+                                });
+                                return response.data;
+                                }
+
+                                async post<T>(
+                                    path: string,
+                                    body?: unknown,
+                                    options?: RequestConfig
+                                    ): Promise<T> {
+                                        const response = await this.request<T>(path, {
+                                            ...options,
+                                            method: "POST",
+                                            body: body ? JSON.stringify(body) : undefined,
+                                            });
+                                            return response.data;
+                                            }
+
+                                            async put<T>(
+                                                path: string,
+                                                body?: unknown,
+                                                options?: RequestConfig
+                                                ): Promise<T> {
+                                                    const response = await this.request<T>(path, {
+                                                        ...options,
+                                                        method: "PUT",
+                                                        body: body ? JSON.stringify(body) : undefined,
+                                                        });
+                                                        return response.data;
+                                                        }
+
+                                                        async delete<T>(path: string, options?: RequestConfig): Promise
+                                                            <T> {
+                                                                const response = await this.request<T>(path, {
+                                                                    ...options,
+                                                                    method: "DELETE",
+                                                                    });
+                                                                    return response.data;
+                                                                    }
+
+                                                                    setAuthToken(token: string) {
+                                                                    this.defaultHeaders = {
+                                                                    ...this.defaultHeaders,
+                                                                    Authorization: `Bearer ${token}`,
+                                                                    };
+                                                                    }
+
+                                                                    clearAuthToken() {
+                                                                    const { Authorization: _, ...rest } =
+                                                                    this.defaultHeaders as Record< string, string>;
+                                                                        this.defaultHeaders = rest;
+                                                                        }
+                                                                        }
+
+                                                                        // Export singleton instance
+                                                                        export const api = new
+                                                                        ApiClient(config.apiBaseUrl);

@@ -1,0 +1,38 @@
+id: event-stream-storage-agent
+name: Event Stream Storage Agent
+version: 1.0.0
+description: Manages append-only event streams with replay, subscription, and retention policies
+
+metadata:
+  level: 3
+  domain: data-management
+  tags: [event, stream, storage, replay, subscription, append-only]
+
+generator:
+  type: DETERMINISTIC
+
+capabilities:
+  - entity-event-storage
+  - data-archival
+
+tools:
+  - name: eventStore
+    type: SERVICE
+    endpoint: /datacloud/events
+  - name: streamSubscriber
+    type: SERVICE
+    endpoint: /datacloud/subscriptions
+
+memory:
+  type: WORKING
+  scope: stream
+  retention: medium
+
+routing:
+  input: EventStreamRequest
+  output: EventStreamResult
+
+resources:
+  memory: "1GB"
+  cpu: "2"
+  timeout: "0"  # Long-running for streaming

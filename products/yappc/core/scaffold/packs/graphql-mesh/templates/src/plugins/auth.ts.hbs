@@ -1,0 +1,109 @@
+{{#if enableAuth}}
+import { useJWT } from "@graphql-yoga/plugin-jwt";
+import type { Plugin } from "graphql-yoga";
+import type { MeshConfig, JwtPayload, AuthContext } from "../types.js";
+import { logger } from "./logging.js";
+
+/**
+* Create JWT authentication plugin
+*/
+export function createAuthPlugin(config: MeshConfig): Plugin {
+const secret = config.jwtSecret ?? process.env.JWT_SECRET;
+
+if (!secret) {
+throw new Error("JWT secret is required when auth is enabled");
+}
+
+return useJWT({
+// Signing key
+signingKey: secret,
+
+// Extract token from Authorization header
+getToken: ({ request }) => {
+const authHeader = request.headers.get("authorization");
+if (!authHeader?.startsWith("Bearer ")) {
+return null;
+}
+return authHeader.slice(7);
+},
+
+// Handle rejected tokens
+reject: {
+missingToken: false, // Allow anonymous access to some queries
+invalidToken: true,
+},
+
+// Transform JWT payload to context
+extendContext: true,
+});
+}
+
+/**
+* Get auth context from request
+*/
+export function getAuthContext(
+token: JwtPayload | undefined
+): AuthContext | undefined {
+if (!token) return undefined;
+
+return {
+userId: token.sub,
+roles: token.roles ?? [],
+permissions: token.permissions ?? [],
+};
+}
+
+/**
+* Check if user has required role
+*/
+export function hasRole(context: AuthContext | undefined, role: string): boolean {
+return context?.roles.includes(role) ?? false;
+}
+
+/**
+* Check if user has required permission
+*/
+export function hasPermission(
+context: AuthContext | undefined,
+permission: string
+): boolean {
+return context?.permissions.includes(permission) ?? false;
+}
+
+/**
+* Require authentication in resolver
+*/
+export function requireAuth<T>(
+    resolver: (parent: unknown, args: unknown, context: { auth: AuthContext }) => T
+    ) {
+    return (
+    parent: unknown,
+    args: unknown,
+    context: { auth?: AuthContext }
+    ): T => {
+    if (!context.auth) {
+    throw new Error("Authentication required");
+    }
+    return resolver(parent, args, context as { auth: AuthContext });
+    };
+    }
+
+    /**
+    * Require specific role in resolver
+    */
+    export function requireRole<T>(
+        role: string,
+        resolver: (parent: unknown, args: unknown, context: { auth: AuthContext }) => T
+        ) {
+        return requireAuth((parent, args, context) => {
+        if (!hasRole(context.auth, role)) {
+        logger.warn({ role, userId: context.auth.userId }, "Access denied: missing role");
+        throw new Error(`Role '${role}' required`);
+        }
+        return resolver(parent, args, context);
+        });
+        }
+        {{else}}
+        // Authentication is disabled. Enable it in pack.json to use auth plugin.
+        export {};
+        {{/if}}

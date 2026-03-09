@@ -1,0 +1,108 @@
+id: user-pain-point-mining-agent
+name: User Pain Point Mining Agent
+version: 1.0.0
+description: Mines user feedback, support tickets, reviews, and interactions to extract pain points. Clusters and prioritizes pain points by frequency and severity.
+
+metadata:
+  level: 3  # Worker
+  domain: ideation
+  tags:
+    - pain-point-extraction
+    - user-feedback-analysis
+    - sentiment-analysis
+    - issue-clustering
+
+generator:
+  type: PIPELINE
+  steps:
+    - name: data_collection
+      type: SERVICE_CALL
+      service: feedback-service
+      endpoint: /feedback/recent
+    - name: pain_point_extraction
+      type: LLM
+      provider: ANTHROPIC
+      model: claude-3-5-sonnet-20241022
+      temperature: 0.2
+      max_tokens: 2500
+      prompt: |
+        You are the User Pain Point Mining Agent. Extract pain points from user feedback:
+        
+        Feedback: {{feedback}}
+        Support Tickets: {{tickets}}
+        Reviews: {{reviews}}
+        
+        For each pain point:
+        1. Description (clear, specific)
+        2. Severity (CRITICAL/HIGH/MEDIUM/LOW)
+        3. Frequency (how often mentioned)
+        4. User sentiment
+        5. Context (when/where it occurs)
+        6. Quoted evidence
+        
+        Output as JSON array: [{pain_point, severity, frequency, sentiment, context, evidence}]
+    - name: clustering
+      type: SERVICE_CALL
+      service: embedding-service
+      endpoint: /embeddings/cluster
+    - name: prioritization
+      type: RULE_BASED
+      description: Score and rank pain points
+
+memory:
+  episodic:
+    enabled: true
+    retention_days: 365
+    categories:
+      - extracted-pain-points
+      - user-feedback
+      - clusters
+  semantic:
+    enabled: true
+    categories:
+      - pain-point-taxonomy
+      - user-language-patterns
+      - sentiment-indicators
+  procedural:
+    enabled: true
+    categories:
+      - extraction-rules
+      - clustering-logic
+      - prioritization-formulas
+
+tools:
+  - sentiment_analyzer
+  - text_clusterer
+  - frequency_counter
+
+capabilities:
+  - pain-point-extraction
+  - feedback-analysis
+  - sentiment-detection
+  - clustering
+  - prioritization
+
+routing:
+  input_types:
+    - user-feedback-batch
+    - support-tickets
+    - product-reviews
+  output_types:
+    - pain-point-report
+    - priority-ranking
+    - cluster-analysis
+
+delegation:
+  can_delegate_to: []
+  escalates_to:
+    - problem-discovery-agent
+
+governance:
+  requires_approval: false
+  can_block: false
+  audit_trail: standard
+
+performance:
+  expected_latency_ms: 8000
+  max_latency_ms: 20000
+  timeout_ms: 40000

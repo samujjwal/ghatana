@@ -1,0 +1,18 @@
+rootProject.name = "flashit"
+
+// Include the agent module for building from flashit directory
+include(":agent")
+project(":agent").projectDir = file("backend/agent")
+
+pluginManagement {
+    repositories {
+        mavenCentral()
+        gradlePluginPortal()
+    }
+}
+
+dependencyResolutionManagement {
+    repositories {
+        mavenCentral()
+    }
+}

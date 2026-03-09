@@ -1,0 +1,256 @@
+# Stakeholder Operator - Consolidated Planning Domain
+# Consolidates: stakeholder_list, stakeholder_engagement, stakeholder_mapping_combiner, stakeholder_review_simulation
+# Purpose: Complete stakeholder management from identification through engagement
+
+id: stakeholder_operator
+version: "1.0.0"
+domain: planning
+category: stakeholder_management
+
+description: |
+  Unified stakeholder operator handling complete stakeholder lifecycle:
+  - Stakeholder identification and listing
+  - Role and interest mapping
+  - Engagement planning and strategy
+  - Communication management
+  - Review simulation and validation
+
+# Operator Modes
+modes:
+  identify:
+    description: "Identify and catalog all relevant stakeholders"
+    role: Business Analyst
+    inputs:
+      - name: business_goals
+        description: Business goals and success criteria
+        required: true
+      - name: project_context
+        description: Project scope and domain context
+        required: false
+    outputs:
+      - name: stakeholder_list
+        description: Comprehensive stakeholder inventory
+        format: yaml_list
+        schema:
+          - id: string
+          - name: string
+          - role: string
+          - organization: string
+          - interests: list
+          - influence_level: "high|medium|low"
+          - engagement_level: "high|medium|low"
+          - mapped_goals: list
+    tasks:
+      - Review business goals to identify stakeholder categories
+      - Consult organizational directory and project records
+      - Document each stakeholder with role and interests
+      - Map stakeholders to relevant goals/criteria
+      - Flag missing or ambiguous stakeholder roles
+    auto_suggestions:
+      - "Security Officer for compliance-related goals"
+      - "Legal Counsel for regulatory requirements"
+      - "Data Protection Officer for privacy concerns"
+      - "Operations Lead for reliability requirements"
+
+  map:
+    description: "Map stakeholders to requirements and responsibilities"
+    role: Project Manager
+    inputs:
+      - name: stakeholder_list
+        description: Identified stakeholders
+        required: true
+      - name: requirements
+        description: Project requirements
+        required: true
+    outputs:
+      - name: stakeholder_mapping
+        description: RACI-style stakeholder mapping
+        format: yaml_matrix
+        schema:
+          - stakeholder_id: string
+          - requirement_id: string
+          - responsibility: "responsible|accountable|consulted|informed"
+          - decision_authority: boolean
+          - review_required: boolean
+    tasks:
+      - Create RACI matrix for requirements
+      - Identify decision authorities
+      - Map review responsibilities
+      - Flag conflicts and gaps in coverage
+    raci_definitions:
+      responsible: "Does the work to complete the task"
+      accountable: "Ultimately answerable for completion"
+      consulted: "Provides input before decision"
+      informed: "Kept updated on progress/decisions"
+
+  engage:
+    description: "Develop stakeholder engagement strategies"
+    role: Project Manager
+    inputs:
+      - name: stakeholder_list
+        description: Identified stakeholders with mapping
+        required: true
+      - name: project_timeline
+        description: Project milestones and timeline
+        required: false
+    outputs:
+      - name: engagement_plan
+        description: Stakeholder engagement strategy
+        format: yaml_list
+        schema:
+          - stakeholder_id: string
+          - strategy: string
+          - communication_channel: list
+          - frequency: "daily|weekly|bi-weekly|monthly|milestone"
+          - key_messages: list
+          - risks: list
+          - mitigation: list
+    tasks:
+      - Define engagement strategy per stakeholder type
+      - Specify communication channels and frequency
+      - Identify engagement risks
+      - Plan mitigation actions
+      - Schedule key touchpoints
+    channel_options:
+      - email: "Formal communication, documentation"
+      - slack: "Quick updates, informal discussion"
+      - meetings: "Decision-making, workshops"
+      - reports: "Status updates, metrics"
+      - demos: "Feature validation, feedback"
+
+  simulate_review:
+    description: "Simulate stakeholder review process"
+    role: QA Analyst
+    inputs:
+      - name: deliverable
+        description: Artifact to be reviewed
+        required: true
+      - name: stakeholder_mapping
+        description: Stakeholders responsible for review
+        required: true
+    outputs:
+      - name: review_simulation_report
+        description: Predicted review outcomes and concerns
+        format: yaml_report
+        schema:
+          - stakeholder_id: string
+          - predicted_concerns: list
+          - likely_questions: list
+          - risk_areas: list
+          - recommended_preparation: list
+    tasks:
+      - Analyze deliverable from each stakeholder perspective
+      - Predict likely concerns and questions
+      - Identify potential blockers
+      - Recommend preparation actions
+      - Generate pre-review checklist
+
+# Internal Logic
+internal_logic:
+  perception:
+    description: "Extract organizational context and stakeholder relationships"
+    sources:
+      - organizational_directory
+      - project_records
+      - business_goals
+  model:
+    description: "Stakeholder relationship graph"
+    entities:
+      - stakeholder: "{id, name, role, influence, engagement}"
+      - engagement: "{stakeholder_id, channel, frequency, last_contact}"
+      - mapping: "{stakeholder_id, artifact_id, responsibility}"
+    relationships:
+      - stakeholder_owns_goal
+      - stakeholder_reviews_artifact
+      - stakeholder_reports_to_stakeholder
+  planning:
+    strategy: |
+      1. Prioritize high-influence stakeholders
+      2. Ensure coverage for all critical artifacts
+      3. Balance engagement frequency with project needs
+      4. Proactively manage resistance risks
+  action:
+    description: "Output structured YAML artifacts"
+    validation: "Project sponsor review for completeness"
+
+# Stakeholder Categories (Reference)
+stakeholder_categories:
+  executive:
+    description: "Executive sponsors and decision makers"
+    typical_interests: ["ROI", "strategic alignment", "risk"]
+    engagement_frequency: "monthly or milestone"
+  technical:
+    description: "Technical leads and architects"
+    typical_interests: ["feasibility", "quality", "maintainability"]
+    engagement_frequency: "weekly"
+  operational:
+    description: "Operations and support teams"
+    typical_interests: ["reliability", "supportability", "documentation"]
+    engagement_frequency: "bi-weekly"
+  compliance:
+    description: "Security, legal, compliance officers"
+    typical_interests: ["regulatory", "audit", "risk mitigation"]
+    engagement_frequency: "milestone and as-needed"
+  end_user:
+    description: "End users and user representatives"
+    typical_interests: ["usability", "features", "performance"]
+    engagement_frequency: "sprint reviews"
+
+# Quality Assurance
+quality:
+  templates:
+    - stakeholder_profile_template
+    - engagement_plan_template
+    - raci_matrix_template
+  checklists:
+    - coverage_checklist
+    - engagement_frequency_checklist
+  automated_checks:
+    - orphan_requirement_detection
+    - missing_accountable_detection
+    - engagement_gap_detection
+
+# Validation Rules
+validation:
+  rules:
+    - "Every goal must have at least one stakeholder"
+    - "Every requirement must have accountable stakeholder"
+    - "High-influence stakeholders must have engagement plan"
+    - "No stakeholder without defined communication channel"
+  review_gates:
+    - project_sponsor_approval
+    - stakeholder_acknowledgment
+
+# Escalation
+escalation:
+  triggers:
+    - "Missing stakeholder for critical area"
+    - "Stakeholder conflict or resistance"
+    - "Engagement plan gaps for high-risk stakeholders"
+  paths:
+    - role: Project Sponsor
+      for: "Stakeholder conflicts, missing sponsors"
+    - role: PMO
+      for: "Cross-project stakeholder issues"
+    - role: Business Owner
+      for: "Unclear business representation"
+
+# Dependencies
+dependencies:
+  upstream:
+    - business_goals_operator
+  downstream:
+    - requirements_operator
+    - communication_operator
+
+# Metrics
+metrics:
+  - name: stakeholder_coverage
+    description: "Goals/requirements with assigned stakeholders"
+    target: "100%"
+  - name: engagement_adherence
+    description: "Planned vs actual stakeholder touchpoints"
+    target: ">= 90%"
+  - name: stakeholder_satisfaction
+    description: "Stakeholder feedback score"
+    target: ">= 4.0/5.0"

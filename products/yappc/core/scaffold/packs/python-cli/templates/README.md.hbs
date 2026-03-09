@@ -1,0 +1,67 @@
+# {{projectName}}
+
+{{#if description}}
+{{description}}
+{{else}}
+A Python CLI application built with Click.
+{{/if}}
+
+## Features
+
+- Click framework for CLI
+- Rich for beautiful terminal output
+- Type hints with mypy
+- Testing with pytest
+- Linting with ruff
+
+## Prerequisites
+
+- Python {{pythonVersion}}
+{{#if buildTool}}
+- {{buildTool}}
+{{else}}
+- uv or poetry
+{{/if}}
+
+## Installation
+
+```bash
+{{#if buildTool}}
+{{#eq buildTool "uv"}}
+uv sync
+{{/eq}}
+{{#eq buildTool "poetry"}}
+poetry install
+{{/eq}}
+{{else}}
+uv sync
+{{/if}}
+```
+
+## Usage
+
+```bash
+{{snakeCase projectName}} --help
+```
+
+## Development
+
+### Run tests
+```bash
+pytest
+```
+
+### Lint
+```bash
+ruff check .
+mypy .
+```
+
+### Format
+```bash
+ruff format .
+```
+
+## License
+
+MIT

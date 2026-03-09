@@ -1,0 +1,203 @@
+/*
+ * Copyright (c) 2025 Ghatana Inc.
+ * All rights reserved.
+ *
+ * Virtual Organization - Pattern Engine Integration
+ */
+syntax = "proto3";
+
+package virtualorg.v1;
+
+import "google/protobuf/timestamp.proto";
+import "virtualorg/v1/decision.proto";
+import "virtualorg/v1/agent_role.proto";
+
+option java_package = "com.ghatana.virtualorg.v1";
+option java_multiple_files = true;
+option java_outer_classname = "PatternOuterClass";
+
+// Pattern recommendation from the pattern engine
+message PatternRecommendationProto {
+  reserved 100 to max;
+
+  // Unique pattern identifier
+  string pattern_id = 1;
+
+  // Type of pattern (e.g., "decision.approval", "bug.detection")
+  string pattern_type = 2;
+
+  // Confidence level (0.0 to 1.0)
+  float confidence = 3;
+
+  // Recommended option ID
+  string recommended_option_id = 4;
+
+  // Metadata about the pattern
+  map<string, string> metadata = 5;
+
+  // When the pattern was created/identified
+  google.protobuf.Timestamp created_at = 6;
+
+  // How many times this pattern was observed
+  int32 occurrence_count = 7;
+
+  // Success rate when this pattern was followed (0.0 to 1.0)
+  float success_rate = 8;
+
+  // Tags for categorization
+  repeated string tags = 9;
+}
+
+// Enriched option with pattern information
+message EnrichedOptionProto {
+  reserved 100 to max;
+
+  // The base option
+  OptionProto option = 1;
+
+  // Pattern-based scoring (0.0 to 1.0)
+  double pattern_score = 2;
+
+  // Number of patterns that support this option
+  int32 pattern_count = 3;
+
+  // Details of supporting patterns
+  repeated PatternRecommendationProto supporting_patterns = 4;
+
+  // Whether this option matches historical successful patterns
+  bool historically_successful = 5;
+
+  // Risk level if this option is chosen (based on patterns)
+  RiskLevelProto pattern_based_risk = 6;
+
+  // Additional insights from pattern analysis
+  string pattern_insights = 7;
+}
+
+// Decision outcome for pattern learning
+message DecisionOutcomeProto {
+  reserved 100 to max;
+
+  // Unique identifier
+  string outcome_id = 1;
+
+  // Related decision ID
+  string decision_id = 2;
+
+  // Overall outcome
+  OutcomeStatusProto outcome = 3;
+
+  // Confidence in the outcome assessment (0.0 to 1.0)
+  float confidence = 4;
+
+  // Actual impact assessment (vs. estimated)
+  ImpactProto actual_impact = 5;
+
+  // Lessons learned
+  string lessons_learned = 6;
+
+  // Recommendations for future similar decisions
+  string recommendations = 7;
+
+  // Tags for categorization
+  repeated string tags = 8;
+
+  // When the outcome was recorded
+  google.protobuf.Timestamp recorded_at = 9;
+
+  // Additional metadata
+  map<string, string> metadata = 10;
+}
+
+// Decision outcome status
+enum OutcomeStatusProto {
+  OUTCOME_STATUS_UNKNOWN = 0;
+  OUTCOME_STATUS_SUCCESS = 1;       // Decision had positive outcome
+  OUTCOME_STATUS_PARTIAL_SUCCESS = 2; // Decision had mixed results
+  OUTCOME_STATUS_FAILURE = 3;       // Decision had negative outcome
+  OUTCOME_STATUS_PENDING = 4;       // Still evaluating outcome
+}
+
+// Pattern subscription request
+message PatternSubscriptionProto {
+  reserved 100 to max;
+
+  // Unique subscription identifier
+  string subscription_id = 1;
+
+  // Agent ID subscribing to patterns
+  string agent_id = 2;
+
+  // Type of patterns to subscribe to
+  string pattern_type = 3;
+
+  // Matching criteria for patterns
+  map<string, string> criteria = 4;
+
+  // Whether the subscription is active
+  bool active = 5;
+
+  // When the subscription was created
+  google.protobuf.Timestamp created_at = 6;
+
+  // Metadata about the subscription
+  map<string, string> metadata = 7;
+}
+
+// Pattern match event notification
+message PatternMatchEventProto {
+  reserved 100 to max;
+
+  // Unique event identifier
+  string event_id = 1;
+
+  // Related pattern ID
+  string pattern_id = 2;
+
+  // Type of pattern
+  string pattern_type = 3;
+
+  // Agent that should be notified
+  string agent_id = 4;
+
+  // Confidence of the match (0.0 to 1.0)
+  float confidence = 5;
+
+  // Data about the match
+  map<string, string> match_data = 6;
+
+  // Recommendation based on the pattern
+  string recommendation = 7;
+
+  // When the match was detected
+  google.protobuf.Timestamp detected_at = 8;
+
+  // Tags for categorization
+  repeated string tags = 9;
+}
+
+// Pattern query request
+message PatternQueryProto {
+  reserved 100 to max;
+
+  // Decision type to query for
+  DecisionTypeProto decision_type = 1;
+
+  // Context for the query
+  map<string, string> context = 2;
+
+  // Minimum confidence threshold (0.0 to 1.0)
+  float min_confidence = 3;
+
+  // Maximum number of results to return
+  int32 limit = 4;
+
+  // Agent role context for filtering
+  AgentRoleProto agent_role = 5;
+
+  // Whether to include historical failure patterns
+  bool include_failures = 6;
+
+  // Tags to filter patterns
+  repeated string tags = 7;
+}

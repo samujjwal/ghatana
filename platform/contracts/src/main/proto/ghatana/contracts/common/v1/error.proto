@@ -1,0 +1,220 @@
+/*
+ * Copyright (c) ${year} Ghatana Inc.
+ * All rights reserved.
+ *
+ * This source code and the accompanying materials are the confidential
+ * and proprietary information of Ghatana Inc. (“Confidential Information”).
+ * You shall not disclose such Confidential Information and shall use it
+ * only in accordance with the terms of the license agreement you entered
+ * into with Ghatana Inc.
+ *
+ * Unauthorized copying of this file, via any medium, is strictly prohibited.
+ * Proprietary and confidential.
+ */
+
+syntax = "proto3";
+
+package ghatana.contracts.common.v1;
+
+import "google/protobuf/any.proto";
+import "google/rpc/code.proto";
+import "google/protobuf/struct.proto";
+import "google/protobuf/timestamp.proto";
+import "google/api/field_behavior.proto";
+
+option go_package = "github.com/ghatana/contracts/gen/go/error/v1;errorv1";
+option java_package = "com.ghatana.contracts.common.v1";
+option java_multiple_files = true;
+option java_outer_classname = "ErrorOuterClass";
+option csharp_namespace = "Ghatana.Contracts.Common.V1";
+
+// ErrorSeverity defines the severity levels for errors
+enum ErrorSeverity {
+  ERROR_SEVERITY_UNSPECIFIED = 0;
+  ERROR_SEVERITY_INFO = 1;
+  ERROR_SEVERITY_WARNING = 2;
+  ERROR_SEVERITY_ERROR = 3;
+  ERROR_SEVERITY_CRITICAL = 4;
+}
+
+// Error represents a standard error response for all services
+//
+// This message is used to communicate error conditions in a consistent
+// way across all services. It includes machine-readable error codes,
+// human-readable messages, and additional context.
+//
+// Example:
+//   {
+//     "code": 404,
+//     "message": "Resource not found",
+//     "details": {
+//       "resource_type": "user",
+//       "resource_id": "12345"
+//     },
+//     "request_id": "req-1234567890",
+//     "severity": "ERROR"
+//   }
+message ErrorProto {
+  int32 code = 1 [(google.api.field_behavior) = REQUIRED];
+  string message = 2 [(google.api.field_behavior) = REQUIRED];
+  google.protobuf.Struct details = 3;
+  string request_id = 4 [(google.api.field_behavior) = OUTPUT_ONLY];
+  ErrorSeverity severity = 5 [(google.api.field_behavior) = REQUIRED];
+  google.protobuf.Timestamp timestamp = 6 [(google.api.field_behavior) = OUTPUT_ONLY];
+  string documentation_url = 7;
+  string error_id = 8 [(google.api.field_behavior) = OUTPUT_ONLY];
+  // Reserved for future evolution
+  reserved 1000 to max;
+  reserved "reserved_field";
+}
+
+// ErrorCode defines the standard error codes for the application.
+// These map to HTTP status codes and gRPC status codes.
+enum ErrorCode {
+  // Default error code. This value is not used.
+  ERROR_CODE_UNSPECIFIED = 0;
+
+  // 4xx Client Errors
+
+  // The request was invalid or cannot be otherwise served.
+  // HTTP: 400 Bad Request
+  // gRPC: INVALID_ARGUMENT (3)
+  BAD_REQUEST = 1;
+
+  // Authentication failed or credentials were not provided.
+  // HTTP: 401 Unauthorized
+  // gRPC: UNAUTHENTICATED (16)
+  UNAUTHORIZED = 2;
+
+  // The authenticated user doesn't have permission to access the resource.
+  // HTTP: 403 Forbidden
+  // gRPC: PERMISSION_DENIED (7)
+  FORBIDDEN = 3;
+
+  // The requested resource doesn't exist.
+  // HTTP: 404 Not Found
+  // gRPC: NOT_FOUND (5)
+  NOT_FOUND = 4;
+
+  // The request method is not supported for the requested resource.
+  // HTTP: 405 Method Not Allowed
+  // gRPC: UNIMPLEMENTED (12)
+  METHOD_NOT_ALLOWED = 5;
+
+  // The request could not be completed due to a conflict with the current state of the resource.
+  // HTTP: 409 Conflict
+  // gRPC: ALREADY_EXISTS (6)
+  CONFLICT = 6;
+
+  // The request was well-formed but was unable to be followed due to semantic errors.
+  // HTTP: 422 Unprocessable Entity
+  // gRPC: FAILED_PRECONDITION (9)
+  VALIDATION_ERROR = 7;
+
+  // The user has sent too many requests in a given amount of time.
+  // HTTP: 429 Too Many Requests
+  // gRPC: RESOURCE_EXHAUSTED (8)
+  TOO_MANY_REQUESTS = 8;
+
+  // 5xx Server Errors
+
+  // An unexpected error occurred on the server.
+  // HTTP: 500 Internal Server Error
+  // gRPC: INTERNAL (13)
+  INTERNAL_ERROR = 100;
+
+  // The server is currently unavailable.
+  // HTTP: 503 Service Unavailable
+  // gRPC: UNAVAILABLE (14)
+  SERVICE_UNAVAILABLE = 101;
+
+  // The server timed out waiting for the request.
+  // HTTP: 504 Gateway Timeout
+  // gRPC: DEADLINE_EXCEEDED (4)
+  TIMEOUT = 102;
+
+  INVALID_INPUT = 103;
+
+  OUT_OF_RANGE = 104;
+
+  TOO_SHORT = 105;
+  TOO_LONG = 106;
+  REQUEST_TOO_LARGE = 107;
+  UNSUPPORTED_MEDIA_TYPE = 108;
+}
+
+// ErrorDetail provides additional context about an error.
+message ErrorDetailProto  {
+  reserved 1000 to max;
+  reserved "reserved_field";
+// A URI reference that identifies the error type
+  // Example: "https://docs.ghatana.com/errors#validation-error"
+  string type = 1;
+
+  // A short, human-readable summary of the error
+  // Example: "Validation Error"
+  string title = 2;
+
+  // The HTTP status code
+  // Example: 422
+  int32 status = 3;
+
+  // A human-readable explanation of the error
+  // Example: "Name must be between 3 and 63 characters long"
+  string detail = 4;
+
+  // A URI reference that identifies the specific occurrence of the error
+  // Example: "/errors/123e4567-e89b-12d3-a456-426614174000"
+  string instance = 5;
+
+  // Additional error details
+  repeated google.protobuf.Any details = 6;
+
+  // The error code
+  ErrorCode code = 7;
+
+  // Field validation errors
+  repeated FieldViolationProto field_violations = 8;
+}
+
+// ErrorResponse is the standard error response format for the API.
+message ErrorResponseProto  {
+  reserved 1000 to max;
+  reserved "reserved_field";
+// The error details.
+  ErrorDetailProto error = 1;
+}
+
+// FieldViolation represents a single field validation error.
+message FieldViolationProto  {
+  reserved 1000 to max;
+  reserved "reserved_field";
+// The path to the field that failed validation
+  // Example: "user.display_name"
+  string field = 1;
+
+  // A description of the error
+  // Example: "Name must be between 3 and 63 characters long"
+  string description = 2;
+
+  // The error code for programmatic handling
+  // Example: "field_required"
+  string code = 3;
+}
+
+// ErrorMapping defines the mapping between ErrorCode and HTTP/gRPC status codes.
+message ErrorMappingProto  {
+  reserved 1000 to max;
+  reserved "reserved_field";
+// The error code.
+  ErrorCode error_code = 1;
+
+  // The HTTP status code.
+  int32 http_status = 2;
+
+  // The gRPC status code.
+  google.rpc.Code grpc_code = 3;
+
+  // The default error message.
+  string default_message = 4;
+}

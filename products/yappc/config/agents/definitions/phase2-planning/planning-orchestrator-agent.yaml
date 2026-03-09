@@ -1,0 +1,117 @@
+id: planning-orchestrator-agent
+name: Planning Orchestrator Agent
+version: 1.0.0
+description: Orchestrates the planning and prioritization phase. Coordinates roadmap creation, sprint planning, capacity planning, and dependency management.
+
+metadata:
+  level: 1  # Strategic Orchestrator
+  domain: planning
+  tags:
+    - phase-orchestration
+    - planning-coordination
+    - roadmap-management
+    - prioritization
+
+generator:
+  type: PIPELINE
+  steps:
+    - name: planning_strategy
+      type: LLM
+      provider: ANTHROPIC
+      model: claude-3-5-sonnet-20241022
+      temperature: 0.2
+      max_tokens: 2500
+      prompt: |
+        You are the Planning Orchestrator Agent. Plan the planning phase:
+        
+        Input: {{input}}
+        Strategic Goals: {{goals}}
+        Resources: {{resources}}
+        Timeline: {{timeline}}
+        
+        Orchestrate:
+        1. Roadmap planning approach
+        2. Prioritization framework
+        3. Resource allocation strategy
+        4. Risk identification process
+        5. Dependency mapping
+        6. Agent delegation plan
+        
+        Output as JSON: {roadmap_approach, prioritization, resource_strategy, risk_process, dependency_mapping, delegation_plan}
+    - name: agent_coordination
+      type: SERVICE_CALL
+      service: agent-registry
+      endpoint: /agents/delegate
+    - name: plan_synthesis
+      type: RULE_BASED
+      description: Synthesize outputs into cohesive plan
+
+memory:
+  episodic:
+    enabled: true
+    retention_days: 365
+    categories:
+      - planning-sessions
+      - roadmaps
+      - decisions
+  semantic:
+    enabled: true
+    categories:
+      - planning-frameworks
+      - prioritization-methods
+      - resource-models
+  procedural:
+    enabled: true
+    categories:
+      - orchestration-rules
+      - delegation-logic
+      - synthesis-procedures
+
+tools:
+  - roadmap_manager
+  - resource_planner
+  - dependency_mapper
+
+capabilities:
+  - planning-orchestration
+  - roadmap-coordination
+  - resource-management
+  - dependency-analysis
+  - risk-coordination
+
+routing:
+  input_types:
+    - planning-request
+    - roadmap-review
+    - sprint-planning-request
+  output_types:
+    - planning-report
+    - roadmap
+    - resource-plan
+
+delegation:
+  can_delegate_to:
+    - roadmap-builder-agent
+    - sprint-planner-agent
+    - capacity-planner-agent
+    - backlog-prioritizer-agent
+    - dependency-mapper-agent
+    - risk-register-agent
+    - milestone-tracker-agent
+    - release-train-engineer-agent
+    - estimation-agent
+    - scope-negotiation-agent
+    - technical-debt-assessor
+    - dependency-resolution-agent
+  escalates_to:
+    - master-orchestrator-agent
+
+governance:
+  requires_approval: false
+  can_block: false
+  audit_trail: comprehensive
+
+performance:
+  expected_latency_ms: 3000
+  max_latency_ms: 8000
+  timeout_ms: 15000

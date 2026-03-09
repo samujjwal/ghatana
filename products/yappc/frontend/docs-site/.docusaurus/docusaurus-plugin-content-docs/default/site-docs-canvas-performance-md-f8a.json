@@ -1,0 +1,27 @@
+{
+  "id": "canvas/performance",
+  "title": "performance",
+  "description": "Documentation coming soon. Visit the Interactive Demo.",
+  "source": "@site/docs/canvas/performance.md",
+  "sourceDirName": "canvas",
+  "slug": "/canvas/performance",
+  "permalink": "/docs/canvas/performance",
+  "draft": false,
+  "unlisted": false,
+  "editUrl": "https://github.com/yappc/app-creator/tree/main/docs-site/docs/canvas/performance.md",
+  "tags": [],
+  "version": "current",
+  "sidebarPosition": 1,
+  "frontMatter": {
+    "sidebar_position": 1
+  },
+  "sidebar": "canvasSidebar",
+  "previous": {
+    "title": "export sharing",
+    "permalink": "/docs/canvas/export-sharing"
+  },
+  "next": {
+    "title": "security",
+    "permalink": "/docs/canvas/security"
+  }
+}

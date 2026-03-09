@@ -1,0 +1,101 @@
+# Test configuration
+server:
+  host: "0.0.0.0"
+  port: 8080
+  shutdown_timeout: "5s"
+  max_concurrent_queries: 10
+  max_query_memory: "256MB"
+  query_timeout: "10s"
+  max_request_size: 1048576  # 1MB
+
+# Logging configuration
+logging:
+  level: "debug"
+  format: "console"
+  enable_console_logging: true
+  enable_file_logging: false
+  file_path: "/tmp/query-service-test.log"
+
+# Metrics configuration
+metrics:
+  enabled: true
+  port: 8081
+  path: "/metrics"
+  namespace: "query_service_test"
+  subsystem: "test"
+  enable_go_metrics: false
+  enable_process_metrics: false
+
+# Tracing configuration
+tracing:
+  enabled: false
+  service_name: "query-service-test"
+  sampler_type: "const"
+  sampler_param: 0
+  reporter_log_spans: false
+
+# Cache configuration
+cache:
+  enabled: true
+  backend: "memory"
+  ttl: "1m"
+  max_size: 1000
+  cleanup_interval: "1m"
+
+# Database configuration
+database:
+  driver: "clickhouse"
+  host: "${CLICKHOUSE_HOST:-localhost}"
+  port: ${CLICKHOUSE_PORT:-9000}
+  name: "test"
+  user: "test"
+  password: "test"
+  max_open_conns: 10
+  max_idle_conns: 5
+  conn_max_lifetime: "5m"
+  conn_max_idle_time: "1m"
+  dial_timeout: "5s"
+  read_timeout: "10s"
+  write_timeout: "10s"
+  debug: true
+
+# Query configuration
+query:
+  default_limit: 10
+  max_limit: 100
+  max_query_time: "5s"
+  max_memory_usage: 268435456  # 256MB
+  max_threads: 2
+
+# Test-specific settings
+test:
+  reset_database: true
+  seed_data: true
+  mock_external_services: true
+  parallel_tests: 4
+  test_timeout: "5m"
+
+# Feature flags for testing
+features:
+  enable_query_cache: true
+  enable_query_logging: false
+  enable_metrics: true
+  enable_tracing: false
+  enable_profiling: false
+  enable_pprof: false
+
+# Test authentication
+auth:
+  enabled: false
+  api_keys:
+    - "test-api-key-123"
+  jwt_secret: "test-secret-key"
+  jwt_expiration: "1h"
+  rate_limit: 1000
+  rate_limit_burst: 100
+
+# Test storage
+storage:
+  type: "memory"
+  cleanup_interval: "1m"
+  retention_period: "1h"

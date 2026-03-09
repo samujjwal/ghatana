@@ -1,0 +1,35 @@
+# ═══════════════════════════════════════════════════════════════════════════════
+# Deterministic Agent — Rule-Based Fraud Detection
+# ═══════════════════════════════════════════════════════════════════════════════
+# This agent applies deterministic rules to flag potentially fraudulent
+# transactions. Rules evaluate in order; first match wins unless
+# evaluateAllRules is true.
+
+agentId: fraud-rule-detector
+type: DETERMINISTIC
+version: "2.1.0"
+timeout: PT5S
+confidenceThreshold: 0.85
+maxRetries: 3
+retryBackoff: PT0.1S
+maxRetryBackoff: PT5S
+failureMode: CIRCUIT_BREAKER
+circuitBreakerThreshold: 5
+circuitBreakerReset: PT30S
+metricsEnabled: true
+tracingEnabled: true
+tracingSampleRate: 0.1
+labels:
+  team: security
+  domain: fraud
+  environment: production
+requiredCapabilities:
+  - low-latency
+properties:
+  description: "Rule-based fraud detection for high-value transactions"
+
+# ─── Deterministic-specific ─────────────────────────────────────────────────
+subtype: RULE_BASED
+evaluateAllRules: true
+exactMatchField: transactionType
+fsmEntityKeyField: accountId

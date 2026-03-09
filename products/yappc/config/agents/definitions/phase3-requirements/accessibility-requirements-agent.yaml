@@ -1,0 +1,107 @@
+id: accessibility-requirements-agent
+name: Accessibility Requirements Agent
+version: 1.0.0
+description: Specifies accessibility requirements ensuring WCAG compliance. Covers screen readers, keyboard navigation, color contrast, and assistive technologies.
+
+metadata:
+  level: 3  # Worker
+  domain: requirements
+  tags:
+    - accessibility
+    - wcag
+    - a11y
+    - inclusive-design
+
+generator:
+  type: PIPELINE
+  steps:
+    - name: accessibility_analysis
+      type: LLM
+      provider: ANTHROPIC
+      model: claude-3-5-sonnet-20241022
+      temperature: 0.1
+      max_tokens: 2500
+      prompt: |
+        You are the Accessibility Requirements Agent. Specify a11y requirements:
+        
+        Feature: {{feature}}
+        UI Components: {{components}}
+        Target WCAG Level: {{wcag_level}}
+        
+        Specify requirements for:
+        1. Perceivable (text alternatives, captions, adaptable, distinguishable)
+        2. Operable (keyboard, timing, seizures, navigation)
+        3. Understandable (readable, predictable, input assistance)
+        4. Robust (compatible, parsable)
+        
+        For each requirement:
+        - WCAG criterion reference
+        - Requirement statement
+        - Implementation guidance
+        - Testing method
+        
+        Output as JSON: {requirements: [{wcag_criterion, category, statement, guidance, testing}], priority_order, testing_checklist}
+    - name: compliance_check
+      type: RULE_BASED
+      description: Check against WCAG criteria
+    - name: a11y_registration
+      type: SERVICE_CALL
+      service: requirements-service
+      endpoint: /accessibility/register
+
+memory:
+  episodic:
+    enabled: true
+    retention_days: 730
+    categories:
+      - a11y-specifications
+      - audits
+      - remediation
+  semantic:
+    enabled: true
+    categories:
+      - wcag-criteria
+      - a11y-patterns
+      - assistive-tech-needs
+  procedural:
+    enabled: true
+    categories:
+      - compliance-rules
+      - testing-methods
+      - remediation-strategies
+
+tools:
+  - wcag_checker
+  - a11y_analyzer
+  - testing_generator
+
+capabilities:
+  - accessibility-specification
+  - wcag-compliance-checking
+  - testing-guidance
+  - remediation-planning
+
+routing:
+  input_types:
+    - feature-specification
+    - ui-design
+    - a11y-request
+  output_types:
+    - a11y-requirements
+    - compliance-checklist
+    - testing-plan
+
+delegation:
+  can_delegate_to: []
+  escalates_to:
+    - non-functional-requirements-agent
+
+governance:
+  requires_approval: false
+  can_block: true  # Can block inaccessible designs
+  audit_trail: comprehensive
+
+performance:
+  expected_latency_ms: 3000
+  max_latency_ms: 8000
+  timeout_ms: 15000

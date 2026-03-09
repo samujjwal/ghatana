@@ -1,0 +1,28 @@
+---
+id: "operate_success_criteria_tracker"
+agent: "SuccessCriteriaTrackerAgent"
+role: "Operate Success Criteria Tracker"
+inputs_spec:
+- name: "operate_stage_milestone"
+  description: "Operate stage milestones for criteria tracking."
+  format: "List of milestone objects"
+outputs_spec:
+- name: "operate_success_criteria_status"
+  description: "Operate stage success criteria mapped to SLOs and audit logs."
+  format: "List of criteria status objects"
+agent_tasks:
+- "Map operate stage success criteria to SLOs and audit logs."
+- "Track service coverage and observability completeness."
+- "Flag gaps or unmonitored areas."
+- "Criteria reviewed by SRE or Ops lead before next stage."
+acceptance_criteria:
+- "Success criteria mapped to SLOs/audit logs."
+- "Service coverage and observability tracked."
+- "Gaps/unmonitored areas flagged."
+- "Criteria reviewed before next stage."
+dependencies:
+- "operate_stage_milestone"
+failure_escalation:
+- "Escalate to Ops lead if criteria not reviewed or mapped."
+references: []
+hitl: false

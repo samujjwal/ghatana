@@ -1,0 +1,77 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://ghatana.ai/schemas/yappc/events/shape-created-v1.json",
+  "title": "Shape Created Event",
+  "description": "Event published when a new shape is created in YAPPC canvas",
+  "version": "1.0.0",
+  "type": "object",
+  "required": ["eventId", "eventType", "timestamp", "shape"],
+  "properties": {
+    "eventId": {
+      "type": "string",
+      "format": "uuid",
+      "description": "Unique event identifier"
+    },
+    "eventType": {
+      "type": "string",
+      "const": "shape.created",
+      "description": "Event type identifier"
+    },
+    "timestamp": {
+      "type": "string",
+      "format": "date-time",
+      "description": "Event timestamp in ISO 8601"
+    },
+    "correlationId": {
+      "type": "string",
+      "description": "Correlation ID for distributed tracing"
+    },
+    "shape": {
+      "type": "object",
+      "required": ["id", "type", "position"],
+      "properties": {
+        "id": {
+          "type": "string",
+          "format": "uuid"
+        },
+        "type": {
+          "type": "string",
+          "enum": ["rectangle", "circle", "text", "connector", "frame", "component"]
+        },
+        "name": {
+          "type": "string",
+          "maxLength": 256
+        },
+        "position": {
+          "type": "object",
+          "required": ["x", "y"],
+          "properties": {
+            "x": { "type": "number" },
+            "y": { "type": "number" },
+            "z": { "type": "number", "default": 0 }
+          }
+        },
+        "dimensions": {
+          "type": "object",
+          "properties": {
+            "width": { "type": "number", "minimum": 0 },
+            "height": { "type": "number", "minimum": 0 }
+          }
+        },
+        "metadata": {
+          "type": "object",
+          "additionalProperties": true
+        }
+      }
+    },
+    "projectId": {
+      "type": "string",
+      "format": "uuid",
+      "description": "Project this shape belongs to"
+    },
+    "agentId": {
+      "type": "string",
+      "description": "Agent that created this shape (if auto-generated)"
+    }
+  }
+}

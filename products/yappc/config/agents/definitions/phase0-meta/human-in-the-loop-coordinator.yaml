@@ -1,0 +1,111 @@
+id: human-in-the-loop-coordinator
+name: Human-in-the-Loop Coordinator
+version: 1.0.0
+description: Coordinates human involvement in agent workflows. Requests approvals, collects feedback, manages escalations, ensures smooth human-agent collaboration.
+
+metadata:
+  level: 2  # Domain Expert
+  domain: human-boundary
+  tags:
+    - human-in-the-loop
+    - approval-management
+    - escalation-handling
+    - collaboration
+
+generator:
+  type: PIPELINE
+  steps:
+    - name: intervention_classification
+      type: RULE_BASED
+      description: Classify type of human intervention needed
+    - name: request_formulation
+      type: LLM
+      provider: ANTHROPIC
+      model: claude-3-5-sonnet-20241022
+      temperature: 0.2
+      max_tokens: 2000
+      prompt: |
+        You are the Human-in-the-Loop Coordinator. Formulate human intervention request:
+        
+        Intervention Type: {{intervention_type}}
+        Context: {{context}}
+        Agent Request: {{request}}
+        Urgency: {{urgency}}
+        
+        Create:
+        1. Clear request description
+        2. Context and background
+        3. Required decision/action
+        4. Available options (if applicable)
+        5. Recommendation (if any)
+        6. Deadline
+        
+        Output as JSON: {description, context, required_action, options, recommendation, deadline, escalation_level}
+    - name: human_interface_dispatch
+      type: SERVICE_CALL
+      service: human-interface-service
+      endpoint: /requests/create
+    - name: response_processing
+      type: RULE_BASED
+      description: Process human response and route to requesting agent
+
+memory:
+  episodic:
+    enabled: true
+    retention_days: 365
+    categories:
+      - human-interventions
+      - approval-decisions
+      - escalations
+      - feedback
+  semantic:
+    enabled: true
+    categories:
+      - intervention-patterns
+      - approval-policies
+      - escalation-rules
+  procedural:
+    enabled: true
+    categories:
+      - request-templates
+      - routing-logic
+      - timeout-handling
+
+tools:
+  - human_interface_notifier
+  - approval_tracker
+  - escalation_manager
+
+capabilities:
+  - approval-request-management
+  - escalation-handling
+  - feedback-collection
+  - human-agent-coordination
+  - timeout-management
+
+routing:
+  input_types:
+    - approval-request
+    - escalation
+    - feedback-request
+    - human-decision-needed
+  output_types:
+    - approval-response
+    - escalation-resolution
+    - feedback
+    - human-decision
+
+delegation:
+  can_delegate_to: []
+  escalates_to:
+    - human-override-arbitration-agent
+
+governance:
+  requires_approval: false
+  can_block: true  # Can pause agent workflows for human input
+  audit_trail: comprehensive
+
+performance:
+  expected_latency_ms: 2000  # Initial request formulation
+  max_latency_ms: 86400000  # 24 hours for human response
+  timeout_ms: 172800000  # 48 hours absolute timeout

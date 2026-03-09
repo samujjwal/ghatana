@@ -1,0 +1,30 @@
+---
+id: "test_remediation_tracker"
+agent: "RemediationTrackerAgent"
+role: "Exception Bot"
+inputs_spec:
+- name: "test_success_criteria_status"
+  description: "Status for all test stage criteria."
+  format: "List of criteria status objects"
+- name: "test_escalation_report"
+  description: "Test escalation report."
+  format: "Escalation report artifact"
+outputs_spec:
+- name: "test_remediation_status"
+  description: "Remediation status tracker for failed or at-risk items."
+  format: "Remediation status artifact"
+agent_tasks:
+- "Track failed/at-risk items for remediation."
+- "Assign owners, deadlines, actions."
+- "Update status until resolution/escalation."
+acceptance_criteria:
+- "All failed/at-risk items tracked for remediation."
+- "Owners, deadlines, actions recorded."
+- "Status updated until resolution/escalation."
+dependencies:
+- "test_success_criteria_status"
+- "test_escalation_report"
+failure_escalation:
+- "Escalate to QA Lead/PM if remediation stalls."
+references: []
+hitl: false

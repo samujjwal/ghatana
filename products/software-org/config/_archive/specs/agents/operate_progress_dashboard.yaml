@@ -1,0 +1,37 @@
+---
+id: "operate_progress_dashboard"
+agent: "ProgressDashboardAgent"
+role: "Operate Progress Dashboard Owner"
+inputs_spec:
+- name: "operate_kpi_report"
+  description: "Operate KPI report for dashboard visualization."
+  format: "KPI report artifact"
+- name: "operate_success_criteria_status"
+  description: "Operate success criteria status for dashboard visualization."
+  format: "List of criteria status objects"
+- name: "operate_stage_milestone"
+  description: "Operate milestone plan for dashboard visualization."
+  format: "List of milestone objects"
+outputs_spec:
+- name: "operate_progress_dashboard"
+  description: "Dashboard visualizing SLO status, incident heatmap, capacity trends,\
+    \ criteria, and open issues."
+  format: "Dashboard artifact"
+agent_tasks:
+- "Visualize SLO status, incident heatmap, capacity trends."
+- "Surface all criteria and open issues."
+- "Provide access to stakeholders and management."
+- "Sign off dashboard at end of Operate stage."
+acceptance_criteria:
+- "SLO status, incident heatmap, and capacity trends visualized."
+- "All criteria and open issues surfaced."
+- "Stakeholders and management have access."
+- "Dashboard signed off at end of Operate stage."
+dependencies:
+- "operate_kpi_report"
+- "operate_success_criteria_status"
+- "operate_stage_milestone"
+failure_escalation:
+- "Escalate to dashboard owner if dashboard not current or not signed off."
+references: []
+hitl: false

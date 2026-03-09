@@ -1,0 +1,21 @@
+{{- if .Values.podDisruptionBudget.enabled }}
+{{- range $role, $config := .Values.agents }}
+{{- if $config.enabled }}
+---
+apiVersion: policy/v1
+kind: PodDisruptionBudget
+metadata:
+  name: {{ include "virtualorg-agent.fullname" $ }}-{{ $role | kebabcase }}
+  namespace: {{ $.Values.global.namespace }}
+  labels:
+    {{- include "virtualorg-agent.labels" $ | nindent 4 }}
+    role: {{ $role | kebabcase }}
+spec:
+  minAvailable: {{ $.Values.podDisruptionBudget.minAvailable }}
+  selector:
+    matchLabels:
+      {{- include "virtualorg-agent.selectorLabels" $ | nindent 6 }}
+      role: {{ $role | kebabcase }}
+{{- end }}
+{{- end }}
+{{- end }}

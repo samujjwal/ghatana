@@ -1,0 +1,26 @@
+---
+id: "incident_comm"
+agent: "IncidentCommAgent"
+role: "Incident Manager"
+inputs_spec:
+- name: "automated_response_log"
+  description: "Automated response log for incident comms."
+  format: "Response log artifact"
+outputs_spec:
+- name: "incident_communication_log"
+  description: "Incident communication log."
+  format: "Communication log artifact"
+agent_tasks:
+- "Define communication procedures for incident notification/escalation."
+- "Log stakeholder updates."
+- "Document customer/partner notification steps for major incidents."
+acceptance_criteria:
+- "Communication procedures defined."
+- "Stakeholder updates logged."
+- "Customer/partner notification steps documented."
+dependencies:
+- "automated_response_log"
+failure_escalation:
+- "Escalate to Incident Manager if communication not logged/documented."
+references: []
+hitl: false

@@ -1,0 +1,29 @@
+---
+id: "deploy_best_practice_enforcement"
+agent: "DeployBestPracticeAgent"
+role: "Deploy QA Auditor"
+inputs_spec:
+- name: "deployment_triggered"
+  description: "Deployment status artifact."
+  format: "Deployment trigger artifact"
+outputs_spec:
+- name: "deploy_best_practice_report"
+  description: "Report on deployment best practices and deviations."
+  format: "Best practice report artifact"
+agent_tasks:
+- "Assess all deployment practices for compliance with org/industry standards."
+- "Consider canary, blue/green, or rolling deployments."
+- "Ensure security and compliance checks are integrated."
+- "Flag and review deviations from best practice."
+acceptance_criteria:
+- "Deployment practices follow org/industry standards."
+- "Canary/blue-green/rolling strategies considered."
+- "Security/compliance checks are integrated."
+- "Deviations are flagged and reviewed."
+dependencies:
+- "deployment_triggered"
+failure_escalation:
+- "Escalate to Deploy QA if deviations not reviewed."
+references: []
+hitl: true
+hitl_reason: "Human ensures deployment best practices are enforced"

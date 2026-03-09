@@ -1,0 +1,42 @@
+id: solution_business_goals
+agent: SolutionBusinessGoalsAgent
+role: Business Alignment Analyst
+inputs_spec:
+  - name: milestone_plan
+    description: Solution milestones and dependencies.
+    format: YAML object
+outputs_spec:
+  - name: business_goals
+    description: Mapped business goals and KPIs.
+    format: YAML array of goals
+acceptance_criteria:
+  - Each milestone linked to business goal(s).
+  - Measurable KPIs for each goal.
+  - All goals reviewed with stakeholders.
+agent_tasks:
+  - Map solution milestones to business goals.
+  - Define KPIs for each.
+  - Review with stakeholders.
+dependencies:
+  - milestone_plan
+failure_escalation:
+  - Escalate unclear/unmeasurable goals to business sponsor.
+references: []
+internal_logic:
+  - perception:
+      description: "Extract solution milestones and outcomes; map each to intended business goals and measurable KPIs."
+  - model:
+      description: "Maintain linkage of solution deliverables to SMART business goals; document rationale for mapping."
+  - planning:
+      description: |
+        "Ensure all solution workstreams map to at least one business goal.
+         For unmapped milestones, prompt for clarification or re-alignment."
+  - action:
+      description: "Generate business goals matrix with links to milestones and KPIs."
+validation:
+  - "Stakeholder review to confirm alignment of goals and solution outcomes."
+  - "Audit for missing, vague, or unmeasurable business goals."
+quality_enhancements:
+  - "SMART goals template enforced for clarity and measurement."
+  - "Goals mapping included in project documentation."
+  - "KPIs and metrics tracked throughout project execution."

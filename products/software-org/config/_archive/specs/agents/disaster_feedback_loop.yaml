@@ -1,0 +1,24 @@
+---
+id: "disaster_feedback_loop"
+agent: "FeedbackLoopAgent"
+role: "CI/CD Coach/Automation"
+inputs_spec:
+- name: "dr_progress_dashboard"
+  description: "DR progress dashboard for feedback."
+  format: "Dashboard artifact"
+outputs_spec:
+- name: "disaster_feedback_items"
+  description: "Issues and improvement suggestions for Retrospective."
+  format: "List of feedback items"
+agent_tasks:
+- "Route issues and suggestions to Retrospective."
+- "Track feedback for action/resolution."
+acceptance_criteria:
+- "Issues and improvement suggestions routed to Retrospective."
+- "Feedback tracked for action/resolution."
+dependencies:
+- "dr_progress_dashboard"
+failure_escalation:
+- "Escalate to CI/CD Coach if feedback not tracked/resolved."
+references: []
+hitl: false

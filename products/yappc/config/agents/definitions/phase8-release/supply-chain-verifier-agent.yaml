@@ -1,0 +1,67 @@
+id: supply-chain-verifier-agent
+name: Supply Chain Verifier Agent
+version: 1.0.0
+description: Verifies supply chain provenance of release artifacts at deploy time. Validates SBOM signatures, artifact signatures, and SLSA attestations against transparency log. Blocks deployment if verification fails.
+
+metadata:
+  level: 3
+  domain: release
+  tags: [release, supply-chain, slsa, verification, deterministic]
+
+generator:
+  type: PIPELINE
+  steps:
+    - name: artifact_signature_verify
+      type: RULE_BASED
+      description: >
+        Verify artifact signatures produced by artifact-signer-agent.
+        Check cosign/GPG signature validity and certificate chain.
+    - name: sbom_signature_verify
+      type: RULE_BASED
+      description: >
+        Verify SBOM signatures against Sigstore transparency log.
+        Validate in-toto attestation format and content.
+    - name: provenance_chain_verify
+      type: RULE_BASED
+      description: >
+        Walk the full provenance chain: source → build → artifact → SBOM.
+        Verify each link has valid attestation. Flag any gaps.
+    - name: policy_compliance_check
+      type: RULE_BASED
+      description: >
+        Check provenance against configured SLSA level requirements.
+        Level 2: signed provenance from hosted build platform.
+        Level 3: hardened build platform with isolated build.
+
+memory:
+  episodic:
+    enabled: true
+    retention_days: 730
+    categories: [verification-results, provenance-chains]
+  semantic:
+    enabled: true
+    categories: [slsa-level-requirements, trusted-builders]
+
+tools: [cosign_verifier, rekor_client, in_toto_verifier]
+
+capabilities:
+  - security-analysis
+  - deployment-automation
+
+routing:
+  input_types: [release-artifact, signed-sbom, slsa-provenance-attestation]
+  output_types: [verification-report, provenance-chain-report]
+
+delegation:
+  can_delegate_to: []
+  escalates_to: release-orchestrator-agent
+
+governance:
+  requires_approval: false
+  can_block: true
+  audit_trail: comprehensive
+
+performance:
+  expected_latency_ms: 3000
+  max_latency_ms: 15000
+  timeout_ms: 30000

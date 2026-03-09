@@ -1,0 +1,138 @@
+{
+    "name": "fullstack-rust-react",
+    "version": "1.0.0",
+    "description": "Full-stack monorepo with Rust Axum backend and React TypeScript frontend",
+    "category": "fullstack",
+    "language": "multi",
+    "runtime": "multi",
+    "buildTool": "cargo",
+    "templates": [
+        {
+            "source": "root/Cargo.toml.hbs",
+            "target": "Cargo.toml"
+        },
+        {
+            "source": "root/package.json.hbs",
+            "target": "package.json"
+        },
+        {
+            "source": "root/pnpm-workspace.yaml.hbs",
+            "target": "pnpm-workspace.yaml"
+        },
+        {
+            "source": "root/Makefile.hbs",
+            "target": "Makefile"
+        },
+        {
+            "source": "root/.gitignore.hbs",
+            "target": ".gitignore"
+        },
+        {
+            "source": "root/README.md.hbs",
+            "target": "README.md"
+        },
+        {
+            "source": "root/docker-compose.yml.hbs",
+            "target": "docker-compose.yml"
+        },
+        {
+            "source": "backend/Cargo.toml.hbs",
+            "target": "backend/Cargo.toml"
+        },
+        {
+            "source": "backend/src/main.rs.hbs",
+            "target": "backend/src/main.rs"
+        },
+        {
+            "source": "backend/src/router.rs.hbs",
+            "target": "backend/src/router.rs"
+        },
+        {
+            "source": "backend/src/handlers.rs.hbs",
+            "target": "backend/src/handlers.rs"
+        },
+        {
+            "source": "backend/src/config.rs.hbs",
+            "target": "backend/src/config.rs"
+        },
+        {
+            "source": "backend/src/error.rs.hbs",
+            "target": "backend/src/error.rs"
+        },
+        {
+            "source": "backend/Dockerfile.hbs",
+            "target": "backend/Dockerfile"
+        },
+        {
+            "source": "frontend/package.json.hbs",
+            "target": "frontend/package.json"
+        },
+        {
+            "source": "frontend/tsconfig.json.hbs",
+            "target": "frontend/tsconfig.json"
+        },
+        {
+            "source": "frontend/vite.config.ts.hbs",
+            "target": "frontend/vite.config.ts"
+        },
+        {
+            "source": "frontend/index.html.hbs",
+            "target": "frontend/index.html"
+        },
+        {
+            "source": "frontend/src/main.tsx.hbs",
+            "target": "frontend/src/main.tsx"
+        },
+        {
+            "source": "frontend/src/App.tsx.hbs",
+            "target": "frontend/src/App.tsx"
+        },
+        {
+            "source": "frontend/src/api/client.ts.hbs",
+            "target": "frontend/src/api/client.ts"
+        },
+        {
+            "source": "frontend/Dockerfile.hbs",
+            "target": "frontend/Dockerfile"
+        }
+    ],
+    "variables": {
+        "projectName": {
+            "type": "string",
+            "description": "Project name",
+            "required": true
+        },
+        "backendPort": {
+            "type": "number",
+            "description": "Backend server port",
+            "default": 3000
+        },
+        "frontendPort": {
+            "type": "number",
+            "description": "Frontend dev server port",
+            "default": 5173
+        },
+        "rustVersion": {
+            "type": "string",
+            "description": "Rust version",
+            "default": "1.82"
+        },
+        "nodeVersion": {
+            "type": "string",
+            "description": "Node.js version",
+            "default": "22"
+        },
+        "enableDocker": {
+            "type": "boolean",
+            "description": "Include Docker configuration",
+            "default": true
+        }
+    },
+    "postCreate": [
+        "cargo build",
+        "pnpm install"
+    ],
+    "devCommand": "make dev",
+    "buildCommand": "make build",
+    "testCommand": "make test"
+}

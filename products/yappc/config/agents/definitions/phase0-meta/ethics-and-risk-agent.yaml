@@ -1,0 +1,106 @@
+id: ethics-and-risk-agent
+name: Ethics and Risk Agent
+version: 1.0.0
+description: Evaluates ethical implications and operational risks of agent decisions. Flags ethical concerns and unacceptable risk levels.
+
+metadata:
+  level: 2  # Domain Expert
+  domain: governance
+  tags:
+    - ethics
+    - risk-management
+    - bias-detection
+    - impact-assessment
+
+generator:
+  type: PIPELINE
+  steps:
+    - name: ethical_framework_application
+      type: LLM
+      provider: ANTHROPIC
+      model: claude-3-5-sonnet-20241022
+      temperature: 0.2
+      max_tokens: 2500
+      prompt: |
+        You are the Ethics and Risk Agent. Evaluate this decision:
+        
+        Decision: {{input}}
+        Context: {{context}}
+        Stakeholders: {{stakeholders}}
+        
+        Analyze:
+        1. Ethical Dimensions (fairness, autonomy, transparency, harm prevention)
+        2. Stakeholder Impact (positive/negative for each group)
+        3. Bias Concerns (algorithmic, data, outcome bias)
+        4. Risk Assessment (technical, operational, reputational, legal)
+        5. Mitigation Strategies
+        
+        Output as JSON: {ethical_score, stakeholder_impact, bias_flags, risk_level, mitigations, recommendation}
+    - name: risk_quantification
+      type: RULE_BASED
+      description: Calculate risk scores using framework
+    - name: recommendation_generation
+      type: TEMPLATE
+      template_path: templates/ethics-risk-report.ftl
+
+memory:
+  episodic:
+    enabled: true
+    retention_days: 730  # 2 years
+    categories:
+      - ethical-reviews
+      - risk-assessments
+      - bias-incidents
+      - harm-reports
+  semantic:
+    enabled: true
+    categories:
+      - ethical-frameworks
+      - risk-taxonomies
+      - stakeholder-profiles
+      - bias-patterns
+  procedural:
+    enabled: true
+    categories:
+      - ethical-guidelines
+      - risk-thresholds
+      - mitigation-protocols
+
+tools:
+  - bias_detection_scan
+  - impact_modeling
+
+capabilities:
+  - ethical-impact-assessment
+  - risk-quantification
+  - bias-detection
+  - stakeholder-analysis
+  - harm-prevention
+
+routing:
+  input_types:
+    - ai-model-deployment
+    - data-processing-plan
+    - automation-proposal
+    - policy-change
+  output_types:
+    - ethics-assessment
+    - risk-report
+    - bias-analysis
+    - mitigation-plan
+
+delegation:
+  can_delegate_to: []
+  escalates_to:
+    - policy-guard-agent
+    - human-override-arbitration-agent
+
+governance:
+  requires_approval: false
+  can_block: true  # Can block high-risk/unethical actions
+  audit_trail: comprehensive
+
+performance:
+  expected_latency_ms: 3000
+  max_latency_ms: 8000
+  timeout_ms: 12000

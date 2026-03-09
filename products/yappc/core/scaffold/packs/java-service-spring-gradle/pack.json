@@ -1,0 +1,212 @@
+{
+    "name": "java-service-spring-gradle",
+    "version": "1.0.0",
+    "description": "Spring Boot 3 service with Gradle, PostgreSQL, and production-ready features",
+    "author": "Ghatana YAPPC Team",
+    "license": "Apache-2.0",
+    "tags": [
+        "java",
+        "spring-boot",
+        "spring",
+        "gradle",
+        "backend",
+        "api",
+        "postgresql",
+        "server"
+    ],
+    "type": "service",
+    "language": "java",
+    "framework": "spring-boot",
+    "buildSystem": "gradle-kts",
+    "platform": "server",
+    "archetype": "service",
+    "dependencies": {
+        "runtime": [
+            "org.springframework.boot:spring-boot-starter-web:3.4.0",
+            "org.springframework.boot:spring-boot-starter-data-jpa:3.4.0",
+            "org.springframework.boot:spring-boot-starter-validation:3.4.0",
+            "org.springframework.boot:spring-boot-starter-actuator:3.4.0",
+            "org.postgresql:postgresql:42.7.4",
+            "io.micrometer:micrometer-registry-prometheus:1.14.1"
+        ],
+        "build": [
+            "gradle:8.11+",
+            "java:21+"
+        ],
+        "devDependencies": [
+            "org.springframework.boot:spring-boot-devtools:3.4.0",
+            "org.springframework.boot:spring-boot-starter-test:3.4.0",
+            "org.testcontainers:postgresql:1.20.4",
+            "org.projectlombok:lombok:1.18.34"
+        ],
+        "plugins": [
+            "spring-boot",
+            "io.spring.dependency-management",
+            "spotless",
+            "jacoco"
+        ]
+    },
+    "templates": {
+        "settings-gradle": {
+            "source": "templates/settings.gradle.kts.hbs",
+            "target": "settings.gradle.kts",
+            "merge": "replace"
+        },
+        "build-gradle": {
+            "source": "templates/build.gradle.kts.hbs",
+            "target": "build.gradle.kts",
+            "merge": "replace"
+        },
+        "gradle-properties": {
+            "source": "templates/gradle.properties.hbs",
+            "target": "gradle.properties",
+            "merge": "replace"
+        },
+        "main-class": {
+            "source": "templates/src/main/java/Application.java.hbs",
+            "target": "src/main/java/{{packagePath}}/Application.java",
+            "merge": "skip-if-exists"
+        },
+        "config-class": {
+            "source": "templates/src/main/java/config/AppConfig.java.hbs",
+            "target": "src/main/java/{{packagePath}}/config/AppConfig.java",
+            "merge": "skip-if-exists"
+        },
+        "entity-class": {
+            "source": "templates/src/main/java/entity/Item.java.hbs",
+            "target": "src/main/java/{{packagePath}}/entity/Item.java",
+            "merge": "skip-if-exists"
+        },
+        "repository-class": {
+            "source": "templates/src/main/java/repository/ItemRepository.java.hbs",
+            "target": "src/main/java/{{packagePath}}/repository/ItemRepository.java",
+            "merge": "skip-if-exists"
+        },
+        "service-class": {
+            "source": "templates/src/main/java/service/ItemService.java.hbs",
+            "target": "src/main/java/{{packagePath}}/service/ItemService.java",
+            "merge": "skip-if-exists"
+        },
+        "controller-class": {
+            "source": "templates/src/main/java/controller/ItemController.java.hbs",
+            "target": "src/main/java/{{packagePath}}/controller/ItemController.java",
+            "merge": "skip-if-exists"
+        },
+        "health-controller": {
+            "source": "templates/src/main/java/controller/HealthController.java.hbs",
+            "target": "src/main/java/{{packagePath}}/controller/HealthController.java",
+            "merge": "skip-if-exists"
+        },
+        "dto-classes": {
+            "source": "templates/src/main/java/dto/ItemDto.java.hbs",
+            "target": "src/main/java/{{packagePath}}/dto/ItemDto.java",
+            "merge": "skip-if-exists"
+        },
+        "exception-handler": {
+            "source": "templates/src/main/java/exception/GlobalExceptionHandler.java.hbs",
+            "target": "src/main/java/{{packagePath}}/exception/GlobalExceptionHandler.java",
+            "merge": "skip-if-exists"
+        },
+        "application-yml": {
+            "source": "templates/src/main/resources/application.yml.hbs",
+            "target": "src/main/resources/application.yml",
+            "merge": "replace"
+        },
+        "application-dev-yml": {
+            "source": "templates/src/main/resources/application-dev.yml.hbs",
+            "target": "src/main/resources/application-dev.yml",
+            "merge": "replace"
+        },
+        "application-prod-yml": {
+            "source": "templates/src/main/resources/application-prod.yml.hbs",
+            "target": "src/main/resources/application-prod.yml",
+            "merge": "replace"
+        },
+        "logback-spring": {
+            "source": "templates/src/main/resources/logback-spring.xml.hbs",
+            "target": "src/main/resources/logback-spring.xml",
+            "merge": "replace"
+        },
+        "test-class": {
+            "source": "templates/src/test/java/ApplicationTests.java.hbs",
+            "target": "src/test/java/{{packagePath}}/ApplicationTests.java",
+            "merge": "skip-if-exists"
+        },
+        "integration-test": {
+            "source": "templates/src/test/java/ItemControllerTest.java.hbs",
+            "target": "src/test/java/{{packagePath}}/controller/ItemControllerTest.java",
+            "merge": "skip-if-exists"
+        },
+        "dockerfile": {
+            "source": "templates/Dockerfile.hbs",
+            "target": "Dockerfile",
+            "merge": "replace"
+        },
+        "docker-compose": {
+            "source": "templates/docker-compose.yml.hbs",
+            "target": "docker-compose.yml",
+            "merge": "replace"
+        },
+        "makefile": {
+            "source": "templates/Makefile.hbs",
+            "target": "Makefile",
+            "merge": "replace"
+        },
+        "gitignore": {
+            "source": "templates/.gitignore.hbs",
+            "target": ".gitignore",
+            "merge": "replace"
+        },
+        "readme": {
+            "source": "templates/README.md.hbs",
+            "target": "README.md",
+            "merge": "replace"
+        }
+    },
+    "variables": {
+        "projectName": {
+            "description": "Project name (lowercase with hyphens)",
+            "required": true,
+            "default": "my-spring-service"
+        },
+        "groupId": {
+            "description": "Maven group ID",
+            "required": true,
+            "default": "com.ghatana"
+        },
+        "packageName": {
+            "description": "Java package name",
+            "required": true,
+            "default": "com.ghatana.myservice"
+        },
+        "description": {
+            "description": "Project description",
+            "required": false,
+            "default": "A Spring Boot service"
+        },
+        "javaVersion": {
+            "description": "Java version",
+            "required": false,
+            "default": "21"
+        },
+        "port": {
+            "description": "Server port",
+            "required": false,
+            "default": "8080"
+        },
+        "databaseUrl": {
+            "description": "Database connection URL",
+            "required": false,
+            "default": "jdbc:postgresql://localhost:5432/mydb"
+        }
+    },
+    "hooks": {
+        "postGenerate": [
+            "./gradlew build --dry-run"
+        ]
+    },
+    "requirements": {
+        "java": ">=21",
+        "gradle": ">=8.0"
+    }
+}

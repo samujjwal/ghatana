@@ -1,0 +1,243 @@
+# Plan Synthesis Operator - Consolidated Planning Domain
+# Consolidates: plan_combiner, milestone plan, requirements package assembly
+# Purpose: Package and synthesize planning outputs for stage transition
+
+id: plan_synthesis_operator
+version: "1.0.0"
+domain: planning
+category: synthesis
+
+description: |
+  Unified plan synthesis operator for packaging planning stage outputs:
+  - Combine all planning artifacts into coherent package
+  - Validate completeness and consistency
+  - Generate handoff checklist for next stage
+  - Ensure all approvals and signoffs are present
+
+# Operator Modes
+modes:
+  validate:
+    description: "Validate planning artifacts for completeness"
+    role: PM/Stage Lead
+    inputs:
+      - name: product_vision
+        description: Refined product vision document
+        required: true
+      - name: business_goals
+        description: Business goals with success criteria
+        required: true
+      - name: stakeholder_mapping
+        description: Stakeholder list and engagement plan
+        required: true
+      - name: requirements
+        description: Functional and non-functional requirements
+        required: true
+      - name: traceability_matrix
+        description: Requirements traceability
+        required: true
+      - name: constraints_assumptions
+        description: Constraints and assumptions package
+        required: true
+    outputs:
+      - name: validation_report
+        description: Planning stage validation results
+        format: yaml_report
+        schema:
+          - artifacts_checked: list
+          - completeness_score: number
+          - gaps: list
+          - warnings: list
+          - blocking_issues: list
+          - ready_for_handoff: boolean
+    tasks:
+      - Check all required artifacts are present
+      - Validate artifact consistency
+      - Identify gaps and missing information
+      - Flag blocking issues
+      - Calculate completeness score
+
+  package:
+    description: "Package planning artifacts for stage transition"
+    role: PM/Stage Lead
+    inputs:
+      - name: validation_report
+        description: Validation results
+        required: true
+      - name: all_planning_artifacts
+        description: All planning stage outputs
+        required: true
+      - name: stakeholder_signoffs
+        description: Required stakeholder approvals
+        required: true
+    outputs:
+      - name: planning_package
+        description: Complete planning stage package
+        format: yaml_package
+        schema:
+          - package_id: string
+          - version: string
+          - created_date: datetime
+          - stage: "planning"
+          - documents: list
+          - approvals: list
+          - handoff_checklist: list
+          - next_stage_prerequisites: list
+          - metadata: object
+    tasks:
+      - Assemble all artifacts into versioned package
+      - Include all approvals and signoffs
+      - Generate handoff checklist
+      - Document next stage prerequisites
+      - Archive for traceability
+
+  handoff:
+    description: "Execute stage transition to Design"
+    role: PM/Stage Lead
+    inputs:
+      - name: planning_package
+        description: Complete planning package
+        required: true
+      - name: next_stage_lead
+        description: Design stage lead assignment
+        required: true
+    outputs:
+      - name: handoff_record
+        description: Stage transition record
+        format: yaml_record
+        schema:
+          - transition_id: string
+          - from_stage: string
+          - to_stage: string
+          - handoff_date: datetime
+          - from_lead: string
+          - to_lead: string
+          - package_version: string
+          - acceptance_status: "accepted|pending|rejected"
+          - notes: list
+    tasks:
+      - Transfer package to Design stage
+      - Confirm receipt by Design lead
+      - Document transition record
+      - Archive planning stage state
+      - Initiate Design stage setup
+
+# Internal Logic
+internal_logic:
+  perception:
+    description: "Aggregate all planning stage artifacts and status"
+    sources:
+      - product_discovery_outputs
+      - business_goals_outputs
+      - stakeholder_outputs
+      - requirements_outputs
+  model:
+    description: "Stage completion tracking"
+    entities:
+      - artifact: "{id, type, status, version, approval_status}"
+      - signoff: "{stakeholder, artifact, date, notes}"
+      - gap: "{artifact, description, severity, owner}"
+    relationships:
+      - artifact_requires_signoff
+      - gap_blocks_handoff
+  planning:
+    strategy: |
+      1. Verify all required artifacts present
+      2. Validate cross-artifact consistency
+      3. Collect missing signoffs
+      4. Package only when all criteria met
+  action:
+    description: "Output packaged artifacts and handoff record"
+    validation: "Stage lead and sponsor sign-off required"
+
+# Completeness Criteria
+completeness:
+  required_artifacts:
+    - product_vision
+    - business_goals
+    - success_criteria
+    - stakeholder_list
+    - engagement_plan
+    - functional_requirements
+    - non_functional_requirements
+    - traceability_matrix
+    - constraints
+    - assumptions
+  required_signoffs:
+    - product_owner
+    - technical_lead
+    - compliance_lead # if applicable
+    - project_sponsor
+  minimum_score: 95
+
+# Handoff Checklist Template
+handoff_checklist:
+  - "All required artifacts present and versioned"
+  - "Requirements traceability complete"
+  - "All critical questions resolved"
+  - "Stakeholder signoffs collected"
+  - "Constraints and assumptions documented"
+  - "No blocking issues outstanding"
+  - "Evidence package archived"
+  - "Next stage lead assigned"
+  - "Kickoff meeting scheduled"
+
+# Quality Assurance
+quality:
+  templates:
+    - package_template
+    - handoff_record_template
+  checklists:
+    - completeness_checklist
+    - signoff_checklist
+  automated_checks:
+    - missing_artifact_detection
+    - version_consistency_check
+    - signoff_collection_status
+
+# Validation Rules
+validation:
+  rules:
+    - "Package must include all required artifacts"
+    - "All required signoffs must be present"
+    - "No blocking issues allowed"
+    - "Completeness score >= 95%"
+  review_gates:
+    - stage_lead_approval
+    - sponsor_sign_off
+
+# Escalation
+escalation:
+  triggers:
+    - "Missing required artifact"
+    - "Signoff not obtained"
+    - "Blocking issue not resolved"
+  paths:
+    - role: Project Sponsor
+      for: "Escalated signoffs, scope decisions"
+    - role: PMO
+      for: "Process exceptions, timeline impacts"
+
+# Dependencies
+dependencies:
+  upstream:
+    - product_discovery_operator
+    - business_goals_operator
+    - stakeholder_operator
+    - requirements_operator
+  downstream:
+    - design_stage_operators
+
+# Metrics
+metrics:
+  - name: planning_stage_duration
+    description: "Time from start to handoff"
+    target: "<= planned duration"
+  - name: artifact_completeness
+    description: "Required artifacts present"
+    target: "100%"
+  - name: signoff_cycle_time
+    description: "Average time to collect signoffs"
+    target: "<= 3 business days"
+  - name: handoff_success_rate
+    description: "First-time handoff acceptance"
+    target: ">= 90%"

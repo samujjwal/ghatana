@@ -1,0 +1,204 @@
+name: Canary Deployment
+
+on:
+  workflow_dispatch:
+    inputs:
+      version:
+        description: 'Version to deploy (e.g., v1.3.0)'
+        required: true
+        type: string
+      stage:
+        description: 'Deployment stage'
+        required: true
+        type: choice
+        options:
+          - deploy
+          - stage1
+          - stage2
+          - stage3
+          - stage4
+          - stage5
+          - promote
+          - rollback
+      environment:
+        description: 'Target environment'
+        required: true
+        type: choice
+        options:
+          - staging
+          - production
+        default: staging
+
+permissions:
+  contents: read
+  id-token: write
+  deployments: write
+
+jobs:
+  canary-deployment:
+    runs-on: ubuntu-latest
+    environment: ${{ inputs.environment }}
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+      
+      - name: Configure kubectl
+        uses: azure/k8s-set-context@v3
+        with:
+          method: kubeconfig
+          kubeconfig: ${{ secrets.KUBECONFIG }}
+      
+      - name: Validate cluster access
+        run: |
+          kubectl cluster-info
+          kubectl get nodes
+      
+      - name: Execute canary deployment
+        id: deploy
+        run: |
+          chmod +x ./scripts/deploy-canary.sh
+          ./scripts/deploy-canary.sh ${{ inputs.version }} ${{ inputs.stage }}
+        env:
+          FEATURE_FLAG_API: ${{ secrets.FEATURE_FLAG_API_URL }}
+      
+      - name: Wait for rollout completion
+        if: ${{ inputs.stage != 'rollback' }}
+        run: |
+          kubectl rollout status deployment/data-cloud-canary -n ghatana --timeout=5m
+      
+      - name: Run smoke tests
+        if: ${{ inputs.stage == 'deploy' || inputs.stage == 'stage1' }}
+        run: |
+          echo "Running smoke tests..."
+          curl -f https://app.ghatana.com/health || exit 1
+          # Add more smoke tests here
+      
+      - name: Notify Slack
+        if: always()
+        uses: slackapi/slack-github-action@v1
+        with:
+          webhook-url: ${{ secrets.SLACK_WEBHOOK }}
+          payload: |
+            {
+              "text": "Canary Deployment: ${{ inputs.stage }}",
+              "blocks": [
+                {
+                  "type": "section",
+                  "text": {
+                    "type": "mrkdwn",
+                    "text": "*Canary Deployment ${{ inputs.stage }}*\n*Version:* ${{ inputs.version }}\n*Environment:* ${{ inputs.environment }}\n*Status:* ${{ job.status }}"
+                  }
+                },
+                {
+                  "type": "actions",
+                  "elements": [
+                    {
+                      "type": "button",
+                      "text": {
+                        "type": "plain_text",
+                        "text": "View Metrics"
+                      },
+                      "url": "https://grafana.ghatana.com/d/canary-dashboard"
+                    },
+                    {
+                      "type": "button",
+                      "text": {
+                        "type": "plain_text",
+                        "text": "View Logs"
+                      },
+                      "url": "https://kibana.ghatana.com"
+                    }
+                  ]
+                }
+              ]
+            }
+      
+      - name: Create deployment record
+        if: success()
+        run: |
+          gh api \
+            --method POST \
+            -H "Accept: application/vnd.github+json" \
+            /repos/${{ github.repository }}/deployments \
+            -f ref='${{ github.ref }}' \
+            -f environment='${{ inputs.environment }}' \
+            -f description='Canary deployment ${{ inputs.stage }}' \
+            -f auto_merge=false \
+            -f required_contexts='[]'
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+  monitor-canary:
+    needs: canary-deployment
+    if: ${{ inputs.stage != 'rollback' && inputs.stage != 'promote' }}
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Wait for monitoring period
+        run: |
+          case "${{ inputs.stage }}" in
+            stage1) sleep 300 ;;    # 5 minutes
+            stage2) sleep 7200 ;;   # 2 hours
+            stage3) sleep 43200 ;;  # 12 hours
+            stage4) sleep 86400 ;;  # 24 hours
+            stage5) sleep 86400 ;;  # 24 hours
+            *) sleep 60 ;;
+          esac
+      
+      - name: Check metrics
+        id: metrics
+        run: |
+          # Query Prometheus for error rate
+          ERROR_RATE=$(curl -s "http://prometheus:9090/api/v1/query" \
+            --data-urlencode 'query=rate(http_requests_total{status=~"5..",version=~".*-canary"}[5m])/rate(http_requests_total{version=~".*-canary"}[5m])' \
+            | jq -r '.data.result[0].value[1]')
+          
+          echo "error_rate=$ERROR_RATE" >> $GITHUB_OUTPUT
+          
+          # Check if error rate exceeds threshold
+          if (( $(echo "$ERROR_RATE > 0.01" | bc -l) )); then
+            echo "::error::Error rate ($ERROR_RATE) exceeds threshold (0.01)"
+            exit 1
+          fi
+      
+      - name: Auto-rollback on failure
+        if: failure()
+        run: |
+          echo "::warning::Auto-rollback triggered due to metrics failure"
+          ./scripts/deploy-canary.sh ${{ inputs.version }} rollback
+
+  post-deployment:
+    needs: [canary-deployment, monitor-canary]
+    if: always() && inputs.stage == 'promote'
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Create GitHub Release
+        if: inputs.environment == 'production'
+        uses: actions/create-release@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          tag_name: ${{ inputs.version }}
+          release_name: Release ${{ inputs.version }}
+          body: |
+            ## Canary Deployment Complete
+            
+            Version ${{ inputs.version }} has been successfully deployed to production.
+            
+            ### Metrics
+            - Error Rate: < 0.01%
+            - P95 Latency: < 2000ms
+            - Deployment Duration: ${{ github.event.workflow_run.created_at }}
+            
+            ### Monitoring
+            - [Grafana Dashboard](https://grafana.ghatana.com/d/canary-dashboard)
+            - [Application Logs](https://kibana.ghatana.com)
+          draft: false
+          prerelease: false
+      
+      - name: Update deployment status
+        run: |
+          echo "Deployment complete!"
+          echo "Next steps: Monitor for 48 hours, then schedule cleanup"

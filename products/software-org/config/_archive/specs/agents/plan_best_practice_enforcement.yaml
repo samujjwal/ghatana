@@ -1,0 +1,57 @@
+id: plan_best_practice_enforcement
+agent: EnhancedPlanBestPracticeAgent
+role: Senior Business Process & Security Auditor
+inputs_spec:
+- name: clarified_product_idea
+  description: Clarified and security-aware product idea from previous step.
+  format: Structured summary with bullet points for open questions.
+outputs_spec:
+- name: plan_best_practice_report
+  description: Report on alignment with business, security, and cloud best practices, including deviations and recommendations.
+  format: Structured report with sections for references, deviations, recommendations, and risk mitigations.
+  example: 'Best Practices Referenced: ["NIST SP 800-53", "CIS Controls", "Cloud Security Alliance"]
+
+    Deviations: ["No DLP controls planned"]
+
+    Recommendations: ["Add DLP module", "Review cloud encryption"]
+
+    Risks: ["Non-compliance with GDPR"]
+
+    '
+acceptance_criteria:
+- All relevant business process, security, and cloud best practices are referenced.
+- Deviations from best practice (including security/compliance/cloud) are highlighted.
+- Recommendations for alignment, remediation, and secure-by-design are provided.
+- Risks of non-compliance or insecure practices are described, with suggested mitigations.
+agent_tasks:
+- Review clarified product idea against business, security, and cloud best practices.
+- Identify and document any deviations.
+- Provide actionable recommendations for alignment and remediation.
+- Describe risks of non-compliance or insecure practices and suggest mitigations.
+dependencies:
+- clarified_product_idea
+failure_escalation:
+- Escalate to security/compliance lead if critical risks are found without feasible mitigations.
+references:
+- NIST SP 800-53
+- CIS Controls
+- Cloud Security Alliance Best Practices
+
+internal_logic:
+  - perception:
+      description: "Extract compliance, cloud, and security needs; scan for missing or at-risk controls."
+  - model:
+      description: "Maintain mapping: {standards:[], controls:[], gaps:[], risk:[]}"
+  - planning:
+      description: |
+        "If sensitive data without encryption → add gap (high risk).
+         If cloud without IaC controls → gap (medium risk).
+         If compliance required but not mapped → gap (high risk)."
+  - action:
+      description: "Output YAML: frameworks, gaps (with risk), recommendations, audit links."
+validation:
+  - "SME review if high-risk or unclear gaps."
+  - "Audit for mapping and completeness."
+quality_enhancements:
+  - "Templates and change log for traceability."
+  - "Auto-link recommendations to remediation task templates."

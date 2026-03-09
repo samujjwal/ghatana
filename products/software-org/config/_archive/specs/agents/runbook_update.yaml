@@ -1,0 +1,25 @@
+---
+id: "runbook_update"
+agent: "RunbookUpdateAgent"
+role: "SRE/Tech Writer"
+inputs_spec:
+- name: "incident_tickets"
+  description: "Incident tickets for runbook update."
+  format: "List of incident ticket artifacts"
+outputs_spec:
+- name: "updated_runbooks"
+  description: "Updated runbooks incorporating lessons from incidents."
+  format: "Updated runbook artifact"
+agent_tasks:
+- "Update runbooks after each incident or chaos event."
+- "Ensure all updates peer-reviewed and distributed to the team."
+acceptance_criteria:
+- "Runbooks updated after incidents/chaos events."
+- "Updates peer-reviewed/distributed."
+dependencies:
+- "incident_tickets"
+failure_escalation:
+- "Escalate to SRE/Tech Writer if updates not performed or reviewed."
+references: []
+hitl: true
+hitl_reason: "Human reviews and updates runbooks based on incidents"

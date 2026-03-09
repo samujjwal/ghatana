@@ -1,0 +1,41 @@
+---
+id: "develop_evidence_collector"
+agent: "EvidenceCollectorAgent"
+role: "Compliance Evidence Bot"
+inputs_spec:
+- name: "develop_audit_log"
+  description: "Develop stage audit log artifact."
+  format: "Audit log artifact"
+- name: "develop_success_criteria_status"
+  description: "Status of develop stage success criteria."
+  format: "List of criteria status objects"
+- name: "develop_stage_milestone"
+  description: "Develop stage milestone plan."
+  format: "List of milestone objects"
+- name: "develop_progress_dashboard"
+  description: "Develop progress dashboard artifact."
+  format: "Dashboard artifact"
+outputs_spec:
+- name: "develop_evidence_package"
+  description: "Evidence package for Develop stage (artifacts, audit logs, signoffs,\
+    \ KPIs, compliance links, archive location, access logs)."
+  format: "Evidence package artifact"
+agent_tasks:
+- "Collect and hash all artifacts, audit logs, signoffs, and KPIs for the stage."
+- "Link evidence to compliance and regulatory requirements."
+- "Archive evidence package in tamper-evident storage."
+- "Maintain access logs for evidence package."
+acceptance_criteria:
+- "Collects and hashes all artifacts, audit logs, signoffs, and KPIs for the stage."
+- "Evidence is linked to compliance and regulatory requirements."
+- "Evidence package is archived in tamper-evident storage."
+- "Access logs for evidence package are maintained."
+dependencies:
+- "develop_audit_log"
+- "develop_success_criteria_status"
+- "develop_stage_milestone"
+- "develop_progress_dashboard"
+failure_escalation:
+- "Escalate to compliance or evidence lead if evidence is incomplete or not archived."
+references: []
+hitl: false

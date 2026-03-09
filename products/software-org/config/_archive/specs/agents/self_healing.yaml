@@ -1,0 +1,27 @@
+---
+id: "self_healing"
+agent: "SelfHealingAgent"
+role: "Platform Engineer"
+inputs_spec:
+- name: "centralized_logs"
+  description: "Centralized logs for self-healing trigger."
+  format: "Centralized log artifact"
+outputs_spec:
+- name: "self_healing_events"
+  description: "Self-healing actions/events and logs."
+  format: "Self-healing event artifact"
+agent_tasks:
+- "Define/test self-healing actions."
+- "Version-control remediation scripts."
+- "Log and analyze events."
+acceptance_criteria:
+- "Self-healing actions defined/tested."
+- "Scripts version-controlled."
+- "Events logged and analyzed."
+dependencies:
+- "centralized_logs"
+failure_escalation:
+- "Escalate to Platform Engineer if self-healing actions ineffective."
+references: []
+hitl: true
+hitl_reason: "Human reviews self-healing events for effectiveness"

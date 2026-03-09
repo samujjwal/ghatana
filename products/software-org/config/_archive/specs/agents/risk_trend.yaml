@@ -1,0 +1,42 @@
+id: risk_trend
+agent: RiskTrendAgent
+role: Risk Trend Analyst
+inputs_spec:
+  - name: evidence_record
+    description: Evidence repository from EvidenceAgent.
+    format: YAML array
+outputs_spec:
+  - name: risk_trend_report
+    description: Time-series analysis of risk evolution, incident patterns, mitigation effectiveness.
+    format: YAML array
+acceptance_criteria:
+  - All critical risks/incidents trend-analyzed.
+  - Mitigation effectiveness and recommendations provided.
+  - Template/time-series fields complete.
+agent_tasks:
+  - Analyze evidence/audit data for risk patterns/trends.
+  - Report severity shifts, recurring incidents, mitigation success.
+  - Generate governance recommendations.
+dependencies:
+  - evidence_record
+failure_escalation:
+  - Escalate unresolved or worsening trends to risk committee.
+references: []
+internal_logic:
+  - perception:
+      description: "Analyze risk log and incident trends over time; identify recurring or escalating risk patterns."
+  - model:
+      description: "Maintain time-series data of risk severity, incident frequency, and mitigation effectiveness."
+  - planning:
+      description: |
+        "Generate trend reports and recommendations for governance review.
+         Flag new or worsening trends for rapid mitigation."
+  - action:
+      description: "Output risk trend analysis and recommendations."
+validation:
+  - "SME/governance review for accuracy and actionability."
+  - "Audit for pattern recognition and follow-up."
+quality_enhancements:
+  - "Trend visualization templates."
+  - "Metrics for risk reduction and trend reversal."
+  - "Automated alerting for new or worsening trends."

@@ -1,0 +1,93 @@
+services:
+{{projectName}}:
+build:
+context: .
+dockerfile: Dockerfile
+ports:
+- "{{port}}:{{port}}"
+environment:
+- NODE_ENV=production
+- PORT={{port}}
+- LOG_LEVEL={{logLevel}}
+{{#if enableAuth}}
+- JWT_SECRET=${JWT_SECRET:-change-me-in-production}
+{{/if}}
+- USERS_SERVICE_URL=http://users-service:4001/graphql
+- PRODUCTS_SERVICE_URL=http://products-service:4002/graphql
+healthcheck:
+test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider",
+"http://localhost:{{port}}/graphql?query=%7B_health%7Bstatus%7D%7D"]
+interval: 30s
+timeout: 3s
+retries: 3
+restart: unless-stopped
+depends_on:
+- users-service
+- products-service
+networks:
+- mesh-network
+
+# Mock services for development
+# Replace with actual service containers in production
+
+users-service:
+image: node:22-alpine
+working_dir: /app
+volumes:
+- ./sources:/app/sources:ro
+command: >
+sh -c "npm i -g graphql-yoga &&
+node -e \"
+const { createYoga, createSchema } = require('graphql-yoga');
+const { createServer } = require('http');
+const schema = createSchema({
+typeDefs: require('fs').readFileSync('./sources/users.graphql', 'utf-8'),
+resolvers: {
+Query: {
+user: (_, { id }) => ({ id, email: 'test@example.com', name: 'Test User', role: 'USER', createdAt: new
+Date().toISOString(), updatedAt: new Date().toISOString() }),
+users: () => [],
+me: () => null,
+},
+},
+});
+const yoga = createYoga({ schema });
+createServer(yoga).listen(4001, () => console.log('Users service at http://localhost:4001/graphql'));
+\""
+ports:
+- "4001:4001"
+networks:
+- mesh-network
+
+products-service:
+image: node:22-alpine
+working_dir: /app
+volumes:
+- ./sources:/app/sources:ro
+command: >
+sh -c "npm i -g graphql-yoga &&
+node -e \"
+const { createYoga, createSchema } = require('graphql-yoga');
+const { createServer } = require('http');
+const schema = createSchema({
+typeDefs: require('fs').readFileSync('./sources/products.graphql', 'utf-8'),
+resolvers: {
+Query: {
+product: (_, { id }) => ({ id, name: 'Product', price: 9.99, currency: 'USD', stock: 100, createdById: '1', createdAt:
+new Date().toISOString(), updatedAt: new Date().toISOString() }),
+products: () => ({ nodes: [], totalCount: 0, pageInfo: { hasNextPage: false, hasPreviousPage: false } }),
+categories: () => [],
+},
+},
+});
+const yoga = createYoga({ schema });
+createServer(yoga).listen(4002, () => console.log('Products service at http://localhost:4002/graphql'));
+\""
+ports:
+- "4002:4002"
+networks:
+- mesh-network
+
+networks:
+mesh-network:
+driver: bridge

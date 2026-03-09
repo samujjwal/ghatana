@@ -1,0 +1,41 @@
+id: acceptance_criteria
+agent: AcceptanceCriteriaAgent
+role: QA Lead
+inputs_spec:
+- name: devops_plan
+  description: DevOps plan with security, compliance, and cloud readiness.
+  format: Structured plan
+outputs_spec:
+- name: acceptance_criteria
+  description: Clear, measurable, and testable acceptance criteria covering functional and non-functional aspects.
+  format: List of criteria objects (description, measurable, testable, aspect)
+  example: "- description: \"All code passes SAST\"\n  measurable: true\n  testable: true\n  aspect: \"Security\"\n"
+acceptance_criteria:
+- Acceptance criteria are clear, measurable, and testable.
+- Criteria cover both functional and non-functional aspects.
+- Missing or ambiguous criteria are flagged.
+agent_tasks:
+- Define acceptance criteria covering all relevant aspects.
+- Ensure criteria are measurable and testable.
+- Flag missing or ambiguous criteria.
+dependencies:
+- devops_plan
+failure_escalation:
+- Escalate to QA lead if criteria are incomplete or unclear.
+references: []
+internal_logic:
+  - perception:
+      description: "Extract DevOps steps and identify verification needs."
+  - model:
+      description: "Criteria: { id, step_id, description, metric, test_method, compliance, risk, owner }"
+  - planning:
+      description: |
+        "For each step/control, specify how acceptance will be measured/tested."
+  - action:
+      description: "Produce YAML with all fields completed."
+validation:
+  - "QA and DevOps SME review."
+  - "Audit for completeness, traceability, and measurability."
+quality_enhancements:
+  - "Criteria templates and metrics catalog."
+  - "Audit log for test results."

@@ -1,0 +1,106 @@
+id: team-health-agent
+name: Team Health Agent
+version: 1.0.0
+description: Monitors team health indicators. Tracks morale, burnout risk, collaboration quality, and psychological safety.
+
+metadata:
+  level: 2  # Domain Expert
+  domain: delivery
+  tags:
+    - team-health
+    - morale
+    - burnout-prevention
+    - psychological-safety
+
+generator:
+  type: PIPELINE
+  steps:
+    - name: health_assessment
+      type: LLM
+      provider: ANTHROPIC
+      model: claude-3-5-sonnet-20241022
+      temperature: 0.2
+      max_tokens: 2000
+      prompt: |
+        You are the Team Health Agent. Assess team health:
+        
+        Team Signals: {{signals}}
+        Work Patterns: {{patterns}}
+        Communication Data: {{communication}}
+        Survey Results: {{surveys}}
+        
+        Assess:
+        1. Workload sustainability (overtime, weekend work)
+        2. Morale indicators (engagement, enthusiasm)
+        3. Burnout risk (individual and team)
+        4. Collaboration quality (communication, helping)
+        5. Psychological safety (speaking up, risk-taking)
+        6. Team cohesion
+        7. Areas of concern
+        8. Recommendations
+        
+        Output as JSON: {workload_score, morale_score, burnout_risk, collaboration_score, psych_safety_score, cohesion_score, concerns, recommendations, overall_health}
+    - name: alert_generation
+      type: RULE_BASED
+      description: Generate alerts for concerning signals
+    - name: intervention_recommendation
+      type: TEMPLATE
+      template_path: templates/team-health-report.ftl
+
+memory:
+  episodic:
+    enabled: true
+    retention_days: 365
+    categories:
+      - health-assessments
+      - interventions
+      - outcomes
+  semantic:
+    enabled: true
+    categories:
+      - health-indicators
+      - intervention-strategies
+      - team-patterns
+  procedural:
+    enabled: true
+    categories:
+      - assessment-framework
+      - alert-thresholds
+      - intervention-playbooks
+
+tools:
+  - health_monitor
+  - burnout_detector
+  - engagement_analyzer
+
+capabilities:
+  - health-assessment
+  - burnout-detection
+  - intervention-recommendation
+  - trend-analysis
+
+routing:
+  input_types:
+    - health-check
+    - team-signals
+    - survey-results
+  output_types:
+    - health-report
+    - alert
+    - recommendations
+
+delegation:
+  can_delegate_to: []
+  escalates_to:
+    - delivery-orchestrator-agent
+    - human-in-the-loop-coordinator
+
+governance:
+  requires_approval: false
+  can_block: false  # Recommends, doesn't block
+  audit_trail: standard  # Privacy sensitive
+
+performance:
+  expected_latency_ms: 3000
+  max_latency_ms: 8000
+  timeout_ms: 15000

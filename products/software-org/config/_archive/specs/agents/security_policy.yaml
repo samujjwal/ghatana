@@ -1,0 +1,29 @@
+---
+id: "security_policy"
+agent: "SecurityPolicyAgent"
+role: "Security Engineer/Architect"
+inputs_spec:
+- name: "ready_for_release_package"
+  description: "Release package including all artifacts for policy creation."
+  format: "Package artifact"
+outputs_spec:
+- name: "policy_as_code_files"
+  description: "Version-controlled security policies as code."
+  format: "Policy-as-code files/artifacts"
+agent_tasks:
+- "Define security policies as code and version control them."
+- "Review policies for completeness, accuracy, and coverage."
+- "Validate compliance with relevant standards (e.g., NIST, CIS, ISO)."
+- "Document policy exceptions/overrides."
+acceptance_criteria:
+- "Security policies are defined as code and version controlled."
+- "Policies are reviewed for completeness, accuracy, and coverage."
+- "Compliance with relevant standards is validated."
+- "Policy exceptions/overrides are documented."
+dependencies:
+- "ready_for_release_package"
+failure_escalation:
+- "Escalate to Security Lead if policy is incomplete or not compliant."
+references: []
+hitl: true
+hitl_reason: "Human reviews security policy as code for compliance"

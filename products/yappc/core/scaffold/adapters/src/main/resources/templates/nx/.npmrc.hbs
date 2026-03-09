@@ -1,0 +1,74 @@
+# .npmrc configuration for
+{{workspaceName}}# .npmrc configuration for
+{{workspaceName}}# .npmrc configuration for
+{{workspaceName}}# .npmrc configuration for
+{{workspaceName}}
+
+# Day 14: Canonical registries and package scope enforcement # Per Doc3 §Roadmap
+Phase 1 and Doc1 §6 Non-Negotiables# Day 14: Canonical registries and package
+scope enforcement # Canonical registry configuration# Per Doc3 §Roadmap Phase 1
+and Doc1 §6 Non-Negotiables# Day 14: Canonical registries and package scope
+enforcement# Day 14: Canonical registries and package scope enforcement
+registry={{registry}}
+
+# Package scope enforcement for @ghatana/* organization
+
+{{scopedRegistry}}# Canonical registry configuration# Per Doc3 §Roadmap Phase 1
+and Doc1 §6 Non-Negotiables# Per Doc3 §Roadmap Phase 1 and Doc1 §6
+Non-Negotiables # Security and audit policiesregistry={{registry}}
+
+audit-level={{auditLevel}}
+
+fund=false # Dependency resolution policies # Package scope enforcement for
+@ghatana/* organization strict-peer-dependencies={{strictPeerDeps}}
+
+auto-install-peers={{autoInstallPeers}}{{scopedRegistry}}# Canonical registry
+configuration# Canonical registry configuration # Package management
+configuration node-linker={{nodeLinker}}
+
+enable-global-cache={{enableGlobalCache}}# Security and audit policiesregistry={{registry}}registry={{registry}}
+
+prefer-frozen-lockfile=true audit-level={{auditLevel}}
+
+# License compliance enforcement license-check=truefund=false # Performance
+optimizations network-concurrency=16 child-concurrency=4# Dependency resolution
+policies # Package scope enforcement for @ghatana/* organization# Package scope
+enforcement for @ghatana/* organization # Cache and temporary
+settingsstrict-peer-dependencies={{strictPeerDeps}}
+
+store-dir=.pnpm-store cache-dir=.pnpm-cacheauto-install-peers={{autoInstallPeers}}{{scopedRegistry}}{{scopedRegistry}}
+
+tmp-dir=.pnpm-tmp # Resolution policies for @ghatana/* packages
+@ghatana:registry=https://registry.npmjs.org/# Package management configuration
+//registry.npmjs.org/:_auth=${NPM_TOKEN}
+//registry.npmjs.org/:always-auth=truenode-linker={{nodeLinker}}
+
+enable-global-cache={{enableGlobalCache}}# Security and audit policies# Security
+and audit policies prefer-frozen-lockfile=true audit-level={{auditLevel}}audit-level={{auditLevel}}
+
+# License compliance enforcement license-check=truefund=falsefund=false #
+Performance optimizations network-concurrency=16 child-concurrency=4# Dependency
+resolution policies # Dependency resolution policies # Cache and temporary
+settingsstrict-peer-dependencies={{strictPeerDeps}}strict-peer-dependencies={{strictPeerDeps}}
+
+store-dir=.pnpm-store cache-dir=.pnpm-cacheauto-install-peers={{autoInstallPeers}}auto-install-peers={{autoInstallPeers}}
+
+tmp-dir=.pnpm-tmp # Resolution policies for @ghatana/* packages
+@ghatana:registry=https://registry.npmjs.org/# Package management configuration#
+Package management configuration //registry.npmjs.org/:_auth=${NPM_TOKEN}
+//registry.npmjs.org/:always-auth=truenode-linker={{nodeLinker}}node-linker={{nodeLinker}}
+
+enable-global-cache={{enableGlobalCache}}enable-global-cache={{enableGlobalCache}}
+
+prefer-frozen-lockfile=trueprefer-frozen-lockfile=true # License compliance
+enforcement# License compliance enforcement license-check=truelicense-check=true
+# Performance optimizations# Performance optimizations
+network-concurrency=16network-concurrency=16
+child-concurrency=4child-concurrency=4 # Cache and temporary settings# Cache and
+temporary settings store-dir=.pnpm-storestore-dir=.pnpm-store
+cache-dir=.pnpm-cachecache-dir=.pnpm-cache tmp-dir=.pnpm-tmptmp-dir=.pnpm-tmp #
+Resolution policies for @ghatana/* packages# Resolution policies for @ghatana/*
+packages
+@ghatana:registry=https://registry.npmjs.org/@ghatana:registry=https://registry.npmjs.org/
+//registry.npmjs.org/:_auth=${NPM_TOKEN}//registry.npmjs.org/:_auth=${NPM_TOKEN}
+//registry.npmjs.org/:always-auth=true//registry.npmjs.org/:always-auth=true

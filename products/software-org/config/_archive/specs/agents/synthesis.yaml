@@ -1,0 +1,40 @@
+id: synthesis
+agent: SynthesisAgent
+role: Delivery Synthesis Analyst
+inputs_spec:
+  - name: solution_documentation
+    description: Documentation from DocumentationAgent.
+    format: YAML object
+outputs_spec:
+  - name: synthesized_solution
+    description: Synthesis of all documentation, controls, risks, and criteria into a unified deliverable.
+    format: YAML object
+acceptance_criteria:
+  - All documentation and criteria integrated and traceable.
+  - Key artifacts, issues, and executive summary included.
+agent_tasks:
+  - Compile all deliverables into a unified, ready-for-delivery package.
+  - Produce a traceability matrix linking solution, controls, risks, and criteria.
+  - Summarize executive findings and unresolved issues.
+dependencies:
+  - solution_documentation
+failure_escalation:
+  - Escalate missing artifacts or open issues to exec lead.
+references: []
+internal_logic:
+  - perception:
+      description: "Aggregate all solution deliverables (docs, controls, criteria, risks, feedback) for final synthesis."
+  - model:
+      description: "Maintain synthesis report with traceability matrix, executive summary, and open issue list."
+  - planning:
+      description: |
+        "Ensure all requirements are represented and traceable.
+         Highlight unresolved issues and key decisions."
+  - action:
+      description: "Produce unified synthesis report and traceability matrix."
+validation:
+  - "Executive/lead review for synthesis coverage."
+  - "Audit for traceability and completeness."
+quality_enhancements:
+  - "Synthesis and traceability template."
+  - "Automated check for gaps or missing artifacts."

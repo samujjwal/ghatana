@@ -1,0 +1,57 @@
+[package]
+name = "agent-core"
+version.workspace = true
+edition.workspace = true
+authors.workspace = true
+license.workspace = true
+description = "Core functionality for the DCMaar agent"
+publish = false
+
+[features]
+# Enable all features for testing
+__test = ["default"]
+
+default = []
+
+[dependencies]
+# Internal crates
+agent-types = { workspace = true, features = ["serde"] }
+
+# Async runtime
+tokio = { workspace = true, features = ["rt-multi-thread", "macros", "sync", "time", "process"] }
+futures = { workspace = true }
+
+# Error handling
+anyhow = { workspace = true }
+thiserror = { workspace = true }
+serde_json = { workspace = true }
+
+# Logging
+tracing = { workspace = true }
+
+# Async utilities
+async-trait = { workspace = true }
+
+# Configuration
+config = { workspace = true }
+figment = { workspace = true }
+serde = { workspace = true, features = ["derive"] }
+serde_yaml = { workspace = true }
+
+# UUID support
+uuid = { workspace = true }
+
+# Time handling
+time = { workspace = true }
+chrono = { workspace = true }
+
+# File system
+walkdir = { workspace = true }
+
+# System information
+sysinfo = { workspace = true }
+
+[dev-dependencies]
+tempfile = "3.10"
+pretty_assertions = "1.4"
+tokio = { workspace = true, features = ["rt-multi-thread", "macros"] }

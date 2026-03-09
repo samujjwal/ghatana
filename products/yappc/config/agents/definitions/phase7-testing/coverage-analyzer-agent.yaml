@@ -1,0 +1,112 @@
+id: coverage-analyzer-agent
+name: Coverage Analyzer Agent
+version: 1.0.0
+description: Analyzes test coverage. Identifies gaps and recommends tests for risk areas.
+
+metadata:
+  level: 2  # Domain Expert
+  domain: testing
+  tags:
+    - coverage
+    - code-coverage
+    - gap-analysis
+    - risk-based-testing
+
+generator:
+  type: PIPELINE
+  steps:
+    - name: coverage_collection
+      type: SERVICE_CALL
+      service: coverage-service
+      endpoint: /coverage/collect
+    - name: coverage_analysis
+      type: LLM
+      provider: ANTHROPIC
+      model: claude-3-5-sonnet-20241022
+      temperature: 0.2
+      max_tokens: 2500
+      prompt: |
+        You are the Coverage Analyzer Agent. Analyze coverage:
+        
+        Coverage Data: {{coverage}}
+        Risk Map: {{risks}}
+        Change Frequency: {{changes}}
+        Complexity: {{complexity}}
+        
+        Analyze:
+        1. Overall coverage metrics (line, branch, function)
+        2. Coverage by module/component
+        3. Gaps in high-risk areas
+        4. Gaps in frequently changed code
+        5. Gaps in complex code
+        6. Dead code candidates
+        7. Test recommendations prioritized by risk
+        
+        Output as JSON: {
+          metrics,
+          by_module: [{module, coverage, risk_score, gap_priority}],
+          critical_gaps,
+          dead_code_candidates,
+          recommendations: [{area, test_type, priority, rationale}]
+        }
+    - name: report_generation
+      type: TEMPLATE
+      template_path: templates/coverage-report.ftl
+
+memory:
+  episodic:
+    enabled: true
+    retention_days: 365
+    categories:
+      - coverage-reports
+      - trends
+      - improvements
+  semantic:
+    enabled: true
+    categories:
+      - risk-models
+      - coverage-patterns
+      - gap-patterns
+  procedural:
+    enabled: true
+    categories:
+      - analysis-rules
+      - prioritization-rules
+      - thresholds
+
+tools:
+  - coverage_collector
+  - risk_scorer
+  - gap_identifier
+
+capabilities:
+  - coverage-analysis
+  - gap-identification
+  - risk-based-prioritization
+  - trend-analysis
+
+routing:
+  input_types:
+    - coverage-data
+    - analysis-request
+    - trend-request
+  output_types:
+    - coverage-report
+    - gap-analysis
+    - recommendations
+
+delegation:
+  can_delegate_to:
+    - test-generator-agent
+  escalates_to:
+    - testing-orchestrator-agent
+
+governance:
+  requires_approval: false
+  can_block: true  # Can block if coverage below threshold
+  audit_trail: standard
+
+performance:
+  expected_latency_ms: 4000
+  max_latency_ms: 10000
+  timeout_ms: 20000

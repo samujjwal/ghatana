@@ -1,0 +1,8 @@
+from fastapi import APIRouter
+from app.models.response import ApiResponse
+
+router = APIRouter(prefix="/api/v1", tags=["api"])
+
+@router.get("/hello")
+async def hello() -> ApiResponse[dict]:
+return ApiResponse.success_response({"message": "Hello from {{projectName}}!"})

@@ -1,0 +1,28 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: {{ include "yappc.fullname" . }}-config
+  labels:
+    {{- include "yappc.labels" . | nindent 4 }}
+data:
+  # Ollama
+  OLLAMA_MODEL: {{ .Values.config.ollama.model | quote }}
+  OLLAMA_TEMPERATURE: {{ .Values.config.ollama.temperature | quote }}
+  OLLAMA_MAX_TOKENS: {{ .Values.config.ollama.maxTokens | quote }}
+  OLLAMA_NUM_GPU: {{ .Values.config.ollama.numGPU | quote }}
+  OLLAMA_GPU_LAYERS: {{ .Values.config.ollama.gpuLayers | quote }}
+  OLLAMA_NUM_THREADS: {{ .Values.config.ollama.numThreads | quote }}
+  OLLAMA_NUM_PARALLEL: {{ .Values.config.ollama.numParallel | quote }}
+  OLLAMA_FLASH_ATTENTION: {{ .Values.config.ollama.flashAttention | quote }}
+  OLLAMA_MAX_LOADED_MODELS: {{ .Values.config.ollama.maxLoadedModels | quote }}
+  # YAPPC
+  YAPPC_AGENT_COUNT: {{ .Values.config.yappc.agentCount | quote }}
+  YAPPC_PHASE_COUNT: {{ .Values.config.yappc.phaseCount | quote }}
+  YAPPC_MODE: {{ .Values.config.yappc.mode | quote }}
+  YAPPC_BATCH_SIZE: {{ .Values.config.yappc.batchSize | quote }}
+  YAPPC_REQUEST_TIMEOUT: {{ .Values.config.yappc.requestTimeout | quote }}
+  # Observability
+  METRICS_ENABLED: {{ .Values.config.metrics.enabled | quote }}
+  METRICS_PORT: {{ .Values.config.metrics.port | quote }}
+  LOG_LEVEL: {{ .Values.config.logging.level | quote }}
+  LOG_FORMAT: {{ .Values.config.logging.format | quote }}

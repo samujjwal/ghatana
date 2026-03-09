@@ -1,0 +1,37 @@
+id: planning-phase
+name: "Product Planning Phase"
+description: "Orchestrates the complete product planning workflow from idea to execution"
+goal: >
+  Guide the product from initial concept through to execution readiness, ensuring all aspects of
+  product definition, market fit, technical feasibility, and implementation planning are addressed.
+type: sequential
+
+# Define the sequence of agents that will process the product planning workflow
+# Each agent's output will be passed as input to the next agent in the sequence
+subAgents:
+  # 1. Idea Phase: Transform raw idea into structured concept
+  - subAgents/idea_agent.yaml
+  
+  # 2. Scoping Phase: Define product scope, goals, and feature prioritization
+  - subAgents/scoping_agent.yaml
+  
+  # 3. Research Phase: Analyze market, users, and competitors
+  - subAgents/research_agent.yaml
+  
+  # 4. Requirements Phase: Create user stories and acceptance criteria
+  - subAgents/requirements_agent.yaml
+  
+  # 5. Architecture Phase: Design technical architecture and select stack
+  - subAgents/architecture_agent.yaml
+  
+  # 6. Design Phase: Create UX wireframes and interaction flows
+  - subAgents/design_agent.yaml
+  
+  # 7. Planning Phase: Create implementation backlog and timeline
+  - subAgents/planning_agent.yaml
+  
+  # 8. Review Phase: Gather and incorporate stakeholder feedback
+  - subAgents/review_agent.yaml
+  
+  # 9. Execution Phase: Set up project management and QA infrastructure
+  - subAgents/execution_agent.yaml

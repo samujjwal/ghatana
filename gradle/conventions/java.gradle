@@ -1,0 +1,57 @@
+// Shared Java / test conventions applied from root build.gradle
+// This file centralizes common project configuration (compiler args, test config, javadoc encoding)
+
+import org.gradle.api.file.DuplicatesStrategy
+import org.gradle.api.tasks.bundling.AbstractArchiveTask
+import org.gradle.external.javadoc.StandardJavadocDocletOptions
+
+// Apply settings to projects that use the Java plugin
+plugins.withType(JavaPlugin) {
+    // Configure compilation for Java projects
+    tasks.withType(JavaCompile).configureEach {
+        options.encoding = 'UTF-8'
+        options.compilerArgs << '-parameters'
+        options.compilerArgs << '-Xlint:unchecked'
+        options.compilerArgs << '-Xlint:deprecation'
+    }
+
+    // Configure Javadoc
+    tasks.withType(Javadoc).configureEach { Javadoc javadocTask ->
+        javadocTask.options.encoding = 'UTF-8'
+
+        if (javadocTask.options instanceof StandardJavadocDocletOptions) {
+            StandardJavadocDocletOptions doclet = (StandardJavadocDocletOptions) javadocTask.options
+            doclet.addBooleanOption('Xdoclint:none', true)
+            doclet.addBooleanOption('quiet', true)
+
+            // Register custom documentation tags used across the codebase so Javadoc treats them as text
+            [
+                'doc.type',
+                'doc.layer',
+                'doc.purpose',
+                'doc.pattern'
+            ].each { tagName ->
+                doclet.addStringOption('tag', "${tagName}:a:${tagName}")
+            }
+        }
+
+        // Keep the build moving even if legacy sources contain malformed Javadoc markup
+        javadocTask.failOnError = false
+        javadocTask.enabled = false
+    }
+
+    // Configure test tasks to use JUnit Platform by default
+    tasks.withType(Test).configureEach {
+        useJUnitPlatform()
+        testLogging {
+            events 'passed', 'skipped', 'failed'
+        }
+    }
+
+    // Ensure duplicate entries do not fail archive-producing tasks (e.g., sourcesJar, test fixtures)
+    tasks.withType(AbstractArchiveTask).configureEach {
+        duplicatesStrategy = DuplicatesStrategy.EXCLUDE
+    }
+}
+
+// Any additional Java-related conventions can be added here later

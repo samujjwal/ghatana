@@ -1,0 +1,114 @@
+id: feature-iteration-agent
+name: Feature Iteration Agent
+version: 1.0.0
+description: Plans feature iterations based on usage and feedback. Evolves features for better outcomes.
+
+metadata:
+  level: 3  # Worker
+  domain: enhancement
+  tags:
+    - feature-iteration
+    - evolution
+    - improvement
+    - user-driven
+
+generator:
+  type: PIPELINE
+  steps:
+    - name: feature_assessment
+      type: LLM
+      provider: ANTHROPIC
+      model: claude-3-5-sonnet-20241022
+      temperature: 0.3
+      max_tokens: 2000
+      prompt: |
+        You are the Feature Iteration Agent. Assess feature:
+        
+        Feature: {{feature}}
+        Usage Data: {{usage}}
+        User Feedback: {{feedback}}
+        Original Goals: {{goals}}
+        Competitive Features: {{competitive}}
+        
+        Assess:
+        1. Goal achievement (metrics vs targets)
+        2. User adoption and engagement
+        3. Pain points in current implementation
+        4. Feature gaps
+        5. Enhancement opportunities
+        6. Iteration recommendations
+        7. Priority and impact
+        
+        Output as JSON: {
+          goal_achievement,
+          adoption_metrics,
+          pain_points,
+          gaps,
+          opportunities,
+          iteration_recommendations: [{change, rationale, impact, effort}],
+          priority_order
+        }
+    - name: iteration_planning
+      type: TEMPLATE
+      template_path: templates/feature-iteration.ftl
+    - name: backlog_update
+      type: SERVICE_CALL
+      service: backlog-service
+      endpoint: /items/create
+
+memory:
+  episodic:
+    enabled: true
+    retention_days: 365
+    categories:
+      - assessments
+      - iterations
+      - outcomes
+  semantic:
+    enabled: true
+    categories:
+      - feature-patterns
+      - iteration-strategies
+      - success-factors
+  procedural:
+    enabled: true
+    categories:
+      - assessment-framework
+      - prioritization-rules
+      - planning-templates
+
+tools:
+  - usage_analyzer
+  - feedback_integrator
+  - iteration_planner
+
+capabilities:
+  - feature-assessment
+  - iteration-planning
+  - impact-analysis
+  - prioritization
+
+routing:
+  input_types:
+    - feature-review
+    - usage-data
+    - iteration-request
+  output_types:
+    - assessment-report
+    - iteration-plan
+    - backlog-items
+
+delegation:
+  can_delegate_to: []
+  escalates_to:
+    - enhancement-orchestrator-agent
+
+governance:
+  requires_approval: false
+  can_block: false
+  audit_trail: standard
+
+performance:
+  expected_latency_ms: 3000
+  max_latency_ms: 8000
+  timeout_ms: 15000

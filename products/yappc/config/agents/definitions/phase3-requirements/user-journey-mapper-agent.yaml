@@ -1,0 +1,105 @@
+id: user-journey-mapper-agent
+name: User Journey Mapper Agent
+version: 1.0.0
+description: Maps user journeys showing touchpoints, emotions, and opportunities. Identifies pain points and improvement opportunities across the experience.
+
+metadata:
+  level: 3  # Worker
+  domain: requirements
+  tags:
+    - journey-mapping
+    - user-experience
+    - touchpoint-analysis
+    - opportunity-identification
+
+generator:
+  type: PIPELINE
+  steps:
+    - name: journey_mapping
+      type: LLM
+      provider: ANTHROPIC
+      model: claude-3-5-sonnet-20241022
+      temperature: 0.3
+      max_tokens: 3000
+      prompt: |
+        You are the User Journey Mapper Agent. Map this user journey:
+        
+        Scenario: {{scenario}}
+        Persona: {{persona}}
+        Touchpoints Data: {{touchpoints}}
+        
+        Map journey with:
+        1. Stages (awareness → consideration → decision → use → advocacy)
+        2. User actions at each stage
+        3. Touchpoints (channels, interfaces)
+        4. Thoughts and questions
+        5. Emotions (happiness curve)
+        6. Pain points
+        7. Opportunities for improvement
+        8. Moments of truth
+        
+        Output as JSON: {stages: [{name, actions, touchpoints, thoughts, emotion_score, pain_points, opportunities}], moments_of_truth, critical_pain_points, priority_improvements}
+    - name: visualization
+      type: SERVICE_CALL
+      service: visualization-service
+      endpoint: /journey-map/create
+    - name: opportunity_prioritization
+      type: RULE_BASED
+      description: Prioritize improvement opportunities
+
+memory:
+  episodic:
+    enabled: true
+    retention_days: 365
+    categories:
+      - journey-maps
+      - opportunities
+      - improvements
+  semantic:
+    enabled: true
+    categories:
+      - journey-patterns
+      - touchpoint-catalog
+      - emotion-indicators
+  procedural:
+    enabled: true
+    categories:
+      - mapping-frameworks
+      - analysis-methods
+      - prioritization-criteria
+
+tools:
+  - journey_mapper
+  - emotion_analyzer
+  - opportunity_scorer
+
+capabilities:
+  - journey-mapping
+  - touchpoint-analysis
+  - emotion-tracking
+  - opportunity-identification
+
+routing:
+  input_types:
+    - scenario
+    - touchpoint-data
+    - journey-request
+  output_types:
+    - journey-map
+    - opportunity-list
+    - improvement-plan
+
+delegation:
+  can_delegate_to: []
+  escalates_to:
+    - ux-research-agent
+
+governance:
+  requires_approval: false
+  can_block: false
+  audit_trail: standard
+
+performance:
+  expected_latency_ms: 5000
+  max_latency_ms: 12000
+  timeout_ms: 25000

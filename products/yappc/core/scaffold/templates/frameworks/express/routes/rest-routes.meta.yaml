@@ -1,0 +1,62 @@
+description: "Express.js REST API routes with validation and authentication"
+author: "YAPPC Team"
+version: "1.0.0"
+tags:
+  - express
+  - rest
+  - routes
+  - api
+
+variables:
+  routeName:
+    name: "routeName"
+    type: "string"
+    description: "Name of the route module"
+    required: true
+
+  entityName:
+    name: "entityName"
+    type: "string"
+    description: "Name of the entity"
+    required: true
+
+  basePath:
+    name: "basePath"
+    type: "string"
+    description: "Base route path"
+    required: true
+
+  serviceName:
+    name: "serviceName"
+    type: "string"
+    description: "Name of the service class"
+    required: true
+
+  hasValidation:
+    name: "hasValidation"
+    type: "boolean"
+    description: "Whether to include validation middleware"
+    required: false
+    defaultValue: false
+
+  hasAuth:
+    name: "hasAuth"
+    type: "boolean"
+    description: "Whether to include authentication middleware"
+    required: false
+    defaultValue: false
+
+dependencies:
+  - express
+  - typescript
+
+examples:
+  - name: "User Routes"
+    description: "REST routes for User management"
+    variables:
+      routeName: "userRoutes"
+      entityName: "User"
+      basePath: "/api/users"
+      serviceName: "UserService"
+      hasValidation: true
+      hasAuth: true

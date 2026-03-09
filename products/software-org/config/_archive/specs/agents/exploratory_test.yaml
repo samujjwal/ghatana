@@ -1,0 +1,24 @@
+---
+id: "exploratory_test"
+agent: "ExploratoryTestAgent"
+role: "QA/Tester"
+inputs_spec:
+- name: "test_environment_url"
+  description: "URL/access to test environment for exploratory tests."
+  format: "Environment URL/credentials"
+outputs_spec:
+- name: "exploratory_test_report"
+  description: "Observations and findings from exploratory testing sessions."
+  format: "Exploratory test report artifact"
+agent_tasks:
+- "Perform exploratory testing in ephemeral environments."
+- "Document unexpected findings, usability issues, and edge case defects."
+acceptance_criteria:
+- "Key exploratory test sessions are performed."
+- "Unexpected findings, usability issues, and edge cases are documented."
+dependencies:
+- "test_environment_url"
+failure_escalation:
+- "Escalate to QA or Product Owner if exploratory findings are not reviewed."
+references: []
+hitl: false

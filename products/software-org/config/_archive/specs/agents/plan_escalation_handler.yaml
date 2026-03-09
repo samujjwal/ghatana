@@ -1,0 +1,51 @@
+id: plan_escalation_handler
+agent: EscalationHandlerAgent
+role: Project Escalation Manager
+inputs_spec:
+- name: plan_success_criteria_status
+  description: Status of Plan stage success criteria.
+  format: List of criteria status objects
+outputs_spec:
+- name: plan_escalation_report
+  description: Escalation report for unresolved blockers, owners, deadlines, and dashboard visibility.
+  format: 'Structured escalation report (sections: at_risk_criteria, owners, deadlines, status)'
+  example: 'at_risk_criteria: ["Requirements signoff"]
+
+    owners: ["PM"]
+
+    deadlines: ["2024-07-10"]
+
+    status: "escalated"
+
+    '
+agent_tasks:
+- Review all "At Risk" or "Not Met" criteria for escalation.
+- Assign owners and deadlines for resolution.
+- Make escalation status visible in dashboard and audit log.
+acceptance_criteria:
+- All "At Risk" or "Not Met" criteria are reviewed for escalation.
+- Owners and deadlines for resolution are assigned.
+- Escalation status is visible in the dashboard and audit log.
+dependencies:
+- plan_success_criteria_status
+failure_escalation:
+- Escalate to escalation manager or PM if blockers are not resolved.
+references: []
+hitl: true
+hitl_reason: Human ensures appropriate escalation/action for unresolved blockers
+internal_logic:
+  - perception:
+      description: "Scan feedback/action items for unresolved or critical issues."
+  - model:
+      description: "Escalations: { id, issue, source, priority, owner, escalation_path, status, resolution, timestamp }"
+  - planning:
+      description: |
+        "For each item, determine escalation need and route."
+  - action:
+      description: "Produce YAML escalation log."
+validation:
+  - "Lead/PM review and sign-off."
+  - "Audit for outcome and response time."
+quality_enhancements:
+  - "Escalation templates and SLA tracking."
+  - "Automated owner notification."

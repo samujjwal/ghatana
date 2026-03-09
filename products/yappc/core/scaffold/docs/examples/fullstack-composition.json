@@ -1,0 +1,135 @@
+{
+    "version": "1.0",
+    "type": "custom",
+    "metadata": {
+        "name": "my-fullstack-app",
+        "description": "Fullstack application with React frontend, Go backend, and PostgreSQL database",
+        "tags": [
+            "web",
+            "api",
+            "database",
+            "fullstack"
+        ],
+        "author": "developer@company.com",
+        "license": "MIT"
+    },
+    "modules": [
+        {
+            "id": "frontend",
+            "name": "Frontend Application",
+            "type": "application",
+            "pack": "ts-react-vite",
+            "path": "./frontend",
+            "enabled": true,
+            "variables": {
+                "port": 3000,
+                "framework": "react",
+                "routing": true,
+                "stateManagement": "zustand"
+            },
+            "dependencies": [
+                "backend"
+            ],
+            "outputs": {
+                "build": "./dist",
+                "serve": "http://localhost:3000",
+                "health": "http://localhost:3000/health"
+            }
+        },
+        {
+            "id": "backend",
+            "name": "API Service",
+            "type": "service",
+            "pack": "go-service-gin",
+            "path": "./backend",
+            "enabled": true,
+            "variables": {
+                "port": 8080,
+                "enableSwagger": true,
+                "database": "postgresql",
+                "auth": "jwt"
+            },
+            "dependencies": [
+                "database"
+            ],
+            "outputs": {
+                "build": "./bin",
+                "serve": "http://localhost:8080",
+                "health": "http://localhost:8080/health",
+                "api": "http://localhost:8080/api"
+            }
+        },
+        {
+            "id": "database",
+            "name": "Database Layer",
+            "type": "infrastructure",
+            "pack": "feature-database",
+            "path": "./infra/database",
+            "enabled": true,
+            "condition": "{{backend.database}} == 'postgresql'",
+            "variables": {
+                "version": "15",
+                "port": 5432,
+                "migrations": true
+            },
+            "outputs": {
+                "connection": "postgresql://localhost:5432/myapp",
+                "migrations": "./migrations"
+            }
+        }
+    ],
+    "integrations": [
+        {
+            "id": "frontend-backend-api",
+            "name": "Frontend-Backend API Integration",
+            "type": "api-client",
+            "from": "frontend",
+            "to": "backend",
+            "templates": [
+                "api-client-generator.hbs",
+                "type-definitions.hbs",
+                "environment-config.hbs"
+            ],
+            "variables": {
+                "apiEndpoint": "{{backend.outputs.api}}",
+                "clientType": "react-client",
+                "authType": "{{backend.variables.auth}}"
+            },
+            "condition": "{{frontend.enabled}} && {{backend.enabled}}"
+        },
+        {
+            "id": "backend-database",
+            "name": "Backend-Database Integration",
+            "type": "datasource",
+            "from": "backend",
+            "to": "database",
+            "templates": [
+                "datasource-config.hbs",
+                "migration-scripts.hbs",
+                "repository-interfaces.hbs"
+            ],
+            "variables": {
+                "connectionString": "{{database.outputs.connection}}",
+                "migrationPath": "{{database.outputs.migrations}}"
+            }
+        }
+    ],
+    "lifecycle": {
+        "pre-generation": [
+            "validate-modules",
+            "check-dependencies"
+        ],
+        "post-generation": [
+            "install-dependencies",
+            "setup-git-hooks"
+        ],
+        "pre-build": [
+            "run-tests",
+            "security-scan"
+        ],
+        "post-build": [
+            "generate-docs",
+            "create-artifacts"
+        ]
+    }
+}

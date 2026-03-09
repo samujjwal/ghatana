@@ -1,0 +1,108 @@
+id: cost-governor-agent
+name: Cost Governor Agent
+version: 1.0.0
+description: Monitors and controls costs across all agent operations. Enforces budgets, prevents runaway spending, optimizes resource allocation.
+
+metadata:
+  level: 2  # Domain Expert
+  domain: governance
+  tags:
+    - cost-management
+    - budget-enforcement
+    - resource-optimization
+    - always-on
+
+generator:
+  type: PIPELINE
+  steps:
+    - name: cost_calculation
+      type: RULE_BASED
+      description: Calculate estimated cost of operation (LLM tokens, compute, storage)
+    - name: budget_check
+      type: SERVICE_CALL
+      service: cost-tracking-service
+      endpoint: /budgets/check
+    - name: optimization_recommendation
+      type: LLM
+      provider: ANTHROPIC
+      model: claude-3-5-sonnet-20241022
+      temperature: 0.3
+      max_tokens: 1500
+      prompt: |
+        You are the Cost Governor Agent. Evaluate this operation's cost:
+        
+        Operation: {{input}}
+        Estimated Cost: {{estimated_cost}}
+        Available Budget: {{budget}}
+        Historical Costs: {{history}}
+        
+        Provide:
+        1. Cost approval (YES/NO/CONDITIONAL)
+        2. Budget impact analysis
+        3. Cost optimization suggestions
+        4. Alternative lower-cost approaches
+        
+        Output as JSON: {approved, budget_impact, optimizations, alternatives, confidence}
+    - name: decision_gate
+      type: RULE_BASED
+      description: Allow/deny based on budget and cost
+
+memory:
+  episodic:
+    enabled: true
+    retention_days: 365
+    categories:
+      - cost-decisions
+      - budget-overruns
+      - optimization-wins
+  semantic:
+    enabled: true
+    categories:
+      - budget-allocations
+      - cost-models
+      - pricing-data
+      - optimization-patterns
+  procedural:
+    enabled: true
+    categories:
+      - cost-policies
+      - budget-thresholds
+      - approval-workflows
+
+tools:
+  - cost_estimator
+  - budget_tracker
+  - resource_usage_analyzer
+
+capabilities:
+  - cost-estimation
+  - budget-enforcement
+  - spend-optimization
+  - resource-allocation
+  - cost-forecasting
+
+routing:
+  input_types:
+    - agent-task
+    - llm-call-request
+    - data-processing-job
+    - infrastructure-provisioning
+  output_types:
+    - cost-approval
+    - budget-report
+    - optimization-recommendations
+
+delegation:
+  can_delegate_to: []
+  escalates_to:
+    - policy-guard-agent
+
+governance:
+  requires_approval: false
+  can_block: true  # Can block over-budget operations
+  audit_trail: comprehensive
+
+performance:
+  expected_latency_ms: 800
+  max_latency_ms: 2000
+  timeout_ms: 4000

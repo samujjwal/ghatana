@@ -1,0 +1,83 @@
+package {{packageName}}.service;
+
+import {{packageName}}.dto.ItemDto;
+import {{packageName}}.entity.Item;
+import {{packageName}}.repository.ItemRepository;
+import jakarta.persistence.EntityNotFoundException;
+import lombok.RequiredArgsConstructor;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
+import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
+
+/**
+* Service for Item business logic.
+*/
+@Service
+@RequiredArgsConstructor
+@Transactional(readOnly = true)
+public class ItemService {
+
+private final ItemRepository itemRepository;
+
+public Page<ItemDto.Response> findAll(Pageable pageable) {
+    return itemRepository.findAll(pageable).map(this::toResponse);
+    }
+
+    public ItemDto.Response findById(String id) {
+    return toResponse(getItemOrThrow(id));
+    }
+
+    @Transactional
+    public ItemDto.Response create(ItemDto.CreateRequest request) {
+    Item item =
+    Item.builder()
+    .title(request.title())
+    .description(request.description())
+    .status(request.status() != null ? request.status() : "pending")
+    .build();
+
+    return toResponse(itemRepository.save(item));
+    }
+
+    @Transactional
+    public ItemDto.Response update(String id, ItemDto.UpdateRequest request) {
+    Item item = getItemOrThrow(id);
+
+    if (request.title() != null) {
+    item.setTitle(request.title());
+    }
+    if (request.description() != null) {
+    item.setDescription(request.description());
+    }
+    if (request.status() != null) {
+    item.setStatus(request.status());
+    }
+
+    return toResponse(itemRepository.save(item));
+    }
+
+    @Transactional
+    public void delete(String id) {
+    if (!itemRepository.existsById(id)) {
+    throw new EntityNotFoundException("Item not found: " + id);
+    }
+    itemRepository.deleteById(id);
+    }
+
+    private Item getItemOrThrow(String id) {
+    return itemRepository
+    .findById(id)
+    .orElseThrow(() -> new EntityNotFoundException("Item not found: " + id));
+    }
+
+    private ItemDto.Response toResponse(Item item) {
+    return new ItemDto.Response(
+    item.getId(),
+    item.getTitle(),
+    item.getDescription(),
+    item.getStatus(),
+    item.getCreatedAt(),
+    item.getUpdatedAt());
+    }
+    }

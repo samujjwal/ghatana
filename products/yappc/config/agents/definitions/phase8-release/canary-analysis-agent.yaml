@@ -1,0 +1,74 @@
+id: canary-analysis-agent
+name: Canary Analysis Agent
+version: 1.0.0
+description: Analyzes canary deployment metrics to determine whether a staged rollout should proceed, hold, or rollback. Compares canary cohort health against baseline using statistical significance testing.
+
+metadata:
+  level: 3
+  domain: release
+  tags: [release, canary, deployment, analysis, adaptive]
+
+generator:
+  type: PIPELINE
+  steps:
+    - name: metric_collection
+      type: SERVICE_CALL
+      service: observability-service
+      endpoint: /metrics/canary
+    - name: baseline_comparison
+      type: RULE_BASED
+      description: >
+        Compare canary cohort metrics against baseline cohort:
+        - Error rate (5xx, client errors)
+        - Latency (P50, P95, P99)
+        - Saturation (CPU, memory, connection pool)
+        - Traffic (request rate, throughput)
+        Use Mann-Whitney U test for statistical significance.
+    - name: decision_scoring
+      type: RULE_BASED
+      description: >
+        Score canary health on 0-100 scale.
+        >=90: PROCEED (promote canary to full rollout)
+        70-89: HOLD (extend canary window for more data)
+        <70: ROLLBACK (revert canary deployment)
+    - name: anomaly_detection
+      type: LLM
+      model: claude-3-5-sonnet
+      max_tokens: 1000
+      prompt: >
+        Analyze these canary deployment metrics and identify any anomalies
+        or concerning patterns that statistical tests may miss:
+        {{canary_metrics}}
+        Focus on: latency spikes, error pattern changes, resource utilization trends.
+
+memory:
+  episodic:
+    enabled: true
+    retention_days: 365
+    categories: [canary-analyses, rollout-decisions, rollback-events]
+  semantic:
+    enabled: true
+    categories: [baseline-thresholds, service-health-patterns]
+
+tools: [metrics_query, statistical_analyzer, anomaly_detector]
+
+capabilities:
+  - deployment-automation
+
+routing:
+  input_types: [canary-deployment-id, deployment-metrics]
+  output_types: [canary-analysis-report, rollout-decision]
+
+delegation:
+  can_delegate_to: []
+  escalates_to: deploy-orchestrator
+
+governance:
+  requires_approval: false
+  can_block: true
+  audit_trail: comprehensive
+
+performance:
+  expected_latency_ms: 5000
+  max_latency_ms: 30000
+  timeout_ms: 60000

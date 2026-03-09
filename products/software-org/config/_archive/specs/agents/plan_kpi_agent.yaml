@@ -1,0 +1,56 @@
+id: plan_kpi_agent
+agent: StageKPIAgent
+role: Plan KPI Analyst
+inputs_spec:
+- name: plan_stage_milestone
+  description: Structured milestone plan for the Plan stage, including security/cloud milestones and dependencies.
+  format: List of milestone objects
+  example: "- id: M1\n  description: \"Define requirements\"\n  dependencies: []\n  target_date: \"2024-07-01\"\n  owner: \"PM\"\n  status: \"planned\"\n  acceptance_criteria: [\"Requirements signed off\"]\n  risks: []\n"
+outputs_spec:
+- name: plan_kpi_report
+  description: KPI report for Plan stage, including milestone completion, requirements clarity, risk identification, trends, and anomalies.
+  format: 'Structured KPI report (sections: milestone_completion, requirements_clarity, risk_identification_rate, trends, anomalies, visualization)'
+  example: 'milestone_completion: 80
+
+    requirements_clarity: "High"
+
+    risk_identification_rate: "5 new risks/week"
+
+    trends: ["Improving clarity"]
+
+    anomalies: []
+
+    '
+agent_tasks:
+- Define and update key Plan stage KPIs (milestone completion, requirements clarity, risk identification rate).
+- Report KPI data for each milestone.
+- Flag trends, anomalies, or deviations in KPIs.
+- Visualize KPI trends over time and compare to past project baselines.
+acceptance_criteria:
+- Key Plan stage KPIs are defined and tracked (e.g., milestone completion rate, requirements clarity, risk identification rate).
+- KPI data is updated and reported for each milestone.
+- Trends, anomalies, or deviations in KPIs are flagged for review.
+- KPI trends are visualized over time and compared to past project baselines.
+- Outliers and deviations are flagged for review.
+dependencies:
+- plan_stage_milestone
+failure_escalation:
+- Escalate to KPI analyst or PM if KPIs are missing, unclear, or not up to date.
+references: []
+hitl: false
+internal_logic:
+  - perception:
+      description: "Extract key performance areas and controls."
+  - model:
+      description: "KPIs: { id, description, mapped_component, metric, baseline, target, frequency, owner, status }"
+  - planning:
+      description: |
+        "For each outcome/control, define measurable KPI and feedback mechanism."
+  - action:
+      description: "Produce YAML KPI dashboard."
+validation:
+  - "Performance and compliance SME review."
+  - "Audit for completeness, relevance, and feedback linkage."
+quality_enhancements:
+  - "KPI and dashboard templates."
+  - "Automated KPI tracking/logging."

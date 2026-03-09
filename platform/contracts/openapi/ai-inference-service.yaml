@@ -1,0 +1,360 @@
+openapi: 3.1.0
+info:
+  title: Ghatana AI Inference Service API
+  description: |
+    AI inference service providing LLM completions and embedding generation
+    through a unified gateway. Supports multiple model providers with
+    rate limiting, caching, and cost tracking.
+  version: 1.0.0
+  contact:
+    name: Ghatana Platform Team
+  license:
+    name: Proprietary
+
+servers:
+  - url: http://localhost:8080
+    description: Local development
+
+paths:
+  /health:
+    get:
+      operationId: healthCheck
+      summary: Service health check
+      description: Returns service health status and readiness information.
+      tags:
+        - Health
+      responses:
+        '200':
+          description: Service is healthy
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HealthResponse'
+
+  /ai/infer/embedding:
+    post:
+      operationId: generateEmbedding
+      summary: Generate single embedding
+      description: |
+        Generates a vector embedding for a single text input using
+        the configured embedding model.
+      tags:
+        - Embeddings
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/EmbeddingRequest'
+      responses:
+        '200':
+          description: Embedding generated successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/EmbeddingResponse'
+        '400':
+          description: Invalid request (missing or empty text)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '429':
+          description: Rate limit exceeded
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '500':
+          description: Embedding generation failed
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /ai/infer/embeddings:
+    post:
+      operationId: generateBatchEmbeddings
+      summary: Generate batch embeddings
+      description: |
+        Generates vector embeddings for multiple text inputs in a single
+        request. More efficient than individual calls for bulk processing.
+      tags:
+        - Embeddings
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/BatchEmbeddingRequest'
+      responses:
+        '200':
+          description: Batch embeddings generated successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BatchEmbeddingResponse'
+        '400':
+          description: Invalid request (empty or missing texts array)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '429':
+          description: Rate limit exceeded
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '500':
+          description: Embedding generation failed
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /ai/infer/completion:
+    post:
+      operationId: generateCompletion
+      summary: Generate LLM completion
+      description: |
+        Generates a text completion using the configured LLM model.
+        Supports system prompts, temperature control, and token limits.
+      tags:
+        - Completions
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CompletionRequest'
+      responses:
+        '200':
+          description: Completion generated successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CompletionResponse'
+        '400':
+          description: Invalid request
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '429':
+          description: Rate limit exceeded
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '500':
+          description: Completion generation failed
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /ai/admin/status:
+    get:
+      operationId: adminStatus
+      summary: Admin service status
+      description: |
+        Returns detailed administrative status including model availability,
+        cache statistics, and rate limiter state.
+      tags:
+        - Admin
+      responses:
+        '200':
+          description: Admin status retrieved
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AdminStatusResponse'
+
+components:
+  schemas:
+    HealthResponse:
+      type: object
+      properties:
+        status:
+          type: string
+          example: UP
+        service:
+          type: string
+          example: ai-inference-service
+      required:
+        - status
+
+    EmbeddingRequest:
+      type: object
+      properties:
+        text:
+          type: string
+          description: Text to generate embedding for
+          example: The quick brown fox jumps over the lazy dog
+        model:
+          type: string
+          description: Optional model override
+          example: text-embedding-ada-002
+      required:
+        - text
+
+    EmbeddingResponse:
+      type: object
+      properties:
+        embedding:
+          type: array
+          items:
+            type: number
+            format: float
+          description: Vector embedding (typically 1536 dimensions)
+        model:
+          type: string
+          description: Model used for generation
+        dimensions:
+          type: integer
+          description: Embedding vector dimensions
+          example: 1536
+        tokensUsed:
+          type: integer
+          description: Number of tokens consumed
+      required:
+        - embedding
+
+    BatchEmbeddingRequest:
+      type: object
+      properties:
+        texts:
+          type: array
+          items:
+            type: string
+          description: List of texts to generate embeddings for
+          example:
+            - First document text
+            - Second document text
+        model:
+          type: string
+          description: Optional model override
+      required:
+        - texts
+
+    BatchEmbeddingResponse:
+      type: object
+      properties:
+        embeddings:
+          type: array
+          items:
+            $ref: '#/components/schemas/EmbeddingResponse'
+        totalTokensUsed:
+          type: integer
+          description: Total tokens consumed across all embeddings
+      required:
+        - embeddings
+
+    CompletionRequest:
+      type: object
+      properties:
+        prompt:
+          type: string
+          description: The prompt text
+          example: Explain quantum computing in simple terms
+        systemPrompt:
+          type: string
+          description: Optional system prompt for context
+          example: You are a helpful science teacher
+        model:
+          type: string
+          description: LLM model to use
+          example: gpt-4
+        temperature:
+          type: number
+          format: float
+          minimum: 0
+          maximum: 2
+          description: Sampling temperature (0=deterministic, 2=creative)
+          example: 0.7
+        maxTokens:
+          type: integer
+          minimum: 1
+          maximum: 128000
+          description: Maximum tokens in the response
+          example: 1024
+        topP:
+          type: number
+          format: float
+          minimum: 0
+          maximum: 1
+          description: Nucleus sampling parameter
+        tenantId:
+          type: string
+          description: Tenant identifier for cost tracking
+      required:
+        - prompt
+
+    CompletionResponse:
+      type: object
+      properties:
+        text:
+          type: string
+          description: Generated completion text
+        model:
+          type: string
+          description: Model used for generation
+        tokensUsed:
+          type: integer
+          description: Total tokens consumed (prompt + completion)
+        promptTokens:
+          type: integer
+          description: Tokens in the prompt
+        completionTokens:
+          type: integer
+          description: Tokens in the generated completion
+        finishReason:
+          type: string
+          enum: [stop, length, content_filter]
+          description: Reason the generation stopped
+      required:
+        - text
+
+    AdminStatusResponse:
+      type: object
+      properties:
+        status:
+          type: string
+          example: operational
+        modelsAvailable:
+          type: array
+          items:
+            type: string
+          description: List of available model identifiers
+        cacheStats:
+          type: object
+          properties:
+            hits:
+              type: integer
+            misses:
+              type: integer
+            size:
+              type: integer
+        rateLimiterStats:
+          type: object
+          properties:
+            requestsPerMinute:
+              type: integer
+            currentLoad:
+              type: number
+              format: float
+
+    ErrorResponse:
+      type: object
+      properties:
+        error:
+          type: string
+          description: Error message
+          example: Rate limit exceeded
+        code:
+          type: string
+          description: Error code
+          example: RATE_LIMITED
+      required:
+        - error

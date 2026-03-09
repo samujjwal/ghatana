@@ -1,0 +1,92 @@
+/*
+ * Copyright (c) ${year} Ghatana Inc.
+ * All rights reserved.
+ *
+ * This source code and the accompanying materials are the confidential
+ * and proprietary information of Ghatana Inc. (“Confidential Information”).
+ * You shall not disclose such Confidential Information and shall use it
+ * only in accordance with the terms of the license agreement you entered
+ * into with Ghatana Inc.
+ *
+ * Unauthorized copying of this file, via any medium, is strictly prohibited.
+ * Proprietary and confidential.
+ */
+syntax = "proto3";
+
+package ghatana.contracts.event.v1;
+
+import "google/protobuf/timestamp.proto";
+import "ghatana/contracts/event/v1/event.proto";
+import "ghatana/contracts/common/v1/envelope.proto";
+
+option java_package = "com.ghatana.contracts.event.v1";
+option java_multiple_files = true;
+option java_outer_classname = "EventLogProto";
+option go_package = "github.com/ghatana/contracts/gen/go/event/v1;eventv1";
+option csharp_namespace = "Ghatana.Contracts.Event.V1";
+
+// EventLogService provides low-level append and read primitives for the
+// durable event log. This is a storage-oriented API and complements the
+// higher-level EventService ingestion/query API.
+service EventLogService {
+  // Append a single event to the log and return the committed record metadata.
+  rpc Append(AppendRequest) returns (AppendResponse);
+
+  // Read records by event type and optional version, starting from an offset.
+  // This API is optimized for sequential reads and supports pagination via
+  // next_offset in the response.
+  rpc ReadByType(ReadByTypeRequest) returns (ReadByTypeResponse);
+}
+
+// Request to append a single event to the log.
+message AppendRequest {
+  reserved 1000 to max;
+  reserved "reserved_field";
+  // Optional envelope for cross-cutting metadata (non-breaking addition)
+  ghatana.contracts.common.v1.Envelope envelope = 20;
+  // Canonical event to append.
+  EventProto event = 1;
+  // Optional idempotency key to avoid duplicate appends.
+  string idempotency_key = 2;
+}
+
+// Response from the append operation including storage metadata.
+message AppendResponse {
+  reserved 1000 to max;
+  reserved "reserved_field";
+  // The persisted record with partition/offset information.
+  EventRecordProto record = 1;
+  // If true, the append was a duplicate and no new record was created.
+  bool duplicate = 2;
+}
+
+// Request to read records for a given type (and optional version), starting at
+// a particular offset within the partition space.
+message ReadByTypeRequest {
+  reserved 1000 to max;
+  reserved "reserved_field";
+  // Event type name, e.g., "order.created".
+  string type = 1;
+  // Optional semantic version (string) filter, e.g., "1.2.0".
+  string type_version = 2;
+  // Tenant scope.
+  string tenant_id = 3;
+  // Starting offset (inclusive). If unset, implementation-defined default.
+  int64 from_offset = 4;
+  // Maximum number of records to return.
+  int32 limit = 5;
+  // Read direction; if true, ascending from from_offset; otherwise descending.
+  bool ascending = 6;
+  // Optional time bounds (occurrence_time or detected_at semantics, impl-defined).
+  google.protobuf.Timestamp start_time = 7;
+  google.protobuf.Timestamp end_time = 8;
+}
+
+// Response containing a page of records and the next offset to continue.
+message ReadByTypeResponse {
+  reserved 1000 to max;
+  reserved "reserved_field";
+  repeated EventRecordProto records = 1;
+  // Next offset to resume reading; -1 if end reached or unknown.
+  int64 next_offset = 2;
+}

@@ -1,0 +1,82 @@
+id: full-lifecycle-orchestrator
+name: Full Lifecycle Orchestrator
+version: 1.0.0
+description: Orchestrates a complete YAPPC lifecycle run for a development task — routes through all 8 stages (intent→context→plan→execute→verify→observe→learn→institutionalize) by delegating to appropriate agents at each stage.
+
+metadata:
+  level: 1
+  domain: lifecycle
+  tags: [orchestrator, lifecycle, sdlc, strategic]
+
+generator:
+  type: PIPELINE
+  steps:
+    - name: stage_routing
+      type: RULE_BASED
+      rules:
+        - Stage intent → delegate to products-officer
+        - Stage context → delegate to context-gathering-agent
+        - Stage plan → delegate to systems-architect
+        - Stage execute → delegate to java-expert or react-expert (by domain)
+        - Stage verify → delegate to test-strategist + sentinel (parallel)
+        - Stage observe → delegate to monitoring-agent
+        - Stage learn → delegate to postmortem-agent (phase10)
+        - Stage institutionalize → delegate to institutionalize-agent
+    - name: lifecycle_summary
+      type: LLM
+      provider: OPENAI
+      model: gpt-4
+      temperature: 0.3
+      max_tokens: 2000
+      prompt: |
+        Summarize lifecycle execution:
+        Task: {{task}}
+        Stage Outputs: {{stage_outputs}}
+        Produce lifecycle completion report with artifacts, metrics, lessons.
+        Output as JSON: {artifacts, metrics, stage_durations, lessons, next_cycle_recommendations}
+
+memory:
+  episodic:
+    enabled: true
+    retention_days: 365
+    categories: [lifecycle-runs, stage-outputs]
+  semantic:
+    enabled: true
+    categories: [lifecycle-patterns, workflow-optimizations]
+  procedural:
+    enabled: true
+    categories: [stage-routing-rules, transition-criteria]
+
+tools: [lifecycle_coordinator, artifact_manager, metrics_collector]
+
+capabilities:
+  - full-lifecycle-orchestration
+  - stage-routing
+  - multi-agent-orchestration
+
+routing:
+  input_types: [task-request, project-id, workspace-id]
+  output_types: [lifecycle-result, artifacts, metrics]
+
+delegation:
+  can_delegate_to:
+    - products-officer
+    - context-gathering-agent
+    - systems-architect
+    - java-expert
+    - react-expert
+    - test-strategist
+    - sentinel
+    - monitoring-agent
+    - institutionalize-agent
+  escalates_to: master-orchestrator-agent
+
+governance:
+  requires_approval: false
+  can_block: false
+  audit_trail: comprehensive
+
+performance:
+  expected_latency_ms: 60000
+  max_latency_ms: 3600000
+  timeout_ms: 7200000

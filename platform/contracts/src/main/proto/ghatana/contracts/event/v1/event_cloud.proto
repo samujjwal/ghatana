@@ -1,0 +1,299 @@
+/*
+ * Copyright (c) ${year} Ghatana Inc.
+ * All rights reserved.
+ *
+ * This source code and the accompanying materials are the confidential
+ * and proprietary information of Ghatana Inc. ("Confidential Information").
+ * You shall not disclose such Confidential Information and shall use it
+ * only in accordance with the terms of the license agreement you entered
+ * into with Ghatana Inc.
+ *
+ * Unauthorized copying of this file, via any medium, is strictly prohibited.
+ * Proprietary and confidential.
+ */
+syntax = "proto3";
+
+package ghatana.contracts.event.v1;
+
+import "ghatana/contracts/event/v1/event.proto";
+import "ghatana/contracts/common/v1/common.proto";
+import "ghatana/contracts/common/v1/error.proto";
+import "google/protobuf/timestamp.proto";
+
+option java_package = "com.ghatana.contracts.event.v1";
+option java_multiple_files = true;
+option java_outer_classname = "EventCloudProto";
+option go_package = "github.com/ghatana/contracts/gen/go/event/v1;eventv1";
+option csharp_namespace = "Ghatana.Contracts.Event.V1";
+
+// =============================================================================
+// EventCloud - Append-only event log with real-time tailing and history queries
+// =============================================================================
+
+// AppendRequestProto - Request to append events to EventCloud
+message AppendRequestProto {
+  // The event to append
+  EventProto event = 1;
+
+  // Append options
+  AppendOptionsProto options = 2;
+
+  reserved 1000 to max;
+  reserved "reserved_field";
+}
+
+// AppendOptionsProto - Options for appending events
+message AppendOptionsProto {
+  // Whether to validate the event against its schema
+  bool validate_schema = 1;
+
+  // Whether to require that the event type is known in the catalog
+  bool require_known_event_type = 2;
+
+  // Whether to enforce strict ordering based on previous_id
+  bool enforce_ordering = 3;
+
+  reserved 1000 to max;
+  reserved "reserved_field";
+}
+
+// AppendResultProto - Result of appending an event
+message AppendResultProto {
+  // The partition where the event was appended
+  int32 partition_id = 1;
+
+  // The offset within the partition
+  int64 offset = 2;
+
+  // When the event was appended (server timestamp)
+  google.protobuf.Timestamp append_time = 3;
+
+  // The event ID (echoed back for convenience)
+  string event_id = 4;
+
+  reserved 1000 to max;
+  reserved "reserved_field";
+}
+
+// AppendBatchRequestProto - Request to append multiple events
+message AppendBatchRequestProto {
+  // Events to append
+  repeated AppendRequestProto requests = 1;
+
+  reserved 1000 to max;
+  reserved "reserved_field";
+}
+
+// AppendBatchResponseProto - Response from batch append
+message AppendBatchResponseProto {
+  // Results for each event
+  repeated AppendResultProto results = 1;
+
+  // Any errors that occurred
+  repeated ghatana.contracts.common.v1.ErrorProto errors = 2;
+
+  reserved 1000 to max;
+  reserved "reserved_field";
+}
+
+// =============================================================================
+// Real-time Tail (Subscribe)
+// =============================================================================
+
+// SubscribeRequestProto - Request to subscribe to event stream
+message SubscribeRequestProto {
+  // Tenant ID for filtering
+  string tenant_id = 1;
+
+  // Event selection criteria
+  SelectionProto selection = 2;
+
+  // Starting positions per partition
+  StartingPositionsProto starting_positions = 3;
+
+  reserved 1000 to max;
+  reserved "reserved_field";
+}
+
+// SelectionProto - Criteria for selecting events to subscribe to
+message SelectionProto {
+  // Event type names to match (empty = all types)
+  repeated string event_type_names = 1;
+
+  // Event type versions to match (empty = all versions)
+  repeated string versions = 2;
+
+  // Header filter expression
+  FilterExpressionProto header_filter = 3;
+
+  reserved 1000 to max;
+  reserved "reserved_field";
+}
+
+// FilterExpressionProto - DSL for filtering events by headers
+message FilterExpressionProto {
+  oneof expression {
+    TrueFilterProto true_filter = 1;
+    EqualsFilterProto equals_filter = 2;
+    PrefixFilterProto prefix_filter = 3;
+    AndFilterProto and_filter = 4;
+    OrFilterProto or_filter = 5;
+    NotFilterProto not_filter = 6;
+  }
+
+  reserved 1000 to max;
+  reserved "reserved_field";
+}
+
+message TrueFilterProto {}
+
+message EqualsFilterProto {
+  string key = 1;
+  string value = 2;
+}
+
+message PrefixFilterProto {
+  string key = 1;
+  string prefix = 2;
+}
+
+message AndFilterProto {
+  FilterExpressionProto left = 1;
+  FilterExpressionProto right = 2;
+}
+
+message OrFilterProto {
+  FilterExpressionProto left = 1;
+  FilterExpressionProto right = 2;
+}
+
+message NotFilterProto {
+  FilterExpressionProto expr = 1;
+}
+
+// StartingPositionsProto - Where to start reading from
+message StartingPositionsProto {
+  oneof position {
+    StartAtLatestProto start_at_latest = 1;
+    StartAtEarliestProto start_at_earliest = 2;
+    StartAtTimeProto start_at_time = 3;
+    StartAtOffsetsProto start_at_offsets = 4;
+  }
+
+  reserved 1000 to max;
+  reserved "reserved_field";
+}
+
+message StartAtLatestProto {}
+
+message StartAtEarliestProto {}
+
+message StartAtTimeProto {
+  google.protobuf.Timestamp time = 1;
+}
+
+message StartAtOffsetsProto {
+  repeated StartOffsetProto offsets = 1;
+}
+
+message StartOffsetProto {
+  int32 partition_id = 1;
+  int64 offset = 2;
+}
+
+// EventChunkProto - A chunk of events delivered via subscription
+message EventChunkProto {
+  // Events in this chunk
+  repeated EventEnvelopeProto events = 1;
+
+  // Whether this is the end of the partition
+  bool end_of_partition = 2;
+
+  reserved 1000 to max;
+  reserved "reserved_field";
+}
+
+// EventEnvelopeProto - Event with partition and offset metadata
+message EventEnvelopeProto {
+  // The event
+  EventProto event = 1;
+
+  // Partition where the event is stored
+  int32 partition_id = 2;
+
+  // Offset within the partition
+  int64 offset = 3;
+
+  reserved 1000 to max;
+  reserved "reserved_field";
+}
+
+// =============================================================================
+// History Query
+// =============================================================================
+
+// HistoryQueryRequestProto - Request to query historical events
+message HistoryQueryRequestProto {
+  // Tenant ID
+  string tenant_id = 1;
+
+  // Event type names to match
+  repeated string event_type_names = 2;
+
+  // Event-time range to query
+  ghatana.contracts.common.v1.TimeIntervalProto event_time_range = 3;
+
+  // Header filter
+  FilterExpressionProto header_filter = 4;
+
+  // Paging options
+  PagingProto paging = 5;
+
+  reserved 1000 to max;
+  reserved "reserved_field";
+}
+
+// PagingProto - Pagination options
+message PagingProto {
+  // Maximum number of results to return
+  int32 limit = 1;
+
+  // Resume from this offset (for pagination)
+  int64 resume_from = 2;
+
+  reserved 1000 to max;
+  reserved "reserved_field";
+}
+
+// HistoryQueryResponseProto - Response from history query
+message HistoryQueryResponseProto {
+  // Matching events
+  repeated EventEnvelopeProto events = 1;
+
+  // Whether there are more results
+  bool has_more = 2;
+
+  // Token to resume from for next page
+  int64 next_resume_token = 3;
+
+  reserved 1000 to max;
+  reserved "reserved_field";
+}
+
+// =============================================================================
+// EventCloud Service
+// =============================================================================
+
+service EventCloudService {
+  // Append a single event
+  rpc Append(AppendRequestProto) returns (AppendResultProto);
+
+  // Append multiple events
+  rpc AppendBatch(AppendBatchRequestProto) returns (AppendBatchResponseProto);
+
+  // Subscribe to event stream (server-streaming)
+  rpc Subscribe(SubscribeRequestProto) returns (stream EventChunkProto);
+
+  // Query historical events
+  rpc Query(HistoryQueryRequestProto) returns (HistoryQueryResponseProto);
+}

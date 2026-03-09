@@ -1,0 +1,159 @@
+workflows:
+  # Developer Persona Workflow - Feature Development Cycle
+  - id: "developer-feature-cycle"
+    name: "Developer Feature Development"
+    description: "Complete feature development workflow for developers"
+    persona: "developer"
+    domain: "development"
+    phases: ["plan", "develop", "test", "deploy"]
+    steps:
+      - name: "analyze-requirements"
+        phase: "plan"
+        type: "analysis"
+        config:
+          analyzers: ["requirement-parser", "dependency-checker"]
+          duration: "15-30 minutes"
+      - name: "implement-feature"
+        phase: "develop"
+        type: "development"
+        config:
+          languages: ["java", "typescript", "javascript"]
+          tools: ["ide-integration", "code-suggestions"]
+      - name: "run-tests"
+        phase: "test"
+        type: "testing"
+        config:
+          test-types: ["unit", "integration", "smoke"]
+          coverage-threshold: 80
+      - name: "deploy-to-dev"
+        phase: "deploy"
+        type: "deployment"
+        config:
+          environment: "development"
+          auto-rollback: true
+
+  # Security Engineer Workflow - Security Review Process
+  - id: "security-review-process"
+    name: "Security Review & Compliance"
+    description: "Security assessment and compliance validation workflow"
+    persona: "security-engineer"
+    domain: "security"
+    phases: ["secure", "test", "verify", "govern"]
+    steps:
+      - name: "security-scan"
+        phase: "secure"
+        type: "security-analysis"
+        config:
+          scanners: ["sast", "dast", "dependency-check"]
+          severity-threshold: "medium"
+      - name: "vulnerability-assessment"
+        phase: "test"
+        type: "vulnerability-testing"
+        config:
+          tools: ["penetration-testing", "threat-modeling"]
+      - name: "compliance-check"
+        phase: "verify"
+        type: "compliance-validation"
+        config:
+          standards: ["OWASP", "SOC2", "ISO27001"]
+      - name: "security-sign-off"
+        phase: "govern"
+        type: "approval"
+        config:
+          approvers: ["security-lead", "compliance-officer"]
+
+  # DevOps Engineer Workflow - Infrastructure & Deployment
+  - id: "devops-pipeline-management"
+    name: "CI/CD Pipeline Management"
+    description: "Infrastructure provisioning and deployment pipeline management"
+    persona: "devops-engineer"
+    domain: "operations"
+    phases: ["deploy", "monitor", "operate"]
+    steps:
+      - name: "provision-infrastructure"
+        phase: "deploy"
+        type: "infrastructure"
+        config:
+          tools: ["terraform", "ansible", "kubernetes"]
+          environments: ["staging", "production"]
+      - name: "deploy-application"
+        phase: "deploy"
+        type: "deployment"
+        config:
+          strategy: "blue-green"
+          rollback-enabled: true
+      - name: "setup-monitoring"
+        phase: "monitor"
+        type: "observability"
+        config:
+          metrics: ["performance", "availability", "errors"]
+          alerting: true
+      - name: "operational-health"
+        phase: "operate"
+        type: "maintenance"
+        config:
+          health-checks: ["service", "database", "infrastructure"]
+
+  # QA Engineer Workflow - Quality Validation
+  - id: "qa-quality-assurance"
+    name: "Quality Assurance & Testing"
+    description: "Comprehensive testing and quality validation workflow"
+    persona: "qa-engineer"
+    domain: "quality"
+    phases: ["test", "verify", "validate"]
+    steps:
+      - name: "test-planning"
+        phase: "test"
+        type: "planning"
+        config:
+          test-types: ["functional", "performance", "accessibility"]
+          coverage-requirements: "90%"
+      - name: "automated-testing"
+        phase: "test"
+        type: "automation"
+        config:
+          frameworks: ["selenium", "jest", "cypress"]
+          parallel-execution: true
+      - name: "quality-gates"
+        phase: "verify"
+        type: "validation"
+        config:
+          criteria:
+            ["test-coverage", "performance-benchmarks", "security-checks"]
+      - name: "acceptance-testing"
+        phase: "validate"
+        type: "user-acceptance"
+        config:
+          scenarios: ["user-journey", "edge-cases", "integration"]
+
+  # Product Manager Workflow - Product Development
+  - id: "product-feature-lifecycle"
+    name: "Product Feature Lifecycle"
+    description: "End-to-end product feature development and delivery"
+    persona: "product-manager"
+    domain: "product"
+    phases: ["intake", "plan", "analyze", "deliver"]
+    steps:
+      - name: "requirements-gathering"
+        phase: "intake"
+        type: "analysis"
+        config:
+          stakeholders: ["users", "business", "technical"]
+          methods: ["interviews", "surveys", "analytics"]
+      - name: "feature-planning"
+        phase: "plan"
+        type: "planning"
+        config:
+          prioritization: "value-vs-effort"
+          timeline: "sprint-based"
+      - name: "user-story-analysis"
+        phase: "analyze"
+        type: "story-mapping"
+        config:
+          acceptance-criteria: true
+          user-personas: true
+      - name: "delivery-validation"
+        phase: "deliver"
+        type: "validation"
+        config:
+          metrics: ["user-adoption", "business-value", "technical-quality"]

@@ -1,0 +1,33 @@
+variable "project_name" {
+description = "Name of the project"
+type = string
+default = "{{kebabCase projectName}}"
+}
+
+variable "environment" {
+description = "Environment name"
+type = string
+default = "dev"
+}
+
+variable "region" {
+description = "Cloud region"
+type = string
+default = "{{region}}"
+}
+
+{{#if (eq cloudProvider "gcp")}}
+variable "project_id" {
+description = "GCP Project ID"
+type = string
+}
+{{/if}}
+
+variable "tags" {
+description = "Common tags for all resources"
+type = map(string)
+default = {
+Project = "{{projectName}}"
+ManagedBy = "Terraform"
+}
+}

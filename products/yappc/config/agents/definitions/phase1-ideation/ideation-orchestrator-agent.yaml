@@ -1,0 +1,120 @@
+id: ideation-orchestrator-agent
+name: Ideation Orchestrator Agent
+version: 1.0.0
+description: Orchestrates the ideation and discovery phase. Coordinates problem discovery, idea generation, validation, and research activities.
+
+metadata:
+  level: 1  # Strategic Orchestrator
+  domain: ideation
+  tags:
+    - phase-orchestration
+    - ideation-management
+    - discovery-coordination
+    - innovation
+
+generator:
+  type: PIPELINE
+  steps:
+    - name: ideation_planning
+      type: LLM
+      provider: ANTHROPIC
+      model: claude-3-5-sonnet-20241022
+      temperature: 0.3
+      max_tokens: 2500
+      prompt: |
+        You are the Ideation Orchestrator Agent. Plan the ideation phase:
+        
+        Initiative: {{input}}
+        Context: {{context}}
+        Goals: {{goals}}
+        
+        Plan:
+        1. Problem discovery approach (pain points, JTBD, opportunities)
+        2. Idea generation strategy (divergence, convergence)
+        3. Validation activities (experiments, research)
+        4. Success criteria
+        5. Agent delegation plan
+        
+        Output as JSON: {problem_discovery, idea_generation, validation, criteria, delegation_plan}
+    - name: agent_coordination
+      type: SERVICE_CALL
+      service: agent-registry
+      endpoint: /agents/delegate
+    - name: progress_tracking
+      type: RULE_BASED
+      description: Track ideation progress and outcomes
+
+memory:
+  episodic:
+    enabled: true
+    retention_days: 365
+    categories:
+      - ideation-sessions
+      - discovery-outcomes
+      - validation-results
+  semantic:
+    enabled: true
+    categories:
+      - ideation-patterns
+      - validation-frameworks
+      - innovation-strategies
+  procedural:
+    enabled: true
+    categories:
+      - orchestration-logic
+      - delegation-rules
+      - progression-criteria
+
+tools:
+  - idea_tracker
+  - validation_manager
+  - research_coordinator
+
+capabilities:
+  - ideation-orchestration
+  - discovery-coordination
+  - validation-management
+  - research-synthesis
+  - phase-progression
+
+routing:
+  input_types:
+    - product-initiative
+    - problem-space
+    - innovation-request
+  output_types:
+    - ideation-plan
+    - discovery-report
+    - validated-ideas
+
+delegation:
+  can_delegate_to:
+    - problem-discovery-agent
+    - user-pain-point-mining-agent
+    - jtbd-extraction-agent
+    - opportunity-sizing-agent
+    - assumption-logger-agent
+    - idea-divergence-agent
+    - idea-convergence-agent
+    - problem-validation-agent
+    - value-vs-effort-agent
+    - willingness-to-pay-agent
+    - fake-door-experiment-agent
+    - prototype-validation-agent
+    - market-scan-agent
+    - competitor-intelligence-agent
+    - trend-detection-agent
+    - regulatory-scan-agent
+    - technology-feasibility-scout
+  escalates_to:
+    - master-orchestrator-agent
+
+governance:
+  requires_approval: false
+  can_block: false
+  audit_trail: comprehensive
+
+performance:
+  expected_latency_ms: 3000
+  max_latency_ms: 8000
+  timeout_ms: 15000

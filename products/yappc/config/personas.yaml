@@ -1,0 +1,57 @@
+# YAPPC Personas Configuration
+# Defines user personas and their capabilities within the YAPPC system
+
+personas:
+  - id: "developer"
+    label: "Developer"
+    description: "Software Developer focused on coding and implementation"
+    category: "TECHNICAL"
+    icon: "code"
+    color: "#3b82f6"
+    focusAreas: ["coding", "debugging", "testing"]
+    permissions: ["code.read", "code.write", "pr.create"]
+
+  - id: "product-owner"
+    label: "Product Owner"
+    description: "Responsible for defining product requirements and roadmap"
+    category: "BUSINESS"
+    icon: "assignment"
+    color: "#f59e0b"
+    focusAreas: ["planning", "requirements", "roadmap"]
+    permissions: ["requirements.define", "roadmap.manage"]
+
+  - id: "devops"
+    label: "DevOps Engineer"
+    description: "Responsible for infrastructure and deployment"
+    category: "TECHNICAL"
+    icon: "settings_suggest"
+    color: "#10b981"
+    focusAreas: ["infrastructure", "deployment", "monitoring"]
+    permissions: ["infra.manage", "deploy.trigger"]
+
+  - id: "architect"
+    label: "Software Architect"
+    description: "Responsible for system design and architecture decisions"
+    category: "TECHNICAL"
+    icon: "architecture"
+    color: "#8b5cf6"
+    focusAreas: ["architecture", "design", "patterns"]
+    permissions: ["arch.design", "tech.decision"]
+
+  - id: "qa-engineer"
+    label: "QA Engineer"
+    description: "Quality assurance and testing specialist"
+    category: "TECHNICAL"
+    icon: "verified_user"
+    color: "#ec4899"
+    focusAreas: ["testing", "quality", "automation"]
+    permissions: ["test.create", "bug.report"]
+
+  - id: "designer"
+    label: "UX/UI Designer"
+    description: "User experience and interface designer"
+    category: "CREATIVE"
+    icon: "palette"
+    color: "#f43f5e"
+    focusAreas: ["design", "ux", "ui"]
+    permissions: ["design.create", "prototype.create"]

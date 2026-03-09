@@ -1,0 +1,29 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+name: {{ include "{{kebabCase projectName}}.fullname" . }}
+labels:
+app: {{ include "{{kebabCase projectName}}.fullname" . }}
+spec:
+replicas: {{ .Values.replicaCount }}
+selector:
+matchLabels:
+app: {{ include "{{kebabCase projectName}}.fullname" . }}
+template:
+metadata:
+labels:
+app: {{ include "{{kebabCase projectName}}.fullname" . }}
+spec:
+serviceAccountName: {{ include "{{kebabCase projectName}}.fullname" . }}
+containers:
+- name: {{ include "{{kebabCase projectName}}.fullname" . }}
+image: "{{ .Values.image.repository }}:{{ .Values.image.tag }}"
+imagePullPolicy: {{ .Values.image.pullPolicy }}
+ports:
+- containerPort: 8080
+envFrom:
+- configMapRef:
+name: {{ include "{{kebabCase projectName}}.fullname" . }}-config
+- secretRef:
+name: {{ include "{{kebabCase projectName}}.fullname" . }}-secret
+resources: {{- toYaml .Values.resources | nindent 12 }}

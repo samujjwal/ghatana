@@ -1,0 +1,55 @@
+[package]
+name = "{{projectName}}-tauri"
+version = "{{version}}"
+description = "{{description}}"
+authors = ["YAPPC Generator"]
+edition = "2021"
+rust-version = "1.75"
+license = "Apache-2.0"
+
+[lib]
+name = "{{projectName}}_lib"
+crate-type = ["lib", "cdylib", "staticlib"]
+
+[build-dependencies]
+tauri-build = { version = "2", features = [] }
+
+[dependencies]
+# Tauri core
+tauri = { version = "2", features = [] }
+tauri-plugin-shell = "2"
+tauri-plugin-dialog = "2"
+tauri-plugin-fs = "2"
+tauri-plugin-os = "2"
+{{#if enableAutoUpdater}}
+tauri-plugin-updater = "2"
+{{/if}}
+{{#if enableDeepLinks}}
+tauri-plugin-deep-link = "2"
+{{/if}}
+
+# Serialization
+serde = { version = "1", features = ["derive"] }
+serde_json = "1"
+
+# Async runtime
+tokio = { version = "1", features = ["full"] }
+
+# Error handling
+thiserror = "1"
+anyhow = "1"
+
+# Logging
+log = "0.4"
+env_logger = "0.11"
+
+[features]
+# This feature is used for production builds or when a dev server is not specified
+custom-protocol = ["tauri/custom-protocol"]
+
+[profile.release]
+lto = true
+codegen-units = 1
+panic = "abort"
+strip = true
+opt-level = "s"

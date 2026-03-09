@@ -1,0 +1,22 @@
+apiVersion: rbac.authorization.k8s.io/v1
+kind: Role
+metadata:
+name: {{kebabCase projectName}}-role
+namespace: {{kebabCase projectName}}
+rules:
+- apiGroups: [""]
+resources: ["pods", "services", "configmaps", "secrets"]
+verbs: ["get", "list", "watch"]
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+name: {{kebabCase projectName}}-rbac
+namespace: {{kebabCase projectName}}
+subjects:
+- kind: ServiceAccount
+name: {{kebabCase projectName}}
+roleRef:
+kind: Role
+name: {{kebabCase projectName}}-role
+apiGroup: rbac.authorization.k8s.io

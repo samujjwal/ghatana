@@ -1,0 +1,276 @@
+/*
+ * Copyright (c) 2025 Ghatana Inc.
+ * All rights reserved.
+ *
+ * This source code and the accompanying materials are the confidential
+ * and proprietary information of Ghatana Inc. ("Confidential Information").
+ * You shall not disclose such Confidential Information and shall use it
+ * only in accordance with the terms of the license agreement you entered
+ * into with Ghatana Inc.
+ *
+ * Unauthorized copying of this file, via any medium, is strictly prohibited.
+ * Proprietary and confidential.
+ */
+syntax = "proto3";
+
+package ghatana.contracts.org.v1;
+
+import "google/protobuf/timestamp.proto";
+import "google/protobuf/struct.proto";
+import "google/api/field_behavior.proto";
+import "ghatana/contracts/common/v1/common.proto";
+
+option java_package = "com.ghatana.contracts.org.v1";
+option java_multiple_files = true;
+option java_outer_classname = "OrganizationEventOuterClass";
+option go_package = "github.com/ghatana/contracts/gen/go/org/v1;orgv1";
+option csharp_namespace = "Ghatana.Contracts.Org.V1";
+
+// =============================================================================
+// Event Type ID Ranges for Organizational Events
+// =============================================================================
+// Reserved range: 8000-8999 for organizational events
+// This ensures no overlap with existing event types in the EventCloud taxonomy.
+//
+// Allocation:
+// - 8000-8099: Organization lifecycle events (ORGANIZATION_CREATED=8000, etc.)
+// - 8100-8199: Department lifecycle events (DEPARTMENT_REGISTERED=8100, etc.)
+// - 8200-8299: Agent lifecycle events (AGENT_REGISTERED=8200, etc.)
+// - 8300-8399: Task lifecycle events (TASK_DECLARED=8300, etc.)
+// - 8400-8499: HITL and governance events (HUMAN_INTERVENTION_REQUIRED=8400, etc.)
+// - 8500-8599: Quality gate events (QUALITY_GATE_EVALUATED=8500, etc.)
+// - 8600-8699: KPI and metrics events (KPI_UPDATED=8600, etc.)
+// - 8700-8799: Audit and compliance events (AUDIT_LOGGED=8700, etc.)
+// - 8800-8899: Integration and workflow events (WORKFLOW_STARTED=8800, etc.)
+// - 8900-8999: Reserved for future extensions
+
+/**
+ * OrganizationEvent is the unified event envelope for all organizational events.
+ * 
+ * This serves as the canonical event type for virtual-org and software-org simulations,
+ * enabling event-driven workflows across departments, agents, and tasks.
+ * 
+ * All organization events MUST extend or map to GEvent for compatibility with
+ * the Agentic Event Processor (AEP) and EventCloud infrastructure.
+ * 
+ * @doc.type message
+ * @doc.purpose Unified organizational event envelope for virtual-org simulations
+ * @doc.layer contracts
+ * @doc.pattern Event Envelope
+ */
+message OrganizationEvent {
+  reserved 1000 to max;
+  reserved "reserved_field";
+
+  // Unique identifier for this event instance
+  string event_id = 1 [(google.api.field_behavior) = REQUIRED];
+  
+  // Tenant identifier for multi-tenancy isolation
+  string tenant_id = 2 [(google.api.field_behavior) = REQUIRED];
+  
+  // Organization identifier within the tenant
+  string organization_id = 3 [(google.api.field_behavior) = REQUIRED];
+  
+  // Department that generated or owns this event
+  string department = 4 [(google.api.field_behavior) = OPTIONAL];
+  
+  // Agent role that generated this event
+  string agent_role = 5 [(google.api.field_behavior) = OPTIONAL];
+  
+  // Event type discriminator (e.g., "organization.created", "task.assigned")
+  string event_type = 6 [(google.api.field_behavior) = REQUIRED];
+  
+  // Schema version for event payload evolution
+  string schema_version = 7 [(google.api.field_behavior) = REQUIRED];
+  
+  // Timestamp when event was created
+  google.protobuf.Timestamp timestamp = 8 [(google.api.field_behavior) = REQUIRED];
+  
+  // Correlation ID for tracking related events across workflows
+  string correlation_id = 9 [(google.api.field_behavior) = OPTIONAL];
+  
+  // Causation ID - the event that directly caused this event
+  string causation_id = 10 [(google.api.field_behavior) = OPTIONAL];
+  
+  // Event-specific payload (flexible structure for domain-specific data)
+  google.protobuf.Struct payload = 11 [(google.api.field_behavior) = REQUIRED];
+  
+  // Metadata for observability, debugging, and audit trails
+  map<string, string> metadata = 12;
+}
+
+/**
+ * OrganizationCreated event emitted when a new organization is instantiated.
+ */
+message OrganizationCreated {
+  reserved 1000 to max;
+  
+  string organization_id = 1 [(google.api.field_behavior) = REQUIRED];
+  string organization_name = 2 [(google.api.field_behavior) = REQUIRED];
+  string organization_type = 3 [(google.api.field_behavior) = REQUIRED]; // e.g., "software-org", "healthcare-org"
+  google.protobuf.Timestamp created_at = 4 [(google.api.field_behavior) = REQUIRED];
+  map<string, string> configuration = 5;
+}
+
+/**
+ * DepartmentRegistered event emitted when a department is added to an organization.
+ */
+message DepartmentRegistered {
+  reserved 1000 to max;
+  
+  string department_id = 1 [(google.api.field_behavior) = REQUIRED];
+  string department_name = 2 [(google.api.field_behavior) = REQUIRED];
+  string department_type = 3 [(google.api.field_behavior) = REQUIRED]; // e.g., "engineering", "qa", "devops"
+  repeated string capabilities = 4; // Department capabilities/responsibilities
+  google.protobuf.Timestamp registered_at = 5 [(google.api.field_behavior) = REQUIRED];
+}
+
+/**
+ * AgentRegistered event emitted when an agent joins the organization.
+ */
+message AgentRegistered {
+  reserved 1000 to max;
+  
+  string agent_id = 1 [(google.api.field_behavior) = REQUIRED];
+  string agent_name = 2 [(google.api.field_behavior) = REQUIRED];
+  string agent_role = 3 [(google.api.field_behavior) = REQUIRED];
+  string department_id = 4 [(google.api.field_behavior) = REQUIRED];
+  repeated string skills = 5;
+  google.protobuf.Timestamp registered_at = 6 [(google.api.field_behavior) = REQUIRED];
+}
+
+/**
+ * TaskDeclared event emitted when a new task is created in the organization.
+ */
+message TaskDeclared {
+  reserved 1000 to max;
+  
+  string task_id = 1 [(google.api.field_behavior) = REQUIRED];
+  string task_name = 2 [(google.api.field_behavior) = REQUIRED];
+  string task_type = 3 [(google.api.field_behavior) = REQUIRED];
+  string description = 4;
+  string priority = 5; // e.g., "low", "medium", "high", "critical"
+  repeated string dependencies = 6; // Task IDs this task depends on
+  google.protobuf.Timestamp declared_at = 7 [(google.api.field_behavior) = REQUIRED];
+  google.protobuf.Timestamp due_date = 8;
+}
+
+/**
+ * TaskAssigned event emitted when a task is assigned to an agent.
+ */
+message TaskAssigned {
+  reserved 1000 to max;
+  
+  string task_id = 1 [(google.api.field_behavior) = REQUIRED];
+  string agent_id = 2 [(google.api.field_behavior) = REQUIRED];
+  string assigned_by = 3; // Agent ID or system that made the assignment
+  google.protobuf.Timestamp assigned_at = 4 [(google.api.field_behavior) = REQUIRED];
+}
+
+/**
+ * TaskStarted event emitted when an agent begins working on a task.
+ */
+message TaskStarted {
+  reserved 1000 to max;
+  
+  string task_id = 1 [(google.api.field_behavior) = REQUIRED];
+  string agent_id = 2 [(google.api.field_behavior) = REQUIRED];
+  google.protobuf.Timestamp started_at = 3 [(google.api.field_behavior) = REQUIRED];
+}
+
+/**
+ * TaskCompleted event emitted when a task is successfully completed.
+ */
+message TaskCompleted {
+  reserved 1000 to max;
+  
+  string task_id = 1 [(google.api.field_behavior) = REQUIRED];
+  string agent_id = 2 [(google.api.field_behavior) = REQUIRED];
+  google.protobuf.Timestamp completed_at = 3 [(google.api.field_behavior) = REQUIRED];
+  google.protobuf.Struct result = 4; // Task-specific result data
+  repeated string artifacts = 5; // URLs or IDs of generated artifacts
+}
+
+/**
+ * TaskFailed event emitted when a task fails or encounters an error.
+ */
+message TaskFailed {
+  reserved 1000 to max;
+  
+  string task_id = 1 [(google.api.field_behavior) = REQUIRED];
+  string agent_id = 2 [(google.api.field_behavior) = REQUIRED];
+  google.protobuf.Timestamp failed_at = 3 [(google.api.field_behavior) = REQUIRED];
+  string error_code = 4;
+  string error_message = 5;
+  google.protobuf.Struct error_details = 6;
+}
+
+/**
+ * HumanInterventionRequested event emitted when human oversight is needed.
+ */
+message HumanInterventionRequested {
+  reserved 1000 to max;
+  
+  string intervention_id = 1 [(google.api.field_behavior) = REQUIRED];
+  string task_id = 2;
+  string reason = 3 [(google.api.field_behavior) = REQUIRED];
+  string severity = 4; // e.g., "info", "warning", "critical"
+  google.protobuf.Timestamp requested_at = 5 [(google.api.field_behavior) = REQUIRED];
+  google.protobuf.Struct context = 6;
+}
+
+/**
+ * HumanInterventionResolved event emitted when a human intervention is completed.
+ */
+message HumanInterventionResolved {
+  reserved 1000 to max;
+  
+  string intervention_id = 1 [(google.api.field_behavior) = REQUIRED];
+  string resolved_by = 2 [(google.api.field_behavior) = REQUIRED]; // User ID
+  string resolution = 3 [(google.api.field_behavior) = REQUIRED];
+  google.protobuf.Timestamp resolved_at = 4 [(google.api.field_behavior) = REQUIRED];
+  google.protobuf.Struct resolution_details = 5;
+}
+
+/**
+ * QualityGateEvaluated event emitted when a quality gate is assessed.
+ */
+message QualityGateEvaluated {
+  reserved 1000 to max;
+  
+  string gate_id = 1 [(google.api.field_behavior) = REQUIRED];
+  string gate_name = 2 [(google.api.field_behavior) = REQUIRED];
+  string task_id = 3;
+  string artifact_id = 4;
+  bool passed = 5 [(google.api.field_behavior) = REQUIRED];
+  google.protobuf.Timestamp evaluated_at = 6 [(google.api.field_behavior) = REQUIRED];
+  repeated QualityMetric metrics = 7;
+}
+
+/**
+ * QualityMetric represents a single quality measurement.
+ */
+message QualityMetric {
+  reserved 1000 to max;
+  
+  string name = 1 [(google.api.field_behavior) = REQUIRED];
+  double value = 2 [(google.api.field_behavior) = REQUIRED];
+  double threshold = 3;
+  bool passed = 4 [(google.api.field_behavior) = REQUIRED];
+}
+
+/**
+ * KpiUpdated event emitted when a department or org-level KPI changes.
+ */
+message KpiUpdated {
+  reserved 1000 to max;
+  
+  string kpi_id = 1 [(google.api.field_behavior) = REQUIRED];
+  string kpi_name = 2 [(google.api.field_behavior) = REQUIRED];
+  string department_id = 3;
+  double current_value = 4 [(google.api.field_behavior) = REQUIRED];
+  double previous_value = 5;
+  double target_value = 6;
+  google.protobuf.Timestamp updated_at = 7 [(google.api.field_behavior) = REQUIRED];
+  string unit = 8; // e.g., "count", "percentage", "milliseconds"
+}

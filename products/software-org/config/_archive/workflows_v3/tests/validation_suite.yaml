@@ -1,0 +1,245 @@
+# Workflow v3 Validation Tests
+# These tests validate that all stage definitions are syntactically correct
+# and reference valid operators
+
+name: Workflow v3 Validation Suite
+version: "1.0"
+
+# Test configuration
+config:
+  operator_index: ../../operations/OPERATOR_INDEX.yaml
+  stages_dir: ../stages/
+  fail_fast: false
+
+# Validation rules
+rules:
+  # Structural validation
+  - name: valid_yaml_syntax
+    description: All stage files must be valid YAML
+    severity: error
+
+  - name: required_fields_present
+    description: Each stage must have name, description, domain
+    severity: error
+    required_fields:
+      - name
+      - description
+
+  - name: workflow_steps_defined
+    description: Each stage must have a workflow with at least one step
+    severity: error
+
+  # Operator reference validation
+  - name: valid_operator_references
+    description: All operator references must exist in the operator index
+    severity: error
+
+  - name: valid_operator_modes
+    description: All operator modes must be defined for the referenced operator
+    severity: error
+
+  - name: valid_cross_cutting_params
+    description: Cross-cutting operators must have required stage parameter
+    severity: error
+
+  # Dependency validation
+  - name: valid_dependencies
+    description: Step dependencies must reference existing steps
+    severity: error
+
+  - name: no_circular_dependencies
+    description: No circular dependencies in step graph
+    severity: error
+
+  # Input/Output validation
+  - name: outputs_consumed
+    description: All step outputs should be consumed by downstream steps or final outputs
+    severity: warning
+
+  - name: inputs_produced
+    description: All step inputs should be produced by upstream steps
+    severity: error
+
+# Test cases
+tests:
+  # Stage existence tests
+  - id: stage_files_exist
+    name: All required stage files exist
+    type: file_existence
+    files:
+      - stages/0_audit_trail.yaml
+      - stages/1_plan.yaml
+      - stages/2_solution.yaml
+      - stages/3_design.yaml
+      - stages/4_develop.yaml
+      - stages/5_build.yaml
+      - stages/6_test.yaml
+      - stages/7_secure.yaml
+      - stages/8_compliance_validation.yaml
+      - stages/9_release_validation.yaml
+      - stages/10_uat.yaml
+      - stages/11_package_release.yaml
+      - stages/12_deploy.yaml
+      - stages/13_operate.yaml
+      - stages/14_monitor.yaml
+      - stages/15_backup.yaml
+      - stages/16_retrospective.yaml
+      - stages/17_dashboard.yaml
+
+  # Domain operator coverage tests
+  - id: planning_operators_used
+    name: Planning domain operators are properly referenced
+    type: operator_coverage
+    domain: planning
+    expected_operators:
+      - planning/product_discovery_operator
+      - planning/business_goals_operator
+      - planning/stakeholder_operator
+      - planning/requirements_operator
+      - planning/plan_synthesis_operator
+    stages: [1_plan.yaml]
+
+  - id: design_operators_used
+    name: Design domain operators are properly referenced
+    type: operator_coverage
+    domain: design
+    expected_operators:
+      - design/architecture_operator
+      - design/component_operator
+      - design/data_model_operator
+      - design/api_operator
+      - design/security_design_operator
+      - design/design_synthesis_operator
+    stages: [2_solution.yaml, 3_design.yaml]
+
+  - id: build_operators_used
+    name: Build domain operators are properly referenced
+    type: operator_coverage
+    domain: build
+    expected_operators:
+      - build/build_pipeline_operator
+      - build/code_quality_operator
+      - build/test_execution_operator
+      - build/security_scan_operator
+    stages: [4_develop.yaml, 5_build.yaml, 6_test.yaml, 7_secure.yaml]
+
+  - id: release_operators_used
+    name: Release domain operators are properly referenced
+    type: operator_coverage
+    domain: release
+    expected_operators:
+      - release/deploy_operator
+      - release/release_management_operator
+    stages:
+      [
+        8_compliance_validation.yaml,
+        9_release_validation.yaml,
+        10_uat.yaml,
+        11_package_release.yaml,
+        12_deploy.yaml,
+      ]
+
+  - id: operate_operators_used
+    name: Operate domain operators are properly referenced
+    type: operator_coverage
+    domain: operate
+    expected_operators:
+      - operate/monitor_operator
+      - operate/incident_operator
+    stages:
+      [13_operate.yaml, 14_monitor.yaml, 15_backup.yaml, 16_retrospective.yaml]
+
+  # Cross-cutting operator tests
+  - id: cross_cutting_milestone_tracker
+    name: Milestone tracker is used in all applicable stages
+    type: cross_cutting_coverage
+    operator: cross-cutting/milestone_tracker
+    expected_stages:
+      - 1_plan.yaml
+      - 2_solution.yaml
+      - 3_design.yaml
+      - 4_develop.yaml
+      - 5_build.yaml
+      - 6_test.yaml
+      - 7_secure.yaml
+      - 8_compliance_validation.yaml
+      - 9_release_validation.yaml
+      - 10_uat.yaml
+      - 11_package_release.yaml
+      - 12_deploy.yaml
+      - 13_operate.yaml
+      - 14_monitor.yaml
+      - 15_backup.yaml
+      - 16_retrospective.yaml
+
+  - id: cross_cutting_best_practice
+    name: Best practice operator is used in all applicable stages
+    type: cross_cutting_coverage
+    operator: cross-cutting/best_practice
+    expected_stages:
+      - 1_plan.yaml
+      - 2_solution.yaml
+      - 3_design.yaml
+      - 4_develop.yaml
+      - 5_build.yaml
+      - 6_test.yaml
+      - 7_secure.yaml
+      - 8_compliance_validation.yaml
+      - 9_release_validation.yaml
+      - 10_uat.yaml
+      - 11_package_release.yaml
+      - 12_deploy.yaml
+      - 13_operate.yaml
+      - 14_monitor.yaml
+      - 15_backup.yaml
+      - 16_retrospective.yaml
+
+  - id: cross_cutting_audit_log
+    name: Audit log operator is available
+    type: cross_cutting_coverage
+    operator: cross-cutting/audit_log
+    expected_stages:
+      - 0_audit_trail.yaml
+
+  # Pipeline tests
+  - id: pipeline_includes_all_stages
+    name: Pipeline includes all stage files
+    type: pipeline_completeness
+    pipeline: pipeline.yaml
+    expected_stage_count: 18
+
+  - id: pipeline_stage_order
+    name: Pipeline stages are in correct order
+    type: pipeline_order
+    pipeline: pipeline.yaml
+    expected_order:
+      - 0_audit_trail.yaml
+      - 1_plan.yaml
+      - 2_solution.yaml
+      - 3_design.yaml
+      - 4_develop.yaml
+      - 5_build.yaml
+      - 6_test.yaml
+      - 7_secure.yaml
+      - 8_compliance_validation.yaml
+      - 9_release_validation.yaml
+      - 10_uat.yaml
+      - 11_package_release.yaml
+      - 12_deploy.yaml
+      - 13_operate.yaml
+      - 14_monitor.yaml
+      - 15_backup.yaml
+      - 16_retrospective.yaml
+      - 17_dashboard.yaml
+
+# Expected results summary
+expected:
+  total_stages: 18
+  total_workflow_steps: ">100"
+  operator_coverage:
+    planning: 100%
+    design: 100%
+    build: 100%
+    release: 100%
+    operate: 100%
+  cross_cutting_coverage: ">90%"

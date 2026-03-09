@@ -1,0 +1,285 @@
+{
+    "dashboard": {
+        "title": "Ghatana Platform - System Overview",
+        "uid": "ghatana-system-overview",
+        "tags": [
+            "ghatana",
+            "system",
+            "overview"
+        ],
+        "timezone": "browser",
+        "schemaVersion": 36,
+        "version": 1,
+        "refresh": "30s",
+        "time": {
+            "from": "now-1h",
+            "to": "now"
+        },
+        "panels": [
+            {
+                "id": 1,
+                "title": "System Health Status",
+                "type": "stat",
+                "gridPos": {
+                    "h": 4,
+                    "w": 6,
+                    "x": 0,
+                    "y": 0
+                },
+                "targets": [
+                    {
+                        "expr": "up{service=~\".+\"}",
+                        "legendFormat": "{{service}}",
+                        "refId": "A"
+                    }
+                ],
+                "fieldConfig": {
+                    "defaults": {
+                        "thresholds": {
+                            "mode": "absolute",
+                            "steps": [
+                                {
+                                    "value": 0,
+                                    "color": "red"
+                                },
+                                {
+                                    "value": 1,
+                                    "color": "green"
+                                }
+                            ]
+                        },
+                        "mappings": [
+                            {
+                                "type": "value",
+                                "value": "1",
+                                "text": "UP"
+                            },
+                            {
+                                "type": "value",
+                                "value": "0",
+                                "text": "DOWN"
+                            }
+                        ]
+                    }
+                }
+            },
+            {
+                "id": 2,
+                "title": "Request Rate (req/s)",
+                "type": "graph",
+                "gridPos": {
+                    "h": 8,
+                    "w": 12,
+                    "x": 0,
+                    "y": 4
+                },
+                "targets": [
+                    {
+                        "expr": "sum(rate(http_requests_total[5m])) by (service)",
+                        "legendFormat": "{{service}}",
+                        "refId": "A"
+                    }
+                ],
+                "yaxes": [
+                    {
+                        "format": "reqps",
+                        "label": "Requests/sec"
+                    },
+                    {
+                        "show": false
+                    }
+                ]
+            },
+            {
+                "id": 3,
+                "title": "Error Rate (%)",
+                "type": "graph",
+                "gridPos": {
+                    "h": 8,
+                    "w": 12,
+                    "x": 12,
+                    "y": 4
+                },
+                "targets": [
+                    {
+                        "expr": "sum(rate(http_requests_total{status=~\"5..\"}[5m])) by (service) / sum(rate(http_requests_total[5m])) by (service) * 100",
+                        "legendFormat": "{{service}}",
+                        "refId": "A"
+                    }
+                ],
+                "yaxes": [
+                    {
+                        "format": "percent",
+                        "label": "Error %"
+                    },
+                    {
+                        "show": false
+                    }
+                ],
+                "alert": {
+                    "conditions": [
+                        {
+                            "evaluator": {
+                                "params": [
+                                    1
+                                ],
+                                "type": "gt"
+                            },
+                            "operator": {
+                                "type": "and"
+                            },
+                            "query": {
+                                "params": [
+                                    "A",
+                                    "5m",
+                                    "now"
+                                ]
+                            },
+                            "reducer": {
+                                "params": [],
+                                "type": "avg"
+                            },
+                            "type": "query"
+                        }
+                    ],
+                    "executionErrorState": "alerting",
+                    "frequency": "1m",
+                    "handler": 1,
+                    "name": "High Error Rate",
+                    "noDataState": "no_data",
+                    "notifications": []
+                }
+            },
+            {
+                "id": 4,
+                "title": "P99 Latency (ms)",
+                "type": "graph",
+                "gridPos": {
+                    "h": 8,
+                    "w": 12,
+                    "x": 0,
+                    "y": 12
+                },
+                "targets": [
+                    {
+                        "expr": "histogram_quantile(0.99, sum(rate(http_request_duration_seconds_bucket[5m])) by (service, le)) * 1000",
+                        "legendFormat": "{{service}} p99",
+                        "refId": "A"
+                    },
+                    {
+                        "expr": "histogram_quantile(0.95, sum(rate(http_request_duration_seconds_bucket[5m])) by (service, le)) * 1000",
+                        "legendFormat": "{{service}} p95",
+                        "refId": "B"
+                    }
+                ],
+                "yaxes": [
+                    {
+                        "format": "ms",
+                        "label": "Latency (ms)"
+                    },
+                    {
+                        "show": false
+                    }
+                ]
+            },
+            {
+                "id": 5,
+                "title": "CPU Usage (%)",
+                "type": "graph",
+                "gridPos": {
+                    "h": 8,
+                    "w": 12,
+                    "x": 12,
+                    "y": 12
+                },
+                "targets": [
+                    {
+                        "expr": "100 - (avg by(instance) (rate(node_cpu_seconds_total{mode=\"idle\"}[5m])) * 100)",
+                        "legendFormat": "{{instance}}",
+                        "refId": "A"
+                    }
+                ],
+                "yaxes": [
+                    {
+                        "format": "percent",
+                        "label": "CPU %",
+                        "max": 100,
+                        "min": 0
+                    },
+                    {
+                        "show": false
+                    }
+                ]
+            },
+            {
+                "id": 6,
+                "title": "Memory Usage (%)",
+                "type": "graph",
+                "gridPos": {
+                    "h": 8,
+                    "w": 12,
+                    "x": 0,
+                    "y": 20
+                },
+                "targets": [
+                    {
+                        "expr": "(1 - (node_memory_MemAvailable_bytes / node_memory_MemTotal_bytes)) * 100",
+                        "legendFormat": "{{instance}}",
+                        "refId": "A"
+                    }
+                ],
+                "yaxes": [
+                    {
+                        "format": "percent",
+                        "label": "Memory %",
+                        "max": 100,
+                        "min": 0
+                    },
+                    {
+                        "show": false
+                    }
+                ]
+            },
+            {
+                "id": 7,
+                "title": "Active Alerts",
+                "type": "table",
+                "gridPos": {
+                    "h": 8,
+                    "w": 12,
+                    "x": 12,
+                    "y": 20
+                },
+                "targets": [
+                    {
+                        "expr": "ALERTS{alertstate=\"firing\"}",
+                        "format": "table",
+                        "instant": true,
+                        "refId": "A"
+                    }
+                ],
+                "transformations": [
+                    {
+                        "id": "organize",
+                        "options": {
+                            "excludeByName": {},
+                            "indexByName": {
+                                "alertname": 0,
+                                "severity": 1,
+                                "service": 2,
+                                "instance": 3,
+                                "Value": 4
+                            },
+                            "renameByName": {
+                                "alertname": "Alert",
+                                "severity": "Severity",
+                                "service": "Service",
+                                "instance": "Instance"
+                            }
+                        }
+                    }
+                ]
+            }
+        ]
+    }
+}

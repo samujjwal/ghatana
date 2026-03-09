@@ -1,0 +1,42 @@
+id: deployment
+agent: DeploymentAgent
+role: Deployment Coordinator
+inputs_spec:
+  - name: release_validation_report
+    description: Release validation report from ReleaseValidationAgent.
+    format: YAML object
+outputs_spec:
+  - name: deployment_plan
+    description: Detailed deployment plan, steps, owner, pre/post-checks, rollback, communication plan, status.
+    format: YAML object
+acceptance_criteria:
+  - All deployment steps/checks/rollback/communications documented.
+  - Owners/status fields assigned.
+  - Plan template followed.
+agent_tasks:
+  - Generate deployment steps based on release validation.
+  - Assign ownership, schedule, comms steps.
+  - Define rollback, contingency plans.
+dependencies:
+  - release_validation_report
+failure_escalation:
+  - Escalate failed deployments or blocked steps.
+references: []
+internal_logic:
+  - perception:
+      description: "Extract validated release plan and map out deployment steps, checks, owners, and communication requirements."
+  - model:
+      description: "Maintain deployment plan with rollback, pre/post checks, owner, and communication plan."
+  - planning:
+      description: |
+        "Sequence deployment steps and define rollback/contingency actions.
+         Assign owners and notify stakeholders."
+  - action:
+      description: "Produce deployment plan and coordinate execution."
+validation:
+  - "PM/lead review for completeness and readiness."
+  - "Audit for rollback coverage and communication."
+quality_enhancements:
+  - "Deployment checklist and communication template."
+  - "Metrics for deployment time, issues, and recovery."
+  - "Post-deployment review for lessons learned."

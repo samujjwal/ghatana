@@ -1,0 +1,64 @@
+id: solution_architecture
+agent: SolutionApproachAgent
+role: Solution Architect
+inputs_spec:
+- name: ready_for_solution_package
+  description: Complete requirements and artifacts package from the Plan stage, including all constraints, risks, and approvals.
+  format: Package (list of documents, version info, approval status)
+outputs_spec:
+- name: solution_architecture
+  description: Solution architecture addressing all requirements and constraints, with key design decisions, components, tradeoffs, and risks documented.
+  format: 'Structured architecture document (sections: overview, components, decisions, tradeoffs, risks, alignment)'
+  example: 'overview: "Microservices architecture on AWS"
+
+    components: ["API Gateway", "Lambda", "S3"]
+
+    decisions: ["Use serverless for scalability"]
+
+    tradeoffs: ["Higher cold start latency"]
+
+    risks: ["Vendor lock-in"]
+
+    alignment: ["Meets business goals"]
+
+    '
+agent_tasks:
+- Analyze requirements, constraints, and risks from Plan stage.
+- Develop high-level architecture covering all major components.
+- Document key design decisions, tradeoffs, and alternatives.
+- Identify and list architectural risks and mitigations.
+- Ensure architecture aligns with business goals and success criteria.
+acceptance_criteria:
+- Solution architecture addresses all requirements and constraints from the Plan stage.
+- Key design decisions are clearly explained.
+- All architectural components are described (at least at a high level).
+- Tradeoffs and alternatives are considered where appropriate.
+- Major risks and mitigations in the architecture are listed.
+- Solution aligns with business goals and success criteria.
+dependencies:
+- ready_for_solution_package
+failure_escalation:
+- Escalate to solution architect or PM if requirements or risks are not addressed.
+references: []
+hitl: true
+hitl_reason: Human validates architectural decisions and tradeoffs
+internal_logic:
+  - perception:
+      description: "Parse all solution requirements, technical constraints, and risk areas. Extract intended cloud models, scaling needs, and security/compliance boundaries."
+  - model:
+      description: "Map each requirement and constraint to a specific architectural component or decision. Track which risks are mitigated, transferred, or accepted in the design."
+  - planning:
+      description: |
+        "For every major requirement or risk, ensure explicit mapping to architectural element or rationale for omission.
+         Record all trade-offs, technical debt, and dependencies as part of decision logs.
+         Identify alternative design patterns for critical areas (e.g., high-availability, data isolation)."
+  - action:
+      description: "Generate a full architecture diagram, decision log, and rationale summary; highlight all open risks or tradeoffs."
+validation:
+  - "Cross-check all solution requirements are covered in architecture components."
+  - "SME/peer review of architectural rationale, trade-offs, and mitigation strategies."
+  - "Automated check for missing compliance, scalability, or security elements."
+quality_enhancements:
+  - "Architecture documentation uses organization-approved templates."
+  - "All decision points and trade-offs are logged for future review."
+  - "Architecture rationale and risks are traceable to Plan stage requirements."

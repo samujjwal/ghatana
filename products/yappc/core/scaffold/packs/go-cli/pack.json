@@ -1,0 +1,26 @@
+{
+    "id": "go-cli",
+    "name": "Go CLI Application",
+    "description": "Go command-line application with Cobra framework",
+    "version": "1.0.0",
+    "type": "application",
+    "language": "go",
+    "buildSystem": "go",
+    "requiredVariables": [
+        "projectName",
+        "modulePath",
+        "goVersion"
+    ],
+    "optionalVariables": [
+        "description",
+        "author"
+    ],
+    "defaults": {
+        "goVersion": "1.21"
+    },
+    "features": [],
+    "dependencies": {
+        "github.com/spf13/cobra": "v1.8.0",
+        "github.com/spf13/viper": "v1.18.0"
+    }
+}

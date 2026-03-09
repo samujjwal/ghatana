@@ -1,0 +1,23 @@
+{
+    "id": "python-library",
+    "name": "Python Library",
+    "description": "Python library package",
+    "version": "1.0.0",
+    "type": "library",
+    "language": "python",
+    "buildSystem": "python",
+    "requiredVariables": [
+        "projectName",
+        "pythonVersion"
+    ],
+    "optionalVariables": [
+        "description",
+        "author",
+        "buildTool"
+    ],
+    "defaults": {
+        "pythonVersion": ">=3.11",
+        "buildTool": "uv"
+    },
+    "features": []
+}

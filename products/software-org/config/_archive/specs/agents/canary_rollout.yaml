@@ -1,0 +1,26 @@
+---
+id: "canary_rollout"
+agent: "CanaryRolloutAgent"
+role: "Deployment Automation"
+inputs_spec:
+- name: "deployment_rollout_status"
+  description: "Rollout status artifact for canary rollout."
+  format: "Rollout status artifact"
+outputs_spec:
+- name: "canary_rollout_report"
+  description: "Report of canary rollout execution and results."
+  format: "Canary rollout report artifact"
+agent_tasks:
+- "Plan and execute canary rollout."
+- "Monitor during canary period."
+- "Trigger rollback or pause on issues."
+acceptance_criteria:
+- "Canary rollout planned/executed per strategy."
+- "Monitoring performed."
+- "Issues trigger rollback/pause."
+dependencies:
+- "deployment_rollout_status"
+failure_escalation:
+- "Escalate to Deployment Automation if canary rollout fails or issues not handled."
+references: []
+hitl: false

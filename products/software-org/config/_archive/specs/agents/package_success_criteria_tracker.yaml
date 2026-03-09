@@ -1,0 +1,26 @@
+---
+id: "package_success_criteria_tracker"
+agent: "SuccessCriteriaTrackerAgent"
+role: "Package Success Criteria Tracker"
+inputs_spec:
+- name: "package_stage_milestone"
+  description: "Package stage milestones for criteria tracking."
+  format: "List of milestone objects"
+outputs_spec:
+- name: "package_success_criteria_status"
+  description: "Status of all entry/exit criteria for package/release stage."
+  format: "List of criteria status objects"
+agent_tasks:
+- "List and map all package/release stage entry/exit criteria."
+- "Track status/owner/remediation; escalate at-risk/failed criteria."
+- "Version tracker for audit/handoff."
+acceptance_criteria:
+- "All stage criteria listed and mapped."
+- "Status/owner/remediation tracked."
+- "At-risk/failed escalated; tracker versioned."
+dependencies:
+- "package_stage_milestone"
+failure_escalation:
+- "Escalate to Criteria Tracker if criteria not maintained."
+references: []
+hitl: false

@@ -1,0 +1,102 @@
+name: Agent Evaluation Flywheel
+
+on:
+  push:
+    branches: [main, develop]
+    paths:
+      - 'products/yappc/config/agents/**'
+      - 'products/yappc/core/agents/src/main/java/com/ghatana/yappc/agent/eval/**'
+      - 'platform/java/agent-dispatch/**'
+      - 'platform/java/agent-framework/**'
+  pull_request:
+    branches: [main]
+    paths:
+      - 'products/yappc/config/agents/**'
+      - 'products/yappc/core/agents/src/main/java/com/ghatana/yappc/agent/eval/**'
+  schedule:
+    # Run nightly at 02:00 UTC to detect drift
+    - cron: '0 2 * * *'
+  workflow_dispatch:
+    inputs:
+      category:
+        description: 'Eval category filter (unit, integration, regression, safety, cost, drift)'
+        required: false
+        default: ''
+
+concurrency:
+  group: agent-eval-${{ github.ref }}
+  cancel-in-progress: true
+
+env:
+  JAVA_VERSION: '21'
+  GRADLE_BUILD_ACTION_CACHE_KEY_JOB: agent-eval
+
+jobs:
+  agent-eval:
+    name: Run Agent Evaluation
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+
+    services:
+      postgres:
+        image: pgvector/pgvector:pg16
+        env:
+          POSTGRES_DB: yappc_eval
+          POSTGRES_USER: yappc
+          POSTGRES_PASSWORD: yappc_eval_pass
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up JDK ${{ env.JAVA_VERSION }}
+        uses: actions/setup-java@v4
+        with:
+          java-version: ${{ env.JAVA_VERSION }}
+          distribution: 'temurin'
+
+      - name: Setup Gradle
+        uses: gradle/actions/setup-gradle@v3
+        with:
+          cache-read-only: ${{ github.ref != 'refs/heads/main' }}
+
+      - name: Run Agent Evaluation
+        env:
+          ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+          DATABASE_URL: postgresql://yappc:yappc_eval_pass@localhost:5432/yappc_eval
+          AGENT_EVAL_MODE: 'true'
+        run: |
+          ./gradlew :products:yappc:core:agents:agentEval \
+            --no-daemon \
+            --stacktrace
+
+      - name: Upload Eval Report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: agent-eval-report
+          path: products/yappc/core/agents/build/reports/agent-eval/report.json
+          retention-days: 90
+
+      - name: Check Eval Results
+        if: always()
+        run: |
+          REPORT="products/yappc/core/agents/build/reports/agent-eval/report.json"
+          if [ -f "$REPORT" ]; then
+            echo "=== Agent Evaluation Report ==="
+            cat "$REPORT" | python3 -m json.tool 2>/dev/null || cat "$REPORT"
+            FAILED=$(python3 -c "import json; r=json.load(open('$REPORT')); print(r.get('failed',0))" 2>/dev/null || echo "0")
+            if [ "$FAILED" -gt "0" ]; then
+              echo "::error::Agent evaluation failed: $FAILED tasks failed"
+              exit 1
+            fi
+          else
+            echo "::warning::No evaluation report found"
+          fi

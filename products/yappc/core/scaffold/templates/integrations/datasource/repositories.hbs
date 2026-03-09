@@ -1,0 +1,87 @@
+{{!--
+  Repository Interfaces Template
+  Generates repository pattern interfaces for data access
+--}}
+{{#if (eq from.language "go")}}
+package repository
+
+import (
+    "context"
+)
+
+// Repository defines the base repository interface
+type Repository[T any] interface {
+    FindByID(ctx context.Context, id string) (*T, error)
+    FindAll(ctx context.Context, filter Filter) ([]*T, error)
+    Create(ctx context.Context, entity *T) error
+    Update(ctx context.Context, entity *T) error
+    Delete(ctx context.Context, id string) error
+    Count(ctx context.Context, filter Filter) (int64, error)
+}
+
+// Filter represents query filters
+type Filter struct {
+    Page     int
+    PageSize int
+    Sort     string
+    Order    string
+    Criteria map[string]interface{}
+}
+
+// Transaction defines transaction operations
+type Transaction interface {
+    Commit() error
+    Rollback() error
+}
+
+// UnitOfWork defines unit of work pattern
+type UnitOfWork interface {
+    Begin(ctx context.Context) (Transaction, error)
+    WithTransaction(ctx context.Context, fn func(ctx context.Context) error) error
+}
+{{/if}}
+{{#if (eq from.language "java")}}
+package {{packagePath from.package}}.repository;
+
+import java.util.List;
+import java.util.Optional;
+
+/**
+ * Base repository interface for data access
+ * 
+ * @doc.type interface
+ * @doc.purpose Generic repository pattern for data access
+ * @doc.layer infrastructure
+ */
+public interface Repository<T, ID> {
+    
+    Optional<T> findById(ID id);
+    
+    List<T> findAll();
+    
+    List<T> findAll(Filter filter);
+    
+    T save(T entity);
+    
+    void delete(ID id);
+    
+    long count();
+    
+    long count(Filter filter);
+    
+    boolean exists(ID id);
+}
+
+/**
+ * Filter for repository queries
+ */
+public class Filter {
+    private int page;
+    private int pageSize;
+    private String sort;
+    private String order;
+    private Map<String, Object> criteria;
+    
+    // Getters and setters
+}
+{{/if}}

@@ -1,0 +1,96 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://ghatana.com/schemas/agent/v1/composite-agent.json",
+  "title": "Composite Agent Configuration",
+  "description": "Schema for COMPOSITE agent type — ensemble, voting, pipeline, router with multiple sub-agents",
+  "allOf": [
+    { "$ref": "agent-base-schema.json" }
+  ],
+  "properties": {
+    "spec": {
+      "properties": {
+        "type": { "const": "COMPOSITE" },
+        "composite": {
+          "$ref": "#/$defs/CompositeSpec"
+        }
+      },
+      "required": ["type", "composite"]
+    }
+  },
+
+  "$defs": {
+    "CompositeSpec": {
+      "type": "object",
+      "properties": {
+        "subtype": {
+          "type": "string",
+          "enum": ["ENSEMBLE", "VOTING", "PIPELINE", "ROUTER"],
+          "default": "ENSEMBLE"
+        },
+        "aggregation": {
+          "$ref": "#/$defs/AggregationConfig"
+        },
+        "subAgents": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/SubAgentRef"
+          },
+          "minItems": 1,
+          "description": "Ordered list of sub-agent references"
+        }
+      },
+      "required": ["subAgents"],
+      "additionalProperties": false
+    },
+
+    "AggregationConfig": {
+      "type": "object",
+      "properties": {
+        "strategy": {
+          "type": "string",
+          "enum": ["WEIGHTED_AVERAGE", "MAJORITY_VOTE", "FIRST_MATCH", "UNANIMOUS"],
+          "default": "WEIGHTED_AVERAGE"
+        },
+        "weights": {
+          "type": "array",
+          "items": { "type": "number", "minimum": 0 },
+          "description": "Weights for WEIGHTED_AVERAGE strategy (must match subAgents length)"
+        },
+        "votingField": {
+          "type": "string",
+          "default": "decision",
+          "description": "Output field used for MAJORITY_VOTE and UNANIMOUS strategies"
+        },
+        "numericField": {
+          "type": "string",
+          "default": "score",
+          "description": "Output field used for WEIGHTED_AVERAGE strategy"
+        }
+      },
+      "additionalProperties": false
+    },
+
+    "SubAgentRef": {
+      "type": "object",
+      "properties": {
+        "agentId": {
+          "type": "string",
+          "description": "Reference to a registered agent ID"
+        },
+        "weight": {
+          "type": "number",
+          "minimum": 0,
+          "default": 1.0,
+          "description": "Weight for this sub-agent in weighted strategies"
+        },
+        "optional": {
+          "type": "boolean",
+          "default": false,
+          "description": "If true, failure of this sub-agent is tolerated"
+        }
+      },
+      "required": ["agentId"],
+      "additionalProperties": false
+    }
+  }
+}

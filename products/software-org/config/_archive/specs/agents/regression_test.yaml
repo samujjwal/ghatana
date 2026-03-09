@@ -1,0 +1,26 @@
+---
+id: "regression_test"
+agent: "RegressionTestAgent"
+role: "QA Engineer"
+inputs_spec:
+- name: "test_aggregation_report"
+  description: "Aggregated report from prior test runs."
+  format: "Aggregation report artifact"
+outputs_spec:
+- name: "regression_test_report"
+  description: "Results and issues from regression tests."
+  format: "Regression test report artifact"
+agent_tasks:
+- "Run regression tests based on prior aggregation."
+- "Document failures and regression trends."
+- "Flag any recurring regressions for escalation."
+acceptance_criteria:
+- "All critical regression scenarios are tested."
+- "Failures and trends are documented."
+- "Recurring regressions are flagged for remediation/escalation."
+dependencies:
+- "test_aggregation_report"
+failure_escalation:
+- "Escalate to QA Lead if recurring regressions go unresolved."
+references: []
+hitl: false

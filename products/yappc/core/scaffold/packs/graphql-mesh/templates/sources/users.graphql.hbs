@@ -1,0 +1,55 @@
+# Users Service GraphQL Schema
+# Example source schema for testing
+
+type User {
+id: ID!
+email: String!
+name: String!
+role: UserRole!
+createdAt: String!
+updatedAt: String!
+}
+
+enum UserRole {
+ADMIN
+USER
+GUEST
+}
+
+type Query {
+user(id: ID!): User
+users(limit: Int, offset: Int): [User!]!
+me: User
+}
+
+type Mutation {
+createUser(input: CreateUserInput!): User!
+updateUser(id: ID!, input: UpdateUserInput!): User!
+deleteUser(id: ID!): Boolean!
+login(email: String!, password: String!): AuthPayload!
+register(input: RegisterInput!): AuthPayload!
+}
+
+input CreateUserInput {
+email: String!
+name: String!
+password: String!
+role: UserRole
+}
+
+input UpdateUserInput {
+email: String
+name: String
+role: UserRole
+}
+
+input RegisterInput {
+email: String!
+name: String!
+password: String!
+}
+
+type AuthPayload {
+token: String!
+user: User!
+}

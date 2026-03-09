@@ -1,0 +1,27 @@
+---
+id: "build_artifacts"
+agent: "ArtifactBuilder"
+role: "CI/CD Runner"
+inputs_spec:
+- name: "build_stage_milestone"
+  description: "List of build-stage milestones required for artifact build."
+  format: "List of milestone objects"
+outputs_spec:
+- name: "build_artifacts"
+  description: "Versioned build artifacts generated automatically by pipeline."
+  format: "Artifact repo or package"
+agent_tasks:
+- "Generate build artifacts automatically by pipeline."
+- "Store artifacts in a versioned repository."
+- "Prevent failed builds from creating artifacts."
+- "Report build status to relevant stakeholders."
+acceptance_criteria:
+- "Build artifacts are generated automatically by the pipeline."
+- "Artifacts are stored in a versioned repository."
+- "Failed builds do not create artifacts."
+- "Build status is reported to all relevant stakeholders."
+dependencies:
+- "build_stage_milestone"
+failure_escalation:
+- "Escalate to CI/CD Runner or DevOps if artifacts are missing or invalid."
+references: []

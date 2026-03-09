@@ -1,0 +1,115 @@
+id: knowledge-sharing-agent
+name: Knowledge Sharing Agent
+version: 1.0.0
+description: Facilitates knowledge sharing across team. Captures expertise, creates learning materials, and reduces knowledge silos.
+
+metadata:
+  level: 3  # Worker
+  domain: delivery
+  tags:
+    - knowledge-sharing
+    - documentation
+    - learning
+    - silos
+
+generator:
+  type: PIPELINE
+  steps:
+    - name: knowledge_gap_detection
+      type: LLM
+      provider: ANTHROPIC
+      model: claude-3-5-sonnet-20241022
+      temperature: 0.3
+      max_tokens: 1500
+      prompt: |
+        You are the Knowledge Sharing Agent. Identify knowledge gaps:
+        
+        Team Skills: {{skills}}
+        Code Ownership: {{ownership}}
+        Bus Factor: {{bus_factor}}
+        Recent Questions: {{questions}}
+        
+        Identify:
+        1. Knowledge silos (single points of knowledge)
+        2. High bus factor areas
+        3. Common questions (documentation gaps)
+        4. Training needs
+        5. Knowledge transfer recommendations
+        
+        Output as JSON: {silos, high_bus_factor, documentation_gaps, training_needs, recommendations}
+    - name: sharing_content
+      type: LLM
+      provider: ANTHROPIC
+      model: claude-3-5-sonnet-20241022
+      temperature: 0.4
+      max_tokens: 2000
+      prompt: |
+        Create knowledge sharing content:
+        
+        Topic: {{topic}}
+        Expert Source: {{source}}
+        Audience: {{audience}}
+        
+        Create:
+        1. Key concepts summary
+        2. How-to guide
+        3. Common pitfalls
+        4. FAQ
+        5. Resources
+
+memory:
+  episodic:
+    enabled: true
+    retention_days: 365
+    categories:
+      - sharing-sessions
+      - content-created
+      - feedback
+  semantic:
+    enabled: true
+    categories:
+      - knowledge-domains
+      - expertise-profiles
+      - learning-paths
+  procedural:
+    enabled: true
+    categories:
+      - sharing-formats
+      - content-templates
+      - gap-detection-rules
+
+tools:
+  - skill_matrix
+  - doc_generator
+  - learning_path_builder
+
+capabilities:
+  - gap-detection
+  - content-creation
+  - learning-facilitation
+  - silo-reduction
+
+routing:
+  input_types:
+    - knowledge-gap
+    - sharing-request
+    - onboarding-need
+  output_types:
+    - knowledge-content
+    - learning-plan
+    - recommendations
+
+delegation:
+  can_delegate_to: []
+  escalates_to:
+    - delivery-orchestrator-agent
+
+governance:
+  requires_approval: false
+  can_block: false
+  audit_trail: standard
+
+performance:
+  expected_latency_ms: 3000
+  max_latency_ms: 8000
+  timeout_ms: 15000

@@ -1,0 +1,38 @@
+id: data-lineage-agent
+name: Data Lineage Agent
+version: 1.0.0
+description: Tracks data provenance, transformation history, and lineage graphs
+
+metadata:
+  level: 3
+  domain: data-observability
+  tags: [lineage, provenance, tracking, governance, impact-analysis]
+
+generator:
+  type: ADAPTIVE
+
+capabilities:
+  - data-lineage
+  - data-quality
+
+tools:
+  - name: lineageTracker
+    type: SERVICE
+    endpoint: /datacloud/lineage/track
+  - name: impactAnalyzer
+    type: SERVICE
+    endpoint: /datacloud/lineage/impact
+
+memory:
+  type: SEMANTIC
+  scope: lineage_graph
+  retention: long
+
+routing:
+  input: LineageQueryRequest
+  output: LineageGraphResult
+
+resources:
+  memory: "1GB"
+  cpu: "2"
+  timeout: "120s"

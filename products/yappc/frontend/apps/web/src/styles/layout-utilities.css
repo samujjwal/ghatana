@@ -1,0 +1,792 @@
+/**
+ * Layout & Spacing Utilities
+ * 
+ * Standardized spacing, layout, and composition patterns.
+ * Replaces inconsistent spacing approaches throughout the application.
+ * 
+ * @doc.type styles
+ * @doc.purpose Consistent layout and spacing utilities
+ * @doc.layer ui
+ * @doc.pattern Utility Classes
+ */
+
+/* ============================================================================
+   Spacing Scale (based on 4px grid)
+   ============================================================================ */
+
+/* Gap utilities */
+.gap-0 {
+    gap: 0px;
+}
+
+.gap-1 {
+    gap: 4px;
+}
+
+.gap-2 {
+    gap: 8px;
+}
+
+.gap-3 {
+    gap: 12px;
+}
+
+.gap-4 {
+    gap: 16px;
+}
+
+.gap-5 {
+    gap: 20px;
+}
+
+.gap-6 {
+    gap: 24px;
+}
+
+.gap-8 {
+    gap: 32px;
+}
+
+.gap-10 {
+    gap: 40px;
+}
+
+.gap-12 {
+    gap: 48px;
+}
+
+.gap-16 {
+    gap: 64px;
+}
+
+/* Padding utilities */
+.p-0 {
+    padding: 0px;
+}
+
+.p-1 {
+    padding: 4px;
+}
+
+.p-2 {
+    padding: 8px;
+}
+
+.p-3 {
+    padding: 12px;
+}
+
+.p-4 {
+    padding: 16px;
+}
+
+.p-5 {
+    padding: 20px;
+}
+
+.p-6 {
+    padding: 24px;
+}
+
+.p-8 {
+    padding: 32px;
+}
+
+.p-10 {
+    padding: 40px;
+}
+
+.p-12 {
+    padding: 48px;
+}
+
+.p-16 {
+    padding: 64px;
+}
+
+/* Padding X utilities */
+.px-0 {
+    padding-left: 0px;
+    padding-right: 0px;
+}
+
+.px-1 {
+    padding-left: 4px;
+    padding-right: 4px;
+}
+
+.px-2 {
+    padding-left: 8px;
+    padding-right: 8px;
+}
+
+.px-3 {
+    padding-left: 12px;
+    padding-right: 12px;
+}
+
+.px-4 {
+    padding-left: 16px;
+    padding-right: 16px;
+}
+
+.px-5 {
+    padding-left: 20px;
+    padding-right: 20px;
+}
+
+.px-6 {
+    padding-left: 24px;
+    padding-right: 24px;
+}
+
+.px-8 {
+    padding-left: 32px;
+    padding-right: 32px;
+}
+
+.px-10 {
+    padding-left: 40px;
+    padding-right: 40px;
+}
+
+.px-12 {
+    padding-left: 48px;
+    padding-right: 48px;
+}
+
+.px-16 {
+    padding-left: 64px;
+    padding-right: 64px;
+}
+
+/* Padding Y utilities */
+.py-0 {
+    padding-top: 0px;
+    padding-bottom: 0px;
+}
+
+.py-1 {
+    padding-top: 4px;
+    padding-bottom: 4px;
+}
+
+.py-2 {
+    padding-top: 8px;
+    padding-bottom: 8px;
+}
+
+.py-3 {
+    padding-top: 12px;
+    padding-bottom: 12px;
+}
+
+.py-4 {
+    padding-top: 16px;
+    padding-bottom: 16px;
+}
+
+.py-5 {
+    padding-top: 20px;
+    padding-bottom: 20px;
+}
+
+.py-6 {
+    padding-top: 24px;
+    padding-bottom: 24px;
+}
+
+.py-8 {
+    padding-top: 32px;
+    padding-bottom: 32px;
+}
+
+.py-10 {
+    padding-top: 40px;
+    padding-bottom: 40px;
+}
+
+.py-12 {
+    padding-top: 48px;
+    padding-bottom: 48px;
+}
+
+.py-16 {
+    padding-top: 64px;
+    padding-bottom: 64px;
+}
+
+/* Margin utilities */
+.m-0 {
+    margin: 0px;
+}
+
+.m-1 {
+    margin: 4px;
+}
+
+.m-2 {
+    margin: 8px;
+}
+
+.m-3 {
+    margin: 12px;
+}
+
+.m-4 {
+    margin: 16px;
+}
+
+.m-5 {
+    margin: 20px;
+}
+
+.m-6 {
+    margin: 24px;
+}
+
+.m-8 {
+    margin: 32px;
+}
+
+.m-10 {
+    margin: 40px;
+}
+
+.m-12 {
+    margin: 48px;
+}
+
+.m-16 {
+    margin: 64px;
+}
+
+/* Margin X utilities */
+.mx-0 {
+    margin-left: 0px;
+    margin-right: 0px;
+}
+
+.mx-1 {
+    margin-left: 4px;
+    margin-right: 4px;
+}
+
+.mx-2 {
+    margin-left: 8px;
+    margin-right: 8px;
+}
+
+.mx-3 {
+    margin-left: 12px;
+    margin-right: 12px;
+}
+
+.mx-4 {
+    margin-left: 16px;
+    margin-right: 16px;
+}
+
+.mx-5 {
+    margin-left: 20px;
+    margin-right: 20px;
+}
+
+.mx-6 {
+    margin-left: 24px;
+    margin-right: 24px;
+}
+
+.mx-8 {
+    margin-left: 32px;
+    margin-right: 32px;
+}
+
+.mx-10 {
+    margin-left: 40px;
+    margin-right: 40px;
+}
+
+.mx-12 {
+    margin-left: 48px;
+    margin-right: 48px;
+}
+
+.mx-16 {
+    margin-left: 64px;
+    margin-right: 64px;
+}
+
+/* Margin Y utilities */
+.my-0 {
+    margin-top: 0px;
+    margin-bottom: 0px;
+}
+
+.my-1 {
+    margin-top: 4px;
+    margin-bottom: 4px;
+}
+
+.my-2 {
+    margin-top: 8px;
+    margin-bottom: 8px;
+}
+
+.my-3 {
+    margin-top: 12px;
+    margin-bottom: 12px;
+}
+
+.my-4 {
+    margin-top: 16px;
+    margin-bottom: 16px;
+}
+
+.my-5 {
+    margin-top: 20px;
+    margin-bottom: 20px;
+}
+
+.my-6 {
+    margin-top: 24px;
+    margin-bottom: 24px;
+}
+
+.my-8 {
+    margin-top: 32px;
+    margin-bottom: 32px;
+}
+
+.my-10 {
+    margin-top: 40px;
+    margin-bottom: 40px;
+}
+
+.my-12 {
+    margin-top: 48px;
+    margin-bottom: 48px;
+}
+
+.my-16 {
+    margin-top: 64px;
+    margin-bottom: 64px;
+}
+
+/* ============================================================================
+   Layout Container Patterns
+   ============================================================================ */
+
+/* Standard containers */
+.container {
+    width: 100%;
+    margin-left: auto;
+    margin-right: auto;
+    padding-left: 16px;
+    padding-right: 16px;
+}
+
+@media (min-width: 640px) {
+    .container {
+        padding-left: 24px;
+        padding-right: 24px;
+    }
+}
+
+@media (min-width: 1024px) {
+    .container {
+        max-width: 1024px;
+    }
+}
+
+@media (min-width: 1280px) {
+    .container {
+        max-width: 1280px;
+    }
+}
+
+/* Section containers */
+.section {
+    padding: 48px 16px;
+}
+
+@media (min-width: 768px) {
+    .section {
+        padding: 64px 24px;
+    }
+}
+
+@media (min-width: 1024px) {
+    .section {
+        padding: 80px 32px;
+    }
+}
+
+.section-sm {
+    padding: 32px 16px;
+}
+
+@media (min-width: 768px) {
+    .section-sm {
+        padding: 48px 24px;
+    }
+}
+
+.section-lg {
+    padding: 64px 16px;
+}
+
+@media (min-width: 768px) {
+    .section-lg {
+        padding: 96px 24px;
+    }
+}
+
+@media (min-width: 1024px) {
+    .section-lg {
+        padding: 128px 32px;
+    }
+}
+
+/* ============================================================================
+   Component Layout Patterns
+   ============================================================================ */
+
+/* Card layouts */
+.card {
+    padding: 24px;
+    border-radius: 12px;
+    border: 1px solid var(--color-divider);
+    background-color: var(--color-bg-paper);
+}
+
+.card-sm {
+    padding: 16px;
+    border-radius: 8px;
+}
+
+.card-lg {
+    padding: 32px;
+    border-radius: 16px;
+}
+
+.card-header {
+    margin-bottom: 20px;
+}
+
+.card-body {
+    margin-bottom: 20px;
+}
+
+.card-footer {
+    margin-top: 20px;
+    padding-top: 20px;
+    border-top: 1px solid var(--color-divider);
+}
+
+/* Form layouts */
+.form-group {
+    margin-bottom: 20px;
+}
+
+.form-group-sm {
+    margin-bottom: 16px;
+}
+
+.form-group-lg {
+    margin-bottom: 24px;
+}
+
+.form-label {
+    display: block;
+    margin-bottom: 8px;
+    font-weight: 500;
+    color: var(--color-text-primary);
+}
+
+.form-input {
+    width: 100%;
+    padding: 12px 16px;
+    border: 1px solid var(--color-divider);
+    border-radius: 8px;
+    background-color: var(--color-bg-surface);
+    color: var(--color-text-primary);
+    font-size: 16px;
+}
+
+.form-input:focus {
+    outline: 2px solid var(--color-primary-500);
+    outline-offset: 2px;
+    border-color: var(--color-primary-500);
+}
+
+/* ============================================================================
+   Grid Layout Patterns
+   ============================================================================ */
+
+/* Standard grid */
+.grid {
+    display: grid;
+    gap: 16px;
+}
+
+.grid-sm {
+    gap: 12px;
+}
+
+.grid-lg {
+    gap: 24px;
+}
+
+.grid-1 {
+    grid-template-columns: repeat(1, minmax(0, 1fr));
+}
+
+.grid-2 {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+.grid-3 {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+}
+
+.grid-4 {
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+}
+
+/* Responsive grids */
+.grid-responsive-2 {
+    display: grid;
+    gap: 16px;
+    grid-template-columns: 1fr;
+}
+
+@media (min-width: 768px) {
+    .grid-responsive-2 {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+}
+
+.grid-responsive-3 {
+    display: grid;
+    gap: 16px;
+    grid-template-columns: 1fr;
+}
+
+@media (min-width: 768px) {
+    .grid-responsive-3 {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+}
+
+@media (min-width: 1024px) {
+    .grid-responsive-3 {
+        grid-template-columns: repeat(3, minmax(0, 1fr));
+    }
+}
+
+/* ============================================================================
+   Flex Layout Patterns
+   ============================================================================ */
+
+/* Standard flex containers */
+.flex {
+    display: flex;
+}
+
+.flex-col {
+    flex-direction: column;
+}
+
+.flex-wrap {
+    flex-wrap: wrap;
+}
+
+.items-center {
+    align-items: center;
+}
+
+.items-start {
+    align-items: flex-start;
+}
+
+.items-end {
+    align-items: flex-end;
+}
+
+.justify-center {
+    justify-content: center;
+}
+
+.justify-between {
+    justify-content: space-between;
+}
+
+.justify-start {
+    justify-content: flex-start;
+}
+
+.justify-end {
+    justify-content: flex-end;
+}
+
+/* ============================================================================
+   Stack Layout Patterns
+   ============================================================================ */
+
+/* Vertical stack */
+.stack {
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+}
+
+.stack-sm {
+    gap: 12px;
+}
+
+.stack-lg {
+    gap: 24px;
+}
+
+/* Horizontal stack */
+.stack-h {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+}
+
+.stack-h-sm {
+    gap: 12px;
+}
+
+.stack-h-lg {
+    gap: 24px;
+}
+
+/* ============================================================================
+   Spacing for Typography
+   ============================================================================ */
+
+/* Heading spacing */
+.heading {
+    margin-bottom: 16px;
+}
+
+.heading-sm {
+    margin-bottom: 12px;
+}
+
+.heading-lg {
+    margin-bottom: 24px;
+}
+
+/* Paragraph spacing */
+.paragraph {
+    margin-bottom: 16px;
+}
+
+.paragraph-sm {
+    margin-bottom: 12px;
+}
+
+.paragraph-lg {
+    margin-bottom: 24px;
+}
+
+/* List spacing */
+.list {
+    margin-bottom: 16px;
+}
+
+.list-item {
+    margin-bottom: 8px;
+}
+
+.list-item:last-child {
+    margin-bottom: 0;
+}
+
+/* ============================================================================
+   Responsive Spacing
+   ============================================================================ */
+
+@media (max-width: 768px) {
+    .responsive-spacing-sm>* {
+        margin-bottom: 12px;
+    }
+
+    .responsive-spacing-sm>*:last-child {
+        margin-bottom: 0;
+    }
+}
+
+@media (min-width: 769px) {
+    .responsive-spacing-sm>* {
+        margin-bottom: 16px;
+    }
+
+    .responsive-spacing-sm>*:last-child {
+        margin-bottom: 0;
+    }
+}
+
+/* ============================================================================
+   Negative Spacing (for tight layouts)
+   ============================================================================ */
+
+.-m-1 {
+    margin: -4px;
+}
+
+.-m-2 {
+    margin: -8px;
+}
+
+.-m-3 {
+    margin: -12px;
+}
+
+.-m-4 {
+    margin: -16px;
+}
+
+.-mx-1 {
+    margin-left: -4px;
+    margin-right: -4px;
+}
+
+.-mx-2 {
+    margin-left: -8px;
+    margin-right: -8px;
+}
+
+.-mx-3 {
+    margin-left: -12px;
+    margin-right: -12px;
+}
+
+.-mx-4 {
+    margin-left: -16px;
+    margin-right: -16px;
+}
+
+.-my-1 {
+    margin-top: -4px;
+    margin-bottom: -4px;
+}
+
+.-my-2 {
+    margin-top: -8px;
+    margin-bottom: -8px;
+}
+
+.-my-3 {
+    margin-top: -12px;
+    margin-bottom: -12px;
+}
+
+.-my-4 {
+    margin-top: -16px;
+    margin-bottom: -16px;
+}

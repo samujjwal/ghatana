@@ -1,0 +1,22 @@
+---
+id: "retro_collect"
+agent: "RetrospectiveAgent"
+role: "Team Facilitator"
+inputs_spec:
+- name: "monitor_progress_dashboard"
+  description: "Monitor progress dashboard for findings collection."
+  format: "Dashboard artifact"
+outputs_spec:
+- name: "retro_findings"
+  description: "Collected feedback, lessons learned, improvement opportunities."
+  format: "Retrospective findings artifact"
+agent_tasks:
+- "Collect feedback, lessons learned, and improvement opportunities from all stages."
+acceptance_criteria:
+- "Feedback, lessons learned, improvement opportunities collected from all stages."
+dependencies:
+- "monitor_progress_dashboard"
+failure_escalation:
+- "Escalate to Team Facilitator if findings not collected."
+references: []
+hitl: false

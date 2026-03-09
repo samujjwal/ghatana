@@ -1,0 +1,233 @@
+syntax = "proto3";
+
+package com.ghatana.core.organization.contracts;
+
+import "google/protobuf/timestamp.proto";
+import "google/protobuf/duration.proto";
+import "google/protobuf/struct.proto";
+
+/**
+ * Unified organization event contract.
+ *
+ * Defines core events emitted across organization, departments, teams, and resources.
+ * All events follow the EventCloud model: metadata (ID/ETIME/STAT) + payload.
+ */
+
+// Organization lifecycle events
+message OrganizationCreatedEvent {
+  string organization_id = 1;
+  string name = 2;
+  string industry = 3;
+  int32 employee_count = 4;
+  google.protobuf.Timestamp created_at = 5;
+  map<string, string> metadata = 6;
+}
+
+message OrganizationUpdatedEvent {
+  string organization_id = 1;
+  string field_changed = 2;
+  string old_value = 3;
+  string new_value = 4;
+  google.protobuf.Timestamp updated_at = 5;
+}
+
+message OrganizationDeletedEvent {
+  string organization_id = 1;
+  string reason = 2;
+  google.protobuf.Timestamp deleted_at = 3;
+}
+
+// Department lifecycle events
+message DepartmentCreatedEvent {
+  string organization_id = 1;
+  string department_id = 2;
+  string name = 3;
+  string manager_id = 4;
+  string business_unit = 5;
+  int32 team_count = 6;
+  google.protobuf.Timestamp created_at = 7;
+}
+
+message DepartmentUpdatedEvent {
+  string organization_id = 1;
+  string department_id = 2;
+  string field_changed = 3;
+  string old_value = 4;
+  string new_value = 5;
+  google.protobuf.Timestamp updated_at = 6;
+}
+
+// KPI and metrics events
+message KPIRecordedEvent {
+  string organization_id = 1;
+  string kpi_id = 2;
+  string kpi_name = 3;
+  double value = 4;
+  string unit = 5;
+  google.protobuf.Timestamp recorded_at = 6;
+  map<string, string> dimensions = 7;
+}
+
+message KPIThresholdExceededEvent {
+  string organization_id = 1;
+  string kpi_id = 2;
+  double current_value = 3;
+  double threshold = 4;
+  string severity = 5;
+  google.protobuf.Timestamp detected_at = 6;
+}
+
+// Team and resource events
+message TeamCreatedEvent {
+  string organization_id = 1;
+  string department_id = 2;
+  string team_id = 3;
+  string name = 4;
+  string lead_id = 5;
+  repeated string member_ids = 6;
+  google.protobuf.Timestamp created_at = 7;
+}
+
+message ResourceAllocatedEvent {
+  string organization_id = 1;
+  string resource_type = 2;
+  string resource_id = 3;
+  string team_id = 4;
+  double quantity = 5;
+  google.protobuf.Timestamp allocated_at = 6;
+}
+
+// Health and status events
+message HealthCheckEvent {
+  string organization_id = 1;
+  string component = 2;
+  enum Status {
+    HEALTHY = 0;
+    DEGRADED = 1;
+    UNHEALTHY = 2;
+  }
+  Status status = 3;
+  string message = 4;
+  google.protobuf.Timestamp checked_at = 5;
+}
+
+message AlertRaisedEvent {
+  string organization_id = 1;
+  string alert_id = 2;
+  string title = 3;
+  string description = 4;
+  enum Severity {
+    INFO = 0;
+    WARNING = 1;
+    CRITICAL = 2;
+  }
+  Severity severity = 5;
+  string source = 6;
+  google.protobuf.Timestamp raised_at = 7;
+  map<string, string> context = 8;
+}
+
+// Workflow and task events
+message TaskCreatedEvent {
+  string organization_id = 1;
+  string task_id = 2;
+  string title = 3;
+  string description = 4;
+  string assigned_to = 5;
+  string department_id = 6;
+  google.protobuf.Timestamp due_date = 7;
+  enum Priority {
+    LOW = 0;
+    MEDIUM = 1;
+    HIGH = 2;
+    CRITICAL = 3;
+  }
+  Priority priority = 8;
+  google.protobuf.Timestamp created_at = 9;
+}
+
+message TaskStatusChangedEvent {
+  string organization_id = 1;
+  string task_id = 2;
+  enum TaskStatus {
+    CREATED = 0;
+    IN_PROGRESS = 1;
+    BLOCKED = 2;
+    COMPLETED = 3;
+    CANCELLED = 4;
+  }
+  TaskStatus old_status = 3;
+  TaskStatus new_status = 4;
+  string changed_by = 5;
+  string reason = 6;
+  google.protobuf.Timestamp changed_at = 7;
+}
+
+// AI and ML integration events
+message ModelTrainingInitiatedEvent {
+  string organization_id = 1;
+  string model_id = 2;
+  string model_type = 3;
+  string training_dataset = 4;
+  map<string, string> hyperparameters = 5;
+  google.protobuf.Timestamp initiated_at = 6;
+}
+
+message ModelMetricsRecordedEvent {
+  string organization_id = 1;
+  string model_id = 2;
+  double accuracy = 3;
+  double precision = 4;
+  double recall = 5;
+  double f1_score = 6;
+  int32 sample_count = 7;
+  google.protobuf.Timestamp recorded_at = 8;
+}
+
+message PredictionGeneratedEvent {
+  string organization_id = 1;
+  string prediction_id = 2;
+  string model_id = 3;
+  string target_entity = 4;
+  double prediction_value = 5;
+  double confidence = 6;
+  map<string, double> feature_values = 7;
+  google.protobuf.Timestamp generated_at = 8;
+}
+
+// Anomaly detection events
+message AnomalyDetectedEvent {
+  string organization_id = 1;
+  string anomaly_id = 2;
+  string anomaly_type = 3;
+  double anomaly_score = 4;
+  string affected_entity = 5;
+  map<string, string> details = 6;
+  enum AnomalySeverity {
+    LOW = 0;
+    MEDIUM = 1;
+    HIGH = 2;
+    CRITICAL = 3;
+  }
+  AnomalySeverity severity = 7;
+  google.protobuf.Timestamp detected_at = 8;
+}
+
+// Integration and plugin events
+message IntegrationConnectedEvent {
+  string organization_id = 1;
+  string integration_id = 2;
+  string integration_type = 3;
+  string remote_system = 4;
+  map<string, string> config = 5;
+  google.protobuf.Timestamp connected_at = 6;
+}
+
+message DataSyncEvent {
+  string organization_id = 1;
+  string integration_id = 2;
+  int32 records_synced = 3;
+  int32 errors = 4;
+  google.protobuf.Duration sync_duration = 5;
+  google.protobuf.Timestamp synced_at = 6;
+}

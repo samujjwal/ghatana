@@ -1,0 +1,34 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: dcmar-service
+  namespace: staging
+  labels:
+    app: dcmaar
+    tier: backend
+    environment: staging
+  annotations:
+    service.beta.kubernetes.io/aws-load-balancer-type: "nlb"
+    service.beta.kubernetes.io/aws-load-balancer-internal: "true"
+spec:
+  type: ClusterIP
+  selector:
+    app: dcmaar
+    tier: backend
+    environment: staging
+  ports:
+  - name: http
+    port: 80
+    targetPort: 8080
+    protocol: TCP
+  - name: grpc
+    port: 50051
+    targetPort: 8081
+    protocol: TCP
+  sessionAffinity: None
+  sessionAffinityConfig:
+    clientIP:
+      timeoutSeconds: 10800
+  ipFamilyPolicy: SingleStack
+  ipFamilies:
+    - IPv4

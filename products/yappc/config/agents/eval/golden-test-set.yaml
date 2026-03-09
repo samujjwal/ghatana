@@ -1,0 +1,196 @@
+# YAPPC Agent Golden Test Set
+# Baseline evaluation cases for the agent evaluation flywheel.
+# Run via: ./gradlew :products:yappc:core:agents:agentEval
+
+apiVersion: ghatana.yappc/v1
+kind: AgentEvalTestSet
+
+metadata:
+  version: 1.0.0
+  description: "Golden test set for YAPPC agent evaluation flywheel"
+  total_cases: 12
+
+test_cases:
+
+  # =========================================================================
+  # Tier Resolution Tests — verify AgentDispatcher resolves correct tier
+  # =========================================================================
+
+  - id: eval-tier-resolve-java
+    description: "Dispatcher resolves a Java-implemented agent to Tier-J"
+    agent_id: agent.yappc.products-officer
+    category: unit
+    input: { query: "What is the project status?" }
+    assertions:
+      - type: STATUS
+        expected: SUCCESS
+        description: "Agent should return SUCCESS"
+    max_latency_ms: 5000
+    tags: [tier-resolution, tier-j]
+
+  - id: eval-tier-resolve-llm
+    description: "Dispatcher resolves an LLM-only agent to Tier-L"
+    agent_id: agent.yappc.root-cause-analysis-agent
+    category: unit
+    input:
+      error: "NullPointerException at UserService.java:42"
+      stack_trace: "java.lang.NullPointerException\n\tat com.example.UserService.getUser(UserService.java:42)"
+    assertions:
+      - type: STATUS
+        expected: SUCCESS
+        description: "Agent should return SUCCESS"
+      - type: CONFIDENCE_MIN
+        expected: "0.3"
+        description: "Root cause analysis should have reasonable confidence"
+    max_latency_ms: 30000
+    tags: [tier-resolution, tier-l]
+
+  # =========================================================================
+  # Debug Pipeline Tests — verify debug agent chain
+  # =========================================================================
+
+  - id: eval-debug-stack-trace
+    description: "Stack trace analyzer parses a Java exception correctly"
+    agent_id: agent.yappc.stack-trace-analyzer-agent
+    category: unit
+    input:
+      stack_trace: |
+        java.lang.NullPointerException: Cannot invoke method on null reference
+          at com.ghatana.yappc.core.UserService.findById(UserService.java:55)
+          at com.ghatana.yappc.api.UserController.getUser(UserController.java:23)
+          at io.activej.http.RoutingServlet.serve(RoutingServlet.java:120)
+    assertions:
+      - type: STATUS
+        expected: SUCCESS
+        description: "Parser should succeed"
+      - type: CONTAINS
+        expected: "UserService"
+        description: "Output should identify UserService as failure location"
+    max_latency_ms: 3000
+    tags: [debug, stack-trace]
+
+  - id: eval-debug-log-analysis
+    description: "Log analysis agent identifies error patterns"
+    agent_id: agent.yappc.log-analysis-agent
+    category: unit
+    input: |
+      2026-03-05T10:00:01Z ERROR [http-worker-3] UserService - Failed to fetch user: connection refused
+      2026-03-05T10:00:02Z ERROR [http-worker-5] UserService - Failed to fetch user: connection refused
+      2026-03-05T10:00:03Z WARN  [health-checker] DatabasePool - Pool exhausted, 0 available connections
+    assertions:
+      - type: STATUS
+        expected: SUCCESS
+      - type: CONFIDENCE_MIN
+        expected: "0.5"
+    max_latency_ms: 15000
+    tags: [debug, logs]
+
+  # =========================================================================
+  # Code Generation Tests — verify stack-specific agents
+  # =========================================================================
+
+  - id: eval-codegen-activej-route
+    description: "ActiveJ expert generates a valid HTTP route handler"
+    agent_id: agent.yappc.activej-expert-agent
+    category: integration
+    input:
+      request: "Create a GET /api/health endpoint returning JSON {status: ok}"
+    assertions:
+      - type: STATUS
+        expected: SUCCESS
+      - type: CONTAINS
+        expected: "RoutingServlet"
+        description: "Generated code should use ActiveJ RoutingServlet"
+    max_latency_ms: 20000
+    tags: [codegen, activej]
+
+  - id: eval-codegen-prisma-model
+    description: "Prisma expert generates a valid schema model"
+    agent_id: agent.yappc.prisma-expert-agent
+    category: integration
+    input:
+      request: "Create a Prisma model for a Project with id, name, description, createdAt"
+    assertions:
+      - type: STATUS
+        expected: SUCCESS
+      - type: CONTAINS
+        expected: "model Project"
+        description: "Output should contain Prisma model declaration"
+    max_latency_ms: 20000
+    tags: [codegen, prisma]
+
+  # =========================================================================
+  # Release Governance Tests — verify gate and SBOM agents
+  # =========================================================================
+
+  - id: eval-release-gate-pass
+    description: "Release gate agent evaluates a complete release candidate"
+    agent_id: agent.yappc.release-gate-agent
+    category: integration
+    input:
+      sbom_present: true
+      artifacts_signed: true
+      quality_gate_passed: true
+      critical_vulnerabilities: 0
+      changelog_updated: true
+    assertions:
+      - type: STATUS
+        expected: SUCCESS
+    max_latency_ms: 15000
+    tags: [release, gate]
+
+  # =========================================================================
+  # Safety Tests — verify guardrail behavior
+  # =========================================================================
+
+  - id: eval-safety-unresolvable
+    description: "Dispatcher returns FAILED for non-existent agent"
+    agent_id: agent.yappc.nonexistent-agent-12345
+    category: safety
+    input: { query: "test" }
+    assertions:
+      - type: STATUS
+        expected: FAILED
+        description: "Non-existent agent should return FAILED"
+    max_latency_ms: 1000
+    tags: [safety, guardrail]
+
+  - id: eval-safety-delegation-depth
+    description: "Service orchestration respects max delegation depth"
+    agent_id: agent.yappc.debug-orchestrator
+    category: safety
+    input:
+      error: "Infinite delegation loop test"
+    assertions:
+      - type: STATUS
+        expected: SUCCESS
+        description: "Should complete without stack overflow"
+    max_latency_ms: 60000
+    tags: [safety, delegation]
+
+  # =========================================================================
+  # Regression Tests — prevent known-fixed bugs from reappearing
+  # =========================================================================
+
+  - id: eval-regression-quality-guard-ref
+    description: "Quality guard agent is resolvable (was dangling in Phase 0)"
+    agent_id: agent.yappc.quality-guard-agent
+    category: regression
+    input: { artifact: "test-artifact-1.0.0.jar" }
+    assertions:
+      - type: STATUS
+        expected: SUCCESS
+        description: "Quality guard should be resolvable after Phase 0 fix"
+    max_latency_ms: 15000
+    tags: [regression, phase-0-fix]
+
+  - id: eval-regression-ops-orch-level
+    description: "Operations orchestrator is at level 2 (was level 1 in Phase 0)"
+    agent_id: agent.yappc.operations-orchestrator-agent
+    category: regression
+    input: { alert: "CPU > 90% for 5 minutes" }
+    assertions:
+      - type: STATUS
+        expected: SUCCESS
+    max_latency_ms: 30000
+    tags: [regression, phase-0-fix]

@@ -1,0 +1,74 @@
+---
+# Cross-Cutting Success Criteria Tracker Operator Template
+# Replaces ~12 stage-specific files: build_success_criteria_tracker.yaml, etc.
+#
+# @doc.type operator-template
+# @doc.purpose Cross-cutting success criteria tracking for all stages
+# @doc.layer operations
+# @doc.pattern Template
+
+template:
+  id: "${stage}_success_criteria_tracker"
+  version: "1.0.0"
+
+operator:
+  type: "SuccessCriteriaOperator"
+  role: "${stage} Success Criteria Tracker"
+  category: "cross-cutting"
+
+parameters:
+  stage:
+    type: "string"
+    required: true
+    description: "Stage name for success criteria tracking"
+
+inputs_spec:
+  - name: "${stage}_stage_milestone"
+    description: "${stage} milestones with success criteria."
+    format: "List of milestone objects"
+    required: true
+
+  - name: "${stage}_test_results"
+    description: "Test/validation results for criteria evaluation."
+    format: "Test results artifact"
+    required: false
+
+outputs_spec:
+  - name: "${stage}_success_criteria_status"
+    description: "Status of all ${stage} success criteria (met/not-met/blocked)."
+    format: "List of criteria status objects"
+
+  - name: "${stage}_criteria_events"
+    description: "Stream of criteria status change events"
+    format: "Event stream"
+    event_type: "ghatana.operations.criteria.${stage}"
+
+agent_tasks:
+  - "Track status of all ${stage} success criteria."
+  - "Evaluate criteria against actual results."
+  - "Flag blocked or at-risk criteria."
+  - "Emit criteria events to EventCloud."
+
+acceptance_criteria:
+  - "All success criteria are tracked with current status."
+  - "Criteria status is updated as evidence becomes available."
+  - "Blocked criteria trigger escalation."
+
+dependencies:
+  - "${stage}_stage_milestone"
+
+failure_escalation:
+  - "Escalate to PM if criteria cannot be evaluated."
+
+config:
+  criteria_states:
+    - "not_started"
+    - "in_progress"
+    - "met"
+    - "not_met"
+    - "blocked"
+    - "deferred"
+
+  event_cloud_topic: "ghatana.operations.criteria"
+
+hitl: false

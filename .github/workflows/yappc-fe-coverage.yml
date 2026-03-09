@@ -1,0 +1,213 @@
+name: "YAPPC FE: Coverage Enforcement"
+
+on:
+  push:
+    branches: [main, develop]
+    paths: ['products/yappc/frontend/**']
+  pull_request:
+    branches: [main, develop]
+    paths:
+      # Run on changes to critical paths
+      - 'libs/canvas/src/state/**'
+      - 'libs/canvas/src/elements/**'
+      - 'libs/canvas/src/viewport/**'
+      - 'libs/canvas/src/layout/**'
+      - 'libs/store/src/**'
+      # Run on test infrastructure changes
+      - '**/*.test.{ts,tsx}'
+      - '**/*.spec.{ts,tsx}'
+      - 'vitest.*.{ts,js}'
+      - 'scripts/enforce-coverage.js'
+      - '.github/workflows/coverage.yml'
+  workflow_dispatch:
+    inputs:
+      strict:
+        description: 'Enforce strict mode (90% for critical paths)'
+        required: false
+        default: true
+        type: boolean
+
+env:
+  NODE_VERSION: '20'
+  PNPM_VERSION: '10.28.2'
+
+defaults:
+  run:
+    working-directory: products/yappc/frontend
+
+jobs:
+  coverage:
+    name: Test Coverage
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0 # Full history for accurate coverage
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: 'pnpm'
+
+      - name: Enable pnpm via corepack
+        run: |
+          corepack enable
+          corepack prepare pnpm@${{ env.PNPM_VERSION }} --activate
+
+      - name: Get pnpm store directory
+        id: pnpm-cache
+        shell: bash
+        run: |
+          echo "STORE_PATH=$(pnpm store path)" >> $GITHUB_OUTPUT
+
+      - name: Setup pnpm cache
+        uses: actions/cache@v4
+        with:
+          path: ${{ steps.pnpm-cache.outputs.STORE_PATH }}
+          key: ${{ runner.os }}-pnpm-store-${{ hashFiles('**/pnpm-lock.yaml') }}
+          restore-keys: |
+            ${{ runner.os }}-pnpm-store-
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile --prefer-offline
+
+      - name: Run tests with coverage
+        run: pnpm run test:coverage
+        env:
+          CI: true
+
+      - name: Enforce coverage thresholds (Standard - 70%)
+        if: github.event_name != 'workflow_dispatch'
+        run: node scripts/enforce-coverage.js
+        continue-on-error: false
+
+      - name: Enforce coverage thresholds (Strict - 90%)
+        if: |
+          (github.event_name == 'workflow_dispatch' && github.event.inputs.strict == 'true')
+        run: node scripts/enforce-coverage.js --strict
+        continue-on-error: false
+
+      - name: Generate coverage report
+        if: always()
+        run: |
+          echo "## Coverage Report" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          if [ -f coverage/coverage-summary.json ]; then
+            node -e "
+              const fs = require('fs');
+              const summary = JSON.parse(fs.readFileSync('coverage/coverage-summary.json', 'utf-8'));
+              const total = summary.total;
+              console.log('| Metric | Coverage |');
+              console.log('|--------|----------|');
+              console.log('| Lines | ' + total.lines.pct.toFixed(2) + '% |');
+              console.log('| Statements | ' + total.statements.pct.toFixed(2) + '% |');
+              console.log('| Functions | ' + total.functions.pct.toFixed(2) + '% |');
+              console.log('| Branches | ' + total.branches.pct.toFixed(2) + '% |');
+            " >> $GITHUB_STEP_SUMMARY
+          else
+            echo "Coverage summary not found" >> $GITHUB_STEP_SUMMARY
+          fi
+
+      - name: Upload coverage reports to Codecov
+        uses: codecov/codecov-action@v4
+        if: always()
+        with:
+          files: ./coverage/lcov.info
+          flags: unittests
+          name: codecov-umbrella
+          fail_ci_if_error: false # Don't fail CI if Codecov upload fails
+          verbose: true
+        env:
+          CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}
+
+      - name: Upload coverage to Coveralls
+        uses: coverallsapp/github-action@v2
+        if: always()
+        with:
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          path-to-lcov: ./coverage/lcov.info
+          flag-name: unit-tests
+          parallel: false
+
+      - name: Archive coverage reports
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: coverage-report
+          path: |
+            coverage/
+            !coverage/**/*.json
+          retention-days: 30
+
+      - name: Archive coverage JSON
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: coverage-json
+          path: coverage/*.json
+          retention-days: 90
+
+      - name: Comment PR with coverage
+        if: github.event_name == 'pull_request'
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const fs = require('fs');
+            
+            if (!fs.existsSync('coverage/coverage-summary.json')) {
+              console.log('Coverage summary not found');
+              return;
+            }
+            
+            const summary = JSON.parse(fs.readFileSync('coverage/coverage-summary.json', 'utf-8'));
+            const total = summary.total;
+            
+            const body = `## 📊 Coverage Report
+            
+            | Metric | Coverage | Status |
+            |--------|----------|--------|
+            | Lines | ${total.lines.pct.toFixed(2)}% | ${total.lines.pct >= 70 ? '✅' : '❌'} |
+            | Statements | ${total.statements.pct.toFixed(2)}% | ${total.statements.pct >= 70 ? '✅' : '❌'} |
+            | Functions | ${total.functions.pct.toFixed(2)}% | ${total.functions.pct >= 70 ? '✅' : '❌'} |
+            | Branches | ${total.branches.pct.toFixed(2)}% | ${total.branches.pct >= 70 ? '✅' : '❌'} |
+            
+            **Threshold:** 70% (Standard), 90% for critical paths
+            
+            <details>
+            <summary>View Full Coverage Report</summary>
+            
+            Download the \`coverage-report\` artifact from this workflow run to view the detailed HTML report.
+            
+            </details>
+            `;
+            
+            github.rest.issues.createComment({
+              issue_number: context.issue.number,
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              body: body
+            });
+
+  coverage-summary:
+    name: Coverage Summary
+    runs-on: ubuntu-latest
+    needs: coverage
+    if: always()
+    
+    steps:
+      - name: Check coverage job status
+        run: |
+          if [ "${{ needs.coverage.result }}" == "failure" ]; then
+            echo "❌ Coverage enforcement failed"
+            exit 1
+          elif [ "${{ needs.coverage.result }}" == "success" ]; then
+            echo "✅ Coverage enforcement passed"
+            exit 0
+          else
+            echo "⚠️ Coverage enforcement was skipped or cancelled"
+            exit 1
+          fi

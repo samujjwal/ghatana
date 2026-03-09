@@ -1,0 +1,86 @@
+# Grafana Dashboard ConfigMap for YAPPC
+# Import this dashboard in Grafana UI
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: yappc-dashboard
+  namespace: yappc
+  labels:
+    grafana_dashboard: "1"
+data:
+  yappc-dashboard.json: |
+    {
+      "dashboard": {
+        "title": "YAPPC Platform Overview",
+        "tags": ["yappc", "llm", "agents"],
+        "timezone": "browser",
+        "panels": [
+          {
+            "id": 1,
+            "title": "Request Rate",
+            "type": "graph",
+            "targets": [
+              {
+                "expr": "rate(http_requests_total{namespace=\"yappc\"}[5m])",
+                "legendFormat": "{{pod}}"
+              }
+            ]
+          },
+          {
+            "id": 2,
+            "title": "P95 Latency",
+            "type": "graph",
+            "targets": [
+              {
+                "expr": "histogram_quantile(0.95, rate(http_request_duration_seconds_bucket{namespace=\"yappc\"}[5m]))",
+                "legendFormat": "P95 Latency"
+              }
+            ]
+          },
+          {
+            "id": 3,
+            "title": "Error Rate",
+            "type": "graph",
+            "targets": [
+              {
+                "expr": "rate(http_requests_total{namespace=\"yappc\",status=~\"5..\"}[5m])",
+                "legendFormat": "5xx Errors"
+              }
+            ]
+          },
+          {
+            "id": 4,
+            "title": "GPU Utilization",
+            "type": "graph",
+            "targets": [
+              {
+                "expr": "nvidia_gpu_duty_cycle",
+                "legendFormat": "GPU {{gpu}}"
+              }
+            ]
+          },
+          {
+            "id": 5,
+            "title": "Pod Count",
+            "type": "stat",
+            "targets": [
+              {
+                "expr": "count(kube_pod_info{namespace=\"yappc\",pod=~\"yappc-agents-.*\"})",
+                "legendFormat": "Running Pods"
+              }
+            ]
+          },
+          {
+            "id": 6,
+            "title": "Memory Usage",
+            "type": "graph",
+            "targets": [
+              {
+                "expr": "container_memory_usage_bytes{namespace=\"yappc\",pod=~\"yappc-agents-.*\"}",
+                "legendFormat": "{{pod}}"
+              }
+            ]
+          }
+        ]
+      }
+    }

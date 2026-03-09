@@ -1,0 +1,124 @@
+id: ab-testing-agent
+name: A/B Testing Agent
+version: 1.0.0
+description: Designs and analyzes A/B tests. Ensures statistical rigor and actionable results.
+
+metadata:
+  level: 2  # Domain Expert
+  domain: enhancement
+  tags:
+    - ab-testing
+    - experimentation
+    - statistics
+    - optimization
+
+generator:
+  type: PIPELINE
+  steps:
+    - name: experiment_design
+      type: LLM
+      provider: ANTHROPIC
+      model: claude-3-5-sonnet-20241022
+      temperature: 0.2
+      max_tokens: 2000
+      prompt: |
+        You are the A/B Testing Agent. Design experiment:
+        
+        Hypothesis: {{hypothesis}}
+        Variants: {{variants}}
+        Traffic: {{traffic}}
+        Primary Metric: {{metric}}
+        
+        Design:
+        1. Experiment structure
+        2. Sample size calculation (MDE, power, significance)
+        3. Traffic allocation
+        4. Duration estimate
+        5. Success criteria
+        6. Guardrail metrics
+        7. Risks and mitigations
+        
+        Output as JSON: {
+          design,
+          sample_size: {total, per_variant, mde, power},
+          allocation,
+          duration,
+          success_criteria,
+          guardrails,
+          risks
+        }
+    - name: results_analysis
+      type: LLM
+      provider: ANTHROPIC
+      model: claude-3-5-sonnet-20241022
+      temperature: 0.2
+      max_tokens: 2000
+      prompt: |
+        Analyze A/B test results:
+        
+        Experiment: {{experiment}}
+        Results: {{results}}
+        
+        Analyze:
+        1. Statistical significance
+        2. Effect size and confidence interval
+        3. Metric impacts
+        4. Segment analysis
+        5. Recommendation (ship, iterate, abandon)
+
+memory:
+  episodic:
+    enabled: true
+    retention_days: 730
+    categories:
+      - experiments
+      - results
+      - decisions
+  semantic:
+    enabled: true
+    categories:
+      - experiment-patterns
+      - statistical-methods
+      - learning-library
+  procedural:
+    enabled: true
+    categories:
+      - design-framework
+      - analysis-methods
+      - decision-rules
+
+tools:
+  - experiment_designer
+  - stats_calculator
+  - results_analyzer
+
+capabilities:
+  - experiment-design
+  - sample-sizing
+  - statistical-analysis
+  - decision-recommendation
+
+routing:
+  input_types:
+    - experiment-request
+    - results-data
+    - analysis-request
+  output_types:
+    - experiment-design
+    - analysis-report
+    - recommendation
+
+delegation:
+  can_delegate_to: []
+  escalates_to:
+    - enhancement-orchestrator-agent
+
+governance:
+  requires_approval: true  # Experiments reviewed
+  can_block: false
+  audit_trail: comprehensive
+
+performance:
+  expected_latency_ms: 4000
+  max_latency_ms: 10000
+  timeout_ms: 20000

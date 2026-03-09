@@ -1,0 +1,26 @@
+---
+id: "code_duplication"
+agent: "CodeDuplicationAgent"
+role: "Automation Tool"
+inputs_spec:
+- name: "modularized_codebase"
+  description: "Codebase for duplication analysis."
+  format: "Source repo or artifact reference"
+outputs_spec:
+- name: "code_duplication_report"
+  description: "Report highlighting duplicate code blocks and hotspots."
+  format: "Duplication scan report"
+agent_tasks:
+- "Scan codebase for duplicate code blocks."
+- "Flag duplication hotspots for refactoring."
+- "Share summary report with developers."
+acceptance_criteria:
+- "Codebase is scanned for duplicate code blocks."
+- "Duplication hotspots are flagged for refactoring."
+- "A summary report is available to devs."
+dependencies:
+- "modularized_codebase"
+failure_escalation:
+- "Escalate to Dev Lead if duplication issues persist."
+references: []
+hitl: false

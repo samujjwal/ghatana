@@ -1,0 +1,24 @@
+{
+  "id": "getting-started",
+  "title": "Getting Started with YAPPC Canvas",
+  "description": "Welcome to the YAPPC Canvas documentation! This comprehensive guide will help you understand, use, and extend the powerful canvas system for building interactive diagrams and applications.",
+  "source": "@site/docs/getting-started.md",
+  "sourceDirName": ".",
+  "slug": "/",
+  "permalink": "/docs/",
+  "draft": false,
+  "unlisted": false,
+  "editUrl": "https://github.com/yappc/app-creator/tree/main/docs-site/docs/getting-started.md",
+  "tags": [],
+  "version": "current",
+  "sidebarPosition": 1,
+  "frontMatter": {
+    "sidebar_position": 1,
+    "slug": "/"
+  },
+  "sidebar": "canvasSidebar",
+  "next": {
+    "title": "Canvas Overview",
+    "permalink": "/docs/canvas/overview"
+  }
+}

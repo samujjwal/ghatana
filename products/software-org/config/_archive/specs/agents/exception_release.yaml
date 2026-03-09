@@ -1,0 +1,27 @@
+---
+id: "exception_release"
+agent: "ExceptionReleaseAgent"
+role: "Security/Release Lead"
+inputs_spec:
+- name: "release_audit_log"
+  description: "Release audit log for exception approval."
+  format: "Audit log artifact"
+outputs_spec:
+- name: "release_exception_approval"
+  description: "Formal approval and documentation of any release exceptions."
+  format: "Exception approval artifact"
+agent_tasks:
+- "Formally document and review all release exceptions."
+- "Require approvals and justifications."
+- "Review exceptions before release."
+acceptance_criteria:
+- "Release exceptions formally documented."
+- "Approvals and justifications included."
+- "Exceptions reviewed before release."
+dependencies:
+- "release_audit_log"
+failure_escalation:
+- "Escalate to Security/Release Lead if exceptions are not reviewed or justified."
+references: []
+hitl: true
+hitl_reason: "Human approves or rejects release exceptions"

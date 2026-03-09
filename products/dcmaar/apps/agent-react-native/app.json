@@ -1,0 +1,48 @@
+{
+  "expo": {
+    "name": "Guardian Agent",
+    "slug": "guardian-agent",
+    "version": "1.0.0",
+    "orientation": "portrait",
+    "userInterfaceStyle": "light",
+    "platforms": [
+      "ios",
+      "android"
+    ],
+    "assetBundlePatterns": [
+      "**/*"
+    ],
+    "ios": {
+      "supportsTablet": true,
+      "bundleIdentifier": "com.yappc.guardian.agent",
+      "infoPlist": {
+        "NSFamilyControlsUsageDescription": "This app requires Family Controls access to monitor and manage screen time.",
+        "NSUserTrackingUsageDescription": "This app needs to track app usage for parental controls."
+      }
+    },
+    "android": {
+      "package": "com.yappc.guardian.agent",
+      "permissions": [
+        "android.permission.PACKAGE_USAGE_STATS",
+        "android.permission.BIND_ACCESSIBILITY_SERVICE",
+        "android.permission.SYSTEM_ALERT_WINDOW",
+        "android.permission.RECEIVE_BOOT_COMPLETED"
+      ]
+    },
+    "plugins": [
+      [
+        "expo-build-properties",
+        {
+          "android": {
+            "compileSdkVersion": 34,
+            "targetSdkVersion": 34,
+            "minSdkVersion": 26
+          },
+          "ios": {
+            "deploymentTarget": "15.1"
+          }
+        }
+      ]
+    ]
+  }
+}

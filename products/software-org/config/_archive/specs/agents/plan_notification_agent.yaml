@@ -1,0 +1,46 @@
+id: plan_notification_agent
+agent: NotificationAgent
+role: PMO Communications
+inputs_spec:
+- name: plan_progress_dashboard
+  description: Plan progress dashboard artifact.
+  format: Dashboard artifact
+- name: plan_escalation_report
+  description: Plan escalation report artifact.
+  format: Structured escalation report
+outputs_spec:
+- name: plan_notifications
+  description: Notifications to stakeholders on key stage events, blockers, escalations, risks, with audit log.
+  format: List of notification objects (recipient, event, detail, timestamp)
+  example: "- recipient: \"Stakeholders\"\n  event: \"Milestone completed\"\n  detail: \"Requirements signoff\"\n  timestamp: \"2024-07-01T10:00:00Z\"\n"
+agent_tasks:
+- Notify all stakeholders on key stage events.
+- Communicate blockers, escalations, and major risks in real time.
+- Log notification delivery for audit.
+acceptance_criteria:
+- All stakeholders receive updates on key stage events.
+- Blockers, escalations, and major risks are communicated in real time.
+- Notification delivery is logged for audit.
+dependencies:
+- plan_progress_dashboard
+- plan_escalation_report
+failure_escalation:
+- Escalate to PMO if notifications are not delivered or logged.
+references: []
+hitl: false
+internal_logic:
+  - perception:
+      description: "Extract notification triggers and recipients from dashboard."
+  - model:
+      description: "Notifications: { id, event, kpi, risk, recipient, channel, trigger, message_template, escalation_path, status }"
+  - planning:
+      description: |
+        "Define alert/notification for each critical event or breach."
+  - action:
+      description: "Produce YAML notification plan."
+validation:
+  - "Lead/PM review and test of notification flows."
+  - "Audit for completeness, redundancy, and escalation."
+quality_enhancements:
+  - "Notification and escalation templates."
+  - "Automated alert simulation/testing."

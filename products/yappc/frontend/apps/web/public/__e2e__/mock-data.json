@@ -1,0 +1,26 @@
+{
+  "workspaces": [
+    {
+      "id": "demo-ws",
+      "name": "Demo Workspace (demo-ws)",
+      "description": "Local demo workspace",
+      "ownerId": "u-local",
+      "createdAt": "2025-10-05T00:00:00.000Z",
+      "updatedAt": "2025-10-05T00:00:00.000Z"
+    }
+  ],
+  "projects": [
+    {
+      "id": "demo-proj",
+      "workspaceId": "demo-ws",
+      "name": "Demo Project (demo-proj)",
+      "description": "Local demo project for canvas-demo",
+      "type": "UI",
+      "targets": ["web"],
+      "status": "active",
+      "onboarding": { "gettingStarted": true },
+      "createdAt": "2025-10-05T00:00:00.000Z",
+      "updatedAt": "2025-10-05T00:00:00.000Z"
+    }
+  ]
+}

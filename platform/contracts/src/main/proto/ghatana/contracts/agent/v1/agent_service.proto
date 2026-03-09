@@ -1,0 +1,380 @@
+/*
+ * Copyright (c) ${year} Ghatana Inc.
+ * All rights reserved.
+ *
+ * This source code and the accompanying materials are the confidential
+ * and proprietary information of Ghatana Inc. (“Confidential Information”).
+ * You shall not disclose such Confidential Information and shall use it
+ * only in accordance with the terms of the license agreement you entered
+ * into with Ghatana Inc.
+ *
+ * Unauthorized copying of this file, via any medium, is strictly prohibited.
+ * Proprietary and confidential.
+ */
+syntax = "proto3";
+
+package ghatana.contracts.agent.v1;
+
+option go_package = "github.com/ghatana/contracts/gen/go/agent/v1;agentv1";
+option java_multiple_files = true;
+option java_package = "com.ghatana.contracts.agent.v1";
+option java_outer_classname = "AgentContractsProto";
+option csharp_namespace = "Ghatana.Contracts.Agent.V1";
+
+import "google/api/annotations.proto";
+import "google/protobuf/empty.proto";
+import "google/protobuf/field_mask.proto";
+import "google/protobuf/timestamp.proto";
+import "ghatana/contracts/common/v1/common.proto";
+import "ghatana/contracts/common/v1/envelope.proto";
+import "ghatana/contracts/agent/v1/agent_manifest.proto";
+
+// Data type enum for parameter definitions
+enum DataTypeProto {
+  DATA_TYPE_UNKNOWN = 0;
+  DATA_TYPE_STRING = 1;
+  DATA_TYPE_INTEGER = 2;
+  DATA_TYPE_FLOAT = 3;
+  DATA_TYPE_BOOLEAN = 4;
+  DATA_TYPE_ARRAY = 5;
+  DATA_TYPE_OBJECT = 6;
+  DATA_TYPE_NULL = 7;
+}
+
+// ===================== Management API =====================
+service AgentManagementServiceProto {
+  // Create a new agent
+  rpc CreateAgent(CreateAgentRequestProto) returns (AgentManifestProto) {
+    option (google.api.http) = {
+      post: "/v1/agents"
+      body: "agent"
+    };
+  }
+
+  // Get an agent by ID
+  rpc GetAgent(GetAgentRequestProto) returns (AgentManifestProto) {
+    option (google.api.http) = { get: "/v1/agents/{id}" };
+  }
+
+  // List agents with optional filtering
+  rpc ListAgents(ListAgentsRequestProto) returns (ListAgentsResponseProto) {
+    option (google.api.http) = { get: "/v1/agents" };
+  }
+
+  // Update an agent
+  rpc UpdateAgent(UpdateAgentRequestProto) returns (UpdateAgentResponseProto) {
+    option (google.api.http) = {
+      put: "/v1/agents/{agent.id}"
+      body: "agent"
+      additional_bindings: {
+        patch: "/v1/agents/{agent.id}"
+        body: "agent"
+      }
+    };
+  }
+
+  // Delete an agent
+  rpc DeleteAgent(DeleteAgentRequestProto) returns (google.protobuf.Empty) {
+    option (google.api.http) = { delete: "/v1/agents/{id}" };
+  }
+
+  // Start an agent
+  rpc StartAgent(StartAgentRequestProto) returns (AgentManifestProto) {
+    option (google.api.http) = {
+      post: "/v1/agents/{id}:start"
+      body: "*"
+    };
+  }
+
+  // Stop an agent
+  rpc StopAgent(StopAgentRequestProto) returns (AgentManifestProto) {
+    option (google.api.http) = {
+      post: "/v1/agents/{id}:stop"
+      body: "*"
+    };
+  }
+
+  // Restart an agent
+  rpc RestartAgent(RestartAgentRequestProto) returns (AgentManifestProto) {
+    option (google.api.http) = {
+      post: "/v1/agents/{id}:restart"
+      body: "*"
+    };
+  }
+
+  // Get agent status
+  rpc GetAgentStatus(GetAgentStatusRequestProto) returns (AgentManifestProto) {
+    option (google.api.http) = { get: "/v1/agents/{id}/status" };
+  }
+
+  // Get agent metrics
+  rpc GetAgentMetrics(GetAgentMetricsRequestProto) returns (AgentManifestProto) {
+    option (google.api.http) = { get: "/v1/agents/{id}/metrics" };
+  }
+
+  // Get agent logs
+  rpc GetAgentLogs(GetAgentLogsRequestProto) returns (stream LogEntryProto) {
+    option (google.api.http) = { get: "/v1/agents/{id}/logs" };
+  }
+
+  // Execute a command on an agent host/container
+  rpc ExecuteCommand(ExecuteCommandRequestProto) returns (stream CommandOutputProto) {
+    option (google.api.http) = {
+      post: "/v1/agents/{id}:execute"
+      body: "*"
+    };
+  }
+}
+
+// ===================== Registration API =====================
+message RegisterAgentRequestProto {
+  string tenant_id = 1;  // Tenant ID
+  AgentSpecProto agent_spec = 2;  // Agent specification proto
+  map<string, string> metadata = 3;  // Additional metadata
+}
+
+message RegisterAgentResponseProto {
+  string agent_id = 1;  // Registered agent ID
+  google.protobuf.Timestamp created_at = 2;  // Creation timestamp
+}
+
+// ===================== Runtime/Execution API =====================
+service AgentExecutionServiceProto {
+  // Register an agent with the system
+  rpc RegisterAgent(RegisterAgentRequestProto) returns (RegisterAgentResponseProto) {
+    option (google.api.http) = {
+      post: "/v1/agents:register"
+      body: "*"
+    };
+  }
+
+  // Execute an agent with the given input
+  rpc ExecuteAgent(AgentExecuteRequestProto) returns (AgentResultProto) {
+    option (google.api.http) = {
+      post: "/v1/agents/{agent_id}:execute"
+      body: "*"
+    };
+  }
+
+  // Stream events from an agent
+  rpc StreamAgentEvents(AgentEventRequestProto) returns (stream AgentEventProto) {
+    option (google.api.http) = { get: "/v1/agents/{agent_id}/events" };
+  }
+}
+
+// ===================== Messages (Management) =====================
+message CreateAgentRequestProto {
+  AgentManifestProto agent = 1;           // The agent to create
+  bool validate_only = 2;            // Validate but do not execute
+  string request_id = 3;             // Idempotency key
+}
+
+message GetAgentRequestProto {
+  string id = 1;                              // Agent ID
+  google.protobuf.FieldMask read_mask = 2;    // Fields to include
+  bool include_status = 3;                    // Include status in response
+  string request_id = 4;
+}
+
+message ListAgentsRequestProto {
+  int32 page_size = 1;                        // Page size
+  string page_token = 2;                      // Pagination token
+  string filter = 3;                          // Filter expression
+  google.protobuf.FieldMask read_mask = 4;    // Fields to include
+  bool include_status = 5;                    // Include status
+  string order_by = 6;                        // Sort order
+}
+
+message ListAgentsResponseProto {
+  repeated AgentManifestProto agents = 1;          // Agents
+  string next_page_token = 2;                 // Next page token
+  int32 total_size = 11;                      // Total count
+  string request_id = 12;
+}
+
+message UpdateAgentRequestProto {
+  AgentManifestProto agent = 1;                    // Agent to update
+  google.protobuf.FieldMask update_mask = 2;  // Fields to update
+  bool validate_only = 3;                     // Validate only
+  string request_id = 4;                      // Idempotency key
+}
+
+message UpdateAgentResponseProto {
+  string agent_id = 1;  // Updated agent ID
+  google.protobuf.Timestamp updated_at = 2;  // Update timestamp
+  string request_id = 3;
+}
+
+message DeleteAgentRequestProto {
+  string id = 1;                              // Agent ID
+  bool force = 2;                             // Force delete
+  string request_id = 3;                      // Idempotency key
+}
+
+message StartAgentRequestProto {
+  string id = 1;                              // Agent ID
+  map<string, string> config_overrides = 2;   // Overrides
+  string request_id = 3;                      // Idempotency key
+}
+
+message StopAgentRequestProto {
+  string id = 1;                              // Agent ID
+  bool force = 2;                             // Force stop
+  string request_id = 3;                      // Idempotency key
+}
+
+message RestartAgentRequestProto {
+  string id = 1;                              // Agent ID
+  bool force = 2;                             // Force restart
+  map<string, string> config_overrides = 3;   // Overrides
+  string request_id = 4;                      // Idempotency key
+}
+
+message GetAgentStatusRequestProto {
+  string id = 1;                              // Agent ID
+  string request_id = 2;
+}
+
+message GetAgentMetricsRequestProto {
+  string id = 1;                              // Agent ID
+  repeated string metrics = 2;                // Metric names
+  ghatana.contracts.common.v1.TimeIntervalProto time_range = 3; // Time range
+  string aggregation = 4;                     // Aggregation function
+  string request_id = 5;
+}
+
+message GetAgentLogsRequestProto {
+  string id = 1;                              // Agent ID
+  string level = 2;                           // Log level filter
+  int32 page_size = 3;                        // Max entries
+  string page_token = 4;                      // Pagination token
+  ghatana.contracts.common.v1.TimeIntervalProto time_range = 5; // Time range
+  string filter = 6;                          // Filter expression
+  bool follow = 7;                            // Tail stream
+  bool reverse = 8;                           // Newest first
+  string request_id = 9;
+}
+
+message LogEntryProto {
+  string level = 1;                           // DEBUG, INFO, WARN, ERROR
+  string message = 2;                         // Message
+  int64 timestamp = 3;                        // Epoch millis
+  map<string, string> fields = 4;             // Extra fields
+  string logger_name = 5;                     // Logger
+  string thread_name = 6;                     // Thread
+  string stack_trace = 7;                     // Stack trace
+  string file = 8;                            // Source file
+  int32 line = 9;                             // Line number
+  string method = 10;                         // Method
+  string request_id = 11;
+}
+
+message ExecuteCommandRequestProto {
+  string id = 1;                              // Agent ID
+  string command = 2;                         // Command
+  repeated string args = 3;                   // Arguments
+  map<string, string> env = 4;                // Env vars
+  string working_dir = 5;                     // Working dir
+  bytes input = 6;                            // STDIN
+  int32 timeout_seconds = 7;                  // Timeout
+  bool tty = 8;                               // Pseudo-terminal
+  bool stream = 9;                            // Stream output
+  string user = 10;                           // Run as user
+  string group = 11;                          // Run as group
+  bool background = 12;                       // Background
+  bool detach = 13;                           // Detach
+  bool wait = 14;                             // Wait for completion
+  string signal = 15;                         // Signal
+  int32 pid = 16;                             // PID
+  string request_id = 17;                     // Idempotency key
+}
+
+message CommandOutputProto {
+  bytes stdout = 1;                           // STDOUT
+  bytes stderr = 2;                           // STDERR
+  int32 exit_code = 3;                        // Exit code
+  int32 signal = 4;                           // Exit signal
+  bool success = 5;                           // Success flag
+  int32 pid = 6;                              // PID
+  int64 start_time = 7;                       // Start (epoch ms)
+  int64 end_time = 8;                         // End (epoch ms)
+  int64 duration_ms = 9;                      // Duration
+  string error = 10;                          // Error message
+  string request_id = 11;
+}
+
+// ===================== Messages (Runtime/Execution) =====================
+message AgentMetadataProto {
+  string id = 1;                               // Unique identifier
+  string class_name = 2;                       // Fully qualified class name
+  string version = 3;                          // Version
+  string description = 4;                      // Description
+  repeated string capabilities = 5;            // Capabilities
+  AgentManifestProto manifest = 6;                  // Full agent manifest
+}
+
+message RegisterResponseProto {
+  reserved 1000 to max;
+  reserved "reserved_field";
+  bool accepted = 1;                           // Accepted?
+  string message = 2;                          // Message / reason
+  string correlation_id = 3;                   // Correlation ID
+  string trace_id = 4;                         // Trace ID
+}
+
+message AgentExecuteRequestProto {
+  reserved 1000 to max;
+  reserved "reserved_field";
+  // Optional envelope for cross-cutting metadata (non-breaking addition)
+  ghatana.contracts.common.v1.Envelope envelope = 15;
+  string agent_id = 1;                         // Agent ID to execute
+  AgentInputProto input = 2;                        // Input payload
+  string auth_token = 3;                       // Auth token
+  string correlation_id = 4;                   // Correlation ID
+  string trace_id = 5;                         // Trace ID
+}
+
+message AgentInputProto {
+  reserved 1000 to max;
+  reserved "reserved_field";
+  oneof payload_oneof {
+    string payload = 1;                        // String payload (e.g., JSON)
+    bytes binary_payload = 6;                  // Binary payload
+  }
+  map<string, string> metadata = 2;            // Additional metadata
+  string agent_id = 3;                         // Target agent ID
+  string pipeline_id = 4;                      // Pipeline ID
+  int64 timestamp = 5;                         // Epoch millis
+}
+
+message AgentResultProto {
+  reserved 1000 to max;
+  reserved "reserved_field";
+  string payload = 1;                          // Result payload (e.g., JSON)
+  map<string, string> metadata = 2;            // Additional metadata
+  string status = 3;                           // success | error
+  string error_message = 4;                    // Error message
+  int32 error_code = 5;                        // Error code
+  string correlation_id = 6;                   // Correlation ID
+  string trace_id = 7;                         // Trace ID
+}
+
+message AgentEventRequestProto {
+  reserved 1000 to max;
+  reserved "reserved_field";
+  string agent_id = 1;                         // Agent ID
+  string auth_token = 2;                       // Auth token
+  string correlation_id = 3;                   // Correlation ID
+  string trace_id = 4;                         // Trace ID
+}
+
+message AgentEventProto {
+  reserved 1000 to max;
+  reserved "reserved_field";
+  string type = 1;                             // Event type
+  string details = 2;                          // JSON details
+  string timestamp = 3;                        // ISO-8601 timestamp
+  string correlation_id = 4;                   // Correlation ID
+  string trace_id = 5;                         // Trace ID
+  map<string, string> context = 6;             // Context data
+}

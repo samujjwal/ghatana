@@ -1,0 +1,248 @@
+/*
+ * Copyright (c) ${year} Ghatana Inc.
+ * All rights reserved.
+ *
+ * This source code and the accompanying materials are the confidential
+ * and proprietary information of Ghatana Inc. ("Confidential Information").
+ * You shall not disclose such Confidential Information and shall use it
+ * only in accordance with the terms of the license agreement you entered
+ * into with Ghatana Inc.
+ *
+ * Unauthorized copying of this file, via any medium, is strictly prohibited.
+ * Proprietary and confidential.
+ */
+syntax = "proto3";
+
+package ghatana.contracts.event.v1;
+
+import "ghatana/contracts/event/v1/event.proto";
+import "ghatana/contracts/event/v1/event_cloud.proto";
+import "ghatana/contracts/common/v1/common.proto";
+import "ghatana/contracts/common/v1/error.proto";
+import "google/protobuf/timestamp.proto";
+
+option java_package = "com.ghatana.contracts.event.v1";
+option java_multiple_files = true;
+option java_outer_classname = "IngestionProto";
+option go_package = "github.com/ghatana/contracts/gen/go/event/v1;eventv1";
+option csharp_namespace = "Ghatana.Contracts.Event.V1";
+
+// =============================================================================
+// IngestionService - Front-door for event ingestion with validation, ACLs, quotas
+// =============================================================================
+
+// IngestEventProto - Event to be ingested (simplified from EventProto)
+message IngestEventProto {
+  // Tenant ID
+  string tenant_id = 1;
+
+  // Event type reference
+  EventTypeRefProto type_ref = 2;
+
+  // When the event occurred
+  google.protobuf.Timestamp occurrence_time = 3;
+
+  // Headers (metadata)
+  map<string, string> headers = 4;
+
+  // Content type of the payload
+  ContentTypeProto content_type = 5;
+
+  // Schema URI (e.g., "proto://com.ghatana.events.OrderCreated@1.2")
+  string schema_uri = 6;
+
+  // Raw payload bytes
+  bytes payload = 7;
+
+  // Correlation ID for distributed tracing
+  string correlation_id = 8;
+
+  // Idempotency key for duplicate prevention
+  string idempotency_key = 9;
+
+  // Partition key for sticky routing
+  string partition_key = 10;
+
+  reserved 1000 to max;
+  reserved "reserved_field";
+}
+
+// EventTypeRefProto - Reference to an event type in the catalog
+message EventTypeRefProto {
+  // Event type name
+  string name = 1;
+
+  // Event type version
+  VersionProto version = 2;
+
+  reserved 1000 to max;
+  reserved "reserved_field";
+}
+
+// VersionProto - Semantic version
+message VersionProto {
+  int32 major = 1;
+  int32 minor = 2;
+
+  reserved 1000 to max;
+  reserved "reserved_field";
+}
+
+// ContentTypeProto - Format of the payload bytes
+enum ContentTypeProto {
+  CONTENT_TYPE_UNSPECIFIED = 0;
+  CONTENT_TYPE_JSON = 1;
+  CONTENT_TYPE_PROTOBUF = 2;
+  CONTENT_TYPE_AVRO = 3;
+  CONTENT_TYPE_TEXT = 4;
+  CONTENT_TYPE_BINARY = 5;
+}
+
+// CallContextProto - Context propagated across all operations
+message CallContextProto {
+  // Tenant ID
+  string tenant_id = 1;
+
+  // Principal (authenticated user/service)
+  PrincipalProto principal = 2;
+
+  // Tracing context
+  TraceContextProto trace_context = 3;
+
+  reserved 1000 to max;
+  reserved "reserved_field";
+}
+
+// PrincipalProto - Represents an authenticated entity
+message PrincipalProto {
+  // Subject (user ID, service name, etc.)
+  string subject = 1;
+
+  // Additional attributes (roles, permissions, etc.)
+  map<string, string> attributes = 2;
+
+  reserved 1000 to max;
+  reserved "reserved_field";
+}
+
+// =============================================================================
+// Ingestion Requests & Responses
+// =============================================================================
+
+// IngestOneRequestProto - Request to ingest a single event
+message IngestOneRequestProto {
+  // Event to ingest
+  IngestEventProto event = 1;
+
+  // Call context
+  CallContextProto context = 2;
+
+  reserved 1000 to max;
+  reserved "reserved_field";
+}
+
+// IngestOneResponseProto - Response from single event ingestion
+message IngestOneResponseProto {
+  // Append result
+  AppendResultProto result = 1;
+
+  reserved 1000 to max;
+  reserved "reserved_field";
+}
+
+// IngestionBatchRequestProto - Request to ingest multiple events
+message IngestionBatchRequestProto {
+  // Events to ingest
+  repeated IngestEventProto events = 1;
+
+  // Call context
+  CallContextProto context = 2;
+
+  reserved 1000 to max;
+  reserved "reserved_field";
+}
+
+// IngestionBatchResponseProto - Response from batch ingestion
+message IngestionBatchResponseProto {
+  // Results for each event
+  repeated AppendResultProto results = 1;
+
+  // Any errors that occurred
+  repeated ghatana.contracts.common.v1.ErrorProto errors = 2;
+
+  reserved 1000 to max;
+  reserved "reserved_field";
+}
+
+// =============================================================================
+// Streaming Ingestion
+// =============================================================================
+
+// StreamInitProto - Initialize streaming ingestion
+message StreamInitProto {
+  // Whether to validate schema
+  bool validate_schema = 1;
+
+  // Whether to require known event types
+  bool require_known_event_type = 2;
+
+  // Call context
+  CallContextProto context = 3;
+
+  reserved 1000 to max;
+  reserved "reserved_field";
+}
+
+// StreamIngestRequestProto - Request in streaming ingestion
+message StreamIngestRequestProto {
+  oneof request {
+    // Initialize the stream
+    StreamInitProto init = 1;
+
+    // Ingest a single event
+    IngestEventProto event = 2;
+
+    // Ingest a batch of events (reuse the existing batch request type)
+    IngestionBatchRequestProto batch = 3;
+
+    // Flush pending events
+    StreamFlushProto flush = 4;
+  }
+
+  reserved 1000 to max;
+  reserved "reserved_field";
+}
+
+message StreamFlushProto {}
+
+// StreamIngestResponseProto - Response in streaming ingestion
+message StreamIngestResponseProto {
+  oneof response {
+    // Result from single event ingestion
+    AppendResultProto result = 1;
+
+    // Results from batch ingestion
+    IngestionBatchResponseProto batch_result = 2;
+
+    // Error
+    ghatana.contracts.common.v1.ErrorProto error = 3;
+  }
+
+  reserved 1000 to max;
+  reserved "reserved_field";
+}
+
+// =============================================================================
+// IngestionService
+// =============================================================================
+
+service IngestionService {
+  // Ingest a single event
+  rpc IngestOne(IngestOneRequestProto) returns (IngestOneResponseProto);
+
+  // Ingest a batch of events
+  rpc IngestBatch(IngestionBatchRequestProto) returns (IngestionBatchResponseProto);
+
+  // Stream events for low-latency ingestion (bidirectional streaming)
+  rpc IngestStream(stream StreamIngestRequestProto) returns (stream StreamIngestResponseProto);
+}

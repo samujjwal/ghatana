@@ -1,0 +1,169 @@
+# QA Department Configuration
+
+apiVersion: virtualorg.ghatana.com/v1
+kind: Department
+metadata:
+  name: qa
+  labels:
+    category: quality
+    cost-center: "QA-001"
+
+spec:
+  displayName: "Quality Assurance"
+  type: QA
+  description: "Testing, quality assurance, and test automation"
+
+  hierarchy:
+    parent: null
+    reportingTo: vp-engineering
+
+  settings:
+    maxAgents: 20
+    autoScaleAgents: true
+
+    taskAssignment:
+      strategy: capability-match
+      loadBalancing:
+        maxTasksPerAgent: 4
+
+    communication:
+      primaryChannel: slack
+      channelPrefix: "#qa-"
+
+  agents:
+    - name: qa-lead
+      displayName: "QA Lead"
+      persona: ref:personas/qa-lead.yaml
+      role:
+        level: lead
+        title: "QA Team Lead"
+      reportingTo: vp-engineering
+      authority:
+        canApprove:
+          - release_sign_off
+          - test_plan_approval
+          - quality_gate_override
+      capabilities:
+        primary:
+          - test_strategy
+          - quality_metrics
+          - test_automation
+          - team_leadership
+      ai:
+        enabled: true
+        systemPrompt: |
+          You are a QA Lead responsible for:
+          - Test strategy and planning
+          - Quality metrics and reporting
+          - Test automation oversight
+          - Release sign-off decisions
+          - Team coordination with Engineering
+
+    - name: qa-engineer
+      displayName: "QA Engineer"
+      persona: ref:personas/qa-engineer.yaml
+      role:
+        level: individual
+      reportingTo: qa-lead
+      capabilities:
+        primary:
+          - manual_testing
+          - test_automation
+          - bug_reporting
+          - regression_testing
+      ai:
+        enabled: true
+        systemPrompt: |
+          You are a QA Engineer responsible for:
+          - Writing and executing test cases
+          - Automated test development
+          - Bug reporting and verification
+          - Regression testing
+          - Quality metrics collection
+
+    - name: automation-engineer
+      displayName: "Test Automation Engineer"
+      persona: ref:personas/qa-engineer.yaml
+      role:
+        level: senior
+      reportingTo: qa-lead
+      capabilities:
+        primary:
+          - test_automation
+          - ci_cd_integration
+          - performance_testing
+          - selenium
+          - playwright
+
+  taskTypes:
+    - name: feature_testing
+      priority: normal
+      slaHours: 16
+      requiredCapabilities: [manual_testing, test_automation]
+
+    - name: regression_testing
+      priority: normal
+      slaHours: 24
+      requiredCapabilities: [regression_testing, test_automation]
+
+    - name: bug_verification
+      priority: high
+      slaHours: 4
+      requiredCapabilities: [manual_testing]
+
+    - name: performance_testing
+      priority: normal
+      slaHours: 40
+      requiredCapabilities: [performance_testing]
+
+  kpis:
+    - name: test_coverage
+      displayName: "Test Coverage"
+      type: percentage
+      target: 90
+      warningThreshold: 80
+      criticalThreshold: 70
+
+    - name: bug_escape_rate
+      displayName: "Bug Escape Rate"
+      type: rate
+      unit: bugs_per_release
+      target: 2
+      warningThreshold: 5
+      criticalThreshold: 10
+
+    - name: test_execution_time
+      displayName: "Test Execution Time"
+      type: duration
+      unit: hours
+      target: 2
+      warningThreshold: 4
+      criticalThreshold: 8
+
+  workflows:
+    - name: feature-testing-workflow
+      steps:
+        - name: receive-handoff
+          action: acknowledge_handoff
+          timeout: PT2H
+
+        - name: create-test-plan
+          agent: qa-engineer
+          action: create_test_plan
+          waitFor: [receive-handoff]
+
+        - name: execute-tests
+          agent: qa-engineer
+          action: execute_test_suite
+          waitFor: [create-test-plan]
+
+        - name: report-results
+          agent: qa-engineer
+          action: generate_test_report
+          waitFor: [execute-tests]
+
+        - name: sign-off
+          agent: qa-lead
+          action: approve_quality
+          waitFor: [report-results]
+          condition: test_pass_rate >= 95

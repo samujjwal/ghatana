@@ -1,0 +1,316 @@
+# Monitor Operator - Consolidated Operations Domain
+# Consolidates: monitoring, alerting, observability, SLO tracking
+# Purpose: Complete observability from metrics collection through alerting
+
+id: monitor_operator
+version: "1.0.0"
+domain: operate
+category: observability
+
+description: |
+  Unified monitoring operator handling complete observability:
+  - Metrics collection and aggregation
+  - Log management and analysis
+  - Distributed tracing
+  - Alerting and notification
+  - SLO/SLI tracking
+
+# Operator Modes
+modes:
+  metrics:
+    description: "Collect and aggregate metrics"
+    role: Monitoring System
+    inputs:
+      - name: metric_sources
+        description: Systems to monitor
+        required: true
+      - name: metric_config
+        description: Metric collection configuration
+        required: true
+    outputs:
+      - name: metrics_data
+        description: Collected metrics
+        format: yaml_document
+        schema:
+          - collection_id: string
+          - timestamp: datetime
+          - sources: list
+          - metrics: list
+          - aggregations: object
+    metric_types:
+      - counter: "Monotonically increasing value"
+      - gauge: "Point-in-time value"
+      - histogram: "Value distribution"
+      - summary: "Quantile observations"
+    golden_signals:
+      - latency: "Response time distribution"
+      - traffic: "Request rate"
+      - errors: "Error rate"
+      - saturation: "Resource utilization"
+    tasks:
+      - Collect metrics from sources
+      - Aggregate by dimensions
+      - Store in time-series database
+      - Generate dashboards
+      - Track golden signals
+
+  logs:
+    description: "Manage and analyze logs"
+    role: Log Management System
+    inputs:
+      - name: log_sources
+        description: Applications producing logs
+        required: true
+      - name: log_config
+        description: Log collection configuration
+        required: true
+    outputs:
+      - name: log_analysis
+        description: Log analysis results
+        format: yaml_document
+        schema:
+          - analysis_id: string
+          - time_range: object
+          - total_logs: number
+          - error_logs: number
+          - patterns: list
+          - anomalies: list
+    log_levels:
+      - error: "Application errors"
+      - warn: "Warning conditions"
+      - info: "Informational messages"
+      - debug: "Debug information"
+      - trace: "Detailed tracing"
+    tasks:
+      - Collect and parse logs
+      - Index for searching
+      - Detect patterns
+      - Identify anomalies
+      - Correlate with metrics
+
+  traces:
+    description: "Manage distributed traces"
+    role: Tracing System
+    inputs:
+      - name: trace_sources
+        description: Services producing traces
+        required: true
+      - name: trace_config
+        description: Tracing configuration
+        required: true
+    outputs:
+      - name: trace_analysis
+        description: Trace analysis results
+        format: yaml_document
+        schema:
+          - analysis_id: string
+          - time_range: object
+          - total_traces: number
+          - error_traces: number
+          - latency_distribution: object
+          - service_dependencies: list
+          - bottlenecks: list
+    trace_data:
+      - trace_id: "Unique trace identifier"
+      - span_id: "Individual operation"
+      - parent_span: "Parent operation"
+      - service: "Service name"
+      - operation: "Operation name"
+      - duration: "Operation time"
+      - status: "Success or error"
+    tasks:
+      - Collect and correlate traces
+      - Build service graphs
+      - Identify bottlenecks
+      - Track latency distribution
+      - Detect error patterns
+
+  alert:
+    description: "Manage alerts and notifications"
+    role: Alert Manager
+    inputs:
+      - name: alert_rules
+        description: Alert rule definitions
+        required: true
+      - name: metrics_data
+        description: Current metrics
+        required: true
+    outputs:
+      - name: alert_status
+        description: Current alert state
+        format: yaml_document
+        schema:
+          - timestamp: datetime
+          - active_alerts: list
+          - resolved_alerts: list
+          - silenced_alerts: list
+          - notification_log: list
+    alert_schema:
+      - alert_id: string
+      - name: string
+      - severity: "critical|high|medium|low"
+      - condition: string
+      - current_value: number
+      - threshold: number
+      - status: "firing|resolved|silenced"
+      - started_at: datetime
+      - resolved_at: datetime
+    notification_channels:
+      - pagerduty: "On-call alerting"
+      - slack: "Team notifications"
+      - email: "Email alerts"
+      - webhook: "Custom integrations"
+    tasks:
+      - Evaluate alert rules
+      - Fire alerts when triggered
+      - Route to appropriate channels
+      - Track alert lifecycle
+      - Manage silences
+
+  slo:
+    description: "Track SLOs and error budgets"
+    role: SRE/Platform Team
+    inputs:
+      - name: slo_definitions
+        description: SLO specifications
+        required: true
+      - name: metrics_data
+        description: Metrics for SLI calculation
+        required: true
+    outputs:
+      - name: slo_report
+        description: SLO compliance report
+        format: yaml_document
+        schema:
+          - report_period: object
+          - slos: list
+          - error_budget_status: object
+          - trend: object
+          - recommendations: list
+    slo_schema:
+      - slo_name: string
+      - sli: string
+      - target: number
+      - window: string
+      - current_value: number
+      - compliance: boolean
+      - error_budget_remaining: number
+    common_slos:
+      - availability: "System uptime percentage"
+      - latency: "Response time percentile"
+      - error_rate: "Error percentage"
+      - throughput: "Request capacity"
+    tasks:
+      - Calculate SLIs from metrics
+      - Track against SLO targets
+      - Manage error budgets
+      - Generate compliance reports
+      - Alert on budget burn
+
+# Internal Logic
+internal_logic:
+  perception:
+    description: "Collect signals from all systems"
+    sources:
+      - applications
+      - infrastructure
+      - networks
+      - external_services
+  model:
+    description: "Observability knowledge graph"
+    entities:
+      - metric: "{name, type, value, labels}"
+      - log: "{timestamp, level, message, context}"
+      - trace: "{id, spans, duration}"
+      - alert: "{name, status, severity}"
+    relationships:
+      - metric_triggers_alert
+      - trace_contains_error
+      - log_correlates_with_trace
+  planning:
+    strategy: |
+      1. Collect comprehensive signals
+      2. Correlate across pillars
+      3. Alert on actionable conditions
+      4. Track SLOs continuously
+      5. Enable rapid debugging
+  action:
+    description: "Monitor, alert, and report"
+    validation: "Continuous monitoring"
+
+# Quality Assurance
+quality:
+  templates:
+    - alert_rule_template
+    - dashboard_template
+    - slo_definition_template
+  checklists:
+    - observability_checklist
+    - alert_hygiene_checklist
+    - slo_review_checklist
+  automated_checks:
+    - alert_coverage
+    - metric_completeness
+    - slo_compliance
+
+# Observability Standards
+standards:
+  metrics:
+    - "Use standard naming conventions"
+    - "Include relevant labels"
+    - "Cover golden signals"
+  logs:
+    - "Structured JSON format"
+    - "Include correlation IDs"
+    - "Appropriate log levels"
+  traces:
+    - "Propagate trace context"
+    - "Include business attributes"
+    - "Sample appropriately"
+
+# Validation Rules
+validation:
+  rules:
+    - "All services must emit golden signals"
+    - "Critical paths must be traced"
+    - "SLOs must be defined"
+    - "Alerts must be actionable"
+  review_gates:
+    - observability_review
+    - alert_review
+
+# Escalation
+escalation:
+  triggers:
+    - "Critical alert firing"
+    - "SLO breach"
+    - "Error budget exhausted"
+  paths:
+    - role: On-Call Engineer
+      for: "Active incidents"
+    - role: SRE Team
+      for: "SLO breaches"
+    - role: Engineering Manager
+      for: "Systemic issues"
+
+# Dependencies
+dependencies:
+  upstream:
+    - deploy_operator
+  downstream:
+    - incident_operator
+
+# Metrics
+metrics:
+  - name: alert_accuracy
+    description: "Actionable alerts percentage"
+    target: ">= 90%"
+  - name: mttr
+    description: "Mean time to resolve"
+    target: "<= 30 minutes"
+  - name: slo_compliance
+    description: "SLOs meeting targets"
+    target: ">= 99%"
+  - name: observability_coverage
+    description: "Services with full observability"
+    target: "100%"

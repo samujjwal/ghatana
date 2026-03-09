@@ -1,0 +1,60 @@
+syntax = "proto3";
+
+package ghatana.contracts.event.v1;
+
+import "google/protobuf/timestamp.proto";
+import "google/api/field_behavior.proto";
+
+option java_package = "com.ghatana.contracts.event.v1";
+option java_multiple_files = true;
+option java_outer_classname = "EventTypeRegistrationOuterClass";
+option go_package = "github.com/ghatana/contracts/gen/go/event/v1;eventv1";
+option csharp_namespace = "Ghatana.Contracts.Event.V1";
+
+// EventTypeRegistrationProto captures registration metadata for an event type schema.
+message EventTypeRegistrationProto {
+  // Unique registration identifier.
+  string registration_id = 1 [
+    (google.api.field_behavior) = REQUIRED
+  ];
+
+  // Tenant that owns the event type registration.
+  string tenant_id = 2 [
+    (google.api.field_behavior) = REQUIRED
+  ];
+
+  // Logical namespace for the event type (for example, "payments").
+  string namespace = 3 [
+    (google.api.field_behavior) = REQUIRED
+  ];
+
+  // Event type name within the namespace (for example, "order.created").
+  string name = 4 [
+    (google.api.field_behavior) = REQUIRED
+  ];
+
+  // Schema version for the event type (semantic version string).
+  string schema_version = 5 [
+    (google.api.field_behavior) = REQUIRED
+  ];
+
+  // When the registration was created.
+  google.protobuf.Timestamp create_time = 6 [
+    (google.api.field_behavior) = OUTPUT_ONLY
+  ];
+
+  // When the registration was last updated.
+  google.protobuf.Timestamp update_time = 7 [
+    (google.api.field_behavior) = OUTPUT_ONLY
+  ];
+
+  // Optional hints describing intended agents/consumers for events of this type.
+  map<string, string> agent_hints = 8 [
+    (google.api.field_behavior) = OPTIONAL
+  ];
+
+  // Additional free-form metadata (labels, tags, governance flags, etc.).
+  map<string, string> metadata = 9 [
+    (google.api.field_behavior) = OPTIONAL
+  ];
+}

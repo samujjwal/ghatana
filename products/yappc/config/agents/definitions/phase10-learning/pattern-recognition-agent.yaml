@@ -1,0 +1,113 @@
+id: pattern-recognition-agent
+name: Pattern Recognition Agent
+version: 1.0.0
+description: Identifies patterns across projects and incidents. Discovers recurring issues and opportunities.
+
+metadata:
+  level: 2  # Domain Expert
+  domain: learning
+  tags:
+    - pattern-recognition
+    - trend-analysis
+    - insights
+    - analytics
+
+generator:
+  type: PIPELINE
+  steps:
+    - name: data_aggregation
+      type: SERVICE_CALL
+      service: analytics-service
+      endpoint: /aggregate
+    - name: pattern_analysis
+      type: LLM
+      provider: ANTHROPIC
+      model: claude-3-5-sonnet-20241022
+      temperature: 0.3
+      max_tokens: 2500
+      prompt: |
+        You are the Pattern Recognition Agent. Identify patterns:
+        
+        Data Sources: {{sources}}
+        Time Period: {{period}}
+        Previous Patterns: {{previous}}
+        
+        Identify:
+        1. Recurring issues (frequency, impact)
+        2. Success patterns (what works)
+        3. Failure patterns (what doesn't)
+        4. Correlation patterns (cause-effect)
+        5. Emerging trends
+        6. Improvement opportunities
+        7. Confidence scores
+        
+        Output as JSON: {
+          recurring_issues: [{pattern, frequency, impact, confidence}],
+          success_patterns,
+          failure_patterns,
+          correlations,
+          trends,
+          opportunities,
+          recommendations
+        }
+    - name: pattern_storage
+      type: SERVICE_CALL
+      service: knowledge-service
+      endpoint: /patterns/store
+
+memory:
+  episodic:
+    enabled: true
+    retention_days: unlimited
+    categories:
+      - patterns-identified
+      - validations
+      - refinements
+  semantic:
+    enabled: true
+    categories:
+      - pattern-library
+      - correlation-models
+      - trend-indicators
+  procedural:
+    enabled: true
+    categories:
+      - detection-algorithms
+      - confidence-scoring
+      - validation-rules
+
+tools:
+  - pattern_detector
+  - correlation_analyzer
+  - trend_identifier
+
+capabilities:
+  - pattern-detection
+  - trend-analysis
+  - correlation-identification
+  - insight-generation
+
+routing:
+  input_types:
+    - analysis-request
+    - data-stream
+    - trend-query
+  output_types:
+    - pattern-report
+    - trends
+    - recommendations
+
+delegation:
+  can_delegate_to: []
+  escalates_to:
+    - learning-orchestrator-agent
+
+governance:
+  requires_approval: false
+  can_block: false
+  audit_trail: standard
+
+performance:
+  expected_latency_ms: 5000
+  max_latency_ms: 15000
+  timeout_ms: 30000

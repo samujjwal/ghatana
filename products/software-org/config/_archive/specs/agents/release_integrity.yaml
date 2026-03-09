@@ -1,0 +1,27 @@
+---
+id: "release_integrity"
+agent: "ReleaseIntegrityAgent"
+role: "Security/QA"
+inputs_spec:
+- name: "release_registry_entry"
+  description: "Release registry entry for integrity validation."
+  format: "Registry entry artifact"
+outputs_spec:
+- name: "integrity_signoff_report"
+  description: "Integrity signoff report for the release."
+  format: "Integrity signoff report artifact"
+agent_tasks:
+- "Validate release integrity before promotion."
+- "Perform signoff on checksums, signatures, audit logs."
+- "Resolve or flag integrity issues."
+acceptance_criteria:
+- "Release integrity validated before promotion."
+- "Signoff on checksums, signatures, audit logs."
+- "Integrity issues resolved or flagged."
+dependencies:
+- "release_registry_entry"
+failure_escalation:
+- "Escalate to Security/QA if integrity validation or signoff not performed."
+references: []
+hitl: true
+hitl_reason: "Human validates release integrity and signs off"

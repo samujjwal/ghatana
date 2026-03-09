@@ -1,0 +1,31 @@
+---
+id: "test_milestone_tracker"
+agent: "TestMilestoneTrackerAgent"
+role: "Test PM"
+inputs_spec:
+- name: "test_best_practice_report"
+  description: "Test best practice compliance report."
+  format: "Compliance report artifact"
+outputs_spec:
+- name: "test_stage_milestone"
+  description: "Test stage milestones with owner, status, risks, blockers."
+  format: "List of milestone objects"
+agent_tasks:
+- "List and track all test milestones (e.g., environment ready, data prepared, test\
+  \ suite completed)."
+- "Assign owners and target dates."
+- "Document blockers and risks for each milestone."
+- "Log milestone completion and status updates."
+acceptance_criteria:
+- "All test milestones are clearly listed."
+- "Each milestone has a target date and owner."
+- "Milestone dependencies are mapped."
+- "Milestone status is up-to-date."
+- "Blockers to test progress are tracked."
+dependencies:
+- "test_best_practice_report"
+failure_escalation:
+- "Escalate to Test PM if test milestones are unclear or blocked."
+references: []
+hitl: true
+hitl_reason: "Human oversight for test milestone tracking"

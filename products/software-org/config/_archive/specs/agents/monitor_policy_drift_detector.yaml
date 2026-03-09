@@ -1,0 +1,32 @@
+---
+id: "monitor_policy_drift_detector"
+agent: "PolicyDriftDetectorAgent"
+role: "Compliance Automation"
+inputs_spec:
+- name: "monitor_milestone_tracker"
+  description: "Monitor milestone tracker for drift detection."
+  format: "Milestone tracker artifact"
+- name: "monitor_progress_dashboard"
+  description: "Monitor progress dashboard for drift status."
+  format: "Dashboard artifact"
+outputs_spec:
+- name: "monitor_policy_drift_report"
+  description: "Report on policy/config drift and status for monitor stage."
+  format: "Drift report artifact"
+agent_tasks:
+- "Compare actual deployed configs/policies to approved definitions."
+- "Flag, categorize, and timestamp all drift or changes."
+- "Escalate critical drift for review."
+- "Maintain drift detection history for trend analysis."
+acceptance_criteria:
+- "Deployed configs/policies compared to approved definitions."
+- "Drift or changes flagged, categorized, and timestamped."
+- "Critical drift escalated for review."
+- "Drift detection history maintained."
+dependencies:
+- "monitor_milestone_tracker"
+- "monitor_progress_dashboard"
+failure_escalation:
+- "Escalate to compliance lead if drift not flagged or reported."
+references: []
+hitl: false

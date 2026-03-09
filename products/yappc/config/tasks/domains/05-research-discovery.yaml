@@ -1,0 +1,124 @@
+domain:
+  id: research-discovery
+  name: "Research & Discovery"
+  description: "Conduct technical and UX research to validate feasibility."
+  order: 5
+  icon: "science"
+  color: "#45B7D1"
+  agent_personas:
+    - "ResearchAgent"
+    - "FeasibilityAnalyzer"
+    - "CodeExplorer"
+  audit_artifacts:
+    - "ResearchLog"
+    - "DecisionSupportDoc"
+    - "FeasibilityReport"
+  inputs:
+    - "Open questions"
+    - "Hypotheses"
+    - "Existing codebase"
+  outputs:
+    - "Research findings"
+    - "Recommendation notes"
+    - "Prototype artifacts"
+
+tasks:
+  # Core ICS research tasks
+  - id: d5-t1
+    name: "Technical research"
+    description: "Investigate technologies and tools."
+    personas: ["Developer", "Tech Lead"]
+    lifecycle_stages: ["context"]
+    automation_level: "assisted"
+  - id: d5-t2
+    name: "UX research"
+    description: "Study user behaviors and needs."
+    personas: ["Developer", "PM"]
+    lifecycle_stages: ["context"]
+    automation_level: "assisted"
+  - id: d5-t3
+    name: "Market/vendor analysis"
+    description: "Evaluate third-party solutions."
+    personas: ["Developer", "Tech Lead", "PM"]
+    lifecycle_stages: ["context", "plan"]
+    automation_level: "assisted"
+  - id: d5-t4
+    name: "Feasibility analysis"
+    description: "Assess technical viability."
+    personas: ["Developer", "Tech Lead"]
+    lifecycle_stages: ["context", "plan"]
+    automation_level: "assisted"
+  - id: d5-t5
+    name: "Risk exploration"
+    description: "Deep dive into potential risks."
+    personas: ["Developer", "Tech Lead", "Security"]
+    lifecycle_stages: ["context", "plan"]
+    automation_level: "assisted"
+  - id: d5-t6
+    name: "Document findings"
+    description: "Record research outcomes."
+    personas: ["Developer", "Tech Lead"]
+    lifecycle_stages: ["context"]
+    automation_level: "assisted"
+
+  # Migrated from legacy research domain
+  - id: res-001
+    name: "Explore Existing Codebases"
+    description: "Navigate and understand existing code to find relevant patterns and dependencies."
+    personas: ["Developer", "Tech Lead"]
+    lifecycle_stages: ["context"]
+    automation_level: "assisted"
+  - id: res-002
+    name: "Analyze System Documentation"
+    description: "Review existing system documentation to understand architecture and design."
+    personas: ["Developer", "Tech Lead"]
+    lifecycle_stages: ["context"]
+    automation_level: "assisted"
+  - id: res-003
+    name: "Research Libraries/Frameworks/Tools"
+    description: "Evaluate external libraries, frameworks, and tools for potential use."
+    personas: ["Developer", "Tech Lead"]
+    lifecycle_stages: ["context", "plan"]
+    automation_level: "assisted"
+  - id: res-004
+    name: "Compare Alternative Designs"
+    description: "Analyze and compare different design approaches for the solution."
+    personas: ["Developer", "Tech Lead"]
+    lifecycle_stages: ["context", "plan"]
+    automation_level: "assisted"
+  - id: res-005
+    name: "Prototype/Spike Solutions"
+    description: "Create quick prototypes to validate technical approaches."
+    personas: ["Developer", "Tech Lead"]
+    lifecycle_stages: ["plan", "execute"]
+    automation_level: "assisted"
+  - id: res-006
+    name: "Evaluate Feasibility"
+    description: "Assess technical feasibility of proposed solutions."
+    personas: ["Developer", "Tech Lead"]
+    lifecycle_stages: ["context", "plan"]
+    automation_level: "assisted"
+  - id: res-007
+    name: "Benchmark Existing Solutions"
+    description: "Compare performance and features of existing solutions."
+    personas: ["Developer", "Tech Lead"]
+    lifecycle_stages: ["context"]
+    automation_level: "assisted"
+  - id: res-008
+    name: "Identify Best Practices"
+    description: "Research industry best practices relevant to the solution."
+    personas: ["Developer", "Tech Lead"]
+    lifecycle_stages: ["context"]
+    automation_level: "assisted"
+  - id: res-009
+    name: "Analyze API Compatibility"
+    description: "Evaluate API compatibility with existing systems."
+    personas: ["Developer", "Tech Lead"]
+    lifecycle_stages: ["context", "plan"]
+    automation_level: "assisted"
+  - id: res-010
+    name: "Document Research Decisions"
+    description: "Record research findings and decisions for future reference."
+    personas: ["Developer", "Tech Lead"]
+    lifecycle_stages: ["context"]
+    automation_level: "assisted"

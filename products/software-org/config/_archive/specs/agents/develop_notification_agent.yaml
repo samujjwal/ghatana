@@ -1,0 +1,30 @@
+---
+id: "develop_notification_agent"
+agent: "NotificationAgent"
+role: "PMO Communications"
+inputs_spec:
+- name: "develop_progress_dashboard"
+  description: "Dashboard of key events and issues."
+  format: "Dashboard artifact"
+- name: "develop_escalation_report"
+  description: "Escalation report for notifications."
+  format: "Escalation report artifact"
+outputs_spec:
+- name: "develop_notifications"
+  description: "Stakeholder notifications (events, blockers, risks) with audit log."
+  format: "List of notification objects"
+agent_tasks:
+- "Notify all stakeholders on key stage events."
+- "Communicate blockers, escalations, and major risks."
+- "Log notification delivery for audit."
+acceptance_criteria:
+- "All stakeholders receive updates on key stage events."
+- "Blockers, escalations, and major risks are communicated in real time."
+- "Notification delivery is logged for audit."
+dependencies:
+- "develop_progress_dashboard"
+- "develop_escalation_report"
+failure_escalation:
+- "Escalate to PMO if notifications are not delivered or logged."
+references: []
+hitl: false

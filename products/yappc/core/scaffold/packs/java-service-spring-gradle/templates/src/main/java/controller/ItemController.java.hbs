@@ -1,0 +1,59 @@
+package {{packageName}}.controller;
+
+import {{packageName}}.dto.ItemDto;
+import {{packageName}}.service.ItemService;
+import jakarta.validation.Valid;
+import lombok.RequiredArgsConstructor;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.web.PageableDefault;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.DeleteMapping;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PatchMapping;
+import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.ResponseStatus;
+import org.springframework.web.bind.annotation.RestController;
+
+/**
+* REST controller for Item endpoints.
+*/
+@RestController
+@RequestMapping("/api/v1/items")
+@RequiredArgsConstructor
+public class ItemController {
+
+private final ItemService itemService;
+
+@GetMapping
+public Page<ItemDto.Response> findAll(@PageableDefault(size = 20) Pageable pageable) {
+    return itemService.findAll(pageable);
+    }
+
+    @GetMapping("/{id}")
+    public ItemDto.Response findById(@PathVariable String id) {
+    return itemService.findById(id);
+    }
+
+    @PostMapping
+    @ResponseStatus(HttpStatus.CREATED)
+    public ItemDto.Response create(@Valid @RequestBody ItemDto.CreateRequest request) {
+    return itemService.create(request);
+    }
+
+    @PatchMapping("/{id}")
+    public ItemDto.Response update(
+    @PathVariable String id, @Valid @RequestBody ItemDto.UpdateRequest request) {
+    return itemService.update(id, request);
+    }
+
+    @DeleteMapping("/{id}")
+    public ResponseEntity<Void> delete(@PathVariable String id) {
+        itemService.delete(id);
+        return ResponseEntity.noContent().build();
+        }
+        }

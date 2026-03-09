@@ -1,0 +1,476 @@
+# Canonical Workflow Templates
+# Reference: developer-tasks.md Part III - The 10 Canonical Workflows
+# These are the foundational workflows for the YAPPC system
+
+workflows:
+  # ===== Discovery Workflows =====
+  - id: new-feature
+    name: "New Feature Development"
+    description: "Complete workflow for developing a new feature from scratch"
+    category: delivery
+    icon: "add_box"
+    color: "#4CAF50"
+    estimated_duration: "2-5 days"
+    lifecycle_stages:
+      - intent
+      - context
+      - plan
+      - execute
+      - verify
+      - observe
+
+    phases:
+      - id: discovery
+        name: "Discovery Phase"
+        stages:
+          - intent
+          - context
+        tasks:
+          - prob-001 # Understand Business Problem
+          - prob-002 # Clarify Goals
+          - prob-003 # Ask Questions
+          - req-001 # Read Requirements
+          - req-002 # Translate to Technical
+          - res-001 # Explore Codebases
+          - res-002 # Analyze Documentation
+
+      - id: planning
+        name: "Planning Phase"
+        stages:
+          - plan
+        tasks:
+          - arch-001 # Design System Architecture
+          - arch-003 # Design APIs
+          - arch-004 # Design Data Models
+          - plan-001 # Break Work into Tasks
+          - plan-002 # Estimate Effort
+          - plan-003 # Identify Dependencies
+
+      - id: implementation
+        name: "Implementation Phase"
+        stages:
+          - execute
+        tasks:
+          - env-001 # Configure Local Environment
+          - impl-001 # Write Application Code
+          - impl-002 # Implement Business Logic
+          - impl-003 # Build UI Components
+          - impl-004 # Implement APIs
+          - test-001 # Write Unit Tests
+          - test-002 # Write Integration Tests
+
+      - id: validation
+        name: "Validation Phase"
+        stages:
+          - verify
+        tasks:
+          - test-009 # Run Tests Locally
+          - review-001 # Review Pull Requests
+          - sec-005 # Security Code Review
+
+      - id: release
+        name: "Release Phase"
+        stages:
+          - observe
+        tasks:
+          - cicd-005 # Deploy to Environments
+          - obs-006 # Monitor System Health
+          - obs-007 # Analyze Production Metrics
+
+  - id: bug-fix
+    name: "Bug Fix"
+    description: "Workflow for fixing a reported bug"
+    category: maintenance
+    icon: "bug_report"
+    color: "#F44336"
+    estimated_duration: "2-8 hours"
+    lifecycle_stages:
+      - context
+      - execute
+      - verify
+
+    phases:
+      - id: investigation
+        name: "Investigation Phase"
+        stages:
+          - context
+        tasks:
+          - debug-001 # Reproduce Issues
+          - debug-002 # Analyze Logs
+          - debug-005 # Analyze Stack Traces
+          - debug-010 # Root Cause Analysis
+
+      - id: fixing
+        name: "Fixing Phase"
+        stages:
+          - execute
+        tasks:
+          - maint-001 # Fix Bugs
+          - test-008 # Write Regression Tests
+
+      - id: validation
+        name: "Validation Phase"
+        stages:
+          - verify
+        tasks:
+          - test-009 # Run Tests Locally
+          - review-001 # Review Pull Requests
+
+  - id: code-review
+    name: "Code Review"
+    description: "Workflow for reviewing code changes"
+    category: quality
+    icon: "rate_review"
+    color: "#9C27B0"
+    estimated_duration: "30min-2 hours"
+    lifecycle_stages:
+      - verify
+      - learn
+
+    phases:
+      - id: review
+        name: "Review Phase"
+        stages:
+          - verify
+        tasks:
+          - review-001 # Review Pull Requests
+          - review-004 # Review Architecture Decisions
+          - review-005 # Review API Design
+          - review-006 # Review Test Coverage
+          - review-007 # Review Documentation
+
+      - id: feedback
+        name: "Feedback Phase"
+        stages:
+          - verify
+          - learn
+        tasks:
+          - review-002 # Provide Code Feedback
+          - review-009 # Approve or Request Changes
+          - review-010 # Mentor Through Reviews
+
+  - id: investigation
+    name: "Technical Investigation"
+    description: "Workflow for researching and evaluating solutions"
+    category: discovery
+    icon: "search"
+    color: "#2196F3"
+    estimated_duration: "4-16 hours"
+    lifecycle_stages:
+      - intent
+      - context
+      - plan
+
+    phases:
+      - id: scoping
+        name: "Scoping Phase"
+        stages:
+          - intent
+        tasks:
+          - prob-001 # Understand Business Problem
+          - prob-004 # Identify Constraints
+
+      - id: research
+        name: "Research Phase"
+        stages:
+          - context
+        tasks:
+          - res-001 # Explore Codebases
+          - res-002 # Analyze Documentation
+          - res-003 # Research Libraries
+          - res-004 # Compare Designs
+          - res-006 # Evaluate Feasibility
+
+      - id: synthesis
+        name: "Synthesis Phase"
+        stages:
+          - plan
+        tasks:
+          - res-005 # Prototype/Spike
+          - res-010 # Validate Assumptions
+          - doc-004 # Write ADRs
+
+  - id: refactoring
+    name: "Refactoring"
+    description: "Workflow for improving code structure"
+    category: maintenance
+    icon: "autorenew"
+    color: "#FF9800"
+    estimated_duration: "2-8 hours"
+    lifecycle_stages:
+      - context
+      - plan
+      - execute
+      - verify
+
+    phases:
+      - id: analysis
+        name: "Analysis Phase"
+        stages:
+          - context
+        tasks:
+          - res-001 # Explore Codebases
+          - maint-002 # Address Technical Debt
+
+      - id: planning
+        name: "Planning Phase"
+        stages:
+          - plan
+        tasks:
+          - plan-001 # Break Work into Tasks
+          - plan-003 # Identify Dependencies
+
+      - id: execution
+        name: "Execution Phase"
+        stages:
+          - execute
+        tasks:
+          - impl-009 # Refactor Code
+          - impl-010 # Improve Readability
+          - impl-011 # Remove Duplication
+          - impl-012 # Apply Design Patterns
+
+      - id: validation
+        name: "Validation Phase"
+        stages:
+          - verify
+        tasks:
+          - test-009 # Run Tests Locally
+          - review-001 # Review Pull Requests
+
+  - id: incident-response
+    name: "Incident Response"
+    description: "Workflow for responding to production incidents"
+    category: operations
+    icon: "emergency"
+    color: "#D32F2F"
+    estimated_duration: "30min-4 hours"
+    lifecycle_stages:
+      - observe
+      - execute
+      - verify
+      - learn
+
+    phases:
+      - id: detection
+        name: "Detection Phase"
+        stages:
+          - observe
+        tasks:
+          - obs-006 # Monitor System Health
+          - obs-007 # Analyze Production Metrics
+          - debug-004 # Debug Production Issues
+
+      - id: mitigation
+        name: "Mitigation Phase"
+        stages:
+          - execute
+        tasks:
+          - maint-006 # Hotfix Production Issues
+          - cicd-008 # Manage Rollbacks
+          - sec-010 # Security Incident Response
+
+      - id: resolution
+        name: "Resolution Phase"
+        stages:
+          - verify
+        tasks:
+          - test-009 # Run Tests Locally
+          - obs-006 # Monitor System Health
+
+      - id: postmortem
+        name: "Postmortem Phase"
+        stages:
+          - learn
+        tasks:
+          - debug-010 # Root Cause Analysis
+          - doc-005 # Write Runbooks
+          - collab-008 # Retrospectives
+
+  - id: deployment
+    name: "Deployment"
+    description: "Workflow for deploying changes to production"
+    category: delivery
+    icon: "rocket_launch"
+    color: "#00BCD4"
+    estimated_duration: "1-4 hours"
+    lifecycle_stages:
+      - execute
+      - verify
+      - observe
+
+    phases:
+      - id: preparation
+        name: "Preparation Phase"
+        stages:
+          - execute
+        tasks:
+          - cicd-003 # Write Build Scripts
+          - cicd-004 # Manage Releases
+          - doc-008 # Maintain Changelog
+
+      - id: deployment
+        name: "Deployment Phase"
+        stages:
+          - execute
+        tasks:
+          - cicd-005 # Deploy to Environments
+          - cicd-007 # Configure Containerization
+
+      - id: validation
+        name: "Validation Phase"
+        stages:
+          - verify
+        tasks:
+          - test-005 # Write Performance Tests
+          - obs-006 # Monitor System Health
+
+      - id: monitoring
+        name: "Monitoring Phase"
+        stages:
+          - observe
+        tasks:
+          - obs-007 # Analyze Production Metrics
+          - obs-008 # Trace Request Flows
+
+  - id: performance-optimization
+    name: "Performance Optimization"
+    description: "Workflow for improving system performance"
+    category: quality
+    icon: "speed"
+    color: "#FF5722"
+    estimated_duration: "4-16 hours"
+    lifecycle_stages:
+      - observe
+      - plan
+      - execute
+      - verify
+
+    phases:
+      - id: profiling
+        name: "Profiling Phase"
+        stages:
+          - observe
+        tasks:
+          - perf-001 # Profile Application
+          - perf-002 # Identify Bottlenecks
+          - perf-009 # Set Performance Benchmarks
+
+      - id: planning
+        name: "Planning Phase"
+        stages:
+          - plan
+        tasks:
+          - plan-001 # Break Work into Tasks
+          - plan-002 # Estimate Effort
+
+      - id: optimization
+        name: "Optimization Phase"
+        stages:
+          - execute
+        tasks:
+          - perf-003 # Optimize Code Performance
+          - perf-004 # Implement Caching
+          - perf-007 # Optimize Database Performance
+
+      - id: validation
+        name: "Validation Phase"
+        stages:
+          - verify
+        tasks:
+          - perf-005 # Run Load Tests
+          - perf-010 # Performance Regression Detection
+
+  - id: security-audit
+    name: "Security Audit"
+    description: "Workflow for security review and remediation"
+    category: security
+    icon: "security"
+    color: "#673AB7"
+    estimated_duration: "4-24 hours"
+    lifecycle_stages:
+      - context
+      - verify
+      - execute
+
+    phases:
+      - id: assessment
+        name: "Assessment Phase"
+        stages:
+          - context
+        tasks:
+          - res-008 # Analyze Security
+
+      - id: scanning
+        name: "Scanning Phase"
+        stages:
+          - verify
+        tasks:
+          - sec-005 # Security Code Review
+          - sec-006 # Vulnerability Assessment
+          - sec-007 # Dependency Security Scan
+          - ai-007 # AI Security Analysis
+
+      - id: remediation
+        name: "Remediation Phase"
+        stages:
+          - execute
+        tasks:
+          - sec-004 # Implement Input Validation
+          - sec-008 # Implement Encryption
+          - maint-003 # Upgrade Dependencies
+
+      - id: compliance
+        name: "Compliance Phase"
+        stages:
+          - verify
+        tasks:
+          - sec-009 # Compliance Check
+          - gov-004 # Compliance Auditing
+
+  - id: documentation
+    name: "Documentation Update"
+    description: "Workflow for creating and updating documentation"
+    category: documentation
+    icon: "description"
+    color: "#607D8B"
+    estimated_duration: "1-4 hours"
+    lifecycle_stages:
+      - context
+      - execute
+      - verify
+      - institutionalize
+
+    phases:
+      - id: analysis
+        name: "Analysis Phase"
+        stages:
+          - context
+        tasks:
+          - res-002 # Analyze Documentation
+
+      - id: writing
+        name: "Writing Phase"
+        stages:
+          - execute
+        tasks:
+          - doc-001 # Write Code Comments
+          - doc-002 # Write README Files
+          - doc-003 # Write API Documentation
+          - doc-004 # Write ADRs
+          - doc-009 # Update Diagrams
+
+      - id: review
+        name: "Review Phase"
+        stages:
+          - verify
+        tasks:
+          - doc-010 # Review Documentation
+          - review-007 # Review Documentation
+
+      - id: publishing
+        name: "Publishing Phase"
+        stages:
+          - institutionalize
+        tasks:
+          - collab-010 # Knowledge Sharing

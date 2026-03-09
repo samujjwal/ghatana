@@ -1,0 +1,277 @@
+{
+    "name": "middleware-gateway",
+    "version": "1.0.0",
+    "description": "API Gateway with routing, rate limiting, authentication, circuit breaker, and request transformation",
+    "author": "Ghatana YAPPC Team",
+    "license": "Apache-2.0",
+    "tags": [
+        "gateway",
+        "api-gateway",
+        "middleware",
+        "proxy",
+        "rate-limiting",
+        "authentication",
+        "circuit-breaker",
+        "load-balancing",
+        "typescript"
+    ],
+    "type": "middleware",
+    "platform": "server",
+    "language": "typescript",
+    "framework": "fastify",
+    "dependencies": {
+        "runtime": [
+            "fastify:^4.28.1",
+            "@fastify/http-proxy:^10.0.0",
+            "@fastify/rate-limit:^9.1.0",
+            "@fastify/jwt:^8.0.1",
+            "@fastify/cors:^9.0.1",
+            "@fastify/helmet:^11.1.1",
+            "@fastify/circuit-breaker:^3.0.0",
+            "@fastify/under-pressure:^8.5.0",
+            "opossum:^8.1.4",
+            "pino:^9.4.0"
+        ],
+        "build": [
+            "node:18+",
+            "pnpm:9+"
+        ],
+        "devDependencies": [
+            "typescript:^5.6.3",
+            "vitest:^2.1.2",
+            "@biomejs/biome:^1.9.4"
+        ]
+    },
+    "templates": {
+        "package-json": {
+            "source": "templates/package.json.hbs",
+            "target": "package.json",
+            "merge": "replace"
+        },
+        "tsconfig": {
+            "source": "templates/tsconfig.json.hbs",
+            "target": "tsconfig.json",
+            "merge": "replace"
+        },
+        "biome": {
+            "source": "templates/biome.json.hbs",
+            "target": "biome.json",
+            "merge": "replace"
+        },
+        "src-index": {
+            "source": "templates/src/index.ts.hbs",
+            "target": "src/index.ts",
+            "merge": "replace"
+        },
+        "src-gateway": {
+            "source": "templates/src/gateway.ts.hbs",
+            "target": "src/gateway.ts",
+            "merge": "replace"
+        },
+        "src-config": {
+            "source": "templates/src/config.ts.hbs",
+            "target": "src/config.ts",
+            "merge": "replace"
+        },
+        "src-routes-config": {
+            "source": "templates/src/routes/config.ts.hbs",
+            "target": "src/routes/config.ts",
+            "merge": "replace"
+        },
+        "src-routes-health": {
+            "source": "templates/src/routes/health.ts.hbs",
+            "target": "src/routes/health.ts",
+            "merge": "replace"
+        },
+        "src-middleware-auth": {
+            "source": "templates/src/middleware/auth.ts.hbs",
+            "target": "src/middleware/auth.ts",
+            "merge": "replace"
+        },
+        "src-middleware-rate-limit": {
+            "source": "templates/src/middleware/rate-limit.ts.hbs",
+            "target": "src/middleware/rate-limit.ts",
+            "merge": "replace"
+        },
+        "src-middleware-circuit-breaker": {
+            "source": "templates/src/middleware/circuit-breaker.ts.hbs",
+            "target": "src/middleware/circuit-breaker.ts",
+            "merge": "replace"
+        },
+        "src-middleware-transform": {
+            "source": "templates/src/middleware/transform.ts.hbs",
+            "target": "src/middleware/transform.ts",
+            "merge": "replace"
+        },
+        "src-middleware-logging": {
+            "source": "templates/src/middleware/logging.ts.hbs",
+            "target": "src/middleware/logging.ts",
+            "merge": "replace"
+        },
+        "src-services-upstream": {
+            "source": "templates/src/services/upstream.ts.hbs",
+            "target": "src/services/upstream.ts",
+            "merge": "replace"
+        },
+        "src-services-discovery": {
+            "source": "templates/src/services/discovery.ts.hbs",
+            "target": "src/services/discovery.ts",
+            "merge": "replace"
+        },
+        "src-types": {
+            "source": "templates/src/types.ts.hbs",
+            "target": "src/types.ts",
+            "merge": "replace"
+        },
+        "config-routes-yaml": {
+            "source": "templates/config/routes.yaml.hbs",
+            "target": "config/routes.yaml",
+            "merge": "replace"
+        },
+        "config-gateway-yaml": {
+            "source": "templates/config/gateway.yaml.hbs",
+            "target": "config/gateway.yaml",
+            "merge": "replace"
+        },
+        "tests-gateway": {
+            "source": "templates/tests/gateway.test.ts.hbs",
+            "target": "tests/gateway.test.ts",
+            "merge": "replace"
+        },
+        "tests-setup": {
+            "source": "templates/tests/setup.ts.hbs",
+            "target": "tests/setup.ts",
+            "merge": "replace"
+        },
+        "vitest-config": {
+            "source": "templates/vitest.config.ts.hbs",
+            "target": "vitest.config.ts",
+            "merge": "replace"
+        },
+        "dockerfile": {
+            "source": "templates/Dockerfile.hbs",
+            "target": "Dockerfile",
+            "merge": "replace"
+        },
+        "docker-compose": {
+            "source": "templates/docker-compose.yml.hbs",
+            "target": "docker-compose.yml",
+            "merge": "replace"
+        },
+        "gitignore": {
+            "source": "templates/.gitignore.hbs",
+            "target": ".gitignore",
+            "merge": "replace"
+        },
+        "makefile": {
+            "source": "templates/Makefile.hbs",
+            "target": "Makefile",
+            "merge": "replace"
+        },
+        "readme": {
+            "source": "templates/README.md.hbs",
+            "target": "README.md",
+            "merge": "replace"
+        }
+    },
+    "variables": {
+        "projectName": {
+            "type": "string",
+            "description": "Project name (kebab-case)",
+            "default": "api-gateway",
+            "pattern": "^[a-z][a-z0-9-]*$"
+        },
+        "description": {
+            "type": "string",
+            "description": "Project description",
+            "default": "API Gateway with routing, rate limiting, and authentication"
+        },
+        "port": {
+            "type": "number",
+            "description": "Gateway port",
+            "default": 8080
+        },
+        "enableRateLimiting": {
+            "type": "boolean",
+            "description": "Enable rate limiting middleware",
+            "default": true
+        },
+        "rateLimitMax": {
+            "type": "number",
+            "description": "Maximum requests per time window",
+            "default": 100
+        },
+        "rateLimitTimeWindow": {
+            "type": "string",
+            "description": "Rate limit time window",
+            "default": "1 minute"
+        },
+        "enableAuth": {
+            "type": "boolean",
+            "description": "Enable JWT authentication",
+            "default": true
+        },
+        "jwtSecret": {
+            "type": "string",
+            "description": "JWT secret (use env var in production)",
+            "default": "change-me-in-production"
+        },
+        "enableCircuitBreaker": {
+            "type": "boolean",
+            "description": "Enable circuit breaker pattern",
+            "default": true
+        },
+        "circuitBreakerThreshold": {
+            "type": "number",
+            "description": "Error percentage to open circuit",
+            "default": 50
+        },
+        "circuitBreakerTimeout": {
+            "type": "number",
+            "description": "Circuit breaker reset timeout (ms)",
+            "default": 30000
+        },
+        "enableMetrics": {
+            "type": "boolean",
+            "description": "Enable Prometheus metrics endpoint",
+            "default": true
+        },
+        "enableCors": {
+            "type": "boolean",
+            "description": "Enable CORS",
+            "default": true
+        },
+        "corsOrigin": {
+            "type": "string",
+            "description": "CORS allowed origin",
+            "default": "*"
+        },
+        "logLevel": {
+            "type": "string",
+            "description": "Log level",
+            "default": "info",
+            "enum": [
+                "debug",
+                "info",
+                "warn",
+                "error"
+            ]
+        }
+    },
+    "hooks": {
+        "postGenerate": [
+            "pnpm install"
+        ]
+    },
+    "requires": {
+        "os": [
+            "windows",
+            "macos",
+            "linux"
+        ],
+        "tools": [
+            "node",
+            "pnpm"
+        ]
+    }
+}

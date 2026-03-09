@@ -1,0 +1,13 @@
+{
+  "extends": "./tsconfig.json",
+  "compilerOptions": {
+    "types": ["node", "webextension-polyfill"],
+    "typeRoots": [
+      "./node_modules/@types",
+      "./node_modules/webextension-polyfill",
+      "./src/types"
+    ]
+  },
+  "include": ["src/**/*"],
+  "exclude": ["node_modules"]
+}

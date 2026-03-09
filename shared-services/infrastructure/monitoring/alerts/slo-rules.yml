@@ -1,0 +1,177 @@
+# ============================================================================
+# SLO (Service Level Objective) Alert Rules
+# ============================================================================
+# Defines SLO thresholds and multi-window, multi-burn-rate alerts
+
+groups:
+  # ==========================================================================
+  # SLO DEFINITIONS
+  # ==========================================================================
+  - name: slo-definitions
+    interval: 1m
+    rules:
+      # Overall platform availability SLO: 99.9% (43.2 minutes downtime/month)
+      - record: slo:availability:ratio
+        expr: avg_over_time(up{service=~".+"}[5m])
+
+      # API latency SLO: p99 < 1000ms
+      - record: slo:latency_p99:milliseconds
+        expr: histogram_quantile(0.99, sum(rate(http_request_duration_seconds_bucket[5m])) by (service, le)) * 1000
+
+      # Error rate SLO: < 1%
+      - record: slo:error_rate:ratio
+        expr: sum(rate(http_requests_total{status=~"5.."}[5m])) by (service) / sum(rate(http_requests_total[5m])) by (service)
+
+  # ==========================================================================
+  # MULTI-WINDOW, MULTI-BURN-RATE ALERTS
+  # ==========================================================================
+  - name: slo-burn-rate-alerts
+    interval: 1m
+    rules:
+      # Fast burn (14.4x): 1% budget consumed in 1 hour
+      - alert: SLOBurnRateCritical
+        expr: |
+          (
+            sum(rate(http_requests_total{status=~"5.."}[1h])) by (service)
+            /
+            sum(rate(http_requests_total[1h])) by (service)
+          ) > (14.4 * 0.001)
+        for: 2m
+        labels:
+          severity: critical
+          category: slo
+          burn_rate: "fast"
+        annotations:
+          summary: "Critical SLO burn rate for {{ $labels.service }}"
+          description: "Error budget will be exhausted in 2 hours at current rate"
+
+      # Medium burn (6x): 1% budget consumed in 6 hours
+      - alert: SLOBurnRateHigh
+        expr: |
+          (
+            sum(rate(http_requests_total{status=~"5.."}[6h])) by (service)
+            /
+            sum(rate(http_requests_total[6h])) by (service)
+          ) > (6 * 0.001)
+        for: 15m
+        labels:
+          severity: warning
+          category: slo
+          burn_rate: "medium"
+        annotations:
+          summary: "High SLO burn rate for {{ $labels.service }}"
+          description: "Error budget will be exhausted in 12 hours at current rate"
+
+      # Slow burn (1x): 1% budget consumed in 30 days
+      - alert: SLOBurnRateModerate
+        expr: |
+          (
+            sum(rate(http_requests_total{status=~"5.."}[3d])) by (service)
+            /
+            sum(rate(http_requests_total[3d])) by (service)
+          ) > 0.001
+        for: 1h
+        labels:
+          severity: info
+          category: slo
+          burn_rate: "slow"
+        annotations:
+          summary: "Moderate SLO burn rate for {{ $labels.service }}"
+          description: "Error budget consumption is elevated"
+
+  # ==========================================================================
+  # ERROR BUDGET TRACKING
+  # ==========================================================================
+  - name: error-budget-tracking
+    interval: 5m
+    rules:
+      # Remaining error budget (30-day window)
+      - record: slo:error_budget:remaining:ratio
+        expr: |
+          1 - (
+            sum_over_time(
+              (sum(rate(http_requests_total{status=~"5.."}[30d])) by (service) /
+               sum(rate(http_requests_total[30d])) by (service))[30d:1h]
+            ) / 0.001
+          )
+
+      # Error budget exhaustion ETA (hours)
+      - record: slo:error_budget:eta:hours
+        expr: |
+          (
+            slo:error_budget:remaining:ratio * 30 * 24
+          ) / (
+            sum(rate(http_requests_total{status=~"5.."}[1h])) by (service) /
+            sum(rate(http_requests_total[1h])) by (service) / 0.001
+          )
+
+  # ==========================================================================
+  # SLO COMPLIANCE TRACKING
+  # ==========================================================================
+  - name: slo-compliance
+    interval: 1h
+    rules:
+      # Monthly SLO compliance
+      - record: slo:compliance:monthly:ratio
+        expr: |
+          1 - (
+            sum_over_time((1 - up{service=~".+"})[30d:1m]) / (30 * 24 * 60)
+          )
+
+      # Weekly SLO compliance
+      - record: slo:compliance:weekly:ratio
+        expr: |
+          1 - (
+            sum_over_time((1 - up{service=~".+"})[7d:1m]) / (7 * 24 * 60)
+          )
+
+  # ==========================================================================
+  # SERVICE-SPECIFIC SLO ALERTS
+  # ==========================================================================
+  - name: service-slo-alerts
+    interval: 1m
+    rules:
+      # EventCloud ingestion SLO: p99 < 100ms
+      - alert: EventCloudIngestionSLOViolation
+        expr: |
+          histogram_quantile(0.99, 
+            sum(rate(eventcloud_ingestion_duration_seconds_bucket[5m])) by (le)
+          ) * 1000 > 100
+        for: 10m
+        labels:
+          severity: warning
+          service: eventcloud
+          category: slo
+        annotations:
+          summary: "EventCloud ingestion latency SLO violation"
+          description: "p99 ingestion latency: {{ $value }}ms (SLO: 100ms)"
+
+      # Auth Gateway SLO: p99 < 200ms
+      - alert: AuthGatewayLatencySLOViolation
+        expr: |
+          histogram_quantile(0.99,
+            sum(rate(http_request_duration_seconds_bucket{service="auth-gateway"}[5m])) by (le)
+          ) * 1000 > 200
+        for: 10m
+        labels:
+          severity: warning
+          service: auth-gateway
+          category: slo
+        annotations:
+          summary: "Auth Gateway latency SLO violation"
+          description: "p99 latency: {{ $value }}ms (SLO: 200ms)"
+
+      # AI Platform inference SLO: p99 < 2000ms
+      - alert: AIInferenceLatencySLOViolation
+        expr: |
+          histogram_quantile(0.99,
+            sum(rate(ai_inference_duration_seconds_bucket[5m])) by (model_id, le)
+          ) * 1000 > 2000
+        for: 10m
+        labels:
+          severity: warning
+          service: ai-platform
+          category: slo
+        annotations:
+          summary: "AI inference latency SLO violation for {{ $labels.model_id }}"
+          description: "p99 latency: {{ $value }}ms (SLO: 2000ms)"

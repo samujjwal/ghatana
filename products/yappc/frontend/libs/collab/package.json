@@ -1,0 +1,43 @@
+{
+  "name": "@ghatana/yappc-collab",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "main": "./src/index.ts",
+  "types": "./src/index.ts",
+  "exports": {
+    ".": {
+      "types": "./src/index.ts",
+      "import": "./src/index.ts"
+    },
+    "./components": {
+      "types": "./src/components/index.ts",
+      "import": "./src/components/index.ts"
+    }
+  },
+  "scripts": {
+    "type-check": "tsc --noEmit",
+    "lint": "eslint src --ext .ts,.tsx",
+    "test": "vitest run",
+    "test:watch": "vitest"
+  },
+  "dependencies": {
+    "yjs": "^13.6.29",
+    "y-websocket": "^3.0.0",
+    "y-indexeddb": "^9.0.12",
+    "lib0": "^0.2.117"
+  },
+  "peerDependencies": {
+    "@ghatana/yappc-ui": "workspace:*",
+    "framer-motion": "^11.0.0",
+    "jotai": "^2.6.0",
+    "lucide-react": "^0.311.0",
+    "react": "^19.0.0",
+    "react-dom": "^19.0.0"
+  },
+  "devDependencies": {
+    "@types/react": "^19.2.10",
+    "typescript": "^5.9.3",
+    "vitest": "^4.0.18"
+  }
+}

@@ -1,0 +1,116 @@
+# Automation Engineer Agent Configuration
+apiVersion: virtualorg.ghatana.com/v1
+kind: Agent
+metadata:
+  name: automation-engineer-agent
+  labels:
+    level: individual-contributor
+    department: devops
+    ai-enabled: "true"
+
+spec:
+  displayName: "Automation Engineer"
+  description: |
+    Automation Engineer responsible for CI/CD pipelines, infrastructure automation,
+    and tooling to improve developer productivity.
+
+  role:
+    name: AutomationEngineer
+    level: individual
+    title: "Automation Engineer"
+
+  department: devops
+  reportingTo: devops-lead-agent
+  directReports: []
+
+  authority:
+    decisionScope: individual
+    budgetLimit: 5000
+    canApprove:
+      - pipeline_changes
+      - automation_scripts
+      - tool_integrations
+    canEscalateTo:
+      - devops-lead-agent
+
+  capabilities:
+    primary:
+      - ci_cd_pipelines
+      - infrastructure_automation
+      - scripting
+      - tool_integration
+      - build_systems
+    secondary:
+      - container_orchestration
+      - cloud_infrastructure
+      - monitoring_setup
+
+  ai:
+    enabled: true
+    provider: openai
+    model: gpt-4-turbo
+
+    systemPrompt: |
+      You are an Automation Engineer in a software organization.
+
+      ## Your Role
+      You build and maintain CI/CD pipelines, automate infrastructure,
+      and create tooling to improve developer productivity.
+
+      ## Your Responsibilities
+      1. Design and maintain CI/CD pipelines
+      2. Automate infrastructure provisioning
+      3. Create developer productivity tools
+      4. Integrate third-party tools and services
+      5. Optimize build and deployment times
+      6. Document automation processes
+
+      ## When to Escalate
+      Escalate to DevOps Lead when:
+      - Pipeline changes affecting all teams
+      - Major infrastructure automation decisions
+      - Tool purchases or vendor decisions
+
+    responseConfig:
+      maxTokens: 1500
+      temperature: 0.5
+      topP: 0.9
+
+    tools:
+      - name: create_pipeline
+        enabled: true
+      - name: update_infrastructure
+        enabled: true
+      - name: run_automation_script
+        enabled: true
+
+    memory:
+      type: short-term
+      contextWindow: 25
+
+  workload:
+    maxConcurrentTasks: 5
+    taskPrioritization: priority
+
+  availability:
+    schedule:
+      type: business-hours
+    responseTime:
+      target: PT30M
+      maximum: PT2H
+
+  hitl:
+    requireApprovalFor:
+      - production_pipeline_change
+    approvalChain:
+      - devops-lead-agent
+
+  subscriptions:
+    - event: pipeline_failure
+      action: investigate_failure
+    - event: new_service_created
+      action: setup_pipeline
+
+  publications:
+    - event: pipeline_created
+    - event: automation_completed

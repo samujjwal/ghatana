@@ -1,0 +1,50 @@
+import type { FastifyRequest, FastifyReply, HookHandlerDoneFunction } from 'fastify';
+
+declare module 'fastify' {
+interface FastifyInstance {
+authenticate: (request: FastifyRequest, reply: FastifyReply) => Promise<void>;
+    authorize: (...roles: string[]) => (request: FastifyRequest, reply: FastifyReply) => Promise<void>;
+        }
+        }
+
+        export function requireAuth(
+        request: FastifyRequest,
+        reply: FastifyReply,
+        done: HookHandlerDoneFunction
+        ) {
+        const authHeader = request.headers.authorization;
+
+        if (!authHeader || !authHeader.startsWith('Bearer ')) {
+        reply.status(401).send({ error: 'No token provided' });
+        return;
+        }
+
+        done();
+        }
+
+        export function requireRole(...roles: string[]) {
+        return async function (request: FastifyRequest, reply: FastifyReply) {
+        const user = request.user;
+
+        if (!user) {
+        return reply.status(401).send({ error: 'Unauthorized' });
+        }
+
+        const userRoles = user.roles || [];
+        const hasRequiredRole = roles.some((role) => userRoles.includes(role));
+
+        if (!hasRequiredRole) {
+        return reply.status(403).send({ error: 'Forbidden: Insufficient permissions' });
+        }
+        };
+        }
+
+        export function optionalAuth(
+        request: FastifyRequest,
+        _reply: FastifyReply,
+        done: HookHandlerDoneFunction
+        ) {
+        // Allow request to continue even without auth
+        // User will be undefined if not authenticated
+        done();
+        }

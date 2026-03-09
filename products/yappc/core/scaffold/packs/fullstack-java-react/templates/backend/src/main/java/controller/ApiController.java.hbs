@@ -1,0 +1,46 @@
+package {{packageName}}.controller;
+
+import {{packageName}}.dto.ApiResponse;
+import {{packageName}}.service.ExampleService;
+{{#if enableSwagger}}
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.tags.Tag;
+{{/if}}
+import org.springframework.web.bind.annotation.*;
+
+import java.util.List;
+
+/**
+* Example API controller.
+*/
+@RestController
+@RequestMapping("/api")
+{{#if enableSwagger}}
+@Tag(name = "API", description = "Example API endpoints")
+{{/if}}
+public class ApiController {
+
+private final ExampleService exampleService;
+
+public ApiController(ExampleService exampleService) {
+this.exampleService = exampleService;
+}
+
+{{#if enableSwagger}}
+@Operation(summary = "Get example data")
+{{/if}}
+@GetMapping("/example")
+public ApiResponse<List<String>> getExample() {
+    var data = exampleService.getExampleData();
+    return ApiResponse.success(data);
+    }
+
+    {{#if enableSwagger}}
+    @Operation(summary = "Post example data")
+    {{/if}}
+    @PostMapping("/example")
+    public ApiResponse<String> postExample(@RequestBody String input) {
+        var result = exampleService.processInput(input);
+        return ApiResponse.success(result);
+        }
+        }

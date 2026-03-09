@@ -1,0 +1,35 @@
+---
+id: "synthesis_deploy_combiner"
+agent: "SynthesisDeployCombinerAgent"
+role: "Release PM/Tech Lead"
+inputs_spec:
+- name: "deployment_event_log"
+  description: "Event log for deployment completion."
+  format: "Deployment event log artifact"
+- name: "deployment_dashboard"
+  description: "Deployment dashboard for deployment completion."
+  format: "Deployment dashboard artifact"
+- name: "manual_rollback_report"
+  description: "Manual rollback report for deployment completion."
+  format: "Manual rollback report artifact"
+outputs_spec:
+- name: "deployment_complete_status"
+  description: "Combined status of deployment completion, logs, dashboards."
+  format: "Deployment completion status artifact"
+agent_tasks:
+- "Combine outputs, logs, dashboards."
+- "Flag gaps/issues in deployment."
+- "Final status signed off by responsible parties."
+acceptance_criteria:
+- "All outputs/logs/dashboards combined."
+- "Gaps/issues flagged."
+- "Final status signed off."
+dependencies:
+- "deployment_event_log"
+- "deployment_dashboard"
+- "manual_rollback_report"
+failure_escalation:
+- "Escalate to Release PM/Tech Lead if status not complete or not reviewed."
+references: []
+hitl: true
+hitl_reason: "Human validates deployment completion status"

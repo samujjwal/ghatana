@@ -1,0 +1,31 @@
+---
+id: "resource_optimization"
+agent: "ResourceOptimizationAgent"
+role: "FinOps/Platform Engineer"
+inputs_spec:
+- name: "centralized_logs"
+  description: "Centralized logs for resource optimization."
+  format: "Centralized log artifact"
+- name: "slo_sli_reports"
+  description: "SLO/SLI reports for resource usage."
+  format: "SLO/SLI report artifact"
+outputs_spec:
+- name: "optimization_report"
+  description: "Resource usage, cost optimization, and recommendations."
+  format: "Optimization report artifact"
+agent_tasks:
+- "Collect usage/cost data."
+- "Generate optimization recommendations."
+- "Track changes/results."
+acceptance_criteria:
+- "Usage/cost data collected."
+- "Optimization recommendations generated."
+- "Changes/results tracked."
+dependencies:
+- "centralized_logs"
+- "slo_sli_reports"
+failure_escalation:
+- "Escalate to FinOps/Platform Engineer if optimization incomplete."
+references: []
+hitl: true
+hitl_reason: "Human reviews resource optimization recommendations"

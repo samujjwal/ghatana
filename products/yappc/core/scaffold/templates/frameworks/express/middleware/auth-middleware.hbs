@@ -1,0 +1,60 @@
+{{!
+  Express.js Authentication Middleware Template
+  
+  Variables:
+  - authStrategy: Authentication strategy (jwt, session, oauth)
+  - hasRoles: Whether to include role-based access control
+}}
+import { Request, Response, NextFunction } from 'express';
+{{#eq authStrategy "jwt"}}
+  import jwt from 'jsonwebtoken';
+{{/eq}}
+{{#eq authStrategy "oauth"}}
+  import { OAuth2Client } from 'google-auth-library';
+{{/eq}}
+import { logger } from '../utils/logger'; /** * Authentication middleware. * *
+@doc.type middleware * @doc.purpose Verify user authentication * @doc.layer
+security * @doc.pattern Authentication */ export interface AuthenticatedRequest
+extends Request { user?: { id: string; email: string;
+{{#if hasRoles}}
+  roles: string[];
+{{/if}}
+}; }
+
+{{#eq authStrategy "jwt"}}
+  /** * JWT authentication middleware. */ export const authenticate = async (
+  req: AuthenticatedRequest, res: Response, next: NextFunction ) => { try {
+  const token = extractToken(req); if (!token) { return res.status(401).json({
+  error: 'No token provided' }); } const decoded = jwt.verify(token,
+  process.env.JWT_SECRET!) as any; req.user = { id: decoded.userId, email:
+  decoded.email,
+  {{#if hasRoles}}
+    roles: decoded.roles || [],
+  {{/if}}
+  }; next(); } catch (error) { logger.error('Authentication failed', { error });
+  return res.status(401).json({ error: 'Invalid token' }); } };
+{{/eq}}
+
+{{#eq authStrategy "session"}}
+  /** * Session authentication middleware. */ export const authenticate = ( req:
+  AuthenticatedRequest, res: Response, next: NextFunction ) => { if
+  (!req.session?.user) { return res.status(401).json({ error: 'Not
+  authenticated' }); } req.user = req.session.user; next(); };
+{{/eq}}
+
+{{#if hasRoles}}
+  /** * Role-based authorization middleware. */ export const authorize =
+  (...allowedRoles: string[]) => { return (req: AuthenticatedRequest, res:
+  Response, next: NextFunction) => { if (!req.user) { return
+  res.status(401).json({ error: 'Not authenticated' }); } const hasRole =
+  req.user.roles.some(role => allowedRoles.includes(role)); if (!hasRole) {
+  logger.warn('Authorization failed', { userId: req.user.id, requiredRoles:
+  allowedRoles, userRoles: req.user.roles, }); return res.status(403).json({
+  error: 'Insufficient permissions' }); } next(); }; };
+{{/if}}
+
+/** * Extract token from request headers. */ function extractToken(req:
+Request): string | null { const authHeader = req.headers.authorization; if
+(!authHeader) { return null; } const parts = authHeader.split(' '); if
+(parts.length !== 2 || parts[0] !== 'Bearer') { return null; } return parts[1];
+}

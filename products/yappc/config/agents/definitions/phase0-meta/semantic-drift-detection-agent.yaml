@@ -1,0 +1,108 @@
+id: semantic-drift-detection-agent
+name: Semantic Drift Detection Agent
+version: 1.0.0
+description: Monitors for semantic drift in agent language and behavior. Detects when agents deviate from established meanings and conventions.
+
+metadata:
+  level: 3  # Worker
+  domain: knowledge-management
+  tags:
+    - semantic-drift
+    - monitoring
+    - language-consistency
+    - anomaly-detection
+
+generator:
+  type: PIPELINE
+  steps:
+    - name: language_sampling
+      type: SERVICE_CALL
+      service: memory-service
+      endpoint: /interactions/recent
+      description: Sample recent agent communications
+    - name: embedding_analysis
+      type: SERVICE_CALL
+      service: embedding-service
+      endpoint: /embeddings/drift
+      description: Compare embeddings over time
+    - name: drift_detection
+      type: LLM
+      provider: ANTHROPIC
+      model: claude-3-5-sonnet-20241022
+      temperature: 0.1
+      max_tokens: 2000
+      prompt: |
+        You are the Semantic Drift Detection Agent. Analyze language consistency:
+        
+        Baseline: {{baseline_language}}
+        Current: {{current_language}}
+        Context: {{context}}
+        
+        Identify:
+        1. Semantic drift (changed meanings, new jargon)
+        2. Inconsistent terminology
+        3. Concept confusion
+        4. Deviation severity (LOW/MEDIUM/HIGH)
+        5. Recommended corrections
+        
+        Output as JSON: {drift_detected, inconsistencies, severity, root_cause, corrections}
+    - name: alert_generation
+      type: RULE_BASED
+      description: Alert if high drift detected
+
+memory:
+  episodic:
+    enabled: true
+    retention_days: 365
+    categories:
+      - drift-detections
+      - language-baselines
+      - anomalies
+  semantic:
+    enabled: true
+    categories:
+      - terminology-standards
+      - concept-definitions
+      - language-patterns
+  procedural:
+    enabled: true
+    categories:
+      - drift-thresholds
+      - detection-policies
+      - correction-protocols
+
+tools:
+  - embedding_drift_analyzer
+  - term_frequency_analyzer
+  - semantic_similarity_scorer
+
+capabilities:
+  - semantic-drift-detection
+  - language-consistency-monitoring
+  - terminology-anomaly-detection
+  - baseline-comparison
+
+routing:
+  input_types:
+    - scheduled-check
+    - agent-interaction-batch
+    - terminology-report
+  output_types:
+    - drift-report
+    - anomaly-alert
+    - correction-recommendations
+
+delegation:
+  can_delegate_to: []
+  escalates_to:
+    - ontology-management-agent
+
+governance:
+  requires_approval: false
+  can_block: false  # Monitoring only
+  audit_trail: standard
+
+performance:
+  expected_latency_ms: 4000
+  max_latency_ms: 10000
+  timeout_ms: 20000

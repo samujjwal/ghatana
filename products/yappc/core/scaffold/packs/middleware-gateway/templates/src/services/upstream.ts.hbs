@@ -1,0 +1,198 @@
+import type { RouteConfig, UpstreamHealth } from "../types.js";
+import { logger } from "../middleware/logging.js";
+{{#if enableCircuitBreaker}}
+import { circuitBreakerManager } from "../middleware/circuit-breaker.js";
+{{/if}}
+
+interface UpstreamServiceOptions {
+/** Health check interval in milliseconds */
+healthCheckInterval?: number;
+/** Request timeout in milliseconds */
+timeout?: number;
+/** Max consecutive failures before marking unhealthy */
+maxFailures?: number;
+}
+
+/**
+* Manages upstream service connections and health
+*/
+export class UpstreamService {
+private readonly upstreams = new Map<string, UpstreamHealth>();
+    private healthCheckTimers = new Map<string, NodeJS.Timeout>();
+        private readonly options: Required<UpstreamServiceOptions>;
+
+            constructor(options?: UpstreamServiceOptions) {
+            this.options = {
+            healthCheckInterval: options?.healthCheckInterval ?? 30000,
+            timeout: options?.timeout ?? 5000,
+            maxFailures: options?.maxFailures ?? 3,
+            };
+            }
+
+            /**
+            * Register an upstream service
+            */
+            register(route: RouteConfig): void {
+            const { upstream, prefix } = route;
+            const name = this.getUpstreamName(upstream);
+
+            if (this.upstreams.has(name)) {
+            logger.debug({ name }, "Upstream already registered");
+            return;
+            }
+
+            this.upstreams.set(name, {
+            name,
+            url: upstream,
+            status: "unknown",
+            lastCheck: new Date(),
+            consecutiveFailures: 0,
+            });
+
+            // Start health checking
+            this.startHealthCheck(name, upstream);
+
+            logger.info({ name, upstream, prefix }, "Registered upstream service");
+            }
+
+            /**
+            * Get upstream name from URL
+            */
+            private getUpstreamName(url: string): string {
+            try {
+            const parsed = new URL(url);
+            return parsed.hostname;
+            } catch {
+            return url;
+            }
+            }
+
+            /**
+            * Start periodic health checks for an upstream
+            */
+            private startHealthCheck(name: string, url: string): void {
+            // Initial check
+            this.checkHealth(name, url);
+
+            // Periodic checks
+            const timer = setInterval(() => {
+            this.checkHealth(name, url);
+            }, this.options.healthCheckInterval);
+
+            this.healthCheckTimers.set(name, timer);
+            }
+
+            /**
+            * Perform health check for an upstream
+            */
+            private async checkHealth(name: string, url: string): Promise<void> {
+                const upstream = this.upstreams.get(name);
+                if (!upstream) return;
+
+                const startTime = performance.now();
+
+                try {
+                const healthUrl = new URL("/health", url).toString();
+                const controller = new AbortController();
+                const timeoutId = setTimeout(() => controller.abort(), this.options.timeout);
+
+                {{#if enableCircuitBreaker}}
+                const response = await circuitBreakerManager.execute(
+                `health:${name}`,
+                () => fetch(healthUrl, {
+                method: "GET",
+                signal: controller.signal,
+                })
+                );
+                {{else}}
+                const response = await fetch(healthUrl, {
+                method: "GET",
+                signal: controller.signal,
+                });
+                {{/if}}
+
+                clearTimeout(timeoutId);
+
+                const latency = performance.now() - startTime;
+
+                if (response.ok) {
+                upstream.status = "healthy";
+                upstream.consecutiveFailures = 0;
+                upstream.latency = latency;
+                } else {
+                this.recordFailure(upstream);
+                }
+                } catch (err) {
+                this.recordFailure(upstream);
+                logger.warn({ name, error: (err as Error).message }, "Health check failed");
+                }
+
+                upstream.lastCheck = new Date();
+                this.upstreams.set(name, upstream);
+                }
+
+                /**
+                * Record a health check failure
+                */
+                private recordFailure(upstream: UpstreamHealth): void {
+                upstream.consecutiveFailures++;
+                upstream.latency = undefined;
+
+                if (upstream.consecutiveFailures >= this.options.maxFailures) {
+                upstream.status = "unhealthy";
+                logger.error(
+                { name: upstream.name, failures: upstream.consecutiveFailures },
+                "Upstream marked unhealthy"
+                );
+                }
+                }
+
+                /**
+                * Get health status for all upstreams
+                */
+                getHealthStatus(): UpstreamHealth[] {
+                return Array.from(this.upstreams.values());
+                }
+
+                /**
+                * Get health status for a specific upstream
+                */
+                getUpstreamHealth(name: string): UpstreamHealth | undefined {
+                return this.upstreams.get(name);
+                }
+
+                /**
+                * Check if an upstream is healthy
+                */
+                isHealthy(url: string): boolean {
+                const name = this.getUpstreamName(url);
+                const upstream = this.upstreams.get(name);
+                return upstream?.status === "healthy";
+                }
+
+                /**
+                * Force a health check for an upstream
+                */
+                async forceHealthCheck(url: string): Promise<UpstreamHealth | undefined> {
+                    const name = this.getUpstreamName(url);
+                    await this.checkHealth(name, url);
+                    return this.upstreams.get(name);
+                    }
+
+                    /**
+                    * Stop all health checks
+                    */
+                    shutdown(): void {
+                    for (const [name, timer] of this.healthCheckTimers) {
+                    clearInterval(timer);
+                    logger.debug({ name }, "Stopped health check");
+                    }
+                    this.healthCheckTimers.clear();
+                    this.upstreams.clear();
+                    }
+                    }
+
+                    /**
+                    * Global upstream service instance
+                    */
+                    export const upstreamService = new UpstreamService();

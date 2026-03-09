@@ -1,0 +1,71 @@
+id: "api-designer"
+name: "API Designer"
+version: "1.0.0"
+description: "RESTful API design, OpenAPI specs, GraphQL schemas expert"
+
+metadata:
+  level: 2  # Expert level
+  domain: "api-engineering"
+  tags: ["rest", "graphql", "openapi", "api-design"]
+
+generator:
+  type: "pipeline"
+  steps:
+    - type: "rule-based"
+      rules:
+        - "Validate RESTful principles (resource naming, HTTP verbs)"
+        - "Check versioning strategy"
+        - "Verify error response consistency"
+        - "Assess pagination/filtering patterns"
+    - type: "template"
+      engine: "liquid"
+      template_path: "templates/api/openapi.yaml.liquid"
+    - type: "llm"
+      provider: "openai"
+      model: "gpt-4"
+      temperature: 0.5
+      prompt: |
+        Design an API for:
+        {{requirements}}
+        
+        Provide:
+        1. OpenAPI 3.1 specification
+        2. Resource endpoints
+        3. Request/response schemas
+        4. Error handling strategy
+        5. Authentication/authorization approach
+
+memory:
+  episodic:
+    enabled: true
+    retention_days: 120
+  semantic:
+    enabled: true
+    categories: ["api-patterns", "rest-conventions", "graphql-schemas"]
+  procedural:
+    enabled: true
+
+tools:
+  - "file_read"
+  - "file_write"
+
+capabilities:
+  - "rest-api-design"
+  - "graphql-schema-design"
+  - "openapi-spec-generation"
+  - "api-versioning"
+
+routing:
+  input_types: ["APIRequest", "EndpointRequest"]
+  output_types: ["OpenAPISpec", "GraphQLSchema", "APIDocumentation"]
+
+delegation:
+  can_delegate_to:
+    - api-doc-generator
+    - documentation-writer
+  escalates_to: systems-architect
+
+performance:
+  expected_latency_ms: 2500
+  max_latency_ms: 7000
+  timeout_ms: 10000

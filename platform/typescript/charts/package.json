@@ -1,0 +1,48 @@
+{
+  "name": "@ghatana/charts",
+  "version": "0.1.0",
+  "description": "Shared chart primitives built on top of Recharts with Ghatana theming",
+  "type": "module",
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js"
+    }
+  },
+  "files": [
+    "dist",
+    "src",
+    "README.md"
+  ],
+  "scripts": {
+    "build": "tsc",
+    "dev": "tsc --watch",
+    "clean": "rm -rf dist",
+    "type-check": "tsc --noEmit"
+  },
+  "peerDependencies": {
+    "@ghatana/theme": "workspace:*",
+    "@ghatana/ui": "workspace:*",
+    "react": "^18.0.0 || ^19.0.0",
+    "recharts": "^2.10.0"
+  },
+  "dependencies": {
+    "@ghatana/theme": "workspace:*",
+    "@ghatana/ui": "workspace:*"
+  },
+  "devDependencies": {
+    "@types/react": "^19.2.10",
+    "typescript": "^5.9.3"
+  },
+  "keywords": [
+    "ghatana",
+    "charts",
+    "recharts",
+    "visualization",
+    "design-system"
+  ],
+  "author": "Ghatana Team",
+  "license": "MIT"
+}

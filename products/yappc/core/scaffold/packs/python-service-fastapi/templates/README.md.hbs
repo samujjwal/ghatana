@@ -1,0 +1,114 @@
+# {{projectName}}
+
+{{#if description}}
+{{description}}
+{{else}}
+A Python FastAPI service.
+{{/if}}
+
+## Features
+
+- FastAPI framework
+- Async/await support
+{{#if enableSwagger}}
+- OpenAPI documentation at `/docs`
+{{/if}}
+{{#if enableCors}}
+- CORS middleware
+{{/if}}
+{{#if enableMetrics}}
+- Prometheus metrics
+{{/if}}
+- Pydantic models
+- Health check endpoint
+
+## Prerequisites
+
+- Python {{pythonVersion}}
+{{#if buildTool}}
+- {{buildTool}}
+{{else}}
+- uv or poetry
+{{/if}}
+
+## Getting Started
+
+### Install dependencies
+
+{{#if buildTool}}
+{{#eq buildTool "uv"}}
+```bash
+uv sync
+```
+{{/eq}}
+{{#eq buildTool "poetry"}}
+```bash
+poetry install
+```
+{{/eq}}
+{{else}}
+```bash
+uv sync
+# or
+poetry install
+```
+{{/if}}
+
+### Run the service
+
+{{#if buildTool}}
+{{#eq buildTool "uv"}}
+```bash
+uv run uvicorn app.main:app --reload
+```
+{{/eq}}
+{{#eq buildTool "poetry"}}
+```bash
+poetry run uvicorn app.main:app --reload
+```
+{{/eq}}
+{{else}}
+```bash
+uvicorn app.main:app --reload
+```
+{{/if}}
+
+### Run tests
+
+```bash
+pytest
+```
+
+## API Endpoints
+
+- `GET /health` - Health check
+- `GET /api/v1/hello` - Example endpoint
+{{#if enableSwagger}}
+- `GET /docs` - Swagger UI
+- `GET /redoc` - ReDoc
+{{/if}}
+{{#if enableMetrics}}
+- `GET /metrics` - Prometheus metrics
+{{/if}}
+
+## Configuration
+
+Environment variables:
+- `PORT` - Server port (default: 8000)
+- `LOG_LEVEL` - Logging level (default: info)
+
+## Docker
+
+Build image:
+```bash
+docker build -t {{projectName}} .
+```
+
+Run container:
+```bash
+docker run -p 8000:8000 {{projectName}}
+```
+
+## License
+
+MIT

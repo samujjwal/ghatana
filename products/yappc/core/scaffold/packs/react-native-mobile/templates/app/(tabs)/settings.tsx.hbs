@@ -1,0 +1,169 @@
+import { StyleSheet, ScrollView, Switch, Platform, Alert } from "react-native";
+import { Text, View } from "@/components/Themed";
+import { useColorScheme } from "@/hooks/useColorScheme";
+import { Colors } from "@/constants/Colors";
+import { config } from "@/constants/config";
+import { useState } from "react";
+
+export default function SettingsScreen() {
+const colorScheme = useColorScheme();
+const theme = Colors[colorScheme ?? "light"];
+const [notifications, setNotifications] = useState(false);
+
+const handleToggle = (value: boolean) => {
+setNotifications(value);
+};
+
+const handleClearData = () => {
+Alert.alert(
+"Clear App Data",
+"Are you sure you want to clear all app data? This cannot be undone.",
+[
+{ text: "Cancel", style: "cancel" },
+{
+text: "Clear",
+style: "destructive",
+onPress: () => {
+// Clear data logic
+},
+},
+]
+);
+};
+
+return (
+<ScrollView style={[styles.container, { backgroundColor: theme.background }]} contentContainerStyle={styles.content}>
+    <View style={styles.section}>
+        <Text style={styles.sectionTitle}>Preferences</Text>
+
+        <SettingRow title="Push Notifications" description="Receive push notifications" right={ <Switch
+            value={notifications} onValueChange={handleToggle} trackColor=\{{ false: theme.border, true: theme.tint }}
+            thumbColor={Platform.OS==="android" ? theme.background : undefined} />
+        }
+        />
+    </View>
+
+    <View style={styles.section}>
+        <Text style={styles.sectionTitle}>Account</Text>
+
+        <SettingRow title="Clear App Data" description="Delete all local app data" onPress={handleClearData}
+            showArrow />
+    </View>
+
+    <View style={styles.section}>
+        <Text style={styles.sectionTitle}>About</Text>
+
+        <SettingRow title="Version" description={config.version} />
+        <SettingRow title="Build" description={config.buildNumber} />
+        <SettingRow title="Environment" description={config.environment} />
+    </View>
+
+    <View style={styles.footer}>
+        <Text style={[styles.footerText, { color: theme.textSecondary }]}>
+            {{displayName}} © 2024
+        </Text>
+        <Text style={[styles.footerText, { color: theme.textSecondary }]}>
+            Built with Expo & React Native
+        </Text>
+    </View>
+</ScrollView>
+);
+}
+
+interface SettingRowProps {
+title: string;
+description?: string;
+right?: React.ReactNode;
+onPress?: () => void;
+showArrow?: boolean;
+}
+
+function SettingRow({
+title,
+description,
+right,
+onPress,
+showArrow,
+}: SettingRowProps) {
+const colorScheme = useColorScheme();
+const theme = Colors[colorScheme ?? "light"];
+
+const content = (
+<View style={[ styles.settingRow, { backgroundColor: theme.card, borderBottomColor: theme.border }, ]}>
+    <View style={styles.settingContent}>
+        <Text style={[styles.settingTitle, { color: theme.text }]}>{title}</Text>
+        {description && (
+        <Text style={[styles.settingDescription, { color: theme.textSecondary }]}>
+            {description}
+        </Text>
+        )}
+    </View>
+    {right && <View style={styles.settingRight}>{right}</View>}
+    {showArrow && (
+    <Text style=\{{ color: theme.textSecondary, fontSize: 18 }}>›</Text>
+    )}
+</View>
+);
+
+if (onPress) {
+return (
+<View style={styles.pressable}>
+    {/* In production, wrap with Pressable from react-native */}
+    {content}
+</View>
+);
+}
+
+return content;
+}
+
+const styles = StyleSheet.create({
+container: {
+flex: 1,
+},
+content: {
+paddingVertical: 16,
+},
+section: {
+marginBottom: 24,
+},
+sectionTitle: {
+fontSize: 13,
+fontWeight: "600",
+textTransform: "uppercase",
+letterSpacing: 0.5,
+marginHorizontal: 16,
+marginBottom: 8,
+opacity: 0.6,
+},
+settingRow: {
+flexDirection: "row",
+alignItems: "center",
+paddingHorizontal: 16,
+paddingVertical: 12,
+borderBottomWidth: StyleSheet.hairlineWidth,
+},
+settingContent: {
+flex: 1,
+},
+settingTitle: {
+fontSize: 16,
+fontWeight: "500",
+},
+settingDescription: {
+fontSize: 14,
+marginTop: 2,
+},
+settingRight: {
+marginLeft: 12,
+},
+pressable: {},
+footer: {
+alignItems: "center",
+paddingVertical: 32,
+},
+footerText: {
+fontSize: 12,
+marginBottom: 4,
+},
+});

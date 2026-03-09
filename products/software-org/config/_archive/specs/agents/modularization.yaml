@@ -1,0 +1,34 @@
+---
+id: "modularization"
+agent: "ModularizationAgent"
+role: "Lead Developer"
+inputs_spec:
+- name: "ready_for_develop_package"
+  description: "Output package from previous stage with design, requirements, checklists,\
+    \ and codebase starter."
+  format: "Package artifact"
+outputs_spec:
+- name: "modularized_codebase"
+  description: "Codebase split into logical, independently testable modules, fully\
+    \ documented."
+  format: "Source repo or artifact reference"
+agent_tasks:
+- "Analyze input package for intended module boundaries and architecture."
+- "Split codebase into logical, independently testable modules."
+- "Ensure module boundaries match design and architecture specs."
+- "Document module dependencies explicitly."
+- "Add basic documentation (README or code comments) for each module."
+- "Review to ensure no module contains unrelated responsibilities."
+acceptance_criteria:
+- "Codebase is split into logical, independently testable modules."
+- "Module boundaries match design and architecture specs."
+- "Module dependencies are explicitly documented."
+- "Each module includes basic documentation (README or code comments)."
+- "No module contains unrelated responsibilities."
+dependencies:
+- "ready_for_develop_package"
+failure_escalation:
+- "If architecture is not followed or modules are unclear, escalate to Solution Architect."
+references: []
+hitl: true
+hitl_reason: "Human ensures modularization aligns with architectural intent"

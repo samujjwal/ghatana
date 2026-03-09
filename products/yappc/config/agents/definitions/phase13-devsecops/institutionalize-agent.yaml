@@ -1,0 +1,71 @@
+id: institutionalize-agent
+name: Institutionalize Agent
+version: 1.0.0
+description: Embeds learnings from the learn stage into organizational practices — updates documentation, creates templates, updates standards, and triggers knowledge sharing.
+
+metadata:
+  level: 3
+  domain: lifecycle
+  tags: [institutionalize, knowledge-management, standards, templates]
+
+generator:
+  type: PIPELINE
+  steps:
+    - name: lessons_analysis
+      type: LLM
+      provider: OPENAI
+      model: gpt-4
+      temperature: 0.4
+      max_tokens: 3000
+      prompt: |
+        Convert lessons learned into actionable organizational updates:
+        Lessons: {{lessons}}
+        Current Standards: {{standards}}
+        Existing Templates: {{templates}}
+        Produce: updated_standards, new_templates, training_materials, automation_candidates.
+        Output as JSON: {standards_updates, new_templates, training_materials, automation_candidates, knowledge_articles}
+    - name: standards_update
+      type: SERVICE_CALL
+      service: knowledge-service
+      endpoint: /standards/update
+    - name: template_creation
+      type: SERVICE_CALL
+      service: knowledge-service
+      endpoint: /templates/create
+
+memory:
+  episodic:
+    enabled: true
+    retention_days: 1095
+    categories: [institutionalization-sessions, standards-history]
+  semantic:
+    enabled: true
+    categories: [organizational-patterns, best-practices]
+  procedural:
+    enabled: true
+    categories: [institutionalization-checklist]
+
+tools: [standards_updater, template_creator, knowledge_publisher]
+
+capabilities:
+  - knowledge-institutionalization
+  - standards-management
+  - template-creation
+
+routing:
+  input_types: [lessons-learned, improvement-plan]
+  output_types: [updated-standards, new-templates, knowledge-articles]
+
+delegation:
+  can_delegate_to: []
+  escalates_to: products-officer
+
+governance:
+  requires_approval: true
+  can_block: false
+  audit_trail: comprehensive
+
+performance:
+  expected_latency_ms: 8000
+  max_latency_ms: 30000
+  timeout_ms: 60000

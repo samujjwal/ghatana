@@ -1,0 +1,126 @@
+import Fastify from "fastify";
+import cors from "@fastify/cors";
+import helmet from "@fastify/helmet";
+import underPressure from "@fastify/under-pressure";
+{{#if enableRateLimiting}}
+import rateLimit from "@fastify/rate-limit";
+{{/if}}
+{{#if enableAuth}}
+import jwt from "@fastify/jwt";
+{{/if}}
+{{#if enableMetrics}}
+import metrics from "@fastify/metrics";
+{{/if}}
+import type { GatewayConfig, RouteConfig } from "./types.js";
+import { registerRoutes } from "./routes/config.js";
+import { registerHealthRoutes } from "./routes/health.js";
+{{#if enableAuth}}
+import { authMiddleware } from "./middleware/auth.js";
+{{/if}}
+{{#if enableCircuitBreaker}}
+import { CircuitBreakerManager } from "./middleware/circuit-breaker.js";
+{{/if}}
+import { requestLoggingHook } from "./middleware/logging.js";
+import { loadRoutesConfig } from "./config.js";
+
+export async function createGateway(config: GatewayConfig) {
+const fastify = Fastify({
+logger: {
+level: config.logLevel,
+transport:
+process.env.NODE_ENV !== "production"
+? { target: "pino-pretty", options: { colorize: true } }
+: undefined,
+},
+trustProxy: true,
+});
+
+// Security headers
+await fastify.register(helmet, {
+contentSecurityPolicy: false, // Disable for API gateway
+});
+
+// CORS
+{{#if enableCors}}
+await fastify.register(cors, {
+origin: config.corsOrigin ?? "*",
+methods: ["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"],
+allowedHeaders: ["Content-Type", "Authorization", "X-Request-ID"],
+credentials: true,
+});
+{{/if}}
+
+// Health checks and backpressure
+await fastify.register(underPressure, {
+maxEventLoopDelay: 1000,
+maxHeapUsedBytes: 1_000_000_000, // 1GB
+maxRssBytes: 2_000_000_000, // 2GB
+retryAfter: 50,
+exposeStatusRoute: {
+routeOpts: { logLevel: "silent" },
+url: "/health/live",
+},
+});
+
+{{#if enableRateLimiting}}
+// Rate limiting
+await fastify.register(rateLimit, {
+max: config.rateLimiting?.max ?? 100,
+timeWindow: config.rateLimiting?.timeWindow ?? "1 minute",
+keyGenerator: (request) => {
+// Use X-Forwarded-For or remote address
+return request.headers["x-forwarded-for"]?.toString().split(",")[0] ??
+request.ip;
+},
+errorResponseBuilder: (_request, context) => ({
+statusCode: 429,
+error: "Too Many Requests",
+message: `Rate limit exceeded. Try again in ${Math.ceil(context.ttl / 1000)} seconds.`,
+retryAfter: context.ttl,
+}),
+});
+{{/if}}
+
+{{#if enableAuth}}
+// JWT authentication
+await fastify.register(jwt, {
+secret: config.jwtSecret ?? process.env.JWT_SECRET ?? "change-me-in-production",
+sign: { expiresIn: "1h" },
+});
+
+// Register auth decorator
+fastify.decorate("authenticate", authMiddleware);
+{{/if}}
+
+{{#if enableMetrics}}
+// Prometheus metrics
+await fastify.register(metrics, {
+endpoint: "/metrics",
+routeMetrics: {
+enabled: true,
+groupStatusCodes: true,
+},
+});
+{{/if}}
+
+// Request logging
+fastify.addHook("onRequest", requestLoggingHook);
+
+{{#if enableCircuitBreaker}}
+// Circuit breaker manager
+const circuitBreakerManager = new CircuitBreakerManager({
+errorThresholdPercentage: config.circuitBreaker?.threshold ?? 50,
+resetTimeout: config.circuitBreaker?.timeout ?? 30000,
+});
+fastify.decorate("circuitBreaker", circuitBreakerManager);
+{{/if}}
+
+// Register health routes
+await registerHealthRoutes(fastify);
+
+// Load and register route configurations
+const routesConfig = loadRoutesConfig();
+await registerRoutes(fastify, routesConfig, config);
+
+return fastify;
+}

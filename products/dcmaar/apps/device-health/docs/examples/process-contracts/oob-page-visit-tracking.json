@@ -1,0 +1,175 @@
+{
+  "id": "oob-page-visit-tracking",
+  "metadata": {
+    "name": "OOB Page Visit & Time Tracking",
+    "description": "Tracks website visits, time spent per domain, categorizes sites, and generates daily statistics",
+    "version": "1.0.0",
+    "author": "DCMAAR Team",
+    "tags": ["oob", "page-visits", "time-tracking", "productivity"],
+    "createdAt": 1706832000000,
+    "updatedAt": 1706832000000
+  },
+  "collect": {
+    "id": "collect",
+    "sources": [
+      {
+        "id": "page-visits",
+        "type": "page-visits",
+        "strategy": "streaming",
+        "config": {
+          "trackActiveTime": true,
+          "updateInterval": 5000,
+          "trackLifecycleStates": true
+        },
+        "filters": [
+          {
+            "field": "payload.url",
+            "operator": "regex",
+            "value": "^https?://"
+          }
+        ],
+        "samplingRate": 1.0,
+        "batchSize": 100
+      }
+    ],
+    "mergeStrategy": "union",
+    "timeoutMs": 10000
+  },
+  "analyze": {
+    "id": "analyze",
+    "operations": [
+      {
+        "id": "visit-statistics-by-domain",
+        "strategy": "custom",
+        "config": {
+          "analysisType": "visit-stats",
+          "groupBy": "domain"
+        },
+        "order": 100
+      },
+      {
+        "id": "top-20-sites",
+        "strategy": "custom",
+        "config": {
+          "analysisType": "top-pages",
+          "limit": 20,
+          "sortBy": "time"
+        },
+        "order": 200
+      },
+      {
+        "id": "time-by-category",
+        "strategy": "aggregate",
+        "config": {
+          "groupBy": "payload.category",
+          "metrics": ["count", "sum"],
+          "fields": ["payload.duration"]
+        },
+        "order": 300
+      },
+      {
+        "id": "hourly-distribution",
+        "strategy": "custom",
+        "config": {
+          "analysisType": "time-distribution",
+          "groupBy": "hour"
+        },
+        "order": 400
+      }
+    ],
+    "parallel": false,
+    "timeoutMs": 20000
+  },
+  "report": {
+    "id": "report",
+    "destinations": [
+      {
+        "id": "visit-stats-storage",
+        "type": "store",
+        "delivery": "store",
+        "config": {
+          "storageType": "local",
+          "key": "page-visit-statistics",
+          "maxReports": 100
+        },
+        "format": "json"
+      },
+      {
+        "id": "daily-summary",
+        "type": "store",
+        "delivery": "store",
+        "config": {
+          "storageType": "local",
+          "key": "daily-visit-summaries",
+          "maxReports": 90
+        },
+        "format": "json",
+        "template": "daily-summary"
+      },
+      {
+        "id": "productivity-report",
+        "type": "notification",
+        "delivery": "notification",
+        "config": {
+          "title": "Daily Productivity Report",
+          "icon": "info",
+          "priority": "low"
+        },
+        "format": "markdown",
+        "when": {
+          "operator": "and",
+          "conditions": [
+            {
+              "field": "summary.eventsCollected",
+              "operator": "gt",
+              "value": 20
+            }
+          ]
+        }
+      }
+    ],
+    "aggregate": true,
+    "includeMetadata": true,
+    "includeSummary": true,
+    "timeoutMs": 10000
+  },
+  "security": {
+    "maxExecutionTimeMs": 45000,
+    "maxMemoryBytes": 52428800,
+    "maxEventsPerBatch": 1000,
+    "allowedNetworkPatterns": [],
+    "deniedNetworkPatterns": ["*"],
+    "allowedBrowserAPIs": ["storage", "tabs", "history", "runtime", "notifications"],
+    "sandboxed": true
+  },
+  "privacy": {
+    "redactionRules": [
+      {
+        "pattern": "\\b[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\\.[A-Z|a-z]{2,}\\b",
+        "replacement": "[EMAIL]",
+        "fields": ["payload.url", "payload.title"]
+      },
+      {
+        "pattern": "password|login|signin|auth|token",
+        "replacement": "[AUTH]",
+        "fields": ["payload.url"]
+      }
+    ],
+    "encryptFields": [],
+    "retentionPeriodMs": 2592000000,
+    "anonymize": false,
+    "requireConsent": false
+  },
+  "enabled": true,
+  "schedule": "*/10 * * * *",
+  "priority": 200,
+  "maxConcurrentExecutions": 1,
+  "timeoutMs": 90000,
+  "onError": "continue",
+  "variables": {
+    "updateInterval": "10m",
+    "trackCategories": true,
+    "generateDailySummary": true,
+    "minVisitDuration": 1000
+  }
+}

@@ -1,0 +1,37 @@
+{
+    "cli": {
+        "version": ">= 5.9.1"
+    },
+    "build": {
+        "development": {
+            "developmentClient": true,
+            "distribution": "internal",
+            "ios": {
+                "resourceClass": "m-1"
+            },
+            "android": {
+                "resourceClass": "medium"
+            }
+        },
+        "preview": {
+            "distribution": "internal",
+            "ios": {
+                "resourceClass": "m-1"
+            },
+            "android": {
+                "resourceClass": "medium"
+            }
+        },
+        "production": {
+            "ios": {
+                "resourceClass": "m-1"
+            },
+            "android": {
+                "resourceClass": "medium"
+            }
+        }
+    },
+    "submit": {
+        "production": {}
+    }
+}

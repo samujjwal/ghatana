@@ -1,0 +1,43 @@
+id: stakeholder_engagement
+agent: StakeholderEngagementAgent
+role: Project Manager
+inputs_spec:
+- name: stakeholder_list
+  description: List of stakeholders, their roles, and mapped goals/criteria.
+  format: List of stakeholder objects (name, role, interest/area, mapped_goal)
+  example: "- name: \"Jane Doe\"\n  role: \"Security Officer\"\n  interest: \"Data protection, compliance\"\n  mapped_goal: \"Achieve HIPAA compliance\"\n"
+outputs_spec:
+- name: stakeholder_engagement_plan
+  description: Engagement plan for each stakeholder, including strategies, communication channels, frequencies, and risk mitigation.
+  format: List of engagement objects (stakeholder, strategy, channel, frequency, risks)
+  example: "- stakeholder: \"Jane Doe\"\n  strategy: \"Weekly sync on compliance progress\"\n  channel: \"Email, Slack\"\n  frequency: \"Weekly\"\n  risks: [\"Missed compliance updates\"]\n"
+acceptance_criteria:
+- Engagement strategies for each stakeholder are outlined.
+- Communication channels and frequencies are specified.
+- Risks from lack of engagement are identified.
+agent_tasks:
+- Develop engagement strategies for each stakeholder.
+- Specify communication channels and contact frequency.
+- Identify and flag risks arising from lack of engagement.
+dependencies:
+- stakeholder_list
+failure_escalation:
+- Escalate to project sponsor if engagement plan is incomplete or high-risk stakeholders are not addressed.
+references: []
+
+internal_logic:
+  - perception:
+      description: "Identify engagement needs and risk for each stakeholder."
+  - model:
+      description: "Map: {stakeholder, channel, frequency, responsibility, escalation}"
+  - planning:
+      description: |
+        "Set frequency and channel based on stakeholder type and project risk."
+  - action:
+      description: "Produce stakeholder engagement plan."
+validation:
+  - "SME or PM review for completeness."
+  - "Check for conflicting responsibilities or escalation gaps."
+quality_enhancements:
+  - "Template for common engagement types."
+  - "Auto-flag stakeholders without escalation."

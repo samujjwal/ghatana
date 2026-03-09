@@ -1,0 +1,43 @@
+# Build stage
+FROM eclipse-temurin:{{javaVersion}}-jdk-alpine AS builder
+
+WORKDIR /app
+
+# Copy gradle wrapper
+COPY gradlew .
+COPY gradle gradle
+RUN chmod +x gradlew
+
+# Copy build files
+COPY build.gradle.kts .
+COPY settings.gradle.kts ../
+
+# Download dependencies
+RUN ./gradlew dependencies --no-daemon
+
+# Copy source
+COPY src src
+
+# Build
+RUN ./gradlew bootJar --no-daemon -x test
+
+# Runtime stage
+FROM eclipse-temurin:{{javaVersion}}-jre-alpine
+
+WORKDIR /app
+
+# Create non-root user
+RUN addgroup -g 1001 -S appgroup && \
+    adduser -u 1001 -S appuser -G appgroup
+
+# Copy JAR
+COPY --from=builder /app/build/libs/{{projectName}}-backend.jar app.jar
+
+USER appuser
+
+EXPOSE {{backendPort}}
+
+HEALTHCHECK --interval=30s --timeout=3s --start-period=30s --retries=3 \
+    CMD wget --no-verbose --tries=1 --spider http://localhost:{{backendPort}}/api/health || exit 1
+
+ENTRYPOINT ["java", "-jar", "app.jar"]

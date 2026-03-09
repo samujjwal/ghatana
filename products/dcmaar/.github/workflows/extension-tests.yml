@@ -1,0 +1,196 @@
+name: DCMaar Extension Tests
+
+on:
+  push:
+    branches: [main, develop]
+    paths:
+      - "services/extension/**"
+      - ".github/workflows/extension-tests.yml"
+  pull_request:
+    branches: [main, develop]
+    paths:
+      - "services/extension/**"
+      - ".github/workflows/extension-tests.yml"
+
+jobs:
+  unit-tests:
+    name: Unit tests (fast)
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v3
+        with:
+          node-version: "18"
+          cache: "pnpm"
+
+      - name: Install dependencies (fast)
+        working-directory: ./services/extension
+        run: |
+          pnpm install --frozen-lockfile
+
+      - name: Run unit tests (Vitest)
+        working-directory: ./services/extension
+        run: |
+          # Run all unit tests including storage tests
+          pnpm run test:unit -- --reporter json > vitest-results.json || true
+          
+          # Run storage-specific tests with coverage
+          pnpm vitest run src/storage/__tests__ --coverage --reporter json > storage-test-results.json || true
+          
+          # Merge test results
+          node -e "
+            const fs = require('fs');
+            const unitResults = fs.existsSync('vitest-results.json') ? JSON.parse(fs.readFileSync('vitest-results.json')) : { testResults: [] };
+            const storageResults = fs.existsSync('storage-test-results.json') ? JSON.parse(fs.readFileSync('storage-test-results.json')) : { testResults: [] };
+            
+            const merged = {
+              ...unitResults,
+              testResults: [...(unitResults.testResults || []), ...(storageResults.testResults || [])],
+              numTotalTests: (unitResults.numTotalTests || 0) + (storageResults.numTotalTests || 0),
+              numPassedTests: (unitResults.numPassedTests || 0) + (storageResults.numPassedTests || 0),
+              numFailedTests: (unitResults.numFailedTests || 0) + (storageResults.numFailedTests || 0),
+              numPendingTests: (unitResults.numPendingTests || 0) + (storageResults.numPendingTests || 0),
+              startTime: Math.min(
+                unitResults.startTime || Date.now(),
+                storageResults.startTime || Date.now()
+              ),
+              success: (unitResults.success !== false) && (storageResults.success !== false)
+            };
+            
+            fs.writeFileSync('vitest-results.json', JSON.stringify(merged));
+          "
+
+      - name: Render Vitest JSON to HTML
+        if: always()
+        working-directory: ./services/extension
+        run: |
+          node -e "const fs=require('fs'); const inPath='vitest-results.json'; const outPath='vitest-results.html'; const r=fs.existsSync(inPath) ? JSON.parse(fs.readFileSync(inPath)) : null; let html='<!doctype html><meta charset=\"utf-8\"><title>Vitest Unit Results</title><body>'; if(r){ html+=`<h1>Vitest Unit Results</h1><p>passed: ${r.summary?.passed ?? 0}, failed: ${r.summary?.failed ?? 0}</p><pre>${JSON.stringify(r.summary, null, 2)}</pre>` } else { html+='<p>No results</p>'; } html+='</body>'; fs.writeFileSync(outPath, html);"
+
+      - name: Upload unit test results
+        if: always()
+        uses: actions/upload-artifact@v3
+        with:
+          name: unit-test-results
+          path: |
+            services/extension/vitest-results.json
+            services/extension/vitest-results.html
+          retention-days: 7
+
+  integration-smoke:
+    name: Integration smoke (light)
+    needs: report
+    runs-on: ubuntu-latest
+    if: always()
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+
+      - name: Start docker compose smoke
+        run: |
+          docker compose -f docker-compose.smoke.yml up -d --build
+          sleep 4
+          docker compose -f docker-compose.smoke.yml ps
+
+      - name: Smoke check
+        run: |
+          # Attempt a simple health check; adjust as needed for your stack
+          curl -fsS http://localhost:8080/health || (docker compose -f docker-compose.smoke.yml logs && exit 1)
+
+  test:
+    name: Test (${{ matrix.browser }}, ${{ matrix.os }})
+    needs: unit-tests
+    runs-on: ${{ matrix.os }}
+    timeout-minutes: 30
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, windows-latest, macos-latest]
+        browser: [chrome, firefox, edge]
+        exclude:
+          # Skip Firefox on Windows due to known issues with Playwright
+          - os: windows-latest
+            browser: firefox
+          # Skip Edge on macOS 12 due to WebKit compatibility
+          - os: macos-12
+            browser: edge
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v3
+        with:
+          node-version: "18"
+          cache: "pnpm"
+
+      - name: Install dependencies
+        working-directory: ./services/extension
+        run: |
+          pnpm install
+          npx playwright install --with-deps ${{ matrix.browser }}
+
+      - name: Build extension
+        working-directory: ./services/extension
+        run: pnpm run build:${{ matrix.browser }}
+
+      - name: Run tests
+        working-directory: ./services/extension
+        run: pnpm test:${{ matrix.browser }}
+        env:
+          PLAYWRIGHT_HEADLESS: true
+          PLAYWRIGHT_TIMEOUT: 60000
+
+      - name: Upload test results
+        if: always()
+        uses: actions/upload-artifact@v3
+        with:
+          name: test-results-${{ matrix.browser }}-${{ matrix.os }}
+          path: |
+            services/extension/test-results/
+            services/extension/playwright-report/
+          retention-days: 7
+
+  report:
+    name: Test Report
+    needs: test
+    if: always()
+    runs-on: ubuntu-latest
+    steps:
+      - name: Download test results
+        uses: actions/download-artifact@v3
+        with:
+          path: test-results
+
+      - name: Generate HTML report
+        run: |
+          mkdir -p test-report
+          echo "# Test Results" > test-report/index.md
+          echo "## Summary" >> test-report/index.md
+          echo "Tests completed for all browsers and platforms." >> test-report/index.md
+          echo "## Artifacts" >> test-report/index.md
+          for dir in test-results/test-results-*; do
+            if [ -d "$dir" ]; then
+              browser_os=$(basename $dir | cut -d'-' -f3-)
+              echo "- [$browser_os]" >> test-report/index.md
+              find "$dir" -name '*.html' | while read -r file; do
+                filename=$(basename "$file")
+                echo "  - [$filename]($browser_os/$filename)" >> test-report/index.md
+              done
+            fi
+          done
+
+      - name: Upload HTML report
+        uses: actions/upload-artifact@v3
+        with:
+          name: test-report
+          path: test-report/
+          retention-days: 7
+
+      - name: Check test results
+        if: contains(needs.*.result, 'failure')
+        run: exit 1

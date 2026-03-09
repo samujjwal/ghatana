@@ -1,0 +1,264 @@
+# Collaboration Tasks
+# Domain 18 of 22 - Developer Task Universe
+# Reference: developer-tasks.md Part I, Section 18
+
+domain:
+  id: collaboration
+  name: "Collaboration"
+  description: "Tasks related to team communication and coordination"
+  order: 18
+  icon: "groups"
+  color: "#AB47BC"
+  lifecycle_stages:
+    - context
+    - execute
+
+tasks:
+  - id: collab-001
+    name: "Participate in Standups"
+    description: "Share progress and blockers in daily standups"
+    personas:
+      - Developer
+      - Tech Lead
+      - PM
+    lifecycle_stages:
+      - context
+    automation_level: manual
+    required_capabilities:
+      - communication
+    input_schema: collab-001-input
+    output_schema: collab-001-output
+    audit_artifacts:
+      - OutputSnapshot
+    ui:
+      icon: "event"
+      color: "#AB47BC"
+      tags:
+        - standups
+        - daily
+        - communication
+
+  - id: collab-002
+    name: "Communicate Progress"
+    description: "Update stakeholders on project progress"
+    personas:
+      - Developer
+      - Tech Lead
+    lifecycle_stages:
+      - observe
+    automation_level: assisted
+    required_capabilities:
+      - communication
+      - reporting
+    input_schema: collab-002-input
+    output_schema: collab-002-output
+    audit_artifacts:
+      - OutputSnapshot
+      - ProgressReport
+    ui:
+      icon: "campaign"
+      color: "#AB47BC"
+      tags:
+        - progress
+        - updates
+        - communication
+
+  - id: collab-003
+    name: "Report Blockers"
+    description: "Identify and escalate blockers"
+    personas:
+      - Developer
+    lifecycle_stages:
+      - context
+    automation_level: manual
+    required_capabilities:
+      - communication
+      - problem-identification
+    input_schema: collab-003-input
+    output_schema: collab-003-output
+    audit_artifacts:
+      - OutputSnapshot
+      - BlockerRecord
+    ui:
+      icon: "front_hand"
+      color: "#AB47BC"
+      tags:
+        - blockers
+        - escalation
+        - communication
+
+  - id: collab-004
+    name: "Coordinate with Team"
+    description: "Collaborate with team members on shared work"
+    personas:
+      - Developer
+      - Tech Lead
+    lifecycle_stages:
+      - execute
+    automation_level: manual
+    required_capabilities:
+      - coordination
+      - communication
+    input_schema: collab-004-input
+    output_schema: collab-004-output
+    audit_artifacts:
+      - OutputSnapshot
+    ui:
+      icon: "diversity_3"
+      color: "#AB47BC"
+      tags:
+        - team
+        - coordination
+        - collaboration
+
+  - id: collab-005
+    name: "Cross-Team Coordination"
+    description: "Work with other teams on dependencies"
+    personas:
+      - Tech Lead
+      - Developer
+    lifecycle_stages:
+      - context
+      - execute
+    automation_level: manual
+    required_capabilities:
+      - coordination
+      - communication
+    input_schema: collab-005-input
+    output_schema: collab-005-output
+    audit_artifacts:
+      - OutputSnapshot
+      - CoordinationRecord
+    ui:
+      icon: "connect_without_contact"
+      color: "#AB47BC"
+      tags:
+        - cross-team
+        - dependencies
+        - coordination
+
+  - id: collab-006
+    name: "Technical Discussions"
+    description: "Participate in technical design discussions"
+    personas:
+      - Developer
+      - Tech Lead
+    lifecycle_stages:
+      - plan
+    automation_level: manual
+    required_capabilities:
+      - communication
+      - technical-knowledge
+    input_schema: collab-006-input
+    output_schema: collab-006-output
+    audit_artifacts:
+      - OutputSnapshot
+      - DiscussionNotes
+    ui:
+      icon: "forum"
+      color: "#AB47BC"
+      tags:
+        - discussions
+        - technical
+        - design
+
+  - id: collab-007
+    name: "Sprint Planning"
+    description: "Participate in sprint planning sessions"
+    personas:
+      - Developer
+      - Tech Lead
+      - PM
+    lifecycle_stages:
+      - plan
+    automation_level: manual
+    required_capabilities:
+      - planning
+      - estimation
+    input_schema: collab-007-input
+    output_schema: collab-007-output
+    audit_artifacts:
+      - OutputSnapshot
+      - SprintPlan
+    ui:
+      icon: "date_range"
+      color: "#AB47BC"
+      tags:
+        - sprint
+        - planning
+        - agile
+
+  - id: collab-008
+    name: "Retrospectives"
+    description: "Participate in retrospective meetings"
+    personas:
+      - Developer
+      - Tech Lead
+    lifecycle_stages:
+      - learn
+    automation_level: manual
+    required_capabilities:
+      - reflection
+      - communication
+    input_schema: collab-008-input
+    output_schema: collab-008-output
+    audit_artifacts:
+      - OutputSnapshot
+      - RetroNotes
+    ui:
+      icon: "psychology"
+      color: "#AB47BC"
+      tags:
+        - retrospective
+        - learning
+        - improvement
+
+  - id: collab-009
+    name: "Onboarding Support"
+    description: "Help onboard new team members"
+    personas:
+      - Developer
+      - Tech Lead
+    lifecycle_stages:
+      - institutionalize
+    automation_level: manual
+    required_capabilities:
+      - mentoring
+      - communication
+    input_schema: collab-009-input
+    output_schema: collab-009-output
+    audit_artifacts:
+      - OutputSnapshot
+    ui:
+      icon: "person_add"
+      color: "#AB47BC"
+      tags:
+        - onboarding
+        - mentoring
+        - team
+
+  - id: collab-010
+    name: "Knowledge Sharing"
+    description: "Share knowledge through presentations or demos"
+    personas:
+      - Developer
+      - Tech Lead
+    lifecycle_stages:
+      - institutionalize
+      - learn
+    automation_level: manual
+    required_capabilities:
+      - communication
+      - presentation
+    input_schema: collab-010-input
+    output_schema: collab-010-output
+    audit_artifacts:
+      - OutputSnapshot
+      - Presentation
+    ui:
+      icon: "co_present"
+      color: "#AB47BC"
+      tags:
+        - knowledge-sharing
+        - presentations
+        - demos

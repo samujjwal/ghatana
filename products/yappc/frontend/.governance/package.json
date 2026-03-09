@@ -1,0 +1,16 @@
+{
+  "name": "@ghatana/yappc-canvas-governance",
+  "version": "1.0.0",
+  "description": "Governance and observability tools for Canvas library",
+  "type": "module",
+  "scripts": {
+    "check-deps": "dependency-cruiser --validate .dependency-cruiser.js src",
+    "check-deps:graph": "dependency-cruiser --output-type dot --validate .dependency-cruiser.js src | dot -T svg > dependency-graph.svg",
+    "lint:architecture": "dependency-cruiser --validate .dependency-cruiser.js --output-type err-long src",
+    "verify:clean": "node scripts/verify-src-clean.js",
+    "verify:governance": "npm run check-deps && npm run verify:clean"
+  },
+  "devDependencies": {
+    "dependency-cruiser": "^16.2.4"
+  }
+}

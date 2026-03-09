@@ -1,0 +1,24 @@
+name: Extension build verification
+
+on:
+    push:
+        branches: [feat/extension/unit-tests-helper]
+    pull_request:
+        branches: [main, feat/extension/unit-tests-helper]
+
+jobs:
+    verify-build:
+        runs-on: ubuntu-latest
+        steps:
+            - uses: actions/checkout@v4
+            - name: Use Node.js
+              uses: actions/setup-node@v4
+              with:
+                  node-version: 18
+                  cache: "pnpm"
+            - name: Setup pnpm
+              run: npm i -g pnpm@8
+            - name: Install dependencies
+              run: pnpm install
+            - name: Build extension (runs postbuild verification)
+              run: pnpm -C services/extension run build:chrome

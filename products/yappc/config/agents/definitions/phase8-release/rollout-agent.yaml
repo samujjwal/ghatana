@@ -1,0 +1,112 @@
+id: rollout-agent
+name: Rollout Agent
+version: 1.0.0
+description: Manages progressive rollouts. Controls canary, blue-green, and percentage-based releases.
+
+metadata:
+  level: 2  # Domain Expert
+  domain: release
+  tags:
+    - rollout
+    - canary
+    - blue-green
+    - progressive-delivery
+
+generator:
+  type: PIPELINE
+  steps:
+    - name: rollout_strategy
+      type: LLM
+      provider: ANTHROPIC
+      model: claude-3-5-sonnet-20241022
+      temperature: 0.2
+      max_tokens: 2000
+      prompt: |
+        You are the Rollout Agent. Design rollout:
+        
+        Release: {{release}}
+        Risk Level: {{risk}}
+        Target: {{target}}
+        Metrics: {{metrics}}
+        
+        Design:
+        1. Rollout strategy (canary, blue-green, rolling)
+        2. Progression stages (percentages/regions)
+        3. Success criteria per stage
+        4. Metrics to monitor
+        5. Bake time between stages
+        6. Auto-rollback triggers
+        7. Manual promotion gates
+        
+        Output as JSON: {
+          strategy,
+          stages: [{percentage, criteria, bake_time, auto_promote}],
+          metrics,
+          rollback_triggers,
+          manual_gates
+        }
+    - name: rollout_execution
+      type: SERVICE_CALL
+      service: rollout-service
+      endpoint: /rollout/progress
+    - name: metrics_monitoring
+      type: SERVICE_CALL
+      service: metrics-service
+      endpoint: /monitor
+
+memory:
+  episodic:
+    enabled: true
+    retention_days: 365
+    categories:
+      - rollouts
+      - promotions
+      - rollbacks
+  semantic:
+    enabled: true
+    categories:
+      - rollout-strategies
+      - success-criteria
+      - risk-indicators
+  procedural:
+    enabled: true
+    categories:
+      - strategy-templates
+      - progression-rules
+      - rollback-criteria
+
+tools:
+  - rollout_controller
+  - traffic_router
+  - metrics_monitor
+
+capabilities:
+  - rollout-strategy
+  - progressive-delivery
+  - canary-management
+  - traffic-shifting
+
+routing:
+  input_types:
+    - rollout-request
+    - promotion-request
+    - rollback-request
+  output_types:
+    - rollout-status
+    - metrics-report
+    - promotion-recommendation
+
+delegation:
+  can_delegate_to: []
+  escalates_to:
+    - release-orchestrator-agent
+
+governance:
+  requires_approval: false  # Auto with metrics
+  can_block: true  # Can halt rollout
+  audit_trail: comprehensive
+
+performance:
+  expected_latency_ms: 2000
+  max_latency_ms: 5000
+  timeout_ms: 10000

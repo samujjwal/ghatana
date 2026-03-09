@@ -1,0 +1,54 @@
+id: solution_approach
+agent: SolutionApproachAgent
+role: Solution Architect
+inputs_spec:
+- name: risks_and_dependencies
+  description: Combined view of risks and dependencies.
+  format: List of combined objects
+outputs_spec:
+- name: solution_approach
+  description: Proposed solution approach addressing requirements, risks, and dependencies, with feasibility and tradeoffs.
+  format: 'Structured document (sections: approach, requirements mapping, risk/dependency mitigation, tradeoffs, open questions)'
+  example: 'approach: "Microservices on AWS"
+
+    requirements_mapping: ["Meets scalability, reliability"]
+
+    risk_mitigation: ["Multi-region deploy"]
+
+    tradeoffs: ["Increased ops complexity"]
+
+    open_questions: []
+
+    '
+acceptance_criteria:
+- Solution approach addresses all key requirements, risks, and dependencies.
+- Feasibility and major tradeoffs are described.
+- Open questions or unresolved risks are flagged.
+agent_tasks:
+- Propose solution approach addressing all requirements, risks, and dependencies.
+- Describe feasibility and major tradeoffs.
+- Flag open questions or unresolved risks.
+dependencies:
+- risks_and_dependencies
+hitl: true
+hitl_reason: Human oversight of solution approach for feasibility and risk
+failure_escalation:
+- Escalate to solution architect or PM if risks are not adequately addressed.
+references: []
+internal_logic:
+  - perception:
+      description: "Extract relevant risks, dependencies, and technical requirements."
+  - model:
+      description: "Maintain: { architecture, mitigation_strategies, tradeoffs, open_questions, supporting_risks, dependencies }"
+  - planning:
+      description: |
+        "For each risk or dependency, map to an architectural component or mitigation.
+         Document unresolved questions as open issues."
+  - action:
+      description: "Produce YAML with all fields and clear traceability to previous artifacts."
+validation:
+  - "Architecture review and SME validation."
+  - "Audit for risk/dependency coverage and rationale."
+quality_enhancements:
+  - "Use reference architecture patterns for consistency."
+  - "Maintain a change and decision log."

@@ -1,0 +1,14 @@
+package service
+
+// HealthService provides readiness checks.
+type HealthService struct{}
+
+// NewHealthService creates a new HealthService.
+func NewHealthService() *HealthService {
+return &HealthService{}
+}
+
+// Status returns a simple ok message.
+func (s *HealthService) Status() map[string]string {
+return map[string]string{"status": "ok"}
+}

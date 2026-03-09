@@ -1,0 +1,24 @@
+---
+id: "accessibility_test"
+agent: "AccessibilityTestAgent"
+role: "Accessibility QA"
+inputs_spec:
+- name: "test_environment_url"
+  description: "Environment for accessibility and compliance testing."
+  format: "Environment URL/credentials"
+outputs_spec:
+- name: "accessibility_test_report"
+  description: "Results of accessibility and ADA/WCAG compliance tests."
+  format: "Accessibility report artifact"
+agent_tasks:
+- "Run accessibility/ADA/WCAG tests."
+- "Document compliance or violations."
+acceptance_criteria:
+- "Accessibility/ADA/WCAG tests are executed."
+- "Compliance or violations are documented."
+dependencies:
+- "test_environment_url"
+failure_escalation:
+- "Escalate to Accessibility Lead if violations found."
+references: []
+hitl: false

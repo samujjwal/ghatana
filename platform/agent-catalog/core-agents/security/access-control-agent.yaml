@@ -1,0 +1,38 @@
+id: access-control-agent
+name: Access Control Agent
+version: 1.0.0
+description: Enforces access policies, authentication, and authorization checks
+
+metadata:
+  level: 3
+  domain: security
+  tags: [access-control, authentication, authorization, rbac, policy]
+
+generator:
+  type: DETERMINISTIC
+
+capabilities:
+  - access-control
+  - policy-enforcement
+
+tools:
+  - name: policyEngine
+    type: SERVICE
+    endpoint: /platform/security/policy
+  - name: authVerifier
+    type: SERVICE
+    endpoint: /platform/security/auth
+
+memory:
+  type: WORKING
+  scope: policy_cache
+  retention: short
+
+routing:
+  input: AccessCheckRequest
+  output: AccessDecision
+
+resources:
+  memory: "512MB"
+  cpu: "1"
+  timeout: "10s"

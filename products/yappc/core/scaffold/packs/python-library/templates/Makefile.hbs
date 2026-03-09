@@ -1,0 +1,22 @@
+.PHONY: install test lint typecheck clean
+
+install:
+{{#if (eq buildTool "uv")}}
+uv venv
+uv pip install -e ".[dev]"
+{{else}}
+poetry install
+{{/if}}
+
+test:
+pytest
+
+lint:
+ruff check .
+
+typecheck:
+mypy {{snakeCase projectName}}
+
+clean:
+rm -rf build/ dist/ *.egg-info
+find . -type d -name __pycache__ -exec rm -rf {} +

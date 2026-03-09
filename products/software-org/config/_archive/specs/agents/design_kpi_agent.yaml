@@ -1,0 +1,42 @@
+id: design_kpi_agent
+agent: StageKPIAgent
+role: Design KPI Analyst
+inputs_spec:
+- name: design_stage_milestone
+  description: Design stage milestone plan.
+  format: List of milestone objects
+outputs_spec:
+- name: design_kpi_report
+  description: KPI report for Design stage (completeness, review cycle time, issue closure rate, trends, anomalies).
+  format: 'Structured KPI report (sections: completeness, review_cycle_time, issue_closure_rate, trends, anomalies, visualization)'
+  example: 'completeness: 95
+
+    review_cycle_time: "2 days"
+
+    issue_closure_rate: "80%"
+
+    trends: ["Improving"]
+
+    anomalies: []
+
+    '
+agent_tasks:
+- Define and update key Design stage KPIs (e.g., design completeness, review cycle time, issue closure rate).
+- Report KPI data for each design milestone.
+- Flag trends, anomalies, or deviations in design KPIs.
+- Visualize KPI trends over time and compare to past project baselines.
+- Flag outliers and deviations for review.
+acceptance_criteria:
+- Key Design stage KPIs are defined (e.g., design completeness, review cycle time, issue closure rate).
+- KPI data is updated and reported for each design milestone.
+- Trends, anomalies, or deviations in design KPIs are flagged for review.
+- KPI trends are visualized over time and compared to past project baselines.
+- Outliers and deviations are flagged for review.
+dependencies:
+- design_stage_milestone
+failure_escalation:
+- Escalate to KPI analyst or PM if KPIs are missing, unclear, or not up to date.
+references: []
+hitl: false
+
+# [!!] No custom enhancement found.

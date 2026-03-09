@@ -1,0 +1,37 @@
+id: design_lint
+agent: DesignLintAgent
+role: Automation Tool
+inputs_spec:
+- name: design_stage_milestone
+  description: Design stage milestone plan.
+  format: List of milestone objects
+outputs_spec:
+- name: design_lint_report
+  description: Automated lint report on design documents for formatting, anti-patterns, and documentation errors.
+  format: Lint report artifact (findings, errors, warnings, distribution)
+  example: 'findings: ["No anti-patterns"]
+
+    errors: []
+
+    warnings: []
+
+    distribution: ["Design team"]
+
+    '
+agent_tasks:
+- Check design documents for formatting and consistency.
+- Flag known anti-patterns and documentation errors.
+- Ensure automated checks pass for all design deliverables.
+- Distribute lint report to the design team.
+acceptance_criteria:
+- Design documents are checked for formatting and consistency.
+- Known anti-patterns and documentation errors are flagged.
+- Automated checks pass for all design deliverables.
+- Lint report is distributed to the design team.
+dependencies:
+- design_stage_milestone
+failure_escalation:
+- Escalate to design automation lead if lint errors are not resolved.
+references: []
+hitl: false
+...

@@ -1,0 +1,78 @@
+# {{projectName}}
+
+{{#if description}}
+{{description}}
+{{else}}
+A .NET Minimal API service.
+{{/if}}
+
+## Features
+
+- .NET {{targetFramework}} Minimal API
+- Async/await support
+{{#if enableSwagger}}
+- Swagger/OpenAPI documentation
+{{/if}}
+{{#if enableCors}}
+- CORS middleware
+{{/if}}
+{{#if enableNullable}}
+- Nullable reference types
+{{/if}}
+- Health check endpoint
+
+## Prerequisites
+
+- .NET SDK {{targetFramework}} or higher
+
+## Getting Started
+
+### Restore dependencies
+```bash
+dotnet restore
+```
+
+### Run the service
+```bash
+dotnet run
+```
+
+### Build
+```bash
+dotnet build
+```
+
+### Test
+```bash
+dotnet test
+```
+
+## API Endpoints
+
+- `GET /health` - Health check
+- `GET /api/v1/hello` - Example endpoint
+{{#if enableSwagger}}
+- `GET /swagger` - Swagger UI
+{{/if}}
+
+## Configuration
+
+Environment variables:
+- `ASPNETCORE_ENVIRONMENT` - Environment (Development, Staging, Production)
+- `ASPNETCORE_URLS` - Server URLs (default: http://localhost:5000)
+
+## Docker
+
+Build image:
+```bash
+docker build -t {{projectName}} .
+```
+
+Run container:
+```bash
+docker run -p 5000:5000 {{projectName}}
+```
+
+## License
+
+MIT

@@ -1,0 +1,41 @@
+---
+id: "synthesis_combiner_test"
+agent: "SynthesisCombinerAgent"
+role: "Test Lead/PM"
+inputs_spec:
+- name: "consolidated_test_results"
+  description: "Consolidated test results for release readiness."
+  format: "Consolidated test results artifact"
+- name: "test_data_report"
+  description: "Test data management report."
+  format: "Test data report artifact"
+- name: "test_audit_report"
+  description: "Test audit compliance report."
+  format: "Audit report artifact"
+- name: "test_best_practices_report"
+  description: "Best practice compliance report."
+  format: "Best practice compliance report"
+outputs_spec:
+- name: "ready_for_release_package"
+  description: "Combined, reviewed package for release readiness."
+  format: "Release-ready package artifact"
+agent_tasks:
+- "Combine all test reports, audit logs, and results into a release-ready package."
+- "Flag missing/failed tests."
+- "Review/sign off package for release."
+- "Ensure all referenced artifacts are current and versioned."
+acceptance_criteria:
+- "All test reports, audit logs, and results are combined into a release-ready package."
+- "Missing or failed tests are flagged."
+- "Package is reviewed and signed off for release."
+- "Ensure all referenced artifacts are current and versioned."
+dependencies:
+- "consolidated_test_results"
+- "test_data_report"
+- "test_audit_report"
+- "test_best_practices_report"
+failure_escalation:
+- "Escalate to Test Lead/PM if package is incomplete or not reviewed."
+references: []
+hitl: true
+hitl_reason: "Human validates release readiness from test outputs"

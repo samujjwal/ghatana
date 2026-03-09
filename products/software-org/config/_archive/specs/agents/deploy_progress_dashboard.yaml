@@ -1,0 +1,33 @@
+---
+id: "deploy_progress_dashboard"
+agent: "ProgressDashboardAgent"
+role: "Deploy Progress Dashboard Owner"
+inputs_spec:
+- name: "deploy_kpi_report"
+  description: "Deploy KPI report for dashboard."
+  format: "KPI report artifact"
+- name: "deploy_success_criteria_status"
+  description: "Success criteria status for dashboard."
+  format: "List of criteria status objects"
+- name: "deploy_stage_milestone"
+  description: "Deployment stage milestones for dashboard."
+  format: "List of milestone objects"
+outputs_spec:
+- name: "deploy_progress_dashboard"
+  description: "Dashboard visualizing RAG status, KPIs, rollbacks, open issues, and\
+    \ timeline."
+  format: "Deploy progress dashboard artifact"
+agent_tasks:
+- "Visualize RAG status, KPIs, rollbacks, open issues, and timeline."
+- "Update dashboard in real time."
+- "Dashboard signed off before close."
+acceptance_criteria:
+- "All required deployment status elements visualized and signed off."
+dependencies:
+- "deploy_kpi_report"
+- "deploy_success_criteria_status"
+- "deploy_stage_milestone"
+failure_escalation:
+- "Escalate to Dashboard Owner if not current/signed off."
+references: []
+hitl: false

@@ -1,0 +1,44 @@
+---
+id: "develop_audit_log_agent"
+agent: "AuditLogAgent"
+role: "Compliance Bot"
+inputs_spec:
+- name: "develop_progress_dashboard"
+  description: "Develop progress dashboard artifact."
+  format: "Dashboard artifact"
+- name: "develop_notification_agent"
+  description: "Notification agent delivery log."
+  format: "List of notification objects"
+- name: "develop_success_criteria_status"
+  description: "Status of develop stage success criteria."
+  format: "List of criteria status objects"
+- name: "develop_stage_milestone"
+  description: "Develop stage milestone plan."
+  format: "List of milestone objects"
+outputs_spec:
+- name: "develop_audit_log"
+  description: "Complete audit log of agent actions, transitions, signoffs, escalations,\
+    \ notifications, cryptographically signed and archived."
+  format: "Audit log artifact"
+agent_tasks:
+- "Record every agent action and transition with timestamp, user/agent, and artifact\
+  \ link."
+- "Log major events (signoffs, escalations, notifications, exceptions)."
+- "Cryptographically sign and archive logs in secure, tamper-evident location."
+- "Ensure audit log is accessible for compliance review."
+acceptance_criteria:
+- "Every agent action and transition is recorded with timestamp, user/agent, and artifact\
+  \ link."
+- "Major events (signoffs, escalations, notifications, exceptions) are explicitly\
+  \ logged."
+- "Logs are cryptographically signed and archived in a secure, tamper-evident location."
+- "Audit log is accessible for compliance review."
+dependencies:
+- "develop_progress_dashboard"
+- "develop_notification_agent"
+- "develop_success_criteria_status"
+- "develop_stage_milestone"
+failure_escalation:
+- "Escalate to compliance or audit lead if logs are incomplete or inaccessible."
+references: []
+hitl: false

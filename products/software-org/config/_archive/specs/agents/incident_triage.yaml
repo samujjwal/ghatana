@@ -1,0 +1,28 @@
+---
+id: "incident_triage"
+agent: "IncidentTriageAgent"
+role: "SOC Analyst"
+inputs_spec:
+- name: "enriched_alerts"
+  description: "Enriched alerts for triage."
+  format: "Enriched alert artifact"
+outputs_spec:
+- name: "triaged_incidents"
+  description: "Prioritized, logged, and escalated incidents."
+  format: "Incident artifact"
+agent_tasks:
+- "Prioritize incidents by severity/business impact."
+- "Log triage actions."
+- "Escalate high/critical incidents immediately."
+- "Human review of triage accuracy."
+acceptance_criteria:
+- "All incidents prioritized/logged."
+- "Escalations performed for high/critical incidents."
+- "Human review of triage."
+dependencies:
+- "enriched_alerts"
+failure_escalation:
+- "Escalate to SOC lead if triage actions missing or inaccurate."
+references: []
+hitl: true
+hitl_reason: "Human reviews and prioritizes incidents"

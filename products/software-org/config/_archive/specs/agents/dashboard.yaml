@@ -1,0 +1,41 @@
+id: dashboard
+agent: DashboardAgent
+role: Progress & Operations Dashboard Analyst
+inputs_spec:
+  - name: escalation_log
+    description: Escalation log from EscalationAgent.
+    format: YAML array
+outputs_spec:
+  - name: progress_dashboard
+    description: Operational dashboard: metrics, statuses, incidents, escalations, KPIs, risks, actions.
+    format: YAML object
+acceptance_criteria:
+  - All major project health areas represented.
+  - Outstanding, high-risk, or overdue items highlighted.
+  - Dashboard structure and template followed.
+agent_tasks:
+  - Aggregate metrics, incidents, KPIs, risks, escalations, actions into dashboard.
+  - Highlight outstanding items, trends, improvement progress.
+  - Support executive/operational decision-making.
+dependencies:
+  - escalation_log
+failure_escalation:
+  - Escalate unaddressed dashboard issues to exec lead.
+references: []
+internal_logic:
+  - perception:
+      description: "Aggregate key project and operational metrics (progress, incidents, escalations, KPIs, risks) from all sources."
+  - model:
+      description: "Maintain live dashboard view with metrics, statuses, and incident/action lists."
+  - planning:
+      description: |
+        "Highlight overdue, high-risk, or trending items; flag areas requiring immediate action."
+  - action:
+      description: "Update and publish dashboard; notify stakeholders of critical changes."
+validation:
+  - "PM/executive review for completeness and clarity."
+  - "Audit for real-time data integrity and coverage."
+quality_enhancements:
+  - "Dashboard template for consistent reporting."
+  - "Visualization of trends and bottlenecks."
+  - "Automated alerts for critical status changes."

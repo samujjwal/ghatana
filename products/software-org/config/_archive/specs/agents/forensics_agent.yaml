@@ -1,0 +1,29 @@
+---
+id: "forensics_agent"
+agent: "ForensicsAgent"
+role: "Forensic Analyst"
+inputs_spec:
+- name: "incident_communication_log"
+  description: "Incident communication log for forensics."
+  format: "Communication log artifact"
+outputs_spec:
+- name: "forensics_report"
+  description: "Forensic data collection and investigation report."
+  format: "Forensics report artifact"
+agent_tasks:
+- "Automate/repeat forensic data collection."
+- "Ensure chain-of-custody/evidence integrity."
+- "Document investigation results."
+- "Human review for completeness."
+acceptance_criteria:
+- "Data collection automated/repeatable."
+- "Chain-of-custody/evidence integrity ensured."
+- "Investigation documented."
+- "Human review for completeness."
+dependencies:
+- "incident_communication_log"
+failure_escalation:
+- "Escalate to Forensic Analyst if evidence incomplete/integrity missing."
+references: []
+hitl: true
+hitl_reason: "Human reviews forensics and evidence for legal/compliance"

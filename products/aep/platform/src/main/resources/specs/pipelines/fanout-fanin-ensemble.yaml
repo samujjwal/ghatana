@@ -1,0 +1,152 @@
+# ============================================================================
+# Fan-Out / Fan-In Fraud Detection Pipeline
+# ============================================================================
+# Pattern: Parallel scoring with explicit dependency-based fan-in
+# Flow:    ingest → [rule-scorer, ml-scorer, velocity-scorer] → aggregator → action
+# Use:     Multi-signal fraud ensemble with parallel execution paths
+# ============================================================================
+
+stages:
+  # ---- Stage 1: Ingest and normalize ----
+  - name: ingest
+    stageType: STREAM
+    connectorIds:
+      - event-cloud-txn-source
+    workflow:
+      - id: txn-ingester
+        agent: aep:agent:TransactionIngester:1.0.0
+        role: ingester
+        agentTasks:
+          - Consume raw transaction events
+          - Normalize to internal schema
+          - Assign correlation ID for distributed tracing
+        inputsSpec:
+          - name: raw-event
+            format: json
+            description: Raw payment gateway event
+        outputsSpec:
+          - name: normalized-event
+            format: json
+            description: Normalized TransactionEvent
+
+  # ---- Stage 2: Parallel scoring (fan-out) ----
+  # Three agents in the same stage, each depends on txn-ingester
+  # They execute in parallel — all three consume the same normalized event
+  - name: parallel-scoring
+    stageType: PATTERN
+    workflow:
+      # 2a: Deterministic rule-based scoring
+      - id: rule-scorer
+        agent: deterministic-fraud-detector
+        role: scorer
+        dependencies:
+          - txn-ingester
+        agentTasks:
+          - Evaluate configurable fraud rules (velocity, amount, geo)
+          - Produce rule-based risk score [0.0, 1.0]
+        inputsSpec:
+          - name: normalized-event
+            format: json
+            description: Normalized transaction
+        outputsSpec:
+          - name: rule-score
+            format: json
+            description: "Rule-based risk score with matched rule IDs"
+
+      # 2b: ML model scoring
+      - id: ml-scorer
+        agent: probabilistic-anomaly-scorer
+        role: scorer
+        dependencies:
+          - txn-ingester
+        agentTasks:
+          - Run transaction features through ML model ensemble
+          - Compute anomaly probability with confidence interval
+        inputsSpec:
+          - name: normalized-event
+            format: json
+            description: Normalized transaction
+        outputsSpec:
+          - name: ml-score
+            format: json
+            description: "ML anomaly probability with confidence bounds"
+
+      # 2c: Velocity pattern scoring
+      - id: velocity-scorer
+        agent: aep:agent:VelocityPatternScorer:1.2.0
+        role: scorer
+        dependencies:
+          - txn-ingester
+        agentTasks:
+          - Compute real-time velocity metrics (count, sum, avg)
+          - Compare against adaptive thresholds per account segment
+          - Produce velocity anomaly score
+        inputsSpec:
+          - name: normalized-event
+            format: json
+            description: Normalized transaction
+        outputsSpec:
+          - name: velocity-score
+            format: json
+            description: "Velocity anomaly score with feature breakdown"
+
+  # ---- Stage 3: Aggregate scores (fan-in) ----
+  # Depends on all three scorers — waits for all before executing
+  - name: aggregate
+    stageType: PATTERN
+    workflow:
+      - id: score-aggregator
+        agent: composite-ensemble-detector
+        role: aggregator
+        dependencies:
+          - rule-scorer
+          - ml-scorer
+          - velocity-scorer
+        agentTasks:
+          - Collect all three risk scores
+          - Apply weighted ensemble aggregation
+          - Produce final fraud decision (PASS / REVIEW / BLOCK)
+        acceptanceCriteria:
+          - All three input scores received before aggregation
+          - Weighted combination produces monotonic risk ordering
+          - Aggregation latency < 10ms p99
+        inputsSpec:
+          - name: rule-score
+            format: json
+            description: Rule-based risk score
+          - name: ml-score
+            format: json
+            description: ML anomaly probability
+          - name: velocity-score
+            format: json
+            description: Velocity anomaly score
+        outputsSpec:
+          - name: ensemble-decision
+            format: json
+            description: Final fraud decision with composite score and signal breakdown
+
+  # ---- Stage 4: Action routing ----
+  - name: action
+    stageType: STREAM
+    connectorIds:
+      - event-cloud-alert-sink
+      - event-cloud-audit-sink
+    workflow:
+      - id: action-router
+        agent: aep:agent:ActionRouter:1.0.0
+        role: router
+        dependencies:
+          - score-aggregator
+        agentTasks:
+          - Route BLOCK → immediate transaction hold + real-time alert
+          - Route REVIEW → analyst queue with supporting evidence
+          - Route PASS → audit log only
+          - Emit decision metrics and latency telemetry
+        inputsSpec:
+          - name: ensemble-decision
+            format: json
+            description: Final fraud decision from score aggregator
+        outputsSpec:
+          - name: action-event
+            format: json
+            description: Routed action event with decision audit trail

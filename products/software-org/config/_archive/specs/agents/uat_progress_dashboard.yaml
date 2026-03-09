@@ -1,0 +1,28 @@
+---
+id: "uat_progress_dashboard"
+agent: "ProgressDashboardAgent"
+role: "UAT Dashboard Owner"
+inputs_spec:
+- name: "uat_plan"
+  description: "UAT plan for dashboard visualization."
+  format: "UAT plan artifact"
+- name: "uat_results"
+  description: "UAT results for dashboard visualization."
+  format: "UAT results artifact"
+outputs_spec:
+- name: "uat_progress_dashboard"
+  description: "Dashboard visualizing UAT scenarios, execution, blockers, and status."
+  format: "Dashboard artifact"
+agent_tasks:
+- "Visualize UAT scenarios, execution results, and blockers."
+- "Update dashboard for team visibility and action."
+acceptance_criteria:
+- "Dashboard is updated with UAT plan, execution, blockers, and status."
+- "Status is visible to UAT team and leadership."
+dependencies:
+- "uat_plan"
+- "uat_results"
+failure_escalation:
+- "Escalate to dashboard owner if not current or visible."
+references: []
+hitl: false

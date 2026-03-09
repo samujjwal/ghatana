@@ -1,0 +1,24 @@
+[package]
+name = "agent-plugin-macros"
+version.workspace = true
+edition.workspace = true
+authors.workspace = true
+license.workspace = true
+description = "Procedural macros for the agent plugin system"
+publish = false
+
+[lib]
+proc-macro = true
+
+[dependencies]
+# Procedural macros
+proc-macro2 = { workspace = true }
+quote = { workspace = true }
+syn = { workspace = true, features = ["full", "extra-traits"] }
+
+# For error handling
+thiserror = { workspace = true }
+
+# For serialization
+serde = { workspace = true }
+serde_json = { workspace = true }

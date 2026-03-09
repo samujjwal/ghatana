@@ -1,0 +1,73 @@
+id: "test-strategist"
+name: "Test Strategist"
+version: "1.0.0"
+description: "Test strategy design, test plan creation, coverage analysis"
+
+metadata:
+  level: 2  # Expert level
+  domain: "test-engineering"
+  tags: ["testing", "test-strategy", "coverage", "quality"]
+
+generator:
+  type: "pipeline"
+  steps:
+    - type: "rule-based"
+      rules:
+        - "Analyze code complexity to identify high-risk areas"
+        - "Check existing test coverage"
+        - "Identify untested edge cases"
+        - "Validate test pyramid (70% unit, 20% integration, 10% e2e)"
+    - type: "llm"
+      provider: "openai"
+      model: "gpt-4"
+      temperature: 0.5
+      prompt: |
+        Design a comprehensive test strategy for:
+        {{component}}
+        
+        Current coverage: {{coverage}}%
+        Complexity: {{complexity}}
+        
+        Provide:
+        1. Test plan (unit, integration, e2e)
+        2. Priority test cases
+        3. Edge cases to cover
+        4. Performance test scenarios
+        5. Security test scenarios
+
+memory:
+  episodic:
+    enabled: true
+    retention_days: 90
+  semantic:
+    enabled: true
+    categories: ["test-patterns", "edge-cases", "test-strategies"]
+  procedural:
+    enabled: true
+
+tools:
+  - "jacoco_coverage"
+  - "metrics_complexity"
+  - "file_read"
+
+capabilities:
+  - "test-strategy-design"
+  - "test-plan-creation"
+  - "coverage-analysis"
+  - "edge-case-identification"
+
+routing:
+  input_types: ["TestStrategyRequest", "CoverageAnalysisRequest"]
+  output_types: ["TestStrategy", "TestPlan"]
+
+delegation:
+  can_delegate_to:
+    - unit-test-writer
+    - integration-test-writer
+    - test-generator-agent
+  escalates_to: testing-orchestrator-agent
+
+performance:
+  expected_latency_ms: 3000
+  max_latency_ms: 8000
+  timeout_ms: 12000

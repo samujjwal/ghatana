@@ -1,0 +1,72 @@
+import { beforeAll, afterAll, afterEach } from "vitest";
+
+// Global test setup
+beforeAll(() => {
+process.env.NODE_ENV = "test";
+process.env.LOG_LEVEL = "error";
+{{#if enableAuth}}
+process.env.JWT_SECRET = "test-secret-for-testing-only";
+{{/if}}
+});
+
+afterAll(() => {
+// Cleanup
+});
+
+afterEach(() => {
+// Reset between tests
+});
+
+// Test utilities
+
+/**
+* Create a test GraphQL client
+*/
+export function createTestClient(url: string) {
+return {
+async query<T=unknown>(
+    query: string,
+    variables?: Record<string, unknown>
+        ): Promise<{ data: T; errors?: Array<{ message: string }> }> {
+            const response = await fetch(url, {
+            method: "POST",
+            headers: {
+            "Content-Type": "application/json",
+            },
+            body: JSON.stringify({ query, variables }),
+            });
+            return response.json();
+            },
+
+            async mutation<T=unknown>(
+                mutation: string,
+                variables?: Record<string, unknown>
+                    ): Promise<{ data: T; errors?: Array<{ message: string }> }> {
+                        return this.query(mutation, variables);
+                        },
+                        };
+                        }
+
+                        /**
+                        * Generate mock JWT for testing
+                        */
+                        export function generateTestToken(payload: Record<string, unknown> = {}): string {
+                            const header = Buffer.from(JSON.stringify({ alg: "HS256", typ: "JWT"
+                            })).toString("base64url");
+                            const body = Buffer.from(JSON.stringify({
+                            sub: "test-user-id",
+                            iat: Math.floor(Date.now() / 1000),
+                            exp: Math.floor(Date.now() / 1000) + 3600,
+                            roles: ["user"],
+                            ...payload,
+                            })).toString("base64url");
+
+                            return `${header}.${body}.test-signature`;
+                            }
+
+                            /**
+                            * Delay helper
+                            */
+                            export function delay(ms: number): Promise<void> {
+                                return new Promise((resolve) => setTimeout(resolve, ms));
+                                }

@@ -1,0 +1,113 @@
+id: caching-strategy-agent
+name: Caching Strategy Agent
+version: 1.0.0
+description: Designs caching strategies for scale. Optimizes read performance and reduces load.
+
+metadata:
+  level: 3  # Worker
+  domain: scaling
+  tags:
+    - caching
+    - performance
+    - read-scaling
+    - optimization
+
+generator:
+  type: PIPELINE
+  steps:
+    - name: caching_analysis
+      type: LLM
+      provider: ANTHROPIC
+      model: claude-3-5-sonnet-20241022
+      temperature: 0.2
+      max_tokens: 2000
+      prompt: |
+        You are the Caching Strategy Agent. Design caching:
+        
+        Access Patterns: {{patterns}}
+        Hot Data: {{hot_data}}
+        Current Caching: {{current}}
+        Requirements: {{requirements}}
+        
+        Design:
+        1. Cache layers (L1 in-process, L2 distributed)
+        2. What to cache (data types, queries)
+        3. Cache invalidation strategy
+        4. TTL policies
+        5. Cache-aside vs write-through vs write-behind
+        6. Eviction policies
+        7. Monitoring and metrics
+        
+        Output as JSON: {
+          layers: [{layer, technology, purpose}],
+          cacheable_data,
+          invalidation_strategy,
+          ttl_policies,
+          write_strategy,
+          eviction_policy,
+          monitoring
+        }
+    - name: implementation_guide
+      type: TEMPLATE
+      template_path: templates/caching-guide.ftl
+    - name: configuration
+      type: SERVICE_CALL
+      service: cache-service
+      endpoint: /configure
+
+memory:
+  episodic:
+    enabled: true
+    retention_days: 365
+    categories:
+      - strategies
+      - implementations
+      - performance-outcomes
+  semantic:
+    enabled: true
+    categories:
+      - caching-patterns
+      - invalidation-strategies
+      - technology-options
+  procedural:
+    enabled: true
+    categories:
+      - analysis-rules
+      - strategy-templates
+      - configuration-patterns
+
+tools:
+  - cache_analyzer
+  - hit_rate_calculator
+  - config_generator
+
+capabilities:
+  - cache-design
+  - invalidation-planning
+  - performance-optimization
+  - monitoring-setup
+
+routing:
+  input_types:
+    - caching-request
+    - performance-issue
+    - scaling-requirement
+  output_types:
+    - caching-strategy
+    - configuration
+    - implementation-guide
+
+delegation:
+  can_delegate_to: []
+  escalates_to:
+    - architecture-evolution-agent
+
+governance:
+  requires_approval: false
+  can_block: false
+  audit_trail: standard
+
+performance:
+  expected_latency_ms: 3000
+  max_latency_ms: 8000
+  timeout_ms: 15000

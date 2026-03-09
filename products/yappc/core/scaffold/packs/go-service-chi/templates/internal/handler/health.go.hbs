@@ -1,0 +1,58 @@
+// Package handler provides HTTP request handlers.
+package handler
+
+import (
+"encoding/json"
+"net/http"
+)
+
+// HealthResponse represents the health check response.
+type HealthResponse struct {
+Status string `json:"status"`
+Version string `json:"version,omitempty"`
+}
+
+// Health returns a health check handler.
+func Health(version string) http.HandlerFunc {
+return func(w http.ResponseWriter, r *http.Request) {
+resp := HealthResponse{
+Status: "ok",
+Version: version,
+}
+writeJSON(w, http.StatusOK, resp)
+}
+}
+
+// Ready returns a readiness check handler.
+// Add checks for database connections, external services, etc.
+func Ready() http.HandlerFunc {
+return func(w http.ResponseWriter, r *http.Request) {
+// TODO: Add readiness checks
+// - Database connection
+// - Cache connection
+// - External service availability
+
+resp := map[string]interface{}{
+"status": "ready",
+"checks": map[string]string{
+// "database": "ok",
+// "cache": "ok",
+},
+}
+writeJSON(w, http.StatusOK, resp)
+}
+}
+
+// Live returns a liveness check handler.
+func Live() http.HandlerFunc {
+return func(w http.ResponseWriter, r *http.Request) {
+writeJSON(w, http.StatusOK, map[string]string{"status": "alive"})
+}
+}
+
+// writeJSON writes a JSON response.
+func writeJSON(w http.ResponseWriter, status int, v interface{}) {
+w.Header().Set("Content-Type", "application/json")
+w.WriteHeader(status)
+json.NewEncoder(w).Encode(v)
+}

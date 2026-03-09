@@ -1,0 +1,66 @@
+id: java-class-writer
+name: Java Class Writer
+version: 1.0.0
+description: Atomic worker agent for generating Java class files from specifications
+
+metadata:
+  level: 3  # Task Worker
+  domain: code-generation
+  tags:
+    - worker
+    - java
+    - code-generation
+    - deterministic
+
+generator:
+  type: TEMPLATE
+  engine: liquid
+  template_path: templates/java/class.liquid
+  variables:
+    java_version: "21"
+    encoding: "UTF-8"
+    indent: "    "
+
+memory:
+  episodic:
+    enabled: true
+    retention_days: 30
+    categories:
+      - generated-classes
+      - compilation-results
+  semantic:
+    enabled: false
+  procedural:
+    enabled: false
+
+tools:
+  - java_compiler
+  - checkstyle_validator
+  - code_formatter
+
+capabilities:
+  - code-generation
+  - java-class-generation
+
+routing:
+  input_types:
+    - class-specification
+    - java-class-request
+  output_types:
+    - java-class-file
+    - compilation-result
+
+delegation:
+  can_delegate_to: []  # Atomic worker, no delegation
+  escalates_to:
+    - java-expert
+
+governance:
+  requires_approval: false
+  can_block: false
+  audit_trail: minimal
+
+performance:
+  expected_latency_ms: 500
+  max_latency_ms: 2000
+  timeout_ms: 5000

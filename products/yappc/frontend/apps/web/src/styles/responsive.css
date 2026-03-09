@@ -1,0 +1,622 @@
+/**
+ * Responsive Layout Utilities
+ * 
+ * Comprehensive responsive design patterns and utilities.
+ * Ensures optimal experience across all device sizes.
+ * 
+ * @doc.type styles
+ * @doc.purpose Responsive layout utilities and patterns
+ * @doc.layer ui
+ * @doc.pattern Responsive Design
+ */
+
+/* ============================================================================
+   Responsive Breakpoints
+   ============================================================================ */
+
+/* Custom breakpoints for consistent design */
+@media (min-width: 320px) {
+    /* Mobile Small */
+}
+
+@media (min-width: 375px) {
+    /* Mobile Medium */
+}
+
+@media (min-width: 414px) {
+    /* Mobile Large */
+}
+
+@media (min-width: 640px) {
+    /* Tablet Small */
+}
+
+@media (min-width: 768px) {
+    /* Tablet Medium */
+}
+
+@media (min-width: 896px) {
+    /* Tablet Large */
+}
+
+@media (min-width: 1024px) {
+    /* Desktop Small */
+}
+
+@media (min-width: 1280px) {
+    /* Desktop Medium */
+}
+
+@media (min-width: 1536px) {
+    /* Desktop Large */
+}
+
+@media (min-width: 1920px) {
+    /* Desktop Extra Large */
+}
+
+/* ============================================================================
+   Container Utilities
+   ============================================================================ */
+
+.responsive-container {
+    width: 100%;
+    margin-left: auto;
+    margin-right: auto;
+    padding-left: 1rem;
+    padding-right: 1rem;
+}
+
+@media (min-width: 640px) {
+    .responsive-container {
+        padding-left: 1.5rem;
+        padding-right: 1.5rem;
+    }
+}
+
+@media (min-width: 1024px) {
+    .responsive-container {
+        padding-left: 2rem;
+        padding-right: 2rem;
+    }
+}
+
+@media (min-width: 1280px) {
+    .responsive-container {
+        padding-left: 3rem;
+        padding-right: 3rem;
+    }
+}
+
+/* ============================================================================
+   Grid Utilities
+   ============================================================================ */
+
+/* Responsive grid patterns */
+.responsive-grid-1 {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: 1rem;
+}
+
+.responsive-grid-2 {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: 1rem;
+}
+
+@media (min-width: 640px) {
+    .responsive-grid-2 {
+        grid-template-columns: repeat(2, 1fr);
+    }
+}
+
+.responsive-grid-3 {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: 1rem;
+}
+
+@media (min-width: 640px) {
+    .responsive-grid-3 {
+        grid-template-columns: repeat(2, 1fr);
+    }
+}
+
+@media (min-width: 1024px) {
+    .responsive-grid-3 {
+        grid-template-columns: repeat(3, 1fr);
+    }
+}
+
+.responsive-grid-4 {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: 1rem;
+}
+
+@media (min-width: 640px) {
+    .responsive-grid-4 {
+        grid-template-columns: repeat(2, 1fr);
+    }
+}
+
+@media (min-width: 1024px) {
+    .responsive-grid-4 {
+        grid-template-columns: repeat(4, 1fr);
+    }
+}
+
+/* Auto-fit grid */
+.responsive-grid-auto {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+    gap: 1rem;
+}
+
+@media (min-width: 640px) {
+    .responsive-grid-auto {
+        grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+        gap: 1.5rem;
+    }
+}
+
+@media (min-width: 1024px) {
+    .responsive-grid-auto {
+        grid-template-columns: repeat(auto-fit, minmax(350px, 1fr));
+        gap: 2rem;
+    }
+}
+
+/* ============================================================================
+   Flexbox Utilities
+   ============================================================================ */
+
+/* Responsive flexbox */
+.responsive-flex {
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+}
+
+@media (min-width: 640px) {
+    .responsive-flex {
+        flex-direction: row;
+        gap: 1.5rem;
+    }
+}
+
+.responsive-flex-reverse {
+    display: flex;
+    flex-direction: column-reverse;
+    gap: 1rem;
+}
+
+@media (min-width: 640px) {
+    .responsive-flex-reverse {
+        flex-direction: row-reverse;
+        gap: 1.5rem;
+    }
+}
+
+/* ============================================================================
+   Layout Components
+   ============================================================================ */
+
+/* Responsive sidebar */
+.responsive-sidebar {
+    display: flex;
+    flex-direction: column;
+    width: 100%;
+}
+
+@media (min-width: 1024px) {
+    .responsive-sidebar {
+        width: 256px;
+        flex-direction: column;
+    }
+}
+
+/* Responsive main content */
+.responsive-main {
+    width: 100%;
+    flex: 1;
+}
+
+@media (min-width: 1024px) {
+    .responsive-main {
+        margin-left: 256px;
+    }
+}
+
+/* Responsive navigation */
+.responsive-nav {
+    display: none;
+}
+
+@media (min-width: 768px) {
+    .responsive-nav {
+        display: flex;
+    }
+}
+
+.responsive-mobile-nav {
+    display: flex;
+}
+
+@media (min-width: 768px) {
+    .responsive-mobile-nav {
+        display: none;
+    }
+}
+
+/* ============================================================================
+   Typography Utilities
+   ============================================================================ */
+
+/* Responsive text sizes */
+.responsive-text-xs {
+    font-size: 0.75rem;
+    line-height: 1rem;
+}
+
+@media (min-width: 640px) {
+    .responsive-text-xs {
+        font-size: 0.875rem;
+        line-height: 1.25rem;
+    }
+}
+
+.responsive-text-sm {
+    font-size: 0.875rem;
+    line-height: 1.25rem;
+}
+
+@media (min-width: 640px) {
+    .responsive-text-sm {
+        font-size: 1rem;
+        line-height: 1.5rem;
+    }
+}
+
+.responsive-text-base {
+    font-size: 1rem;
+    line-height: 1.5rem;
+}
+
+@media (min-width: 640px) {
+    .responsive-text-base {
+        font-size: 1.125rem;
+        line-height: 1.75rem;
+    }
+}
+
+.responsive-text-lg {
+    font-size: 1.125rem;
+    line-height: 1.75rem;
+}
+
+@media (min-width: 640px) {
+    .responsive-text-lg {
+        font-size: 1.25rem;
+        line-height: 1.75rem;
+    }
+}
+
+@media (min-width: 1024px) {
+    .responsive-text-lg {
+        font-size: 1.5rem;
+        line-height: 2rem;
+    }
+}
+
+.responsive-text-xl {
+    font-size: 1.25rem;
+    line-height: 1.75rem;
+}
+
+@media (min-width: 640px) {
+    .responsive-text-xl {
+        font-size: 1.5rem;
+        line-height: 2rem;
+    }
+}
+
+@media (min-width: 1024px) {
+    .responsive-text-xl {
+        font-size: 1.875rem;
+        line-height: 2.25rem;
+    }
+}
+
+.responsive-text-2xl {
+    font-size: 1.5rem;
+    line-height: 2rem;
+}
+
+@media (min-width: 640px) {
+    .responsive-text-2xl {
+        font-size: 1.875rem;
+        line-height: 2.25rem;
+    }
+}
+
+@media (min-width: 1024px) {
+    .responsive-text-2xl {
+        font-size: 2.25rem;
+        line-height: 2.5rem;
+    }
+}
+
+/* ============================================================================
+   Spacing Utilities
+   ============================================================================ */
+
+/* Responsive spacing */
+.responsive-py {
+    padding-top: 1rem;
+    padding-bottom: 1rem;
+}
+
+@media (min-width: 640px) {
+    .responsive-py {
+        padding-top: 2rem;
+        padding-bottom: 2rem;
+    }
+}
+
+@media (min-width: 1024px) {
+    .responsive-py {
+        padding-top: 3rem;
+        padding-bottom: 3rem;
+    }
+}
+
+.responsive-px {
+    padding-left: 1rem;
+    padding-right: 1rem;
+}
+
+@media (min-width: 640px) {
+    .responsive-px {
+        padding-left: 2rem;
+        padding-right: 2rem;
+    }
+}
+
+@media (min-width: 1024px) {
+    .responsive-px {
+        padding-left: 3rem;
+        padding-right: 3rem;
+    }
+}
+
+.responsive-gap {
+    gap: 0.75rem;
+}
+
+@media (min-width: 640px) {
+    .responsive-gap {
+        gap: 1rem;
+    }
+}
+
+@media (min-width: 1024px) {
+    .responsive-gap {
+        gap: 1.5rem;
+    }
+}
+
+/* ============================================================================
+   Component-Specific Responsive Patterns
+   ============================================================================ */
+
+/* Responsive card layout */
+.responsive-card {
+    width: 100%;
+    max-width: none;
+}
+
+@media (min-width: 640px) {
+    .responsive-card {
+        max-width: 320px;
+    }
+}
+
+@media (min-width: 1024px) {
+    .responsive-card {
+        max-width: 384px;
+    }
+}
+
+/* Responsive form layout */
+.responsive-form {
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+}
+
+@media (min-width: 640px) {
+    .responsive-form {
+        max-width: 480px;
+        margin: 0 auto;
+    }
+}
+
+@media (min-width: 768px) {
+    .responsive-form {
+        max-width: 600px;
+    }
+}
+
+/* Responsive table */
+.responsive-table {
+    display: block;
+    overflow-x: auto;
+    white-space: nowrap;
+}
+
+@media (min-width: 640px) {
+    .responsive-table {
+        display: table;
+        white-space: normal;
+    }
+}
+
+/* Responsive image */
+.responsive-image {
+    width: 100%;
+    height: auto;
+    object-fit: cover;
+}
+
+@media (min-width: 768px) {
+    .responsive-image {
+        max-height: 400px;
+    }
+}
+
+/* ============================================================================
+   Mobile-First Utilities
+   ============================================================================ */
+
+/* Hide on mobile */
+.mobile-hidden {
+    display: none;
+}
+
+@media (min-width: 640px) {
+    .mobile-hidden {
+        display: block;
+    }
+}
+
+/* Show only on mobile */
+.mobile-only {
+    display: block;
+}
+
+@media (min-width: 640px) {
+    .mobile-only {
+        display: none;
+    }
+}
+
+/* Hide on tablet */
+.tablet-hidden {
+    display: block;
+}
+
+@media (min-width: 640px) and (max-width: 1023px) {
+    .tablet-hidden {
+        display: none;
+    }
+}
+
+/* Show only on tablet */
+.tablet-only {
+    display: none;
+}
+
+@media (min-width: 640px) and (max-width: 1023px) {
+    .tablet-only {
+        display: block;
+    }
+}
+
+/* Hide on desktop */
+.desktop-hidden {
+    display: block;
+}
+
+@media (min-width: 1024px) {
+    .desktop-hidden {
+        display: none;
+    }
+}
+
+/* Show only on desktop */
+.desktop-only {
+    display: none;
+}
+
+@media (min-width: 1024px) {
+    .desktop-only {
+        display: block;
+    }
+}
+
+/* ============================================================================
+   Orientation Utilities
+   ============================================================================ */
+
+/* Landscape only */
+@media (orientation: landscape) {
+    .landscape-only {
+        display: block;
+    }
+
+    .landscape-hidden {
+        display: none;
+    }
+}
+
+/* Portrait only */
+@media (orientation: portrait) {
+    .portrait-only {
+        display: block;
+    }
+
+    .portrait-hidden {
+        display: none;
+    }
+}
+
+/* ============================================================================
+   Device-Specific Utilities
+   ============================================================================ */
+
+/* Hover effects - only on devices with hover capability */
+@media (hover: hover) {
+    .hover-effect {
+        transition: all 0.2s ease;
+    }
+
+    .hover-effect:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+    }
+}
+
+/* No hover devices (touch devices) */
+@media (hover: none) {
+    .no-hover-effect {
+        transition: none;
+    }
+}
+
+/* ============================================================================
+   Print Utilities
+   ============================================================================ */
+
+@media print {
+    .print-hidden {
+        display: none !important;
+    }
+
+    .print-only {
+        display: block !important;
+    }
+
+    .print-break-before {
+        page-break-before: always;
+    }
+
+    .print-break-after {
+        page-break-after: always;
+    }
+
+    .print-break-inside-avoid {
+        page-break-inside: avoid;
+    }
+}

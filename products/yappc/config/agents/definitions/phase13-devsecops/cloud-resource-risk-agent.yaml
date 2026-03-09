@@ -1,0 +1,70 @@
+id: cloud-resource-risk-agent
+name: Cloud Resource Risk Scoring Agent
+version: 1.0.0
+description: Scores cloud resources for security risk based on configuration, exposure, and threat intel.
+
+metadata:
+  level: 3
+  domain: cloud-security
+  tags: [cloud, risk-scoring, security, exposure]
+
+generator:
+  type: PIPELINE
+  steps:
+    - name: config_check
+      type: RULE_BASED
+      rules:
+        - Check public accessibility (S3, RDS, EC2)
+        - Check encryption at rest / in transit
+        - Check IAM overpermissions
+        - Check open security groups
+    - name: risk_scoring
+      type: LLM
+      provider: ANTHROPIC
+      model: claude-3-5-sonnet-20241022
+      temperature: 0.1
+      max_tokens: 1500
+      prompt: |
+        Score cloud resource risk:
+        Resource: {{resource}}
+        Config Findings: {{findings}}
+        Threat Intel: {{intel}}
+        Assign risk score 0-100 with breakdown by category.
+        Output as JSON: {risk_score, breakdown, critical_issues, remediation_priority}
+
+memory:
+  episodic:
+    enabled: true
+    retention_days: 365
+    categories: [risk-assessments]
+  semantic:
+    enabled: true
+    categories: [risk-patterns, cloud-misconfigurations]
+  procedural:
+    enabled: true
+    categories: [scoring-rules, risk-thresholds]
+
+tools: [cloud_config_analyzer, threat_intel_feed]
+
+capabilities:
+  - cloud-risk-scoring
+  - misconfiguration-detection
+  - exposure-analysis
+
+routing:
+  input_types: [cloud-resource, risk-assessment-request]
+  output_types: [risk-score, risk-report]
+
+delegation:
+  can_delegate_to: []
+  escalates_to: cloud-security-orchestrator
+
+governance:
+  requires_approval: false
+  can_block: false
+  audit_trail: standard
+
+performance:
+  expected_latency_ms: 3000
+  max_latency_ms: 10000
+  timeout_ms: 20000

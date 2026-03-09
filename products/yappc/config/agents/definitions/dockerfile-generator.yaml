@@ -1,0 +1,32 @@
+id: agent.yappc.dockerfile-generator
+name: Dockerfile Generator
+description: Container configuration and Dockerfile generation agent
+version: 1.0.0
+type: worker
+category: deployment
+
+capabilities:
+  - dockerfile-generation
+  - container-optimization
+  - multi-stage-builds
+  - security-hardening
+
+requirements:
+  - containerization
+  - build-tools
+  - security-knowledge
+
+parameters:
+  base_image:
+    type: string
+    default: "openjdk:17-jdk-slim"
+    description: Base Docker image
+  
+  optimization_level:
+    type: string
+    default: "production"
+    description: Build optimization level
+
+metadata:
+  author: "YAPPC Team"
+  tags: [docker, containerization, deployment, devops]

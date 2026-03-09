@@ -1,0 +1,12 @@
+#!/bin/bash
+# Gradle wrapper for flashit product - delegates to backend/agent gradle
+
+cd "$(dirname "$0")" || exit 1
+
+# If backend/agent has its own gradle wrapper, use it
+if [ -f "backend/agent/gradlew" ]; then
+    exec backend/agent/gradlew "$@"
+fi
+
+# Otherwise use system gradle from agent directory
+exec gradle -p backend/agent "$@"

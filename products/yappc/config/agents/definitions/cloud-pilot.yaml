@@ -1,0 +1,71 @@
+id: "cloud-pilot"
+name: "Cloud Pilot"
+version: "1.0.0"
+description: "Cloud infrastructure, Kubernetes, Docker, AWS/GCP expert"
+
+metadata:
+  level: 2  # Expert level
+  domain: "devops-infrastructure"
+  tags: ["kubernetes", "docker", "aws", "gcp", "terraform"]
+
+generator:
+  type: "pipeline"
+  steps:
+    - type: "rule-based"
+      rules:
+        - "Validate Kubernetes resource limits"
+        - "Check security best practices (RBAC, network policies)"
+        - "Verify Dockerfile multi-stage build"
+        - "Assess cost optimization"
+    - type: "template"
+      engine: "liquid"
+      template_path: "templates/k8s/deployment.yaml.liquid"
+    - type: "llm"
+      provider: "openai"
+      model: "gpt-4"
+      temperature: 0.4
+      prompt: |
+        Review this infrastructure configuration:
+        {{config}}
+        
+        Provide:
+        1. Security hardening recommendations
+        2. Cost optimization strategies
+        3. High availability setup
+        4. Monitoring/observability integration
+
+memory:
+  episodic:
+    enabled: true
+    retention_days: 90
+  semantic:
+    enabled: true
+    categories: ["k8s-patterns", "docker-images", "cloud-architecture"]
+  procedural:
+    enabled: true
+
+tools:
+  - "file_read"
+  - "file_write"
+
+capabilities:
+  - "kubernetes-manifest-generation"
+  - "dockerfile-creation"
+  - "terraform-scripting"
+  - "cloud-architecture"
+
+routing:
+  input_types: ["InfrastructureRequest", "DeploymentRequest"]
+  output_types: ["KubernetesManifest", "Dockerfile", "TerraformScript"]
+
+delegation:
+  can_delegate_to:
+    - infrastructure-architect-agent
+    - deployment-agent
+    - environment-manager-agent
+  escalates_to: systems-architect
+
+performance:
+  expected_latency_ms: 2500
+  max_latency_ms: 7000
+  timeout_ms: 10000

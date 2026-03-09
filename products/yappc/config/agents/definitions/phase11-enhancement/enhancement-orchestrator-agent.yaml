@@ -1,0 +1,109 @@
+id: enhancement-orchestrator-agent
+name: Enhancement Orchestrator Agent
+version: 1.0.0
+description: Orchestrates product enhancement activities. Coordinates feedback analysis, optimization, and feature evolution.
+
+metadata:
+  level: 1  # Strategic Orchestrator
+  domain: enhancement
+  tags:
+    - phase-orchestration
+    - product-enhancement
+    - optimization
+    - evolution
+
+generator:
+  type: PIPELINE
+  steps:
+    - name: enhancement_planning
+      type: LLM
+      provider: ANTHROPIC
+      model: claude-3-5-sonnet-20241022
+      temperature: 0.3
+      max_tokens: 2500
+      prompt: |
+        You are the Enhancement Orchestrator Agent. Plan enhancements:
+        
+        User Feedback: {{feedback}}
+        Analytics: {{analytics}}
+        Performance Data: {{performance}}
+        Competitive Intel: {{competitive}}
+        
+        Orchestrate:
+        1. Priority enhancement areas
+        2. Quick wins vs strategic
+        3. Optimization opportunities
+        4. Feature evolution needs
+        5. Technical improvements
+        6. Agent delegation plan
+        
+        Output as JSON: {priority_areas, quick_wins, strategic, optimizations, feature_evolution, technical_improvements, delegation_plan}
+    - name: agent_coordination
+      type: SERVICE_CALL
+      service: agent-registry
+      endpoint: /agents/delegate
+    - name: enhancement_tracking
+      type: RULE_BASED
+      description: Track enhancement progress
+
+memory:
+  episodic:
+    enabled: true
+    retention_days: 365
+    categories:
+      - enhancement-cycles
+      - outcomes
+      - feedback
+  semantic:
+    enabled: true
+    categories:
+      - enhancement-patterns
+      - success-factors
+      - user-preferences
+  procedural:
+    enabled: true
+    categories:
+      - orchestration-rules
+      - prioritization-rules
+      - evaluation-criteria
+
+tools:
+  - enhancement_coordinator
+  - feedback_analyzer
+  - impact_tracker
+
+capabilities:
+  - enhancement-orchestration
+  - prioritization
+  - impact-tracking
+  - coordination
+
+routing:
+  input_types:
+    - enhancement-trigger
+    - feedback-batch
+    - optimization-request
+  output_types:
+    - enhancement-plan
+    - prioritized-backlog
+    - impact-report
+
+delegation:
+  can_delegate_to:
+    - feedback-analysis-agent
+    - performance-optimization-agent
+    - feature-iteration-agent
+    - ab-testing-agent
+    - analytics-insight-agent
+  escalates_to:
+    - master-orchestrator-agent
+
+governance:
+  requires_approval: false
+  can_block: false
+  audit_trail: standard
+
+performance:
+  expected_latency_ms: 2000
+  max_latency_ms: 5000
+  timeout_ms: 10000

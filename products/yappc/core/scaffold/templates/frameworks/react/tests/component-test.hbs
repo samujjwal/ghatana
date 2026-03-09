@@ -1,0 +1,65 @@
+{{!--
+  React Component Test Template (Vitest/Jest)
+  
+  Variables:
+  - componentName: Name of the component being tested
+  - componentPath: Import path to the component
+  - testCases: Array of test case definitions
+--}}
+import { describe, it, expect, vi } from 'vitest';
+import { render, screen, fireEvent, waitFor } from '@testing-library/react';
+import { {{componentName}} } from '{{componentPath}}';
+
+/**
+ * Tests for {{componentName}} component.
+ * 
+ * @doc.type test
+ * @doc.purpose Verify {{componentName}} behavior and rendering
+ * @doc.layer test
+ */
+describe('{{componentName}}', () => {
+  it('should render without crashing', () => {
+    render(<{{componentName}} />);
+    expect(screen.getByRole('heading')).toBeInTheDocument();
+  });
+
+  {{#each testCases}}
+  it('{{description}}', {{#if async}}async {{/if}}() => {
+    {{#if setup}}
+    // Setup
+    {{setup}}
+    {{/if}}
+
+    {{#if async}}
+    render(<{{../componentName}} {{#if props}}{{props}}{{/if}} />);
+    
+    await waitFor(() => {
+      {{assertion}}
+    });
+    {{else}}
+    render(<{{../componentName}} {{#if props}}{{props}}{{/if}} />);
+    
+    {{assertion}}
+    {{/if}}
+  });
+
+  {{/each}}
+
+  it('should handle user interactions', async () => {
+    const mockHandler = vi.fn();
+    render(<{{componentName}} onClick={mockHandler} />);
+    
+    const button = screen.getByRole('button');
+    fireEvent.click(button);
+    
+    expect(mockHandler).toHaveBeenCalledTimes(1);
+  });
+
+  it('should update when props change', () => {
+    const { rerender } = render(<{{componentName}} value="initial" />);
+    expect(screen.getByText('initial')).toBeInTheDocument();
+    
+    rerender(<{{componentName}} value="updated" />);
+    expect(screen.getByText('updated')).toBeInTheDocument();
+  });
+});

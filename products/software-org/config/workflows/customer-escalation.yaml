@@ -1,0 +1,129 @@
+# Customer Escalation Workflow Configuration
+apiVersion: virtualorg.ghatana.com/v1
+kind: Workflow
+metadata:
+  name: customer-escalation
+  namespace: software-org
+  labels:
+    domain: support
+    priority: high
+    autonomy-level: medium
+  annotations:
+    description: "Handle customer escalations with appropriate urgency and resolution"
+    owner: support-department
+
+spec:
+  trigger:
+    events:
+      - type: escalation.requested
+      - type: customer.complaint
+    manual:
+      enabled: true
+      authorizedRoles:
+        - support-manager
+        - support-engineer
+
+  execution:
+    mode: sequential
+    timeout: 4h
+    retryPolicy:
+      maxRetries: 2
+      backoffMultiplier: 2
+      initialDelay: 5m
+
+  context:
+    inputs:
+      - name: customer_id
+        type: string
+      - name: issue_description
+        type: string
+      - name: severity
+        type: string
+        default: high
+
+  stages:
+    - id: assess-escalation
+      name: "Assess Escalation"
+      description: "Evaluate the escalation severity and customer impact"
+      agent: support-manager-agent
+      action:
+        type: ai-decision
+        operation: escalation-assessment
+      transitions:
+        - on: success
+          goto: assign-owner
+
+    - id: assign-owner
+      name: "Assign Owner"
+      description: "Assign appropriate owner based on issue type"
+      agent: support-manager-agent
+      action:
+        type: automated
+        operation: owner-assignment
+      transitions:
+        - on: success
+          goto: investigate-issue
+
+    - id: investigate-issue
+      name: "Investigate Issue"
+      description: "Deep dive into the customer issue"
+      agent: support-engineer-agent
+      action:
+        type: ai-decision
+        operation: issue-investigation
+      transitions:
+        - on: success
+          goto: propose-resolution
+
+    - id: propose-resolution
+      name: "Propose Resolution"
+      description: "Create resolution proposal for customer"
+      agent: support-manager-agent
+      action:
+        type: ai-decision
+        operation: resolution-proposal
+      hitl:
+        required: true
+        checkpoint: "resolution-approval"
+        approvers:
+          - role: support-manager
+        timeout: 2h
+      transitions:
+        - on: approved
+          goto: implement-resolution
+        - on: rejected
+          goto: investigate-issue
+
+    - id: implement-resolution
+      name: "Implement Resolution"
+      description: "Execute the approved resolution"
+      agent: support-engineer-agent
+      action:
+        type: automated
+        operation: resolution-implementation
+      transitions:
+        - on: success
+          goto: notify-customer
+
+    - id: notify-customer
+      name: "Notify Customer"
+      description: "Communicate resolution to customer"
+      agent: support-specialist-agent
+      action:
+        type: automated
+        operation: customer-notification
+      transitions:
+        - on: success
+          goto: complete
+
+    - id: complete
+      name: "Complete Escalation"
+      action:
+        type: automated
+        operation: finalize
+
+  postActions:
+    - type: audit-log
+      data:
+        workflow: customer-escalation
+        outcome: "{{workflow.status}}"

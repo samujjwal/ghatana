@@ -1,0 +1,107 @@
+id: onboarding-agent
+name: Onboarding Agent
+version: 1.0.0
+description: Assists with team member onboarding. Creates personalized onboarding plans, tracks progress, and ensures productivity ramp-up.
+
+metadata:
+  level: 3  # Worker
+  domain: delivery
+  tags:
+    - onboarding
+    - ramp-up
+    - new-hire
+    - orientation
+
+generator:
+  type: PIPELINE
+  steps:
+    - name: onboarding_plan
+      type: LLM
+      provider: ANTHROPIC
+      model: claude-3-5-sonnet-20241022
+      temperature: 0.3
+      max_tokens: 2000
+      prompt: |
+        You are the Onboarding Agent. Create onboarding plan:
+        
+        New Team Member: {{member}}
+        Role: {{role}}
+        Experience Level: {{experience}}
+        Project Context: {{project}}
+        Team: {{team}}
+        
+        Create personalized plan:
+        1. Week 1 goals (environment, tools, meet team)
+        2. Week 2-4 goals (codebase, first tasks)
+        3. Month 2-3 goals (meaningful contributions)
+        4. Key people to meet
+        5. Documentation to read
+        6. Starter tasks (graduated difficulty)
+        7. Buddy assignment
+        8. Check-in schedule
+        
+        Output as JSON: {week1, week2_4, month2_3, people, docs, starter_tasks, buddy, checkins}
+    - name: progress_tracking
+      type: RULE_BASED
+      description: Track onboarding progress
+    - name: content_personalization
+      type: TEMPLATE
+      template_path: templates/onboarding-plan.ftl
+
+memory:
+  episodic:
+    enabled: true
+    retention_days: 365
+    categories:
+      - onboarding-plans
+      - progress
+      - feedback
+  semantic:
+    enabled: true
+    categories:
+      - role-requirements
+      - team-context
+      - success-patterns
+  procedural:
+    enabled: true
+    categories:
+      - onboarding-templates
+      - checklist-items
+      - milestone-definitions
+
+tools:
+  - plan_generator
+  - progress_tracker
+  - resource_recommender
+
+capabilities:
+  - plan-creation
+  - progress-tracking
+  - resource-recommendation
+  - buddy-matching
+
+routing:
+  input_types:
+    - new-hire
+    - onboarding-start
+    - progress-update
+  output_types:
+    - onboarding-plan
+    - progress-report
+    - recommendations
+
+delegation:
+  can_delegate_to:
+    - knowledge-sharing-agent
+  escalates_to:
+    - delivery-orchestrator-agent
+
+governance:
+  requires_approval: false
+  can_block: false
+  audit_trail: standard
+
+performance:
+  expected_latency_ms: 3000
+  max_latency_ms: 8000
+  timeout_ms: 15000

@@ -1,0 +1,143 @@
+domain:
+  id: performance-optimization
+  name: "Performance & Optimization"
+  description: "Optimize system performance and cost."
+  order: 24
+  icon: "speed"
+  color: "#66BB6A"
+  agent_personas:
+    - "PerformanceOptimizer"
+    - "CostAnalyzer"
+    - "Profiler"
+  audit_artifacts:
+    - "PerformanceReport"
+    - "OptimizationChange"
+    - "BenchmarkResult"
+  inputs:
+    - "Metrics"
+    - "Benchmarks"
+    - "Performance data"
+  outputs:
+    - "Optimized systems"
+    - "Performance reports"
+
+tasks:
+  # Core ICS performance tasks
+  - id: d24-t1
+    name: "Profiling"
+    description: "Analyze resource usage."
+    personas: ["Developer"]
+    lifecycle_stages: ["verify"]
+    automation_level: "assisted"
+  - id: d24-t2
+    name: "Cost optimization"
+    description: "Reduce infrastructure costs."
+    personas: ["DevOps", "Developer"]
+    lifecycle_stages: ["observe", "execute"]
+    automation_level: "assisted"
+  - id: d24-t3
+    name: "Latency reduction"
+    description: "Improve response times."
+    personas: ["Developer"]
+    lifecycle_stages: ["execute"]
+    automation_level: "assisted"
+  - id: d24-t4
+    name: "Reliability improvements"
+    description: "Enhance system stability."
+    personas: ["Developer", "DevOps"]
+    lifecycle_stages: ["execute"]
+    automation_level: "assisted"
+
+  # Migrated from legacy performance domain
+  - id: perf-001
+    name: "Performance Profiling"
+    description: "Profile application for bottlenecks."
+    personas: ["Developer"]
+    lifecycle_stages: ["verify"]
+    automation_level: "assisted"
+  - id: perf-002
+    name: "Load Testing"
+    description: "Test system under load."
+    personas: ["Developer", "QA"]
+    lifecycle_stages: ["verify"]
+    automation_level: "assisted"
+  - id: perf-003
+    name: "Memory Optimization"
+    description: "Optimize memory usage."
+    personas: ["Developer"]
+    lifecycle_stages: ["execute"]
+    automation_level: "assisted"
+  - id: perf-004
+    name: "Query Optimization"
+    description: "Optimize database queries."
+    personas: ["Developer"]
+    lifecycle_stages: ["execute"]
+    automation_level: "assisted"
+  - id: perf-005
+    name: "Caching Implementation"
+    description: "Add caching layers."
+    personas: ["Developer"]
+    lifecycle_stages: ["execute"]
+    automation_level: "assisted"
+  - id: perf-006
+    name: "CDN Configuration"
+    description: "Set up content delivery."
+    personas: ["DevOps"]
+    lifecycle_stages: ["execute"]
+    automation_level: "assisted"
+  - id: perf-007
+    name: "Bundle Size Optimization"
+    description: "Reduce frontend bundle sizes."
+    personas: ["Developer"]
+    lifecycle_stages: ["execute"]
+    automation_level: "assisted"
+  - id: perf-008
+    name: "API Performance Tuning"
+    description: "Optimize API response times."
+    personas: ["Developer"]
+    lifecycle_stages: ["execute"]
+    automation_level: "assisted"
+  - id: perf-009
+    name: "Concurrency Optimization"
+    description: "Improve concurrent processing."
+    personas: ["Developer"]
+    lifecycle_stages: ["execute"]
+    automation_level: "assisted"
+  - id: perf-010
+    name: "Performance Monitoring"
+    description: "Set up performance monitoring."
+    personas: ["Developer", "DevOps"]
+    lifecycle_stages: ["observe"]
+    automation_level: "automated"
+
+  # Migrated from legacy maintenance domain
+  - id: maint-001
+    name: "Dependency Updates"
+    description: "Update project dependencies."
+    personas: ["Developer"]
+    lifecycle_stages: ["execute"]
+    automation_level: "assisted"
+  - id: maint-002
+    name: "Technical Debt Reduction"
+    description: "Address technical debt items."
+    personas: ["Developer"]
+    lifecycle_stages: ["execute"]
+    automation_level: "assisted"
+  - id: maint-003
+    name: "Legacy Code Modernization"
+    description: "Update legacy code patterns."
+    personas: ["Developer"]
+    lifecycle_stages: ["execute"]
+    automation_level: "assisted"
+  - id: maint-004
+    name: "Deprecation Management"
+    description: "Handle deprecated features."
+    personas: ["Developer"]
+    lifecycle_stages: ["execute"]
+    automation_level: "assisted"
+  - id: maint-005
+    name: "Infrastructure Maintenance"
+    description: "Maintain infrastructure components."
+    personas: ["DevOps"]
+    lifecycle_stages: ["execute"]
+    automation_level: "assisted"

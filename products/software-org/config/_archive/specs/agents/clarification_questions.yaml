@@ -1,0 +1,43 @@
+id: clarification_questions
+agent: ClarificationQuestionsAgent
+role: Business Analyst
+inputs_spec:
+- name: constraints_and_assumptions
+  description: Synthesized list of constraints and assumptions.
+  format: List of combined objects
+outputs_spec:
+- name: clarification_questions
+  description: List of clear and actionable clarification questions, prioritized by importance or risk.
+  format: List of question objects (question, related_constraint_or_assumption, priority)
+  example: "- question: \"Is SSO required for all user roles?\"\n  related_constraint: \"Must use company IdP\"\n  priority: \"High\"\n"
+acceptance_criteria:
+- All unclear points are turned into clarification questions.
+- Each question is clear and actionable.
+- Questions are prioritized by importance or risk.
+agent_tasks:
+- Identify unclear points and turn them into questions.
+- Ensure questions are clear and actionable.
+- Prioritize questions by importance or risk.
+dependencies:
+- constraints_and_assumptions
+hitl: true
+hitl_reason: Human generates and reviews clarification questions for accuracy
+failure_escalation:
+- Escalate to project sponsor if critical clarifications are not obtained.
+references: []
+internal_logic:
+  - perception:
+      description: "Identify open issues, gaps, and high-risk items."
+  - model:
+      description: "Questions: {id, question, area, rationale, priority}"
+  - planning:
+      description: |
+        "Rank by risk and assign to appropriate stakeholder."
+  - action:
+      description: "Produce YAML with questions."
+validation:
+  - "Lead/SME review for prioritization."
+  - "Audit trail for all questions."
+quality_enhancements:
+  - "Templates and risk-ranking logic."
+  - "Change log for question evolution."

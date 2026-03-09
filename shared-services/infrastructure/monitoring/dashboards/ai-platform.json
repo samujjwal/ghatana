@@ -1,0 +1,301 @@
+{
+    "dashboard": {
+        "title": "AI Platform - Model Registry & Feature Store",
+        "tags": [
+            "ai-platform",
+            "ml",
+            "models",
+            "features"
+        ],
+        "timezone": "browser",
+        "schemaVersion": 16,
+        "version": 1,
+        "refresh": "30s",
+        "panels": [
+            {
+                "id": 1,
+                "title": "Model Registry - Registrations per Minute",
+                "type": "graph",
+                "targets": [
+                    {
+                        "expr": "rate(model_registry_register_count[1m])",
+                        "legendFormat": "Registrations/min"
+                    }
+                ],
+                "yaxes": [
+                    {
+                        "format": "short",
+                        "label": "Registrations"
+                    }
+                ],
+                "gridPos": {
+                    "x": 0,
+                    "y": 0,
+                    "w": 12,
+                    "h": 8
+                }
+            },
+            {
+                "id": 2,
+                "title": "Model Registry - Query Latency (p50, p95, p99)",
+                "type": "graph",
+                "targets": [
+                    {
+                        "expr": "histogram_quantile(0.50, rate(model_registry_query_duration_bucket[5m]))",
+                        "legendFormat": "p50"
+                    },
+                    {
+                        "expr": "histogram_quantile(0.95, rate(model_registry_query_duration_bucket[5m]))",
+                        "legendFormat": "p95"
+                    },
+                    {
+                        "expr": "histogram_quantile(0.99, rate(model_registry_query_duration_bucket[5m]))",
+                        "legendFormat": "p99"
+                    }
+                ],
+                "yaxes": [
+                    {
+                        "format": "ms",
+                        "label": "Latency"
+                    }
+                ],
+                "gridPos": {
+                    "x": 12,
+                    "y": 0,
+                    "w": 12,
+                    "h": 8
+                }
+            },
+            {
+                "id": 3,
+                "title": "Models by Deployment Status",
+                "type": "piechart",
+                "targets": [
+                    {
+                        "expr": "sum by (status) (model_deployment_status_count)",
+                        "legendFormat": "{{status}}"
+                    }
+                ],
+                "gridPos": {
+                    "x": 0,
+                    "y": 8,
+                    "w": 8,
+                    "h": 8
+                }
+            },
+            {
+                "id": 4,
+                "title": "Feature Store - Ingestion Rate",
+                "type": "graph",
+                "targets": [
+                    {
+                        "expr": "rate(feature_ingestion_rate[1m])",
+                        "legendFormat": "Features/sec"
+                    }
+                ],
+                "yaxes": [
+                    {
+                        "format": "short",
+                        "label": "Features/sec"
+                    }
+                ],
+                "gridPos": {
+                    "x": 8,
+                    "y": 8,
+                    "w": 8,
+                    "h": 8
+                }
+            },
+            {
+                "id": 5,
+                "title": "Feature Store - Write Latency",
+                "type": "graph",
+                "targets": [
+                    {
+                        "expr": "histogram_quantile(0.99, rate(feature_store_write_duration_bucket[5m]))",
+                        "legendFormat": "p99"
+                    }
+                ],
+                "yaxes": [
+                    {
+                        "format": "ms",
+                        "label": "Latency"
+                    }
+                ],
+                "gridPos": {
+                    "x": 16,
+                    "y": 8,
+                    "w": 8,
+                    "h": 8
+                }
+            },
+            {
+                "id": 6,
+                "title": "AI Model Inference - Request Rate",
+                "type": "graph",
+                "targets": [
+                    {
+                        "expr": "rate(ai_model_inference_count[1m])",
+                        "legendFormat": "{{model_name}}"
+                    }
+                ],
+                "yaxes": [
+                    {
+                        "format": "reqps",
+                        "label": "Requests/sec"
+                    }
+                ],
+                "gridPos": {
+                    "x": 0,
+                    "y": 16,
+                    "w": 12,
+                    "h": 8
+                }
+            },
+            {
+                "id": 7,
+                "title": "AI Model Quality Scores",
+                "type": "graph",
+                "targets": [
+                    {
+                        "expr": "ai_model_quality_score",
+                        "legendFormat": "{{model_name}} - {{metric_type}}"
+                    }
+                ],
+                "yaxes": [
+                    {
+                        "format": "percentunit",
+                        "label": "Score",
+                        "min": 0,
+                        "max": 1
+                    }
+                ],
+                "gridPos": {
+                    "x": 12,
+                    "y": 16,
+                    "w": 12,
+                    "h": 8
+                }
+            },
+            {
+                "id": 8,
+                "title": "Data Drift Detection",
+                "type": "graph",
+                "targets": [
+                    {
+                        "expr": "ai_model_drift_magnitude",
+                        "legendFormat": "{{model_name}}"
+                    }
+                ],
+                "yaxes": [
+                    {
+                        "format": "short",
+                        "label": "Drift Magnitude"
+                    }
+                ],
+                "gridPos": {
+                    "x": 0,
+                    "y": 24,
+                    "w": 12,
+                    "h": 8
+                },
+                "alert": {
+                    "name": "High Model Drift",
+                    "conditions": [
+                        {
+                            "evaluator": {
+                                "params": [
+                                    0.3
+                                ],
+                                "type": "gt"
+                            },
+                            "query": {
+                                "params": [
+                                    "A",
+                                    "5m",
+                                    "now"
+                                ]
+                            },
+                            "reducer": {
+                                "type": "avg"
+                            },
+                            "type": "query"
+                        }
+                    ],
+                    "executionErrorState": "alerting",
+                    "frequency": "1m",
+                    "message": "Model drift detected - drift magnitude above threshold"
+                }
+            },
+            {
+                "id": 9,
+                "title": "EventCloud Partition Lag (Feature Ingestion)",
+                "type": "graph",
+                "targets": [
+                    {
+                        "expr": "eventcloud_lag",
+                        "legendFormat": "Partition {{partition}}"
+                    }
+                ],
+                "yaxes": [
+                    {
+                        "format": "short",
+                        "label": "Events Behind"
+                    }
+                ],
+                "gridPos": {
+                    "x": 12,
+                    "y": 24,
+                    "w": 12,
+                    "h": 8
+                }
+            },
+            {
+                "id": 10,
+                "title": "HTTP Service - AI Registry Request Rate",
+                "type": "graph",
+                "targets": [
+                    {
+                        "expr": "rate(http_requests_total{service=\"ai-registry\"}[1m])",
+                        "legendFormat": "{{method}} {{endpoint}} - {{status}}"
+                    }
+                ],
+                "yaxes": [
+                    {
+                        "format": "reqps",
+                        "label": "Requests/sec"
+                    }
+                ],
+                "gridPos": {
+                    "x": 0,
+                    "y": 32,
+                    "w": 12,
+                    "h": 8
+                }
+            },
+            {
+                "id": 11,
+                "title": "HTTP Service - Request Latency p99",
+                "type": "graph",
+                "targets": [
+                    {
+                        "expr": "histogram_quantile(0.99, rate(http_request_duration_bucket{service=\"ai-registry\"}[5m]))",
+                        "legendFormat": "{{endpoint}}"
+                    }
+                ],
+                "yaxes": [
+                    {
+                        "format": "ms",
+                        "label": "Latency"
+                    }
+                ],
+                "gridPos": {
+                    "x": 12,
+                    "y": 32,
+                    "w": 12,
+                    "h": 8
+                }
+            }
+        ]
+    }
+}

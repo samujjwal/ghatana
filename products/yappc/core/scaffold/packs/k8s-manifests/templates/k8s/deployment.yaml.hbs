@@ -1,0 +1,49 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+name: {{projectName}}
+namespace: {{namespace}}
+labels:
+app: {{projectName}}
+version: v1
+spec:
+replicas: {{replicas}}
+selector:
+matchLabels:
+app: {{projectName}}
+template:
+metadata:
+labels:
+app: {{projectName}}
+version: v1
+spec:
+containers:
+- name: {{projectName}}
+image: {{projectName}}:latest
+imagePullPolicy: IfNotPresent
+ports:
+- containerPort: 8080
+name: http
+protocol: TCP
+env:
+- name: ENVIRONMENT
+value: "production"
+resources:
+requests:
+memory: "128Mi"
+cpu: "100m"
+limits:
+memory: "512Mi"
+cpu: "500m"
+livenessProbe:
+httpGet:
+path: /health/live
+port: 8080
+initialDelaySeconds: 30
+periodSeconds: 10
+readinessProbe:
+httpGet:
+path: /health/ready
+port: 8080
+initialDelaySeconds: 5
+periodSeconds: 5

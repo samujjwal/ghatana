@@ -1,0 +1,138 @@
+# Operate Stage - v3 Operator-Based Definition
+# Uses consolidated operators from operations/domain/operate/
+name: Operate
+description: Day-to-day operations and incident management
+domain: operate
+
+# Operators used in this stage
+operators:
+  - ref: operate/incident_operator
+    modes: [detect, respond, communicate, resolve, dr]
+  - ref: operate/monitor_operator
+    modes: [alert]
+
+# Cross-cutting operators
+cross_cutting:
+  - ref: cross-cutting/milestone_tracker
+    params:
+      stage: operate
+  - ref: cross-cutting/best_practice
+    params:
+      stage: operate
+  - ref: cross-cutting/notification
+    params:
+      stage: operate
+  - ref: cross-cutting/escalation
+    params:
+      stage: operate
+  - ref: cross-cutting/audit_log
+    params:
+      stage: operate
+
+# Workflow sequence
+workflow:
+  # Incident Detection
+  - step: detect_incidents
+    operator: operate/incident_operator
+    mode: detect
+    inputs:
+      - name: deploy_stage_milestone
+      - name: monitoring_data
+    outputs:
+      - name: detected_incidents
+
+  # Alert Management
+  - step: manage_alerts
+    operator: operate/monitor_operator
+    mode: alert
+    inputs:
+      - name: detected_incidents
+    outputs:
+      - name: alert_status
+    depends_on: [detect_incidents]
+
+  # Incident Response
+  - step: incident_response
+    operator: operate/incident_operator
+    mode: respond
+    inputs:
+      - name: detected_incidents
+    outputs:
+      - name: incident_response_actions
+    depends_on: [manage_alerts]
+    hitl: true
+    hitl_reason: Human coordinates incident response
+
+  # Escalation (if needed)
+  - step: escalate_incidents
+    operator: cross-cutting/escalation
+    params:
+      stage: operate
+    inputs:
+      - name: incident_response_actions
+    outputs:
+      - name: escalation_status
+    depends_on: [incident_response]
+    condition: incident_response_actions.severity == 'critical'
+
+  # Incident Communication
+  - step: communicate_incidents
+    operator: operate/incident_operator
+    mode: communicate
+    inputs:
+      - name: incident_response_actions
+    outputs:
+      - name: incident_communication
+    depends_on: [incident_response]
+
+  # Incident Resolution
+  - step: resolve_incidents
+    operator: operate/incident_operator
+    mode: resolve
+    inputs:
+      - name: incident_response_actions
+    outputs:
+      - name: incident_resolution
+    depends_on: [communicate_incidents]
+
+  # Disaster Recovery (if needed)
+  - step: disaster_recovery
+    operator: operate/incident_operator
+    mode: dr
+    inputs:
+      - name: detected_incidents
+    outputs:
+      - name: dr_status
+    depends_on: [resolve_incidents]
+    condition: incident_response_actions.type == 'disaster'
+
+  # Cross-cutting
+  - step: best_practice_check
+    operator: cross-cutting/best_practice
+    params:
+      stage: operate
+    inputs:
+      - name: incident_resolution
+    outputs:
+      - name: best_practice_report
+    depends_on: [resolve_incidents]
+
+  - step: track_milestones
+    operator: cross-cutting/milestone_tracker
+    params:
+      stage: operate
+    inputs:
+      - name: best_practice_report
+    outputs:
+      - name: operate_stage_milestone
+    depends_on: [best_practice_check]
+
+# Stage entry/exit criteria
+entry_criteria:
+  - Deployment complete
+  - System in production
+
+exit_criteria:
+  - Operational stability achieved
+  - Incidents resolved
+  - SLOs maintained

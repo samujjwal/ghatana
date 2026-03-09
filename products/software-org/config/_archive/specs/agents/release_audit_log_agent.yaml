@@ -1,0 +1,27 @@
+---
+id: "release_audit_log_agent"
+agent: "AuditLogAgent"
+role: "Compliance Bot"
+inputs_spec:
+- name: "release_progress_dashboard"
+  description: "Release progress dashboard for audit logging."
+  format: "Dashboard artifact"
+- name: "release_notification_agent"
+  description: "Notification agent delivery log."
+  format: "List of notification objects"
+outputs_spec:
+- name: "release_audit_log"
+  description: "Audit log of all release actions, signoffs, and notifications."
+  format: "Audit log artifact"
+agent_tasks:
+- "Log all release actions, signoffs, and notifications."
+- "Version and archive logs for compliance."
+acceptance_criteria:
+- "All release actions, signoffs, and notifications are logged and versioned."
+dependencies:
+- "release_progress_dashboard"
+- "release_notification_agent"
+failure_escalation:
+- "Escalate to Compliance if audit log is incomplete."
+references: []
+hitl: false

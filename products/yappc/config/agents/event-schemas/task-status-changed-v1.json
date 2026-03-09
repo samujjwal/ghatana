@@ -1,0 +1,64 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://ghatana.ai/schemas/yappc/events/task-status-changed-v1.json",
+  "title": "Task Status Changed Event",
+  "description": "Event published when a task transitions between states",
+  "version": "1.0.0",
+  "type": "object",
+  "required": ["eventId", "eventType", "timestamp", "taskId", "projectId", "previousStatus", "newStatus"],
+  "properties": {
+    "eventId": {
+      "type": "string",
+      "format": "uuid"
+    },
+    "eventType": {
+      "type": "string",
+      "const": "task.status.changed"
+    },
+    "timestamp": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "correlationId": {
+      "type": "string"
+    },
+    "taskId": {
+      "type": "string",
+      "format": "uuid",
+      "description": "Task that changed status"
+    },
+    "projectId": {
+      "type": "string",
+      "format": "uuid"
+    },
+    "previousStatus": {
+      "type": "string",
+      "enum": ["PENDING", "ASSIGNED", "IN_PROGRESS", "COMPLETED", "FAILED", "CANCELLED"]
+    },
+    "newStatus": {
+      "type": "string",
+      "enum": ["PENDING", "ASSIGNED", "IN_PROGRESS", "COMPLETED", "FAILED", "CANCELLED"]
+    },
+    "assignedAgentId": {
+      "type": "string",
+      "description": "Agent responsible for this task"
+    },
+    "reason": {
+      "type": "string",
+      "description": "Reason for status change"
+    },
+    "resultSummary": {
+      "type": "string",
+      "description": "Summary of results (for COMPLETED status)"
+    },
+    "errorMessage": {
+      "type": "string",
+      "description": "Error details (for FAILED status)"
+    },
+    "durationSeconds": {
+      "type": "integer",
+      "minimum": 0,
+      "description": "Time spent in previous status"
+    }
+  }
+}

@@ -1,0 +1,72 @@
+id: diff-analyzer-agent
+name: Diff Analyzer Agent
+version: 1.0.0
+description: Analyzes code diffs (commits, PRs) to identify changes that may have introduced the current bug. Correlates failure timing with recent changes.
+
+metadata:
+  level: 3
+  domain: debugging
+  tags: [debugging, diff-analysis, git-bisect, change-correlation]
+
+generator:
+  type: PIPELINE
+  steps:
+    - name: diff_collection
+      type: SERVICE_CALL
+      service: git-service
+      endpoint: /diffs/range
+    - name: change_analysis
+      type: LLM
+      provider: ANTHROPIC
+      model: claude-3-5-sonnet-20241022
+      temperature: 0.1
+      max_tokens: 2000
+      prompt: |
+        Analyze recent code changes to find the commit that introduced this bug:
+        
+        Error: {{input}}
+        Failure Location: {{failure_location}}
+        Recent Diffs: {{diffs}}
+        Commit Timeline: {{commits}}
+        
+        Identify:
+        1. Commits touching the failure location (file, class, method)
+        2. Behavioral changes in the affected code path
+        3. Most likely introducing commit (with evidence)
+        4. Risk assessment of each change
+        5. Recommended git bisect range if uncertain
+        
+        Output as JSON: {suspect_commits, most_likely, evidence, risk_assessment, bisect_range}
+
+memory:
+  episodic:
+    enabled: true
+    retention_days: 180
+    categories: [diff-analyses, introducing-commits]
+  semantic:
+    enabled: true
+    categories: [change-risk-patterns, hotspot-files]
+
+tools: [git_log, git_diff, git_bisect]
+
+capabilities:
+  - code-analysis
+  - root-cause-analysis
+
+routing:
+  input_types: [error-with-timeframe, commit-range]
+  output_types: [diff-analysis-report, suspect-commit-list]
+
+delegation:
+  can_delegate_to: []
+  escalates_to: debug-orchestrator
+
+governance:
+  requires_approval: false
+  can_block: false
+  audit_trail: standard
+
+performance:
+  expected_latency_ms: 3000
+  max_latency_ms: 15000
+  timeout_ms: 30000

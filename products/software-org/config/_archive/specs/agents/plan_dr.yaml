@@ -1,0 +1,43 @@
+---
+id: "plan_dr"
+agent: "DRPlanAgent"
+role: "Disaster Recovery Planner"
+inputs_spec:
+  - name: "incident_log"
+    description: "Incident log from IncidentHandlerAgent."
+    format: "YAML object"
+outputs_spec:
+  - name: "dr_plan"
+    description: >
+      Comprehensive disaster recovery plan, mapped to incidents, RTO/RPO, DR steps, roles, communication, and testing.
+    format: "YAML: { incidents[], rto, rpo, dr_steps[], roles[], communication_plan, test_schedule, status }"
+agent_tasks:
+  - "Define DR plan addressing major incident types, RTO/RPO, and required recovery steps."
+  - "Assign DR roles, test schedule, and communication plan."
+  - "Maintain plan status and review log."
+acceptance_criteria:
+  - "DR plan covers all critical incidents and meets RTO/RPO requirements."
+  - "Roles, communication, and test plans documented."
+  - "Plan status tracked and tested."
+internal_logic:
+  - perception:
+      description: "Extract incidents, impact, and recovery requirements."
+  - model:
+      description: "{ incidents, rto, rpo, dr_steps, roles, communication_plan, test_schedule, status }"
+  - planning:
+      description: |
+        "Map DR steps to incident types and compliance."
+  - action:
+      description: "Produce YAML DR plan."
+validation:
+  - "DR/BCP lead review and approval."
+  - "Audit for completeness and test coverage."
+quality_enhancements:
+  - "DR and BCP plan templates."
+  - "Automated test tracking and logs."
+dependencies: []
+failure_escalation:
+  - "Escalate untested or non-compliant DR plans."
+references:
+  - "Disaster recovery and business continuity best practices."
+  - "See: hatchworks.com/blog/ai-agents-explained/, datacamp.com/blog/ai-agents"

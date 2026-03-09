@@ -1,0 +1,49 @@
+{
+  "name": "@ghatana/audio-video-ui",
+  "version": "1.0.0",
+  "description": "Shared UI components for audio-video application",
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "type": "module",
+  "scripts": {
+    "build": "tsc || true",
+    "dev": "tsc --watch",
+    "clean": "rm -rf dist"
+  },
+  "files": [
+    "dist"
+  ],
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js"
+    }
+  },
+  "peerDependencies": {
+    "react": "^19.1.0",
+    "react-dom": "^19.1.0"
+  },
+  "devDependencies": {
+    "@types/react": "^19.2.7",
+    "@types/react-dom": "^19.2.3",
+    "typescript": "^5.9.3"
+  },
+  "publishConfig": {
+    "access": "restricted"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/ghatana/audio-video.git",
+    "directory": "libs/audio-video-ui"
+  },
+  "keywords": [
+    "react",
+    "components",
+    "ui",
+    "audio",
+    "video",
+    "ghatana"
+  ],
+  "author": "Ghatana Team",
+  "license": "MIT"
+}

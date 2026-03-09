@@ -1,0 +1,27 @@
+---
+id: "slosli_tracking"
+agent: "SLOSLITrackingAgent"
+role: "SRE/Platform Engineer"
+inputs_spec:
+- name: "centralized_logs"
+  description: "Centralized logs for SLO/SLI tracking."
+  format: "Centralized log artifact"
+outputs_spec:
+- name: "slo_sli_reports"
+  description: "SLO/SLI tracking reports for all key services."
+  format: "SLO/SLI report artifact"
+agent_tasks:
+- "Define and track SLOs/SLIs for key services."
+- "Report and store actual SLO/SLI data."
+- "Flag violations and trends for review."
+acceptance_criteria:
+- "SLOs/SLIs defined and tracked."
+- "Actual data reported and stored."
+- "Violations and trends flagged for review."
+dependencies:
+- "centralized_logs"
+failure_escalation:
+- "Escalate to SRE/Platform Engineer if SLO/SLI tracking incomplete."
+references: []
+hitl: true
+hitl_reason: "Human reviews SLO/SLI tracking for reliability"

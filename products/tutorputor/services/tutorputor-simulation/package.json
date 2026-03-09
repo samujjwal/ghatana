@@ -1,0 +1,21 @@
+{
+    "name": "@ghatana/tutorputor-simulation",
+    "version": "0.0.1",
+    "private": true,
+    "type": "module",
+    "main": "./src/index.ts",
+    "types": "./src/index.ts",
+    "scripts": {
+        "build": "tsc",
+        "test": "vitest run",
+        "test:watch": "vitest"
+    },
+    "dependencies": {
+        "@ghatana/tutorputor-contracts": "workspace:*",
+        "@ghatana/tutorputor-db": "workspace:*"
+    },
+    "devDependencies": {
+        "typescript": "^5.9.3",
+        "vitest": "^4.0.18"
+    }
+}

@@ -1,0 +1,186 @@
+{
+    "name": "graphql-mesh",
+    "version": "1.0.0",
+    "description": "GraphQL Mesh gateway for federated GraphQL services with schema stitching and REST/gRPC source integration",
+    "category": "middleware",
+    "language": "typescript",
+    "runtime": "node",
+    "buildTool": "pnpm",
+    "templates": [
+        {
+            "source": "package.json.hbs",
+            "target": "package.json"
+        },
+        {
+            "source": "tsconfig.json.hbs",
+            "target": "tsconfig.json"
+        },
+        {
+            "source": "biome.json.hbs",
+            "target": "biome.json"
+        },
+        {
+            "source": ".meshrc.yaml.hbs",
+            "target": ".meshrc.yaml"
+        },
+        {
+            "source": "src/index.ts.hbs",
+            "target": "src/index.ts"
+        },
+        {
+            "source": "src/server.ts.hbs",
+            "target": "src/server.ts"
+        },
+        {
+            "source": "src/config.ts.hbs",
+            "target": "src/config.ts"
+        },
+        {
+            "source": "src/types.ts.hbs",
+            "target": "src/types.ts"
+        },
+        {
+            "source": "src/plugins/auth.ts.hbs",
+            "target": "src/plugins/auth.ts"
+        },
+        {
+            "source": "src/plugins/logging.ts.hbs",
+            "target": "src/plugins/logging.ts"
+        },
+        {
+            "source": "src/plugins/caching.ts.hbs",
+            "target": "src/plugins/caching.ts"
+        },
+        {
+            "source": "src/plugins/rate-limit.ts.hbs",
+            "target": "src/plugins/rate-limit.ts"
+        },
+        {
+            "source": "src/resolvers/custom.ts.hbs",
+            "target": "src/resolvers/custom.ts"
+        },
+        {
+            "source": "src/transforms/filter-schema.ts.hbs",
+            "target": "src/transforms/filter-schema.ts"
+        },
+        {
+            "source": "sources/users.graphql.hbs",
+            "target": "sources/users.graphql"
+        },
+        {
+            "source": "sources/products.graphql.hbs",
+            "target": "sources/products.graphql"
+        },
+        {
+            "source": "tests/mesh.test.ts.hbs",
+            "target": "tests/mesh.test.ts"
+        },
+        {
+            "source": "tests/setup.ts.hbs",
+            "target": "tests/setup.ts"
+        },
+        {
+            "source": "vitest.config.ts.hbs",
+            "target": "vitest.config.ts"
+        },
+        {
+            "source": "Dockerfile.hbs",
+            "target": "Dockerfile"
+        },
+        {
+            "source": "docker-compose.yml.hbs",
+            "target": "docker-compose.yml"
+        },
+        {
+            "source": ".gitignore.hbs",
+            "target": ".gitignore"
+        },
+        {
+            "source": "Makefile.hbs",
+            "target": "Makefile"
+        },
+        {
+            "source": "README.md.hbs",
+            "target": "README.md"
+        }
+    ],
+    "variables": {
+        "projectName": {
+            "type": "string",
+            "description": "Project name",
+            "required": true
+        },
+        "port": {
+            "type": "number",
+            "description": "Server port",
+            "default": 4000
+        },
+        "enablePlayground": {
+            "type": "boolean",
+            "description": "Enable GraphQL Playground",
+            "default": true
+        },
+        "enableIntrospection": {
+            "type": "boolean",
+            "description": "Enable GraphQL introspection",
+            "default": true
+        },
+        "enableAuth": {
+            "type": "boolean",
+            "description": "Enable JWT authentication",
+            "default": true
+        },
+        "jwtSecret": {
+            "type": "string",
+            "description": "JWT secret for authentication",
+            "default": "change-me-in-production"
+        },
+        "enableCaching": {
+            "type": "boolean",
+            "description": "Enable response caching",
+            "default": true
+        },
+        "cacheMaxAge": {
+            "type": "number",
+            "description": "Default cache max age in seconds",
+            "default": 60
+        },
+        "enableRateLimiting": {
+            "type": "boolean",
+            "description": "Enable rate limiting",
+            "default": true
+        },
+        "rateLimitMax": {
+            "type": "number",
+            "description": "Max requests per window",
+            "default": 100
+        },
+        "enableMetrics": {
+            "type": "boolean",
+            "description": "Enable Prometheus metrics",
+            "default": true
+        },
+        "enableCors": {
+            "type": "boolean",
+            "description": "Enable CORS",
+            "default": true
+        },
+        "corsOrigin": {
+            "type": "string",
+            "description": "CORS allowed origins",
+            "default": "*"
+        },
+        "logLevel": {
+            "type": "string",
+            "description": "Log level",
+            "default": "info"
+        }
+    },
+    "postCreate": [
+        "pnpm install",
+        "pnpm mesh:build"
+    ],
+    "devCommand": "pnpm dev",
+    "buildCommand": "pnpm build",
+    "testCommand": "pnpm test"
+}

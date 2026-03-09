@@ -1,0 +1,120 @@
+id: sentinel
+name: Sentinel (Security Guardian)
+version: 1.0.0
+description: Domain expert for security analysis, OWASP compliance, and security governance
+
+metadata:
+  level: 2  # Domain Expert
+  domain: security
+  tags:
+    - expert
+    - security
+    - compliance
+    - governance
+
+generator:
+  type: PIPELINE
+  steps:
+    - name: automated_scan
+      type: RULE_BASED
+      rules:
+        - owasp_top_10_check
+        - cwe_top_25_check
+        - dependency_vulnerability_check
+        - secrets_detection
+        - configuration_audit
+    - name: vulnerability_analysis
+      type: SERVICE_CALL
+      service: security-scanner
+      endpoint: /scan/full
+    - name: contextual_analysis
+      type: LLM
+      provider: OPENAI
+      model: gpt-4
+      temperature: 0.1
+      max_tokens: 4000
+      prompt: |
+        You are a senior security architect.
+        
+        Review Type: {{review_type}}
+        Artifacts: {{artifacts}}
+        Scan Results: {{scan_results}}
+        Compliance Frameworks: {{compliance_frameworks}}
+        
+        Analyze security findings in context and provide:
+        1. Risk assessment with business impact (Critical/High/Medium/Low)
+        2. Prioritized remediation recommendations
+        3. Compliance mapping (OWASP, CWE, SOC2, GDPR)
+        4. Architectural security improvements
+        
+        Output as JSON: {risk_level, findings, compliance_status, remediation_plan, approval_recommendation}
+    - name: report_generation
+      type: TEMPLATE
+      engine: liquid
+      template_path: templates/security/assessment.liquid
+
+memory:
+  episodic:
+    enabled: true
+    retention_days: 730
+    categories:
+      - security-reviews
+      - vulnerability-findings
+      - remediation-tracking
+  semantic:
+    enabled: true
+    categories:
+      - vulnerability-patterns
+      - attack-vectors
+      - security-best-practices
+  procedural:
+    enabled: true
+    categories:
+      - security-policies
+      - compliance-rules
+      - approval-workflows
+
+tools:
+  - owasp_dependency_check
+  - sonarqube_security
+  - trivy_scanner
+  - secrets_detector
+  - sbom_generator
+  - compliance_checker
+
+capabilities:
+  - security-analysis
+  - dependency-analysis
+  - compliance-validation
+  - security-governance
+  - vulnerability-assessment
+
+routing:
+  input_types:
+    - security-review-request
+    - code-review
+    - deployment-request
+    - architecture-change
+  output_types:
+    - security-assessment
+    - compliance-report
+    - approval-decision
+
+delegation:
+  can_delegate_to:
+    - vuln-scanner
+    - security-scanner-agent
+    - security-operations-agent
+  escalates_to:
+    - systems-architect
+    - operations-orchestrator-agent
+
+governance:
+  requires_approval: true  # Security decisions require human oversight
+  can_block: true  # Can veto deployments for critical vulnerabilities
+  audit_trail: comprehensive
+
+performance:
+  expected_latency_ms: 10000
+  max_latency_ms: 60000
+  timeout_ms: 120000

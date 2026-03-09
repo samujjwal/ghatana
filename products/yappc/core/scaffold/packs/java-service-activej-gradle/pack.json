@@ -1,0 +1,140 @@
+{
+  "name": "java-service-activej-gradle",
+  "version": "1.0.0",
+  "description": "ActiveJ-based Java service with Gradle build, Docker, and OpenTelemetry observability",
+  "author": "Ghatana YAPPC Team",
+  "license": "Apache-2.0",
+  "tags": [
+    "java",
+    "activej",
+    "service",
+    "microservice",
+    "gradle",
+    "docker",
+    "otel"
+  ],
+  "type": "service",
+  "language": "java",
+  "framework": "activej",
+  "dependencies": {
+    "runtime": [
+      "io.activej:activej-http:6.0",
+      "io.activej:activej-inject:6.0",
+      "io.activej:activej-launcher:6.0",
+      "io.activej:activej-boot:6.0"
+    ],
+    "build": ["gradle:8.0+", "java:21+"],
+    "test": [
+      "org.junit.jupiter:junit-jupiter-api:5.10.2",
+      "org.junit.jupiter:junit-jupiter-engine:5.10.2",
+      "io.activej:activej-test:6.0"
+    ],
+    "plugins": ["application", "com.diffplug.spotless", "checkstyle", "jacoco"]
+  },
+  "templates": {
+    "settings-gradle": {
+      "source": "templates/settings.gradle.hbs",
+      "target": "settings.gradle",
+      "merge": "replace"
+    },
+    "build-gradle": {
+      "source": "templates/build.gradle.hbs",
+      "target": "build.gradle",
+      "merge": "replace"
+    },
+    "main-class": {
+      "source": "templates/src/main/java/MainApplication.java.hbs",
+      "target": "src/main/java/{{packagePath}}/{{className}}.java",
+      "merge": "skip-if-exists"
+    },
+    "service-class": {
+      "source": "templates/src/main/java/HttpService.java.hbs",
+      "target": "src/main/java/{{packagePath}}/service/HttpService.java",
+      "merge": "skip-if-exists"
+    },
+    "config-class": {
+      "source": "templates/src/main/java/ServiceConfig.java.hbs",
+      "target": "src/main/java/{{packagePath}}/config/ServiceConfig.java",
+      "merge": "skip-if-exists"
+    },
+    "dockerfile": {
+      "source": "templates/Dockerfile.hbs",
+      "target": "Dockerfile",
+      "merge": "replace"
+    },
+    "docker-compose": {
+      "source": "templates/docker-compose.yml.hbs",
+      "target": "docker-compose.yml",
+      "merge": "skip-if-exists"
+    },
+    "application-properties": {
+      "source": "templates/src/main/resources/application.properties.hbs",
+      "target": "src/main/resources/application.properties",
+      "merge": "merge"
+    },
+    "otel-config": {
+      "source": "templates/src/main/resources/otel.properties.hbs",
+      "target": "src/main/resources/otel.properties",
+      "merge": "replace"
+    },
+    "test-class": {
+      "source": "templates/src/test/java/MainApplicationTest.java.hbs",
+      "target": "src/test/java/{{packagePath}}/{{className}}Test.java",
+      "merge": "skip-if-exists"
+    }
+  },
+  "hooks": {
+    "pre-generation": ["yappc doctor --tools java,docker"],
+    "post-generation": [
+      "yappc codemod --sort-imports --format-code",
+      "yappc doctor",
+      "./gradlew build --dry-run"
+    ]
+  },
+  "variables": {
+    "serviceName": {
+      "type": "string",
+      "description": "Service name (used for main class and Docker image)",
+      "required": true,
+      "validation": "^[A-Z][a-zA-Z0-9]*$"
+    },
+    "packageName": {
+      "type": "string",
+      "description": "Java package name",
+      "required": true,
+      "validation": "^[a-z][a-z0-9_.]*[a-z0-9]$"
+    },
+    "className": {
+      "type": "string",
+      "description": "Main application class name",
+      "default": "{{serviceName}}Application"
+    },
+    "port": {
+      "type": "number",
+      "description": "HTTP server port",
+      "default": 8080
+    },
+    "enableOtel": {
+      "type": "boolean",
+      "description": "Enable OpenTelemetry observability",
+      "default": true
+    },
+    "enableDocker": {
+      "type": "boolean",
+      "description": "Generate Docker configuration",
+      "default": true
+    },
+    "javaVersion": {
+      "type": "string",
+      "description": "Java version",
+      "default": "21",
+      "options": ["17", "21"]
+    }
+  },
+  "requirements": {
+    "java-version": "21",
+    "gradle-version": "8.0+",
+    "docker": true,
+    "tools": ["java", "gradle", "docker"]
+  }
+}

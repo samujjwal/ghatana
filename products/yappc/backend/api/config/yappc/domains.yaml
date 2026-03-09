@@ -1,0 +1,77 @@
+domains:
+  # DevSecOps Execution Domain - Developer & Tech Lead Personas
+  - id: "development"
+    name: "Development & Engineering"
+    description: "Code development, reviews, testing, and technical implementation"
+    personas: ["developer", "tech-lead", "sre"]
+    phases: ["plan", "develop", "test", "deploy"]
+    capabilities:
+      - "code-analysis"
+      - "syntax-tree-manipulation"
+      - "dependency-analysis"
+      - "semantic-preserving-refactoring"
+      - "test-automation"
+      - "performance-monitoring"
+    icon: "💻"
+    color: "#2196F3"
+
+  # DevSecOps Security Domain - Security Engineer & Compliance Personas
+  - id: "security"
+    name: "Security & Compliance"
+    description: "Security scanning, compliance checks, vulnerability management"
+    personas: ["security-engineer", "compliance-officer"]
+    phases: ["plan", "secure", "test", "monitor", "govern"]
+    capabilities:
+      - "vulnerability-scanning"
+      - "compliance-checking"
+      - "security-analysis"
+      - "threat-modeling"
+      - "audit-logging"
+    icon: "🔒"
+    color: "#F44336"
+
+  # DevSecOps Operations Domain - DevOps, SRE, Infrastructure Personas
+  - id: "operations"
+    name: "Operations & Infrastructure"
+    description: "CI/CD pipelines, infrastructure, deployment, and monitoring"
+    personas:
+      ["devops-engineer", "sre", "infrastructure-architect", "release-manager"]
+    phases: ["deploy", "monitor", "operate", "optimize"]
+    capabilities:
+      - "pipeline-automation"
+      - "infrastructure-as-code"
+      - "monitoring-setup"
+      - "incident-response"
+      - "capacity-planning"
+    icon: "⚙️"
+    color: "#4CAF50"
+
+  # DevSecOps Quality Domain - QA Engineer Persona
+  - id: "quality"
+    name: "Quality Assurance"
+    description: "Testing strategies, quality gates, and validation processes"
+    personas: ["qa-engineer"]
+    phases: ["test", "verify", "validate"]
+    capabilities:
+      - "test-automation"
+      - "quality-metrics"
+      - "defect-tracking"
+      - "performance-testing"
+      - "acceptance-testing"
+    icon: "✅"
+    color: "#9C27B0"
+
+  # DevSecOps Product Domain - PM, PO, BA Personas
+  - id: "product"
+    name: "Product & Business"
+    description: "Requirements, roadmap, user stories, and business alignment"
+    personas: ["product-manager", "product-owner", "business-analyst"]
+    phases: ["intake", "plan", "analyze", "deliver"]
+    capabilities:
+      - "requirement-analysis"
+      - "user-story-management"
+      - "roadmap-planning"
+      - "stakeholder-communication"
+      - "feature-prioritization"
+    icon: "📋"
+    color: "#FF9800"

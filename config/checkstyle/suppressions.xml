@@ -1,0 +1,18 @@
+<?xml version="1.0"?>
+<!DOCTYPE suppressions PUBLIC
+        "-//Checkstyle//DTD SuppressionFilter Configuration 1.2//EN"
+        "https://checkstyle.org/dtds/suppressions_1_2.dtd">
+
+<suppressions>
+    <!-- Suppress checks for auto-generated files -->
+    <suppress files="[\\/]generated[\\/]" checks=".*" />
+    <suppress files="[\\/]build[\\/]" checks=".*" />
+    <suppress files="[\\/]target[\\/]" checks=".*" />
+    
+    <!-- Suppress specific checks for test files -->
+    <suppress files="Test\.java$" checks="JavadocMethod" />
+    <suppress files="Test\.java$" checks="MagicNumber" />
+    
+    <!-- Suppress for protobuf generated files -->
+    <suppress files="[\\/]generated[\\/]proto[\\/]" checks=".*" />
+</suppressions>

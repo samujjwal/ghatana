@@ -1,0 +1,28 @@
+---
+id: "uat_evidence_collector"
+agent: "EvidenceCollectorAgent"
+role: "Compliance Evidence Bot"
+inputs_spec:
+- name: "uat_audit_log"
+  description: "UAT audit log for evidence package."
+  format: "Audit log artifact"
+- name: "uat_results"
+  description: "UAT execution results for evidence."
+  format: "UAT results artifact"
+outputs_spec:
+- name: "uat_evidence_package"
+  description: "Evidence package with all UAT signoffs, feedback, and results."
+  format: "Evidence package artifact"
+agent_tasks:
+- "Collect all signoffs, feedback, and test results as evidence."
+- "Archive UAT results and link for traceability."
+acceptance_criteria:
+- "UAT evidence package includes all signoffs, feedback, and test results."
+- "UAT results are archived and linked for traceability."
+dependencies:
+- "uat_audit_log"
+- "uat_results"
+failure_escalation:
+- "Escalate to compliance evidence lead if evidence package is incomplete or not archived."
+references: []
+hitl: false

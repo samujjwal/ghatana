@@ -1,0 +1,18 @@
+# Ignore generated build artifacts and declaration files that cause typed-lint to parse files outside tsconfig
+**/dist/**
+**/dist/types/**
+**/dist/**/*.d.ts
+# Keep node_modules and common outputs ignored
+node_modules/
+coverage/
+.turbo/
+/.next/
+.parcel-cache/
+.cache/
+
+# Additional ignores for generated code
+**/src/generated/**
+**/*.generated.*
+**/*.generated.ts
+apps/**/src/generated/**
+libs/**/src/generated/**

@@ -1,0 +1,68 @@
+id: compliance-control-evaluation-agent
+name: Compliance Control Evaluation Agent
+version: 1.0.0
+description: Evaluates a workspace against individual controls within a compliance framework (SOC2, GDPR, ISO27001, PCI-DSS).
+
+metadata:
+  level: 3
+  domain: compliance
+  tags: [compliance, soc2, gdpr, iso27001, pci-dss, controls]
+
+generator:
+  type: PIPELINE
+  steps:
+    - name: evidence_collection
+      type: SERVICE_CALL
+      service: compliance-service
+      endpoint: /evidence/collect
+    - name: control_evaluation
+      type: LLM
+      provider: OPENAI
+      model: gpt-4
+      temperature: 0.1
+      max_tokens: 2000
+      prompt: |
+        Evaluate compliance control:
+        Framework: {{framework}}
+        Control: {{control}}
+        Evidence: {{evidence}}
+        Workspace Config: {{config}}
+        Determine: PASS / FAIL / NOT_APPLICABLE with justification.
+        Output as JSON: {status, score, evidence_summary, gaps, remediation_steps}
+
+memory:
+  episodic:
+    enabled: true
+    retention_days: 1095
+    categories: [control-evaluations, audit-history]
+  semantic:
+    enabled: true
+    categories: [control-requirements, framework-mappings]
+  procedural:
+    enabled: true
+    categories: [evaluation-rules, evidence-criteria]
+
+tools: [compliance_checker, evidence_collector]
+
+capabilities:
+  - compliance-control-evaluation
+  - evidence-analysis
+  - gap-identification
+
+routing:
+  input_types: [compliance-framework, control-id, workspace-id]
+  output_types: [control-result, compliance-gap]
+
+delegation:
+  can_delegate_to: []
+  escalates_to: compliance-audit-orchestrator
+
+governance:
+  requires_approval: false
+  can_block: false
+  audit_trail: comprehensive
+
+performance:
+  expected_latency_ms: 5000
+  max_latency_ms: 15000
+  timeout_ms: 30000

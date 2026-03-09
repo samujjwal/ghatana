@@ -1,0 +1,124 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://ghatana.com/schemas/agent/v1/reactive-agent.json",
+  "title": "Reactive Agent Configuration",
+  "description": "Schema for REACTIVE agent type — trigger-based, event-driven with cooldowns and sliding windows",
+  "allOf": [
+    { "$ref": "agent-base-schema.json" }
+  ],
+  "properties": {
+    "spec": {
+      "properties": {
+        "type": { "const": "REACTIVE" },
+        "reactive": {
+          "$ref": "#/$defs/ReactiveSpec"
+        }
+      },
+      "required": ["type", "reactive"]
+    }
+  },
+
+  "$defs": {
+    "ReactiveSpec": {
+      "type": "object",
+      "properties": {
+        "subtype": {
+          "type": "string",
+          "enum": ["TRIGGER", "CIRCUIT_BREAKER", "RATE_LIMITER", "REFLEX"],
+          "default": "TRIGGER"
+        },
+        "triggers": {
+          "type": "array",
+          "items": { "$ref": "#/$defs/TriggerDefinition" },
+          "minItems": 1,
+          "description": "Trigger definitions evaluated on each event"
+        }
+      },
+      "required": ["triggers"],
+      "additionalProperties": false
+    },
+
+    "TriggerDefinition": {
+      "type": "object",
+      "properties": {
+        "name": {
+          "type": "string",
+          "description": "Unique trigger name"
+        },
+        "eventType": {
+          "$ref": "#/$defs/EventTypeMatcher",
+          "description": "Event type matching criteria"
+        },
+        "condition": {
+          "$ref": "#/$defs/SimpleCondition",
+          "description": "Additional condition on event fields"
+        },
+        "threshold": {
+          "type": "integer",
+          "minimum": 0,
+          "default": 0,
+          "description": "Number of matching events required within window before firing (0 = fire immediately)"
+        },
+        "countingWindow": {
+          "$ref": "agent-base-schema.json#/$defs/Duration",
+          "default": "5m",
+          "description": "Sliding window duration for threshold counting"
+        },
+        "cooldown": {
+          "$ref": "agent-base-schema.json#/$defs/Duration",
+          "default": "0s",
+          "description": "Minimum time between consecutive firings of this trigger"
+        },
+        "priority": {
+          "type": "integer",
+          "minimum": 0,
+          "default": 100,
+          "description": "Lower number = higher priority; evaluated in priority order"
+        },
+        "actions": {
+          "type": "object",
+          "additionalProperties": true,
+          "description": "Key-value actions merged into output when trigger fires"
+        }
+      },
+      "required": ["name", "eventType", "actions"],
+      "additionalProperties": false
+    },
+
+    "EventTypeMatcher": {
+      "type": "object",
+      "properties": {
+        "field": {
+          "type": "string",
+          "description": "Input field containing the event type"
+        },
+        "value": {
+          "type": "string",
+          "description": "Expected event type value"
+        }
+      },
+      "required": ["field", "value"],
+      "additionalProperties": false
+    },
+
+    "SimpleCondition": {
+      "type": "object",
+      "properties": {
+        "field": {
+          "type": "string",
+          "description": "Input field to evaluate"
+        },
+        "operator": {
+          "type": "string",
+          "enum": [">", ">=", "<", "<=", "==", "!=", "contains"],
+          "description": "Comparison operator"
+        },
+        "value": {
+          "description": "Expected value for comparison"
+        }
+      },
+      "required": ["field", "operator", "value"],
+      "additionalProperties": false
+    }
+  }
+}

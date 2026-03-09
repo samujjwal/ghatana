@@ -1,0 +1,87 @@
+package observability
+
+import (
+"context"
+"io"
+"os"
+"time"
+
+"github.com/rs/zerolog"
+"github.com/rs/zerolog/log"
+)
+
+// InitLogger initializes the zerolog logger
+func InitLogger() {
+zerolog.TimeFieldFormat = time.RFC3339Nano
+zerolog.SetGlobalLevel(parseLogLevel("{{logLevel}}"))
+
+{{#if (eq logFormat "json")}}
+// JSON format for production
+log.Logger = zerolog.New(os.Stdout).
+With().
+Timestamp().
+Str("service", "{{serviceName}}").
+Logger()
+{{else}}
+// Pretty console output for development
+output := zerolog.ConsoleWriter{
+Out: os.Stdout,
+TimeFormat: time.RFC3339,
+}
+log.Logger = zerolog.New(output).
+With().
+Timestamp().
+Str("service", "{{serviceName}}").
+Logger()
+{{/if}}
+
+log.Info().Msg("Logger initialized")
+}
+
+func parseLogLevel(level string) zerolog.Level {
+switch level {
+case "debug":
+return zerolog.DebugLevel
+case "info":
+return zerolog.InfoLevel
+case "warn":
+return zerolog.WarnLevel
+case "error":
+return zerolog.ErrorLevel
+default:
+return zerolog.InfoLevel
+}
+}
+
+// WithContext creates a logger with context fields
+func WithContext(ctx context.Context) *zerolog.Logger {
+logger := log.With().Logger()
+
+// Add trace ID if available
+if traceID := ctx.Value("traceID"); traceID != nil {
+logger = logger.With().Str("trace_id", traceID.(string)).Logger()
+}
+
+return &logger
+}
+
+// WithFields creates a logger with additional fields
+func WithFields(fields map[string]interface{}) *zerolog.Logger {
+logger := log.With().Fields(fields).Logger()
+return &logger
+}
+
+// NewRequestLogger creates a logger for HTTP request logging
+func NewRequestLogger(method, path, requestID string) *zerolog.Logger {
+logger := log.With().
+Str("method", method).
+Str("path", path).
+Str("request_id", requestID).
+Logger()
+return &logger
+}
+
+// GetWriter returns a writer for use with http middleware
+func GetWriter() io.Writer {
+return log.Logger
+}

@@ -1,0 +1,175 @@
+{{!--
+  Spring Boot Business Service Template
+  
+  Variables:
+  - serviceName: Name of the service
+  - entityName: Name of the entity
+  - repositoryName: Name of the repository
+  - hasValidation: Whether to include validation logic
+  - hasTransactions: Whether to use @Transactional
+--}}
+package {{packageName}}.service;
+
+import {{packageName}}.dto.{{entityName}}DTO;
+import {{packageName}}.entity.{{entityName}};
+import {{packageName}}.repository.{{repositoryName}};
+import {{packageName}}.mapper.{{entityName}}Mapper;
+{{#if hasValidation}}
+import {{packageName}}.exception.ValidationException;
+{{/if}}
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
+import org.springframework.stereotype.Service;
+{{#if hasTransactions}}
+import org.springframework.transaction.annotation.Transactional;
+{{/if}}
+import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
+
+import java.util.Optional;
+
+/**
+ * Business service for {{entityName}} operations.
+ * 
+ * @doc.type service
+ * @doc.purpose Business logic for {{entityName}} management
+ * @doc.layer business
+ * @doc.pattern Service Layer
+ */
+@Slf4j
+@Service
+@RequiredArgsConstructor
+{{#if hasTransactions}}
+@Transactional(readOnly = true)
+{{/if}}
+public class {{serviceName}} {
+
+    private final {{repositoryName}} {{camelCase repositoryName}};
+    private final {{entityName}}Mapper {{camelCase entityName}}Mapper;
+
+    /**
+     * Create a new {{entityName}}.
+     *
+     * @param dto {{entityName}} data transfer object
+     * @return Created {{entityName}} DTO
+     */
+    {{#if hasTransactions}}
+    @Transactional
+    {{/if}}
+    public {{entityName}}DTO create({{entityName}}DTO dto) {
+        log.info("Creating new {{entityName}}: {}", dto);
+        
+        {{#if hasValidation}}
+        validate{{entityName}}(dto);
+        {{/if}}
+        
+        {{entityName}} entity = {{camelCase entityName}}Mapper.toEntity(dto);
+        {{entityName}} saved = {{camelCase repositoryName}}.save(entity);
+        
+        log.info("{{entityName}} created with id: {}", saved.getId());
+        return {{camelCase entityName}}Mapper.toDTO(saved);
+    }
+
+    /**
+     * Find {{entityName}} by ID.
+     *
+     * @param id {{entityName}} identifier
+     * @return Optional containing {{entityName}} DTO if found
+     */
+    public Optional<{{entityName}}DTO> findById(Long id) {
+        log.debug("Finding {{entityName}} by id: {}", id);
+        return {{camelCase repositoryName}}.findById(id)
+                .map({{camelCase entityName}}Mapper::toDTO);
+    }
+
+    /**
+     * Find all {{entityName}}s with pagination.
+     *
+     * @param pageable Pagination parameters
+     * @return Page of {{entityName}} DTOs
+     */
+    public Page<{{entityName}}DTO> findAll(Pageable pageable) {
+        log.debug("Finding all {{entityName}}s with pagination: {}", pageable);
+        return {{camelCase repositoryName}}.findAll(pageable)
+                .map({{camelCase entityName}}Mapper::toDTO);
+    }
+
+    /**
+     * Update existing {{entityName}}.
+     *
+     * @param id {{entityName}} identifier
+     * @param dto Updated {{entityName}} data
+     * @return Optional containing updated {{entityName}} DTO if found
+     */
+    {{#if hasTransactions}}
+    @Transactional
+    {{/if}}
+    public Optional<{{entityName}}DTO> update(Long id, {{entityName}}DTO dto) {
+        log.info("Updating {{entityName}} with id: {}", id);
+        
+        return {{camelCase repositoryName}}.findById(id)
+                .map(existing -> {
+                    {{#if hasValidation}}
+                    validate{{entityName}}(dto);
+                    {{/if}}
+                    
+                    {{camelCase entityName}}Mapper.updateEntity(dto, existing);
+                    {{entityName}} updated = {{camelCase repositoryName}}.save(existing);
+                    
+                    log.info("{{entityName}} updated: {}", id);
+                    return {{camelCase entityName}}Mapper.toDTO(updated);
+                });
+    }
+
+    /**
+     * Delete {{entityName}} by ID.
+     *
+     * @param id {{entityName}} identifier
+     * @return true if deleted, false if not found
+     */
+    {{#if hasTransactions}}
+    @Transactional
+    {{/if}}
+    public boolean delete(Long id) {
+        log.info("Deleting {{entityName}} with id: {}", id);
+        
+        if ({{camelCase repositoryName}}.existsById(id)) {
+            {{camelCase repositoryName}}.deleteById(id);
+            log.info("{{entityName}} deleted: {}", id);
+            return true;
+        }
+        
+        log.warn("{{entityName}} not found for deletion: {}", id);
+        return false;
+    }
+
+    /**
+     * Search {{entityName}}s by query.
+     *
+     * @param query Search query
+     * @param pageable Pagination parameters
+     * @return Page of matching {{entityName}} DTOs
+     */
+    public Page<{{entityName}}DTO> search(String query, Pageable pageable) {
+        log.debug("Searching {{entityName}}s with query: {}", query);
+        return {{camelCase repositoryName}}.search(query, pageable)
+                .map({{camelCase entityName}}Mapper::toDTO);
+    }
+
+    {{#if hasValidation}}
+    /**
+     * Validate {{entityName}} data.
+     *
+     * @param dto {{entityName}} to validate
+     * @throws ValidationException if validation fails
+     */
+    private void validate{{entityName}}({{entityName}}DTO dto) {
+        // Add custom validation logic here
+        if (dto == null) {
+            throw new ValidationException("{{entityName}} cannot be null");
+        }
+        
+        // Additional validation rules
+    }
+    {{/if}}
+}

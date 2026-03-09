@@ -1,0 +1,38 @@
+id: solution_pattern_enforcer
+agent: SolutionPatternEnforcerAgent
+role: Solution Automation Bot
+inputs_spec:
+- name: solution_stage_milestone
+  description: Solution stage milestone plan.
+  format: List of milestone objects
+outputs_spec:
+- name: pattern_compliance_report
+  description: Automated report on compliance with approved solution patterns, flagged non-compliances, and diagram notation checks.
+  format: 'Structured report (sections: compliance, non_compliant_patterns, diagram_notations, distribution)'
+  example: 'compliance: true
+
+    non_compliant_patterns: []
+
+    diagram_notations: "UML"
+
+    distribution: ["Solution team"]
+
+    '
+agent_tasks:
+- Check if architecture matches org-approved solution patterns.
+- Automatically flag non-compliant patterns.
+- Check all architecture diagrams use approved notations.
+- Generate and distribute pattern compliance report.
+acceptance_criteria:
+- Architecture matches organization-approved solution patterns.
+- Non-compliant patterns are automatically flagged.
+- All architecture diagrams use approved notations.
+- Pattern compliance report is generated and distributed.
+dependencies:
+- solution_stage_milestone
+failure_escalation:
+- Escalate to solution automation lead if non-compliance is found.
+references: []
+hitl: false
+
+# [!!] No custom enhancement found.

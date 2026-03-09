@@ -1,0 +1,246 @@
+id: scoping_agent
+name: "Scoping Agent"
+description: "Defines scope, goals, and prioritized features"
+goal: >
+  Define clear product goals, boundaries, and prioritized feature sets, translating the initial idea into actionable scope and feature sets for planning.
+
+input:
+  # Core product concept
+  product_statement: Concise summary of the product from idea_agent.
+  problem_statement: Clear problem/opportunity addressed from idea_agent.
+  value_proposition: Core value proposition from idea_agent.
+  
+  # Market and audience
+  market_segment: Target market segment from idea_agent.
+  target_audience: Intended user groups from idea_agent.
+  
+  # Features and capabilities
+  product_features: List of proposed features from idea_agent.
+  competitive_advantage: Key differentiators from idea_agent.
+  existing_solution: Current alternatives from idea_agent.
+  
+  # Business context
+  business_goals: High-level business objectives (if available).
+  technical_constraints: Any known technical limitations or requirements.
+  timeline_expectations: Expected development timeline (if any).
+
+output:
+  # Product definition
+  product_vision: Clear, inspiring statement of what the product aims to achieve.
+  product_goals: 3-5 specific, measurable objectives.
+  success_metrics: How success will be measured for this product.
+  
+  # Scope definition
+  in_scope_features: 
+    - List of features included in MVP (Minimum Viable Product)
+    - List of features for future phases
+  out_of_scope_features: 
+    - Features explicitly excluded from current scope
+    - With rationale for exclusion
+  
+  # Feature prioritization
+  feature_prioritization:
+    must_have: 
+      - List of critical features for MVP
+      - With justification for each
+    should_have: 
+      - List of important but not critical features
+      - With business/technical impact
+    could_have: 
+      - List of nice-to-have features
+      - With potential value assessment
+    wont_have: 
+      - List of features explicitly not in scope
+      - With reasoning for exclusion
+  
+  # Technical considerations
+  technical_considerations: Any key technical decisions or constraints.
+  risks_and_mitigations: Potential risks and proposed mitigation strategies.
+  
+  # Dependencies
+  external_dependencies: Any third-party services, APIs, or platforms required.
+  internal_dependencies: Cross-team or cross-functional dependencies.
+
+type: sequential
+afterToolCallbacks:
+  - logMilestone
+components:
+  - type: llm_agent
+    name: "Scoping Content Generator"
+    description: "Structures product scope, goals, and features into a comprehensive plan"
+    model: "llama3.2"
+    instruction: |
+      You are a senior product manager and technical lead with expertise in product scoping and planning.
+      
+      # Context
+      You are defining the scope for a new product based on the following information:
+      **Product idea to refine:**
+      {plan_product_idea}
+
+      **Product review evaluation:**
+      {plan_idea_review_evaluation}
+      
+      # Your Task
+      Create a comprehensive product scope document that includes:
+      
+      1. A clear product vision and specific, measurable goals
+      2. Well-defined feature sets categorized by priority (must-have, should-have, could-have, won't-have)
+      3. Clear boundaries between what's in-scope and out-of-scope
+      4. Technical considerations and potential risks
+      
+      # Output Format
+      Provide your response as a valid JSON object with the following structure:
+      {
+        "product_vision": "...",
+        "product_goals": ["...", "..."],
+        "success_metrics": ["...", "..."],
+        "in_scope_features": {
+          "mvp": ["...", "..."],
+          "future_phases": ["..."]
+        },
+        "out_of_scope_features": ["...", "..."],
+        "feature_prioritization": {
+          "must_have": [{"feature": "...", "rationale": "..."}],
+          "should_have": [{"feature": "...", "rationale": "..."}],
+          "could_have": [{"feature": "...", "value": "..."}],
+          "wont_have": [{"feature": "...", "reason": "..."}]
+        },
+        "technical_considerations": "...",
+        "risks_and_mitigations": ["...", "..."],
+        "external_dependencies": ["..."],
+        "internal_dependencies": ["..."]
+      }
+      
+      # Guidelines
+      - Be specific and actionable in your recommendations
+      - Consider both business value and technical feasibility
+      - Identify potential risks and suggest mitigations
+      - Keep the MVP scope focused and achievable
+      - Provide clear rationales for prioritization decisions
+
+    outputKey: "plan_scoped_features"
+
+  - type: loop
+    name: "Scoping Refinement Loop"
+    description: "Iteratively refines and validates the product scope based on evaluation"
+    maxIterations: 1
+    components:
+      - type: llm_agent
+        name: "Scope Evaluation Expert"
+        description: "Thoroughly evaluates the scope document for clarity, completeness, and feasibility"
+        model: "llama3.2"
+        instruction: |
+          You are an experienced product manager and technical lead responsible for ensuring high-quality product scoping.
+          
+          # Context
+          ## Current Scope Document
+          {plan_scoped_features}
+          
+          # Task
+          Evaluate the current scope document and provide detailed, actionable feedback for improvement.
+          
+          # Evaluation Criteria
+          1. **Completeness**
+             - Are all critical sections present and addressed?
+             - Are there any obvious gaps in the analysis?
+             
+          2. **Clarity**
+             - Is the product vision clear and inspiring?
+             - Are goals specific, measurable, and achievable?
+             - Are features well-defined and unambiguous?
+             
+          3. **Feasibility**
+             - Is the MVP scope realistically achievable?
+             - Are technical considerations and risks adequately addressed?
+             - Are dependencies clearly identified?
+             
+          4. **Strategic Alignment**
+             - Does the scope align with business goals?
+             - Does it address the identified market needs?
+             - Is the competitive advantage clear?
+          
+          # Output Format
+          Provide your evaluation as a JSON object with the following structure:
+          {
+            "evaluation_summary": {
+              "overall_score": "A-F grade",
+              "strengths": ["...", "..."],
+              "critical_issues": ["...", "..."],
+              "readiness_for_planning": "Ready/Needs Work/Not Ready",
+              "key_risks": ["...", "..."]
+            },
+            "section_feedback": {
+              "product_vision": {
+                "score": 1-5,
+                "feedback": "...",
+                "suggestions": ["..."]
+              },
+              "product_goals": {
+                "score": 1-5,
+                "feedback": "...",
+                "suggestions": ["..."]
+              },
+              "feature_prioritization": {
+                "score": 1-5,
+                "feedback": "...",
+                "suggestions": ["..."]
+              },
+              "technical_considerations": {
+                "score": 1-5,
+                "feedback": "...",
+                "suggestions": ["..."]
+              }
+            },
+            "improvement_plan": {
+              "priority_improvements": ["...", "..."],
+              "recommended_actions": ["...", "..."]
+            }
+          }
+          
+          # Guidelines
+          - Be specific and constructive in your feedback
+          - Provide actionable suggestions for improvement
+          - Consider both business and technical perspectives
+          - Focus on the most critical issues first
+          - Be realistic about what can be achieved in the refinement iterations
+        outputKey: "plan_scope_evaluation"
+
+      - type: llm_agent
+        name: "Scoping Refinement Expert"
+        description: "Refines the product scope based on detailed evaluation feedback"
+        model: "llama3.2"
+        instruction: |
+          You are a senior product manager responsible for refining the product scope based on evaluation feedback.
+          
+          # Context
+          ## Current Scope Document
+          {plan_scoped_features}
+          
+          ## Evaluation Feedback
+          {plan_scope_evaluation}
+          
+          # Your Task
+          Refine the product scope document by:
+          1. Addressing all critical issues and blocking concerns
+          2. Implementing suggested improvements from the evaluation
+          3. Ensuring the scope is clear, complete, and actionable
+          4. Maintaining consistency across all sections
+          
+          # Guidelines
+          - Prioritize addressing critical issues first
+          - Make changes incrementally and deliberately
+          - Ensure all modifications are consistent with the product vision
+          - Maintain a balance between ambition and feasibility
+          - Document any assumptions or decisions made during refinement
+          
+          # Output Format
+          Return the complete, refined scope document in the same JSON format as the original.
+          Include all sections, even if they haven't changed.
+          
+          # Additional Considerations
+          - Keep the MVP scope focused and achievable
+          - Ensure technical considerations address the key risks
+          - Update dependencies based on the refined scope
+          - Maintain clear traceability between features and goals
+        outputKey: "plan_scoped_features"
+        tools: ["exitLoop"]

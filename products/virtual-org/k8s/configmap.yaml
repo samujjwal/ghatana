@@ -1,0 +1,93 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: virtualorg-config
+  namespace: virtualorg
+  labels:
+    app: virtualorg-agent
+data:
+  # Service config
+  SERVICE_NAME: "virtual-org-agent"
+  SERVICE_VERSION: "1.0.0"
+
+  # LLM config
+  LLM_PROVIDER: "openai"
+  LLM_MODEL: "gpt-4"
+  LLM_TEMPERATURE: "0.7"
+  LLM_MAX_TOKENS: "2048"
+  LLM_TIMEOUT_SECONDS: "30"
+  EMBEDDING_MODEL: "text-embedding-ada-002"
+
+  # Database
+  DATABASE_URL: "jdbc:postgresql://postgres-service:5432/virtual_org"
+  DATABASE_USERNAME: "postgres"
+
+  # Redis
+  REDIS_HOST: "redis-service"
+  REDIS_PORT: "6379"
+
+  # Observability
+  OTLP_TRACES_ENDPOINT: "http://otel-collector:4317"
+  OTLP_METRICS_ENDPOINT: "http://otel-collector:4317"
+  LOG_LEVEL: "INFO"
+  LOG_FORMAT: "json"
+  TRACE_SAMPLE_RATE: "1.0"
+
+  # Memory
+  MEMORY_TYPE: "pgvector"
+
+  # Task queue
+  TASK_QUEUE_TYPE: "redis"
+
+  # Server
+  SERVER_HOST: "0.0.0.0"
+  SERVER_PORT: "8080"
+
+  # Agent defaults
+  AGENT_DEFAULT_TIMEOUT_SECONDS: "30"
+  AGENT_MAX_RETRIES: "3"
+  AGENT_RETRY_DELAY_SECONDS: "5"
+  AGENT_MAX_CONCURRENT_TASKS: "5"
+
+  # Tools
+  FILE_OPS_BASE_DIR: "/workspace"
+  GIT_TIMEOUT_SECONDS: "60"
+  HTTP_TIMEOUT_SECONDS: "30"
+
+  # application.conf (embedded HOCON)
+  application.conf: |
+    virtual-org {
+      service {
+        name = ${SERVICE_NAME}
+        version = ${SERVICE_VERSION}
+      }
+
+      llm {
+        provider = ${LLM_PROVIDER}
+        model = ${LLM_MODEL}
+        api-key = ${LLM_API_KEY}
+        temperature = ${LLM_TEMPERATURE}
+        max-tokens = ${LLM_MAX_TOKENS}
+      }
+
+      database {
+        url = ${DATABASE_URL}
+        username = ${DATABASE_USERNAME}
+        password = ${DATABASE_PASSWORD}
+      }
+
+      redis {
+        host = ${REDIS_HOST}
+        port = ${REDIS_PORT}
+        password = ${?REDIS_PASSWORD}
+      }
+
+      observability {
+        tracing.otlp-endpoint = ${OTLP_TRACES_ENDPOINT}
+        metrics.otlp-endpoint = ${OTLP_METRICS_ENDPOINT}
+        logging {
+          level = ${LOG_LEVEL}
+          format = ${LOG_FORMAT}
+        }
+      }
+    }

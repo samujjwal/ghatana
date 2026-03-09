@@ -1,0 +1,114 @@
+id: policy-guard-agent
+name: Policy Guard Agent
+version: 1.0.0
+description: Enforces organizational policies, regulatory compliance, and operational constraints across all agent actions. Gates high-risk decisions.
+
+metadata:
+  level: 1  # Strategic Orchestrator
+  domain: governance
+  tags:
+    - policy-enforcement
+    - compliance
+    - risk-gating
+    - always-on
+
+generator:
+  type: PIPELINE
+  steps:
+    - name: policy_lookup
+      type: SERVICE_CALL
+      service: policy-engine
+      endpoint: /policies/applicable
+      description: Retrieve applicable policies for action
+    - name: compliance_check
+      type: RULE_BASED
+      description: Apply policy rules and constraints
+    - name: risk_assessment
+      type: LLM
+      provider: ANTHROPIC
+      model: claude-3-5-sonnet-20241022
+      temperature: 0.0
+      max_tokens: 1500
+      prompt: |
+        You are the Policy Guard Agent. Evaluate this action against policies:
+        
+        Action: {{input}}
+        Applicable Policies: {{policies}}
+        Compliance Rules: {{rules}}
+        
+        Provide:
+        1. Policy compliance score (0-100)
+        2. Violated policies (if any)
+        3. Risk level (LOW/MEDIUM/HIGH/CRITICAL)
+        4. Required mitigations
+        
+        Output as JSON: {compliance_score, violations, risk_level, mitigations, approved}
+    - name: decision_gate
+      type: RULE_BASED
+      description: Allow/block based on risk and compliance
+
+memory:
+  episodic:
+    enabled: true
+    retention_days: 2555  # 7 years for compliance
+    categories:
+      - policy-violations
+      - blocked-actions
+      - approved-exceptions
+  semantic:
+    enabled: true
+    categories:
+      - organizational-policies
+      - regulatory-requirements
+      - compliance-frameworks
+      - risk-thresholds
+  procedural:
+    enabled: true
+    categories:
+      - enforcement-rules
+      - exception-handling
+      - escalation-protocols
+
+tools:
+  - policy_engine_query
+  - compliance_database_check
+
+capabilities:
+  - policy-enforcement
+  - compliance-validation
+  - risk-gating
+  - exception-management
+  - audit-logging
+
+routing:
+  input_types:
+    - agent-action
+    - api-call
+    - data-access-request
+    - deployment-plan
+    - infrastructure-change
+  output_types:
+    - policy-verdict
+    - compliance-report
+    - risk-assessment
+    - mitigation-requirements
+
+delegation:
+  can_delegate_to:
+    - ethics-and-risk-agent
+    - audit-trail-agent
+    - confidence-threshold-agent
+    - alternative-exploration-agent
+    - explanation-depth-agent
+  escalates_to:
+    - human-override-arbitration-agent
+
+governance:
+  requires_approval: false  # Always-on enforcement
+  can_block: true  # Can block non-compliant actions
+  audit_trail: comprehensive
+
+performance:
+  expected_latency_ms: 1500
+  max_latency_ms: 4000
+  timeout_ms: 7000

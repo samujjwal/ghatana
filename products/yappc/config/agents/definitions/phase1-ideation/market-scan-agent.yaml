@@ -1,0 +1,108 @@
+id: market-scan-agent
+name: Market Scan Agent
+version: 1.0.0
+description: Scans market landscape for trends, opportunities, and threats. Aggregates market intelligence from multiple sources.
+
+metadata:
+  level: 2  # Domain Expert
+  domain: ideation
+  tags:
+    - market-intelligence
+    - trend-analysis
+    - opportunity-identification
+    - research
+
+generator:
+  type: PIPELINE
+  steps:
+    - name: source_aggregation
+      type: SERVICE_CALL
+      service: market-data-service
+      endpoint: /market/aggregate
+    - name: market_analysis
+      type: LLM
+      provider: ANTHROPIC
+      model: claude-3-5-sonnet-20241022
+      temperature: 0.3
+      max_tokens: 3000
+      prompt: |
+        You are the Market Scan Agent. Analyze market landscape:
+        
+        Market: {{market}}
+        Data Sources: {{sources}}
+        Focus Areas: {{focus}}
+        
+        Analyze:
+        1. Market size and growth
+        2. Key trends and shifts
+        3. Emerging opportunities
+        4. Threats and disruptions
+        5. Key players and dynamics
+        6. Entry barriers and enablers
+        7. Timing considerations
+        
+        Output as JSON: {market_size, trends, opportunities, threats, key_players, barriers, enablers, timing, confidence}
+    - name: report_generation
+      type: TEMPLATE
+      template_path: templates/market-scan-report.ftl
+
+memory:
+  episodic:
+    enabled: true
+    retention_days: 365
+    categories:
+      - market-scans
+      - trend-reports
+      - opportunity-analyses
+  semantic:
+    enabled: true
+    categories:
+      - market-models
+      - trend-patterns
+      - industry-taxonomies
+  procedural:
+    enabled: true
+    categories:
+      - scan-methodologies
+      - analysis-frameworks
+      - source-evaluation
+
+tools:
+  - market_data_aggregator
+  - trend_detector
+  - news_analyzer
+
+capabilities:
+  - market-intelligence
+  - trend-identification
+  - opportunity-scanning
+  - threat-detection
+  - report-generation
+
+routing:
+  input_types:
+    - market-scan-request
+    - trend-analysis-request
+    - industry-research
+  output_types:
+    - market-report
+    - trend-analysis
+    - opportunity-brief
+
+delegation:
+  can_delegate_to:
+    - competitor-intelligence-agent
+    - trend-detection-agent
+    - regulatory-scan-agent
+  escalates_to:
+    - ideation-orchestrator-agent
+
+governance:
+  requires_approval: false
+  can_block: false
+  audit_trail: standard
+
+performance:
+  expected_latency_ms: 10000
+  max_latency_ms: 25000
+  timeout_ms: 45000

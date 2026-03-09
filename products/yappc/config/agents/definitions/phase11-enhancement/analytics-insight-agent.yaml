@@ -1,0 +1,118 @@
+id: analytics-insight-agent
+name: Analytics Insight Agent
+version: 1.0.0
+description: Generates insights from product analytics. Identifies opportunities and issues.
+
+metadata:
+  level: 2  # Domain Expert
+  domain: enhancement
+  tags:
+    - analytics
+    - insights
+    - data-driven
+    - product-intelligence
+
+generator:
+  type: PIPELINE
+  steps:
+    - name: data_collection
+      type: SERVICE_CALL
+      service: analytics-service
+      endpoint: /collect
+    - name: insight_generation
+      type: LLM
+      provider: ANTHROPIC
+      model: claude-3-5-sonnet-20241022
+      temperature: 0.3
+      max_tokens: 2500
+      prompt: |
+        You are the Analytics Insight Agent. Generate insights:
+        
+        Analytics Data: {{data}}
+        KPIs: {{kpis}}
+        Time Period: {{period}}
+        Benchmarks: {{benchmarks}}
+        
+        Analyze and generate:
+        1. KPI performance summary
+        2. Notable changes (significant deltas)
+        3. User behavior patterns
+        4. Conversion funnel analysis
+        5. Retention patterns
+        6. Engagement trends
+        7. Opportunities identified
+        8. Issues/concerns
+        9. Recommended actions
+        
+        Output as JSON: {
+          kpi_summary,
+          notable_changes,
+          behavior_patterns,
+          funnel_analysis,
+          retention,
+          engagement,
+          opportunities,
+          concerns,
+          recommendations
+        }
+    - name: insight_distribution
+      type: SERVICE_CALL
+      service: notification-service
+      endpoint: /distribute
+
+memory:
+  episodic:
+    enabled: true
+    retention_days: 365
+    categories:
+      - insight-reports
+      - actions-taken
+      - outcomes
+  semantic:
+    enabled: true
+    categories:
+      - metric-patterns
+      - benchmark-library
+      - insight-types
+  procedural:
+    enabled: true
+    categories:
+      - analysis-framework
+      - significance-rules
+      - recommendation-logic
+
+tools:
+  - analytics_connector
+  - insight_generator
+  - visualization_builder
+
+capabilities:
+  - data-analysis
+  - insight-generation
+  - trend-identification
+  - recommendation
+
+routing:
+  input_types:
+    - analytics-data
+    - insight-request
+    - kpi-query
+  output_types:
+    - insight-report
+    - dashboard
+    - recommendations
+
+delegation:
+  can_delegate_to: []
+  escalates_to:
+    - enhancement-orchestrator-agent
+
+governance:
+  requires_approval: false
+  can_block: false
+  audit_trail: standard
+
+performance:
+  expected_latency_ms: 5000
+  max_latency_ms: 15000
+  timeout_ms: 30000

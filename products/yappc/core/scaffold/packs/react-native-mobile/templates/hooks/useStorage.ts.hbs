@@ -1,0 +1,82 @@
+import { useState, useEffect, useCallback } from "react";
+import { storage } from "@/lib/storage";
+
+/**
+* Hook for reading/writing values to persistent storage.
+* Supports both AsyncStorage and SecureStore.
+*/
+export function useStorage<T>(
+    key: string,
+    defaultValue: T,
+    options?: { secure?: boolean }
+    ) {
+    const [value, setValue] = useState<T>(defaultValue);
+        const [loading, setLoading] = useState(true);
+        const [error, setError] = useState<Error | null>(null);
+
+            const secure = options?.secure ?? false;
+
+            // Load initial value
+            useEffect(() => {
+            const load = async () => {
+            try {
+            setLoading(true);
+            const stored = secure
+            ? await storage.getSecure(key)
+            : await storage.get(key);
+
+            if (stored !== null) {
+            setValue(JSON.parse(stored) as T);
+            }
+            } catch (err) {
+            setError(err instanceof Error ? err : new Error(String(err)));
+            } finally {
+            setLoading(false);
+            }
+            };
+
+            load();
+            }, [key, secure]);
+
+            // Save value
+            const save = useCallback(
+            async (newValue: T) => {
+            try {
+            setError(null);
+            const serialized = JSON.stringify(newValue);
+
+            if (secure) {
+            await storage.setSecure(key, serialized);
+            } else {
+            await storage.set(key, serialized);
+            }
+
+            setValue(newValue);
+            } catch (err) {
+            setError(err instanceof Error ? err : new Error(String(err)));
+            throw err;
+            }
+            },
+            [key, secure]
+            );
+
+            // Remove value
+            const remove = useCallback(async () => {
+            try {
+            setError(null);
+
+            if (secure) {
+            await storage.removeSecure(key);
+            } else {
+            await storage.remove(key);
+            }
+
+            setValue(defaultValue);
+            } catch (err) {
+            setError(err instanceof Error ? err : new Error(String(err)));
+            throw err;
+            }
+            }, [key, secure, defaultValue]);
+
+            return { value, save, remove, loading, error };
+            }

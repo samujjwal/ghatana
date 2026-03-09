@@ -1,0 +1,64 @@
+syntax = "proto3";
+
+package guardian;
+
+option java_multiple_files = true;
+option java_package = "com.guardian.v1";
+option go_package = "github.com/samujjwal/dcmaar/apps/guardian/proto/guardian;guardian";
+
+// UsageEvent represents a single usage datapoint for a child on a device.
+message UsageEvent {
+  string device_id = 1;
+  string app_id = 2;
+  int32 duration_minutes = 3;
+  int64 timestamp = 4;     // Unix epoch seconds
+  string app_name = 5;
+  string category = 6;     // social, games, education, etc.
+  bool is_website = 7;
+  string website = 8;
+}
+
+// Policy enforcement action decided by the backend.
+message PolicyAction {
+  enum Action {
+    ALLOW = 0;
+    BLOCK = 1;
+    LIMIT_TIME = 2;
+    NOTIFY_PARENT = 3;
+  }
+
+  Action action = 1;
+  int32 remaining_minutes = 2;
+  string reason = 3;
+}
+
+// Device policy configuration for a child device.
+message DevicePolicy {
+  string device_id = 1;
+  string child_id = 2;
+  repeated AppLimitRule app_limits = 3;
+  repeated WebsiteFilterRule website_filters = 4;
+  ScheduleRule schedule = 5;
+  bool offline_allowed = 6;
+}
+
+// Per-app time limit rule.
+message AppLimitRule {
+  string app_id = 1;
+  int32 daily_limit_minutes = 2;
+  string day_of_week = 3;  // MON, TUE, etc.
+}
+
+// Per-domain website filter rule.
+message WebsiteFilterRule {
+  string domain = 1;
+  bool is_allowed = 2;
+  string category = 3;
+}
+
+// Schedule rule for blocked/allowed windows.
+message ScheduleRule {
+  string start_time = 1;  // HH:MM
+  string end_time = 2;
+  string description = 3;  // "bedtime", "homework time"
+}

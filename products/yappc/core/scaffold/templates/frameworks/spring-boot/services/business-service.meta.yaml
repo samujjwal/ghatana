@@ -1,0 +1,62 @@
+description: "Spring Boot business service layer with transaction management"
+author: "YAPPC Team"
+version: "1.0.0"
+tags:
+  - spring-boot
+  - service
+  - business-logic
+  - transaction
+
+variables:
+  packageName:
+    name: "packageName"
+    type: "string"
+    description: "Java package name"
+    required: true
+
+  serviceName:
+    name: "serviceName"
+    type: "string"
+    description: "Name of the service class"
+    required: true
+
+  entityName:
+    name: "entityName"
+    type: "string"
+    description: "Name of the entity"
+    required: true
+
+  repositoryName:
+    name: "repositoryName"
+    type: "string"
+    description: "Name of the repository interface"
+    required: true
+
+  hasValidation:
+    name: "hasValidation"
+    type: "boolean"
+    description: "Whether to include custom validation"
+    required: false
+    defaultValue: false
+
+  hasTransactions:
+    name: "hasTransactions"
+    type: "boolean"
+    description: "Whether to use @Transactional"
+    required: false
+    defaultValue: true
+
+dependencies:
+  - spring-boot-starter-data-jpa
+  - lombok
+
+examples:
+  - name: "User Service"
+    description: "Business service for User entity"
+    variables:
+      packageName: "com.example.demo"
+      serviceName: "UserService"
+      entityName: "User"
+      repositoryName: "UserRepository"
+      hasValidation: true
+      hasTransactions: true

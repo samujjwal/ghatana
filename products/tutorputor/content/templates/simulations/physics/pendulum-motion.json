@@ -1,0 +1,264 @@
+{
+    "$schema": "../simulation-template.schema.json",
+    "id": "physics_pendulum_motion",
+    "version": "1.0.0",
+    "metadata": {
+        "title": "Simple Pendulum Simulator",
+        "description": "Study simple harmonic motion through a pendulum simulation. Explore how length and gravity affect the period.",
+        "domain": "physics",
+        "subDomain": "mechanics",
+        "difficulty": "easy",
+        "estimatedDuration": 15,
+        "gradeLevel": [
+            "middle_school",
+            "high_school"
+        ],
+        "tags": [
+            "oscillation",
+            "simple harmonic motion",
+            "gravity",
+            "period"
+        ],
+        "author": "Tutorputor Physics Team",
+        "license": "CC-BY-4.0"
+    },
+    "learningObjectives": [
+        "Understand the relationship between pendulum length and period",
+        "Observe that amplitude (for small angles) does not affect period",
+        "Learn about simple harmonic motion",
+        "Calculate period using T = 2π√(L/g)"
+    ],
+    "prerequisites": [
+        "Basic understanding of oscillations",
+        "Knowledge of acceleration due to gravity"
+    ],
+    "entities": [
+        {
+            "id": "pendulum_bob",
+            "type": "physics:particle",
+            "properties": {
+                "mass": {
+                    "value": 1,
+                    "unit": "kg",
+                    "editable": true,
+                    "min": 0.1,
+                    "max": 5
+                },
+                "radius": {
+                    "value": 0.1,
+                    "unit": "m",
+                    "editable": false
+                },
+                "color": "#4CAF50"
+            }
+        },
+        {
+            "id": "pendulum_rod",
+            "type": "physics:constraint",
+            "properties": {
+                "type": "distance",
+                "length": {
+                    "value": 1,
+                    "unit": "m",
+                    "editable": true,
+                    "min": 0.5,
+                    "max": 3
+                },
+                "pivotPoint": {
+                    "value": [
+                        0,
+                        3,
+                        0
+                    ],
+                    "unit": "m"
+                },
+                "stiffness": 1,
+                "damping": 0
+            }
+        },
+        {
+            "id": "pivot",
+            "type": "physics:anchor",
+            "properties": {
+                "position": {
+                    "value": [
+                        0,
+                        3,
+                        0
+                    ],
+                    "unit": "m"
+                },
+                "visible": true,
+                "color": "#795548"
+            }
+        },
+        {
+            "id": "angle_indicator",
+            "type": "visualization:arc",
+            "properties": {
+                "visible": true,
+                "color": "#FF9800",
+                "showValue": true
+            }
+        }
+    ],
+    "interactions": [
+        {
+            "id": "start_stop",
+            "type": "toggle",
+            "label": "Start/Stop",
+            "action": {
+                "type": "toggle_simulation"
+            }
+        },
+        {
+            "id": "drag_bob",
+            "type": "drag",
+            "label": "Drag to set initial angle",
+            "target": "pendulum_bob",
+            "constraints": {
+                "type": "arc",
+                "center": "pivot.position",
+                "radius": "pendulum_rod.length"
+            }
+        },
+        {
+            "id": "length_slider",
+            "type": "slider",
+            "label": "Pendulum Length",
+            "target": "pendulum_rod.length",
+            "range": [
+                0.5,
+                3
+            ],
+            "step": 0.1,
+            "unit": "m"
+        },
+        {
+            "id": "gravity_slider",
+            "type": "slider",
+            "label": "Gravity",
+            "target": "physics.gravity",
+            "range": [
+                1,
+                20
+            ],
+            "step": 0.5,
+            "unit": "m/s²"
+        }
+    ],
+    "physics": {
+        "engine": "custom",
+        "gravity": {
+            "value": [
+                0,
+                -9.81,
+                0
+            ],
+            "unit": "m/s²",
+            "editable": true
+        },
+        "damping": {
+            "enabled": false,
+            "coefficient": 0
+        },
+        "timeScale": 1,
+        "stepSize": 0.016
+    },
+    "measurements": [
+        {
+            "id": "period",
+            "type": "period",
+            "label": "Period",
+            "source": "pendulum_bob.position.x",
+            "unit": "s"
+        },
+        {
+            "id": "frequency",
+            "type": "frequency",
+            "label": "Frequency",
+            "source": "period",
+            "unit": "Hz"
+        },
+        {
+            "id": "current_angle",
+            "type": "angle",
+            "label": "Current Angle",
+            "source": "angle_indicator",
+            "unit": "degrees"
+        },
+        {
+            "id": "max_velocity",
+            "type": "maximum",
+            "label": "Max Velocity",
+            "source": "pendulum_bob.velocity",
+            "unit": "m/s"
+        }
+    ],
+    "assessment": {
+        "type": "inquiry_based",
+        "tasks": [
+            {
+                "id": "task_1",
+                "instruction": "Set length to 1m and measure the period. How does this compare to T = 2π√(L/g)?",
+                "expectedOutcome": {
+                    "measurement": "period",
+                    "tolerance": 0.1,
+                    "targetValue": 2.006
+                },
+                "points": 15
+            },
+            {
+                "id": "task_2",
+                "instruction": "Double the length to 2m. Does the period also double?",
+                "expectedOutcome": {
+                    "measurement": "period",
+                    "tolerance": 0.15,
+                    "targetValue": 2.838
+                },
+                "points": 15
+            },
+            {
+                "id": "task_3",
+                "instruction": "Set gravity to simulate the Moon (1.62 m/s²). How does the period change?",
+                "expectedOutcome": {
+                    "measurement": "period",
+                    "comparison": "greater_than",
+                    "referenceValue": 4.0
+                },
+                "points": 20
+            }
+        ],
+        "passingScore": 70,
+        "hints": [
+            "The period formula is T = 2π√(L/g)",
+            "Period depends on length and gravity, not mass",
+            "When length increases, period increases (but not linearly)"
+        ]
+    },
+    "visualization": {
+        "type": "2d",
+        "renderer": "canvas",
+        "camera": {
+            "type": "orthographic",
+            "center": [
+                0,
+                1.5,
+                0
+            ],
+            "zoom": 1
+        },
+        "background": {
+            "type": "solid",
+            "color": "#FAFAFA"
+        },
+        "annotations": [
+            {
+                "type": "label",
+                "text": "Theoretical: T = 2π√(L/g)",
+                "position": "top-right",
+                "style": "equation"
+            }
+        ]
+    }
+}

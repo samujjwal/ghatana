@@ -1,0 +1,75 @@
+name: Integration tests (mock server)
+
+on:
+    push:
+        branches: [main]
+    pull_request:
+        branches: [main]
+
+jobs:
+    integration:
+        runs-on: ubuntu-latest
+        steps:
+            - name: Checkout
+              uses: actions/checkout@v4
+
+            - name: Use Node.js 18
+              uses: actions/setup-node@v4
+              with:
+                  node-version: "18"
+
+            - name: Install dependencies (root)
+              run: pnpm install --frozen-lockfile
+            - name: Cache pnpm store
+              uses: actions/cache@v4
+              with:
+                  path: ~/.pnpm-store
+                  key: ${{ runner.os }}-pnpm-${{ hashFiles('**/pnpm-lock.yaml') }}
+                  restore-keys: |
+                      ${{ runner.os }}-pnpm-
+
+            - name: Start mock-config-server
+              run: |
+                  cd services/desktop
+                  # start server on port 9001 and background it
+                  NODE_PATH=./node_modules PORT=9001 node ../../tools/mock-config-server/index.js > /tmp/mock.log 2>&1 &
+                  echo $! > /tmp/mock.pid
+
+            - name: Wait for mock server readiness
+              run: |
+                  n=0
+                  until curl -sSf http://localhost:9001/config > /dev/null; do
+                    n=$((n+1))
+                    if [ $n -gt 30 ]; then
+                      echo "mock server failed to start"
+                      echo "==== /tmp/mock.log ===="
+                      cat /tmp/mock.log || true
+                      exit 1
+                    fi
+                    sleep 1
+                  done
+
+            - name: Run integration tests (external mode)
+              run: |
+                  cd services/desktop
+                  npm run test:integration:external
+
+            - name: Upload integration artifacts
+              if: always()
+              uses: actions/upload-artifact@v4
+              with:
+                  name: integration-artifacts
+                  path: |
+                      tools/test-runner/fail-summary.*.txt
+                      tools/test-runner/mock-server-log.*.log
+                      tools/test-runner/mock-test-log.*.log
+                      tools/test-runner/node_path_fallback.*.txt
+                      /tmp/mock-out-*.log
+                      /tmp/mock-err-*.log
+
+            - name: Stop mock server
+              if: always()
+              run: |
+                  if [ -f /tmp/mock.pid ]; then
+                    kill $(cat /tmp/mock.pid) || true
+                  fi

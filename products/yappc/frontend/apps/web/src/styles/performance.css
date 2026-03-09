@@ -1,0 +1,481 @@
+/**
+ * Performance Optimization Styles
+ * 
+ * Performance-focused CSS utilities and optimizations.
+ * Ensures smooth interactions and fast rendering.
+ * 
+ * @doc.type styles
+ * @doc.purpose Performance optimization utilities
+ * @doc.layer ui
+ * @doc.pattern Performance
+ */
+
+/* ============================================================================
+   Performance Optimizations
+   ============================================================================ */
+
+/* GPU acceleration for animations */
+.gpu-accelerated {
+    transform: translateZ(0);
+    backface-visibility: hidden;
+    perspective: 1000px;
+}
+
+/* Optimize rendering */
+.optimize-render {
+    contain: layout style paint;
+}
+
+/* Optimize compositing */
+.optimize-compositing {
+    will-change: transform, opacity;
+    isolation: isolate;
+}
+
+/* Optimize painting */
+.optimize-paint {
+    contain: paint;
+}
+
+/* ============================================================================
+   Image Optimization
+   ============================================================================ */
+
+/* Lazy loading images */
+.lazy-image {
+    loading: lazy;
+    opacity: 0;
+    transition: opacity 0.3s ease;
+}
+
+.lazy-image.loaded {
+    opacity: 1;
+}
+
+/* Optimized image containers */
+.image-container {
+    position: relative;
+    overflow: hidden;
+    background-color: var(--color-muted);
+}
+
+.image-container img {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    transition: opacity 0.3s ease;
+}
+
+/* ============================================================================
+   Animation Performance
+   ============================================================================ */
+
+/* Use transform instead of position changes */
+.transform-animation {
+    transform: translateX(0);
+    transition: transform 0.3s ease;
+}
+
+.transform-animation:hover {
+    transform: translateX(10px);
+}
+
+/* Use opacity for fade effects */
+.opacity-animation {
+    opacity: 1;
+    transition: opacity 0.3s ease;
+}
+
+.opacity-animation:hover {
+    opacity: 0.8;
+}
+
+/* Disable animations for performance */
+.no-animation {
+    animation: none !important;
+    transition: none !important;
+}
+
+/* ============================================================================
+   Scroll Performance
+   ============================================================================ */
+
+/* Smooth scrolling */
+.smooth-scroll {
+    scroll-behavior: smooth;
+}
+
+/* Optimize scroll containers */
+.scroll-optimize {
+    overflow: auto;
+    -webkit-overflow-scrolling: touch;
+    overscroll-behavior: contain;
+}
+
+/* Virtual scrolling hints */
+.virtual-scroll {
+    height: 100%;
+    overflow-y: auto;
+}
+
+/* ============================================================================
+   Font Performance
+   ============================================================================ */
+
+/* Optimize font loading */
+.font-optimize {
+    font-display: swap;
+}
+
+/* Optimize text rendering */
+.text-optimize {
+    text-rendering: optimizeLegibility;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+}
+
+/* ============================================================================
+   Layout Performance
+   ============================================================================ */
+
+/* Contain layout shifts */
+.contain-layout {
+    contain: layout;
+}
+
+/* Contain size */
+.contain-size {
+    contain: size;
+}
+
+/* Contain paint */
+.contain-paint {
+    contain: paint;
+}
+
+/* Contain all */
+.contain-all {
+    contain: strict;
+}
+
+/* ============================================================================
+   Component Performance
+   ============================================================================ */
+
+/* Optimize button rendering */
+.button-optimize {
+    contain: layout style paint;
+    isolation: isolate;
+}
+
+/* Optimize card rendering */
+.card-optimize {
+    contain: layout style paint;
+    isolation: isolate;
+}
+
+/* Optimize form rendering */
+.form-optimize {
+    contain: layout style;
+}
+
+/* ============================================================================
+   Reduced Motion Performance
+   ============================================================================ */
+
+@media (prefers-reduced-motion: reduce) {
+
+    /* Disable animations for better performance */
+    *,
+    *::before,
+    *::after {
+        animation-duration: 0.01ms !important;
+        animation-iteration-count: 1 !important;
+        transition-duration: 0.01ms !important;
+    }
+
+    /* Disable scroll-behavior */
+    html {
+        scroll-behavior: auto;
+    }
+}
+
+/* ============================================================================
+   Memory Optimization
+   ============================================================================ */
+
+/* Cleanup unused elements */
+.cleanup-hidden {
+    display: none !important;
+}
+
+/* Optimize large lists */
+.list-optimize {
+    contain: layout style;
+}
+
+/* Optimize tables */
+.table-optimize {
+    contain: layout style;
+}
+
+/* ============================================================================
+   Network Performance
+   ============================================================================ */
+
+/* Optimize critical CSS */
+.critical-css {
+    display: block;
+}
+
+/* Defer non-critical CSS */
+.defer-css {
+    display: none;
+}
+
+/* Optimize font loading */
+.font-preload {
+    font-display: swap;
+    font-family: system-ui, -apple-system, sans-serif;
+}
+
+/* ============================================================================
+   Debug Performance
+   ============================================================================ */
+
+/* Performance debugging */
+.debug-performance * {
+    outline: 1px solid red !important;
+}
+
+.debug-performance [style*="transform"] {
+    background-color: rgba(255, 0, 0, 0.1) !important;
+}
+
+.debug-performance [style*="opacity"] {
+    background-color: rgba(0, 255, 0, 0.1) !important;
+}
+
+.debug-performance [style*="animation"] {
+    background-color: rgba(0, 0, 255, 0.1) !important;
+}
+
+/* ============================================================================
+   Mobile Performance
+   ============================================================================ */
+
+/* Optimize for mobile */
+.mobile-optimize {
+    -webkit-tap-highlight-color: transparent;
+    touch-action: manipulation;
+}
+
+/* Optimize touch interactions */
+.touch-optimize {
+    touch-action: manipulation;
+    -webkit-tap-highlight-color: transparent;
+}
+
+/* ============================================================================
+   Background Performance
+   ============================================================================ */
+
+/* Optimize background rendering */
+.bg-optimize {
+    background-attachment: fixed;
+    background-position: center;
+    background-repeat: no-repeat;
+    background-size: cover;
+    will-change: transform;
+}
+
+/* Optimize gradient backgrounds */
+.gradient-optimize {
+    background: linear-gradient(135deg, var(--color-primary-500), var(--color-secondary-500));
+    will-change: transform;
+}
+
+/* ============================================================================
+   Shadow Performance
+   ============================================================================ */
+
+/* Optimize box shadows */
+.shadow-optimize {
+    box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+    will-change: transform, box-shadow;
+}
+
+.shadow-optimize:hover {
+    box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+}
+
+/* ============================================================================
+   Border Performance
+   ============================================================================ */
+
+/* Optimize border rendering */
+.border-optimize {
+    border: 1px solid var(--color-divider);
+    will-change: border-color;
+}
+
+/* Optimize border animations */
+.border-animate-optimize {
+    border: 1px solid transparent;
+    will-change: border-color;
+    transition: border-color 0.3s ease;
+}
+
+.border-animate-optimize:hover {
+    border-color: var(--color-primary-500);
+}
+
+/* ============================================================================
+   Filter Performance
+   ============================================================================ */
+
+/* Optimize filters */
+.filter-optimize {
+    filter: blur(0);
+    will-change: filter;
+    transition: filter 0.3s ease;
+}
+
+.filter-optimize:hover {
+    filter: blur(2px);
+}
+
+/* ============================================================================
+   Clip Path Performance
+   ============================================================================ */
+
+/* Optimize clip paths */
+.clip-optimize {
+    clip-path: polygon(0 0, 100% 0, 100% 100%, 0 100%);
+    will-change: clip-path;
+    transition: clip-path 0.3s ease;
+}
+
+.clip-optimize:hover {
+    clip-path: polygon(0 0, 100% 0, 100% 100%, 0 100%);
+}
+
+/* ============================================================================
+   Mask Performance
+   ============================================================================ */
+
+/* Optimize mask rendering */
+.mask-optimize {
+    mask-image: linear-gradient(to right, transparent, black);
+    mask-size: 200% 100%;
+    mask-position: -100% 0;
+    will-change: mask-position;
+    transition: mask-position 0.3s ease;
+}
+
+.mask-optimize:hover {
+    mask-position: 0% 0;
+}
+
+/* ============================================================================
+   Blend Mode Performance
+   ============================================================================ */
+
+/* Optimize blend modes */
+.blend-optimize {
+    mix-blend-mode: normal;
+    will-change: mix-blend-mode;
+    transition: mix-blend-mode 0.3s ease;
+}
+
+.blend-optimize:hover {
+    mix-blend-mode: multiply;
+}
+
+/* ============================================================================
+   Transform Performance
+   ============================================================================ */
+
+/* Optimize 3D transforms */
+.transform-3d-optimize {
+    transform: translateZ(0);
+    backface-visibility: hidden;
+    perspective: 1000px;
+    will-change: transform;
+    transition: transform 0.3s ease;
+}
+
+.transform-3d-optimize:hover {
+    transform: translateZ(20px) rotateX(5deg) rotateY(5deg);
+}
+
+/* ============================================================================
+   CSS Custom Properties Performance
+   ============================================================================ */
+
+/* Optimize custom properties */
+.custom-prop-optimize {
+    --animation-duration: 0.3s;
+    --transition-timing: ease;
+}
+
+/* Use CSS custom properties for dynamic values */
+.dynamic-value {
+    transform: translateX(var(--translate-x, 0));
+    opacity: var(--opacity, 1);
+    transition: transform var(--animation-duration) var(--transition-timing), opacity var(--animation-duration) var(--transition-timing);
+}
+
+/* ============================================================================
+   Performance Monitoring
+   ============================================================================ */
+
+/* Performance indicators */
+.performance-indicator {
+    position: fixed;
+    top: 10px;
+    right: 10px;
+    background: var(--color-surface-elevated);
+    border: 1px solid var(--color-divider);
+    border-radius: 4px;
+    padding: 8px;
+    font-size: 12px;
+    color: var(--color-text-secondary);
+    z-index: 9999;
+    font-family: monospace;
+}
+
+/* Performance metrics */
+.performance-metrics {
+    position: fixed;
+    bottom: 10px;
+    left: 10px;
+    background: var(--color-surface-elevated);
+    border: 1px solid var(--color-divider);
+    border-radius: 4px;
+    padding: 8px;
+    font-size: 10px;
+    color: var(--color-text-secondary);
+    z-index: 9999;
+    font-family: monospace;
+}
+
+/* Show only in development */
+@media (development) {
+
+    .performance-indicator,
+    .performance-metrics {
+        display: block;
+    }
+}
+
+@media (production) {
+
+    .performance-indicator,
+    .performance-metrics {
+        display: none;
+    }
+}

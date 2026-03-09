@@ -1,0 +1,49 @@
+import { describe, it, expect, vi } from "vitest";
+import { render, screen, fireEvent, waitFor } from "@testing-library/react";
+import App from "../App";
+
+// Mock the Tauri bridge
+vi.mock("@/lib/tauri-bridge", () => ({
+greet: vi.fn().mockResolvedValue("Hello, Test!"),
+getAppInfo: vi.fn().mockResolvedValue({
+appVersion: "0.1.0",
+tauriVersion: "2.0.0",
+platform: "macos",
+arch: "aarch64",
+}),
+}));
+
+describe("App", () => {
+it("renders the app header", async () => {
+render(
+<App />);
+
+await waitFor(() => {
+expect(screen.getByRole("heading", { level: 1 })).toBeInTheDocument();
+});
+});
+
+it("displays system information", async () => {
+render(
+<App />);
+
+await waitFor(() => {
+expect(screen.getByText("System Information")).toBeInTheDocument();
+});
+});
+
+it("greets the user when form is submitted", async () => {
+render(
+<App />);
+
+const input = screen.getByPlaceholderText(/enter your name/i);
+const button = screen.getByRole("button", { name: /greet/i });
+
+fireEvent.change(input, { target: { value: "Test" } });
+fireEvent.click(button);
+
+await waitFor(() => {
+expect(screen.getByText(/hello, test/i)).toBeInTheDocument();
+});
+});
+});

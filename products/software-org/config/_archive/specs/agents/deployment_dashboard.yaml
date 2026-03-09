@@ -1,0 +1,26 @@
+---
+id: "deployment_dashboard"
+agent: "DeploymentDashboardAgent"
+role: "DevOps/Platform Engineer"
+inputs_spec:
+- name: "deployment_event_log"
+  description: "Deployment event log for dashboard."
+  format: "Deployment event log artifact"
+outputs_spec:
+- name: "deployment_dashboard"
+  description: "Dashboard of deployment status, events, metrics."
+  format: "Deployment dashboard artifact"
+agent_tasks:
+- "Visualize deployment status, events, and metrics."
+- "Update dashboards in real time."
+- "Grant stakeholder access."
+acceptance_criteria:
+- "Status, events, metrics visualized."
+- "Dashboards updated real time."
+- "Stakeholders have access."
+dependencies:
+- "deployment_event_log"
+failure_escalation:
+- "Escalate to DevOps/Platform if dashboard not updated or not accessible."
+references: []
+hitl: false

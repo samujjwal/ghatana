@@ -1,0 +1,90 @@
+// Shared configuration for web applications using ActiveJ
+// NOTE: This file is for ActiveJ-based web modules ONLY.
+//       Spring Boot references have been removed per architectural decision #6.
+
+// Configure web-specific dependencies
+dependencies {
+    // ActiveJ web dependencies — use version catalog
+    implementation libs.activej.http
+    implementation libs.activej.inject
+    
+    // Platform libraries (updated paths per migration mapping)
+    implementation project(':platform:java:security')
+    
+    // API documentation (OpenAPI)
+    implementation 'io.swagger.core.v3:swagger-annotations:2.2.19'
+    
+    // Test dependencies
+    testImplementation project(':platform:java:testing:test-utils')
+    testImplementation 'io.rest-assured:rest-assured:5.3.0'
+    testImplementation 'io.rest-assured:json-path:5.3.0'
+    testImplementation 'io.rest-assured:xml-path:5.3.0'
+}
+
+// Configure frontend build task
+task frontendBuild(type: NodeTask) {
+    script = file('node_modules/webpack/bin/webpack.js')
+    args = ['--mode', 'production']
+    
+    // Only execute if the frontend directory exists
+    onlyIf { file('src/main/frontend').exists() }
+    
+    // Dependencies
+    dependsOn 'npmInstall'
+    
+    // Inputs and outputs for incremental builds
+    inputs.dir('src/main/frontend')
+    inputs.file('package.json')
+    inputs.file('webpack.config.js')
+    outputs.dir('build/resources/main/static')
+}
+
+// Configure npm install task
+task npmInstall(type: NpmTask) {
+    onlyIf { file('package.json').exists() }
+    
+    // Set working directory
+    workingDir = file('.')
+    
+    // Install dependencies
+    args = ['install']
+    
+    // Output directory
+    outputs.dir('node_modules')
+}
+
+// Configure processResources to include frontend build
+processResources.dependsOn 'frontendBuild'
+
+// Configure test task
+test {
+    useJUnitPlatform()
+    
+    // Configure test logging
+    testLogging {
+        events 'passed', 'skipped', 'failed'
+        showStandardStreams = true
+    }
+    
+    // Configure test reports
+    reports {
+        html.required = true
+        junitXml.required = true
+    }
+}
+
+// NOTE: Spring Boot bootRun/bootJar tasks removed.
+// ActiveJ applications use their own Launcher classes.
+// For Docker builds, use the standard application plugin's distTar/distZip.
+
+// Configure Docker Compose down
+tasks.register('dockerComposeDown', Exec) {
+    group = 'Docker'
+    description = 'Stop and remove Docker containers'
+    
+    commandLine 'docker-compose', '-f', 'src/main/docker/docker-compose.yml', 'down'
+    
+    onlyIf {
+        file('src/main/docker/docker-compose.yml').exists()
+    }
+}

@@ -1,0 +1,31 @@
+id: agent.yappc.ux-director
+name: UX Director
+description: User experience design and UI/UX guidance agent
+version: 1.0.0
+type: worker
+category: design
+
+capabilities:
+  - ui-design
+  - ux-research
+  - wireframe-creation
+  - design-system-guidance
+
+requirements:
+  - design-tools
+  - prototyping-tools
+
+parameters:
+  design_system:
+    type: string
+    default: "material-design"
+    description: Design system to follow
+  
+  expertise_level:
+    type: string
+    default: "senior"
+    description: UX expertise level
+
+metadata:
+  author: "YAPPC Team"
+  tags: [ux, design, ui, frontend]

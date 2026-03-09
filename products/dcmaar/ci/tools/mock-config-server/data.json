@@ -1,0 +1,2021 @@
+{
+  "config": {
+    "$schemaId": "ConfigEnvelope.json",
+    "profileId": "local",
+    "version": "1.0.0",
+    "issuedAt": 1700000000,
+    "expiresAt": 1700003600,
+    "capabilities": [
+      {
+        "name": "config_management",
+        "enabled": true
+      }
+    ],
+    "agentConfig": {
+      "adminServer": {
+        "bindAddress": "127.0.0.1:8080",
+        "tlsEnabled": false
+      }
+    },
+    "extensionConfig": {
+      "transport": {
+        "endpoint": "http://localhost:8081",
+        "batchSize": 10,
+        "retryAttempts": 2
+      }
+    },
+    "signature": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+  },
+  "audits": [
+    {
+      "id": "srv_1759605305746",
+      "timestamp": "2025-10-04T19:15:05.746Z",
+      "user": "mock-server",
+      "action": "apply",
+      "summary": "Server applied config",
+      "details": {
+        "old": {
+          "$schemaId": "ConfigEnvelope.json",
+          "profileId": "local",
+          "version": "1.0.0",
+          "issuedAt": 1700000000,
+          "expiresAt": 1700003600,
+          "capabilities": [
+            {
+              "name": "config_management",
+              "enabled": true
+            }
+          ],
+          "agentConfig": {
+            "adminServer": {
+              "bindAddress": "127.0.0.1:8080",
+              "tlsEnabled": false
+            }
+          },
+          "extensionConfig": {
+            "transport": {
+              "endpoint": "http://localhost:8081",
+              "batchSize": 10,
+              "retryAttempts": 2
+            }
+          },
+          "signature": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+        },
+        "new": {
+          "$schemaId": "ConfigEnvelope.json",
+          "profileId": "local",
+          "version": "1.0.0",
+          "issuedAt": 1700000000,
+          "expiresAt": 1700003600,
+          "capabilities": [
+            {
+              "name": "config_management",
+              "enabled": true
+            }
+          ],
+          "agentConfig": {
+            "adminServer": {
+              "bindAddress": "127.0.0.1:8080",
+              "tlsEnabled": false
+            }
+          },
+          "extensionConfig": {
+            "transport": {
+              "endpoint": "http://localhost:8081",
+              "batchSize": 10,
+              "retryAttempts": 2
+            }
+          },
+          "signature": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+        }
+      }
+    },
+    {
+      "id": "srv_1759605057155",
+      "timestamp": "2025-10-04T19:10:57.155Z",
+      "user": "mock-server",
+      "action": "apply",
+      "summary": "Server applied config",
+      "details": {
+        "old": {
+          "$schemaId": "ConfigEnvelope.json",
+          "profileId": "local",
+          "version": "1.0.0",
+          "issuedAt": 1700000000,
+          "expiresAt": 1700003600,
+          "capabilities": [
+            {
+              "name": "config_management",
+              "enabled": true
+            }
+          ],
+          "agentConfig": {
+            "adminServer": {
+              "bindAddress": "127.0.0.1:8080",
+              "tlsEnabled": false
+            }
+          },
+          "extensionConfig": {
+            "transport": {
+              "endpoint": "http://localhost:8081",
+              "batchSize": 10,
+              "retryAttempts": 2
+            }
+          },
+          "signature": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+        },
+        "new": {
+          "$schemaId": "ConfigEnvelope.json",
+          "profileId": "local",
+          "version": "1.0.0",
+          "issuedAt": 1700000000,
+          "expiresAt": 1700003600,
+          "capabilities": [
+            {
+              "name": "config_management",
+              "enabled": true
+            }
+          ],
+          "agentConfig": {
+            "adminServer": {
+              "bindAddress": "127.0.0.1:8080",
+              "tlsEnabled": false
+            }
+          },
+          "extensionConfig": {
+            "transport": {
+              "endpoint": "http://localhost:8081",
+              "batchSize": 10,
+              "retryAttempts": 2
+            }
+          },
+          "signature": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+        }
+      }
+    },
+    {
+      "id": "srv_1759604918115",
+      "timestamp": "2025-10-04T19:08:38.115Z",
+      "user": "mock-server",
+      "action": "apply",
+      "summary": "Server applied config",
+      "details": {
+        "old": {
+          "$schemaId": "ConfigEnvelope.json",
+          "profileId": "local",
+          "version": "1.0.0",
+          "issuedAt": 1700000000,
+          "expiresAt": 1700003600,
+          "capabilities": [
+            {
+              "name": "config_management",
+              "enabled": true
+            }
+          ],
+          "agentConfig": {
+            "adminServer": {
+              "bindAddress": "127.0.0.1:8080",
+              "tlsEnabled": false
+            }
+          },
+          "extensionConfig": {
+            "transport": {
+              "endpoint": "http://localhost:8081",
+              "batchSize": 10,
+              "retryAttempts": 2
+            }
+          },
+          "signature": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+        },
+        "new": {
+          "$schemaId": "ConfigEnvelope.json",
+          "profileId": "local",
+          "version": "1.0.0",
+          "issuedAt": 1700000000,
+          "expiresAt": 1700003600,
+          "capabilities": [
+            {
+              "name": "config_management",
+              "enabled": true
+            }
+          ],
+          "agentConfig": {
+            "adminServer": {
+              "bindAddress": "127.0.0.1:8080",
+              "tlsEnabled": false
+            }
+          },
+          "extensionConfig": {
+            "transport": {
+              "endpoint": "http://localhost:8081",
+              "batchSize": 10,
+              "retryAttempts": 2
+            }
+          },
+          "signature": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+        }
+      }
+    },
+    {
+      "id": "srv_1759603005584",
+      "timestamp": "2025-10-04T18:36:45.584Z",
+      "user": "mock-server",
+      "action": "apply",
+      "summary": "Server applied config",
+      "details": {
+        "old": {
+          "$schemaId": "ConfigEnvelope.json",
+          "profileId": "local",
+          "version": "1.0.0",
+          "issuedAt": 1700000000,
+          "expiresAt": 1700003600,
+          "capabilities": [
+            {
+              "name": "config_management",
+              "enabled": true
+            }
+          ],
+          "agentConfig": {
+            "adminServer": {
+              "bindAddress": "127.0.0.1:8080",
+              "tlsEnabled": false
+            }
+          },
+          "extensionConfig": {
+            "transport": {
+              "endpoint": "http://localhost:8081",
+              "batchSize": 10,
+              "retryAttempts": 2
+            }
+          },
+          "signature": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+        },
+        "new": {
+          "$schemaId": "ConfigEnvelope.json",
+          "profileId": "local",
+          "version": "1.0.0",
+          "issuedAt": 1700000000,
+          "expiresAt": 1700003600,
+          "capabilities": [
+            {
+              "name": "config_management",
+              "enabled": true
+            }
+          ],
+          "agentConfig": {
+            "adminServer": {
+              "bindAddress": "127.0.0.1:8080",
+              "tlsEnabled": false
+            }
+          },
+          "extensionConfig": {
+            "transport": {
+              "endpoint": "http://localhost:8081",
+              "batchSize": 10,
+              "retryAttempts": 2
+            }
+          },
+          "signature": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+        }
+      }
+    },
+    {
+      "id": "srv_1759602968546",
+      "timestamp": "2025-10-04T18:36:08.546Z",
+      "user": "mock-server",
+      "action": "apply",
+      "summary": "Server applied config",
+      "details": {
+        "old": {
+          "$schemaId": "ConfigEnvelope.json",
+          "profileId": "local",
+          "version": "1.0.0",
+          "issuedAt": 1700000000,
+          "expiresAt": 1700003600,
+          "capabilities": [
+            {
+              "name": "config_management",
+              "enabled": true
+            }
+          ],
+          "agentConfig": {
+            "adminServer": {
+              "bindAddress": "127.0.0.1:8080",
+              "tlsEnabled": false
+            }
+          },
+          "extensionConfig": {
+            "transport": {
+              "endpoint": "http://localhost:8081",
+              "batchSize": 10,
+              "retryAttempts": 2
+            }
+          },
+          "signature": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+        },
+        "new": {
+          "$schemaId": "ConfigEnvelope.json",
+          "profileId": "local",
+          "version": "1.0.0",
+          "issuedAt": 1700000000,
+          "expiresAt": 1700003600,
+          "capabilities": [
+            {
+              "name": "config_management",
+              "enabled": true
+            }
+          ],
+          "agentConfig": {
+            "adminServer": {
+              "bindAddress": "127.0.0.1:8080",
+              "tlsEnabled": false
+            }
+          },
+          "extensionConfig": {
+            "transport": {
+              "endpoint": "http://localhost:8081",
+              "batchSize": 10,
+              "retryAttempts": 2
+            }
+          },
+          "signature": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+        }
+      }
+    },
+    {
+      "id": "srv_1759602951093",
+      "timestamp": "2025-10-04T18:35:51.093Z",
+      "user": "mock-server",
+      "action": "apply",
+      "summary": "Server applied config",
+      "details": {
+        "old": {
+          "$schemaId": "ConfigEnvelope.json",
+          "profileId": "local",
+          "version": "1.0.0",
+          "issuedAt": 1700000000,
+          "expiresAt": 1700003600,
+          "capabilities": [
+            {
+              "name": "config_management",
+              "enabled": true
+            }
+          ],
+          "agentConfig": {
+            "adminServer": {
+              "bindAddress": "127.0.0.1:8080",
+              "tlsEnabled": false
+            }
+          },
+          "extensionConfig": {
+            "transport": {
+              "endpoint": "http://localhost:8081",
+              "batchSize": 10,
+              "retryAttempts": 2
+            }
+          },
+          "signature": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+        },
+        "new": {
+          "$schemaId": "ConfigEnvelope.json",
+          "profileId": "local",
+          "version": "1.0.0",
+          "issuedAt": 1700000000,
+          "expiresAt": 1700003600,
+          "capabilities": [
+            {
+              "name": "config_management",
+              "enabled": true
+            }
+          ],
+          "agentConfig": {
+            "adminServer": {
+              "bindAddress": "127.0.0.1:8080",
+              "tlsEnabled": false
+            }
+          },
+          "extensionConfig": {
+            "transport": {
+              "endpoint": "http://localhost:8081",
+              "batchSize": 10,
+              "retryAttempts": 2
+            }
+          },
+          "signature": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+        }
+      }
+    },
+    {
+      "id": "srv_1759602929190",
+      "timestamp": "2025-10-04T18:35:29.190Z",
+      "user": "mock-server",
+      "action": "apply",
+      "summary": "Server applied config",
+      "details": {
+        "old": {
+          "$schemaId": "ConfigEnvelope.json",
+          "profileId": "local",
+          "version": "1.0.0",
+          "issuedAt": 1700000000,
+          "expiresAt": 1700003600,
+          "capabilities": [
+            {
+              "name": "config_management",
+              "enabled": true
+            }
+          ],
+          "agentConfig": {
+            "adminServer": {
+              "bindAddress": "127.0.0.1:8080",
+              "tlsEnabled": false
+            }
+          },
+          "extensionConfig": {
+            "transport": {
+              "endpoint": "http://localhost:8081",
+              "batchSize": 10,
+              "retryAttempts": 2
+            }
+          },
+          "signature": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+        },
+        "new": {
+          "$schemaId": "ConfigEnvelope.json",
+          "profileId": "local",
+          "version": "1.0.0",
+          "issuedAt": 1700000000,
+          "expiresAt": 1700003600,
+          "capabilities": [
+            {
+              "name": "config_management",
+              "enabled": true
+            }
+          ],
+          "agentConfig": {
+            "adminServer": {
+              "bindAddress": "127.0.0.1:8080",
+              "tlsEnabled": false
+            }
+          },
+          "extensionConfig": {
+            "transport": {
+              "endpoint": "http://localhost:8081",
+              "batchSize": 10,
+              "retryAttempts": 2
+            }
+          },
+          "signature": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+        }
+      }
+    },
+    {
+      "id": "srv_1759602852814",
+      "timestamp": "2025-10-04T18:34:12.814Z",
+      "user": "mock-server",
+      "action": "apply",
+      "summary": "Server applied config",
+      "details": {
+        "old": {
+          "$schemaId": "ConfigEnvelope.json",
+          "profileId": "local",
+          "version": "1.0.0",
+          "issuedAt": 1700000000,
+          "expiresAt": 1700003600,
+          "capabilities": [
+            {
+              "name": "config_management",
+              "enabled": true
+            }
+          ],
+          "agentConfig": {
+            "adminServer": {
+              "bindAddress": "127.0.0.1:8080",
+              "tlsEnabled": false
+            }
+          },
+          "extensionConfig": {
+            "transport": {
+              "endpoint": "http://localhost:8081",
+              "batchSize": 10,
+              "retryAttempts": 2
+            }
+          },
+          "signature": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+        },
+        "new": {
+          "$schemaId": "ConfigEnvelope.json",
+          "profileId": "local",
+          "version": "1.0.0",
+          "issuedAt": 1700000000,
+          "expiresAt": 1700003600,
+          "capabilities": [
+            {
+              "name": "config_management",
+              "enabled": true
+            }
+          ],
+          "agentConfig": {
+            "adminServer": {
+              "bindAddress": "127.0.0.1:8080",
+              "tlsEnabled": false
+            }
+          },
+          "extensionConfig": {
+            "transport": {
+              "endpoint": "http://localhost:8081",
+              "batchSize": 10,
+              "retryAttempts": 2
+            }
+          },
+          "signature": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+        }
+      }
+    },
+    {
+      "id": "srv_1759602817708",
+      "timestamp": "2025-10-04T18:33:37.708Z",
+      "user": "mock-server",
+      "action": "apply",
+      "summary": "Server applied config",
+      "details": {
+        "old": {
+          "$schemaId": "ConfigEnvelope.json",
+          "profileId": "local",
+          "version": "1.0.0",
+          "issuedAt": 1700000000,
+          "expiresAt": 1700003600,
+          "capabilities": [
+            {
+              "name": "config_management",
+              "enabled": true
+            }
+          ],
+          "agentConfig": {
+            "adminServer": {
+              "bindAddress": "127.0.0.1:8080",
+              "tlsEnabled": false
+            }
+          },
+          "extensionConfig": {
+            "transport": {
+              "endpoint": "http://localhost:8081",
+              "batchSize": 10,
+              "retryAttempts": 2
+            }
+          },
+          "signature": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+        },
+        "new": {
+          "$schemaId": "ConfigEnvelope.json",
+          "profileId": "local",
+          "version": "1.0.0",
+          "issuedAt": 1700000000,
+          "expiresAt": 1700003600,
+          "capabilities": [
+            {
+              "name": "config_management",
+              "enabled": true
+            }
+          ],
+          "agentConfig": {
+            "adminServer": {
+              "bindAddress": "127.0.0.1:8080",
+              "tlsEnabled": false
+            }
+          },
+          "extensionConfig": {
+            "transport": {
+              "endpoint": "http://localhost:8081",
+              "batchSize": 10,
+              "retryAttempts": 2
+            }
+          },
+          "signature": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+        }
+      }
+    },
+    {
+      "id": "srv_1759602405381",
+      "timestamp": "2025-10-04T18:26:45.381Z",
+      "user": "mock-server",
+      "action": "apply",
+      "summary": "Server applied config",
+      "details": {
+        "old": {
+          "$schemaId": "ConfigEnvelope.json",
+          "profileId": "local",
+          "version": "1.0.0",
+          "issuedAt": 1700000000,
+          "expiresAt": 1700003600,
+          "capabilities": [
+            {
+              "name": "config_management",
+              "enabled": true
+            }
+          ],
+          "agentConfig": {
+            "adminServer": {
+              "bindAddress": "127.0.0.1:8080",
+              "tlsEnabled": false
+            }
+          },
+          "extensionConfig": {
+            "transport": {
+              "endpoint": "http://localhost:8081",
+              "batchSize": 10,
+              "retryAttempts": 2
+            }
+          },
+          "signature": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+        },
+        "new": {
+          "$schemaId": "ConfigEnvelope.json",
+          "profileId": "local",
+          "version": "1.0.0",
+          "issuedAt": 1700000000,
+          "expiresAt": 1700003600,
+          "capabilities": [
+            {
+              "name": "config_management",
+              "enabled": true
+            }
+          ],
+          "agentConfig": {
+            "adminServer": {
+              "bindAddress": "127.0.0.1:8080",
+              "tlsEnabled": false
+            }
+          },
+          "extensionConfig": {
+            "transport": {
+              "endpoint": "http://localhost:8081",
+              "batchSize": 10,
+              "retryAttempts": 2
+            }
+          },
+          "signature": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+        }
+      }
+    },
+    {
+      "id": "srv_1759600872532",
+      "timestamp": "2025-10-04T18:01:12.532Z",
+      "user": "mock-server",
+      "action": "apply",
+      "summary": "Server applied config",
+      "details": {
+        "old": {
+          "$schemaId": "ConfigEnvelope.json",
+          "profileId": "local",
+          "version": "1.0.0",
+          "issuedAt": 1700000000,
+          "expiresAt": 1700003600,
+          "capabilities": [
+            {
+              "name": "config_management",
+              "enabled": true
+            }
+          ],
+          "agentConfig": {
+            "adminServer": {
+              "bindAddress": "127.0.0.1:8080",
+              "tlsEnabled": false
+            }
+          },
+          "extensionConfig": {
+            "transport": {
+              "endpoint": "http://localhost:8081",
+              "batchSize": 10,
+              "retryAttempts": 2
+            }
+          },
+          "signature": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+        },
+        "new": {
+          "$schemaId": "ConfigEnvelope.json",
+          "profileId": "local",
+          "version": "1.0.0",
+          "issuedAt": 1700000000,
+          "expiresAt": 1700003600,
+          "capabilities": [
+            {
+              "name": "config_management",
+              "enabled": true
+            }
+          ],
+          "agentConfig": {
+            "adminServer": {
+              "bindAddress": "127.0.0.1:8080",
+              "tlsEnabled": false
+            }
+          },
+          "extensionConfig": {
+            "transport": {
+              "endpoint": "http://localhost:8081",
+              "batchSize": 10,
+              "retryAttempts": 2
+            }
+          },
+          "signature": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+        }
+      }
+    },
+    {
+      "id": "srv_1759600604213",
+      "timestamp": "2025-10-04T17:56:44.213Z",
+      "user": "mock-server",
+      "action": "apply",
+      "summary": "Server applied config",
+      "details": {
+        "old": {
+          "$schemaId": "ConfigEnvelope.json",
+          "profileId": "local",
+          "version": "1.0.0",
+          "issuedAt": 1700000000,
+          "expiresAt": 1700003600,
+          "capabilities": [
+            {
+              "name": "config_management",
+              "enabled": true
+            }
+          ],
+          "agentConfig": {
+            "adminServer": {
+              "bindAddress": "127.0.0.1:8080",
+              "tlsEnabled": false
+            }
+          },
+          "extensionConfig": {
+            "transport": {
+              "endpoint": "http://localhost:8081",
+              "batchSize": 10,
+              "retryAttempts": 2
+            }
+          },
+          "signature": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+        },
+        "new": {
+          "$schemaId": "ConfigEnvelope.json",
+          "profileId": "local",
+          "version": "1.0.0",
+          "issuedAt": 1700000000,
+          "expiresAt": 1700003600,
+          "capabilities": [
+            {
+              "name": "config_management",
+              "enabled": true
+            }
+          ],
+          "agentConfig": {
+            "adminServer": {
+              "bindAddress": "127.0.0.1:8080",
+              "tlsEnabled": false
+            }
+          },
+          "extensionConfig": {
+            "transport": {
+              "endpoint": "http://localhost:8081",
+              "batchSize": 10,
+              "retryAttempts": 2
+            }
+          },
+          "signature": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+        }
+      }
+    },
+    {
+      "id": "srv_1759599955993",
+      "timestamp": "2025-10-04T17:45:55.993Z",
+      "user": "mock-server",
+      "action": "apply",
+      "summary": "Server applied config",
+      "details": {
+        "old": {
+          "$schemaId": "ConfigEnvelope.json",
+          "profileId": "local",
+          "version": "1.0.0",
+          "issuedAt": 1700000000,
+          "expiresAt": 1700003600,
+          "capabilities": [
+            {
+              "name": "config_management",
+              "enabled": true
+            }
+          ],
+          "agentConfig": {
+            "adminServer": {
+              "bindAddress": "127.0.0.1:8080",
+              "tlsEnabled": false
+            }
+          },
+          "extensionConfig": {
+            "transport": {
+              "endpoint": "http://localhost:8081",
+              "batchSize": 10,
+              "retryAttempts": 2
+            }
+          },
+          "signature": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+        },
+        "new": {
+          "$schemaId": "ConfigEnvelope.json",
+          "profileId": "local",
+          "version": "1.0.0",
+          "issuedAt": 1700000000,
+          "expiresAt": 1700003600,
+          "capabilities": [
+            {
+              "name": "config_management",
+              "enabled": true
+            }
+          ],
+          "agentConfig": {
+            "adminServer": {
+              "bindAddress": "127.0.0.1:8080",
+              "tlsEnabled": false
+            }
+          },
+          "extensionConfig": {
+            "transport": {
+              "endpoint": "http://localhost:8081",
+              "batchSize": 10,
+              "retryAttempts": 2
+            }
+          },
+          "signature": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+        }
+      }
+    },
+    {
+      "id": "srv_1759597161171",
+      "timestamp": "2025-10-04T16:59:21.171Z",
+      "user": "mock-server",
+      "action": "apply",
+      "summary": "Server applied config",
+      "details": {
+        "old": {
+          "$schemaId": "ConfigEnvelope.json",
+          "profileId": "local",
+          "version": "1.0.0",
+          "issuedAt": 1700000000,
+          "expiresAt": 1700003600,
+          "capabilities": [
+            {
+              "name": "config_management",
+              "enabled": true
+            }
+          ],
+          "agentConfig": {
+            "adminServer": {
+              "bindAddress": "127.0.0.1:8080",
+              "tlsEnabled": false
+            }
+          },
+          "extensionConfig": {
+            "transport": {
+              "endpoint": "http://localhost:8081",
+              "batchSize": 10,
+              "retryAttempts": 2
+            }
+          },
+          "signature": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+        },
+        "new": {
+          "$schemaId": "ConfigEnvelope.json",
+          "profileId": "local",
+          "version": "1.0.0",
+          "issuedAt": 1700000000,
+          "expiresAt": 1700003600,
+          "capabilities": [
+            {
+              "name": "config_management",
+              "enabled": true
+            }
+          ],
+          "agentConfig": {
+            "adminServer": {
+              "bindAddress": "127.0.0.1:8080",
+              "tlsEnabled": false
+            }
+          },
+          "extensionConfig": {
+            "transport": {
+              "endpoint": "http://localhost:8081",
+              "batchSize": 10,
+              "retryAttempts": 2
+            }
+          },
+          "signature": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+        }
+      }
+    },
+    {
+      "id": "srv_1759461951119",
+      "timestamp": "2025-10-03T03:25:51.119Z",
+      "user": "mock-server",
+      "action": "apply",
+      "summary": "Server applied config",
+      "details": {
+        "old": {
+          "$schemaId": "ConfigEnvelope.json",
+          "profileId": "local",
+          "version": "1.0.0",
+          "issuedAt": 1700000000,
+          "expiresAt": 1700003600,
+          "capabilities": [
+            {
+              "name": "config_management",
+              "enabled": true
+            }
+          ],
+          "agentConfig": {
+            "adminServer": {
+              "bindAddress": "127.0.0.1:8080",
+              "tlsEnabled": false
+            }
+          },
+          "extensionConfig": {
+            "transport": {
+              "endpoint": "http://localhost:8081",
+              "batchSize": 10,
+              "retryAttempts": 2
+            }
+          },
+          "signature": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+        },
+        "new": {
+          "$schemaId": "ConfigEnvelope.json",
+          "profileId": "local",
+          "version": "1.0.0",
+          "issuedAt": 1700000000,
+          "expiresAt": 1700003600,
+          "capabilities": [
+            {
+              "name": "config_management",
+              "enabled": true
+            }
+          ],
+          "agentConfig": {
+            "adminServer": {
+              "bindAddress": "127.0.0.1:8080",
+              "tlsEnabled": false
+            }
+          },
+          "extensionConfig": {
+            "transport": {
+              "endpoint": "http://localhost:8081",
+              "batchSize": 10,
+              "retryAttempts": 2
+            }
+          },
+          "signature": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+        }
+      }
+    },
+    {
+      "id": "srv_1759460884171",
+      "timestamp": "2025-10-03T03:08:04.171Z",
+      "user": "mock-server",
+      "action": "apply",
+      "summary": "Server applied config",
+      "details": {
+        "old": {
+          "$schemaId": "ConfigEnvelope.json",
+          "profileId": "local",
+          "version": "1.0.0",
+          "issuedAt": 1700000000,
+          "expiresAt": 1700003600,
+          "capabilities": [
+            {
+              "name": "config_management",
+              "enabled": true
+            }
+          ],
+          "agentConfig": {
+            "adminServer": {
+              "bindAddress": "127.0.0.1:8080",
+              "tlsEnabled": false
+            }
+          },
+          "extensionConfig": {
+            "transport": {
+              "endpoint": "http://localhost:8081",
+              "batchSize": 10,
+              "retryAttempts": 2
+            }
+          },
+          "signature": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+        },
+        "new": {
+          "$schemaId": "ConfigEnvelope.json",
+          "profileId": "local",
+          "version": "1.0.0",
+          "issuedAt": 1700000000,
+          "expiresAt": 1700003600,
+          "capabilities": [
+            {
+              "name": "config_management",
+              "enabled": true
+            }
+          ],
+          "agentConfig": {
+            "adminServer": {
+              "bindAddress": "127.0.0.1:8080",
+              "tlsEnabled": false
+            }
+          },
+          "extensionConfig": {
+            "transport": {
+              "endpoint": "http://localhost:8081",
+              "batchSize": 10,
+              "retryAttempts": 2
+            }
+          },
+          "signature": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+        }
+      }
+    },
+    {
+      "id": "srv_1759460762967",
+      "timestamp": "2025-10-03T03:06:02.967Z",
+      "user": "mock-server",
+      "action": "apply",
+      "summary": "Server applied config",
+      "details": {
+        "old": {
+          "$schemaId": "ConfigEnvelope.json",
+          "profileId": "local",
+          "version": "1.0.0",
+          "issuedAt": 1700000000,
+          "expiresAt": 1700003600,
+          "capabilities": [
+            {
+              "name": "config_management",
+              "enabled": true
+            }
+          ],
+          "agentConfig": {
+            "adminServer": {
+              "bindAddress": "127.0.0.1:8080",
+              "tlsEnabled": false
+            }
+          },
+          "extensionConfig": {
+            "transport": {
+              "endpoint": "http://localhost:8081",
+              "batchSize": 10,
+              "retryAttempts": 2
+            }
+          },
+          "signature": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+        },
+        "new": {
+          "$schemaId": "ConfigEnvelope.json",
+          "profileId": "local",
+          "version": "1.0.0",
+          "issuedAt": 1700000000,
+          "expiresAt": 1700003600,
+          "capabilities": [
+            {
+              "name": "config_management",
+              "enabled": true
+            }
+          ],
+          "agentConfig": {
+            "adminServer": {
+              "bindAddress": "127.0.0.1:8080",
+              "tlsEnabled": false
+            }
+          },
+          "extensionConfig": {
+            "transport": {
+              "endpoint": "http://localhost:8081",
+              "batchSize": 10,
+              "retryAttempts": 2
+            }
+          },
+          "signature": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+        }
+      }
+    },
+    {
+      "id": "srv_1759460435905",
+      "timestamp": "2025-10-03T03:00:35.905Z",
+      "user": "mock-server",
+      "action": "apply",
+      "summary": "Server applied config",
+      "details": {
+        "old": {
+          "$schemaId": "ConfigEnvelope.json",
+          "profileId": "local",
+          "version": "1.0.0",
+          "issuedAt": 1700000000,
+          "expiresAt": 1700003600,
+          "capabilities": [
+            {
+              "name": "config_management",
+              "enabled": true
+            }
+          ],
+          "agentConfig": {
+            "adminServer": {
+              "bindAddress": "127.0.0.1:8080",
+              "tlsEnabled": false
+            }
+          },
+          "extensionConfig": {
+            "transport": {
+              "endpoint": "http://localhost:8081",
+              "batchSize": 10,
+              "retryAttempts": 2
+            }
+          },
+          "signature": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+        },
+        "new": {
+          "$schemaId": "ConfigEnvelope.json",
+          "profileId": "local",
+          "version": "1.0.0",
+          "issuedAt": 1700000000,
+          "expiresAt": 1700003600,
+          "capabilities": [
+            {
+              "name": "config_management",
+              "enabled": true
+            }
+          ],
+          "agentConfig": {
+            "adminServer": {
+              "bindAddress": "127.0.0.1:8080",
+              "tlsEnabled": false
+            }
+          },
+          "extensionConfig": {
+            "transport": {
+              "endpoint": "http://localhost:8081",
+              "batchSize": 10,
+              "retryAttempts": 2
+            }
+          },
+          "signature": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+        }
+      }
+    },
+    {
+      "id": "srv_1759460077916",
+      "timestamp": "2025-10-03T02:54:37.916Z",
+      "user": "mock-server",
+      "action": "apply",
+      "summary": "Server applied config",
+      "details": {
+        "old": {
+          "$schemaId": "ConfigEnvelope.json",
+          "profileId": "local",
+          "version": "1.0.0",
+          "issuedAt": 1700000000,
+          "expiresAt": 1700003600,
+          "capabilities": [
+            {
+              "name": "config_management",
+              "enabled": true
+            }
+          ],
+          "agentConfig": {
+            "adminServer": {
+              "bindAddress": "127.0.0.1:8080",
+              "tlsEnabled": false
+            }
+          },
+          "extensionConfig": {
+            "transport": {
+              "endpoint": "http://localhost:8081",
+              "batchSize": 10,
+              "retryAttempts": 2
+            }
+          },
+          "signature": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+        },
+        "new": {
+          "$schemaId": "ConfigEnvelope.json",
+          "profileId": "local",
+          "version": "1.0.0",
+          "issuedAt": 1700000000,
+          "expiresAt": 1700003600,
+          "capabilities": [
+            {
+              "name": "config_management",
+              "enabled": true
+            }
+          ],
+          "agentConfig": {
+            "adminServer": {
+              "bindAddress": "127.0.0.1:8080",
+              "tlsEnabled": false
+            }
+          },
+          "extensionConfig": {
+            "transport": {
+              "endpoint": "http://localhost:8081",
+              "batchSize": 10,
+              "retryAttempts": 2
+            }
+          },
+          "signature": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+        }
+      }
+    },
+    {
+      "id": "srv_1759458809764",
+      "timestamp": "2025-10-03T02:33:29.764Z",
+      "user": "mock-server",
+      "action": "apply",
+      "summary": "Server applied config",
+      "details": {
+        "old": {
+          "$schemaId": "ConfigEnvelope.json",
+          "profileId": "local",
+          "version": "1.0.0",
+          "issuedAt": 1700000000,
+          "expiresAt": 1700003600,
+          "capabilities": [
+            {
+              "name": "config_management",
+              "enabled": true
+            }
+          ],
+          "agentConfig": {
+            "adminServer": {
+              "bindAddress": "127.0.0.1:8080",
+              "tlsEnabled": false
+            }
+          },
+          "extensionConfig": {
+            "transport": {
+              "endpoint": "http://localhost:8081",
+              "batchSize": 10,
+              "retryAttempts": 2
+            }
+          },
+          "signature": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+        },
+        "new": {
+          "$schemaId": "ConfigEnvelope.json",
+          "profileId": "local",
+          "version": "1.0.0",
+          "issuedAt": 1700000000,
+          "expiresAt": 1700003600,
+          "capabilities": [
+            {
+              "name": "config_management",
+              "enabled": true
+            }
+          ],
+          "agentConfig": {
+            "adminServer": {
+              "bindAddress": "127.0.0.1:8080",
+              "tlsEnabled": false
+            }
+          },
+          "extensionConfig": {
+            "transport": {
+              "endpoint": "http://localhost:8081",
+              "batchSize": 10,
+              "retryAttempts": 2
+            }
+          },
+          "signature": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+        }
+      }
+    },
+    {
+      "id": "srv_1759458608321",
+      "timestamp": "2025-10-03T02:30:08.321Z",
+      "user": "mock-server",
+      "action": "apply",
+      "summary": "Server applied config",
+      "details": {
+        "old": {
+          "$schemaId": "ConfigEnvelope.json",
+          "profileId": "local",
+          "version": "1.0.0",
+          "issuedAt": 1700000000,
+          "expiresAt": 1700003600,
+          "capabilities": [
+            {
+              "name": "config_management",
+              "enabled": true
+            }
+          ],
+          "agentConfig": {
+            "adminServer": {
+              "bindAddress": "127.0.0.1:8080",
+              "tlsEnabled": false
+            }
+          },
+          "extensionConfig": {
+            "transport": {
+              "endpoint": "http://localhost:8081",
+              "batchSize": 10,
+              "retryAttempts": 2
+            }
+          },
+          "signature": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+        },
+        "new": {
+          "$schemaId": "ConfigEnvelope.json",
+          "profileId": "local",
+          "version": "1.0.0",
+          "issuedAt": 1700000000,
+          "expiresAt": 1700003600,
+          "capabilities": [
+            {
+              "name": "config_management",
+              "enabled": true
+            }
+          ],
+          "agentConfig": {
+            "adminServer": {
+              "bindAddress": "127.0.0.1:8080",
+              "tlsEnabled": false
+            }
+          },
+          "extensionConfig": {
+            "transport": {
+              "endpoint": "http://localhost:8081",
+              "batchSize": 10,
+              "retryAttempts": 2
+            }
+          },
+          "signature": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+        }
+      }
+    },
+    {
+      "id": "srv_1759458430009",
+      "timestamp": "2025-10-03T02:27:10.009Z",
+      "user": "mock-server",
+      "action": "apply",
+      "summary": "Server applied config",
+      "details": {
+        "old": {
+          "$schemaId": "ConfigEnvelope.json",
+          "profileId": "local",
+          "version": "1.0.0",
+          "issuedAt": 1700000000,
+          "expiresAt": 1700003600,
+          "capabilities": [
+            {
+              "name": "config_management",
+              "enabled": true
+            }
+          ],
+          "agentConfig": {
+            "adminServer": {
+              "bindAddress": "127.0.0.1:8080",
+              "tlsEnabled": false
+            }
+          },
+          "extensionConfig": {
+            "transport": {
+              "endpoint": "http://localhost:8081",
+              "batchSize": 10,
+              "retryAttempts": 2
+            }
+          },
+          "signature": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+        },
+        "new": {
+          "$schemaId": "ConfigEnvelope.json",
+          "profileId": "local",
+          "version": "1.0.0",
+          "issuedAt": 1700000000,
+          "expiresAt": 1700003600,
+          "capabilities": [
+            {
+              "name": "config_management",
+              "enabled": true
+            }
+          ],
+          "agentConfig": {
+            "adminServer": {
+              "bindAddress": "127.0.0.1:8080",
+              "tlsEnabled": false
+            }
+          },
+          "extensionConfig": {
+            "transport": {
+              "endpoint": "http://localhost:8081",
+              "batchSize": 10,
+              "retryAttempts": 2
+            }
+          },
+          "signature": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+        }
+      }
+    },
+    {
+      "id": "srv_1759457763679",
+      "timestamp": "2025-10-03T02:16:03.679Z",
+      "user": "mock-server",
+      "action": "apply",
+      "summary": "Server applied config",
+      "details": {
+        "old": {
+          "$schemaId": "ConfigEnvelope.json",
+          "profileId": "local",
+          "version": "1.0.0",
+          "issuedAt": 1700000000,
+          "expiresAt": 1700003600,
+          "capabilities": [
+            {
+              "name": "config_management",
+              "enabled": true
+            }
+          ],
+          "agentConfig": {
+            "adminServer": {
+              "bindAddress": "127.0.0.1:8080",
+              "tlsEnabled": false
+            }
+          },
+          "extensionConfig": {
+            "transport": {
+              "endpoint": "http://localhost:8081",
+              "batchSize": 10,
+              "retryAttempts": 2
+            }
+          },
+          "signature": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+        },
+        "new": {
+          "$schemaId": "ConfigEnvelope.json",
+          "profileId": "local",
+          "version": "1.0.0",
+          "issuedAt": 1700000000,
+          "expiresAt": 1700003600,
+          "capabilities": [
+            {
+              "name": "config_management",
+              "enabled": true
+            }
+          ],
+          "agentConfig": {
+            "adminServer": {
+              "bindAddress": "127.0.0.1:8080",
+              "tlsEnabled": false
+            }
+          },
+          "extensionConfig": {
+            "transport": {
+              "endpoint": "http://localhost:8081",
+              "batchSize": 10,
+              "retryAttempts": 2
+            }
+          },
+          "signature": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+        }
+      }
+    },
+    {
+      "id": "srv_1759456758201",
+      "timestamp": "2025-10-03T01:59:18.201Z",
+      "user": "mock-server",
+      "action": "apply",
+      "summary": "Server applied config",
+      "details": {
+        "old": {
+          "$schemaId": "ConfigEnvelope.json",
+          "profileId": "local",
+          "version": "1.0.0",
+          "issuedAt": 1700000000,
+          "expiresAt": 1700003600,
+          "capabilities": [
+            {
+              "name": "config_management",
+              "enabled": true
+            }
+          ],
+          "agentConfig": {
+            "adminServer": {
+              "bindAddress": "127.0.0.1:8080",
+              "tlsEnabled": false
+            }
+          },
+          "extensionConfig": {
+            "transport": {
+              "endpoint": "http://localhost:8081",
+              "batchSize": 10,
+              "retryAttempts": 2
+            }
+          },
+          "signature": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+        },
+        "new": {
+          "$schemaId": "ConfigEnvelope.json",
+          "profileId": "local",
+          "version": "1.0.0",
+          "issuedAt": 1700000000,
+          "expiresAt": 1700003600,
+          "capabilities": [
+            {
+              "name": "config_management",
+              "enabled": true
+            }
+          ],
+          "agentConfig": {
+            "adminServer": {
+              "bindAddress": "127.0.0.1:8080",
+              "tlsEnabled": false
+            }
+          },
+          "extensionConfig": {
+            "transport": {
+              "endpoint": "http://localhost:8081",
+              "batchSize": 10,
+              "retryAttempts": 2
+            }
+          },
+          "signature": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+        }
+      }
+    },
+    {
+      "id": "srv_1759456307846",
+      "timestamp": "2025-10-03T01:51:47.846Z",
+      "user": "mock-server",
+      "action": "apply",
+      "summary": "Server applied config",
+      "details": {
+        "old": {
+          "$schemaId": "ConfigEnvelope.json",
+          "profileId": "local",
+          "version": "1.0.0",
+          "issuedAt": 1700000000,
+          "expiresAt": 1700003600,
+          "capabilities": [
+            {
+              "name": "config_management",
+              "enabled": true
+            }
+          ],
+          "agentConfig": {
+            "adminServer": {
+              "bindAddress": "127.0.0.1:8080",
+              "tlsEnabled": false
+            }
+          },
+          "extensionConfig": {
+            "transport": {
+              "endpoint": "http://localhost:8081",
+              "batchSize": 10,
+              "retryAttempts": 2
+            }
+          },
+          "signature": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+        },
+        "new": {
+          "$schemaId": "ConfigEnvelope.json",
+          "profileId": "local",
+          "version": "1.0.0",
+          "issuedAt": 1700000000,
+          "expiresAt": 1700003600,
+          "capabilities": [
+            {
+              "name": "config_management",
+              "enabled": true
+            }
+          ],
+          "agentConfig": {
+            "adminServer": {
+              "bindAddress": "127.0.0.1:8080",
+              "tlsEnabled": false
+            }
+          },
+          "extensionConfig": {
+            "transport": {
+              "endpoint": "http://localhost:8081",
+              "batchSize": 10,
+              "retryAttempts": 2
+            }
+          },
+          "signature": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+        }
+      }
+    },
+    {
+      "id": "srv_1759456192717",
+      "timestamp": "2025-10-03T01:49:52.717Z",
+      "user": "mock-server",
+      "action": "apply",
+      "summary": "Server applied config",
+      "details": {
+        "old": {
+          "$schemaId": "ConfigEnvelope.json",
+          "profileId": "local",
+          "version": "1.0.0",
+          "issuedAt": 1700000000,
+          "expiresAt": 1700003600,
+          "capabilities": [
+            {
+              "name": "config_management",
+              "enabled": true
+            }
+          ],
+          "agentConfig": {
+            "adminServer": {
+              "bindAddress": "127.0.0.1:8080",
+              "tlsEnabled": false
+            }
+          },
+          "extensionConfig": {
+            "transport": {
+              "endpoint": "http://localhost:8081",
+              "batchSize": 10,
+              "retryAttempts": 2
+            }
+          },
+          "signature": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+        },
+        "new": {
+          "$schemaId": "ConfigEnvelope.json",
+          "profileId": "local",
+          "version": "1.0.0",
+          "issuedAt": 1700000000,
+          "expiresAt": 1700003600,
+          "capabilities": [
+            {
+              "name": "config_management",
+              "enabled": true
+            }
+          ],
+          "agentConfig": {
+            "adminServer": {
+              "bindAddress": "127.0.0.1:8080",
+              "tlsEnabled": false
+            }
+          },
+          "extensionConfig": {
+            "transport": {
+              "endpoint": "http://localhost:8081",
+              "batchSize": 10,
+              "retryAttempts": 2
+            }
+          },
+          "signature": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+        }
+      }
+    },
+    {
+      "id": "srv_1759456015767",
+      "timestamp": "2025-10-03T01:46:55.767Z",
+      "user": "mock-server",
+      "action": "apply",
+      "summary": "Server applied config",
+      "details": {
+        "old": {
+          "$schemaId": "ConfigEnvelope.json",
+          "profileId": "local",
+          "version": "1.0.0",
+          "issuedAt": 1700000000,
+          "expiresAt": 1700003600,
+          "capabilities": [
+            {
+              "name": "config_management",
+              "enabled": true
+            }
+          ],
+          "agentConfig": {
+            "adminServer": {
+              "bindAddress": "127.0.0.1:8080",
+              "tlsEnabled": false
+            }
+          },
+          "extensionConfig": {
+            "transport": {
+              "endpoint": "http://localhost:8081",
+              "batchSize": 10,
+              "retryAttempts": 2
+            }
+          },
+          "signature": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+        },
+        "new": {
+          "$schemaId": "ConfigEnvelope.json",
+          "profileId": "local",
+          "version": "1.0.0",
+          "issuedAt": 1700000000,
+          "expiresAt": 1700003600,
+          "capabilities": [
+            {
+              "name": "config_management",
+              "enabled": true
+            }
+          ],
+          "agentConfig": {
+            "adminServer": {
+              "bindAddress": "127.0.0.1:8080",
+              "tlsEnabled": false
+            }
+          },
+          "extensionConfig": {
+            "transport": {
+              "endpoint": "http://localhost:8081",
+              "batchSize": 10,
+              "retryAttempts": 2
+            }
+          },
+          "signature": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+        }
+      }
+    },
+    {
+      "id": "srv_1759455404739",
+      "timestamp": "2025-10-03T01:36:44.739Z",
+      "user": "mock-server",
+      "action": "apply",
+      "summary": "Server applied config",
+      "details": {
+        "old": {
+          "$schemaId": "ConfigEnvelope.json",
+          "profileId": "local",
+          "version": "1.0.0",
+          "issuedAt": 1700000000,
+          "expiresAt": 1700003600,
+          "capabilities": [
+            {
+              "name": "config_management",
+              "enabled": true
+            }
+          ],
+          "agentConfig": {
+            "adminServer": {
+              "bindAddress": "127.0.0.1:8080",
+              "tlsEnabled": false
+            }
+          },
+          "extensionConfig": {
+            "transport": {
+              "endpoint": "http://localhost:8081",
+              "batchSize": 10,
+              "retryAttempts": 2
+            }
+          },
+          "signature": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+        },
+        "new": {
+          "$schemaId": "ConfigEnvelope.json",
+          "profileId": "local",
+          "version": "1.0.0",
+          "issuedAt": 1700000000,
+          "expiresAt": 1700003600,
+          "capabilities": [
+            {
+              "name": "config_management",
+              "enabled": true
+            }
+          ],
+          "agentConfig": {
+            "adminServer": {
+              "bindAddress": "127.0.0.1:8080",
+              "tlsEnabled": false
+            }
+          },
+          "extensionConfig": {
+            "transport": {
+              "endpoint": "http://localhost:8081",
+              "batchSize": 10,
+              "retryAttempts": 2
+            }
+          },
+          "signature": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+        }
+      }
+    },
+    {
+      "id": "srv_1759454476301",
+      "timestamp": "2025-10-03T01:21:16.301Z",
+      "user": "mock-server",
+      "action": "apply",
+      "summary": "Server applied config",
+      "details": {
+        "old": {
+          "$schemaId": "ConfigEnvelope.json",
+          "profileId": "local",
+          "version": "1.0.0",
+          "issuedAt": 1700000000,
+          "expiresAt": 1700003600,
+          "capabilities": [
+            {
+              "name": "config_management",
+              "enabled": true
+            }
+          ],
+          "agentConfig": {
+            "adminServer": {
+              "bindAddress": "127.0.0.1:8080",
+              "tlsEnabled": false
+            }
+          },
+          "extensionConfig": {
+            "transport": {
+              "endpoint": "http://localhost:8081",
+              "batchSize": 10,
+              "retryAttempts": 2
+            }
+          },
+          "signature": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+        },
+        "new": {
+          "$schemaId": "ConfigEnvelope.json",
+          "profileId": "local",
+          "version": "1.0.0",
+          "issuedAt": 1700000000,
+          "expiresAt": 1700003600,
+          "capabilities": [
+            {
+              "name": "config_management",
+              "enabled": true
+            }
+          ],
+          "agentConfig": {
+            "adminServer": {
+              "bindAddress": "127.0.0.1:8080",
+              "tlsEnabled": false
+            }
+          },
+          "extensionConfig": {
+            "transport": {
+              "endpoint": "http://localhost:8081",
+              "batchSize": 10,
+              "retryAttempts": 2
+            }
+          },
+          "signature": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+        }
+      }
+    },
+    {
+      "id": "srv_1759453985304",
+      "timestamp": "2025-10-03T01:13:05.304Z",
+      "user": "mock-server",
+      "action": "apply",
+      "summary": "Server applied config",
+      "details": {
+        "old": {
+          "$schemaId": "ConfigEnvelope.json",
+          "profileId": "local",
+          "version": "1.0.0",
+          "issuedAt": 1700000000,
+          "expiresAt": 1700003600,
+          "capabilities": [
+            {
+              "name": "config_management",
+              "enabled": true
+            }
+          ],
+          "agentConfig": {
+            "adminServer": {
+              "bindAddress": "127.0.0.1:8080",
+              "tlsEnabled": false
+            }
+          },
+          "extensionConfig": {
+            "transport": {
+              "endpoint": "http://localhost:8081",
+              "batchSize": 10,
+              "retryAttempts": 2
+            }
+          },
+          "signature": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+        },
+        "new": {
+          "$schemaId": "ConfigEnvelope.json",
+          "profileId": "local",
+          "version": "1.0.0",
+          "issuedAt": 1700000000,
+          "expiresAt": 1700003600,
+          "capabilities": [
+            {
+              "name": "config_management",
+              "enabled": true
+            }
+          ],
+          "agentConfig": {
+            "adminServer": {
+              "bindAddress": "127.0.0.1:8080",
+              "tlsEnabled": false
+            }
+          },
+          "extensionConfig": {
+            "transport": {
+              "endpoint": "http://localhost:8081",
+              "batchSize": 10,
+              "retryAttempts": 2
+            }
+          },
+          "signature": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+        }
+      }
+    },
+    {
+      "id": "srv_1759452875646",
+      "timestamp": "2025-10-03T00:54:35.646Z",
+      "user": "mock-server",
+      "action": "apply",
+      "summary": "Server applied config",
+      "details": {
+        "old": {
+          "$schemaId": "ConfigEnvelope.json",
+          "profileId": "local",
+          "version": "1.0.0",
+          "issuedAt": 1700000000,
+          "expiresAt": 1700003600,
+          "capabilities": [
+            {
+              "name": "config_management",
+              "enabled": true
+            }
+          ],
+          "agentConfig": {
+            "adminServer": {
+              "bindAddress": "127.0.0.1:8080",
+              "tlsEnabled": false
+            }
+          },
+          "extensionConfig": {
+            "transport": {
+              "endpoint": "http://localhost:8081",
+              "batchSize": 10,
+              "retryAttempts": 2
+            }
+          },
+          "signature": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+        },
+        "new": {
+          "$schemaId": "ConfigEnvelope.json",
+          "profileId": "local",
+          "version": "1.0.0",
+          "issuedAt": 1700000000,
+          "expiresAt": 1700003600,
+          "capabilities": [
+            {
+              "name": "config_management",
+              "enabled": true
+            }
+          ],
+          "agentConfig": {
+            "adminServer": {
+              "bindAddress": "127.0.0.1:8080",
+              "tlsEnabled": false
+            }
+          },
+          "extensionConfig": {
+            "transport": {
+              "endpoint": "http://localhost:8081",
+              "batchSize": 10,
+              "retryAttempts": 2
+            }
+          },
+          "signature": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+        }
+      }
+    },
+    {
+      "id": "srv_1759450419080",
+      "timestamp": "2025-10-03T00:13:39.080Z",
+      "user": "mock-server",
+      "action": "apply",
+      "summary": "Server applied config",
+      "details": {
+        "old": null,
+        "new": {
+          "$schemaId": "ConfigEnvelope.json",
+          "profileId": "local",
+          "version": "1.0.0",
+          "issuedAt": 1700000000,
+          "expiresAt": 1700003600,
+          "capabilities": [
+            {
+              "name": "config_management",
+              "enabled": true
+            }
+          ],
+          "agentConfig": {
+            "adminServer": {
+              "bindAddress": "127.0.0.1:8080",
+              "tlsEnabled": false
+            }
+          },
+          "extensionConfig": {
+            "transport": {
+              "endpoint": "http://localhost:8081",
+              "batchSize": 10,
+              "retryAttempts": 2
+            }
+          },
+          "signature": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+        }
+      }
+    }
+  ]
+}

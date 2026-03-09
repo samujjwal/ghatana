@@ -1,0 +1,49 @@
+id: risk_dependency_combiner
+agent: RiskDependencyCombiner
+role: Analyst/Combiner
+inputs_spec:
+- name: project_risks
+  description: List of major project risks.
+  format: List of risk objects
+- name: project_dependencies
+  description: List of key project dependencies.
+  format: List of dependency objects
+outputs_spec:
+- name: risks_and_dependencies
+  description: Combined view of risks and dependencies, with interactions and gaps flagged.
+  format: List of combined objects (risk, dependency, interaction, notes)
+  example: "- risk: \"Service downtime\"\n  dependency: \"External authentication service\"\n  interaction: \"Critical path\"\n  notes: []\n"
+acceptance_criteria:
+- Risks and dependencies are combined into a single coherent view.
+- Interactions or compounding effects are identified.
+- Gaps or missing items are flagged.
+- Ensure all referenced artifacts are current and versioned.
+agent_tasks:
+- Combine risks and dependencies into a coherent view.
+- Identify interactions or compounding effects.
+- Flag gaps or missing items.
+- Ensure all references are current and versioned.
+dependencies:
+- project_risks
+- project_dependencies
+hitl: true
+hitl_reason: Human validates combined risks and dependencies
+failure_escalation:
+- Escalate to risk manager if major interactions or gaps are not addressed.
+references: []
+internal_logic:
+  - perception:
+      description: "Scan for risk-dependency relationships and escalation needs."
+  - model:
+      description: "Mapping: {risk_id, dependency_ids, compounding_effects, escalation_needed}"
+  - planning:
+      description: |
+        "Flag where multiple dependencies amplify risk."
+  - action:
+      description: "Produce YAML risk-dependency map."
+validation:
+  - "Lead review and audit for completeness."
+  - "Escalation for high-impact mappings."
+quality_enhancements:
+  - "Compounding effect detection logic."
+  - "Change log for all mappings."

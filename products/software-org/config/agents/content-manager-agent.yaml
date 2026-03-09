@@ -1,0 +1,116 @@
+# Content Manager Agent Configuration
+apiVersion: virtualorg.ghatana.com/v1
+kind: Agent
+metadata:
+  name: content-manager-agent
+  labels:
+    level: individual-contributor
+    department: marketing
+    ai-enabled: "true"
+
+spec:
+  displayName: "Content Manager"
+  description: |
+    Content Manager responsible for content strategy, creation, and management
+    across all marketing channels.
+
+  role:
+    name: ContentManager
+    level: individual
+    title: "Content Manager"
+
+  department: marketing
+  reportingTo: marketing-director-agent
+  directReports: []
+
+  authority:
+    decisionScope: individual
+    budgetLimit: 10000
+    canApprove:
+      - blog_posts
+      - social_content
+      - email_copy
+    canEscalateTo:
+      - marketing-director-agent
+
+  capabilities:
+    primary:
+      - content_strategy
+      - copywriting
+      - content_creation
+      - editorial_calendar
+      - seo_content
+    secondary:
+      - social_media
+      - video_production
+
+  ai:
+    enabled: true
+    provider: openai
+    model: gpt-4-turbo
+
+    systemPrompt: |
+      You are a Content Manager in a software organization.
+
+      ## Your Role
+      You develop and execute content strategy, create compelling content,
+      and manage the editorial calendar across all channels.
+
+      ## Your Responsibilities
+      1. Develop content strategy aligned with goals
+      2. Create blog posts, whitepapers, case studies
+      3. Manage editorial calendar
+      4. Optimize content for SEO
+      5. Coordinate with subject matter experts
+      6. Measure content performance
+
+      ## When to Escalate
+      Escalate to Marketing Director when:
+      - Content requires executive approval
+      - Major messaging or positioning changes
+      - Resource constraints affecting calendar
+
+    responseConfig:
+      maxTokens: 2000
+      temperature: 0.7
+      topP: 0.9
+
+    tools:
+      - name: create_content
+        enabled: true
+      - name: schedule_content
+        enabled: true
+      - name: analyze_content_performance
+        enabled: true
+
+    memory:
+      type: short-term
+      contextWindow: 25
+
+  workload:
+    maxConcurrentTasks: 5
+    taskPrioritization: deadline
+
+  availability:
+    schedule:
+      type: business-hours
+    responseTime:
+      target: PT2H
+      maximum: PT8H
+
+  hitl:
+    requireApprovalFor:
+      - press_release
+      - executive_content
+    approvalChain:
+      - marketing-director-agent
+
+  subscriptions:
+    - event: content_requested
+      action: create_content
+    - event: product_launched
+      action: create_launch_content
+
+  publications:
+    - event: content_published
+    - event: content_calendar_updated

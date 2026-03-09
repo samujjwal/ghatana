@@ -1,0 +1,42 @@
+id: compliance_design
+agent: ComplianceDesignAgent
+role: Compliance Design Analyst
+inputs_spec:
+  - name: performance_design
+    description: Performance design documentation.
+    format: YAML object
+outputs_spec:
+  - name: compliance_design
+    description: Compliance design: controls, mappings, evidence needs, checklists.
+    format: YAML object
+acceptance_criteria:
+  - All compliance requirements mapped to design controls.
+  - Evidence and checklist fields complete.
+  - Peer/compliance officer review completed.
+agent_tasks:
+  - Extract all compliance requirements and map to design controls.
+  - Build control/evidence checklist.
+  - Peer review and compliance alignment.
+dependencies:
+  - performance_design
+failure_escalation:
+  - Escalate missing/incomplete controls/evidence.
+references: []
+internal_logic:
+  - perception:
+      description: "Extract all compliance requirements (e.g., GDPR, HIPAA, SOC2) and map to design controls and audit points."
+  - model:
+      description: "Maintain compliance design register with control mapping, artifact references, and evidence needs."
+  - planning:
+      description: |
+        "Ensure every compliance requirement is explicitly addressed.
+         Flag ambiguous or incomplete compliance mapping."
+  - action:
+      description: "Generate compliance design documentation and control checklists."
+validation:
+  - "Compliance officer/SME review."
+  - "Audit for control and evidence mapping completeness."
+quality_enhancements:
+  - "Compliance checklist template."
+  - "Metrics for coverage and evidence status."
+  - "Automated reminders for control design review."

@@ -1,0 +1,406 @@
+apiVersion: ghatana.yappc/v2
+kind: DomainAgentCatalog
+
+metadata:
+  name: governance
+  version: 1.0.0
+  description: "Governance, guardrails, approval workflows, and policy enforcement agents"
+  domain: governance
+  agentCount: 20
+
+spec:
+  agents:
+    # Level 1: Governance Orchestrators
+    - id: governance-orchestrator
+      name: Governance Orchestrator
+      level: 1
+      type: orchestrator
+      description: "Coordinates governance policies, approvals, and compliance across all operations"
+      domain: governance
+      capabilities:
+        - governance-orchestration
+        - policy-enforcement
+        - approval-coordination
+      routing:
+        input_types: [governance_request, policy_check, approval_needed]
+        output_types: [approval_decision, policy_violation, governance_report]
+      governance:
+        requires_approval: true
+        veto_power: true
+        audit_trail: comprehensive
+      tags: [governance, orchestration, policy]
+
+    - id: release-governance-agent
+      name: Release Governance Agent
+      level: 1
+      type: orchestrator
+      description: "Orchestrates release governance with approval workflows and compliance gates"
+      domain: governance
+      capabilities:
+        - release-governance
+        - approval-workflows
+        - compliance-gates
+      routing:
+        input_types: [release_request, deployment_approval]
+        output_types: [approval_decision, gate_status]
+      governance:
+        requires_approval: true
+        veto_power: true
+        audit_trail: comprehensive
+      tags: [governance, release, compliance]
+
+    # Level 2: Domain Guardians
+    - id: policy-enforcement-agent
+      name: Policy Enforcement Agent
+      level: 2
+      type: domain-expert
+      description: "Enforces organizational policies across all systems"
+      domain: governance
+      capabilities:
+        - policy-enforcement
+        - rule-validation
+        - violation-detection
+      memory:
+        semantic:
+          enabled: true
+          categories: [policies, rules, standards]
+      tools:
+        - policy_validator
+        - rule_engine
+      tags: [governance, policy, enforcement]
+
+    - id: approval-workflow-agent
+      name: Approval Workflow Agent
+      level: 2
+      type: domain-expert
+      description: "Manages approval workflows and escalation paths"
+      domain: governance
+      capabilities:
+        - approval-management
+        - workflow-coordination
+        - escalation-handling
+      routing:
+        input_types: [approval_request, escalation_needed]
+        output_types: [approval_status, escalation_alert]
+      tags: [governance, approval, workflow]
+
+    - id: audit-coordinator
+      name: Audit Coordinator Agent
+      level: 2
+      type: domain-expert
+      description: "Coordinates internal and external audit processes"
+      domain: governance
+      capabilities:
+        - audit-coordination
+        - evidence-collection
+        - finding-tracking
+      tools:
+        - audit_manager
+        - evidence_collector
+      tags: [governance, audit, coordination]
+
+    # Level 3: Governance Workers
+    - id: budget-gate-agent
+      name: Budget Gate Agent
+      level: 3
+      type: worker
+      description: "Evaluates budget constraints and cost implications before deployments"
+      domain: governance
+      capabilities:
+        - cost-governance
+        - budget-validation
+        - resource-quotas
+      governance:
+        requires_approval: true
+        veto_power: true
+      routing:
+        input_types: [deployment_request, cost_analysis]
+        output_types: [budget_approval, cost_warning]
+      tags: [governance, budget, cost]
+
+    - id: dependency-gate-agent
+      name: Dependency Gate Agent
+      level: 3
+      type: worker
+      description: "Validates dependency changes for security and compatibility"
+      domain: governance
+      capabilities:
+        - dependency-governance
+        - security-gates
+        - compatibility-validation
+      governance:
+        requires_approval: true
+        veto_power: true
+      tools:
+        - dependency_checker
+        - compatibility_analyzer
+      tags: [governance, dependencies, security]
+
+    - id: license-compliance-agent
+      name: License Compliance Agent
+      level: 3
+      type: worker
+      description: "Validates license compliance for all dependencies"
+      domain: governance
+      capabilities:
+        - license-checking
+        - compliance-validation
+        - risk-assessment
+      tools:
+        - license_scanner
+        - compliance_checker
+      tags: [governance, licensing, compliance]
+
+    - id: data-sovereignty-agent
+      name: Data Sovereignty Agent
+      level: 3
+      type: worker
+      description: "Ensures data sovereignty and residency requirements are met"
+      domain: governance
+      capabilities:
+        - data-sovereignty
+        - residency-enforcement
+        - geo-compliance
+      tools:
+        - residency_checker
+        - geo_validator
+      tags: [governance, data, sovereignty]
+
+    - id: retention-policy-enforcer
+      name: Retention Policy Enforcer Agent
+      level: 3
+      type: worker
+      description: "Enforces data retention and deletion policies"
+      domain: governance
+      capabilities:
+        - retention-enforcement
+        - deletion-management
+        - policy-compliance
+      tools:
+        - retention_manager
+        - deletion_coordinator
+      tags: [governance, retention, data]
+
+    - id: access-review-agent
+      name: Access Review Agent
+      level: 3
+      type: worker
+      description: "Conducts periodic access reviews and certifications"
+      domain: governance
+      capabilities:
+        - access-review
+        - certification-management
+        - privilege-audit
+      memory:
+        episodic:
+          enabled: true
+          retention_days: 365
+      tools:
+        - access_reviewer
+        - cert_manager
+      tags: [governance, access, review]
+
+    - id: change-management-agent
+      name: Change Management Agent
+      level: 3
+      type: worker
+      description: "Manages change control processes and CAB coordination"
+      domain: governance
+      capabilities:
+        - change-management
+        - cab-coordination
+        - impact-assessment
+      routing:
+        input_types: [change_request, impact_analysis]
+        output_types: [change_approval, implementation_schedule]
+      tools:
+        - change_manager
+        - impact_analyzer
+      tags: [governance, change, management]
+
+    - id: vendor-risk-assessor
+      name: Vendor Risk Assessor Agent
+      level: 3
+      type: worker
+      description: "Assesses and monitors third-party vendor risks"
+      domain: governance
+      capabilities:
+        - vendor-assessment
+        - risk-monitoring
+        - due-diligence
+      memory:
+        semantic:
+          enabled: true
+          categories: [vendor-profiles, risk-factors]
+      tools:
+        - vendor_assessor
+        - risk_monitor
+      tags: [governance, vendor, risk]
+
+    - id: business-continuity-agent
+      name: Business Continuity Agent
+      level: 3
+      type: worker
+      description: "Manages business continuity and disaster recovery planning"
+      domain: governance
+      capabilities:
+        - bc-planning
+        - dr-coordination
+        - recovery-testing
+      tools:
+        - bc_planner
+        - dr_coordinator
+      tags: [governance, business-continuity, disaster-recovery]
+
+    - id: ethics-review-agent
+      name: Ethics Review Agent
+      level: 3
+      type: worker
+      description: "Reviews AI implementations for ethical considerations"
+      domain: governance
+      capabilities:
+        - ethics-review
+        - bias-detection
+        - fairness-assessment
+      tools:
+        - ethics_checker
+        - bias_detector
+      tags: [governance, ethics, ai]
+
+    - id: sustainability-agent
+      name: Sustainability Agent
+      level: 3
+      type: worker
+      description: "Monitors and optimizes for environmental sustainability"
+      domain: governance
+      capabilities:
+        - sustainability-monitoring
+        - carbon-footprint
+        - green-optimization
+      tools:
+        - sustainability_tracker
+        - carbon_calculator
+      tags: [governance, sustainability, green]
+
+    - id: quality-gate-agent
+      name: Quality Gate Agent
+      level: 3
+      type: worker
+      description: "Enforces quality gates for code, tests, and documentation"
+      domain: governance
+      capabilities:
+        - quality-gates
+        - code-quality
+        - test-coverage
+      governance:
+        requires_approval: true
+        veto_power: true
+      tools:
+        - quality_checker
+        - coverage_analyzer
+      tags: [governance, quality, gates]
+
+    - id: documentation-gate-agent
+      name: Documentation Gate Agent
+      level: 3
+      type: worker
+      description: "Ensures documentation requirements are met before releases"
+      domain: governance
+      capabilities:
+        - documentation-checks
+        - completeness-validation
+        - accuracy-verification
+      tools:
+        - doc_checker
+        - completeness_validator
+      tags: [governance, documentation, gates]
+
+    - id: security-gate-agent
+      name: Security Gate Agent
+      level: 3
+      type: worker
+      description: "Enforces security gates before production deployments"
+      domain: governance
+      capabilities:
+        - security-gates
+        - vulnerability-checks
+        - scan-validation
+      governance:
+        requires_approval: true
+        veto_power: true
+      tools:
+        - security_scanner
+        - gate_validator
+      tags: [governance, security, gates]
+
+  hierarchy:
+    level1:
+      - governance-orchestrator
+      - release-governance-agent
+    level2:
+      - policy-enforcement-agent
+      - approval-workflow-agent
+      - audit-coordinator
+    level3:
+      - budget-gate-agent
+      - dependency-gate-agent
+      - license-compliance-agent
+      - data-sovereignty-agent
+      - retention-policy-enforcer
+      - access-review-agent
+      - change-management-agent
+      - vendor-risk-assessor
+      - business-continuity-agent
+      - ethics-review-agent
+      - sustainability-agent
+      - quality-gate-agent
+      - documentation-gate-agent
+      - security-gate-agent
+
+  capability_routing:
+    governance-orchestration:
+      primary: governance-orchestrator
+    release-governance:
+      primary: release-governance-agent
+    policy-enforcement:
+      primary: policy-enforcement-agent
+    approval-workflows:
+      primary: approval-workflow-agent
+    cost-governance:
+      primary: budget-gate-agent
+    dependency-governance:
+      primary: dependency-gate-agent
+    license-compliance:
+      primary: license-compliance-agent
+    data-sovereignty:
+      primary: data-sovereignty-agent
+    access-review:
+      primary: access-review-agent
+    change-management:
+      primary: change-management-agent
+    vendor-risk:
+      primary: vendor-risk-assessor
+    quality-gates:
+      primary: quality-gate-agent
+    security-gates:
+      primary: security-gate-agent
+
+  governance_policies:
+    approval_chains:
+      release:
+        - security-gate-agent
+        - quality-gate-agent
+        - documentation-gate-agent
+        - release-governance-agent
+      budget:
+        - budget-gate-agent
+        - approval-workflow-agent
+      change:
+        - change-management-agent
+        - approval-workflow-agent
+
+    veto_powers:
+      - release-governance-agent
+      - dependency-gate-agent
+      - budget-gate-agent
+      - security-gate-agent

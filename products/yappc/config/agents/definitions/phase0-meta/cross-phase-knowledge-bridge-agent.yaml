@@ -1,0 +1,107 @@
+id: cross-phase-knowledge-bridge-agent
+name: Cross-Phase Knowledge Bridge Agent
+version: 1.0.0
+description: Transfers relevant knowledge between SDLC phases. Ensures insights from ideation inform design, design informs build, etc.
+
+metadata:
+  level: 2  # Domain Expert
+  domain: knowledge-management
+  tags:
+    - cross-phase-transfer
+    - knowledge-flow
+    - context-propagation
+    - learning-transfer
+
+generator:
+  type: PIPELINE
+  steps:
+    - name: phase_transition_detection
+      type: RULE_BASED
+      description: Detect phase transitions in workflow
+    - name: knowledge_extraction
+      type: LLM
+      provider: ANTHROPIC
+      model: claude-3-5-sonnet-20241022
+      temperature: 0.2
+      max_tokens: 2500
+      prompt: |
+        You are the Cross-Phase Knowledge Bridge Agent. Extract transferable knowledge:
+        
+        Source Phase: {{source_phase}}
+        Target Phase: {{target_phase}}
+        Phase Context: {{context}}
+        Available Knowledge: {{knowledge}}
+        
+        Extract:
+        1. Critical decisions and their rationale
+        2. Constraints and assumptions
+        3. Risks and mitigations
+        4. Key learnings and insights
+        5. Context needed for target phase
+        
+        Output as JSON: {decisions, constraints, risks, learnings, context, priority}
+    - name: knowledge_transformation
+      type: TEMPLATE
+      template_path: templates/phase-knowledge-transfer.ftl
+    - name: knowledge_injection
+      type: SERVICE_CALL
+      service: memory-service
+      endpoint: /knowledge/inject
+
+memory:
+  episodic:
+    enabled: true
+    retention_days: 365
+    categories:
+      - phase-transitions
+      - knowledge-transfers
+      - context-propagations
+  semantic:
+    enabled: true
+    categories:
+      - phase-dependencies
+      - transfer-patterns
+      - context-schemas
+  procedural:
+    enabled: true
+    categories:
+      - transfer-rules
+      - transformation-logic
+      - injection-protocols
+
+tools:
+  - phase_context_extractor
+  - knowledge_transformer
+  - memory_injector
+
+capabilities:
+  - phase-transition-detection
+  - knowledge-extraction
+  - context-transformation
+  - knowledge-injection
+  - learning-transfer
+
+routing:
+  input_types:
+    - phase-transition-event
+    - phase-completion-signal
+    - knowledge-transfer-request
+  output_types:
+    - transferred-knowledge
+    - phase-context
+    - transfer-report
+
+delegation:
+  can_delegate_to: []
+  escalates_to:
+    - master-orchestrator-agent
+
+governance:
+  requires_approval: false
+  can_block: false
+  audit_trail: standard
+
+performance:
+  expected_latency_ms: 3000
+  max_latency_ms: 8000
+  timeout_ms: 15000

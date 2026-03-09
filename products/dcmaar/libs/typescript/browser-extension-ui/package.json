@@ -1,0 +1,52 @@
+{
+  "name": "@ghatana/dcmaar-browser-extension-ui",
+  "version": "1.0.0",
+  "description": "Reusable UI components for browser extensions",
+  "type": "module",
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "import": "./dist/index.js",
+      "types": "./dist/index.d.ts"
+    },
+    "./styles": {
+      "import": "./dist/styles/index.css"
+    }
+  },
+  "scripts": {
+    "build": "tsc && npm run build:styles",
+    "build:styles": "mkdir -p dist/styles && cp src/styles/*.css dist/styles/",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "type-check": "tsc --noEmit",
+    "clean": "rm -rf dist"
+  },
+  "keywords": [
+    "browser-extension",
+    "react",
+    "ui-components",
+    "chrome-extension"
+  ],
+  "author": "DCMAAR Team",
+  "license": "MIT",
+  "dependencies": {
+    "@ghatana/dcmaar-browser-extension-core": "workspace:*"
+  },
+  "devDependencies": {
+    "@types/node": "^25.2.0",
+    "@types/react": "^19.2.10",
+    "@types/react-dom": "^19.2.3",
+    "typescript": "^5.9.3",
+    "vitest": "^4.0.18"
+  },
+  "peerDependencies": {
+    "react": "^18.0.0",
+    "react-dom": "^18.0.0"
+  },
+  "files": [
+    "dist",
+    "README.md",
+    "LICENSE"
+  ]
+}

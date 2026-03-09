@@ -1,0 +1,107 @@
+# Prometheus Configuration for Event Processing v2.0 Load Testing
+#
+# Purpose: Monitor load test metrics for Phase 4 performance validation
+# Location: monitoring/prometheus.yml
+# References: MetricsCollector (core/observability), LoadTestSuite
+#
+# Phase 4 Metrics:
+# - Throughput: events/sec
+# - Latency: p50, p95, p99, p999, max
+# - Memory: heap usage, GC
+# - Errors: error rate by type
+# - Cache: hit rate, misses
+#
+# Usage:
+#   docker run -p 9090:9090 -v $(pwd)/prometheus.yml:/etc/prometheus/prometheus.yml prom/prometheus
+
+global:
+  scrape_interval: 15s # Scrape metrics every 15 seconds
+  evaluation_interval: 15s # Evaluate rules every 15 seconds
+  external_labels:
+    cluster: "phase4-load-testing"
+    environment: "performance-test"
+
+# Alertmanager configuration (optional for load testing)
+alerting:
+  alertmanagers:
+    - static_configs:
+        - targets: []
+          # - alertmanager:9093
+
+# Load rules once and evaluate them according to global.evaluation_interval
+rule_files:
+  - "alert-rules.yml"
+
+# Scrape configurations
+scrape_configs:
+  # EventCloud metrics
+  - job_name: "eventcloud"
+    metrics_path: "/metrics"
+    scrape_interval: 5s # More frequent for load testing
+    static_configs:
+      - targets: ["localhost:8080"]
+        labels:
+          service: "eventcloud"
+          tier: "core"
+    metric_relabel_configs:
+      # Keep only EventCloud metrics
+      - source_labels: [__name__]
+        regex: "eventcloud_.*"
+        action: keep
+
+  # Operator metrics
+  - job_name: "operators"
+    metrics_path: "/metrics"
+    scrape_interval: 5s
+    static_configs:
+      - targets: ["localhost:8081"]
+        labels:
+          service: "operators"
+          tier: "core"
+    metric_relabel_configs:
+      # Keep operator-related metrics
+      - source_labels: [__name__]
+        regex: "operator_.*"
+        action: keep
+
+  # Load test metrics
+  - job_name: "load-test"
+    metrics_path: "/metrics"
+    scrape_interval: 5s
+    static_configs:
+      - targets: ["localhost:8082"]
+        labels:
+          service: "load-test"
+          tier: "testing"
+    metric_relabel_configs:
+      # Keep load test metrics
+      - source_labels: [__name__]
+        regex: "load_test_.*"
+        action: keep
+
+  # JVM metrics (memory, GC, threads)
+  - job_name: "jvm"
+    metrics_path: "/metrics"
+    scrape_interval: 15s
+    static_configs:
+      - targets:
+          - "localhost:8080"
+          - "localhost:8081"
+          - "localhost:8082"
+        labels:
+          tier: "platform"
+    metric_relabel_configs:
+      # Keep JVM metrics
+      - source_labels: [__name__]
+        regex: "jvm_.*|process_.*"
+        action: keep
+
+  # System metrics (CPU, disk, network)
+  - job_name: "node-exporter"
+    metrics_path: "/metrics"
+    scrape_interval: 15s
+    static_configs:
+      - targets: ["localhost:9100"]
+        labels:
+          service: "node-exporter"
+          tier: "infrastructure"

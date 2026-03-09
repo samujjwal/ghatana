@@ -1,0 +1,31 @@
+name: Extension CI
+
+on:
+    push:
+        paths:
+            - "services/extension/**"
+    pull_request:
+        paths:
+            - "services/extension/**"
+
+jobs:
+    lint-and-test:
+        runs-on: ubuntu-latest
+        defaults:
+            run:
+                working-directory: services/extension
+        steps:
+            - uses: actions/checkout@v4
+            - name: Use Node.js
+              uses: actions/setup-node@v4
+              with:
+                  node-version: 20
+                  cache: "pnpm"
+            - name: Install pnpm
+              run: corepack enable && corepack prepare pnpm@latest --activate
+            - name: Install dependencies
+              run: pnpm install
+            - name: Run linter
+              run: pnpm run lint
+            - name: Run tests
+              run: pnpm run test -- --workers=1

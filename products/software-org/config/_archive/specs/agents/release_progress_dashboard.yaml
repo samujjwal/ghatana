@@ -1,0 +1,31 @@
+---
+id: "release_progress_dashboard"
+agent: "ProgressDashboardAgent"
+role: "Release Dashboard Owner"
+inputs_spec:
+- name: "release_candidate_validation_report"
+  description: "Validation report for dashboard visualization."
+  format: "Validation report artifact"
+- name: "release_notes"
+  description: "Release notes for dashboard visualization."
+  format: "Release notes artifact"
+- name: "license_compliance_report"
+  description: "License compliance report for dashboard visualization."
+  format: "License compliance report artifact"
+outputs_spec:
+- name: "release_progress_dashboard"
+  description: "Dashboard visualizing release readiness, approvals, and compliance."
+  format: "Dashboard artifact"
+agent_tasks:
+- "Visualize release readiness, documentation, signoffs, and compliance."
+- "Update dashboard for team and leadership visibility."
+acceptance_criteria:
+- "Dashboard is updated with all release readiness data and compliance status."
+dependencies:
+- "release_candidate_validation_report"
+- "release_notes"
+- "license_compliance_report"
+failure_escalation:
+- "Escalate to dashboard owner if dashboard is not current."
+references: []
+hitl: false

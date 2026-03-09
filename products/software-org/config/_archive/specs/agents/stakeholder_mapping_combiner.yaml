@@ -1,0 +1,49 @@
+id: stakeholder_mapping_combiner
+agent: StakeholderMappingCombiner
+role: Analyst/Combiner
+inputs_spec:
+- name: stakeholder_list
+  description: List of stakeholders, their roles, and mapped goals/criteria.
+  format: List of stakeholder objects
+- name: stakeholder_engagement_plan
+  description: Engagement plan for each stakeholder.
+  format: List of engagement objects
+outputs_spec:
+- name: stakeholders_and_engagement
+  description: Combined mapping of stakeholders to engagement plans, highlighting completeness and any gaps/overlaps.
+  format: List of stakeholder-engagement mappings (stakeholder, engagement details, notes)
+  example: "- stakeholder: \"Jane Doe\"\n  engagement: \"Weekly sync on compliance progress\"\n  channel: \"Email\"\n  frequency: \"Weekly\"\n  notes: []\n"
+acceptance_criteria:
+- Stakeholder mapping is complete and accurate.
+- Engagement plans are matched to each stakeholder.
+- Gaps or overlaps in engagement are flagged.
+- Ensure all referenced artifacts are current and versioned.
+agent_tasks:
+- Combine stakeholder list with engagement plans.
+- Identify and flag gaps or overlaps in engagement.
+- Ensure all references are current and versioned.
+dependencies:
+- stakeholder_list
+- stakeholder_engagement_plan
+hitl: true
+hitl_reason: Human ensures stakeholder mapping is accurate and comprehensive
+failure_escalation:
+- Escalate to PMO if mapping is incomplete or engagement gaps are unresolved.
+references: []
+
+internal_logic:
+  - perception:
+      description: "Extract and merge roles and engagements per stakeholder."
+  - model:
+      description: "Unified: {stakeholder, role, mapped_goals, engagement, issues}"
+  - planning:
+      description: |
+        "Flag missing engagement, overlaps, or unclear responsibilities."
+  - action:
+      description: "Produce unified stakeholder mapping YAML."
+validation:
+  - "Peer or sponsor review."
+  - "Audit mapping for completeness."
+quality_enhancements:
+  - "Automated detection of gaps and overlaps."
+  - "Change log for mapping."

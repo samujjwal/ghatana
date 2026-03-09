@@ -1,0 +1,2539 @@
+openapi: 3.0.3
+info:
+  title: YAPPC Dashboard API
+  description: |
+    REST API for YAPPC Dashboard capabilities including:
+    - Audit Trail Management
+    - Version History & Rollback
+    - Requirements Management
+    - AI Suggestions (Human-in-the-Loop)
+    - Architecture Impact Analysis
+    - Authorization & Persona Management
+
+    ## Authentication
+    All endpoints require authentication via Bearer token in the Authorization header.
+
+    ## Multi-Tenancy
+    All endpoints require an `X-Tenant-Id` header for tenant isolation.
+
+    ## Personas
+    The API supports 21 personas mapped from YAPPC and canonical requirements models.
+    See `/auth/personas` endpoints for persona-based permissions.
+  version: 1.0.0
+  contact:
+    name: YAPPC Team
+    email: api@ghatana.com
+  license:
+    name: Proprietary
+    url: https://ghatana.com/license
+
+servers:
+  - url: http://localhost:8080
+    description: Local Development
+  - url: https://api.yappc.ghatana.com
+    description: Production
+
+security:
+  - bearerAuth: []
+
+tags:
+  - name: Audit
+    description: Audit trail operations
+  - name: Versions
+    description: Version history and rollback
+  - name: Requirements
+    description: Requirements management
+  - name: AI Suggestions
+    description: AI-generated suggestions with human review
+  - name: Architecture
+    description: Architecture impact analysis
+  - name: Authorization
+    description: Permission and persona management
+
+paths:
+  # ========== Audit Endpoints ==========
+  /api/v1/audit/events:
+    get:
+      tags: [Audit]
+      summary: Query audit events
+      description: Retrieve audit events with filtering and pagination
+      operationId: queryAuditEvents
+      parameters:
+        - $ref: "#/components/parameters/TenantId"
+        - name: resourceType
+          in: query
+          schema:
+            type: string
+            enum: [REQUIREMENT, VERSION, AI_SUGGESTION, ARCHITECTURE, SECURITY]
+        - name: resourceId
+          in: query
+          schema:
+            type: string
+        - name: startDate
+          in: query
+          schema:
+            type: string
+            format: date-time
+        - name: endDate
+          in: query
+          schema:
+            type: string
+            format: date-time
+        - name: userId
+          in: query
+          schema:
+            type: string
+        - name: page
+          in: query
+          schema:
+            type: integer
+            default: 0
+        - name: size
+          in: query
+          schema:
+            type: integer
+            default: 20
+      responses:
+        "200":
+          description: Paginated audit events
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AuditEventsPage"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+
+    post:
+      tags: [Audit]
+      summary: Record audit event
+      description: Record a new audit event (typically called by services)
+      operationId: recordAuditEvent
+      parameters:
+        - $ref: "#/components/parameters/TenantId"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/RecordAuditEventRequest"
+      responses:
+        "201":
+          description: Event recorded
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AuditEvent"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+
+  /api/v1/audit/events/{resourceType}/{resourceId}:
+    get:
+      tags: [Audit]
+      summary: Get audit events for resource
+      operationId: getAuditEventsForResource
+      parameters:
+        - $ref: "#/components/parameters/TenantId"
+        - name: resourceType
+          in: path
+          required: true
+          schema:
+            type: string
+        - name: resourceId
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Audit events for the resource
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/AuditEvent"
+
+  # ========== Version Endpoints ==========
+  /api/v1/versions/{resourceType}/{resourceId}/history:
+    get:
+      tags: [Versions]
+      summary: Get version history
+      operationId: getVersionHistory
+      parameters:
+        - $ref: "#/components/parameters/TenantId"
+        - name: resourceType
+          in: path
+          required: true
+          schema:
+            type: string
+        - name: resourceId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        "200":
+          description: Version history
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/VersionHistory"
+
+  /api/v1/versions/{resourceType}/{resourceId}:
+    post:
+      tags: [Versions]
+      summary: Create new version
+      operationId: createVersion
+      parameters:
+        - $ref: "#/components/parameters/TenantId"
+        - name: resourceType
+          in: path
+          required: true
+          schema:
+            type: string
+        - name: resourceId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CreateVersionRequest"
+      responses:
+        "201":
+          description: Version created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Version"
+
+  /api/v1/versions/{resourceType}/{resourceId}/compare:
+    get:
+      tags: [Versions]
+      summary: Compare two versions
+      operationId: compareVersions
+      parameters:
+        - $ref: "#/components/parameters/TenantId"
+        - name: resourceType
+          in: path
+          required: true
+          schema:
+            type: string
+        - name: resourceId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+        - name: fromVersion
+          in: query
+          required: true
+          schema:
+            type: integer
+        - name: toVersion
+          in: query
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: Version comparison
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/VersionComparison"
+
+  /api/v1/versions/{resourceType}/{resourceId}/rollback:
+    post:
+      tags: [Versions]
+      summary: Rollback to previous version
+      operationId: rollbackVersion
+      parameters:
+        - $ref: "#/components/parameters/TenantId"
+        - name: resourceType
+          in: path
+          required: true
+          schema:
+            type: string
+        - name: resourceId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/RollbackRequest"
+      responses:
+        "200":
+          description: Rollback successful
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Version"
+
+  # ========== Requirements Endpoints ==========
+  /api/v1/requirements:
+    get:
+      tags: [Requirements]
+      summary: Query requirements
+      operationId: queryRequirements
+      parameters:
+        - $ref: "#/components/parameters/TenantId"
+        - name: projectId
+          in: query
+          schema:
+            type: string
+        - name: status
+          in: query
+          schema:
+            $ref: "#/components/schemas/RequirementStatus"
+        - name: type
+          in: query
+          schema:
+            $ref: "#/components/schemas/RequirementType"
+        - name: priority
+          in: query
+          schema:
+            $ref: "#/components/schemas/Priority"
+        - name: assignedTo
+          in: query
+          schema:
+            type: string
+      responses:
+        "200":
+          description: List of requirements
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Requirement"
+
+    post:
+      tags: [Requirements]
+      summary: Create requirement
+      operationId: createRequirement
+      parameters:
+        - $ref: "#/components/parameters/TenantId"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CreateRequirementRequest"
+      responses:
+        "201":
+          description: Requirement created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Requirement"
+
+  /api/v1/requirements/{id}:
+    get:
+      tags: [Requirements]
+      summary: Get requirement by ID
+      operationId: getRequirement
+      parameters:
+        - $ref: "#/components/parameters/TenantId"
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        "200":
+          description: Requirement details
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Requirement"
+        "404":
+          $ref: "#/components/responses/NotFound"
+
+    put:
+      tags: [Requirements]
+      summary: Update requirement
+      operationId: updateRequirement
+      parameters:
+        - $ref: "#/components/parameters/TenantId"
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/UpdateRequirementRequest"
+      responses:
+        "200":
+          description: Requirement updated
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Requirement"
+
+    delete:
+      tags: [Requirements]
+      summary: Delete requirement
+      operationId: deleteRequirement
+      parameters:
+        - $ref: "#/components/parameters/TenantId"
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        "204":
+          description: Requirement deleted
+
+  /api/v1/requirements/{id}/submit:
+    post:
+      tags: [Requirements]
+      summary: Submit for review
+      operationId: submitRequirementForReview
+      parameters:
+        - $ref: "#/components/parameters/TenantId"
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        "200":
+          description: Submitted for review
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Requirement"
+
+  /api/v1/requirements/{id}/approve:
+    post:
+      tags: [Requirements]
+      summary: Approve requirement
+      operationId: approveRequirement
+      parameters:
+        - $ref: "#/components/parameters/TenantId"
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        "200":
+          description: Requirement approved
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Requirement"
+
+  /api/v1/requirements/{id}/reject:
+    post:
+      tags: [Requirements]
+      summary: Reject requirement
+      operationId: rejectRequirement
+      parameters:
+        - $ref: "#/components/parameters/TenantId"
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        "200":
+          description: Requirement rejected
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Requirement"
+
+  /api/v1/requirements/funnel:
+    get:
+      tags: [Requirements]
+      summary: Get requirements funnel metrics
+      operationId: getRequirementsFunnel
+      parameters:
+        - $ref: "#/components/parameters/TenantId"
+      responses:
+        "200":
+          description: Funnel metrics by status
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/RequirementsFunnel"
+
+  # ========== AI Suggestions Endpoints ==========
+  /api/v1/ai/suggestions:
+    get:
+      tags: [AI Suggestions]
+      summary: Get pending suggestions (inbox)
+      operationId: getAISuggestionsInbox
+      parameters:
+        - $ref: "#/components/parameters/TenantId"
+        - name: projectId
+          in: query
+          schema:
+            type: string
+        - name: type
+          in: query
+          schema:
+            $ref: "#/components/schemas/SuggestionType"
+        - name: minConfidence
+          in: query
+          schema:
+            type: number
+            format: double
+            minimum: 0
+            maximum: 1
+      responses:
+        "200":
+          description: List of pending suggestions
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/AISuggestion"
+
+    post:
+      tags: [AI Suggestions]
+      summary: Generate AI suggestion
+      operationId: generateAISuggestion
+      parameters:
+        - $ref: "#/components/parameters/TenantId"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/GenerateSuggestionRequest"
+      responses:
+        "201":
+          description: Suggestion generated
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AISuggestion"
+
+  /api/v1/ai/suggestions/{id}:
+    get:
+      tags: [AI Suggestions]
+      summary: Get suggestion by ID
+      operationId: getAISuggestion
+      parameters:
+        - $ref: "#/components/parameters/TenantId"
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        "200":
+          description: Suggestion details
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AISuggestion"
+
+  /api/v1/ai/suggestions/{id}/accept:
+    post:
+      tags: [AI Suggestions]
+      summary: Accept suggestion
+      operationId: acceptAISuggestion
+      parameters:
+        - $ref: "#/components/parameters/TenantId"
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/AcceptSuggestionRequest"
+      responses:
+        "200":
+          description: Suggestion accepted
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AISuggestion"
+
+  /api/v1/ai/suggestions/{id}/reject:
+    post:
+      tags: [AI Suggestions]
+      summary: Reject suggestion
+      operationId: rejectAISuggestion
+      parameters:
+        - $ref: "#/components/parameters/TenantId"
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/RejectSuggestionRequest"
+      responses:
+        "200":
+          description: Suggestion rejected
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AISuggestion"
+
+  /api/v1/ai/suggestions/{id}/defer:
+    post:
+      tags: [AI Suggestions]
+      summary: Defer suggestion
+      operationId: deferAISuggestion
+      parameters:
+        - $ref: "#/components/parameters/TenantId"
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        "200":
+          description: Suggestion deferred
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AISuggestion"
+
+  /api/v1/ai/suggestions/stats:
+    get:
+      tags: [AI Suggestions]
+      summary: Get suggestion statistics
+      operationId: getAISuggestionStats
+      parameters:
+        - $ref: "#/components/parameters/TenantId"
+      responses:
+        "200":
+          description: Suggestion statistics
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AISuggestionStats"
+
+  # ========== Architecture Endpoints ==========
+  /api/v1/architecture/impact:
+    post:
+      tags: [Architecture]
+      summary: Analyze impact of change
+      operationId: analyzeArchitectureImpact
+      parameters:
+        - $ref: "#/components/parameters/TenantId"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ImpactAnalysisRequest"
+      responses:
+        "200":
+          description: Impact analysis result
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ImpactAnalysisResult"
+
+  /api/v1/architecture/dependencies/{componentId}:
+    get:
+      tags: [Architecture]
+      summary: Get dependency graph
+      operationId: getDependencyGraph
+      parameters:
+        - $ref: "#/components/parameters/TenantId"
+        - name: componentId
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Dependency graph
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/DependencyGraph"
+
+  /api/v1/architecture/simulate:
+    post:
+      tags: [Architecture]
+      summary: Simulate changes
+      operationId: simulateArchitectureChanges
+      parameters:
+        - $ref: "#/components/parameters/TenantId"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/SimulationRequest"
+      responses:
+        "200":
+          description: Simulation result
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/SimulationResult"
+
+  /api/v1/architecture/health:
+    get:
+      tags: [Architecture]
+      summary: Get architecture health metrics
+      operationId: getArchitectureHealth
+      parameters:
+        - $ref: "#/components/parameters/TenantId"
+      responses:
+        "200":
+          description: Health metrics
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ArchitectureHealth"
+
+  # ========== Authorization Endpoints ==========
+  /api/v1/auth/check-permission:
+    post:
+      tags: [Authorization]
+      summary: Check permission
+      operationId: checkPermission
+      parameters:
+        - $ref: "#/components/parameters/TenantId"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CheckPermissionRequest"
+      responses:
+        "200":
+          description: Permission check result
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/CheckPermissionResponse"
+
+  /api/v1/auth/users/{userId}/permissions:
+    get:
+      tags: [Authorization]
+      summary: Get user permissions
+      operationId: getUserPermissions
+      parameters:
+        - $ref: "#/components/parameters/TenantId"
+        - name: userId
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: User permissions
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/UserPermissions"
+
+  /api/v1/auth/personas/{persona}/permissions:
+    get:
+      tags: [Authorization]
+      summary: Get persona permissions
+      operationId: getPersonaPermissions
+      parameters:
+        - name: persona
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Persona permissions
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/PersonaPermissions"
+
+  /api/v1/auth/personas:
+    get:
+      tags: [Authorization]
+      summary: List all personas
+      operationId: listPersonas
+      responses:
+        "200":
+          description: List of personas
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Persona"
+
+  # ========== Workspace API ==========
+  /api/workspaces:
+    get:
+      tags: [Workspaces]
+      summary: List workspaces
+      operationId: listWorkspaces
+      parameters:
+        - $ref: "#/components/parameters/TenantId"
+      responses:
+        "200":
+          description: List of workspaces
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Workspace"
+    post:
+      tags: [Workspaces]
+      summary: Create a workspace
+      operationId: createWorkspace
+      parameters:
+        - $ref: "#/components/parameters/TenantId"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CreateWorkspaceRequest"
+      responses:
+        "201":
+          description: Workspace created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Workspace"
+
+  /api/workspaces/{id}:
+    get:
+      tags: [Workspaces]
+      summary: Get workspace by ID
+      operationId: getWorkspace
+      parameters:
+        - $ref: "#/components/parameters/TenantId"
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        "200":
+          description: Workspace details
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Workspace"
+        "404":
+          description: Workspace not found
+    put:
+      tags: [Workspaces]
+      summary: Update workspace
+      operationId: updateWorkspace
+      parameters:
+        - $ref: "#/components/parameters/TenantId"
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CreateWorkspaceRequest"
+      responses:
+        "200":
+          description: Workspace updated
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Workspace"
+    delete:
+      tags: [Workspaces]
+      summary: Delete workspace
+      operationId: deleteWorkspace
+      parameters:
+        - $ref: "#/components/parameters/TenantId"
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        "204":
+          description: Workspace deleted
+
+  /api/workspaces/{id}/members:
+    get:
+      tags: [Workspaces]
+      summary: List workspace members
+      operationId: listWorkspaceMembers
+      parameters:
+        - $ref: "#/components/parameters/TenantId"
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        "200":
+          description: List of members
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/WorkspaceMember"
+    post:
+      tags: [Workspaces]
+      summary: Add member to workspace
+      operationId: addWorkspaceMember
+      parameters:
+        - $ref: "#/components/parameters/TenantId"
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/AddMemberRequest"
+      responses:
+        "201":
+          description: Member added
+
+  /api/workspaces/{id}/settings:
+    get:
+      tags: [Workspaces]
+      summary: Get workspace settings
+      operationId: getWorkspaceSettings
+      parameters:
+        - $ref: "#/components/parameters/TenantId"
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        "200":
+          description: Workspace settings
+          content:
+            application/json:
+              schema:
+                type: object
+    put:
+      tags: [Workspaces]
+      summary: Update workspace settings
+      operationId: updateWorkspaceSettings
+      parameters:
+        - $ref: "#/components/parameters/TenantId"
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+      responses:
+        "200":
+          description: Settings updated
+
+  # ========== Approval Workflow API ==========
+  /api/approvals:
+    post:
+      tags: [Approvals]
+      summary: Create approval workflow
+      operationId: createApprovalWorkflow
+      parameters:
+        - $ref: "#/components/parameters/TenantId"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CreateApprovalRequest"
+      responses:
+        "201":
+          description: Approval workflow created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApprovalWorkflow"
+
+  /api/approvals/pending:
+    get:
+      tags: [Approvals]
+      summary: Get pending approvals
+      operationId: getPendingApprovals
+      parameters:
+        - $ref: "#/components/parameters/TenantId"
+      responses:
+        "200":
+          description: List of pending approvals
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/ApprovalWorkflow"
+
+  /api/approvals/{id}:
+    get:
+      tags: [Approvals]
+      summary: Get approval workflow by ID
+      operationId: getApprovalWorkflow
+      parameters:
+        - $ref: "#/components/parameters/TenantId"
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        "200":
+          description: Approval workflow details
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApprovalWorkflow"
+    delete:
+      tags: [Approvals]
+      summary: Cancel approval workflow
+      operationId: cancelApprovalWorkflow
+      parameters:
+        - $ref: "#/components/parameters/TenantId"
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        "204":
+          description: Workflow cancelled
+
+  /api/approvals/{id}/decision:
+    post:
+      tags: [Approvals]
+      summary: Submit approval decision
+      operationId: submitApprovalDecision
+      parameters:
+        - $ref: "#/components/parameters/TenantId"
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ApprovalDecision"
+      responses:
+        "200":
+          description: Decision recorded
+
+  /api/approvals/{id}/history:
+    get:
+      tags: [Approvals]
+      summary: Get approval history
+      operationId: getApprovalHistory
+      parameters:
+        - $ref: "#/components/parameters/TenantId"
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        "200":
+          description: Approval history
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  type: object
+
+  # ========== Configuration API ==========
+  /api/config/domains:
+    get:
+      tags: [Configuration]
+      summary: Get all domains
+      operationId: getDomains
+      responses:
+        "200":
+          description: List of domains
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  type: object
+
+  /api/config/domains/{id}:
+    get:
+      tags: [Configuration]
+      summary: Get domain by ID
+      operationId: getDomainById
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Domain details
+          content:
+            application/json:
+              schema:
+                type: object
+
+  /api/config/workflows:
+    get:
+      tags: [Configuration]
+      summary: Get all workflows
+      operationId: getWorkflows
+      responses:
+        "200":
+          description: List of workflows
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  type: object
+
+  /api/config/workflows/{id}:
+    get:
+      tags: [Configuration]
+      summary: Get workflow by ID
+      operationId: getWorkflowById
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Workflow details
+          content:
+            application/json:
+              schema:
+                type: object
+
+  /api/config/lifecycle:
+    get:
+      tags: [Configuration]
+      summary: Get lifecycle configuration
+      operationId: getLifecycleConfig
+      responses:
+        "200":
+          description: Lifecycle configuration
+          content:
+            application/json:
+              schema:
+                type: object
+
+  /api/config/agents:
+    get:
+      tags: [Configuration]
+      summary: Get agent capabilities
+      operationId: getAgentCapabilities
+      responses:
+        "200":
+          description: Agent capabilities
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  type: object
+
+  /api/config/tasks:
+    get:
+      tags: [Configuration]
+      summary: Get all tasks
+      operationId: getAllTasks
+      responses:
+        "200":
+          description: List of tasks
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  type: object
+
+  /api/config/personas:
+    get:
+      tags: [Configuration]
+      summary: Get all personas
+      operationId: getConfigPersonas
+      responses:
+        "200":
+          description: List of personas
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Persona"
+
+  /api/config/personas/{id}:
+    get:
+      tags: [Configuration]
+      summary: Get persona by ID
+      operationId: getConfigPersonaById
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Persona details
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Persona"
+
+  # ========== Dashboard API ==========
+  /api/dashboards:
+    get:
+      tags: [Dashboards]
+      summary: Get all dashboards
+      operationId: getDashboards
+      parameters:
+        - $ref: "#/components/parameters/TenantId"
+      responses:
+        "200":
+          description: List of dashboards
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Dashboard"
+
+  /api/dashboards/{id}:
+    get:
+      tags: [Dashboards]
+      summary: Get dashboard by ID
+      operationId: getDashboardById
+      parameters:
+        - $ref: "#/components/parameters/TenantId"
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Dashboard details
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Dashboard"
+
+  /api/dashboards/domain/{domainId}:
+    get:
+      tags: [Dashboards]
+      summary: Get dashboards by domain
+      operationId: getDashboardsByDomain
+      parameters:
+        - $ref: "#/components/parameters/TenantId"
+        - name: domainId
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Domain dashboards
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Dashboard"
+
+  # ========== Build API ==========
+  /api/v1/build/execute:
+    post:
+      tags: [Build]
+      summary: Execute a build
+      operationId: executeBuild
+      parameters:
+        - $ref: "#/components/parameters/TenantId"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/BuildRequest"
+      responses:
+        "202":
+          description: Build initiated
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/BuildJob"
+
+  /api/v1/build/jobs/{jobId}:
+    get:
+      tags: [Build]
+      summary: Get build status
+      operationId: getBuildStatus
+      parameters:
+        - $ref: "#/components/parameters/TenantId"
+        - name: jobId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        "200":
+          description: Build job status
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/BuildJob"
+    delete:
+      tags: [Build]
+      summary: Cancel a build
+      operationId: cancelBuild
+      parameters:
+        - $ref: "#/components/parameters/TenantId"
+        - name: jobId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        "204":
+          description: Build cancelled
+
+  /api/v1/build/jobs/{jobId}/logs:
+    get:
+      tags: [Build]
+      summary: Get build logs
+      operationId: getBuildLogs
+      parameters:
+        - $ref: "#/components/parameters/TenantId"
+        - name: jobId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        "200":
+          description: Build logs
+          content:
+            text/plain:
+              schema:
+                type: string
+
+  /api/v1/build/jobs/{jobId}/artifacts:
+    get:
+      tags: [Build]
+      summary: Download build artifacts
+      operationId: downloadArtifacts
+      parameters:
+        - $ref: "#/components/parameters/TenantId"
+        - name: jobId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        "200":
+          description: Build artifacts
+          content:
+            application/octet-stream:
+              schema:
+                type: string
+                format: binary
+
+  /api/v1/build/history:
+    get:
+      tags: [Build]
+      summary: Get build history
+      operationId: getBuildHistory
+      parameters:
+        - $ref: "#/components/parameters/TenantId"
+      responses:
+        "200":
+          description: Build history
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/BuildJob"
+
+  # ========== Workflow Agent API ==========
+  /api/agents:
+    get:
+      tags: [Agents]
+      summary: List all agents
+      operationId: listAgents
+      parameters:
+        - $ref: "#/components/parameters/TenantId"
+      responses:
+        "200":
+          description: List of available agents
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Agent"
+
+  /api/agents/execute:
+    post:
+      tags: [Agents]
+      summary: Execute an agent
+      operationId: executeAgent
+      parameters:
+        - $ref: "#/components/parameters/TenantId"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/AgentExecuteRequest"
+      responses:
+        "202":
+          description: Agent execution started
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AgentExecution"
+
+  /api/agents/execute/batch:
+    post:
+      tags: [Agents]
+      summary: Execute agents in batch
+      operationId: executeBatchAgents
+      parameters:
+        - $ref: "#/components/parameters/TenantId"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: array
+              items:
+                $ref: "#/components/schemas/AgentExecuteRequest"
+      responses:
+        "202":
+          description: Batch execution started
+
+  /api/agents/execute/{id}:
+    get:
+      tags: [Agents]
+      summary: Get execution status
+      operationId: getExecutionStatus
+      parameters:
+        - $ref: "#/components/parameters/TenantId"
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        "200":
+          description: Execution status
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AgentExecution"
+    delete:
+      tags: [Agents]
+      summary: Cancel execution
+      operationId: cancelExecution
+      parameters:
+        - $ref: "#/components/parameters/TenantId"
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        "204":
+          description: Execution cancelled
+
+  /api/agents/role/{role}:
+    get:
+      tags: [Agents]
+      summary: Get agents by role
+      operationId: getAgentsByRole
+      parameters:
+        - $ref: "#/components/parameters/TenantId"
+        - name: role
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Agents with specified role
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Agent"
+
+  /api/agents/{id}/health:
+    get:
+      tags: [Agents]
+      summary: Get agent health
+      operationId: getAgentHealth
+      parameters:
+        - $ref: "#/components/parameters/TenantId"
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Agent health status
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: string
+                    enum: [healthy, degraded, unhealthy]
+                  lastCheck:
+                    type: string
+                    format: date-time
+
+  # ========== Left Rail API ==========
+  /api/rail/components:
+    get:
+      tags: [Rail]
+      summary: Get rail components
+      operationId: getRailComponents
+      parameters:
+        - $ref: "#/components/parameters/TenantId"
+      responses:
+        "200":
+          description: Rail components
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  type: object
+
+  /api/rail/infrastructure:
+    get:
+      tags: [Rail]
+      summary: Get infrastructure view
+      operationId: getRailInfrastructure
+      parameters:
+        - $ref: "#/components/parameters/TenantId"
+      responses:
+        "200":
+          description: Infrastructure data
+          content:
+            application/json:
+              schema:
+                type: object
+
+  /api/rail/files:
+    get:
+      tags: [Rail]
+      summary: Get files view
+      operationId: getRailFiles
+      parameters:
+        - $ref: "#/components/parameters/TenantId"
+      responses:
+        "200":
+          description: File listing
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  type: object
+
+  /api/rail/datasources:
+    get:
+      tags: [Rail]
+      summary: Get data sources
+      operationId: getRailDataSources
+      parameters:
+        - $ref: "#/components/parameters/TenantId"
+      responses:
+        "200":
+          description: Data sources
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  type: object
+
+  /api/rail/history:
+    get:
+      tags: [Rail]
+      summary: Get history
+      operationId: getRailHistory
+      parameters:
+        - $ref: "#/components/parameters/TenantId"
+      responses:
+        "200":
+          description: History entries
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  type: object
+
+  /api/rail/favorites:
+    get:
+      tags: [Rail]
+      summary: Get favorites
+      operationId: getRailFavorites
+      parameters:
+        - $ref: "#/components/parameters/TenantId"
+      responses:
+        "200":
+          description: Favorite items
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  type: object
+
+  /api/rail/ai/suggestions:
+    post:
+      tags: [Rail]
+      summary: Get AI suggestions for rail
+      operationId: getRailAISuggestions
+      parameters:
+        - $ref: "#/components/parameters/TenantId"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                context:
+                  type: string
+      responses:
+        "200":
+          description: AI suggestions
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  type: object
+
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+
+  parameters:
+    TenantId:
+      name: X-Tenant-Id
+      in: header
+      required: true
+      schema:
+        type: string
+      description: Tenant identifier for multi-tenancy
+
+  responses:
+    BadRequest:
+      description: Bad request
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/Error"
+    Unauthorized:
+      description: Unauthorized
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/Error"
+    NotFound:
+      description: Resource not found
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/Error"
+
+  schemas:
+    # ========== Common ==========
+    Error:
+      type: object
+      properties:
+        code:
+          type: string
+        message:
+          type: string
+        details:
+          type: object
+          additionalProperties: true
+
+    # ========== Audit ==========
+    AuditEvent:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        tenantId:
+          type: string
+        eventType:
+          type: string
+        principal:
+          type: string
+        resourceType:
+          type: string
+        resourceId:
+          type: string
+        success:
+          type: boolean
+        details:
+          type: object
+          additionalProperties: true
+        timestamp:
+          type: string
+          format: date-time
+
+    AuditEventsPage:
+      type: object
+      properties:
+        content:
+          type: array
+          items:
+            $ref: "#/components/schemas/AuditEvent"
+        page:
+          type: integer
+        size:
+          type: integer
+        totalElements:
+          type: integer
+        totalPages:
+          type: integer
+
+    RecordAuditEventRequest:
+      type: object
+      required: [eventType, resourceType, resourceId]
+      properties:
+        eventType:
+          type: string
+        resourceType:
+          type: string
+        resourceId:
+          type: string
+        details:
+          type: object
+          additionalProperties: true
+
+    # ========== Versions ==========
+    Version:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        resourceType:
+          type: string
+        resourceId:
+          type: string
+          format: uuid
+        versionNumber:
+          type: integer
+        author:
+          type: string
+        reason:
+          type: string
+        snapshot:
+          type: object
+          additionalProperties: true
+        createdAt:
+          type: string
+          format: date-time
+
+    VersionHistory:
+      type: object
+      properties:
+        resourceId:
+          type: string
+          format: uuid
+        versions:
+          type: array
+          items:
+            $ref: "#/components/schemas/Version"
+        currentVersion:
+          type: integer
+
+    VersionComparison:
+      type: object
+      properties:
+        fromVersion:
+          type: integer
+        toVersion:
+          type: integer
+        changes:
+          type: array
+          items:
+            $ref: "#/components/schemas/FieldChange"
+
+    FieldChange:
+      type: object
+      properties:
+        field:
+          type: string
+        oldValue:
+          type: string
+        newValue:
+          type: string
+        changeType:
+          type: string
+          enum: [ADDED, MODIFIED, REMOVED]
+
+    CreateVersionRequest:
+      type: object
+      required: [reason]
+      properties:
+        reason:
+          type: string
+        snapshot:
+          type: object
+
+    RollbackRequest:
+      type: object
+      required: [targetVersion]
+      properties:
+        targetVersion:
+          type: integer
+        reason:
+          type: string
+
+    # ========== Requirements ==========
+    RequirementStatus:
+      type: string
+      enum:
+        [DRAFT, REVIEW, APPROVED, REJECTED, IMPLEMENTED, VERIFIED, DEPRECATED]
+
+    RequirementType:
+      type: string
+      enum:
+        [
+          FUNCTIONAL,
+          NON_FUNCTIONAL,
+          CONSTRAINT,
+          INTERFACE,
+          SECURITY,
+          PERFORMANCE,
+          USABILITY,
+          COMPLIANCE,
+        ]
+
+    Priority:
+      type: string
+      enum: [CRITICAL, HIGH, MEDIUM, LOW]
+
+    Requirement:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        tenantId:
+          type: string
+        projectId:
+          type: string
+        title:
+          type: string
+        description:
+          type: string
+        type:
+          $ref: "#/components/schemas/RequirementType"
+        status:
+          $ref: "#/components/schemas/RequirementStatus"
+        priority:
+          $ref: "#/components/schemas/Priority"
+        category:
+          type: string
+        createdBy:
+          type: string
+        assignedTo:
+          type: string
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
+        versionNumber:
+          type: integer
+        tags:
+          type: array
+          items:
+            type: string
+        qualityMetrics:
+          $ref: "#/components/schemas/QualityMetrics"
+
+    QualityMetrics:
+      type: object
+      properties:
+        testabilityScore:
+          type: number
+          format: double
+        completenessScore:
+          type: number
+          format: double
+        clarityScore:
+          type: number
+          format: double
+        ambiguityFlags:
+          type: array
+          items:
+            type: string
+
+    CreateRequirementRequest:
+      type: object
+      required: [title]
+      properties:
+        title:
+          type: string
+        description:
+          type: string
+        type:
+          $ref: "#/components/schemas/RequirementType"
+        priority:
+          $ref: "#/components/schemas/Priority"
+        category:
+          type: string
+        projectId:
+          type: string
+        tags:
+          type: array
+          items:
+            type: string
+
+    UpdateRequirementRequest:
+      type: object
+      properties:
+        title:
+          type: string
+        description:
+          type: string
+        priority:
+          $ref: "#/components/schemas/Priority"
+        category:
+          type: string
+        assignedTo:
+          type: string
+        tags:
+          type: array
+          items:
+            type: string
+
+    RequirementsFunnel:
+      type: object
+      properties:
+        draft:
+          type: integer
+        review:
+          type: integer
+        approved:
+          type: integer
+        rejected:
+          type: integer
+        implemented:
+          type: integer
+        verified:
+          type: integer
+        total:
+          type: integer
+
+    # ========== AI Suggestions ==========
+    SuggestionType:
+      type: string
+      enum:
+        [
+          REQUIREMENT,
+          CLARIFICATION,
+          REFINEMENT,
+          ALTERNATIVE,
+          DECOMPOSITION,
+          DEPENDENCY,
+          EDGE_CASE,
+          SECURITY,
+          PERFORMANCE,
+          TESTABILITY,
+        ]
+
+    SuggestionStatus:
+      type: string
+      enum: [PENDING, ACCEPTED, REJECTED, DEFERRED, APPLIED, EXPIRED]
+
+    AISuggestion:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        tenantId:
+          type: string
+        projectId:
+          type: string
+        type:
+          $ref: "#/components/schemas/SuggestionType"
+        status:
+          $ref: "#/components/schemas/SuggestionStatus"
+        title:
+          type: string
+        content:
+          type: string
+        rationale:
+          type: string
+        sourceModel:
+          type: string
+        targetResourceId:
+          type: string
+        targetResourceType:
+          type: string
+        confidence:
+          type: number
+          format: double
+        priority:
+          $ref: "#/components/schemas/Priority"
+        createdAt:
+          type: string
+          format: date-time
+        reviewedAt:
+          type: string
+          format: date-time
+        reviewedBy:
+          type: string
+        reviewNotes:
+          type: string
+
+    GenerateSuggestionRequest:
+      type: object
+      required: [type, targetResourceType, targetResourceId]
+      properties:
+        type:
+          $ref: "#/components/schemas/SuggestionType"
+        targetResourceType:
+          type: string
+        targetResourceId:
+          type: string
+        context:
+          type: string
+
+    AcceptSuggestionRequest:
+      type: object
+      properties:
+        notes:
+          type: string
+
+    RejectSuggestionRequest:
+      type: object
+      required: [reason]
+      properties:
+        reason:
+          type: string
+
+    AISuggestionStats:
+      type: object
+      properties:
+        pendingCount:
+          type: integer
+        acceptedCount:
+          type: integer
+        rejectedCount:
+          type: integer
+        acceptanceRate:
+          type: number
+          format: double
+        averageConfidence:
+          type: number
+          format: double
+        byType:
+          type: object
+          additionalProperties:
+            type: integer
+
+    # ========== Architecture ==========
+    ImpactAnalysisRequest:
+      type: object
+      required: [requirementId]
+      properties:
+        requirementId:
+          type: string
+        changeDescription:
+          type: string
+
+    ImpactAnalysisResult:
+      type: object
+      properties:
+        requirementId:
+          type: string
+        blastRadius:
+          type: integer
+        riskScore:
+          type: number
+          format: double
+        riskLevel:
+          type: string
+          enum: [LOW, MEDIUM, HIGH, CRITICAL]
+        affectedComponents:
+          type: array
+          items:
+            type: string
+        recommendations:
+          type: array
+          items:
+            type: string
+
+    DependencyGraph:
+      type: object
+      properties:
+        rootComponent:
+          type: string
+        nodes:
+          type: array
+          items:
+            $ref: "#/components/schemas/DependencyNode"
+        edges:
+          type: array
+          items:
+            $ref: "#/components/schemas/DependencyEdge"
+
+    DependencyNode:
+      type: object
+      properties:
+        id:
+          type: string
+        type:
+          type: string
+        depth:
+          type: integer
+
+    DependencyEdge:
+      type: object
+      properties:
+        from:
+          type: string
+        to:
+          type: string
+        relationship:
+          type: string
+
+    SimulationRequest:
+      type: object
+      required: [changes]
+      properties:
+        changes:
+          type: array
+          items:
+            $ref: "#/components/schemas/ProposedChange"
+
+    ProposedChange:
+      type: object
+      properties:
+        targetId:
+          type: string
+        targetType:
+          type: string
+        description:
+          type: string
+
+    SimulationResult:
+      type: object
+      properties:
+        changeCount:
+          type: integer
+        totalBlastRadius:
+          type: integer
+        averageRiskScore:
+          type: number
+          format: double
+        maxRiskScore:
+          type: number
+          format: double
+        allAffectedComponents:
+          type: array
+          items:
+            type: string
+
+    ArchitectureHealth:
+      type: object
+      properties:
+        totalComponents:
+          type: integer
+        totalDependencies:
+          type: integer
+        averageCoupling:
+          type: number
+          format: double
+        maxCoupling:
+          type: number
+          format: double
+        healthScore:
+          type: number
+          format: double
+        hotspots:
+          type: array
+          items:
+            type: string
+
+    # ========== Authorization ==========
+    CheckPermissionRequest:
+      type: object
+      required: [userId, resource, action]
+      properties:
+        userId:
+          type: string
+        resource:
+          type: string
+        action:
+          type: string
+
+    CheckPermissionResponse:
+      type: object
+      properties:
+        allowed:
+          type: boolean
+        reason:
+          type: string
+
+    UserPermissions:
+      type: object
+      properties:
+        userId:
+          type: string
+        permissions:
+          type: array
+          items:
+            type: string
+        roles:
+          type: array
+          items:
+            type: string
+        personas:
+          type: array
+          items:
+            type: string
+
+    PersonaPermissions:
+      type: object
+      properties:
+        persona:
+          type: string
+        permissions:
+          type: array
+          items:
+            type: string
+        description:
+          type: string
+
+    Persona:
+      type: object
+      properties:
+        id:
+          type: string
+        name:
+          type: string
+        description:
+          type: string
+        category:
+          type: string
+          enum: [TECHNICAL, MANAGEMENT, GOVERNANCE, ANALYSIS]
+
+    # ========== Workspace Schemas ==========
+    Workspace:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        tenantId:
+          type: string
+        name:
+          type: string
+        description:
+          type: string
+        ownerId:
+          type: string
+        status:
+          type: string
+          enum: [ACTIVE, ARCHIVED, SUSPENDED]
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
+
+    CreateWorkspaceRequest:
+      type: object
+      required: [name]
+      properties:
+        name:
+          type: string
+        description:
+          type: string
+
+    WorkspaceMember:
+      type: object
+      properties:
+        userId:
+          type: string
+        role:
+          type: string
+          enum: [OWNER, ADMIN, MEMBER, VIEWER]
+        joinedAt:
+          type: string
+          format: date-time
+
+    AddMemberRequest:
+      type: object
+      required: [userId, role]
+      properties:
+        userId:
+          type: string
+        role:
+          type: string
+          enum: [ADMIN, MEMBER, VIEWER]
+
+    # ========== Approval Schemas ==========
+    ApprovalWorkflow:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        type:
+          type: string
+        status:
+          type: string
+          enum: [PENDING, APPROVED, REJECTED, CANCELLED]
+        requestedBy:
+          type: string
+        approvers:
+          type: array
+          items:
+            type: string
+        createdAt:
+          type: string
+          format: date-time
+
+    CreateApprovalRequest:
+      type: object
+      required: [type, resourceId]
+      properties:
+        type:
+          type: string
+        resourceId:
+          type: string
+        approvers:
+          type: array
+          items:
+            type: string
+        description:
+          type: string
+
+    ApprovalDecision:
+      type: object
+      required: [decision]
+      properties:
+        decision:
+          type: string
+          enum: [APPROVE, REJECT]
+        comment:
+          type: string
+
+    # ========== Dashboard Schemas ==========
+    Dashboard:
+      type: object
+      properties:
+        id:
+          type: string
+        name:
+          type: string
+        domainId:
+          type: string
+        widgets:
+          type: array
+          items:
+            type: object
+        createdAt:
+          type: string
+          format: date-time
+
+    # ========== Build Schemas ==========
+    BuildRequest:
+      type: object
+      required: [projectId]
+      properties:
+        projectId:
+          type: string
+          format: uuid
+        buildType:
+          type: string
+          enum: [FULL, INCREMENTAL, CLEAN]
+        parameters:
+          type: object
+          additionalProperties:
+            type: string
+
+    BuildJob:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        projectId:
+          type: string
+          format: uuid
+        status:
+          type: string
+          enum: [QUEUED, RUNNING, SUCCESS, FAILED, CANCELLED]
+        buildType:
+          type: string
+        startedAt:
+          type: string
+          format: date-time
+        completedAt:
+          type: string
+          format: date-time
+        duration:
+          type: integer
+          description: Duration in milliseconds
+
+    # ========== Agent Schemas ==========
+    Agent:
+      type: object
+      properties:
+        id:
+          type: string
+        name:
+          type: string
+        role:
+          type: string
+        description:
+          type: string
+        capabilities:
+          type: array
+          items:
+            type: string
+        status:
+          type: string
+          enum: [ACTIVE, INACTIVE, DEGRADED]
+
+    AgentExecuteRequest:
+      type: object
+      required: [agentId, task]
+      properties:
+        agentId:
+          type: string
+        task:
+          type: string
+        parameters:
+          type: object
+          additionalProperties: true
+        priority:
+          type: string
+          enum: [LOW, MEDIUM, HIGH, CRITICAL]
+
+    AgentExecution:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        agentId:
+          type: string
+        status:
+          type: string
+          enum: [PENDING, RUNNING, COMPLETED, FAILED, CANCELLED]
+        result:
+          type: object
+        startedAt:
+          type: string
+          format: date-time
+        completedAt:
+          type: string
+          format: date-time

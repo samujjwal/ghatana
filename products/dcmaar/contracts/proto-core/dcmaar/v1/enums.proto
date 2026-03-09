@@ -1,0 +1,30 @@
+syntax = "proto3";
+
+package dcmaar.v1;
+
+option go_package = "github.com/samujjwal/dcmaar/proto/gen/go/pb/dcmaar/v1;dcmaarv1";
+option java_multiple_files = true;
+option java_outer_classname = "EnumsProto";
+option java_package = "com.dcmaar.v1";
+option csharp_namespace = "Dcmaar.V1";
+option objc_class_prefix = "DCX";
+option php_namespace = "Dcmaar\\V1";
+option ruby_package = "Dcmaar::V1";
+
+// HealthStatus represents the health status of a service or component
+enum HealthStatus {
+  // Health status is unknown
+  HEALTH_STATUS_UNKNOWN = 0;
+  
+  // Service is healthy
+  HEALTH_STATUS_HEALTHY = 1;
+  
+  // Service is degraded but still operational
+  HEALTH_STATUS_DEGRADED = 2;
+  
+  // Service is unhealthy
+  HEALTH_STATUS_UNHEALTHY = 3;
+  
+  // Service is offline or not responding
+  HEALTH_STATUS_OFFLINE = 4;
+}

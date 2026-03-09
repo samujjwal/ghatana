@@ -1,0 +1,558 @@
+scalar DateTime
+scalar JSON
+
+type Query {
+    # Workspace
+    workspaces(tenantId: String!): [Workspace!]!
+    workspace(tenantId: String!, id: ID!): Workspace
+    
+    # Projects
+    projects(tenantId: String, workspaceId: ID): [Project!]!
+    project(tenantId: String!, id: ID!): Project
+
+    # Collaboration
+    teams(tenantId: String!, organizationId: String): [Team!]!
+    team(tenantId: String!, id: ID!): Team
+    myTeams(tenantId: String!): [Team!]!
+    
+    notifications(tenantId: String!, unreadOnly: Boolean): [Notification!]!
+    unreadNotificationCount(tenantId: String!): Int!
+    
+    # Channels
+    channels(tenantId: String!, teamId: ID!): [Channel!]!
+    channel(tenantId: String!, id: ID!): Channel
+
+    # Security
+    vulnerabilities(tenantId: String!, projectId: ID, status: String): [Vulnerability!]!
+    securityScans(tenantId: String!, projectId: ID!): [SecurityScan!]!
+    complianceAssessments(tenantId: String!, projectId: ID): [ComplianceAssessment!]!
+    auditLogs(tenantId: String!, resourceType: String, resourceId: ID, limit: Int): [AuditLog!]!
+
+    # Requirements
+    requirements(tenantId: String!, projectId: ID, status: String): [Requirement!]!
+    requirement(tenantId: String!, id: ID!): Requirement
+    requirementFunnel(tenantId: String!, projectId: ID): FunnelAnalytics!
+
+    # Stories & Sprints
+    stories(tenantId: String!, projectId: ID!, sprintId: ID, status: String): [Story!]!
+    story(tenantId: String!, id: ID!): Story
+    sprints(tenantId: String!, projectId: ID!, status: String): [Sprint!]!
+    sprint(tenantId: String!, id: ID!): Sprint
+
+    # AI Suggestions
+    aiSuggestions(tenantId: String!, projectId: ID, status: String): [AISuggestion!]!
+    aiSuggestion(tenantId: String!, id: ID!): AISuggestion
+    aiSuggestionInbox(tenantId: String!): [AISuggestion!]!
+
+    # Approvals
+    approvals(tenantId: String!, status: String): [ApprovalWorkflow!]!
+    approval(tenantId: String!, id: ID!): ApprovalWorkflow
+    pendingApprovals(tenantId: String!): [ApprovalWorkflow!]!
+
+    # Bootstrapping
+    bootstrappingSession(tenantId: String!, id: ID!): BootstrappingSession
+
+    # Operations
+    alerts(tenantId: String!, projectId: ID, status: String, severity: String): [Alert!]!
+    alert(tenantId: String!, id: ID!): Alert
+    incidents(tenantId: String!, projectId: ID, status: String): [Incident!]!
+    incident(tenantId: String!, id: ID!): Incident
+    metrics(tenantId: String!, projectId: ID!, name: String): [Metric!]!
+    traces(tenantId: String!, projectId: ID, serviceId: String, limit: Int): [Trace!]!
+    logEntries(tenantId: String!, projectId: ID, level: String, limit: Int): [LogEntry!]!
+
+    # Architecture
+    architectureDependencies(tenantId: String!, projectId: ID): JSON
+    techDebt(tenantId: String!, projectId: ID): JSON
+
+    # Dashboards
+    dashboards(tenantId: String!): [Dashboard!]!
+    dashboard(tenantId: String!, id: ID!): Dashboard
+}
+
+type Mutation {
+    # Workspace
+    createWorkspace(tenantId: String!, input: CreateWorkspaceInput!): Workspace!
+    
+    # Collaboration
+    createTeam(tenantId: String!, input: CreateTeamInput!): Team!
+    addTeamMember(tenantId: String!, teamId: ID!, userId: ID!, role: String!): Team!
+    markNotificationRead(tenantId: String!, id: ID!): Boolean!
+    markAllNotificationsRead(tenantId: String!): Boolean!
+    
+    # Channels
+    createChannel(tenantId: String!, input: CreateChannelInput!): Channel!
+    
+    # Security
+    triggerScan(tenantId: String!, projectId: ID!, type: String!): SecurityScan!
+    updateVulnerabilityStatus(tenantId: String!, id: ID!, status: String!): Vulnerability!
+
+    # Requirements
+    createRequirement(tenantId: String!, input: CreateRequirementInput!): Requirement!
+    updateRequirement(tenantId: String!, id: ID!, input: UpdateRequirementInput!): Requirement!
+    deleteRequirement(tenantId: String!, id: ID!): Boolean!
+    approveRequirement(tenantId: String!, id: ID!): Requirement!
+
+    # Stories & Sprints
+    createStory(tenantId: String!, input: CreateStoryInput!): Story!
+    updateStory(tenantId: String!, id: ID!, input: UpdateStoryInput!): Story!
+    deleteStory(tenantId: String!, id: ID!): Boolean!
+    createSprint(tenantId: String!, input: CreateSprintInput!): Sprint!
+    startSprint(tenantId: String!, id: ID!): Sprint!
+    completeSprint(tenantId: String!, id: ID!): Sprint!
+
+    # AI Suggestions
+    generateAISuggestion(tenantId: String!, input: GenerateAISuggestionInput!): AISuggestion!
+    acceptAISuggestion(tenantId: String!, id: ID!): AISuggestion!
+    rejectAISuggestion(tenantId: String!, id: ID!, reason: String): AISuggestion!
+
+    # Approvals
+    createApproval(tenantId: String!, input: CreateApprovalInput!): ApprovalWorkflow!
+    submitApprovalDecision(tenantId: String!, id: ID!, decision: String!, comment: String): ApprovalWorkflow!
+    cancelApproval(tenantId: String!, id: ID!): Boolean!
+
+    # Bootstrapping
+    startBootstrappingSession(tenantId: String!, input: StartBootstrappingInput!): BootstrappingSession!
+    sendBootstrappingMessage(tenantId: String!, sessionId: ID!, message: String!): BootstrappingSession!
+
+    # Operations
+    createAlert(tenantId: String!, input: CreateAlertInput!): Alert!
+    acknowledgeAlert(tenantId: String!, id: ID!): Alert!
+    resolveAlert(tenantId: String!, id: ID!): Alert!
+    createIncident(tenantId: String!, input: CreateIncidentInput!): Incident!
+}
+
+# ========== Types ==========
+
+type Workspace {
+    id: ID!
+    tenantId: String!
+    name: String!
+    description: String
+    type: String!
+    status: String!
+    ownerId: String!
+    createdAt: DateTime!
+    updatedAt: DateTime!
+    # members: [WorkspaceMember!]
+}
+
+type Project {
+    id: ID!
+    tenantId: String!
+    workspaceId: ID!
+    name: String!
+    projectKey: String!
+    status: String!
+    type: String!
+    ownerId: String!
+    createdAt: DateTime!
+    updatedAt: DateTime!
+}
+
+type Team {
+    id: ID!
+    tenantId: String!
+    name: String!
+    description: String
+    avatarUrl: String
+    type: String!
+    visibility: String!
+    timezone: String
+    members: [TeamMember!]
+    createdAt: DateTime!
+    updatedAt: DateTime!
+}
+
+type TeamMember {
+    userId: ID!
+    role: String!
+    joinedAt: DateTime!
+}
+
+type Notification {
+    id: ID!
+    tenantId: String!
+    userId: String!
+    type: String!
+    title: String!
+    message: String
+    actionUrl: String
+    read: Boolean!
+    createdAt: DateTime!
+    metadata: JSON
+}
+
+type Channel {
+    id: ID!
+    tenantId: String!
+    teamId: ID!
+    name: String!
+    type: String!
+    description: String
+    topic: String
+    createdAt: DateTime!
+    updatedAt: DateTime!
+    unreadCount: Int
+}
+
+type Vulnerability {
+    id: ID!
+    tenantId: String!
+    projectId: ID
+    cveId: String
+    title: String!
+    description: String
+    severity: String!
+    status: String!
+    packageName: String
+    packageVersion: String
+    fixedVersion: String
+    cvssScore: Float
+    detectedAt: DateTime!
+    resolvedAt: DateTime
+}
+
+type SecurityScan {
+    id: ID!
+    tenantId: String!
+    projectId: ID!
+    type: String!
+    status: String!
+    startedAt: DateTime
+    completedAt: DateTime
+    summary: JSON
+    findingsCount: Int
+}
+
+type ComplianceAssessment {
+    id: ID!
+    tenantId: String!
+    projectId: ID
+    framework: String!
+    status: String!
+    score: Int
+    lastAssessmentAt: DateTime!
+}
+
+type AuditLog {
+    id: ID!
+    tenantId: String!
+    userId: String
+    action: String!
+    resourceType: String!
+    resourceId: String
+    details: JSON
+    timestamp: DateTime!
+}
+
+type Requirement {
+    id: ID!
+    tenantId: String!
+    projectId: ID
+    title: String!
+    description: String
+    domain: String
+    status: String!
+    priority: String
+    qualityScore: Float
+    createdBy: String
+    createdAt: DateTime!
+    updatedAt: DateTime!
+}
+
+type FunnelAnalytics {
+    draft: Int!
+    submitted: Int!
+    inReview: Int!
+    approved: Int!
+    rejected: Int!
+    implemented: Int!
+}
+
+type Story {
+    id: ID!
+    tenantId: String!
+    projectId: ID!
+    sprintId: ID
+    storyKey: String!
+    title: String!
+    description: String
+    type: String!
+    status: String!
+    priority: String!
+    storyPoints: Int
+    assigneeId: String
+    tasks: [Task!]
+    acceptanceCriteria: [AcceptanceCriterion!]
+    createdAt: DateTime!
+    updatedAt: DateTime!
+}
+
+type Task {
+    id: ID!
+    title: String!
+    description: String
+    status: String!
+    assigneeId: String
+    aiGenerated: Boolean!
+}
+
+type AcceptanceCriterion {
+    id: ID!
+    description: String!
+    met: Boolean!
+    aiGenerated: Boolean!
+}
+
+type Sprint {
+    id: ID!
+    tenantId: String!
+    projectId: ID!
+    name: String!
+    goal: String
+    status: String!
+    startDate: DateTime
+    endDate: DateTime
+    stories: [Story!]
+    createdAt: DateTime!
+    updatedAt: DateTime!
+}
+
+type AISuggestion {
+    id: ID!
+    tenantId: String!
+    projectId: ID
+    type: String!
+    status: String!
+    title: String!
+    content: String
+    confidence: Float
+    rationale: String
+    generatedBy: String
+    modelId: String
+    createdAt: DateTime!
+    resolvedAt: DateTime
+}
+
+type ApprovalWorkflow {
+    id: ID!
+    tenantId: String!
+    type: String!
+    status: String!
+    resourceId: ID!
+    requestedBy: String!
+    approvers: [String!]
+    decisions: [ApprovalDecision!]
+    createdAt: DateTime!
+    resolvedAt: DateTime
+}
+
+type ApprovalDecision {
+    userId: String!
+    decision: String!
+    comment: String
+    decidedAt: DateTime!
+}
+
+type BootstrappingSession {
+    id: ID!
+    tenantId: String!
+    workspaceId: ID!
+    userId: String!
+    status: String!
+    initialIdea: String
+    conversationHistory: [ConversationTurn!]
+    projectDefinition: JSON
+    createdAt: DateTime!
+    updatedAt: DateTime!
+}
+
+type ConversationTurn {
+    role: String!
+    content: String!
+    timestamp: DateTime!
+}
+
+type Alert {
+    id: ID!
+    tenantId: String!
+    projectId: ID
+    name: String!
+    description: String
+    severity: String!
+    status: String!
+    condition: String
+    metricName: String
+    threshold: Float
+    message: String
+    triggeredAt: DateTime
+    acknowledgedAt: DateTime
+    resolvedAt: DateTime
+    createdAt: DateTime!
+}
+
+type Incident {
+    id: ID!
+    tenantId: String!
+    projectId: ID
+    title: String!
+    description: String
+    severity: String!
+    status: String!
+    commanderId: String
+    impactedServices: [String!]
+    startedAt: DateTime
+    resolvedAt: DateTime
+    createdAt: DateTime!
+}
+
+type Metric {
+    id: ID!
+    tenantId: String!
+    projectId: ID!
+    name: String!
+    type: String!
+    unit: String
+    value: Float
+    tags: JSON
+    createdAt: DateTime!
+}
+
+type Trace {
+    id: ID!
+    tenantId: String!
+    traceId: String!
+    name: String!
+    service: String!
+    operation: String
+    status: String!
+    durationMs: Float
+    startTime: DateTime!
+    endTime: DateTime
+    spans: JSON
+}
+
+type LogEntry {
+    id: ID!
+    tenantId: String!
+    projectId: ID
+    level: String!
+    message: String!
+    source: String
+    timestamp: DateTime!
+    metadata: JSON
+}
+
+type Dashboard {
+    id: ID!
+    tenantId: String!
+    name: String!
+    domainId: String
+    widgets: JSON
+    createdAt: DateTime!
+}
+
+# ========== Inputs ==========
+
+input CreateWorkspaceInput {
+    name: String!
+    description: String
+    type: String
+}
+
+input CreateTeamInput {
+    name: String!
+    description: String
+    type: String
+    visibility: String
+    organizationId: String
+}
+
+input CreateChannelInput {
+    teamId: ID!
+    name: String!
+    type: String!
+    description: String
+}
+
+input CreateRequirementInput {
+    projectId: ID!
+    title: String!
+    description: String
+    domain: String
+    priority: String
+}
+
+input UpdateRequirementInput {
+    title: String
+    description: String
+    domain: String
+    priority: String
+}
+
+input CreateStoryInput {
+    projectId: ID!
+    sprintId: ID
+    title: String!
+    description: String
+    type: String
+    priority: String
+    storyPoints: Int
+    generateTasks: Boolean
+    generateAcceptanceCriteria: Boolean
+}
+
+input UpdateStoryInput {
+    title: String
+    description: String
+    type: String
+    priority: String
+    storyPoints: Int
+}
+
+input CreateSprintInput {
+    projectId: ID!
+    name: String!
+    goal: String
+    startDate: DateTime
+    endDate: DateTime
+}
+
+input GenerateAISuggestionInput {
+    projectId: ID
+    workspaceId: ID
+    suggestionType: String!
+    userPrompt: String!
+    context: JSON
+}
+
+input CreateApprovalInput {
+    type: String!
+    resourceId: ID!
+    approvers: [ID!]
+    description: String
+}
+
+input StartBootstrappingInput {
+    workspaceId: ID!
+    initialPrompt: String!
+}
+
+input CreateAlertInput {
+    projectId: ID!
+    name: String!
+    description: String
+    severity: String!
+    condition: String!
+    metricName: String
+    threshold: Float
+}
+
+input CreateIncidentInput {
+    projectId: ID!
+    title: String!
+    description: String
+    severity: String!
+    impactedServices: [String!]
+}

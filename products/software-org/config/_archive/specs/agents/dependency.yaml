@@ -1,0 +1,41 @@
+id: dependency
+agent: DependencyAgent
+role: Solution Architect
+inputs_spec:
+- name: project_risks
+  description: List of major project risks.
+  format: List of risk objects
+outputs_spec:
+- name: project_dependencies
+  description: List of key project dependencies, with impact and associated risks.
+  format: List of dependency objects (description, impact, related_risks)
+  example: "- description: \"External authentication service\"\n  impact: \"Critical for login\"\n  related_risks: [\"Service downtime\"]\n"
+acceptance_criteria:
+- All key dependencies are listed (internal/external).
+- Each dependency is described with its impact.
+- Risks from dependencies are identified.
+agent_tasks:
+- List all key dependencies.
+- Describe each dependency's impact.
+- Identify risks from dependencies.
+dependencies:
+- project_risks
+failure_escalation:
+- Escalate to solution architect if critical dependencies are not addressed.
+references: []
+internal_logic:
+  - perception:
+      description: "Extract dependencies from risk analysis."
+  - model:
+      description: "Dependencies: {id, description, type, mapped_risks, owner, status}"
+  - planning:
+      description: |
+        "Map dependencies to risks and assign status."
+  - action:
+      description: "Produce YAML dependency list."
+validation:
+  - "Lead engineer or PM review."
+  - "Audit all critical or external dependencies."
+quality_enhancements:
+  - "Dependency and status tracking templates."
+  - "Escalation log for blocked or at-risk dependencies."

@@ -1,0 +1,36 @@
+name: Migration Inventory Check
+
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+    paths:
+      - 'multi-agent-system/**'
+      - 'core/**'
+      - 'scripts/**'
+      - 'docs/modules/**'
+
+jobs:
+  inventory:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.11'
+      - name: Run public-type inventory
+        run: |
+          python3 scripts/public_type_inventory.py --modules multi-agent-system/shared/models multi-agent-system/shared/observability multi-agent-system/shared/common
+      - name: Run consumer usage report
+        run: |
+          python3 scripts/consumer_usage_report.py --inventory docs/modules/inventories/public_types.csv
+      - name: Generate dependency graph
+        run: |
+          python3 scripts/dependency_graph.py --bases multi-agent-system/shared --out docs/modules/dependency-graphs/shared_graph.dot
+      - name: Upload artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: migration-reports
+          path: docs/modules/inventories/**
+

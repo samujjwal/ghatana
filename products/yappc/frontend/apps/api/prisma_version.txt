@@ -1,0 +1,19 @@
+npm warn Unknown project config "shamefully-hoist". This will stop working in the next major version of npm.
+npm warn Unknown project config "strict-peer-dependencies". This will stop working in the next major version of npm.
+npm warn Unknown project config "auto-install-peers". This will stop working in the next major version of npm.
+npm warn Unknown project config "lockfile". This will stop working in the next major version of npm.
+npm warn Unknown project config "prefer-frozen-lockfile". This will stop working in the next major version of npm.
+Environment variables loaded from .env
+Prisma schema loaded from prisma/schema.prisma
+prisma                  : 6.19.0
+@prisma/client          : 7.2.0
+Computed binaryTarget   : debian-openssl-1.1.x
+Operating System        : linux
+Architecture            : x64
+Node.js                 : v24.10.0
+TypeScript              : 5.9.3
+Query Engine (Node-API) : libquery-engine 2ba551f319ab1df4bc874a89965d8b3641056773 (at ../../node_modules/.pnpm/@prisma+engines@6.19.0/node_modules/@prisma/engines/libquery_engine-debian-openssl-1.1.x.so.node)
+PSL                     : @prisma/prisma-schema-wasm 6.19.0-26.2ba551f319ab1df4bc874a89965d8b3641056773
+Schema Engine           : schema-engine-cli 2ba551f319ab1df4bc874a89965d8b3641056773 (at ../../node_modules/.pnpm/@prisma+engines@6.19.0/node_modules/@prisma/engines/schema-engine-debian-openssl-1.1.x)
+Default Engines Hash    : 2ba551f319ab1df4bc874a89965d8b3641056773
+Studio                  : 0.511.0

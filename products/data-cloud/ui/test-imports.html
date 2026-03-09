@@ -1,0 +1,34 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <title>Import Test</title>
+</head>
+
+<body>
+    <h1>Testing Module Imports</h1>
+    <div id="results"></div>
+
+    <script type="module">
+        const results = document.getElementById('results');
+
+        async function testImport(name, path) {
+            try {
+                const module = await import(path);
+                results.innerHTML += `<div style="color: green;">✓ ${name}: ${Object.keys(module).join(', ')}</div>`;
+            } catch (e) {
+                results.innerHTML += `<div style="color: red;">✗ ${name}: ${e.message}</div>`;
+            }
+        }
+
+        // Test each page
+        await testImport('InsightsPage', './src/pages/InsightsPage.tsx');
+        await testImport('AlertsPage', './src/pages/AlertsPage.tsx');
+        await testImport('SqlWorkspacePage', './src/pages/SqlWorkspacePage.tsx');
+        await testImport('TrustCenter', './src/pages/TrustCenter.tsx');
+        await testImport('SettingsPage', './src/pages/SettingsPage.tsx');
+        await testImport('IntelligentHub', './src/pages/IntelligentHub.tsx');
+    </script>
+</body>
+
+</html>

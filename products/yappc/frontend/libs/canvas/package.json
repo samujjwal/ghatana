@@ -1,0 +1,71 @@
+{
+  "name": "@ghatana/yappc-canvas",
+  "version": "1.0.0",
+  "description": "World-class, production-ready Canvas library for diagramming applications",
+  "type": "module",
+  "main": "./src/index.ts",
+  "types": "./src/index.ts",
+  "exports": {
+    ".": "./src/index.ts",
+    "./edgeless": "./src/edgeless/index.ts",
+    "./sketch": "./src/sketch/index.ts",
+    "./examples": "./examples/index.js",
+    "./examples/*": "./examples/*",
+    "./migration/legacy-atoms": "./src/migration/legacy-atoms.ts"
+  },
+  "files": [
+    "src",
+    "dist"
+  ],
+  "scripts": {
+    "build": "tsc --build",
+    "test": "vitest --config=./vitest.config.ts",
+    "test:coverage": "vitest --coverage",
+    "test:ui": "vitest --ui",
+    "lint": "eslint src --ext .ts,.tsx",
+    "typecheck": "tsc --noEmit"
+  },
+  "peerDependencies": {
+    "react": "^19.1.0",
+    "react-dom": "^19.1.0"
+  },
+  "dependencies": {
+    "@ghatana/canvas": "workspace:*",
+    "@ghatana/yappc-ai": "workspace:*",
+    "@ghatana/yappc-ide": "workspace:*",
+    "@ghatana/yappc-types": "workspace:*",
+    "@ghatana/yappc-ui": "workspace:*",
+    "jotai": "^2.17.0",
+    "@ghatana/ui": "workspace:*",
+    "@xyflow/react": "^12.10.0"
+  },
+  "devDependencies": {
+    "@testing-library/jest-dom": "^6.9.1",
+    "@testing-library/react": "^16.3.2",
+    "@testing-library/user-event": "^14.6.1",
+    "@types/js-yaml": "^4.0.9",
+    "@types/react": "^19.2.10",
+    "@types/react-dom": "^19.2.3",
+    "@vitest/coverage-v8": "^4.0.18",
+    "@vitest/ui": "^4.0.18",
+    "eslint": "^9.39.2",
+    "js-yaml": "^4.1.1",
+    "typescript": "^5.9.3",
+    "vitest": "^4.0.18"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/yappc/app-creator.git",
+    "directory": "libs/canvas"
+  },
+  "keywords": [
+    "canvas",
+    "diagram",
+    "react",
+    "typescript",
+    "drawing",
+    "visualization"
+  ],
+  "author": "YAPPC Team",
+  "license": "MIT"
+}

@@ -1,0 +1,1075 @@
+{
+    "domain": "Business_Organizations_SocialScience",
+    "levels": {
+        "Foundational": {
+            "concepts": [
+                {
+                    "id": "bus_F_1",
+                    "name": "What is a Business / Organization — basics of enterprise and society",
+                    "description": "Introduce the idea of businesses and organizations: what they are, why they exist; concept of goods/services, basic roles (producer, consumer), simple supply & demand ideas; role of organizations in everyday life and economy.",
+                    "prerequisites": [],
+                    "audience_tags": [
+                        "K-12",
+                        "Independent_Study"
+                    ],
+                    "keywords": [
+                        "business",
+                        "organization",
+                        "goods",
+                        "services",
+                        "consumer",
+                        "producer",
+                        "economy",
+                        "trade",
+                        "supply",
+                        "demand"
+                    ],
+                    "simulation_metadata": {
+                        "simulation_type": "interactive_visualization + simple_exercise",
+                        "recommended_interactivity": "low",
+                        "purpose": "Visualize simple economy: producers provide goods/services, consumers consume; show flows of goods & money; illustrate why organizations/businesses form.",
+                        "estimated_time": "15 min"
+                    },
+                    "cross_domain_links": [],
+                    "learning_object_metadata": {
+                        "author": "TutorPutor Team",
+                        "version": "1.0.0",
+                        "status": "published",
+                        "intended_end_user_role": [
+                            "student",
+                            "self-learner"
+                        ],
+                        "context": [
+                            "self-study",
+                            "classroom introduction"
+                        ],
+                        "difficulty": "easy",
+                        "typical_learning_time": "20 min",
+                        "learning_object_type": "conceptual_explanation",
+                        "creation_date": "2025-12-05",
+                        "last_modified": "2025-12-05"
+                    },
+                    "pedagogical_metadata": {
+                        "learning_objectives": [
+                            "Define what a business or organization is and describe its purpose.",
+                            "Explain difference between goods and services, producers and consumers.",
+                            "Recognize that businesses exist to provide goods/services and satisfy needs."
+                        ],
+                        "competencies": [
+                            "economic literacy",
+                            "organizational awareness",
+                            "basic reasoning"
+                        ],
+                        "scaffolding_level": "standalone",
+                        "accessibility_notes": ""
+                    }
+                },
+                {
+                    "id": "bus_F_2",
+                    "name": "Basic Economics: Supply, Demand & Markets (intro)",
+                    "description": "Introduce simple supply and demand dynamics: what supply/demand mean, how price emerges, how supply and demand curves shift, simple market equilibrium idea, effects of scarcity and consumer choices.",
+                    "prerequisites": [
+                        "bus_F_1"
+                    ],
+                    "audience_tags": [
+                        "K-12",
+                        "Independent_Study"
+                    ],
+                    "keywords": [
+                        "supply",
+                        "demand",
+                        "market",
+                        "price",
+                        "scarcity",
+                        "equilibrium",
+                        "consumer",
+                        "producer",
+                        "shortage",
+                        "surplus"
+                    ],
+                    "simulation_metadata": {
+                        "simulation_type": "market_simulator + interactive_chart",
+                        "recommended_interactivity": "low",
+                        "purpose": "Allow user to manipulate supply & demand curves (shift supply/demand), observe effect on price and quantity, simulate shortage or surplus, basic market dynamics.",
+                        "estimated_time": "20 min"
+                    },
+                    "cross_domain_links": [],
+                    "learning_object_metadata": {
+                        "author": "TutorPutor Team",
+                        "version": "1.0.0",
+                        "status": "published",
+                        "intended_end_user_role": [
+                            "student",
+                            "self-learner"
+                        ],
+                        "context": [
+                            "self-study",
+                            "classroom"
+                        ],
+                        "difficulty": "easy",
+                        "typical_learning_time": "25 min",
+                        "learning_object_type": "simulation + conceptual_explanation",
+                        "creation_date": "2025-12-05",
+                        "last_modified": "2025-12-05"
+                    },
+                    "pedagogical_metadata": {
+                        "learning_objectives": [
+                            "Define supply, demand, and market price conceptually.",
+                            "Simulate how shifts in supply or demand affect price and quantity.",
+                            "Recognize effects of scarcity, surplus, and shortage on markets."
+                        ],
+                        "competencies": [
+                            "economic reasoning",
+                            "graphical interpretation",
+                            "cause-effect thinking"
+                        ],
+                        "scaffolding_level": "scaffolded",
+                        "accessibility_notes": ""
+                    }
+                },
+                {
+                    "id": "bus_F_3",
+                    "name": "Money, Trade & Value — basics of exchange and barter to currency",
+                    "description": "Explain how trade originally worked (barter), problems with barter, how money/currency solves trade problems, concept of value, medium of exchange, basics of prices and exchange value.",
+                    "prerequisites": [
+                        "bus_F_1",
+                        "bus_F_2"
+                    ],
+                    "audience_tags": [
+                        "K-12",
+                        "Independent_Study"
+                    ],
+                    "keywords": [
+                        "money",
+                        "trade",
+                        "barter",
+                        "currency",
+                        "exchange",
+                        "value",
+                        "price",
+                        "medium of exchange",
+                        "market",
+                        "economy"
+                    ],
+                    "simulation_metadata": {
+                        "simulation_type": "trade_simulator + interactive_exercise",
+                        "recommended_interactivity": "low",
+                        "purpose": "Simulate barter exchanges between agents; show inefficiencies; then simulate trade using money/currency; illustrate how currency simplifies transactions and allows for value storage and exchange.",
+                        "estimated_time": "20 min"
+                    },
+                    "cross_domain_links": [],
+                    "learning_object_metadata": {
+                        "author": "TutorPutor Team",
+                        "version": "1.0.0",
+                        "status": "published",
+                        "intended_end_user_role": [
+                            "student",
+                            "self-learner"
+                        ],
+                        "context": [
+                            "self-study",
+                            "classroom"
+                        ],
+                        "difficulty": "easy",
+                        "typical_learning_time": "25 min",
+                        "learning_object_type": "simulation + conceptual_explanation",
+                        "creation_date": "2025-12-05",
+                        "last_modified": "2025-12-05"
+                    },
+                    "pedagogical_metadata": {
+                        "learning_objectives": [
+                            "Explain difference between barter and currency-based trade.",
+                            "Understand why money/currency emerged historically as medium of exchange.",
+                            "Recognize how currency enables trade and reflects value."
+                        ],
+                        "competencies": [
+                            "economic literacy",
+                            "historical reasoning",
+                            "conceptual clarity"
+                        ],
+                        "scaffolding_level": "scaffolded",
+                        "accessibility_notes": ""
+                    }
+                },
+                {
+                    "id": "bus_F_4",
+                    "name": "Roles & Jobs: what workers, employers and organizations do",
+                    "description": "Introduce concepts of work: employees, employers, roles/functions, organization structure at very simple level; what earning means; wages/salary, labor vs capital; how people contribute to organizations.",
+                    "prerequisites": [
+                        "bus_F_1"
+                    ],
+                    "audience_tags": [
+                        "K-12",
+                        "Independent_Study"
+                    ],
+                    "keywords": [
+                        "job",
+                        "employee",
+                        "employer",
+                        "work",
+                        "wages",
+                        "salary",
+                        "labor",
+                        "organization",
+                        "role",
+                        "function"
+                    ],
+                    "simulation_metadata": {
+                        "simulation_type": "interactive_scenario + simple_simulator",
+                        "recommended_interactivity": "low",
+                        "purpose": "Create simple organization with roles, assign workers, simulate production process, show that workers get compensation, organization produces output — illustrate how work and wages connect.",
+                        "estimated_time": "20 min"
+                    },
+                    "cross_domain_links": [],
+                    "learning_object_metadata": {
+                        "author": "TutorPutor Team",
+                        "version": "1.0.0",
+                        "status": "published",
+                        "intended_end_user_role": [
+                            "student",
+                            "self-learner"
+                        ],
+                        "context": [
+                            "self-study",
+                            "classroom"
+                        ],
+                        "difficulty": "easy",
+                        "typical_learning_time": "25 min",
+                        "learning_object_type": "simulation + conceptual_explanation",
+                        "creation_date": "2025-12-05",
+                        "last_modified": "2025-12-05"
+                    },
+                    "pedagogical_metadata": {
+                        "learning_objectives": [
+                            "Define roles of worker and employer in an organization.",
+                            "Understand basic concept of labor, wages and compensation.",
+                            "Recognize that organizations coordinate work to produce goods/services."
+                        ],
+                        "competencies": [
+                            "economic reasoning",
+                            "social literacy",
+                            "organizational awareness"
+                        ],
+                        "scaffolding_level": "scaffolded",
+                        "accessibility_notes": ""
+                    }
+                },
+                {
+                    "id": "bus_F_5",
+                    "name": "Simple Business Models — how businesses make money",
+                    "description": "Basic idea of how businesses generate revenue: cost vs revenue, profit; simple model of buying resources, producing goods/services, selling to customers — concept of margin, cost, revenue, profit in intuitive sense.",
+                    "prerequisites": [
+                        "bus_F_3",
+                        "bus_F_4"
+                    ],
+                    "audience_tags": [
+                        "K-12",
+                        "Independent_Study"
+                    ],
+                    "keywords": [
+                        "business model",
+                        "cost",
+                        "revenue",
+                        "profit",
+                        "margin",
+                        "sell",
+                        "buy",
+                        "cost structure",
+                        "goods",
+                        "services"
+                    ],
+                    "simulation_metadata": {
+                        "simulation_type": "business_model_simulator + interactive_exercise",
+                        "recommended_interactivity": "low",
+                        "purpose": "Let user run a toy business: buy inputs at cost, transform into outputs, sell at price — compute revenue, cost, profit or loss; visualize profitability depending on price and cost structure.",
+                        "estimated_time": "25 min"
+                    },
+                    "cross_domain_links": [],
+                    "learning_object_metadata": {
+                        "author": "TutorPutor Team",
+                        "version": "1.0.0",
+                        "status": "published",
+                        "intended_end_user_role": [
+                            "student",
+                            "self-learner"
+                        ],
+                        "context": [
+                            "self-study",
+                            "classroom"
+                        ],
+                        "difficulty": "easy",
+                        "typical_learning_time": "30 min",
+                        "learning_object_type": "simulation + exercise",
+                        "creation_date": "2025-12-05",
+                        "last_modified": "2025-12-05"
+                    },
+                    "pedagogical_metadata": {
+                        "learning_objectives": [
+                            "Understand basic cost, revenue, and profit concepts.",
+                            "Simulate simple business operations and compute profit/loss.",
+                            "Recognize how price, cost and volume affect business viability."
+                        ],
+                        "competencies": [
+                            "economic literacy",
+                            "numeracy",
+                            "basic business sense"
+                        ],
+                        "scaffolding_level": "scaffolded",
+                        "accessibility_notes": ""
+                    }
+                }
+            ]
+        },
+        "Intermediate": {
+            "concepts": [
+                {
+                    "id": "bus_I_1",
+                    "name": "Market Structures & Competition: monopoly, oligopoly, perfect competition, monopolistic",
+                    "description": "Introduce different types of market structures — perfect competition, monopoly, oligopoly, monopolistic competition — what differentiates them: number of firms, barriers to entry, price vs quantity competition, basic implications for consumers and producers.",
+                    "prerequisites": [
+                        "bus_F_2",
+                        "bus_F_5"
+                    ],
+                    "audience_tags": [
+                        "College",
+                        "Independent_Study"
+                    ],
+                    "keywords": [
+                        "market structure",
+                        "monopoly",
+                        "oligopoly",
+                        "perfect competition",
+                        "monopolistic competition",
+                        "competition",
+                        "market power",
+                        "barriers to entry"
+                    ],
+                    "simulation_metadata": {
+                        "simulation_type": "market_structure_simulator + interactive_chart",
+                        "recommended_interactivity": "medium",
+                        "purpose": "Simulate markets under different structures, allow user to change number of firms, entry barriers, cost structures; observe price, output, consumer surplus, producer surplus under each scenario.",
+                        "estimated_time": "30 min"
+                    },
+                    "cross_domain_links": [],
+                    "learning_object_metadata": {
+                        "author": "TutorPutor Team",
+                        "version": "1.0.0",
+                        "status": "draft",
+                        "intended_end_user_role": [
+                            "student",
+                            "self-learner"
+                        ],
+                        "context": [
+                            "self-study",
+                            "intro economics coursework"
+                        ],
+                        "difficulty": "intermediate",
+                        "typical_learning_time": "35 min",
+                        "learning_object_type": "simulation + conceptual_explanation",
+                        "creation_date": "2025-12-05",
+                        "last_modified": "2025-12-05"
+                    },
+                    "pedagogical_metadata": {
+                        "learning_objectives": [
+                            "Describe various market structures and their characteristics.",
+                            "Simulate how market structure affects price, output, competition, consumer/producer surplus.",
+                            "Analyze implications of barriers to entry and market power on welfare and competition."
+                        ],
+                        "competencies": [
+                            "economic reasoning",
+                            "market analysis",
+                            "comparative analysis",
+                            "simulation modelling"
+                        ],
+                        "scaffolding_level": "scaffolded",
+                        "accessibility_notes": ""
+                    }
+                },
+                {
+                    "id": "bus_I_2",
+                    "name": "Costs, Revenue, Profit & Break-Even Analysis",
+                    "description": "Introduce cost structures (fixed vs variable costs), revenue, marginal cost and revenue, break-even point; basic accounting/finance view of a small business — understand how costs and volume affect profitability and decision-making.",
+                    "prerequisites": [
+                        "bus_F_5"
+                    ],
+                    "audience_tags": [
+                        "College",
+                        "Independent_Study"
+                    ],
+                    "keywords": [
+                        "fixed cost",
+                        "variable cost",
+                        "marginal cost",
+                        "revenue",
+                        "profit",
+                        "break-even",
+                        "cost structure",
+                        "business finance"
+                    ],
+                    "simulation_metadata": {
+                        "simulation_type": "business_finance_simulator + interactive_exercise",
+                        "recommended_interactivity": "medium",
+                        "purpose": "Allow user to set cost parameters (fixed, variable), choose price, vary production volume, compute revenue, cost, profit/loss; plot cost/revenue curves and identify break-even volume.",
+                        "estimated_time": "30 min"
+                    },
+                    "cross_domain_links": [],
+                    "learning_object_metadata": {
+                        "author": "TutorPutor Team",
+                        "version": "1.0.0",
+                        "status": "draft",
+                        "intended_end_user_role": [
+                            "student",
+                            "self-learner"
+                        ],
+                        "context": [
+                            "intro business/economics coursework",
+                            "self-study"
+                        ],
+                        "difficulty": "intermediate",
+                        "typical_learning_time": "35 min",
+                        "learning_object_type": "simulation + exercise",
+                        "creation_date": "2025-12-05",
+                        "last_modified": "2025-12-05"
+                    },
+                    "pedagogical_metadata": {
+                        "learning_objectives": [
+                            "Differentiate fixed vs variable costs, and compute total cost for given volume.",
+                            "Calculate revenue, marginal cost/revenue, profit or loss for various volumes.",
+                            "Perform break-even analysis and interpret results for business decisions."
+                        ],
+                        "competencies": [
+                            "financial reasoning",
+                            "quantitative calculation",
+                            "business decision-making"
+                        ],
+                        "scaffolding_level": "scaffolded",
+                        "accessibility_notes": ""
+                    }
+                },
+                {
+                    "id": "bus_I_3",
+                    "name": "Basic Organizational Structure & Management: departments, roles, coordination",
+                    "description": "Explain how organizations/businesses are structured internally: departments (e.g. production, sales, finance), roles, hierarchy vs flat, coordination and communication, basic idea of management and leadership functions in organizations.",
+                    "prerequisites": [
+                        "bus_F_4",
+                        "bus_F_5"
+                    ],
+                    "audience_tags": [
+                        "College",
+                        "Independent_Study"
+                    ],
+                    "keywords": [
+                        "organization structure",
+                        "management",
+                        "leadership",
+                        "department",
+                        "hierarchy",
+                        "coordination",
+                        "roles",
+                        "communication",
+                        "organization design"
+                    ],
+                    "simulation_metadata": {
+                        "simulation_type": "organization_simulator + role_assignment + simple_dynamics",
+                        "recommended_interactivity": "medium",
+                        "purpose": "Let user build an organization: assign departments & roles, define workflows, simulate tasks and communication flows, observe how structure impacts efficiency, output, and coordination overhead.",
+                        "estimated_time": "30 min"
+                    },
+                    "cross_domain_links": [],
+                    "learning_object_metadata": {
+                        "author": "TutorPutor Team",
+                        "version": "1.0.0",
+                        "status": "draft",
+                        "intended_end_user_role": [
+                            "student",
+                            "self-learner"
+                        ],
+                        "context": [
+                            "intro management/business coursework",
+                            "self-study"
+                        ],
+                        "difficulty": "intermediate",
+                        "typical_learning_time": "35 min",
+                        "learning_object_type": "simulation + conceptual_explanation",
+                        "creation_date": "2025-12-05",
+                        "last_modified": "2025-12-05"
+                    },
+                    "pedagogical_metadata": {
+                        "learning_objectives": [
+                            "Define different parts of an organization and their functions.",
+                            "Understand how organizational structure and roles affect workflow and productivity.",
+                            "Simulate how communication and coordination impact organizational performance."
+                        ],
+                        "competencies": [
+                            "organizational reasoning",
+                            "management thinking",
+                            "systems thinking",
+                            "simulation modelling"
+                        ],
+                        "scaffolding_level": "scaffolded",
+                        "accessibility_notes": ""
+                    }
+                },
+                {
+                    "id": "bus_I_4",
+                    "name": "Introduction to Marketing & Demand — how businesses reach customers",
+                    "description": "Describe concept of marketing, demand generation, customers, basic marketing tools (advertising, product design, pricing), supply-demand interplay from business perspective — how businesses influence demand and respond to consumer preferences.",
+                    "prerequisites": [
+                        "bus_I_1",
+                        "bus_I_3"
+                    ],
+                    "audience_tags": [
+                        "College",
+                        "Independent_Study"
+                    ],
+                    "keywords": [
+                        "marketing",
+                        "demand",
+                        "consumer behavior",
+                        "advertising",
+                        "pricing strategy",
+                        "product",
+                        "market research",
+                        "business demand",
+                        "customer",
+                        "supply"
+                    ],
+                    "simulation_metadata": {
+                        "simulation_type": "market_simulator + demand_influence_engine + interactive_exercise",
+                        "recommended_interactivity": "medium",
+                        "purpose": "Let user simulate a market where a business modifies product attributes, price, advertising investment; observe changes in demand, revenue, and profit; explore how marketing influences demand and sales.",
+                        "estimated_time": "35 min"
+                    },
+                    "cross_domain_links": [],
+                    "learning_object_metadata": {
+                        "author": "TutorPutor Team",
+                        "version": "1.0.0",
+                        "status": "draft",
+                        "intended_end_user_role": [
+                            "student",
+                            "self-learner"
+                        ],
+                        "context": [
+                            "intro marketing/business coursework",
+                            "self-study"
+                        ],
+                        "difficulty": "intermediate",
+                        "typical_learning_time": "40 min",
+                        "learning_object_type": "simulation + exercise",
+                        "creation_date": "2025-12-05",
+                        "last_modified": "2025-12-05"
+                    },
+                    "pedagogical_metadata": {
+                        "learning_objectives": [
+                            "Explain basic marketing concepts and their role in influencing demand.",
+                            "Simulate impact of pricing, advertising, and product attributes on demand and revenue.",
+                            "Understand business strategies to attract customers and compete in market."
+                        ],
+                        "competencies": [
+                            "business reasoning",
+                            "market understanding",
+                            "consumer behavior",
+                            "strategic thinking"
+                        ],
+                        "scaffolding_level": "scaffolded",
+                        "accessibility_notes": ""
+                    }
+                }
+            ]
+        },
+        "Advanced": {
+            "concepts": [
+                {
+                    "id": "bus_A_1",
+                    "name": "Business Strategy & Competitive Advantage",
+                    "description": "Study of how firms develop strategy to gain competitive advantage: SWOT, core competencies, differentiation vs cost leadership, value proposition, strategic positioning, dynamic competition over time, strategic decision-making.",
+                    "prerequisites": [
+                        "bus_I_3",
+                        "bus_I_4",
+                        "bus_I_2"
+                    ],
+                    "audience_tags": [
+                        "University_Advanced",
+                        "Independent_Study"
+                    ],
+                    "keywords": [
+                        "business strategy",
+                        "competitive advantage",
+                        "differentiation",
+                        "cost leadership",
+                        "core competency",
+                        "value proposition",
+                        "SWOT",
+                        "strategy",
+                        "market positioning",
+                        "competitive analysis"
+                    ],
+                    "simulation_metadata": {
+                        "simulation_type": "strategy_simulator + competitive_market_engine + interactive_exercise",
+                        "recommended_interactivity": "medium-high",
+                        "purpose": "Let user run a virtual firm in competitive environment, choose strategic levers (price, cost, differentiation, marketing), simulate market over multiple time periods, track market share, profits, competitor reactions; test different strategies.",
+                        "estimated_time": "1 hr"
+                    },
+                    "cross_domain_links": [],
+                    "learning_object_metadata": {
+                        "author": "TutorPutor Team",
+                        "version": "1.0.0",
+                        "status": "draft",
+                        "intended_end_user_role": [
+                            "student",
+                            "advanced student",
+                            "self-learner"
+                        ],
+                        "context": [
+                            "business strategy course",
+                            "self-study",
+                            "simulation-based learning"
+                        ],
+                        "difficulty": "hard",
+                        "typical_learning_time": "1–1.5 hr",
+                        "learning_object_type": "simulation + conceptual module",
+                        "creation_date": "2025-12-05",
+                        "last_modified": "2025-12-05"
+                    },
+                    "pedagogical_metadata": {
+                        "learning_objectives": [
+                            "Formulate strategic decisions to achieve competitive advantage.",
+                            "Analyze trade-offs between cost, quality, differentiation, and market share.",
+                            "Simulate effect of strategic choices over time in a competitive environment."
+                        ],
+                        "competencies": [
+                            "strategic thinking",
+                            "business modelling",
+                            "competitive analysis",
+                            "decision-making"
+                        ],
+                        "scaffolding_level": "scaffolded",
+                        "accessibility_notes": ""
+                    }
+                },
+                {
+                    "id": "bus_A_2",
+                    "name": "Organizational Behavior & Leadership: motivation, culture, structure, change",
+                    "description": "Understand how human behavior, culture, organizational structure and leadership influence performance: motivation theories, group dynamics, corporate culture, organizational change, leadership styles, communication, incentives, teamwork and organizational effectiveness.",
+                    "prerequisites": [
+                        "bus_I_3"
+                    ],
+                    "audience_tags": [
+                        "University_Advanced",
+                        "Independent_Study"
+                    ],
+                    "keywords": [
+                        "organizational behavior",
+                        "leadership",
+                        "motivation",
+                        "culture",
+                        "teamwork",
+                        "management",
+                        "change management",
+                        "organizational structure",
+                        "communication",
+                        "incentives"
+                    ],
+                    "simulation_metadata": {
+                        "simulation_type": "organization_dynamics_simulator + agent_based_model",
+                        "recommended_interactivity": "medium-high",
+                        "purpose": "Simulate an organization with agents (employees), define culture, leadership style, incentives, communication flows; run simulation over time to observe productivity, turnover, morale, conflict; test how changes in structure or policies influence outcomes.",
+                        "estimated_time": "1 hr"
+                    },
+                    "cross_domain_links": [],
+                    "learning_object_metadata": {
+                        "author": "TutorPutor Team",
+                        "version": "1.0.0",
+                        "status": "draft",
+                        "intended_end_user_role": [
+                            "student",
+                            "advanced student",
+                            "self-learner",
+                            "future manager"
+                        ],
+                        "context": [
+                            "organizational behavior course",
+                            "self-study",
+                            "simulation-based training"
+                        ],
+                        "difficulty": "hard",
+                        "typical_learning_time": "1–1.5 hr",
+                        "learning_object_type": "simulation + conceptual module",
+                        "creation_date": "2025-12-05",
+                        "last_modified": "2025-12-05"
+                    },
+                    "pedagogical_metadata": {
+                        "learning_objectives": [
+                            "Explain how organizational structure and culture affect performance and employee behavior.",
+                            "Simulate team dynamics, motivation, leadership effects, and organizational change.",
+                            "Use incentive and communication models to influence organizational outcomes."
+                        ],
+                        "competencies": [
+                            "social reasoning",
+                            "management insight",
+                            "systems thinking",
+                            "behavioral modeling"
+                        ],
+                        "scaffolding_level": "scaffolded",
+                        "accessibility_notes": ""
+                    }
+                },
+                {
+                    "id": "bus_A_3",
+                    "name": "Finance & Accounting Fundamentals for Firms",
+                    "description": "Core financial concepts within firms: balance sheets, income statements, cash flow, assets/liabilities, capital structure, investment vs cost, risk & return, basic financial decision making for businesses.",
+                    "prerequisites": [
+                        "bus_I_2",
+                        "bus_I_3"
+                    ],
+                    "audience_tags": [
+                        "University_Advanced",
+                        "Independent_Study"
+                    ],
+                    "keywords": [
+                        "finance",
+                        "accounting",
+                        "balance sheet",
+                        "cash flow",
+                        "assets",
+                        "liabilities",
+                        "capital structure",
+                        "risk",
+                        "return",
+                        "financial decision"
+                    ],
+                    "simulation_metadata": {
+                        "simulation_type": "finance_simulator + accounting_engine + interactive_exercise",
+                        "recommended_interactivity": "medium-high",
+                        "purpose": "Allow user to manage a virtual firm’s finances: track assets/liabilities, cash flow, simulate investment decisions, compute profit/loss, analyze risk/return, see long-term financial health under different scenarios.",
+                        "estimated_time": "1 hr"
+                    },
+                    "cross_domain_links": [],
+                    "learning_object_metadata": {
+                        "author": "TutorPutor Team",
+                        "version": "0.1.0",
+                        "status": "draft",
+                        "intended_end_user_role": [
+                            "student",
+                            "advanced student",
+                            "self-learner",
+                            "entrepreneur"
+                        ],
+                        "context": [
+                            "business finance coursework",
+                            "self-study",
+                            "simulation-based learning"
+                        ],
+                        "difficulty": "hard",
+                        "typical_learning_time": "1–1.5 hr",
+                        "learning_object_type": "simulation + conceptual module",
+                        "creation_date": "2025-12-05",
+                        "last_modified": "2025-12-05"
+                    },
+                    "pedagogical_metadata": {
+                        "learning_objectives": [
+                            "Interpret financial statements: balance sheet, income statement, cash flow.",
+                            "Make business decisions based on financial data (investment, debt, capital structure).",
+                            "Evaluate business risk and return under different financial strategies."
+                        ],
+                        "competencies": [
+                            "financial literacy",
+                            "accounting understanding",
+                            "business decision-making",
+                            "risk analysis"
+                        ],
+                        "scaffolding_level": "scaffolded",
+                        "accessibility_notes": ""
+                    }
+                },
+                {
+                    "id": "bus_A_4",
+                    "name": "Macro-economics Basics: aggregate economy, supply/demand, inflation, GDP, unemployment",
+                    "description": "Introduction to macro-economic concepts: gross domestic product (GDP), aggregate supply and demand, inflation/deflation, unemployment, business cycles, role of government, money supply, fiscal/monetary policy at a high-level view.",
+                    "prerequisites": [
+                        "bus_I_1"
+                    ],
+                    "audience_tags": [
+                        "University_Advanced",
+                        "Independent_Study"
+                    ],
+                    "keywords": [
+                        "macroeconomics",
+                        "GDP",
+                        "inflation",
+                        "unemployment",
+                        "aggregate supply",
+                        "aggregate demand",
+                        "business cycle",
+                        "fiscal policy",
+                        "monetary policy",
+                        "economy"
+                    ],
+                    "simulation_metadata": {
+                        "simulation_type": "macro_economy_simulator + interactive_chart",
+                        "recommended_interactivity": "medium-high",
+                        "purpose": "Simulate a simplified national economy: production, consumption, inflation, employment; allow user to adjust policies (tax, government spending, money supply) and observe macroeconomic indicators over time.",
+                        "estimated_time": "1–1.5 hr"
+                    },
+                    "cross_domain_links": [],
+                    "learning_object_metadata": {
+                        "author": "TutorPutor Team",
+                        "version": "0.1.0",
+                        "status": "draft",
+                        "intended_end_user_role": [
+                            "student",
+                            "advanced student",
+                            "independent learner",
+                            "policy-interested learner"
+                        ],
+                        "context": [
+                            "economics coursework",
+                            "self-study",
+                            "simulation-based learning"
+                        ],
+                        "difficulty": "hard",
+                        "typical_learning_time": "1–1.5 hr",
+                        "learning_object_type": "simulation + conceptual module",
+                        "creation_date": "2025-12-05",
+                        "last_modified": "2025-12-05"
+                    },
+                    "pedagogical_metadata": {
+                        "learning_objectives": [
+                            "Understand macroeconomic indicators (GDP, inflation, unemployment) and how they interact.",
+                            "Simulate effects of fiscal and monetary policy on economy.",
+                            "Analyze trade-offs and dynamics of macroeconomic policy over time."
+                        ],
+                        "competencies": [
+                            "macro-economic reasoning",
+                            "systems thinking",
+                            "policy analysis",
+                            "economic simulation"
+                        ],
+                        "scaffolding_level": "scaffolded",
+                        "accessibility_notes": ""
+                    }
+                }
+            ]
+        },
+        "Research_Independent": {
+            "concepts": [
+                {
+                    "id": "bus_R_1",
+                    "name": "Organizational Theory & Institutional Analysis",
+                    "description": "Advanced study of how organizations behave, evolve, and interact with environment: institutional theory, organizational ecology, networks, organizational lifecycle, governance, regulation, organizational change and adaptation over time.",
+                    "prerequisites": [
+                        "bus_A_2",
+                        "bus_A_3"
+                    ],
+                    "audience_tags": [
+                        "University_Advanced",
+                        "Research",
+                        "Independent_Study"
+                    ],
+                    "keywords": [
+                        "organizational theory",
+                        "institutional analysis",
+                        "organizational ecology",
+                        "governance",
+                        "regulation",
+                        "network",
+                        "organizational change",
+                        "adaptation",
+                        "institution",
+                        "organization lifecycle"
+                    ],
+                    "simulation_metadata": {
+                        "simulation_type": "agent_based_model + network_simulator + interactive_experiment",
+                        "recommended_interactivity": "high",
+                        "purpose": "Allow user to build organizations or a population of organizations, define institutional rules/regulations/environment, simulate lifecycle (birth, growth, decline), interactions, mergers/acquisitions, regulatory impact, competition/co-operation, and observe systemic patterns over time.",
+                        "estimated_time": "2–3 hours",
+                        "resources_needed": [
+                            "complex simulation backend"
+                        ]
+                    },
+                    "cross_domain_links": [],
+                    "learning_object_metadata": {
+                        "author": "TutorPutor Team",
+                        "version": "0.1.0",
+                        "status": "draft",
+                        "intended_end_user_role": [
+                            "researcher",
+                            "advanced student",
+                            "self-learner"
+                        ],
+                        "context": [
+                            "organizational research",
+                            "policy analysis",
+                            "simulation-based research"
+                        ],
+                        "difficulty": "very_hard",
+                        "typical_learning_time": "3 hr",
+                        "learning_object_type": "project + simulation",
+                        "creation_date": "2025-12-05",
+                        "last_modified": "2025-12-05"
+                    },
+                    "pedagogical_metadata": {
+                        "learning_objectives": [
+                            "Analyze organizational behavior and adaptation under varying institutional and environmental pressures.",
+                            "Simulate organizational lifecycle and interactions among organizations (competition, cooperation, regulation).",
+                            "Investigate governance, regulation and structure impacts on organizational success and survival."
+                        ],
+                        "competencies": [
+                            "organizational theory",
+                            "systems modeling",
+                            "social science research methods",
+                            "policy thinking"
+                        ],
+                        "scaffolding_level": "scaffolded",
+                        "accessibility_notes": ""
+                    }
+                },
+                {
+                    "id": "bus_R_2",
+                    "name": "Market Dynamics, Business Cycles & Economic Modeling (macro + micro interplay)",
+                    "description": "Use computational economic models to simulate both micro-level firm/market behavior and macro-level economy — supply/demand, business cycles, inflation/unemployment, shock response, policy effects, feedback loops between firms, consumers, and macroeconomic aggregate.",
+                    "prerequisites": [
+                        "bus_A_4",
+                        "bus_A_3",
+                        "bus_I_1"
+                    ],
+                    "audience_tags": [
+                        "Research",
+                        "Independent_Study",
+                        "University_Advanced"
+                    ],
+                    "keywords": [
+                        "economic modeling",
+                        "market dynamics",
+                        "business cycles",
+                        "macro-micro link",
+                        "policy effect",
+                        "agent-based economics",
+                        "economic simulation",
+                        "shock response",
+                        "aggregate demand",
+                        "aggregate supply"
+                    ],
+                    "simulation_metadata": {
+                        "simulation_type": "economy_simulator + agent_based_model + system_dynamics",
+                        "recommended_interactivity": "high",
+                        "purpose": "Allow user to build a simulated economy: define agents (firms, consumers, government), markets, policies; run over time to observe cycles, crises, inflation/deflation, employment dynamics, and study effects of external shocks or policy interventions.",
+                        "estimated_time": "3–4 hours",
+                        "resources_needed": [
+                            "economic simulation backend"
+                        ]
+                    },
+                    "cross_domain_links": [],
+                    "learning_object_metadata": {
+                        "author": "TutorPutor Team",
+                        "version": "0.1.0",
+                        "status": "draft",
+                        "intended_end_user_role": [
+                            "researcher",
+                            "policy analyst",
+                            "advanced student",
+                            "self-learner"
+                        ],
+                        "context": [
+                            "economic research",
+                            "policy simulation",
+                            "macro-micro economics study"
+                        ],
+                        "difficulty": "very_hard",
+                        "typical_learning_time": "3–4 hr",
+                        "learning_object_type": "project + simulation",
+                        "creation_date": "2025-12-05",
+                        "last_modified": "2025-12-05"
+                    },
+                    "pedagogical_metadata": {
+                        "learning_objectives": [
+                            "Model micro- and macro-economic interactions and emergent behavior.",
+                            "Simulate business cycles, shocks, policy interventions, and their effect on economy indicators.",
+                            "Analyze resilience, stability, and systemic risk in economies under different scenarios."
+                        ],
+                        "competencies": [
+                            "economic modeling",
+                            "systems thinking",
+                            "policy analysis",
+                            "simulation research"
+                        ],
+                        "scaffolding_level": "scaffolded",
+                        "accessibility_notes": ""
+                    }
+                },
+                {
+                    "id": "bus_R_3",
+                    "name": "Behavioral Economics & Organizational Psychology: decision making, biases, incentives",
+                    "description": "Study human behavior and decision-making in economics and organizations: psychological biases, incentives, bounded rationality, game theory basics, cooperation vs competition, organizational culture impact on decision, behavioral modeling within firms and markets.",
+                    "prerequisites": [
+                        "bus_A_2",
+                        "bus_I_1"
+                    ],
+                    "audience_tags": [
+                        "Research",
+                        "Independent_Study",
+                        "University_Advanced"
+                    ],
+                    "keywords": [
+                        "behavioral economics",
+                        "decision making",
+                        "bias",
+                        "incentives",
+                        "bounded rationality",
+                        "game theory",
+                        "organizational psychology",
+                        "human behavior",
+                        "economic psychology",
+                        "behavioral modeling"
+                    ],
+                    "simulation_metadata": {
+                        "simulation_type": "agent_based_model + behavioral_simulator + interactive_experiment",
+                        "recommended_interactivity": "high",
+                        "purpose": "Let user define agents with preferences, biases, incentives; simulate decision-making in markets or organizational contexts; study outcomes like cooperation, competition, market inefficiencies, firm behavior under behavioral constraints.",
+                        "estimated_time": "2–3 hours",
+                        "resources_needed": [
+                            "behavioral simulation backend"
+                        ]
+                    },
+                    "cross_domain_links": [],
+                    "learning_object_metadata": {
+                        "author": "TutorPutor Team",
+                        "version": "0.1.0",
+                        "status": "draft",
+                        "intended_end_user_role": [
+                            "researcher",
+                            "advanced student",
+                            "self-learner",
+                            "policy analyst"
+                        ],
+                        "context": [
+                            "behavioral research",
+                            "economic psychology study",
+                            "organizational research"
+                        ],
+                        "difficulty": "very_hard",
+                        "typical_learning_time": "2.5 hr",
+                        "learning_object_type": "project + simulation",
+                        "creation_date": "2025-12-05",
+                        "last_modified": "2025-12-05"
+                    },
+                    "pedagogical_metadata": {
+                        "learning_objectives": [
+                            "Model decision-making under bounded rationality and biases.",
+                            "Simulate behavior of individuals and groups in markets or organizations under varying incentives.",
+                            "Analyze outcomes of behavioral biases on efficiency, cooperation, competition, and organizational performance."
+                        ],
+                        "competencies": [
+                            "behavioral reasoning",
+                            "economic psychology",
+                            "game theory basics",
+                            "simulation modeling"
+                        ],
+                        "scaffolding_level": "scaffolded",
+                        "accessibility_notes": ""
+                    }
+                }
+            ]
+        }
+    }
+}

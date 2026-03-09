@@ -1,0 +1,120 @@
+---
+# Cross-Cutting Progress Dashboard Operator Template
+# Replaces 15 stage-specific files: build_progress_dashboard.yaml, test_progress_dashboard.yaml, etc.
+#
+# Usage: Instantiate with stage parameter to create stage-specific progress dashboard
+# Parameters:
+#   - stage: The stage name (plan, solution, design, develop, build, test, secure,
+#            compliance, uat, package, deploy, operate, monitor, dr, release)
+#
+# @doc.type operator-template
+# @doc.purpose Cross-cutting progress dashboard for all DevSecOps stages
+# @doc.layer operations
+# @doc.pattern Template
+
+template:
+  id: "${stage}_progress_dashboard"
+  version: "1.0.0"
+
+operator:
+  type: "ProgressDashboardOperator"
+  role: "${stage} Progress Dashboard Owner"
+  category: "cross-cutting"
+
+parameters:
+  stage:
+    type: "string"
+    required: true
+    description: "Stage name for which to create progress dashboard"
+    allowed_values:
+      - "plan"
+      - "solution"
+      - "design"
+      - "develop"
+      - "build"
+      - "test"
+      - "secure"
+      - "compliance"
+      - "uat"
+      - "package"
+      - "deploy"
+      - "operate"
+      - "monitor"
+      - "dr"
+      - "release"
+
+inputs_spec:
+  - name: "${stage}_kpi_report"
+    description: "Latest ${stage} KPIs for dashboard visualization."
+    format: "KPI report artifact"
+    required: true
+
+  - name: "${stage}_success_criteria_status"
+    description: "Success criteria status for ${stage} dashboard."
+    format: "List of criteria status objects"
+    required: true
+
+  - name: "${stage}_stage_milestone"
+    description: "${stage} milestone plan for dashboard tracking."
+    format: "List of milestone objects"
+    required: true
+
+  - name: "${stage}_risk_assessment"
+    description: "Risk assessment data for ${stage} stage."
+    format: "Risk assessment artifact"
+    required: false
+
+outputs_spec:
+  - name: "${stage}_progress_dashboard"
+    description: "Dashboard of ${stage} metrics, KPIs, blockers, scan results, and milestone status."
+    format: "Dashboard artifact"
+
+  - name: "${stage}_dashboard_events"
+    description: "Stream of dashboard update events for real-time sync"
+    format: "Event stream"
+    event_type: "ghatana.operations.dashboard.${stage}"
+
+agent_tasks:
+  - "Visualize ${stage} frequency, duration, artifact traceability, findings, and KPIs."
+  - "Show open ${stage} blockers (security, compliance, quality)."
+  - "Link to logs, scan reports, milestone status."
+  - "Highlight critical path, blocked dependencies, bottlenecks, overdue milestones."
+  - "Provide drill-down capability for detailed analysis."
+  - "Emit dashboard update events to EventCloud."
+
+acceptance_criteria:
+  - "Dashboard visualizes all KPIs, blockers, and scan results."
+  - "Dashboard updated in real-time."
+  - "Critical path, blocked dependencies, bottlenecks are visually emphasized."
+  - "Dashboard is reviewed before stage handoff."
+
+dependencies:
+  - "${stage}_kpi_report"
+  - "${stage}_success_criteria_status"
+  - "${stage}_stage_milestone"
+
+failure_escalation:
+  - "Escalate to Dashboard Owner/PM if dashboard not up-to-date."
+  - "Emit ${stage}.dashboard.stale event if refresh fails."
+
+config:
+  # Refresh settings
+  refresh_interval_seconds: 30
+  stale_threshold_seconds: 300
+
+  # Visualization settings
+  chart_types:
+    - "burndown"
+    - "velocity"
+    - "risk_heatmap"
+    - "dependency_graph"
+
+  # Observability
+  metrics_enabled: true
+  event_cloud_topic: "ghatana.operations.dashboard"
+
+references:
+  - "Agile Metrics - Sprint Burndown"
+  - "DevOps Handbook - Flow Metrics"
+
+hitl: false

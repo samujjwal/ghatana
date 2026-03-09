@@ -1,0 +1,27 @@
+#
+{{projectName}}
+
+{{description}}
+
+## Overview This project was generated using
+[YAPPC](https://github.com/ghatana/yappc) - Yet Another Project/Package Creator.
+## Getting Started ### Prerequisites - Java 21+ - Gradle 8.0+
+{{#if requirements.docker}}- Docker{{/if}}
+{{#if requirements.node-version}}- Node.js {{requirements.node-version}}{{/if}}
+
+### Building ```bash # Build the project ./gradlew build # Run tests ./gradlew
+test # Check code quality ./gradlew check ``` ### Development ```bash # Run
+YAPPC doctor to check environment yappc doctor # Generate dependency graph yappc
+graph ``` ## Project Structure ```
+{{projectName}}/ ├── .yappc/ # YAPPC configuration ├── build.gradle # Build
+configuration ├── settings.gradle # Project settings ├── src/ │ ├── main/ │ └──
+test/ └── README.md # This file ``` ## Contributing 1. Follow the code style
+enforced by Spotless 2. Write tests for new functionality 3. Run `./gradlew
+check` before committing 4. Update documentation as needed ## License This
+project is licensed under the
+{{license}}
+License. ## Author
+
+{{author}}
+
+--- *Generated with YAPPC v1.0.0*

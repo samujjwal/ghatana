@@ -1,0 +1,298 @@
+# Release Management Operator - Consolidated Release Domain
+# Consolidates: release planning, UAT coordination, go/no-go decisions, release notes
+# Purpose: End-to-end release management from planning through go-live
+
+id: release_management_operator
+version: "1.0.0"
+domain: release
+category: release_management
+
+description: |
+  Unified release management operator handling complete release coordination:
+  - Release planning and scheduling
+  - UAT coordination
+  - Go/No-Go decision management
+  - Release communication
+  - Release documentation
+
+# Operator Modes
+modes:
+  plan:
+    description: "Plan and schedule release"
+    role: Release Manager
+    inputs:
+      - name: release_scope
+        description: Features and fixes for release
+        required: true
+      - name: dependencies
+        description: External dependencies and blockers
+        required: false
+    outputs:
+      - name: release_plan
+        description: Complete release plan
+        format: yaml_document
+        schema:
+          - release_id: string
+          - version: string
+          - codename: string
+          - target_date: datetime
+          - scope: list
+          - milestones: list
+          - dependencies: list
+          - risks: list
+          - stakeholders: list
+          - communication_plan: object
+    tasks:
+      - Define release scope and version
+      - Set release milestones
+      - Identify dependencies and risks
+      - Plan stakeholder communication
+      - Schedule release activities
+
+  uat:
+    description: "Coordinate User Acceptance Testing"
+    role: UAT Coordinator
+    inputs:
+      - name: release_candidate
+        description: Release candidate for UAT
+        required: true
+      - name: uat_environment
+        description: UAT test environment
+        required: true
+      - name: acceptance_criteria
+        description: UAT acceptance criteria
+        required: true
+    outputs:
+      - name: uat_report
+        description: UAT execution report
+        format: yaml_document
+        schema:
+          - uat_id: string
+          - release_version: string
+          - start_date: datetime
+          - end_date: datetime
+          - test_cases: list
+          - user_feedback: list
+          - defects: list
+          - acceptance_status: "accepted|rejected|conditional"
+          - sign_off: list
+    test_case_schema:
+      - id: string
+      - scenario: string
+      - tester: string
+      - status: "passed|failed|blocked"
+      - comments: string
+    tasks:
+      - Prepare UAT environment
+      - Execute UAT test cases
+      - Collect user feedback
+      - Track and triage defects
+      - Obtain stakeholder sign-off
+
+  go_nogo:
+    description: "Manage go/no-go decision"
+    role: Release Manager
+    inputs:
+      - name: release_status
+        description: Current release status
+        required: true
+      - name: uat_report
+        description: UAT results
+        required: true
+      - name: readiness_checklist
+        description: Release readiness items
+        required: true
+    outputs:
+      - name: go_nogo_decision
+        description: Go/No-Go decision record
+        format: yaml_document
+        schema:
+          - decision_id: string
+          - release_version: string
+          - decision_date: datetime
+          - decision: "go|no-go|defer"
+          - attendees: list
+          - checklist_results: list
+          - open_issues: list
+          - conditions: list
+          - rationale: string
+          - next_steps: list
+    readiness_checklist:
+      - code_complete: "All features implemented"
+      - tests_passed: "All tests passing"
+      - uat_accepted: "UAT sign-off obtained"
+      - security_cleared: "Security review passed"
+      - docs_ready: "Documentation complete"
+      - support_ready: "Support team briefed"
+      - rollback_tested: "Rollback verified"
+    tasks:
+      - Review readiness checklist
+      - Assess open issues and risks
+      - Conduct go/no-go meeting
+      - Document decision and rationale
+      - Communicate decision
+
+  communicate:
+    description: "Manage release communication"
+    role: Release Manager
+    inputs:
+      - name: release_plan
+        description: Release details
+        required: true
+      - name: audience_config
+        description: Communication audiences
+        required: true
+    outputs:
+      - name: release_communications
+        description: Release communication package
+        format: yaml_document
+        schema:
+          - release_version: string
+          - release_notes: object
+          - changelog: list
+          - internal_announcement: object
+          - external_announcement: object
+          - support_briefing: object
+          - customer_notification: object
+    communication_types:
+      - internal: "Team and organization updates"
+      - external: "Customer-facing announcements"
+      - support: "Support team briefings"
+      - technical: "Technical documentation updates"
+    tasks:
+      - Draft release notes
+      - Prepare announcements
+      - Brief support teams
+      - Notify customers
+      - Update documentation
+
+  document:
+    description: "Generate release documentation"
+    role: Technical Writer
+    inputs:
+      - name: release_scope
+        description: Features in release
+        required: true
+      - name: change_history
+        description: Changes since last release
+        required: true
+    outputs:
+      - name: release_documentation
+        description: Complete release documentation
+        format: yaml_document
+        schema:
+          - version: string
+          - release_date: datetime
+          - release_notes: object
+          - changelog: list
+          - migration_guide: object
+          - known_issues: list
+          - deprecations: list
+    tasks:
+      - Generate changelog from commits
+      - Write user-facing release notes
+      - Document breaking changes
+      - Create migration guides
+      - List known issues
+
+# Internal Logic
+internal_logic:
+  perception:
+    description: "Track release status and readiness"
+    sources:
+      - release_tracking_system
+      - test_results
+      - stakeholder_feedback
+  model:
+    description: "Release management knowledge graph"
+    entities:
+      - release: "{version, status, scope, date}"
+      - uat_result: "{scenario, status, feedback}"
+      - decision: "{type, outcome, rationale}"
+    relationships:
+      - release_includes_feature
+      - uat_validates_release
+      - decision_approves_release
+  planning:
+    strategy: |
+      1. Plan early, communicate often
+      2. UAT with real users
+      3. Data-driven go/no-go
+      4. Clear communication
+      5. Document everything
+  action:
+    description: "Coordinate release activities"
+    validation: "Go/no-go decision required"
+
+# Quality Assurance
+quality:
+  templates:
+    - release_plan_template
+    - release_notes_template
+    - go_nogo_checklist_template
+  checklists:
+    - release_readiness_checklist
+    - communication_checklist
+    - documentation_checklist
+  automated_checks:
+    - scope_completeness
+    - test_coverage_verification
+    - dependency_status_check
+
+# HITL Configuration
+hitl:
+  enabled: true
+  touchpoints:
+    - go_nogo_decision
+    - uat_sign_off
+    - release_approval
+  reason: "Human judgment critical for release decisions"
+
+# Validation Rules
+validation:
+  rules:
+    - "All checklist items must be addressed"
+    - "UAT sign-off required"
+    - "Go/no-go meeting documented"
+    - "Communication plan executed"
+  review_gates:
+    - release_manager_approval
+    - stakeholder_sign_off
+
+# Escalation
+escalation:
+  triggers:
+    - "Release blocker identified"
+    - "UAT rejection"
+    - "Missed release date risk"
+  paths:
+    - role: Product Owner
+      for: "Scope decisions"
+    - role: Engineering Manager
+      for: "Technical blockers"
+    - role: Executive Sponsor
+      for: "Major release decisions"
+
+# Dependencies
+dependencies:
+  upstream:
+    - test_execution_operator
+    - security_scan_operator
+  downstream:
+    - deploy_operator
+    - support_operator
+
+# Metrics
+metrics:
+  - name: release_frequency
+    description: "Releases per time period"
+    target: ">= weekly"
+  - name: release_lead_time
+    description: "Time from code complete to release"
+    target: "<= 3 days"
+  - name: uat_acceptance_rate
+    description: "UAT first-pass acceptance"
+    target: ">= 90%"
+  - name: release_defect_rate
+    description: "Defects found post-release"
+    target: "< 5%"

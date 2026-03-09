@@ -1,0 +1,49 @@
+{
+    "name": "terraform-baseline",
+    "version": "1.0.0",
+    "description": "Terraform infrastructure baseline",
+    "language": "hcl",
+    "category": "infrastructure",
+    "platform": "cloud",
+    "buildSystem": "terraform",
+    "author": "YAPPC Team",
+    "tags": [
+        "terraform",
+        "iac",
+        "infrastructure",
+        "cloud"
+    ],
+    "requiredVariables": [
+        "projectName",
+        "cloudProvider"
+    ],
+    "optionalVariables": [
+        "region",
+        "environment",
+        "includeDatabase",
+        "includeCache",
+        "includeMessageBroker"
+    ],
+    "defaults": {
+        "cloudProvider": "aws",
+        "region": "us-east-1",
+        "environment": "dev",
+        "includeDatabase": "true",
+        "includeCache": "true",
+        "includeMessageBroker": "false"
+    },
+    "templates": [
+        "main.tf.hbs",
+        "variables.tf.hbs",
+        "outputs.tf.hbs",
+        "providers.tf.hbs",
+        "backend.tf.hbs",
+        "modules/database/main.tf.hbs",
+        "modules/cache/main.tf.hbs",
+        "modules/network/main.tf.hbs",
+        "environments/dev.tfvars.hbs",
+        "environments/prod.tfvars.hbs",
+        ".gitignore.hbs",
+        "README.md.hbs"
+    ]
+}

@@ -1,0 +1,98 @@
+# HR to Engineering Hiring Interaction
+apiVersion: virtualorg.ghatana.com/v1
+kind: Interaction
+metadata:
+  name: hr-engineering-hiring
+  namespace: software-org
+  labels:
+    type: collaboration
+    departments: [hr, engineering]
+
+spec:
+  displayName: "HR Engineering Hiring Collaboration"
+  description: |
+    Defines the interaction pattern for hiring engineering
+    roles with collaboration between HR and engineering.
+
+  participants:
+    source:
+      department: hr
+      agents:
+        - recruiter-agent
+        - hr-director-agent
+    target:
+      department: engineering
+      agents:
+        - cto-agent
+        - architect-lead-agent
+        - senior-engineer-agent
+
+  trigger:
+    events:
+      - type: position.opened
+      - type: hiring.request.approved
+      - type: candidate.interview.scheduled
+
+  protocol:
+    type: async
+    timeout: PT4W
+
+  collaboration:
+    stages:
+      - name: requisition
+        owner: engineering
+        activities:
+          - Define job requirements
+          - Set compensation range
+          - Identify interviewers
+      - name: sourcing
+        owner: hr
+        activities:
+          - Post job listings
+          - Source candidates
+          - Initial screening
+      - name: interviewing
+        owner: shared
+        activities:
+          - Technical interviews
+          - Culture fit interviews
+          - Reference checks
+      - name: offer
+        owner: hr
+        activities:
+          - Prepare offer
+          - Negotiate terms
+          - Close candidate
+
+    requirements:
+      - name: job_description
+        description: "Detailed job description"
+        mandatory: true
+      - name: interview_panel
+        description: "List of interviewers"
+        mandatory: true
+      - name: compensation_range
+        description: "Approved compensation range"
+        mandatory: true
+
+    artifacts:
+      - type: job_requisition
+        required: true
+      - type: interview_feedback
+        required: true
+      - type: offer_letter
+        required: true
+
+  notifications:
+    onTrigger:
+      - channel: slack
+        target: "#hiring"
+        template: "New engineering position opened: {{position_title}}"
+    onComplete:
+      - channel: slack
+        target: "#engineering"
+        template: "Hiring completed: {{candidate_name}} - {{position_title}}"
+
+  sla:
+    acknowledgment: PT24H
+    completion: PT6W

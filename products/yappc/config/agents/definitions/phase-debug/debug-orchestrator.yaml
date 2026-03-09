@@ -1,0 +1,119 @@
+id: debug-orchestrator
+name: Debug Orchestrator
+version: 1.0.0
+description: Orchestrates debugging activities. Coordinates log analysis, stack trace parsing, root cause analysis, and fix generation. Triggered by test failures, build errors, or incident debug requests.
+
+metadata:
+  level: 2  # Domain Expert — Phase Orchestrator
+  domain: debugging
+  tags:
+    - phase-orchestration
+    - debugging
+    - root-cause-analysis
+    - incident-debug
+
+generator:
+  type: PIPELINE
+  steps:
+    - name: debug_triage
+      type: LLM
+      provider: ANTHROPIC
+      model: claude-3-5-sonnet-20241022
+      temperature: 0.2
+      max_tokens: 2500
+      prompt: |
+        You are the Debug Orchestrator. Triage and plan debugging for this issue:
+        
+        Error: {{input}}
+        Context: {{context}}
+        Stack Trace: {{stack_trace}}
+        
+        Determine:
+        1. Error category (build, test, runtime, performance, data, network)
+        2. Analysis agents to invoke (log-analysis, stack-trace-analyzer, heap-dump-analyzer, etc.)
+        3. Whether parallel or sequential analysis is appropriate
+        4. Confidence in automated resolution vs need for human review
+        5. Related prior incidents from episodic memory
+        
+        Output as JSON: {category, analysis_plan, execution_mode, confidence, related_incidents}
+    - name: analysis_coordination
+      type: SERVICE_CALL
+      service: agent-registry
+      endpoint: /agents/delegate
+    - name: fix_generation
+      type: SERVICE_CALL
+      service: agent-registry
+      endpoint: /agents/delegate
+    - name: verification
+      type: RULE_BASED
+      description: Verify fix resolves original issue; generate regression test
+
+memory:
+  episodic:
+    enabled: true
+    retention_days: 365
+    categories:
+      - debug-sessions
+      - root-causes
+      - fix-outcomes
+      - recurring-issues
+  semantic:
+    enabled: true
+    categories:
+      - error-patterns
+      - fix-strategies
+      - codebase-hotspots
+  procedural:
+    enabled: true
+    categories:
+      - triage-rules
+      - escalation-paths
+      - tool-selection-rules
+
+tools:
+  - debug_coordinator
+  - error_classifier
+  - fix_verifier
+
+capabilities:
+  - root-cause-analysis
+  - log-analysis
+
+routing:
+  input_types:
+    - test-failure
+    - build-error
+    - incident-debug-request
+    - performance-degradation
+  output_types:
+    - debug-report
+    - fix-patch
+    - regression-test
+
+delegation:
+  can_delegate_to:
+    - log-analysis-agent
+    - stack-trace-analyzer-agent
+    - reproduction-agent
+    - root-cause-analysis-agent
+    - fix-generator-agent
+    - regression-test-writer-agent
+    - heap-dump-analyzer-agent
+    - thread-dump-analyzer-agent
+    - query-explain-agent
+    - network-trace-agent
+    - replay-debugger-agent
+    - diff-analyzer-agent
+  escalates_to:
+    - master-orchestrator-agent
+    - human-in-the-loop-coordinator
+
+governance:
+  requires_approval: false
+  can_block: false
+  audit_trail: comprehensive
+
+performance:
+  expected_latency_ms: 5000
+  max_latency_ms: 30000
+  timeout_ms: 60000

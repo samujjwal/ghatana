@@ -1,0 +1,94 @@
+{{!--
+  Express.js Mongoose Schema Template
+  
+  Variables:
+  - modelName: Name of the model
+  - collectionName: MongoDB collection name
+  - fields: Array of field definitions
+  - hasTimestamps: Whether to include timestamps
+  - hasIndexes: Whether to define indexes
+--}}
+import mongoose, { Schema, Document } from 'mongoose';
+
+/**
+ * {{modelName}} document interface.
+ */
+export interface I{{modelName}} extends Document {
+  {{#each fields}}
+  {{name}}{{#if optional}}?{{/if}}: {{type}};
+  {{/each}}
+  {{#if hasTimestamps}}
+  createdAt: Date;
+  updatedAt: Date;
+  {{/if}}
+}
+
+/**
+ * {{modelName}} schema definition.
+ * 
+ * @doc.type model
+ * @doc.purpose Define {{modelName}} data structure
+ * @doc.layer data
+ * @doc.pattern Mongoose Schema
+ */
+const {{modelName}}Schema = new Schema<I{{modelName}}>(
+  {
+    {{#each fields}}
+    {{name}}: {
+      type: {{schemaType}},
+      {{#if required}}required: true,{{/if}}
+      {{#if unique}}unique: true,{{/if}}
+      {{#if default}}default: {{default}},{{/if}}
+      {{#if minlength}}minlength: {{minlength}},{{/if}}
+      {{#if maxlength}}maxlength: {{maxlength}},{{/if}}
+      {{#if min}}min: {{min}},{{/if}}
+      {{#if max}}max: {{max}},{{/if}}
+      {{#if enum}}enum: [{{#each enum}}'{{this}}'{{#unless @last}}, {{/unless}}{{/each}}],{{/if}}
+      {{#if ref}}ref: '{{ref}}',{{/if}}
+    },
+    {{/each}}
+  },
+  {
+    {{#if hasTimestamps}}
+    timestamps: true,
+    {{/if}}
+    collection: '{{collectionName}}',
+  }
+);
+
+{{#if hasIndexes}}
+// Indexes
+{{#each indexes}}
+{{modelName}}Schema.index({ {{#each fields}}{{this}}: {{../direction}}{{#unless @last}}, {{/unless}}{{/each}} }{{#if unique}}, { unique: true }{{/if}});
+{{/each}}
+{{/if}}
+
+// Virtual fields
+{{modelName}}Schema.virtual('id').get(function() {
+  return this._id.toHexString();
+});
+
+// Ensure virtuals are included in JSON
+{{modelName}}Schema.set('toJSON', {
+  virtuals: true,
+  transform: (doc, ret) => {
+    delete ret._id;
+    delete ret.__v;
+    return ret;
+  },
+});
+
+// Model methods
+{{modelName}}Schema.methods.toJSON = function() {
+  const obj = this.toObject();
+  delete obj._id;
+  delete obj.__v;
+  return obj;
+};
+
+// Static methods
+{{modelName}}Schema.statics.findByCustomField = function(value: string) {
+  return this.findOne({ customField: value });
+};
+
+export const {{modelName}} = mongoose.model<I{{modelName}}>('{{modelName}}', {{modelName}}Schema);

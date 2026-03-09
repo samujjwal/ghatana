@@ -1,0 +1,63 @@
+[package]
+name = "dcmaar-agent-common"
+version.workspace = true
+authors.workspace = true
+description = "Shared models, types, and utilities for DCMAAR agent implementations"
+edition.workspace = true
+license.workspace = true
+rust-version.workspace = true
+publish = false
+
+[dependencies]
+# Core dependencies
+anyhow = { workspace = true }
+thiserror = { workspace = true }
+tracing = { workspace = true }
+async-trait = { workspace = true }
+
+# Serialization
+serde = { workspace = true, features = ["derive"] }
+serde_json = { workspace = true }
+serde_yaml = { workspace = true }
+
+# Database
+sqlx = { workspace = true, optional = true }
+
+# Time handling
+chrono = { workspace = true, features = ["serde"] }
+time = { workspace = true, features = ["formatting", "parsing", "serde"] }
+
+# UUID
+uuid = { workspace = true, features = ["v4", "serde"] }
+
+# Validation
+validator = { workspace = true, features = ["derive"] }
+
+# Configuration
+toml = { workspace = true }
+figment = { workspace = true, optional = true }
+
+# Async runtime
+tokio = { workspace = true, features = ["sync"] }
+futures = { workspace = true }
+
+# Protocol Buffers (for gRPC integration)
+prost = { workspace = true, optional = true }
+prost-types = { workspace = true, optional = true }
+tonic = { workspace = true, optional = true }
+
+# WebAssembly
+wasmtime = { workspace = true, optional = true }
+
+[dev-dependencies]
+tempfile = { workspace = true }
+pretty_assertions = { workspace = true }
+tokio = { workspace = true, features = ["rt-multi-thread", "macros", "test-util"] }
+
+[features]
+default = ["storage", "config"]
+storage = ["sqlx"]
+config = ["figment"]
+grpc = ["prost", "prost-types", "tonic"]
+wasm = ["wasmtime"]
+full = ["storage", "config", "grpc", "wasm"]

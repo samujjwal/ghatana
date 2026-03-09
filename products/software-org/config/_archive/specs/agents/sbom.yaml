@@ -1,0 +1,27 @@
+---
+id: "sbom"
+agent: "SBOMAgent"
+role: "Tooling Engineer"
+inputs_spec:
+- name: "build_artifacts"
+  description: "Build artifacts for generating SBOM."
+  format: "Artifact repo/package"
+outputs_spec:
+- name: "sbom_files"
+  description: "Software Bill of Materials (SBOM) for each build."
+  format: "SBOM file artifact"
+agent_tasks:
+- "Generate SBOM for each build."
+- "Include all runtime and build-time dependencies."
+- "Store and link SBOM to build artifacts."
+- "Track changes in dependencies."
+acceptance_criteria:
+- "Software Bill of Materials is generated for each build."
+- "SBOM includes all runtime and build-time dependencies."
+- "SBOM is stored and linked to build artifacts."
+- "Changes in dependencies are tracked."
+dependencies:
+- "build_artifacts"
+failure_escalation:
+- "Escalate to Tooling Engineer if SBOM is incomplete or not generated."
+references: []

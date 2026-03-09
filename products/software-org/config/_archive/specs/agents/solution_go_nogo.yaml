@@ -1,0 +1,33 @@
+id: solution_go_nogo
+agent: GoNoGoDecisionAgent
+role: Stage Owner/Stakeholders
+inputs_spec:
+- name: solution_readiness_status
+  description: Readiness status for Solution stage.
+  format: Structured status object
+outputs_spec:
+- name: solution_go_nogo_decision
+  description: Go/No-Go decision with rationale and review of blockers, risks, and criteria.
+  format: Structured decision object (decision, rationale, reviewed_items)
+  example: 'decision: "Go"
+
+    rationale: "All criteria met"
+
+    reviewed_items: ["Blockers", "Risks"]
+
+    '
+agent_tasks:
+- Review all blockers, risks, and criteria.
+- Record Go/No-Go decision and rationale.
+acceptance_criteria:
+- All blockers, risks, and criteria reviewed.
+- Go/No-Go decision and rationale recorded.
+dependencies:
+- solution_readiness_status
+failure_escalation:
+- Escalate to stage owner if decision cannot be made.
+references: []
+hitl: true
+hitl_reason: Human review required for Go/No-Go decision
+
+# [!!] No custom enhancement found.

@@ -1,0 +1,55 @@
+// Central Source Sets Configuration for All Modules
+// This file is automatically applied to all Java modules via the root build.gradle.kts
+// No need to manually apply this in individual modules
+
+// Standard source sets are automatically configured for all Java projects
+// The following source sets are available:
+//
+// 1. main (always enabled):
+//    - src/main/java - Production source code
+//    - src/main/resources - Production resources
+//
+// 2. test (always enabled):
+//    - src/test/java - Unit test source code
+//    - src/test/resources - Test resources
+//
+// 3. integrationTest (optional - enable with project.ext.enableIntegrationTests = true):
+//    - src/integrationTest/java - Integration test source code
+//    - src/integrationTest/resources - Integration test resources
+//
+// 4. functionalTest (optional - enable with project.ext.enableFunctionalTests = true):
+//    - src/functionalTest/java - Functional test source code
+//    - src/functionalTest/resources - Functional test resources
+//
+// 5. jmh (optional - enable with project.ext.enableJmh = true):
+//    - src/jmh/java - JMH benchmark source code
+//    - src/jmh/resources - JMH benchmark resources
+
+// How to enable optional source sets in your module's build.gradle:
+//
+// // Enable integration tests
+// ext.enableIntegrationTests = true
+//
+// // Enable functional tests
+// ext.enableFunctionalTests = true
+//
+// // Enable JMH benchmarks
+// ext.enableJmh = true
+//
+// // Dependencies for additional source sets
+// dependencies {
+//     integrationTestImplementation sourceSets.main.output
+//     integrationTestImplementation libs.testcontainers.junit.jupiter
+//     
+//     functionalTestImplementation sourceSets.main.output
+//     functionalTestImplementation libs.test.wiremock
+//     
+//     jmhImplementation libs.jmh.core
+//     jmhAnnotationProcessor libs.jmh.generator.annprocess
+// }
+//
+// // Running tests
+// // ./gradlew test - Unit tests
+// // ./gradlew integrationTest - Integration tests
+// // ./gradlew functionalTest - Functional tests
+// // ./gradlew check - All tests

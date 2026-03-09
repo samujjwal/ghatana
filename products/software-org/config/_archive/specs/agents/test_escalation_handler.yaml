@@ -1,0 +1,27 @@
+---
+id: "test_escalation_handler"
+agent: "EscalationHandlerAgent"
+role: "QA/Test Escalation Manager"
+inputs_spec:
+- name: "test_success_criteria_status"
+  description: "Status for all test stage criteria."
+  format: "List of criteria status objects"
+outputs_spec:
+- name: "test_escalation_report"
+  description: "Escalation report for unresolved test blockers and owners/deadlines."
+  format: "Escalation report artifact"
+agent_tasks:
+- "Review \"At Risk\" or \"Not Met\" criteria."
+- "Assign owners and deadlines."
+- "Make escalation status visible in dashboard and audit log."
+acceptance_criteria:
+- "All \"At Risk\" or \"Not Met\" criteria reviewed for escalation."
+- "Owners/deadlines assigned."
+- "Escalation status visible in dashboard/audit log."
+dependencies:
+- "test_success_criteria_status"
+failure_escalation:
+- "Escalate to QA/Test Escalation Manager or PM if blockers remain unresolved."
+references: []
+hitl: true
+hitl_reason: "Human oversight for unresolved test blockers"

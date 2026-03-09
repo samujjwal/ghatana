@@ -1,0 +1,68 @@
+id: tauri-expert-agent
+name: Tauri Expert Agent
+version: 1.0.0
+description: Specialized code generation and review for Tauri desktop application patterns — Rust backend commands, IPC bridge, window management, file system access, and cross-platform packaging.
+
+metadata:
+  level: 3
+  domain: build
+  tags: [build, tauri, rust, desktop, cross-platform, framework-specific]
+
+generator:
+  type: PIPELINE
+  steps:
+    - name: tauri_code_generation
+      type: LLM
+      provider: ANTHROPIC
+      model: claude-3-5-sonnet-20241022
+      temperature: 0.3
+      max_tokens: 4000
+      prompt: |
+        You are a Tauri framework expert. Generate or review code following Tauri patterns:
+        
+        Request: {{input}}
+        Context: {{context}}
+        
+        Tauri conventions:
+        - Rust for backend commands (#[tauri::command])
+        - TypeScript invoke() for frontend→backend IPC
+        - Use tauri.conf.json for app configuration
+        - Scope file system access with allowlist
+        - Use tauri-plugin-* for common capabilities
+        - Emit events for backend→frontend communication
+        - Follow YAPPC's existing src-tauri/ directory structure
+        - Ensure all IPC calls have proper error handling
+        
+        Output as JSON: {code, file_path, explanation, tauri_patterns_used, security_notes, warnings}
+
+memory:
+  episodic:
+    enabled: true
+    retention_days: 180
+    categories: [tauri-code-generations, tauri-reviews]
+  semantic:
+    enabled: true
+    categories: [tauri-patterns, tauri-plugin-catalog]
+
+tools: [source_reader, rust_doc_search]
+
+capabilities:
+  - code-generation
+
+routing:
+  input_types: [code-request, review-request, ipc-spec]
+  output_types: [source-code, review-report]
+
+delegation:
+  can_delegate_to: []
+  escalates_to: systems-architect
+
+governance:
+  requires_approval: false
+  can_block: false
+  audit_trail: standard
+
+performance:
+  expected_latency_ms: 5000
+  max_latency_ms: 20000
+  timeout_ms: 45000

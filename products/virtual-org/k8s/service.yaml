@@ -1,0 +1,92 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: virtualorg-agent-service
+  namespace: virtualorg
+  labels:
+    app: virtualorg-agent
+spec:
+  type: ClusterIP
+  selector:
+    app: virtualorg-agent
+  ports:
+    - name: http
+      port: 8080
+      targetPort: 8080
+      protocol: TCP
+    - name: metrics
+      port: 8081
+      targetPort: 8081
+      protocol: TCP
+
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: virtualorg-agent-senior-engineer
+  namespace: virtualorg
+  labels:
+    app: virtualorg-agent
+    role: senior-engineer
+spec:
+  type: ClusterIP
+  selector:
+    app: virtualorg-agent
+    role: senior-engineer
+  ports:
+    - name: http
+      port: 8080
+      targetPort: 8080
+      protocol: TCP
+    - name: metrics
+      port: 8081
+      targetPort: 8081
+      protocol: TCP
+
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: virtualorg-agent-architect
+  namespace: virtualorg
+  labels:
+    app: virtualorg-agent
+    role: architect
+spec:
+  type: ClusterIP
+  selector:
+    app: virtualorg-agent
+    role: architect
+  ports:
+    - name: http
+      port: 8080
+      targetPort: 8080
+      protocol: TCP
+    - name: metrics
+      port: 8081
+      targetPort: 8081
+      protocol: TCP
+
+---
+# Headless service for StatefulSet or direct pod discovery
+apiVersion: v1
+kind: Service
+metadata:
+  name: virtualorg-agent-headless
+  namespace: virtualorg
+  labels:
+    app: virtualorg-agent
+spec:
+  type: ClusterIP
+  clusterIP: None
+  selector:
+    app: virtualorg-agent
+  ports:
+    - name: http
+      port: 8080
+      targetPort: 8080
+      protocol: TCP
+    - name: metrics
+      port: 8081
+      targetPort: 8081
+      protocol: TCP

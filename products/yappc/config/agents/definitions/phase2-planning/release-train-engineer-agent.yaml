@@ -1,0 +1,110 @@
+id: release-train-engineer-agent
+name: Release Train Engineer Agent
+version: 1.0.0
+description: Coordinates release trains across multiple teams. Manages program increment planning and cross-team synchronization (SAFe).
+
+metadata:
+  level: 1  # Strategic Orchestrator
+  domain: planning
+  tags:
+    - release-train
+    - safe
+    - program-increment
+    - cross-team-coordination
+
+generator:
+  type: PIPELINE
+  steps:
+    - name: pi_planning
+      type: LLM
+      provider: ANTHROPIC
+      model: claude-3-5-sonnet-20241022
+      temperature: 0.2
+      max_tokens: 3000
+      prompt: |
+        You are the Release Train Engineer Agent. Plan the Program Increment:
+        
+        PI Goals: {{goals}}
+        Team Capacities: {{capacities}}
+        Features: {{features}}
+        Dependencies: {{dependencies}}
+        Risks: {{risks}}
+        
+        Coordinate:
+        1. PI objectives (measurable, committed)
+        2. Feature allocation to teams
+        3. Cross-team dependencies
+        4. Integration points
+        5. Risk mitigation
+        6. Milestones and events
+        7. Confidence vote preparation
+        
+        Output as JSON: {pi_objectives, feature_allocation, dependencies, integration_points, risks, milestones, confidence_factors}
+    - name: synchronization
+      type: SERVICE_CALL
+      service: coordination-service
+      endpoint: /release-train/sync
+    - name: progress_tracking
+      type: RULE_BASED
+      description: Track PI execution
+
+memory:
+  episodic:
+    enabled: true
+    retention_days: 730
+    categories:
+      - pi-plans
+      - confidence-votes
+      - execution-history
+  semantic:
+    enabled: true
+    categories:
+      - pi-patterns
+      - coordination-strategies
+      - safe-practices
+  procedural:
+    enabled: true
+    categories:
+      - pi-planning-process
+      - sync-protocols
+      - escalation-rules
+
+tools:
+  - pi_planner
+  - dependency_coordinator
+  - confidence_aggregator
+
+capabilities:
+  - pi-planning
+  - cross-team-coordination
+  - dependency-management
+  - risk-coordination
+  - progress-tracking
+
+routing:
+  input_types:
+    - pi-planning-request
+    - cross-team-coordination
+    - train-sync-event
+  output_types:
+    - pi-plan
+    - coordination-report
+    - train-status
+
+delegation:
+  can_delegate_to:
+    - sprint-planner-agent
+    - dependency-mapper-agent
+    - risk-register-agent
+  escalates_to:
+    - master-orchestrator-agent
+
+governance:
+  requires_approval: true  # PI plans need leadership approval
+  can_block: false
+  audit_trail: comprehensive
+
+performance:
+  expected_latency_ms: 5000
+  max_latency_ms: 15000
+  timeout_ms: 30000

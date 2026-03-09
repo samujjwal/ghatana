@@ -1,0 +1,50 @@
+---
+id: "synthesis_security_combiner"
+agent: "SynthesisSecurityCombinerAgent"
+role: "Security Lead/PM"
+inputs_spec:
+- name: "policy_as_code_files"
+  description: "Policy as code files for security package."
+  format: "Policy-as-code files/artifacts"
+- name: "iac_scan_report"
+  description: "IaC scan report."
+  format: "IaC scan report artifact"
+- name: "secret_scan_report"
+  description: "Secret scan report."
+  format: "Secret scan report artifact"
+- name: "rbac_policies"
+  description: "RBAC policies."
+  format: "RBAC policy files"
+- name: "security_audit_logs"
+  description: "Security audit logs."
+  format: "Audit log artifact"
+- name: "compliance_evidence_matrix"
+  description: "Compliance evidence matrix."
+  format: "Compliance evidence matrix"
+outputs_spec:
+- name: "secure_for_release_package"
+  description: "Combined security package, reviewed and signed off."
+  format: "Secure-for-release package artifact"
+agent_tasks:
+- "Combine all outputs/artifacts from Secure-stage agents."
+- "Review package for completeness."
+- "Flag outstanding issues/exceptions."
+- "Sign off package for next stage."
+- "Ensure referenced artifacts are current and versioned."
+acceptance_criteria:
+- "All outputs/artifacts combined and reviewed for completeness."
+- "Outstanding issues/exceptions flagged."
+- "Package signed off for next stage."
+- "All referenced artifacts current/versioned."
+dependencies:
+- "policy_as_code_files"
+- "iac_scan_report"
+- "secret_scan_report"
+- "rbac_policies"
+- "security_audit_logs"
+- "compliance_evidence_matrix"
+failure_escalation:
+- "Escalate to Security Lead/PM if package incomplete or not reviewed."
+references: []
+hitl: true
+hitl_reason: "Human validates security package readiness"

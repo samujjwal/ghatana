@@ -1,0 +1,26 @@
+id: solution_feedback_loop
+agent: FeedbackLoopAgent
+role: CI/CD Coach/Automation
+inputs_spec:
+- name: solution_progress_dashboard
+  description: Solution progress dashboard artifact.
+  format: Dashboard artifact
+outputs_spec:
+- name: solution_feedback_items
+  description: List of issues and improvement suggestions routed to Retrospective, tracked for resolution.
+  format: List of feedback objects (issue, suggestion, status, resolution)
+  example: "- issue: \"Milestone delay\"\n  suggestion: \"Increase code reviews\"\n  status: \"open\"\n  resolution: \"\"\n"
+agent_tasks:
+- Route all issues and improvement suggestions to Retrospective.
+- Track feedback for action and resolution.
+acceptance_criteria:
+- All issues and improvement suggestions are routed to Retrospective.
+- Feedback is tracked for action and resolution.
+dependencies:
+- solution_progress_dashboard
+failure_escalation:
+- Escalate to CI/CD coach if feedback is not acted on.
+references: []
+hitl: false
+
+# [!!] No custom enhancement found.

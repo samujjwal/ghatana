@@ -1,0 +1,13 @@
+apiVersion: v1
+kind: Service
+metadata:
+name: {{ include "{{kebabCase projectName}}.fullname" . }}
+labels:
+app: {{ include "{{kebabCase projectName}}.fullname" . }}
+spec:
+type: {{ .Values.service.type }}
+selector:
+app: {{ include "{{kebabCase projectName}}.fullname" . }}
+ports:
+- port: {{ .Values.service.port }}
+targetPort: 8080

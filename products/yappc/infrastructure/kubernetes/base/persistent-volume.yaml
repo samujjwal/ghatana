@@ -1,0 +1,44 @@
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: ollama-models-pvc
+  namespace: yappc
+  labels:
+    app: ollama
+spec:
+  accessModes:
+    - ReadWriteOnce
+  resources:
+    requests:
+      storage: 50Gi  # Storage for LLM models
+  storageClassName: fast-ssd  # Use high-performance SSD
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: yappc-logs-pvc
+  namespace: yappc
+  labels:
+    app: yappc-agents
+spec:
+  accessModes:
+    - ReadWriteOnce
+  resources:
+    requests:
+      storage: 20Gi  # Storage for application logs
+  storageClassName: standard
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: yappc-cache-pvc
+  namespace: yappc
+  labels:
+    app: yappc-agents
+spec:
+  accessModes:
+    - ReadWriteOnce
+  resources:
+    requests:
+      storage: 10Gi  # Storage for application cache
+  storageClassName: standard

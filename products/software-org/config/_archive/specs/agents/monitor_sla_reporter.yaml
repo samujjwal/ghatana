@@ -1,0 +1,32 @@
+---
+id: "monitor_sla_reporter"
+agent: "SLAComplianceReporterAgent"
+role: "Service Quality Bot"
+inputs_spec:
+- name: "monitor_progress_dashboard"
+  description: "Monitor progress dashboard for SLA monitoring."
+  format: "Dashboard artifact"
+- name: "monitor_kpi_report"
+  description: "Monitor KPI report for SLA monitoring."
+  format: "KPI report artifact"
+outputs_spec:
+- name: "monitor_sla_report"
+  description: "SLA compliance report for all services in monitor stage."
+  format: "SLA compliance report artifact"
+agent_tasks:
+- "Monitor SLO/SLA metrics for breaches and trends."
+- "Trigger notification and root cause entry on breach."
+- "Archive report for audit and share with stakeholders."
+- "Recommend improvements if trends worsen."
+acceptance_criteria:
+- "All SLO/SLA metrics monitored for breaches and trends."
+- "Any breach triggers automated notification and root cause entry."
+- "SLA compliance report is archived for audit and shared with stakeholders."
+- "SLA improvement recommendations are generated if trends worsen."
+dependencies:
+- "monitor_progress_dashboard"
+- "monitor_kpi_report"
+failure_escalation:
+- "Escalate to Service Quality Bot if SLA report not archived or breaches unaddressed."
+references: []
+hitl: false

@@ -1,0 +1,29 @@
+---
+id: "monitor_success_criteria_tracker"
+agent: "SuccessCriteriaTrackerAgent"
+role: "Monitor Success Criteria Tracker"
+inputs_spec:
+- name: "monitor_stage_milestone"
+  description: "Monitor stage milestones for criteria tracking."
+  format: "List of milestone objects"
+outputs_spec:
+- name: "monitor_success_criteria_status"
+  description: "Monitor & Respond criteria mapped to detection, alerting, and response\
+    \ runbooks."
+  format: "List of criteria status objects"
+agent_tasks:
+- "Map criteria to detection, alerting, and response runbooks."
+- "Confirm coverage for all major assets and threat types."
+- "Document open incidents or gaps."
+- "Ensure tracker reviewed by Security or SOC lead at stage exit."
+acceptance_criteria:
+- "Criteria mapped to detection/alerting/runbooks."
+- "Coverage confirmed for all major assets/threat types."
+- "Open incidents/gaps documented."
+- "Tracker reviewed at stage exit."
+dependencies:
+- "monitor_stage_milestone"
+failure_escalation:
+- "Escalate to Security or SOC lead if criteria not reviewed or gaps not documented."
+references: []
+hitl: false

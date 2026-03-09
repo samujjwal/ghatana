@@ -1,0 +1,28 @@
+---
+id: "uat_readiness_checker"
+agent: "ReadinessCheckerAgent"
+role: "Gatekeeper Bot"
+inputs_spec:
+- name: "uat_plan"
+  description: "UAT plan artifact."
+  format: "UAT plan artifact"
+- name: "uat_results"
+  description: "UAT execution results artifact."
+  format: "UAT results artifact"
+outputs_spec:
+- name: "uat_readiness_status"
+  description: "Readiness status for UAT exit including defect/criteria review."
+  format: "Readiness status artifact"
+agent_tasks:
+- "Review UAT exit criteria, defect resolution, and acceptance."
+- "Confirm all exit criteria met and critical defects resolved or accepted with risk."
+acceptance_criteria:
+- "All UAT exit criteria are met."
+- "Critical defects are resolved or accepted with risk."
+dependencies:
+- "uat_plan"
+- "uat_results"
+failure_escalation:
+- "Escalate to gatekeeper or PM if exit criteria not met."
+references: []
+hitl: false

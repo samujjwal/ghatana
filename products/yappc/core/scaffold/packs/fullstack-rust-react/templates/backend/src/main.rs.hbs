@@ -1,0 +1,33 @@
+mod config;
+mod error;
+mod handlers;
+mod router;
+
+use crate::config::Config;
+use crate::router::create_router;
+use tracing_subscriber::{layer::SubscriberExt, util::SubscriberInitExt};
+
+#[tokio::main]
+async fn main() {
+// Initialize tracing
+tracing_subscriber::registry()
+.with(
+tracing_subscriber::EnvFilter::try_from_default_env()
+.unwrap_or_else(|_| "backend=debug,tower_http=debug".into()),
+)
+.with(tracing_subscriber::fmt::layer())
+.init();
+
+let config = Config::from_env();
+let app = create_router();
+
+let listener = tokio::net::TcpListener::bind(format!("0.0.0.0:{}", config.port))
+.await
+.expect("Failed to bind");
+
+tracing::info!("🚀 Server running at http://localhost:{}", config.port);
+
+axum::serve(listener, app)
+.await
+.expect("Failed to start server");
+}

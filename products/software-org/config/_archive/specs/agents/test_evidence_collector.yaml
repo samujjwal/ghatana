@@ -1,0 +1,31 @@
+---
+id: "test_evidence_collector"
+agent: "EvidenceCollectorAgent"
+role: "Compliance Evidence Bot"
+inputs_spec:
+- name: "test_audit_log"
+  description: "Audit log for Test stage."
+  format: "Audit log artifact"
+- name: "test_success_criteria_status"
+  description: "Status of Test stage success criteria."
+  format: "List of criteria status objects"
+outputs_spec:
+- name: "test_evidence_package"
+  description: "Evidence package for Test stage, including all artifacts, logs, signoffs,\
+    \ KPIs, and compliance links."
+  format: "Evidence package artifact"
+agent_tasks:
+- "Collect/hash all artifacts, audit logs, signoffs, KPIs."
+- "Link evidence to compliance requirements."
+- "Archive package securely, maintain access logs."
+acceptance_criteria:
+- "All artifacts, logs, signoffs, KPIs are collected and hashed."
+- "Evidence is linked to compliance requirements."
+- "Package is archived securely, access logs maintained."
+dependencies:
+- "test_audit_log"
+- "test_success_criteria_status"
+failure_escalation:
+- "Escalate to Evidence Lead/Compliance if evidence is incomplete or not archived."
+references: []
+hitl: false

@@ -1,0 +1,132 @@
+/**
+* Gateway configuration types
+*/
+export interface GatewayConfig {
+port: number;
+logLevel: "debug" | "info" | "warn" | "error";
+{{#if enableCors}}
+corsOrigin?: string;
+{{/if}}
+{{#if enableRateLimiting}}
+rateLimiting?: {
+max: number;
+timeWindow: string;
+};
+{{/if}}
+{{#if enableAuth}}
+jwtSecret?: string;
+{{/if}}
+{{#if enableCircuitBreaker}}
+circuitBreaker?: {
+threshold: number;
+timeout: number;
+};
+{{/if}}
+}
+
+/**
+* Route configuration for upstream services
+*/
+export interface RouteConfig {
+/** Route prefix (e.g., "/api/users") */
+prefix: string;
+/** Upstream service URL (e.g., "http://user-service:3000") */
+upstream: string;
+/** Allowed HTTP methods */
+methods?: string[];
+/** Request timeout in milliseconds */
+timeout?: number;
+/** Number of retries on failure */
+retries?: number;
+/** Require authentication for this route */
+auth?: boolean;
+/** Route-specific rate limiting */
+rateLimit?: {
+max: number;
+timeWindow: string;
+};
+/** Request/response transformation */
+transform?: {
+request?: Record<string, string>;
+    response?: Record<string, string>;
+        };
+        /** Additional headers to add */
+        headers?: Record<string, string>;
+            /** Strip the prefix when forwarding */
+            stripPrefix?: boolean;
+            }
+
+            /**
+            * Upstream service health status
+            */
+            export interface UpstreamHealth {
+            name: string;
+            url: string;
+            status: "healthy" | "unhealthy" | "unknown";
+            latency?: number;
+            lastCheck: Date;
+            consecutiveFailures: number;
+            }
+
+            {{#if enableAuth}}
+            /**
+            * JWT payload interface
+            */
+            export interface JwtPayload {
+            sub: string;
+            iat: number;
+            exp: number;
+            roles?: string[];
+            permissions?: string[];
+            [key: string]: unknown;
+            }
+
+            /**
+            * Authenticated request user
+            */
+            export interface AuthUser {
+            id: string;
+            roles: string[];
+            permissions: string[];
+            }
+            {{/if}}
+
+            {{#if enableCircuitBreaker}}
+            /**
+            * Circuit breaker state
+            */
+            export type CircuitState = "closed" | "open" | "half-open";
+
+            /**
+            * Circuit breaker stats
+            */
+            export interface CircuitStats {
+            state: CircuitState;
+            failures: number;
+            successes: number;
+            rejected: number;
+            fallbacks: number;
+            lastFailure?: Date;
+            }
+            {{/if}}
+
+            // Fastify type extensions
+            declare module "fastify" {
+            interface FastifyInstance {
+            {{#if enableAuth}}
+            authenticate: (
+            request: FastifyRequest,
+            reply: FastifyReply
+            ) => Promise<void>;
+                {{/if}}
+                {{#if enableCircuitBreaker}}
+                circuitBreaker: import("./middleware/circuit-breaker.js").CircuitBreakerManager;
+                {{/if}}
+                }
+
+                {{#if enableAuth}}
+                interface FastifyRequest {
+                user?: AuthUser;
+                }
+                {{/if}}
+                }

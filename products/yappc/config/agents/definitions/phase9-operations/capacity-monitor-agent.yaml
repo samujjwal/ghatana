@@ -1,0 +1,111 @@
+id: capacity-monitor-agent
+name: Capacity Monitor Agent
+version: 1.0.0
+description: Monitors system capacity. Predicts needs and recommends scaling.
+
+metadata:
+  level: 3  # Worker
+  domain: operations
+  tags:
+    - capacity
+    - scaling
+    - prediction
+    - resources
+
+generator:
+  type: PIPELINE
+  steps:
+    - name: capacity_collection
+      type: SERVICE_CALL
+      service: metrics-service
+      endpoint: /capacity/collect
+    - name: capacity_analysis
+      type: LLM
+      provider: ANTHROPIC
+      model: claude-3-5-sonnet-20241022
+      temperature: 0.2
+      max_tokens: 2000
+      prompt: |
+        You are the Capacity Monitor Agent. Analyze capacity:
+        
+        Current Utilization: {{utilization}}
+        Historical Trends: {{trends}}
+        Growth Projections: {{growth}}
+        Planned Events: {{events}}
+        
+        Analyze:
+        1. Current utilization by resource type
+        2. Headroom assessment
+        3. Trend analysis (increasing/stable/decreasing)
+        4. Projected capacity needs (1w, 1m, 3m)
+        5. Scaling recommendations
+        6. Cost optimization opportunities
+        
+        Output as JSON: {
+          utilization_summary,
+          headroom,
+          trends,
+          projections,
+          scaling_recommendations,
+          cost_opportunities
+        }
+    - name: alerting
+      type: RULE_BASED
+      description: Generate capacity alerts
+
+memory:
+  episodic:
+    enabled: true
+    retention_days: 365
+    categories:
+      - capacity-reports
+      - scaling-events
+      - predictions
+  semantic:
+    enabled: true
+    categories:
+      - capacity-models
+      - scaling-patterns
+      - cost-models
+  procedural:
+    enabled: true
+    categories:
+      - monitoring-rules
+      - scaling-thresholds
+      - prediction-algorithms
+
+tools:
+  - capacity_collector
+  - trend_analyzer
+  - scaling_recommender
+
+capabilities:
+  - capacity-monitoring
+  - trend-analysis
+  - prediction
+  - scaling-recommendation
+
+routing:
+  input_types:
+    - capacity-query
+    - scaling-request
+    - prediction-request
+  output_types:
+    - capacity-report
+    - scaling-plan
+    - prediction
+
+delegation:
+  can_delegate_to: []
+  escalates_to:
+    - operations-orchestrator-agent
+
+governance:
+  requires_approval: false
+  can_block: false
+  audit_trail: standard
+
+performance:
+  expected_latency_ms: 3000
+  max_latency_ms: 8000
+  timeout_ms: 15000

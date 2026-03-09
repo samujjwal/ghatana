@@ -1,0 +1,64 @@
+global:
+  resolve_timeout: 5m
+  # Slack webhook URL - configure this for your team
+  # slack_api_url: 'YOUR_SLACK_WEBHOOK_URL'
+
+# Route tree
+route:
+  group_by: ['alertname', 'cluster', 'service']
+  group_wait: 10s
+  group_interval: 10s
+  repeat_interval: 12h
+  receiver: 'default'
+  
+  routes:
+    # Critical alerts go to on-call
+    - match:
+        severity: critical
+      receiver: 'critical-alerts'
+      continue: true
+    
+    # Warning alerts to team channel
+    - match:
+        severity: warning
+      receiver: 'warning-alerts'
+
+# Receivers
+receivers:
+  - name: 'default'
+    # Configure your default notification method
+    # For development, just log to console
+    webhook_configs:
+      - url: 'http://localhost:9093/api/v2/alerts'
+        send_resolved: true
+
+  - name: 'critical-alerts'
+    # Example Slack configuration (uncomment and configure)
+    # slack_configs:
+    #   - channel: '#ghatana-critical'
+    #     title: '🚨 Critical Alert'
+    #     text: '{{ range .Alerts }}{{ .Annotations.description }}{{ end }}'
+    #     send_resolved: true
+    webhook_configs:
+      - url: 'http://localhost:9093/api/v2/alerts'
+        send_resolved: true
+
+  - name: 'warning-alerts'
+    # Example Slack configuration (uncomment and configure)
+    # slack_configs:
+    #   - channel: '#ghatana-alerts'
+    #     title: '⚠️ Warning'
+    #     text: '{{ range .Alerts }}{{ .Annotations.description }}{{ end }}'
+    #     send_resolved: true
+    webhook_configs:
+      - url: 'http://localhost:9093/api/v2/alerts'
+        send_resolved: true
+
+# Inhibition rules
+inhibit_rules:
+  # Inhibit warning if critical is firing
+  - source_match:
+      severity: 'critical'
+    target_match:
+      severity: 'warning'
+    equal: ['alertname', 'service']

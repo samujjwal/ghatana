@@ -1,0 +1,19 @@
+.PHONY: build run test fmt lint clean
+
+build:
+cargo build --release
+
+run:
+cargo run
+
+test:
+cargo test
+
+fmt:
+cargo fmt
+
+lint:
+cargo clippy
+
+clean:
+cargo clean

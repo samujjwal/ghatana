@@ -1,0 +1,42 @@
+{
+    "name": "docker-compose",
+    "version": "1.0.0",
+    "description": "Docker Compose infrastructure setup",
+    "language": "yaml",
+    "category": "infrastructure",
+    "platform": "server",
+    "buildSystem": "docker",
+    "author": "YAPPC Team",
+    "tags": [
+        "docker",
+        "docker-compose",
+        "infrastructure",
+        "containers"
+    ],
+    "requiredVariables": [
+        "projectName"
+    ],
+    "optionalVariables": [
+        "includePostgres",
+        "includeRedis",
+        "includeRabbitMQ",
+        "includePrometheus",
+        "includeGrafana"
+    ],
+    "defaults": {
+        "includePostgres": "true",
+        "includeRedis": "true",
+        "includeRabbitMQ": "false",
+        "includePrometheus": "true",
+        "includeGrafana": "true"
+    },
+    "templates": [
+        "docker-compose.yml.hbs",
+        "docker-compose.override.yml.hbs",
+        ".env.example.hbs",
+        "postgres/init.sql.hbs",
+        "prometheus/prometheus.yml.hbs",
+        "grafana/dashboards/app-dashboard.json.hbs",
+        "README.md.hbs"
+    ]
+}

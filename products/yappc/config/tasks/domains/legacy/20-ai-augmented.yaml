@@ -1,0 +1,267 @@
+# AI-Augmented Development Tasks
+# Domain 20 of 22 - Developer Task Universe
+# Reference: developer-tasks.md Part I, Section 20
+
+domain:
+  id: ai-augmented
+  name: "AI-Augmented Development"
+  description: "Tasks that leverage AI assistance for development"
+  order: 20
+  icon: "smart_toy"
+  color: "#EC407A"
+  lifecycle_stages:
+    - execute
+    - verify
+
+tasks:
+  - id: ai-001
+    name: "AI Code Generation"
+    description: "Use AI to generate code from specifications"
+    personas:
+      - Developer
+    lifecycle_stages:
+      - execute
+    automation_level: automated
+    required_capabilities:
+      - ai-coding
+      - code-generation
+    input_schema: ai-001-input
+    output_schema: ai-001-output
+    audit_artifacts:
+      - InputSnapshot
+      - OutputSnapshot
+      - AIGeneratedCode
+      - VerificationResult
+    ui:
+      icon: "auto_awesome"
+      color: "#EC407A"
+      tags:
+        - ai
+        - code-generation
+        - automation
+
+  - id: ai-002
+    name: "AI-Assisted Debugging"
+    description: "Use AI to help diagnose and fix issues"
+    personas:
+      - Developer
+    lifecycle_stages:
+      - execute
+    automation_level: assisted
+    required_capabilities:
+      - ai-debugging
+      - debugging
+    input_schema: ai-002-input
+    output_schema: ai-002-output
+    audit_artifacts:
+      - InputSnapshot
+      - OutputSnapshot
+      - AIAnalysis
+    ui:
+      icon: "psychology_alt"
+      color: "#EC407A"
+      tags:
+        - ai
+        - debugging
+        - assistance
+
+  - id: ai-003
+    name: "AI Test Generation"
+    description: "Use AI to generate test cases"
+    personas:
+      - Developer
+      - QA
+    lifecycle_stages:
+      - execute
+    automation_level: automated
+    required_capabilities:
+      - ai-testing
+      - testing
+    input_schema: ai-003-input
+    output_schema: ai-003-output
+    audit_artifacts:
+      - InputSnapshot
+      - OutputSnapshot
+      - AIGeneratedTests
+      - VerificationResult
+    ui:
+      icon: "playlist_add_check"
+      color: "#EC407A"
+      tags:
+        - ai
+        - testing
+        - automation
+
+  - id: ai-004
+    name: "AI Code Review"
+    description: "Use AI for automated code review"
+    personas:
+      - Developer
+    lifecycle_stages:
+      - verify
+    automation_level: automated
+    required_capabilities:
+      - ai-review
+      - code-review
+    input_schema: ai-004-input
+    output_schema: ai-004-output
+    audit_artifacts:
+      - InputSnapshot
+      - OutputSnapshot
+      - AIReviewComments
+    ui:
+      icon: "rate_review"
+      color: "#EC407A"
+      tags:
+        - ai
+        - code-review
+        - automation
+
+  - id: ai-005
+    name: "AI Documentation Generation"
+    description: "Use AI to generate documentation"
+    personas:
+      - Developer
+    lifecycle_stages:
+      - execute
+    automation_level: automated
+    required_capabilities:
+      - ai-documentation
+      - documentation
+    input_schema: ai-005-input
+    output_schema: ai-005-output
+    audit_artifacts:
+      - InputSnapshot
+      - OutputSnapshot
+      - AIGeneratedDocs
+    ui:
+      icon: "auto_stories"
+      color: "#EC407A"
+      tags:
+        - ai
+        - documentation
+        - automation
+
+  - id: ai-006
+    name: "AI Refactoring Suggestions"
+    description: "Use AI to suggest code improvements"
+    personas:
+      - Developer
+    lifecycle_stages:
+      - verify
+    automation_level: assisted
+    required_capabilities:
+      - ai-refactoring
+      - refactoring
+    input_schema: ai-006-input
+    output_schema: ai-006-output
+    audit_artifacts:
+      - InputSnapshot
+      - OutputSnapshot
+      - AISuggestions
+    ui:
+      icon: "tips_and_updates"
+      color: "#EC407A"
+      tags:
+        - ai
+        - refactoring
+        - suggestions
+
+  - id: ai-007
+    name: "AI Security Analysis"
+    description: "Use AI to identify security vulnerabilities"
+    personas:
+      - Developer
+      - Security
+    lifecycle_stages:
+      - verify
+    automation_level: automated
+    required_capabilities:
+      - ai-security
+      - security-analysis
+    input_schema: ai-007-input
+    output_schema: ai-007-output
+    audit_artifacts:
+      - InputSnapshot
+      - OutputSnapshot
+      - AISecurityReport
+    ui:
+      icon: "security"
+      color: "#EC407A"
+      tags:
+        - ai
+        - security
+        - analysis
+
+  - id: ai-008
+    name: "AI Code Completion"
+    description: "Use AI for real-time code suggestions"
+    personas:
+      - Developer
+    lifecycle_stages:
+      - execute
+    automation_level: automated
+    required_capabilities:
+      - ai-completion
+      - coding
+    input_schema: ai-008-input
+    output_schema: ai-008-output
+    audit_artifacts:
+      - OutputSnapshot
+    ui:
+      icon: "edit"
+      color: "#EC407A"
+      tags:
+        - ai
+        - completion
+        - coding
+
+  - id: ai-009
+    name: "AI Query Generation"
+    description: "Use AI to generate database queries"
+    personas:
+      - Developer
+    lifecycle_stages:
+      - execute
+    automation_level: assisted
+    required_capabilities:
+      - ai-database
+      - database
+    input_schema: ai-009-input
+    output_schema: ai-009-output
+    audit_artifacts:
+      - InputSnapshot
+      - OutputSnapshot
+      - AIGeneratedQuery
+    ui:
+      icon: "storage"
+      color: "#EC407A"
+      tags:
+        - ai
+        - queries
+        - database
+
+  - id: ai-010
+    name: "AI Prompt Engineering"
+    description: "Craft effective prompts for AI tools"
+    personas:
+      - Developer
+    lifecycle_stages:
+      - execute
+    automation_level: manual
+    required_capabilities:
+      - prompt-engineering
+      - ai-tools
+    input_schema: ai-010-input
+    output_schema: ai-010-output
+    audit_artifacts:
+      - InputSnapshot
+      - OutputSnapshot
+      - PromptRecord
+    ui:
+      icon: "tune"
+      color: "#EC407A"
+      tags:
+        - ai
+        - prompts
+        - engineering

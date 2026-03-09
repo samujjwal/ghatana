@@ -1,0 +1,26 @@
+---
+id: "dr_audit_log_agent"
+agent: "AuditLogAgent"
+role: "Compliance Bot"
+inputs_spec:
+- name: "dr_progress_dashboard"
+  description: "DR progress dashboard for audit logging."
+  format: "Dashboard artifact"
+- name: "dr_notification_agent"
+  description: "DR notification agent log."
+  format: "List of notification objects"
+outputs_spec:
+- name: "dr_audit_log"
+  description: "Audit log of DR test results, actions, notifications."
+  format: "Audit log artifact"
+agent_tasks:
+- "Log all DR test results, actions, and notifications."
+acceptance_criteria:
+- "All DR test results, actions, and notifications are logged."
+dependencies:
+- "dr_progress_dashboard"
+- "dr_notification_agent"
+failure_escalation:
+- "Escalate to Compliance if audit log incomplete or missing."
+references: []
+hitl: false

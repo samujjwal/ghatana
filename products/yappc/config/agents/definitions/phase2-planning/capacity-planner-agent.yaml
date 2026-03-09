@@ -1,0 +1,107 @@
+id: capacity-planner-agent
+name: Capacity Planner Agent
+version: 1.0.0
+description: Plans and manages team capacity. Accounts for vacations, on-call, meetings, and sustainable pace. Forecasts future capacity.
+
+metadata:
+  level: 3  # Worker
+  domain: planning
+  tags:
+    - capacity-planning
+    - resource-management
+    - forecasting
+    - sustainable-pace
+
+generator:
+  type: PIPELINE
+  steps:
+    - name: capacity_calculation
+      type: LLM
+      provider: ANTHROPIC
+      model: claude-3-5-sonnet-20241022
+      temperature: 0.1
+      max_tokens: 2000
+      prompt: |
+        You are the Capacity Planner Agent. Calculate team capacity:
+        
+        Team: {{team}}
+        Timeframe: {{timeframe}}
+        Planned Time Off: {{pto}}
+        On-Call Schedule: {{oncall}}
+        Recurring Meetings: {{meetings}}
+        Historical Velocity: {{velocity}}
+        
+        Calculate:
+        1. Total available hours
+        2. Deductions (PTO, on-call, meetings, overhead)
+        3. Net capacity (story points or hours)
+        4. Confidence range
+        5. Capacity by skill/role
+        6. Recommendations for optimization
+        
+        Output as JSON: {total_hours, deductions, net_capacity, confidence, by_skill, by_person, optimization_recommendations}
+    - name: forecast_generation
+      type: RULE_BASED
+      description: Generate capacity forecast
+    - name: capacity_registration
+      type: SERVICE_CALL
+      service: capacity-service
+      endpoint: /capacity/register
+
+memory:
+  episodic:
+    enabled: true
+    retention_days: 365
+    categories:
+      - capacity-calculations
+      - actuals-vs-planned
+      - adjustments
+  semantic:
+    enabled: true
+    categories:
+      - capacity-models
+      - overhead-benchmarks
+      - velocity-patterns
+  procedural:
+    enabled: true
+    categories:
+      - calculation-formulas
+      - deduction-rules
+      - forecasting-methods
+
+tools:
+  - calendar_analyzer
+  - velocity_tracker
+  - capacity_calculator
+
+capabilities:
+  - capacity-calculation
+  - availability-tracking
+  - forecasting
+  - optimization-recommendations
+
+routing:
+  input_types:
+    - capacity-request
+    - planning-period
+    - team-change
+  output_types:
+    - capacity-report
+    - forecast
+    - optimization-plan
+
+delegation:
+  can_delegate_to: []
+  escalates_to:
+    - sprint-planner-agent
+    - planning-orchestrator-agent
+
+governance:
+  requires_approval: false
+  can_block: false
+  audit_trail: standard
+
+performance:
+  expected_latency_ms: 2000
+  max_latency_ms: 5000
+  timeout_ms: 10000

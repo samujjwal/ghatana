@@ -1,0 +1,675 @@
+# ============================================================================
+# AI AGENTS GRAPHQL SCHEMA
+# 
+# GraphQL types and operations for AI agent interactions.
+# This is the User API layer that calls the Java AI backend.
+# 
+# @doc.type schema
+# @doc.purpose AI agent GraphQL API
+# @doc.layer product
+# @doc.pattern API Gateway
+# ============================================================================
+
+# ============================================================================
+# ENUMS
+# ============================================================================
+
+"""
+AI Agent names
+"""
+enum AgentName {
+  COPILOT_AGENT
+  QUERY_PARSER_AGENT
+  PREDICTION_AGENT
+  ANOMALY_DETECTOR_AGENT
+  CODE_GENERATOR_AGENT
+  SENTIMENT_AGENT
+  RECOMMENDATION_AGENT
+  SEARCH_AGENT
+  WORKFLOW_ROUTER_AGENT
+  DOC_GENERATOR_AGENT
+}
+
+"""
+Agent execution status
+"""
+enum AgentExecutionStatus {
+  PENDING
+  RUNNING
+  SUCCESS
+  FAILED
+  TIMEOUT
+  CANCELLED
+}
+
+"""
+Query parser intent types
+"""
+enum QueryIntent {
+  SEARCH
+  FILTER
+  COMMAND
+  QUESTION
+  NAVIGATE
+}
+
+"""
+Anomaly metric types
+"""
+enum AnomalyMetricType {
+  VELOCITY
+  QUALITY_METRICS
+  CYCLE_TIME
+  THROUGHPUT
+  ERROR_RATE
+  CUSTOM
+}
+
+"""
+Anomaly severity levels
+"""
+enum AnomalySeverity {
+  INFO
+  WARNING
+  CRITICAL
+}
+
+"""
+Insight severity levels
+"""
+enum InsightSeverity {
+  INFO
+  LOW
+  MEDIUM
+  HIGH
+  CRITICAL
+}
+
+# ============================================================================
+# INPUT TYPES
+# ============================================================================
+
+"""
+Context for agent execution
+"""
+input AgentContextInput {
+  userId: String!
+  workspaceId: String!
+  requestId: String
+  timeout: Int
+  metadata: JSON
+}
+
+"""
+Copilot agent input
+"""
+input CopilotInput {
+  query: String!
+  conversationHistory: [ConversationMessageInput!]
+  itemContext: ItemContextInput
+  maxTokens: Int
+  streaming: Boolean
+}
+
+"""
+Conversation message input
+"""
+input ConversationMessageInput {
+  role: String!
+  content: String!
+  timestamp: Float
+}
+
+"""
+Item context input
+"""
+input ItemContextInput {
+  itemId: String!
+  phase: String
+  priority: String
+}
+
+"""
+Query parser input
+"""
+input QueryParserInput {
+  query: String!
+  contextualItems: [String!]
+  previousQueries: [String!]
+  maxSuggestions: Int
+}
+
+"""
+Prediction agent input
+"""
+input PredictionInput {
+  itemId: String!
+  currentPhase: String
+  historicalData: [HistoricalDataPointInput!]
+  horizonDays: Int
+  requestedPredictions: [String!]
+}
+
+"""
+Historical data point input
+"""
+input HistoricalDataPointInput {
+  date: String!
+  phase: String!
+  metrics: JSON!
+}
+
+"""
+Anomaly detector input
+"""
+input AnomalyInput {
+  itemId: String
+  workspaceId: String
+  metricType: AnomalyMetricType!
+  dataPoints: [MetricDataPointInput!]!
+  sensitivity: Float
+  lookbackWindow: Int
+}
+
+"""
+Metric data point input
+"""
+input MetricDataPointInput {
+  timestamp: Float!
+  value: Float!
+  labels: JSON
+}
+
+"""
+User AI preferences input
+"""
+input UserAIPreferencesInput {
+  enableAISuggestions: Boolean
+  enablePredictions: Boolean
+  enableCopilot: Boolean
+  preferredModel: String
+  temperature: Float
+  maxTokens: Int
+  autoAcceptLow: Boolean
+  notificationLevel: String
+  excludedAgents: [AgentName!]
+}
+
+# ============================================================================
+# OUTPUT TYPES
+# ============================================================================
+
+"""
+Agent execution metrics
+"""
+type AgentMetrics {
+  latencyMs: Int!
+  tokensUsed: Int
+  costUSD: Float
+  modelUsed: String
+}
+
+"""
+Agent trace record
+"""
+type AgentTraceRecord {
+  timestamp: Float!
+  event: String!
+  duration: Float
+  metadata: JSON
+}
+
+"""
+Agent execution trace
+"""
+type AgentTrace {
+  agentName: AgentName!
+  requestId: String!
+  startTime: Float!
+  endTime: Float!
+  records: [AgentTraceRecord!]!
+}
+
+"""
+Agent execution error
+"""
+type AgentError {
+  code: String!
+  message: String!
+  retryable: Boolean!
+}
+
+"""
+Copilot action
+"""
+type CopilotAction {
+  type: String!
+  label: String!
+  payload: JSON!
+  confidence: Float!
+}
+
+"""
+Copilot agent output
+"""
+type CopilotOutput {
+  message: String!
+  actions: [CopilotAction!]!
+  suggestions: [String!]!
+  modelUsed: String!
+  tokensUsed: Int!
+}
+
+"""
+Copilot agent result
+"""
+type CopilotResult {
+  success: Boolean!
+  data: CopilotOutput
+  error: AgentError
+  metrics: AgentMetrics!
+  trace: AgentTrace!
+}
+
+"""
+Parsed query token
+"""
+type QueryToken {
+  text: String!
+  type: String!
+  start: Int!
+  end: Int!
+}
+
+"""
+Parsed query structure
+"""
+type ParsedQuery {
+  type: String!
+  filters: JSON!
+  sortBy: String
+  limit: Int
+}
+
+"""
+Query parser output
+"""
+type QueryParserOutput {
+  intent: QueryIntent!
+  confidence: Float!
+  parameters: JSON!
+  suggestions: [String!]!
+  tokens: [QueryToken!]!
+  parsedQuery: ParsedQuery!
+}
+
+"""
+Query parser result
+"""
+type QueryParserResult {
+  success: Boolean!
+  data: QueryParserOutput
+  error: AgentError
+  metrics: AgentMetrics!
+  trace: AgentTrace!
+}
+
+"""
+Phase prediction
+"""
+type PhasePredictionOutput {
+  targetDate: String!
+  predictedPhase: String!
+  confidence: Float!
+  probability: Float!
+}
+
+"""
+Risk factor
+"""
+type RiskFactor {
+  factor: String!
+  score: Float!
+  description: String!
+}
+
+"""
+Recommendation
+"""
+type PredictionRecommendation {
+  priority: String!
+  action: String!
+  reason: String!
+  impact: String!
+}
+
+"""
+Model info
+"""
+type ModelInfo {
+  ensemble: [String!]!
+  confidence: Float!
+}
+
+"""
+Prediction agent output
+"""
+type PredictionOutput {
+  predictions: [PhasePredictionOutput!]!
+  riskScore: Float!
+  riskFactors: [RiskFactor!]!
+  recommendations: [PredictionRecommendation!]!
+  modelInfo: ModelInfo!
+}
+
+"""
+Prediction result
+"""
+type PredictionResult {
+  success: Boolean!
+  data: PredictionOutput
+  error: AgentError
+  metrics: AgentMetrics!
+  trace: AgentTrace!
+}
+
+"""
+Detected anomaly
+"""
+type DetectedAnomaly {
+  timestamp: Float!
+  value: Float!
+  expectedValue: Float!
+  deviation: Float!
+  severity: AnomalySeverity!
+  type: String!
+  description: String!
+}
+
+"""
+Baseline statistics
+"""
+type AnomalyBaseline {
+  mean: Float!
+  stdDev: Float!
+  min: Float!
+  max: Float!
+  trend: String!
+}
+
+"""
+Contributing factor
+"""
+type ContributingFactor {
+  factor: String!
+  contribution: Float!
+}
+
+"""
+Root cause analysis
+"""
+type RootCauseAnalysis {
+  likelyCause: String!
+  confidence: Float!
+  contributingFactors: [ContributingFactor!]!
+}
+
+"""
+Mitigation step
+"""
+type MitigationStep {
+  step: Int!
+  action: String!
+  priority: String!
+  automated: Boolean!
+}
+
+"""
+Anomaly detector output
+"""
+type AnomalyOutput {
+  anomaliesDetected: [DetectedAnomaly!]!
+  baseline: AnomalyBaseline!
+  rootCauseAnalysis: RootCauseAnalysis
+  mitigationSteps: [MitigationStep!]!
+}
+
+"""
+Anomaly detection result
+"""
+type AnomalyResult {
+  success: Boolean!
+  data: AnomalyOutput
+  error: AgentError
+  metrics: AgentMetrics!
+  trace: AgentTrace!
+}
+
+"""
+Agent health status
+"""
+type AgentHealth {
+  healthy: Boolean!
+  latency: Int!
+  lastCheck: DateTime!
+  dependencies: JSON!
+  errorMessage: String
+}
+
+"""
+Agent metadata
+"""
+type AgentMetadata {
+  name: AgentName!
+  version: String!
+  description: String!
+  capabilities: [String!]!
+  supportedModels: [String!]!
+  latencySLA: Int!
+}
+
+"""
+Agent registry information
+"""
+type AgentInfo {
+  name: AgentName!
+  version: String!
+  description: String!
+  state: String!
+  registeredAt: DateTime!
+  capabilities: [String!]!
+  health: AgentHealth
+}
+
+"""
+User AI preferences
+"""
+type UserAIPreferences {
+  id: ID!
+  userId: String!
+  enableAISuggestions: Boolean!
+  enablePredictions: Boolean!
+  enableCopilot: Boolean!
+  preferredModel: String!
+  temperature: Float!
+  maxTokens: Int!
+  autoAcceptLow: Boolean!
+  notificationLevel: String!
+  excludedAgents: [AgentName!]!
+  createdAt: DateTime!
+  updatedAt: DateTime!
+}
+
+"""
+Copilot session
+"""
+type CopilotSession {
+  id: ID!
+  userId: String!
+  title: String
+  status: String!
+  messages: JSON!
+  tokensUsed: Int!
+  modelUsed: String!
+  createdAt: DateTime!
+  updatedAt: DateTime!
+  endedAt: DateTime
+}
+
+"""
+Agent execution log
+"""
+type AgentExecution {
+  id: ID!
+  agentName: String!
+  requestId: String!
+  userId: String!
+  workspaceId: String
+  input: JSON!
+  output: JSON
+  status: AgentExecutionStatus!
+  latencyMs: Int!
+  tokensUsed: Int
+  errorMessage: String
+  startedAt: DateTime!
+  completedAt: DateTime
+}
+
+# ============================================================================
+# QUERIES
+# ============================================================================
+
+extend type Query {
+  """
+  Get all registered AI agents
+  """
+  aiAgents: [AgentInfo!]!
+
+  """
+  Get a specific agent by name
+  """
+  aiAgent(name: AgentName!): AgentInfo
+
+  """
+  Get agent health status
+  """
+  aiAgentHealth(name: AgentName!): AgentHealth!
+
+  """
+  Get all agent health statuses
+  """
+  aiAgentsHealthCheck: [AgentHealth!]!
+
+  """
+  Get user AI preferences
+  """
+  userAIPreferences(userId: String!): UserAIPreferences
+
+  """
+  Get copilot sessions for a user
+  """
+  copilotSessions(
+    userId: String!
+    status: String
+    limit: Int
+    offset: Int
+  ): [CopilotSession!]!
+
+  """
+  Get a specific copilot session
+  """
+  copilotSession(id: ID!): CopilotSession
+
+  """
+  Get agent execution history
+  """
+  agentExecutions(
+    agentName: AgentName
+    userId: String
+    status: AgentExecutionStatus
+    limit: Int
+    offset: Int
+  ): [AgentExecution!]!
+}
+
+# ============================================================================
+# MUTATIONS
+# ============================================================================
+
+extend type Mutation {
+  """
+  Execute the Copilot agent
+  """
+  executeCopilot(
+    input: CopilotInput!
+    context: AgentContextInput!
+  ): CopilotResult!
+
+  """
+  Execute the Query Parser agent
+  """
+  executeQueryParser(
+    input: QueryParserInput!
+    context: AgentContextInput!
+  ): QueryParserResult!
+
+  """
+  Execute the Prediction agent
+  """
+  executePrediction(
+    input: PredictionInput!
+    context: AgentContextInput!
+  ): PredictionResult!
+
+  """
+  Execute the Anomaly Detector agent
+  """
+  executeAnomalyDetector(
+    input: AnomalyInput!
+    context: AgentContextInput!
+  ): AnomalyResult!
+
+  """
+  Update user AI preferences
+  """
+  updateUserAIPreferences(
+    userId: String!
+    input: UserAIPreferencesInput!
+  ): UserAIPreferences!
+
+  """
+  Create a new copilot session
+  """
+  createCopilotSession(userId: String!, modelUsed: String!): CopilotSession!
+
+  """
+  End a copilot session
+  """
+  endCopilotSession(id: ID!): CopilotSession!
+
+  """
+  Provide feedback on a copilot session
+  """
+  feedbackCopilotSession(id: ID!, feedback: String!): CopilotSession!
+}
+
+# ============================================================================
+# SUBSCRIPTIONS
+# ============================================================================
+
+extend type Subscription {
+  """
+  Subscribe to copilot streaming responses
+  """
+  copilotStream(sessionId: ID!): String!
+
+  """
+  Subscribe to anomaly alerts for a workspace
+  """
+  anomalyAlerts(workspaceId: String!): AnomalyResult!
+
+  """
+  Subscribe to prediction updates for an item
+  """
+  predictionUpdates(itemId: String!): PredictionResult!
+}

@@ -1,0 +1,25 @@
+syntax = "proto3";
+
+package ghatana.contracts.common.v1;
+
+option java_multiple_files = true;
+option java_package = "com.ghatana.contracts.common.v1";
+option java_outer_classname = "EnvelopeProto";
+
+// Standard message envelope for requests/responses to carry cross-cutting metadata
+message Envelope {
+  // Semantic version of the schema for payload interpretation (e.g., "v1")
+  string schema_version = 1;
+
+  // Correlates retries and idempotent operations across hops
+  string request_id = 2;
+
+  // Distributed trace correlation identifier (e.g., W3C traceparent id)
+  string trace_id = 3;
+
+  // Tenant identifier for multi-tenant isolation
+  string tenant_id = 4;
+}
+
+
+

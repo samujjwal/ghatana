@@ -1,0 +1,110 @@
+id: scaling-orchestrator-agent
+name: Scaling Orchestrator Agent
+version: 1.0.0
+description: Orchestrates scaling activities. Coordinates growth planning, capacity, architecture evolution, and team scaling.
+
+metadata:
+  level: 1  # Strategic Orchestrator
+  domain: scaling
+  tags:
+    - phase-orchestration
+    - scaling
+    - growth
+    - evolution
+
+generator:
+  type: PIPELINE
+  steps:
+    - name: scaling_planning
+      type: LLM
+      provider: ANTHROPIC
+      model: claude-3-5-sonnet-20241022
+      temperature: 0.2
+      max_tokens: 2500
+      prompt: |
+        You are the Scaling Orchestrator Agent. Plan scaling:
+        
+        Growth Projections: {{growth}}
+        Current Capacity: {{capacity}}
+        Architecture State: {{architecture}}
+        Team State: {{team}}
+        
+        Orchestrate:
+        1. Capacity scaling needs
+        2. Architecture evolution requirements
+        3. Team scaling considerations
+        4. Process scaling
+        5. Technical debt priorities
+        6. Risk areas
+        7. Agent delegation plan
+        
+        Output as JSON: {capacity_scaling, architecture_evolution, team_scaling, process_scaling, tech_debt, risks, delegation_plan}
+    - name: agent_coordination
+      type: SERVICE_CALL
+      service: agent-registry
+      endpoint: /agents/delegate
+    - name: scaling_tracking
+      type: RULE_BASED
+      description: Track scaling progress
+
+memory:
+  episodic:
+    enabled: true
+    retention_days: 730
+    categories:
+      - scaling-events
+      - outcomes
+      - lessons
+  semantic:
+    enabled: true
+    categories:
+      - scaling-patterns
+      - growth-models
+      - architecture-evolution
+  procedural:
+    enabled: true
+    categories:
+      - orchestration-rules
+      - scaling-playbooks
+      - risk-assessment
+
+tools:
+  - scaling_coordinator
+  - capacity_planner
+  - architecture_advisor
+
+capabilities:
+  - scaling-orchestration
+  - growth-planning
+  - architecture-evolution
+  - team-scaling
+
+routing:
+  input_types:
+    - scaling-trigger
+    - growth-forecast
+    - capacity-alert
+  output_types:
+    - scaling-plan
+    - evolution-roadmap
+    - recommendations
+
+delegation:
+  can_delegate_to:
+    - horizontal-scaling-agent
+    - architecture-evolution-agent
+    - sharding-agent
+    - caching-strategy-agent
+    - team-topology-agent
+  escalates_to:
+    - master-orchestrator-agent
+
+governance:
+  requires_approval: true  # Scaling decisions reviewed
+  can_block: false
+  audit_trail: comprehensive
+
+performance:
+  expected_latency_ms: 3000
+  max_latency_ms: 8000
+  timeout_ms: 15000

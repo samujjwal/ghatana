@@ -1,0 +1,100 @@
+{{!--
+  API Client Template for {{from.framework}} to {{to.framework}}
+  Generates type-safe API client for frontend-backend communication
+--}}
+{{#if (eq from.language "typescript")}}
+import axios, { AxiosInstance, AxiosRequestConfig } from 'axios';
+
+/**
+ * API Client for {{to.name}}
+ * 
+ * @doc.type class
+ * @doc.purpose Type-safe API client for {{to.name}} service
+ * @doc.layer integration
+ */
+export class {{pascalCase to.id}}Client {
+  private client: AxiosInstance;
+  private baseURL: string;
+
+  constructor(baseURL?: string) {
+    this.baseURL = baseURL || process.env.{{uppercase (snakeCase to.id)}}_API_URL || '{{apiEndpoint}}';
+    this.client = axios.create({
+      baseURL: this.baseURL,
+      timeout: {{timeout}},
+      headers: {
+        'Content-Type': 'application/json',
+      },
+    });
+
+    {{#if (eq authType "jwt")}}
+    // Add JWT token interceptor
+    this.client.interceptors.request.use((config) => {
+      const token = localStorage.getItem('auth_token');
+      if (token) {
+        config.headers.Authorization = `Bearer ${token}`;
+      }
+      return config;
+    });
+    {{/if}}
+
+    // Add retry interceptor
+    this.client.interceptors.response.use(
+      (response) => response,
+      async (error) => {
+        const config = error.config;
+        if (!config || !config.retry) {
+          config.retry = 0;
+        }
+        if (config.retry < {{retries}}) {
+          config.retry += 1;
+          return this.client(config);
+        }
+        return Promise.reject(error);
+      }
+    );
+  }
+
+  /**
+   * Get request helper
+   */
+  async get<T>(path: string, config?: AxiosRequestConfig): Promise<T> {
+    const response = await this.client.get<T>(path, config);
+    return response.data;
+  }
+
+  /**
+   * Post request helper
+   */
+  async post<T>(path: string, data?: any, config?: AxiosRequestConfig): Promise<T> {
+    const response = await this.client.post<T>(path, data, config);
+    return response.data;
+  }
+
+  /**
+   * Put request helper
+   */
+  async put<T>(path: string, data?: any, config?: AxiosRequestConfig): Promise<T> {
+    const response = await this.client.put<T>(path, data, config);
+    return response.data;
+  }
+
+  /**
+   * Delete request helper
+   */
+  async delete<T>(path: string, config?: AxiosRequestConfig): Promise<T> {
+    const response = await this.client.delete<T>(path, config);
+    return response.data;
+  }
+
+  /**
+   * Patch request helper
+   */
+  async patch<T>(path: string, data?: any, config?: AxiosRequestConfig): Promise<T> {
+    const response = await this.client.patch<T>(path, data, config);
+    return response.data;
+  }
+}
+
+// Export singleton instance
+export const {{camelCase to.id}}Client = new {{pascalCase to.id}}Client();
+{{/if}}

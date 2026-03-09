@@ -1,0 +1,36 @@
+---
+id: "package_progress_dashboard"
+agent: "ProgressDashboardAgent"
+role: "Package Progress Dashboard Owner"
+inputs_spec:
+- name: "package_kpi_report"
+  description: "Package KPI report for dashboard visualization."
+  format: "KPI report artifact"
+- name: "package_success_criteria_status"
+  description: "Success criteria status for dashboard visualization."
+  format: "List of criteria status objects"
+- name: "package_stage_milestone"
+  description: "Milestone plan for dashboard visualization."
+  format: "List of milestone objects"
+outputs_spec:
+- name: "package_progress_dashboard"
+  description: "Dashboard visualizing delivery KPIs, integrity, promotion/exception\
+    \ status, audit, and trends."
+  format: "Dashboard artifact"
+agent_tasks:
+- "Visualize KPIs, artifact integrity, promotion/exception, audit, trends."
+- "Highlight open blockers or failed integrity checks."
+- "Link to release audit, integrity, milestone tracker."
+- "Update dashboard in real time and review before deployment."
+acceptance_criteria:
+- "Dashboard visualizes all KPIs, trends, and status."
+- "Updated in real time and reviewed before deployment."
+- "Blockers and failed integrity checks highlighted."
+dependencies:
+- "package_kpi_report"
+- "package_success_criteria_status"
+- "package_stage_milestone"
+failure_escalation:
+- "Escalate to Dashboard Owner if dashboard is not current/actionable."
+references: []
+hitl: false

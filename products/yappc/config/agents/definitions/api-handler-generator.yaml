@@ -1,0 +1,33 @@
+id: agent.yappc.api-handler-generator
+name: API Handler Generator
+description: REST API endpoint and handler generation agent
+version: 1.0.0
+type: worker
+category: code-generation
+
+capabilities:
+  - rest-api-generation
+  - endpoint-design
+  - validation-logic
+  - documentation-generation
+
+requirements:
+  - api-frameworks
+  - backend-languages
+  - database-knowledge
+
+parameters:
+  framework:
+    type: string
+    default: "spring-boot"
+    description: API framework to use
+  
+  language:
+    type: string
+    default: "java"
+    description: Programming language
+
+metadata:
+  author: "YAPPC Team"
+  level: 3
+  tags: [api, backend, rest, generation]

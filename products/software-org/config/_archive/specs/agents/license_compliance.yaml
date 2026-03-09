@@ -1,0 +1,26 @@
+---
+id: "license_compliance"
+agent: "LicenseComplianceAgent"
+role: "Automation Tool"
+inputs_spec:
+- name: "modularized_codebase"
+  description: "Codebase with all dependencies to check for license compatibility."
+  format: "Source repo or dependency manifest"
+outputs_spec:
+- name: "license_compliance_report"
+  description: "Compliance report for all dependencies and artifacts."
+  format: "License compliance report artifact"
+agent_tasks:
+- "Check all dependencies for license compatibility."
+- "Flag non-compliant licenses."
+- "Attach compliance report to build/release."
+acceptance_criteria:
+- "All dependencies are checked for license compatibility."
+- "Non-compliant licenses are flagged."
+- "A compliance report is attached to the build/release."
+dependencies:
+- "modularized_codebase"
+failure_escalation:
+- "Escalate to Compliance or DevOps if non-compliance found."
+references: []
+hitl: false

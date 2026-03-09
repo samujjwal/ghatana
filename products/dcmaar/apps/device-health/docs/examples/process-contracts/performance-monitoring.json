@@ -1,0 +1,132 @@
+{
+  "id": "performance-monitoring",
+  "metadata": {
+    "name": "Performance Monitoring",
+    "description": "Monitors browser performance metrics and detects anomalies",
+    "version": "1.0.0",
+    "author": "DCMAAR Team",
+    "tags": ["performance", "monitoring", "health"],
+    "createdAt": 1706745600000,
+    "updatedAt": 1706745600000
+  },
+  "collect": {
+    "id": "collect",
+    "sources": [
+      {
+        "id": "performance-metrics-source",
+        "type": "performance",
+        "strategy": "polling",
+        "config": {
+          "eventTypes": ["performance"],
+          "pollingIntervalMs": 60000,
+          "metrics": ["memory", "cpu", "network"]
+        },
+        "samplingRate": 1.0,
+        "batchSize": 50
+      }
+    ],
+    "mergeStrategy": "union",
+    "timeoutMs": 5000
+  },
+  "analyze": {
+    "id": "analyze",
+    "operations": [
+      {
+        "id": "aggregate-metrics",
+        "strategy": "aggregate",
+        "config": {
+          "groupBy": "type",
+          "metrics": ["avg", "max", "min"],
+          "fields": ["payload.usedJSHeapSize", "payload.totalJSHeapSize"]
+        },
+        "order": 100,
+        "continueOnError": false
+      },
+      {
+        "id": "detect-anomalies",
+        "strategy": "anomaly",
+        "config": {
+          "thresholds": {
+            "memoryUsagePercent": 80,
+            "heapSizeGrowthRate": 0.1
+          },
+          "windowSize": 10
+        },
+        "order": 200,
+        "continueOnError": false
+      }
+    ],
+    "parallel": false,
+    "timeoutMs": 10000
+  },
+  "report": {
+    "id": "report",
+    "destinations": [
+      {
+        "id": "performance-store",
+        "type": "store",
+        "delivery": "store",
+        "config": {
+          "storageType": "indexeddb",
+          "key": "performance-reports",
+          "maxReports": 100
+        },
+        "format": "json"
+      },
+      {
+        "id": "alert-notification",
+        "type": "notification",
+        "delivery": "notification",
+        "config": {
+          "title": "Performance Alert",
+          "icon": "warning",
+          "priority": "high"
+        },
+        "format": "markdown",
+        "when": {
+          "operator": "or",
+          "conditions": [
+            {
+              "field": "data.anomalies",
+              "operator": "exists"
+            },
+            {
+              "field": "data.memoryUsagePercent",
+              "operator": "gt",
+              "value": 80
+            }
+          ]
+        }
+      }
+    ],
+    "aggregate": true,
+    "includeMetadata": true,
+    "includeSummary": true,
+    "timeoutMs": 5000
+  },
+  "security": {
+    "maxExecutionTimeMs": 20000,
+    "maxMemoryBytes": 10485760,
+    "maxEventsPerBatch": 100,
+    "allowedNetworkPatterns": [],
+    "deniedNetworkPatterns": ["*"],
+    "allowedBrowserAPIs": ["storage", "runtime"],
+    "sandboxed": true
+  },
+  "privacy": {
+    "redactionRules": [],
+    "encryptFields": [],
+    "anonymize": false,
+    "requireConsent": false
+  },
+  "enabled": true,
+  "schedule": "*/5 * * * *",
+  "priority": 200,
+  "maxConcurrentExecutions": 1,
+  "timeoutMs": 30000,
+  "onError": "continue",
+  "variables": {
+    "alertThreshold": 80,
+    "monitoringWindow": "5m"
+  }
+}

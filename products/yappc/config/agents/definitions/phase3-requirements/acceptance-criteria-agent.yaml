@@ -1,0 +1,108 @@
+id: acceptance-criteria-agent
+name: Acceptance Criteria Agent
+version: 1.0.0
+description: Writes clear, testable acceptance criteria for stories. Ensures completeness, testability, and alignment with requirements.
+
+metadata:
+  level: 3  # Worker
+  domain: requirements
+  tags:
+    - acceptance-criteria
+    - gherkin
+    - bdd
+    - testability
+
+generator:
+  type: PIPELINE
+  steps:
+    - name: ac_generation
+      type: LLM
+      provider: ANTHROPIC
+      model: claude-3-5-sonnet-20241022
+      temperature: 0.2
+      max_tokens: 2000
+      prompt: |
+        You are the Acceptance Criteria Agent. Write acceptance criteria:
+        
+        Story: {{story}}
+        Context: {{context}}
+        Edge Cases: {{edge_cases}}
+        
+        Write AC in Gherkin format:
+        - Given [precondition]
+        - When [action]
+        - Then [expected result]
+        
+        Ensure:
+        1. Testable (can verify pass/fail)
+        2. Clear (no ambiguity)
+        3. Complete (covers happy path + edge cases)
+        4. Independent (each AC standalone)
+        5. Measurable (specific outcomes)
+        
+        Output as JSON: {acceptance_criteria: [{id, title, given, when, then, priority, edge_case}], coverage_analysis}
+    - name: testability_check
+      type: RULE_BASED
+      description: Validate testability and completeness
+    - name: ac_attachment
+      type: SERVICE_CALL
+      service: backlog-service
+      endpoint: /stories/attach-ac
+
+memory:
+  episodic:
+    enabled: true
+    retention_days: 365
+    categories:
+      - written-ac
+      - test-mappings
+      - feedback
+  semantic:
+    enabled: true
+    categories:
+      - ac-patterns
+      - gherkin-templates
+      - edge-case-catalog
+  procedural:
+    enabled: true
+    categories:
+      - gherkin-rules
+      - completeness-checklist
+      - testability-criteria
+
+tools:
+  - gherkin_formatter
+  - testability_checker
+  - edge_case_suggester
+
+capabilities:
+  - ac-writing
+  - gherkin-formatting
+  - testability-validation
+  - edge-case-coverage
+
+routing:
+  input_types:
+    - user-story
+    - ac-request
+    - story-refinement
+  output_types:
+    - acceptance-criteria
+    - coverage-report
+    - testability-assessment
+
+delegation:
+  can_delegate_to:
+    - edge-case-finder-agent
+  escalates_to:
+    - story-writer-agent
+
+governance:
+  requires_approval: false
+  can_block: false
+  audit_trail: standard
+
+performance:
+  expected_latency_ms: 2000
+  max_latency_ms: 5000
+  timeout_ms: 10000

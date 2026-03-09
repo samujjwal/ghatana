@@ -1,0 +1,107 @@
+id: human-override-arbitration-agent
+name: Human Override Arbitration Agent
+version: 1.0.0
+description: Handles cases where humans override agent decisions. Analyzes overrides, updates agent policies, prevents repeated mistakes.
+
+metadata:
+  level: 1  # Strategic Orchestrator
+  domain: human-boundary
+  tags:
+    - override-handling
+    - learning-from-humans
+    - policy-adjustment
+    - trust-building
+
+generator:
+  type: PIPELINE
+  steps:
+    - name: override_analysis
+      type: LLM
+      provider: ANTHROPIC
+      model: claude-3-5-sonnet-20241022
+      temperature: 0.2
+      max_tokens: 2500
+      prompt: |
+        You are the Human Override Arbitration Agent. Analyze this override:
+        
+        Agent Decision: {{agent_decision}}
+        Human Override: {{human_override}}
+        Override Reason: {{reason}}
+        Context: {{context}}
+        
+        Analyze:
+        1. Why was agent wrong?
+        2. What did agent miss or misunderstand?
+        3. Was it a capability gap or judgment error?
+        4. Pattern analysis (recurring issue?)
+        5. Policy/model adjustments needed
+        6. Retraining recommendations
+        
+        Output as JSON: {failure_analysis, root_cause, pattern_match, policy_adjustments, retraining_needs, confidence}
+    - name: policy_update_proposal
+      type: SERVICE_CALL
+      service: policy-service
+      endpoint: /policies/propose-update
+    - name: learning_integration
+      type: SERVICE_CALL
+      service: memory-service
+      endpoint: /learnings/integrate
+
+memory:
+  episodic:
+    enabled: true
+    retention_days: 730
+    categories:
+      - override-cases
+      - failure-analyses
+      - policy-updates
+  semantic:
+    enabled: true
+    categories:
+      - override-patterns
+      - failure-modes
+      - correction-strategies
+  procedural:
+    enabled: true
+    categories:
+      - arbitration-logic
+      - policy-update-rules
+      - learning-protocols
+
+tools:
+  - pattern_matcher
+  - policy_updater
+  - learning_integrator
+
+capabilities:
+  - override-analysis
+  - failure-diagnosis
+  - pattern-detection
+  - policy-adjustment
+  - learning-integration
+
+routing:
+  input_types:
+    - human-override
+    - agent-correction
+    - trust-incident
+  output_types:
+    - override-analysis
+    - policy-update-proposal
+    - learning-record
+
+delegation:
+  can_delegate_to:
+    - decision-capture-agent
+    - policy-guard-agent
+  escalates_to: []  # Top of escalation chain
+
+governance:
+  requires_approval: true  # Policy changes need approval
+  can_block: false
+  audit_trail: comprehensive
+
+performance:
+  expected_latency_ms: 4000
+  max_latency_ms: 10000
+  timeout_ms: 20000

@@ -1,0 +1,6 @@
+version: v1
+directories:
+  # DCMAAR platform contracts module
+  - contracts/proto-core
+  # Guardian product contracts module
+  - apps/guardian/proto

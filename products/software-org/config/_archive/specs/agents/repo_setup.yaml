@@ -1,0 +1,28 @@
+---
+id: "repo_setup"
+agent: "RepoSetupAgent"
+role: "DevOps Engineer"
+inputs_spec:
+- name: "onboarding_session"
+  description: "Completion record of onboarding session."
+  format: "Onboarding session record"
+outputs_spec:
+- name: "configured_repo"
+  description: "Initialized repository with structure, permissions, branches, and\
+    \ CI/CD hooks."
+  format: "Repo URL or configuration artifact"
+agent_tasks:
+- "Initialize repo with required structure and branches."
+- "Enforce access controls and permissions."
+- "Set branch protection rules."
+- "Configure CI/CD hooks or integrations."
+acceptance_criteria:
+- "Repo is initialized with required structure and branches."
+- "Access controls and permissions are enforced."
+- "Branch protection rules are set."
+- "CI/CD hooks or integrations are configured."
+dependencies:
+- "onboarding_session"
+failure_escalation:
+- "Escalate to DevOps or Security if repo misconfigured."
+references: []

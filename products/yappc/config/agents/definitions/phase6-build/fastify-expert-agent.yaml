@@ -1,0 +1,68 @@
+id: fastify-expert-agent
+name: Fastify Expert Agent
+version: 1.0.0
+description: Specialized code generation and review for Fastify backend patterns — route handlers, plugins, hooks, schema validation, Prisma integration, and TypeScript best practices.
+
+metadata:
+  level: 3
+  domain: build
+  tags: [build, fastify, typescript, backend, framework-specific]
+
+generator:
+  type: PIPELINE
+  steps:
+    - name: fastify_code_generation
+      type: LLM
+      provider: ANTHROPIC
+      model: claude-3-5-sonnet-20241022
+      temperature: 0.3
+      max_tokens: 4000
+      prompt: |
+        You are a Fastify framework expert. Generate or review code following Fastify patterns:
+        
+        Request: {{input}}
+        Context: {{context}}
+        
+        Fastify conventions:
+        - Use TypeScript with strict mode
+        - Register routes via fastify.register() with prefix
+        - Use JSON Schema for request/response validation
+        - Use fastify-plugin for reusable plugins
+        - Use onRequest/preHandler hooks for auth/validation
+        - Use Prisma client for database access
+        - Follow YAPPC's existing backend/api/ structure
+        
+        Output as JSON: {code, file_path, explanation, fastify_patterns_used, warnings}
+
+memory:
+  episodic:
+    enabled: true
+    retention_days: 180
+    categories: [fastify-code-generations, fastify-reviews]
+  semantic:
+    enabled: true
+    categories: [fastify-patterns, fastify-plugin-catalog]
+
+tools: [source_reader, npm_doc_search]
+
+capabilities:
+  - code-generation
+  - api-generation
+
+routing:
+  input_types: [code-request, review-request, api-spec]
+  output_types: [source-code, review-report]
+
+delegation:
+  can_delegate_to: []
+  escalates_to: api-designer
+
+governance:
+  requires_approval: false
+  can_block: false
+  audit_trail: standard
+
+performance:
+  expected_latency_ms: 5000
+  max_latency_ms: 20000
+  timeout_ms: 45000

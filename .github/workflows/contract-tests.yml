@@ -1,0 +1,113 @@
+name: OpenAPI Contract Tests
+
+on:
+  pull_request:
+    paths:
+      - 'products/yappc/backend/api/**'
+      - 'products/yappc/backend/api/openapi.yaml'
+  push:
+    branches:
+      - main
+      - develop
+    paths:
+      - 'products/yappc/backend/api/**'
+      - 'products/yappc/backend/api/openapi.yaml'
+  workflow_dispatch:
+
+jobs:
+  contract-tests:
+    name: YAPPC API Contract Tests
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+
+    services:
+      postgres:
+        image: postgres:16-alpine
+        env:
+          POSTGRES_DB: yappc_test
+          POSTGRES_USER: yappc
+          POSTGRES_PASSWORD: yappc_test_password
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+        ports:
+          - 5432:5432
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Java 21
+        uses: actions/setup-java@v4
+        with:
+          distribution: 'temurin'
+          java-version: '21'
+          cache: 'gradle'
+
+      - name: Set up Python 3.11
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+          cache: 'pip'
+
+      - name: Install Schemathesis
+        run: |
+          pip install schemathesis==3.27.1
+
+      - name: Build YAPPC API
+        working-directory: products/yappc
+        run: |
+          ./gradlew :backend:api:build -x test --no-daemon
+
+      - name: Start YAPPC API Server
+        working-directory: products/yappc
+        env:
+          SPRING_PROFILES_ACTIVE: test
+          DATABASE_URL: jdbc:postgresql://localhost:5432/yappc_test
+          DATABASE_USERNAME: yappc
+          DATABASE_PASSWORD: yappc_test_password
+        run: |
+          ./gradlew :backend:api:bootRun --no-daemon &
+          echo $! > api.pid
+          
+          # Wait for API to be ready (max 60s)
+          for i in {1..60}; do
+            if curl -f http://localhost:8080/health 2>/dev/null; then
+              echo "API is ready"
+              break
+            fi
+            echo "Waiting for API... ($i/60)"
+            sleep 1
+          done
+
+      - name: Run Schemathesis Contract Tests
+        working-directory: products/yappc/backend/api
+        run: |
+          schemathesis run openapi.yaml \
+            --base-url http://localhost:8080 \
+            --checks all \
+            --hypothesis-max-examples 50 \
+            --hypothesis-deadline 5000 \
+            --workers 4 \
+            --exitfirst \
+            --show-errors-tracebacks \
+            --report
+
+      - name: Stop API Server
+        if: always()
+        working-directory: products/yappc
+        run: |
+          if [ -f api.pid ]; then
+            kill $(cat api.pid) || true
+            rm api.pid
+          fi
+
+      - name: Upload Contract Test Report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: contract-test-report
+          path: products/yappc/backend/api/schemathesis-report.html
+          retention-days: 7

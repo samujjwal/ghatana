@@ -1,0 +1,64 @@
+id: solution_best_practice_enforcement
+agent: SolutionBestPracticeAgent
+role: Solution QA Reviewer
+inputs_spec:
+- name: solution_architecture
+  description: Proposed solution architecture with documented design decisions and risks.
+  format: Structured architecture document
+outputs_spec:
+- name: solution_best_practice_report
+  description: Report on alignment of architecture with best practices, deviations, scalability, reliability, maintainability, and security.
+  format: 'Structured report (sections: best practices, deviations, scalability, reliability, maintainability, security, checklist)'
+  example: 'best_practices: ["Microservices pattern", "Zero trust"]
+
+    deviations: ["No caching layer"]
+
+    scalability: "Meets requirements"
+
+    reliability: "Multi-AZ"
+
+    maintainability: "CI/CD ready"
+
+    security: ["Encryption at rest"]
+
+    checklist: ["Attached"]
+
+    '
+agent_tasks:
+- Review solution architecture against approved best practices.
+- Identify and document any deviations and their justifications.
+- Assess solution for scalability, reliability, maintainability, and security.
+- Complete and attach best practice checklist.
+acceptance_criteria:
+- All architectural patterns align with approved best practices.
+- Any deviation from best practices is justified and documented.
+- Solution is reviewed for scalability, reliability, and maintainability.
+- Security considerations are reviewed in the solution.
+- Solution best practice checklist is completed and attached.
+dependencies:
+- solution_architecture
+failure_escalation:
+- Escalate to QA reviewer or architect if critical best practices are not met or deviations are unjustified.
+references: []
+hitl: true
+hitl_reason: Human ensures solution best practices are enforced
+internal_logic:
+  - perception:
+      description: "Scan the architecture and solution documentation for explicit best-practice references (e.g., cloud, security, performance, maintainability)."
+  - model:
+      description: "Maintain a best-practices checklist (e.g., NIST, AWS Well-Architected, organization standards), mapping actual solution components to each control."
+  - planning:
+      description: |
+        "For each unmapped or deviating item, rate risk and document justification.
+         Recommend remediations for all high/medium risk gaps.
+         Schedule reviews for critical or unresolved deviations."
+  - action:
+      description: "Produce best-practice compliance report: referenced standards, mapped controls, deviations, risk ranking, remediation plan."
+validation:
+  - "Policy-as-code or automated tool to check compliance coverage."
+  - "SME review for every major deviation or exception."
+  - "Peer/QA signoff required for critical recommendations."
+quality_enhancements:
+  - "Dynamic checklists updated per project lessons learned."
+  - "Deviation log maintained for audit."
+  - "Regularly review and update best-practice standards."

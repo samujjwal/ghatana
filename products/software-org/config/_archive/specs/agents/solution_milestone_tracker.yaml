@@ -1,0 +1,49 @@
+id: solution_milestone_tracker
+agent: SolutionMilestoneTrackerAgent
+role: Solution PM
+inputs_spec:
+- name: solution_best_practice_report
+  description: Best practice review report for the solution architecture.
+  format: Structured report
+outputs_spec:
+- name: solution_stage_milestone
+  description: List of all solution stage milestones, with targets, owners, dependencies, and status.
+  format: List of milestone objects (id, description, target_date, owner, dependencies, entry_criteria, exit_criteria, status)
+  example: "- id: S1\n  description: \"Architecture signoff\"\n  target_date: \"2024-08-01\"\n  owner: \"Lead Architect\"\n  dependencies: []\n  entry_criteria: [\"Best practice report complete\"]\n  exit_criteria: [\"Signoff obtained\"]\n  status: \"planned\"\n"
+agent_tasks:
+- Define and document all solution-related milestones.
+- Map dependencies on prior or subsequent stages.
+- Document entry and exit criteria for the solution stage.
+- Assign owners and target dates.
+- Track and log all milestone completions.
+acceptance_criteria:
+- All solution-related milestones are documented with target dates and owners.
+- Solution stage entry and exit criteria are clear.
+- Dependencies on prior or subsequent stages are documented.
+- All milestone completions are logged.
+dependencies:
+- solution_best_practice_report
+failure_escalation:
+- Escalate to Solution PM or stage lead if milestones are missing or unclear.
+references: []
+hitl: true
+hitl_reason: Human oversight for tracking solution milestones
+internal_logic:
+  - perception:
+      description: "Parse project solution roadmap and requirements to identify all deliverable milestones, dependencies, and risk-prone phases."
+  - model:
+      description: "Maintain a structured milestone dependency graph, mapping owners, due dates, risk status, and cross-team handoffs."
+  - planning:
+      description: |
+        "Automatically flag milestones at risk due to unresolved dependencies or lack of ownership.
+         Sequence critical path tasks and escalate if slippage or blockages are detected."
+  - action:
+      description: "Generate milestone plan with Gantt/dependency view, risk flagging, and real-time status updates."
+validation:
+  - "Automated check: all required solution deliverables mapped to milestones."
+  - "Escalate overdue or at-risk milestones to project manager."
+  - "Stakeholder review/acceptance for all major dependencies."
+quality_enhancements:
+  - "Milestone template includes status, risk, and audit trail."
+  - "Real-time updates linked to project dashboard."
+  - "Automatically suggest risk mitigations for delayed milestones."

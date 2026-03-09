@@ -1,0 +1,24 @@
+{{!
+  Event Producer Template
+  Generates event producer for event-driven architecture
+}}
+{{#if (eq from.language "go")}}
+  package events import ( "context" "encoding/json" "fmt" "time"
+  "github.com/segmentio/kafka-go" ) // EventProducer handles event publishing
+  type EventProducer struct { writer *kafka.Writer topic string } //
+  NewEventProducer creates a new event producer func NewEventProducer(brokers
+  []string, topic string) *EventProducer { writer := &kafka.Writer{ Addr:
+  kafka.TCP(brokers...), Topic: topic, Balancer: &kafka.LeastBytes{},
+  RequiredAcks: kafka.RequireAll, Async: false, } return &EventProducer{ writer:
+  writer, topic: topic, } } // Publish publishes an event func (p
+  *EventProducer) Publish(ctx context.Context, event Event) error { data, err :=
+  json.Marshal(event) if err != nil { return fmt.Errorf("failed to marshal
+  event: %w", err) } message := kafka.Message{ Key: []byte(event.ID()), Value:
+  data, Time: time.Now(), Headers: []kafka.Header{ {Key: "event-type", Value:
+  []byte(event.Type())}, {Key: "event-version", Value: []byte(event.Version())},
+  }, } if err := p.writer.WriteMessages(ctx, message); err != nil { return
+  fmt.Errorf("failed to write message: %w", err) } return nil } // Close closes
+  the producer func (p *EventProducer) Close() error { return p.writer.Close() }
+  // Event interface for all events type Event interface { ID() string Type()
+  string Version() string Timestamp() time.Time Data() interface{} }
+{{/if}}

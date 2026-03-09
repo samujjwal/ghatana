@@ -1,0 +1,169 @@
+import type { FastifyRequest, FastifyReply } from "fastify";
+import type { RouteConfig } from "../types.js";
+import { logger } from "./logging.js";
+
+/**
+* Transform request before forwarding to upstream
+*/
+export async function transformRequest(
+request: FastifyRequest,
+route: RouteConfig
+): Promise<{ headers: Record<string, string>; body?: unknown }> {
+    const transform = route.transform?.request;
+    const headers: Record<string, string> = {};
+
+        // Copy original headers
+        for (const [key, value] of Object.entries(request.headers)) {
+        if (typeof value === "string") {
+        headers[key] = value;
+        } else if (Array.isArray(value)) {
+        headers[key] = value.join(", ");
+        }
+        }
+
+        // Apply header transformations
+        if (transform) {
+        for (const [key, value] of Object.entries(transform)) {
+        // Support template variables
+        headers[key] = interpolate(value, {
+        requestId: request.id,
+        method: request.method,
+        url: request.url,
+        ip: request.ip,
+        });
+        }
+        }
+
+        // Remove hop-by-hop headers
+        const hopByHopHeaders = [
+        "connection",
+        "keep-alive",
+        "proxy-authenticate",
+        "proxy-authorization",
+        "te",
+        "trailers",
+        "transfer-encoding",
+        "upgrade",
+        ];
+
+        for (const header of hopByHopHeaders) {
+        delete headers[header];
+        }
+
+        // Transform body if present
+        let body = request.body;
+        if (body && typeof body === "object") {
+        body = transformBody(body as Record<string, unknown>, transform);
+            }
+
+            return { headers, body };
+            }
+
+            /**
+            * Transform response before sending to client
+            */
+            export async function transformResponse(
+            _request: FastifyRequest,
+            reply: FastifyReply,
+            route: RouteConfig,
+            upstreamResponse: {
+            statusCode: number;
+            headers: Record<string, string>;
+                body: unknown;
+                }
+                ): Promise<void> {
+                    const transform = route.transform?.response;
+
+                    // Apply response header transformations
+                    if (transform) {
+                    for (const [key, value] of Object.entries(transform)) {
+                    reply.header(key, value);
+                    }
+                    }
+
+                    // Copy upstream headers (except hop-by-hop)
+                    const skipHeaders = new Set([
+                    "connection",
+                    "keep-alive",
+                    "transfer-encoding",
+                    "content-encoding",
+                    "content-length",
+                    ]);
+
+                    for (const [key, value] of Object.entries(upstreamResponse.headers)) {
+                    if (!skipHeaders.has(key.toLowerCase())) {
+                    reply.header(key, value);
+                    }
+                    }
+
+                    reply.status(upstreamResponse.statusCode);
+                    return reply.send(upstreamResponse.body);
+                    }
+
+                    /**
+                    * Transform request/response body
+                    */
+                    function transformBody(
+                    body: Record<string, unknown>,
+                        transform?: Record<string, string>
+                            ): Record<string, unknown> {
+                                if (!transform) return body;
+
+                                const result = { ...body };
+
+                                for (const [key, value] of Object.entries(transform)) {
+                                // Handle field renaming: "newKey": "{{oldKey}}"
+                                const match = value.match(/^\{\{(\w+)\}\}$/);
+                                if (match) {
+                                const sourceKey = match[1];
+                                if (sourceKey in result) {
+                                result[key] = result[sourceKey];
+                                if (key !== sourceKey) {
+                                delete result[sourceKey];
+                                }
+                                }
+                                }
+                                // Handle field removal: "fieldToRemove": ""
+                                else if (value === "") {
+                                delete result[key];
+                                }
+                                // Handle static value assignment
+                                else {
+                                result[key] = value;
+                                }
+                                }
+
+                                return result;
+                                }
+
+                                /**
+                                * Simple string interpolation
+                                */
+                                function interpolate(template: string, context: Record<string, unknown>): string {
+                                    return template.replace(/\{\{(\w+)\}\}/g, (_, key) => {
+                                    const value = context[key];
+                                    return value !== undefined ? String(value) : "";
+                                    });
+                                    }
+
+                                    /**
+                                    * Middleware to log request/response transformations
+                                    */
+                                    export async function transformLoggingMiddleware(
+                                    request: FastifyRequest,
+                                    _reply: FastifyReply
+                                    ) {
+                                    const startTime = process.hrtime.bigint();
+
+                                    request.log.debug({
+                                    transform: {
+                                    originalUrl: request.url,
+                                    originalMethod: request.method,
+                                    headers: Object.keys(request.headers),
+                                    },
+                                    });
+
+                                    // Store start time for response logging
+                                    (request as FastifyRequest & { transformStartTime: bigint }).transformStartTime =
+                                    startTime;
+                                    }

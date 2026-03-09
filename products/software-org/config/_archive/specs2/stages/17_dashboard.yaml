@@ -1,0 +1,49 @@
+name: Portfolio Dashboard
+workflow:
+  - id: portfolio_summary_dashboard
+    agent: PortfolioSummaryDashboardAgent
+    role: PMO/Exec
+    inputs_spec:
+      - name: plan_progress_dashboard
+        description: Plan progress dashboard for aggregation.
+        format: Dashboard artifact
+      - name: solution_progress_dashboard
+        description: Solution progress dashboard for aggregation.
+        format: Dashboard artifact
+      - name: design_progress_dashboard
+        description: Design progress dashboard for aggregation.
+        format: Dashboard artifact
+      - name: develop_progress_dashboard
+        description: Develop progress dashboard for aggregation.
+        format: Dashboard artifact
+      - name: build_progress_dashboard
+        description: Build progress dashboard for aggregation.
+        format: Dashboard artifact
+      - name: deploy_progress_dashboard
+        description: Deploy progress dashboard for aggregation.
+        format: Dashboard artifact
+      - name: operate_observability_metrics
+        description: Operate observability metrics for aggregation.
+        format: Metrics artifact
+    outputs_spec:
+      - name: portfolio_summary_dashboard
+        description: Executive summary dashboard aggregating all KPIs, risks, readiness.
+        format: Portfolio summary dashboard artifact
+    agent_tasks:
+      - Aggregate all pipeline KPIs, risks, and readiness.
+      - Create executive summary and trend visualizations.
+    acceptance_criteria:
+      - All pipeline KPIs, risks, readiness aggregated.
+      - Executive summary and trend visualizations created.
+    dependencies:
+      - plan_progress_dashboard
+      - solution_progress_dashboard
+      - design_progress_dashboard
+      - develop_progress_dashboard
+      - build_progress_dashboard
+      - deploy_progress_dashboard
+      - operate_observability_metrics
+    failure_escalation:
+      - Escalate to PMO/Exec if dashboard not created or data missing.
+    references: []
+    hitl: false

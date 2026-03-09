@@ -1,0 +1,9 @@
+{
+  "extends": "./tsconfig.json",
+  // TEMPORARY: keep references empty to avoid wide-scope build errors while
+  // we stage the declaration-only builds per `scripts/build-types.js`.
+  // We'll populate this with validated project references in a follow-up
+  // change (one or two packages at a time).
+  "references": [],
+  "include": ["types/**/*.d.ts"]
+}

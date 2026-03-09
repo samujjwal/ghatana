@@ -1,0 +1,55 @@
+{
+  "name": "@ghatana/dcmaar-plugin-extension",
+  "version": "0.1.0",
+  "description": "Device monitoring plugin implementations for DCMAAR framework",
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "scripts": {
+    "build": "tsc",
+    "test": "vitest run",
+    "test:unit": "vitest run --testPathPattern=unit",
+    "test:watch": "vitest run --watch",
+    "test:coverage": "vitest run --coverage",
+    "lint": "eslint src --ext .ts --max-warnings 0",
+    "lint:fix": "eslint src --ext .ts --fix",
+    "typecheck": "tsc --noEmit",
+    "clean": "rm -rf dist",
+    "prebuild": "npm run clean"
+  },
+  "keywords": [
+    "dcmaar",
+    "plugin",
+    "device-monitoring",
+    "cpu",
+    "memory",
+    "battery"
+  ],
+  "author": "DCMAAR Team",
+  "license": "MIT",
+  "peerDependencies": {
+    "@ghatana/dcmaar-types": "workspace:*",
+    "@ghatana/dcmaar-plugin-abstractions": "workspace:*"
+  },
+  "peerDependenciesMeta": {
+    "@ghatana/dcmaar-types": {
+      "optional": false
+    },
+    "@ghatana/dcmaar-plugin-abstractions": {
+      "optional": false
+    }
+  },
+  "devDependencies": {
+    "@ghatana/dcmaar-types": "workspace:*",
+    "@ghatana/dcmaar-plugin-abstractions": "workspace:*",
+    "@types/node": "^25.2.0",
+    "@typescript-eslint/eslint-plugin": "^8.54.0",
+    "@typescript-eslint/parser": "^8.54.0",
+    "eslint": "^9.39.2",
+    "prettier": "^3.8.1",
+    "typescript": "^5.9.3",
+    "vitest": "^4.0.18"
+  },
+  "engines": {
+    "node": ">=18.0.0"
+  }
+}

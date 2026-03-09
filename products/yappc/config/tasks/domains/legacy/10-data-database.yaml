@@ -1,0 +1,284 @@
+# Data & Database Tasks
+# Domain 10 of 22 - Developer Task Universe
+# Reference: developer-tasks.md Part I, Section 10
+
+domain:
+  id: data-database
+  name: "Data & Database"
+  description: "Tasks related to database design, data modeling, and data management"
+  order: 10
+  icon: "storage"
+  color: "#8D6E63"
+  lifecycle_stages:
+    - plan
+    - execute
+    - verify
+
+tasks:
+  - id: data-001
+    name: "Design Database Schema"
+    description: "Create logical and physical database schema designs"
+    personas:
+      - Developer
+      - Tech Lead
+    lifecycle_stages:
+      - plan
+    automation_level: assisted
+    required_capabilities:
+      - database-design
+      - data-modeling
+    input_schema: data-001-input
+    output_schema: data-001-output
+    audit_artifacts:
+      - InputSnapshot
+      - OutputSnapshot
+      - DecisionRecord
+      - SchemaDesign
+    ui:
+      icon: "schema"
+      color: "#8D6E63"
+      tags:
+        - schema
+        - design
+        - database
+
+  - id: data-002
+    name: "Create Database Migrations"
+    description: "Write migration scripts for schema changes"
+    personas:
+      - Developer
+    lifecycle_stages:
+      - execute
+    automation_level: assisted
+    required_capabilities:
+      - database-migrations
+      - code-generation
+    input_schema: data-002-input
+    output_schema: data-002-output
+    audit_artifacts:
+      - InputSnapshot
+      - OutputSnapshot
+      - ChangeSet
+    ui:
+      icon: "transform"
+      color: "#8D6E63"
+      tags:
+        - migrations
+        - schema-changes
+        - database
+
+  - id: data-003
+    name: "Optimize Database Queries"
+    description: "Analyze and improve query performance"
+    personas:
+      - Developer
+    lifecycle_stages:
+      - verify
+    automation_level: assisted
+    required_capabilities:
+      - query-optimization
+      - performance-analysis
+    input_schema: data-003-input
+    output_schema: data-003-output
+    audit_artifacts:
+      - InputSnapshot
+      - OutputSnapshot
+      - ChangeSet
+      - PerformanceReport
+    ui:
+      icon: "speed"
+      color: "#8D6E63"
+      tags:
+        - optimization
+        - performance
+        - queries
+
+  - id: data-004
+    name: "Design Indexes"
+    description: "Create database indexes for query optimization"
+    personas:
+      - Developer
+    lifecycle_stages:
+      - plan
+      - execute
+    automation_level: assisted
+    required_capabilities:
+      - database-design
+      - performance-analysis
+    input_schema: data-004-input
+    output_schema: data-004-output
+    audit_artifacts:
+      - InputSnapshot
+      - OutputSnapshot
+      - ChangeSet
+    ui:
+      icon: "sort"
+      color: "#8D6E63"
+      tags:
+        - indexes
+        - optimization
+        - performance
+
+  - id: data-005
+    name: "Manage Data Migrations"
+    description: "Handle data transformation and migration between systems"
+    personas:
+      - Developer
+      - DevOps
+    lifecycle_stages:
+      - plan
+      - execute
+      - verify
+    automation_level: assisted
+    required_capabilities:
+      - data-migration
+      - etl
+    input_schema: data-005-input
+    output_schema: data-005-output
+    audit_artifacts:
+      - InputSnapshot
+      - OutputSnapshot
+      - ChangeSet
+      - MigrationReport
+    ui:
+      icon: "move_to_inbox"
+      color: "#8D6E63"
+      tags:
+        - data-migration
+        - etl
+        - transformation
+
+  - id: data-006
+    name: "Design Data Models"
+    description: "Create entity-relationship and object models"
+    personas:
+      - Developer
+      - Tech Lead
+    lifecycle_stages:
+      - plan
+    automation_level: assisted
+    required_capabilities:
+      - data-modeling
+      - design
+    input_schema: data-006-input
+    output_schema: data-006-output
+    audit_artifacts:
+      - InputSnapshot
+      - OutputSnapshot
+      - DecisionRecord
+      - DataModel
+    ui:
+      icon: "account_tree"
+      color: "#8D6E63"
+      tags:
+        - data-models
+        - entities
+        - relationships
+
+  - id: data-007
+    name: "Implement Data Validation"
+    description: "Create data validation rules and constraints"
+    personas:
+      - Developer
+    lifecycle_stages:
+      - execute
+    automation_level: assisted
+    required_capabilities:
+      - data-validation
+      - code-generation
+    input_schema: data-007-input
+    output_schema: data-007-output
+    audit_artifacts:
+      - InputSnapshot
+      - OutputSnapshot
+      - ChangeSet
+    ui:
+      icon: "check_circle"
+      color: "#8D6E63"
+      tags:
+        - validation
+        - constraints
+        - data-quality
+
+  - id: data-008
+    name: "Design Data Pipelines"
+    description: "Create ETL/ELT pipelines for data processing"
+    personas:
+      - Developer
+      - Tech Lead
+    lifecycle_stages:
+      - plan
+      - execute
+    automation_level: assisted
+    required_capabilities:
+      - data-engineering
+      - pipeline-design
+    input_schema: data-008-input
+    output_schema: data-008-output
+    audit_artifacts:
+      - InputSnapshot
+      - OutputSnapshot
+      - DecisionRecord
+      - PipelineDesign
+    ui:
+      icon: "route"
+      color: "#8D6E63"
+      tags:
+        - pipelines
+        - etl
+        - data-engineering
+
+  - id: data-009
+    name: "Backup and Recovery Planning"
+    description: "Design backup strategies and recovery procedures"
+    personas:
+      - DevOps
+      - Developer
+    lifecycle_stages:
+      - plan
+    automation_level: assisted
+    required_capabilities:
+      - database-admin
+      - disaster-recovery
+    input_schema: data-009-input
+    output_schema: data-009-output
+    audit_artifacts:
+      - InputSnapshot
+      - OutputSnapshot
+      - DecisionRecord
+      - BackupPlan
+    ui:
+      icon: "backup"
+      color: "#8D6E63"
+      tags:
+        - backup
+        - recovery
+        - disaster-recovery
+
+  - id: data-010
+    name: "Data Archival Strategy"
+    description: "Design and implement data retention and archival policies"
+    personas:
+      - Developer
+      - DevOps
+    lifecycle_stages:
+      - plan
+      - execute
+    automation_level: assisted
+    required_capabilities:
+      - data-management
+      - compliance
+    input_schema: data-010-input
+    output_schema: data-010-output
+    audit_artifacts:
+      - InputSnapshot
+      - OutputSnapshot
+      - DecisionRecord
+      - PolicyDocument
+    ui:
+      icon: "archive"
+      color: "#8D6E63"
+      tags:
+        - archival
+        - retention
+        - compliance

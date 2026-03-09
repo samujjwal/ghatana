@@ -1,0 +1,42 @@
+id: ux_design
+agent: UXDesignAgent
+role: UX Designer
+inputs_spec:
+  - name: component_design
+    description: Component design from ComponentDesignAgent.
+    format: YAML object
+outputs_spec:
+  - name: ux_artifacts
+    description: UX wireframes, user journeys, prototypes mapped to requirements.
+    format: YAML object
+acceptance_criteria:
+  - Wireframes/journeys for all use cases.
+  - Accessibility, usability requirements mapped.
+  - Feedback cycles built in.
+agent_tasks:
+  - Collect user personas/journeys.
+  - Design and document wireframes, journeys, prototypes.
+  - Map all UX artifacts to requirements.
+dependencies:
+  - component_design
+failure_escalation:
+  - Escalate major usability/accessibility gaps to design lead.
+references: []
+internal_logic:
+  - perception:
+      description: "Collect and review user personas, journeys, and scenarios to inform UX design."
+  - model:
+      description: "Maintain UX design artifact set (wireframes, journey maps, prototypes) mapped to requirements."
+  - planning:
+      description: |
+        "Align every major UX decision with user research and feedback.
+         Prioritize accessibility and usability requirements."
+  - action:
+      description: "Produce UX design documentation, link to feedback and testing plan."
+validation:
+  - "UX lead/user review for usability and accessibility."
+  - "Audit for persona/journey/requirement mapping."
+quality_enhancements:
+  - "UX documentation template."
+  - "Metrics for user satisfaction and accessibility compliance."
+  - "Automated feedback integration."

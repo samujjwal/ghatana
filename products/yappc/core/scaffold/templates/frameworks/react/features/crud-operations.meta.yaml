@@ -1,0 +1,66 @@
+description: "Complete CRUD operations feature with TanStack Query"
+author: "YAPPC Team"
+version: "1.0.0"
+tags:
+  - react
+  - crud
+  - tanstack-query
+  - feature
+
+variables:
+  entityName:
+    name: "entityName"
+    type: "string"
+    description: "Name of the entity (singular, PascalCase)"
+    required: true
+
+  entityNamePlural:
+    name: "entityNamePlural"
+    type: "string"
+    description: "Plural form of entity name"
+    required: true
+
+  fields:
+    name: "fields"
+    type: "array"
+    description: "Array of field definitions"
+    required: true
+
+  apiEndpoint:
+    name: "apiEndpoint"
+    type: "string"
+    description: "API endpoint for the entity"
+    required: true
+
+  hasSearch:
+    name: "hasSearch"
+    type: "boolean"
+    description: "Whether to include search functionality"
+    required: false
+    defaultValue: false
+
+  hasPagination:
+    name: "hasPagination"
+    type: "boolean"
+    description: "Whether to include pagination"
+    required: false
+    defaultValue: false
+
+dependencies:
+  - react
+  - "@tanstack/react-query"
+
+examples:
+  - name: "User CRUD"
+    description: "CRUD operations for User entity"
+    variables:
+      entityName: "User"
+      entityNamePlural: "Users"
+      fields:
+        - name: "name"
+          label: "Name"
+        - name: "email"
+          label: "Email"
+      apiEndpoint: "/api/users"
+      hasSearch: true
+      hasPagination: true

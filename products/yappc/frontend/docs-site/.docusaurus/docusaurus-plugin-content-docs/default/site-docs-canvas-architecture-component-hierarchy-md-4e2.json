@@ -1,0 +1,27 @@
+{
+  "id": "canvas/architecture/component-hierarchy",
+  "title": "Component Hierarchy",
+  "description": "Documentation coming soon.",
+  "source": "@site/docs/canvas/architecture/component-hierarchy.md",
+  "sourceDirName": "canvas/architecture",
+  "slug": "/canvas/architecture/component-hierarchy",
+  "permalink": "/docs/canvas/architecture/component-hierarchy",
+  "draft": false,
+  "unlisted": false,
+  "editUrl": "https://github.com/yappc/app-creator/tree/main/docs-site/docs/canvas/architecture/component-hierarchy.md",
+  "tags": [],
+  "version": "current",
+  "sidebarPosition": 1,
+  "frontMatter": {
+    "sidebar_position": 1
+  },
+  "sidebar": "canvasSidebar",
+  "previous": {
+    "title": "Overview",
+    "permalink": "/docs/canvas/architecture/overview"
+  },
+  "next": {
+    "title": "State Management",
+    "permalink": "/docs/canvas/architecture/state-management"
+  }
+}

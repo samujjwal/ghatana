@@ -1,0 +1,27 @@
+---
+id: "release_notes_agent_deploy"
+agent: "ReleaseNotesAgent"
+role: "Release Manager/Automation"
+inputs_spec:
+- name: "release_package"
+  description: "Versioned release package with change log and artifacts."
+  format: "Release package artifact"
+outputs_spec:
+- name: "release_notes"
+  description: "Versioned release notes with features, fixes, changes, and distribution\
+    \ log."
+  format: "Release notes artifact"
+agent_tasks:
+- "Generate release notes for all new and changed features or fixes."
+- "Distribute notes to all relevant stakeholders."
+- "Attach notes to release artifacts and archive."
+acceptance_criteria:
+- "Release notes are generated for all changes."
+- "Notes are distributed to stakeholders and attached to artifacts."
+- "Notes are versioned and archived."
+dependencies:
+- "release_package"
+failure_escalation:
+- "Escalate to Release Manager if release notes are incomplete or not distributed."
+references: []
+hitl: false

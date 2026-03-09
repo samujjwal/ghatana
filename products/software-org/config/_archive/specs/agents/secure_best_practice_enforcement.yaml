@@ -1,0 +1,28 @@
+---
+id: "secure_best_practice_enforcement"
+agent: "SecureBestPracticeAgent"
+role: "SecOps QA Reviewer"
+inputs_spec:
+- name: "policy_as_code_files"
+  description: "Security as code artifacts for review."
+  format: "Policy-as-code files/artifacts"
+outputs_spec:
+- name: "secure_best_practice_report"
+  description: "Review of security best practices and recommendations."
+  format: "Best practice compliance report"
+agent_tasks:
+- "Review security as code artifacts against best practices."
+- "Document and justify security controls."
+- "Flag and track deviations from best practices."
+- "Ensure remediation or exception process is in place."
+acceptance_criteria:
+- "Artifacts reviewed against best practices."
+- "Controls documented and justified."
+- "Deviations flagged/tracked; remediation in place."
+dependencies:
+- "policy_as_code_files"
+failure_escalation:
+- "Escalate to SecOps QA Lead if critical deviations are not remediated."
+references: []
+hitl: true
+hitl_reason: "Human ensures security best practices are enforced"

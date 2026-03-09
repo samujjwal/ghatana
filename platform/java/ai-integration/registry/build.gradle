@@ -1,0 +1,62 @@
+plugins {
+    id 'java-library'
+    id 'jacoco'
+}
+
+group = 'com.ghatana.libs.aiplatform'
+version = '1.0-SNAPSHOT'
+
+description = 'AI Platform Model Registry - Version control and deployment tracking for ML models'
+
+dependencies {
+    // Core infrastructure
+    api project(':libs:database')
+    api project(':libs:observability')
+    api project(':libs:types')
+    api project(':libs:common-utils')
+    
+    // Database
+    implementation libs.postgresql
+    implementation libs.hikaricp
+    
+    // Jackson for JSON
+    implementation platform(libs.jackson.bom)
+    implementation libs.jackson.databind
+    implementation libs.jackson.datatype.jdk8
+    implementation libs.jackson.datatype.jsr310
+    
+    // Validation
+    implementation libs.jakarta.validation.api
+    
+    // Logging
+    implementation libs.slf4j.api
+    
+    // Testing
+    testImplementation libs.junit.jupiter.api
+    testImplementation libs.junit.jupiter.params
+    testRuntimeOnly libs.junit.jupiter.engine
+    testRuntimeOnly libs.junit.platform.launcher
+    testImplementation libs.assertj.core
+    testImplementation libs.mockito.core
+    testImplementation libs.mockito.junit.jupiter
+    testImplementation project(':libs:test-utils')
+    testImplementation project(':libs:test-containers')
+}
+
+test {
+    useJUnitPlatform()
+    testLogging {
+        events "passed", "skipped", "failed"
+        exceptionFormat "full"
+    }
+}
+
+jacocoTestReport {
+    reports {
+        xml.required = true
+        html.required = true
+    }
+    dependsOn test
+}
+
+check.dependsOn jacocoTestReport

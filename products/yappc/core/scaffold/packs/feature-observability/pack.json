@@ -1,0 +1,186 @@
+{
+    "name": "feature-observability",
+    "version": "1.0.0",
+    "description": "Cross-language observability feature pack - adds structured logging, metrics, distributed tracing, and health checks",
+    "category": "feature",
+    "language": "multi",
+    "runtime": "multi",
+    "buildTool": "multi",
+    "supportedPacks": [
+        "java-service-spring-gradle",
+        "java-service-activej-gradle",
+        "ts-node-fastify",
+        "rust-service-axum-cargo",
+        "go-service-chi",
+        "middleware-gateway"
+    ],
+    "templates": {
+        "java": [
+            {
+                "source": "java/ObservabilityConfig.java.hbs",
+                "target": "src/main/java/{{packagePath}}/config/ObservabilityConfig.java"
+            },
+            {
+                "source": "java/MetricsService.java.hbs",
+                "target": "src/main/java/{{packagePath}}/observability/MetricsService.java"
+            },
+            {
+                "source": "java/TracingConfig.java.hbs",
+                "target": "src/main/java/{{packagePath}}/config/TracingConfig.java"
+            },
+            {
+                "source": "java/HealthIndicator.java.hbs",
+                "target": "src/main/java/{{packagePath}}/observability/CustomHealthIndicator.java"
+            },
+            {
+                "source": "java/application-observability.yaml.hbs",
+                "target": "src/main/resources/application-observability.yaml"
+            }
+        ],
+        "typescript": [
+            {
+                "source": "typescript/logger.ts.hbs",
+                "target": "src/observability/logger.ts"
+            },
+            {
+                "source": "typescript/metrics.ts.hbs",
+                "target": "src/observability/metrics.ts"
+            },
+            {
+                "source": "typescript/tracing.ts.hbs",
+                "target": "src/observability/tracing.ts"
+            },
+            {
+                "source": "typescript/health.ts.hbs",
+                "target": "src/observability/health.ts"
+            }
+        ],
+        "rust": [
+            {
+                "source": "rust/observability-mod.rs.hbs",
+                "target": "src/observability/mod.rs"
+            },
+            {
+                "source": "rust/logging.rs.hbs",
+                "target": "src/observability/logging.rs"
+            },
+            {
+                "source": "rust/metrics.rs.hbs",
+                "target": "src/observability/metrics.rs"
+            },
+            {
+                "source": "rust/tracing-config.rs.hbs",
+                "target": "src/observability/tracing.rs"
+            }
+        ],
+        "go": [
+            {
+                "source": "go/logger.go.hbs",
+                "target": "internal/observability/logger.go"
+            },
+            {
+                "source": "go/metrics.go.hbs",
+                "target": "internal/observability/metrics.go"
+            },
+            {
+                "source": "go/tracing.go.hbs",
+                "target": "internal/observability/tracing.go"
+            },
+            {
+                "source": "go/health.go.hbs",
+                "target": "internal/observability/health.go"
+            }
+        ]
+    },
+    "variables": {
+        "serviceName": {
+            "type": "string",
+            "description": "Service name for observability",
+            "required": true
+        },
+        "enableTracing": {
+            "type": "boolean",
+            "description": "Enable distributed tracing (OpenTelemetry)",
+            "default": true
+        },
+        "enableMetrics": {
+            "type": "boolean",
+            "description": "Enable Prometheus metrics",
+            "default": true
+        },
+        "metricsPort": {
+            "type": "number",
+            "description": "Metrics endpoint port",
+            "default": 9090
+        },
+        "logLevel": {
+            "type": "string",
+            "description": "Default log level",
+            "enum": [
+                "debug",
+                "info",
+                "warn",
+                "error"
+            ],
+            "default": "info"
+        },
+        "logFormat": {
+            "type": "string",
+            "description": "Log format",
+            "enum": [
+                "json",
+                "text"
+            ],
+            "default": "json"
+        },
+        "otlpEndpoint": {
+            "type": "string",
+            "description": "OpenTelemetry collector endpoint",
+            "default": "http://localhost:4318"
+        }
+    },
+    "dependencies": {
+        "java-gradle": {
+            "implementation": [
+                "org.springframework.boot:spring-boot-starter-actuator",
+                "io.micrometer:micrometer-registry-prometheus",
+                "io.opentelemetry:opentelemetry-api:1.43.0",
+                "io.opentelemetry.instrumentation:opentelemetry-spring-boot-starter:2.9.0"
+            ]
+        },
+        "typescript-pnpm": {
+            "dependencies": {
+                "pino": "^9.5.0",
+                "pino-pretty": "^11.3.0",
+                "prom-client": "^15.1.0",
+                "@opentelemetry/api": "^1.9.0",
+                "@opentelemetry/sdk-node": "^0.56.0",
+                "@opentelemetry/auto-instrumentations-node": "^0.53.0"
+            }
+        },
+        "rust-cargo": {
+            "dependencies": {
+                "tracing": "0.1",
+                "tracing-subscriber": {
+                    "version": "0.3",
+                    "features": [
+                        "env-filter",
+                        "json"
+                    ]
+                },
+                "metrics": "0.23",
+                "metrics-exporter-prometheus": "0.15",
+                "opentelemetry": "0.26",
+                "opentelemetry-otlp": "0.26"
+            }
+        },
+        "go-modules": {
+            "require": [
+                "github.com/rs/zerolog v1.33.0",
+                "github.com/prometheus/client_golang v1.20.5",
+                "go.opentelemetry.io/otel v1.32.0",
+                "go.opentelemetry.io/otel/exporters/otlp/otlptrace v1.32.0"
+            ]
+        }
+    }
+}

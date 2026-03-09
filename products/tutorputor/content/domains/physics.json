@@ -1,0 +1,1474 @@
+[
+{
+  "domain": "Physics",
+  "level": "Foundational",
+  "concepts": [
+    {
+      "id": "phy_F_1",
+      "name": "Scalars and Vectors",
+      "description": "Understand what physical quantities have only magnitude (scalars) vs magnitude + direction (vectors).",
+      "domain": "Physics",
+      "level": "Foundational",
+      "prerequisites": [],
+      "audience_tags": ["K-12","Independent_Study"],
+      "keywords": ["scalar", "vector", "magnitude", "direction"],
+      "simulation_metadata": {
+        "simulation_type": "interactive_visualization",
+        "recommended_interactivity": "low",
+        "purpose": "Visualize difference between scalar vs vector using arrows/values",
+        "estimated_time": "10 min"
+      },
+      "cross_domain_links": [],
+      "learning_object_metadata": {
+        "author": "TutorPutor Team",
+        "version": "1.0.0",
+        "status": "published",
+        "intended_end_user_role": ["student","self-learner"],
+        "context": ["self-study","classroom"],
+        "difficulty": "easy",
+        "typical_learning_time": "15 min",
+        "learning_object_type": "conceptual_explanation",
+        "creation_date": "2025-12-05",
+        "last_modified": "2025-12-05"
+      },
+      "pedagogical_metadata": {
+        "learning_objectives": [
+          "Distinguish between scalar and vector quantities.",
+          "Explain why direction matters for vector quantities."
+        ],
+        "competencies": ["quantitative reasoning", "visualization"],
+        "scaffolding_level": "standalone",
+        "accessibility_notes": "Use high-contrast arrows for visibility"
+      }
+    },
+    {
+      "id": "phy_F_2",
+      "name": "One-Dimensional Motion: position, speed, velocity",
+      "description": "Describe position, speed and velocity along a line; interpret simple motion patterns qualitatively.",
+      "domain": "Physics",
+      "level": "Foundational",
+      "prerequisites": ["phy_F_1"],
+      "audience_tags": ["K-12","Independent_Study"],
+      "keywords": ["motion", "velocity", "speed", "position", "time"],
+      "simulation_metadata": {
+        "simulation_type": "physics-2D",
+        "recommended_interactivity": "low",
+        "purpose": "Allow user to move an object along a line and observe position/time, velocity/time visually",
+        "estimated_time": "15 min"
+      },
+      "cross_domain_links": [
+        {
+          "target_concept_id": "math_L1_functions_and_graphs",
+          "relation": "uses",
+          "notes": "Motion can be represented as a time-based function; graphs help visualization"
+        }
+      ],
+      "learning_object_metadata": {
+        "author": "TutorPutor Team",
+        "version": "1.0.0",
+        "status": "published",
+        "intended_end_user_role": ["student","self-learner"],
+        "context": ["self-study","classroom"],
+        "difficulty": "easy",
+        "typical_learning_time": "20 min",
+        "learning_object_type": "simulation",
+        "creation_date": "2025-12-05",
+        "last_modified": "2025-12-05"
+      },
+      "pedagogical_metadata": {
+        "learning_objectives": [
+          "Define and distinguish position, speed, and velocity.",
+          "Visualize motion along a line over time.",
+          "Interpret basic motion qualitatively."
+        ],
+        "competencies": ["kinematic reasoning", "visualization"],
+        "scaffolding_level": "scaffolded",
+        "accessibility_notes": ""
+      }
+    },
+    {
+      "id": "phy_F_3",
+      "name": "Acceleration & Velocity Change",
+      "description": "Conceptualize acceleration: how velocity changes over time in 1-D motion contexts.",
+      "domain": "Physics",
+      "level": "Foundational",
+      "prerequisites": ["phy_F_2"],
+      "audience_tags": ["K-12","Independent_Study"],
+      "keywords": ["acceleration", "velocity change", "motion", "time", "kinematics"],
+      "simulation_metadata": {
+        "simulation_type": "physics-2D",
+        "recommended_interactivity": "low",
+        "purpose": "Simulate an object accelerating or decelerating along 1-D path; observe velocity/time changes",
+        "estimated_time": "15 min"
+      },
+      "cross_domain_links": [],
+      "learning_object_metadata": {
+        "author": "TutorPutor Team",
+        "version": "1.0.0",
+        "status": "published",
+        "intended_end_user_role": ["student","self-learner"],
+        "context": ["self-study","classroom"],
+        "difficulty": "easy",
+        "typical_learning_time": "20 min",
+        "learning_object_type": "simulation",
+        "creation_date": "2025-12-05",
+        "last_modified": "2025-12-05"
+      },
+      "pedagogical_metadata": {
+        "learning_objectives": [
+          "Explain what acceleration means (change in velocity over time).",
+          "Relate acceleration to real-world motion changes (speeding up, slowing down)."
+        ],
+        "competencies": ["kinematic reasoning", "time-based visualization"],
+        "scaffolding_level": "scaffolded",
+        "accessibility_notes": ""
+      }
+    },
+    {
+      "id": "phy_F_4",
+      "name": "Force (qualitative)",
+      "description": "Basic notion of a force: pushes/pulls that cause motion change — intuitive understanding without heavy math.",
+      "domain": "Physics",
+      "level": "Foundational",
+      "prerequisites": ["phy_F_1","phy_F_2"],
+      "audience_tags": ["K-12","Independent_Study"],
+      "keywords": ["force", "motion", "push", "pull", "physics intuition"],
+      "simulation_metadata": {
+        "simulation_type": "physics-2D",
+        "recommended_interactivity": "low",
+        "purpose": "Visualize applying a force to an object and observe motion change qualitatively",
+        "estimated_time": "15 min"
+      },
+      "cross_domain_links": [],
+      "learning_object_metadata": {
+        "author": "TutorPutor Team",
+        "version": "1.0.0",
+        "status": "published",
+        "intended_end_user_role": ["student","self-learner"],
+        "context": ["self-study","classroom"],
+        "difficulty": "easy",
+        "typical_learning_time": "20 min",
+        "learning_object_type": "simulation",
+        "creation_date": "2025-12-05",
+        "last_modified": "2025-12-05"
+      },
+      "pedagogical_metadata": {
+        "learning_objectives": [
+          "Understand what a force is (a push or pull).",
+          "Explain how applying a force can change an object’s motion."
+        ],
+        "competencies": ["physical intuition", "qualitative reasoning"],
+        "scaffolding_level": "scaffolded",
+        "accessibility_notes": ""
+      }
+    },
+    {
+      "id": "phy_F_5",
+      "name": "Basic Energy: Kinetic and Potential (qualitative)",
+      "description": "Introductory idea of energy, different forms — kinetic and potential energy qualitatively in simple contexts.",
+      "domain": "Physics",
+      "level": "Foundational",
+      "prerequisites": ["phy_F_2","phy_F_4"],
+      "audience_tags": ["K-12","Independent_Study"],
+      "keywords": ["energy", "kinetic", "potential", "conservation", "motion"],
+      "simulation_metadata": {
+        "simulation_type": "physics-2D",
+        "recommended_interactivity": "low",
+        "purpose": "Demonstrate energy as a concept; show transformation between kinetic and potential energy visually (e.g. object thrown up/down).",
+        "estimated_time": "15 min"
+      },
+      "cross_domain_links": [],
+      "learning_object_metadata": {
+        "author": "TutorPutor Team",
+        "version": "1.0.0",
+        "status": "published",
+        "intended_end_user_role": ["student","self-learner"],
+        "context": ["self-study","classroom"],
+        "difficulty": "easy",
+        "typical_learning_time": "20 min",
+        "learning_object_type": "simulation",
+        "creation_date": "2025-12-05",
+        "last_modified": "2025-12-05"
+      },
+      "pedagogical_metadata": {
+        "learning_objectives": [
+          "Differentiate between kinetic and potential energy.",
+          "Visualize energy transformation in simple motion contexts.",
+          "Build intuition for energy conservation in simple scenarios."
+        ],
+        "competencies": ["energy reasoning", "visualization", "physics intuition"],
+        "scaffolding_level": "scaffolded",
+        "accessibility_notes": ""
+      }
+    },
+    {
+      "id": "phy_F_6",
+      "name": "Gravity & Weight (qualitative)",
+      "description": "Basic idea of gravity, weight, and why objects fall or feel heavy — intuitive understanding.",
+      "domain": "Physics",
+      "level": "Foundational",
+      "prerequisites": ["phy_F_2","phy_F_4"],
+      "audience_tags": ["K-12","Independent_Study"],
+      "keywords": ["gravity", "weight", "free fall", "mass", "acceleration"],
+      "simulation_metadata": {
+        "simulation_type": "physics-2D",
+        "recommended_interactivity": "low",
+        "purpose": "Simulate objects under gravity: free-fall, weight, falling vs slow drop, observe motion change.",
+        "estimated_time": "15 min"
+      },
+      "cross_domain_links": [],
+      "learning_object_metadata": {
+        "author": "TutorPutor Team",
+        "version": "1.0.0",
+        "status": "published",
+        "intended_end_user_role": ["student","self-learner"],
+        "context": ["self-study","classroom"],
+        "difficulty": "easy",
+        "typical_learning_time": "20 min",
+        "learning_object_type": "simulation",
+        "creation_date": "2025-12-05",
+        "last_modified": "2025-12-05"
+      },
+      "pedagogical_metadata": {
+        "learning_objectives": [
+          "Explain what gravity is and how it affects objects.",
+          "Visualize free-fall motion and weight under gravity.",
+          "Relate mass, gravity, and weight in intuitive scenarios."
+        ],
+        "competencies": ["physical intuition","visualization"],
+        "scaffolding_level": "scaffolded",
+        "accessibility_notes": ""
+      }
+    },
+    {
+      "id": "phy_F_7",
+      "name": "Basic Waves & Sound (qualitative)",
+      "description": "Intro to wave phenomena: disturbance propagation, waves and sound qualitatively — understand wave as propagation of energy/disturbance.",
+      "domain": "Physics",
+      "level": "Foundational",
+      "prerequisites": [],
+      "audience_tags": ["K-12","Independent_Study"],
+      "keywords": ["wave", "sound", "propagation", "disturbance"],
+      "simulation_metadata": {
+        "simulation_type": "physics-2D",
+        "recommended_interactivity": "low",
+        "purpose": "Visualize wave propagation, e.g. wave on string, simple sound wave, without heavy math.",
+        "estimated_time": "15 min"
+      },
+      "cross_domain_links": [],
+      "learning_object_metadata": {
+        "author": "TutorPutor Team",
+        "version": "1.0.0",
+        "status": "published",
+        "intended_end_user_role": ["student","self-learner"],
+        "context": ["self-study","classroom"],
+        "difficulty": "easy",
+        "typical_learning_time": "20 min",
+        "learning_object_type": "conceptual_explanation",
+        "creation_date": "2025-12-05",
+        "last_modified": "2025-12-05"
+      },
+      "pedagogical_metadata": {
+        "learning_objectives": [
+          "Understand what a wave is (a propagating disturbance).",
+          "Relate basic wave features (crest/trough, propagation) to phenomena like sound or water waves."
+        ],
+        "competencies": ["visualization","qualitative reasoning"],
+        "scaffolding_level": "scaffolded",
+        "accessibility_notes": ""
+      }
+    },
+    {
+      "id": "phy_F_8",
+      "name": "Basic Light, Reflection & Shadows (qualitative)",
+      "description": "Observation-based understanding of light behavior: rays, shadows, reflection qualitatively in simple contexts.",
+      "domain": "Physics",
+      "level": "Foundational",
+      "prerequisites": [],
+      "audience_tags": ["K-12","Independent_Study"],
+      "keywords": ["light", "ray", "reflection", "shadow", "optics"],
+      "simulation_metadata": {
+        "simulation_type": "physics-2D",
+        "recommended_interactivity": "low",
+        "purpose": "Simulate light rays, reflection, shadows, simple ray diagrams visually.",
+        "estimated_time": "15 min"
+      },
+      "cross_domain_links": [],
+      "learning_object_metadata": {
+        "author": "TutorPutor Team",
+        "version": "1.0.0",
+        "status": "published",
+        "intended_end_user_role": ["student","self-learner"],
+        "context": ["self-study","classroom"],
+        "difficulty": "easy",
+        "typical_learning_time": "20 min",
+        "learning_object_type": "conceptual_explanation",
+        "creation_date": "2025-12-05",
+        "last_modified": "2025-12-05"
+      },
+      "pedagogical_metadata": {
+        "learning_objectives": [
+          "Visualize basic light behavior (rays).",
+          "Explain how shadows and reflections form."
+        ],
+        "competencies": ["visual reasoning","qualitative understanding"],
+        "scaffolding_level": "scaffolded",
+        "accessibility_notes": ""
+      }
+    },
+    {
+      "id": "phy_F_9",
+      "name": "Intro to Measurement & Units (length, time, mass)",
+      "description": "Understanding units of measurement that physics uses (meter, second, kilogram), basic measurement concepts and unit conversion — foundation for quantification.",
+      "domain": "Physics",
+      "level": "Foundational",
+      "prerequisites": [],
+      "audience_tags": ["K-12","Independent_Study"],
+      "keywords": ["units", "measurement", "conversion", "meter", "second", "kilogram"],
+      "simulation_metadata": {
+        "simulation_type": "interactive_visualization",
+        "recommended_interactivity": "low",
+        "purpose": "Allow user to explore measurement units, convert between units, understand baseline measurements.",
+        "estimated_time": "10 min"
+      },
+      "cross_domain_links": [
+        {
+          "target_concept_id": "math_L0_numbers_and_quantity",
+          "relation": "depends_on",
+          "notes": "Basic arithmetic and number sense needed for measurement and conversions"
+        }
+      ],
+      "learning_object_metadata": {
+        "author": "TutorPutor Team",
+        "version": "1.0.0",
+        "status": "published",
+        "intended_end_user_role": ["student","self-learner"],
+        "context": ["self-study","classroom"],
+        "difficulty": "easy",
+        "typical_learning_time": "15 min",
+        "learning_object_type": "exercise",
+        "creation_date": "2025-12-05",
+        "last_modified": "2025-12-05"
+      },
+      "pedagogical_metadata": {
+        "learning_objectives": [
+          "Recognize key physical units: meters, seconds, kilograms.",
+          "Perform simple unit conversions correctly.",
+          "Understand the importance of consistent units in physics."
+        ],
+        "competencies": ["numeracy", "unit literacy"],
+        "scaffolding_level": "standalone",
+        "accessibility_notes": ""
+      }
+    }
+  ]
+},
+{
+  "domain": "Physics",
+  "level": "Intermediate",
+  "concepts": [
+    {
+      "id": "physics_I_1",
+      "name": "2D Motion: Velocity & Acceleration Vectors, Trajectories",
+      "description": "Extend 1-D motion to 2-D: understand motion in a plane, decompose vectors, analyze trajectories under constant acceleration (e.g. projectile motion).",
+      "domain": "Physics",
+      "level": "Intermediate",
+      "prerequisites": ["physics_F_1", "physics_F_2", "physics_F_4"],
+      "audience_tags": ["College","Independent_Study"],
+      "keywords": ["2D motion","vector decomposition","trajectory","projectile","acceleration","velocity"],
+      "simulation_metadata": {
+        "simulation_type": "physics-2D",
+        "recommended_interactivity": "medium",
+        "purpose": "Allow user to set initial velocity vector, angle and magnitude, and simulate projectile motion; visualize position, velocity, acceleration over time",
+        "estimated_time": "20 min"
+      },
+      "cross_domain_links": [
+        {
+          "target_concept_id": "math_L2_linear_algebra_intro",
+          "relation": "uses",
+          "notes": "Vector operations and coordinate geometry for decomposition"
+        }
+      ],
+      "learning_object_metadata": {
+        "author": "TutorPutor Team",
+        "version": "1.0.0",
+        "status": "published",
+        "intended_end_user_role": ["student","self-learner"],
+        "context": ["self-study","lab simulation"],
+        "difficulty": "intermediate",
+        "typical_learning_time": "25 min",
+        "learning_object_type": "simulation",
+        "creation_date": "2025-12-05",
+        "last_modified": "2025-12-05"
+      },
+      "pedagogical_metadata": {
+        "learning_objectives": [
+          "Represent motion in 2D using vector decomposition.",
+          "Predict and visualize the trajectory of a projectile under gravity.",
+          "Relate velocity and acceleration vectors to real motion paths."
+        ],
+        "competencies": ["vector reasoning","kinematic analysis","visualization"],
+        "scaffolding_level": "scaffolded",
+        "accessibility_notes": ""
+      }
+    },
+    {
+      "id": "physics_I_2",
+      "name": "Newton’s Laws of Motion (quantitative)",
+      "description": "Formal study of Newton's three laws: how forces lead to acceleration, concept of inertia and action-reaction; apply to various scenarios quantitatively (forces, mass, acceleration, friction).",
+      "domain": "Physics",
+      "level": "Intermediate",
+      "prerequisites": ["physics_I_1", "physics_F_4"],
+      "audience_tags": ["College","Independent_Study"],
+      "keywords": ["Newton’s laws","force","acceleration","inertia","dynamics","free-body diagram"],
+      "simulation_metadata": {
+        "simulation_type": "physics-2D",
+        "recommended_interactivity": "medium",
+        "purpose": "Let user apply forces (single or multiple), adjust mass, friction; simulate resulting motion and analyze forces, acceleration, velocity, displacement.",
+        "estimated_time": "30 min"
+      },
+      "cross_domain_links": [
+        {
+          "target_concept_id": "math_L2_calculus_introduction",
+          "relation": "uses",
+          "notes": "Continuous change often expressed with calculus for acceleration, velocity relationships"
+        }
+      ],
+      "learning_object_metadata": {
+        "author": "TutorPutor Team",
+        "version": "1.0.0",
+        "status": "published",
+        "intended_end_user_role": ["student","self-learner"],
+        "context": ["self-study","lab simulation"],
+        "difficulty": "intermediate",
+        "typical_learning_time": "30 min",
+        "learning_object_type": "simulation",
+        "creation_date": "2025-12-05",
+        "last_modified": "2025-12-05"
+      },
+      "pedagogical_metadata": {
+        "learning_objectives": [
+          "Apply Newton's laws to compute motion given forces and mass.",
+          "Use free-body diagrams to represent forces and predict motion.",
+          "Understand and quantify inertia, net force, acceleration relationships."
+        ],
+        "competencies": ["dynamics","quantitative problem solving","physical reasoning"],
+        "scaffolding_level": "scaffolded",
+        "accessibility_notes": ""
+      }
+    },
+    {
+      "id": "physics_I_3",
+      "name": "Work, Energy & Power (quantitative)",
+      "description": "Define and calculate work, kinetic energy, potential energy (gravitational), and power; explore energy transformations and work–energy theorem in mechanical systems.",
+      "domain": "Physics",
+      "level": "Intermediate",
+      "prerequisites": ["physics_I_2", "physics_F_5", "physics_F_6"],
+      "audience_tags": ["College","Independent_Study"],
+      "keywords": ["work","energy","kinetic energy","potential energy","power","energy transformation","mechanics"],
+      "simulation_metadata": {
+        "simulation_type": "physics-2D",
+        "recommended_interactivity": "medium",
+        "purpose": "Simulate mechanical systems (object lifting, falling, sliding) to observe work done, energy conversions and compute energies and power over time",
+        "estimated_time": "25 min"
+      },
+      "cross_domain_links": [],
+      "learning_object_metadata": {
+        "author": "TutorPutor Team",
+        "version": "1.0.0",
+        "status": "published",
+        "intended_end_user_role": ["student","self-learner"],
+        "context": ["self-study","lab simulation"],
+        "difficulty": "intermediate",
+        "typical_learning_time": "30 min",
+        "learning_object_type": "simulation",
+        "creation_date": "2025-12-05",
+        "last_modified": "2025-12-05"
+      },
+      "pedagogical_metadata": {
+        "learning_objectives": [
+          "Compute work done by forces in various contexts.",
+          "Compute kinetic and potential energy and understand energy conservation principles.",
+          "Use energy and power calculations to analyze motion and work scenarios."
+        ],
+        "competencies": ["calculation","energy reasoning","physics problem solving"],
+        "scaffolding_level": "scaffolded",
+        "accessibility_notes": ""
+      }
+    },
+    {
+      "id": "physics_I_4",
+      "name": "Momentum & Collisions (elastic and inelastic)",
+      "description": "Understand momentum, impulse; analyze collisions in 1D and 2D — elastic vs inelastic collisions, conservation laws for momentum and kinetic energy (when applicable).",
+      "domain": "Physics",
+      "level": "Intermediate",
+      "prerequisites": ["physics_I_2"],
+      "audience_tags": ["College","Independent_Study"],
+      "keywords": ["momentum","impulse","collision","elastic collision","inelastic collision","conservation laws"],
+      "simulation_metadata": {
+        "simulation_type": "physics-2D",
+        "recommended_interactivity": "medium",
+        "purpose": "Simulate collisions between objects with varying masses/velocities; observe post-collision velocities, check conservation laws; allow change of elasticity parameter.",
+        "estimated_time": "25 min"
+      },
+      "cross_domain_links": [],
+      "learning_object_metadata": {
+        "author": "TutorPutor Team",
+        "version": "1.0.0",
+        "status": "published",
+        "intended_end_user_role": ["student","self-learner"],
+        "context": ["self-study","lab simulation"],
+        "difficulty": "intermediate",
+        "typical_learning_time": "30 min",
+        "learning_object_type": "simulation",
+        "creation_date": "2025-12-05",
+        "last_modified": "2025-12-05"
+      },
+      "pedagogical_metadata": {
+        "learning_objectives": [
+          "Define momentum and impulse.",
+          "Apply conservation of momentum to collisions.",
+          "Distinguish between elastic and inelastic collisions, and compute outcomes."
+        ],
+        "competencies": ["mechanical reasoning","calculation","simulation analysis"],
+        "scaffolding_level": "scaffolded",
+        "accessibility_notes": ""
+      }
+    },
+    {
+      "id": "physics_I_5",
+      "name": "Circular Motion & Centripetal Force",
+      "description": "Introduce motion along circular paths: centripetal acceleration & force, uniform circular motion, period and frequency relations; analyze motion on a circular track qualitatively and quantitatively.",
+      "domain": "Physics",
+      "level": "Intermediate",
+      "prerequisites": ["physics_I_1","physics_I_2"],
+      "audience_tags": ["College","Independent_Study"],
+      "keywords": ["circular motion","centripetal force","acceleration","angular velocity","period","radius"],
+      "simulation_metadata": {
+        "simulation_type": "physics-2D",
+        "recommended_interactivity": "medium",
+        "purpose": "Simulate object moving in circle given speed/radius; visualize centripetal force vector, acceleration vector; vary speed/radius to observe effects.",
+        "estimated_time": "20 min"
+      },
+      "cross_domain_links": [],
+      "learning_object_metadata": {
+        "author": "TutorPutor Team",
+        "version": "1.0.0",
+        "status": "published",
+        "intended_end_user_role": ["student","self-learner"],
+        "context": ["self-study","lab simulation"],
+        "difficulty": "intermediate",
+        "typical_learning_time": "25 min",
+        "learning_object_type": "simulation",
+        "creation_date": "2025-12-05",
+        "last_modified": "2025-12-05"
+      },
+      "pedagogical_metadata": {
+        "learning_objectives": [
+          "Explain centripetal acceleration and force in circular motion.",
+          "Quantitatively relate speed, radius, and period/frequency for circular motion.",
+          "Visualize forces and velocities in circular motion contexts."
+        ],
+        "competencies": ["dynamics","vector reasoning","quantitative analysis"],
+        "scaffolding_level": "scaffolded",
+        "accessibility_notes": ""
+      }
+    },
+    {
+      "id": "physics_I_6",
+      "name": "Simple Harmonic Motion (springs, pendulums)",
+      "description": "Study oscillatory motion: springs, mass-spring systems, pendulums; analyze period, amplitude, restoring force qualitatively & quantitatively (small-angle approx, Hooke’s law).",
+      "domain": "Physics",
+      "level": "Intermediate",
+      "prerequisites": ["physics_I_2","physics_I_5"],
+      "audience_tags": ["College","Independent_Study"],
+      "keywords": ["harmonic motion","oscillation","spring","pendulum","period","frequency","restoring force"],
+      "simulation_metadata": {
+        "simulation_type": "physics-2D",
+        "recommended_interactivity": "medium",
+        "purpose": "Simulate oscillatory systems (spring-mass, pendulum), allow adjustment of parameters (mass, spring constant, length) to observe oscillation behavior, period, energy conversions.",
+        "estimated_time": "25 min"
+      },
+      "cross_domain_links": [],
+      "learning_object_metadata": {
+        "author": "TutorPutor Team",
+        "version": "1.0.0",
+        "status": "published",
+        "intended_end_user_role": ["student","self-learner"],
+        "context": ["self-study","lab simulation"],
+        "difficulty": "intermediate",
+        "typical_learning_time": "30 min",
+        "learning_object_type": "simulation",
+        "creation_date": "2025-12-05",
+        "last_modified": "2025-12-05"
+      },
+      "pedagogical_metadata": {
+        "learning_objectives": [
+          "Describe simple harmonic motion and restoring force.",
+          "Compute period/frequency for spring and pendulum systems (approx).",
+          "Visualize oscillations and energy exchanges in oscillatory motion."
+        ],
+        "competencies": ["oscillatory reasoning","quantitative calculation","simulation analysis"],
+        "scaffolding_level": "scaffolded",
+        "accessibility_notes": ""
+      }
+    },
+    {
+      "id": "physics_I_7",
+      "name": "Wave Fundamentals: wavelength, frequency, wave speed",
+      "description": "Formalize wave behavior: define wavelength, frequency, amplitude, wave speed; understand mechanical waves in media; relation between wave properties and medium characteristics.",
+      "domain": "Physics",
+      "level": "Intermediate",
+      "prerequisites": ["physics_F_7"],
+      "audience_tags": ["College","Independent_Study"],
+      "keywords": ["wave","wavelength","frequency","wave speed","mechanical wave","medium"],
+      "simulation_metadata": {
+        "simulation_type": "wave-sim",
+        "recommended_interactivity": "medium",
+        "purpose": "Simulate wave propagation on a string or medium, allow adjusting frequency/wavelength/medium characteristics, visualize wave propagation, measure speed, amplitude, period.",
+        "estimated_time": "20 min"
+      },
+      "cross_domain_links": [],
+      "learning_object_metadata": {
+        "author": "TutorPutor Team",
+        "version": "1.0.0",
+        "status": "published",
+        "intended_end_user_role": ["student","self-learner"],
+        "context": ["self-study","lab simulation"],
+        "difficulty": "intermediate",
+        "typical_learning_time": "25 min",
+        "learning_object_type": "simulation",
+        "creation_date": "2025-12-05",
+        "last_modified": "2025-12-05"
+      },
+      "pedagogical_metadata": {
+        "learning_objectives": [
+          "Define wavelength, frequency, amplitude, and wave speed for mechanical waves.",
+          "Relate wave properties and medium characteristics to wave behavior.",
+          "Visualize wave propagation and measure wave parameters."
+        ],
+        "competencies": ["wave reasoning","visualization","quantitative measurement"],
+        "scaffolding_level": "scaffolded",
+        "accessibility_notes": ""
+      }
+    },
+    {
+      "id": "physics_I_8",
+      "name": "Basic Electrostatics: Charge, Coulomb’s Law (intro)",
+      "description": "Introduce electric charge, Coulomb’s law for point charges, concept of electric force/field at qualitative and simplified quantitative level.",
+      "domain": "Physics",
+      "level": "Intermediate",
+      "prerequisites": ["physics_F_1","math_L2_algebra_intro"],
+      "audience_tags": ["College","Independent_Study"],
+      "keywords": ["electric charge","Coulomb’s law","electrostatics","force","field"],
+      "simulation_metadata": {
+        "simulation_type": "physics-2D",
+        "recommended_interactivity": "medium",
+        "purpose": "Simulate two or more point charges, allow users to change magnitude and sign, visualize forces/fields and compute force magnitude/direction.",
+        "estimated_time": "25 min"
+      },
+      "cross_domain_links": [],
+      "learning_object_metadata": {
+        "author": "TutorPutor Team",
+        "version": "1.0.0",
+        "status": "published",
+        "intended_end_user_role": ["student","self-learner"],
+        "context": ["self-study","lab simulation"],
+        "difficulty": "intermediate",
+        "typical_learning_time": "30 min",
+        "learning_object_type": "simulation",
+        "creation_date": "2025-12-05",
+        "last_modified": "2025-12-05"
+      },
+      "pedagogical_metadata": {
+        "learning_objectives": [
+          "Understand electric charge and Coulomb’s law.",
+          "Compute electrostatic force between charges.",
+          "Visualize electric forces and fields for point-charge configurations."
+        ],
+        "competencies": ["electrostatics reasoning","quantitative calculation","visualization"],
+        "scaffolding_level": "scaffolded",
+        "accessibility_notes": ""
+      }
+    },
+    {
+      "id": "physics_I_9",
+      "name": "Conservation Laws & Energy/Momentum Conservation in Collisions",
+      "description": "Explore conservation of momentum and energy (when applicable), understand conditions for conservation (isolated systems), analyze collisions, and understand system constraints and energy transformations.",
+      "domain": "Physics",
+      "level": "Intermediate",
+      "prerequisites": ["physics_I_4","physics_I_3"],
+      "audience_tags": ["College","Independent_Study"],
+      "keywords": ["conservation laws","momentum conservation","energy conservation","isolated system","collisions"],
+      "simulation_metadata": {
+        "simulation_type": "physics-2D",
+        "recommended_interactivity": "medium",
+        "purpose": "Simulate collisions or closed-system interactions; track total energy, kinetic energy, momentum before and after to examine conservation laws under different conditions (elastic, inelastic, external forces).",
+        "estimated_time": "30 min"
+      },
+      "cross_domain_links": [],
+      "learning_object_metadata": {
+        "author": "TutorPutor Team",
+        "version": "1.0.0",
+        "status": "published",
+        "intended_end_user_role": ["student","self-learner"],
+        "context": ["self-study","lab simulation"],
+        "difficulty": "intermediate",
+        "typical_learning_time": "35 min",
+        "learning_object_type": "simulation",
+        "creation_date": "2025-12-05",
+        "last_modified": "2025-12-05"
+      },
+      "pedagogical_metadata": {
+        "learning_objectives": [
+          "Apply conservation of momentum in collision scenarios.",
+          "Determine whether kinetic energy is conserved and under what conditions.",
+          "Analyze energy transformations and system boundaries."
+        ],
+        "competencies": ["physics reasoning","system analysis","quantitative evaluation"],
+        "scaffolding_level": "scaffolded",
+        "accessibility_notes": ""
+      }
+    }
+  ]
+},
+{
+  "domain": "Physics",
+  "level": "Advanced",
+  "concepts": [
+    {
+      "id": "physics_A_1",
+      "name": "Rotational Dynamics & Rigid Body Motion",
+      "description": "Study rotation of rigid bodies: torque, moment of inertia, angular momentum, rotational kinetic energy, and their relation to translational motion.",
+      "domain": "Physics",
+      "level": "Advanced",
+      "prerequisites": ["physics_I_2","physics_I_5"],
+      "audience_tags": ["University_Advanced","Independent_Study"],
+      "keywords": ["rotation","torque","moment of inertia","angular momentum","rigid body","dynamics"],
+      "simulation_metadata": {
+        "simulation_type": "physics-2D",
+        "recommended_interactivity": "medium",
+        "purpose": "Simulate rotating rigid bodies under various torques; visualize angular velocity, inertia, energy and momentum; explore stability and rotational motion.",
+        "estimated_time": "30 min"
+      },
+      "cross_domain_links": [],
+      "learning_object_metadata": {
+        "author": "TutorPutor Team",
+        "version": "1.0.0",
+        "status": "published",
+        "intended_end_user_role": ["student","self-learner"],
+        "context": ["self-study","lab simulation"],
+        "difficulty": "hard",
+        "typical_learning_time": "35 min",
+        "learning_object_type": "simulation",
+        "creation_date": "2025-12-05",
+        "last_modified": "2025-12-05"
+      },
+      "pedagogical_metadata": {
+        "learning_objectives": [
+          "Compute torque, moment of inertia, angular momentum for rigid bodies.",
+          "Analyze rotational motion and its relation to force and energy.",
+          "Understand conservation of angular momentum in isolated systems."
+        ],
+        "competencies": ["mechanics","vector calculus","physical reasoning"],
+        "scaffolding_level": "scaffolded",
+        "accessibility_notes": ""
+      }
+    },
+    {
+      "id": "physics_A_2",
+      "name": "Fluid Mechanics: Pressure, Buoyancy, Flow & Continuity",
+      "description": "Understand fluid statics and dynamics: pressure in fluids, buoyancy, fluid flow, continuity equation, basic fluid behavior qualitatively and quantitatively.",
+      "domain": "Physics",
+      "level": "Advanced",
+      "prerequisites": ["physics_I_2","physics_I_3"],
+      "audience_tags": ["University_Advanced","Independent_Study"],
+      "keywords": ["fluid mechanics","pressure","buoyancy","continuity","flow","fluids"],
+      "simulation_metadata": {
+        "simulation_type": "physics-2D",
+        "recommended_interactivity": "medium",
+        "purpose": "Simulate fluid containers, buoyancy, flowing fluids; visualize pressure, density, flow lines; experiment with fluid parameters.",
+        "estimated_time": "35 min"
+      },
+      "cross_domain_links": [],
+      "learning_object_metadata": {
+        "author": "TutorPutor Team",
+        "version": "1.0.0",
+        "status": "published",
+        "intended_end_user_role": ["student","self-learner"],
+        "context": ["self-study","simulation lab"],
+        "difficulty": "hard",
+        "typical_learning_time": "40 min",
+        "learning_object_type": "simulation",
+        "creation_date": "2025-12-05",
+        "last_modified": "2025-12-05"
+      },
+      "pedagogical_metadata": {
+        "learning_objectives": [
+          "Compute fluid pressure and buoyant force in static fluids.",
+          "Understand and apply the continuity equation for incompressible flow.",
+          "Visualize fluid flow behavior and effects of density/pressure changes."
+        ],
+        "competencies": ["fluid reasoning","calculus","visualization","physical modeling"],
+        "scaffolding_level": "scaffolded",
+        "accessibility_notes": ""
+      }
+    },
+    {
+      "id": "physics_A_3",
+      "name": "Wave Optics & Electromagnetic Waves",
+      "description": "Study detailed wave phenomena: interference, diffraction, polarization, electromagnetic wave propagation, wave–matter interaction, basic optics theory, wave–particle aspects intro.",
+      "domain": "Physics",
+      "level": "Advanced",
+      "prerequisites": ["physics_I_7","physics_I_8"],
+      "audience_tags": ["University_Advanced","Independent_Study"],
+      "keywords": ["optics","electromagnetic wave","interference","diffraction","polarization","wave mechanics"],
+      "simulation_metadata": {
+        "simulation_type": "wave-sim",
+        "recommended_interactivity": "medium",
+        "purpose": "Simulate wave interference, diffraction, polarization, EM wave propagation; visualize fields and resulting patterns; allow parameter variation (wavelength, slit width, medium).",
+        "estimated_time": "40 min"
+      },
+      "cross_domain_links": [],
+      "learning_object_metadata": {
+        "author": "TutorPutor Team",
+        "version": "1.0.0",
+        "status": "published",
+        "intended_end_user_role": ["student","self-learner"],
+        "context": ["self-study","simulation lab"],
+        "difficulty": "hard",
+        "typical_learning_time": "45 min",
+        "learning_object_type": "simulation",
+        "creation_date": "2025-12-05",
+        "last_modified": "2025-12-05"
+      },
+      "pedagogical_metadata": {
+        "learning_objectives": [
+          "Describe interference, diffraction and polarization of waves.",
+          "Simulate electromagnetic wave propagation and interactions.",
+          "Understand relationship between wave properties (wavelength, frequency) and observed phenomena in optics."
+        ],
+        "competencies": ["wave reasoning","optics","field theory","visual simulation"],
+        "scaffolding_level": "scaffolded",
+        "accessibility_notes": ""
+      }
+    },
+    {
+      "id": "physics_A_4",
+      "name": "Thermodynamics & Statistical Physics (intro)",
+      "description": "Formal study of thermodynamics: laws of thermodynamics, heat, work, internal energy, entropy (qualitative + introductory quantitative); basic statistical ideas for systems of many particles.",
+      "domain": "Physics",
+      "level": "Advanced",
+      "prerequisites": ["physics_I_3","physics_I_6"],
+      "audience_tags": ["University_Advanced","Independent_Study"],
+      "keywords": ["thermodynamics","heat","entropy","statistical physics","energy","temperature","laws of thermodynamics"],
+      "simulation_metadata": {
+        "simulation_type": "system_dynamics",
+        "recommended_interactivity": "medium",
+        "purpose": "Simulate thermodynamic processes (heating, cooling, compression, expansion), calculate work, heat, temperature changes; optionally simulate ideal gas behavior; allow parameter variation.",
+        "estimated_time": "40 min"
+      },
+      "cross_domain_links": [],
+      "learning_object_metadata": {
+        "author": "TutorPutor Team",
+        "version": "1.0.0",
+        "status": "published",
+        "intended_end_user_role": ["student","self-learner"],
+        "context": ["self-study","simulation lab"],
+        "difficulty": "hard",
+        "typical_learning_time": "45 min",
+        "learning_object_type": "simulation",
+        "creation_date": "2025-12-05",
+        "last_modified": "2025-12-05"
+      },
+      "pedagogical_metadata": {
+        "learning_objectives": [
+          "Understand and apply the laws of thermodynamics (energy conservation, entropy).",
+          "Model simple thermodynamic processes and compute heat, work, temperature changes.",
+          "Introduce statistical thinking for many-particle systems."
+        ],
+        "competencies": ["thermodynamic reasoning","statistical thinking","calculation","visual simulation"],
+        "scaffolding_level": "scaffolded",
+        "accessibility_notes": ""
+      }
+    },
+    {
+      "id": "physics_A_5",
+      "name": "Electricity & Magnetism (fields, circuits, Maxwell basics)",
+      "description": "Comprehensive study of electric and magnetic fields, field lines, potential, circuits, electromagnetic waves and introduction to fundamentals of Maxwell’s equations (qualitative/intro-calculus level).",
+      "domain": "Physics",
+      "level": "Advanced",
+      "prerequisites": ["physics_I_8","physics_I_3","physics_I_7"],
+      "audience_tags": ["University_Advanced","Independent_Study"],
+      "keywords": ["electric field","magnetic field","circuits","Maxwell's equations","electromagnetism","EM waves","potential","charge"],
+      "simulation_metadata": {
+        "simulation_type": "field-sim",
+        "recommended_interactivity": "medium",
+        "purpose": "Simulate charge distributions, fields, circuits, field propagation; visualize field lines, potentials, charge interactions; allow parameter variation in circuits and fields.",
+        "estimated_time": "45 min"
+      },
+      "cross_domain_links": [],
+      "learning_object_metadata": {
+        "author": "TutorPutor Team",
+        "version": "1.0.0",
+        "status": "published",
+        "intended_end_user_role": ["student","self-learner"],
+        "context": ["self-study","lab simulation"],
+        "difficulty": "hard",
+        "typical_learning_time": "50 min",
+        "learning_object_type": "simulation",
+        "creation_date": "2025-12-05",
+        "last_modified": "2025-12-05"
+      },
+      "pedagogical_metadata": {
+        "learning_objectives": [
+          "Compute and visualize electric and magnetic fields for various charge/current configurations.",
+          "Analyze circuits, field interactions and EM wave propagation.",
+          "Understand the concept of field and potential, and basic Maxwell's equations implications."
+        ],
+        "competencies": ["electromagnetism","field reasoning","calculus","simulation analysis"],
+        "scaffolding_level": "scaffolded",
+        "accessibility_notes": ""
+      }
+    },
+    {
+      "id": "physics_A_6",
+      "name": "Special Relativity (intro)",
+      "description": "Introduction to the theory of special relativity: relativity of simultaneity, time dilation, length contraction, mass–energy equivalence, simple relativistic dynamics.",
+      "domain": "Physics",
+      "level": "Advanced",
+      "prerequisites": ["physics_A_5","physics_A_3"],
+      "audience_tags": ["University_Advanced","Independent_Study"],
+      "keywords": ["relativity","time dilation","length contraction","spacetime","mass–energy equivalence","Lorentz transformation"],
+      "simulation_metadata": {
+        "simulation_type": "interactive_visualization",
+        "recommended_interactivity": "medium",
+        "purpose": "Visualize relativistic effects (time dilation, length contraction), inertial frames transformation, velocity addition; allow parameter variation of speed to observe relativistic phenomena.",
+        "estimated_time": "30 min"
+      },
+      "cross_domain_links": [],
+      "learning_object_metadata": {
+        "author": "TutorPutor Team",
+        "version": "1.0.0",
+        "status": "published",
+        "intended_end_user_role": ["student","self-learner"],
+        "context": ["self-study","simulation lab","theoretical study"],
+        "difficulty": "hard",
+        "typical_learning_time": "35 min",
+        "learning_object_type": "simulation",
+        "creation_date": "2025-12-05",
+        "last_modified": "2025-12-05"
+      },
+      "pedagogical_metadata": {
+        "learning_objectives": [
+          "Explain core concepts of special relativity (time dilation, length contraction, simultaneity).",
+          "Apply Lorentz transformations to simple scenarios.",
+          "Understand mass–energy equivalence and limitations of classical mechanics at high speeds."
+        ],
+        "competencies": ["relativistic reasoning","theoretical thinking","visualization"],
+        "scaffolding_level": "scaffolded",
+        "accessibility_notes": ""
+      }
+    }
+  ]
+},
+{
+  "domain": "Physics",
+  "level": "Research_Independent",
+  "concepts": [
+    {
+      "id": "physics_R_1",
+      "name": "Lagrangian & Hamiltonian Mechanics (Analytical Mechanics)",
+      "description": "Formulation of mechanics using variational principles: Lagrangian and Hamiltonian formalisms, generalized coordinates, canonical momenta, Poisson brackets, symmetries & conservation via Noether’s theorem.",
+      "domain": "Physics",
+      "level": "Research_Independent",
+      "prerequisites": ["physics_A_1","physics_I_2","math_L3_analysis_multivariable"],
+      "audience_tags": ["University_Advanced","Research","Independent_Study"],
+      "keywords": ["Lagrangian mechanics","Hamiltonian mechanics","variational principle","canonical coordinates","symmetries","Noether theorem"],
+      "simulation_metadata": {
+        "simulation_type": "symbolic + interactive_physics",
+        "recommended_interactivity": "medium",
+        "purpose": "Allow definition of a system via Lagrangian/Hamiltonian; simulate motion, derive equations of motion, show phase-space trajectories, explore conserved quantities under symmetries.",
+        "estimated_time": "45 min"
+      },
+      "cross_domain_links": [
+        {
+          "target_concept_id": "math_L3_differential_equations",
+          "relation": "uses",
+          "notes": "Solving Euler–Lagrange or Hamilton's equations relies on differential equations"
+        }
+      ],
+      "learning_object_metadata": {
+        "author": "TutorPutor Team",
+        "version": "1.0.0",
+        "status": "draft",
+        "intended_end_user_role": ["student","researcher","self-learner"],
+        "context": ["self-study","theoretical study"],
+        "difficulty": "very_hard",
+        "typical_learning_time": "1 hr",
+        "learning_object_type": "simulation + theoretical module",
+        "creation_date": "2025-12-05",
+        "last_modified": "2025-12-05"
+      },
+      "pedagogical_metadata": {
+        "learning_objectives": [
+          "Derive equations of motion from a given Lagrangian/Hamiltonian.",
+          "Understand generalized coordinates and canonical momenta.",
+          "Use symmetry principles to deduce conserved quantities via Noether’s theorem.",
+          "Analyze phase-space trajectories and stability."
+        ],
+        "competencies": ["theoretical reasoning","symbolic manipulation","differential equation solving","physics intuition"],
+        "scaffolding_level": "scaffolded",
+        "accessibility_notes": ""
+      }
+    },
+    {
+      "id": "physics_R_2",
+      "name": "Quantum Mechanics (Non-relativistic, Many-Body & Perturbation Theory)",
+      "description": "Foundations of quantum mechanics: Hilbert spaces, operators, wavefunctions, time-independent & time-dependent Schrödinger equation; perturbation theory, multi-particle systems, identical particles, spin and angular momentum, basic many-body theory.",
+      "domain": "Physics",
+      "level": "Research_Independent",
+      "prerequisites": ["physics_A_3","physics_I_7","math_L3_linear_algebra"],
+      "audience_tags": ["University_Advanced","Research","Independent_Study"],
+      "keywords": ["quantum mechanics","Schrödinger equation","perturbation theory","many-body physics","spin","angular momentum","wavefunction"],
+      "simulation_metadata": {
+        "simulation_type": "quantum_simulator + interactive_visualization",
+        "recommended_interactivity": "high",
+        "purpose": "Allow user to define simple quantum systems (1D/3D wells, harmonic oscillator, hydrogen atom), compute eigenstates / eigenvalues, visualize wavefunctions, experiment with perturbations, combine multiple particles to observe many-body behavior.",
+        "estimated_time": "60 min"
+      },
+      "cross_domain_links": [
+        {
+          "target_concept_id": "math_L3_linear_algebra",
+          "relation": "foundation_for",
+          "notes": "Quantum states and operators require vector spaces, eigenvalues, inner products"
+        }
+      ],
+      "learning_object_metadata": {
+        "author": "TutorPutor Team",
+        "version": "1.0.0",
+        "status": "draft",
+        "intended_end_user_role": ["student","researcher","self-learner"],
+        "context": ["self-study","research prep"],
+        "difficulty": "very_hard",
+        "typical_learning_time": "1.5 hr",
+        "learning_object_type": "simulation + theoretical module",
+        "creation_date": "2025-12-05",
+        "last_modified": "2025-12-05"
+      },
+      "pedagogical_metadata": {
+        "learning_objectives": [
+          "Solve time-independent and time-dependent Schrödinger equation for basic potentials.",
+          "Understand the role of operators, eigenstates, and observable measurements in quantum mechanics.",
+          "Apply perturbation theory for small corrections.",
+          "Model simple many-body quantum systems, understand indistinguishability, symmetrization/antisymmetrization."
+        ],
+        "competencies": ["quantum reasoning","linear algebra","problem solving","simulation analysis"],
+        "scaffolding_level": "scaffolded",
+        "accessibility_notes": ""
+      }
+    },
+    {
+      "id": "physics_R_3",
+      "name": "Quantum Field Theory & Relativistic Quantum Mechanics (intro)",
+      "description": "Introduction to quantum field theory (QFT) and relativistic quantum mechanics: field quantization, Dirac equation, particle creation/annihilation, basics of gauge fields, simple interactions; conceptual understanding bridging quantum mechanics and special relativity.",
+      "domain": "Physics",
+      "level": "Research_Independent",
+      "prerequisites": ["physics_R_2","physics_A_6","math_L4_tensors_and_differential_geometry"],
+      "audience_tags": ["Research","Independent_Study"],
+      "keywords": ["quantum field theory","Dirac equation","field quantization","gauge fields","particle physics","relativity","QED"],
+      "simulation_metadata": {
+        "simulation_type": "theoretical_exploration + visualization (field lines, Feynman diagrams)",
+        "recommended_interactivity": "medium",
+        "purpose": "Allow user to define simple field theories, visualize field propagation, particle creation/annihilation, draw Feynman diagrams, explore basic interactions (e.g. in QED), emphasize conceptual understanding.",
+        "estimated_time": "1 hr"
+      },
+      "cross_domain_links": [
+        {
+          "target_concept_id": "physics_R_1",
+          "relation": "foundation_from",
+          "notes": "Field Lagrangians build on classical analytical mechanics"
+        },
+        {
+          "target_concept_id": "math_L4_differential_geometry",
+          "relation": "uses",
+          "notes": "Field theory uses advanced mathematics like tensors and differential geometry"
+        }
+      ],
+      "learning_object_metadata": {
+        "author": "TutorPutor Team",
+        "version": "0.1.0",
+        "status": "draft",
+        "intended_end_user_role": ["researcher","advanced student"],
+        "context": ["research prep","theoretical study"],
+        "difficulty": "very_hard",
+        "typical_learning_time": "1.5 hr",
+        "learning_object_type": "theoretical module",
+        "creation_date": "2025-12-05",
+        "last_modified": "2025-12-05"
+      },
+      "pedagogical_metadata": {
+        "learning_objectives": [
+          "Understand the necessity of field quantization when combining quantum mechanics and relativity.",
+          "Formulate simple Lagrangian field theories and derive their equations of motion.",
+          "Interpret basic field interactions using simple diagrams and conceptual tools.",
+          "Recognize the limits of nonrelativistic quantum mechanics and where QFT becomes relevant."
+        ],
+        "competencies": ["theoretical reasoning","field theory fundamentals","mathematical physics","conceptual understanding"],
+        "scaffolding_level": "scaffolded",
+        "accessibility_notes": ""
+      }
+    },
+    {
+      "id": "physics_R_4",
+      "name": "Statistical Mechanics & Advanced Thermodynamics",
+      "description": "Statistical physics: micro-state ensembles, canonical & grand canonical ensembles, partition functions, connection to thermodynamics, emergent macroscopic properties from microscopic states, phase transitions, fluctuations, statistical description of many-particle systems.",
+      "domain": "Physics",
+      "level": "Research_Independent",
+      "prerequisites": ["physics_A_4","physics_R_2","math_L3_probability_statistics"],
+      "audience_tags": ["University_Advanced","Research","Independent_Study"],
+      "keywords": ["statistical mechanics","ensemble theory","partition function","phase transition","thermodynamics","fluctuations","many-body"],
+      "simulation_metadata": {
+        "simulation_type": "system_dynamics + statistical_simulation",
+        "recommended_interactivity": "medium",
+        "purpose": "Simulate large particle ensembles (e.g. ideal gas, spin systems), compute statistical properties, simulate thermodynamic processes, observe emergent behavior (temperature, entropy, fluctuations, phase transitions).",
+        "estimated_time": "50 min"
+      },
+      "cross_domain_links": [
+        {
+          "target_concept_id": "chem_L2_thermodynamics_and_kinetics",
+          "relation": "related_to",
+          "notes": "Statistical mechanics underlies both physics and chemical thermodynamics"
+        }
+      ],
+      "learning_object_metadata": {
+        "author": "TutorPutor Team",
+        "version": "0.1.0",
+        "status": "draft",
+        "intended_end_user_role": ["student","researcher"],
+        "context": ["self-study","research prep"],
+        "difficulty": "very_hard",
+        "typical_learning_time": "1.5 hr",
+        "learning_object_type": "simulation + theoretical module",
+        "creation_date": "2025-12-05",
+        "last_modified": "2025-12-05"
+      },
+      "pedagogical_metadata": {
+        "learning_objectives": [
+          "Derive macroscopic thermodynamic properties from microscopic statistical ensembles.",
+          "Compute partition functions and relate to energy, entropy, free energy.",
+          "Model phase transitions and fluctuations in many-particle systems.",
+          "Understand connections between statistical mechanics, thermodynamics, and thermodynamic laws."
+        ],
+        "competencies": ["statistical reasoning","many-body modeling","calculus & probability","thermodynamic intuition"],
+        "scaffolding_level": "scaffolded",
+        "accessibility_notes": ""
+      }
+    },
+    {
+      "id": "physics_R_5",
+      "name": "Computational Physics & Numerical Methods",
+      "description": "Use numerical methods to simulate physical systems: solve ordinary/partial differential equations (ODE/PDE), implement simulations for mechanics, fluids, statistical systems; Monte Carlo methods; computational approximation techniques for complex systems.",
+      "domain": "Physics",
+      "level": "Research_Independent",
+      "prerequisites": ["physics_R_1","physics_R_4","math_L3_numerical_methods"],
+      "audience_tags": ["Independent_Study","Research"],
+      "keywords": ["computational physics","numerical methods","ODE solvers","PDE solvers","Monte Carlo","simulation"],
+      "simulation_metadata": {
+        "simulation_type": "code_editor + simulation",
+        "recommended_interactivity": "high",
+        "purpose": "Provide a coding sandbox for users to implement numerical solvers (ODE / PDE / Monte-Carlo) for physical systems (e.g. pendulum, wave equation, diffusion, N-body), visualize results, and analyze behavior.",
+        "estimated_time": "1–2 hr",
+        "resources_needed": ["code editor", "numeric library"]
+      },
+      "cross_domain_links": [
+        {
+          "target_concept_id": "cs_L3_computer_systems_and_architecture_detailed",
+          "relation": "implementation_dependent_on",
+          "notes": "Computational physics relies on programming, memory management, efficient simulation"
+        }
+      ],
+      "learning_object_metadata": {
+        "author": "TutorPutor Team",
+        "version": "0.1.0",
+        "status": "draft",
+        "intended_end_user_role": ["student","researcher","self-learner"],
+        "context": ["self-study","research project"],
+        "difficulty": "very_hard",
+        "typical_learning_time": "2 hr",
+        "learning_object_type": "project",
+        "creation_date": "2025-12-05",
+        "last_modified": "2025-12-05"
+      },
+      "pedagogical_metadata": {
+        "learning_objectives": [
+          "Implement numerical solvers for ODEs & PDEs governing physical systems.",
+          "Simulate complex physical phenomena not solvable analytically.",
+          "Analyze simulation results, validate against theory, handle numerical stability."
+        ],
+        "competencies": ["programming","numerical analysis","modeling","data analysis"],
+        "scaffolding_level": "scaffolded",
+        "accessibility_notes": ""
+      }
+    },
+    {
+      "id": "physics_R_6",
+      "name": "Relativistic & Gravitational Physics (intro to General Relativity)",
+      "description": "Study of relativistic dynamics beyond special relativity; introduction to curved spacetime, basic general relativity concepts, spacetime metric, geodesics, gravity as geometry (qualitative/intro mathematical).",
+      "domain": "Physics",
+      "level": "Research_Independent",
+      "prerequisites": ["physics_A_6","math_L4_differential_geometry"],
+      "audience_tags": ["Research","Independent_Study"],
+      "keywords": ["general relativity","spacetime","metric","geodesics","gravity","curved spacetime"],
+      "simulation_metadata": {
+        "simulation_type": "interactive_visualization + theoretical module",
+        "recommended_interactivity": "medium",
+        "purpose": "Visualize curved spacetime around masses, geodesic orbits, gravitational time dilation, simple black-hole metrics; provide conceptual tools without full tensor mathematics if desired.",
+        "estimated_time": "1 hr"
+      },
+      "cross_domain_links": [
+        {
+          "target_concept_id": "math_L4_differential_geometry",
+          "relation": "uses",
+          "notes": "General relativity requires differential geometry and tensor calculus"
+        }
+      ],
+      "learning_object_metadata": {
+        "author": "TutorPutor Team",
+        "version": "0.1.0",
+        "status": "draft",
+        "intended_end_user_role": ["researcher","advanced student"],
+        "context": ["self-study","theoretical study"],
+        "difficulty": "very_hard",
+        "typical_learning_time": "1.5 hr",
+        "learning_object_type": "theoretical module + visualization",
+        "creation_date": "2025-12-05",
+        "last_modified": "2025-12-05"
+      },
+      "pedagogical_metadata": {
+        "learning_objectives": [
+          "Understand concept of spacetime as a curved manifold representing gravity.",
+          "Visualize motion (geodesics) in curved spacetime around massive bodies.",
+          "Appreciate difference between Newtonian gravity and general relativistic gravity."
+        ],
+        "competencies": ["theoretical physics","geometric reasoning","visualization","advanced mathematics"],
+        "scaffolding_level": "scaffolded",
+        "accessibility_notes": ""
+      }
+    },
+    {
+      "id": "physics_R_7",
+      "name": "Condensed Matter & Many-Body Physics (intro)",
+      "description": "Study of many-particle systems in solid state, statistical emergent phenomena, basic models (e.g. Fermi gas, lattice models), introduction to many-body approaches: mean-field theory, second quantization, basic solid-state phenomena (crystals, band theory, phonons).",
+      "domain": "Physics",
+      "level": "Research_Independent",
+      "prerequisites": ["physics_R_2","physics_R_4"],
+      "audience_tags": ["Research","Independent_Study"],
+      "keywords": ["condensed matter","many-body physics","solid state","band theory","second quantization","phonons","statistical physics"],
+      "simulation_metadata": {
+        "simulation_type": "numerical_simulation + visualization",
+        "recommended_interactivity": "high",
+        "purpose": "Allow users to model simplified many-body systems (e.g. electron gas, lattice), compute band structure, density of states, simulate basic thermal and quantum effects in solids, visualize lattice and energy bands.",
+        "estimated_time": "2 hr"
+      },
+      "cross_domain_links": [
+        {
+          "target_concept_id": "chem_L3_atomic_molecular_quantum_models",
+          "relation": "related_to",
+          "notes": "Atomic/molecular quantum models underpin condensed matter behavior"
+        }
+      ],
+      "learning_object_metadata": {
+        "author": "TutorPutor Team",
+        "version": "0.1.0",
+        "status": "draft",
+        "intended_end_user_role": ["researcher","advanced student"],
+        "context": ["self-study","research project"],
+        "difficulty": "very_hard",
+        "typical_learning_time": "2–3 hr",
+        "learning_object_type": "project",
+        "creation_date": "2025-12-05",
+        "last_modified": "2025-12-05"
+      },
+      "pedagogical_metadata": {
+        "learning_objectives": [
+          "Model many-particle quantum systems in simplified contexts.",
+          "Compute and interpret band structures, density of states, collective phenomena.",
+          "Relate microscopic interactions to macroscopic solid-state properties."
+        ],
+        "competencies": ["many-body reasoning","quantum mechanics","numerical modeling","solid-state physics"],
+        "scaffolding_level": "scaffolded",
+        "accessibility_notes": ""
+      }
+    },
+    {
+      "id": "physics_R_8",
+      "name": "Non-linear Dynamics, Chaos & Complex Systems (in classical & quantum contexts)",
+      "description": "Study of non-linear dynamical systems, sensitivity to initial conditions, chaos; classical examples (pendulum with driving force, double pendulum, logistic map), and introduction to quantum chaos / semi-classical methods for complex quantum systems.",
+      "domain": "Physics",
+      "level": "Research_Independent",
+      "prerequisites": ["physics_R_1","math_L3_dynamical_systems"],
+      "audience_tags": ["Independent_Study","Research"],
+      "keywords": ["non-linear dynamics","chaos","complex systems","sensitivity","quantum chaos","bifurcations","phase space"],
+      "simulation_metadata": {
+        "simulation_type": "interactive_simulation + numerical_experiment",
+        "recommended_interactivity": "high",
+        "purpose": "Allow users to simulate classical non-linear systems (e.g. driven pendulum, logistic map), observe phase-space, bifurcations, chaos onset; optionally explore simplified quantum-chaos analogues (e.g. quantum kicked rotor).",
+        "estimated_time": "1.5 hr"
+      },
+      "cross_domain_links": [
+        {
+          "target_concept_id": "cs_L3_computer_systems_and_architecture_detailed",
+          "relation": "uses",
+          "notes": "Simulating complex systems computationally benefits from efficient code and system understanding"
+        }
+      ],
+      "learning_object_metadata": {
+        "author": "TutorPutor Team",
+        "version": "0.1.0",
+        "status": "draft",
+        "intended_end_user_role": ["researcher","advanced student"],
+        "context": ["research project","self-study"],
+        "difficulty": "very_hard",
+        "typical_learning_time": "2 hr",
+        "learning_object_type": "project",
+        "creation_date": "2025-12-05",
+        "last_modified": "2025-12-05"
+      },
+      "pedagogical_metadata": {
+        "learning_objectives": [
+          "Understand behavior of non-linear dynamical systems and criteria for chaos.",
+          "Visualize phase-space, bifurcations, and chaotic trajectories.",
+          "Explore analogies between classical and quantum chaos in simplified models."
+        ],
+        "competencies": ["dynamical reasoning","numerical modeling","complex systems","critical thinking"],
+        "scaffolding_level": "scaffolded",
+        "accessibility_notes": ""
+      }
+    },
+    {
+      "id": "physics_R_P1",
+      "name": "Monte Carlo Simulation: Ising Model & Phase Transitions Project",
+      "description": "Implement and analyze the 2D (or 3D) Ising model using Monte Carlo (Metropolis or cluster algorithms), explore temperature-driven phase transition, compute observables (magnetization, susceptibility, specific heat), estimate critical temperature, finite-size effects.",
+      "domain": "Physics",
+      "level": "Research_Independent",
+      "prerequisites": ["physics_R_4","physics_R_5"],
+      "audience_tags": ["Independent_Study","Research"],
+      "keywords": ["Ising model","Monte Carlo","phase transition","critical phenomena","statistical mechanics","finite size scaling"],
+      "simulation_metadata": {
+        "simulation_type": "numerical_simulation + interactive_visualization",
+        "recommended_interactivity": "high",
+        "purpose": "Allow user to write a Monte Carlo simulation of Ising model, vary temperature, visualize spin configurations, compute statistical observables, plot magnetization/energy/heat-capacity vs temperature; explore finite-size scaling and critical behavior",
+        "estimated_time": "2–3 hours"
+      },
+      "cross_domain_links": [],
+      "learning_object_metadata": {
+        "author": "TutorPutor Team",
+        "version": "0.1.0",
+        "status": "draft",
+        "intended_end_user_role": ["student","researcher","self-learner"],
+        "context": ["research project","self-study"],
+        "difficulty": "very_hard",
+        "typical_learning_time": "3 hr",
+        "learning_object_type": "project",
+        "creation_date": "2025-12-05",
+        "last_modified": "2025-12-05"
+      },
+      "pedagogical_metadata": {
+        "learning_objectives": [
+          "Implement Monte Carlo code for the Ising model.",
+          "Compute thermodynamic observables across varying temperature.",
+          "Identify and analyze the phase transition (order parameter, critical temperature).",
+          "Understand finite-size effects and scaling behavior in statistical systems."
+        ],
+        "competencies": ["numerical simulation","statistical mechanics","data analysis","computational physics"],
+        "scaffolding_level": "scaffolded",
+        "accessibility_notes": ""
+      }
+    },
+    {
+      "id": "physics_R_P2",
+      "name": "Quantum Monte Carlo Simulation: Bose–Einstein Condensation in a Harmonic Trap",
+      "description": "Simulate a dilute gas of bosons in a harmonic potential using Monte Carlo methods to explore condensation behavior, compute critical temperature, condensate fraction vs temperature, study finite-size and density dependence — based on ideal or weakly-interacting Bose gas models.",
+      "domain": "Physics",
+      "level": "Research_Independent",
+      "prerequisites": ["physics_R_4","physics_R_2"],
+      "audience_tags": ["Research","Independent_Study"],
+      "keywords": ["Bose–Einstein condensate","quantum Monte Carlo","harmonic trap","phase transition","bosons","condensate fraction"],
+      "simulation_metadata": {
+        "simulation_type": "quantum_simulator + numerical_simulation",
+        "recommended_interactivity": "high",
+        "purpose": "Allow user to simulate bosonic particles under harmonic trap, apply Monte Carlo sampling (or quantum-statistical sampling), compute occupancy of ground state vs excited states as temperature decreases, observe onset of condensation, compute critical temperature, condensate fraction curves.",
+        "estimated_time": "3–4 hours"
+      },
+      "cross_domain_links": [],
+      "learning_object_metadata": {
+        "author": "TutorPutor Team",
+        "version": "0.1.0",
+        "status": "draft",
+        "intended_end_user_role": ["researcher","advanced student"],
+        "context": ["research project","self-study"],
+        "difficulty": "very_hard",
+        "typical_learning_time": "4 hr",
+        "learning_object_type": "project",
+        "creation_date": "2025-12-05",
+        "last_modified": "2025-12-05"
+      },
+      "pedagogical_metadata": {
+        "learning_objectives": [
+          "Model a gas of bosons in a confining potential using quantum/statistical Monte Carlo.",
+          "Compute occupancy distributions and identify macroscopic occupation of ground state (condensate).",
+          "Determine critical temperature for condensation and study dependence on density / trap parameters.",
+          "Relate simulation results to analytical predictions for ideal Bose gas condensation."
+        ],
+        "competencies": ["quantum simulation","statistical physics","data analysis","computational modeling"],
+        "scaffolding_level": "scaffolded",
+        "accessibility_notes": ""
+      }
+    },
+    {
+      "id": "physics_R_P3",
+      "name": "Design-and-Simulate: Simple Particle Accelerator (classical approach)",
+      "description": "Design a simplified classical model of a linear (or ring) particle accelerator: simulate charged particles under electromagnetic fields, model beam steering/focusing using fields, study beam dynamics, stability, confinement, and motion under field gradients. This is a toy model, not full high-energy physics, but useful for understanding accelerator physics basics.",
+      "domain": "Physics",
+      "level": "Research_Independent",
+      "prerequisites": ["physics_A_5","physics_R_5"],
+      "audience_tags": ["Independent_Study","Research"],
+      "keywords": ["accelerator physics","charged particles","electromagnetic fields","beam dynamics","particle simulation","classical physics"],
+      "simulation_metadata": {
+        "simulation_type": "numerical_simulation + interactive_physics",
+        "recommended_interactivity": "high",
+        "purpose": "Allow user to build a classical particle accelerator simulation: define field regions (electric/magnetic), simulate particle trajectories, apply focusing/steering, explore parameters such as field strength, particle energy, beam divergence, detect stability boundaries and resonance behaviors.",
+        "estimated_time": "4–5 hours",
+        "resources_needed": ["numeric library or physics engine"]
+      },
+      "cross_domain_links": [],
+      "learning_object_metadata": {
+        "author": "TutorPutor Team",
+        "version": "0.1.0",
+        "status": "draft",
+        "intended_end_user_role": ["researcher","advanced student"],
+        "context": ["research project","self-study","computational lab"],
+        "difficulty": "very_hard",
+        "typical_learning_time": "5 hr",
+        "learning_object_type": "project",
+        "creation_date": "2025-12-05",
+        "last_modified": "2025-12-05"
+      },
+      "pedagogical_metadata": {
+        "learning_objectives": [
+          "Construct a simplified classical model of a particle accelerator.",
+          "Simulate charged particles under electric and magnetic fields and analyze their trajectories.",
+          "Understand beam dynamics: focusing, steering, confinement, and stability.",
+          "Explore how varying field parameters affect beam quality and stability."
+        ],
+        "competencies": ["computational physics","electromagnetism","numerical modeling","systems thinking"],
+        "scaffolding_level": "scaffolded",
+        "accessibility_notes": ""
+      }
+    }
+  ]
+}
+
+]
+

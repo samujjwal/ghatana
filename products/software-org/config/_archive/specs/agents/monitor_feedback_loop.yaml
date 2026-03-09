@@ -1,0 +1,24 @@
+---
+id: "monitor_feedback_loop"
+agent: "FeedbackLoopAgent"
+role: "CI/CD Coach/Automation"
+inputs_spec:
+- name: "monitor_progress_dashboard"
+  description: "Monitor progress dashboard for collecting feedback."
+  format: "Dashboard artifact"
+outputs_spec:
+- name: "monitor_feedback_items"
+  description: "Issues/improvement suggestions routed to Retrospective."
+  format: "List of feedback items"
+agent_tasks:
+- "Route all issues/improvement suggestions to Retrospective."
+- "Track feedback for action/resolution."
+acceptance_criteria:
+- "All issues/improvement suggestions routed to Retrospective."
+- "Feedback tracked for action/resolution."
+dependencies:
+- "monitor_progress_dashboard"
+failure_escalation:
+- "Escalate to CI/CD Coach if feedback not acted on."
+references: []
+hitl: false

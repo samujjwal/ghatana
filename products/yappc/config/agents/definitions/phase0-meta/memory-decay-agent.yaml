@@ -1,0 +1,106 @@
+id: memory-decay-agent
+name: Memory Decay Agent
+version: 1.0.0
+description: Implements memory retention policies. Archives, compresses, or purges old memories based on relevance, access patterns, and governance rules.
+
+metadata:
+  level: 3  # Worker
+  domain: knowledge-management
+  tags:
+    - memory-lifecycle
+    - retention-policy
+    - archival
+    - data-governance
+
+generator:
+  type: PIPELINE
+  steps:
+    - name: memory_assessment
+      type: SERVICE_CALL
+      service: memory-service
+      endpoint: /memories/eligible-for-decay
+    - name: relevance_scoring
+      type: LLM
+      provider: ANTHROPIC
+      model: claude-3-5-sonnet-20241022
+      temperature: 0.1
+      max_tokens: 1500
+      prompt: |
+        You are the Memory Decay Agent. Evaluate memories for retention:
+        
+        Memories: {{memories}}
+        Access Patterns: {{access_patterns}}
+        Retention Policies: {{policies}}
+        
+        For each memory, determine:
+        1. Relevance score (0-100)
+        2. Historical importance
+        3. Future utility likelihood
+        4. Recommended action (KEEP/ARCHIVE/COMPRESS/PURGE)
+        
+        Output as JSON array: [{memory_id, relevance, importance, utility, action, reason}]
+    - name: policy_application
+      type: RULE_BASED
+      description: Apply retention policies and compliance rules
+    - name: memory_lifecycle_action
+      type: SERVICE_CALL
+      service: memory-service
+      endpoint: /memories/lifecycle-action
+
+memory:
+  episodic:
+    enabled: true
+    retention_days: 730
+    categories:
+      - decay-decisions
+      - purge-logs
+      - archive-operations
+  semantic:
+    enabled: true
+    categories:
+      - retention-policies
+      - compliance-rules
+      - decay-models
+  procedural:
+    enabled: true
+    categories:
+      - lifecycle-rules
+      - archival-procedures
+      - purge-protocols
+
+tools:
+  - memory_access_analyzer
+  - relevance_scorer
+  - compression_engine
+
+capabilities:
+  - memory-lifecycle-management
+  - relevance-scoring
+  - policy-enforcement
+  - archival-compression
+  - compliance-purging
+
+routing:
+  input_types:
+    - scheduled-cleanup
+    - memory-batch
+    - retention-policy-change
+  output_types:
+    - lifecycle-report
+    - purge-log
+    - archive-manifest
+
+delegation:
+  can_delegate_to: []
+  escalates_to:
+    - policy-guard-agent  # For compliance validation
+
+governance:
+  requires_approval: true  # Purge operations need approval
+  can_block: false
+  audit_trail: comprehensive
+
+performance:
+  expected_latency_ms: 10000
+  max_latency_ms: 30000
+  timeout_ms: 60000

@@ -1,0 +1,50 @@
+# DevSecOps Canvas Schema
+
+type Phase {
+  id: ID!
+  key: String!
+  title: String!
+  description: String!
+  order: Int!
+  color: String!
+  icon: String
+  milestones: [Milestone!]
+  kpis: JSON
+}
+
+type Milestone {
+  id: ID!
+  title: String!
+  description: String
+  dueDate: DateTime!
+  status: String!
+  owner: User
+}
+
+type Item {
+  id: ID!
+  title: String!
+  description: String
+  type: String!
+  priority: String!
+  status: String!
+  phaseId: String!
+  owners: [User!]!
+  tags: [String!]!
+  createdAt: DateTime!
+  updatedAt: DateTime!
+  startDate: DateTime
+  dueDate: DateTime
+  completedAt: DateTime
+  estimatedHours: Float
+  actualHours: Float
+  progress: Int!
+  
+  parentId: String
+  childrenIds: [String!]
+  dependsOn: [String!]
+  blockedBy: [String!]
+  
+  artifacts: [JSON!]
+  integrations: [JSON!]
+}

@@ -1,0 +1,59 @@
+import pino from 'pino';
+
+const isProduction = process.env.NODE_ENV === 'production';
+
+export const logger = pino({
+name: '{{serviceName}}',
+level: process.env.LOG_LEVEL || '{{logLevel}}',
+{{#if (eq logFormat "json")}}
+formatters: {
+level: (label) => ({ level: label }),
+bindings: () => ({}),
+},
+{{else}}
+transport: isProduction
+? undefined
+: {
+target: 'pino-pretty',
+options: {
+colorize: true,
+translateTime: 'SYS:standard',
+ignore: 'pid,hostname',
+},
+},
+{{/if}}
+base: {
+service: '{{serviceName}}',
+env: process.env.NODE_ENV || 'development',
+},
+timestamp: () => `,"timestamp":"${new Date().toISOString()}"`,
+});
+
+// Child logger factory for adding context
+export function createLogger(context: Record<string, unknown>) {
+    return logger.child(context);
+    }
+
+    // Request logger middleware
+    export function requestLogger() {
+    return (request: any, reply: any, done: () => void) => {
+    const startTime = Date.now();
+    const requestId = request.id;
+
+    request.log = logger.child({
+    requestId,
+    method: request.method,
+    url: request.url,
+    });
+
+    reply.addHook('onResponse', () => {
+    const duration = Date.now() - startTime;
+    request.log.info({
+    statusCode: reply.statusCode,
+    duration,
+    }, 'Request completed');
+    });
+
+    done();
+    };
+    }

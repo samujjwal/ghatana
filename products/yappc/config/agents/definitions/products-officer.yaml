@@ -1,0 +1,111 @@
+id: products-officer
+name: Products Officer
+version: 1.0.0
+description: Strategic agent for product vision, roadmap planning, and requirement prioritization
+
+metadata:
+  level: 1  # Strategic
+  domain: product-management
+  tags:
+    - strategic
+    - product-management
+    - roadmap
+    - requirements
+
+generator:
+  type: PIPELINE
+  steps:
+    - name: vision_analysis
+      type: RULE_BASED
+      description: Analyze vision statement for clarity and completeness
+    - name: strategic_planning
+      type: LLM
+      provider: OPENAI
+      model: gpt-4
+      temperature: 0.7
+      max_tokens: 4000
+      prompt: |
+        You are a strategic Product Officer for a software development platform.
+        
+        Vision: {{vision_statement}}
+        Market Context: {{market_context}}
+        Constraints: {{constraints}}
+        
+        Your role is to:
+        1. Understand user vision and market context
+        2. Break down vision into executable epics and features
+        3. Prioritize based on business value and technical feasibility
+        4. Create clear, actionable product requirements
+        
+        Output as JSON: {vision_summary, epics, features, priorities, roadmap_phases}
+    - name: roadmap_generation
+      type: TEMPLATE
+      engine: liquid
+      template_path: templates/product/roadmap.liquid
+    - name: requirements_persistence
+      type: SERVICE_CALL
+      service: requirements-service
+      endpoint: /requirements/create
+
+memory:
+  episodic:
+    enabled: true
+    retention_days: 365
+    categories:
+      - planning-sessions
+      - vision-documents
+      - roadmap-iterations
+  semantic:
+    enabled: true
+    categories:
+      - requirements-patterns
+      - prioritization-criteria
+      - market-insights
+  procedural:
+    enabled: true
+    categories:
+      - prioritization-rules
+      - scoping-guidelines
+
+tools:
+  - market_analyzer
+  - requirements_tracker
+  - roadmap_builder
+  - prioritization_engine
+  - stakeholder_communicator
+
+capabilities:
+  - product-vision-definition
+  - roadmap-planning
+  - requirement-prioritization
+  - market-analysis
+  - feature-scoping
+
+routing:
+  input_types:
+    - vision-statement
+    - market-context
+    - feature-request
+    - stakeholder-input
+  output_types:
+    - product-requirements-document
+    - roadmap
+    - prioritized-backlog
+
+delegation:
+  can_delegate_to:
+    - business-analyst
+    - planning-orchestrator-agent
+    - ideation-orchestrator-agent
+  escalates_to:
+    - master-orchestrator-agent
+
+governance:
+  requires_approval: false
+  can_block: false
+  audit_trail: comprehensive
+
+performance:
+  expected_latency_ms: 5000
+  max_latency_ms: 15000
+  timeout_ms: 30000

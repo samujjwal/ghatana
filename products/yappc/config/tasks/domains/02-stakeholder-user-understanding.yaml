@@ -1,0 +1,119 @@
+domain:
+  id: stakeholder-user-understanding
+  name: "Stakeholder & User Understanding"
+  description: "Identify stakeholders, understand user needs, and build empathy through research."
+  order: 2
+  icon: "people"
+  color: "#AB47BC"
+  agent_personas:
+    - "StakeholderMapper"
+    - "PersonaAgent"
+    - "UserResearcher"
+  audit_artifacts:
+    - "StakeholderMap"
+    - "PersonaVersion"
+    - "InterviewNotes"
+    - "SurveyResults"
+  inputs:
+    - "Stakeholder lists"
+    - "User research data"
+    - "Business context"
+  outputs:
+    - "Persona definitions"
+    - "Stakeholder maps"
+    - "User journey maps"
+
+tasks:
+  # Core stakeholder tasks
+  - id: d2-t1
+    name: "Identify stakeholders"
+    description: "List all key stakeholders and decision makers."
+    personas: ["PM", "Tech Lead"]
+    lifecycle_stages: ["intent", "context"]
+    automation_level: "manual"
+  - id: d2-t2
+    name: "Map stakeholder influence"
+    description: "Create influence/interest matrix for stakeholders."
+    personas: ["PM", "Tech Lead"]
+    lifecycle_stages: ["context"]
+    automation_level: "assisted"
+  - id: d2-t3
+    name: "Identify user segments"
+    description: "Segment the user base by behavior and needs."
+    personas: ["PM", "Developer"]
+    lifecycle_stages: ["context"]
+    automation_level: "assisted"
+  - id: d2-t4
+    name: "Define personas"
+    description: "Create detailed user personas with goals and pain points."
+    personas: ["PM", "Developer"]
+    lifecycle_stages: ["context"]
+    automation_level: "assisted"
+  - id: d2-t5
+    name: "Capture stakeholder needs"
+    description: "Gather and document requirements from stakeholders."
+    personas: ["PM", "Tech Lead", "Developer"]
+    lifecycle_stages: ["context", "plan"]
+    automation_level: "manual"
+  - id: d2-t6
+    name: "Resolve conflicting interests"
+    description: "Negotiate and resolve conflicts between stakeholders."
+    personas: ["PM", "Tech Lead"]
+    lifecycle_stages: ["plan"]
+    automation_level: "manual"
+  - id: d2-t7
+    name: "Validate understanding"
+    description: "Confirm understanding with stakeholders."
+    personas: ["PM", "Tech Lead", "Developer"]
+    lifecycle_stages: ["plan", "verify"]
+    automation_level: "manual"
+
+  # User research tasks
+  - id: user-001
+    name: "Conduct User Interviews"
+    description: "Interview users to understand their needs and pain points."
+    personas: ["PM", "Developer"]
+    lifecycle_stages: ["context"]
+    automation_level: "manual"
+  - id: user-002
+    name: "Create User Surveys"
+    description: "Design and distribute surveys to gather user feedback."
+    personas: ["PM"]
+    lifecycle_stages: ["context"]
+    automation_level: "assisted"
+  - id: user-003
+    name: "Analyze User Behavior"
+    description: "Review analytics and usage patterns."
+    personas: ["PM", "Developer"]
+    lifecycle_stages: ["context", "observe"]
+    automation_level: "assisted"
+  - id: user-004
+    name: "Map User Journeys"
+    description: "Create end-to-end user journey maps."
+    personas: ["PM", "Developer"]
+    lifecycle_stages: ["context"]
+    automation_level: "assisted"
+  - id: user-005
+    name: "Identify Pain Points"
+    description: "Document user frustrations and blockers."
+    personas: ["PM", "Developer"]
+    lifecycle_stages: ["context"]
+    automation_level: "assisted"
+  - id: user-006
+    name: "Define Jobs-to-be-Done"
+    description: "Identify what users are trying to accomplish."
+    personas: ["PM", "Developer"]
+    lifecycle_stages: ["context"]
+    automation_level: "assisted"
+  - id: user-007
+    name: "Competitive User Analysis"
+    description: "Understand how users interact with competitor products."
+    personas: ["PM"]
+    lifecycle_stages: ["context"]
+    automation_level: "assisted"
+  - id: user-008
+    name: "Create Empathy Maps"
+    description: "Build empathy maps to understand user feelings and thoughts."
+    personas: ["PM", "Developer"]
+    lifecycle_stages: ["context"]
+    automation_level: "assisted"

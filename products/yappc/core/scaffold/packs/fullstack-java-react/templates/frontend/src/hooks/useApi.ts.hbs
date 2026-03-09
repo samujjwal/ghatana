@@ -1,0 +1,55 @@
+import { useQuery, useMutation, UseQueryOptions, UseMutationOptions } from "@tanstack/react-query";
+import { apiClient } from "../api/client";
+
+/**
+* Hook for fetching data from the API
+*/
+export function useApi<T>(
+    endpoint: string,
+    options?: Omit<UseQueryOptions<T, Error>, "queryKey" | "queryFn">
+        ) {
+        return useQuery<T, Error>({
+            queryKey: [endpoint],
+            queryFn: () => apiClient.get<T>(endpoint),
+                ...options,
+                });
+                }
+
+                /**
+                * Hook for POST mutations
+                */
+                export function useApiMutation<TData, TVariables>(
+                    endpoint: string,
+                    options?: Omit<UseMutationOptions<TData, Error, TVariables>, "mutationFn">
+                        ) {
+                        return useMutation<TData, Error, TVariables>({
+                            mutationFn: (variables) => apiClient.post<TData>(endpoint, variables),
+                                ...options,
+                                });
+                                }
+
+                                /**
+                                * Hook for PUT mutations
+                                */
+                                export function useApiUpdate<TData, TVariables>(
+                                    endpoint: string,
+                                    options?: Omit<UseMutationOptions<TData, Error, TVariables>, "mutationFn">
+                                        ) {
+                                        return useMutation<TData, Error, TVariables>({
+                                            mutationFn: (variables) => apiClient.put<TData>(endpoint, variables),
+                                                ...options,
+                                                });
+                                                }
+
+                                                /**
+                                                * Hook for DELETE mutations
+                                                */
+                                                export function useApiDelete<TData>(
+                                                    endpoint: string,
+                                                    options?: Omit<UseMutationOptions<TData, Error, void>, "mutationFn">
+                                                        ) {
+                                                        return useMutation<TData, Error, void>({
+                                                            mutationFn: () => apiClient.delete<TData>(endpoint),
+                                                                ...options,
+                                                                });
+                                                                }

@@ -1,0 +1,112 @@
+---
+# Cross-Cutting Observability Export Operator Template
+# Replaces 15 stage-specific files: build_observability_export.yaml, test_observability_export.yaml, etc.
+#
+# Usage: Instantiate with stage parameter to create stage-specific observability exporter
+# Parameters:
+#   - stage: The stage name (plan, solution, design, develop, build, test, secure,
+#            compliance, uat, package, deploy, operate, monitor, dr, release)
+#
+# @doc.type operator-template
+# @doc.purpose Cross-cutting observability export for all DevSecOps stages
+# @doc.layer operations
+# @doc.pattern Template
+
+template:
+  id: "${stage}_observability_export"
+  version: "1.0.0"
+
+operator:
+  type: "ObservabilityExportOperator"
+  role: "SRE/Analytics"
+  category: "cross-cutting"
+
+parameters:
+  stage:
+    type: "string"
+    required: true
+    description: "Stage name for which to create observability exporter"
+    allowed_values:
+      - "plan"
+      - "solution"
+      - "design"
+      - "develop"
+      - "build"
+      - "test"
+      - "secure"
+      - "compliance"
+      - "uat"
+      - "package"
+      - "deploy"
+      - "operate"
+      - "monitor"
+      - "dr"
+      - "release"
+
+inputs_spec:
+  - name: "${stage}_progress_dashboard"
+    description: "${stage} progress dashboard for observability export."
+    format: "Dashboard artifact"
+    required: true
+
+  - name: "${stage}_kpi_report"
+    description: "KPI metrics from ${stage} stage."
+    format: "KPI report artifact"
+    required: false
+
+outputs_spec:
+  - name: "${stage}_observability_export"
+    description: "Pipeline metrics/KPIs exported to analytics/monitoring for ${stage} stage."
+    format: "Export artifact"
+
+  - name: "${stage}_metrics_stream"
+    description: "Real-time metrics stream for external observability systems"
+    format: "Metrics stream (OpenTelemetry)"
+    event_type: "ghatana.operations.metrics.${stage}"
+
+agent_tasks:
+  - "Export pipeline metrics/KPIs to external analytics or monitoring systems."
+  - "Flag any gaps in observability coverage."
+  - "Ensure metrics follow OpenTelemetry conventions."
+  - "Emit metrics to Prometheus/Grafana/Datadog endpoints."
+
+acceptance_criteria:
+  - "Pipeline metrics/KPIs exported to external analytics/monitoring."
+  - "Gaps in observability are flagged and reported."
+  - "Metrics are queryable in observability dashboards."
+
+dependencies:
+  - "${stage}_progress_dashboard"
+
+failure_escalation:
+  - "Escalate to SRE/Analytics if metrics not exported or gaps missed."
+  - "Emit ${stage}.observability.gap event to EventCloud."
+
+config:
+  # Export targets
+  export_targets:
+    - type: "prometheus"
+      endpoint: "${PROMETHEUS_PUSHGATEWAY_URL}"
+    - type: "otel"
+      endpoint: "${OTEL_EXPORTER_OTLP_ENDPOINT}"
+    - type: "eventcloud"
+      topic: "ghatana.operations.metrics"
+
+  # Metric naming
+  metric_prefix: "ghatana_operations_${stage}"
+
+  # Export frequency
+  export_interval_seconds: 60
+
+  # OpenTelemetry settings
+  otel_service_name: "software-org-${stage}"
+  otel_resource_attributes:
+    deployment.environment: "${ENVIRONMENT}"
+    service.namespace: "ghatana"
+
+references:
+  - "OpenTelemetry Metrics Specification"
+  - "Prometheus Naming Best Practices"
+  - "DORA Metrics - Four Key Metrics"
+
+hitl: false

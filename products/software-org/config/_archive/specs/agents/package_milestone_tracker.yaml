@@ -1,0 +1,29 @@
+---
+id: "package_milestone_tracker"
+agent: "PackageMilestoneTrackerAgent"
+role: "Release PM"
+inputs_spec:
+- name: "package_best_practice_report"
+  description: "Best practice report for package milestone tracking."
+  format: "Best practice report artifact"
+outputs_spec:
+- name: "package_stage_milestone"
+  description: "Package/release milestones and status."
+  format: "List of milestone objects"
+agent_tasks:
+- "List and track all package/release milestones."
+- "Document owners and target dates."
+- "Identify blockers."
+- "Log milestone completion."
+acceptance_criteria:
+- "All milestones are listed and tracked."
+- "Owners and target dates documented."
+- "Blockers identified."
+- "Milestone completion logged."
+dependencies:
+- "package_best_practice_report"
+failure_escalation:
+- "Escalate to Release PM if milestones are unclear or blockers not addressed."
+references: []
+hitl: true
+hitl_reason: "Human oversight for package milestone tracking"

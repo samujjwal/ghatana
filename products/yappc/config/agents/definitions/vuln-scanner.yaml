@@ -1,0 +1,78 @@
+id: vuln-scanner
+name: Vulnerability Scanner
+version: 1.0.0
+description: Atomic worker for OWASP-based security vulnerability scanning
+
+metadata:
+  level: 3  # Task Worker
+  domain: security
+  tags:
+    - worker
+    - security
+    - scanning
+    - owasp
+
+generator:
+  type: RULE_BASED
+  rules_engine: owasp
+  rules:
+    - sql_injection_detection
+    - xss_detection
+    - insecure_deserialization
+    - sensitive_data_exposure
+    - broken_authentication
+    - security_misconfiguration
+    - outdated_dependencies
+  severity_scoring: cvss_v3
+
+memory:
+  episodic:
+    enabled: true
+    retention_days: 365
+    categories:
+      - scan-results
+      - vulnerability-findings
+  semantic:
+    enabled: true
+    categories:
+      - known-vulnerabilities
+      - cve-database
+  procedural:
+    enabled: false
+
+tools:
+  - owasp_dependency_check
+  - sonarqube_scanner
+  - trivy_scanner
+  - semgrep
+  - gitleaks
+
+capabilities:
+  - security-analysis
+  - dependency-analysis
+  - vulnerability-detection
+
+routing:
+  input_types:
+    - scan-request
+    - code-artifact
+    - container-image
+  output_types:
+    - vulnerability-report
+    - severity-summary
+
+delegation:
+  can_delegate_to: []  # Atomic worker
+  escalates_to:
+    - sentinel
+    - security-scanner-agent
+
+governance:
+  requires_approval: false
+  can_block: false
+  audit_trail: standard
+
+performance:
+  expected_latency_ms: 5000
+  max_latency_ms: 120000
+  timeout_ms: 180000

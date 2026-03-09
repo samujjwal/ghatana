@@ -1,0 +1,61 @@
+id: design_review
+agent: SolutionApproachAgent
+role: Lead Architect
+inputs_spec:
+- name: api_contracts
+  description: API contracts for all public APIs.
+  format: List of API contract objects
+- name: data_models
+  description: Data models for all key entities.
+  format: List of data model objects
+outputs_spec:
+- name: design_signoff
+  description: Final review and signoff on entire design (API, data model, component diagrams), with feedback and open issues tracked.
+  format: 'Structured signoff document (sections: review, feedback, open_issues, compliance, signoff_status)'
+  example: 'review: "All components reviewed"
+
+    feedback: ["Clarify API /users"]
+
+    open_issues: []
+
+    compliance: "Meets architecture"
+
+    signoff_status: "approved"
+
+    '
+agent_tasks:
+- Review the entire design (API, data model, component diagrams).
+- Track review feedback and open issues.
+- Confirm compliance with architecture and business goals.
+- Clearly record final signoff or required follow-ups.
+acceptance_criteria:
+- Entire design (API, data model, component diagrams) is reviewed.
+- Review feedback and open issues are tracked.
+- Compliance with architecture and business goals is confirmed.
+- Final signoff or required follow-ups are clearly recorded.
+dependencies:
+- api_contracts
+- data_models
+failure_escalation:
+- Escalate to Lead Architect or PM if signoff is withheld or issues unresolved.
+references: []
+hitl: true
+hitl_reason: Human provides final review and signoff on design
+internal_logic:
+  - perception:
+      description: "Review all design artifacts (architecture, data, API, component, security, UX, etc.) for completeness, consistency, and risk."
+  - model:
+      description: "Maintain review findings register with status, recommendations, and follow-up actions."
+  - planning:
+      description: |
+        "Prioritize review for high-risk or business-critical components.
+         Escalate unresolved design gaps or conflicts."
+  - action:
+      description: "Produce design review report and follow-up action list."
+validation:
+  - "Lead/peer review signoff for each artifact."
+  - "Audit for closure of all critical review items."
+quality_enhancements:
+  - "Design review template."
+  - "Metrics for open vs. resolved review findings."
+  - "Automated tracking of review cycle time."

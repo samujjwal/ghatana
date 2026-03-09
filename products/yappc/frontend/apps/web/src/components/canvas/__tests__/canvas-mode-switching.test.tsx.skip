@@ -1,0 +1,297 @@
+/**
+ * Canvas Mode Switching Integration Tests
+ * 
+ * Tests canvas behavior when switching between modes and levels.
+ * Validates state persistence, component rendering, and transitions.
+ * 
+ * NOTE: This test file is currently disabled (.tsx.skip) until
+ * testing dependencies are installed:
+ * - @testing-library/react
+ * - @testing-library/user-event
+ * - @types/jest or @types/mocha
+ * 
+ * To enable: rename to canvas-mode-switching.test.tsx and install dependencies
+ * 
+ * @doc.type test
+ * @doc.purpose Integration tests for canvas switching
+ * @doc.layer product
+ * @doc.pattern Test
+ */
+
+import { render, screen, waitFor } from '@testing-library/react';
+import { userEvent } from '@testing-library/user-event';
+import { Provider, useAtom } from 'jotai';
+import { Canvas } from '../Canvas';
+import { canvasModeAtom, abstractionLevelAtom } from '../../../atoms/canvas-atoms';
+import type { CanvasMode, AbstractionLevel } from '../../../types/canvas';
+import { CANVAS_MODES } from '../../../types/canvas';
+
+// Mock localStorage for persistence tests
+const localStorageMock = (() => {
+  let store: Record<string, string> = {};
+  return {
+    getItem: (key: string) => store[key] || null,
+    setItem: (key: string, value: string) => { store[key] = value; },
+    clear: () => { store = {}; },
+    removeItem: (key: string) => { delete store[key]; },
+  };
+})();
+
+Object.defineProperty(window, 'localStorage', { value: localStorageMock });
+
+describe('Canvas Mode Switching', () => {
+  beforeEach(() => {
+    localStorageMock.clear();
+  });
+
+  describe('Mode Transitions', () => {
+    it('should render all 7 canvas modes', async () => {
+      const modes: CanvasMode[] = CANVAS_MODES;
+
+      for (const mode of modes) {
+        const { container, unmount } = render(
+          <Provider>
+            <Canvas mode={mode} level={'code'} />
+          </Provider>
+        );
+
+        // Verify canvas renders without errors
+        expect(container.firstChild).toBeTruthy();
+        
+        // Verify mode-specific content loads
+        await waitFor(() => {
+          expect(container.querySelector('[data-testid="canvas-content"]')).toBeTruthy();
+        }, { timeout: 2000 });
+
+        unmount();
+      }
+    });
+
+    it('should render all 4 abstraction levels', async () => {
+      const levels: AbstractionLevel[] = ['system', 'component', 'file', 'code'];
+
+      for (const level of levels) {
+        const { container, unmount } = render(
+          <Provider>
+            <Canvas mode={'brainstorm'} level={level} />
+          </Provider>
+        );
+
+        expect(container.firstChild).toBeTruthy();
+        await waitFor(() => {
+          expect(container.querySelector('[data-testid="canvas-content"]')).toBeTruthy();
+        }, { timeout: 2000 });
+
+        unmount();
+      }
+    });
+
+    it('should render all 28 canvas combinations', async () => {
+      const modes: CanvasMode[] = CANVAS_MODES;
+      const levels: AbstractionLevel[] = ['system', 'component', 'file', 'code'];
+
+      let renderedCount = 0;
+
+      for (const mode of modes) {
+        for (const level of levels) {
+          const { container, unmount } = render(
+            <Provider>
+              <Canvas mode={mode} level={level} />
+            </Provider>
+          );
+
+          expect(container.firstChild).toBeTruthy();
+          renderedCount++;
+
+          unmount();
+        }
+      }
+
+      expect(renderedCount).toBe(28); // 7 modes × 4 levels
+    });
+  });
+
+  describe('State Persistence', () => {
+    it('should persist canvas state when switching modes', async () => {
+      const { rerender } = render(
+        <Provider>
+          <Canvas mode={'code'} level={'code'} />
+        </Provider>
+      );
+
+      // Simulate user interaction that creates state
+      // (Implementation depends on canvas specifics)
+      
+      // Switch to different mode
+      rerender(
+        <Provider>
+          <Canvas mode={'brainstorm'} level={'system'} />
+        </Provider>
+      );
+
+      // Switch back to original mode
+      rerender(
+        <Provider>
+          <Canvas mode={'code'} level={'code'} />
+        </Provider>
+      );
+
+      // Verify state was restored
+      await waitFor(() => {
+        // Check that persisted state is loaded
+        const storedState = localStorageMock.getItem('canvas-state-code-code');
+        expect(storedState).toBeTruthy();
+      });
+    });
+
+    it('should handle mode switching without data loss', async () => {
+      const user = userEvent.setup();
+      
+      render(
+        <Provider>
+          <Canvas mode={'diagram'} level={'system'} />
+        </Provider>
+      );
+
+      // Check that canvas content is accessible
+      const canvas = screen.getByTestId('canvas-content');
+      expect(canvas).toBeInTheDocument();
+    });
+  });
+
+  describe('Performance', () => {
+    it('should switch modes within performance threshold', async () => {
+      const startTime = performance.now();
+
+      const { rerender } = render(
+        <Provider>
+          <Canvas mode={'brainstorm'} level={'system'} />
+        </Provider>
+      );
+
+      for (let i = 0; i < 5; i++) {
+        const modes = CANVAS_MODES;
+        const randomMode = modes[Math.floor(Math.random() * modes.length)];
+        
+        rerender(
+          <Provider>
+            <Canvas mode={randomMode} level={'system'} />
+          </Provider>
+        );
+      }
+
+      const endTime = performance.now();
+      const duration = endTime - startTime;
+
+      // Should complete 5 mode switches in under 1 second
+      expect(duration).toBeLessThan(1000);
+    });
+
+    it('should not cause memory leaks during rapid switching', async () => {
+      const { rerender, unmount } = render(
+        <Provider>
+          <Canvas mode={'brainstorm'} level={'system'} />
+        </Provider>
+      );
+
+      // Rapidly switch modes
+      for (let i = 0; i < 20; i++) {
+        const modes = CANVAS_MODES;
+        const mode = modes[i % modes.length];
+        
+        rerender(
+          <Provider>
+            <Canvas mode={mode} level={'system'} />
+          </Provider>
+        );
+      }
+
+      unmount();
+      
+      // Verify cleanup
+      expect(document.querySelector('[data-testid="canvas-content"]')).toBeNull();
+    });
+  });
+
+  describe('Edge Cases', () => {
+    it('should handle invalid mode gracefully', () => {
+      const invalidMode = 'INVALID_MODE' as CanvasMode;
+      
+      expect(() => {
+        render(
+          <Provider>
+            <Canvas mode={invalidMode} level={'code'} />
+          </Provider>
+        );
+      }).not.toThrow();
+    });
+
+    it('should handle rapid mode changes', async () => {
+      const { rerender } = render(
+        <Provider>
+          <Canvas mode={'brainstorm'} level={'system'} />
+        </Provider>
+      );
+
+      // Rapid mode changes without waiting
+      rerender(<Provider><Canvas mode={'code'} level={'code'} /></Provider>);
+      rerender(<Provider><Canvas mode={'design'} level={'component'} /></Provider>);
+      rerender(<Provider><Canvas mode={'brainstorm'} level={'system'} /></Provider>);
+
+      await waitFor(() => {
+        expect(screen.getByTestId('canvas-content')).toBeInTheDocument();
+      });
+    });
+
+    it('should maintain state during level transitions', async () => {
+      const { rerender } = render(
+        <Provider>
+          <Canvas mode={'code'} level={'system'} />
+        </Provider>
+      );
+
+      // Change level, keep mode
+      rerender(
+        <Provider>
+          <Canvas mode={'code'} level={'code'} />
+        </Provider>
+      );
+
+      // Verify no errors during transition
+      await waitFor(() => {
+        expect(screen.getByTestId('canvas-content')).toBeInTheDocument();
+      });
+    });
+  });
+
+  describe('Integration with Atoms', () => {
+    it('should sync with canvasModeAtom', async () => {
+      const TestComponent = () => {
+        const [mode, setMode] = useAtom(canvasModeAtom);
+        
+        return (
+          <>
+            <Canvas mode={mode} level={'code'} />
+            <button onClick={() => setMode('design')}>
+              Switch to Design
+            </button>
+          </>
+        );
+      };
+
+      render(
+        <Provider>
+          <TestComponent />
+        </Provider>
+      );
+
+      const button = screen.getByText('Switch to Design');
+      await userEvent.click(button);
+
+      await waitFor(() => {
+        // Verify mode changed
+        expect(screen.getByTestId('canvas-content')).toBeInTheDocument();
+      });
+    });
+  });
+});

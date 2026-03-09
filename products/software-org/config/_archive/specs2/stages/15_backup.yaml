@@ -1,0 +1,230 @@
+name: Disaster Recovery & Backup Validation
+workflow:
+    - id: backup_validation
+      agent: BackupValidationAgent
+      role: Infra Ops Engineer
+      inputs_spec:
+        - name: operate_progress_dashboard
+          description: Operate progress dashboard for backup validation.
+          format: Dashboard artifact
+      outputs_spec:
+        - name: backup_validation_report
+          description: Backup validation results.
+          format: Backup validation report artifact
+      agent_tasks:
+        - Test backups for completeness/restorability.
+        - Validate RPO/RTO.
+        - Version and link results to relevant incidents.
+      acceptance_criteria:
+        - Backups tested for completeness/restorability.
+        - RPO/RTO validated.
+        - Results versioned and linked to incidents.
+      dependencies:
+        - operate_progress_dashboard
+      failure_escalation:
+        - Escalate to Infra Ops if backups incomplete or RPO/RTO not met.
+      references: []
+      hitl: false
+
+    - id: dr_test
+      agent: DRSelfTestAgent
+      role: SRE/Resilience Engineer
+      inputs_spec:
+        - name: backup_validation_report
+          description: Backup validation report for DR test.
+          format: Backup validation report artifact
+      outputs_spec:
+        - name: dr_test_report
+          description: DR plan test results and issues.
+          format: DR test report artifact
+      agent_tasks:
+        - Test disaster recovery plan via simulation/failover.
+        - Include all critical systems/processes in DR scenarios.
+        - Document and remediate issues/gaps/failures.
+      acceptance_criteria:
+        - DR plan tested via simulation or controlled failover.
+        - All critical systems/processes included.
+        - Issues/gaps/failures documented and remediated.
+      dependencies:
+        - backup_validation_report
+      failure_escalation:
+        - Escalate to SRE/Resilience if DR plan not tested/completed.
+      references: []
+      hitl: false
+
+    - id: dr_readiness_checker
+      agent: ReadinessCheckerAgent
+      role: Gatekeeper Bot
+      inputs_spec:
+        - name: backup_validation_report
+          description: Backup validation report for DR readiness.
+          format: Backup validation report artifact
+        - name: dr_test_report
+          description: DR test report for DR readiness.
+          format: DR test report artifact
+      outputs_spec:
+        - name: dr_readiness_status
+          description: DR readiness status report.
+          format: Readiness status artifact
+      agent_tasks:
+        - Verify all DR exit criteria met.
+        - Ensure critical findings are resolved.
+      acceptance_criteria:
+        - All DR exit criteria are met and critical findings resolved.
+      dependencies:
+        - backup_validation_report
+        - dr_test_report
+      failure_escalation:
+        - Escalate to Gatekeeper if DR exit criteria not met or findings unresolved.
+      references: []
+      hitl: false
+
+    - id: dr_progress_dashboard
+      agent: ProgressDashboardAgent
+      role: DR Dashboard Owner
+      inputs_spec:
+        - name: backup_validation_report
+          description: Backup validation report for dashboard.
+          format: Backup validation report artifact
+        - name: dr_test_report
+          description: DR test report for dashboard.
+          format: DR test report artifact
+      outputs_spec:
+        - name: dr_progress_dashboard
+          description: Dashboard showing backup and DR test status.
+          format: Dashboard artifact
+      agent_tasks:
+        - Visualize backup validation and DR test status for the org.
+      acceptance_criteria:
+        - Dashboard visualizes backup and DR test status.
+      dependencies:
+        - backup_validation_report
+        - dr_test_report
+      failure_escalation:
+        - Escalate to DR Dashboard Owner if dashboard not updated.
+      references: []
+      hitl: false
+
+    - id: disaster_observability_export
+      agent: ObservabilityExportAgent
+      role: SRE/Analytics
+      inputs_spec:
+        - name: dr_progress_dashboard
+          description: DR progress dashboard for observability export.
+          format: Dashboard artifact
+      outputs_spec:
+        - name: disaster_observability_export
+          description: Exported metrics/KPIs for disaster recovery and backup validation.
+          format: Export artifact
+      agent_tasks:
+        - Export metrics/KPIs to external analytics/monitoring.
+        - Flag any gaps in observability.
+      acceptance_criteria:
+        - Metrics/KPIs exported to external analytics/monitoring.
+        - Gaps in observability flagged.
+      dependencies:
+        - dr_progress_dashboard
+      failure_escalation:
+        - Escalate to SRE/Analytics if metrics not exported or gaps missed.
+      references: []
+      hitl: false
+
+    - id: disaster_feedback_loop
+      agent: FeedbackLoopAgent
+      role: CI/CD Coach/Automation
+      inputs_spec:
+        - name: dr_progress_dashboard
+          description: DR progress dashboard for feedback.
+          format: Dashboard artifact
+      outputs_spec:
+        - name: disaster_feedback_items
+          description: Issues and improvement suggestions for Retrospective.
+          format: List of feedback items
+      agent_tasks:
+        - Route issues and suggestions to Retrospective.
+        - Track feedback for action/resolution.
+      acceptance_criteria:
+        - Issues and improvement suggestions routed to Retrospective.
+        - Feedback tracked for action/resolution.
+      dependencies:
+        - dr_progress_dashboard
+      failure_escalation:
+        - Escalate to CI/CD Coach if feedback not tracked/resolved.
+      references: []
+      hitl: false
+
+    - id: dr_notification_agent
+      agent: NotificationAgent
+      role: IT/PMO Communications
+      inputs_spec:
+        - name: dr_progress_dashboard
+          description: DR progress dashboard for notification triggers.
+          format: Dashboard artifact
+      outputs_spec:
+        - name: dr_notifications
+          description: DR notifications sent to stakeholders.
+          format: List of notification objects
+      agent_tasks:
+        - Notify stakeholders of DR status and issues.
+        - Track notification delivery for audit.
+      acceptance_criteria:
+        - Stakeholders notified on DR status/issues.
+        - Notification delivery logged for audit.
+      dependencies:
+        - dr_progress_dashboard
+      failure_escalation:
+        - Escalate to IT/PMO if notifications not delivered/logged.
+      references: []
+      hitl: false
+
+    - id: dr_audit_log_agent
+      agent: AuditLogAgent
+      role: Compliance Bot
+      inputs_spec:
+        - name: dr_progress_dashboard
+          description: DR progress dashboard for audit logging.
+          format: Dashboard artifact
+        - name: dr_notification_agent
+          description: DR notification agent log.
+          format: List of notification objects
+      outputs_spec:
+        - name: dr_audit_log
+          description: Audit log of DR test results, actions, notifications.
+          format: Audit log artifact
+      agent_tasks:
+        - Log all DR test results, actions, and notifications.
+      acceptance_criteria:
+        - All DR test results, actions, and notifications are logged.
+      dependencies:
+        - dr_progress_dashboard
+        - dr_notification_agent
+      failure_escalation:
+        - Escalate to Compliance if audit log incomplete or missing.
+      references: []
+      hitl: false
+
+    - id: dr_evidence_collector
+      agent: EvidenceCollectorAgent
+      role: Compliance Evidence Bot
+      inputs_spec:
+        - name: dr_audit_log
+          description: DR audit log for evidence.
+          format: Audit log artifact
+        - name: dr_test_report
+          description: DR test report for evidence.
+          format: DR test report artifact
+      outputs_spec:
+        - name: dr_evidence_package
+          description: DR and backup validation results for compliance.
+          format: Evidence package artifact
+      agent_tasks:
+        - Archive DR and backup validation results for compliance.
+      acceptance_criteria:
+        - DR and backup validation results archived for compliance.
+      dependencies:
+        - dr_audit_log
+        - dr_test_report
+      failure_escalation:
+        - Escalate to Compliance Evidence Bot if evidence not archived.
+      references: []
+      hitl: false

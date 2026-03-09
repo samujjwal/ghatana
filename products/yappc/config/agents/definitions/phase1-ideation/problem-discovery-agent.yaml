@@ -1,0 +1,111 @@
+id: problem-discovery-agent
+name: Problem Discovery Agent
+version: 1.0.0
+description: Discovers and articulates problems worth solving. Analyzes user needs, business pain points, and market gaps to identify high-value opportunities.
+
+metadata:
+  level: 2  # Domain Expert
+  domain: ideation
+  tags:
+    - problem-discovery
+    - needs-analysis
+    - opportunity-identification
+    - user-research
+
+generator:
+  type: PIPELINE
+  steps:
+    - name: data_gathering
+      type: SERVICE_CALL
+      service: research-service
+      endpoint: /research/user-insights
+    - name: problem_synthesis
+      type: LLM
+      provider: ANTHROPIC
+      model: claude-3-5-sonnet-20241022
+      temperature: 0.4
+      max_tokens: 3000
+      prompt: |
+        You are the Problem Discovery Agent. Synthesize problems from research data:
+        
+        Research Data: {{research}}
+        User Feedback: {{feedback}}
+        Business Context: {{business_context}}
+        Market Data: {{market_data}}
+        
+        Identify:
+        1. Core problems (what users/business struggle with)
+        2. Root causes (why problems exist)
+        3. Impact and frequency
+        4. Current workarounds
+        5. Problem statement (clear, specific, measurable)
+        6. Affected stakeholders
+        
+        Output as JSON array: [{problem, root_cause, impact, frequency, workarounds, statement, stakeholders, priority}]
+    - name: problem_validation
+      type: RULE_BASED
+      description: Validate problem significance and solvability
+    - name: problem_documentation
+      type: TEMPLATE
+      template_path: templates/problem-statement.ftl
+
+memory:
+  episodic:
+    enabled: true
+    retention_days: 365
+    categories:
+      - discovered-problems
+      - user-insights
+      - validation-results
+  semantic:
+    enabled: true
+    categories:
+      - problem-patterns
+      - user-needs
+      - pain-points
+  procedural:
+    enabled: true
+    categories:
+      - discovery-methods
+      - validation-criteria
+      - synthesis-rules
+
+tools:
+  - user_research_analyzer
+  - feedback_aggregator
+  - impact_assessor
+
+capabilities:
+  - problem-identification
+  - root-cause-analysis
+  - impact-assessment
+  - problem-validation
+  - stakeholder-analysis
+
+routing:
+  input_types:
+    - user-research
+    - feedback-data
+    - market-analysis
+    - business-need
+  output_types:
+    - problem-statement
+    - problem-report
+    - discovery-insights
+
+delegation:
+  can_delegate_to:
+    - user-pain-point-mining-agent
+    - jtbd-extraction-agent
+  escalates_to:
+    - ideation-orchestrator-agent
+
+governance:
+  requires_approval: false
+  can_block: false
+  audit_trail: standard
+
+performance:
+  expected_latency_ms: 5000
+  max_latency_ms: 12000
+  timeout_ms: 20000

@@ -1,0 +1,300 @@
+# Default values for virtualorg-agent Helm chart
+
+# Global settings
+global:
+  namespace: virtualorg
+
+# Image configuration
+image:
+  repository: virtualorg-agent
+  pullPolicy: IfNotPresent
+  tag: "latest"
+
+imagePullSecrets: []
+nameOverride: ""
+fullnameOverride: ""
+
+# Service Account
+serviceAccount:
+  create: true
+  annotations: {}
+  name: "virtualorg-agent"
+
+# Pod Security Context
+podSecurityContext:
+  runAsNonRoot: true
+  runAsUser: 1000
+  fsGroup: 1000
+
+# Container Security Context
+securityContext:
+  allowPrivilegeEscalation: false
+  capabilities:
+    drop:
+      - ALL
+  readOnlyRootFilesystem: false
+
+# Service configuration
+service:
+  type: ClusterIP
+  port: 8080
+  metricsPort: 8081
+  annotations:
+    prometheus.io/scrape: "true"
+    prometheus.io/port: "8081"
+    prometheus.io/path: "/metrics"
+
+# Ingress configuration
+ingress:
+  enabled: false
+  className: "nginx"
+  annotations:
+    cert-manager.io/cluster-issuer: "letsencrypt-prod"
+  hosts:
+    - host: virtualorg-agent.example.com
+      paths:
+        - path: /
+          pathType: Prefix
+  tls:
+    - secretName: virtualorg-agent-tls
+      hosts:
+        - virtualorg-agent.example.com
+
+# Agent roles configuration
+agents:
+  seniorEngineer:
+    enabled: true
+    replicaCount: 2
+    role: SENIOR_ENGINEER
+    resources:
+      requests:
+        memory: "512Mi"
+        cpu: "250m"
+      limits:
+        memory: "2Gi"
+        cpu: "1000m"
+    autoscaling:
+      enabled: true
+      minReplicas: 2
+      maxReplicas: 10
+      targetCPUUtilizationPercentage: 70
+      targetMemoryUtilizationPercentage: 80
+
+  architect:
+    enabled: true
+    replicaCount: 1
+    role: ARCHITECT
+    resources:
+      requests:
+        memory: "512Mi"
+        cpu: "250m"
+      limits:
+        memory: "2Gi"
+        cpu: "1000m"
+    autoscaling:
+      enabled: true
+      minReplicas: 1
+      maxReplicas: 5
+      targetCPUUtilizationPercentage: 70
+      targetMemoryUtilizationPercentage: 80
+
+  engineer:
+    enabled: false
+    replicaCount: 2
+    role: ENGINEER
+    resources:
+      requests:
+        memory: "512Mi"
+        cpu: "250m"
+      limits:
+        memory: "2Gi"
+        cpu: "1000m"
+
+  qa:
+    enabled: false
+    replicaCount: 1
+    role: QA
+    resources:
+      requests:
+        memory: "512Mi"
+        cpu: "250m"
+      limits:
+        memory: "2Gi"
+        cpu: "1000m"
+
+# Application configuration
+config:
+  # Service
+  serviceName: "virtual-org-agent"
+  serviceVersion: "1.0.0"
+
+  # LLM
+  llm:
+    provider: "openai"
+    model: "gpt-4"
+    temperature: 0.7
+    maxTokens: 2048
+    timeoutSeconds: 30
+    embeddingModel: "text-embedding-ada-002"
+
+  # Database
+  database:
+    url: "jdbc:postgresql://postgres-service:5432/virtual_org"
+    username: "postgres"
+    # password set via secret
+
+  # Redis
+  redis:
+    host: "redis-service"
+    port: 6379
+    # password set via secret
+
+  # Observability
+  observability:
+    otlpTracesEndpoint: "http://otel-collector:4317"
+    otlpMetricsEndpoint: "http://otel-collector:4317"
+    logLevel: "INFO"
+    logFormat: "json"
+    traceSampleRate: 1.0
+
+  # Memory
+  memory:
+    type: "pgvector"
+
+  # Task Queue
+  taskQueue:
+    type: "redis"
+    maxQueueSize: 1000
+    pollIntervalMs: 100
+
+  # Agent defaults
+  agentDefaults:
+    timeoutSeconds: 30
+    maxRetries: 3
+    retryDelaySeconds: 5
+    maxConcurrentTasks: 5
+
+  # Tools
+  tools:
+    fileOps:
+      enabled: true
+      baseDir: "/workspace"
+      timeoutSeconds: 30
+    git:
+      enabled: true
+      timeoutSeconds: 60
+    http:
+      enabled: true
+      timeoutSeconds: 30
+      maxRedirects: 5
+    codeExecution:
+      enabled: false
+      timeoutSeconds: 60
+      maxMemoryMb: 512
+
+  # Server
+  server:
+    host: "0.0.0.0"
+    port: 8080
+    timeoutSeconds: 60
+
+# Secrets (use external secret management in production)
+secrets:
+  # LLM API keys
+  llmApiKey: ""
+  anthropicApiKey: ""
+
+  # Database
+  databasePassword: "postgres"
+
+  # Redis
+  redisPassword: ""
+
+  # JWT
+  jwtSecret: ""
+
+# External secret management (use one of these in production)
+externalSecrets:
+  enabled: false
+  backend: "vault"  # Options: vault, aws-secrets-manager, gcp-secret-manager, azure-key-vault
+  vaultAddr: "http://vault:8200"
+  vaultPath: "secret/virtualorg"
+
+# Pod Disruption Budget
+podDisruptionBudget:
+  enabled: true
+  minAvailable: 1
+
+# Affinity and anti-affinity
+affinity:
+  podAntiAffinity:
+    preferredDuringSchedulingIgnoredDuringExecution:
+      - weight: 100
+        podAffinityTerm:
+          labelSelector:
+            matchExpressions:
+              - key: app
+                operator: In
+                values:
+                  - virtualorg-agent
+          topologyKey: kubernetes.io/hostname
+
+# Node selector
+nodeSelector: {}
+
+# Tolerations
+tolerations: []
+
+# Liveness and readiness probes
+livenessProbe:
+  httpGet:
+    path: /health
+    port: 8080
+  initialDelaySeconds: 60
+  periodSeconds: 30
+  timeoutSeconds: 10
+  failureThreshold: 3
+
+readinessProbe:
+  httpGet:
+    path: /health/ready
+    port: 8080
+  initialDelaySeconds: 30
+  periodSeconds: 10
+  timeoutSeconds: 5
+  failureThreshold: 3
+
+# Volumes
+persistence:
+  workspace:
+    enabled: true
+    size: 1Gi
+    storageClass: ""
+  logs:
+    enabled: true
+    size: 500Mi
+    storageClass: ""
+
+# Init containers
+initContainers:
+  waitForPostgres:
+    enabled: true
+    image: busybox:1.36
+  waitForRedis:
+    enabled: true
+    image: busybox:1.36
+
+# Additional labels
+labels: {}
+
+# Additional annotations
+annotations: {}
+
+# Pod annotations
+podAnnotations:
+  prometheus.io/scrape: "true"
+  prometheus.io/port: "8081"
+  prometheus.io/path: "/metrics"
+
+# Pod labels
+podLabels: {}

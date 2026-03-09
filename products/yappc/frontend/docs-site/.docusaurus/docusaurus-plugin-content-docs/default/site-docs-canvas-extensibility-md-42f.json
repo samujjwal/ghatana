@@ -1,0 +1,27 @@
+{
+  "id": "canvas/extensibility",
+  "title": "extensiuility",
+  "description": "Documentation coming soon. Visit the Interactive Demo.",
+  "source": "@site/docs/canvas/extensibility.md",
+  "sourceDirName": "canvas",
+  "slug": "/canvas/extensibility",
+  "permalink": "/docs/canvas/extensibility",
+  "draft": false,
+  "unlisted": false,
+  "editUrl": "https://github.com/yappc/app-creator/tree/main/docs-site/docs/canvas/extensibility.md",
+  "tags": [],
+  "version": "current",
+  "sidebarPosition": 1,
+  "frontMatter": {
+    "sidebar_position": 1
+  },
+  "sidebar": "canvasSidebar",
+  "previous": {
+    "title": "monitoring",
+    "permalink": "/docs/canvas/monitoring"
+  },
+  "next": {
+    "title": "customization",
+    "permalink": "/docs/canvas/customization"
+  }
+}

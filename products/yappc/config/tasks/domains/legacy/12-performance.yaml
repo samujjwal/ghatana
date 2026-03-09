@@ -1,0 +1,285 @@
+# Performance Tasks
+# Domain 12 of 22 - Developer Task Universe
+# Reference: developer-tasks.md Part I, Section 12
+
+domain:
+  id: performance
+  name: "Performance"
+  description: "Tasks related to performance optimization and monitoring"
+  order: 12
+  icon: "speed"
+  color: "#FF9800"
+  lifecycle_stages:
+    - verify
+    - observe
+
+tasks:
+  - id: perf-001
+    name: "Profile Application"
+    description: "Use profiling tools to analyze application performance"
+    personas:
+      - Developer
+    lifecycle_stages:
+      - observe
+    automation_level: assisted
+    required_capabilities:
+      - performance-profiling
+      - analysis
+    input_schema: perf-001-input
+    output_schema: perf-001-output
+    audit_artifacts:
+      - InputSnapshot
+      - OutputSnapshot
+      - PerformanceReport
+    ui:
+      icon: "timeline"
+      color: "#FF9800"
+      tags:
+        - profiling
+        - analysis
+        - performance
+
+  - id: perf-002
+    name: "Identify Bottlenecks"
+    description: "Locate performance bottlenecks in the system"
+    personas:
+      - Developer
+      - DevOps
+    lifecycle_stages:
+      - observe
+    automation_level: assisted
+    required_capabilities:
+      - performance-analysis
+      - pattern-recognition
+    input_schema: perf-002-input
+    output_schema: perf-002-output
+    audit_artifacts:
+      - InputSnapshot
+      - OutputSnapshot
+      - DecisionRecord
+      - PerformanceReport
+    ui:
+      icon: "find_replace"
+      color: "#FF9800"
+      tags:
+        - bottlenecks
+        - analysis
+        - optimization
+
+  - id: perf-003
+    name: "Optimize Code Performance"
+    description: "Apply code optimizations to improve performance"
+    personas:
+      - Developer
+    lifecycle_stages:
+      - execute
+    automation_level: assisted
+    required_capabilities:
+      - performance-optimization
+      - refactoring
+    input_schema: perf-003-input
+    output_schema: perf-003-output
+    audit_artifacts:
+      - InputSnapshot
+      - OutputSnapshot
+      - ChangeSet
+      - PerformanceReport
+    ui:
+      icon: "bolt"
+      color: "#FF9800"
+      tags:
+        - optimization
+        - code
+        - performance
+
+  - id: perf-004
+    name: "Implement Caching"
+    description: "Design and implement caching strategies"
+    personas:
+      - Developer
+    lifecycle_stages:
+      - plan
+      - execute
+    automation_level: assisted
+    required_capabilities:
+      - caching
+      - architecture
+    input_schema: perf-004-input
+    output_schema: perf-004-output
+    audit_artifacts:
+      - InputSnapshot
+      - OutputSnapshot
+      - ChangeSet
+      - DecisionRecord
+    ui:
+      icon: "cached"
+      color: "#FF9800"
+      tags:
+        - caching
+        - performance
+        - optimization
+
+  - id: perf-005
+    name: "Run Load Tests"
+    description: "Execute load tests to measure system capacity"
+    personas:
+      - Developer
+      - DevOps
+      - QA
+    lifecycle_stages:
+      - verify
+    automation_level: automated
+    required_capabilities:
+      - load-testing
+      - performance-analysis
+    input_schema: perf-005-input
+    output_schema: perf-005-output
+    audit_artifacts:
+      - InputSnapshot
+      - OutputSnapshot
+      - VerificationResult
+      - LoadTestReport
+    ui:
+      icon: "trending_up"
+      color: "#FF9800"
+      tags:
+        - load-testing
+        - capacity
+        - stress
+
+  - id: perf-006
+    name: "Analyze Memory Usage"
+    description: "Monitor and optimize memory consumption"
+    personas:
+      - Developer
+    lifecycle_stages:
+      - observe
+      - execute
+    automation_level: assisted
+    required_capabilities:
+      - memory-profiling
+      - performance-analysis
+    input_schema: perf-006-input
+    output_schema: perf-006-output
+    audit_artifacts:
+      - InputSnapshot
+      - OutputSnapshot
+      - PerformanceReport
+    ui:
+      icon: "memory"
+      color: "#FF9800"
+      tags:
+        - memory
+        - profiling
+        - optimization
+
+  - id: perf-007
+    name: "Optimize Database Performance"
+    description: "Improve database query and operation performance"
+    personas:
+      - Developer
+    lifecycle_stages:
+      - verify
+      - execute
+    automation_level: assisted
+    required_capabilities:
+      - database-optimization
+      - query-analysis
+    input_schema: perf-007-input
+    output_schema: perf-007-output
+    audit_artifacts:
+      - InputSnapshot
+      - OutputSnapshot
+      - ChangeSet
+      - PerformanceReport
+    ui:
+      icon: "storage"
+      color: "#FF9800"
+      tags:
+        - database
+        - queries
+        - optimization
+
+  - id: perf-008
+    name: "Optimize Network Performance"
+    description: "Improve network latency and throughput"
+    personas:
+      - Developer
+      - DevOps
+    lifecycle_stages:
+      - verify
+      - execute
+    automation_level: assisted
+    required_capabilities:
+      - network-optimization
+      - performance-analysis
+    input_schema: perf-008-input
+    output_schema: perf-008-output
+    audit_artifacts:
+      - InputSnapshot
+      - OutputSnapshot
+      - ChangeSet
+      - PerformanceReport
+    ui:
+      icon: "router"
+      color: "#FF9800"
+      tags:
+        - network
+        - latency
+        - throughput
+
+  - id: perf-009
+    name: "Set Performance Benchmarks"
+    description: "Define and measure performance baselines"
+    personas:
+      - Developer
+      - Tech Lead
+    lifecycle_stages:
+      - plan
+      - verify
+    automation_level: assisted
+    required_capabilities:
+      - benchmarking
+      - performance-analysis
+    input_schema: perf-009-input
+    output_schema: perf-009-output
+    audit_artifacts:
+      - InputSnapshot
+      - OutputSnapshot
+      - VerificationResult
+      - BenchmarkReport
+    ui:
+      icon: "assessment"
+      color: "#FF9800"
+      tags:
+        - benchmarks
+        - baselines
+        - metrics
+
+  - id: perf-010
+    name: "Performance Regression Detection"
+    description: "Monitor for performance regressions"
+    personas:
+      - Developer
+      - DevOps
+    lifecycle_stages:
+      - verify
+      - observe
+    automation_level: automated
+    required_capabilities:
+      - performance-monitoring
+      - regression-detection
+    input_schema: perf-010-input
+    output_schema: perf-010-output
+    audit_artifacts:
+      - InputSnapshot
+      - OutputSnapshot
+      - VerificationResult
+      - RegressionReport
+    ui:
+      icon: "trending_down"
+      color: "#FF9800"
+      tags:
+        - regression
+        - monitoring
+        - detection

@@ -1,0 +1,255 @@
+{
+    "name": "react-native-mobile",
+    "version": "1.0.0",
+    "description": "Cross-platform mobile application with React Native, Expo, and TypeScript",
+    "author": "Ghatana YAPPC Team",
+    "license": "Apache-2.0",
+    "tags": [
+        "react-native",
+        "expo",
+        "typescript",
+        "mobile",
+        "ios",
+        "android",
+        "cross-platform"
+    ],
+    "type": "application",
+    "platform": "mobile",
+    "language": "typescript",
+    "framework": "react-native",
+    "dependencies": {
+        "runtime": [
+            "expo:~52.0.0",
+            "react:18.3.1",
+            "react-native:0.76.2",
+            "expo-router:~4.0.0",
+            "expo-status-bar:~2.0.0",
+            "@react-native-async-storage/async-storage:2.0.0",
+            "expo-secure-store:~14.0.0"
+        ],
+        "build": [
+            "node:18+",
+            "pnpm:9+",
+            "expo-cli"
+        ],
+        "devDependencies": [
+            "typescript:^5.6.3",
+            "@types/react:~18.3.12",
+            "@types/react-native:~0.73.0",
+            "jest:^29.7.0",
+            "@testing-library/react-native:^12.8.1",
+            "jest-expo:~52.0.0"
+        ]
+    },
+    "templates": {
+        "package-json": {
+            "source": "templates/package.json.hbs",
+            "target": "package.json",
+            "merge": "replace"
+        },
+        "tsconfig": {
+            "source": "templates/tsconfig.json.hbs",
+            "target": "tsconfig.json",
+            "merge": "replace"
+        },
+        "app-json": {
+            "source": "templates/app.json.hbs",
+            "target": "app.json",
+            "merge": "replace"
+        },
+        "app-layout": {
+            "source": "templates/app/_layout.tsx.hbs",
+            "target": "app/_layout.tsx",
+            "merge": "replace"
+        },
+        "app-index": {
+            "source": "templates/app/index.tsx.hbs",
+            "target": "app/index.tsx",
+            "merge": "replace"
+        },
+        "app-tabs-layout": {
+            "source": "templates/app/(tabs)/_layout.tsx.hbs",
+            "target": "app/(tabs)/_layout.tsx",
+            "merge": "replace"
+        },
+        "app-tabs-home": {
+            "source": "templates/app/(tabs)/index.tsx.hbs",
+            "target": "app/(tabs)/index.tsx",
+            "merge": "replace"
+        },
+        "app-tabs-settings": {
+            "source": "templates/app/(tabs)/settings.tsx.hbs",
+            "target": "app/(tabs)/settings.tsx",
+            "merge": "replace"
+        },
+        "components-themed": {
+            "source": "templates/components/Themed.tsx.hbs",
+            "target": "components/Themed.tsx",
+            "merge": "replace"
+        },
+        "components-button": {
+            "source": "templates/components/Button.tsx.hbs",
+            "target": "components/Button.tsx",
+            "merge": "replace"
+        },
+        "hooks-use-color-scheme": {
+            "source": "templates/hooks/useColorScheme.ts.hbs",
+            "target": "hooks/useColorScheme.ts",
+            "merge": "replace"
+        },
+        "hooks-use-storage": {
+            "source": "templates/hooks/useStorage.ts.hbs",
+            "target": "hooks/useStorage.ts",
+            "merge": "replace"
+        },
+        "lib-api": {
+            "source": "templates/lib/api.ts.hbs",
+            "target": "lib/api.ts",
+            "merge": "replace"
+        },
+        "lib-storage": {
+            "source": "templates/lib/storage.ts.hbs",
+            "target": "lib/storage.ts",
+            "merge": "replace"
+        },
+        "constants-colors": {
+            "source": "templates/constants/Colors.ts.hbs",
+            "target": "constants/Colors.ts",
+            "merge": "replace"
+        },
+        "constants-config": {
+            "source": "templates/constants/config.ts.hbs",
+            "target": "constants/config.ts",
+            "merge": "replace"
+        },
+        "types-index": {
+            "source": "templates/types/index.ts.hbs",
+            "target": "types/index.ts",
+            "merge": "replace"
+        },
+        "tests-setup": {
+            "source": "templates/__tests__/setup.ts.hbs",
+            "target": "__tests__/setup.ts",
+            "merge": "replace"
+        },
+        "tests-app": {
+            "source": "templates/__tests__/App.test.tsx.hbs",
+            "target": "__tests__/App.test.tsx",
+            "merge": "replace"
+        },
+        "babel-config": {
+            "source": "templates/babel.config.js.hbs",
+            "target": "babel.config.js",
+            "merge": "replace"
+        },
+        "metro-config": {
+            "source": "templates/metro.config.js.hbs",
+            "target": "metro.config.js",
+            "merge": "replace"
+        },
+        "eas-json": {
+            "source": "templates/eas.json.hbs",
+            "target": "eas.json",
+            "merge": "replace"
+        },
+        "gitignore": {
+            "source": "templates/.gitignore.hbs",
+            "target": ".gitignore",
+            "merge": "replace"
+        },
+        "makefile": {
+            "source": "templates/Makefile.hbs",
+            "target": "Makefile",
+            "merge": "replace"
+        },
+        "readme": {
+            "source": "templates/README.md.hbs",
+            "target": "README.md",
+            "merge": "replace"
+        }
+    },
+    "variables": {
+        "projectName": {
+            "type": "string",
+            "description": "Project name (kebab-case)",
+            "default": "my-mobile-app",
+            "pattern": "^[a-z][a-z0-9-]*$"
+        },
+        "displayName": {
+            "type": "string",
+            "description": "Application display name",
+            "default": "My Mobile App"
+        },
+        "description": {
+            "type": "string",
+            "description": "Project description",
+            "default": "Cross-platform mobile application built with React Native and Expo"
+        },
+        "bundleId": {
+            "type": "string",
+            "description": "iOS Bundle ID (reverse domain notation)",
+            "default": "com.ghatana.app"
+        },
+        "packageName": {
+            "type": "string",
+            "description": "Android Package Name",
+            "default": "com.ghatana.app"
+        },
+        "version": {
+            "type": "string",
+            "description": "Application version",
+            "default": "1.0.0"
+        },
+        "expoSlug": {
+            "type": "string",
+            "description": "Expo project slug",
+            "default": "my-mobile-app"
+        },
+        "enableNotifications": {
+            "type": "boolean",
+            "description": "Enable push notifications",
+            "default": false
+        },
+        "enableBiometrics": {
+            "type": "boolean",
+            "description": "Enable biometric authentication",
+            "default": false
+        },
+        "enableCamera": {
+            "type": "boolean",
+            "description": "Enable camera access",
+            "default": false
+        },
+        "enableLocation": {
+            "type": "boolean",
+            "description": "Enable location services",
+            "default": false
+        },
+        "enableDeepLinking": {
+            "type": "boolean",
+            "description": "Enable deep linking / URL scheme",
+            "default": false
+        },
+        "scheme": {
+            "type": "string",
+            "description": "URL scheme for deep linking",
+            "default": "myapp"
+        }
+    },
+    "hooks": {
+        "postGenerate": [
+            "pnpm install"
+        ]
+    },
+    "requires": {
+        "os": [
+            "windows",
+            "macos",
+            "linux"
+        ],
+        "tools": [
+            "node",
+            "pnpm"
+        ]
+    }
+}

@@ -1,0 +1,124 @@
+{{!--
+  Spring Boot Integration Test Template
+  
+  Variables:
+  - testClassName: Name of the test class
+  - entityName: Name of the entity being tested
+  - repositoryName: Name of the repository
+  - useTestContainers: Whether to use TestContainers
+--}}
+package {{packageName}}.integration;
+
+import {{packageName}}.entity.{{entityName}};
+import {{packageName}}.repository.{{repositoryName}};
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.BeforeEach;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.test.context.SpringBootTest;
+{{#if useTestContainers}}
+import org.springframework.boot.testcontainers.service.connection.ServiceConnection;
+import org.testcontainers.containers.PostgreSQLContainer;
+import org.testcontainers.junit.jupiter.Container;
+import org.testcontainers.junit.jupiter.Testcontainers;
+{{/if}}
+import org.springframework.transaction.annotation.Transactional;
+
+import static org.assertj.core.api.Assertions.assertThat;
+
+/**
+ * Integration tests for {{entityName}} persistence.
+ * 
+ * @doc.type test
+ * @doc.purpose Verify {{entityName}} database operations
+ * @doc.layer test
+ * @doc.pattern Integration Test
+ */
+@SpringBootTest
+{{#if useTestContainers}}
+@Testcontainers
+{{/if}}
+@Transactional
+class {{testClassName}} {
+
+    {{#if useTestContainers}}
+    @Container
+    @ServiceConnection
+    static PostgreSQLContainer<?> postgres = new PostgreSQLContainer<>("postgres:16-alpine");
+
+    {{/if}}
+    @Autowired
+    private {{repositoryName}} {{camelCase repositoryName}};
+
+    private {{entityName}} test{{entityName}};
+
+    @BeforeEach
+    void setUp() {
+        {{camelCase repositoryName}}.deleteAll();
+        
+        test{{entityName}} = {{entityName}}.builder()
+                // Set test data
+                .build();
+    }
+
+    @Test
+    void shouldSave{{entityName}}() {
+        // When
+        {{entityName}} saved = {{camelCase repositoryName}}.save(test{{entityName}});
+
+        // Then
+        assertThat(saved.getId()).isNotNull();
+        assertThat(saved).isEqualTo(test{{entityName}});
+    }
+
+    @Test
+    void shouldFind{{entityName}}ById() {
+        // Given
+        {{entityName}} saved = {{camelCase repositoryName}}.save(test{{entityName}});
+
+        // When
+        {{entityName}} found = {{camelCase repositoryName}}.findById(saved.getId()).orElse(null);
+
+        // Then
+        assertThat(found).isNotNull();
+        assertThat(found).isEqualTo(saved);
+    }
+
+    @Test
+    void shouldUpdate{{entityName}}() {
+        // Given
+        {{entityName}} saved = {{camelCase repositoryName}}.save(test{{entityName}});
+        
+        // When
+        // Update fields
+        {{entityName}} updated = {{camelCase repositoryName}}.save(saved);
+
+        // Then
+        assertThat(updated.getId()).isEqualTo(saved.getId());
+        // Assert updated fields
+    }
+
+    @Test
+    void shouldDelete{{entityName}}() {
+        // Given
+        {{entityName}} saved = {{camelCase repositoryName}}.save(test{{entityName}});
+
+        // When
+        {{camelCase repositoryName}}.deleteById(saved.getId());
+
+        // Then
+        assertThat({{camelCase repositoryName}}.findById(saved.getId())).isEmpty();
+    }
+
+    @Test
+    void shouldFindAll{{entityName}}s() {
+        // Given
+        {{camelCase repositoryName}}.save(test{{entityName}});
+        {{camelCase repositoryName}}.save({{entityName}}.builder().build());
+
+        // When
+        var all = {{camelCase repositoryName}}.findAll();
+
+        // Then
+        assertThat(all).hasSize(2);
+    }
+}

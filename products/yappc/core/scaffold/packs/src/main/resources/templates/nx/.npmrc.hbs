@@ -1,0 +1,40 @@
+# .npmrc configuration for {{workspaceName}}
+
+# Day 14: Canonical registries and package scope enforcement
+# Per Doc3 §Roadmap Phase 1 and Doc1 §6 Non-Negotiables
+
+# Canonical registry configuration
+registry={{registry}}
+
+# Package scope enforcement for @ghatana/* organization
+{{scopedRegistry}}
+
+# Security and audit policies
+audit-level={{auditLevel}}
+fund=false
+
+# Dependency resolution policies
+strict-peer-dependencies={{strictPeerDeps}}
+auto-install-peers={{autoInstallPeers}}
+
+# Package management configuration
+node-linker={{nodeLinker}}
+enable-global-cache={{enableGlobalCache}}
+prefer-frozen-lockfile=true
+
+# License compliance enforcement
+license-check=true
+
+# Performance optimizations
+network-concurrency=16
+child-concurrency=4
+
+# Cache and temporary settings
+store-dir=.pnpm-store
+cache-dir=.pnpm-cache
+tmp-dir=.pnpm-tmp
+
+# Resolution policies for @ghatana/* packages
+@ghatana:registry=https://registry.npmjs.org/
+//registry.npmjs.org/:_auth=${NPM_TOKEN}
+//registry.npmjs.org/:always-auth=true

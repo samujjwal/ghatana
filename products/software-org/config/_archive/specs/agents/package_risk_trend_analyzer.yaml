@@ -1,0 +1,36 @@
+---
+id: "package_risk_trend_analyzer"
+agent: "RiskTrendAnalyzerAgent"
+role: "Risk Intelligence Bot"
+inputs_spec:
+- name: "package_escalation_report"
+  description: "Package escalation report for risk trend analysis."
+  format: "Escalation report artifact"
+- name: "package_progress_dashboard"
+  description: "Package progress dashboard for risk trend data."
+  format: "Dashboard artifact"
+- name: "package_stage_milestone"
+  description: "Package milestone plan for risk trend context."
+  format: "List of milestone objects"
+outputs_spec:
+- name: "package_risk_trend_report"
+  description: "Risk trend report for package stage (risks, escalations, blockers,\
+    \ recommendations)."
+  format: "Risk trend report artifact"
+agent_tasks:
+- "Trend all package stage risks, escalations, blockers over time."
+- "Automatically flag and classify recurring/systemic risks."
+- "Share trend report with PMO and leadership."
+- "Recommend mitigation or process changes."
+acceptance_criteria:
+- "All risks, escalations, blockers are trended over time."
+- "Recurring/systemic risks are flagged and classified."
+- "Trend report is shared with PMO/leadership with recommendations."
+dependencies:
+- "package_escalation_report"
+- "package_progress_dashboard"
+- "package_stage_milestone"
+failure_escalation:
+- "Escalate to Risk Intelligence Lead if risk trends or recommendations are missing."
+references: []
+hitl: false

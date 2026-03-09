@@ -1,0 +1,132 @@
+global:
+  scrape_interval: 15s
+  evaluation_interval: 15s
+  external_labels:
+    cluster: 'ghatana-dev'
+    environment: 'development'
+
+# Alertmanager configuration
+alerting:
+  alertmanagers:
+    - static_configs:
+        - targets: ['alertmanager:9093']
+
+# Load rules once and periodically evaluate them
+rule_files:
+  - '/etc/prometheus/rules/*.yml'
+
+# Scrape configurations
+scrape_configs:
+  # Prometheus self-monitoring
+  - job_name: 'prometheus'
+    static_configs:
+      - targets: ['localhost:9090']
+        labels:
+          service: 'prometheus'
+
+  # YAPPC Services (Java/ActiveJ)
+  - job_name: 'yappc-backend-api'
+    static_configs:
+      - targets: ['host.docker.internal:8080']
+        labels:
+          service: 'yappc-backend-api'
+          product: 'yappc'
+          layer: 'api'
+          tech: 'java'
+    metrics_path: '/metrics'
+    
+  - job_name: 'yappc-domain'
+    static_configs:
+      - targets: ['host.docker.internal:7003']
+        labels:
+          service: 'yappc-domain'
+          product: 'yappc'
+          layer: 'domain'
+          tech: 'java'
+    metrics_path: '/metrics'
+    
+  - job_name: 'yappc-ai-requirements'
+    static_configs:
+      - targets: ['host.docker.internal:8081']
+        labels:
+          service: 'yappc-ai-requirements'
+          product: 'yappc'
+          layer: 'domain'
+          tech: 'java'
+    metrics_path: '/metrics'
+    
+  - job_name: 'yappc-lifecycle'
+    static_configs:
+      - targets: ['host.docker.internal:8082']
+        labels:
+          service: 'yappc-lifecycle'
+          product: 'yappc'
+          layer: 'domain'
+          tech: 'java'
+    metrics_path: '/metrics'
+    
+  - job_name: 'yappc-canvas-ai'
+    static_configs:
+      - targets: ['host.docker.internal:8083']
+        labels:
+          service: 'yappc-canvas-ai'
+          product: 'yappc'
+          layer: 'domain'
+          tech: 'java'
+    metrics_path: '/metrics'
+
+  # Node.js API (Fastify)
+  - job_name: 'yappc-app-creator-api'
+    static_configs:
+      - targets: ['host.docker.internal:7003']
+        labels:
+          service: 'yappc-app-creator-api'
+          product: 'yappc'
+          layer: 'api'
+          tech: 'nodejs'
+    metrics_path: '/metrics'
+
+  # AEP Services
+  - job_name: 'aep-unified-launcher'
+    static_configs:
+      - targets: ['host.docker.internal:8090']
+        labels:
+          service: 'aep-unified-launcher'
+          product: 'aep'
+          layer: 'launcher'
+    metrics_path: '/metrics'
+
+  # Data Cloud Services
+  - job_name: 'data-cloud-event'
+    static_configs:
+      - targets: ['host.docker.internal:8100']
+        labels:
+          service: 'data-cloud-event'
+          product: 'data-cloud'
+          layer: 'event'
+    metrics_path: '/metrics'
+
+  # Infrastructure - PostgreSQL
+  - job_name: 'postgres'
+    static_configs:
+      - targets: ['host.docker.internal:9187']
+        labels:
+          service: 'postgresql'
+          component: 'database'
+    scrape_interval: 30s
+
+  # Infrastructure - Redis
+  - job_name: 'redis'
+    static_configs:
+      - targets: ['host.docker.internal:9121']
+        labels:
+          service: 'redis'
+          component: 'cache'
+    scrape_interval: 30s
+
+  # Node Exporter - Host metrics
+  - job_name: 'node-exporter'
+    static_configs:
+      - targets: ['node-exporter:9100']
+        labels:
+          instance: 'dev-machine'

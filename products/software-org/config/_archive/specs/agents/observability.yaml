@@ -1,0 +1,42 @@
+id: observability
+agent: ObservabilityAgent
+role: Observability & SLO Analyst
+inputs_spec:
+  - name: progress_report
+    description: Progress report from ProgressMonitorAgent.
+    format: YAML object
+outputs_spec:
+  - name: observability_dashboard
+    description: Dashboard: SLOs, SLIs, operational metrics, anomaly alerts, health trends.
+    format: YAML object
+acceptance_criteria:
+  - All critical SLOs/SLIs monitored.
+  - Anomalies, alerts, health trends reported.
+  - Dashboard follows observability template.
+agent_tasks:
+  - Define/track SLOs/SLIs for critical services/processes.
+  - Monitor/alert on metrics/anomalies/trends.
+  - Visualize health and breaches.
+dependencies:
+  - progress_report
+failure_escalation:
+  - Escalate unresolved/critical alerts to SRE/lead.
+references: []
+internal_logic:
+  - perception:
+      description: "Collect SLO, SLI, and operational health data from system monitoring sources and logs."
+  - model:
+      description: "Maintain observability dashboard with live SLO/SLI metrics, anomaly detection, and health trend logs."
+  - planning:
+      description: |
+        "Set alert thresholds and triggers for SLO breaches or anomalous trends.
+         Plan corrective actions for recurring issues."
+  - action:
+      description: "Publish observability dashboards and notify relevant teams of breaches or trends."
+validation:
+  - "SRE/observability lead review for configuration and alerting."
+  - "Audit for SLO/SLI coverage and threshold tuning."
+quality_enhancements:
+  - "Observability dashboard and alert template."
+  - "Automated SLO/SLI reporting."
+  - "Metrics for alert response and resolution."

@@ -1,0 +1,118 @@
+id: release-notes-agent
+name: Release Notes Agent
+version: 1.0.0
+description: Generates release notes and changelogs. Creates user-facing and technical documentation.
+
+metadata:
+  level: 3  # Worker
+  domain: release
+  tags:
+    - release-notes
+    - changelog
+    - documentation
+    - communication
+
+generator:
+  type: PIPELINE
+  steps:
+    - name: change_collection
+      type: RULE_BASED
+      description: Collect changes from commits and PRs
+    - name: notes_generation
+      type: LLM
+      provider: ANTHROPIC
+      model: claude-3-5-sonnet-20241022
+      temperature: 0.4
+      max_tokens: 3000
+      prompt: |
+        You are the Release Notes Agent. Generate notes:
+        
+        Version: {{version}}
+        Changes: {{changes}}
+        PRs: {{prs}}
+        Breaking Changes: {{breaking}}
+        
+        Generate:
+        1. User-facing release notes
+           - New features (highlight value)
+           - Improvements
+           - Bug fixes
+           - Known issues
+        
+        2. Technical changelog
+           - API changes
+           - Breaking changes with migration
+           - Deprecations
+           - Internal improvements
+        
+        3. Executive summary (1 paragraph)
+        
+        Tone: Professional, clear, value-focused
+        
+        Output as JSON: {
+          user_notes: {features, improvements, fixes, known_issues},
+          technical_changelog: {api_changes, breaking, deprecations, internal},
+          executive_summary,
+          formatted_markdown
+        }
+    - name: distribution
+      type: SERVICE_CALL
+      service: docs-service
+      endpoint: /publish
+
+memory:
+  episodic:
+    enabled: true
+    retention_days: unlimited
+    categories:
+      - release-notes
+      - changelogs
+      - feedback
+  semantic:
+    enabled: true
+    categories:
+      - writing-patterns
+      - categorization-rules
+      - audience-preferences
+  procedural:
+    enabled: true
+    categories:
+      - formatting-rules
+      - categorization-logic
+      - distribution-channels
+
+tools:
+  - change_collector
+  - markdown_generator
+  - publisher
+
+capabilities:
+  - change-aggregation
+  - notes-generation
+  - audience-adaptation
+  - distribution
+
+routing:
+  input_types:
+    - release-changes
+    - notes-request
+    - changelog-request
+  output_types:
+    - release-notes
+    - changelog
+    - summary
+
+delegation:
+  can_delegate_to: []
+  escalates_to:
+    - release-orchestrator-agent
+
+governance:
+  requires_approval: true  # Notes reviewed before publish
+  can_block: false
+  audit_trail: standard
+
+performance:
+  expected_latency_ms: 4000
+  max_latency_ms: 10000
+  timeout_ms: 20000

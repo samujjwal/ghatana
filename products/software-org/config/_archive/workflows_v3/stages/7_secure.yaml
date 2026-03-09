@@ -1,0 +1,109 @@
+# Secure Stage - v3 Operator-Based Definition
+# Uses consolidated operators from operations/domain/build/
+name: Secure
+description: Advanced security scanning including DAST and supply chain analysis
+domain: build
+
+# Operators used in this stage
+operators:
+  - ref: build/security_scan_operator
+    modes: [dast, supply_chain]
+  - ref: design/security_design_operator
+    modes: [compliance_mapping]
+
+# Cross-cutting operators
+cross_cutting:
+  - ref: cross-cutting/milestone_tracker
+    params:
+      stage: secure
+  - ref: cross-cutting/best_practice
+    params:
+      stage: secure
+  - ref: cross-cutting/kpi
+    params:
+      stage: secure
+  - ref: cross-cutting/audit_log
+    params:
+      stage: secure
+  - ref: cross-cutting/evidence_collector
+    params:
+      stage: secure
+
+# Workflow sequence
+workflow:
+  # Dynamic Security Testing
+  - step: dast_scan
+    operator: build/security_scan_operator
+    mode: dast
+    inputs:
+      - name: test_stage_milestone
+      - name: build_artifacts
+    outputs:
+      - name: dast_report
+
+  # Supply Chain Analysis
+  - step: supply_chain_scan
+    operator: build/security_scan_operator
+    mode: supply_chain
+    inputs:
+      - name: build_artifacts
+    outputs:
+      - name: supply_chain_report
+    depends_on: [dast_scan]
+
+  # Compliance Mapping
+  - step: compliance_mapping
+    operator: design/security_design_operator
+    mode: compliance_mapping
+    inputs:
+      - name: dast_report
+      - name: supply_chain_report
+    outputs:
+      - name: compliance_mapping_report
+    depends_on: [supply_chain_scan]
+
+  # Evidence Collection
+  - step: collect_security_evidence
+    operator: cross-cutting/evidence_collector
+    params:
+      stage: secure
+    inputs:
+      - name: dast_report
+      - name: supply_chain_report
+      - name: compliance_mapping_report
+    outputs:
+      - name: security_evidence_package
+    depends_on: [compliance_mapping]
+
+  # Cross-cutting
+  - step: best_practice_check
+    operator: cross-cutting/best_practice
+    params:
+      stage: secure
+    inputs:
+      - name: dast_report
+      - name: supply_chain_report
+    outputs:
+      - name: best_practice_report
+    depends_on: [collect_security_evidence]
+
+  - step: track_milestones
+    operator: cross-cutting/milestone_tracker
+    params:
+      stage: secure
+    inputs:
+      - name: best_practice_report
+    outputs:
+      - name: secure_stage_milestone
+    depends_on: [best_practice_check]
+
+# Stage entry/exit criteria
+entry_criteria:
+  - Test stage complete
+  - Deployed test environment available
+
+exit_criteria:
+  - DAST complete
+  - Supply chain analysis complete
+  - No critical vulnerabilities
+  - Security evidence collected

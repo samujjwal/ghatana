@@ -1,0 +1,95 @@
+# GraphQL Mesh Configuration
+# Federated GraphQL Gateway
+
+serve:
+port: {{port}}
+cors:
+{{#if enableCors}}
+origin: "{{corsOrigin}}"
+credentials: true
+{{else}}
+origin: false
+{{/if}}
+{{#if enablePlayground}}
+playground: true
+{{else}}
+playground: false
+{{/if}}
+{{#if enableIntrospection}}
+endpoint: /graphql
+{{/if}}
+
+sources:
+# User Service (GraphQL)
+- name: Users
+handler:
+graphql:
+endpoint: ${USERS_SERVICE_URL:http://localhost:4001/graphql}
+# For subscriptions:
+# subscriptionsEndpoint: ws://localhost:4001/graphql
+transforms:
+- prefix:
+value: Users_
+includeRootOperations: false
+ignore:
+- Query.me
+- Mutation.login
+- Mutation.register
+
+# Product Service (GraphQL)
+- name: Products
+handler:
+graphql:
+endpoint: ${PRODUCTS_SERVICE_URL:http://localhost:4002/graphql}
+transforms:
+- prefix:
+value: Products_
+includeRootOperations: false
+
+# Example: REST API as GraphQL source
+# - name: Orders
+# handler:
+# openapi:
+# source: ./sources/orders-openapi.yaml
+# baseUrl: ${ORDERS_SERVICE_URL:http://localhost:4003}
+
+# Example: gRPC as GraphQL source
+# - name: Inventory
+# handler:
+# grpc:
+# endpoint: ${INVENTORY_SERVICE_URL:localhost:4004}
+# protoFilePath: ./sources/inventory.proto
+
+additionalTypeDefs: |
+# Extend types across sources (stitching)
+extend type Products_Product {
+createdBy: Users_User
+}
+
+additionalResolvers:
+- ./src/resolvers/custom.ts
+
+{{#if enableCaching}}
+cache:
+inmemoryLru:
+max: 1000
+{{/if}}
+
+plugins:
+{{#if enableAuth}}
+- useAuth:
+mode: protect
+{{/if}}
+{{#if enableMetrics}}
+- usePrometheus: {}
+{{/if}}
+{{#if enableRateLimiting}}
+- useRateLimiter:
+max: {{rateLimitMax}}
+window: 60s
+{{/if}}
+- useLogger: {}
+
+# Documents for code generation (optional)
+# documents:
+# - ./operations/**/*.graphql

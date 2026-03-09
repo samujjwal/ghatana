@@ -1,0 +1,69 @@
+# YAPPC Task Domains Configuration
+# High-level categorization of work domains
+
+domains:
+  - id: "frontend"
+    name: "Frontend Development"
+    description: "User interface and user experience development"
+    color: "#2563eb"
+    icon: "🎨"
+    order: 1
+    frameworks: ["React", "Vue", "Angular"]
+    personas: ["developer", "designer"]
+    phases: ["intent", "context", "plan", "execute", "verify"]
+    capabilities: ["code-generation", "component-generation", "code-review"]
+
+  - id: "backend"
+    name: "Backend Development"
+    description: "Server-side logic and API development"
+    color: "#059669"
+    icon: "⚙️"
+    order: 2
+    frameworks: ["Spring Boot", "Express.js", "FastAPI"]
+    personas: ["developer", "architect"]
+    phases: ["intent", "context", "plan", "execute", "verify"]
+    capabilities: ["code-generation", "api-design", "code-review"]
+
+  - id: "database"
+    name: "Database Management"
+    description: "Data modeling and database optimization"
+    color: "#dc2626"
+    icon: "🗄️"
+    order: 3
+    frameworks: ["PostgreSQL", "MongoDB", "Redis"]
+    personas: ["developer", "architect"]
+    phases: ["intent", "context", "plan", "execute", "verify"]
+    capabilities: ["schema-design", "query-optimization", "data-modeling"]
+
+  - id: "devops"
+    name: "DevOps & Infrastructure"
+    description: "Deployment, monitoring, and infrastructure management"
+    color: "#7c3aed"
+    icon: "🚀"
+    order: 4
+    frameworks: ["Docker", "Kubernetes", "AWS"]
+    personas: ["devops", "architect"]
+    phases: ["plan", "execute", "verify", "observe"]
+    capabilities: ["deployment", "monitoring", "infrastructure-management"]
+
+  - id: "testing"
+    name: "Testing & Quality Assurance"
+    description: "Test creation, execution, and quality validation"
+    color: "#ec4899"
+    icon: "✅"
+    order: 5
+    frameworks: ["Jest", "JUnit", "Cypress"]
+    personas: ["qa-engineer", "developer"]
+    phases: ["plan", "execute", "verify"]
+    capabilities: ["test-generation", "test-execution", "quality-analysis"]
+
+  - id: "design"
+    name: "UX/UI Design"
+    description: "User experience and interface design"
+    color: "#f43f5e"
+    icon: "🎨"
+    order: 6
+    frameworks: ["Figma", "Sketch", "Adobe XD"]
+    personas: ["designer"]
+    phases: ["intent", "context", "plan", "execute"]
+    capabilities: ["ui-design", "ux-research", "prototyping"]

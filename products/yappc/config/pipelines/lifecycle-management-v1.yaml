@@ -1,0 +1,127 @@
+# YAPPC Lifecycle Management Pipeline
+# AEP pipeline definition for project lifecycle state management
+#
+# This pipeline defines the core workflow for managing project lifecycle
+# transitions using AEP event processing with TypedAgent integration.
+
+apiVersion: ghatana.aep/v1
+kind: Pipeline
+
+metadata:
+  name: "lifecycle-management-v1"
+  version: "1.0.0"
+  description: "Project lifecycle state management pipeline"
+  tags: ["lifecycle", "state-management", "core"]
+
+spec:
+  # Pipeline inputs
+  inputs:
+    - name: "phase-transition-events"
+      topic: "phase.transition"
+      schema: "phase-transition-v1"
+      description: "Phase transition events from projects"
+    
+    - name: "task-status-events"
+      topic: "task.status.changed"
+      schema: "task-status-changed-v1"
+      description: "Task status change events"
+
+  # Pipeline outputs
+  outputs:
+    - name: "lifecycle-state-updates"
+      topic: "lifecycle.state.updated"
+      description: "Updated lifecycle state for UI synchronization"
+    
+    - name: "agent-dispatch-events"
+      topic: "agent.dispatch.requested"
+      description: "Agent execution requests"
+
+  # Pipeline operators (stages)
+  operators:
+    - name: "phase-transition-validator"
+      type: "validator"
+      config:
+        schema: "phase-transition-v1"
+        strict: true
+      description: "Validate phase transition events against schema"
+
+    - name: "phase-state-manager"
+      type: "agent"
+      agent_id: "agent.yappc.phase-state-manager"
+      config:
+        persistence: "data-cloud"
+        checkpoint_policy: "onShutdown"
+        backpressure:
+          strategy: "DROP_OLDEST"
+          buffer_size: 1024
+      description: "Manage phase state transitions in Data-Cloud"
+
+    - name: "gate-orchestrator"
+      type: "agent"
+      agent_id: "agent.yappc.gate-orchestrator"
+      config:
+        parallel_gates: true
+        timeout_ms: 30000
+        backpressure:
+          strategy: "BLOCK"
+          buffer_size: 256
+      description: "Execute gate agent approvals in parallel"
+
+    - name: "lifecycle-state-publisher"
+      type: "transformer"
+      config:
+        output_topic: "lifecycle.state.updated"
+        include_metadata: true
+      description: "Publish lifecycle state updates for UI sync"
+
+    - name: "agent-dispatcher"
+      type: "router"
+      config:
+        routing_config: "event-routing.yaml"
+        default_strategy: "DROP_LATEST"
+      description: "Route events to appropriate agents"
+
+  # Error handling
+  error_handling:
+    strategy: "dead_letter"
+    dead_letter_topic: "lifecycle.management.dlq"
+    retry_policy:
+      max_retries: 3
+      backoff_ms: 1000
+      max_backoff_ms: 10000
+
+  # Monitoring
+  monitoring:
+    metrics:
+      - name: "phase_transitions_total"
+        type: "counter"
+        description: "Total phase transition events processed"
+      
+      - name: "gate_approvals_duration"
+        type: "histogram"
+        description: "Duration of gate approval processes"
+      
+      - name: "agent_dispatch_failures"
+        type: "counter"
+        description: "Failed agent dispatch attempts"
+
+    alerts:
+      - name: "phase_transition_validation_failure"
+        condition: "validation_error_rate > 0.1"
+        description: "High phase transition validation failure rate"
+      
+      - name: "gate_approval_timeout"
+        condition: "gate_approval_timeout_rate > 0.05"
+        description: "High gate approval timeout rate"
+
+  # Dependencies
+  dependencies:
+    services:
+      - "data-cloud-platform"
+      - "event-cloud-platform"
+    schemas:
+      - "phase-transition-v1"
+      - "task-status-changed-v1"
+    configs:
+      - "event-routing.yaml"
+      - "phase-transition-events.yaml"

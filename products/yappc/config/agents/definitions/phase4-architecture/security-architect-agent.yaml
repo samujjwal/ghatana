@@ -1,0 +1,106 @@
+id: security-architect-agent
+name: Security Architect Agent
+version: 1.0.0
+description: Designs security architecture. Specifies authentication, authorization, encryption, and security controls for systems.
+
+metadata:
+  level: 2  # Domain Expert
+  domain: architecture
+  tags:
+    - security-architecture
+    - authentication
+    - authorization
+    - threat-modeling
+
+generator:
+  type: PIPELINE
+  steps:
+    - name: threat_modeling
+      type: LLM
+      provider: ANTHROPIC
+      model: claude-3-5-sonnet-20241022
+      temperature: 0.2
+      max_tokens: 3000
+      prompt: |
+        You are the Security Architect Agent. Design security architecture:
+        
+        System: {{system}}
+        Data Classification: {{data}}
+        Compliance Requirements: {{compliance}}
+        Threat Environment: {{threats}}
+        
+        Design:
+        1. Threat Model (STRIDE analysis)
+        2. Authentication strategy (methods, MFA, SSO)
+        3. Authorization model (RBAC, ABAC, policies)
+        4. Data protection (encryption at rest/transit, key management)
+        5. Network security (segmentation, firewalls, WAF)
+        6. Security monitoring (logging, alerting, SIEM)
+        7. Incident response integration
+        8. Security controls by layer
+        
+        Output as JSON: {threat_model, authentication, authorization, data_protection, network_security, monitoring, incident_response, controls}
+    - name: security_validation
+      type: RULE_BASED
+      description: Validate against security standards
+    - name: security_documentation
+      type: TEMPLATE
+      template_path: templates/security-architecture.ftl
+
+memory:
+  episodic:
+    enabled: true
+    retention_days: 2555
+    categories:
+      - security-designs
+      - threat-models
+      - security-reviews
+  semantic:
+    enabled: true
+    categories:
+      - security-patterns
+      - threat-catalog
+      - compliance-frameworks
+  procedural:
+    enabled: true
+    categories:
+      - security-standards
+      - review-checklists
+      - hardening-guides
+
+tools:
+  - threat_modeler
+  - security_analyzer
+  - compliance_checker
+
+capabilities:
+  - threat-modeling
+  - security-design
+  - compliance-mapping
+  - control-specification
+
+routing:
+  input_types:
+    - architecture-input
+    - security-review-request
+    - threat-assessment
+  output_types:
+    - security-architecture
+    - threat-model
+    - security-controls
+
+delegation:
+  can_delegate_to: []
+  escalates_to:
+    - architecture-orchestrator-agent
+    - policy-guard-agent
+
+governance:
+  requires_approval: true  # Security decisions need approval
+  can_block: true  # Can block insecure designs
+  audit_trail: comprehensive
+
+performance:
+  expected_latency_ms: 6000
+  max_latency_ms: 15000
+  timeout_ms: 30000

@@ -1,0 +1,58 @@
+{
+    "name": "vue-vite",
+    "version": "1.0.0",
+    "description": "Vue 3 application with Vite",
+    "language": "typescript",
+    "category": "frontend",
+    "platform": "web",
+    "buildSystem": "pnpm",
+    "author": "YAPPC Team",
+    "tags": [
+        "vue",
+        "vite",
+        "typescript",
+        "frontend",
+        "spa"
+    ],
+    "requiredVariables": [
+        "projectName"
+    ],
+    "optionalVariables": [
+        "description",
+        "author",
+        "enableRouter",
+        "enablePinia",
+        "enableTailwind",
+        "enableVitest"
+    ],
+    "defaults": {
+        "description": "Vue 3 application with Vite",
+        "enableRouter": "true",
+        "enablePinia": "true",
+        "enableTailwind": "true",
+        "enableVitest": "true"
+    },
+    "templates": [
+        "package.json.hbs",
+        "tsconfig.json.hbs",
+        "vite.config.ts.hbs",
+        "index.html.hbs",
+        "src/main.ts.hbs",
+        "src/App.vue.hbs",
+        "src/router/index.ts.hbs",
+        "src/stores/counter.ts.hbs",
+        "src/components/HelloWorld.vue.hbs",
+        "src/views/HomeView.vue.hbs",
+        "src/assets/main.css.hbs",
+        "tailwind.config.js.hbs",
+        "postcss.config.js.hbs",
+        "vitest.config.ts.hbs",
+        "src/components/__tests__/HelloWorld.spec.ts.hbs",
+        ".gitignore.hbs",
+        "README.md.hbs"
+    ],
+    "supportedFeatures": [
+        "auth",
+        "observability"
+    ]
+}

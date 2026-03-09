@@ -1,0 +1,90 @@
+/**
+* {{projectName}} - Application Builder
+*
+* Configures and builds the Fastify application with plugins and routes.
+*
+* @module app
+*/
+
+import Fastify, { type FastifyInstance, type FastifyServerOptions } from 'fastify';
+import cors from '@fastify/cors';
+import helmet from '@fastify/helmet';
+import sensible from '@fastify/sensible';
+import swagger from '@fastify/swagger';
+import swaggerUi from '@fastify/swagger-ui';
+
+import { config } from './config.js';
+import { prismaPlugin } from './plugins/prisma.js';
+import { registerRoutes } from './routes/index.js';
+
+export async function buildApp(opts: FastifyServerOptions = {}): Promise<FastifyInstance> {
+    const app = Fastify({
+    logger: {
+    level: config.logLevel,
+    transport:
+    config.nodeEnv === 'development'
+    ? {
+    target: 'pino-pretty',
+    options: {
+    translateTime: 'HH:MM:ss Z',
+    ignore: 'pid,hostname',
+    },
+    }
+    : undefined,
+    },
+    ...opts,
+    });
+
+    // Security plugins
+    await app.register(helmet, {
+    contentSecurityPolicy: config.nodeEnv === 'production',
+    });
+
+    await app.register(cors, {
+    origin: config.corsOrigin,
+    credentials: true,
+    });
+
+    // Utility plugins
+    await app.register(sensible);
+
+    // Database
+    await app.register(prismaPlugin);
+
+    // Swagger documentation
+    if (config.enableSwagger) {
+    await app.register(swagger, {
+    openapi: {
+    openapi: '3.1.0',
+    info: {
+    title: '{{projectName}}',
+    description: '{{description}}',
+    version: '0.1.0',
+    },
+    servers: [
+    {
+    url: `http://localhost:${config.port}`,
+    description: 'Development server',
+    },
+    ],
+    tags: [
+    { name: 'health', description: 'Health check endpoints' },
+    { name: 'api', description: 'API endpoints' },
+    ],
+    },
+    });
+
+    await app.register(swaggerUi, {
+    routePrefix: '/docs',
+    uiConfig: {
+    docExpansion: 'list',
+    deepLinking: true,
+    },
+    });
+    }
+
+    // Register routes
+    await registerRoutes(app);
+
+    return app;
+    }

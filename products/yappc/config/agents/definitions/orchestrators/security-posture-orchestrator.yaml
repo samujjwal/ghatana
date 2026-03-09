@@ -1,0 +1,75 @@
+id: security-posture-orchestrator
+name: Security Posture Orchestrator
+version: 1.0.0
+description: Orchestrates end-to-end security posture assessment — delegates to sentinel, security-scanner-agent, vulnerability-scoring-agent, dependency-auditor, and security-operations-agent.
+
+metadata:
+  level: 2
+  domain: security
+  tags: [orchestrator, security-posture, devsecops]
+
+generator:
+  type: PIPELINE
+  steps:
+    - name: posture_coordination
+      type: RULE_BASED
+      rules:
+        - Trigger parallel: sentinel scan + dependency-auditor
+        - Wait for all scans to complete
+        - Apply vulnerability-scoring-agent to findings
+        - Aggregate into posture score
+    - name: posture_summary
+      type: LLM
+      provider: OPENAI
+      model: gpt-4
+      temperature: 0.2
+      max_tokens: 3000
+      prompt: |
+        Summarize security posture:
+        Scan Results: {{scan_results}}
+        Vulnerability Scores: {{vuln_scores}}
+        Dependency Audit: {{dep_audit}}
+        Produce overall posture score (0-100), trend vs. last assessment, top priorities.
+        Output as JSON: {posture_score, trend, critical_findings, top_priorities, posture_summary}
+
+memory:
+  episodic:
+    enabled: true
+    retention_days: 730
+    categories: [posture-assessments, posture-trends]
+  semantic:
+    enabled: true
+    categories: [posture-patterns, benchmark-data]
+  procedural:
+    enabled: true
+    categories: [assessment-workflow, scoring-rules]
+
+tools: [posture_aggregator, trend_analyzer]
+
+capabilities:
+  - security-posture-assessment
+  - multi-agent-orchestration
+  - posture-scoring
+
+routing:
+  input_types: [workspace-id, posture-request]
+  output_types: [posture-report, posture-score]
+
+delegation:
+  can_delegate_to:
+    - sentinel
+    - security-scanner-agent
+    - vulnerability-scoring-agent
+    - agent.yappc.dependency-auditor
+    - security-operations-agent
+  escalates_to: systems-architect
+
+governance:
+  requires_approval: false
+  can_block: false
+  audit_trail: comprehensive
+
+performance:
+  expected_latency_ms: 30000
+  max_latency_ms: 120000
+  timeout_ms: 180000

@@ -1,0 +1,29 @@
+{{! Shared package.json scripts partial }}
+"scripts": { "dev": "{{#if framework}}{{#eq framework "vite"}}vite{{/eq}}{{#eq
+    framework "next"
+  }}next dev{{/eq}}{{else}}npm run start{{/if}}", "build": "{{#if
+  framework
+}}{{#eq framework "vite"}}vite build{{/eq}}{{#eq framework "next"}}next build{{/eq}}{{else}}npm
+  run build{{/if}}", "start": "{{#if framework}}{{#eq framework "vite"}}vite
+    preview{{/eq}}{{#eq framework "next"}}next start{{/eq}}{{else}}node
+  dist/index.js{{/if}}", "lint": "eslint . --ext ts,tsx
+--report-unused-disable-directives --max-warnings 0", "lint:fix": "eslint .
+--ext ts,tsx --fix", "format": "prettier --write
+\"src/**/*.{ts,tsx,css,scss,md}\"", "format:check": "prettier --check
+\"src/**/*.{ts,tsx,css,scss,md}\"", "typecheck": "tsc --noEmit", "test": "{{#if
+  testFramework
+}}{{#eq testFramework "vitest"}}vitest{{/eq}}{{#eq
+    testFramework "jest"
+  }}jest{{/eq}}{{else}}vitest{{/if}}", "test:ui": "{{#if testFramework}}{{#eq
+    testFramework "vitest"
+  }}vitest --ui{{/eq}}{{#eq testFramework "jest"}}jest --watch{{/eq}}{{else}}vitest
+  --ui{{/if}}", "test:coverage": "{{#if testFramework}}{{#eq
+    testFramework "vitest"
+  }}vitest --coverage{{/eq}}{{#eq testFramework "jest"}}jest --coverage{{/eq}}{{else}}vitest
+  --coverage{{/if}}"{{#if enableDocker}}, "docker:build": "docker build -t
+  {{projectName}}:{{version}}
+  .", "docker:run": "docker run -p
+  {{port}}:{{port}}
+  --rm
+  {{projectName}}:{{version}}"{{/if}}
+}

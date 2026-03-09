@@ -1,0 +1,42 @@
+name: CI Security Gates
+
+on:
+  pull_request:
+  push:
+    branches: [ main ]
+
+jobs:
+  security-go-rust:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Setup Go
+        uses: actions/setup-go@v5
+        with:
+          go-version: '1.22.x'
+      - name: Setup Rust
+        uses: dtolnay/rust-toolchain@stable
+      - name: Install scanners
+        run: |
+          curl -sSfL https://raw.githubusercontent.com/google/osv-scanner/main/scripts/install.sh | sh -s -- -b /usr/local/bin
+          curl -sSfL https://raw.githubusercontent.com/anchore/syft/main/install.sh | sh -s -- -b /usr/local/bin
+          curl -sSfL https://raw.githubusercontent.com/aquasecurity/trivy/main/contrib/install.sh | sh -s -- -b /usr/local/bin
+          cargo install cargo-audit || true
+      - name: Go vuln scan (govulncheck)
+        run: |
+          cd services/server
+          go install golang.org/x/vuln/cmd/govulncheck@latest
+          govulncheck ./...
+      - name: Rust cargo-audit
+        run: |
+          cargo audit -q || true
+      - name: OSV scanner
+        run: |
+          osv-scanner -r . || true
+      - name: SBOM (syft)
+        run: |
+          syft packages dir:. -o table || true
+      - name: Container scan (trivy) - server Dockerfile
+        run: |
+          trivy config --severity HIGH,CRITICAL services/server || true
+

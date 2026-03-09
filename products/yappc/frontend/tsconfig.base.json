@@ -1,0 +1,104 @@
+{
+  "compilerOptions": {
+    "target": "ES2020",
+    "useDefineForClassFields": true,
+    "lib": [
+      "ES2020",
+      "DOM",
+      "DOM.Iterable"
+    ],
+    "module": "ESNext",
+    "skipLibCheck": true,
+    "moduleResolution": "bundler",
+    "allowImportingTsExtensions": true,
+    "resolveJsonModule": true,
+    "isolatedModules": true,
+    "noEmit": true,
+    "jsx": "react-jsx",
+    "strict": true,
+    "noUnusedLocals": true,
+    "noUnusedParameters": true,
+    "noFallthroughCasesInSwitch": true,
+    "incremental": true,
+    "tsBuildInfoFile": ".tsbuildinfo",
+    "declaration": true,
+    "declarationMap": true,
+    // Recommend emitted declaration files to live under package dist/types instead
+    // of being committed inside `src/`. Individual package tsconfigs may override
+    // this. This helps avoid duplicate-declaration collisions during typecheck.
+    "declarationDir": "dist/types",
+    "outDir": "dist",
+    "baseUrl": ".",
+    "paths": {
+      // Library packages
+      "@ghatana/yappc-ui": ["libs/ui/src"],
+      "@ghatana/yappc-ui/*": ["libs/ui/src/*"],
+
+      "@ghatana/yappc-ai": ["libs/ai/src"],
+      "@ghatana/yappc-ai/*": ["libs/ai/src/*"],
+      "@ghatana/yappc-ai-requirements-service": ["libs/ai-requirements-service/src"],
+      "@ghatana/yappc-ai-requirements-service/*": ["libs/ai-requirements-service/src/*"],
+      "@ghatana/yappc-canvas": ["libs/canvas/src"],
+      "@ghatana/yappc-canvas/*": ["libs/canvas/src/*"],
+      "@ghatana/yappc-crdt": ["libs/crdt/src"],
+      "@ghatana/yappc-crdt/*": ["libs/crdt/src/*"],
+      "@ghatana/yappc-collab": ["libs/collab/src"],
+      "@ghatana/yappc-collab/*": ["libs/collab/src/*"],
+      "@ghatana/yappc-ide": ["libs/ide/src"],
+      "@ghatana/yappc-ide/*": ["libs/ide/src/*"],
+      "@ghatana/yappc-types": ["libs/types/src"],
+      "@ghatana/yappc-types/*": ["libs/types/src/*"],
+
+      "@ghatana/yappc-api": ["libs/api/src"],
+      "@ghatana/yappc-api/*": ["libs/api/src/*"],
+      "@ghatana/yappc-testing": ["libs/testing/src"],
+      "@ghatana/yappc-testing/*": ["libs/testing/src/*"],
+      "@ghatana/yappc-mocks": ["libs/mocks/src"],
+      "@ghatana/yappc-mocks/*": ["libs/mocks/src/*"],
+
+      "@ghatana/yappc-auth": ["libs/auth/src"],
+      "@ghatana/yappc-auth/*": ["libs/auth/src/*"],
+
+      "@ghatana/yappc-code-editor": ["libs/code-editor/src"],
+      "@ghatana/yappc-code-editor/*": ["libs/code-editor/src/*"],
+
+      "@ghatana/yappc-live-preview-server": ["libs/live-preview-server/src"],
+      "@ghatana/yappc-live-preview-server/*": ["libs/live-preview-server/src/*"],
+      "@ghatana/yappc-component-traceability": ["libs/component-traceability/src"],
+      "@ghatana/yappc-component-traceability/*": ["libs/component-traceability/src/*"],
+      "@ghatana/yappc-vite-plugin-live-edit": ["libs/vite-plugin-live-edit/src"],
+      "@ghatana/yappc-vite-plugin-live-edit/*": ["libs/vite-plugin-live-edit/src/*"],
+      // App-specific aliases (for apps/web)
+      "@/components": ["apps/web/src/components"],
+      "@/components/*": ["apps/web/src/components/*"],
+      "@/hooks": ["apps/web/src/hooks"],
+      "@/hooks/*": ["apps/web/src/hooks/*"],
+      "@/services": ["apps/web/src/services"],
+      "@/services/*": ["apps/web/src/services/*"],
+      "@/state": ["apps/web/src/state"],
+      "@/state/*": ["apps/web/src/state/*"],
+      "@/pages": ["apps/web/src/pages"],
+      "@/pages/*": ["apps/web/src/pages/*"],
+      "@/routes": ["apps/web/src/routes"],
+      "@/routes/*": ["apps/web/src/routes/*"],
+      "@/layouts": ["apps/web/src/layouts"],
+      "@/layouts/*": ["apps/web/src/layouts/*"],
+      "@/shared": ["apps/web/src/shared"],
+      "@/shared/*": ["apps/web/src/shared/*"],
+      "@/utils": ["apps/web/src/utils"],
+      "@/utils/*": ["apps/web/src/utils/*"],
+      // Legacy/compatibility aliases
+      "@ghatana/types": ["libs/types/src"],
+      "@ghatana/types/*": ["libs/types/src/*"],
+      "@ghatana/ui": ["../../../libs/typescript/ui/src"],
+      "@ghatana/ui/*": ["../../../libs/typescript/ui/src/*"],
+      "@ghatana/canvas": ["libs/canvas/src"],
+      "@ghatana/canvas/*": ["libs/canvas/src/*"],
+      // React Flow compatibility
+      "reactflow": ["node_modules/@reactflow/core"],
+      "reactflow/*": ["node_modules/@reactflow/*"]
+    }
+  },
+  "include": [],
+  "references": []
+}

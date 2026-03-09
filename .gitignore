@@ -1,0 +1,57 @@
+# Build outputs
+build/
+dist/
+out/
+target/
+*.class
+
+# Dependencies
+node_modules/
+.pnpm-store/
+
+# IDE
+.idea/
+*.iml
+.vscode/
+*.swp
+*.swo
+*~
+
+# Gradle
+.gradle/
+gradle-app.setting
+!gradle-wrapper.jar
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Logs
+*.log
+
+# Environment
+.env
+.env.local
+.env.*.local
+
+# Test output
+coverage/
+test-results/
+.nyc_output/
+
+# TypeScript
+*.tsbuildinfo
+# Prevent compiled output in source directories
+platform/typescript/**/src/**/*.js
+platform/typescript/**/src/**/*.d.ts
+platform/typescript/**/src/**/*.js.map
+
+# Turbo
+.turbo/
+
+# Heap dumps
+*.hprof
+
+# Temporary files
+*.tmp
+*.bak

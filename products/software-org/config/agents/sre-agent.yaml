@@ -1,0 +1,121 @@
+# SRE Agent Configuration
+apiVersion: virtualorg.ghatana.com/v1
+kind: Agent
+metadata:
+  name: sre-agent
+  labels:
+    level: individual-contributor
+    department: devops
+    ai-enabled: "true"
+
+spec:
+  displayName: "Site Reliability Engineer"
+  description: |
+    SRE responsible for system reliability, incident response, monitoring,
+    and maintaining service level objectives.
+
+  role:
+    name: SRE
+    level: individual
+    title: "Site Reliability Engineer"
+
+  department: devops
+  reportingTo: devops-lead-agent
+  directReports: []
+
+  authority:
+    decisionScope: individual
+    budgetLimit: 5000
+    canApprove:
+      - monitoring_alerts
+      - runbook_updates
+      - incident_postmortems
+    canEscalateTo:
+      - devops-lead-agent
+
+  capabilities:
+    primary:
+      - incident_response
+      - monitoring
+      - reliability_engineering
+      - capacity_planning
+      - performance_optimization
+    secondary:
+      - automation
+      - infrastructure_as_code
+      - security_hardening
+
+  ai:
+    enabled: true
+    provider: openai
+    model: gpt-4-turbo
+
+    systemPrompt: |
+      You are a Site Reliability Engineer in a software organization.
+
+      ## Your Role
+      You ensure system reliability, respond to incidents, maintain monitoring,
+      and work to meet service level objectives.
+
+      ## Your Responsibilities
+      1. Monitor system health and performance
+      2. Respond to and resolve incidents
+      3. Conduct postmortems and implement improvements
+      4. Maintain and improve monitoring/alerting
+      5. Capacity planning and optimization
+      6. Automate operational tasks
+
+      ## When to Escalate
+      Escalate to DevOps Lead when:
+      - Major incident affecting multiple services
+      - SLO breach requiring leadership attention
+      - Infrastructure changes with broad impact
+
+    responseConfig:
+      maxTokens: 1500
+      temperature: 0.4
+      topP: 0.9
+
+    tools:
+      - name: check_system_health
+        enabled: true
+      - name: create_incident
+        enabled: true
+      - name: update_runbook
+        enabled: true
+      - name: scale_infrastructure
+        enabled: true
+
+    memory:
+      type: short-term
+      contextWindow: 25
+
+  workload:
+    maxConcurrentTasks: 6
+    taskPrioritization: urgency
+
+  availability:
+    schedule:
+      type: on-call
+    responseTime:
+      target: PT5M
+      maximum: PT15M
+
+  hitl:
+    requireApprovalFor:
+      - major_infrastructure_change
+    approvalChain:
+      - devops-lead-agent
+
+  subscriptions:
+    - event: alert_triggered
+      action: investigate_alert
+    - event: deployment_completed
+      action: verify_deployment
+    - event: incident_declared
+      action: join_incident_response
+
+  publications:
+    - event: incident_resolved
+    - event: postmortem_completed
+    - event: slo_status_updated

@@ -1,0 +1,24 @@
+{
+    "name": "@ghatana/tutorputor-sim-author",
+    "version": "1.0.0",
+    "private": true,
+    "main": "./src/index.ts",
+    "types": "./src/index.ts",
+    "scripts": {
+        "build": "tsc",
+        "test": "vitest run",
+        "test:watch": "vitest"
+    },
+    "dependencies": {
+        "@ghatana/tutorputor-contracts": "workspace:*",
+        "@ghatana/tutorputor-db": "workspace:*",
+        "@ghatana/api": "workspace:*",
+        "openai": "^6.17.0",
+        "zod": "^4.3.6"
+    },
+    "devDependencies": {
+        "@types/node": "^25.2.0",
+        "typescript": "^5.9.3",
+        "vitest": "^4.0.18"
+    }
+}

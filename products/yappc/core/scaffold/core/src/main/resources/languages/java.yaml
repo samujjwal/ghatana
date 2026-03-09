@@ -1,0 +1,147 @@
+name: Java
+versions:
+  - "11"
+  - "17"
+  - "21"
+  - "22"
+
+packageManagement:
+  options:
+    - maven
+    - gradle
+  files:
+    - pom.xml
+    - build.gradle
+    - settings.gradle
+  commands:
+    maven:
+      compile: "mvn compile"
+      test: "mvn test"
+      package: "mvn package"
+      install: "mvn install"
+      clean: "mvn clean"
+    gradle:
+      build: "./gradlew build"
+      test: "./gradlew test"
+      run: "./gradlew run"
+      clean: "./gradlew clean"
+
+buildSystems:
+  maven:
+    files:
+      - pom.xml
+    commands:
+      compile: "mvn compile"
+      test: "mvn test"
+      package: "mvn package"
+      install: "mvn install"
+    outputs:
+      - jar
+      - war
+
+  gradle:
+    files:
+      - build.gradle
+      - settings.gradle
+    commands:
+      build: "./gradlew build"
+      test: "./gradlew test"
+      run: "./gradlew run"
+    outputs:
+      - jar
+      - war
+
+frameworks:
+  spring-boot:
+    templates:
+      - java-service-spring-gradle
+      - java-service-spring-maven
+    conventions:
+      - src/main/java/
+      - src/main/resources/
+      - src/test/java/
+    testing:
+      - junit5
+      - mockito
+      - spring-boot-test
+    config:
+      - application.yml
+      - application.properties
+
+  activej:
+    templates:
+      - java-service-activej-gradle
+    conventions:
+      - src/main/java/
+      - src/main/resources/
+    testing:
+      - junit5
+      - mockito
+    config:
+      - application.conf
+
+  micronaut:
+    templates:
+      - java-service-micronaut
+    conventions:
+      - src/main/java/
+      - src/main/resources/
+    testing:
+      - junit5
+      - mockito
+    config:
+      - application.yml
+
+  quarkus:
+    templates:
+      - java-service-quarkus
+    conventions:
+      - src/main/java/
+      - src/main/resources/
+    testing:
+      - junit5
+      - rest-assured
+    config:
+      - application.properties
+
+testing:
+  frameworks:
+    - junit5
+    - junit4
+    - testng
+    - mockito
+    - assertj
+  conventions:
+    - "*Test.java"
+    - "@Test"
+    - "@BeforeEach"
+    - "@AfterEach"
+  coverage:
+    - jacoco
+    - cobertura
+
+linting:
+  tools:
+    - checkstyle
+    - spotbugs
+    - pmd
+    - google-java-format
+  config:
+    - checkstyle.xml
+    - spotbugs.xml
+    - pmd.xml
+
+conventions:
+  directory:
+    - src/main/java
+    - src/main/resources
+    - src/test/java
+    - src/test/resources
+  naming:
+    - PascalCase
+    - camelCase
+  imports:
+    - grouped
+    - java-first
+    - javax-second
+    - third-party-last

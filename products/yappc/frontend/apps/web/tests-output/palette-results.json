@@ -1,0 +1,2090 @@
+
+> web@0.0.0 test /home/samujjwal/Developments/yappc/yappc/app-creator/apps/web
+> vitest -- test/routes/__tests__/integration/PaletteDragDrop.integration.spec.tsx --runInBand --reporter json
+
+
+ RUN  v2.1.9 /home/samujjwal/Developments/yappc/yappc/app-creator/apps/web
+
+ ❯ src/components/canvas/__tests__/canvas-refactoring.test.tsx (0 test)
+ ❯ src/components/canvas/__tests__/performance-integration.test.tsx (11 tests | 4 failed) 411ms
+   × Performance Tests > usePerformanceMonitor > tracks basic performance metrics 40ms
+     → expect(element).toHaveTextContent()
+
+Expected element to have text content:
+  100
+Received:
+  0
+   × Performance Tests > useVirtualScrolling > handles empty item list 19ms
+     → expect(element).toHaveTextContent()
+
+Expected element to have text content:
+  0
+Received:
+  -1
+   × History Tests > useAdvancedHistory > supports branching when enabled 8ms
+     → expect(element).toHaveTextContent()
+
+Expected element to have text content:
+  feature-branch
+Received:
+  main
+   × Integration Stress Tests > maintains state consistency across hooks 9ms
+     → expect(element).toHaveTextContent()
+
+Expected element to have text content:
+  1
+Received:
+  0
+ ❯ src/components/canvas/__tests__/edge-cases.test.tsx (24 tests | 15 failed) 901ms
+   × Performance Edge Cases > BatchProcessor > handles empty batch 10ms
+     → processor.process is not a function
+   × Performance Edge Cases > BatchProcessor > processes large batches efficiently 2ms
+     → processor.process is not a function
+   × Performance Edge Cases > BatchProcessor > maintains operation order 1ms
+     → processor.process is not a function
+   × Performance Edge Cases > BatchProcessor > handles conflicting operations 1ms
+     → processor.process is not a function
+   × Performance Edge Cases > useViewportCulling Edge Cases > handles viewport outside content area 48ms
+     → getItemBounds is not a function
+   × Performance Edge Cases > useViewportCulling Edge Cases > handles items without bounds 5ms
+     → getItemBounds is not a function
+   × Collaboration Edge Cases > OperationalTransform > handles insert-insert conflicts 1ms
+     → transform.transformPair is not a function or its return value is not iterable
+   × Collaboration Edge Cases > OperationalTransform > handles delete-delete conflicts 1ms
+     → transform.transformPair is not a function or its return value is not iterable
+   × Collaboration Edge Cases > OperationalTransform > handles insert-delete conflicts 1ms
+     → transform.transformPair is not a function or its return value is not iterable
+   × Collaboration Edge Cases > OperationalTransform > maintains operation semantics after transform 1ms
+     → transform.transformSequence is not a function
+   × Collaboration Edge Cases > Concurrent Operation Resolution > resolves simultaneous edits to same position 1ms
+     → transform.resolveConflicts is not a function
+   × Collaboration Edge Cases > Concurrent Operation Resolution > handles rapid operation sequences 1ms
+     → transform.resolveConflicts is not a function
+   × History Edge Cases > BranchManager > creates branches from any point in history 1ms
+     → mainBranch.addEntry is not a function
+   × History Edge Cases > BranchManager > merges branches with conflict resolution 1ms
+     → mainBranch.addEntry is not a function
+   × History Edge Cases > BranchManager > handles circular branch dependencies 7ms
+     → expected true to be false // Object.is equality
+   ✓ Integration Stress Tests > handles concurrent operations across all systems 640ms
+ ✓ src/routes/__tests__/integration/canvas-test.viewport.spec.tsx (17 tests) 392ms
+ ✓ src/routes/__tests__/canvas-test.infinite.spec.tsx (28 tests) 21ms
+ ✓ src/routes/__tests__/canvas-test.history.spec.tsx (26 tests) 30ms
+ ✓ src/routes/__tests__/canvas-test.grid.spec.tsx (28 tests) 21ms
+ ✓ perf/infinite-canvas.bench.spec.ts (15 tests) 1015ms
+   ✓ Infinite Canvas Performance Benchmark > Memory and Resource Management > should not create excessive temporary objects during culling 460ms
+stdout | perf/infinite-canvas.bench.spec.ts > Infinite Canvas Performance Benchmark > Static Canvas with 5000 Nodes > should maintain 60 FPS P95 with static viewport
+Static Canvas Metrics:
+  Frame Count: 1
+  Total Time: 9.08ms
+  Avg FPS: 110.50
+  P95 FPS: 110.50
+  P99 FPS: 110.50
+  Min/Max FPS: 110.50 / 110.50
+
+stdout | perf/infinite-canvas.bench.spec.ts > Infinite Canvas Performance Benchmark > Static Canvas with 5000 Nodes > should effectively cull non-visible nodes
+Culling Effectiveness:
+  Total Nodes: 5000
+  Visible Nodes: 48
+  Culled Nodes: 4952
+  Cull Ratio: 99.04%
+
+stdout | perf/infinite-canvas.bench.spec.ts > Infinite Canvas Performance Benchmark > Static Canvas with 5000 Nodes > should handle viewport bounds calculation efficiently
+Viewport Bounds Performance:
+  Iterations: 10000
+  Total Time: 15.22ms
+  Avg Time per Call: 0.0015ms
+
+stdout | perf/infinite-canvas.bench.spec.ts > Infinite Canvas Performance Benchmark > Panning Performance > should maintain 60 FPS P95 while panning
+Panning Metrics:
+  Frame Count: 100
+  Avg FPS: 2699.91
+  P95 FPS: 4076.19
+  P95 Frame Time: 0.50ms
+
+stdout | perf/infinite-canvas.bench.spec.ts > Infinite Canvas Performance Benchmark > Panning Performance > should handle rapid panning smoothly
+Rapid Panning Metrics:
+  Frame Count: 200
+  Avg Frame Time: 0.38ms
+  P95 Frame Time: 0.41ms
+
+stdout | perf/infinite-canvas.bench.spec.ts > Infinite Canvas Performance Benchmark > Zooming Performance > should maintain 60 FPS P95 while zooming
+Zooming Metrics:
+  Frame Count: 100
+  Avg FPS: 2212.84
+  P95 FPS: 2910.24
+
+stdout | perf/infinite-canvas.bench.spec.ts > Infinite Canvas Performance Benchmark > Zooming Performance > should handle zoom with focal point efficiently
+Zoom at Point Performance:
+  Iterations: 1000
+  Avg Time per Call: 0.0015ms
+
+stdout | perf/infinite-canvas.bench.spec.ts > Infinite Canvas Performance Benchmark > Combined Operations > should handle simultaneous pan and zoom
+Combined Pan+Zoom Metrics:
+  Frame Count: 100
+  P95 FPS: 4187.71
+  P99 FPS: 4187.71
+
+stdout | perf/infinite-canvas.bench.spec.ts > Infinite Canvas Performance Benchmark > Coordinate Transformation Performance > should handle screenToWorld transformations efficiently
+Screen to World Transform:
+  Iterations: 10000
+  Avg Time per Call: 0.0010ms
+
+stdout | perf/infinite-canvas.bench.spec.ts > Infinite Canvas Performance Benchmark > Coordinate Transformation Performance > should handle worldToScreen transformations efficiently
+World to Screen Transform:
+  Iterations: 10000
+  Avg Time per Call: 0.0001ms
+
+stdout | perf/infinite-canvas.bench.spec.ts > Infinite Canvas Performance Benchmark > Visibility Culling Performance > should handle point visibility checks efficiently
+Point Visibility Check:
+  Iterations: 10000
+  Avg Time per Call: 0.0003ms
+
+stdout | perf/infinite-canvas.bench.spec.ts > Infinite Canvas Performance Benchmark > Visibility Culling Performance > should handle rect visibility checks efficiently
+Rect Visibility Check:
+  Iterations: 10000
+  Avg Time per Call: 0.0002ms
+
+stdout | perf/infinite-canvas.bench.spec.ts > Infinite Canvas Performance Benchmark > Memory and Resource Management > should not create excessive temporary objects during culling
+Memory Usage:
+  Before: 0.00 MB
+  After: 0.00 MB
+  Growth: 0.00 MB
+
+stdout | perf/infinite-canvas.bench.spec.ts > Infinite Canvas Performance Benchmark > Fit to View Performance > should calculate fit-to-view efficiently
+Fit to View Performance:
+  Iterations: 1000
+  Avg Time per Call: 0.0359ms
+
+stdout | perf/infinite-canvas.bench.spec.ts > Infinite Canvas Performance Benchmark > Overall Performance Summary > should provide complete performance report
+
+=== PERFORMANCE SUMMARY ===
+
+Static Canvas (5000 nodes):
+  P95 FPS: 563.29
+  P95 Frame Time: 1.78ms
+
+Panning:
+  P95 FPS: 2950.68
+  P95 Frame Time: 3.40ms
+
+Zooming:
+  P95 FPS: 2881.69
+  P95 Frame Time: 0.46ms
+
+=== TARGET: 60 FPS P95 (16.67ms frame time) ===
+
+
+ ❯ src/routes/__tests__/integration/canvas-test.checkpoint.spec.tsx (24 tests | 2 failed) 1831ms
+   ✓ Feature 2.11: Undo/Redo UX - Integration Tests > Checkpoint Management > maintains multiple checkpoints 310ms
+   × Feature 2.11: Undo/Redo UX - Integration Tests > Collaborative Undo and Conflicts > detects conflicts when undoing other actor's actions 20ms
+     → expected "spy" to be called at least once
+   × Feature 2.11: Undo/Redo UX - Integration Tests > Acceptance Criteria Validation > ✓ Collaborative undo: Conflict warning for other users' changes 20ms
+     → expected "spy" to be called at least once
+   ✓ Feature 2.11: Undo/Redo UX - Integration Tests > Performance and Edge Cases > handles large timeline efficiently 371ms
+ ✓ src/routes/__tests__/integration/canvas-test.pages.spec.tsx (20 tests) 2047ms
+   ✓ Feature 2.10: Multi-Page Navigation - Integration Tests > Performance and Edge Cases > handles rapid page switching 551ms
+ ❯ src/routes/__tests__/canvas-test.minimap.spec.tsx (28 tests | 7 failed) 2407ms
+   × Minimap Integration Tests > Viewport Indicator Synchronization > should calculate correct viewport indicator position 6ms
+     → expected -22.857142857142854 to be greater than or equal to 0
+   ✓ Minimap Integration Tests > Click-to-Pan Interaction > should handle minimap click and update viewport 475ms
+   × Minimap Integration Tests > Click-to-Pan Interaction > should calculate correct world coordinates from minimap click 1ms
+     → Cannot read properties of undefined (reading 'x')
+   ✓ Minimap Integration Tests > Zoom Controls Integration > should handle fit to screen button click 334ms
+   × Minimap Integration Tests > Coordinate Transformations > should handle nodes at canvas bounds correctly 2ms
+     → expected 23.33333333333333 to be close to 10, received difference is 13.333333333333329, but expected 0.05
+   × Minimap Integration Tests > Custom Configuration > should apply custom padding 1ms
+     → expected 30 to be close to 20, received difference is 10, but expected 0.05
+   × Minimap Integration Tests > Zoom to Selection > should calculate viewport to fit selected nodes 1ms
+     → expected NaN to be greater than 0
+   × Minimap Integration Tests > Zoom to Selection > should handle single node selection 1ms
+     → expected NaN to be close to 200, received difference is NaN, but expected 0.5
+   × Minimap Integration Tests > Zoom to Selection > should handle empty selection gracefully 15ms
+     → expected { x: +0, y: +0 } to deeply equal { x: 500, y: 500 }
+ ✓ src/routes/__tests__/integration/integration-validation.spec.ts (28 tests) 18ms
+ ✓ src/routes/__tests__/canvas-test.selection.spec.tsx (14 tests) 31ms
+ ✓ src/components/canvas/utils/transform.test.ts (12 tests) 39ms
+ ✓ src/test-utils/__tests__/mocks.test.ts (31 tests) 76ms
+ ✓ src/components/canvas/page/exportJSX.test.ts (11 tests) 11ms
+ ✓ src/services/registry/ComponentRegistry.test.ts (19 tests) 20ms
+ ✓ src/routes/__tests__/integration/CanvasScene.integration.spec.tsx (13 tests) 397ms
+ ✓ src/components/canvas/page/schemas.test.ts (15 tests) 47ms
+ ✓ src/services/navigation/NavigationService.test.ts (12 tests) 48ms
+stdout | src/routes/__tests__/integration/PaletteDragDrop.integration.spec.tsx > Feature 6.4: Palette Drag & Drop Integration > DnD Metadata Validation > exposes correct draggable metadata on palette items
+[UI] Rendering shared ComponentPalette (components/canvas/ComponentPalette.tsx)
+
+stdout | src/routes/__tests__/integration/PaletteDragDrop.integration.spec.tsx > Feature 6.4: Palette Drag & Drop Integration > DnD Metadata Validation > includes correct component type in metadata
+[UI] Rendering shared ComponentPalette (components/canvas/ComponentPalette.tsx)
+
+stdout | src/routes/__tests__/integration/PaletteDragDrop.integration.spec.tsx > Feature 6.4: Palette Drag & Drop Integration > DnD Metadata Validation > includes default data in component metadata
+[UI] Rendering shared ComponentPalette (components/canvas/ComponentPalette.tsx)
+
+stdout | src/routes/__tests__/integration/PaletteDragDrop.integration.spec.tsx > Feature 6.4: Palette Drag & Drop Integration > DnD Metadata Validation > sets proper draggable attributes for accessibility
+[UI] Rendering shared ComponentPalette (components/canvas/ComponentPalette.tsx)
+
+stdout | src/routes/__tests__/integration/PaletteDragDrop.integration.spec.tsx > Feature 6.4: Palette Drag & Drop Integration > Drag Interaction Flow > handles drag start event
+[UI] Rendering shared ComponentPalette (components/canvas/ComponentPalette.tsx)
+
+stdout | src/routes/__tests__/integration/PaletteDragDrop.integration.spec.tsx > Feature 6.4: Palette Drag & Drop Integration > Drag Interaction Flow > handles drag end with valid drop target
+[UI] Rendering shared ComponentPalette (components/canvas/ComponentPalette.tsx)
+
+ ✓ src/components/canvas/sketch/smoothStroke.test.ts (11 tests) 23ms
+ ✓ src/routes/__tests__/integration/canvas-test.stable-ids.spec.tsx (29 tests) 7398ms
+   ✓ Feature 2.15: Stable IDs & Diffing - Integration Tests > ID Generation and Management > should generate deterministic content-hash IDs 500ms
+   ✓ Feature 2.15: Stable IDs & Diffing - Integration Tests > ID Generation and Management > should generate different hashes for different content 789ms
+   ✓ Feature 2.15: Stable IDs & Diffing - Integration Tests > ID Generation and Management > should generate UUIDs with correct format 300ms
+   ✓ Feature 2.15: Stable IDs & Diffing - Integration Tests > ID Collision Detection > should detect collision for existing ID 416ms
+   ✓ Feature 2.15: Stable IDs & Diffing - Integration Tests > ID Collision Detection > should suggest alternative IDs for multiple collisions 491ms
+   ✓ Feature 2.15: Stable IDs & Diffing - Integration Tests > ID Validation and Normalization > should reject IDs with invalid characters 402ms
+   ✓ Feature 2.15: Stable IDs & Diffing - Integration Tests > ID Validation and Normalization > should normalize IDs with special characters 303ms
+   ✓ Feature 2.15: Stable IDs & Diffing - Integration Tests > Acceptance Criteria Validation > ✓ AC 2.15.1: ID scheme - Node IDs hash from type+data 318ms
+stdout | src/routes/__tests__/integration/PaletteDragDrop.integration.spec.tsx > Feature 6.4: Palette Drag & Drop Integration > Drag Interaction Flow > provides correct component data on drop
+[UI] Rendering shared ComponentPalette (components/canvas/ComponentPalette.tsx)
+
+ ✓ src/routes/__tests__/canvas-demo-helpers.test.ts (10 tests) 15ms
+stdout | src/routes/__tests__/integration/PaletteDragDrop.integration.spec.tsx > Feature 6.4: Palette Drag & Drop Integration > Coordinate Projection > handles drop at different canvas positions
+[UI] Rendering shared ComponentPalette (components/canvas/ComponentPalette.tsx)
+
+ ✓ src/components/canvas/toolbar/__tests__/NodeTypePicker.test.tsx (7 tests) 1037ms
+   ✓ NodeTypePicker > renders dialog when open 364ms
+stdout | src/routes/__tests__/integration/PaletteDragDrop.integration.spec.tsx > Feature 6.4: Palette Drag & Drop Integration > Multiple Component Drops > handles dropping multiple components sequentially
+[UI] Rendering shared ComponentPalette (components/canvas/ComponentPalette.tsx)
+
+stdout | src/routes/__tests__/integration/PaletteDragDrop.integration.spec.tsx > Feature 6.4: Palette Drag & Drop Integration > Multiple Component Drops > maintains correct order of dropped components
+[UI] Rendering shared ComponentPalette (components/canvas/ComponentPalette.tsx)
+
+stdout | src/routes/__tests__/integration/PaletteDragDrop.integration.spec.tsx > Feature 6.4: Palette Drag & Drop Integration > Edge Cases > handles drag cancel (drop outside canvas)
+[UI] Rendering shared ComponentPalette (components/canvas/ComponentPalette.tsx)
+
+stdout | src/routes/__tests__/integration/PaletteDragDrop.integration.spec.tsx > Feature 6.4: Palette Drag & Drop Integration > Edge Cases > handles rapid successive drops
+[UI] Rendering shared ComponentPalette (components/canvas/ComponentPalette.tsx)
+
+stdout | src/routes/__tests__/integration/PaletteDragDrop.integration.spec.tsx > Feature 6.4: Palette Drag & Drop Integration > Edge Cases > handles drop with missing metadata gracefully
+[UI] Rendering shared ComponentPalette (components/canvas/ComponentPalette.tsx)
+
+stdout | src/routes/__tests__/integration/PaletteDragDrop.integration.spec.tsx > Feature 6.4: Palette Drag & Drop Integration > State Integration > updates canvas atom after successful drop
+[UI] Rendering shared ComponentPalette (components/canvas/ComponentPalette.tsx)
+
+ ✓ src/components/canvas/hooks/useCanvasHistory.test.ts (8 tests) 115ms
+ ✓ src/components/canvas/hooks/useCanvasSelection.test.ts (8 tests) 63ms
+ ❯ src/routes/__tests__/integration/PaletteDragDrop.integration.spec.tsx (15 tests | 10 failed) 14783ms
+   ✓ Feature 6.4: Palette Drag & Drop Integration > DnD Metadata Validation > exposes correct draggable metadata on palette items 1195ms
+   ✓ Feature 6.4: Palette Drag & Drop Integration > DnD Metadata Validation > includes correct component type in metadata 430ms
+   ✓ Feature 6.4: Palette Drag & Drop Integration > DnD Metadata Validation > includes default data in component metadata 388ms
+   ✓ Feature 6.4: Palette Drag & Drop Integration > DnD Metadata Validation > sets proper draggable attributes for accessibility 373ms
+   ✓ Feature 6.4: Palette Drag & Drop Integration > Drag Interaction Flow > handles drag start event 366ms
+   × Feature 6.4: Palette Drag & Drop Integration > Drag Interaction Flow > handles drag end with valid drop target 1520ms
+     → expected "spy" to be called at least once
+
+Ignored nodes: comments, script, style
+[36m<html>[39m
+  [36m<head />[39m
+  [36m<body>[39m
+    [36m<div>[39m
+      [36m<div[39m
+        [33maria-label[39m=[32m"Component Palette"[39m
+        [33mclass[39m=[32m"MuiPaper-root MuiPaper-elevation MuiPaper-rounded MuiPaper-elevation2 css-1ezauy5-MuiPaper-root"[39m
+        [33mdata-testid[39m=[32m"component-palette"[39m
+        [33mid[39m=[32m"component-palette"[39m
+      [36m>[39m
+        [36m<div[39m
+          [33mclass[39m=[32m"MuiBox-root css-r6rj31"[39m
+        [36m>[39m
+          [36m<h6[39m
+            [33mclass[39m=[32m"MuiTypography-root MuiTypography-h6 css-188twu3-MuiTypography-root"[39m
+          [36m>[39m
+            [0mPalette[0m
+          [36m</h6>[39m
+          [36m<div[39m
+            [33mclass[39m=[32m"MuiStack-root css-q4tsa-MuiStack-root"[39m
+          [36m>[39m
+            [36m<div[39m
+              [33mclass[39m=[32m"MuiChip-root MuiChip-outlined MuiChip-sizeSmall MuiChip-colorPrimary MuiChip-outlinedPrimary css-1y6wsfa-MuiChip-root"[39m
+              [33mtabindex[39m=[32m"0"[39m
+            [36m>[39m
+              [36m<span[39m
+                [33mclass[39m=[32m"MuiChip-label MuiChip-labelSmall css-rrn746-MuiChip-label"[39m
+              [36m>[39m
+                [0mAPI[0m
+              [36m</span>[39m
+            [36m</div>[39m
+            [36m<div[39m
+              [33mclass[39m=[32m"MuiChip-root MuiChip-outlined MuiChip-sizeSmall MuiChip-colorPrimary MuiChip-outlinedPrimary css-1y6wsfa-MuiChip-root"[39m
+              [33mtabindex[39m=[32m"0"[39m
+            [36m>[39m
+              [36m<span[39m
+                [33mclass[39m=[32m"MuiChip-label MuiChip-labelSmall css-rrn746-MuiChip-label"[39m
+              [36m>[39m
+                [0mData[0m
+              [36m</span>[39m
+            [36m</div>[39m
+            [36m<div[39m
+              [33mclass[39m=[32m"MuiChip-root MuiChip-outlined MuiChip-sizeSmall MuiChip-colorPrimary MuiChip-outlinedPrimary css-1y6wsfa-MuiChip-root"[39m
+              [33mtabindex[39m=[32m"0"[39m
+            [36m>[39m
+              [36m<span[39m
+                [33mclass[39m=[32m"MuiChip-label MuiChip-labelSmall css-rrn746-MuiChip-label"[39m
+              [36m>[39m
+                [0mComponent[0m
+              [36m</span>[39m
+            [36m</div>[39m
+          [36m</div>[39m
+          [36m<div[39m
+            [33mclass[39m=[32m"MuiFormControl-root MuiFormControl-fullWidth MuiTextField-root css-120rok2-MuiFormControl-root-MuiTextField-root"[39m
+          [36m>[39m
+            [36m<div[39m
+              [33mclass[39m=[32m"MuiInputBase-root MuiOutlinedInput-root MuiInputBase-colorPrimary MuiInputBase-fullWidth MuiInputBase-formControl MuiInputBase-sizeSmall MuiInputBase-adornedStart css-8j6b76-MuiInputBase-root-MuiOutlinedInput-root"[39m
+            [36m>[39m
+              [36m<div[39m
+                [33mclass[39m=[32m"MuiInputAdornment-root MuiInputAdornment-positionStart MuiInputAdornment-outlined MuiInputAdornment-sizeSmall css-ittuaa-MuiInputAdornment-root"[39m
+              [36m>[39m
+                [36m<span[39m
+                  [33mclass[39m=[32m"notranslate"[39m
+                [36m>[39m
+                  [0m​[0m
+                [36m</span>[39m
+                [36m<svg[39m
+                  [33maria-hidden[39m=[32m"true"[39m
+                  [33mclass[39m=[32m"MuiSvgIcon-root MuiSvgIcon-fontSizeSmall css-ptiqhd-MuiSvgIcon-root"[39m
+                  [33mdata-testid[39m=[32m"SearchIcon"[39m
+                  [33mfocusable[39m=[32m"false"[39m
+                  [33mviewBox[39m=[32m"0 0 24 24"[39m
+                [36m>[39m
+                  [36m<path[39m
+                    [33md[39m=[32m"M15.5 14h-.79l-.28-.27C15.41 12.59 16 11.11 16 9.5 16 5.91 13.09 3 9.5 3S3 5.91 3 9.5 5.91 16 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14"[39m
+                  [36m/>[39m
+                [36m</svg>[39m
+              [36m</div>[39m
+              [36m<input[39m
+                [33maria-invalid[39m=[32m"false"[39m
+                [33mclass[39m=[32m"MuiInputBase-input MuiOutlinedInput-input MuiInputBase-inputSizeSmall MuiInputBase-inputAdornedStart css-1ua80n0-MuiInputBase-input-MuiOutlinedInput-input"[39m
+                [33mid[39m=[32m"_r_5_"[39m
+                [33mplaceholder[39m=[32m"Search components..."[39m
+                [33mtabindex[39m=[32m"0"[39m
+                [33mtype[39m=[32m"text"[39m
+                [33mvalue[39m=[32m""[39m
+              [36m/>[39m
+              [36m<fieldset[39m
+                [33maria-hidden[39m=[32m"true"[39m
+                [33mclass[39m=[32m"MuiOutlinedInput-notchedOutline css-r01yff-MuiNotchedOutlined-root-MuiOutlinedInput-notchedOutline"[39m
+              [36m>[39m
+                [36m<legend[39m
+                  [33mclass[39m=[32m"css-1whs34k-MuiNotchedOutlined-root"[39m
+                [36m>[39m
+                  [36m<span[39m
+                    [33mclass[39m=[32m"notranslate"[39m
+                  [36m>[39m
+                    [0m​[0m
+                  [36m</span>[39m
+                [36m</legend>[39m
+              [36m</fieldset>[39m
+            [36m</div>[39m
+          [36m</div>[39m
+        [36m</div>[39m
+        [36m<div[39m
+          [33mclass[39m=[32m"MuiBox-root css-4z6nar"[39m
+        [36m>[39m
+          [36m<div[39m
+            [33mclass[39m=[32m"MuiPaper-root MuiPaper-elevation MuiPaper-rounded MuiPaper-elevation1 MuiAccordion-root MuiAccordion-rounded Mui-expanded MuiAccordion-gutters css-t56fdk-MuiPaper-root-MuiAccordion-root"[39m
+          [36m>[39m
+            [36m<div[39m
+              [33maria-expanded[39m=[32m"true"[39m
+              [33mclass[39m=[32m"MuiButtonBase-root MuiAccordionSummary-root Mui-expanded MuiAccordionSummary-gutters css-137yb42-MuiButtonBase-root-MuiAccordionSummary-root"[39m
+              [33mrole[39m=[32m"button"[39m
+              [33mtabindex[39m=[32m"0"[39m
+            [36m>[39m
+              [36m<div[39m
+                [33mclass[39m=[32m"MuiAccordionSummary-content Mui-expanded MuiAccordionSummary-contentGutters css-eqpfi5-MuiAccordionSummary-content"[39m
+              [36m>[39m
+                [36m<div[39m
+                  [33mclass[39m=[32m"MuiBox-root css-1bntj9o"[39m
+                [36m>[39m
+                  [36m<h6[39m
+                    [33mclass[39m=[32m"MuiTypography-root MuiTypography-subtitle2 css-1k1wiw9-MuiTypography-root"[39m
+                  [36m>[39m
+                    [0mArchitecture[0m
+                  [36m</h6>[39m
+                  [36m<div[39m
+                    [33mclass[39m=[32m"MuiChip-root MuiChip-outlined MuiChip-sizeSmall MuiChip-colorDefault MuiChip-outlinedDefault css-1rvzqce...
+   × Feature 6.4: Palette Drag & Drop Integration > Drag Interaction Flow > provides correct component data on drop 1426ms
+     → expected "spy" to be called at least once
+
+Ignored nodes: comments, script, style
+[36m<html>[39m
+  [36m<head />[39m
+  [36m<body>[39m
+    [36m<div>[39m
+      [36m<div[39m
+        [33maria-label[39m=[32m"Component Palette"[39m
+        [33mclass[39m=[32m"MuiPaper-root MuiPaper-elevation MuiPaper-rounded MuiPaper-elevation2 css-1ezauy5-MuiPaper-root"[39m
+        [33mdata-testid[39m=[32m"component-palette"[39m
+        [33mid[39m=[32m"component-palette"[39m
+      [36m>[39m
+        [36m<div[39m
+          [33mclass[39m=[32m"MuiBox-root css-r6rj31"[39m
+        [36m>[39m
+          [36m<h6[39m
+            [33mclass[39m=[32m"MuiTypography-root MuiTypography-h6 css-188twu3-MuiTypography-root"[39m
+          [36m>[39m
+            [0mPalette[0m
+          [36m</h6>[39m
+          [36m<div[39m
+            [33mclass[39m=[32m"MuiStack-root css-q4tsa-MuiStack-root"[39m
+          [36m>[39m
+            [36m<div[39m
+              [33mclass[39m=[32m"MuiChip-root MuiChip-outlined MuiChip-sizeSmall MuiChip-colorPrimary MuiChip-outlinedPrimary css-1y6wsfa-MuiChip-root"[39m
+              [33mtabindex[39m=[32m"0"[39m
+            [36m>[39m
+              [36m<span[39m
+                [33mclass[39m=[32m"MuiChip-label MuiChip-labelSmall css-rrn746-MuiChip-label"[39m
+              [36m>[39m
+                [0mAPI[0m
+              [36m</span>[39m
+            [36m</div>[39m
+            [36m<div[39m
+              [33mclass[39m=[32m"MuiChip-root MuiChip-outlined MuiChip-sizeSmall MuiChip-colorPrimary MuiChip-outlinedPrimary css-1y6wsfa-MuiChip-root"[39m
+              [33mtabindex[39m=[32m"0"[39m
+            [36m>[39m
+              [36m<span[39m
+                [33mclass[39m=[32m"MuiChip-label MuiChip-labelSmall css-rrn746-MuiChip-label"[39m
+              [36m>[39m
+                [0mData[0m
+              [36m</span>[39m
+            [36m</div>[39m
+            [36m<div[39m
+              [33mclass[39m=[32m"MuiChip-root MuiChip-outlined MuiChip-sizeSmall MuiChip-colorPrimary MuiChip-outlinedPrimary css-1y6wsfa-MuiChip-root"[39m
+              [33mtabindex[39m=[32m"0"[39m
+            [36m>[39m
+              [36m<span[39m
+                [33mclass[39m=[32m"MuiChip-label MuiChip-labelSmall css-rrn746-MuiChip-label"[39m
+              [36m>[39m
+                [0mComponent[0m
+              [36m</span>[39m
+            [36m</div>[39m
+          [36m</div>[39m
+          [36m<div[39m
+            [33mclass[39m=[32m"MuiFormControl-root MuiFormControl-fullWidth MuiTextField-root css-120rok2-MuiFormControl-root-MuiTextField-root"[39m
+          [36m>[39m
+            [36m<div[39m
+              [33mclass[39m=[32m"MuiInputBase-root MuiOutlinedInput-root MuiInputBase-colorPrimary MuiInputBase-fullWidth MuiInputBase-formControl MuiInputBase-sizeSmall MuiInputBase-adornedStart css-8j6b76-MuiInputBase-root-MuiOutlinedInput-root"[39m
+            [36m>[39m
+              [36m<div[39m
+                [33mclass[39m=[32m"MuiInputAdornment-root MuiInputAdornment-positionStart MuiInputAdornment-outlined MuiInputAdornment-sizeSmall css-ittuaa-MuiInputAdornment-root"[39m
+              [36m>[39m
+                [36m<span[39m
+                  [33mclass[39m=[32m"notranslate"[39m
+                [36m>[39m
+                  [0m​[0m
+                [36m</span>[39m
+                [36m<svg[39m
+                  [33maria-hidden[39m=[32m"true"[39m
+                  [33mclass[39m=[32m"MuiSvgIcon-root MuiSvgIcon-fontSizeSmall css-ptiqhd-MuiSvgIcon-root"[39m
+                  [33mdata-testid[39m=[32m"SearchIcon"[39m
+                  [33mfocusable[39m=[32m"false"[39m
+                  [33mviewBox[39m=[32m"0 0 24 24"[39m
+                [36m>[39m
+                  [36m<path[39m
+                    [33md[39m=[32m"M15.5 14h-.79l-.28-.27C15.41 12.59 16 11.11 16 9.5 16 5.91 13.09 3 9.5 3S3 5.91 3 9.5 5.91 16 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14"[39m
+                  [36m/>[39m
+                [36m</svg>[39m
+              [36m</div>[39m
+              [36m<input[39m
+                [33maria-invalid[39m=[32m"false"[39m
+                [33mclass[39m=[32m"MuiInputBase-input MuiOutlinedInput-input MuiInputBase-inputSizeSmall MuiInputBase-inputAdornedStart css-1ua80n0-MuiInputBase-input-MuiOutlinedInput-input"[39m
+                [33mid[39m=[32m"_r_6_"[39m
+                [33mplaceholder[39m=[32m"Search components..."[39m
+                [33mtabindex[39m=[32m"0"[39m
+                [33mtype[39m=[32m"text"[39m
+                [33mvalue[39m=[32m""[39m
+              [36m/>[39m
+              [36m<fieldset[39m
+                [33maria-hidden[39m=[32m"true"[39m
+                [33mclass[39m=[32m"MuiOutlinedInput-notchedOutline css-r01yff-MuiNotchedOutlined-root-MuiOutlinedInput-notchedOutline"[39m
+              [36m>[39m
+                [36m<legend[39m
+                  [33mclass[39m=[32m"css-1whs34k-MuiNotchedOutlined-root"[39m
+                [36m>[39m
+                  [36m<span[39m
+                    [33mclass[39m=[32m"notranslate"[39m
+                  [36m>[39m
+                    [0m​[0m
+                  [36m</span>[39m
+                [36m</legend>[39m
+              [36m</fieldset>[39m
+            [36m</div>[39m
+          [36m</div>[39m
+        [36m</div>[39m
+        [36m<div[39m
+          [33mclass[39m=[32m"MuiBox-root css-4z6nar"[39m
+        [36m>[39m
+          [36m<div[39m
+            [33mclass[39m=[32m"MuiPaper-root MuiPaper-elevation MuiPaper-rounded MuiPaper-elevation1 MuiAccordion-root MuiAccordion-rounded Mui-expanded MuiAccordion-gutters css-t56fdk-MuiPaper-root-MuiAccordion-root"[39m
+          [36m>[39m
+            [36m<div[39m
+              [33maria-expanded[39m=[32m"true"[39m
+              [33mclass[39m=[32m"MuiButtonBase-root MuiAccordionSummary-root Mui-expanded MuiAccordionSummary-gutters css-137yb42-MuiButtonBase-root-MuiAccordionSummary-root"[39m
+              [33mrole[39m=[32m"button"[39m
+              [33mtabindex[39m=[32m"0"[39m
+            [36m>[39m
+              [36m<div[39m
+                [33mclass[39m=[32m"MuiAccordionSummary-content Mui-expanded MuiAccordionSummary-contentGutters css-eqpfi5-MuiAccordionSummary-content"[39m
+              [36m>[39m
+                [36m<div[39m
+                  [33mclass[39m=[32m"MuiBox-root css-1bntj9o"[39m
+                [36m>[39m
+                  [36m<h6[39m
+                    [33mclass[39m=[32m"MuiTypography-root MuiTypography-subtitle2 css-1k1wiw9-MuiTypography-root"[39m
+                  [36m>[39m
+                    [0mArchitecture[0m
+                  [36m</h6>[39m
+                  [36m<div[39m
+                    [33mclass[39m=[32m"MuiChip-root MuiChip-outlined MuiChip-sizeSmall MuiChip-colorDefault MuiChip-outlinedDefault css-1rvzqce...
+   × Feature 6.4: Palette Drag & Drop Integration > Coordinate Projection > projects screen coordinates to canvas coordinates 13ms
+     → project is not a function
+   × Feature 6.4: Palette Drag & Drop Integration > Coordinate Projection > handles drop at different canvas positions 1336ms
+     → expected +0 to be 1 // Object.is equality
+
+Ignored nodes: comments, script, style
+[36m<html>[39m
+  [36m<head />[39m
+  [36m<body>[39m
+    [36m<div>[39m
+      [36m<div[39m
+        [33maria-label[39m=[32m"Component Palette"[39m
+        [33mclass[39m=[32m"MuiPaper-root MuiPaper-elevation MuiPaper-rounded MuiPaper-elevation2 css-1ezauy5-MuiPaper-root"[39m
+        [33mdata-testid[39m=[32m"component-palette"[39m
+        [33mid[39m=[32m"component-palette"[39m
+      [36m>[39m
+        [36m<div[39m
+          [33mclass[39m=[32m"MuiBox-root css-r6rj31"[39m
+        [36m>[39m
+          [36m<h6[39m
+            [33mclass[39m=[32m"MuiTypography-root MuiTypography-h6 css-188twu3-MuiTypography-root"[39m
+          [36m>[39m
+            [0mPalette[0m
+          [36m</h6>[39m
+          [36m<div[39m
+            [33mclass[39m=[32m"MuiStack-root css-q4tsa-MuiStack-root"[39m
+          [36m>[39m
+            [36m<div[39m
+              [33mclass[39m=[32m"MuiChip-root MuiChip-outlined MuiChip-sizeSmall MuiChip-colorPrimary MuiChip-outlinedPrimary css-1y6wsfa-MuiChip-root"[39m
+              [33mtabindex[39m=[32m"0"[39m
+            [36m>[39m
+              [36m<span[39m
+                [33mclass[39m=[32m"MuiChip-label MuiChip-labelSmall css-rrn746-MuiChip-label"[39m
+              [36m>[39m
+                [0mAPI[0m
+              [36m</span>[39m
+            [36m</div>[39m
+            [36m<div[39m
+              [33mclass[39m=[32m"MuiChip-root MuiChip-outlined MuiChip-sizeSmall MuiChip-colorPrimary MuiChip-outlinedPrimary css-1y6wsfa-MuiChip-root"[39m
+              [33mtabindex[39m=[32m"0"[39m
+            [36m>[39m
+              [36m<span[39m
+                [33mclass[39m=[32m"MuiChip-label MuiChip-labelSmall css-rrn746-MuiChip-label"[39m
+              [36m>[39m
+                [0mData[0m
+              [36m</span>[39m
+            [36m</div>[39m
+            [36m<div[39m
+              [33mclass[39m=[32m"MuiChip-root MuiChip-outlined MuiChip-sizeSmall MuiChip-colorPrimary MuiChip-outlinedPrimary css-1y6wsfa-MuiChip-root"[39m
+              [33mtabindex[39m=[32m"0"[39m
+            [36m>[39m
+              [36m<span[39m
+                [33mclass[39m=[32m"MuiChip-label MuiChip-labelSmall css-rrn746-MuiChip-label"[39m
+              [36m>[39m
+                [0mComponent[0m
+              [36m</span>[39m
+            [36m</div>[39m
+          [36m</div>[39m
+          [36m<div[39m
+            [33mclass[39m=[32m"MuiFormControl-root MuiFormControl-fullWidth MuiTextField-root css-120rok2-MuiFormControl-root-MuiTextField-root"[39m
+          [36m>[39m
+            [36m<div[39m
+              [33mclass[39m=[32m"MuiInputBase-root MuiOutlinedInput-root MuiInputBase-colorPrimary MuiInputBase-fullWidth MuiInputBase-formControl MuiInputBase-sizeSmall MuiInputBase-adornedStart css-8j6b76-MuiInputBase-root-MuiOutlinedInput-root"[39m
+            [36m>[39m
+              [36m<div[39m
+                [33mclass[39m=[32m"MuiInputAdornment-root MuiInputAdornment-positionStart MuiInputAdornment-outlined MuiInputAdornment-sizeSmall css-ittuaa-MuiInputAdornment-root"[39m
+              [36m>[39m
+                [36m<span[39m
+                  [33mclass[39m=[32m"notranslate"[39m
+                [36m>[39m
+                  [0m​[0m
+                [36m</span>[39m
+                [36m<svg[39m
+                  [33maria-hidden[39m=[32m"true"[39m
+                  [33mclass[39m=[32m"MuiSvgIcon-root MuiSvgIcon-fontSizeSmall css-ptiqhd-MuiSvgIcon-root"[39m
+                  [33mdata-testid[39m=[32m"SearchIcon"[39m
+                  [33mfocusable[39m=[32m"false"[39m
+                  [33mviewBox[39m=[32m"0 0 24 24"[39m
+                [36m>[39m
+                  [36m<path[39m
+                    [33md[39m=[32m"M15.5 14h-.79l-.28-.27C15.41 12.59 16 11.11 16 9.5 16 5.91 13.09 3 9.5 3S3 5.91 3 9.5 5.91 16 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14"[39m
+                  [36m/>[39m
+                [36m</svg>[39m
+              [36m</div>[39m
+              [36m<input[39m
+                [33maria-invalid[39m=[32m"false"[39m
+                [33mclass[39m=[32m"MuiInputBase-input MuiOutlinedInput-input MuiInputBase-inputSizeSmall MuiInputBase-inputAdornedStart css-1ua80n0-MuiInputBase-input-MuiOutlinedInput-input"[39m
+                [33mid[39m=[32m"_r_7_"[39m
+                [33mplaceholder[39m=[32m"Search components..."[39m
+                [33mtabindex[39m=[32m"0"[39m
+                [33mtype[39m=[32m"text"[39m
+                [33mvalue[39m=[32m""[39m
+              [36m/>[39m
+              [36m<fieldset[39m
+                [33maria-hidden[39m=[32m"true"[39m
+                [33mclass[39m=[32m"MuiOutlinedInput-notchedOutline css-r01yff-MuiNotchedOutlined-root-MuiOutlinedInput-notchedOutline"[39m
+              [36m>[39m
+                [36m<legend[39m
+                  [33mclass[39m=[32m"css-1whs34k-MuiNotchedOutlined-root"[39m
+                [36m>[39m
+                  [36m<span[39m
+                    [33mclass[39m=[32m"notranslate"[39m
+                  [36m>[39m
+                    [0m​[0m
+                  [36m</span>[39m
+                [36m</legend>[39m
+              [36m</fieldset>[39m
+            [36m</div>[39m
+          [36m</div>[39m
+        [36m</div>[39m
+        [36m<div[39m
+          [33mclass[39m=[32m"MuiBox-root css-4z6nar"[39m
+        [36m>[39m
+          [36m<div[39m
+            [33mclass[39m=[32m"MuiPaper-root MuiPaper-elevation MuiPaper-rounded MuiPaper-elevation1 MuiAccordion-root MuiAccordion-rounded Mui-expanded MuiAccordion-gutters css-t56fdk-MuiPaper-root-MuiAccordion-root"[39m
+          [36m>[39m
+            [36m<div[39m
+              [33maria-expanded[39m=[32m"true"[39m
+              [33mclass[39m=[32m"MuiButtonBase-root MuiAccordionSummary-root Mui-expanded MuiAccordionSummary-gutters css-137yb42-MuiButtonBase-root-MuiAccordionSummary-root"[39m
+              [33mrole[39m=[32m"button"[39m
+              [33mtabindex[39m=[32m"0"[39m
+            [36m>[39m
+              [36m<div[39m
+                [33mclass[39m=[32m"MuiAccordionSummary-content Mui-expanded MuiAccordionSummary-contentGutters css-eqpfi5-MuiAccordionSummary-content"[39m
+              [36m>[39m
+                [36m<div[39m
+                  [33mclass[39m=[32m"MuiBox-root css-1bntj9o"[39m
+                [36m>[39m
+                  [36m<h6[39m
+                    [33mclass[39m=[32m"MuiTypography-root MuiTypography-subtitle2 css-1k1wiw9-MuiTypography-root"[39m
+                  [36m>[39m
+                    [0mArchitecture[0m
+                  [36m</h6>[39m
+                  [36m<div[39m
+                    [33mclass[39m=[32m"MuiChip-root MuiChip-outlined MuiChip-sizeSmall MuiChip-colorDefault MuiChip-outlinedDefault css-1rvzqce...
+   × Feature 6.4: Palette Drag & Drop Integration > Multiple Component Drops > handles dropping multiple components sequentially 1402ms
+     → expected +0 to be 1 // Object.is equality
+
+Ignored nodes: comments, script, style
+[36m<html>[39m
+  [36m<head />[39m
+  [36m<body>[39m
+    [36m<div>[39m
+      [36m<div[39m
+        [33maria-label[39m=[32m"Component Palette"[39m
+        [33mclass[39m=[32m"MuiPaper-root MuiPaper-elevation MuiPaper-rounded MuiPaper-elevation2 css-1ezauy5-MuiPaper-root"[39m
+        [33mdata-testid[39m=[32m"component-palette"[39m
+        [33mid[39m=[32m"component-palette"[39m
+      [36m>[39m
+        [36m<div[39m
+          [33mclass[39m=[32m"MuiBox-root css-r6rj31"[39m
+        [36m>[39m
+          [36m<h6[39m
+            [33mclass[39m=[32m"MuiTypography-root MuiTypography-h6 css-188twu3-MuiTypography-root"[39m
+          [36m>[39m
+            [0mPalette[0m
+          [36m</h6>[39m
+          [36m<div[39m
+            [33mclass[39m=[32m"MuiStack-root css-q4tsa-MuiStack-root"[39m
+          [36m>[39m
+            [36m<div[39m
+              [33mclass[39m=[32m"MuiChip-root MuiChip-outlined MuiChip-sizeSmall MuiChip-colorPrimary MuiChip-outlinedPrimary css-1y6wsfa-MuiChip-root"[39m
+              [33mtabindex[39m=[32m"0"[39m
+            [36m>[39m
+              [36m<span[39m
+                [33mclass[39m=[32m"MuiChip-label MuiChip-labelSmall css-rrn746-MuiChip-label"[39m
+              [36m>[39m
+                [0mAPI[0m
+              [36m</span>[39m
+            [36m</div>[39m
+            [36m<div[39m
+              [33mclass[39m=[32m"MuiChip-root MuiChip-outlined MuiChip-sizeSmall MuiChip-colorPrimary MuiChip-outlinedPrimary css-1y6wsfa-MuiChip-root"[39m
+              [33mtabindex[39m=[32m"0"[39m
+            [36m>[39m
+              [36m<span[39m
+                [33mclass[39m=[32m"MuiChip-label MuiChip-labelSmall css-rrn746-MuiChip-label"[39m
+              [36m>[39m
+                [0mData[0m
+              [36m</span>[39m
+            [36m</div>[39m
+            [36m<div[39m
+              [33mclass[39m=[32m"MuiChip-root MuiChip-outlined MuiChip-sizeSmall MuiChip-colorPrimary MuiChip-outlinedPrimary css-1y6wsfa-MuiChip-root"[39m
+              [33mtabindex[39m=[32m"0"[39m
+            [36m>[39m
+              [36m<span[39m
+                [33mclass[39m=[32m"MuiChip-label MuiChip-labelSmall css-rrn746-MuiChip-label"[39m
+              [36m>[39m
+                [0mComponent[0m
+              [36m</span>[39m
+            [36m</div>[39m
+          [36m</div>[39m
+          [36m<div[39m
+            [33mclass[39m=[32m"MuiFormControl-root MuiFormControl-fullWidth MuiTextField-root css-120rok2-MuiFormControl-root-MuiTextField-root"[39m
+          [36m>[39m
+            [36m<div[39m
+              [33mclass[39m=[32m"MuiInputBase-root MuiOutlinedInput-root MuiInputBase-colorPrimary MuiInputBase-fullWidth MuiInputBase-formControl MuiInputBase-sizeSmall MuiInputBase-adornedStart css-8j6b76-MuiInputBase-root-MuiOutlinedInput-root"[39m
+            [36m>[39m
+              [36m<div[39m
+                [33mclass[39m=[32m"MuiInputAdornment-root MuiInputAdornment-positionStart MuiInputAdornment-outlined MuiInputAdornment-sizeSmall css-ittuaa-MuiInputAdornment-root"[39m
+              [36m>[39m
+                [36m<span[39m
+                  [33mclass[39m=[32m"notranslate"[39m
+                [36m>[39m
+                  [0m​[0m
+                [36m</span>[39m
+                [36m<svg[39m
+                  [33maria-hidden[39m=[32m"true"[39m
+                  [33mclass[39m=[32m"MuiSvgIcon-root MuiSvgIcon-fontSizeSmall css-ptiqhd-MuiSvgIcon-root"[39m
+                  [33mdata-testid[39m=[32m"SearchIcon"[39m
+                  [33mfocusable[39m=[32m"false"[39m
+                  [33mviewBox[39m=[32m"0 0 24 24"[39m
+                [36m>[39m
+                  [36m<path[39m
+                    [33md[39m=[32m"M15.5 14h-.79l-.28-.27C15.41 12.59 16 11.11 16 9.5 16 5.91 13.09 3 9.5 3S3 5.91 3 9.5 5.91 16 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14"[39m
+                  [36m/>[39m
+                [36m</svg>[39m
+              [36m</div>[39m
+              [36m<input[39m
+                [33maria-invalid[39m=[32m"false"[39m
+                [33mclass[39m=[32m"MuiInputBase-input MuiOutlinedInput-input MuiInputBase-inputSizeSmall MuiInputBase-inputAdornedStart css-1ua80n0-MuiInputBase-input-MuiOutlinedInput-input"[39m
+                [33mid[39m=[32m"_r_8_"[39m
+                [33mplaceholder[39m=[32m"Search components..."[39m
+                [33mtabindex[39m=[32m"0"[39m
+                [33mtype[39m=[32m"text"[39m
+                [33mvalue[39m=[32m""[39m
+              [36m/>[39m
+              [36m<fieldset[39m
+                [33maria-hidden[39m=[32m"true"[39m
+                [33mclass[39m=[32m"MuiOutlinedInput-notchedOutline css-r01yff-MuiNotchedOutlined-root-MuiOutlinedInput-notchedOutline"[39m
+              [36m>[39m
+                [36m<legend[39m
+                  [33mclass[39m=[32m"css-1whs34k-MuiNotchedOutlined-root"[39m
+                [36m>[39m
+                  [36m<span[39m
+                    [33mclass[39m=[32m"notranslate"[39m
+                  [36m>[39m
+                    [0m​[0m
+                  [36m</span>[39m
+                [36m</legend>[39m
+              [36m</fieldset>[39m
+            [36m</div>[39m
+          [36m</div>[39m
+        [36m</div>[39m
+        [36m<div[39m
+          [33mclass[39m=[32m"MuiBox-root css-4z6nar"[39m
+        [36m>[39m
+          [36m<div[39m
+            [33mclass[39m=[32m"MuiPaper-root MuiPaper-elevation MuiPaper-rounded MuiPaper-elevation1 MuiAccordion-root MuiAccordion-rounded Mui-expanded MuiAccordion-gutters css-t56fdk-MuiPaper-root-MuiAccordion-root"[39m
+          [36m>[39m
+            [36m<div[39m
+              [33maria-expanded[39m=[32m"true"[39m
+              [33mclass[39m=[32m"MuiButtonBase-root MuiAccordionSummary-root Mui-expanded MuiAccordionSummary-gutters css-137yb42-MuiButtonBase-root-MuiAccordionSummary-root"[39m
+              [33mrole[39m=[32m"button"[39m
+              [33mtabindex[39m=[32m"0"[39m
+            [36m>[39m
+              [36m<div[39m
+                [33mclass[39m=[32m"MuiAccordionSummary-content Mui-expanded MuiAccordionSummary-contentGutters css-eqpfi5-MuiAccordionSummary-content"[39m
+              [36m>[39m
+                [36m<div[39m
+                  [33mclass[39m=[32m"MuiBox-root css-1bntj9o"[39m
+                [36m>[39m
+                  [36m<h6[39m
+                    [33mclass[39m=[32m"MuiTypography-root MuiTypography-subtitle2 css-1k1wiw9-MuiTypography-root"[39m
+                  [36m>[39m
+                    [0mArchitecture[0m
+                  [36m</h6>[39m
+                  [36m<div[39m
+                    [33mclass[39m=[32m"MuiChip-root MuiChip-outlined MuiChip-sizeSmall MuiChip-colorDefault MuiChip-outlinedDefault css-1rvzqce...
+   × Feature 6.4: Palette Drag & Drop Integration > Multiple Component Drops > maintains correct order of dropped components 1330ms
+     → expected 0 to be greater than 0
+
+Ignored nodes: comments, script, style
+[36m<html>[39m
+  [36m<head />[39m
+  [36m<body>[39m
+    [36m<div>[39m
+      [36m<div[39m
+        [33maria-label[39m=[32m"Component Palette"[39m
+        [33mclass[39m=[32m"MuiPaper-root MuiPaper-elevation MuiPaper-rounded MuiPaper-elevation2 css-1ezauy5-MuiPaper-root"[39m
+        [33mdata-testid[39m=[32m"component-palette"[39m
+        [33mid[39m=[32m"component-palette"[39m
+      [36m>[39m
+        [36m<div[39m
+          [33mclass[39m=[32m"MuiBox-root css-r6rj31"[39m
+        [36m>[39m
+          [36m<h6[39m
+            [33mclass[39m=[32m"MuiTypography-root MuiTypography-h6 css-188twu3-MuiTypography-root"[39m
+          [36m>[39m
+            [0mPalette[0m
+          [36m</h6>[39m
+          [36m<div[39m
+            [33mclass[39m=[32m"MuiStack-root css-q4tsa-MuiStack-root"[39m
+          [36m>[39m
+            [36m<div[39m
+              [33mclass[39m=[32m"MuiChip-root MuiChip-outlined MuiChip-sizeSmall MuiChip-colorPrimary MuiChip-outlinedPrimary css-1y6wsfa-MuiChip-root"[39m
+              [33mtabindex[39m=[32m"0"[39m
+            [36m>[39m
+              [36m<span[39m
+                [33mclass[39m=[32m"MuiChip-label MuiChip-labelSmall css-rrn746-MuiChip-label"[39m
+              [36m>[39m
+                [0mAPI[0m
+              [36m</span>[39m
+            [36m</div>[39m
+            [36m<div[39m
+              [33mclass[39m=[32m"MuiChip-root MuiChip-outlined MuiChip-sizeSmall MuiChip-colorPrimary MuiChip-outlinedPrimary css-1y6wsfa-MuiChip-root"[39m
+              [33mtabindex[39m=[32m"0"[39m
+            [36m>[39m
+              [36m<span[39m
+                [33mclass[39m=[32m"MuiChip-label MuiChip-labelSmall css-rrn746-MuiChip-label"[39m
+              [36m>[39m
+                [0mData[0m
+              [36m</span>[39m
+            [36m</div>[39m
+            [36m<div[39m
+              [33mclass[39m=[32m"MuiChip-root MuiChip-outlined MuiChip-sizeSmall MuiChip-colorPrimary MuiChip-outlinedPrimary css-1y6wsfa-MuiChip-root"[39m
+              [33mtabindex[39m=[32m"0"[39m
+            [36m>[39m
+              [36m<span[39m
+                [33mclass[39m=[32m"MuiChip-label MuiChip-labelSmall css-rrn746-MuiChip-label"[39m
+              [36m>[39m
+                [0mComponent[0m
+              [36m</span>[39m
+            [36m</div>[39m
+          [36m</div>[39m
+          [36m<div[39m
+            [33mclass[39m=[32m"MuiFormControl-root MuiFormControl-fullWidth MuiTextField-root css-120rok2-MuiFormControl-root-MuiTextField-root"[39m
+          [36m>[39m
+            [36m<div[39m
+              [33mclass[39m=[32m"MuiInputBase-root MuiOutlinedInput-root MuiInputBase-colorPrimary MuiInputBase-fullWidth MuiInputBase-formControl MuiInputBase-sizeSmall MuiInputBase-adornedStart css-8j6b76-MuiInputBase-root-MuiOutlinedInput-root"[39m
+            [36m>[39m
+              [36m<div[39m
+                [33mclass[39m=[32m"MuiInputAdornment-root MuiInputAdornment-positionStart MuiInputAdornment-outlined MuiInputAdornment-sizeSmall css-ittuaa-MuiInputAdornment-root"[39m
+              [36m>[39m
+                [36m<span[39m
+                  [33mclass[39m=[32m"notranslate"[39m
+                [36m>[39m
+                  [0m​[0m
+                [36m</span>[39m
+                [36m<svg[39m
+                  [33maria-hidden[39m=[32m"true"[39m
+                  [33mclass[39m=[32m"MuiSvgIcon-root MuiSvgIcon-fontSizeSmall css-ptiqhd-MuiSvgIcon-root"[39m
+                  [33mdata-testid[39m=[32m"SearchIcon"[39m
+                  [33mfocusable[39m=[32m"false"[39m
+                  [33mviewBox[39m=[32m"0 0 24 24"[39m
+                [36m>[39m
+                  [36m<path[39m
+                    [33md[39m=[32m"M15.5 14h-.79l-.28-.27C15.41 12.59 16 11.11 16 9.5 16 5.91 13.09 3 9.5 3S3 5.91 3 9.5 5.91 16 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14"[39m
+                  [36m/>[39m
+                [36m</svg>[39m
+              [36m</div>[39m
+              [36m<input[39m
+                [33maria-invalid[39m=[32m"false"[39m
+                [33mclass[39m=[32m"MuiInputBase-input MuiOutlinedInput-input MuiInputBase-inputSizeSmall MuiInputBase-inputAdornedStart css-1ua80n0-MuiInputBase-input-MuiOutlinedInput-input"[39m
+                [33mid[39m=[32m"_r_9_"[39m
+                [33mplaceholder[39m=[32m"Search components..."[39m
+                [33mtabindex[39m=[32m"0"[39m
+                [33mtype[39m=[32m"text"[39m
+                [33mvalue[39m=[32m""[39m
+              [36m/>[39m
+              [36m<fieldset[39m
+                [33maria-hidden[39m=[32m"true"[39m
+                [33mclass[39m=[32m"MuiOutlinedInput-notchedOutline css-r01yff-MuiNotchedOutlined-root-MuiOutlinedInput-notchedOutline"[39m
+              [36m>[39m
+                [36m<legend[39m
+                  [33mclass[39m=[32m"css-1whs34k-MuiNotchedOutlined-root"[39m
+                [36m>[39m
+                  [36m<span[39m
+                    [33mclass[39m=[32m"notranslate"[39m
+                  [36m>[39m
+                    [0m​[0m
+                  [36m</span>[39m
+                [36m</legend>[39m
+              [36m</fieldset>[39m
+            [36m</div>[39m
+          [36m</div>[39m
+        [36m</div>[39m
+        [36m<div[39m
+          [33mclass[39m=[32m"MuiBox-root css-4z6nar"[39m
+        [36m>[39m
+          [36m<div[39m
+            [33mclass[39m=[32m"MuiPaper-root MuiPaper-elevation MuiPaper-rounded MuiPaper-elevation1 MuiAccordion-root MuiAccordion-rounded Mui-expanded MuiAccordion-gutters css-t56fdk-MuiPaper-root-MuiAccordion-root"[39m
+          [36m>[39m
+            [36m<div[39m
+              [33maria-expanded[39m=[32m"true"[39m
+              [33mclass[39m=[32m"MuiButtonBase-root MuiAccordionSummary-root Mui-expanded MuiAccordionSummary-gutters css-137yb42-MuiButtonBase-root-MuiAccordionSummary-root"[39m
+              [33mrole[39m=[32m"button"[39m
+              [33mtabindex[39m=[32m"0"[39m
+            [36m>[39m
+              [36m<div[39m
+                [33mclass[39m=[32m"MuiAccordionSummary-content Mui-expanded MuiAccordionSummary-contentGutters css-eqpfi5-MuiAccordionSummary-content"[39m
+              [36m>[39m
+                [36m<div[39m
+                  [33mclass[39m=[32m"MuiBox-root css-1bntj9o"[39m
+                [36m>[39m
+                  [36m<h6[39m
+                    [33mclass[39m=[32m"MuiTypography-root MuiTypography-subtitle2 css-1k1wiw9-MuiTypography-root"[39m
+                  [36m>[39m
+                    [0mArchitecture[0m
+                  [36m</h6>[39m
+                  [36m<div[39m
+                    [33mclass[39m=[32m"MuiChip-root MuiChip-outlined MuiChip-sizeSmall MuiChip-colorDefault MuiChip-outlinedDefault css-1rvzqce...
+   × Feature 6.4: Palette Drag & Drop Integration > Edge Cases > handles drag cancel (drop outside canvas) 1249ms
+     → expected "spy" to be called at least once
+
+Ignored nodes: comments, script, style
+[36m<html>[39m
+  [36m<head />[39m
+  [36m<body>[39m
+    [36m<div>[39m
+      [36m<div[39m
+        [33maria-label[39m=[32m"Component Palette"[39m
+        [33mclass[39m=[32m"MuiPaper-root MuiPaper-elevation MuiPaper-rounded MuiPaper-elevation2 css-1ezauy5-MuiPaper-root"[39m
+        [33mdata-testid[39m=[32m"component-palette"[39m
+        [33mid[39m=[32m"component-palette"[39m
+      [36m>[39m
+        [36m<div[39m
+          [33mclass[39m=[32m"MuiBox-root css-r6rj31"[39m
+        [36m>[39m
+          [36m<h6[39m
+            [33mclass[39m=[32m"MuiTypography-root MuiTypography-h6 css-188twu3-MuiTypography-root"[39m
+          [36m>[39m
+            [0mPalette[0m
+          [36m</h6>[39m
+          [36m<div[39m
+            [33mclass[39m=[32m"MuiStack-root css-q4tsa-MuiStack-root"[39m
+          [36m>[39m
+            [36m<div[39m
+              [33mclass[39m=[32m"MuiChip-root MuiChip-outlined MuiChip-sizeSmall MuiChip-colorPrimary MuiChip-outlinedPrimary css-1y6wsfa-MuiChip-root"[39m
+              [33mtabindex[39m=[32m"0"[39m
+            [36m>[39m
+              [36m<span[39m
+                [33mclass[39m=[32m"MuiChip-label MuiChip-labelSmall css-rrn746-MuiChip-label"[39m
+              [36m>[39m
+                [0mAPI[0m
+              [36m</span>[39m
+            [36m</div>[39m
+            [36m<div[39m
+              [33mclass[39m=[32m"MuiChip-root MuiChip-outlined MuiChip-sizeSmall MuiChip-colorPrimary MuiChip-outlinedPrimary css-1y6wsfa-MuiChip-root"[39m
+              [33mtabindex[39m=[32m"0"[39m
+            [36m>[39m
+              [36m<span[39m
+                [33mclass[39m=[32m"MuiChip-label MuiChip-labelSmall css-rrn746-MuiChip-label"[39m
+              [36m>[39m
+                [0mData[0m
+              [36m</span>[39m
+            [36m</div>[39m
+            [36m<div[39m
+              [33mclass[39m=[32m"MuiChip-root MuiChip-outlined MuiChip-sizeSmall MuiChip-colorPrimary MuiChip-outlinedPrimary css-1y6wsfa-MuiChip-root"[39m
+              [33mtabindex[39m=[32m"0"[39m
+            [36m>[39m
+              [36m<span[39m
+                [33mclass[39m=[32m"MuiChip-label MuiChip-labelSmall css-rrn746-MuiChip-label"[39m
+              [36m>[39m
+                [0mComponent[0m
+              [36m</span>[39m
+            [36m</div>[39m
+          [36m</div>[39m
+          [36m<div[39m
+            [33mclass[39m=[32m"MuiFormControl-root MuiFormControl-fullWidth MuiTextField-root css-120rok2-MuiFormControl-root-MuiTextField-root"[39m
+          [36m>[39m
+            [36m<div[39m
+              [33mclass[39m=[32m"MuiInputBase-root MuiOutlinedInput-root MuiInputBase-colorPrimary MuiInputBase-fullWidth MuiInputBase-formControl MuiInputBase-sizeSmall MuiInputBase-adornedStart css-8j6b76-MuiInputBase-root-MuiOutlinedInput-root"[39m
+            [36m>[39m
+              [36m<div[39m
+                [33mclass[39m=[32m"MuiInputAdornment-root MuiInputAdornment-positionStart MuiInputAdornment-outlined MuiInputAdornment-sizeSmall css-ittuaa-MuiInputAdornment-root"[39m
+              [36m>[39m
+                [36m<span[39m
+                  [33mclass[39m=[32m"notranslate"[39m
+                [36m>[39m
+                  [0m​[0m
+                [36m</span>[39m
+                [36m<svg[39m
+                  [33maria-hidden[39m=[32m"true"[39m
+                  [33mclass[39m=[32m"MuiSvgIcon-root MuiSvgIcon-fontSizeSmall css-ptiqhd-MuiSvgIcon-root"[39m
+                  [33mdata-testid[39m=[32m"SearchIcon"[39m
+                  [33mfocusable[39m=[32m"false"[39m
+                  [33mviewBox[39m=[32m"0 0 24 24"[39m
+                [36m>[39m
+                  [36m<path[39m
+                    [33md[39m=[32m"M15.5 14h-.79l-.28-.27C15.41 12.59 16 11.11 16 9.5 16 5.91 13.09 3 9.5 3S3 5.91 3 9.5 5.91 16 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14"[39m
+                  [36m/>[39m
+                [36m</svg>[39m
+              [36m</div>[39m
+              [36m<input[39m
+                [33maria-invalid[39m=[32m"false"[39m
+                [33mclass[39m=[32m"MuiInputBase-input MuiOutlinedInput-input MuiInputBase-inputSizeSmall MuiInputBase-inputAdornedStart css-1ua80n0-MuiInputBase-input-MuiOutlinedInput-input"[39m
+                [33mid[39m=[32m"_r_a_"[39m
+                [33mplaceholder[39m=[32m"Search components..."[39m
+                [33mtabindex[39m=[32m"0"[39m
+                [33mtype[39m=[32m"text"[39m
+                [33mvalue[39m=[32m""[39m
+              [36m/>[39m
+              [36m<fieldset[39m
+                [33maria-hidden[39m=[32m"true"[39m
+                [33mclass[39m=[32m"MuiOutlinedInput-notchedOutline css-r01yff-MuiNotchedOutlined-root-MuiOutlinedInput-notchedOutline"[39m
+              [36m>[39m
+                [36m<legend[39m
+                  [33mclass[39m=[32m"css-1whs34k-MuiNotchedOutlined-root"[39m
+                [36m>[39m
+                  [36m<span[39m
+                    [33mclass[39m=[32m"notranslate"[39m
+                  [36m>[39m
+                    [0m​[0m
+                  [36m</span>[39m
+                [36m</legend>[39m
+              [36m</fieldset>[39m
+            [36m</div>[39m
+          [36m</div>[39m
+        [36m</div>[39m
+        [36m<div[39m
+          [33mclass[39m=[32m"MuiBox-root css-4z6nar"[39m
+        [36m>[39m
+          [36m<div[39m
+            [33mclass[39m=[32m"MuiPaper-root MuiPaper-elevation MuiPaper-rounded MuiPaper-elevation1 MuiAccordion-root MuiAccordion-rounded Mui-expanded MuiAccordion-gutters css-t56fdk-MuiPaper-root-MuiAccordion-root"[39m
+          [36m>[39m
+            [36m<div[39m
+              [33maria-expanded[39m=[32m"true"[39m
+              [33mclass[39m=[32m"MuiButtonBase-root MuiAccordionSummary-root Mui-expanded MuiAccordionSummary-gutters css-137yb42-MuiButtonBase-root-MuiAccordionSummary-root"[39m
+              [33mrole[39m=[32m"button"[39m
+              [33mtabindex[39m=[32m"0"[39m
+            [36m>[39m
+              [36m<div[39m
+                [33mclass[39m=[32m"MuiAccordionSummary-content Mui-expanded MuiAccordionSummary-contentGutters css-eqpfi5-MuiAccordionSummary-content"[39m
+              [36m>[39m
+                [36m<div[39m
+                  [33mclass[39m=[32m"MuiBox-root css-1bntj9o"[39m
+                [36m>[39m
+                  [36m<h6[39m
+                    [33mclass[39m=[32m"MuiTypography-root MuiTypography-subtitle2 css-1k1wiw9-MuiTypography-root"[39m
+                  [36m>[39m
+                    [0mArchitecture[0m
+                  [36m</h6>[39m
+                  [36m<div[39m
+                    [33mclass[39m=[32m"MuiChip-root MuiChip-outlined MuiChip-sizeSmall MuiChip-colorDefault MuiChip-outlinedDefault css-1rvzqce...
+   × Feature 6.4: Palette Drag & Drop Integration > Edge Cases > handles rapid successive drops 1269ms
+     → expected +0 to be 5 // Object.is equality
+
+Ignored nodes: comments, script, style
+[36m<html>[39m
+  [36m<head />[39m
+  [36m<body>[39m
+    [36m<div>[39m
+      [36m<div[39m
+        [33maria-label[39m=[32m"Component Palette"[39m
+        [33mclass[39m=[32m"MuiPaper-root MuiPaper-elevation MuiPaper-rounded MuiPaper-elevation2 css-1ezauy5-MuiPaper-root"[39m
+        [33mdata-testid[39m=[32m"component-palette"[39m
+        [33mid[39m=[32m"component-palette"[39m
+      [36m>[39m
+        [36m<div[39m
+          [33mclass[39m=[32m"MuiBox-root css-r6rj31"[39m
+        [36m>[39m
+          [36m<h6[39m
+            [33mclass[39m=[32m"MuiTypography-root MuiTypography-h6 css-188twu3-MuiTypography-root"[39m
+          [36m>[39m
+            [0mPalette[0m
+          [36m</h6>[39m
+          [36m<div[39m
+            [33mclass[39m=[32m"MuiStack-root css-q4tsa-MuiStack-root"[39m
+          [36m>[39m
+            [36m<div[39m
+              [33mclass[39m=[32m"MuiChip-root MuiChip-outlined MuiChip-sizeSmall MuiChip-colorPrimary MuiChip-outlinedPrimary css-1y6wsfa-MuiChip-root"[39m
+              [33mtabindex[39m=[32m"0"[39m
+            [36m>[39m
+              [36m<span[39m
+                [33mclass[39m=[32m"MuiChip-label MuiChip-labelSmall css-rrn746-MuiChip-label"[39m
+              [36m>[39m
+                [0mAPI[0m
+              [36m</span>[39m
+            [36m</div>[39m
+            [36m<div[39m
+              [33mclass[39m=[32m"MuiChip-root MuiChip-outlined MuiChip-sizeSmall MuiChip-colorPrimary MuiChip-outlinedPrimary css-1y6wsfa-MuiChip-root"[39m
+              [33mtabindex[39m=[32m"0"[39m
+            [36m>[39m
+              [36m<span[39m
+                [33mclass[39m=[32m"MuiChip-label MuiChip-labelSmall css-rrn746-MuiChip-label"[39m
+              [36m>[39m
+                [0mData[0m
+              [36m</span>[39m
+            [36m</div>[39m
+            [36m<div[39m
+              [33mclass[39m=[32m"MuiChip-root MuiChip-outlined MuiChip-sizeSmall MuiChip-colorPrimary MuiChip-outlinedPrimary css-1y6wsfa-MuiChip-root"[39m
+              [33mtabindex[39m=[32m"0"[39m
+            [36m>[39m
+              [36m<span[39m
+                [33mclass[39m=[32m"MuiChip-label MuiChip-labelSmall css-rrn746-MuiChip-label"[39m
+              [36m>[39m
+                [0mComponent[0m
+              [36m</span>[39m
+            [36m</div>[39m
+          [36m</div>[39m
+          [36m<div[39m
+            [33mclass[39m=[32m"MuiFormControl-root MuiFormControl-fullWidth MuiTextField-root css-120rok2-MuiFormControl-root-MuiTextField-root"[39m
+          [36m>[39m
+            [36m<div[39m
+              [33mclass[39m=[32m"MuiInputBase-root MuiOutlinedInput-root MuiInputBase-colorPrimary MuiInputBase-fullWidth MuiInputBase-formControl MuiInputBase-sizeSmall MuiInputBase-adornedStart css-8j6b76-MuiInputBase-root-MuiOutlinedInput-root"[39m
+            [36m>[39m
+              [36m<div[39m
+                [33mclass[39m=[32m"MuiInputAdornment-root MuiInputAdornment-positionStart MuiInputAdornment-outlined MuiInputAdornment-sizeSmall css-ittuaa-MuiInputAdornment-root"[39m
+              [36m>[39m
+                [36m<span[39m
+                  [33mclass[39m=[32m"notranslate"[39m
+                [36m>[39m
+                  [0m​[0m
+                [36m</span>[39m
+                [36m<svg[39m
+                  [33maria-hidden[39m=[32m"true"[39m
+                  [33mclass[39m=[32m"MuiSvgIcon-root MuiSvgIcon-fontSizeSmall css-ptiqhd-MuiSvgIcon-root"[39m
+                  [33mdata-testid[39m=[32m"SearchIcon"[39m
+                  [33mfocusable[39m=[32m"false"[39m
+                  [33mviewBox[39m=[32m"0 0 24 24"[39m
+                [36m>[39m
+                  [36m<path[39m
+                    [33md[39m=[32m"M15.5 14h-.79l-.28-.27C15.41 12.59 16 11.11 16 9.5 16 5.91 13.09 3 9.5 3S3 5.91 3 9.5 5.91 16 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14"[39m
+                  [36m/>[39m
+                [36m</svg>[39m
+              [36m</div>[39m
+              [36m<input[39m
+                [33maria-invalid[39m=[32m"false"[39m
+                [33mclass[39m=[32m"MuiInputBase-input MuiOutlinedInput-input MuiInputBase-inputSizeSmall MuiInputBase-inputAdornedStart css-1ua80n0-MuiInputBase-input-MuiOutlinedInput-input"[39m
+                [33mid[39m=[32m"_r_b_"[39m
+                [33mplaceholder[39m=[32m"Search components..."[39m
+                [33mtabindex[39m=[32m"0"[39m
+                [33mtype[39m=[32m"text"[39m
+                [33mvalue[39m=[32m""[39m
+              [36m/>[39m
+              [36m<fieldset[39m
+                [33maria-hidden[39m=[32m"true"[39m
+                [33mclass[39m=[32m"MuiOutlinedInput-notchedOutline css-r01yff-MuiNotchedOutlined-root-MuiOutlinedInput-notchedOutline"[39m
+              [36m>[39m
+                [36m<legend[39m
+                  [33mclass[39m=[32m"css-1whs34k-MuiNotchedOutlined-root"[39m
+                [36m>[39m
+                  [36m<span[39m
+                    [33mclass[39m=[32m"notranslate"[39m
+                  [36m>[39m
+                    [0m​[0m
+                  [36m</span>[39m
+                [36m</legend>[39m
+              [36m</fieldset>[39m
+            [36m</div>[39m
+          [36m</div>[39m
+        [36m</div>[39m
+        [36m<div[39m
+          [33mclass[39m=[32m"MuiBox-root css-4z6nar"[39m
+        [36m>[39m
+          [36m<div[39m
+            [33mclass[39m=[32m"MuiPaper-root MuiPaper-elevation MuiPaper-rounded MuiPaper-elevation1 MuiAccordion-root MuiAccordion-rounded Mui-expanded MuiAccordion-gutters css-t56fdk-MuiPaper-root-MuiAccordion-root"[39m
+          [36m>[39m
+            [36m<div[39m
+              [33maria-expanded[39m=[32m"true"[39m
+              [33mclass[39m=[32m"MuiButtonBase-root MuiAccordionSummary-root Mui-expanded MuiAccordionSummary-gutters css-137yb42-MuiButtonBase-root-MuiAccordionSummary-root"[39m
+              [33mrole[39m=[32m"button"[39m
+              [33mtabindex[39m=[32m"0"[39m
+            [36m>[39m
+              [36m<div[39m
+                [33mclass[39m=[32m"MuiAccordionSummary-content Mui-expanded MuiAccordionSummary-contentGutters css-eqpfi5-MuiAccordionSummary-content"[39m
+              [36m>[39m
+                [36m<div[39m
+                  [33mclass[39m=[32m"MuiBox-root css-1bntj9o"[39m
+                [36m>[39m
+                  [36m<h6[39m
+                    [33mclass[39m=[32m"MuiTypography-root MuiTypography-subtitle2 css-1k1wiw9-MuiTypography-root"[39m
+                  [36m>[39m
+                    [0mArchitecture[0m
+                  [36m</h6>[39m
+                  [36m<div[39m
+                    [33mclass[39m=[32m"MuiChip-root MuiChip-outlined MuiChip-sizeSmall MuiChip-colorDefault MuiChip-outlinedDefault css-1rvzqce...
+   × Feature 6.4: Palette Drag & Drop Integration > Edge Cases > handles drop with missing metadata gracefully 1240ms
+     → expected "spy" to be called at least once
+
+Ignored nodes: comments, script, style
+[36m<html>[39m
+  [36m<head />[39m
+  [36m<body>[39m
+    [36m<div>[39m
+      [36m<div[39m
+        [33maria-label[39m=[32m"Component Palette"[39m
+        [33mclass[39m=[32m"MuiPaper-root MuiPaper-elevation MuiPaper-rounded MuiPaper-elevation2 css-1ezauy5-MuiPaper-root"[39m
+        [33mdata-testid[39m=[32m"component-palette"[39m
+        [33mid[39m=[32m"component-palette"[39m
+      [36m>[39m
+        [36m<div[39m
+          [33mclass[39m=[32m"MuiBox-root css-r6rj31"[39m
+        [36m>[39m
+          [36m<h6[39m
+            [33mclass[39m=[32m"MuiTypography-root MuiTypography-h6 css-188twu3-MuiTypography-root"[39m
+          [36m>[39m
+            [0mPalette[0m
+          [36m</h6>[39m
+          [36m<div[39m
+            [33mclass[39m=[32m"MuiStack-root css-q4tsa-MuiStack-root"[39m
+          [36m>[39m
+            [36m<div[39m
+              [33mclass[39m=[32m"MuiChip-root MuiChip-outlined MuiChip-sizeSmall MuiChip-colorPrimary MuiChip-outlinedPrimary css-1y6wsfa-MuiChip-root"[39m
+              [33mtabindex[39m=[32m"0"[39m
+            [36m>[39m
+              [36m<span[39m
+                [33mclass[39m=[32m"MuiChip-label MuiChip-labelSmall css-rrn746-MuiChip-label"[39m
+              [36m>[39m
+                [0mAPI[0m
+              [36m</span>[39m
+            [36m</div>[39m
+            [36m<div[39m
+              [33mclass[39m=[32m"MuiChip-root MuiChip-outlined MuiChip-sizeSmall MuiChip-colorPrimary MuiChip-outlinedPrimary css-1y6wsfa-MuiChip-root"[39m
+              [33mtabindex[39m=[32m"0"[39m
+            [36m>[39m
+              [36m<span[39m
+                [33mclass[39m=[32m"MuiChip-label MuiChip-labelSmall css-rrn746-MuiChip-label"[39m
+              [36m>[39m
+                [0mData[0m
+              [36m</span>[39m
+            [36m</div>[39m
+            [36m<div[39m
+              [33mclass[39m=[32m"MuiChip-root MuiChip-outlined MuiChip-sizeSmall MuiChip-colorPrimary MuiChip-outlinedPrimary css-1y6wsfa-MuiChip-root"[39m
+              [33mtabindex[39m=[32m"0"[39m
+            [36m>[39m
+              [36m<span[39m
+                [33mclass[39m=[32m"MuiChip-label MuiChip-labelSmall css-rrn746-MuiChip-label"[39m
+              [36m>[39m
+                [0mComponent[0m
+              [36m</span>[39m
+            [36m</div>[39m
+          [36m</div>[39m
+          [36m<div[39m
+            [33mclass[39m=[32m"MuiFormControl-root MuiFormControl-fullWidth MuiTextField-root css-120rok2-MuiFormControl-root-MuiTextField-root"[39m
+          [36m>[39m
+            [36m<div[39m
+              [33mclass[39m=[32m"MuiInputBase-root MuiOutlinedInput-root MuiInputBase-colorPrimary MuiInputBase-fullWidth MuiInputBase-formControl MuiInputBase-sizeSmall MuiInputBase-adornedStart css-8j6b76-MuiInputBase-root-MuiOutlinedInput-root"[39m
+            [36m>[39m
+              [36m<div[39m
+                [33mclass[39m=[32m"MuiInputAdornment-root MuiInputAdornment-positionStart MuiInputAdornment-outlined MuiInputAdornment-sizeSmall css-ittuaa-MuiInputAdornment-root"[39m
+              [36m>[39m
+                [36m<span[39m
+                  [33mclass[39m=[32m"notranslate"[39m
+                [36m>[39m
+                  [0m​[0m
+                [36m</span>[39m
+                [36m<svg[39m
+                  [33maria-hidden[39m=[32m"true"[39m
+                  [33mclass[39m=[32m"MuiSvgIcon-root MuiSvgIcon-fontSizeSmall css-ptiqhd-MuiSvgIcon-root"[39m
+                  [33mdata-testid[39m=[32m"SearchIcon"[39m
+                  [33mfocusable[39m=[32m"false"[39m
+                  [33mviewBox[39m=[32m"0 0 24 24"[39m
+                [36m>[39m
+                  [36m<path[39m
+                    [33md[39m=[32m"M15.5 14h-.79l-.28-.27C15.41 12.59 16 11.11 16 9.5 16 5.91 13.09 3 9.5 3S3 5.91 3 9.5 5.91 16 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14"[39m
+                  [36m/>[39m
+                [36m</svg>[39m
+              [36m</div>[39m
+              [36m<input[39m
+                [33maria-invalid[39m=[32m"false"[39m
+                [33mclass[39m=[32m"MuiInputBase-input MuiOutlinedInput-input MuiInputBase-inputSizeSmall MuiInputBase-inputAdornedStart css-1ua80n0-MuiInputBase-input-MuiOutlinedInput-input"[39m
+                [33mid[39m=[32m"_r_c_"[39m
+                [33mplaceholder[39m=[32m"Search components..."[39m
+                [33mtabindex[39m=[32m"0"[39m
+                [33mtype[39m=[32m"text"[39m
+                [33mvalue[39m=[32m""[39m
+              [36m/>[39m
+              [36m<fieldset[39m
+                [33maria-hidden[39m=[32m"true"[39m
+                [33mclass[39m=[32m"MuiOutlinedInput-notchedOutline css-r01yff-MuiNotchedOutlined-root-MuiOutlinedInput-notchedOutline"[39m
+              [36m>[39m
+                [36m<legend[39m
+                  [33mclass[39m=[32m"css-1whs34k-MuiNotchedOutlined-root"[39m
+                [36m>[39m
+                  [36m<span[39m
+                    [33mclass[39m=[32m"notranslate"[39m
+                  [36m>[39m
+                    [0m​[0m
+                  [36m</span>[39m
+                [36m</legend>[39m
+              [36m</fieldset>[39m
+            [36m</div>[39m
+          [36m</div>[39m
+        [36m</div>[39m
+        [36m<div[39m
+          [33mclass[39m=[32m"MuiBox-root css-4z6nar"[39m
+        [36m>[39m
+          [36m<div[39m
+            [33mclass[39m=[32m"MuiPaper-root MuiPaper-elevation MuiPaper-rounded MuiPaper-elevation1 MuiAccordion-root MuiAccordion-rounded Mui-expanded MuiAccordion-gutters css-t56fdk-MuiPaper-root-MuiAccordion-root"[39m
+          [36m>[39m
+            [36m<div[39m
+              [33maria-expanded[39m=[32m"true"[39m
+              [33mclass[39m=[32m"MuiButtonBase-root MuiAccordionSummary-root Mui-expanded MuiAccordionSummary-gutters css-137yb42-MuiButtonBase-root-MuiAccordionSummary-root"[39m
+              [33mrole[39m=[32m"button"[39m
+              [33mtabindex[39m=[32m"0"[39m
+            [36m>[39m
+              [36m<div[39m
+                [33mclass[39m=[32m"MuiAccordionSummary-content Mui-expanded MuiAccordionSummary-contentGutters css-eqpfi5-MuiAccordionSummary-content"[39m
+              [36m>[39m
+                [36m<div[39m
+                  [33mclass[39m=[32m"MuiBox-root css-1bntj9o"[39m
+                [36m>[39m
+                  [36m<h6[39m
+                    [33mclass[39m=[32m"MuiTypography-root MuiTypography-subtitle2 css-1k1wiw9-MuiTypography-root"[39m
+                  [36m>[39m
+                    [0mArchitecture[0m
+                  [36m</h6>[39m
+                  [36m<div[39m
+                    [33mclass[39m=[32m"MuiChip-root MuiChip-outlined MuiChip-sizeSmall MuiChip-colorDefault MuiChip-outlinedDefault css-1rvzqce...
+   × Feature 6.4: Palette Drag & Drop Integration > State Integration > updates canvas atom after successful drop 1243ms
+     → expected [] to have a length of 1 but got +0
+
+Ignored nodes: comments, script, style
+[36m<html>[39m
+  [36m<head />[39m
+  [36m<body>[39m
+    [36m<div>[39m
+      [36m<div[39m
+        [33maria-label[39m=[32m"Component Palette"[39m
+        [33mclass[39m=[32m"MuiPaper-root MuiPaper-elevation MuiPaper-rounded MuiPaper-elevation2 css-1ezauy5-MuiPaper-root"[39m
+        [33mdata-testid[39m=[32m"component-palette"[39m
+        [33mid[39m=[32m"component-palette"[39m
+      [36m>[39m
+        [36m<div[39m
+          [33mclass[39m=[32m"MuiBox-root css-r6rj31"[39m
+        [36m>[39m
+          [36m<h6[39m
+            [33mclass[39m=[32m"MuiTypography-root MuiTypography-h6 css-188twu3-MuiTypography-root"[39m
+          [36m>[39m
+            [0mPalette[0m
+          [36m</h6>[39m
+          [36m<div[39m
+            [33mclass[39m=[32m"MuiStack-root css-q4tsa-MuiStack-root"[39m
+          [36m>[39m
+            [36m<div[39m
+              [33mclass[39m=[32m"MuiChip-root MuiChip-outlined MuiChip-sizeSmall MuiChip-colorPrimary MuiChip-outlinedPrimary css-1y6wsfa-MuiChip-root"[39m
+              [33mtabindex[39m=[32m"0"[39m
+            [36m>[39m
+              [36m<span[39m
+                [33mclass[39m=[32m"MuiChip-label MuiChip-labelSmall css-rrn746-MuiChip-label"[39m
+              [36m>[39m
+                [0mAPI[0m
+              [36m</span>[39m
+            [36m</div>[39m
+            [36m<div[39m
+              [33mclass[39m=[32m"MuiChip-root MuiChip-outlined MuiChip-sizeSmall MuiChip-colorPrimary MuiChip-outlinedPrimary css-1y6wsfa-MuiChip-root"[39m
+              [33mtabindex[39m=[32m"0"[39m
+            [36m>[39m
+              [36m<span[39m
+                [33mclass[39m=[32m"MuiChip-label MuiChip-labelSmall css-rrn746-MuiChip-label"[39m
+              [36m>[39m
+                [0mData[0m
+              [36m</span>[39m
+            [36m</div>[39m
+            [36m<div[39m
+              [33mclass[39m=[32m"MuiChip-root MuiChip-outlined MuiChip-sizeSmall MuiChip-colorPrimary MuiChip-outlinedPrimary css-1y6wsfa-MuiChip-root"[39m
+              [33mtabindex[39m=[32m"0"[39m
+            [36m>[39m
+              [36m<span[39m
+                [33mclass[39m=[32m"MuiChip-label MuiChip-labelSmall css-rrn746-MuiChip-label"[39m
+              [36m>[39m
+                [0mComponent[0m
+              [36m</span>[39m
+            [36m</div>[39m
+          [36m</div>[39m
+          [36m<div[39m
+            [33mclass[39m=[32m"MuiFormControl-root MuiFormControl-fullWidth MuiTextField-root css-120rok2-MuiFormControl-root-MuiTextField-root"[39m
+          [36m>[39m
+            [36m<div[39m
+              [33mclass[39m=[32m"MuiInputBase-root MuiOutlinedInput-root MuiInputBase-colorPrimary MuiInputBase-fullWidth MuiInputBase-formControl MuiInputBase-sizeSmall MuiInputBase-adornedStart css-8j6b76-MuiInputBase-root-MuiOutlinedInput-root"[39m
+            [36m>[39m
+              [36m<div[39m
+                [33mclass[39m=[32m"MuiInputAdornment-root MuiInputAdornment-positionStart MuiInputAdornment-outlined MuiInputAdornment-sizeSmall css-ittuaa-MuiInputAdornment-root"[39m
+              [36m>[39m
+                [36m<span[39m
+                  [33mclass[39m=[32m"notranslate"[39m
+                [36m>[39m
+                  [0m​[0m
+                [36m</span>[39m
+                [36m<svg[39m
+                  [33maria-hidden[39m=[32m"true"[39m
+                  [33mclass[39m=[32m"MuiSvgIcon-root MuiSvgIcon-fontSizeSmall css-ptiqhd-MuiSvgIcon-root"[39m
+                  [33mdata-testid[39m=[32m"SearchIcon"[39m
+                  [33mfocusable[39m=[32m"false"[39m
+                  [33mviewBox[39m=[32m"0 0 24 24"[39m
+                [36m>[39m
+                  [36m<path[39m
+                    [33md[39m=[32m"M15.5 14h-.79l-.28-.27C15.41 12.59 16 11.11 16 9.5 16 5.91 13.09 3 9.5 3S3 5.91 3 9.5 5.91 16 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14"[39m
+                  [36m/>[39m
+                [36m</svg>[39m
+              [36m</div>[39m
+              [36m<input[39m
+                [33maria-invalid[39m=[32m"false"[39m
+                [33mclass[39m=[32m"MuiInputBase-input MuiOutlinedInput-input MuiInputBase-inputSizeSmall MuiInputBase-inputAdornedStart css-1ua80n0-MuiInputBase-input-MuiOutlinedInput-input"[39m
+                [33mid[39m=[32m"_r_d_"[39m
+                [33mplaceholder[39m=[32m"Search components..."[39m
+                [33mtabindex[39m=[32m"0"[39m
+                [33mtype[39m=[32m"text"[39m
+                [33mvalue[39m=[32m""[39m
+              [36m/>[39m
+              [36m<fieldset[39m
+                [33maria-hidden[39m=[32m"true"[39m
+                [33mclass[39m=[32m"MuiOutlinedInput-notchedOutline css-r01yff-MuiNotchedOutlined-root-MuiOutlinedInput-notchedOutline"[39m
+              [36m>[39m
+                [36m<legend[39m
+                  [33mclass[39m=[32m"css-1whs34k-MuiNotchedOutlined-root"[39m
+                [36m>[39m
+                  [36m<span[39m
+                    [33mclass[39m=[32m"notranslate"[39m
+                  [36m>[39m
+                    [0m​[0m
+                  [36m</span>[39m
+                [36m</legend>[39m
+              [36m</fieldset>[39m
+            [36m</div>[39m
+          [36m</div>[39m
+        [36m</div>[39m
+        [36m<div[39m
+          [33mclass[39m=[32m"MuiBox-root css-4z6nar"[39m
+        [36m>[39m
+          [36m<div[39m
+            [33mclass[39m=[32m"MuiPaper-root MuiPaper-elevation MuiPaper-rounded MuiPaper-elevation1 MuiAccordion-root MuiAccordion-rounded Mui-expanded MuiAccordion-gutters css-t56fdk-MuiPaper-root-MuiAccordion-root"[39m
+          [36m>[39m
+            [36m<div[39m
+              [33maria-expanded[39m=[32m"true"[39m
+              [33mclass[39m=[32m"MuiButtonBase-root MuiAccordionSummary-root Mui-expanded MuiAccordionSummary-gutters css-137yb42-MuiButtonBase-root-MuiAccordionSummary-root"[39m
+              [33mrole[39m=[32m"button"[39m
+              [33mtabindex[39m=[32m"0"[39m
+            [36m>[39m
+              [36m<div[39m
+                [33mclass[39m=[32m"MuiAccordionSummary-content Mui-expanded MuiAccordionSummary-contentGutters css-eqpfi5-MuiAccordionSummary-content"[39m
+              [36m>[39m
+                [36m<div[39m
+                  [33mclass[39m=[32m"MuiBox-root css-1bntj9o"[39m
+                [36m>[39m
+                  [36m<h6[39m
+                    [33mclass[39m=[32m"MuiTypography-root MuiTypography-subtitle2 css-1k1wiw9-MuiTypography-root"[39m
+                  [36m>[39m
+                    [0mArchitecture[0m
+                  [36m</h6>[39m
+                  [36m<div[39m
+                    [33mclass[39m=[32m"MuiChip-root MuiChip-outlined MuiChip-sizeSmall MuiChip-colorDefault MuiChip-outlinedDefault css-1rvzqce...
+ ✓ src/__tests__/canvas/useCanvasScene.deep.integration.spec.tsx (1 test) 93ms
+ ✓ src/__tests__/canvas/useCanvasScene.behavior.spec.ts (2 tests) 46ms
+ ❯ src/__tests__/canvas/reactflow-mocks.spec.ts (3 tests | 3 failed) 24ms
+   × createMockReactFlowInstance > projects coordinates using viewport and zoom, and exposes viewport 18ms
+     → inst.__viewport is not a function
+   × createMockReactFlowInstance > applies node changes: add, update, remove 2ms
+     → inst.__applyNodeChanges is not a function
+   × createMockReactFlowInstance > applies edge changes: add, update, remove 2ms
+     → inst.__applyEdgeChanges is not a function
+stdout | src/components/canvas/__tests__/ComponentPalette.integration.test.tsx > ComponentPalette integration > toggles category expand/collapse when header is clicked
+[UI] Rendering shared ComponentPalette (components/canvas/ComponentPalette.tsx)
+[UI] Rendering shared ComponentPalette (components/canvas/ComponentPalette.tsx)
+[UI] Rendering shared ComponentPalette (components/canvas/ComponentPalette.tsx)
+[UI] Rendering shared ComponentPalette (components/canvas/ComponentPalette.tsx)
+
+stdout | src/components/canvas/__tests__/ComponentPalette.integration.test.tsx > ComponentPalette integration > updates footer counts when search filters results
+[UI] Rendering shared ComponentPalette (components/canvas/ComponentPalette.tsx)
+
+stdout | src/components/canvas/__tests__/ComponentPalette.integration.test.tsx > ComponentPalette integration > calls onAddComponent when add button is activated via keyboard
+[UI] Rendering shared ComponentPalette (components/canvas/ComponentPalette.tsx)
+
+stdout | src/components/canvas/__tests__/ComponentPalette.integration.test.tsx > ComponentPalette integration > exposes draggable payload attributes and does not call onAddComponent on pointer events
+[UI] Rendering shared ComponentPalette (components/canvas/ComponentPalette.tsx)
+
+ ❯ src/components/canvas/__tests__/ComponentPalette.integration.test.tsx (4 tests | 1 failed) 2068ms
+   ✓ ComponentPalette integration > toggles category expand/collapse when header is clicked 1047ms
+   × ComponentPalette integration > updates footer counts when search filters results 332ms
+     → Unable to find an element with the text: /components available/. This could be because the text is broken up by multiple elements. In this case, you can provide a function for your text matcher to make your matcher more flexible.
+
+Ignored nodes: comments, script, style
+[36m<body>[39m
+  [36m<div>[39m
+    [36m<div[39m
+      [33maria-label[39m=[32m"Component Palette"[39m
+      [33mclass[39m=[32m"MuiPaper-root MuiPaper-elevation MuiPaper-rounded MuiPaper-elevation2 css-1ezauy5-MuiPaper-root"[39m
+      [33mdata-testid[39m=[32m"component-palette"[39m
+      [33mid[39m=[32m"component-palette"[39m
+    [36m>[39m
+      [36m<div[39m
+        [33mclass[39m=[32m"MuiBox-root css-r6rj31"[39m
+      [36m>[39m
+        [36m<h6[39m
+          [33mclass[39m=[32m"MuiTypography-root MuiTypography-h6 css-188twu3-MuiTypography-root"[39m
+        [36m>[39m
+          [0mPalette[0m
+        [36m</h6>[39m
+        [36m<div[39m
+          [33mclass[39m=[32m"MuiStack-root css-q4tsa-MuiStack-root"[39m
+        [36m>[39m
+          [36m<div[39m
+            [33mclass[39m=[32m"MuiChip-root MuiChip-outlined MuiChip-sizeSmall MuiChip-colorPrimary MuiChip-outlinedPrimary css-1y6wsfa-MuiChip-root"[39m
+            [33mtabindex[39m=[32m"0"[39m
+          [36m>[39m
+            [36m<span[39m
+              [33mclass[39m=[32m"MuiChip-label MuiChip-labelSmall css-rrn746-MuiChip-label"[39m
+            [36m>[39m
+              [0mAPI[0m
+            [36m</span>[39m
+          [36m</div>[39m
+          [36m<div[39m
+            [33mclass[39m=[32m"MuiChip-root MuiChip-outlined MuiChip-sizeSmall MuiChip-colorPrimary MuiChip-outlinedPrimary css-1y6wsfa-MuiChip-root"[39m
+            [33mtabindex[39m=[32m"0"[39m
+          [36m>[39m
+            [36m<span[39m
+              [33mclass[39m=[32m"MuiChip-label MuiChip-labelSmall css-rrn746-MuiChip-label"[39m
+            [36m>[39m
+              [0mData[0m
+            [36m</span>[39m
+          [36m</div>[39m
+          [36m<div[39m
+            [33mclass[39m=[32m"MuiChip-root MuiChip-outlined MuiChip-sizeSmall MuiChip-colorPrimary MuiChip-outlinedPrimary css-1y6wsfa-MuiChip-root"[39m
+            [33mtabindex[39m=[32m"0"[39m
+          [36m>[39m
+            [36m<span[39m
+              [33mclass[39m=[32m"MuiChip-label MuiChip-labelSmall css-rrn746-MuiChip-label"[39m
+            [36m>[39m
+              [0mComponent[0m
+            [36m</span>[39m
+          [36m</div>[39m
+        [36m</div>[39m
+        [36m<div[39m
+          [33mclass[39m=[32m"MuiFormControl-root MuiFormControl-fullWidth MuiTextField-root css-120rok2-MuiFormControl-root-MuiTextField-root"[39m
+        [36m>[39m
+          [36m<div[39m
+            [33mclass[39m=[32m"MuiInputBase-root MuiOutlinedInput-root MuiInputBase-colorPrimary MuiInputBase-fullWidth MuiInputBase-formControl MuiInputBase-sizeSmall MuiInputBase-adornedStart css-8j6b76-MuiInputBase-root-MuiOutlinedInput-root"[39m
+          [36m>[39m
+            [36m<div[39m
+              [33mclass[39m=[32m"MuiInputAdornment-root MuiInputAdornment-positionStart MuiInputAdornment-outlined MuiInputAdornment-sizeSmall css-ittuaa-MuiInputAdornment-root"[39m
+            [36m>[39m
+              [36m<span[39m
+                [33mclass[39m=[32m"notranslate"[39m
+              [36m>[39m
+                [0m​[0m
+              [36m</span>[39m
+              [36m<svg[39m
+                [33maria-hidden[39m=[32m"true"[39m
+                [33mclass[39m=[32m"MuiSvgIcon-root MuiSvgIcon-fontSizeSmall css-ptiqhd-MuiSvgIcon-root"[39m
+                [33mdata-testid[39m=[32m"SearchIcon"[39m
+                [33mfocusable[39m=[32m"false"[39m
+                [33mviewBox[39m=[32m"0 0 24 24"[39m
+              [36m>[39m
+                [36m<path[39m
+                  [33md[39m=[32m"M15.5 14h-.79l-.28-.27C15.41 12.59 16 11.11 16 9.5 16 5.91 13.09 3 9.5 3S3 5.91 3 9.5 5.91 16 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14"[39m
+                [36m/>[39m
+              [36m</svg>[39m
+            [36m</div>[39m
+            [36m<input[39m
+              [33maria-invalid[39m=[32m"false"[39m
+              [33mclass[39m=[32m"MuiInputBase-input MuiOutlinedInput-input MuiInputBase-inputSizeSmall MuiInputBase-inputAdornedStart css-1ua80n0-MuiInputBase-input-MuiOutlinedInput-input"[39m
+              [33mid[39m=[32m"_r_1_"[39m
+              [33mplaceholder[39m=[32m"Search components..."[39m
+              [33mtabindex[39m=[32m"0"[39m
+              [33mtype[39m=[32m"text"[39m
+              [33mvalue[39m=[32m""[39m
+            [36m/>[39m
+            [36m<fieldset[39m
+              [33maria-hidden[39m=[32m"true"[39m
+              [33mclass[39m=[32m"MuiOutlinedInput-notchedOutline css-r01yff-MuiNotchedOutlined-root-MuiOutlinedInput-notchedOutline"[39m
+            [36m>[39m
+              [36m<legend[39m
+                [33mclass[39m=[32m"css-1whs34k-MuiNotchedOutlined-root"[39m
+              [36m>[39m
+                [36m<span[39m
+                  [33mclass[39m=[32m"notranslate"[39m
+                [36m>[39m
+                  [0m​[0m
+                [36m</span>[39m
+              [36m</legend>[39m
+            [36m</fieldset>[39m
+          [36m</div>[39m
+        [36m</div>[39m
+      [36m</div>[39m
+      [36m<div[39m
+        [33mclass[39m=[32m"MuiBox-root css-4z6nar"[39m
+      [36m>[39m
+        [36m<div[39m
+          [33mclass[39m=[32m"MuiPaper-root MuiPaper-elevation MuiPaper-rounded MuiPaper-elevation1 MuiAccordion-root MuiAccordion-rounded Mui-expanded MuiAccordion-gutters css-t56fdk-MuiPaper-root-MuiAccordion-root"[39m
+        [36m>[39m
+          [36m<div[39m
+            [33maria-expanded[39m=[32m"true"[39m
+            [33mclass[39m=[32m"MuiButtonBase-root MuiAccordionSummary-root Mui-expanded MuiAccordionSummary-gutters css-137yb42-MuiButtonBase-root-MuiAccordionSummary-root"[39m
+            [33mrole[39m=[32m"button"[39m
+            [33mtabindex[39m=[32m"0"[39m
+          [36m>[39m
+            [36m<div[39m
+              [33mclass[39m=[32m"MuiAccordionSummary-content Mui-expanded MuiAccordionSummary-contentGutters css-eqpfi5-MuiAccordionSummary-content"[39m
+            [36m>[39m
+              [36m<div[39m
+                [33mclass[39m=[32m"MuiBox-root css-1bntj9o"[39m
+              [36m>[39m
+                [36m<h6[39m
+                  [33mclass[39m=[32m"MuiTypography-root MuiTypography-subtitle2 css-1k1wiw9-MuiTypography-root"[39m
+                [36m>[39m
+                  [0mArchitecture[0m
+                [36m</h6>[39m
+                [36m<div[39m
+                  [33mclass[39m=[32m"MuiChip-root MuiChip-outlined MuiChip-sizeSmall MuiChip-colorDefault MuiChip-outlinedDefault css-1rvzqce-MuiChip-root"[39m
+                [36m>[39m
+                  [36m<span[39m
+                    [33mclass[39m=[32m"MuiChip-label MuiChip-labelSmall css-rrn746-MuiChip-label"[39m
+                  [36m>[39m
+                    [0m6[0m
+                  [36m</span>[39m
+        ...
+   ✓ ComponentPalette integration > calls onAddComponent when add button is activated via keyboard 417ms
+ ✓ src/__tests__/useZoom.spec.tsx (2 tests) 71ms
+ ❯ src/routes/page-designer/__tests__/useZoom.spec.tsx (0 test)
+ ✓ src/__tests__/routes.spec.ts (2 tests) 216ms
+ ✓ src/__tests__/canvas/useCanvasPersistence.spec.ts (1 test) 34ms
+ ✓ src/components/canvas/performance/__tests__/PerformancePanel.test.tsx (7 tests) 554ms
+ ✓ src/__tests__/canvas/useCanvasScene.no-pingpong.integration.spec.tsx (1 test) 106ms
+ ✓ src/utils/coord.test.ts (4 tests) 9ms
+ ✓ src/__tests__/canvas/useCanvasScene.integration.spec.tsx (1 test) 116ms
+ ❯ src/routes/app/project/canvas/__tests__/canvas-scene.handlers.test.tsx (1 test | 1 failed) 1107ms
+   × CanvasScene handlers stability > does not enter an infinite update loop when handlers are invoked repeatedly 1105ms
+     → Cannot read properties of null (reading 'scale')
+stdout | src/routes/app/project/canvas/__tests__/canvas-scene.handlers.test.tsx > CanvasScene handlers stability > does not enter an infinite update loop when handlers are invoked repeatedly
+[UI] Rendering shared ComponentPalette (components/canvas/ComponentPalette.tsx)
+
+ ✓ src/__tests__/canvas/applyChanges.spec.ts (2 tests) 7ms
+ ✓ src/__tests__/canvas/normalizeNode.spec.ts (2 tests) 5ms
+ ✓ src/__tests__/canvas/equality.spec.ts (2 tests) 7ms
+ ✓ src/components/canvas/__tests__/ComponentPalette.test.tsx (2 tests) 1290ms
+   ✓ ComponentPalette > renders categories and components, supports search filtering 1024ms
+stdout | src/components/canvas/__tests__/ComponentPalette.test.tsx > ComponentPalette > renders categories and components, supports search filtering
+[UI] Rendering shared ComponentPalette (components/canvas/ComponentPalette.tsx)
+[UI] Rendering shared ComponentPalette (components/canvas/ComponentPalette.tsx)
+[UI] Rendering shared ComponentPalette (components/canvas/ComponentPalette.tsx)
+
+stdout | src/components/canvas/__tests__/ComponentPalette.test.tsx > ComponentPalette > calls onAddComponent with default position when add icon is clicked
+[UI] Rendering shared ComponentPalette (components/canvas/ComponentPalette.tsx)
+
+ ✓ src/__tests__/Canvas.spec.tsx (1 test) 60ms
+ ✓ src/__tests__/Palette.spec.tsx (1 test) 180ms
+ ✓ src/__tests__/smoke.test.tsx (1 test) 67ms
+ ❯ src/components/canvas/stories/__tests__/CanvasFeatureStoryList.test.tsx (7 tests | 3 failed) 10494ms
+   × CanvasFeatureStoryList > renders the default category and stories 2711ms
+     → Unable to find an element by: [data-testid="canvas-feature-story-status-summary-all-status-not-started"]
+
+Ignored nodes: comments, script, style
+[36m<body>[39m
+  [36m<div>[39m
+    [36m<div[39m
+      [33mclass[39m=[32m"MuiBox-root css-0"[39m
+      [33mdata-testid[39m=[32m"canvas-feature-story-list"[39m
+    [36m>[39m
+      [36m<div[39m
+        [33mclass[39m=[32m"MuiStack-root css-v2woy3-MuiStack-root"[39m
+      [36m>[39m
+        [36m<div[39m
+          [33mclass[39m=[32m"MuiStack-root css-1npwy6j-MuiStack-root"[39m
+        [36m>[39m
+          [36m<div[39m
+            [33mclass[39m=[32m"MuiTabs-root css-15flnjc-MuiTabs-root"[39m
+            [33mdata-testid[39m=[32m"canvas-feature-story-tabs"[39m
+          [36m>[39m
+            [36m<div[39m
+              [33mclass[39m=[32m"MuiTabs-scrollableX MuiTabs-hideScrollbar css-oqr85h"[39m
+              [33mstyle[39m=[32m"width: 99px; height: 99px; position: absolute; top: -9999px; overflow: scroll;"[39m
+            [36m/>[39m
+            [36m<div[39m
+              [33mclass[39m=[32m"MuiTabs-scroller MuiTabs-hideScrollbar MuiTabs-scrollableX css-69z67c-MuiTabs-scroller"[39m
+              [33mstyle[39m=[32m"margin-bottom: 0px;"[39m
+            [36m>[39m
+              [36m<div[39m
+                [33maria-label[39m=[32m"Canvas feature story categories"[39m
+                [33mclass[39m=[32m"MuiTabs-flexContainer css-heg063-MuiTabs-flexContainer"[39m
+                [33mrole[39m=[32m"tablist"[39m
+              [36m>[39m
+                [36m<button[39m
+                  [33maria-selected[39m=[32m"false"[39m
+                  [33mclass[39m=[32m"MuiButtonBase-root MuiTab-root MuiTab-textColorPrimary css-1h9z7r5-MuiButtonBase-root-MuiTab-root"[39m
+                  [33mid[39m=[32m"canvas-feature-tab-all"[39m
+                  [33mrole[39m=[32m"tab"[39m
+                  [33mtabindex[39m=[32m"-1"[39m
+                  [33mtype[39m=[32m"button"[39m
+                [36m>[39m
+                  [0mAll (83)[0m
+                  [36m<span[39m
+                    [33mclass[39m=[32m"MuiTouchRipple-root css-8je8zh-MuiTouchRipple-root"[39m
+                  [36m/>[39m
+                [36m</button>[39m
+                [36m<button[39m
+                  [33maria-selected[39m=[32m"true"[39m
+                  [33mclass[39m=[32m"MuiButtonBase-root MuiTab-root MuiTab-textColorPrimary Mui-selected css-1h9z7r5-MuiButtonBase-root-MuiTab-root"[39m
+                  [33mid[39m=[32m"canvas-feature-tab-1"[39m
+                  [33mrole[39m=[32m"tab"[39m
+                  [33mtabindex[39m=[32m"0"[39m
+                  [33mtype[39m=[32m"button"[39m
+                [36m>[39m
+                  [0mCurrent Capabilities (17)[0m
+                  [36m<span[39m
+                    [33mclass[39m=[32m"MuiTouchRipple-root css-8je8zh-MuiTouchRipple-root"[39m
+                  [36m/>[39m
+                [36m</button>[39m
+                [36m<button[39m
+                  [33maria-selected[39m=[32m"false"[39m
+                  [33mclass[39m=[32m"MuiButtonBase-root MuiTab-root MuiTab-textColorPrimary css-1h9z7r5-MuiButtonBase-root-MuiTab-root"[39m
+                  [33mid[39m=[32m"canvas-feature-tab-2"[39m
+                  [33mrole[39m=[32m"tab"[39m
+                  [33mtabindex[39m=[32m"-1"[39m
+                  [33mtype[39m=[32m"button"[39m
+                [36m>[39m
+                  [0mFuture Enhancements & Roadmap (35)[0m
+                  [36m<span[39m
+                    [33mclass[39m=[32m"MuiTouchRipple-root css-8je8zh-MuiTouchRipple-root"[39m
+                  [36m/>[39m
+                [36m</button>[39m
+                [36m<button[39m
+                  [33maria-selected[39m=[32m"false"[39m
+                  [33mclass[39m=[32m"MuiButtonBase-root MuiTab-root MuiTab-textColorPrimary css-1h9z7r5-MuiButtonBase-root-MuiTab-root"[39m
+                  [33mid[39m=[32m"canvas-feature-tab-3"[39m
+                  [33mrole[39m=[32m"tab"[39m
+                  [33mtabindex[39m=[32m"-1"[39m
+                  [33mtype[39m=[32m"button"[39m
+                [36m>[39m
+                  [0mCollaboration Blueprint (7)[0m
+                  [36m<span[39m
+                    [33mclass[39m=[32m"MuiTouchRipple-root css-8je8zh-MuiTouchRipple-root"[39m
+                  [36m/>[39m
+                [36m</button>[39m
+                [36m<button[39m
+                  [33maria-selected[39m=[32m"false"[39m
+                  [33mclass[39m=[32m"MuiButtonBase-root MuiTab-root MuiTab-textColorPrimary css-1h9z7r5-MuiButtonBase-root-MuiTab-root"[39m
+                  [33mid[39m=[32m"canvas-feature-tab-4"[39m
+                  [33mrole[39m=[32m"tab"[39m
+                  [33mtabindex[39m=[32m"-1"[39m
+                  [33mtype[39m=[32m"button"[39m
+                [36m>[39m
+                  [0mSecurity, Compliance & Export Policies (8)[0m
+                  [36m<span[39m
+                    [33mclass[39m=[32m"MuiTouchRipple-root css-8je8zh-MuiTouchRipple-root"[39m
+                  [36m/>[39m
+                [36m</button>[39m
+                [36m<button[39m
+                  [33maria-selected[39m=[32m"false"[39m
+                  [33mclass[39m=[32m"MuiButtonBase-root MuiTab-root MuiTab-textColorPrimary css-1h9z7r5-MuiButtonBase-root-MuiTab-root"[39m
+                  [33mid[39m=[32m"canvas-feature-tab-5"[39m
+                  [33mrole[39m=[32m"tab"[39m
+                  [33mtabindex[39m=[32m"-1"[39m
+                  [33mtype[39m=[32m"button"[39m
+                [36m>[39m
+                  [0mBackup & Recovery (4)[0m
+                  [36m<span[39m
+                    [33mclass[39m=[32m"MuiTouchRipple-root css-8je8zh-MuiTouchRipple-root"[39m
+                  [36m/>[39m
+                [36m</button>[39m
+                [36m<button[39m
+                  [33maria-selected[39m=[32m"false"[39m
+                  [33mclass[39m=[32m"MuiButtonBase-root MuiTab-root MuiTab-textColorPrimary css-1h9z7r5-MuiButtonBase-root-MuiTab-root"[39m
+                  [33mid[39m=[32m"canvas-feature-tab-6"[39m
+                  [33mrole[39m=[32m"tab"[39m
+                  [33mtabindex[39m=[32m"-1"[39m
+                  [33mtype[39m=[32m"button"[39m
+                [36m>[39m
+                  [0mTesting & Quality Gates (6)[0m
+                  [36m<span[39m
+                    [33mclass[39m=[32m"MuiTouchRipple-root css-8je8zh-MuiTouchRipple-root"[39m
+                  [36m/>[39m
+                [36m</button>[39m
+                [36m<button[39m
+                  [33maria-selected[39m=[32m"false"[39m
+                  [33mclass[39m=[32m"MuiButtonBase-root MuiTab-root MuiTab-textColorPrimary css-1h9z7r5-MuiButtonBase-root-MuiTab-root"[39m
+                  [33mid[39m=[32m"canvas-feature-tab-7"[39m
+                  [33mrole[39m=[32m"tab"[39m
+                  [33mtabindex[39m=[32m"-1"[39m
+              ...
+   ✓ CanvasFeatureStoryList > filters stories within the active category by search term 1194ms
+   ✓ CanvasFeatureStoryList > invokes onStorySelect when a card is activated 822ms
+   ✓ CanvasFeatureStoryList > shows an informative state when filters yield no results 944ms
+   ✓ CanvasFeatureStoryList > can switch categories via tabs 4372ms
+   × CanvasFeatureStoryList > filters stories by progress status 341ms
+     → Unable to find an element with the text: Viewport Management. This could be because the text is broken up by multiple elements. In this case, you can provide a function for your text matcher to make your matcher more flexible.
+
+Ignored nodes: comments, script, style
+[36m<body>[39m
+  [36m<div>[39m
+    [36m<div[39m
+      [33mclass[39m=[32m"MuiBox-root css-0"[39m
+      [33mdata-testid[39m=[32m"canvas-feature-story-list"[39m
+    [36m>[39m
+      [36m<div[39m
+        [33mclass[39m=[32m"MuiStack-root css-v2woy3-MuiStack-root"[39m
+      [36m>[39m
+        [36m<div[39m
+          [33mclass[39m=[32m"MuiStack-root css-1npwy6j-MuiStack-root"[39m
+        [36m>[39m
+          [36m<div[39m
+            [33mclass[39m=[32m"MuiTabs-root css-15flnjc-MuiTabs-root"[39m
+            [33mdata-testid[39m=[32m"canvas-feature-story-tabs"[39m
+          [36m>[39m
+            [36m<div[39m
+              [33mclass[39m=[32m"MuiTabs-scrollableX MuiTabs-hideScrollbar css-oqr85h"[39m
+              [33mstyle[39m=[32m"width: 99px; height: 99px; position: absolute; top: -9999px; overflow: scroll;"[39m
+            [36m/>[39m
+            [36m<div[39m
+              [33mclass[39m=[32m"MuiTabs-scroller MuiTabs-hideScrollbar MuiTabs-scrollableX css-69z67c-MuiTabs-scroller"[39m
+              [33mstyle[39m=[32m"margin-bottom: 0px;"[39m
+            [36m>[39m
+              [36m<div[39m
+                [33maria-label[39m=[32m"Canvas feature story categories"[39m
+                [33mclass[39m=[32m"MuiTabs-flexContainer css-heg063-MuiTabs-flexContainer"[39m
+                [33mrole[39m=[32m"tablist"[39m
+              [36m>[39m
+                [36m<button[39m
+                  [33maria-selected[39m=[32m"false"[39m
+                  [33mclass[39m=[32m"MuiButtonBase-root MuiTab-root MuiTab-textColorPrimary css-1h9z7r5-MuiButtonBase-root-MuiTab-root"[39m
+                  [33mid[39m=[32m"canvas-feature-tab-all"[39m
+                  [33mrole[39m=[32m"tab"[39m
+                  [33mtabindex[39m=[32m"-1"[39m
+                  [33mtype[39m=[32m"button"[39m
+                [36m>[39m
+                  [0mAll (83)[0m
+                  [36m<span[39m
+                    [33mclass[39m=[32m"MuiTouchRipple-root css-8je8zh-MuiTouchRipple-root"[39m
+                  [36m/>[39m
+                [36m</button>[39m
+                [36m<button[39m
+                  [33maria-selected[39m=[32m"true"[39m
+                  [33mclass[39m=[32m"MuiButtonBase-root MuiTab-root MuiTab-textColorPrimary Mui-selected css-1h9z7r5-MuiButtonBase-root-MuiTab-root"[39m
+                  [33mid[39m=[32m"canvas-feature-tab-1"[39m
+                  [33mrole[39m=[32m"tab"[39m
+                  [33mtabindex[39m=[32m"0"[39m
+                  [33mtype[39m=[32m"button"[39m
+                [36m>[39m
+                  [0mCurrent Capabilities (17)[0m
+                  [36m<span[39m
+                    [33mclass[39m=[32m"MuiTouchRipple-root css-8je8zh-MuiTouchRipple-root"[39m
+                  [36m/>[39m
+                [36m</button>[39m
+                [36m<button[39m
+                  [33maria-selected[39m=[32m"false"[39m
+                  [33mclass[39m=[32m"MuiButtonBase-root MuiTab-root MuiTab-textColorPrimary css-1h9z7r5-MuiButtonBase-root-MuiTab-root"[39m
+                  [33mid[39m=[32m"canvas-feature-tab-2"[39m
+                  [33mrole[39m=[32m"tab"[39m
+                  [33mtabindex[39m=[32m"-1"[39m
+                  [33mtype[39m=[32m"button"[39m
+                [36m>[39m
+                  [0mFuture Enhancements & Roadmap (35)[0m
+                  [36m<span[39m
+                    [33mclass[39m=[32m"MuiTouchRipple-root css-8je8zh-MuiTouchRipple-root"[39m
+                  [36m/>[39m
+                [36m</button>[39m
+                [36m<button[39m
+                  [33maria-selected[39m=[32m"false"[39m
+                  [33mclass[39m=[32m"MuiButtonBase-root MuiTab-root MuiTab-textColorPrimary css-1h9z7r5-MuiButtonBase-root-MuiTab-root"[39m
+                  [33mid[39m=[32m"canvas-feature-tab-3"[39m
+                  [33mrole[39m=[32m"tab"[39m
+                  [33mtabindex[39m=[32m"-1"[39m
+                  [33mtype[39m=[32m"button"[39m
+                [36m>[39m
+                  [0mCollaboration Blueprint (7)[0m
+                  [36m<span[39m
+                    [33mclass[39m=[32m"MuiTouchRipple-root css-8je8zh-MuiTouchRipple-root"[39m
+                  [36m/>[39m
+                [36m</button>[39m
+                [36m<button[39m
+                  [33maria-selected[39m=[32m"false"[39m
+                  [33mclass[39m=[32m"MuiButtonBase-root MuiTab-root MuiTab-textColorPrimary css-1h9z7r5-MuiButtonBase-root-MuiTab-root"[39m
+                  [33mid[39m=[32m"canvas-feature-tab-4"[39m
+                  [33mrole[39m=[32m"tab"[39m
+                  [33mtabindex[39m=[32m"-1"[39m
+                  [33mtype[39m=[32m"button"[39m
+                [36m>[39m
+                  [0mSecurity, Compliance & Export Policies (8)[0m
+                  [36m<span[39m
+                    [33mclass[39m=[32m"MuiTouchRipple-root css-8je8zh-MuiTouchRipple-root"[39m
+                  [36m/>[39m
+                [36m</button>[39m
+                [36m<button[39m
+                  [33maria-selected[39m=[32m"false"[39m
+                  [33mclass[39m=[32m"MuiButtonBase-root MuiTab-root MuiTab-textColorPrimary css-1h9z7r5-MuiButtonBase-root-MuiTab-root"[39m
+                  [33mid[39m=[32m"canvas-feature-tab-5"[39m
+                  [33mrole[39m=[32m"tab"[39m
+                  [33mtabindex[39m=[32m"-1"[39m
+                  [33mtype[39m=[32m"button"[39m
+                [36m>[39m
+                  [0mBackup & Recovery (4)[0m
+                  [36m<span[39m
+                    [33mclass[39m=[32m"MuiTouchRipple-root css-8je8zh-MuiTouchRipple-root"[39m
+                  [36m/>[39m
+                [36m</button>[39m
+                [36m<button[39m
+                  [33maria-selected[39m=[32m"false"[39m
+                  [33mclass[39m=[32m"MuiButtonBase-root MuiTab-root MuiTab-textColorPrimary css-1h9z7r5-MuiButtonBase-root-MuiTab-root"[39m
+                  [33mid[39m=[32m"canvas-feature-tab-6"[39m
+                  [33mrole[39m=[32m"tab"[39m
+                  [33mtabindex[39m=[32m"-1"[39m
+                  [33mtype[39m=[32m"button"[39m
+                [36m>[39m
+                  [0mTesting & Quality Gates (6)[0m
+                  [36m<span[39m
+                    [33mclass[39m=[32m"MuiTouchRipple-root css-8je8zh-MuiTouchRipple-root"[39m
+                  [36m/>[39m
+                [36m</button>[39m
+                [36m<button[39m
+                  [33maria-selected[39m=[32m"false"[39m
+                  [33mclass[39m=[32m"MuiButtonBase-root MuiTab-root MuiTab-textColorPrimary css-1h9z7r5-MuiButtonBase-root-MuiTab-root"[39m
+                  [33mid[39m=[32m"canvas-feature-tab-7"[39m
+                  [33mrole[39m=[32m"tab"[39m
+                  [33mtabindex[39m=[32m"-1"[39m
+              ...
+   × CanvasFeatureStoryList > applies an initialProgressFilter when provided 107ms
+     → Unable to find an element with the text: Element Manipulation. This could be because the text is broken up by multiple elements. In this case, you can provide a function for your text matcher to make your matcher more flexible.
+
+Ignored nodes: comments, script, style
+[36m<body>[39m
+  [36m<div>[39m
+    [36m<div[39m
+      [33mclass[39m=[32m"MuiBox-root css-0"[39m
+      [33mdata-testid[39m=[32m"canvas-feature-story-list"[39m
+    [36m>[39m
+      [36m<div[39m
+        [33mclass[39m=[32m"MuiStack-root css-v2woy3-MuiStack-root"[39m
+      [36m>[39m
+        [36m<div[39m
+          [33mclass[39m=[32m"MuiStack-root css-1npwy6j-MuiStack-root"[39m
+        [36m>[39m
+          [36m<div[39m
+            [33mclass[39m=[32m"MuiTabs-root css-15flnjc-MuiTabs-root"[39m
+            [33mdata-testid[39m=[32m"canvas-feature-story-tabs"[39m
+          [36m>[39m
+            [36m<div[39m
+              [33mclass[39m=[32m"MuiTabs-scrollableX MuiTabs-hideScrollbar css-oqr85h"[39m
+              [33mstyle[39m=[32m"width: 99px; height: 99px; position: absolute; top: -9999px; overflow: scroll;"[39m
+            [36m/>[39m
+            [36m<div[39m
+              [33mclass[39m=[32m"MuiTabs-scroller MuiTabs-hideScrollbar MuiTabs-scrollableX css-69z67c-MuiTabs-scroller"[39m
+              [33mstyle[39m=[32m"margin-bottom: 0px;"[39m
+            [36m>[39m
+              [36m<div[39m
+                [33maria-label[39m=[32m"Canvas feature story categories"[39m
+                [33mclass[39m=[32m"MuiTabs-flexContainer css-heg063-MuiTabs-flexContainer"[39m
+                [33mrole[39m=[32m"tablist"[39m
+              [36m>[39m
+                [36m<button[39m
+                  [33maria-selected[39m=[32m"false"[39m
+                  [33mclass[39m=[32m"MuiButtonBase-root MuiTab-root MuiTab-textColorPrimary css-1h9z7r5-MuiButtonBase-root-MuiTab-root"[39m
+                  [33mid[39m=[32m"canvas-feature-tab-all"[39m
+                  [33mrole[39m=[32m"tab"[39m
+                  [33mtabindex[39m=[32m"-1"[39m
+                  [33mtype[39m=[32m"button"[39m
+                [36m>[39m
+                  [0mAll (83)[0m
+                  [36m<span[39m
+                    [33mclass[39m=[32m"MuiTouchRipple-root css-8je8zh-MuiTouchRipple-root"[39m
+                  [36m/>[39m
+                [36m</button>[39m
+                [36m<button[39m
+                  [33maria-selected[39m=[32m"true"[39m
+                  [33mclass[39m=[32m"MuiButtonBase-root MuiTab-root MuiTab-textColorPrimary Mui-selected css-1h9z7r5-MuiButtonBase-root-MuiTab-root"[39m
+                  [33mid[39m=[32m"canvas-feature-tab-1"[39m
+                  [33mrole[39m=[32m"tab"[39m
+                  [33mtabindex[39m=[32m"0"[39m
+                  [33mtype[39m=[32m"button"[39m
+                [36m>[39m
+                  [0mCurrent Capabilities (17)[0m
+                  [36m<span[39m
+                    [33mclass[39m=[32m"MuiTouchRipple-root css-8je8zh-MuiTouchRipple-root"[39m
+                  [36m/>[39m
+                [36m</button>[39m
+                [36m<button[39m
+                  [33maria-selected[39m=[32m"false"[39m
+                  [33mclass[39m=[32m"MuiButtonBase-root MuiTab-root MuiTab-textColorPrimary css-1h9z7r5-MuiButtonBase-root-MuiTab-root"[39m
+                  [33mid[39m=[32m"canvas-feature-tab-2"[39m
+                  [33mrole[39m=[32m"tab"[39m
+                  [33mtabindex[39m=[32m"-1"[39m
+                  [33mtype[39m=[32m"button"[39m
+                [36m>[39m
+                  [0mFuture Enhancements & Roadmap (35)[0m
+                  [36m<span[39m
+                    [33mclass[39m=[32m"MuiTouchRipple-root css-8je8zh-MuiTouchRipple-root"[39m
+                  [36m/>[39m
+                [36m</button>[39m
+                [36m<button[39m
+                  [33maria-selected[39m=[32m"false"[39m
+                  [33mclass[39m=[32m"MuiButtonBase-root MuiTab-root MuiTab-textColorPrimary css-1h9z7r5-MuiButtonBase-root-MuiTab-root"[39m
+                  [33mid[39m=[32m"canvas-feature-tab-3"[39m
+                  [33mrole[39m=[32m"tab"[39m
+                  [33mtabindex[39m=[32m"-1"[39m
+                  [33mtype[39m=[32m"button"[39m
+                [36m>[39m
+                  [0mCollaboration Blueprint (7)[0m
+                  [36m<span[39m
+                    [33mclass[39m=[32m"MuiTouchRipple-root css-8je8zh-MuiTouchRipple-root"[39m
+                  [36m/>[39m
+                [36m</button>[39m
+                [36m<button[39m
+                  [33maria-selected[39m=[32m"false"[39m
+                  [33mclass[39m=[32m"MuiButtonBase-root MuiTab-root MuiTab-textColorPrimary css-1h9z7r5-MuiButtonBase-root-MuiTab-root"[39m
+                  [33mid[39m=[32m"canvas-feature-tab-4"[39m
+                  [33mrole[39m=[32m"tab"[39m
+                  [33mtabindex[39m=[32m"-1"[39m
+                  [33mtype[39m=[32m"button"[39m
+                [36m>[39m
+                  [0mSecurity, Compliance & Export Policies (8)[0m
+                  [36m<span[39m
+                    [33mclass[39m=[32m"MuiTouchRipple-root css-8je8zh-MuiTouchRipple-root"[39m
+                  [36m/>[39m
+                [36m</button>[39m
+                [36m<button[39m
+                  [33maria-selected[39m=[32m"false"[39m
+                  [33mclass[39m=[32m"MuiButtonBase-root MuiTab-root MuiTab-textColorPrimary css-1h9z7r5-MuiButtonBase-root-MuiTab-root"[39m
+                  [33mid[39m=[32m"canvas-feature-tab-5"[39m
+                  [33mrole[39m=[32m"tab"[39m
+                  [33mtabindex[39m=[32m"-1"[39m
+                  [33mtype[39m=[32m"button"[39m
+                [36m>[39m
+                  [0mBackup & Recovery (4)[0m
+                  [36m<span[39m
+                    [33mclass[39m=[32m"MuiTouchRipple-root css-8je8zh-MuiTouchRipple-root"[39m
+                  [36m/>[39m
+                [36m</button>[39m
+                [36m<button[39m
+                  [33maria-selected[39m=[32m"false"[39m
+                  [33mclass[39m=[32m"MuiButtonBase-root MuiTab-root MuiTab-textColorPrimary css-1h9z7r5-MuiButtonBase-root-MuiTab-root"[39m
+                  [33mid[39m=[32m"canvas-feature-tab-6"[39m
+                  [33mrole[39m=[32m"tab"[39m
+                  [33mtabindex[39m=[32m"-1"[39m
+                  [33mtype[39m=[32m"button"[39m
+                [36m>[39m
+                  [0mTesting & Quality Gates (6)[0m
+                  [36m<span[39m
+                    [33mclass[39m=[32m"MuiTouchRipple-root css-8je8zh-MuiTouchRipple-root"[39m
+                  [36m/>[39m
+                [36m</button>[39m
+                [36m<button[39m
+                  [33maria-selected[39m=[32m"false"[39m
+                  [33mclass[39m=[32m"MuiButtonBase-root MuiTab-root MuiTab-textColorPrimary css-1h9z7r5-MuiButtonBase-root-MuiTab-root"[39m
+                  [33mid[39m=[32m"canvas-feature-tab-7"[39m
+                  [33mrole[39m=[32m"tab"[39m
+                  [33mtabindex[39m=[32m"-1"[39m
+              ...
+ ✓ src/components/canvas/toolbar/__tests__/CanvasToolbar.test.tsx (5 tests) 176ms
+ ✓ src/__tests__/canvas/useCanvasScene.reactflow.integration.spec.tsx (1 test) 34ms
+ ❯ src/components/canvas/__tests__/ComponentPalette.drag.test.tsx (1 test | 1 failed) 331ms
+   × ComponentPalette drag integration > exposes payload and simulates a drop projection 330ms
+     → project is not a function
+stdout | src/components/canvas/__tests__/ComponentPalette.drag.test.tsx > ComponentPalette drag integration > exposes payload and simulates a drop projection
+[UI] Rendering shared ComponentPalette (components/canvas/ComponentPalette.tsx)
+
+
+⎯⎯⎯⎯⎯⎯ Unhandled Errors ⎯⎯⎯⎯⎯⎯
+
+Vitest caught 1 unhandled error during the test run.
+This might cause false positive tests. Resolve unhandled errors to make sure your tests are not affected.
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯
+ Test Files  12 failed | 39 passed (51)
+      Tests  47 failed | 471 passed (518)
+     Errors  1 error
+   Start at  21:49:58
+   Duration  47.06s (transform 6.63s, setup 22.46s, collect 316.87s, tests 50.29s, environment 56.13s, prepare 9.04s)
+
+/home/samujjwal/Developments/yappc/yappc/app-creator/apps/web:
+ ERR_PNPM_RECURSIVE_RUN_FIRST_FAIL  web@0.0.0 test: `vitest -- test/routes/__tests__/integration/PaletteDragDrop.integration.spec.tsx --runInBand --reporter json`
+Exit status 1

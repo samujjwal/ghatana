@@ -1,0 +1,8 @@
+{
+  "specVersion": "1.4",
+  "components": [
+    { "name": "a", "version": "1.0", "purl": "pkg:npm/a@1.0" },
+    { "name": "b", "version": "2.0", "purl": "pkg:npm/b@2.0" },
+    { "name": "c", "version": "3.0", "purl": "pkg:npm/c@3.0" }
+  ]
+}

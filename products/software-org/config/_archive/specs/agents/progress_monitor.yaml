@@ -1,0 +1,42 @@
+id: progress_monitor
+agent: ProgressMonitorAgent
+role: Progress Monitoring Analyst
+inputs_spec:
+  - name: progress_dashboard
+    description: Dashboard from DashboardAgent.
+    format: YAML object
+outputs_spec:
+  - name: progress_report
+    description: Status report: project health, velocity, incidents, trend, bottlenecks.
+    format: YAML object
+acceptance_criteria:
+  - All key project metrics/incidents summarized.
+  - Bottlenecks/action items identified.
+  - Report is clear, actionable, template-based.
+agent_tasks:
+  - Analyze dashboard to produce status/progress report.
+  - Identify trends, bottlenecks, action areas.
+  - Propose next steps/improvements.
+dependencies:
+  - progress_dashboard
+failure_escalation:
+  - Escalate persistent bottlenecks to leadership.
+references: []
+internal_logic:
+  - perception:
+      description: "Monitor dashboard and data feeds for project velocity, incident trends, and bottleneck detection."
+  - model:
+      description: "Maintain progress metrics, incident log, bottleneck list, and next steps."
+  - planning:
+      description: |
+        "Identify overdue, blocked, or trending issues for action.
+         Propose targeted next steps to unblock or improve progress."
+  - action:
+      description: "Generate periodic progress reports and improvement recommendations."
+validation:
+  - "PM/reviewer sign-off on all progress/bottleneck findings."
+  - "Audit for action item closure."
+quality_enhancements:
+  - "Progress report template."
+  - "Automated bottleneck/trend visualization."
+  - "Metrics for project velocity and issue closure rate."

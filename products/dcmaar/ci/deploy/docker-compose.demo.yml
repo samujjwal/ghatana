@@ -1,0 +1,184 @@
+version: "3.8"
+
+x-common-env: &common-env
+  TZ: ${TZ:-UTC}
+  RUST_LOG: ${RUST_LOG:-info}
+  RUST_BACKTRACE: ${RUST_BACKTRACE:-0}
+  DEMO_MODE: "true"
+  DEMO_API_KEY: ${DEMO_API_KEY:-}
+
+services:
+  # Legacy Go-based DCMAAR API server (deprecated; target stack is Java + Node.js)
+  server:
+    image: dcmaar/server:${TAG:-latest}
+    container_name: dcmaar-server
+    restart: unless-stopped
+    ports:
+      - "50051:50051" # gRPC
+      - "8080:8080" # HTTP
+    environment:
+      <<: *common-env
+      DATABASE_URL: postgres://postgres:postgres@postgres:5432/dcmaar
+      REDIS_URL: redis://redis:6379
+      METRICS_ADDR: 0.0.0.0:8081
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8080/health"]
+      interval: 10s
+      timeout: 5s
+      retries: 3
+      start_period: 30s
+    deploy:
+      resources:
+        limits:
+          cpus: "1"
+          memory: 512M
+
+  # Desktop App
+  desktop:
+    image: dcmaar/desktop:${TAG:-latest}
+    container_name: dcmaar-desktop
+    restart: unless-stopped
+    environment:
+      <<: *common-env
+      SERVER_URL: server:50051
+    depends_on:
+      server:
+        condition: service_healthy
+    deploy:
+      resources:
+        limits:
+          cpus: "0.5"
+          memory: 256M
+
+  # Web Dashboard
+  dashboard:
+    image: dcmaar/dashboard:${TAG:-latest}
+    container_name: dcmaar-dashboard
+    restart: unless-stopped
+    ports:
+      - "3000:3000"
+    environment:
+      <<: *common-env
+      NODE_ENV: production
+      API_URL: http://server:8080
+    depends_on:
+      server:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "wget", "--spider", "-q", "http://localhost:3000"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+    deploy:
+      resources:
+        limits:
+          cpus: "0.5"
+          memory: 512M
+
+  # PostgreSQL Database
+  postgres:
+    image: postgres:15-alpine
+    container_name: dcmaar-postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+      POSTGRES_DB: dcmaar
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+    deploy:
+      resources:
+        limits:
+          cpus: "0.5"
+          memory: 1G
+
+  # Redis Cache
+  redis:
+    image: redis:7-alpine
+    container_name: dcmaar-redis
+    restart: unless-stopped
+    command: redis-server --appendonly yes
+    volumes:
+      - redis_data:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 3s
+      retries: 5
+    deploy:
+      resources:
+        limits:
+          cpus: "0.3"
+          memory: 256M
+
+  # Monitoring Stack
+  prometheus:
+    image: prom/prometheus:latest
+    container_name: dcmaar-prometheus
+    restart: unless-stopped
+    ports:
+      - "9090:9090"
+    volumes:
+      - ./monitoring/prometheus:/etc/prometheus
+      - prometheus_data:/prometheus
+    command:
+      - "--config.file=/etc/prometheus/prometheus.yml"
+      - "--storage.tsdb.path=/prometheus"
+    depends_on:
+      - server
+      - desktop
+      - dashboard
+    deploy:
+      resources:
+        limits:
+          cpus: "0.3"
+          memory: 512M
+
+  grafana:
+    image: grafana/grafana:latest
+    container_name: dcmaar-grafana
+    restart: unless-stopped
+    ports:
+      - "3001:3000"
+    environment:
+      GF_SECURITY_ADMIN_PASSWORD: admin
+      GF_USERS_ALLOW_SIGN_UP: "false"
+      GF_INSTALL_PLUGINS: "grafana-clock-panel,grafana-piechart-panel"
+    volumes:
+      - grafana_data:/var/lib/grafana
+    depends_on:
+      - prometheus
+    healthcheck:
+      test:
+        [
+          "CMD",
+          "wget",
+          "--spider",
+          "-q",
+          "http://admin:admin@localhost:3000/api/health",
+        ]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+    deploy:
+      resources:
+        limits:
+          cpus: "0.5"
+          memory: 512M
+
+# Named volumes for persistent data
+volumes:
+  postgres_data:
+  redis_data:
+  prometheus_data:
+  grafana_data:

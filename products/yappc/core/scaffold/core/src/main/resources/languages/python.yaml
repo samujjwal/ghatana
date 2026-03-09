@@ -1,0 +1,135 @@
+name: Python
+versions:
+  - "3.9"
+  - "3.10"
+  - "3.11"
+  - "3.12"
+  - "3.13"
+
+packageManagement:
+  options:
+    - pip
+    - poetry
+    - conda
+    - pipenv
+  files:
+    - requirements.txt
+    - setup.py
+    - pyproject.toml
+    - poetry.lock
+    - Pipfile
+    - environment.yml
+  commands:
+    pip:
+      install: "pip install -r requirements.txt"
+      freeze: "pip freeze > requirements.txt"
+      add: "pip install {{package}}"
+    poetry:
+      install: "poetry install"
+      add: "poetry add {{package}}"
+      run: "poetry run {{command}}"
+    conda:
+      create: "conda env create -f environment.yml"
+      activate: "conda activate {{env}}"
+
+buildSystems:
+  setuptools:
+    files:
+      - setup.py
+      - setup.cfg
+    commands:
+      build: "python setup.py build"
+      install: "python setup.py install"
+    outputs:
+      - wheel
+      - egg
+
+  poetry:
+    files:
+      - pyproject.toml
+      - poetry.lock
+    commands:
+      build: "poetry build"
+      publish: "poetry publish"
+    outputs:
+      - wheel
+      - sdist
+
+frameworks:
+  fastapi:
+    templates:
+      - python-service-fastapi
+    conventions:
+      - app/
+      - routers/
+      - models/
+      - schemas/
+    testing:
+      - pytest
+      - httpx
+    async: true
+
+  django:
+    templates:
+      - python-service-django
+    conventions:
+      - app/models.py
+      - app/views.py
+      - app/urls.py
+      - app/admin.py
+    testing:
+      - django.test.TestCase
+      - pytest-django
+    orm: true
+
+  flask:
+    templates:
+      - python-service-flask
+    conventions:
+      - app/
+      - routes/
+      - models/
+      - templates/
+    testing:
+      - pytest
+      - flask-testing
+
+testing:
+  frameworks:
+    - pytest
+    - unittest
+    - nose2
+    - doctest
+  conventions:
+    - "test_*.py"
+    - "*_test.py"
+    - "test_*"
+    - pytest.ini
+  coverage:
+    - coverage.py
+    - pytest-cov
+
+linting:
+  tools:
+    - flake8
+    - black
+    - mypy
+    - pylint
+    - ruff
+  config:
+    - .flake8
+    - pyproject.toml
+    - mypy.ini
+
+conventions:
+  directory:
+    - src
+    - tests
+    - docs
+  naming:
+    - snake_case
+    - PascalCase
+  imports:
+    - stdlib-first
+    - third-party-second
+    - local-last

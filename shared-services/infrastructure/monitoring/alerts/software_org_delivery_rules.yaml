@@ -1,0 +1,210 @@
+# Software-Org Delivery Metrics Alert Rules
+# Prometheus alert rules for software-org product
+#
+# Targets: SLO breaches, delivery pipeline failures, and performance degradation
+# Integration: AlertManager → Slack/PagerDuty
+#
+# @package monitoring/alerts
+# @version 1.0
+
+groups:
+  - name: software_org_delivery
+    interval: 60s
+    rules:
+      # Lead Time SLO: Target <= 1 hour
+      - alert: HighLeadTime
+        expr: |
+          ((increase(deployment_time_seconds_total{org_id="software-org"}[7d]) / 3600) 
+           / increase(deployments_total{org_id="software-org"}[7d])) > 1
+        for: 5m
+        labels:
+          severity: warning
+          team: platform
+          slo: delivery_lead_time
+        annotations:
+          summary: "High lead time detected in {{ $labels.department }}"
+          description: |
+            Lead time exceeds 1 hour SLO.
+            Current: {{ $value | humanizeDuration }} (7d average)
+            Department: {{ $labels.department }}
+            Organization: {{ $labels.org_id }}
+
+      # Deployment Frequency SLO: Target >= 7 deployments/week
+      - alert: LowDeploymentFrequency
+        expr: |
+          increase(deployments_total{org_id="software-org"}[7d]) < 7
+        for: 10m
+        labels:
+          severity: warning
+          team: platform
+          slo: deployment_frequency
+        annotations:
+          summary: "Low deployment frequency in {{ $labels.department }}"
+          description: |
+            Deployment frequency below 7 per week SLO.
+            Current: {{ $value | humanize }} deployments (7d)
+            Department: {{ $labels.department }}
+            Organization: {{ $labels.org_id }}
+
+      # MTTR SLO: Target <= 15 minutes
+      - alert: HighMTTR
+        expr: |
+          ((increase(incident_resolution_time_seconds_total{org_id="software-org"}[7d]) / 60)
+           / increase(incidents_resolved_total{org_id="software-org"}[7d])) > 15
+        for: 5m
+        labels:
+          severity: warning
+          team: platform
+          slo: mttr
+        annotations:
+          summary: "High mean time to recovery in {{ $labels.department }}"
+          description: |
+            MTTR exceeds 15 minute SLO.
+            Current: {{ $value | humanizeDuration }} (7d average)
+            Department: {{ $labels.department }}
+            Organization: {{ $labels.org_id }}
+
+      # Change Failure Rate SLO: Target <= 5%
+      - alert: HighChangeFailureRate
+        expr: |
+          (increase(deployment_failures_total{org_id="software-org"}[7d]) 
+           / increase(deployments_total{org_id="software-org"}[7d])) > 0.05
+        for: 5m
+        labels:
+          severity: warning
+          team: platform
+          slo: change_failure_rate
+        annotations:
+          summary: "High change failure rate in {{ $labels.department }}"
+          description: |
+            Change failure rate exceeds 5% SLO.
+            Current: {{ $value | humanizePercentage }}
+            Department: {{ $labels.department }}
+            Organization: {{ $labels.org_id }}
+
+      # Build Success Rate Critical
+      - alert: LowBuildSuccessRate
+        expr: |
+          (increase(builds_successful_total{org_id="software-org"}[1h])
+           / increase(builds_total{org_id="software-org"}[1h])) < 0.8
+        for: 5m
+        labels:
+          severity: critical
+          team: platform
+          slo: build_success_rate
+        annotations:
+          summary: "Build success rate < 80% in {{ $labels.department }}"
+          description: |
+            Build success rate below 80% threshold.
+            Current: {{ $value | humanizePercentage }}
+            Department: {{ $labels.department }}
+            Organization: {{ $labels.org_id }}
+            Action: Investigate recent code changes or infrastructure issues.
+
+      # Test Coverage Regression
+      - alert: TestCoverageRegression
+        expr: |
+          (test_coverage_ratio{org_id="software-org"} 
+           < ignoring(instance) (test_coverage_ratio{org_id="software-org"} offset 7d))
+        for: 10m
+        labels:
+          severity: warning
+          team: platform
+          slo: test_coverage
+        annotations:
+          summary: "Test coverage regression in {{ $labels.department }}"
+          description: |
+            Test coverage decreased compared to last week.
+            Current: {{ $value | humanizePercentage }}
+            Department: {{ $labels.department }}
+            Organization: {{ $labels.org_id }}
+
+      # Deployment Failure Spike
+      - alert: DeploymentFailureSpike
+        expr: |
+          rate(deployment_failures_total{org_id="software-org"}[5m]) > 0.2
+        for: 3m
+        labels:
+          severity: critical
+          team: platform
+          incident: deployment_failure
+        annotations:
+          summary: "Deployment failures spike in {{ $labels.department }}"
+          description: |
+            Deployment failure rate > 20% (5m average).
+            Current: {{ $value | humanize }} failures/sec
+            Department: {{ $labels.department }}
+            Organization: {{ $labels.org_id }}
+            Action: Check deployment logs and rollback if necessary.
+
+      # Agent Processing Error Rate
+      - alert: HighAgentErrorRate
+        expr: |
+          rate(agent_process_errors_total{org_id="software-org"}[5m])
+          / rate(agent_process_total{org_id="software-org"}[5m]) > 0.05
+        for: 5m
+        labels:
+          severity: warning
+          team: platform
+          component: agent
+        annotations:
+          summary: "Agent error rate elevated in {{ $labels.department }}"
+          description: |
+            Agent processing error rate > 5%.
+            Current: {{ $value | humanizePercentage }}
+            Department: {{ $labels.department }}
+            Organization: {{ $labels.org_id }}
+
+      # Department Health Critical
+      - alert: DepartmentHealthCritical
+        expr: |
+          department_health_score{org_id="software-org"} < 0.5
+        for: 10m
+        labels:
+          severity: critical
+          team: platform
+          component: department_health
+        annotations:
+          summary: "Department health critical in {{ $labels.department }}"
+          description: |
+            Department health score below 0.5 (critical threshold).
+            Current: {{ $value }}
+            Department: {{ $labels.department }}
+            Organization: {{ $labels.org_id }}
+            Action: Page on-call engineer immediately.
+
+      # Event Ingestion Lag
+      - alert: EventIngestionLag
+        expr: |
+          rate(org_events_pending_total{org_id="software-org"}[1m]) > 1000
+        for: 5m
+        labels:
+          severity: warning
+          team: platform
+          component: event_ingestion
+        annotations:
+          summary: "Event ingestion lag in {{ $labels.department }}"
+          description: |
+            Event backlog exceeds 1000 events.
+            Current: {{ $value | humanize }} pending events
+            Department: {{ $labels.department }}
+            Organization: {{ $labels.org_id }}
+
+      # SLA Breach: Any metric
+      - alert: SLABreach
+        expr: |
+          (increase(deployment_time_seconds_total{org_id="software-org"}[7d]) / 3600 / increase(deployments_total{org_id="software-org"}[7d])) > 24
+          or
+          (increase(deployment_failures_total{org_id="software-org"}[7d]) / increase(deployments_total{org_id="software-org"}[7d])) > 0.2
+        for: 5m
+        labels:
+          severity: critical
+          team: platform
+          slo: comprehensive
+        annotations:
+          summary: "Critical SLA breach in {{ $labels.department }}"
+          description: |
+            One or more DORA KPIs critically exceed SLA thresholds.
+            Department: {{ $labels.department }}
+            Organization: {{ $labels.org_id }}
+            Action: Escalate to management and incident commander.

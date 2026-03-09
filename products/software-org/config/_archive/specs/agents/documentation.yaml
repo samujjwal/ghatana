@@ -1,0 +1,45 @@
+id: documentation
+agent: DocumentationAgent
+role: Technical Writer
+inputs_spec:
+- name: acceptance_criteria
+  description: List of acceptance criteria covering all aspects.
+  format: List of criteria objects
+outputs_spec:
+- name: requirements_documentation
+  description: Comprehensive documentation of all requirements and criteria, clearly structured.
+  format: 'Structured documentation (sections: requirements, acceptance criteria, structure, notes)'
+  example: 'requirements: ["User upload", "Secure storage"]
+
+    acceptance_criteria: ["All code passes SAST"]
+
+    '
+acceptance_criteria:
+- Documentation covers all requirements and criteria.
+- Structure is clear and easy to follow.
+- Missing information or inconsistencies are flagged.
+agent_tasks:
+- Document all requirements and acceptance criteria.
+- Ensure documentation structure is clear and comprehensive.
+- Flag missing information or inconsistencies.
+dependencies:
+- acceptance_criteria
+failure_escalation:
+- Escalate to technical writer lead if documentation is incomplete.
+references: []
+internal_logic:
+  - perception:
+      description: "Extract components, criteria, and compliance links."
+  - model:
+      description: "Documentation: { architecture_doc, controls_doc, criteria_doc, compliance_mapping, rationale, revision_log }"
+  - planning:
+      description: |
+        "Generate/assemble docs and traceability mapping."
+  - action:
+      description: "Produce YAML documentation bundle."
+validation:
+  - "Lead and compliance SME review."
+  - "Audit for completeness and traceability."
+quality_enhancements:
+  - "Documentation and mapping templates."
+  - "Automated revision/change log."

@@ -1,0 +1,295 @@
+# Component Design Operator - Consolidated Design Domain
+# Consolidates: component_design, design_patterns, interface_spec, module design
+# Purpose: Detailed component and module design with pattern application
+
+id: component_operator
+version: "1.0.0"
+domain: design
+category: component_design
+
+description: |
+  Unified component design operator handling detailed design:
+  - Component identification and design
+  - Design pattern selection and application
+  - Interface specification
+  - Dependency and coupling analysis
+  - Module boundary definition
+
+# Operator Modes
+modes:
+  identify:
+    description: "Identify components from architecture"
+    role: Component Designer
+    inputs:
+      - name: solution_architecture
+        description: System architecture document
+        required: true
+      - name: requirements
+        description: Functional requirements for tracing
+        required: true
+    outputs:
+      - name: component_inventory
+        description: List of identified components
+        format: yaml_list
+        schema:
+          - id: string
+          - name: string
+          - type: "service|module|library|adapter|gateway"
+          - layer: "presentation|business|data|integration|infrastructure"
+          - purpose: string
+          - mapped_requirements: list
+          - estimated_complexity: "high|medium|low"
+    tasks:
+      - Extract components from architecture
+      - Classify by type and layer
+      - Map to requirements
+      - Estimate complexity
+      - Flag ambiguous boundaries
+
+  design:
+    description: "Design individual components"
+    role: Component Designer
+    inputs:
+      - name: component_inventory
+        description: Identified components
+        required: true
+      - name: design_patterns
+        description: Selected design patterns
+        required: false
+    outputs:
+      - name: component_designs
+        description: Detailed component design documents
+        format: yaml_list
+        schema:
+          - component_id: string
+          - responsibilities: list
+          - interfaces_provided: list
+          - interfaces_required: list
+          - dependencies: list
+          - design_patterns: list
+          - internal_structure: object
+          - error_handling: object
+          - logging_strategy: string
+          - configuration: list
+          - constraints: list
+    tasks:
+      - Define component responsibilities (single responsibility)
+      - Specify interfaces (provided and required)
+      - Document dependencies
+      - Apply design patterns
+      - Define error handling strategy
+      - Specify configuration points
+    design_principles:
+      - single_responsibility
+      - open_closed
+      - dependency_inversion
+      - interface_segregation
+      - composition_over_inheritance
+
+  patterns:
+    description: "Select and apply design patterns"
+    role: Design Pattern Analyst
+    inputs:
+      - name: solution_architecture
+        description: Architecture for pattern context
+        required: true
+      - name: component_inventory
+        description: Components requiring patterns
+        required: true
+    outputs:
+      - name: pattern_mapping
+        description: Pattern to component mapping
+        format: yaml_list
+        schema:
+          - pattern_name: string
+          - pattern_category: "creational|structural|behavioral|architectural"
+          - component_id: string
+          - rationale: string
+          - alternatives_considered: list
+          - rejection_reasons: list
+          - implementation_notes: string
+          - anti_patterns_avoided: list
+    common_patterns:
+      creational:
+        - factory: "Object creation abstraction"
+        - builder: "Complex object construction"
+        - singleton: "Single instance guarantee"
+        - prototype: "Object cloning"
+      structural:
+        - adapter: "Interface compatibility"
+        - decorator: "Dynamic behavior extension"
+        - facade: "Simplified interface"
+        - proxy: "Access control, caching"
+      behavioral:
+        - observer: "Event notification"
+        - strategy: "Algorithm selection"
+        - command: "Operation encapsulation"
+        - chain_of_responsibility: "Request handling chain"
+      architectural:
+        - repository: "Data access abstraction"
+        - unit_of_work: "Transaction boundary"
+        - cqrs: "Read/write separation"
+        - event_sourcing: "Event-based state"
+    tasks:
+      - Analyze component requirements
+      - Select appropriate patterns
+      - Document rationale and alternatives
+      - Identify anti-patterns to avoid
+      - Provide implementation guidance
+
+  interfaces:
+    description: "Specify component interfaces"
+    role: Component Designer
+    inputs:
+      - name: component_designs
+        description: Component design documents
+        required: true
+    outputs:
+      - name: interface_specifications
+        description: Detailed interface specifications
+        format: yaml_list
+        schema:
+          - interface_id: string
+          - provider_component: string
+          - consumer_components: list
+          - interface_type: "synchronous|asynchronous|event"
+          - protocol: "rest|grpc|graphql|websocket|message_queue"
+          - operations: list
+          - data_contracts: list
+          - error_contracts: list
+          - sla: object
+          - versioning_strategy: string
+    tasks:
+      - Define interface operations
+      - Specify data contracts
+      - Define error handling contracts
+      - Set SLA expectations
+      - Plan versioning strategy
+
+  analyze_coupling:
+    description: "Analyze component dependencies and coupling"
+    role: Design Analyst
+    inputs:
+      - name: component_designs
+        description: All component designs
+        required: true
+    outputs:
+      - name: coupling_analysis
+        description: Dependency and coupling report
+        format: yaml_report
+        schema:
+          - component_count: number
+          - dependency_count: number
+          - avg_dependencies_per_component: number
+          - coupling_metrics: object
+          - circular_dependencies: list
+          - highly_coupled_components: list
+          - loosely_coupled_components: list
+          - recommendations: list
+    tasks:
+      - Build dependency graph
+      - Detect circular dependencies
+      - Calculate coupling metrics
+      - Identify problematic coupling
+      - Recommend improvements
+
+# Internal Logic
+internal_logic:
+  perception:
+    description: "Extract components and relationships from architecture"
+    sources:
+      - architecture_documents
+      - requirements
+      - existing_components
+  model:
+    description: "Component design knowledge graph"
+    entities:
+      - component: "{id, type, responsibilities, interfaces}"
+      - interface: "{id, operations, contracts}"
+      - pattern: "{name, category, applicability}"
+      - dependency: "{from, to, type, strength}"
+    relationships:
+      - component_provides_interface
+      - component_requires_interface
+      - component_applies_pattern
+      - component_depends_on_component
+  planning:
+    strategy: |
+      1. Decompose based on single responsibility
+      2. Apply appropriate patterns
+      3. Minimize coupling, maximize cohesion
+      4. Define clear interfaces
+      5. Validate with coupling analysis
+  action:
+    description: "Output component design artifacts"
+    validation: "Design lead review required"
+
+# Quality Assurance
+quality:
+  templates:
+    - component_design_template
+    - interface_specification_template
+    - pattern_documentation_template
+  checklists:
+    - solid_principles_checklist
+    - interface_completeness_checklist
+    - pattern_appropriateness_checklist
+  automated_checks:
+    - circular_dependency_detection
+    - coupling_threshold_check
+    - interface_consistency_check
+
+# Coupling Thresholds
+coupling_thresholds:
+  max_dependencies_per_component: 7
+  max_coupling_score: 0.3
+  circular_dependency_tolerance: 0
+  fan_out_warning: 5
+  fan_in_warning: 10
+
+# Validation Rules
+validation:
+  rules:
+    - "Each component must have single responsibility"
+    - "All interfaces must have contracts defined"
+    - "No circular dependencies allowed"
+    - "Pattern selection must have rationale"
+  review_gates:
+    - design_lead_review
+    - peer_review
+
+# Escalation
+escalation:
+  triggers:
+    - "Circular dependency detected"
+    - "Coupling exceeds threshold"
+    - "Ambiguous component boundary"
+  paths:
+    - role: Design Lead
+      for: "Boundary decisions, coupling issues"
+    - role: Architect
+      for: "Pattern conflicts, structural changes"
+
+# Dependencies
+dependencies:
+  upstream:
+    - architecture_operator
+  downstream:
+    - data_model_operator
+    - api_operator
+    - build_operator
+
+# Metrics
+metrics:
+  - name: component_cohesion
+    description: "Average component cohesion score"
+    target: ">= 0.8"
+  - name: coupling_score
+    description: "Average coupling between components"
+    target: "<= 0.3"
+  - name: pattern_coverage
+    description: "Components with documented patterns"
+    target: "100%"
+  - name: interface_completeness
+    description: "Interfaces with full contracts"
+    target: "100%"

@@ -1,0 +1,54 @@
+{{!--
+  React Custom Hook Template
+  
+  Variables:
+  - hookName: Name of the hook (camelCase, starting with 'use')
+  - description: Hook description
+  - returnType: Type of value returned by hook
+  - parameters: Array of parameter definitions
+--}}
+import { useState, useEffect, useCallback } from 'react';
+
+{{#if parameters}}
+/**
+ * Parameters for {{hookName}} hook.
+ */
+interface {{pascalCase hookName}}Params {
+  {{#each parameters}}
+  {{name}}{{#if optional}}?{{/if}}: {{type}};
+  {{/each}}
+}
+{{/if}}
+
+/**
+ * {{description}}
+ * 
+ * @doc.type hook
+ * @doc.purpose {{description}}
+ * @doc.layer business-logic
+ * @doc.pattern Custom Hook
+ * 
+ * @example
+ * ```tsx
+ * const result = {{hookName}}({{#if parameters}}{ param1, param2 }{{/if}});
+ * ```
+ */
+export function {{hookName}}({{#if parameters}}params: {{pascalCase hookName}}Params{{/if}}): {{returnType}} {
+  const [data, setData] = useState<{{returnType}} | null>(null);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<Error | null>(null);
+
+  useEffect(() => {
+    setLoading(true);
+    
+    // Hook logic here
+    
+    setLoading(false);
+  }, [{{#if parameters}}{{#each parameters}}params.{{name}}{{#unless @last}}, {{/unless}}{{/each}}{{/if}}]);
+
+  const refetch = useCallback(() => {
+    // Refetch logic
+  }, [{{#if parameters}}{{#each parameters}}params.{{name}}{{#unless @last}}, {{/unless}}{{/each}}{{/if}}]);
+
+  return { data, loading, error, refetch };
+}

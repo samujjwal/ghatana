@@ -1,0 +1,28 @@
+/**
+* {{projectName}} - Test Setup
+*
+* Vitest setup and test utilities.
+*
+* @module tests/setup
+*/
+
+import { beforeAll, afterAll, afterEach } from 'vitest';
+import type { FastifyInstance } from 'fastify';
+import { buildApp } from '../src/app.js';
+
+let app: FastifyInstance;
+
+beforeAll(async () => {
+app = await buildApp({ logger: false });
+await app.ready();
+});
+
+afterAll(async () => {
+await app.close();
+});
+
+afterEach(async () => {
+// Clean up test data if needed
+});
+
+export { app };

@@ -1,0 +1,25 @@
+# {{projectName}}
+
+{{#if description}}{{description}}{{else}}Next.js 15 + TypeScript starter.{{/if}}
+
+## Scripts
+- `pnpm dev` — start dev server
+- `pnpm build` — production build
+- `pnpm start` — run built app
+- `pnpm lint` — run Next lint
+- `pnpm type-check` — TypeScript type check
+
+## Setup
+```bash
+pnpm install
+pnpm dev
+```
+
+## Docker
+```bash
+docker build -t {{kebabCase projectName}} .
+docker run -p 3000:3000 {{kebabCase projectName}}
+```
+
+## Testing
+Add tests under `__tests__` (example provided).

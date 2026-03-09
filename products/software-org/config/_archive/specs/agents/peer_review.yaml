@@ -1,0 +1,27 @@
+---
+id: "peer_review"
+agent: "PeerReviewAgent"
+role: "Assigned Reviewer"
+inputs_spec:
+- name: "modularized_codebase"
+  description: "Codebase for peer review."
+  format: "Source repo or artifact"
+outputs_spec:
+- name: "peer_review_report"
+  description: "Report documenting review feedback and approval."
+  format: "Peer review report"
+agent_tasks:
+- "Review all major changes before merge."
+- "Document feedback and ensure issues are addressed."
+- "Approve or reject changes."
+acceptance_criteria:
+- "All major changes receive peer review."
+- "Reviewer feedback is documented and addressed."
+- "No code is merged without review approval."
+dependencies:
+- "modularized_codebase"
+failure_escalation:
+- "Escalate to Dev Lead if review not performed."
+references: []
+hitl: true
+hitl_reason: "Human peer review required for code quality and knowledge sharing"

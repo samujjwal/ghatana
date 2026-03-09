@@ -1,0 +1,74 @@
+---
+# Cross-Cutting Readiness Checker Operator Template
+# Replaces ~10 stage-specific files: build_readiness_checker.yaml, etc.
+#
+# @doc.type operator-template
+# @doc.purpose Cross-cutting stage readiness validation for all stages
+# @doc.layer operations
+# @doc.pattern Template
+
+template:
+  id: "${stage}_readiness_checker"
+  version: "1.0.0"
+
+operator:
+  type: "ReadinessOperator"
+  role: "${stage} Readiness Validator"
+  category: "cross-cutting"
+
+parameters:
+  stage:
+    type: "string"
+    required: true
+    description: "Stage name for readiness checking"
+
+inputs_spec:
+  - name: "${stage}_prerequisites"
+    description: "Prerequisites for ${stage} readiness."
+    format: "Prerequisite list"
+    required: true
+
+  - name: "${stage}_success_criteria_status"
+    description: "Status of entry criteria."
+    format: "Criteria status list"
+    required: true
+
+outputs_spec:
+  - name: "${stage}_readiness_report"
+    description: "Readiness assessment for ${stage} stage entry."
+    format: "Readiness report artifact"
+
+  - name: "${stage}_readiness_events"
+    description: "Stream of readiness status events"
+    format: "Event stream"
+    event_type: "ghatana.operations.readiness.${stage}"
+
+agent_tasks:
+  - "Validate all ${stage} entry prerequisites."
+  - "Assess readiness based on criteria status."
+  - "Generate readiness report with blockers."
+  - "Emit readiness events to EventCloud."
+
+acceptance_criteria:
+  - "All prerequisites are validated."
+  - "Readiness status is clearly determined (ready/not-ready)."
+  - "Blockers are identified and documented."
+
+dependencies:
+  - "${stage}_prerequisites"
+  - "${stage}_success_criteria_status"
+
+failure_escalation:
+  - "Escalate to PM if readiness cannot be determined."
+
+config:
+  readiness_states:
+    - "ready"
+    - "not_ready"
+    - "conditional"
+    - "blocked"
+
+  auto_proceed_on_ready: false # Require explicit approval
+  event_cloud_topic: "ghatana.operations.readiness"
+
+hitl: true # Human approval typically required

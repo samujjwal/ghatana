@@ -1,0 +1,25 @@
+# ═══════════════════════════════════════════════════════════════════════════════
+# Adaptive Agent — Thompson Sampling Threshold Tuner
+# ═══════════════════════════════════════════════════════════════════════════════
+# Automatically tunes the fraud detection threshold using Thompson Sampling.
+# Explores [0.1, 0.9] with 10 arms, optimizing for F1 score.
+
+agentId: threshold-tuner
+type: ADAPTIVE
+version: "1.0.0"
+timeout: PT2S
+metricsEnabled: true
+labels:
+  team: ml-platform
+  domain: optimization
+
+# ─── Adaptive-specific ──────────────────────────────────────────────────────
+subtype: BANDIT
+banditAlgorithm: THOMPSON_SAMPLING
+explorationRate: 0.1
+tunedParameter: confidenceThreshold
+parameterMin: 0.1
+parameterMax: 0.9
+armCount: 10
+objectiveMetric: f1_score
+maximize: true

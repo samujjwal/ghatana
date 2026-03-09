@@ -1,0 +1,68 @@
+# OpenTelemetry Collector Configuration
+# This configuration receives OTLP and exports to multiple backends
+
+receivers:
+  # OTLP receivers for gRPC and HTTP
+  otlp:
+    protocols:
+      grpc:
+        endpoint: "0.0.0.0:4317"
+      http:
+        endpoint: "0.0.0.0:4318"
+
+processors:
+  # Batch processor to batch spans before exporting
+  batch:
+    timeout: 1s
+    send_batch_size: 1024
+  
+  # Memory limiter to prevent out of memory situations
+  memory_limiter:
+    check_interval: 1s
+    limit_mib: 1000
+    spike_limit_mib: 200
+
+  # Add resource attributes
+  resource:
+    attributes:
+      - key: service.name
+        value: "query-service"
+        action: upsert
+
+# Exporters for different backends
+exporters:
+  # Console exporter for debugging (prints to stdout)
+  logging:
+    loglevel: info
+    sampling_initial: 5
+    sampling_thereafter: 200
+  
+  # Jaeger exporter
+  jaeger:
+    endpoint: "jaeger:14250"
+    tls:
+      insecure: true
+  
+  # OTLP exporter (for other OTLP-compatible backends)
+  otlp:
+    endpoint: "tempo:4317"
+    tls:
+      insecure: true
+
+# Service section ties everything together
+service:
+  pipelines:
+    traces:
+      receivers: [otlp]
+      processors: [memory_limiter, batch, resource]
+      exporters: [logging, jaeger, otlp]
+    
+    metrics:
+      receivers: [otlp]
+      processors: [memory_limiter, batch]
+      exporters: [logging]
+    
+    logs:
+      receivers: [otlp]
+      processors: [memory_limiter, batch]
+      exporters: [logging]

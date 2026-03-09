@@ -1,0 +1,29 @@
+namespace {{pascalCase projectName}}.Middleware;
+
+public class LoggingMiddleware
+{
+private readonly RequestDelegate _next;
+private readonly ILogger<LoggingMiddleware> _logger;
+
+    public LoggingMiddleware(RequestDelegate next, ILogger<LoggingMiddleware> logger)
+        {
+        _next = next;
+        _logger = logger;
+        }
+
+        public async Task InvokeAsync(HttpContext context)
+        {
+        var start = DateTime.UtcNow;
+
+        await _next(context);
+
+        var duration = DateTime.UtcNow - start;
+        _logger.LogInformation(
+        "{Method} {Path} {StatusCode} {Duration}ms",
+        context.Request.Method,
+        context.Request.Path,
+        context.Response.StatusCode,
+        duration.TotalMilliseconds
+        );
+        }
+        }

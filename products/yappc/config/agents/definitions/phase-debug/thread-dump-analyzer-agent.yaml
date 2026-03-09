@@ -1,0 +1,69 @@
+id: thread-dump-analyzer-agent
+name: Thread Dump Analyzer Agent
+version: 1.0.0
+description: Analyzes JVM thread dumps to identify deadlocks, thread starvation, blocked threads, and concurrency issues contributing to hangs or performance degradation.
+
+metadata:
+  level: 3
+  domain: debugging
+  tags: [debugging, thread-dump, deadlock, concurrency, jvm]
+
+generator:
+  type: PIPELINE
+  steps:
+    - name: thread_parse
+      type: RULE_BASED
+      description: Parse thread dump into structured thread states (RUNNABLE, WAITING, BLOCKED, TIMED_WAITING) with lock ownership graph
+    - name: concurrency_analysis
+      type: LLM
+      provider: ANTHROPIC
+      model: claude-3-5-sonnet-20241022
+      temperature: 0.1
+      max_tokens: 2000
+      prompt: |
+        Analyze this thread dump for concurrency issues:
+        
+        Thread Dump: {{input}}
+        Application Context: {{context}}
+        
+        Identify:
+        1. Deadlocked threads (lock cycle detection)
+        2. Blocked thread chains (who holds the lock?)
+        3. Thread pool saturation (all workers busy)
+        4. Long-running threads (stuck operations)
+        5. ActiveJ eventloop thread health
+        
+        Output as JSON: {deadlocks, blocked_chains, pool_saturation, long_running, eventloop_health, recommendations}
+
+memory:
+  episodic:
+    enabled: true
+    retention_days: 180
+    categories: [thread-analyses, deadlock-resolutions]
+  semantic:
+    enabled: true
+    categories: [concurrency-patterns, lock-ordering-rules]
+
+tools: [thread_dump_parser, lock_graph_builder]
+
+capabilities:
+  - root-cause-analysis
+  - performance-analysis
+
+routing:
+  input_types: [thread-dump-path, thread-dump-text]
+  output_types: [thread-analysis-report, deadlock-report]
+
+delegation:
+  can_delegate_to: []
+  escalates_to: debug-orchestrator
+
+governance:
+  requires_approval: false
+  can_block: false
+  audit_trail: standard
+
+performance:
+  expected_latency_ms: 2000
+  max_latency_ms: 10000
+  timeout_ms: 20000

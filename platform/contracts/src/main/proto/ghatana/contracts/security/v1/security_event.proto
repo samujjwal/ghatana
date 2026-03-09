@@ -1,0 +1,197 @@
+/*
+ * Copyright (c) 2025 Ghatana Inc.
+ * All rights reserved.
+ *
+ * Security and authorization event contracts for enterprise multi-tenant platform.
+ */
+
+syntax = "proto3";
+
+package ghatana.contracts.security.v1;
+
+import "google/protobuf/timestamp.proto";
+import "google/protobuf/struct.proto";
+import "ghatana/contracts/common/v1/common.proto";
+
+option java_package = "com.ghatana.contracts.security.v1";
+option java_multiple_files = true;
+option java_outer_classname = "SecurityEventsOuterClass";
+option go_package = "github.com/ghatana/contracts/gen/go/security/v1;securityv1";
+option csharp_namespace = "Ghatana.Contracts.Security.V1";
+
+// SecurityEvent is the base message for all security and authorization events.
+// These events are critical for audit trails, compliance, and threat detection.
+message SecurityEvent {
+  // Unique event identifier
+  string event_id = 1;
+  
+  // Event type (e.g., OAUTH_TOKEN_ISSUED, POLICY_EVALUATED, AUDIT_LOG)
+  string event_type = 2;
+  
+  // Tenant ID for multi-tenant isolation (CRITICAL)
+  string tenant_id = 3;
+  
+  // Timestamp when event occurred
+  google.protobuf.Timestamp occurred_at = 4;
+  
+  // Subject (user/agent) ID performing the action
+  string subject_id = 5;
+  
+  // Resource being accessed (optional)
+  string resource_id = 6;
+  
+  // Action being performed (e.g., "read", "write", "delete", "merge-to-main")
+  string action = 7;
+  
+  // Outcome of the action (SUCCESS, DENIED, ERROR)
+  string outcome = 8;
+  
+  // Contextual metadata (flexible for different event types)
+  google.protobuf.Struct metadata = 9;
+  
+  // Source IP address for network context
+  string source_ip = 10;
+  
+  // Correlation ID for tracing related events
+  string correlation_id = 11;
+}
+
+// AuthenticationEvent: Emitted when authentication succeeds or fails
+message AuthenticationEvent {
+  SecurityEvent base = 1;
+  
+  // Authentication method (e.g., "oidc", "mfa", "basic_auth")
+  string auth_method = 2;
+  
+  // Provider name (e.g., "auth0", "keycloak", "okta")
+  string provider = 3;
+  
+  // Error message if authentication failed
+  string error_message = 4;
+}
+
+// OAuthTokenEvent: Emitted for OAuth 2.1 token lifecycle events
+message OAuthTokenEvent {
+  SecurityEvent base = 1;
+  
+  // Token type (access, refresh, id_token)
+  string token_type = 2;
+  
+  // Scopes granted
+  repeated string scopes = 3;
+  
+  // Token expiration (Unix timestamp)
+  int64 expires_at = 4;
+  
+  // Event subtype (ISSUED, REFRESHED, REVOKED, EXPIRED)
+  string event_subtype = 5;
+}
+
+// PolicyEvaluationEvent: Emitted for every access control decision
+message PolicyEvaluationEvent {
+  SecurityEvent base = 1;
+  
+  // Policy type (RBAC, ABAC, HITL, CUSTOM)
+  string policy_type = 2;
+  
+  // Matched policy rule ID
+  string policy_rule_id = 3;
+  
+  // Policy decision reason (why permit or deny)
+  string decision_reason = 4;
+  
+  // Subject roles (for RBAC evaluation)
+  repeated string subject_roles = 5;
+  
+  // Resource attributes (for ABAC evaluation)
+  map<string, string> resource_attributes = 6;
+  
+  // Evaluation time in milliseconds
+  int64 evaluation_time_ms = 7;
+  
+  // Policy cache hit (true if decision came from cache)
+  bool cache_hit = 8;
+}
+
+// AuditLogEvent: Comprehensive audit trail for compliance
+message AuditLogEvent {
+  SecurityEvent base = 1;
+  
+  // Audit severity (INFO, WARNING, CRITICAL)
+  string severity = 2;
+  
+  // Detailed audit message
+  string audit_message = 3;
+  
+  // Changed fields (for data modification audits)
+  map<string, string> changed_fields = 4;
+  
+  // Previous values (before modification)
+  map<string, string> previous_values = 5;
+  
+  // New values (after modification)
+  map<string, string> new_values = 6;
+  
+  // Requester contact info (email, name for human actions)
+  string requester_info = 7;
+}
+
+// ZeroTrustEvent: Emitted for zero-trust verification and contextual authorization
+message ZeroTrustEvent {
+  SecurityEvent base = 1;
+  
+  // Trust score (0-100) based on contextual factors
+  int32 trust_score = 2;
+  
+  // Risk level (LOW, MEDIUM, HIGH, CRITICAL)
+  string risk_level = 3;
+  
+  // Signals evaluated (device_posture, geo_location, time_of_day, user_behavior)
+  repeated string evaluated_signals = 4;
+  
+  // Anomaly detected (true if unusual access pattern)
+  bool anomaly_detected = 5;
+  
+  // Anomaly description
+  string anomaly_description = 6;
+  
+  // Required additional verification (MFA, CAPTCHA, HITL)
+  bool requires_additional_verification = 7;
+}
+
+// MfaEvent: Emitted for multi-factor authentication events
+message MfaEvent {
+  SecurityEvent base = 1;
+  
+  // MFA method (totp, sms, email, hardware_key, biometric)
+  string mfa_method = 2;
+  
+  // Challenge issued time
+  google.protobuf.Timestamp challenge_issued_at = 3;
+  
+  // Challenge result (VERIFIED, FAILED, EXPIRED)
+  string challenge_result = 4;
+  
+  // Number of attempts made
+  int32 attempt_count = 5;
+}
+
+// BehavioralBiometricsEvent: Emitted for behavioral biometrics analysis
+message BehavioralBiometricsEvent {
+  SecurityEvent base = 1;
+  
+  // Biometrics score (0-100) measuring typing, mouse, navigation patterns
+  int32 biometrics_score = 2;
+  
+  // Deviation from baseline (percentage)
+  int32 baseline_deviation = 3;
+  
+  // Risk classification based on behavioral analysis
+  string risk_classification = 4;
+  
+  // Suspicious indicators detected
+  repeated string suspicious_indicators = 5;
+  
+  // Recommendation (allow, challenge, deny)
+  string recommendation = 6;
+}

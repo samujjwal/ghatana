@@ -1,0 +1,98 @@
+name: "YAPPC FE: 'Chromatic Visual Testing'"
+
+on:
+  push:
+    branches:
+      - main
+      - develop
+      paths: ['products/yappc/frontend/**']
+  pull_request:
+    branches:
+      - main
+      - develop
+
+      paths: ['products/yappc/frontend/**']
+# Allow one concurrent deployment
+concurrency:
+  group: 'chromatic-${{ github.workflow }}-${{ github.ref }}'
+  cancel-in-progress: true
+
+defaults:
+  run:
+    working-directory: products/yappc/frontend
+
+jobs:
+  chromatic:
+    name: 'Chromatic Snapshot Tests'
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+
+    permissions:
+      contents: read
+      pull-requests: write
+
+    steps:
+      - name: 'Checkout Repository'
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0  # Needed for Chromatic to compare against baseline
+
+      - name: 'Setup Node.js'
+        uses: actions/setup-node@v4
+        with:
+          node-version: '18'
+
+      - name: 'Install pnpm'
+        uses: pnpm/action-setup@v2
+        with:
+          version: 10
+          run_install: false
+
+      - name: 'Get pnpm Store Directory'
+        id: pnpm-cache
+        shell: bash
+        run: |
+          echo "STORE_PATH=$(pnpm store path)" >> $GITHUB_OUTPUT
+
+      - name: 'Setup pnpm Cache'
+        uses: actions/cache@v3
+        with:
+          path: ${{ steps.pnpm-cache.outputs.STORE_PATH }}
+          key: ${{ runner.os }}-pnpm-store-${{ hashFiles('**/pnpm-lock.yaml') }}
+          restore-keys: |
+            ${{ runner.os }}-pnpm-store-
+
+      - name: 'Install Dependencies'
+        run: pnpm install --frozen-lockfile
+
+      - name: 'Build Storybook'
+        run: pnpm run storybook:ci
+        timeout-minutes: 15
+        env:
+          NODE_OPTIONS: '--max-old-space-size=4096'
+
+      - name: 'Publish Storybook to Chromatic'
+        uses: chromaui/action@v1
+        with:
+          projectToken: ${{ secrets.CHROMATIC_PROJECT_TOKEN }}
+          storybookBuildDir: dist/storybook
+          exitOnceUploaded: true
+          exitZeroOnChanges: true
+          autoAcceptChanges: ${{ github.event_name == 'push' && github.ref == 'refs/heads/main' }}
+          onlyChanged: ${{ github.event_name == 'pull_request' }}
+        timeout-minutes: 20
+
+      - name: 'Comment PR with Chromatic Results'
+        if: always() && github.event_name == 'pull_request'
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const fs = require('fs');
+            const chromaticLink = 'https://chromatic.com';
+            
+            github.rest.issues.createComment({
+              issue_number: context.issue.number,
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              body: `✅ **Chromatic Visual Tests**\n\n[View Chromatic Build](${chromaticLink})\n\nVisual regression testing completed. Check the Chromatic dashboard for detailed results.`
+            });

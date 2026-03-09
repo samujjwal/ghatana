@@ -1,0 +1,72 @@
+{
+  "name": "base",
+  "version": "1.0.0",
+  "description": "Base pack providing fundamental project structure and configurations",
+  "author": "Ghatana YAPPC Team",
+  "license": "Apache-2.0",
+  "tags": ["base", "foundation", "essential"],
+  "type": "base",
+  "language": "multi",
+  "framework": "yappc",
+  "dependencies": {
+    "runtime": [],
+    "build": ["gradle"],
+    "test": ["junit"],
+    "plugins": ["spotless", "checkstyle"]
+  },
+  "templates": {
+    "gitignore": {
+      "source": "templates/.gitignore.hbs",
+      "target": ".gitignore",
+      "merge": "skip-if-exists"
+    },
+    "readme": {
+      "source": "templates/README.md.hbs",
+      "target": "README.md",
+      "merge": "skip-if-exists"
+    },
+    "editorconfig": {
+      "source": "templates/.editorconfig.hbs",
+      "target": ".editorconfig",
+      "merge": "replace"
+    },
+    "yappc-config": {
+      "source": "templates/.yappc/config.json.hbs",
+      "target": ".yappc/config.json",
+      "merge": "replace"
+    }
+  },
+  "hooks": {
+    "post-generation": ["yappc doctor", "git init"]
+  },
+  "variables": {
+    "projectName": {
+      "type": "string",
+      "description": "Project name",
+      "required": true,
+      "validation": "^[a-zA-Z][a-zA-Z0-9-]*$"
+    },
+    "description": {
+      "type": "string",
+      "description": "Project description",
+      "default": "A YAPPC generated project"
+    },
+    "author": {
+      "type": "string",
+      "description": "Project author",
+      "default": "Developer"
+    },
+    "license": {
+      "type": "string",
+      "description": "Project license",
+      "default": "Apache-2.0",
+      "options": ["Apache-2.0", "MIT", "GPL-3.0", "BSD-3-Clause"]
+    }
+  },
+  "requirements": {
+    "java-version": "21+",
+    "gradle-version": "8.0+",
+    "docker": false,
+    "tools": ["git"]
+  }
+}

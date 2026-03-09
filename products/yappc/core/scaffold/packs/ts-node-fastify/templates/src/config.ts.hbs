@@ -1,0 +1,57 @@
+/**
+* {{projectName}} - Configuration
+*
+* Centralized configuration loaded from environment variables.
+*
+* @module config
+*/
+
+import { z } from 'zod';
+
+const configSchema = z.object({
+nodeEnv: z.enum(['development', 'production', 'test']).default('development'),
+port: z.coerce.number().min(1).max(65535).default(3000),
+host: z.string().default('0.0.0.0'),
+logLevel: z.enum(['fatal', 'error', 'warn', 'info', 'debug', 'trace']).default('info'),
+databaseUrl: z.string().url(),
+apiPrefix: z.string().default('/api/v1'),
+corsOrigin: z.string().default('*'),
+rateLimitMax: z.coerce.number().default(100),
+rateLimitWindowMs: z.coerce.number().default(60000),
+enableSwagger: z
+.string()
+.transform((val) => val === 'true')
+.default('true'),
+enableMetrics: z
+.string()
+.transform((val) => val === 'true')
+.default('true'),
+});
+
+export type Config = z.infer<typeof configSchema>;
+
+    function loadConfig(): Config {
+    const result = configSchema.safeParse({
+    nodeEnv: process.env['NODE_ENV'],
+    port: process.env['PORT'],
+    host: process.env['HOST'],
+    logLevel: process.env['LOG_LEVEL'],
+    databaseUrl: process.env['DATABASE_URL'],
+    apiPrefix: process.env['API_PREFIX'],
+    corsOrigin: process.env['CORS_ORIGIN'],
+    rateLimitMax: process.env['RATE_LIMIT_MAX'],
+    rateLimitWindowMs: process.env['RATE_LIMIT_WINDOW_MS'],
+    enableSwagger: process.env['ENABLE_SWAGGER'],
+    enableMetrics: process.env['ENABLE_METRICS'],
+    });
+
+    if (!result.success) {
+    console.error('❌ Invalid configuration:');
+    console.error(result.error.format());
+    process.exit(1);
+    }
+
+    return result.data;
+    }
+
+    export const config = loadConfig();

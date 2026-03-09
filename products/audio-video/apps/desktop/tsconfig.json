@@ -1,0 +1,52 @@
+{
+  "compilerOptions": {
+    "target": "ES2022",
+    "useDefineForClassFields": true,
+    "lib": [
+      "ES2022",
+      "DOM",
+      "DOM.Iterable"
+    ],
+    "module": "ESNext",
+    "skipLibCheck": true,
+    "moduleResolution": "bundler",
+    "allowImportingTsExtensions": true,
+    "resolveJsonModule": true,
+    "isolatedModules": true,
+    "noEmit": true,
+    "jsx": "react-jsx",
+    "strict": true,
+    "noUnusedLocals": false,
+    "noUnusedParameters": false,
+    "noFallthroughCasesInSwitch": true,
+    "baseUrl": ".",
+    "paths": {
+      "@/*": [
+        "./src/*"
+      ],
+      "@ghatana/audio-video-types": [
+        "../../libs/audio-video-types/src"
+      ],
+      "@ghatana/audio-video-client": [
+        "../../libs/audio-video-client/src"
+      ],
+      "@ghatana/audio-video-ui": [
+        "../../libs/audio-video-ui/src"
+      ]
+    }
+  },
+  "include": [
+    "src"
+  ],
+  "references": [
+    {
+      "path": "../../libs/audio-video-types"
+    },
+    {
+      "path": "../../libs/audio-video-client"
+    },
+    {
+      "path": "../../libs/audio-video-ui"
+    }
+  ]
+}

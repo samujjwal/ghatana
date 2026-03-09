@@ -1,0 +1,345 @@
+{
+    "$schema": "../simulation-template.schema.json",
+    "id": "chemistry_molecular_bonding",
+    "version": "1.0.0",
+    "metadata": {
+        "title": "Molecular Bonding Simulator",
+        "description": "Explore covalent and ionic bonding by combining atoms to form molecules. Visualize electron sharing and transfer.",
+        "domain": "chemistry",
+        "subDomain": "bonding",
+        "difficulty": "medium",
+        "estimatedDuration": 25,
+        "gradeLevel": [
+            "high_school",
+            "undergraduate"
+        ],
+        "tags": [
+            "bonding",
+            "molecules",
+            "electrons",
+            "covalent",
+            "ionic"
+        ],
+        "author": "Tutorputor Chemistry Team",
+        "license": "CC-BY-4.0"
+    },
+    "learningObjectives": [
+        "Understand the difference between covalent and ionic bonds",
+        "Visualize electron sharing in covalent bonds",
+        "Observe electron transfer in ionic bonds",
+        "Build common molecules and observe their structures"
+    ],
+    "prerequisites": [
+        "Understanding of atomic structure",
+        "Knowledge of valence electrons",
+        "Familiarity with the periodic table"
+    ],
+    "entities": [
+        {
+            "id": "hydrogen_1",
+            "type": "chemistry:atom",
+            "properties": {
+                "element": "H",
+                "atomicNumber": 1,
+                "valenceElectrons": 1,
+                "electronegativity": 2.2,
+                "position": {
+                    "value": [
+                        -2,
+                        0,
+                        0
+                    ],
+                    "unit": "angstrom"
+                },
+                "color": "#FFFFFF",
+                "radius": 0.53
+            }
+        },
+        {
+            "id": "hydrogen_2",
+            "type": "chemistry:atom",
+            "properties": {
+                "element": "H",
+                "atomicNumber": 1,
+                "valenceElectrons": 1,
+                "electronegativity": 2.2,
+                "position": {
+                    "value": [
+                        2,
+                        0,
+                        0
+                    ],
+                    "unit": "angstrom"
+                },
+                "color": "#FFFFFF",
+                "radius": 0.53
+            }
+        },
+        {
+            "id": "oxygen_1",
+            "type": "chemistry:atom",
+            "properties": {
+                "element": "O",
+                "atomicNumber": 8,
+                "valenceElectrons": 6,
+                "electronegativity": 3.44,
+                "position": {
+                    "value": [
+                        0,
+                        2,
+                        0
+                    ],
+                    "unit": "angstrom"
+                },
+                "color": "#FF0000",
+                "radius": 0.73
+            }
+        },
+        {
+            "id": "carbon_1",
+            "type": "chemistry:atom",
+            "properties": {
+                "element": "C",
+                "atomicNumber": 6,
+                "valenceElectrons": 4,
+                "electronegativity": 2.55,
+                "position": {
+                    "value": [
+                        0,
+                        -2,
+                        0
+                    ],
+                    "unit": "angstrom"
+                },
+                "color": "#333333",
+                "radius": 0.77
+            }
+        },
+        {
+            "id": "electron_cloud",
+            "type": "visualization:orbital",
+            "properties": {
+                "visible": true,
+                "opacity": 0.6,
+                "showSharing": true
+            }
+        }
+    ],
+    "interactions": [
+        {
+            "id": "drag_atom",
+            "type": "drag",
+            "label": "Drag atoms to form bonds",
+            "targets": [
+                "hydrogen_1",
+                "hydrogen_2",
+                "oxygen_1",
+                "carbon_1"
+            ],
+            "snapDistance": 1.5
+        },
+        {
+            "id": "atom_palette",
+            "type": "palette",
+            "label": "Available Atoms",
+            "items": [
+                {
+                    "element": "H",
+                    "label": "Hydrogen",
+                    "color": "#FFFFFF"
+                },
+                {
+                    "element": "C",
+                    "label": "Carbon",
+                    "color": "#333333"
+                },
+                {
+                    "element": "N",
+                    "label": "Nitrogen",
+                    "color": "#3050F8"
+                },
+                {
+                    "element": "O",
+                    "label": "Oxygen",
+                    "color": "#FF0000"
+                },
+                {
+                    "element": "Na",
+                    "label": "Sodium",
+                    "color": "#AB5CF2"
+                },
+                {
+                    "element": "Cl",
+                    "label": "Chlorine",
+                    "color": "#1FF01F"
+                }
+            ]
+        },
+        {
+            "id": "view_electrons",
+            "type": "toggle",
+            "label": "Show Electrons",
+            "target": "electron_cloud.visible"
+        },
+        {
+            "id": "bond_type_display",
+            "type": "toggle",
+            "label": "Show Bond Types",
+            "action": {
+                "type": "toggle_annotation",
+                "target": "bond_labels"
+            }
+        },
+        {
+            "id": "rotate_molecule",
+            "type": "rotate",
+            "label": "Rotate view",
+            "sensitivity": 0.5
+        }
+    ],
+    "physics": {
+        "engine": "chemistry:molecular",
+        "bondingRules": {
+            "covalent": {
+                "maxDistance": 2.0,
+                "minElectronegativityDiff": 0,
+                "maxElectronegativityDiff": 1.7
+            },
+            "ionic": {
+                "minElectronegativityDiff": 1.7
+            }
+        },
+        "octetRule": true,
+        "minimizeEnergy": true
+    },
+    "measurements": [
+        {
+            "id": "bond_length",
+            "type": "distance",
+            "label": "Bond Length",
+            "unit": "Å"
+        },
+        {
+            "id": "bond_angle",
+            "type": "angle",
+            "label": "Bond Angle",
+            "unit": "degrees"
+        },
+        {
+            "id": "bond_type",
+            "type": "classification",
+            "label": "Bond Type",
+            "categories": [
+                "covalent",
+                "ionic",
+                "polar covalent"
+            ]
+        },
+        {
+            "id": "molecular_formula",
+            "type": "formula",
+            "label": "Molecular Formula"
+        }
+    ],
+    "assessment": {
+        "type": "construction",
+        "tasks": [
+            {
+                "id": "task_1",
+                "instruction": "Build a water molecule (H₂O) by connecting two hydrogen atoms to one oxygen atom.",
+                "expectedOutcome": {
+                    "molecularFormula": "H2O",
+                    "bondCount": 2,
+                    "bondType": "polar covalent"
+                },
+                "points": 15
+            },
+            {
+                "id": "task_2",
+                "instruction": "Build a methane molecule (CH₄) with correct tetrahedral geometry.",
+                "expectedOutcome": {
+                    "molecularFormula": "CH4",
+                    "bondCount": 4,
+                    "bondAngle": {
+                        "value": 109.5,
+                        "tolerance": 5
+                    }
+                },
+                "points": 20
+            },
+            {
+                "id": "task_3",
+                "instruction": "Create sodium chloride (NaCl) and observe the ionic bond formation.",
+                "expectedOutcome": {
+                    "molecularFormula": "NaCl",
+                    "bondType": "ionic"
+                },
+                "points": 20
+            },
+            {
+                "id": "task_4",
+                "instruction": "Build carbon dioxide (CO₂) with double bonds.",
+                "expectedOutcome": {
+                    "molecularFormula": "CO2",
+                    "bondCount": 2,
+                    "bondOrder": 2,
+                    "geometry": "linear"
+                },
+                "points": 25
+            }
+        ],
+        "passingScore": 70,
+        "hints": [
+            "Hydrogen needs 1 electron to complete its shell",
+            "Oxygen needs 2 electrons to complete its octet",
+            "Carbon needs 4 electrons to complete its octet",
+            "Electronegativity difference > 1.7 indicates ionic bonding"
+        ]
+    },
+    "visualization": {
+        "type": "3d",
+        "renderer": "three.js",
+        "camera": {
+            "type": "perspective",
+            "position": [
+                5,
+                3,
+                8
+            ],
+            "lookAt": [
+                0,
+                0,
+                0
+            ],
+            "fov": 50
+        },
+        "lighting": {
+            "ambient": {
+                "color": "#ffffff",
+                "intensity": 0.5
+            },
+            "directional": {
+                "color": "#ffffff",
+                "intensity": 0.7,
+                "position": [
+                    5,
+                    10,
+                    5
+                ]
+            }
+        },
+        "background": {
+            "type": "solid",
+            "color": "#1a1a2e"
+        },
+        "atomStyles": {
+            "representation": "ball-and-stick",
+            "ballScale": 0.3,
+            "stickRadius": 0.1
+        },
+        "electronVisualization": {
+            "type": "probability_cloud",
+            "quality": "medium"
+        }
+    }
+}

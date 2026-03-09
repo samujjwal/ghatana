@@ -1,0 +1,71 @@
+id: "react-expert"
+name: "React Expert"
+version: "1.0.0"
+description: "Expert in React/TypeScript frontend development"
+
+metadata:
+  level: 2  # Expert level
+  domain: "frontend-engineering"
+  tags: ["react", "typescript", "ui", "components"]
+
+generator:
+  type: "pipeline"
+  steps:
+    - type: "rule-based"
+      rules:
+        - "Validate React patterns (hooks, components, state management)"
+        - "Check TypeScript type safety"
+        - "Ensure accessibility (a11y) standards"
+    - type: "template"
+      engine: "liquid"
+      template_path: "templates/react/component.tsx.liquid"
+    - type: "llm"
+      provider: "openai"
+      model: "gpt-4"
+      temperature: 0.4
+      prompt: |
+        Review and refine this React component:
+        {{generated_code}}
+        
+        Ensure:
+        - TypeScript strict mode compliance
+        - React best practices (hooks, memoization)
+        - Accessibility (ARIA labels, keyboard nav)
+        - Tailwind CSS for styling
+
+memory:
+  episodic:
+    enabled: true
+    retention_days: 60
+  semantic:
+    enabled: true
+    categories: ["react-patterns", "typescript-types", "ui-components"]
+  procedural:
+    enabled: true
+
+tools:
+  - "file_read"
+  - "file_write"
+  - "ast_parse"
+  - "file_exists"
+
+capabilities:
+  - "react-component-generation"
+  - "typescript-typing"
+  - "ui-implementation"
+  - "state-management"
+
+routing:
+  input_types: ["ComponentRequest", "UIFeatureRequest"]
+  output_types: ["ReactComponent", "TypeScriptCode"]
+
+delegation:
+  can_delegate_to:
+    - code-generator-agent
+    - accessibility-test-agent
+  escalates_to: systems-architect
+
+performance:
+  expected_latency_ms: 2000
+  max_latency_ms: 6000
+  timeout_ms: 8000

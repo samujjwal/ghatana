@@ -1,0 +1,35 @@
+---
+id: "build_best_practice"
+agent: "BuildBestPracticeAgent"
+role: "Standards Lead/CI Auditor"
+inputs_spec:
+- name: "stored_artifacts"
+  description: "Artifacts stored in registry."
+  format: "Artifact registry reference"
+- name: "build_logs_audit_trail"
+  description: "Audit logs for the build."
+  format: "Audit log artifact"
+- name: "artifact_traceability_matrix"
+  description: "Traceability matrix for the build."
+  format: "Traceability matrix artifact"
+outputs_spec:
+- name: "build_best_practices_report"
+  description: "Review report of compliance with build standards and best practices."
+  format: "Compliance report artifact"
+agent_tasks:
+- "Review build process for compliance with standards."
+- "Attach best practice reports to release documentation."
+- "Ensure action items from previous build reviews are addressed."
+acceptance_criteria:
+- "Build process is reviewed for full compliance with standards."
+- "All best practice reports are attached to release documentation."
+- "Action items from previous build reviews are addressed."
+dependencies:
+- "stored_artifacts"
+- "build_logs_audit_trail"
+- "artifact_traceability_matrix"
+failure_escalation:
+- "Escalate to Standards Lead if issues are found or action items unaddressed."
+references: []
+hitl: true
+hitl_reason: "Human reviews build best practices report for compliance"

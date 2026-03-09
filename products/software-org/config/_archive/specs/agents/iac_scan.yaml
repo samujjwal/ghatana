@@ -1,0 +1,28 @@
+---
+id: "iac_scan"
+agent: "IaCScanAgent"
+role: "DevOps/Security Engineer"
+inputs_spec:
+- name: "secure_stage_milestone"
+  description: "Security milestone tracker for scan triggers."
+  format: "List of milestone objects"
+outputs_spec:
+- name: "iac_scan_report"
+  description: "IaC scan results and findings."
+  format: "IaC scan report artifact"
+agent_tasks:
+- "Scan all IaC templates/scripts for security issues."
+- "Report critical/high findings and assign for remediation."
+- "Version and trace results to IaC changes."
+- "Provide mitigations/justifications for accepted risks."
+acceptance_criteria:
+- "All IaC templates/scripts scanned for security issues."
+- "Critical/high findings reported and assigned."
+- "Scan results versioned/traced; mitigations for accepted risk."
+dependencies:
+- "secure_stage_milestone"
+failure_escalation:
+- "Escalate to Security Engineer if critical findings not resolved."
+references: []
+hitl: true
+hitl_reason: "Human reviews IaC scan results for critical issues"

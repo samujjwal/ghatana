@@ -1,0 +1,29 @@
+server:
+port: {{backendPort}}
+
+spring:
+application:
+name: {{projectName}}-backend
+
+{{#if enableSwagger}}
+springdoc:
+api-docs:
+path: /api-docs
+swagger-ui:
+path: /swagger-ui.html
+operationsSorter: method
+{{/if}}
+
+management:
+endpoints:
+web:
+exposure:
+include: health,info
+endpoint:
+health:
+show-details: when_authorized
+
+logging:
+level:
+root: INFO
+{{packageName}}: DEBUG

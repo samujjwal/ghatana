@@ -1,0 +1,114 @@
+version: '3.8'
+
+services:
+{{#if includePostgres}}
+postgres:
+image: postgres:16-alpine
+container_name: {{projectName}}-postgres
+environment:
+POSTGRES_DB: {{projectName}}
+POSTGRES_USER: ${POSTGRES_USER:-postgres}
+POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-postgres}
+ports:
+- "5432:5432"
+volumes:
+- postgres_data:/var/lib/postgresql/data
+- ./postgres/init.sql:/docker-entrypoint-initdb.d/init.sql
+healthcheck:
+test: ["CMD-SHELL", "pg_isready -U postgres"]
+interval: 10s
+timeout: 5s
+retries: 5
+networks:
+- {{projectName}}-network
+{{/if}}
+
+{{#if includeRedis}}
+redis:
+image: redis:7-alpine
+container_name: {{projectName}}-redis
+ports:
+- "6379:6379"
+volumes:
+- redis_data:/data
+healthcheck:
+test: ["CMD", "redis-cli", "ping"]
+interval: 10s
+timeout: 5s
+retries: 5
+networks:
+- {{projectName}}-network
+{{/if}}
+
+{{#if includeRabbitMQ}}
+rabbitmq:
+image: rabbitmq:3-management-alpine
+container_name: {{projectName}}-rabbitmq
+environment:
+RABBITMQ_DEFAULT_USER: ${RABBITMQ_USER:-guest}
+RABBITMQ_DEFAULT_PASS: ${RABBITMQ_PASSWORD:-guest}
+ports:
+- "5672:5672"
+- "15672:15672"
+volumes:
+- rabbitmq_data:/var/lib/rabbitmq
+healthcheck:
+test: ["CMD", "rabbitmq-diagnostics", "ping"]
+interval: 10s
+timeout: 5s
+retries: 5
+networks:
+- {{projectName}}-network
+{{/if}}
+
+{{#if includePrometheus}}
+prometheus:
+image: prom/prometheus:latest
+container_name: {{projectName}}-prometheus
+ports:
+- "9090:9090"
+volumes:
+- ./prometheus/prometheus.yml:/etc/prometheus/prometheus.yml
+- prometheus_data:/prometheus
+command:
+- '--config.file=/etc/prometheus/prometheus.yml'
+- '--storage.tsdb.path=/prometheus'
+networks:
+- {{projectName}}-network
+{{/if}}
+
+{{#if includeGrafana}}
+grafana:
+image: grafana/grafana:latest
+container_name: {{projectName}}-grafana
+ports:
+- "3001:3000"
+environment:
+GF_SECURITY_ADMIN_PASSWORD: ${GRAFANA_PASSWORD:-admin}
+volumes:
+- grafana_data:/var/lib/grafana
+- ./grafana/dashboards:/etc/grafana/provisioning/dashboards
+networks:
+- {{projectName}}-network
+{{/if}}
+
+volumes:
+{{#if includePostgres}}
+postgres_data:
+{{/if}}
+{{#if includeRedis}}
+redis_data:
+{{/if}}
+{{#if includeRabbitMQ}}
+rabbitmq_data:
+{{/if}}
+{{#if includePrometheus}}
+prometheus_data:
+{{/if}}
+{{#if includeGrafana}}
+grafana_data:
+{{/if}}
+
+networks:
+{{projectName}}-network:
+driver: bridge

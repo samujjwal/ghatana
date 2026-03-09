@@ -1,0 +1,28 @@
+---
+id: "secure_milestone_tracker"
+agent: "SecureMilestoneTrackerAgent"
+role: "Security PM"
+inputs_spec:
+- name: "secure_best_practice_report"
+  description: "Security best practice report."
+  format: "Best practice compliance report"
+outputs_spec:
+- name: "secure_stage_milestone"
+  description: "Tracked security milestones, owners, risks."
+  format: "List of milestone objects"
+agent_tasks:
+- "Track all security milestones with descriptions and target dates."
+- "Assign owners to each milestone."
+- "Flag risks, blockers, dependencies."
+- "List and track stage exit criteria."
+acceptance_criteria:
+- "All security milestones tracked with descriptions and dates."
+- "Owners assigned; risks/blockers flagged."
+- "Stage exit criteria listed/tracked."
+dependencies:
+- "secure_best_practice_report"
+failure_escalation:
+- "Escalate to Security PM if milestones are unclear or risks not managed."
+references: []
+hitl: true
+hitl_reason: "Human oversight for security milestone tracking"

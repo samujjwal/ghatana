@@ -1,0 +1,51 @@
+{{!
+  Datasource Configuration Template
+  Generates database connection configuration
+}}
+{{#if (eq from.language "go")}}
+  package config import ( "database/sql" "fmt" "time" _ "github.com/lib/pq" ) //
+  DatabaseConfig holds database configuration type DatabaseConfig struct { Host
+  string Port int Database string User string Password string SSLMode string
+  PoolSize int Timeout time.Duration } // NewDatabaseConfig creates a new
+  database configuration func NewDatabaseConfig() *DatabaseConfig { return
+  &DatabaseConfig{ Host: getEnv("DB_HOST", "localhost"), Port:
+  getEnvInt("DB_PORT",
+  {{to.outputs.port}}), Database: getEnv("DB_NAME", "{{to.id}}"), User:
+  getEnv("DB_USER", "postgres"), Password: getEnv("DB_PASSWORD", ""), SSLMode:
+  getEnv("DB_SSL_MODE", "disable"), PoolSize: getEnvInt("DB_POOL_SIZE",
+  {{poolSize}}), Timeout: time.Duration(getEnvInt("DB_TIMEOUT",
+  {{timeout}})) * time.Millisecond, } } // ConnectionString returns the database
+  connection string func (c *DatabaseConfig) ConnectionString() string { return
+  fmt.Sprintf( "host=%s port=%d user=%s password=%s dbname=%s sslmode=%s",
+  c.Host, c.Port, c.User, c.Password, c.Database, c.SSLMode, ) } // Connect
+  establishes a database connection func (c *DatabaseConfig) Connect() (*sql.DB,
+  error) { db, err := sql.Open("postgres", c.ConnectionString()) if err != nil {
+  return nil, fmt.Errorf("failed to open database: %w", err) }
+  db.SetMaxOpenConns(c.PoolSize) db.SetMaxIdleConns(c.PoolSize / 2)
+  db.SetConnMaxLifetime(time.Hour) if err := db.Ping(); err != nil { return nil,
+  fmt.Errorf("failed to ping database: %w", err) } return db, nil } func
+  getEnv(key, defaultValue string) string { if value := os.Getenv(key); value !=
+  "" { return value } return defaultValue } func getEnvInt(key string,
+  defaultValue int) int { if value := os.Getenv(key); value != "" { if intValue,
+  err := strconv.Atoi(value); err == nil { return intValue } } return
+  defaultValue }
+{{/if}}
+{{#if (eq from.language "java")}}
+  package
+  {{packagePath from.package}}.config; import com.zaxxer.hikari.HikariConfig;
+  import com.zaxxer.hikari.HikariDataSource; import javax.sql.DataSource; /** *
+  Database configuration for
+  {{to.name}}
+  * * @doc.type class * @doc.purpose Database connection configuration *
+  @doc.layer infrastructure */ public class DatabaseConfig { private static
+  final String JDBC_URL = "{{connectionString}}"; private static final int
+  POOL_SIZE =
+  {{poolSize}}; private static final int TIMEOUT =
+  {{timeout}}; public DataSource createDataSource() { HikariConfig config = new
+  HikariConfig(); config.setJdbcUrl(JDBC_URL);
+  config.setUsername(System.getenv("DB_USER"));
+  config.setPassword(System.getenv("DB_PASSWORD"));
+  config.setMaximumPoolSize(POOL_SIZE); config.setConnectionTimeout(TIMEOUT);
+  config.setIdleTimeout(600000); config.setMaxLifetime(1800000); return new
+  HikariDataSource(config); } }
+{{/if}}

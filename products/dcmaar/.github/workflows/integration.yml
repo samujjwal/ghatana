@@ -1,0 +1,44 @@
+name: Integration Tests
+
+on:
+    push:
+        branches: [main]
+    pull_request:
+        branches: [main]
+
+jobs:
+    integration:
+        runs-on: ubuntu-latest
+        steps:
+            - name: Checkout
+              uses: actions/checkout@v4
+
+                        - name: Setup Node
+                            uses: actions/setup-node@v4
+                            with:
+                                    node-version: "18"
+
+            - name: Make scripts executable
+              run: |
+                  chmod +x ./tools/install-deps.sh || true
+                  chmod +x ./tools/test-runner/run-integration.sh || true
+
+            - name: Install dependencies and run integration runner
+              run: |
+                  ./tools/install-deps.sh --strict
+                  ./tools/test-runner/run-integration.sh --ci
+              env:
+                  CI: true
+
+            - name: Upload fail-summary artifacts
+              if: always()
+              uses: actions/upload-artifact@v4
+              with:
+                  name: integration-artifacts
+                  path: |
+                      tools/test-runner/fail-summary.*.txt
+                      tools/test-runner/mock-server-log.*.log
+                      tools/test-runner/mock-test-log.*.log
+                      tools/test-runner/node_path_fallback.*.txt
+                      /tmp/mock-out-*.log
+                      /tmp/mock-err-*.log

@@ -1,0 +1,230 @@
+{
+  "id": "security-audit",
+  "metadata": {
+    "name": "Security Audit Process",
+    "description": "Audits browser activity for security issues and suspicious patterns",
+    "version": "1.0.0",
+    "author": "DCMAAR Security Team",
+    "tags": ["security", "audit", "compliance"],
+    "createdAt": 1706745600000,
+    "updatedAt": 1706745600000
+  },
+  "collect": {
+    "id": "collect",
+    "sources": [
+      {
+        "id": "navigation-events",
+        "type": "browser-events",
+        "strategy": "event-driven",
+        "config": {
+          "eventTypes": ["navigation"]
+        },
+        "filters": [
+          {
+            "field": "payload.url",
+            "operator": "regex",
+            "value": "^https?://"
+          }
+        ],
+        "samplingRate": 1.0,
+        "batchSize": 200
+      },
+      {
+        "id": "network-requests",
+        "type": "network",
+        "strategy": "streaming",
+        "config": {
+          "captureHeaders": false,
+          "captureBody": false,
+          "protocols": ["http", "https"]
+        },
+        "samplingRate": 0.1,
+        "batchSize": 500
+      }
+    ],
+    "mergeStrategy": "union",
+    "timeoutMs": 15000,
+    "retry": {
+      "maxAttempts": 2,
+      "backoffMs": 2000
+    }
+  },
+  "analyze": {
+    "id": "analyze",
+    "operations": [
+      {
+        "id": "filter-suspicious-urls",
+        "strategy": "filter",
+        "config": {
+          "patterns": [
+            ".*\\.exe$",
+            ".*\\.zip$",
+            "javascript:.*",
+            "data:text/html.*"
+          ],
+          "matchType": "regex"
+        },
+        "order": 100,
+        "continueOnError": false
+      },
+      {
+        "id": "classify-risk-level",
+        "strategy": "classify",
+        "config": {
+          "categories": {
+            "high-risk": [
+              "unknown-domain",
+              "suspicious-extension",
+              "malware-pattern"
+            ],
+            "medium-risk": [
+              "mixed-content",
+              "self-signed-cert"
+            ],
+            "low-risk": [
+              "known-safe",
+              "verified-cert"
+            ]
+          },
+          "defaultCategory": "medium-risk"
+        },
+        "order": 200,
+        "continueOnError": false
+      },
+      {
+        "id": "enrich-threat-intel",
+        "strategy": "enrich",
+        "config": {
+          "sources": ["local-blocklist"],
+          "fields": ["threatScore", "category", "reputation"]
+        },
+        "order": 300,
+        "continueOnError": true
+      }
+    ],
+    "parallel": false,
+    "timeoutMs": 20000
+  },
+  "report": {
+    "id": "report",
+    "destinations": [
+      {
+        "id": "audit-log",
+        "type": "store",
+        "delivery": "store",
+        "config": {
+          "storageType": "indexeddb",
+          "key": "security-audit-logs",
+          "maxReports": 1000,
+          "encrypt": true
+        },
+        "format": "json"
+      },
+      {
+        "id": "security-alert",
+        "type": "notification",
+        "delivery": "notification",
+        "config": {
+          "title": "Security Alert",
+          "icon": "warning",
+          "priority": "high",
+          "requireAction": true
+        },
+        "format": "markdown",
+        "when": {
+          "operator": "or",
+          "conditions": [
+            {
+              "field": "data.riskLevel",
+              "operator": "eq",
+              "value": "high-risk"
+            },
+            {
+              "field": "data.threatScore",
+              "operator": "gt",
+              "value": 7
+            }
+          ]
+        }
+      },
+      {
+        "id": "compliance-webhook",
+        "type": "webhook",
+        "delivery": "webhook",
+        "config": {
+          "url": "https://security-dashboard.example.com/api/audit",
+          "method": "POST",
+          "headers": {
+            "Content-Type": "application/json",
+            "X-API-Key": "${API_KEY}"
+          }
+        },
+        "format": "json",
+        "when": {
+          "field": "data.riskLevel",
+          "operator": "in",
+          "value": ["high-risk", "medium-risk"]
+        }
+      }
+    ],
+    "aggregate": true,
+    "includeMetadata": true,
+    "includeSummary": true,
+    "timeoutMs": 10000
+  },
+  "security": {
+    "maxExecutionTimeMs": 60000,
+    "maxMemoryBytes": 104857600,
+    "maxEventsPerBatch": 2000,
+    "allowedNetworkPatterns": ["https://security-dashboard.example.com/*"],
+    "deniedNetworkPatterns": [
+      "file://*",
+      "chrome://*",
+      "chrome-extension://*"
+    ],
+    "allowedBrowserAPIs": [
+      "storage",
+      "tabs",
+      "runtime",
+      "notifications",
+      "history"
+    ],
+    "sandboxed": true
+  },
+  "privacy": {
+    "redactionRules": [
+      {
+        "pattern": "\\b[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\\.[A-Z|a-z]{2,}\\b",
+        "replacement": "[EMAIL]"
+      },
+      {
+        "pattern": "\\b\\d{3}-\\d{2}-\\d{4}\\b",
+        "replacement": "[SSN]"
+      },
+      {
+        "pattern": "\\b\\d{4}[\\s-]?\\d{4}[\\s-]?\\d{4}[\\s-]?\\d{4}\\b",
+        "replacement": "[CARD]"
+      },
+      {
+        "pattern": "password|secret|token|apikey|api_key",
+        "replacement": "[REDACTED]",
+        "fields": ["payload.url", "payload.headers", "metadata"]
+      }
+    ],
+    "encryptFields": ["payload.cookies", "payload.authHeaders"],
+    "retentionPeriodMs": 2592000000,
+    "anonymize": true,
+    "requireConsent": true
+  },
+  "enabled": true,
+  "schedule": "0 * * * *",
+  "priority": 300,
+  "maxConcurrentExecutions": 2,
+  "timeoutMs": 120000,
+  "onError": "halt",
+  "variables": {
+    "threatScoreThreshold": 7,
+    "auditWindow": "1h",
+    "complianceMode": "strict"
+  }
+}

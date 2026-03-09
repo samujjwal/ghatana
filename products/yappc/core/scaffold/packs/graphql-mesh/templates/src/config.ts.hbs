@@ -1,0 +1,68 @@
+import { readFileSync, existsSync } from "node:fs";
+import { join } from "node:path";
+import { parse as parseYaml } from "yaml";
+import { z } from "zod";
+import type { MeshConfig } from "./types.js";
+
+const ConfigSchema = z.object({
+port: z.number().default({{port}}),
+enablePlayground: z.boolean().default({{enablePlayground}}),
+enableIntrospection: z.boolean().default({{enableIntrospection}}),
+{{#if enableAuth}}
+enableAuth: z.boolean().default(true),
+jwtSecret: z.string().optional(),
+{{/if}}
+{{#if enableCaching}}
+enableCaching: z.boolean().default(true),
+cacheMaxAge: z.number().default({{cacheMaxAge}}),
+{{/if}}
+{{#if enableRateLimiting}}
+enableRateLimiting: z.boolean().default(true),
+rateLimitMax: z.number().default({{rateLimitMax}}),
+{{/if}}
+{{#if enableMetrics}}
+enableMetrics: z.boolean().default(true),
+{{/if}}
+{{#if enableCors}}
+enableCors: z.boolean().default(true),
+corsOrigin: z.string().default("{{corsOrigin}}"),
+{{/if}}
+logLevel: z.enum(["debug", "info", "warn", "error"]).default("{{logLevel}}"),
+});
+
+export function loadConfig(): MeshConfig {
+// Load from environment
+const envConfig: Partial<MeshConfig> = {
+    port: process.env.PORT ? parseInt(process.env.PORT, 10) : undefined,
+    logLevel: process.env.LOG_LEVEL as MeshConfig["logLevel"] | undefined,
+    {{#if enableAuth}}
+    jwtSecret: process.env.JWT_SECRET,
+    {{/if}}
+    {{#if enableCors}}
+    corsOrigin: process.env.CORS_ORIGIN,
+    {{/if}}
+    };
+
+    // Try to load from config file
+    const configPath = join(process.cwd(), "config.yaml");
+    let fileConfig: Partial<MeshConfig> = {};
+
+        if (existsSync(configPath)) {
+        try {
+        const content = readFileSync(configPath, "utf-8");
+        fileConfig = parseYaml(content) ?? {};
+        } catch (err) {
+        console.warn(`Warning: Could not parse ${configPath}`, err);
+        }
+        }
+
+        // Merge and validate
+        const merged = {
+        ...fileConfig,
+        ...Object.fromEntries(
+        Object.entries(envConfig).filter(([_, v]) => v !== undefined)
+        ),
+        };
+
+        return ConfigSchema.parse(merged);
+        }

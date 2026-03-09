@@ -1,0 +1,319 @@
+# API Design Operator - Consolidated Design Domain
+# Consolidates: api_contract, api_contract_develop, interface specification, API security
+# Purpose: Complete API design from contracts through security to documentation
+
+id: api_operator
+version: "1.0.0"
+domain: design
+category: api_design
+
+description: |
+  Unified API design operator handling complete API lifecycle design:
+  - API contract definition (OpenAPI, GraphQL, gRPC)
+  - Endpoint and operation design
+  - Request/response schema design
+  - API security specification
+  - Versioning and deprecation strategy
+  - API documentation
+
+# Operator Modes
+modes:
+  contract_design:
+    description: "Design API contracts"
+    role: API Architect
+    inputs:
+      - name: component_designs
+        description: Component designs with interfaces
+        required: true
+      - name: data_model
+        description: Data model for schema reference
+        required: true
+    outputs:
+      - name: api_contracts
+        description: API contract specifications
+        format: yaml_list
+        schema:
+          - api_id: string
+          - name: string
+          - version: string
+          - specification_format: "openapi|graphql|grpc|asyncapi"
+          - base_path: string
+          - authentication: object
+          - endpoints: list
+          - schemas: list
+          - error_responses: list
+          - rate_limiting: object
+    endpoint_schema:
+      - path: string
+      - method: "GET|POST|PUT|PATCH|DELETE"
+      - operation_id: string
+      - summary: string
+      - description: string
+      - tags: list
+      - parameters: list
+      - request_body: object
+      - responses: object
+      - security: list
+    tasks:
+      - Define API structure and versioning
+      - Design endpoints and operations
+      - Create request/response schemas
+      - Specify authentication and authorization
+      - Define error responses
+      - Document rate limiting
+    design_principles:
+      - resource_oriented: "REST resource modeling"
+      - consistent_naming: "Predictable URL patterns"
+      - proper_http_methods: "Semantic HTTP verb usage"
+      - pagination: "Cursor or offset pagination"
+      - filtering: "Query parameter filtering"
+      - versioning: "URL or header versioning"
+
+  schema_design:
+    description: "Design API schemas and data types"
+    role: API Architect
+    inputs:
+      - name: data_model
+        description: Data model for reference
+        required: true
+      - name: api_contracts
+        description: API contract structure
+        required: true
+    outputs:
+      - name: api_schemas
+        description: API schema definitions
+        format: yaml_document
+        schema:
+          - schemas: list
+          - common_types: list
+          - enums: list
+          - validation_rules: list
+    schema_definition:
+      - schema_name: string
+      - description: string
+      - type: "object|array|string|number|boolean"
+      - properties: list
+      - required_fields: list
+      - validation: object
+      - examples: list
+    tasks:
+      - Map data model to API schemas
+      - Define common types and enums
+      - Specify validation rules
+      - Create schema examples
+      - Document field constraints
+
+  security_design:
+    description: "Design API security"
+    role: Security Architect
+    inputs:
+      - name: api_contracts
+        description: API contracts
+        required: true
+      - name: security_requirements
+        description: Security NFRs
+        required: true
+    outputs:
+      - name: api_security_spec
+        description: API security specification
+        format: yaml_document
+        schema:
+          - authentication_schemes: list
+          - authorization_model: object
+          - scope_definitions: list
+          - rate_limiting: object
+          - input_validation: object
+          - output_encoding: object
+          - cors_policy: object
+          - security_headers: list
+    authentication_types:
+      - oauth2: "OAuth 2.0 flows"
+      - jwt: "JWT bearer tokens"
+      - api_key: "API key authentication"
+      - mtls: "Mutual TLS"
+      - basic: "Basic authentication (legacy)"
+    tasks:
+      - Define authentication schemes
+      - Design authorization model (RBAC, ABAC)
+      - Create scope definitions
+      - Specify rate limiting policies
+      - Define input validation rules
+      - Configure CORS and security headers
+
+  versioning:
+    description: "Design API versioning and deprecation"
+    role: API Architect
+    inputs:
+      - name: api_contracts
+        description: API contracts
+        required: true
+      - name: existing_apis
+        description: Existing API versions
+        required: false
+    outputs:
+      - name: versioning_strategy
+        description: API versioning plan
+        format: yaml_document
+        schema:
+          - versioning_scheme: "url|header|query"
+          - current_version: string
+          - supported_versions: list
+          - deprecation_policy: object
+          - migration_guides: list
+          - breaking_change_policy: object
+    tasks:
+      - Define versioning scheme
+      - Plan deprecation timeline
+      - Document migration paths
+      - Define breaking change policy
+      - Create version compatibility matrix
+
+  documentation:
+    description: "Generate API documentation"
+    role: Technical Writer
+    inputs:
+      - name: api_contracts
+        description: Complete API contracts
+        required: true
+      - name: api_schemas
+        description: Schema definitions
+        required: true
+      - name: api_security_spec
+        description: Security specifications
+        required: true
+    outputs:
+      - name: api_documentation
+        description: Generated API documentation
+        format: yaml_document
+        schema:
+          - overview: string
+          - getting_started: object
+          - authentication_guide: object
+          - endpoint_reference: list
+          - schema_reference: list
+          - error_reference: list
+          - examples: list
+          - sdks: list
+          - changelog: list
+    tasks:
+      - Write API overview
+      - Create getting started guide
+      - Document authentication flows
+      - Generate endpoint reference
+      - Provide code examples
+      - Maintain changelog
+
+# Internal Logic
+internal_logic:
+  perception:
+    description: "Analyze components and data models for API needs"
+    sources:
+      - component_interfaces
+      - data_model
+      - security_requirements
+  model:
+    description: "API design knowledge graph"
+    entities:
+      - api: "{id, version, endpoints, schemas}"
+      - endpoint: "{path, method, parameters, responses}"
+      - schema: "{name, type, properties, validation}"
+    relationships:
+      - api_exposes_endpoint
+      - endpoint_uses_schema
+      - api_requires_authentication
+  planning:
+    strategy: |
+      1. Start with resource identification
+      2. Apply RESTful principles
+      3. Design for backward compatibility
+      4. Security by design
+      5. Document as you design
+  action:
+    description: "Output API contract and documentation"
+    validation: "API review and consumer validation"
+
+# Quality Assurance
+quality:
+  templates:
+    - openapi_template
+    - graphql_schema_template
+    - api_documentation_template
+  checklists:
+    - rest_principles_checklist
+    - security_checklist
+    - documentation_checklist
+  automated_checks:
+    - openapi_lint
+    - schema_validation
+    - breaking_change_detection
+    - security_scan
+
+# API Design Rules
+design_rules:
+  naming:
+    - "Use plural nouns for collections"
+    - "Use kebab-case for URLs"
+    - "Use camelCase for JSON properties"
+    - "Use consistent naming across endpoints"
+  http_methods:
+    - "GET for retrieval (idempotent)"
+    - "POST for creation"
+    - "PUT for full replacement"
+    - "PATCH for partial update"
+    - "DELETE for removal"
+  responses:
+    - "Use appropriate HTTP status codes"
+    - "Return consistent error format"
+    - "Include pagination metadata"
+    - "Use HATEOAS for discoverability"
+
+# Validation Rules
+validation:
+  rules:
+    - "All endpoints must have security defined"
+    - "All request bodies must have schemas"
+    - "All responses must be documented"
+    - "Breaking changes require version increment"
+  review_gates:
+    - api_architect_review
+    - security_review
+    - consumer_review
+
+# Escalation
+escalation:
+  triggers:
+    - "Breaking change to stable API"
+    - "Security vulnerability in API design"
+    - "Performance concern with API pattern"
+  paths:
+    - role: API Architect
+      for: "Design decisions, versioning"
+    - role: Security Architect
+      for: "Authentication, authorization issues"
+    - role: Product Owner
+      for: "Breaking change approval"
+
+# Dependencies
+dependencies:
+  upstream:
+    - component_operator
+    - data_model_operator
+  downstream:
+    - build_operator
+    - test_strategy_operator
+    - security_design_operator
+
+# Metrics
+metrics:
+  - name: api_coverage
+    description: "Components with API contracts"
+    target: "100%"
+  - name: documentation_completeness
+    description: "Endpoints with full documentation"
+    target: "100%"
+  - name: security_coverage
+    description: "Endpoints with security defined"
+    target: "100%"
+  - name: schema_validation_rate
+    description: "Requests with schema validation"
+    target: "100%"

@@ -1,0 +1,145 @@
+# YAPPC Agent Orchestration Pipeline
+# AEP pipeline definition for agent execution and coordination
+#
+# This pipeline defines the workflow for orchestrating agent execution,
+# handling backpressure, and managing agent lifecycle events.
+
+apiVersion: ghatana.aep/v1
+kind: Pipeline
+
+metadata:
+  name: "agent-orchestration-v1"
+  version: "1.0.0"
+  description: "Agent execution and coordination pipeline"
+  tags: ["agents", "orchestration", "execution"]
+
+spec:
+  # Pipeline inputs
+  inputs:
+    - name: "agent-dispatch-events"
+      topic: "agent.dispatch.requested"
+      schema: "agent-dispatch-v1"
+      description: "Agent execution requests from lifecycle management"
+    
+    - name: "agent-result-events"
+      topic: "agent.result.produced"
+      schema: "agent-result-v1"
+      description: "Agent execution results"
+
+  # Pipeline outputs
+  outputs:
+    - name: "agent-metrics"
+      topic: "agent.metrics.updated"
+      description: "Agent performance and health metrics"
+    
+    - name: "workflow-events"
+      topic: "workflow.step.completed"
+      description: "Workflow step completion events"
+
+  # Pipeline operators (stages)
+  operators:
+    - name: "agent-dispatch-validator"
+      type: "validator"
+      config:
+        schema: "agent-dispatch-v1"
+        strict: true
+      description: "Validate agent dispatch requests"
+
+    - name: "backpressure-handler"
+      type: "backpressure"
+      config:
+        strategy: "DROP_OLDEST"
+        buffer_size: 2048
+        overflow_to_dlq: true
+      description: "Handle high-volume agent requests with backpressure"
+
+    - name: "agent-executor"
+      type: "agent-operator"
+      config:
+        agent_registry: "registry.yaml"
+        checkpoint_policy: "everyN"
+        checkpoint_interval: 10
+        resilience:
+          circuit_breaker:
+            threshold: 5
+            reset_timeout_ms: 30000
+          retry:
+            max_retries: 3
+            backoff_ms: 1000
+      description: "Execute agents with resilience and checkpointing"
+
+    - name: "result-aggregator"
+      type: "aggregator"
+      config:
+        aggregation_window_ms: 5000
+        group_by: ["agent_id", "correlation_id"]
+      description: "Aggregate agent results for workflow coordination"
+
+    - name: "metrics-collector"
+      type: "metrics"
+      config:
+        include_agent_metrics: true
+        include_pipeline_metrics: true
+        export_interval_ms: 10000
+      description: "Collect and export agent performance metrics"
+
+  # Error handling
+  error_handling:
+    strategy: "circuit_breaker"
+    circuit_breaker:
+      failure_threshold: 10
+      recovery_timeout_ms: 60000
+      half_open_max_calls: 5
+    dead_letter_topic: "agent.orchestration.dlq"
+    retry_policy:
+      max_retries: 5
+      backoff_multiplier: 2.0
+      max_backoff_ms: 30000
+
+  # Monitoring
+  monitoring:
+    metrics:
+      - name: "agent_executions_total"
+        type: "counter"
+        labels: ["agent_id", "status"]
+        description: "Total agent executions by status"
+      
+      - name: "agent_execution_duration"
+        type: "histogram"
+        labels: ["agent_id"]
+        description: "Agent execution duration"
+      
+      - name: "circuit_breaker_state"
+        type: "gauge"
+        labels: ["agent_id"]
+        description: "Circuit breaker state per agent"
+      
+      - name: "backpressure_buffer_size"
+        type: "gauge"
+        description: "Current backpressure buffer utilization"
+
+    alerts:
+      - name: "agent_execution_failure_rate"
+        condition: "agent_failure_rate > 0.2"
+        description: "High agent execution failure rate"
+      
+      - name: "circuit_breaker_open"
+        condition: "circuit_breaker_open_count > 0"
+        description: "Circuit breaker is open for agents"
+      
+      - name: "backpressure_buffer_full"
+        condition: "buffer_utilization > 0.9"
+        description: "Backpressure buffer near capacity"
+
+  # Dependencies
+  dependencies:
+    services:
+      - "agent-framework"
+      - "agent-registry"
+      - "data-cloud-platform"
+    schemas:
+      - "agent-dispatch-v1"
+      - "agent-result-v1"
+    configs:
+      - "registry.yaml"
+      - "event-routing.yaml"

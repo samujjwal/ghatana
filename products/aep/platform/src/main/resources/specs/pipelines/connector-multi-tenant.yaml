@@ -1,0 +1,167 @@
+# ============================================================================
+# Connector-Based Multi-Tenant Streaming Pipeline
+# ============================================================================
+# Pattern: Connector-centric pipeline with inline ConnectorSpec definitions
+# Flow:    EventCloud source → process → HTTP egress + EventCloud sink
+# Use:     Multi-tenant event processing with explicit connector configuration
+# ============================================================================
+
+stages:
+  # ---- Stage 1: Multi-tenant event ingestion via EventCloud ----
+  - name: tenant-ingest
+    stageType: CONNECTOR
+    connectors:
+      - id: ec-txn-source
+        type: EVENT_CLOUD_SOURCE
+        endpoint: eventcloud-prod-cluster-01
+        topicOrStream: transactions.raw
+        tenantId: "${TENANT_ID}"
+        durable: true
+        ordered: true
+        maxInFlight: 1000
+        properties:
+          consumerGroup: "fraud-pipeline-${TENANT_ID}"
+          autoOffsetReset: earliest
+          maxPollRecords: "500"
+          heartbeatIntervalMs: "3000"
+          sessionTimeoutMs: "30000"
+        tags:
+          - production
+          - fraud-pipeline
+          - multi-tenant
+    workflow:
+      - id: tenant-ingester
+        agent: aep:agent:TenantAwareIngester:2.0.0
+        role: ingester
+        agentTasks:
+          - Consume events with tenant isolation
+          - Validate tenant-specific schema variant
+          - Apply tenant rate limits
+          - Tag events with tenant processing metadata
+        inputsSpec:
+          - name: raw-tenant-event
+            format: json
+            description: Raw event with tenant context from EventCloud
+        outputsSpec:
+          - name: tenant-event
+            format: json
+            description: Tenant-validated and tagged event
+
+  # ---- Stage 2: Tenant-aware fraud processing ----
+  - name: process
+    stageType: PATTERN
+    workflow:
+      - id: tenant-detector
+        agent: adaptive-threshold-tuner
+        role: detector
+        dependencies:
+          - tenant-ingester
+        agentTasks:
+          - Load tenant-specific detection thresholds
+          - Apply adaptive threshold analysis
+          - Score transaction against tenant-calibrated model
+        acceptanceCriteria:
+          - Tenant isolation maintained (no cross-tenant data leakage)
+          - Adaptive thresholds converge within 1000 observations per arm
+          - Detection latency < 100ms p99 per tenant
+        inputsSpec:
+          - name: tenant-event
+            format: json
+            description: Tenant-tagged event from ingester
+        outputsSpec:
+          - name: detection-result
+            format: json
+            description: Tenant-specific detection result with adaptive score
+
+  # ---- Stage 3: External webhook notification via HTTP ----
+  - name: webhook-notify
+    stageType: CONNECTOR
+    connectors:
+      - id: http-webhook-out
+        type: HTTP_EGRESS
+        endpoint: "https://api.${TENANT_DOMAIN}/webhooks/fraud"
+        tenantId: "${TENANT_ID}"
+        durable: false
+        ordered: false
+        maxInFlight: 50
+        properties:
+          method: POST
+          contentType: application/json
+          authType: bearer
+          authTokenEnvVar: "WEBHOOK_TOKEN_${TENANT_ID}"
+          timeoutMs: "5000"
+          retryCount: "3"
+          retryBackoffMs: "1000"
+          tlsVerify: "true"
+        tags:
+          - webhook
+          - external
+          - tenant-specific
+    workflow:
+      - id: webhook-sender
+        agent: aep:agent:WebhookDispatcher:1.0.0
+        role: notifier
+        dependencies:
+          - tenant-detector
+        failureEscalation:
+          - audit-writer
+        agentTasks:
+          - Format detection result as tenant webhook payload
+          - Send HTTP POST to tenant-specific webhook endpoint
+          - Handle retries with exponential backoff
+          - Log webhook delivery status
+        inputsSpec:
+          - name: detection-result
+            format: json
+            description: Detection result to notify about
+        outputsSpec:
+          - name: webhook-receipt
+            format: json
+            description: Webhook delivery receipt with HTTP status
+
+  # ---- Stage 4: Audit trail to EventCloud ----
+  - name: audit-sink
+    stageType: CONNECTOR
+    connectors:
+      - id: ec-audit-sink
+        type: EVENT_CLOUD_SINK
+        endpoint: eventcloud-prod-cluster-01
+        topicOrStream: fraud.audit
+        tenantId: "${TENANT_ID}"
+        durable: true
+        ordered: true
+        maxInFlight: 500
+        properties:
+          compressionType: lz4
+          batchSizeBytes: "65536"
+          lingerMs: "50"
+          acks: all
+          retentionDays: "365"
+        tags:
+          - audit
+          - compliance
+          - durable
+    workflow:
+      - id: audit-writer
+        agent: aep:agent:AuditTrailWriter:1.0.0
+        role: auditor
+        dependencies:
+          - tenant-detector
+        agentTasks:
+          - Construct immutable audit record with full decision lineage
+          - Include tenant ID, transaction ID, all scores, decision, timestamp
+          - Write to durable audit topic with exactly-once semantics
+          - Emit audit write latency metrics
+        acceptanceCriteria:
+          - Every processed transaction has an audit record
+          - Audit records are immutable and tamper-evident
+          - Write latency < 50ms p99
+          - 365-day retention enforced by topic configuration
+        inputsSpec:
+          - name: detection-result
+            format: json
+            description: Complete detection result for audit
+        outputsSpec:
+          - name: audit-receipt
+            format: json
+            description: Audit write confirmation with offset

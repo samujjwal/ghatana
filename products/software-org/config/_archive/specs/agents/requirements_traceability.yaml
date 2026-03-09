@@ -1,0 +1,49 @@
+id: requirements_traceability
+agent: RequirementsTraceabilityAgent
+role: QA Analyst/Automation
+inputs_spec:
+- name: requirements_package
+  description: Complete requirements package including all requirements, criteria, and artifacts from the Plan stage.
+  format: Package (list of documents, version info, approval status)
+  example: 'documents: ["requirements.md", "criteria.xlsx"]
+
+    version: "v1.0"
+
+    approvals: ["PO", "QA"]
+
+    '
+outputs_spec:
+- name: requirements_traceability_report
+  description: Traceability matrix linking requirements to tests and deliverables, with gaps and ambiguities flagged.
+  format: Traceability matrix artifact (requirements, mapped_tests, mapped_deliverables, gaps)
+  example: "- requirement: \"User can upload documents securely\"\n  mapped_tests: [\"TC-001\", \"TC-002\"]\n  mapped_deliverables: [\"secure_upload_module\"]\n  gaps: []\n"
+agent_tasks:
+- Generate a traceability matrix linking each requirement to corresponding tests and deliverables.
+- Identify and flag missing or ambiguous links between requirements and downstream artifacts.
+- Structure the traceability report for easy consumption by QA and project stakeholders.
+acceptance_criteria:
+- Traceability matrix links all requirements to corresponding tests and deliverables.
+- Missing or ambiguous links are identified and flagged for review.
+- Traceability report is organized and accessible for QA and stakeholders.
+dependencies:
+- requirements_package
+failure_escalation:
+- Escalate to QA analyst or requirements owner if traceability gaps are found and not resolved.
+references: []
+hitl: false
+
+internal_logic:
+  - perception:
+      description: "Extract required context, risks, dependencies, and gaps for agent 'requirements_traceability'."
+  - model:
+      description: "Track fulfillment of acceptance criteria and unresolved escalations."
+  - planning:
+      description: "For all open issues or missing outputs, trigger validation/escalation or follow-up."
+  - action:
+      description: "Assemble output per spec; update agent's trace/audit log."
+validation:
+  - "SME or HITL review for output correctness and completeness."
+  - "Audit for field and format coverage."
+quality_enhancements:
+  - "Output templates and audit log integration."
+  - "Escalation if any acceptance criteria unmet."

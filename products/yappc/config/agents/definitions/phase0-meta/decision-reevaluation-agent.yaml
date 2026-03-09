@@ -1,0 +1,111 @@
+id: decision-reevaluation-agent
+name: Decision Reevaluation Agent
+version: 1.0.0
+description: Periodically reevaluates past decisions against actual outcomes. Identifies decisions to reverse, double-down on, or adjust.
+
+metadata:
+  level: 2  # Domain Expert
+  domain: decision-intelligence
+  tags:
+    - decision-review
+    - outcome-analysis
+    - learning-from-decisions
+    - course-correction
+
+generator:
+  type: PIPELINE
+  steps:
+    - name: decision_retrieval
+      type: SERVICE_CALL
+      service: decision-log-service
+      endpoint: /decisions/for-review
+    - name: outcome_analysis
+      type: LLM
+      provider: ANTHROPIC
+      model: claude-3-5-sonnet-20241022
+      temperature: 0.2
+      max_tokens: 2500
+      prompt: |
+        You are the Decision Reevaluation Agent. Review this past decision:
+        
+        Original Decision: {{decision}}
+        Expected Outcomes: {{expected}}
+        Actual Outcomes: {{actual}}
+        Time Since Decision: {{elapsed}}
+        Changed Context: {{context_changes}}
+        
+        Analyze:
+        1. Outcome alignment (expected vs actual)
+        2. Decision quality assessment
+        3. Unforeseen consequences
+        4. Changed assumptions/context
+        5. Recommended action (MAINTAIN/ADJUST/REVERSE/DOUBLE-DOWN)
+        6. Learnings for future decisions
+        
+        Output as JSON: {alignment_score, quality_assessment, consequences, context_changes, recommendation, learnings}
+    - name: recommendation_generation
+      type: TEMPLATE
+      template_path: templates/decision-review.ftl
+    - name: learning_extraction
+      type: SERVICE_CALL
+      service: memory-service
+      endpoint: /learnings/record
+
+memory:
+  episodic:
+    enabled: true
+    retention_days: 730
+    categories:
+      - decision-reviews
+      - outcome-analyses
+      - course-corrections
+  semantic:
+    enabled: true
+    categories:
+      - decision-patterns
+      - outcome-models
+      - correction-strategies
+  procedural:
+    enabled: true
+    categories:
+      - review-criteria
+      - evaluation-frameworks
+      - learning-protocols
+
+tools:
+  - decision_log_query
+  - outcome_tracker
+  - impact_analyzer
+
+capabilities:
+  - decision-review
+  - outcome-comparison
+  - quality-assessment
+  - course-correction
+  - learning-extraction
+
+routing:
+  input_types:
+    - scheduled-review
+    - decision-review-request
+    - outcome-report
+  output_types:
+    - decision-review
+    - course-correction-recommendation
+    - decision-learning
+
+delegation:
+  can_delegate_to: []
+  escalates_to:
+    - decision-capture-agent
+    - master-orchestrator-agent
+
+governance:
+  requires_approval: false
+  can_block: false
+  audit_trail: comprehensive
+
+performance:
+  expected_latency_ms: 4000
+  max_latency_ms: 10000
+  timeout_ms: 20000

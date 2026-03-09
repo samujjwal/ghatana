@@ -1,0 +1,362 @@
+/*
+ * Copyright (c) 2025 Ghatana Inc.
+ * All rights reserved.
+ *
+ * This source code and the accompanying materials are the confidential
+ * and proprietary information of Ghatana Inc. ("Confidential Information").
+ * You shall not disclose such Confidential Information and shall use it
+ * only in accordance with the terms of the license agreement you entered
+ * into with Ghatana Inc.
+ *
+ * Unauthorized copying of this file, via any medium, is strictly prohibited.
+ * Proprietary and confidential.
+ */
+syntax = "proto3";
+
+package ghatana.contracts.learning.v1;
+
+// Standard imports
+import "google/protobuf/duration.proto";
+import "google/protobuf/timestamp.proto";
+import "google/api/annotations.proto";
+import "google/api/field_behavior.proto";
+
+// Local imports
+import "ghatana/contracts/pattern/v1/pattern.proto";
+
+option java_package = "com.ghatana.contracts.learning.v1";
+option java_multiple_files = true;
+option java_outer_classname = "PatternLearningServiceOuterClass";
+option go_package = "github.com/ghatana/contracts/gen/go/learning/v1;learningv1";
+option csharp_namespace = "Ghatana.Contracts.Learning.V1";
+
+// PatternLearningService provides intelligent pattern recommendation and analysis
+// capabilities using machine learning and LLM-powered analysis.
+service PatternLearningService {
+  // RecommendPatterns analyzes event data and recommends pattern candidates
+  // using LLM-powered analysis of statistical features.
+  rpc RecommendPatterns(RecommendPatternsRequest) returns (RecommendPatternsResponse) {
+    option (google.api.http) = {
+      post: "/v1/patterns:recommend"
+      body: "*"
+    };
+  }
+  
+  // EvaluatePatterns runs pattern candidates in shadow replay mode to assess
+  // their performance against historical data without emitting matches.
+  rpc EvaluatePatterns(EvaluatePatternsRequest) returns (EvaluatePatternsResponse) {
+    option (google.api.http) = {
+      post: "/v1/patterns:evaluate"
+      body: "*"
+    };
+  }
+}
+
+// Request for pattern recommendations based on event data analysis
+message RecommendPatternsRequest {
+  // Required. Tenant ID for scoped analysis
+  string tenant_id = 1 [(google.api.field_behavior) = REQUIRED];
+  
+  // Optional. Time window in hours for analysis (default: 24)
+  int32 lookback_hours = 2 [(google.api.field_behavior) = OPTIONAL];
+  
+  // Optional. Maximum number of pattern suggestions to return (default: 5)
+  int32 max_suggestions = 3 [(google.api.field_behavior) = OPTIONAL];
+  
+  // Optional. Additional context for pattern recommendation
+  map<string, string> context = 4 [(google.api.field_behavior) = OPTIONAL];
+  
+  // Optional. Whether to persist recommendations as draft patterns (default: false)
+  bool persist_drafts = 5 [(google.api.field_behavior) = OPTIONAL];
+  
+  // Optional. Processing timeout in seconds (default: 120)
+  int32 timeout_seconds = 6 [(google.api.field_behavior) = OPTIONAL];
+}
+
+// Response containing recommended patterns and analysis diagnostics
+message RecommendPatternsResponse {
+  // List of recommended pattern candidates
+  repeated ghatana.contracts.pattern.v1.PatternProto recommendations = 1;
+  
+  // Analysis diagnostics and metadata
+  RecommendationDiagnostics diagnostics = 2;
+  
+  // Request processing metadata
+  ProcessingMetadata processing = 3;
+}
+
+// Diagnostics information about the recommendation process
+message RecommendationDiagnostics {
+  // Number of events analyzed
+  int64 events_analyzed = 1;
+  
+  // Number of event types discovered
+  int32 event_types_count = 2;
+  
+  // Time range of analyzed data
+  google.protobuf.Duration analysis_window = 3;
+  
+  // Peak activity hour (0-23)
+  int32 peak_hour = 4;
+  
+  // Average events per hour
+  double avg_events_per_hour = 5;
+  
+  // Data quality assessment
+  DataQualityAssessment data_quality = 6;
+  
+  // Feature extraction summary
+  map<string, double> feature_summary = 7;
+}
+
+// Assessment of data quality for recommendations
+message DataQualityAssessment {
+  // Quality level: INSUFFICIENT, LIMITED, MODERATE, RICH
+  DataQualityLevel quality_level = 1;
+  
+  // Quality score (0.0 - 1.0)
+  double quality_score = 2;
+  
+  // Quality factors and their contributions
+  map<string, double> quality_factors = 3;
+  
+  // Recommendations for improving data quality
+  repeated string improvement_suggestions = 4;
+}
+
+// Data quality levels for recommendation reliability
+enum DataQualityLevel {
+  // Default value, should not be used
+  DATA_QUALITY_LEVEL_UNSPECIFIED = 0;
+  
+  // Insufficient data for reliable recommendations
+  DATA_QUALITY_LEVEL_INSUFFICIENT = 1;
+  
+  // Limited data, recommendations may be basic
+  DATA_QUALITY_LEVEL_LIMITED = 2;
+  
+  // Moderate data quality, good recommendations possible
+  DATA_QUALITY_LEVEL_MODERATE = 3;
+  
+  // Rich data, high-quality recommendations
+  DATA_QUALITY_LEVEL_RICH = 4;
+}
+
+// Processing metadata for the recommendation request
+message ProcessingMetadata {
+  // Unique operation ID for tracking
+  string operation_id = 1;
+  
+  // Request timestamp
+  google.protobuf.Timestamp request_time = 2;
+  
+  // Processing completion timestamp
+  google.protobuf.Timestamp completion_time = 3;
+  
+  // Total processing duration
+  google.protobuf.Duration processing_duration = 4;
+  
+  // LLM provider used for analysis
+  string llm_provider = 5;
+  
+  // Feature extraction duration
+  google.protobuf.Duration feature_extraction_duration = 6;
+  
+  // LLM analysis duration
+  google.protobuf.Duration llm_analysis_duration = 7;
+  
+  // Processing stages completed
+  repeated string completed_stages = 8;
+  
+  // Any warnings encountered during processing
+  repeated string warnings = 9;
+}
+
+// Request for pattern evaluation using shadow replay
+message EvaluatePatternsRequest {
+  // Required. Tenant ID for scoped evaluation
+  string tenant_id = 1 [(google.api.field_behavior) = REQUIRED];
+  
+  // Required. Pattern candidates to evaluate
+  repeated ghatana.contracts.pattern.v1.PatternProto patterns = 2 [(google.api.field_behavior) = REQUIRED];
+  
+  // Optional. Time window for evaluation in hours (default: 72)
+  int32 evaluation_hours = 3 [(google.api.field_behavior) = OPTIONAL];
+  
+  // Optional. Start time for evaluation period (default: now - evaluation_hours)
+  google.protobuf.Timestamp start_time = 4 [(google.api.field_behavior) = OPTIONAL];
+  
+  // Optional. End time for evaluation period (default: now)
+  google.protobuf.Timestamp end_time = 5 [(google.api.field_behavior) = OPTIONAL];
+  
+  // Optional. Shadow mode configuration
+  ShadowModeConfig shadow_config = 6 [(google.api.field_behavior) = OPTIONAL];
+  
+  // Optional. Processing timeout in seconds (default: 300)
+  int32 timeout_seconds = 7 [(google.api.field_behavior) = OPTIONAL];
+}
+
+// Response containing pattern evaluation results and performance metrics
+message EvaluatePatternsResponse {
+  // Pattern evaluation results
+  repeated PatternEvaluationResult results = 1;
+  
+  // Overall evaluation metrics
+  EvaluationSummary summary = 2;
+  
+  // Evaluation processing metadata
+  ProcessingMetadata processing = 3;
+}
+
+// Configuration for shadow mode evaluation
+message ShadowModeConfig {
+  // Whether to enable detailed match tracking (may impact performance)
+  bool enable_match_tracking = 1;
+  
+  // Maximum number of matches to track per pattern (default: 1000)
+  int32 max_matches_per_pattern = 2;
+  
+  // Whether to include false positive analysis
+  bool analyze_false_positives = 3;
+  
+  // Sample rate for detailed analysis (0.0-1.0, default: 0.1)
+  double sampling_rate = 4;
+}
+
+// Evaluation result for a single pattern
+message PatternEvaluationResult {
+  // Pattern that was evaluated
+  ghatana.contracts.pattern.v1.PatternProto pattern = 1;
+  
+  // Performance metrics
+  PatternPerformanceMetrics metrics = 2;
+  
+  // Match details (if tracking enabled)
+  repeated PatternMatch matches = 3;
+  
+  // Evaluation status and any issues
+  EvaluationStatus status = 4;
+  
+  // Recommendations for pattern improvement
+  repeated string recommendations = 5;
+}
+
+// Performance metrics for pattern evaluation
+message PatternPerformanceMetrics {
+  // True positives: correctly identified matches
+  int64 true_positives = 1;
+  
+  // False positives: incorrectly identified matches
+  int64 false_positives = 2;
+  
+  // False negatives: missed actual patterns
+  int64 false_negatives = 3;
+  
+  // True negatives: correctly identified non-matches
+  int64 true_negatives = 4;
+  
+  // Precision: TP / (TP + FP)
+  double precision = 5;
+  
+  // Recall: TP / (TP + FN)
+  double recall = 6;
+  
+  // F1 Score: 2 * (precision * recall) / (precision + recall)
+  double f1_score = 7;
+  
+  // Total events processed during evaluation
+  int64 events_processed = 8;
+  
+  // Evaluation processing time in milliseconds
+  int64 processing_time_ms = 9;
+}
+
+// Individual pattern match detected during evaluation
+message PatternMatch {
+  // Unique match identifier
+  string match_id = 1;
+  
+  // Timestamp when the pattern was detected
+  google.protobuf.Timestamp match_time = 2;
+  
+  // Confidence score (0.0-1.0)
+  double confidence = 3;
+  
+  // Match type classification
+  MatchType match_type = 4;
+  
+  // Event IDs that contributed to this match
+  repeated string event_ids = 5;
+  
+  // Additional match metadata
+  map<string, string> metadata = 6;
+}
+
+// Classification of pattern match types
+enum MatchType {
+  // Default value, should not be used
+  MATCH_TYPE_UNSPECIFIED = 0;
+  
+  // True positive: correctly identified pattern
+  MATCH_TYPE_TRUE_POSITIVE = 1;
+  
+  // False positive: incorrectly identified pattern
+  MATCH_TYPE_FALSE_POSITIVE = 2;
+  
+  // Potential match requiring manual verification
+  MATCH_TYPE_POTENTIAL = 3;
+}
+
+// Status of pattern evaluation
+enum EvaluationStatus {
+  // Default value, should not be used
+  EVALUATION_STATUS_UNSPECIFIED = 0;
+  
+  // Evaluation completed successfully
+  EVALUATION_STATUS_SUCCESS = 1;
+  
+  // Evaluation completed with warnings
+  EVALUATION_STATUS_WARNING = 2;
+  
+  // Evaluation failed due to insufficient data
+  EVALUATION_STATUS_INSUFFICIENT_DATA = 3;
+  
+  // Evaluation failed due to error
+  EVALUATION_STATUS_ERROR = 4;
+  
+  // Evaluation timed out
+  EVALUATION_STATUS_TIMEOUT = 5;
+}
+
+// Overall summary of the evaluation process
+message EvaluationSummary {
+  // Total number of patterns evaluated
+  int32 patterns_evaluated = 1;
+  
+  // Number of successful evaluations
+  int32 successful_evaluations = 2;
+  
+  // Number of failed evaluations
+  int32 failed_evaluations = 3;
+  
+  // Overall precision across all patterns
+  double overall_precision = 4;
+  
+  // Overall recall across all patterns
+  double overall_recall = 5;
+  
+  // Overall F1 score across all patterns
+  double overall_f1_score = 6;
+  
+  // Total events processed across all evaluations
+  int64 total_events_processed = 7;
+  
+  // Total processing time for all evaluations
+  int64 total_processing_time_ms = 8;
+  
+  // Data coverage during evaluation period
+  double data_coverage_percent = 9;
+  
+  // Quality of evaluation dataset
+  DataQualityLevel dataset_quality = 10;
+}

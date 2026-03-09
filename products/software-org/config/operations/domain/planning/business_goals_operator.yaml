@@ -1,0 +1,280 @@
+# Business Goals Operator - Consolidated Planning Domain
+# Consolidates: business_goals, constraints, assumptions, goals_criteria_combiner, constraints_assumptions_combiner
+# Purpose: Business context definition from goals through constraints and assumptions
+
+id: business_goals_operator
+version: "1.0.0"
+domain: planning
+category: business_context
+
+description: |
+  Unified business goals operator handling complete business context:
+  - Business goal identification and documentation
+  - Success criteria definition
+  - Constraint identification and impact analysis
+  - Assumption documentation and risk assessment
+  - Goal-criteria-constraint alignment
+
+# Operator Modes
+modes:
+  define_goals:
+    description: "Identify and document business goals"
+    role: Senior Product Owner
+    inputs:
+      - name: product_context
+        description: Product idea and domain context
+        required: true
+      - name: milestone_plan
+        description: Project milestones and timeline
+        required: false
+    outputs:
+      - name: business_goals
+        description: Structured business goals with success criteria
+        format: yaml_list
+        schema:
+          - id: string
+          - description: string
+          - category: "strategic|operational|compliance|technical"
+          - measurable: boolean
+          - success_indicator: string
+          - target_value: string
+          - target_date: date
+          - mapped_milestone: string
+          - priority: "critical|high|medium|low"
+          - owner: string
+    tasks:
+      - Identify business goals from product context
+      - Ensure each goal is measurable (SMART criteria)
+      - Map goals to milestones
+      - Include security, compliance, and cloud-readiness goals
+      - Flag conflicts and ambiguities
+    goal_categories:
+      strategic: "Long-term business value, market position"
+      operational: "Efficiency, cost reduction, process improvement"
+      compliance: "Regulatory, security, audit requirements"
+      technical: "Platform capabilities, scalability, reliability"
+
+  define_criteria:
+    description: "Define success criteria for goals"
+    role: Product Owner
+    inputs:
+      - name: business_goals
+        description: Documented business goals
+        required: true
+    outputs:
+      - name: success_criteria
+        description: Measurable success criteria
+        format: yaml_list
+        schema:
+          - id: string
+          - goal_id: string
+          - criterion: string
+          - metric: string
+          - baseline: string
+          - target: string
+          - measurement_method: string
+          - verification_frequency: string
+    tasks:
+      - Define specific, measurable criteria for each goal
+      - Establish baselines and targets
+      - Specify measurement methods
+      - Set verification checkpoints
+      - Align with KPIs and OKRs
+
+  identify_constraints:
+    description: "Identify and document project constraints"
+    role: Project Manager
+    inputs:
+      - name: business_goals
+        description: Business goals and context
+        required: true
+      - name: non_functional_requirements
+        description: NFRs from requirements analysis
+        required: false
+    outputs:
+      - name: constraints
+        description: Project constraints with impact analysis
+        format: yaml_list
+        schema:
+          - id: string
+          - description: string
+          - type: "budget|timeline|resource|technical|regulatory|organizational"
+          - source: string
+          - impacted_goals: list
+          - impacted_requirements: list
+          - flexibility: "fixed|negotiable"
+          - risk_level: "high|medium|low"
+    constraint_types:
+      budget: "Financial limitations, cost caps"
+      timeline: "Deadlines, milestone constraints"
+      resource: "Team size, skill availability"
+      technical: "Technology stack, platform limitations"
+      regulatory: "Legal, compliance, security mandates"
+      organizational: "Policy, process, cultural constraints"
+    tasks:
+      - Extract constraints from NFRs and context
+      - Classify by type and flexibility
+      - Analyze impact on goals and requirements
+      - Assess risk level
+      - Document constraint sources
+
+  document_assumptions:
+    description: "Document and validate project assumptions"
+    role: Technical Lead
+    inputs:
+      - name: constraints
+        description: Identified constraints
+        required: true
+      - name: business_goals
+        description: Business goals
+        required: true
+    outputs:
+      - name: assumptions
+        description: Documented assumptions with validation status
+        format: yaml_list
+        schema:
+          - id: string
+          - description: string
+          - category: "technical|business|resource|external"
+          - rationale: string
+          - mapped_constraint: string
+          - mapped_goal: string
+          - risk_level: "high|medium|low"
+          - validation_status: "validated|pending|invalidated"
+          - validation_method: string
+          - owner: string
+    tasks:
+      - Identify implicit and explicit assumptions
+      - Map assumptions to constraints and goals
+      - Assess risk of each assumption
+      - Define validation methods
+      - Flag unverified high-risk assumptions
+
+  combine:
+    description: "Combine goals, constraints, and assumptions into coherent package"
+    role: Product Owner
+    inputs:
+      - name: business_goals
+        description: Business goals with criteria
+        required: true
+      - name: constraints
+        description: Project constraints
+        required: true
+      - name: assumptions
+        description: Project assumptions
+        required: true
+    outputs:
+      - name: business_context_package
+        description: Integrated business context document
+        format: yaml_package
+        schema:
+          - goals: list
+          - success_criteria: list
+          - constraints: list
+          - assumptions: list
+          - alignment_matrix: matrix
+          - risk_summary: object
+          - approval_status: object
+    tasks:
+      - Validate goal-constraint-assumption alignment
+      - Build traceability matrix
+      - Identify conflicts and gaps
+      - Generate risk summary
+      - Prepare for stakeholder approval
+
+# Internal Logic
+internal_logic:
+  perception:
+    description: "Extract business context and strategic priorities"
+    sources:
+      - strategic_documents
+      - stakeholder_input
+      - regulatory_requirements
+  model:
+    description: "Business context knowledge graph"
+    entities:
+      - goal: "{id, description, category, metric, milestone}"
+      - constraint: "{id, type, impact, flexibility}"
+      - assumption: "{id, risk, validation_status}"
+    relationships:
+      - goal_measured_by_criterion
+      - constraint_impacts_goal
+      - assumption_relates_to_constraint
+  planning:
+    strategy: |
+      1. Start with strategic goals, cascade to operational
+      2. Ensure SMART criteria for all goals
+      3. Validate assumptions before baselining
+      4. Balance constraints against goals
+  action:
+    description: "Output structured YAML artifacts"
+    validation: "Business owner and sponsor review required"
+
+# Quality Assurance
+quality:
+  templates:
+    - smart_goal_template
+    - constraint_template
+    - assumption_template
+  checklists:
+    - smart_criteria_checklist
+    - constraint_coverage_checklist
+    - assumption_validation_checklist
+  automated_checks:
+    - goal_measurability_check
+    - constraint_conflict_detection
+    - unvalidated_assumption_alert
+
+# SMART Goal Criteria (Reference)
+smart_criteria:
+  specific: "Clear, unambiguous statement of what to achieve"
+  measurable: "Quantifiable metric or indicator"
+  achievable: "Realistic given constraints"
+  relevant: "Aligned with business strategy"
+  time_bound: "Clear deadline or milestone"
+
+# Validation Rules
+validation:
+  rules:
+    - "Every goal must be measurable"
+    - "Every constraint must have impact analysis"
+    - "High-risk assumptions must have validation plan"
+    - "Goals and constraints must be aligned"
+  review_gates:
+    - product_owner_review
+    - sponsor_approval
+    - compliance_sign_off
+
+# Escalation
+escalation:
+  triggers:
+    - "Goal-constraint conflict"
+    - "Unvalidated high-risk assumption"
+    - "Missing success criteria for critical goal"
+  paths:
+    - role: Product Owner
+      for: "Goal clarification, priority conflicts"
+    - role: Project Sponsor
+      for: "Constraint negotiation"
+    - role: Compliance Lead
+      for: "Regulatory goal validation"
+
+# Dependencies
+dependencies:
+  upstream:
+    - product_vision_operator
+  downstream:
+    - stakeholder_operator
+    - requirements_operator
+
+# Metrics
+metrics:
+  - name: goal_measurability
+    description: "Percentage of goals with measurable criteria"
+    target: "100%"
+  - name: assumption_validation_rate
+    description: "Assumptions validated before baseline"
+    target: ">= 90%"
+  - name: goal_alignment_score
+    description: "Goals aligned with strategic objectives"
+    target: "100%"

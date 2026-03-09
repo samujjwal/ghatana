@@ -1,0 +1,80 @@
+name: "YAPPC FE: Storybook smoke tests"
+
+on:
+    pull_request:
+        paths:
+            - "apps/web/**"
+            - "libs/ui/**"
+            - "e2e/**"
+            - ".github/workflows/**"
+    push:
+        branches: [main]
+
+        paths: ['products/yappc/frontend/**']
+defaults:
+  run:
+    working-directory: products/yappc/frontend
+
+jobs:
+    storybook-smoke:
+        runs-on: ubuntu-latest
+        timeout-minutes: 30
+        steps:
+            - name: Checkout
+              uses: actions/checkout@v4
+
+            - name: Setup Node.js
+              uses: actions/setup-node@v4
+              with:
+                  node-version: 20
+                  cache: "pnpm"
+
+            - name: Install pnpm
+              run: npm i -g pnpm@10.28.2
+
+            - name: Install dependencies
+              run: pnpm install --frozen-lockfile
+
+            - name: Run unit tests (fast failure)
+              run: pnpm -w -C apps/web vitest --run
+
+            - name: Build Storybook (libs/ui)
+              run: pnpm -w -C libs/ui build-storybook
+
+            - name: Serve Storybook static
+              run: |
+                  npx http-server libs/ui/storybook-static -p 6006 &
+
+            - name: Wait for Storybook to be available
+              run: |
+                  for i in $(seq 1 30); do
+                    if curl -sSf http://localhost:6006 >/dev/null; then
+                      echo "Storybook is ready" && break
+                    fi
+                    echo "waiting for storybook..."; sleep 1
+                  done
+
+            - name: Install Playwright browsers
+              run: pnpm exec playwright install --with-deps
+
+            - name: Run Playwright smoke tests
+              env:
+                  STORYBOOK_PORT: 6006
+                  PLAYWRIGHT_ALWAYS_TRACE: "1"
+              run: |
+                  pnpm exec playwright test \
+                    e2e/storybook-drag.spec.ts \
+                    e2e/storybook-drag-multi.spec.ts \
+                    e2e/phase3-storybook-smoke.spec.ts \
+                    -c playwright.config.ts --project=chromium --reporter=list
+
+            - name: Upload test artifacts (always)
+              if: always()
+              uses: actions/upload-artifact@v4
+              with:
+                  name: storybook-test-results
+                  path: |
+                      test-results/**
+                      playwright-report/**
+                      **/*.zip
+                      test-results/**/*.zip

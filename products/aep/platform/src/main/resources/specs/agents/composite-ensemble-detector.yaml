@@ -1,0 +1,31 @@
+# ═══════════════════════════════════════════════════════════════════════════════
+# Composite Agent — Ensemble Fraud Detection
+# ═══════════════════════════════════════════════════════════════════════════════
+# Combines multiple sub-agents using weighted average scoring.
+# Three sub-agents contribute with configurable weights.
+
+agentId: ensemble-fraud-detector
+type: COMPOSITE
+version: "1.0.0"
+timeout: PT20S
+confidenceThreshold: 0.8
+failureMode: CIRCUIT_BREAKER
+metricsEnabled: true
+labels:
+  team: security
+  domain: fraud
+  pattern: ensemble
+
+# ─── Composite-specific ─────────────────────────────────────────────────────
+subtype: ENSEMBLE
+aggregationStrategy: WEIGHTED_AVERAGE
+subAgentIds:
+  - fraud-rule-detector
+  - anomaly-ml-scorer
+  - behavior-analyzer
+weights:
+  - 0.4
+  - 0.4
+  - 0.2
+votingField: decision
+numericField: score

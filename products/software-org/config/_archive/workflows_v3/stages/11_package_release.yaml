@@ -1,0 +1,93 @@
+# Package Release Stage - v3 Operator-Based Definition
+# Uses consolidated operators from operations/domain/release/
+name: Package Release
+description: Final release packaging and documentation
+domain: release
+
+# Operators used in this stage
+operators:
+  - ref: release/release_management_operator
+    modes: [document]
+  - ref: build/build_pipeline_operator
+    modes: [artifacts]
+
+# Cross-cutting operators
+cross_cutting:
+  - ref: cross-cutting/milestone_tracker
+    params:
+      stage: package_release
+  - ref: cross-cutting/best_practice
+    params:
+      stage: package_release
+  - ref: cross-cutting/evidence_collector
+    params:
+      stage: package_release
+  - ref: cross-cutting/audit_log
+    params:
+      stage: package_release
+
+# Workflow sequence
+workflow:
+  # Final Artifact Packaging
+  - step: package_artifacts
+    operator: build/build_pipeline_operator
+    mode: artifacts
+    inputs:
+      - name: uat_stage_milestone
+      - name: build_artifacts
+    outputs:
+      - name: release_artifacts
+
+  # Release Documentation
+  - step: release_documentation
+    operator: release/release_management_operator
+    mode: document
+    inputs:
+      - name: release_artifacts
+    outputs:
+      - name: release_documentation
+    depends_on: [package_artifacts]
+
+  # Evidence Collection
+  - step: collect_release_evidence
+    operator: cross-cutting/evidence_collector
+    params:
+      stage: package_release
+    inputs:
+      - name: release_artifacts
+      - name: release_documentation
+    outputs:
+      - name: release_evidence_package
+    depends_on: [release_documentation]
+
+  # Cross-cutting
+  - step: best_practice_check
+    operator: cross-cutting/best_practice
+    params:
+      stage: package_release
+    inputs:
+      - name: release_artifacts
+      - name: release_documentation
+    outputs:
+      - name: best_practice_report
+    depends_on: [collect_release_evidence]
+
+  - step: track_milestones
+    operator: cross-cutting/milestone_tracker
+    params:
+      stage: package_release
+    inputs:
+      - name: best_practice_report
+    outputs:
+      - name: package_release_milestone
+    depends_on: [best_practice_check]
+
+# Stage entry/exit criteria
+entry_criteria:
+  - UAT complete and approved
+  - All artifacts verified
+
+exit_criteria:
+  - Release package created
+  - Documentation complete
+  - Evidence collected

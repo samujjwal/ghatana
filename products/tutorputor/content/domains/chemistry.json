@@ -1,0 +1,1154 @@
+{
+  "domain": "Chemistry",
+  "levels": {
+    "Foundational": {
+      "concepts": [
+        {
+          "id": "chem_F_1",
+          "name": "Atoms, Elements & The Periodic Table",
+          "description": "Introduction to atoms, subatomic particles, atomic number/mass, isotopes; organization of elements via the periodic table; periodic trends such as atomic radius, electronegativity, ionization energy.",
+          "prerequisites": [],
+          "audience_tags": ["K-12","Independent_Study"],
+          "keywords": ["atom","element","periodic table","isotope","atomic structure","periodic trends"],
+          "simulation_metadata": {
+            "simulation_type": "interactive_visualization",
+            "recommended_interactivity": "low",
+            "purpose": "Visualize atoms and elements, show periodic table and how changing atomic number affects electron configuration and element properties.",
+            "estimated_time": "15 min"
+          },
+          "cross_domain_links": [],
+          "learning_object_metadata": {
+            "author": "TutorPutor Team",
+            "version": "1.0.0",
+            "status": "published",
+            "intended_end_user_role": ["student","self-learner"],
+            "context": ["self-study","classroom"],
+            "difficulty": "easy",
+            "typical_learning_time": "20 min",
+            "learning_object_type": "conceptual_explanation",
+            "creation_date": "2025-12-05",
+            "last_modified": "2025-12-05"
+          },
+          "pedagogical_metadata": {
+            "learning_objectives": [
+              "Define atom, nucleus, proton, neutron, electron, isotope.",
+              "Use the periodic table to identify elements and their atomic properties.",
+              "Explain periodic trends qualitatively (e.g. atomic radius, ionization energy)."
+            ],
+            "competencies": ["scientific literacy","visualization","conceptual reasoning"],
+            "scaffolding_level": "standalone",
+            "accessibility_notes": ""
+          }
+        },
+        {
+          "id": "chem_F_2",
+          "name": "Chemical Bonds & Molecular Structure (intro)",
+          "description": "Basic understanding of how atoms bond to form molecules — ionic and covalent bonding, simple Lewis structures, basic molecular geometry, and concept of chemical compounds.",
+          "prerequisites": ["chem_F_1"],
+          "audience_tags": ["K-12","Independent_Study"],
+          "keywords": ["chemical bond","ionic bond","covalent bond","molecule","Lewis structure","chemical compound"],
+          "simulation_metadata": {
+            "simulation_type": "interactive_visualization",
+            "recommended_interactivity": "low",
+            "purpose": "Allow user to build simple molecules from atoms; show bonding types, basic shapes (linear, bent, etc.), bonding vs non-bonding electrons, molecule formation.",
+            "estimated_time": "20 min"
+          },
+          "cross_domain_links": [],
+          "learning_object_metadata": {
+            "author": "TutorPutor Team",
+            "version": "1.0.0",
+            "status": "published",
+            "intended_end_user_role": ["student","self-learner"],
+            "context": ["self-study","classroom"],
+            "difficulty": "easy",
+            "typical_learning_time": "25 min",
+            "learning_object_type": "conceptual_explanation",
+            "creation_date": "2025-12-05",
+            "last_modified": "2025-12-05"
+          },
+          "pedagogical_metadata": {
+            "learning_objectives": [
+              "Differentiate between ionic and covalent bonding.",
+              "Construct simple Lewis structures for basic molecules.",
+              "Understand how molecular structure affects compound identity."
+            ],
+            "competencies": ["chemical reasoning","visualization","spatial reasoning"],
+            "scaffolding_level": "scaffolded",
+            "accessibility_notes": ""
+          }
+        },
+        {
+          "id": "chem_F_3",
+          "name": "States of Matter & Phases (solid, liquid, gas, phase changes)",
+          "description": "Understand different states of matter, properties of solids/liquids/gases, phase changes, and basic concepts such as melting, boiling, evaporation, condensation.",
+          "prerequisites": ["chem_F_1"],
+          "audience_tags": ["K-12","Independent_Study"],
+          "keywords": ["solid","liquid","gas","phase change","melting","boiling","evaporation","condensation","matter"],
+          "simulation_metadata": {
+            "simulation_type": "interactive_visualization",
+            "recommended_interactivity": "low",
+            "purpose": "Visualize particles in different phases and observe transitions upon heating/cooling; illustrate how molecular motion changes with state changes.",
+            "estimated_time": "15 min"
+          },
+          "cross_domain_links": [],
+          "learning_object_metadata": {
+            "author": "TutorPutor Team",
+            "version": "1.0.0",
+            "status": "published",
+            "intended_end_user_role": ["student","self-learner"],
+            "context": ["self-study","classroom"],
+            "difficulty": "easy",
+            "typical_learning_time": "20 min",
+            "learning_object_type": "conceptual_explanation",
+            "creation_date": "2025-12-05",
+            "last_modified": "2025-12-05"
+          },
+          "pedagogical_metadata": {
+            "learning_objectives": [
+              "Identify solid, liquid, gas states and their particle-level characteristics.",
+              "Describe phase changes and the process (melting, boiling, freezing, condensation, evaporation).",
+              "Understand that temperature and energy input drive phase transitions."
+            ],
+            "competencies": ["scientific reasoning","visualization","conceptual understanding"],
+            "scaffolding_level": "scaffolded",
+            "accessibility_notes": ""
+          }
+        },
+        {
+          "id": "chem_F_4",
+          "name": "Stoichiometry, Moles & Chemical Quantities",
+          "description": "Introduce the mole concept, Avogadro’s number, molar mass, mole-mass relationships; stoichiometry of simple chemical reactions — balancing equations, converting between mass, moles, and number of particles.",
+          "prerequisites": ["chem_F_1","chem_F_2"],
+          "audience_tags": ["K-12","Independent_Study"],
+          "keywords": ["mole","stoichiometry","Avogadro's number","molar mass","chemical equation","balancing equations","mass–mole conversion"],
+          "simulation_metadata": {
+            "simulation_type": "interactive_exercise",
+            "recommended_interactivity": "low",
+            "purpose": "Allow user to practice balancing simple chemical equations, compute required amounts (mass, moles) for reactants/products, and convert between quantities.",
+            "estimated_time": "20 min"
+          },
+          "cross_domain_links": [
+            {
+              "target_concept_id": "math_L0_numbers_and_quantity",
+              "relation": "uses",
+              "notes": "Basic arithmetic and proportional reasoning needed for conversions"
+            }
+          ],
+          "learning_object_metadata": {
+            "author": "TutorPutor Team",
+            "version": "1.0.0",
+            "status": "published",
+            "intended_end_user_role": ["student","self-learner"],
+            "context": ["self-study","classroom","lab homework"],
+            "difficulty": "easy",
+            "typical_learning_time": "25 min",
+            "learning_object_type": "exercise",
+            "creation_date": "2025-12-05",
+            "last_modified": "2025-12-05"
+          },
+          "pedagogical_metadata": {
+            "learning_objectives": [
+              "Understand mole concept and its use in chemistry.",
+              "Balance basic chemical equations correctly.",
+              "Compute mass and mole relationships for reactants and products."
+            ],
+            "competencies": ["quantitative reasoning","chemical calculation","numeracy"],
+            "scaffolding_level": "scaffolded",
+            "accessibility_notes": ""
+          }
+        },
+        {
+          "id": "chem_F_5",
+          "name": "Basic Chemical Reactions & Conservation of Mass",
+          "description": "Intro to chemical reactions — writing reaction equations, law of conservation of mass, reactants ↔ products, simple reaction types (synthesis, decomposition, combustion, simple displacement).",
+          "prerequisites": ["chem_F_4","chem_F_2"],
+          "audience_tags": ["K-12","Independent_Study"],
+          "keywords": ["chemical reaction","reactants","products","law of conservation","reaction types","combustion","synthesis","decomposition"],
+          "simulation_metadata": {
+            "simulation_type": "interactive_exercise",
+            "recommended_interactivity": "low",
+            "purpose": "Allow user to write reaction equations, check mass balance, simulate reactant → product conversions, and validate conservation of mass in reactions.",
+            "estimated_time": "20 min"
+          },
+          "cross_domain_links": [],
+          "learning_object_metadata": {
+            "author": "TutorPutor Team",
+            "version": "1.0.0",
+            "status": "published",
+            "intended_end_user_role": ["student","self-learner"],
+            "context": ["self-study","classroom","lab homework"],
+            "difficulty": "easy",
+            "typical_learning_time": "25 min",
+            "learning_object_type": "exercise",
+            "creation_date": "2025-12-05",
+            "last_modified": "2025-12-05"
+          },
+          "pedagogical_metadata": {
+            "learning_objectives": [
+              "Write basic chemical reaction equations correctly.",
+              "Apply conservation of mass in chemical reactions.",
+              "Classify simple reaction types (synthesis, decomposition, combustion, etc.)."
+            ],
+            "competencies": ["chemical literacy","conservation reasoning","equation writing"],
+            "scaffolding_level": "scaffolded",
+            "accessibility_notes": ""
+          }
+        },
+        {
+          "id": "chem_F_6",
+          "name": "Solutions, Solubility & Concentration (intro)",
+          "description": "Introduction to solutions: solvents vs solutes, solubility, concentration measures (molarity), dilution, concept of saturated/unsaturated solutions, basic solute/solvent interactions.",
+          "prerequisites": ["chem_F_4"],
+          "audience_tags": ["K-12","Independent_Study"],
+          "keywords": ["solution","solubility","solute","solvent","molarity","dilution","saturated solution","concentration"],
+          "simulation_metadata": {
+            "simulation_type": "interactive_exercise",
+            "recommended_interactivity": "low",
+            "purpose": "Allow user to create solutions, adjust concentration, dilute, and observe solubility limits; compute molarity and amounts of solute/solvent for given volumes.",
+            "estimated_time": "20 min"
+          },
+          "cross_domain_links": [],
+          "learning_object_metadata": {
+            "author": "TutorPutor Team",
+            "version": "1.0.0",
+            "status": "published",
+            "intended_end_user_role": ["student","self-learner"],
+            "context": ["self-study","classroom","lab homework"],
+            "difficulty": "easy",
+            "typical_learning_time": "25 min",
+            "learning_object_type": "exercise",
+            "creation_date": "2025-12-05",
+            "last_modified": "2025-12-05"
+          },
+          "pedagogical_metadata": {
+            "learning_objectives": [
+              "Define solutions, solutes, solvents, and solubility.",
+              "Compute concentrations (molarity) and perform dilution calculations.",
+              "Understand solubility limits qualitatively."
+            ],
+            "competencies": ["quantitative reasoning","chemical calculation","solution chemistry basics"],
+            "scaffolding_level": "scaffolded",
+            "accessibility_notes": ""
+          }
+        },
+        {
+          "id": "chem_F_7",
+          "name": "Acids, Bases & pH (intro)",
+          "description": "Basic concepts of acids and bases, pH, hydrogen ion concentration, neutralization, simple acid-base reactions and their effects in aqueous solutions.",
+          "prerequisites": ["chem_F_6","chem_F_5"],
+          "audience_tags": ["K-12","Independent_Study"],
+          "keywords": ["acid","base","pH","neutralization","aqueous solution","acid-base reaction","hydrogen ion concentration"],
+          "simulation_metadata": {
+            "simulation_type": "interactive_exercise",
+            "recommended_interactivity": "low",
+            "purpose": "Allow user to mix acidic and basic solutions, observe pH change, compute pH from concentration, perform neutralization reactions and observe products.",
+            "estimated_time": "20 min"
+          },
+          "cross_domain_links": [],
+          "learning_object_metadata": {
+            "author": "TutorPutor Team",
+            "version": "1.0.0",
+            "status": "published",
+            "intended_end_user_role": ["student","self-learner"],
+            "context": ["self-study","classroom","lab homework"],
+            "difficulty": "easy",
+            "typical_learning_time": "25 min",
+            "learning_object_type": "exercise",
+            "creation_date": "2025-12-05",
+            "last_modified": "2025-12-05"
+          },
+          "pedagogical_metadata": {
+            "learning_objectives": [
+              "Define acids, bases, and pH in simple terms.",
+              "Compute pH given hydrogen ion concentration (or vice versa).",
+              "Simulate neutralization reactions in aqueous solutions."
+            ],
+            "competencies": ["chemical reasoning","quantitative calculation","solution chemistry"],
+            "scaffolding_level": "scaffolded",
+            "accessibility_notes": ""
+          }
+        },
+        {
+          "id": "chem_F_8",
+          "name": "Chemical Reaction Rates & Basic Thermochemistry (qualitative)",
+          "description": "Introductory view of how reaction rates can vary, basics of exothermic and endothermic reactions, energy changes in reactions, and how energy relates to bonds and reaction types.",
+          "prerequisites": ["chem_F_1","chem_F_2","chem_F_5"],
+          "audience_tags": ["K-12","Independent_Study"],
+          "keywords": ["reaction rate","thermochemistry","exothermic","endothermic","activation energy","energy change","bonds"],
+          "simulation_metadata": {
+            "simulation_type": "interactive_visualization",
+            "recommended_interactivity": "low",
+            "purpose": "Visualize simple reactions, show energy diagrams, illustrate exothermic vs endothermic reactions, and show how breaking/forming bonds involves energy changes.",
+            "estimated_time": "25 min"
+          },
+          "cross_domain_links": [],
+          "learning_object_metadata": {
+            "author": "TutorPutor Team",
+            "version": "1.0.0",
+            "status": "published",
+            "intended_end_user_role": ["student","self-learner"],
+            "context": ["self-study","classroom","lab demonstration"],
+            "difficulty": "easy",
+            "typical_learning_time": "30 min",
+            "learning_object_type": "conceptual_explanation",
+            "creation_date": "2025-12-05",
+            "last_modified": "2025-12-05"
+          },
+          "pedagogical_metadata": {
+            "learning_objectives": [
+              "Explain qualitatively how chemical reactions involve energy changes.",
+              "Distinguish between exothermic and endothermic reactions.",
+              "Understand that reaction rates and reaction energetics influence how reactions proceed."
+            ],
+            "competencies": ["chemical reasoning","energy concepts","qualitative analysis"],
+            "scaffolding_level": "scaffolded",
+            "accessibility_notes": ""
+          }
+        }
+      ]
+    },
+    "Intermediate": {
+      "concepts": [
+        {
+          "id": "chem_I_1",
+          "name": "Chemical Equilibrium & Equilibrium Constants",
+          "description": "Understand dynamic chemical equilibrium, equilibrium constant (Kₑq), how to write equilibrium expressions, calculate equilibrium concentrations, and predict shift under changing conditions using Le Châtelier’s principle.",
+          "prerequisites": ["chem_F_4","chem_F_5"],
+          "audience_tags": ["College","Independent_Study"],
+          "keywords": ["chemical equilibrium","equilibrium constant","Le Chatelier's principle","reaction quotient","dynamic equilibrium"],
+          "simulation_metadata": {
+            "simulation_type": "interactive_exercise",
+            "recommended_interactivity": "medium",
+            "purpose": "Simulate reversible chemical reactions; allow changing concentrations, volume, temperature to observe how equilibrium shifts, compute Kₑq and reaction quotient Q, and compare before/after changes.",
+            "estimated_time": "25 min"
+          },
+          "cross_domain_links": [],
+          "learning_object_metadata": {
+            "author": "TutorPutor Team",
+            "version": "1.0.0",
+            "status": "draft",
+            "intended_end_user_role": ["student","self-learner"],
+            "context": ["self-study","classroom"],
+            "difficulty": "intermediate",
+            "typical_learning_time": "30 min",
+            "learning_object_type": "simulation + exercise",
+            "creation_date": "2025-12-05",
+            "last_modified": "2025-12-05"
+          },
+          "pedagogical_metadata": {
+            "learning_objectives": [
+              "Write equilibrium expressions and compute equilibrium constants for given reactions.",
+              "Calculate equilibrium concentrations from initial amounts and equilibrium constant.",
+              "Use Le Châtelier’s principle to predict how changes (concentration, temperature, pressure) shift equilibrium."
+            ],
+            "competencies": ["chemical reasoning","algebraic calculation","dynamic thinking"],
+            "scaffolding_level": "scaffolded",
+            "accessibility_notes": ""
+          }
+        },
+        {
+          "id": "chem_I_2",
+          "name": "Chemical Kinetics: Reaction Rates and Rate Laws",
+          "description": "Study reaction rates: how concentration, temperature, catalysts affect rate; write and determine rate laws (order of reaction), compute rate constants; understand molecularity and elementary vs overall reactions.",
+          "prerequisites": ["chem_F_4","chem_F_5"],
+          "audience_tags": ["College","Independent_Study"],
+          "keywords": ["chemical kinetics","rate law","reaction rate","activation energy","catalysis","temperature effect"],
+          "simulation_metadata": {
+            "simulation_type": "interactive_experiment_simulation",
+            "recommended_interactivity": "medium",
+            "purpose": "Allow user to simulate reaction progress under varying initial concentrations, temperature, catalysts; measure concentration vs time; fit data to derive rate law and rate constant.",
+            "estimated_time": "30 min"
+          },
+          "cross_domain_links": [],
+          "learning_object_metadata": {
+            "author": "TutorPutor Team",
+            "version": "1.0.0",
+            "status": "draft",
+            "intended_end_user_role": ["student","self-learner"],
+            "context": ["self-study","lab simulation"],
+            "difficulty": "intermediate",
+            "typical_learning_time": "35 min",
+            "learning_object_type": "simulation + exercise",
+            "creation_date": "2025-12-05",
+            "last_modified": "2025-12-05"
+          },
+          "pedagogical_metadata": {
+            "learning_objectives": [
+              "Measure how reactant/product concentrations change over time.",
+              "Derive rate law (order, rate constant) from concentration vs time data.",
+              "Understand how temperature, catalysts, and concentration affect reaction rate."
+            ],
+            "competencies": ["data analysis","chemical kinetics","quantitative reasoning","experimental design"],
+            "scaffolding_level": "scaffolded",
+            "accessibility_notes": ""
+          }
+        },
+        {
+          "id": "chem_I_3",
+          "name": "Acid–Base Equilibria & Buffer Systems (Intermediate)",
+          "description": "Extend basic acid/base introduction to include weak acids & bases, equilibrium in aqueous solution, buffer action and buffer capacity, pH / pKa / pOH relationships, titration curves and neutralization reactions.",
+          "prerequisites": ["chem_F_7","chem_I_1"],
+          "audience_tags": ["College","Independent_Study"],
+          "keywords": ["acid–base equilibrium","buffer","pH","pKa","titration","neutralization","conjugate acid-base pair"],
+          "simulation_metadata": {
+            "simulation_type": "interactive_exercise",
+            "recommended_interactivity": "medium",
+            "purpose": "Simulate mixing of weak acid/base with titrant; compute and plot pH vs volume added (titration curve), demonstrate buffer region, equivalence point, and effect of dilution/concentration.",
+            "estimated_time": "30 min"
+          },
+          "cross_domain_links": [],
+          "learning_object_metadata": {
+            "author": "TutorPutor Team",
+            "version": "1.0.0",
+            "status": "draft",
+            "intended_end_user_role": ["student","self-learner"],
+            "context": ["self-study","lab simulation"],
+            "difficulty": "intermediate",
+            "typical_learning_time": "35 min",
+            "learning_object_type": "simulation + exercise",
+            "creation_date": "2025-12-05",
+            "last_modified": "2025-12-05"
+          },
+          "pedagogical_metadata": {
+            "learning_objectives": [
+              "Compute pH of weak acid/base solutions and conjugate pairs.",
+              "Simulate and interpret titration curves and buffer regions.",
+              "Understand buffer capacity and how dilution or addition alters pH."
+            ],
+            "competencies": ["chemical equilibrium reasoning","quantitative calculation","practical chemistry","data interpretation"],
+            "scaffolding_level": "scaffolded",
+            "accessibility_notes": ""
+          }
+        },
+        {
+          "id": "chem_I_4",
+          "name": "Solubility Equilibria & Precipitation Reactions",
+          "description": "Study solubility products (Ksp), dissolution/precipitation equilibria, common-ion effect, precipitation reactions, and qualitative predictions for precipitation under various conditions.",
+          "prerequisites": ["chem_I_1","chem_F_6"],
+          "audience_tags": ["College","Independent_Study"],
+          "keywords": ["solubility","Ksp","precipitation","common-ion effect","saturated solution","equilibrium"],
+          "simulation_metadata": {
+            "simulation_type": "interactive_exercise",
+            "recommended_interactivity": "medium",
+            "purpose": "Simulate dissolution of salts in water, adjust concentrations, volume, common ions; compute ion concentrations vs Ksp; show precipitation threshold and visualize precipitation formation.",
+            "estimated_time": "25 min"
+          },
+          "cross_domain_links": [],
+          "learning_object_metadata": {
+            "author": "TutorPutor Team",
+            "version": "1.0.0",
+            "status": "draft",
+            "intended_end_user_role": ["student","self-learner"],
+            "context": ["self-study","lab simulation"],
+            "difficulty": "intermediate",
+            "typical_learning_time": "30 min",
+            "learning_object_type": "simulation + exercise",
+            "creation_date": "2025-12-05",
+            "last_modified": "2025-12-05"
+          },
+          "pedagogical_metadata": {
+            "learning_objectives": [
+              "Write dissolution/precipitation equilibria and calculate Ksp.",
+              "Predict whether precipitation occurs under given ion concentrations (common-ion, dilution effects).",
+              "Understand saturated solutions and solubility limits qualitatively and quantitatively."
+            ],
+            "competencies": ["equilibrium reasoning","quantitative chemistry","solution chemistry","prediction"],
+            "scaffolding_level": "scaffolded",
+            "accessibility_notes": ""
+          }
+        },
+        {
+          "id": "chem_I_5",
+          "name": "Thermochemistry & Introduction to Chemical Thermodynamics",
+          "description": "Quantitative study of heat, enthalpy, heat capacity, calorimetry, reaction enthalpy changes, exothermic vs endothermic reactions; introduction to concepts of Gibbs free energy, spontaneity and thermodynamic favorability.",
+          "prerequisites": ["chem_F_5","chem_F_6"],
+          "audience_tags": ["College","Independent_Study"],
+          "keywords": ["thermochemistry","enthalpy","heat capacity","calorimetry","Gibbs free energy","spontaneity","endothermic","exothermic"],
+          "simulation_metadata": {
+            "simulation_type": "interactive_lab_simulation",
+            "recommended_interactivity": "medium",
+            "purpose": "Allow user to simulate mixing or reactions with heat exchange; compute enthalpy changes, heat capacity; optionally simulate calorimetry experiments; visualize energy flow and reaction spontaneity.",
+            "estimated_time": "30 min"
+          },
+          "cross_domain_links": [],
+          "learning_object_metadata": {
+            "author": "TutorPutor Team",
+            "version": "1.0.0",
+            "status": "draft",
+            "intended_end_user_role": ["student","self-learner"],
+            "context": ["self-study","lab simulation"],
+            "difficulty": "intermediate",
+            "typical_learning_time": "35 min",
+            "learning_object_type": "simulation + conceptual module",
+            "creation_date": "2025-12-05",
+            "last_modified": "2025-12-05"
+          },
+          "pedagogical_metadata": {
+            "learning_objectives": [
+              "Compute heat change, enthalpy, and heat capacity for chemical reactions or mixing.",
+              "Use calorimetry data to determine reaction enthalpy.",
+              "Understand how enthalpy and free energy relate to reaction spontaneity and favorability."
+            ],
+            "competencies": ["thermodynamic reasoning","quantitative calculation","chemical understanding","energy concepts"],
+            "scaffolding_level": "scaffolded",
+            "accessibility_notes": ""
+          }
+        },
+        {
+          "id": "chem_I_6",
+          "name": "Redox Reactions & Electrochemistry (Introduction)",
+          "description": "Explore oxidation–reduction reactions, oxidation states, balancing redox equations, basic galvanic/voltaic cells, standard electrode potentials, cell voltage calculation, and simple electrolysis principles.",
+          "prerequisites": ["chem_I_1","chem_I_5"],
+          "audience_tags": ["College","Independent_Study"],
+          "keywords": ["redox","electrochemistry","galvanic cell","electrode potential","voltaic cell","electrolysis","oxidation state"],
+          "simulation_metadata": {
+            "simulation_type": "interactive_exercise",
+            "recommended_interactivity": "medium",
+            "purpose": "Simulate redox reactions, build a simple virtual galvanic cell, compute cell voltage based on standard potentials, simulate electrolysis by applying external voltage, visualize ion movement and electrode reactions.",
+            "estimated_time": "30 min"
+          },
+          "cross_domain_links": [],
+          "learning_object_metadata": {
+            "author": "TutorPutor Team",
+            "version": "1.0.0",
+            "status": "draft",
+            "intended_end_user_role": ["student","self-learner"],
+            "context": ["self-study","lab simulation"],
+            "difficulty": "intermediate",
+            "typical_learning_time": "35 min",
+            "learning_object_type": "simulation + exercise",
+            "creation_date": "2025-12-05",
+            "last_modified": "2025-12-05"
+          },
+          "pedagogical_metadata": {
+            "learning_objectives": [
+              "Assign oxidation states and balance redox reactions correctly.",
+              "Calculate standard cell potentials and predict spontaneity of redox reactions.",
+              "Understand electrolysis and conditions needed to drive non-spontaneous reactions."
+            ],
+            "competencies": ["electrochemistry reasoning","quantitative calculation","chemical literacy","simulation analysis"],
+            "scaffolding_level": "scaffolded",
+            "accessibility_notes": ""
+          }
+        },
+        {
+          "id": "chem_I_7",
+          "name": "Intermolecular Forces & Phase Behavior (liquids, solids, gases)",
+          "description": "Deeper exploration of intermolecular forces (dispersion, dipole–dipole, hydrogen bonding), how they influence boiling/melting points, solubility, volatility; understand colligative properties, vapor pressure, and phase diagrams qualitatively.",
+          "prerequisites": ["chem_F_2","chem_F_3"],
+          "audience_tags": ["College","Independent_Study"],
+          "keywords": ["intermolecular forces","hydrogen bonding","van der Waals","phase behavior","boiling point","melting point","vapor pressure","solubility"],
+          "simulation_metadata": {
+            "simulation_type": "interactive_visualization",
+            "recommended_interactivity": "medium",
+            "purpose": "Visualize molecules with different interaction strengths; simulate heating/cooling to observe phase changes; adjust intermolecular parameters to explore effects on melting/boiling points and solubility.",
+            "estimated_time": "25 min"
+          },
+          "cross_domain_links": [],
+          "learning_object_metadata": {
+            "author": "TutorPutor Team",
+            "version": "1.0.0",
+            "status": "draft",
+            "intended_end_user_role": ["student","self-learner"],
+            "context": ["self-study","classroom","lab simulation"],
+            "difficulty": "intermediate",
+            "typical_learning_time": "30 min",
+            "learning_object_type": "conceptual_explanation + simulation",
+            "creation_date": "2025-12-05",
+            "last_modified": "2025-12-05"
+          },
+          "pedagogical_metadata": {
+            "learning_objectives": [
+              "Describe different types of intermolecular forces.",
+              "Explain how intermolecular forces affect physical properties like boiling/melting points and solubility.",
+              "Interpret how changes in molecular interactions influence phase behavior and colligative effects."
+            ],
+            "competencies": ["chemical reasoning","molecular visualization","physical chemistry intuition","qualitative analysis"],
+            "scaffolding_level": "scaffolded",
+            "accessibility_notes": ""
+          }
+        },
+        {
+          "id": "chem_I_8",
+          "name": "Introduction to Organic Chemistry: Functional Groups & Basic Reactions",
+          "description": "Provide entry-level exposure to organic chemistry: understanding basic organic functional groups (alkanes, alkenes, alcohols, halides, simple aromatics), naming conventions, structural isomers, and simple substitution/addition reactions.",
+          "prerequisites": ["chem_F_2"],
+          "audience_tags": ["College","Independent_Study"],
+          "keywords": ["organic chemistry","functional groups","alkane","alkene","alcohol","halide","isomer","naming","addition reaction","substitution reaction"],
+          "simulation_metadata": {
+            "simulation_type": "molecule_editor + reaction_simulation",
+            "recommended_interactivity": "medium",
+            "purpose": "Allow user to build small organic molecules, identify functional groups, convert between representations (structural, skeletal), simulate simple reactions (e.g. substitution, addition), and visualize structural changes.",
+            "estimated_time": "30 min"
+          },
+          "cross_domain_links": [],
+          "learning_object_metadata": {
+            "author": "TutorPutor Team",
+            "version": "1.0.0",
+            "status": "draft",
+            "intended_end_user_role": ["student","self-learner"],
+            "context": ["self-study","lab simulation"],
+            "difficulty": "intermediate",
+            "typical_learning_time": "35 min",
+            "learning_object_type": "simulation + conceptual module",
+            "creation_date": "2025-12-05",
+            "last_modified": "2025-12-05"
+          },
+          "pedagogical_metadata": {
+            "learning_objectives": [
+              "Recognize and name common organic functional groups.",
+              "Represent molecules in different structural formats (Lewis, skeletal).",
+              "Simulate and predict outcomes of simple organic reactions (substitution / addition)."
+            ],
+            "competencies": ["chemical literacy","structural reasoning","organic reaction understanding","molecular modeling"],
+            "scaffolding_level": "scaffolded",
+            "accessibility_notes": ""
+          }
+        }
+      ]
+    },
+    "Advanced": {
+      "concepts": [
+        {
+          "id": "chem_A_1",
+          "name": "Molecular Orbital Theory & Chemical Bonding (MO / VB / Crystal-Field / Ligand-Field)",
+          "description": "Deep study of bonding beyond simple Lewis structures — molecular orbital theory (MOT), valence bond (VB) theory, crystal-field and ligand-field theory for transition metal complexes; electronic configuration, bonding, anti-bonding orbitals, bond order, paramagnetism vs diamagnetism, effect of ligand fields on spectral properties.",
+          "prerequisites": ["chem_I_8","chem_I_6"],
+          "audience_tags": ["University_Advanced","Independent_Study","Research"],
+          "keywords": ["molecular orbital theory","valence bond theory","ligand field","crystal field","bond order","paramagnetism","inorganic chemistry","transition metal complexes"],
+          "simulation_metadata": {
+            "simulation_type": "quantum_chemistry_visualization + interactive_molecule_editor",
+            "recommended_interactivity": "medium",
+            "purpose": "Allow user to build small molecules or transition-metal complexes; compute and visualize molecular orbitals, energy levels, electron occupancy; predict magnetic properties, bond orders, relative stabilities; optionally show ligand-field splitting diagrams.",
+            "estimated_time": "45 min"
+          },
+          "cross_domain_links": [],
+          "learning_object_metadata": {
+            "author": "TutorPutor Team",
+            "version": "1.0.0",
+            "status": "draft",
+            "intended_end_user_role": ["student","advanced student","researcher"],
+            "context": ["self-study","advanced coursework","research prep"],
+            "difficulty": "hard",
+            "typical_learning_time": "1 hr",
+            "learning_object_type": "simulation + conceptual module",
+            "creation_date": "2025-12-05",
+            "last_modified": "2025-12-05"
+          },
+          "pedagogical_metadata": {
+            "learning_objectives": [
+              "Explain molecular orbital formation from atomic orbitals; distinguish bonding, non-bonding, anti-bonding orbitals.",
+              "Compute bond order, predict magnetic properties (paramagnetism vs diamagnetism) from MO occupancy.",
+              "Apply ligand-field / crystal-field theory to transition metal complexes to predict splitting, stability, and spectroscopic features."
+            ],
+            "competencies": ["quantum chemical reasoning","inorganic chemistry","molecular orbital theory","prediction & interpretation"],
+            "scaffolding_level": "scaffolded",
+            "accessibility_notes": ""
+          }
+        },
+        {
+          "id": "chem_A_2",
+          "name": "Spectroscopy & Molecular Spectroscopy (IR, UV-Vis, NMR, Mass Spec fundamentals)",
+          "description": "Study of how molecules interact with electromagnetic radiation: basics of infrared (vibrational), UV-visible (electronic), NMR (nuclear magnetic), mass spectrometry; transitions, selection rules, interpretation of spectra, structure determination, qualitative and quantitative analysis.",
+          "prerequisites": ["chem_A_1","chem_I_6","chem_I_1"],
+          "audience_tags": ["University_Advanced","Research","Independent_Study"],
+          "keywords": ["spectroscopy","IR","UV-Vis","NMR","mass spectrometry","molecular structure","spectral interpretation","analytical chemistry"],
+          "simulation_metadata": {
+            "simulation_type": "spectroscopy_simulator + molecule_editor",
+            "recommended_interactivity": "medium",
+            "purpose": "Allow user to input or draw molecular structures; simulate predicted IR, UV-Vis, basic NMR (chemical shift patterns), mass spectrum fragments; compare with experimental-like spectra; use to deduce structural features.",
+            "estimated_time": "1 hr"
+          },
+          "cross_domain_links": [],
+          "learning_object_metadata": {
+            "author": "TutorPutor Team",
+            "version": "1.0.0",
+            "status": "draft",
+            "intended_end_user_role": ["student","researcher","advanced student"],
+            "context": ["lab coursework","self-study","analytical study"],
+            "difficulty": "hard",
+            "typical_learning_time": "1–1.5 hr",
+            "learning_object_type": "simulation + conceptual module",
+            "creation_date": "2025-12-05",
+            "last_modified": "2025-12-05"
+          },
+          "pedagogical_metadata": {
+            "learning_objectives": [
+              "Understand principles of different spectroscopic methods and when each applies.",
+              "Predict and interpret spectra for given molecular structures.",
+              "Use spectral data to deduce structural and functional group information in molecules."
+            ],
+            "competencies": ["analytical chemistry","spectral analysis","structural reasoning","instrumental understanding"],
+            "scaffolding_level": "scaffolded",
+            "accessibility_notes": ""
+          }
+        },
+        {
+          "id": "chem_A_3",
+          "name": "Chemical Thermodynamics & Statistical Thermodynamics",
+          "description": "Deep dive into thermodynamics: enthalpy, entropy, Gibbs free energy, chemical potential; non-ideal solutions, phase equilibria, colligative properties, spontaneity, phase diagrams, and statistical view of thermodynamics (relation to microstates, partition functions, entropy from statistical ensembles).",
+          "prerequisites": ["chem_I_5","chem_I_1"],
+          "audience_tags": ["University_Advanced","Independent_Study","Research"],
+          "keywords": ["thermodynamics","entropy","Gibbs free energy","phase equilibrium","statistical thermodynamics","chemical potential","phase diagrams","ensemble theory"],
+          "simulation_metadata": {
+            "simulation_type": "system_dynamics + statistical_simulator",
+            "recommended_interactivity": "medium",
+            "purpose": "Simulate chemical and phase equilibria, compute thermodynamic variables (G, H, S), generate phase diagrams under varying conditions (temperature, pressure, composition), optionally simulate statistical ensembles to illustrate entropy/micro-state link.",
+            "estimated_time": "1 hr"
+          },
+          "cross_domain_links": [],
+          "learning_object_metadata": {
+            "author": "TutorPutor Team",
+            "version": "1.0.0",
+            "status": "draft",
+            "intended_end_user_role": ["student","advanced student","researcher"],
+            "context": ["self-study","physical chemistry coursework","research prep"],
+            "difficulty": "hard",
+            "typical_learning_time": "1–1.5 hr",
+            "learning_object_type": "simulation + conceptual module",
+            "creation_date": "2025-12-05",
+            "last_modified": "2025-12-05"
+          },
+          "pedagogical_metadata": {
+            "learning_objectives": [
+              "Compute thermodynamic potentials and use them to predict spontaneity and equilibrium.",
+              "Understand entropy from both macroscopic and microscopic (statistical) perspectives.",
+              "Generate and interpret phase diagrams; understand phase equilibria and non-ideal behavior."
+            ],
+            "competencies": ["thermodynamic reasoning","statistical thinking","physical chemistry","phase behavior analysis"],
+            "scaffolding_level": "scaffolded",
+            "accessibility_notes": ""
+          }
+        },
+        {
+          "id": "chem_A_4",
+          "name": "Chemical Kinetics & Reaction Mechanisms (advanced)",
+          "description": "Beyond basic rate laws: study reaction mechanisms, rate-determining steps, reaction intermediates, activation energy, collision theory, transition state theory, catalysis (homogeneous, heterogeneous), enzyme-like catalysis, advanced kinetics models.",
+          "prerequisites": ["chem_I_2","chem_A_3"],
+          "audience_tags": ["University_Advanced","Research","Independent_Study"],
+          "keywords": ["reaction mechanism","transition state theory","activation energy","catalysis","chemical kinetics","rate determining step","intermediate","energy barrier"],
+          "simulation_metadata": {
+            "simulation_type": "kinetics_simulator + reaction_pathway_visualization",
+            "recommended_interactivity": "medium",
+            "purpose": "Allow user to model multi-step reactions, define intermediates and energy profile (activation energies), simulate concentration vs time for reactants/intermediates/products, vary temperature/catalyst, and observe kinetics effects and reaction pathways.",
+            "estimated_time": "1 hr"
+          },
+          "cross_domain_links": [],
+          "learning_object_metadata": {
+            "author": "TutorPutor Team",
+            "version": "1.0.0",
+            "status": "draft",
+            "intended_end_user_role": ["student","advanced student","researcher"],
+            "context": ["self-study","physical chemistry","research prep"],
+            "difficulty": "hard",
+            "typical_learning_time": "1 hr",
+            "learning_object_type": "simulation + conceptual module",
+            "creation_date": "2025-12-05",
+            "last_modified": "2025-12-05"
+          },
+          "pedagogical_metadata": {
+            "learning_objectives": [
+              "Describe reaction mechanisms, identify rate-determining step and intermediates.",
+              "Use transition-state theory to relate activation energy to reaction rate.",
+              "Model kinetics of multi-step reactions; analyze concentration vs time behavior under varying conditions (temperature, catalysts)."
+            ],
+            "competencies": ["kinetic reasoning","reaction mechanism understanding","data analysis","chemical modeling"],
+            "scaffolding_level": "scaffolded",
+            "accessibility_notes": ""
+          }
+        },
+        {
+          "id": "chem_A_5",
+          "name": "Coordination Chemistry & Inorganic Complexes",
+          "description": "Study of coordination compounds: ligand types, coordination numbers, geometry, crystal field / ligand field theory, electronic configurations, color, magnetic behavior, coordination stability, ligand substitution dynamics, stereochemistry, basic organometallic introduction.",
+          "prerequisites": ["chem_A_1","chem_I_4"],
+          "audience_tags": ["University_Advanced","Research","Independent_Study"],
+          "keywords": ["coordination chemistry","ligand","complex ion","crystal field","inorganic chemistry","transition metal complex","stereochemistry","organometallic"],
+          "simulation_metadata": {
+            "simulation_type": "molecule_editor + complex_builder + visualization",
+            "recommended_interactivity": "medium",
+            "purpose": "Allow user to build coordination complexes, choose ligands, visualize geometry, electronic configuration, predict color/magnetism via ligand-field splitting, simulate ligand substitution reactions, explore stability under different conditions.",
+            "estimated_time": "1 hr"
+          },
+          "cross_domain_links": [],
+          "learning_object_metadata": {
+            "author": "TutorPutor Team",
+            "version": "1.0.0",
+            "status": "draft",
+            "intended_end_user_role": ["student","advanced student","researcher"],
+            "context": ["self-study","inorganic chemistry lab coursework","research prep"],
+            "difficulty": "hard",
+            "typical_learning_time": "1–1.5 hr",
+            "learning_object_type": "simulation + conceptual module",
+            "creation_date": "2025-12-05",
+            "last_modified": "2025-12-05"
+          },
+          "pedagogical_metadata": {
+            "learning_objectives": [
+              "Construct coordination complexes with varying ligands and coordination numbers/geometries.",
+              "Apply ligand-field or crystal-field theory to predict electronic configuration, magnetism and color.",
+              "Understand ligand substitution dynamics and stability of complexes."
+            ],
+            "competencies": ["inorganic reasoning","molecular modeling","electronic structure understanding","chemical intuition"],
+            "scaffolding_level": "scaffolded",
+            "accessibility_notes": ""
+          }
+        },
+        {
+          "id": "chem_A_6",
+          "name": "Computational & Quantum Chemistry (ab initio, semi-empirical, DFT basics)",
+          "description": "Introduction to computational chemistry methods: approximate quantum methods (Hartree–Fock, semi-empirical, density functional theory), solving Schrödinger equation for molecules, energy minimization, geometry optimization, basic property computation, limitations and approximations; compare theory vs experiment.",
+          "prerequisites": ["chem_A_1","chem_A_2","chem_A_3"],
+          "audience_tags": ["University_Advanced","Research","Independent_Study"],
+          "keywords": ["computational chemistry","quantum chemistry","Hartree–Fock","density functional theory","geometry optimization","molecular simulation","ab initio methods","DFT"],
+          "simulation_metadata": {
+            "simulation_type": "quantum_chemistry_engine + molecule_editor + visualization",
+            "recommended_interactivity": "high",
+            "purpose": "Allow user to define molecular systems, run quantum chemistry computations (e.g. geometry optimization, energy levels, orbital visualization), compare different methods, analyze computed properties (bond lengths, energies, reactivity predictions), understand approximations and limitations.",
+            "estimated_time": "2 hr"
+          },
+          "cross_domain_links": [],
+          "learning_object_metadata": {
+            "author": "TutorPutor Team",
+            "version": "0.1.0",
+            "status": "draft",
+            "intended_end_user_role": ["student","researcher","advanced student"],
+            "context": ["self-study","research-oriented coursework","computational lab"],
+            "difficulty": "very_hard",
+            "typical_learning_time": "2–3 hr",
+            "learning_object_type": "project + simulation",
+            "creation_date": "2025-12-05",
+            "last_modified": "2025-12-05"
+          },
+          "pedagogical_metadata": {
+            "learning_objectives": [
+              "Use computational chemistry methods to model molecular structures and properties.",
+              "Perform geometry optimization and evaluate molecular energies, bond parameters, electronic structure.",
+              "Understand differences between computational methods (ab initio, semi-empirical, DFT) and their trade-offs."
+            ],
+            "competencies": ["computational modeling","quantum chemistry","numerical methods","chemical reasoning"],
+            "scaffolding_level": "scaffolded",
+            "accessibility_notes": ""
+          }
+        },
+        {
+          "id": "chem_A_7",
+          "name": "Supramolecular Chemistry, Self-Assembly, Host-Guest & Non-Covalent Interactions",
+          "description": "Study of chemistry beyond individual molecules — supramolecular interactions, self-assembly, host-guest chemistry, non-covalent interactions (hydrogen bonding, pi–pi, van der Waals, electrostatic), molecular recognition, dynamic covalent chemistry, design of molecular machines and assemblies.",
+          "prerequisites": ["chem_A_1","chem_I_7"],
+          "audience_tags": ["University_Advanced","Research","Independent_Study"],
+          "keywords": ["supramolecular chemistry","self-assembly","host-guest chemistry","non-covalent interactions","molecular recognition","dynamic covalent chemistry","molecular machines"],
+          "simulation_metadata": {
+            "simulation_type": "molecule_editor + interactive_visualization + assembly_simulator",
+            "recommended_interactivity": "high",
+            "purpose": "Allow user to build molecules/macrocycles, define non-covalent interactions, simulate assembly processes (host/guest binding, self-assembly), visualize binding/unbinding, compute energetics qualitatively, and explore design of supramolecular structures.",
+            "estimated_time": "1–1.5 hr"
+          },
+          "cross_domain_links": [],
+          "learning_object_metadata": {
+            "author": "TutorPutor Team",
+            "version": "0.1.0",
+            "status": "draft",
+            "intended_end_user_role": ["student","researcher","advanced student"],
+            "context": ["self-study","research lab","design project"],
+            "difficulty": "very_hard",
+            "typical_learning_time": "1.5 hr",
+            "learning_object_type": "project + simulation",
+            "creation_date": "2025-12-05",
+            "last_modified": "2025-12-05"
+          },
+          "pedagogical_metadata": {
+            "learning_objectives": [
+              "Understand non-covalent interactions and their role in molecular recognition and assembly.",
+              "Design simple host-guest or self-assembled molecular systems.",
+              "Simulate binding/unbinding and explore stability, specificity, and dynamics of supramolecular structures."
+            ],
+            "competencies": ["molecular design","chemical reasoning","non-covalent interaction understanding","simulation modeling"],
+            "scaffolding_level": "scaffolded",
+            "accessibility_notes": ""
+          }
+        }
+      ]
+    },
+    "Research_Independent": {
+      "concepts": [
+        {
+          "id": "chem_R_1",
+          "name": "Advanced Quantum & Computational Chemistry (ab initio, DFT, post-Hartree-Fock)",
+          "description": "Use advanced quantum-mechanical calculations (e.g. Hartree–Fock, DFT, post-Hartree-Fock) to compute molecular geometries, energies, orbitals, reaction paths, transition states; analyze accuracy, compare methods, predict molecular properties and reactivity.",
+          "prerequisites": ["chem_A_1","chem_A_3","chem_A_2"],
+          "audience_tags": ["University_Advanced","Research","Independent_Study"],
+          "keywords": ["ab initio","DFT","post-Hartree-Fock","quantum chemistry","geometry optimization","reaction path","molecular orbital","density functional theory"],
+          "simulation_metadata": {
+            "simulation_type": "quantum_chemistry_engine + molecule_editor + visualization",
+            "recommended_interactivity": "high",
+            "purpose": "Allow user to define molecular systems, run quantum-chemical calculations (geometry optimization, energy landscapes, reaction path search, transition states), visualize molecular orbitals/densities/energy profiles; compare different computational methods.",
+            "estimated_time": "2–3 hours",
+            "resources_needed": ["quantum chemistry backend / engine"]
+          },
+          "cross_domain_links": [
+            {
+              "target_concept_id": "physics_R_2",
+              "relation": "foundation_from",
+              "notes": "Quantum mechanics foundation from Physics research-level quantum mechanics"
+            },
+            {
+              "target_concept_id": "cs_R_numerical_methods_and_high_performance_computing",
+              "relation": "uses",
+              "notes": "Efficient computation, data structures, numerical solvers and HPC skills needed"
+            }
+          ],
+          "learning_object_metadata": {
+            "author": "TutorPutor Team",
+            "version": "0.1.0",
+            "status": "draft",
+            "intended_end_user_role": ["researcher","advanced student","self-learner"],
+            "context": ["research-oriented coursework","computational chemistry lab","self-study"],
+            "difficulty": "very_hard",
+            "typical_learning_time": "3 hr",
+            "learning_object_type": "project + simulation",
+            "creation_date": "2025-12-05",
+            "last_modified": "2025-12-05"
+          },
+          "pedagogical_metadata": {
+            "learning_objectives": [
+              "Perform ab initio / DFT calculations for molecules and analyze results.",
+              "Compare computational methods: accuracy, resource usage, applicability.",
+              "Predict molecular properties: geometry, energy, electronic structure.",
+              "Map reaction paths / transition states and estimate activation energies."
+            ],
+            "competencies": ["computational modeling","quantum chemical reasoning","numerical analysis","chemical intuition"],
+            "scaffolding_level": "scaffolded",
+            "accessibility_notes": ""
+          }
+        },
+        {
+          "id": "chem_R_2",
+          "name": "Computational Materials & Nanochemistry: design & simulation of nanomaterials / nanostructures / interfaces",
+          "description": "Simulate and design nanomaterials, nanostructures, surfaces, interfaces and materials — e.g. nanoparticles, metal-organic frameworks (MOFs), 2D materials — understand their electronic, structural, and chemical properties; explore catalysis, adsorption, material stability and reactivity in silico.",
+          "prerequisites": ["chem_R_1","chem_A_5","chem_A_1"],
+          "audience_tags": ["Research","Independent_Study","University_Advanced"],
+          "keywords": ["nanomaterials","metal-organic frameworks","surface chemistry","materials simulation","adsorption","catalysis","2D materials","nanochemistry"],
+          "simulation_metadata": {
+            "simulation_type": "materials_simulation_engine + molecular / periodic structure editor + visualization",
+            "recommended_interactivity": "high",
+            "purpose": "Allow user to define periodic or nanoscale structures (crystals, MOFs, surfaces, nanoparticles), run simulations (electronic structure, adsorption, reactivity), visualize structure/property relationships, test hypotheses (e.g. catalytic active sites, adsorption capacity, stability under conditions).",
+            "estimated_time": "3–4 hours",
+            "resources_needed": ["materials simulation backend / engine"]
+          },
+          "cross_domain_links": [
+            {
+              "target_concept_id": "physics_R_5",
+              "relation": "uses",
+              "notes": "Computational physics and numerical methods underpin materials simulations"
+            }
+          ],
+          "learning_object_metadata": {
+            "author": "TutorPutor Team",
+            "version": "0.1.0",
+            "status": "draft",
+            "intended_end_user_role": ["researcher","advanced student","self-learner"],
+            "context": ["research project","materials lab simulation","self-study"],
+            "difficulty": "very_hard",
+            "typical_learning_time": "4 hr",
+            "learning_object_type": "project + simulation",
+            "creation_date": "2025-12-05",
+            "last_modified": "2025-12-05"
+          },
+          "pedagogical_metadata": {
+            "learning_objectives": [
+              "Design nanoscale / periodic chemical structures (nanoparticles, MOFs, surfaces).",
+              "Compute structural, electronic and chemical properties of materials in silico.",
+              "Evaluate stability, reactivity, adsorption/catalysis potential of materials.",
+              "Develop intuition about structure-property relationships at nanoscale."
+            ],
+            "competencies": ["materials chemistry","computational modeling","quantum/materials theory","chemical engineering thinking"],
+            "scaffolding_level": "scaffolded",
+            "accessibility_notes": ""
+          }
+        },
+        {
+          "id": "chem_R_3",
+          "name": "Catalysis & Reaction Mechanism Research (homogeneous, heterogeneous, photocatalysis, electrocatalysis)",
+          "description": "Investigate advanced catalysis mechanisms — homogeneous, heterogeneous, photocatalysis, electrocatalysis; model reaction pathways, energy profiles, kinetics, catalyst design and optimization; study catalyst-surface interactions, activation barriers, and real-world applications (e.g. energy, environment, green chemistry).",
+          "prerequisites": ["chem_R_1","chem_R_2","chem_A_4"],
+          "audience_tags": ["Research","Independent_Study","University_Advanced"],
+          "keywords": ["catalysis","heterogeneous catalysis","homogeneous catalysis","photocatalysis","electrocatalysis","reaction mechanism","reaction pathway","surface catalysis","energy conversion"],
+          "simulation_metadata": {
+            "simulation_type": "reaction_pathway_simulator + materials + surface interaction engine",
+            "recommended_interactivity": "high",
+            "purpose": "Allow user to define catalytic systems (molecules, surfaces, catalysts), simulate reaction pathways (surface or molecular), compute energy barriers, model kinetics under varying conditions (temperature, light, electrode potential), compare catalytic efficiencies, explore design improvements.",
+            "estimated_time": "4–5 hours",
+            "resources_needed": ["simulation backend for catalysis and surface chemistry"]
+          },
+          "cross_domain_links": [
+            {
+              "target_concept_id": "chem_R_2",
+              "relation": "depends_on",
+              "notes": "Catalysis research builds on materials/nanochemistry and computational chemistry foundation"
+            }
+          ],
+          "learning_object_metadata": {
+            "author": "TutorPutor Team",
+            "version": "0.1.0",
+            "status": "draft",
+            "intended_end_user_role": ["researcher","advanced student","self-learner"],
+            "context": ["research project","advanced chemistry lab simulation","self-study"],
+            "difficulty": "very_hard",
+            "typical_learning_time": "5 hr",
+            "learning_object_type": "project + simulation",
+            "creation_date": "2025-12-05",
+            "last_modified": "2025-12-05"
+          },
+          "pedagogical_metadata": {
+            "learning_objectives": [
+              "Model catalytic reaction mechanisms (homogeneous, heterogeneous, photocatalytic, electrocatalytic).",
+              "Compute activation energies, reaction energetics, kinetics under various conditions.",
+              "Design and optimize catalysts (molecular or material-based) for efficiency, selectivity, stability.",
+              "Apply catalysis knowledge to real-world challenges (energy conversion, green chemistry, sustainability)."
+            ],
+            "competencies": ["catalysis research","materials-chemistry","computational modeling","chemical engineering thinking"],
+            "scaffolding_level": "scaffolded",
+            "accessibility_notes": ""
+          }
+        },
+        {
+          "id": "chem_R_4",
+          "name": "Computational / Theoretical Spectroscopy & Reaction-Dynamics Simulations",
+          "description": "Use computational methods to simulate spectroscopic signatures (IR, Raman, UV-Vis, NMR, electronic spectra), molecular vibrations, reaction dynamics, excited-state phenomena; link theoretical predictions with experimental spectral data; simulate reaction pathways and photochemical processes.",
+          "prerequisites": ["chem_R_1","chem_A_2"],
+          "audience_tags": ["Research","Independent_Study","University_Advanced"],
+          "keywords": ["computational spectroscopy","vibrational spectroscopy","electronic spectra","reaction dynamics","photochemistry","quantum dynamics","simulation","spectral prediction"],
+          "simulation_metadata": {
+            "simulation_type": "quantum_chemistry_engine + dynamics_simulator + visualization",
+            "recommended_interactivity": "high",
+            "purpose": "Allow user to define molecular systems, compute predicted spectra, simulate vibrational modes, excited-state dynamics, reaction pathways under light or thermal activation; compare with reference or experimental-like spectra; explore photochemical or thermal reaction dynamics.",
+            "estimated_time": "3–4 hours",
+            "resources_needed": ["quantum chemistry + dynamics simulation backend"]
+          },
+          "cross_domain_links": [
+            {
+              "target_concept_id": "chem_R_1",
+              "relation": "foundation_from",
+              "notes": "Spectroscopy & quantum calculations rely on quantum chemistry foundation"
+            }
+          ],
+          "learning_object_metadata": {
+            "author": "TutorPutor Team",
+            "version": "0.1.0",
+            "status": "draft",
+            "intended_end_user_role": ["researcher","advanced student","self-learner"],
+            "context": ["computational spectroscopy lab","research project","self-study"],
+            "difficulty": "very_hard",
+            "typical_learning_time": "4 hr",
+            "learning_object_type": "project + simulation",
+            "creation_date": "2025-12-05",
+            "last_modified": "2025-12-05"
+          },
+          "pedagogical_metadata": {
+            "learning_objectives": [
+              "Predict and compute molecular spectra using theoretical methods.",
+              "Simulate molecular vibrations, electronic transitions, and reaction dynamics (thermal or photochemical).",
+              "Compare theoretical spectra with experimental data; interpret spectral features in terms of molecular structure and dynamics.",
+              "Use computational spectroscopy as a tool for structure verification, reaction monitoring, or photochemical mechanism exploration."
+            ],
+            "competencies": ["computational spectroscopy","quantum chemistry","molecular dynamics","data analysis"],
+            "scaffolding_level": "scaffolded",
+            "accessibility_notes": ""
+          }
+        },
+        {
+          "id": "chem_R_5",
+          "name": "Environmental & Green Chemistry Research (pollutants, sustainable materials, green processes)",
+          "description": "Research on chemical processes related to environment: pollutant degradation, green synthesis, sustainable materials, environmental impact of chemicals, waste treatment, green energy materials (e.g. catalysts for CO₂ reduction, water-splitting, battery materials), life-cycle analysis, safety & sustainability.",
+          "prerequisites": ["chem_R_2","chem_R_3","chem_A_3"],
+          "audience_tags": ["Research","Independent_Study","University_Advanced"],
+          "keywords": ["environmental chemistry","green chemistry","pollutant degradation","sustainable materials","catalysis","battery materials","CO2 reduction","water splitting","life-cycle analysis","chemical safety"],
+          "simulation_metadata": {
+            "simulation_type": "materials_simulation + reaction_simulation + system_dynamics",
+            "recommended_interactivity": "high",
+            "purpose": "Allow user to design or simulate sustainable materials, catalytic processes for pollutant degradation or energy conversion, model chemical reaction networks in environment or industrial processes, perform life-cycle simulations, estimate environmental impact and sustainability metrics.",
+            "estimated_time": "4–5 hours",
+            "resources_needed": ["simulation backend for materials/reactions/environment modelling"]
+          },
+          "cross_domain_links": [
+            {
+              "target_concept_id": "biology_R_ecosystem_impact",
+              "relation": "related_to",
+              "notes": "Environmental chemistry often intersects with ecological and biological systems"
+            }
+          ],
+          "learning_object_metadata": {
+            "author": "TutorPutor Team",
+            "version": "0.1.0",
+            "status": "draft",
+            "intended_end_user_role": ["researcher","advanced student","self-learner"],
+            "context": ["sustainability research","materials research","environmental study"],
+            "difficulty": "very_hard",
+            "typical_learning_time": "5 hr",
+            "learning_object_type": "project + simulation",
+            "creation_date": "2025-12-05",
+            "last_modified": "2025-12-05"
+          },
+          "pedagogical_metadata": {
+            "learning_objectives": [
+              "Design green chemistry or sustainable materials/processes addressing environmental challenges.",
+              "Simulate pollutant degradation, energy-conversion catalysis, or waste treatment processes.",
+              "Assess environmental impact, stability, and sustainability via simulation and life-cycle modelling.",
+              "Integrate chemistry with environmental and systems thinking for real-world applications."
+            ],
+            "competencies": ["environmental chemistry","materials science","systems modelling","sustainability reasoning"],
+            "scaffolding_level": "scaffolded",
+            "accessibility_notes": ""
+          }
+        },
+        {
+          "id": "chem_R_6",
+          "name": "Biochemical & Medicinal Chemistry Simulations (drug design, biomolecular interactions, metabolic pathways)",
+          "description": "Use computational chemistry and molecular modelling to simulate interactions between small molecules and biomolecules (proteins, nucleic acids), predict binding affinities, model metabolic transformations, simulate reaction pathways in biological context, support drug discovery or biochemical research.",
+          "prerequisites": ["chem_R_1","biology_I_2","chem_A_2"],
+          "audience_tags": ["Research","Independent_Study","University_Advanced"],
+          "keywords": ["medicinal chemistry","drug design","molecular docking","biomolecular interaction","metabolic pathway simulation","computational pharmacology","ligand binding","protein-ligand interaction"],
+          "simulation_metadata": {
+            "simulation_type": "molecular_docking_engine + molecular_dynamics + reaction_simulation",
+            "recommended_interactivity": "high",
+            "purpose": "Allow user to define small-molecule ligands and biomolecular targets (e.g. proteins, nucleic acids), simulate docking / binding, compute interaction energies, simulate metabolic transformations, investigate reactivity and binding stability; optionally model small-molecule metabolism or enzymatic transformations.",
+            "estimated_time": "4–6 hours",
+            "resources_needed": ["docking/molecular dynamics backend"]
+          },
+          "cross_domain_links": [
+            {
+              "target_concept_id": "biology_R_molecular_biology_research_methods",
+              "relation": "intersects",
+              "notes": "Overlap with biology and pharmacology; simulating biochemical interactions and metabolism"
+            }
+          ],
+          "learning_object_metadata": {
+            "author": "TutorPutor Team",
+            "version": "0.1.0",
+            "status": "draft",
+            "intended_end_user_role": ["researcher","graduate student","self-learner"],
+            "context": ["medicinal research","computational biochemistry lab","self-study"],
+            "difficulty": "very_hard",
+            "typical_learning_time": "5–6 hr",
+            "learning_object_type": "project + simulation",
+            "creation_date": "2025-12-05",
+            "last_modified": "2025-12-05"
+          },
+          "pedagogical_metadata": {
+            "learning_objectives": [
+              "Model small-molecule interactions with biomolecular targets via docking / dynamics.",
+              "Predict binding affinity and binding stability; understand factors affecting binding.",
+              "Simulate metabolic transformations or enzymatic reactions for small molecules.",
+              "Relate molecular design to biological activity and biochemical context."
+            ],
+            "competencies": ["medicinal chemistry","computational biology","molecular modelling","chemical-biological reasoning"],
+            "scaffolding_level": "scaffolded",
+            "accessibility_notes": ""
+          }
+        }
+      ]
+    }
+  }
+}
+

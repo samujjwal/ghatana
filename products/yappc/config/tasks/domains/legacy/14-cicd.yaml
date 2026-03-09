@@ -1,0 +1,274 @@
+# CI/CD & DevOps Tasks
+# Domain 14 of 22 - Developer Task Universe
+# Reference: developer-tasks.md Part I, Section 14
+
+domain:
+  id: cicd
+  name: "CI/CD & DevOps"
+  description: "Tasks related to continuous integration, deployment, and operations"
+  order: 14
+  icon: "autorenew"
+  color: "#00897B"
+  lifecycle_stages:
+    - execute
+    - verify
+
+tasks:
+  - id: cicd-001
+    name: "Configure CI Pipeline"
+    description: "Set up continuous integration pipeline"
+    personas:
+      - DevOps
+      - Developer
+    lifecycle_stages:
+      - execute
+    automation_level: assisted
+    required_capabilities:
+      - ci-configuration
+      - automation
+    input_schema: cicd-001-input
+    output_schema: cicd-001-output
+    audit_artifacts:
+      - InputSnapshot
+      - OutputSnapshot
+      - ChangeSet
+    ui:
+      icon: "settings_suggest"
+      color: "#00897B"
+      tags:
+        - ci
+        - pipeline
+        - configuration
+
+  - id: cicd-002
+    name: "Configure CD Pipeline"
+    description: "Set up continuous deployment pipeline"
+    personas:
+      - DevOps
+    lifecycle_stages:
+      - execute
+    automation_level: assisted
+    required_capabilities:
+      - cd-configuration
+      - automation
+    input_schema: cicd-002-input
+    output_schema: cicd-002-output
+    audit_artifacts:
+      - InputSnapshot
+      - OutputSnapshot
+      - ChangeSet
+    ui:
+      icon: "rocket_launch"
+      color: "#00897B"
+      tags:
+        - cd
+        - deployment
+        - pipeline
+
+  - id: cicd-003
+    name: "Write Build Scripts"
+    description: "Create scripts for building applications"
+    personas:
+      - Developer
+      - DevOps
+    lifecycle_stages:
+      - execute
+    automation_level: assisted
+    required_capabilities:
+      - scripting
+      - build-systems
+    input_schema: cicd-003-input
+    output_schema: cicd-003-output
+    audit_artifacts:
+      - InputSnapshot
+      - OutputSnapshot
+      - ChangeSet
+    ui:
+      icon: "build"
+      color: "#00897B"
+      tags:
+        - build
+        - scripts
+        - automation
+
+  - id: cicd-004
+    name: "Manage Releases"
+    description: "Coordinate and manage software releases"
+    personas:
+      - DevOps
+      - Tech Lead
+    lifecycle_stages:
+      - execute
+    automation_level: assisted
+    required_capabilities:
+      - release-management
+      - coordination
+    input_schema: cicd-004-input
+    output_schema: cicd-004-output
+    audit_artifacts:
+      - InputSnapshot
+      - OutputSnapshot
+      - ReleaseRecord
+    ui:
+      icon: "new_releases"
+      color: "#00897B"
+      tags:
+        - releases
+        - versioning
+        - deployment
+
+  - id: cicd-005
+    name: "Deploy to Environments"
+    description: "Deploy applications to various environments"
+    personas:
+      - DevOps
+      - Developer
+    lifecycle_stages:
+      - execute
+    automation_level: automated
+    required_capabilities:
+      - deployment
+      - infrastructure
+    input_schema: cicd-005-input
+    output_schema: cicd-005-output
+    audit_artifacts:
+      - InputSnapshot
+      - OutputSnapshot
+      - DeploymentRecord
+    ui:
+      icon: "cloud_upload"
+      color: "#00897B"
+      tags:
+        - deployment
+        - environments
+        - release
+
+  - id: cicd-006
+    name: "Manage Infrastructure"
+    description: "Provision and manage infrastructure resources"
+    personas:
+      - DevOps
+    lifecycle_stages:
+      - execute
+    automation_level: assisted
+    required_capabilities:
+      - infrastructure
+      - iac
+    input_schema: cicd-006-input
+    output_schema: cicd-006-output
+    audit_artifacts:
+      - InputSnapshot
+      - OutputSnapshot
+      - ChangeSet
+      - InfrastructureRecord
+    ui:
+      icon: "dns"
+      color: "#00897B"
+      tags:
+        - infrastructure
+        - iac
+        - provisioning
+
+  - id: cicd-007
+    name: "Configure Containerization"
+    description: "Create and manage container configurations"
+    personas:
+      - DevOps
+      - Developer
+    lifecycle_stages:
+      - execute
+    automation_level: assisted
+    required_capabilities:
+      - containers
+      - docker
+    input_schema: cicd-007-input
+    output_schema: cicd-007-output
+    audit_artifacts:
+      - InputSnapshot
+      - OutputSnapshot
+      - ChangeSet
+    ui:
+      icon: "widgets"
+      color: "#00897B"
+      tags:
+        - containers
+        - docker
+        - kubernetes
+
+  - id: cicd-008
+    name: "Manage Rollbacks"
+    description: "Execute rollback procedures when needed"
+    personas:
+      - DevOps
+    lifecycle_stages:
+      - execute
+    automation_level: assisted
+    required_capabilities:
+      - deployment
+      - incident-response
+    input_schema: cicd-008-input
+    output_schema: cicd-008-output
+    audit_artifacts:
+      - InputSnapshot
+      - OutputSnapshot
+      - DeploymentRecord
+      - IncidentRecord
+    ui:
+      icon: "undo"
+      color: "#00897B"
+      tags:
+        - rollback
+        - recovery
+        - deployment
+
+  - id: cicd-009
+    name: "Optimize Build Performance"
+    description: "Improve CI/CD pipeline performance"
+    personas:
+      - DevOps
+    lifecycle_stages:
+      - verify
+    automation_level: assisted
+    required_capabilities:
+      - ci-optimization
+      - performance-analysis
+    input_schema: cicd-009-input
+    output_schema: cicd-009-output
+    audit_artifacts:
+      - InputSnapshot
+      - OutputSnapshot
+      - ChangeSet
+      - PerformanceReport
+    ui:
+      icon: "speed"
+      color: "#00897B"
+      tags:
+        - optimization
+        - performance
+        - ci
+
+  - id: cicd-010
+    name: "Configure Feature Flags"
+    description: "Set up and manage feature flag infrastructure"
+    personas:
+      - Developer
+      - DevOps
+    lifecycle_stages:
+      - execute
+    automation_level: assisted
+    required_capabilities:
+      - feature-flags
+      - configuration
+    input_schema: cicd-010-input
+    output_schema: cicd-010-output
+    audit_artifacts:
+      - InputSnapshot
+      - OutputSnapshot
+      - ChangeSet
+    ui:
+      icon: "flag"
+      color: "#00897B"
+      tags:
+        - feature-flags
+        - toggles
+        - deployment

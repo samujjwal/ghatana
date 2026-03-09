@@ -1,0 +1,42 @@
+id: design_lint
+agent: DesignLintAgent
+role: Design Lint Automation Tool
+inputs_spec:
+  - name: design_artifacts
+    description: All current design artifacts and documents.
+    format: YAML array
+outputs_spec:
+  - name: lint_report
+    description: List of lint errors, warnings, fixes, and artifact mappings.
+    format: YAML object
+acceptance_criteria:
+  - All artifacts scanned for compliance to design standards/templates.
+  - All errors/warnings mapped to artifacts/owners.
+  - Remediation and retest status logged.
+agent_tasks:
+  - Auto-scan design artifacts for formatting, completeness, anti-patterns.
+  - Assign errors/warnings to responsible owners.
+  - Track fixes and retests, escalate critical issues.
+dependencies:
+  - design_artifacts
+failure_escalation:
+  - Escalate critical/unresolved errors to design lead/QA.
+references: []
+internal_logic:
+  - perception:
+      description: "Automatically scan all design artifacts for formatting errors, incomplete sections, or non-compliance with organization’s design standards."
+  - model:
+      description: "Maintain a lint error/warning register, mapping findings to affected artifacts and team members."
+  - planning:
+      description: |
+        "For each lint finding, generate a remediation recommendation and assign to responsible owner.
+         Flag critical errors for immediate review and escalation."
+  - action:
+      description: "Produce and distribute lint report, track status of fixes and retests."
+validation:
+  - "Automated lint tool run on every artifact and update."
+  - "QA or peer review for unresolved or repeated errors."
+quality_enhancements:
+  - "Lint rule template library for consistent enforcement."
+  - "Metrics for error/warning reduction and time-to-fix."
+  - "Automated reminders for unresolved lint items."

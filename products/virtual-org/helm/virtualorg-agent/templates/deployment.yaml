@@ -1,0 +1,155 @@
+{{- range $role, $config := .Values.agents }}
+{{- if $config.enabled }}
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ include "virtualorg-agent.fullname" $ }}-{{ $role | kebabcase }}
+  namespace: {{ .Values.global.namespace }}
+  labels:
+    {{- include "virtualorg-agent.labels" $ | nindent 4 }}
+    role: {{ $role | kebabcase }}
+spec:
+  {{- if not $config.autoscaling.enabled }}
+  replicas: {{ $config.replicaCount }}
+  {{- end }}
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxSurge: 1
+      maxUnavailable: 0
+  selector:
+    matchLabels:
+      {{- include "virtualorg-agent.selectorLabels" $ | nindent 6 }}
+      role: {{ $role | kebabcase }}
+  template:
+    metadata:
+      annotations:
+        checksum/config: {{ include (print $.Template.BasePath "/configmap.yaml") $ | sha256sum }}
+        checksum/secret: {{ include (print $.Template.BasePath "/secret.yaml") $ | sha256sum }}
+        {{- with $.Values.podAnnotations }}
+        {{- toYaml . | nindent 8 }}
+        {{- end }}
+      labels:
+        {{- include "virtualorg-agent.selectorLabels" $ | nindent 8 }}
+        role: {{ $role | kebabcase }}
+        {{- with $.Values.podLabels }}
+        {{- toYaml . | nindent 8 }}
+        {{- end }}
+    spec:
+      {{- with $.Values.imagePullSecrets }}
+      imagePullSecrets:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      serviceAccountName: {{ include "virtualorg-agent.serviceAccountName" $ }}
+      securityContext:
+        {{- toYaml $.Values.podSecurityContext | nindent 8 }}
+
+      {{- if $.Values.initContainers.waitForPostgres.enabled }}
+      initContainers:
+        - name: wait-for-postgres
+          image: {{ $.Values.initContainers.waitForPostgres.image }}
+          command: ['sh', '-c', 'until nc -z {{ $.Values.config.database.url | regexFind "//([^:]+):" | trimPrefix "//" | trimSuffix ":" }} 5432; do echo waiting for postgres; sleep 2; done;']
+        {{- if $.Values.initContainers.waitForRedis.enabled }}
+        - name: wait-for-redis
+          image: {{ $.Values.initContainers.waitForRedis.image }}
+          command: ['sh', '-c', 'until nc -z {{ $.Values.config.redis.host }} {{ $.Values.config.redis.port }}; do echo waiting for redis; sleep 2; done;']
+        {{- end }}
+      {{- end }}
+
+      containers:
+        - name: agent
+          securityContext:
+            {{- toYaml $.Values.securityContext | nindent 12 }}
+          image: "{{ $.Values.image.repository }}:{{ $.Values.image.tag | default $.Chart.AppVersion }}"
+          imagePullPolicy: {{ $.Values.image.pullPolicy }}
+
+          ports:
+            - name: http
+              containerPort: {{ $.Values.config.server.port }}
+              protocol: TCP
+            - name: metrics
+              containerPort: {{ $.Values.service.metricsPort }}
+              protocol: TCP
+
+          env:
+            - name: AGENT_ROLE
+              value: {{ $config.role | quote }}
+            - name: AGENT_ID
+              valueFrom:
+                fieldRef:
+                  fieldPath: metadata.name
+            - name: POD_NAME
+              valueFrom:
+                fieldRef:
+                  fieldPath: metadata.name
+            - name: POD_NAMESPACE
+              valueFrom:
+                fieldRef:
+                  fieldPath: metadata.namespace
+            - name: POD_IP
+              valueFrom:
+                fieldRef:
+                  fieldPath: status.podIP
+            - name: NODE_NAME
+              valueFrom:
+                fieldRef:
+                  fieldPath: spec.nodeName
+
+          envFrom:
+            - configMapRef:
+                name: {{ include "virtualorg-agent.fullname" $ }}-config
+            - secretRef:
+                name: {{ include "virtualorg-agent.fullname" $ }}-secrets
+
+          resources:
+            {{- toYaml $config.resources | nindent 12 }}
+
+          livenessProbe:
+            {{- toYaml $.Values.livenessProbe | nindent 12 }}
+
+          readinessProbe:
+            {{- toYaml $.Values.readinessProbe | nindent 12 }}
+
+          volumeMounts:
+            - name: workspace
+              mountPath: /workspace
+            - name: config
+              mountPath: /app/config
+              readOnly: true
+            - name: logs
+              mountPath: /app/logs
+
+      volumes:
+        - name: workspace
+          {{- if $.Values.persistence.workspace.enabled }}
+          emptyDir:
+            sizeLimit: {{ $.Values.persistence.workspace.size }}
+          {{- else }}
+          emptyDir: {}
+          {{- end }}
+        - name: config
+          configMap:
+            name: {{ include "virtualorg-agent.fullname" $ }}-config
+        - name: logs
+          {{- if $.Values.persistence.logs.enabled }}
+          emptyDir:
+            sizeLimit: {{ $.Values.persistence.logs.size }}
+          {{- else }}
+          emptyDir: {}
+          {{- end }}
+
+      {{- with $.Values.nodeSelector }}
+      nodeSelector:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with $.Values.affinity }}
+      affinity:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with $.Values.tolerations }}
+      tolerations:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+{{- end }}
+{{- end }}

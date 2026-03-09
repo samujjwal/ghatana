@@ -1,0 +1,369 @@
+# Testing Tasks
+# Domain 8 of 22 - Developer Task Universe
+# Reference: developer-tasks.md Part I, Section 8
+
+domain:
+  id: testing
+  name: "Testing"
+  description: "Tasks related to creating and executing tests"
+  order: 8
+  icon: "science"
+  color: "#66BB6A"
+  lifecycle_stages:
+    - execute
+    - verify
+
+tasks:
+  # Test Creation Tasks
+  - id: test-001
+    name: "Write Unit Tests"
+    description: "Create unit tests for individual functions and components"
+    personas:
+      - Developer
+      - QA
+    lifecycle_stages:
+      - execute
+      - verify
+    automation_level: assisted
+    required_capabilities:
+      - testing
+      - code-generation
+    input_schema: test-001-input
+    output_schema: test-001-output
+    audit_artifacts:
+      - InputSnapshot
+      - OutputSnapshot
+      - ChangeSet
+      - VerificationResult
+    ui:
+      icon: "check_box"
+      color: "#66BB6A"
+      tags:
+        - unit-tests
+        - testing
+        - coverage
+
+  - id: test-002
+    name: "Write Integration Tests"
+    description: "Create tests that verify component interactions"
+    personas:
+      - Developer
+      - QA
+    lifecycle_stages:
+      - execute
+      - verify
+    automation_level: assisted
+    required_capabilities:
+      - testing
+      - code-generation
+    input_schema: test-002-input
+    output_schema: test-002-output
+    audit_artifacts:
+      - InputSnapshot
+      - OutputSnapshot
+      - ChangeSet
+      - VerificationResult
+    ui:
+      icon: "integration_instructions"
+      color: "#66BB6A"
+      tags:
+        - integration-tests
+        - testing
+        - interactions
+
+  - id: test-003
+    name: "Write API Tests"
+    description: "Create tests for API endpoints and contracts"
+    personas:
+      - Developer
+      - QA
+    lifecycle_stages:
+      - execute
+      - verify
+    automation_level: assisted
+    required_capabilities:
+      - testing
+      - api-knowledge
+    input_schema: test-003-input
+    output_schema: test-003-output
+    audit_artifacts:
+      - InputSnapshot
+      - OutputSnapshot
+      - ChangeSet
+      - VerificationResult
+    ui:
+      icon: "api"
+      color: "#66BB6A"
+      tags:
+        - api-tests
+        - testing
+        - contracts
+
+  - id: test-004
+    name: "Write UI/End-to-End Tests"
+    description: "Create automated tests that simulate user workflows"
+    personas:
+      - Developer
+      - QA
+    lifecycle_stages:
+      - execute
+      - verify
+    automation_level: assisted
+    required_capabilities:
+      - testing
+      - ui-automation
+    input_schema: test-004-input
+    output_schema: test-004-output
+    audit_artifacts:
+      - InputSnapshot
+      - OutputSnapshot
+      - ChangeSet
+      - VerificationResult
+    ui:
+      icon: "screenshot_monitor"
+      color: "#66BB6A"
+      tags:
+        - e2e-tests
+        - ui-testing
+        - automation
+
+  - id: test-005
+    name: "Write Performance Tests"
+    description: "Create tests to measure and validate performance"
+    personas:
+      - Developer
+      - DevOps
+    lifecycle_stages:
+      - verify
+    automation_level: assisted
+    required_capabilities:
+      - testing
+      - performance-analysis
+    input_schema: test-005-input
+    output_schema: test-005-output
+    audit_artifacts:
+      - InputSnapshot
+      - OutputSnapshot
+      - ChangeSet
+      - VerificationResult
+    ui:
+      icon: "speed"
+      color: "#66BB6A"
+      tags:
+        - performance-tests
+        - load-testing
+        - benchmarks
+
+  - id: test-006
+    name: "Write Security Tests"
+    description: "Create tests to verify security controls"
+    personas:
+      - Developer
+      - Security
+    lifecycle_stages:
+      - verify
+    automation_level: assisted
+    required_capabilities:
+      - testing
+      - security-analysis
+    input_schema: test-006-input
+    output_schema: test-006-output
+    audit_artifacts:
+      - InputSnapshot
+      - OutputSnapshot
+      - ChangeSet
+      - VerificationResult
+      - PolicyCheck
+    ui:
+      icon: "security"
+      color: "#66BB6A"
+      tags:
+        - security-tests
+        - vulnerability
+        - compliance
+
+  - id: test-007
+    name: "Write Contract Tests"
+    description: "Create tests to verify API contracts between services"
+    personas:
+      - Developer
+    lifecycle_stages:
+      - verify
+    automation_level: assisted
+    required_capabilities:
+      - testing
+      - contract-testing
+    input_schema: test-007-input
+    output_schema: test-007-output
+    audit_artifacts:
+      - InputSnapshot
+      - OutputSnapshot
+      - ChangeSet
+      - VerificationResult
+    ui:
+      icon: "handshake"
+      color: "#66BB6A"
+      tags:
+        - contract-tests
+        - pact
+        - api
+
+  - id: test-008
+    name: "Write Regression Tests"
+    description: "Create tests to prevent regression of fixed bugs"
+    personas:
+      - Developer
+      - QA
+    lifecycle_stages:
+      - verify
+    automation_level: assisted
+    required_capabilities:
+      - testing
+      - code-generation
+    input_schema: test-008-input
+    output_schema: test-008-output
+    audit_artifacts:
+      - InputSnapshot
+      - OutputSnapshot
+      - ChangeSet
+      - VerificationResult
+    ui:
+      icon: "replay"
+      color: "#66BB6A"
+      tags:
+        - regression-tests
+        - bug-prevention
+        - quality
+
+  # Test Execution Tasks
+  - id: test-009
+    name: "Run Tests Locally"
+    description: "Execute test suites in local development environment"
+    personas:
+      - Developer
+      - QA
+    lifecycle_stages:
+      - execute
+      - verify
+    automation_level: automated
+    required_capabilities:
+      - test-execution
+      - environment-management
+    input_schema: test-009-input
+    output_schema: test-009-output
+    audit_artifacts:
+      - InputSnapshot
+      - OutputSnapshot
+      - VerificationResult
+    ui:
+      icon: "play_arrow"
+      color: "#66BB6A"
+      tags:
+        - test-execution
+        - local
+        - development
+
+  - id: test-010
+    name: "Debug Failing Tests"
+    description: "Investigate and fix failing test cases"
+    personas:
+      - Developer
+      - QA
+    lifecycle_stages:
+      - execute
+      - verify
+    automation_level: assisted
+    required_capabilities:
+      - debugging
+      - testing
+    input_schema: test-010-input
+    output_schema: test-010-output
+    audit_artifacts:
+      - InputSnapshot
+      - OutputSnapshot
+      - DecisionRecord
+    ui:
+      icon: "bug_report"
+      color: "#66BB6A"
+      tags:
+        - debugging
+        - failing-tests
+        - troubleshooting
+
+  - id: test-011
+    name: "Fix Flaky Tests"
+    description: "Identify and fix tests that have intermittent failures"
+    personas:
+      - Developer
+      - QA
+    lifecycle_stages:
+      - execute
+    automation_level: assisted
+    required_capabilities:
+      - debugging
+      - testing
+    input_schema: test-011-input
+    output_schema: test-011-output
+    audit_artifacts:
+      - InputSnapshot
+      - OutputSnapshot
+      - ChangeSet
+    ui:
+      icon: "sync_problem"
+      color: "#66BB6A"
+      tags:
+        - flaky-tests
+        - reliability
+        - ci
+
+  - id: test-012
+    name: "Improve Test Coverage"
+    description: "Analyze coverage gaps and add tests to increase coverage"
+    personas:
+      - Developer
+      - QA
+    lifecycle_stages:
+      - verify
+    automation_level: assisted
+    required_capabilities:
+      - testing
+      - code-analysis
+    input_schema: test-012-input
+    output_schema: test-012-output
+    audit_artifacts:
+      - InputSnapshot
+      - OutputSnapshot
+      - ChangeSet
+    ui:
+      icon: "coverage"
+      color: "#66BB6A"
+      tags:
+        - coverage
+        - quality
+        - testing
+
+  - id: test-013
+    name: "Review CI Test Results"
+    description: "Analyze test results from CI pipeline runs"
+    personas:
+      - Developer
+      - QA
+    lifecycle_stages:
+      - verify
+    automation_level: assisted
+    required_capabilities:
+      - testing
+      - ci-analysis
+    input_schema: test-013-input
+    output_schema: test-013-output
+    audit_artifacts:
+      - InputSnapshot
+      - OutputSnapshot
+      - VerificationResult
+    ui:
+      icon: "analytics"
+      color: "#66BB6A"
+      tags:
+        - ci
+        - results
+        - analysis

@@ -1,0 +1,69 @@
+id: context-gathering-agent
+name: Context Gathering Agent
+version: 1.0.0
+description: Gathers codebase context for a development task — reads relevant files, dependencies, prior decisions, and related tickets.
+
+metadata:
+  level: 3
+  domain: lifecycle
+  tags: [context, codebase-analysis, research, intent, plan]
+
+generator:
+  type: PIPELINE
+  steps:
+    - name: codebase_exploration
+      type: SERVICE_CALL
+      service: code-service
+      endpoint: /context/gather
+    - name: context_synthesis
+      type: LLM
+      provider: OPENAI
+      model: gpt-4
+      temperature: 0.3
+      max_tokens: 4000
+      prompt: |
+        Synthesize codebase context for task:
+        Task: {{task}}
+        Relevant Files: {{files}}
+        Dependencies: {{deps}}
+        Prior ADRs: {{adrs}}
+        Recent Commits: {{commits}}
+        Produce ContextSummary with: relevant_components, dependencies, constraints, risks, suggested_approach.
+        Output as JSON: {context_summary, relevant_components, constraints, risks, suggested_approach}
+
+memory:
+  episodic:
+    enabled: true
+    retention_days: 90
+    categories: [context-sessions, codebase-snapshots]
+  semantic:
+    enabled: true
+    categories: [codebase-patterns, architecture-knowledge]
+  procedural:
+    enabled: true
+    categories: [context-gathering-checklist]
+
+tools: [code_reader, dependency_analyzer, ticket_reader]
+
+capabilities:
+  - context-gathering
+  - codebase-analysis
+  - dependency-mapping
+
+routing:
+  input_types: [task-description, repository-context]
+  output_types: [context-summary, dependency-map]
+
+delegation:
+  can_delegate_to: []
+  escalates_to: systems-architect
+
+governance:
+  requires_approval: false
+  can_block: false
+  audit_trail: standard
+
+performance:
+  expected_latency_ms: 5000
+  max_latency_ms: 15000
+  timeout_ms: 30000

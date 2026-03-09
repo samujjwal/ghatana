@@ -1,0 +1,115 @@
+import type { FastifyInstance, FastifyRequest, FastifyReply } from "fastify";
+{{#if enableCircuitBreaker}}
+import type { CircuitBreakerManager } from "../middleware/circuit-breaker.js";
+{{/if}}
+
+interface HealthResponse {
+status: "healthy" | "degraded" | "unhealthy";
+timestamp: string;
+uptime: number;
+version: string;
+checks: Record<string, HealthCheck>;
+    }
+
+    interface HealthCheck {
+    status: "pass" | "fail" | "warn";
+    time?: number;
+    message?: string;
+    }
+
+    /**
+    * Register health check routes
+    */
+    export async function registerHealthRoutes(fastify: FastifyInstance) {
+    // Basic health check
+    fastify.get("/health", {
+    schema: {
+    response: {
+    200: {
+    type: "object",
+    properties: {
+    status: { type: "string" },
+    timestamp: { type: "string" },
+    },
+    },
+    },
+    },
+    }, async (_request: FastifyRequest, _reply: FastifyReply) => {
+    return {
+    status: "healthy",
+    timestamp: new Date().toISOString(),
+    };
+    });
+
+    // Detailed health check
+    fastify.get("/health/ready", async (_request: FastifyRequest, reply: FastifyReply) => {
+    const checks: Record<string, HealthCheck> = {};
+        let overallStatus: "healthy" | "degraded" | "unhealthy" = "healthy";
+
+        // Memory check
+        const memUsage = process.memoryUsage();
+        const memUsedPercent = (memUsage.heapUsed / memUsage.heapTotal) * 100;
+
+        if (memUsedPercent > 90) {
+        checks.memory = { status: "fail", message: `Memory usage: ${memUsedPercent.toFixed(1)}%` };
+        overallStatus = "unhealthy";
+        } else if (memUsedPercent > 75) {
+        checks.memory = { status: "warn", message: `Memory usage: ${memUsedPercent.toFixed(1)}%` };
+        if (overallStatus === "healthy") overallStatus = "degraded";
+        } else {
+        checks.memory = { status: "pass", message: `Memory usage: ${memUsedPercent.toFixed(1)}%` };
+        }
+
+        // Event loop check
+        const startHr = process.hrtime.bigint();
+        await new Promise((resolve) => setImmediate(resolve));
+        const eventLoopLag = Number(process.hrtime.bigint() - startHr) / 1_000_000; // ms
+
+        if (eventLoopLag > 100) {
+        checks.eventLoop = { status: "fail", time: eventLoopLag };
+        overallStatus = "unhealthy";
+        } else if (eventLoopLag > 50) {
+        checks.eventLoop = { status: "warn", time: eventLoopLag };
+        if (overallStatus === "healthy") overallStatus = "degraded";
+        } else {
+        checks.eventLoop = { status: "pass", time: eventLoopLag };
+        }
+
+        {{#if enableCircuitBreaker}}
+        // Circuit breaker check
+        const circuitBreaker = (fastify as FastifyInstance & { circuitBreaker?: CircuitBreakerManager }).circuitBreaker;
+        if (circuitBreaker) {
+        const stats = circuitBreaker.getAllStats();
+        const openCircuits = Object.entries(stats).filter(([_, s]) => s.state === "open");
+
+        if (openCircuits.length > 0) {
+        checks.circuits = {
+        status: "warn",
+        message: `${openCircuits.length} circuit(s) open`
+        };
+        if (overallStatus === "healthy") overallStatus = "degraded";
+        } else {
+        checks.circuits = { status: "pass" };
+        }
+        }
+        {{/if}}
+
+        const response: HealthResponse = {
+        status: overallStatus,
+        timestamp: new Date().toISOString(),
+        uptime: process.uptime(),
+        version: process.env.npm_package_version ?? "0.0.0",
+        checks,
+        };
+
+        const statusCode = overallStatus === "unhealthy" ? 503 : 200;
+        return reply.status(statusCode).send(response);
+        });
+
+        // Liveness probe (Kubernetes)
+        fastify.get("/health/live", {
+        logLevel: "silent",
+        }, async () => {
+        return { status: "ok" };
+        });
+        }

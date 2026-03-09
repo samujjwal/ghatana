@@ -1,0 +1,195 @@
+{
+    "name": "feature-database",
+    "version": "1.0.0",
+    "description": "Cross-language database integration feature pack - adds database connectivity, migrations, and ORM/query builder support",
+    "category": "feature",
+    "language": "multi",
+    "runtime": "multi",
+    "buildTool": "multi",
+    "supportedPacks": [
+        "java-service-spring-gradle",
+        "java-service-activej-gradle",
+        "ts-node-fastify",
+        "rust-service-axum-cargo",
+        "go-service-chi",
+        "fullstack-java-react",
+        "fullstack-rust-react",
+        "fullstack-go-react"
+    ],
+    "templates": {
+        "java": [
+            {
+                "source": "java/application-db.yaml.hbs",
+                "target": "src/main/resources/application-db.yaml"
+            },
+            {
+                "source": "java/DatabaseConfig.java.hbs",
+                "target": "src/main/java/{{packagePath}}/config/DatabaseConfig.java"
+            },
+            {
+                "source": "java/BaseEntity.java.hbs",
+                "target": "src/main/java/{{packagePath}}/entity/BaseEntity.java"
+            },
+            {
+                "source": "java/BaseRepository.java.hbs",
+                "target": "src/main/java/{{packagePath}}/repository/BaseRepository.java"
+            },
+            {
+                "source": "java/FlywayConfig.java.hbs",
+                "target": "src/main/java/{{packagePath}}/config/FlywayConfig.java"
+            },
+            {
+                "source": "java/V1__initial_schema.sql.hbs",
+                "target": "src/main/resources/db/migration/V1__initial_schema.sql"
+            }
+        ],
+        "typescript": [
+            {
+                "source": "typescript/prisma-schema.prisma.hbs",
+                "target": "prisma/schema.prisma"
+            },
+            {
+                "source": "typescript/db-client.ts.hbs",
+                "target": "src/db/client.ts"
+            },
+            {
+                "source": "typescript/db-migrations.ts.hbs",
+                "target": "src/db/migrations.ts"
+            },
+            {
+                "source": "typescript/base-repository.ts.hbs",
+                "target": "src/db/base-repository.ts"
+            }
+        ],
+        "rust": [
+            {
+                "source": "rust/database-mod.rs.hbs",
+                "target": "src/database/mod.rs"
+            },
+            {
+                "source": "rust/connection.rs.hbs",
+                "target": "src/database/connection.rs"
+            },
+            {
+                "source": "rust/migrations-mod.rs.hbs",
+                "target": "src/database/migrations/mod.rs"
+            },
+            {
+                "source": "rust/schema.rs.hbs",
+                "target": "src/database/schema.rs"
+            }
+        ],
+        "go": [
+            {
+                "source": "go/database.go.hbs",
+                "target": "internal/database/database.go"
+            },
+            {
+                "source": "go/migrations.go.hbs",
+                "target": "internal/database/migrations.go"
+            },
+            {
+                "source": "go/repository.go.hbs",
+                "target": "internal/database/repository.go"
+            }
+        ]
+    },
+    "variables": {
+        "databaseType": {
+            "type": "string",
+            "description": "Database type",
+            "enum": [
+                "postgresql",
+                "mysql",
+                "sqlite",
+                "mongodb"
+            ],
+            "default": "postgresql"
+        },
+        "databaseHost": {
+            "type": "string",
+            "description": "Database host",
+            "default": "localhost"
+        },
+        "databasePort": {
+            "type": "number",
+            "description": "Database port",
+            "default": 5432
+        },
+        "databaseName": {
+            "type": "string",
+            "description": "Database name",
+            "required": true
+        },
+        "enableMigrations": {
+            "type": "boolean",
+            "description": "Enable database migrations",
+            "default": true
+        },
+        "connectionPoolSize": {
+            "type": "number",
+            "description": "Connection pool size",
+            "default": 10
+        }
+    },
+    "dependencies": {
+        "java-gradle": {
+            "implementation": [
+                "org.springframework.boot:spring-boot-starter-data-jpa",
+                "org.flywaydb:flyway-core:10.18.0"
+            ],
+            "runtimeOnly": [
+                "org.postgresql:postgresql:42.7.4"
+            ]
+        },
+        "typescript-pnpm": {
+            "dependencies": {
+                "@prisma/client": "^5.22.0"
+            },
+            "devDependencies": {
+                "prisma": "^5.22.0"
+            }
+        },
+        "rust-cargo": {
+            "dependencies": {
+                "sqlx": {
+                    "version": "0.8",
+                    "features": [
+                        "runtime-tokio",
+                        "postgres",
+                        "migrate"
+                    ]
+                },
+                "tokio": {
+                    "version": "1",
+                    "features": [
+                        "full"
+                    ]
+                }
+            }
+        },
+        "go-modules": {
+            "require": [
+                "github.com/jackc/pgx/v5 v5.7.0",
+                "github.com/golang-migrate/migrate/v4 v4.18.0"
+            ]
+        }
+    },
+    "hooks": {
+        "postApply": {
+            "java": [
+                "./gradlew flywayMigrate"
+            ],
+            "typescript": [
+                "pnpm prisma generate",
+                "pnpm prisma migrate dev --name init"
+            ],
+            "rust": [
+                "cargo sqlx prepare"
+            ],
+            "go": [
+                "go run cmd/migrate/main.go up"
+            ]
+        }
+    }
+}

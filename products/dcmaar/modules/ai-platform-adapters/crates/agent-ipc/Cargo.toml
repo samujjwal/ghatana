@@ -1,0 +1,60 @@
+[package]
+name = "agent-ipc"
+version.workspace = true
+edition.workspace = true
+authors.workspace = true
+license.workspace = true
+description = "Inter-process communication for DCMaar agent components"
+publish = false
+
+[features]
+default = ["json"]
+json = ["serde_json"]
+# Enable Unix Domain Socket transport (using tokio built-in support)
+unix = []
+# Enable WebSocket transport
+websocket = ["tokio-tungstenite", "tungstenite"]
+# Enable Windows Named Pipes
+windows = ["tokio-named-pipes"]
+
+[dependencies]
+# Internal crates
+agent-types = { workspace = true, features = ["serde"] }
+
+# Async runtime
+tokio = { workspace = true, features = ["rt-multi-thread", "sync", "time"] }
+
+# Serialization
+serde = { workspace = true, features = ["derive"] }
+serde_json = { workspace = true, optional = true }
+
+# Error handling
+thiserror = { workspace = true }
+anyhow = { workspace = true }
+
+# Message passing
+futures = { version = "0.3", default-features = false, features = ["std"] }
+async-stream = "0.3"
+futures-util = "0.3"
+
+# Async traits (still needed in some places)
+async-trait = { workspace = true }
+
+# URL parsing for WebSockets
+url = { workspace = true }
+
+# Transport-specific deps (optional based on features)
+# tokio-uds is deprecated, use tokio::net::UnixStream instead
+tokio-tungstenite = { version = "0.21", optional = true }
+tungstenite = { version = "0.21", optional = true }
+tokio-named-pipes = { version = "0.1", optional = true }
+
+# UUID for connection/session IDs
+uuid = { workspace = true, features = ["v4", "serde"] }
+
+# Logging
+tracing = { workspace = true }
+
+[dev-dependencies]
+tempfile = "3.10"
+tokio = { workspace = true, features = ["rt-multi-thread", "macros", "test-util"] }

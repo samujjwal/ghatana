@@ -1,0 +1,17 @@
+# Grafana Provisioning - Dashboards
+#
+# Purpose: Auto-load Phase 4 load testing dashboards
+# Location: monitoring/grafana-provisioning/dashboards/default.yml
+
+apiVersion: 1
+
+providers:
+  - name: "Phase 4 Dashboards"
+    orgId: 1
+    folder: "Phase 4 Load Testing"
+    type: file
+    disableDeletion: false
+    updateIntervalSeconds: 10
+    allowUiUpdates: true
+    options:
+      path: /etc/grafana/dashboards

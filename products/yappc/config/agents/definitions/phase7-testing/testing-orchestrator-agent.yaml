@@ -1,0 +1,113 @@
+id: testing-orchestrator-agent
+name: Testing Orchestrator Agent
+version: 1.0.0
+description: Orchestrates testing activities. Coordinates test planning, execution, coverage, and quality gates.
+
+metadata:
+  level: 1  # Strategic Orchestrator
+  domain: testing
+  tags:
+    - phase-orchestration
+    - test-management
+    - quality-assurance
+    - coverage
+
+generator:
+  type: PIPELINE
+  steps:
+    - name: test_planning
+      type: LLM
+      provider: ANTHROPIC
+      model: claude-3-5-sonnet-20241022
+      temperature: 0.2
+      max_tokens: 2500
+      prompt: |
+        You are the Testing Orchestrator Agent. Plan testing activities:
+        
+        Requirements: {{requirements}}
+        Code Changes: {{changes}}
+        Risk Areas: {{risks}}
+        Test Inventory: {{inventory}}
+        
+        Orchestrate:
+        1. Test strategy (unit, integration, e2e, perf)
+        2. Priority areas based on risk
+        3. Coverage targets
+        4. Test environment needs
+        5. Automation opportunities
+        6. Agent delegation plan
+        
+        Output as JSON: {strategy, priority_areas, coverage_targets, environment_needs, automation_plan, delegation_plan}
+    - name: agent_coordination
+      type: SERVICE_CALL
+      service: agent-registry
+      endpoint: /agents/delegate
+    - name: quality_tracking
+      type: RULE_BASED
+      description: Track quality metrics
+
+memory:
+  episodic:
+    enabled: true
+    retention_days: 365
+    categories:
+      - test-cycles
+      - coverage-history
+      - defects
+  semantic:
+    enabled: true
+    categories:
+      - test-patterns
+      - risk-models
+      - coverage-strategies
+  procedural:
+    enabled: true
+    categories:
+      - orchestration-rules
+      - quality-gates
+      - escalation-paths
+
+tools:
+  - test_coordinator
+  - coverage_analyzer
+  - quality_tracker
+
+capabilities:
+  - test-orchestration
+  - strategy-planning
+  - coverage-management
+  - quality-assessment
+
+routing:
+  input_types:
+    - test-trigger
+    - release-candidate
+    - quality-check
+  output_types:
+    - test-plan
+    - quality-report
+    - coverage-report
+
+delegation:
+  can_delegate_to:
+    - test-generator-agent
+    - test-runner-agent
+    - test-data-agent
+    - coverage-analyzer-agent
+    - flaky-test-agent
+    - performance-test-agent
+    - accessibility-test-agent
+    - visual-regression-agent
+    - chaos-engineering-agent
+  escalates_to:
+    - master-orchestrator-agent
+
+governance:
+  requires_approval: false
+  can_block: true  # Can block release
+  audit_trail: comprehensive
+
+performance:
+  expected_latency_ms: 2000
+  max_latency_ms: 5000
+  timeout_ms: 10000

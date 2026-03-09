@@ -1,0 +1,22 @@
+# AI Voice Production Studio - Python Dependencies
+
+# Core ML
+torch>=2.0.0
+torchaudio>=2.0.0
+numpy>=1.24.0
+
+# Audio processing
+librosa>=0.10.0
+soundfile>=0.12.0
+pydub>=0.25.0
+
+# Stem separation
+demucs>=4.0.0
+
+# Pitch detection
+crepe>=0.0.14
+pyworld>=0.3.0
+
+# Utilities
+scipy>=1.10.0
+resampy>=0.4.0

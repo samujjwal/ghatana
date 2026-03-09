@@ -1,0 +1,12 @@
+{
+  "compilerOptions": {
+    "declaration": true,
+    "declarationMap": false,
+    "emitDeclarationOnly": false,
+    "outDir": "./dist",
+    "declarationDir": "./dist/types",
+    "rootDir": "./src",
+    "sourceMap": false,
+    "noEmit": false
+  }
+}

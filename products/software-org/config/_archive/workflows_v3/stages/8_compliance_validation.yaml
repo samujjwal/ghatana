@@ -1,0 +1,99 @@
+# Compliance Validation Stage - v3 Operator-Based Definition
+# Uses consolidated operators from operations/domain/release/
+name: Compliance Validation
+description: Verify compliance with regulatory and organizational standards
+domain: release
+
+# Operators used in this stage
+operators:
+  - ref: design/security_design_operator
+    modes: [compliance_mapping]
+  - ref: release/release_management_operator
+    modes: [go_nogo]
+
+# Cross-cutting operators
+cross_cutting:
+  - ref: cross-cutting/milestone_tracker
+    params:
+      stage: compliance_validation
+  - ref: cross-cutting/best_practice
+    params:
+      stage: compliance_validation
+  - ref: cross-cutting/evidence_collector
+    params:
+      stage: compliance_validation
+  - ref: cross-cutting/go_nogo
+    params:
+      stage: compliance_validation
+  - ref: cross-cutting/audit_log
+    params:
+      stage: compliance_validation
+
+# Workflow sequence
+workflow:
+  # Compliance Review
+  - step: compliance_review
+    operator: design/security_design_operator
+    mode: compliance_mapping
+    inputs:
+      - name: secure_stage_milestone
+      - name: security_evidence_package
+    outputs:
+      - name: compliance_review_report
+    hitl: true
+    hitl_reason: Human reviews compliance status
+
+  # Evidence Collection
+  - step: collect_compliance_evidence
+    operator: cross-cutting/evidence_collector
+    params:
+      stage: compliance_validation
+    inputs:
+      - name: compliance_review_report
+    outputs:
+      - name: compliance_evidence_package
+    depends_on: [compliance_review]
+
+  # Go/No-Go Decision
+  - step: compliance_go_nogo
+    operator: cross-cutting/go_nogo
+    params:
+      stage: compliance_validation
+    inputs:
+      - name: compliance_evidence_package
+    outputs:
+      - name: compliance_go_nogo_decision
+    depends_on: [collect_compliance_evidence]
+    hitl: true
+    hitl_reason: Human makes compliance go/no-go decision
+
+  # Cross-cutting
+  - step: best_practice_check
+    operator: cross-cutting/best_practice
+    params:
+      stage: compliance_validation
+    inputs:
+      - name: compliance_review_report
+    outputs:
+      - name: best_practice_report
+    depends_on: [compliance_go_nogo]
+
+  - step: track_milestones
+    operator: cross-cutting/milestone_tracker
+    params:
+      stage: compliance_validation
+    inputs:
+      - name: best_practice_report
+    outputs:
+      - name: compliance_stage_milestone
+    depends_on: [best_practice_check]
+
+# Stage entry/exit criteria
+entry_criteria:
+  - Secure stage complete
+  - Security evidence available
+
+exit_criteria:
+  - Compliance verified
+  - Evidence collected
+  - Go/no-go decision made

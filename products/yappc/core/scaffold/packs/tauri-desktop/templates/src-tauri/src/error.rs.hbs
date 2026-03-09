@@ -1,0 +1,97 @@
+//! Error Types for the Application
+//!
+//! This module defines custom error types that can be serialized
+//! and sent to the frontend via Tauri's IPC mechanism.
+
+use serde::Serialize;
+use thiserror::Error;
+
+/// Application error type
+#[derive(Debug, Error)]
+pub enum AppError {
+/// Lock acquisition failed
+#[error("Failed to acquire lock")]
+LockError,
+
+/// IO operation failed
+#[error("IO error: {0}")]
+IoError(#[from] std::io::Error),
+
+/// Serialization error
+#[error("Serialization error: {0}")]
+SerializationError(#[from] serde_json::Error),
+
+/// Configuration error
+#[error("Configuration error: {0}")]
+ConfigError(String),
+
+/// Generic error
+#[error("{0}")]
+Generic(String),
+}
+
+/// Serializable error for Tauri IPC
+///
+/// Tauri requires errors to implement Serialize. This wrapper
+/// converts our error types into a format that can be sent to the frontend.
+impl Serialize for AppError {
+fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
+        where
+        S: serde::Serializer,
+        {
+        #[derive(Serialize)]
+        struct ErrorResponse {
+        code: String,
+        message: String,
+        }
+
+        let response = ErrorResponse {
+        code: match self {
+        AppError::LockError => "LOCK_ERROR",
+        AppError::IoError(_) => "IO_ERROR",
+        AppError::SerializationError(_) => "SERIALIZATION_ERROR",
+        AppError::ConfigError(_) => "CONFIG_ERROR",
+        AppError::Generic(_) => "GENERIC_ERROR",
+        }
+        .to_string(),
+        message: self.to_string(),
+        };
+
+        response.serialize(serializer)
+        }
+        }
+
+        /// Convenience type alias for Results using AppError
+        pub type AppResult<T> = Result<T, AppError>;
+
+                impl From<String> for AppError {
+                    fn from(s: String) -> Self {
+                    AppError::Generic(s)
+                    }
+                    }
+
+                    impl From<&str> for AppError {
+                        fn from(s: &str) -> Self {
+                        AppError::Generic(s.to_string())
+                        }
+                        }
+
+                        #[cfg(test)]
+                        mod tests {
+                        use super::*;
+
+                        #[test]
+                        fn test_error_serialization() {
+                        let error = AppError::LockError;
+                        let json = serde_json::to_string(&error).unwrap();
+                        assert!(json.contains("LOCK_ERROR"));
+                        assert!(json.contains("Failed to acquire lock"));
+                        }
+
+                        #[test]
+                        fn test_error_from_string() {
+                        let error: AppError = "test error".into();
+                        assert!(matches!(error, AppError::Generic(_)));
+                        assert_eq!(error.to_string(), "test error");
+                        }
+                        }

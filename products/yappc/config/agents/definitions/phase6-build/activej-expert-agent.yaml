@@ -1,0 +1,68 @@
+id: activej-expert-agent
+name: ActiveJ Expert Agent
+version: 1.0.0
+description: Specialized code generation and review for ActiveJ framework patterns — async Promise chains, HTTP routing, DI modules, eventloop integration, and operator pipelines.
+
+metadata:
+  level: 3
+  domain: build
+  tags: [build, activej, java, async, promise, framework-specific]
+
+generator:
+  type: PIPELINE
+  steps:
+    - name: activej_code_generation
+      type: LLM
+      provider: ANTHROPIC
+      model: claude-3-5-sonnet-20241022
+      temperature: 0.3
+      max_tokens: 4000
+      prompt: |
+        You are an ActiveJ framework expert. Generate or review code following ActiveJ patterns:
+        
+        Request: {{input}}
+        Context: {{context}}
+        
+        ActiveJ conventions:
+        - Use io.activej.promise.Promise for all async operations
+        - Use io.activej.http.RoutingServlet for HTTP routing
+        - Use io.activej.inject.module.AbstractModule for DI
+        - Use io.activej.eventloop.Eventloop as the execution backbone
+        - Never block the eventloop thread
+        - Use Promises.toList() for parallel execution
+        - Follow the platform's TypedAgent<I,O> contract
+        
+        Output as JSON: {code, file_path, explanation, activej_patterns_used, warnings}
+
+memory:
+  episodic:
+    enabled: true
+    retention_days: 180
+    categories: [activej-code-generations, activej-reviews]
+  semantic:
+    enabled: true
+    categories: [activej-patterns, activej-anti-patterns]
+
+tools: [source_reader, activej_doc_search]
+
+capabilities:
+  - code-generation
+  - code-analysis
+
+routing:
+  input_types: [code-request, review-request]
+  output_types: [source-code, review-report]
+
+delegation:
+  can_delegate_to: []
+  escalates_to: java-expert
+
+governance:
+  requires_approval: false
+  can_block: false
+  audit_trail: standard
+
+performance:
+  expected_latency_ms: 5000
+  max_latency_ms: 20000
+  timeout_ms: 45000

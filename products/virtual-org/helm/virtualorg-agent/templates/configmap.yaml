@@ -1,0 +1,74 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: {{ include "virtualorg-agent.fullname" . }}-config
+  namespace: {{ .Values.global.namespace }}
+  labels:
+    {{- include "virtualorg-agent.labels" . | nindent 4 }}
+data:
+  # Service config
+  SERVICE_NAME: {{ .Values.config.serviceName | quote }}
+  SERVICE_VERSION: {{ .Values.config.serviceVersion | quote }}
+
+  # LLM config
+  LLM_PROVIDER: {{ .Values.config.llm.provider | quote }}
+  LLM_MODEL: {{ .Values.config.llm.model | quote }}
+  LLM_TEMPERATURE: {{ .Values.config.llm.temperature | quote }}
+  LLM_MAX_TOKENS: {{ .Values.config.llm.maxTokens | quote }}
+  LLM_TIMEOUT_SECONDS: {{ .Values.config.llm.timeoutSeconds | quote }}
+  EMBEDDING_MODEL: {{ .Values.config.llm.embeddingModel | quote }}
+
+  # Database
+  DATABASE_URL: {{ .Values.config.database.url | quote }}
+  DATABASE_USERNAME: {{ .Values.config.database.username | quote }}
+
+  # Redis
+  REDIS_HOST: {{ .Values.config.redis.host | quote }}
+  REDIS_PORT: {{ .Values.config.redis.port | quote }}
+
+  # Observability
+  OTLP_TRACES_ENDPOINT: {{ .Values.config.observability.otlpTracesEndpoint | quote }}
+  OTLP_METRICS_ENDPOINT: {{ .Values.config.observability.otlpMetricsEndpoint | quote }}
+  LOG_LEVEL: {{ .Values.config.observability.logLevel | quote }}
+  LOG_FORMAT: {{ .Values.config.observability.logFormat | quote }}
+  TRACE_SAMPLE_RATE: {{ .Values.config.observability.traceSampleRate | quote }}
+
+  # Memory
+  MEMORY_TYPE: {{ .Values.config.memory.type | quote }}
+
+  # Task queue
+  TASK_QUEUE_TYPE: {{ .Values.config.taskQueue.type | quote }}
+  TASK_QUEUE_MAX_SIZE: {{ .Values.config.taskQueue.maxQueueSize | quote }}
+  TASK_QUEUE_POLL_INTERVAL_MS: {{ .Values.config.taskQueue.pollIntervalMs | quote }}
+
+  # Server
+  SERVER_HOST: {{ .Values.config.server.host | quote }}
+  SERVER_PORT: {{ .Values.config.server.port | quote }}
+  SERVER_TIMEOUT_SECONDS: {{ .Values.config.server.timeoutSeconds | quote }}
+
+  # Agent defaults
+  AGENT_DEFAULT_TIMEOUT_SECONDS: {{ .Values.config.agentDefaults.timeoutSeconds | quote }}
+  AGENT_MAX_RETRIES: {{ .Values.config.agentDefaults.maxRetries | quote }}
+  AGENT_RETRY_DELAY_SECONDS: {{ .Values.config.agentDefaults.retryDelaySeconds | quote }}
+  AGENT_MAX_CONCURRENT_TASKS: {{ .Values.config.agentDefaults.maxConcurrentTasks | quote }}
+
+  # Tools
+  {{- if .Values.config.tools.fileOps.enabled }}
+  FILE_OPS_ENABLED: "true"
+  FILE_OPS_BASE_DIR: {{ .Values.config.tools.fileOps.baseDir | quote }}
+  FILE_OPS_TIMEOUT_SECONDS: {{ .Values.config.tools.fileOps.timeoutSeconds | quote }}
+  {{- end }}
+  {{- if .Values.config.tools.git.enabled }}
+  GIT_ENABLED: "true"
+  GIT_TIMEOUT_SECONDS: {{ .Values.config.tools.git.timeoutSeconds | quote }}
+  {{- end }}
+  {{- if .Values.config.tools.http.enabled }}
+  HTTP_ENABLED: "true"
+  HTTP_TIMEOUT_SECONDS: {{ .Values.config.tools.http.timeoutSeconds | quote }}
+  HTTP_MAX_REDIRECTS: {{ .Values.config.tools.http.maxRedirects | quote }}
+  {{- end }}
+  {{- if .Values.config.tools.codeExecution.enabled }}
+  CODE_EXECUTION_ENABLED: "true"
+  CODE_EXECUTION_TIMEOUT_SECONDS: {{ .Values.config.tools.codeExecution.timeoutSeconds | quote }}
+  CODE_EXECUTION_MAX_MEMORY_MB: {{ .Values.config.tools.codeExecution.maxMemoryMb | quote }}
+  {{- end }}

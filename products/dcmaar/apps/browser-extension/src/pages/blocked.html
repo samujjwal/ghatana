@@ -1,0 +1,310 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Access Blocked - Guardian</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+        }
+
+        .container {
+            background: white;
+            border-radius: 16px;
+            padding: 48px 40px;
+            max-width: 600px;
+            width: 100%;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+            text-align: center;
+        }
+
+        .icon {
+            width: 80px;
+            height: 80px;
+            margin: 0 auto 24px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 40px;
+        }
+
+        h1 {
+            font-size: 28px;
+            color: #1a202c;
+            margin-bottom: 12px;
+            font-weight: 700;
+        }
+
+        .subtitle {
+            font-size: 16px;
+            color: #718096;
+            margin-bottom: 32px;
+        }
+
+        .blocked-url {
+            background: #f7fafc;
+            border: 1px solid #e2e8f0;
+            border-radius: 8px;
+            padding: 16px;
+            margin-bottom: 24px;
+            word-break: break-all;
+            font-family: 'Monaco', 'Courier New', monospace;
+            font-size: 14px;
+            color: #4a5568;
+        }
+
+        .reason {
+            background: #fef5e7;
+            border-left: 4px solid #f59e0b;
+            padding: 16px;
+            margin-bottom: 32px;
+            border-radius: 4px;
+            text-align: left;
+        }
+
+        .reason-title {
+            font-weight: 600;
+            color: #92400e;
+            margin-bottom: 8px;
+            font-size: 14px;
+        }
+
+        .reason-text {
+            color: #78350f;
+            line-height: 1.6;
+            font-size: 14px;
+        }
+
+        .time-remaining {
+            margin-top: 8px;
+            font-size: 13px;
+            color: #6b21a8;
+        }
+
+        .info {
+            background: #eff6ff;
+            border-radius: 8px;
+            padding: 20px;
+            margin-bottom: 24px;
+            text-align: left;
+        }
+
+        .info-title {
+            font-weight: 600;
+            color: #1e40af;
+            margin-bottom: 12px;
+            font-size: 15px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .info-list {
+            color: #1e3a8a;
+            font-size: 14px;
+            line-height: 1.8;
+            list-style: none;
+        }
+
+        .info-list li {
+            padding-left: 24px;
+            position: relative;
+        }
+
+        .info-list li::before {
+            content: "✓";
+            position: absolute;
+            left: 0;
+            color: #3b82f6;
+            font-weight: bold;
+        }
+
+        .actions {
+            display: flex;
+            gap: 12px;
+            justify-content: center;
+            flex-wrap: wrap;
+        }
+
+        .btn {
+            padding: 12px 24px;
+            border-radius: 8px;
+            font-weight: 600;
+            font-size: 14px;
+            cursor: pointer;
+            transition: all 0.2s;
+            text-decoration: none;
+            display: inline-block;
+            border: none;
+        }
+
+        .request-box {
+            margin-top: 16px;
+            text-align: left;
+            font-size: 14px;
+            color: #4a5568;
+        }
+
+        .request-label {
+            display: block;
+            font-weight: 500;
+            margin-bottom: 6px;
+        }
+
+        .request-textarea {
+            width: 100%;
+            min-height: 72px;
+            padding: 8px 10px;
+            border-radius: 6px;
+            border: 1px solid #e2e8f0;
+            font-family: inherit;
+            font-size: 14px;
+            resize: vertical;
+        }
+
+        .request-textarea:focus {
+            outline: none;
+            border-color: #667eea;
+            box-shadow: 0 0 0 1px rgba(102, 126, 234, 0.4);
+        }
+
+        .request-status {
+            margin-top: 8px;
+            font-size: 13px;
+        }
+
+        .request-status-success {
+            color: #166534;
+        }
+
+        .request-status-error {
+            color: #b91c1c;
+        }
+
+        .btn-primary {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+        }
+
+        .btn-primary:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(102, 126, 234, 0.4);
+        }
+
+        .btn-secondary {
+            background: white;
+            color: #4a5568;
+            border: 2px solid #e2e8f0;
+        }
+
+        .btn-secondary:hover {
+            border-color: #cbd5e0;
+            background: #f7fafc;
+        }
+
+        .footer {
+            margin-top: 32px;
+            padding-top: 24px;
+            border-top: 1px solid #e2e8f0;
+            font-size: 13px;
+            color: #a0aec0;
+        }
+
+        .logo {
+            font-weight: 700;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        @media (max-width: 640px) {
+            .container {
+                padding: 32px 24px;
+            }
+
+            h1 {
+                font-size: 24px;
+            }
+
+            .actions {
+                flex-direction: column;
+            }
+
+            .btn {
+                width: 100%;
+            }
+        }
+    </style>
+</head>
+
+<body>
+    <div class="container">
+        <div class="icon">🛡️</div>
+
+        <h1>Access Blocked</h1>
+        <p class="subtitle">This website has been blocked by Guardian parental controls</p>
+
+        <div class="blocked-url" id="blocked-url">
+            Loading...
+        </div>
+
+        <div class="reason" id="reason-box">
+            <div class="reason-title">Why is this blocked?</div>
+            <div class="reason-text" id="reason-text">
+                Loading...
+            </div>
+            <p class="time-remaining" id="time-remaining"></p>
+        </div>
+
+        <div class="info">
+            <div class="info-title">
+                <span>ℹ️</span>
+                <span>What can you do?</span>
+            </div>
+            <ul class="info-list">
+                <li>Ask your parent or guardian for access</li>
+                <li>Try again during allowed times</li>
+                <li>Explore educational or allowed websites</li>
+                <li>Take a break and enjoy offline activities</li>
+            </ul>
+        </div>
+
+        <div class="request-box" id="request-box">
+            <label for="request-notes" class="request-label">Explain why you need this site (optional)</label>
+            <textarea id="request-notes" class="request-textarea" placeholder="e.g., homework assignment, teacher shared this link"></textarea>
+            <p class="request-status" id="request-status"></p>
+        </div>
+
+        <div class="actions">
+            <button class="btn btn-primary" id="btn-back">Go Back</button>
+            <button class="btn btn-secondary" id="btn-home">Go to Homepage</button>
+            <button class="btn btn-secondary" id="btn-request-unblock">Request Access</button>
+        </div>
+
+        <div class="footer">
+            Protected by <span class="logo">Guardian</span> •
+            <span id="timestamp"></span>
+        </div>
+    </div>
+
+    <script src="blocked.js"></script>
+</body>
+
+</html>

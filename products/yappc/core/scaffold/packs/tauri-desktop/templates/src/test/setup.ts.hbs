@@ -1,0 +1,27 @@
+import "@testing-library/jest-dom/vitest";
+
+// Mock Tauri APIs for testing
+vi.mock("@tauri-apps/api/core", () => ({
+invoke: vi.fn(),
+}));
+
+vi.mock("@tauri-apps/api/app", () => ({
+getVersion: vi.fn().mockResolvedValue("0.1.0"),
+getTauriVersion: vi.fn().mockResolvedValue("2.0.0"),
+}));
+
+vi.mock("@tauri-apps/api/window", () => ({
+getCurrentWindow: vi.fn().mockReturnValue({
+minimize: vi.fn(),
+maximize: vi.fn(),
+unmaximize: vi.fn(),
+close: vi.fn(),
+isMaximized: vi.fn().mockResolvedValue(false),
+onResized: vi.fn().mockResolvedValue(() => {}),
+}),
+}));
+
+vi.mock("@tauri-apps/plugin-os", () => ({
+platform: vi.fn().mockResolvedValue("macos"),
+arch: vi.fn().mockResolvedValue("aarch64"),
+}));

@@ -1,0 +1,356 @@
+name: Desktop CI/CD
+
+on:
+  push:
+    branches: [main, develop]
+    paths:
+      - 'services/desktop/**'
+      - 'proto/**'
+      - '.github/workflows/desktop-ci.yml'
+  pull_request:
+    branches: [main, develop]
+    paths:
+      - 'services/desktop/**'
+      - 'proto/**'
+
+env:
+  CARGO_TERM_COLOR: always
+  RUST_BACKTRACE: 1
+
+jobs:
+  # Lint and format checks
+  lint:
+    name: Lint & Format
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      
+      - name: Install Rust toolchain
+        uses: dtolnay/rust-toolchain@stable
+        with:
+          components: rustfmt, clippy
+      
+      - name: Cache cargo registry
+        uses: actions/cache@v4
+        with:
+          path: ~/.cargo/registry
+          key: ${{ runner.os }}-cargo-registry-${{ hashFiles('**/Cargo.lock') }}
+      
+      - name: Cache cargo index
+        uses: actions/cache@v4
+        with:
+          path: ~/.cargo/git
+          key: ${{ runner.os }}-cargo-git-${{ hashFiles('**/Cargo.lock') }}
+      
+      - name: Cache cargo build
+        uses: actions/cache@v4
+        with:
+          path: services/desktop/src-tauri/target
+          key: ${{ runner.os }}-cargo-build-${{ hashFiles('**/Cargo.lock') }}
+      
+      - name: Run cargo fmt
+        working-directory: services/desktop/src-tauri
+        run: cargo fmt --all -- --check
+      
+      - name: Run cargo clippy
+        working-directory: services/desktop/src-tauri
+        run: cargo clippy --all-targets --all-features -- -D warnings
+      
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+      
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v2
+        with:
+          version: 9
+      
+      - name: Install frontend dependencies
+        working-directory: services/desktop
+        run: pnpm install --frozen-lockfile
+      
+      - name: Run ESLint
+        working-directory: services/desktop
+        run: pnpm lint --max-warnings=0
+      
+      - name: Run Prettier
+        working-directory: services/desktop
+        run: pnpm exec prettier --check "src/**/*.{ts,tsx}"
+
+  # Build and test Rust backend
+  test-rust:
+    name: Test Rust Backend
+    runs-on: ${{ matrix.os }}
+    strategy:
+      matrix:
+        os: [ubuntu-latest, macos-latest, windows-latest]
+    steps:
+      - uses: actions/checkout@v4
+      
+      - name: Install Rust toolchain
+        uses: dtolnay/rust-toolchain@stable
+      
+      - name: Cache cargo
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.cargo/registry
+            ~/.cargo/git
+            services/desktop/src-tauri/target
+          key: ${{ runner.os }}-cargo-${{ hashFiles('**/Cargo.lock') }}
+      
+      - name: Install system dependencies (Ubuntu)
+        if: matrix.os == 'ubuntu-latest'
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y libwebkit2gtk-4.0-dev \
+            build-essential \
+            curl \
+            wget \
+            libssl-dev \
+            libgtk-3-dev \
+            libayatana-appindicator3-dev \
+            librsvg2-dev
+      
+      - name: Run tests
+        working-directory: services/desktop/src-tauri
+        run: cargo test --all-features
+      
+      - name: Build
+        working-directory: services/desktop/src-tauri
+        run: cargo build --release
+
+  # Build and test frontend
+  test-frontend:
+    name: Test Frontend
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+      
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v2
+        with:
+          version: 9
+      
+      - name: Cache pnpm store
+        uses: actions/cache@v4
+        with:
+          path: ~/.pnpm-store
+          key: ${{ runner.os }}-pnpm-${{ hashFiles('**/pnpm-lock.yaml') }}
+      
+      - name: Install dependencies
+        working-directory: services/desktop
+        run: pnpm install --frozen-lockfile
+      
+      - name: Run tests
+        working-directory: services/desktop
+        run: pnpm test:coverage
+      
+      - name: Upload coverage
+        uses: codecov/codecov-action@v4
+        with:
+          files: services/desktop/coverage/lcov.info
+          flags: frontend
+
+  # Security audit
+  security:
+    name: Security Audit
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      
+      - name: Install Rust toolchain
+        uses: dtolnay/rust-toolchain@stable
+      
+      - name: Install cargo-audit
+        run: cargo install cargo-audit
+      
+      - name: Run cargo audit
+        working-directory: services/desktop/src-tauri
+        run: cargo audit
+      
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+      
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v2
+        with:
+          version: 9
+      
+      - name: Install dependencies
+        working-directory: services/desktop
+        run: pnpm install --frozen-lockfile
+      
+      - name: Run npm audit
+        working-directory: services/desktop
+        run: pnpm audit --audit-level=moderate
+
+  # Container security scan
+  container-scan:
+    name: Container Security Scan
+    runs-on: ubuntu-latest
+    if: github.event_name == 'push'
+    steps:
+      - uses: actions/checkout@v4
+      
+      - name: Build Docker image
+        working-directory: services/desktop
+        run: docker build -t dcmaar-desktop:${{ github.sha }} .
+      
+      - name: Run Trivy vulnerability scanner
+        uses: aquasecurity/trivy-action@master
+        with:
+          image-ref: dcmaar-desktop:${{ github.sha }}
+          format: 'sarif'
+          output: 'trivy-results.sarif'
+      
+      - name: Upload Trivy results to GitHub Security
+        uses: github/codeql-action/upload-sarif@v3
+        with:
+          sarif_file: 'trivy-results.sarif'
+
+  # Generate SBOM
+  sbom:
+    name: Generate SBOM
+    runs-on: ubuntu-latest
+    if: github.event_name == 'push'
+    steps:
+      - uses: actions/checkout@v4
+      
+      - name: Install syft
+        run: curl -sSfL https://raw.githubusercontent.com/anchore/syft/main/install.sh | sh -s -- -b /usr/local/bin
+      
+      - name: Generate SBOM
+        working-directory: services/desktop
+        run: syft . -o spdx-json > sbom.json
+      
+      - name: Upload SBOM
+        uses: actions/upload-artifact@v4
+        with:
+          name: sbom
+          path: services/desktop/sbom.json
+
+  # Proto validation
+  proto-validation:
+    name: Proto Validation
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      
+      - name: Install buf
+        run: |
+          BIN="/usr/local/bin" && \
+          VERSION="1.28.1" && \
+          curl -sSL \
+            "https://github.com/bufbuild/buf/releases/download/v${VERSION}/buf-$(uname -s)-$(uname -m)" \
+            -o "${BIN}/buf" && \
+          chmod +x "${BIN}/buf"
+      
+      - name: Lint proto files
+        run: buf lint proto
+      
+      - name: Check proto breaking changes
+        if: github.event_name == 'pull_request'
+        run: buf breaking proto --against '.git#branch=main'
+
+  # Integration tests
+  integration:
+    name: Integration Tests
+    runs-on: ubuntu-latest
+    needs: [test-rust, test-frontend]
+    steps:
+      - uses: actions/checkout@v4
+      
+      - name: Install Rust toolchain
+        uses: dtolnay/rust-toolchain@stable
+      
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+      
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v2
+        with:
+          version: 9
+      
+      - name: Install system dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y libwebkit2gtk-4.0-dev \
+            build-essential \
+            curl \
+            wget \
+            libssl-dev \
+            libgtk-3-dev \
+            libayatana-appindicator3-dev \
+            librsvg2-dev
+      
+      - name: Install dependencies
+        working-directory: services/desktop
+        run: pnpm install --frozen-lockfile
+      
+      - name: Run integration tests
+        working-directory: services/desktop
+        run: pnpm test:integration
+
+  # Build release artifacts
+  build-release:
+    name: Build Release
+    runs-on: ${{ matrix.os }}
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    needs: [lint, test-rust, test-frontend, security, proto-validation]
+    strategy:
+      matrix:
+        os: [ubuntu-latest, macos-latest, windows-latest]
+    steps:
+      - uses: actions/checkout@v4
+      
+      - name: Install Rust toolchain
+        uses: dtolnay/rust-toolchain@stable
+      
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+      
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v2
+        with:
+          version: 9
+      
+      - name: Install system dependencies (Ubuntu)
+        if: matrix.os == 'ubuntu-latest'
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y libwebkit2gtk-4.0-dev \
+            build-essential \
+            curl \
+            wget \
+            libssl-dev \
+            libgtk-3-dev \
+            libayatana-appindicator3-dev \
+            librsvg2-dev
+      
+      - name: Install dependencies
+        working-directory: services/desktop
+        run: pnpm install --frozen-lockfile
+      
+      - name: Build Tauri app
+        working-directory: services/desktop
+        run: pnpm tauri build
+      
+      - name: Upload artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: dcmaar-desktop-${{ matrix.os }}
+          path: |
+            services/desktop/src-tauri/target/release/bundle/

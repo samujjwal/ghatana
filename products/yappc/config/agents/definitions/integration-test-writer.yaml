@@ -1,0 +1,70 @@
+id: "integration-test-writer"
+name: "Integration Test Writer"
+version: "1.0.0"
+description: "Integration test generation for multi-component interactions"
+
+metadata:
+  level: 3  # Worker level
+  domain: "test-engineering"
+  tags: ["integration-tests", "testcontainers", "activej"]
+
+generator:
+  type: "pipeline"
+  steps:
+    - type: "rule-based"
+      rules:
+        - "Identify component dependencies"
+        - "Determine test containers needed (PostgreSQL, Redis, etc.)"
+        - "Validate ActiveJ eventloop usage in tests"
+    - type: "template"
+      engine: "liquid"
+      template_path: "templates/test/integration-test.java.liquid"
+    - type: "llm"
+      provider: "openai"
+      model: "gpt-3.5-turbo"
+      temperature: 0.3
+      prompt: |
+        Generate integration test logic for:
+        {{component}}
+        
+        Dependencies: {{dependencies}}
+        
+        Ensure:
+        - Extend EventloopTestBase
+        - Use runPromise() for async operations
+        - Setup test containers
+        - Clean up resources in @AfterEach
+
+memory:
+  episodic:
+    enabled: true
+    retention_days: 30
+  semantic:
+    enabled: true
+    categories: ["integration-patterns", "test-containers"]
+  procedural:
+    enabled: true
+
+tools:
+  - "file_read"
+  - "file_write"
+  - "ast_find_class"
+  - "ast_find_method"
+
+capabilities:
+  - "integration-test-generation"
+  - "testcontainers-setup"
+  - "async-test-patterns"
+
+routing:
+  input_types: ["IntegrationTestRequest"]
+  output_types: ["IntegrationTest"]
+
+delegation:
+  can_delegate_to: []
+  escalates_to: "test-strategist"
+
+performance:
+  expected_latency_ms: 2000
+  max_latency_ms: 6000
+  timeout_ms: 8000

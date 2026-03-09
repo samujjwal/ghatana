@@ -1,0 +1,16 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+    <PropertyGroup>
+        <TargetFramework>{{targetFramework}}</TargetFramework>
+        <ImplicitUsings>enable</ImplicitUsings>
+        <Nullable>enable</Nullable>
+        {{#if description}}
+        <Description>{{description}}</Description>
+        {{/if}}
+        {{#if author}}
+        <Authors>{{author}}</Authors>
+        {{/if}}
+        <GeneratePackageOnBuild>true</GeneratePackageOnBuild>
+    </PropertyGroup>
+
+</Project>

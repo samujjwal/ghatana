@@ -1,0 +1,337 @@
+# Engineering Department Configuration
+# Defines the entire Engineering department through configuration
+
+apiVersion: virtualorg.ghatana.com/v1
+kind: Department
+metadata:
+  name: engineering
+  labels:
+    category: technical
+    cost-center: "ENG-001"
+
+spec:
+  # Basic Info
+  displayName: "Engineering"
+  type: ENGINEERING
+  description: "Software development, architecture, and technical leadership"
+
+  # Organizational Position
+  hierarchy:
+    parent: null # Top-level technical department
+    reportingTo: cto-agent
+    children:
+      - backend-team
+      - frontend-team
+      - platform-team
+      - data-team
+
+  # Department Settings
+  settings:
+    maxAgents: 50
+    autoScaleAgents: true
+
+    taskAssignment:
+      strategy: capability-match
+      fallbackStrategy: round-robin
+      loadBalancing:
+        maxTasksPerAgent: 5
+        considerExpertise: true
+
+    communication:
+      primaryChannel: slack
+      channelPrefix: "#eng-"
+      meetingCadence:
+        standup: "0 10 * * 1-5"
+        planning: "0 10 * * 1"
+        retro: "0 15 * * 5"
+
+    codeReview:
+      requiredApprovals: 2
+      autoAssign: true
+      maxReviewers: 3
+
+  # Sub-teams (inline or referenced)
+  teams:
+    - name: backend-team
+      lead: backend-lead
+      agents:
+        - senior-backend-engineer
+        - backend-engineer-1
+        - backend-engineer-2
+      capabilities: [java, spring, microservices, databases]
+
+    - name: frontend-team
+      lead: frontend-lead
+      agents:
+        - senior-frontend-engineer
+        - frontend-engineer-1
+      capabilities: [react, typescript, css, accessibility]
+
+    - name: platform-team
+      lead: platform-lead
+      agents:
+        - platform-engineer-1
+        - platform-engineer-2
+      capabilities: [kubernetes, terraform, observability]
+
+  # Agent Definitions
+  agents:
+    # Executive Level
+    - name: cto-agent
+      persona: ref:personas/executive.yaml
+      displayName: "CTO"
+      role:
+        name: CTO
+        level: executive
+        title: "Chief Technology Officer"
+      reportingTo: ceo-agent
+      authority:
+        decisionScope: organization
+        budgetLimit: 5000000
+        canApprove:
+          - architecture_decisions
+          - technology_adoption
+          - team_expansion
+          - vendor_selection
+          - security_exceptions
+      ai:
+        enabled: true
+        systemPrompt: |
+          You are the CTO of a software company. Your responsibilities:
+          - Strategic technology decisions
+          - Architecture oversight
+          - Team growth and development
+          - Vendor and technology evaluation
+          - Balancing innovation with stability
+
+          Decision Framework:
+          1. Align with business objectives
+          2. Consider technical debt implications
+          3. Evaluate team capacity and skills
+          4. Assess security and compliance
+          5. Plan for scalability
+
+    # Lead Engineers
+    - name: lead-engineer
+      persona: ref:personas/senior-engineer.yaml
+      displayName: "Lead Engineer"
+      role:
+        name: Lead Engineer
+        level: lead
+        title: "Lead Software Engineer"
+      department: engineering
+      reportingTo: cto-agent
+      directReports:
+        - senior-engineer
+        - engineer
+      authority:
+        decisionScope: team
+        canApprove:
+          - code_review
+          - architecture_decisions
+          - deployment_approval
+      capabilities:
+        primary:
+          - technical_leadership
+          - code_review
+          - architecture_design
+          - mentoring
+          - sprint_planning
+        secondary:
+          - java
+          - system_design
+          - performance_optimization
+      ai:
+        enabled: true
+        systemPrompt: |
+          You are a Lead Engineer responsible for:
+          - Code review and quality assurance
+          - Technical design decisions
+          - Team mentoring and growth
+          - Sprint planning and estimation
+          - Cross-team coordination
+
+          When reviewing code:
+          1. Focus on correctness and logic
+          2. Check for security vulnerabilities
+          3. Evaluate performance implications
+          4. Ensure test coverage
+          5. Consider maintainability
+
+    # Senior Engineers
+    - name: senior-engineer
+      persona: ref:personas/senior-engineer.yaml
+      displayName: "Senior Software Engineer"
+      role:
+        level: senior
+      reportingTo: lead-engineer
+      capabilities:
+        primary:
+          - java
+          - system_design
+          - code_review
+          - debugging
+          - performance_optimization
+      ai:
+        enabled: true
+        model: gpt-4-turbo
+
+    # Engineers
+    - name: engineer
+      persona: ref:personas/engineer.yaml
+      displayName: "Software Engineer"
+      role:
+        level: individual
+      reportingTo: senior-engineer
+      capabilities:
+        primary:
+          - java
+          - testing
+          - debugging
+      workload:
+        maxConcurrentTasks: 3
+        taskPrioritization: deadline
+
+  # Department Workflows
+  workflows:
+    - name: code-review-workflow
+      steps:
+        - name: submit-pr
+          agent: engineer
+          action: create_pull_request
+
+        - name: automated-checks
+          agent: system
+          action: run_ci_checks
+          waitFor: [submit-pr]
+
+        - name: review
+          agent: senior-engineer
+          action: review_code
+          waitFor: [automated-checks]
+          condition: automated_checks.passed
+
+        - name: approve
+          agent: lead-engineer
+          action: approve_merge
+          waitFor: [review]
+          condition: review.approved
+
+    - name: feature-development
+      steps:
+        - name: design
+          agent: senior-engineer
+          action: create_technical_design
+
+        - name: implement
+          agent: engineer
+          action: implement_feature
+          waitFor: [design]
+
+        - name: test
+          agent: engineer
+          action: write_tests
+          waitFor: [implement]
+
+        - name: code-review
+          workflow: code-review-workflow
+          waitFor: [test]
+
+  # KPI Definitions
+  kpis:
+    - name: velocity
+      displayName: "Sprint Velocity"
+      type: gauge
+      unit: story_points
+      target: 80
+      warningThreshold: 60
+      criticalThreshold: 40
+
+    - name: code_coverage
+      displayName: "Code Coverage"
+      type: percentage
+      target: 85
+      warningThreshold: 75
+      criticalThreshold: 60
+
+    - name: pr_cycle_time
+      displayName: "PR Cycle Time"
+      type: duration
+      unit: hours
+      target: 24
+      warningThreshold: 48
+      criticalThreshold: 72
+
+    - name: bug_rate
+      displayName: "Bug Rate"
+      type: rate
+      unit: bugs_per_100_stories
+      target: 5
+      warningThreshold: 10
+      criticalThreshold: 20
+
+    - name: deployment_frequency
+      displayName: "Deployment Frequency"
+      type: frequency
+      unit: per_day
+      target: 5
+      warningThreshold: 2
+      criticalThreshold: 0.5
+
+  # Task Types
+  taskTypes:
+    - name: feature_development
+      displayName: "Feature Development"
+      priority: normal
+      slaHours: 40
+      requiredCapabilities: [java, testing]
+      assignmentStrategy: capability-match
+      escalation:
+        - at: 80%
+          to: lead-engineer
+        - at: 100%
+          to: cto-agent
+
+    - name: bug_fix
+      displayName: "Bug Fix"
+      priority: high
+      slaHours: 8
+      requiredCapabilities: [debugging, java]
+
+    - name: code_review
+      displayName: "Code Review"
+      priority: normal
+      slaHours: 4
+      requiredCapabilities: [code_review]
+
+    - name: technical_debt
+      displayName: "Technical Debt"
+      priority: low
+      slaHours: 80
+      requiredCapabilities: [refactoring]
+
+    - name: security_fix
+      displayName: "Security Fix"
+      priority: critical
+      slaHours: 4
+      requiredCapabilities: [security, java]
+      escalation:
+        - at: 50%
+          to: security-lead
+        - at: 75%
+          to: cto-agent
+
+  # Event Subscriptions
+  subscriptions:
+    - event: pr_opened
+      action: assign_reviewers
+
+    - event: deployment_failed
+      action: rollback_and_notify
+
+    - event: security_vulnerability_detected
+      action: create_security_task
+      priority: critical
+
+    - event: sprint_started
+      action: distribute_tasks

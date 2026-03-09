@@ -1,0 +1,45 @@
+import { useState, useEffect } from 'react';
+import { apiClient } from './api/client';
+
+interface HealthStatus {
+status: string;
+timestamp: string;
+service: string;
+}
+
+function App() {
+const [health, setHealth] = useState<HealthStatus | null>(null);
+    const [items, setItems] = useState<string[]>([]);
+
+        useEffect(() => {
+        apiClient.getHealth().then(setHealth);
+        apiClient.getExample().then(setItems);
+        }, []);
+
+        return (
+        <div className="container">
+            <h1>{{projectName}}</h1>
+            <p>Go Chi + React + Vite Fullstack Application</p>
+
+            <section>
+                <h2>Backend Health</h2>
+                {health ? (
+                <pre>{JSON.stringify(health, null, 2)}</pre>
+                ) : (
+                <p>Loading...</p>
+                )}
+            </section>
+
+            <section>
+                <h2>Example Data</h2>
+                <ul>
+                    {items.map((item, i) => (
+                    <li key={i}>{item}</li>
+                    ))}
+                </ul>
+            </section>
+        </div>
+        );
+        }
+
+        export default App;

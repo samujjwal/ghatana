@@ -1,0 +1,24 @@
+---
+id: "test_env_monitoring"
+agent: "TestEnvironmentMonitoringAgent"
+role: "SRE/QA"
+inputs_spec:
+- name: "test_environment_url"
+  description: "URL/credentials for test environment monitoring."
+  format: "Environment URL/credentials"
+outputs_spec:
+- name: "test_env_health_report"
+  description: "Health and status report for all ephemeral test environments."
+  format: "Health report artifact"
+agent_tasks:
+- "Monitor all ephemeral test environments for health/status."
+- "Report anomalies, failures, performance issues."
+acceptance_criteria:
+- "Environment health and status monitored/reported."
+- "Anomalies/failures are flagged."
+dependencies:
+- "test_environment_url"
+failure_escalation:
+- "Escalate to SRE/DevOps if environments are unhealthy."
+references: []
+hitl: false

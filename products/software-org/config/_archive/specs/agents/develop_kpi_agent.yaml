@@ -1,0 +1,36 @@
+---
+id: "develop_kpi_agent"
+agent: "StageKPIAgent"
+role: "Develop KPI Analyst"
+inputs_spec:
+- name: "develop_stage_milestone"
+  description: "Milestones for KPI tracking."
+  format: "List of milestone objects"
+outputs_spec:
+- name: "develop_kpi_report"
+  description: "Full KPI report (code quality, test coverage, review times, defect\
+    \ rates, technical debt, trends)."
+  format: "KPI report artifact"
+agent_tasks:
+- "Track and report code quality score, test coverage %, code review turnaround, peer\
+  \ review rate, vulnerability density, technical debt."
+- "Flag trends, anomalies, and negative movements."
+- "Ensure KPI data is linked to codebase versions and milestones."
+- "Visualize KPI trends over time."
+acceptance_criteria:
+- "{KPI=Code quality score (static analysis, linting pass rate)}"
+- "{KPI=Test coverage % (unit, integration, e2e)}"
+- "{KPI=Mean code review turnaround time (hours/days)}"
+- "{KPI=Peer review pass rate and defect escape rate}"
+- "{KPI=Vulnerability density (per 1k lines of code)}"
+- "{KPI=Technical debt (issues/complexity metrics)}"
+- "Trends, anomalies, or negative movements are flagged for action."
+- "KPI data is traceable to codebase versions and milestone reports."
+- "KPI trends are visualized over time and compared to past project baselines."
+- "Outliers and deviations are flagged for review."
+dependencies:
+- "develop_stage_milestone"
+failure_escalation:
+- "Escalate to KPI Analyst or Dev Lead if KPIs not updated or acted on."
+references: []
+hitl: false

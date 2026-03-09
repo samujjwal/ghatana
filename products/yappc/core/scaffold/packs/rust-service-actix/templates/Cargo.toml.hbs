@@ -1,0 +1,22 @@
+[package]
+name = "{{projectName}}"
+version = "0.1.0"
+edition = "{{rustEdition}}"
+authors = [{{#each authors}}"{{this}}"{{#unless @last}}, {{/unless}}{{/each}}]
+
+[dependencies]
+actix-web = "4.4"
+actix-rt = "2.9"
+{{#if enableCors}}
+actix-cors = "0.7"
+{{/if}}
+serde = { version = "1.0", features = ["derive"] }
+serde_json = "1.0"
+env_logger = "0.11"
+log = "0.4"
+{{#if enableMetrics}}
+prometheus = "0.13"
+{{/if}}
+
+[dev-dependencies]
+actix-web-test = "4.4"

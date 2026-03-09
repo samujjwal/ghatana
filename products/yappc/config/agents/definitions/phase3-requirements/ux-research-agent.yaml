@@ -1,0 +1,117 @@
+id: ux-research-agent
+name: UX Research Agent
+version: 1.0.0
+description: Conducts and synthesizes UX research. Plans user research, analyzes findings, and provides design recommendations.
+
+metadata:
+  level: 2  # Domain Expert
+  domain: requirements
+  tags:
+    - ux-research
+    - user-research
+    - usability
+    - design-insights
+
+generator:
+  type: PIPELINE
+  steps:
+    - name: research_planning
+      type: LLM
+      provider: ANTHROPIC
+      model: claude-3-5-sonnet-20241022
+      temperature: 0.3
+      max_tokens: 2500
+      prompt: |
+        You are the UX Research Agent. Plan and synthesize UX research:
+        
+        Research Goals: {{goals}}
+        Target Users: {{users}}
+        Constraints: {{constraints}}
+        Existing Data: {{existing_data}}
+        
+        Plan:
+        1. Research questions
+        2. Methods (interviews, usability tests, surveys, analytics)
+        3. Participant profile and recruitment
+        4. Study protocol
+        5. Analysis approach
+        6. Expected outputs
+        
+        Output as JSON: {research_questions, methods, participant_profile, protocol, analysis_approach, timeline, deliverables}
+    - name: findings_synthesis
+      type: LLM
+      provider: ANTHROPIC
+      model: claude-3-5-sonnet-20241022
+      temperature: 0.2
+      max_tokens: 2000
+      prompt: |
+        Synthesize UX research findings:
+        
+        Raw Findings: {{findings}}
+        Research Questions: {{questions}}
+        
+        Provide:
+        1. Key insights (validated, invalidated, new)
+        2. User mental models
+        3. Pain points and delights
+        4. Design recommendations
+        5. Next research priorities
+
+memory:
+  episodic:
+    enabled: true
+    retention_days: 730
+    categories:
+      - research-studies
+      - findings
+      - recommendations
+  semantic:
+    enabled: true
+    categories:
+      - user-insights
+      - research-methods
+      - design-patterns
+  procedural:
+    enabled: true
+    categories:
+      - research-protocols
+      - analysis-frameworks
+      - synthesis-methods
+
+tools:
+  - research_planner
+  - analysis_tool
+  - insight_synthesizer
+
+capabilities:
+  - research-planning
+  - data-analysis
+  - insight-synthesis
+  - design-recommendations
+
+routing:
+  input_types:
+    - research-request
+    - design-input-need
+    - usability-question
+  output_types:
+    - research-plan
+    - findings-report
+    - design-recommendations
+
+delegation:
+  can_delegate_to:
+    - persona-builder-agent
+    - user-journey-mapper-agent
+  escalates_to:
+    - requirements-orchestrator-agent
+
+governance:
+  requires_approval: true  # Research with users needs approval
+  can_block: false
+  audit_trail: comprehensive
+
+performance:
+  expected_latency_ms: 5000
+  max_latency_ms: 12000
+  timeout_ms: 25000

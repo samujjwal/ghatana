@@ -1,0 +1,67 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: governance-config
+  namespace: ghatana
+  labels:
+    app: governance-service
+data:
+  # Role inheritance configuration
+  max-role-inheritance-depth: "5"
+  enable-cycle-detection: "true"
+  role-cache-ttl: "600000" # 10 minutes in milliseconds
+  max-role-assignments-per-principal: "50"
+  max-permissions-per-role: "100"
+
+  # Audit and metrics configuration
+  enable-audit-logging: "true"
+  enable-metrics: "true"
+  metrics-collection-interval-seconds: "60"
+
+  # Redis configuration
+  redis-host: "redis.ghatana.svc.cluster.local"
+  redis-port: "6379"
+  redis-db: "0"
+  redis-password: ""
+  redis-ssl-enabled: "false"
+  redis-max-pool-size: "20"
+  redis-min-idle: "5"
+
+  # Database configuration (non-sensitive)
+  database-pool-size: "20"
+  database-connection-timeout: "30000"
+  database-idle-timeout: "600000"
+  database-max-lifetime: "1800000"
+
+  # Health check configuration
+  health-check-timeout-seconds: "5"
+  health-check-readiness-threshold-ms: "500"
+  health-check-degraded-threshold-ms: "1000"
+
+  # Performance tuning
+  role-resolution-cache-size: "10000"
+  permission-resolution-parallel-threads: "4"
+  batch-operation-max-size: "100"
+  batch-operation-timeout-ms: "5000"
+
+  # Observability
+  metrics-enabled: "true"
+  metrics-registry-type: "micrometer"
+  tracing-enabled: "true"
+  tracing-sample-rate: "0.1"
+
+  # Logging
+  log-level: "INFO"
+  audit-log-level: "INFO"
+  slow-query-threshold-ms: "100"
+
+  # Multi-tenancy
+  enforce-tenant-isolation: "true"
+  default-tenant-id: "default"
+
+  # Feature flags
+  enable-role-inheritance: "true"
+  enable-wildcard-permissions: "true"
+  enable-permission-caching: "true"
+  enable-batch-operations: "true"
+  enable-async-audit-logging: "true"

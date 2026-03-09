@@ -1,0 +1,8 @@
+<?xml version="1.0"?>
+<ruleset name="Basic Rules">
+    <description>Basic PMD rules</description>
+    <rule ref="category/java/bestpractices.xml/UnusedImports"/>
+    <rule ref="category/java/bestpractices.xml/UnusedLocalVariable"/>
+    <rule ref="category/java/bestpractices.xml/UnusedPrivateField"/>
+    <rule ref="category/java/codestyle.xml/UnnecessaryImport"/>
+</ruleset>

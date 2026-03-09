@@ -1,0 +1,31 @@
+package router
+
+import (
+"github.com/go-chi/chi/v5"
+"github.com/go-chi/chi/v5/middleware"
+"github.com/go-chi/cors"
+
+"{{moduleName}}/backend/handlers"
+)
+
+func New() *chi.Mux {
+r := chi.NewRouter()
+
+// Middleware
+r.Use(middleware.Logger)
+r.Use(middleware.Recoverer)
+r.Use(cors.Handler(cors.Options{
+AllowedOrigins: []string{"http://localhost:{{frontendPort}}", "http://127.0.0.1:{{frontendPort}}"},
+AllowedMethods: []string{"GET", "POST", "PUT", "DELETE", "OPTIONS"},
+AllowedHeaders: []string{"Accept", "Authorization", "Content-Type"},
+AllowCredentials: true,
+}))
+
+// Routes
+r.Route("/api", func(r chi.Router) {
+r.Get("/health", handlers.Health)
+r.Get("/example", handlers.GetExample)
+})
+
+return r
+}

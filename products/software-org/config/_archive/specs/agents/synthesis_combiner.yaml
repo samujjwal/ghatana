@@ -1,0 +1,41 @@
+---
+id: "synthesis_combiner"
+agent: "SynthesisCombinerAgent"
+role: "Lead DevOps/PM"
+inputs_spec:
+- name: "stored_artifacts"
+  description: "All stored release artifacts."
+  format: "Artifact registry reference"
+- name: "build_logs_audit_trail"
+  description: "Full audit trail/logs for the build."
+  format: "Audit log artifact"
+- name: "artifact_traceability_matrix"
+  description: "Traceability matrix for release."
+  format: "Traceability matrix artifact"
+- name: "build_best_practices_report"
+  description: "Build best practice review report."
+  format: "Compliance report artifact"
+outputs_spec:
+- name: "ready_for_test_package"
+  description: "Complete, bundled package for Test stage."
+  format: "Release/test package artifact"
+agent_tasks:
+- "Bundle all build outputs, logs, and traceability for Test stage."
+- "Flag missing or failed deliverables."
+- "Confirm explicit readiness for Test."
+- "Ensure all referenced artifacts are current and versioned."
+acceptance_criteria:
+- "All build outputs, logs, and traceability are bundled for the Test stage."
+- "Missing or failed deliverables are flagged."
+- "Readiness for Test stage is explicitly confirmed."
+- "All referenced artifacts are current and versioned."
+dependencies:
+- "stored_artifacts"
+- "build_logs_audit_trail"
+- "artifact_traceability_matrix"
+- "build_best_practices_report"
+failure_escalation:
+- "Escalate to DevOps/PM if bundle is incomplete or unreadiness is detected."
+references: []
+hitl: true
+hitl_reason: "Human validates test package readiness"

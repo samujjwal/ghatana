@@ -1,0 +1,26 @@
+{
+  "name": "@ghatana/yappc-eslint-local-rules",
+  "version": "1.0.0",
+  "description": "Custom ESLint rules for YAPPC design system enforcement",
+  "type": "module",
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "scripts": {
+    "build": "tsc",
+    "watch": "tsc --watch",
+    "clean": "rm -rf dist"
+  },
+  "keywords": [
+    "eslint",
+    "eslintplugin",
+    "design-system",
+    "yappc"
+  ],
+  "author": "YAPPC Team",
+  "license": "MIT",
+  "devDependencies": {
+    "@types/eslint": "^9.6.1",
+    "@types/estree": "^1.0.8",
+    "typescript": "^5.9.3"
+  }
+}

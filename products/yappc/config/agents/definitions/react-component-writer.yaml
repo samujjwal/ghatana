@@ -1,0 +1,33 @@
+id: agent.yappc.react-component-writer
+name: React Component Writer
+description: React.js component generation and optimization agent
+version: 1.0.0
+type: worker
+category: code-generation
+
+capabilities:
+  - react-component-generation
+  - hooks-implementation
+  - state-management
+  - performance-optimization
+
+requirements:
+  - react-ecosystem
+  - javascript-typescript
+  - frontend-tools
+
+parameters:
+  component_type:
+    type: string
+    default: "functional"
+    description: Type of React component to generate
+  
+  state_management:
+    type: string
+    default: "hooks"
+    description: State management approach
+
+metadata:
+  author: "YAPPC Team"
+  level: 3
+  tags: [react, frontend, javascript, typescript]

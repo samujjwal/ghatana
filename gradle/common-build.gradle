@@ -1,0 +1,251 @@
+// Common build configuration for all Java/Kotlin modules
+
+// Apply common plugins and configurations to subprojects (excluding data-cloud)
+subprojects { project ->
+    // Skip data-cloud projects - they use their own build configuration
+    if (project.path.startsWith(":products:data-cloud")) {
+        return
+    }
+    
+    group = 'com.ghatana'
+    version = '1.0.0-SNAPSHOT'
+
+    apply plugin: 'java-library'
+    apply plugin: 'checkstyle'
+    apply plugin: 'pmd'
+    apply plugin: 'jacoco'
+    apply plugin: 'com.diffplug.spotless'
+
+    // The shared Jacoco conventions plugin wires additional task dependencies
+    // around compileJava. For :contracts:proto this currently results in a
+    // CircularReferenceException (compileJava -> compileJava), so we skip
+    // applying it just for that module while keeping it enabled everywhere else.
+    if (project.path != ':contracts:proto') {
+        apply plugin: 'com.ghatana.jacoco-conventions'
+    }
+    apply plugin: 'com.ghatana.testing.test-dependency-audit'
+    apply plugin: 'org.owasp.dependencycheck'
+    // TODO: re-enable pitest after verifying ReportingExtension usage in Gradle 9
+    // apply plugin: 'info.solidsoft.pitest'
+    
+    // Common dependencies
+    tasks.named('check') {
+        dependsOn('verifyTestDependencies')
+    }
+    
+    dependencies {
+        // JUnit 5 BOM for consistent versioning
+        testImplementation platform(libs.junit.bom)
+        
+        // Test dependencies
+        testImplementation libs.junit.jupiter.api
+        testRuntimeOnly libs.junit.jupiter.engine
+        // Ensure the JUnit Platform launcher is available to test worker JVMs
+        testRuntimeOnly libs.junit.platform.launcher
+        testImplementation libs.mockito.junit.jupiter
+        testImplementation libs.assertj.core
+        testImplementation platform(libs.testcontainers.bom)
+        testImplementation libs.testcontainers.core
+        testImplementation libs.testcontainers.junit.jupiter
+        
+        // ActiveJ
+        testImplementation libs.activej.core
+        testImplementation libs.activej.test
+        
+        // Logging (configured via log4j2-config.gradle)
+        implementation libs.slf4j.api
+        // Provide the Log4j JUL bridge at test/runtime so java.util.logging LogManager can be loaded
+        testRuntimeOnly libs.log4j.jul
+    }
+
+
+    
+    // Java configuration
+    java {
+        toolchain {
+            languageVersion = JavaLanguageVersion.of(21)
+        }
+    }
+    
+    // Test configuration
+    test {
+        useJUnitPlatform()
+        testLogging {
+            events 'passed', 'skipped', 'failed'
+            showStandardStreams = true
+        }
+        finalizedBy jacocoTestReport
+        // Configure system properties for tests
+        systemProperty 'java.util.logging.manager', 'org.apache.logging.log4j.jul.LogManager'
+        
+        // Make sure tests can find the log4j2.xml configuration
+        systemProperty 'log4j.configurationFile', "${rootProject.projectDir}/config/log4j2.xml"
+        
+        // Ensure test resources are on the classpath
+        classpath += files('src/test/resources')
+        
+        // Show standard out and standard error of the test JVM(s) on the console
+        testLogging.showStandardStreams = true
+    }
+    
+    // JaCoCo configuration
+    jacoco {
+        // Use a JaCoCo version that resolves reliably from Maven Central
+        toolVersion = '0.8.13'
+    }
+
+    // Ensure the jacocoAnt configuration (used by -javaagent in test JVMs) resolves
+    // to the same, compatible JaCoCo artifacts. Gradle's builtin defaults may pull
+    // an older agent; explicitly declare the dependency here.
+    // Provide an explicit configuration that contains only the JaCoCo agent JAR
+    // and make it available for the test JVM -javaagent argument. This avoids
+    // relying on Gradle's internal jacocoAnt wiring which may resolve an older
+    // agent version depending on Gradle's bundled defaults.
+    configurations {
+        jacocoAgent
+    }
+
+    dependencies {
+        // Agent artifact - this is the runtime javaagent we will point the Test JVM at
+        jacocoAgent "org.jacoco:org.jacoco.agent:0.8.13"
+
+        // Also pin jacocoAnt to the same family for any tasks that still rely on it
+        jacocoAnt "org.jacoco:org.jacoco.ant:0.8.13"
+    }
+    
+    jacocoTestReport {
+        dependsOn test
+        reports {
+            xml.required = true
+            html.required = true
+            csv.required = false
+        }
+    }
+
+    // PITest configuration is currently disabled
+    // To enable PITest, uncomment the plugin application above and uncomment this block
+    /*
+    pitest {
+        junit5PluginVersion = libs.versions.pitest.junit5.get()
+        pitestVersion = libs.versions.pitest.get()
+        targetClasses = ['com.ghatana.*']
+        threads = Runtime.runtime.availableProcessors()
+        outputFormats = ['XML', 'HTML']
+        timestampedReports = false
+        testStrengthThreshold = 80
+        mutationThreshold = 70
+    }
+    */
+    
+    // Checkstyle configuration
+    checkstyle {
+        // Use explicit version (matches catalog) to avoid Kotlin accessor calls in Groovy
+        toolVersion = '10.12.5'
+        configFile = rootProject.file('config/checkstyle/checkstyle.xml')
+        configProperties = [
+            'suppressionFile': rootProject.file('config/checkstyle/suppressions.xml').absolutePath
+        ]
+        ignoreFailures = false
+        showViolations = true
+    }
+    
+    // PMD configuration
+    pmd {
+        // Use a Java 21–compatible PMD version
+        toolVersion = '7.3.0'
+        ruleSetFiles = files(rootProject.file('config/pmd/ruleset.xml'))
+        ruleSets = []
+        ignoreFailures = false
+        consoleOutput = true
+    }
+    
+    // SpotBugs configuration — ENABLED
+    if (pluginManager.hasPlugin('com.github.spotbugs')) {
+        spotbugs {
+            toolVersion = '4.8.5'
+            ignoreFailures = false
+            showStackTraces = true
+            showProgress = true
+            effort = 'max'
+            reportLevel = 'default'
+            excludeFilter = rootProject.file('config/spotbugs/exclude.xml')
+        }
+    
+        dependencies {
+            spotbugsPlugins 'com.h3xstream.findsecbugs:findsecbugs-plugin:1.12.0'
+        }
+    
+        def spotbugsLauncher = javaToolchains.launcherFor {
+            languageVersion = JavaLanguageVersion.of(21)
+        }
+    
+        tasks.configureEach { t ->
+            if (t.class.name == 'com.github.spotbugs.snom.SpotBugsTask') {
+                t.javaLauncher.set(spotbugsLauncher)
+            }
+        }
+    }
+
+    // Ensure quality checks are enabled by default; apply narrow excludes for problematic files instead
+    tasks.configureEach { t ->
+        def n = t.name.toLowerCase()
+        if (n.contains('spotless')) {
+            // Enable Spotless tasks for all projects; exclude specific files below instead of disabling whole projects
+            t.enabled = true
+        }
+        // SpotBugs and PMD tasks remain enabled for static analysis runs
+    }
+    
+    // Ensure any future tasks are also configured for selected tools
+    tasks.whenTaskAdded { t ->
+        def n = t.name.toLowerCase()
+        // PMD tasks are now enabled with ignoreFailures=true (see PMD config above)
+    }
+
+    // SpotBugs: enabled with ignoreFailures=true to report findings without failing build
+    // When findings are triaged, set ignoreFailures=false to enforce
+    // Note: SpotBugs plugin must be applied separately for this to have effect
+
+    // Quality gates ENFORCED — build fails on Checkstyle/PMD violations
+    tasks.withType(org.gradle.api.plugins.quality.Checkstyle).configureEach { it.ignoreFailures = false }
+    tasks.withType(org.gradle.api.plugins.quality.Pmd).configureEach { it.ignoreFailures = false }
+    
+    // Spotless configuration - temporarily disabling all checks
+    spotless {
+        java {
+            target 'src/**/*.java'
+            // Enable formatting and validation using configured formatters
+        }
+        
+        format 'misc', {
+            target '**/*.gradle', '**/.gitignore'
+            // Exclude ALL .md files to avoid following broken symbolic links
+            // targetExclude '**/*.md' is not needed since we don't target them
+        }
+        
+        format 'xml', {
+            target '**/*.xml', '**/*.xsd'
+            // XML formatting enabled
+        }
+        // Enforce Spotless checks during 'check' lifecycle
+        enforceCheck = true
+    }
+    
+    // OWASP Dependency Check configuration
+    dependencyCheck {
+        formats = ['HTML', 'JSON', 'JUNIT']
+        failBuildOnCVSS = 7.0
+        suppressionFile = rootProject.file('config/dependency-check/suppressions.xml')
+        skipConfigurations = ['checkstyle', 'pmd', 'spotbugs', 'jacoco']
+        analyzers {
+            assemblyEnabled = false
+            nodeEnabled = false
+            nodeAudit {
+                enabled = false
+            }
+            retirejs {
+                enabled = false
+            }
+        }
+    }
+}

@@ -1,0 +1,550 @@
+{
+    "$schema": "http://json-schema.org/draft-07/schema#",
+    "$id": "https://tutorputor.io/schemas/v1/assessments/simulation-item.json",
+    "title": "SimulationAssessmentItem",
+    "description": "Assessment item driven by simulation interactions (USP-based)",
+    "type": "object",
+    "required": [
+        "id",
+        "type",
+        "mode",
+        "simulationRef",
+        "gradingStrategy",
+        "points"
+    ],
+    "properties": {
+        "id": {
+            "type": "string",
+            "description": "Unique identifier for the simulation item"
+        },
+        "type": {
+            "type": "string",
+            "const": "simulation",
+            "description": "Item type discriminator"
+        },
+        "mode": {
+            "type": "string",
+            "enum": [
+                "prediction",
+                "manipulation",
+                "explanation",
+                "design",
+                "diagnosis"
+            ],
+            "description": "Assessment mode determining interaction pattern"
+        },
+        "prompt": {
+            "type": "string",
+            "description": "Question or task prompt presented to the learner"
+        },
+        "stimulus": {
+            "type": "string",
+            "description": "Context or background information"
+        },
+        "points": {
+            "type": "number",
+            "minimum": 0,
+            "description": "Maximum points for this item"
+        },
+        "simulationRef": {
+            "type": "object",
+            "description": "Reference to simulation manifest and state",
+            "required": [
+                "manifestId"
+            ],
+            "properties": {
+                "manifestId": {
+                    "type": "string",
+                    "description": "ID of the simulation manifest"
+                },
+                "domain": {
+                    "type": "string",
+                    "enum": [
+                        "CS_DISCRETE",
+                        "PHYSICS",
+                        "ECONOMICS",
+                        "CHEMISTRY",
+                        "BIOLOGY",
+                        "MEDICINE",
+                        "ENGINEERING",
+                        "MATHEMATICS"
+                    ],
+                    "description": "Simulation domain"
+                },
+                "initialStateRef": {
+                    "type": "string",
+                    "description": "Reference to initial simulation state snapshot"
+                },
+                "targetStateRef": {
+                    "type": "string",
+                    "description": "Reference to expected target state (for manipulation/design modes)"
+                },
+                "stepRange": {
+                    "type": "object",
+                    "description": "Subset of steps to include",
+                    "properties": {
+                        "startStep": {
+                            "type": "integer",
+                            "minimum": 0
+                        },
+                        "endStep": {
+                            "type": "integer",
+                            "minimum": 0
+                        }
+                    }
+                }
+            }
+        },
+        "parameterConstraints": {
+            "type": "array",
+            "description": "Constraints on parameters the learner can modify",
+            "items": {
+                "type": "object",
+                "required": [
+                    "parameterId"
+                ],
+                "properties": {
+                    "parameterId": {
+                        "type": "string",
+                        "description": "ID of the parameter"
+                    },
+                    "parameterName": {
+                        "type": "string",
+                        "description": "Human-readable parameter name"
+                    },
+                    "locked": {
+                        "type": "boolean",
+                        "description": "Whether parameter is locked (read-only)"
+                    },
+                    "allowedRange": {
+                        "type": "object",
+                        "properties": {
+                            "min": {
+                                "type": "number"
+                            },
+                            "max": {
+                                "type": "number"
+                            }
+                        }
+                    },
+                    "allowedValues": {
+                        "type": "array",
+                        "items": {
+                            "type": [
+                                "number",
+                                "string",
+                                "boolean"
+                            ]
+                        },
+                        "description": "Discrete allowed values"
+                    }
+                }
+            }
+        },
+        "entityFocus": {
+            "type": "array",
+            "description": "Entities to highlight or focus on for assessment",
+            "items": {
+                "type": "object",
+                "required": [
+                    "entityId"
+                ],
+                "properties": {
+                    "entityId": {
+                        "type": "string"
+                    },
+                    "entityType": {
+                        "type": "string"
+                    },
+                    "observableProperties": {
+                        "type": "array",
+                        "items": {
+                            "type": "string"
+                        },
+                        "description": "Properties the learner should observe"
+                    }
+                }
+            }
+        },
+        "predictionOptions": {
+            "type": "object",
+            "description": "Configuration for prediction mode",
+            "properties": {
+                "targetVariables": {
+                    "type": "array",
+                    "description": "Variables the learner must predict",
+                    "items": {
+                        "type": "object",
+                        "required": [
+                            "variableId",
+                            "variableName"
+                        ],
+                        "properties": {
+                            "variableId": {
+                                "type": "string"
+                            },
+                            "variableName": {
+                                "type": "string"
+                            },
+                            "unit": {
+                                "type": "string"
+                            },
+                            "expectedValue": {
+                                "type": "number"
+                            },
+                            "tolerance": {
+                                "type": "number"
+                            },
+                            "toleranceType": {
+                                "type": "string",
+                                "enum": [
+                                    "absolute",
+                                    "relative",
+                                    "percentage"
+                                ]
+                            }
+                        }
+                    }
+                },
+                "predictionTime": {
+                    "type": "number",
+                    "description": "Time point at which prediction should be made"
+                },
+                "showActualAfterSubmit": {
+                    "type": "boolean",
+                    "default": true,
+                    "description": "Whether to reveal actual values after submission"
+                }
+            }
+        },
+        "manipulationOptions": {
+            "type": "object",
+            "description": "Configuration for manipulation mode",
+            "properties": {
+                "targetConditions": {
+                    "type": "array",
+                    "description": "Conditions that must be achieved",
+                    "items": {
+                        "type": "object",
+                        "required": [
+                            "conditionId",
+                            "description",
+                            "evaluator"
+                        ],
+                        "properties": {
+                            "conditionId": {
+                                "type": "string"
+                            },
+                            "description": {
+                                "type": "string"
+                            },
+                            "evaluator": {
+                                "type": "string",
+                                "description": "Expression or function name to evaluate condition"
+                            },
+                            "partialCreditThreshold": {
+                                "type": "number"
+                            }
+                        }
+                    }
+                },
+                "maxActions": {
+                    "type": "integer",
+                    "description": "Maximum number of actions allowed"
+                },
+                "timeLimit": {
+                    "type": "integer",
+                    "description": "Time limit in seconds"
+                }
+            }
+        },
+        "explanationOptions": {
+            "type": "object",
+            "description": "Configuration for explanation mode",
+            "properties": {
+                "requiredConcepts": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    },
+                    "description": "Concepts that must be mentioned in explanation"
+                },
+                "minWordCount": {
+                    "type": "integer"
+                },
+                "maxWordCount": {
+                    "type": "integer"
+                },
+                "rubricCriteria": {
+                    "type": "array",
+                    "items": {
+                        "type": "object",
+                        "required": [
+                            "criterion",
+                            "weight"
+                        ],
+                        "properties": {
+                            "criterion": {
+                                "type": "string"
+                            },
+                            "description": {
+                                "type": "string"
+                            },
+                            "weight": {
+                                "type": "number",
+                                "minimum": 0,
+                                "maximum": 1
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "gradingStrategy": {
+            "type": "object",
+            "description": "How to grade the simulation item",
+            "required": [
+                "method"
+            ],
+            "properties": {
+                "method": {
+                    "type": "string",
+                    "enum": [
+                        "kernel_replay",
+                        "state_comparison",
+                        "rubric",
+                        "cbm_weighted",
+                        "hybrid"
+                    ],
+                    "description": "Grading method"
+                },
+                "kernelReplayConfig": {
+                    "type": "object",
+                    "description": "Config for kernel-based grading",
+                    "properties": {
+                        "tolerances": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "number"
+                            }
+                        },
+                        "metricWeights": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "number"
+                            }
+                        }
+                    }
+                },
+                "stateComparisonConfig": {
+                    "type": "object",
+                    "description": "Config for state comparison grading",
+                    "properties": {
+                        "targetStateId": {
+                            "type": "string"
+                        },
+                        "entityMatching": {
+                            "type": "string",
+                            "enum": [
+                                "strict",
+                                "flexible",
+                                "semantic"
+                            ]
+                        },
+                        "propertyWeights": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "number"
+                            }
+                        }
+                    }
+                },
+                "rubricConfig": {
+                    "type": "object",
+                    "description": "Config for rubric-based grading",
+                    "properties": {
+                        "criteria": {
+                            "type": "array",
+                            "items": {
+                                "type": "object",
+                                "required": [
+                                    "id",
+                                    "description",
+                                    "maxPoints"
+                                ],
+                                "properties": {
+                                    "id": {
+                                        "type": "string"
+                                    },
+                                    "description": {
+                                        "type": "string"
+                                    },
+                                    "maxPoints": {
+                                        "type": "number"
+                                    },
+                                    "levels": {
+                                        "type": "array",
+                                        "items": {
+                                            "type": "object",
+                                            "properties": {
+                                                "level": {
+                                                    "type": "integer"
+                                                },
+                                                "description": {
+                                                    "type": "string"
+                                                },
+                                                "points": {
+                                                    "type": "number"
+                                                }
+                                            }
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    }
+                },
+                "cbmConfig": {
+                    "type": "object",
+                    "description": "Config for Confidence-Based Marking",
+                    "properties": {
+                        "confidenceLevels": {
+                            "type": "array",
+                            "items": {
+                                "type": "object",
+                                "properties": {
+                                    "level": {
+                                        "type": "integer"
+                                    },
+                                    "label": {
+                                        "type": "string"
+                                    },
+                                    "correctMultiplier": {
+                                        "type": "number"
+                                    },
+                                    "incorrectPenalty": {
+                                        "type": "number"
+                                    }
+                                }
+                            }
+                        }
+                    }
+                },
+                "partialCredit": {
+                    "type": "boolean",
+                    "default": true,
+                    "description": "Whether to award partial credit"
+                }
+            }
+        },
+        "hints": {
+            "type": "array",
+            "description": "Progressive hints for the learner",
+            "items": {
+                "type": "object",
+                "required": [
+                    "hintId",
+                    "content"
+                ],
+                "properties": {
+                    "hintId": {
+                        "type": "string"
+                    },
+                    "content": {
+                        "type": "string"
+                    },
+                    "pointDeduction": {
+                        "type": "number"
+                    },
+                    "unlockCondition": {
+                        "type": "string",
+                        "enum": [
+                            "time_elapsed",
+                            "attempts_made",
+                            "request",
+                            "auto"
+                        ]
+                    }
+                }
+            }
+        },
+        "feedback": {
+            "type": "object",
+            "description": "Feedback configuration",
+            "properties": {
+                "showCorrectAnswer": {
+                    "type": "boolean"
+                },
+                "showExplanation": {
+                    "type": "boolean"
+                },
+                "showReplay": {
+                    "type": "boolean",
+                    "description": "Whether to show simulation replay with correct solution"
+                },
+                "customFeedbackByScore": {
+                    "type": "array",
+                    "items": {
+                        "type": "object",
+                        "properties": {
+                            "minScore": {
+                                "type": "number"
+                            },
+                            "maxScore": {
+                                "type": "number"
+                            },
+                            "message": {
+                                "type": "string"
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "taxonomyLevel": {
+            "type": "string",
+            "enum": [
+                "remember",
+                "understand",
+                "apply",
+                "analyze",
+                "evaluate",
+                "create"
+            ],
+            "description": "Bloom's taxonomy level"
+        },
+        "metadata": {
+            "type": "object",
+            "description": "Additional metadata",
+            "properties": {
+                "authorId": {
+                    "type": "string"
+                },
+                "createdAt": {
+                    "type": "string",
+                    "format": "date-time"
+                },
+                "updatedAt": {
+                    "type": "string",
+                    "format": "date-time"
+                },
+                "version": {
+                    "type": "integer"
+                },
+                "tags": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
+                },
+                "alignedStandards": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    },
+                    "description": "Educational standards alignment"
+                }
+            }
+        }
+    }
+}

@@ -1,0 +1,64 @@
+id: plan_risk_trend_analyzer
+agent: RiskTrendAnalyzerAgent
+role: Risk Intelligence Bot
+inputs_spec:
+- name: plan_escalation_report
+  description: Plan stage escalation report.
+  format: Structured escalation report
+- name: plan_progress_dashboard
+  description: Plan progress dashboard artifact.
+  format: Dashboard artifact
+- name: plan_stage_milestone
+  description: Plan stage milestone plan.
+  format: List of milestone objects
+outputs_spec:
+- name: plan_risk_trend_report
+  description: Trend report of all risks, escalations, and blockers, with recurring/systemic risks flagged and mitigation recommendations.
+  format: Risk trend report artifact (risks, escalations, blockers, trends, flagged_systemic, recommendations)
+  example: 'risks: ["Requirement ambiguity"]
+
+    escalations: ["Requirements signoff delay"]
+
+    blockers: []
+
+    trends: ["Improving"]
+
+    flagged_systemic: ["Recurring ambiguity"]
+
+    recommendations: ["Improve requirements template"]
+
+    '
+agent_tasks:
+- Trend all risks, escalations, and blockers over time.
+- Automatically flag and classify recurring or systemic risks.
+- Share risk trend report with PMO and leadership.
+- Include recommendations for mitigation or process changes.
+acceptance_criteria:
+- All risks, escalations, and blockers are trended over time.
+- Recurring or systemic risks are automatically flagged and classified.
+- Risk trend report is shared with PMO and leadership.
+- Recommendations for mitigation or process changes are included.
+dependencies:
+- plan_escalation_report
+- plan_progress_dashboard
+- plan_stage_milestone
+failure_escalation:
+- Escalate to risk intelligence lead if trends or recommendations are missing.
+references: []
+hitl: false
+internal_logic:
+  - perception:
+      description: "Extract time-series data from evidence and incidents."
+  - model:
+      description: "Risk trends: { id, risk_id, trend_type, incident_history, severity, mitigation_effectiveness, recommendations, period }"
+  - planning:
+      description: |
+        "For each risk, analyze trends and summarize findings."
+  - action:
+      description: "Produce YAML risk trend report."
+validation:
+  - "Risk and governance SME review."
+  - "Audit for completeness, history, and recommendations."
+quality_enhancements:
+  - "Trend analysis and recommendation templates."
+  - "Automated incident pattern recognition."

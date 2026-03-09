@@ -1,0 +1,46 @@
+id: kafka-ingestion-agent
+name: Kafka Ingestion Agent
+version: 1.0.0
+description: Ingests events from Kafka topics with offset management and consumer group coordination
+
+metadata:
+  level: 3
+  domain: event-processing
+  tags: [kafka, ingestion, streaming, consumer, offset-management]
+
+aep:
+  operatorType: INGESTION
+  inputEventTypes: []
+  outputEventTypes: ["raw.kafka"]
+  backpressure:
+    bufferSize: 10000
+    overflowStrategy: DROP_OLDEST
+  reliability:
+    checkpointInterval: "30s"
+    maxRetries: 3
+    deadLetterQueue: "kafka-ingestion-dlq"
+
+generator:
+  type: DETERMINISTIC
+
+capabilities:
+  - event-ingestion
+  - stream-processing
+
+tools:
+  - name: kafkaConsumer
+    type: SERVICE
+    endpoint: /aep/kafka/consume
+  - name: offsetManager
+    type: SERVICE
+    endpoint: /aep/kafka/offsets
+
+memory:
+  type: WORKING
+  scope: consumer_state
+  retention: short
+
+resources:
+  memory: "1GB"
+  cpu: "2"
+  timeout: "0"  # Long-running

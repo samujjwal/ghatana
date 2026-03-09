@@ -1,0 +1,116 @@
+id: merge-conflict-agent
+name: Merge Conflict Agent
+version: 1.0.0
+description: Assists in resolving merge conflicts. Analyzes conflicts and suggests resolutions.
+
+metadata:
+  level: 3  # Worker
+  domain: build
+  tags:
+    - merge-conflict
+    - git
+    - version-control
+    - collaboration
+
+generator:
+  type: PIPELINE
+  steps:
+    - name: conflict_analysis
+      type: LLM
+      provider: ANTHROPIC
+      model: claude-3-5-sonnet-20241022
+      temperature: 0.2
+      max_tokens: 2500
+      prompt: |
+        You are the Merge Conflict Agent. Analyze and resolve conflicts:
+        
+        Conflicts: {{conflicts}}
+        Branch A (ours): {{ours}}
+        Branch B (theirs): {{theirs}}
+        Common Ancestor: {{base}}
+        Change History: {{history}}
+        
+        For each conflict:
+        1. Understand intent of both changes
+        2. Identify semantic conflict vs textual
+        3. Propose resolution
+        4. Flag if needs human decision
+        5. Test implications
+        
+        Output as JSON: {
+          conflicts: [{
+            file, 
+            location,
+            ours_intent,
+            theirs_intent,
+            conflict_type: [semantic|textual|both],
+            resolution,
+            confidence,
+            needs_human: boolean,
+            rationale
+          }],
+          auto_resolvable_count,
+          human_required_count
+        }
+    - name: resolution_application
+      type: SERVICE_CALL
+      service: git-service
+      endpoint: /conflict/resolve
+
+memory:
+  episodic:
+    enabled: true
+    retention_days: 365
+    categories:
+      - conflicts
+      - resolutions
+      - human-overrides
+  semantic:
+    enabled: true
+    categories:
+      - conflict-patterns
+      - resolution-strategies
+      - codebase-knowledge
+  procedural:
+    enabled: true
+    categories:
+      - resolution-rules
+      - confidence-thresholds
+      - escalation-criteria
+
+tools:
+  - conflict_parser
+  - git_operations
+  - diff_analyzer
+
+capabilities:
+  - conflict-analysis
+  - resolution-suggestion
+  - semantic-understanding
+  - safe-merge
+
+routing:
+  input_types:
+    - merge-conflict
+    - rebase-conflict
+    - cherry-pick-conflict
+  output_types:
+    - resolution
+    - human-review-request
+    - conflict-analysis
+
+delegation:
+  can_delegate_to: []
+  escalates_to:
+    - build-orchestrator-agent
+    - human-in-the-loop-coordinator
+
+governance:
+  requires_approval: true  # Resolutions reviewed
+  can_block: false
+  audit_trail: comprehensive
+
+performance:
+  expected_latency_ms: 3000
+  max_latency_ms: 8000
+  timeout_ms: 15000

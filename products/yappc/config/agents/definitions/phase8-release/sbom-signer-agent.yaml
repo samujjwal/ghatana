@@ -1,0 +1,65 @@
+id: sbom-signer-agent
+name: SBOM Signer Agent
+version: 1.0.0
+description: Signs generated SBOMs using Sigstore/cosign to produce SLSA Level 2 provenance attestations. Publishes signed SBOMs to transparency log for verifiable supply chain integrity.
+
+metadata:
+  level: 3
+  domain: release
+  tags: [release, sbom, signing, sigstore, cosign, slsa, deterministic]
+
+generator:
+  type: PIPELINE
+  steps:
+    - name: sbom_validation
+      type: RULE_BASED
+      description: >
+        Validate SBOM completeness — all components have PURL, license,
+        and SHA-256 hash. Reject incomplete SBOMs before signing.
+    - name: key_retrieval
+      type: SERVICE_CALL
+      service: secret-store
+      endpoint: /secrets/sbom-signing-key
+    - name: sbom_signing
+      type: RULE_BASED
+      description: >
+        Sign SBOM using cosign with Sigstore transparency log.
+        Produce: detached signature (.sig), certificate (.cert),
+        and SLSA provenance attestation (in-toto format).
+    - name: transparency_log_publish
+      type: SERVICE_CALL
+      service: rekor-transparency-log
+      endpoint: /entries
+
+memory:
+  episodic:
+    enabled: true
+    retention_days: 730
+    categories: [sbom-signing-operations, transparency-log-entries]
+  semantic:
+    enabled: true
+    categories: [signing-policies, slsa-requirements]
+
+tools: [cosign_signer, rekor_client, sbom_validator]
+
+capabilities:
+  - security-analysis
+  - deployment-automation
+
+routing:
+  input_types: [cyclonedx-sbom, spdx-sbom]
+  output_types: [signed-sbom, sbom-signature, slsa-provenance-attestation]
+
+delegation:
+  can_delegate_to: []
+  escalates_to: release-orchestrator-agent
+
+governance:
+  requires_approval: true
+  can_block: false
+  audit_trail: comprehensive
+
+performance:
+  expected_latency_ms: 2000
+  max_latency_ms: 10000
+  timeout_ms: 30000

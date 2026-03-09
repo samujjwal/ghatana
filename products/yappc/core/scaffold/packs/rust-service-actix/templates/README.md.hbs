@@ -1,0 +1,82 @@
+# {{projectName}}
+
+{{#if description}}
+{{description}}
+{{else}}
+A Rust service built with Actix Web framework.
+{{/if}}
+
+## Features
+
+- Actix Web framework
+- Async/await support
+{{#if enableCors}}
+- CORS middleware
+{{/if}}
+{{#if enableMetrics}}
+- Prometheus metrics
+{{/if}}
+- Structured logging with tracing
+- Health check endpoint
+
+## Prerequisites
+
+- Rust {{rustEdition}} or higher
+- Cargo
+
+## Getting Started
+
+### Build
+```bash
+cargo build
+```
+
+### Run
+```bash
+cargo run
+```
+
+### Test
+```bash
+cargo test
+```
+
+### Format
+```bash
+cargo fmt
+```
+
+### Lint
+```bash
+cargo clippy
+```
+
+## API Endpoints
+
+- `GET /health` - Health check
+- `GET /api/v1/hello` - Example endpoint
+{{#if enableMetrics}}
+- `GET /metrics` - Prometheus metrics
+{{/if}}
+
+## Configuration
+
+Environment variables:
+- `RUST_LOG` - Log level (default: info)
+- `PORT` - Server port (default: 8080)
+
+## Docker
+
+Build image:
+```bash
+docker build -t {{projectName}} .
+```
+
+Run container:
+```bash
+docker run -p 8080:8080 {{projectName}}
+```
+
+## License
+
+MIT

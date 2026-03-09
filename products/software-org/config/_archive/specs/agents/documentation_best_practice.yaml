@@ -1,0 +1,29 @@
+---
+id: "documentation_best_practice"
+agent: "DocumentationBestPracticeAgent"
+role: "Technical Writer"
+inputs_spec:
+- name: "modularized_codebase"
+  description: "Codebase for documentation quality checks."
+  format: "Source repo or artifact reference"
+outputs_spec:
+- name: "documentation_compliance_report"
+  description: "Documentation compliance report for codebase."
+  format: "Documentation compliance report"
+agent_tasks:
+- "Review all new/changed modules for documentation."
+- "Ensure docstrings/comments are present and meaningful."
+- "Update project documentation for major changes."
+- "Ensure docs follow company templates or guidelines."
+acceptance_criteria:
+- "All new/changed modules are documented."
+- "Docstrings/comments are present and meaningful."
+- "Project documentation is updated for major changes."
+- "Docs follow company templates or guidelines."
+dependencies:
+- "modularized_codebase"
+failure_escalation:
+- "Escalate to Documentation Lead if documentation is insufficient."
+references: []
+hitl: true
+hitl_reason: "Human ensures documentation meets required standards"

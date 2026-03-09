@@ -1,0 +1,46 @@
+syntax = "proto3";
+
+package dcmaar.v1;
+option java_multiple_files = true;
+option java_outer_classname = "ACTIONSProto";
+option java_package = "com.dcmaar.v1";
+option csharp_namespace = "Dcmaar.V1";
+option objc_class_prefix = "DCX";
+option php_namespace = "Dcmaar\\V1";
+option ruby_package = "Dcmaar::V1";
+option go_package = "github.com/samujjwal/dcmaar/proto/gen/go/pb/dcmaar/v1;dcmaarv1";
+
+// Action submission and status contracts (skeleton)
+message ActionSubmitRequest {
+  string tenant_id = 1;
+  string device_id = 2;
+  string command = 3;
+  repeated string args = 4;
+}
+
+message ActionSubmitResponse {
+  string action_id = 1;
+}
+
+message ActionStatusRequest {
+  string action_id = 1;
+}
+
+enum ActionState {
+  ACTION_STATE_UNKNOWN = 0;
+  ACTION_STATE_PENDING = 1;
+  ACTION_STATE_RUNNING = 2;
+  ACTION_STATE_COMPLETED = 3;
+  ACTION_STATE_FAILED = 4;
+}
+
+message ActionStatusResponse {
+  string action_id = 1;
+  ActionState state = 2;
+  string message = 3;
+}
+
+service ActionService {
+  rpc SubmitAction(ActionSubmitRequest) returns (ActionSubmitResponse);
+  rpc GetActionStatus(ActionStatusRequest) returns (ActionStatusResponse);
+}

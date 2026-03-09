@@ -1,0 +1,280 @@
+{
+    "name": "tauri-desktop",
+    "version": "1.0.0",
+    "description": "Cross-platform desktop application with Tauri 2.x, Rust backend, and React+TypeScript frontend",
+    "author": "Ghatana YAPPC Team",
+    "license": "Apache-2.0",
+    "tags": [
+        "tauri",
+        "rust",
+        "react",
+        "typescript",
+        "desktop",
+        "cross-platform",
+        "electron-alternative",
+        "native"
+    ],
+    "type": "application",
+    "platform": "desktop",
+    "language": "typescript",
+    "backendLanguage": "rust",
+    "framework": "tauri",
+    "dependencies": {
+        "runtime": [
+            "react:^18.3.1",
+            "react-dom:^18.3.1",
+            "@tauri-apps/api:^2.0.0",
+            "@tauri-apps/plugin-shell:^2.0.0",
+            "@tauri-apps/plugin-dialog:^2.0.0",
+            "@tauri-apps/plugin-fs:^2.0.0",
+            "@tauri-apps/plugin-os:^2.0.0"
+        ],
+        "build": [
+            "node:18+",
+            "pnpm:9+",
+            "rust:1.75+",
+            "@tauri-apps/cli:^2.0.0"
+        ],
+        "devDependencies": [
+            "typescript:^5.6.3",
+            "vite:^5.4.8",
+            "@vitejs/plugin-react-swc:^3.7.1",
+            "vitest:^2.1.2",
+            "@testing-library/react:^16.0.1"
+        ],
+        "rustDependencies": [
+            "tauri:2.0",
+            "serde:1.0",
+            "serde_json:1.0",
+            "tokio:1.0"
+        ]
+    },
+    "templates": {
+        "package-json": {
+            "source": "templates/package.json.hbs",
+            "target": "package.json",
+            "merge": "replace"
+        },
+        "tsconfig": {
+            "source": "templates/tsconfig.json.hbs",
+            "target": "tsconfig.json",
+            "merge": "replace"
+        },
+        "tsconfig-node": {
+            "source": "templates/tsconfig.node.json.hbs",
+            "target": "tsconfig.node.json",
+            "merge": "replace"
+        },
+        "vite-config": {
+            "source": "templates/vite.config.ts.hbs",
+            "target": "vite.config.ts",
+            "merge": "replace"
+        },
+        "index-html": {
+            "source": "templates/index.html.hbs",
+            "target": "index.html",
+            "merge": "replace"
+        },
+        "src-main": {
+            "source": "templates/src/main.tsx.hbs",
+            "target": "src/main.tsx",
+            "merge": "replace"
+        },
+        "src-app": {
+            "source": "templates/src/App.tsx.hbs",
+            "target": "src/App.tsx",
+            "merge": "replace"
+        },
+        "src-app-css": {
+            "source": "templates/src/App.css.hbs",
+            "target": "src/App.css",
+            "merge": "replace"
+        },
+        "src-tauri-bridge": {
+            "source": "templates/src/lib/tauri-bridge.ts.hbs",
+            "target": "src/lib/tauri-bridge.ts",
+            "merge": "replace"
+        },
+        "src-hooks": {
+            "source": "templates/src/hooks/useTauri.ts.hbs",
+            "target": "src/hooks/useTauri.ts",
+            "merge": "replace"
+        },
+        "src-components-titlebar": {
+            "source": "templates/src/components/TitleBar.tsx.hbs",
+            "target": "src/components/TitleBar.tsx",
+            "merge": "replace"
+        },
+        "tauri-conf": {
+            "source": "templates/src-tauri/tauri.conf.json.hbs",
+            "target": "src-tauri/tauri.conf.json",
+            "merge": "replace"
+        },
+        "tauri-cargo": {
+            "source": "templates/src-tauri/Cargo.toml.hbs",
+            "target": "src-tauri/Cargo.toml",
+            "merge": "replace"
+        },
+        "tauri-main": {
+            "source": "templates/src-tauri/src/main.rs.hbs",
+            "target": "src-tauri/src/main.rs",
+            "merge": "replace"
+        },
+        "tauri-lib": {
+            "source": "templates/src-tauri/src/lib.rs.hbs",
+            "target": "src-tauri/src/lib.rs",
+            "merge": "replace"
+        },
+        "tauri-commands": {
+            "source": "templates/src-tauri/src/commands.rs.hbs",
+            "target": "src-tauri/src/commands.rs",
+            "merge": "replace"
+        },
+        "tauri-state": {
+            "source": "templates/src-tauri/src/state.rs.hbs",
+            "target": "src-tauri/src/state.rs",
+            "merge": "replace"
+        },
+        "tauri-error": {
+            "source": "templates/src-tauri/src/error.rs.hbs",
+            "target": "src-tauri/src/error.rs",
+            "merge": "replace"
+        },
+        "tauri-icons": {
+            "source": "templates/src-tauri/icons/.gitkeep.hbs",
+            "target": "src-tauri/icons/.gitkeep",
+            "merge": "replace"
+        },
+        "tauri-capabilities": {
+            "source": "templates/src-tauri/capabilities/default.json.hbs",
+            "target": "src-tauri/capabilities/default.json",
+            "merge": "replace"
+        },
+        "biome-json": {
+            "source": "templates/biome.json.hbs",
+            "target": "biome.json",
+            "merge": "replace"
+        },
+        "vitest-config": {
+            "source": "templates/vitest.config.ts.hbs",
+            "target": "vitest.config.ts",
+            "merge": "replace"
+        },
+        "gitignore": {
+            "source": "templates/.gitignore.hbs",
+            "target": ".gitignore",
+            "merge": "replace"
+        },
+        "makefile": {
+            "source": "templates/Makefile.hbs",
+            "target": "Makefile",
+            "merge": "replace"
+        },
+        "readme": {
+            "source": "templates/README.md.hbs",
+            "target": "README.md",
+            "merge": "replace"
+        }
+    },
+    "variables": {
+        "projectName": {
+            "type": "string",
+            "description": "Project name (kebab-case)",
+            "default": "my-desktop-app",
+            "pattern": "^[a-z][a-z0-9-]*$"
+        },
+        "displayName": {
+            "type": "string",
+            "description": "Application display name",
+            "default": "My Desktop App"
+        },
+        "description": {
+            "type": "string",
+            "description": "Project description",
+            "default": "Cross-platform desktop application built with Tauri"
+        },
+        "bundleId": {
+            "type": "string",
+            "description": "Bundle identifier (reverse domain notation)",
+            "default": "com.ghatana.app"
+        },
+        "version": {
+            "type": "string",
+            "description": "Application version",
+            "default": "0.1.0"
+        },
+        "windowWidth": {
+            "type": "number",
+            "description": "Default window width",
+            "default": 1200
+        },
+        "windowHeight": {
+            "type": "number",
+            "description": "Default window height",
+            "default": 800
+        },
+        "minWindowWidth": {
+            "type": "number",
+            "description": "Minimum window width",
+            "default": 800
+        },
+        "minWindowHeight": {
+            "type": "number",
+            "description": "Minimum window height",
+            "default": 600
+        },
+        "enableDevtools": {
+            "type": "boolean",
+            "description": "Enable DevTools in development",
+            "default": true
+        },
+        "enableSystemTray": {
+            "type": "boolean",
+            "description": "Enable system tray icon",
+            "default": false
+        },
+        "enableAutoUpdater": {
+            "type": "boolean",
+            "description": "Enable Tauri auto-updater",
+            "default": false
+        },
+        "enableDeepLinks": {
+            "type": "boolean",
+            "description": "Enable deep link/URL scheme handling",
+            "default": false
+        },
+        "targetPlatforms": {
+            "type": "array",
+            "description": "Target platforms",
+            "default": [
+                "windows",
+                "macos",
+                "linux"
+            ]
+        },
+        "useCustomTitlebar": {
+            "type": "boolean",
+            "description": "Use custom window titlebar",
+            "default": true
+        }
+    },
+    "hooks": {
+        "postGenerate": [
+            "pnpm install",
+            "cd src-tauri && cargo check"
+        ]
+    },
+    "requires": {
+        "os": [
+            "windows",
+            "macos",
+            "linux"
+        ],
+        "tools": [
+            "node",
+            "pnpm",
+            "rust",
+            "cargo"
+        ]
+    }
+}

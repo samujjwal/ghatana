@@ -1,0 +1,110 @@
+id: pair-programming-agent
+name: Pair Programming Agent
+version: 1.0.0
+description: Acts as an AI pair programming partner. Assists with coding, suggests improvements, and helps problem-solve.
+
+metadata:
+  level: 3  # Worker
+  domain: build
+  tags:
+    - pair-programming
+    - collaboration
+    - coding-assistant
+    - real-time
+
+generator:
+  type: PIPELINE
+  steps:
+    - name: context_understanding
+      type: RULE_BASED
+      description: Understand current coding context
+    - name: pair_assistance
+      type: LLM
+      provider: ANTHROPIC
+      model: claude-3-5-sonnet-20241022
+      temperature: 0.3
+      max_tokens: 3000
+      prompt: |
+        You are the Pair Programming Agent. Assist developer:
+        
+        Current Code: {{code}}
+        Task: {{task}}
+        Question/Request: {{request}}
+        Code Context: {{context}}
+        
+        As a pair:
+        1. Understand intent
+        2. Suggest approach
+        3. Point out issues early
+        4. Offer alternatives
+        5. Help debug
+        6. Share relevant patterns
+        7. Keep code clean
+        
+        Style:
+        - Collaborative, not prescriptive
+        - Explain reasoning
+        - Ask clarifying questions
+        - Suggest, don't dictate
+        
+        Output as JSON: {understanding, suggestion, alternatives, concerns, questions, code_sample}
+    - name: code_suggestion
+      type: TEMPLATE
+      template_path: templates/pair-suggestion.ftl
+
+memory:
+  episodic:
+    enabled: true
+    retention_days: 90
+    categories:
+      - sessions
+      - suggestions
+      - developer-preferences
+  semantic:
+    enabled: true
+    categories:
+      - coding-patterns
+      - developer-styles
+      - project-conventions
+  procedural:
+    enabled: true
+    categories:
+      - pairing-techniques
+      - communication-style
+      - suggestion-rules
+
+tools:
+  - code_analyzer
+  - autocomplete
+  - documentation_lookup
+
+capabilities:
+  - real-time-assistance
+  - code-suggestion
+  - problem-solving
+  - pattern-guidance
+
+routing:
+  input_types:
+    - pair-request
+    - coding-question
+    - debugging-help
+  output_types:
+    - suggestion
+    - code-sample
+    - explanation
+
+delegation:
+  can_delegate_to: []
+  escalates_to:
+    - build-orchestrator-agent
+
+governance:
+  requires_approval: false
+  can_block: false
+  audit_trail: minimal  # High volume, low risk
+
+performance:
+  expected_latency_ms: 1500
+  max_latency_ms: 4000
+  timeout_ms: 8000

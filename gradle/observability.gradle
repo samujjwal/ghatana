@@ -1,0 +1,107 @@
+// Shared configuration for observability modules
+
+apply plugin: 'java-library'
+
+// Use version catalog for consistent dependency management
+dependencies {
+    // OpenTelemetry — versions from libs.versions.toml
+    implementation platform("io.opentelemetry:opentelemetry-bom:${libs.versions.opentelemetry.get()}")
+    implementation 'io.opentelemetry:opentelemetry-api'
+    implementation 'io.opentelemetry:opentelemetry-sdk'
+    implementation 'io.opentelemetry:opentelemetry-sdk-metrics'
+    implementation 'io.opentelemetry:opentelemetry-exporter-otlp'
+    implementation 'io.opentelemetry.semconv:opentelemetry-semconv:1.37.0'
+
+    // Micrometer — versions from libs.versions.toml
+    implementation platform("io.micrometer:micrometer-bom:${libs.versions.micrometer.get()}")
+    implementation 'io.micrometer:micrometer-core'
+    implementation 'io.micrometer:micrometer-registry-prometheus'
+    implementation 'io.micrometer:micrometer-registry-jmx'
+    
+    // Testing
+    testImplementation "io.opentelemetry:opentelemetry-sdk-testing:${libs.versions.opentelemetry.get()}"
+    testImplementation 'io.micrometer:micrometer-test'
+    testImplementation "org.awaitility:awaitility:${libs.versions.awaitility.get()}"
+}
+
+// Configure test task
+test {
+    useJUnitPlatform()
+    
+    // Configure test logging
+    testLogging {
+        events 'passed', 'skipped', 'failed'
+        showStandardStreams = true
+        showExceptions = true
+        showCauses = true
+        showStackTraces = true
+        exceptionFormat = 'full'
+    }
+    
+    // Configure system properties for tests
+    systemProperty 'otel.traces.exporter', 'none'
+    systemProperty 'otel.metrics.exporter', 'none'
+    systemProperty 'otel.logs.exporter', 'none'
+    
+    // Configure test reports
+    reports {
+        html.required = true
+        junitXml.required = true
+    }
+    
+    // Configure test JVM arguments
+    jvmArgs = [
+        '-Xms512m',
+        '-Xmx1g',
+        '-XX:+HeapDumpOnOutOfMemoryError',
+        '-Dfile.encoding=UTF-8',
+        '--add-opens=java.base/java.util=ALL-UNNAMED'
+    ]
+}
+
+// Configure JaCoCo for code coverage (only if plugin is applied)
+plugins.withId('jacoco') {
+    jacocoTestReport {
+        reports {
+            xml.required = true
+            html.required = true
+            csv.required = false
+        }
+        
+        afterEvaluate {
+            classDirectories.setFrom(files(classDirectories.files.collect {
+            fileTree(dir: it, exclude: [
+                '**/internal/**',
+                '**/test/**',
+                '**/generated/**',
+                '**/demo/**',
+                '**/example/**'
+            ])
+        }))
+    }
+    }
+}
+
+// Configure SpotBugs if the plugin is applied
+if (pluginManager.hasPlugin('com.github.spotbugs')) {
+    tasks.named('spotbugsMain') {
+        reports {
+            html.required = true
+            xml.required = false
+        }
+        
+        excludeFilter = rootProject.file('config/spotbugs/observability-exclude.xml')
+    }
+}
+
+// Configure Checkstyle if the plugin is applied
+if (pluginManager.hasPlugin('checkstyle')) {
+    tasks.named('checkstyleMain') {
+        config = rootProject.resources.text.fromFile('config/checkstyle/checkstyle.xml')
+        configProperties = [
+            'suppressionFile': rootProject.file('config/checkstyle/suppressions.xml').absolutePath
+        ]
+    }
+}
+
+// Publishing configuration is handled in the main build.gradle file

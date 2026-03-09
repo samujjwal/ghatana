@@ -1,0 +1,605 @@
+name: Package & Release (Immutable & Declarative Artifacts)
+workflow:
+    - id: release_artifact
+      agent: ReleaseArtifactAgent
+      role: Release Engineer
+      inputs_spec:
+        - name: secure_for_release_package
+          description: Security-approved package for release artifact creation.
+          format: Package artifact
+      outputs_spec:
+        - name: signed_release_artifacts
+          description: Signed and integrity-checked release artifacts.
+          format: Release artifact bundle
+      agent_tasks:
+        - Sign release artifact and verify integrity.
+        - Ensure artifact contains all required deliverables (binaries, docs, manifests, etc.).
+        - Make artifact traceable to source commit, build, and requirements.
+        - Ensure compatibility with target deployment platforms.
+      acceptance_criteria:
+        - Release artifact is signed and integrity-checked.
+        - Contains all required deliverables.
+        - Traceable to source, build, requirements.
+        - Compatible with target platforms.
+      dependencies:
+        - secure_for_release_package
+      failure_escalation:
+        - Escalate to Release Engineer if artifact fails integrity or is incomplete.
+      references: []
+      hitl: true
+      hitl_reason: Human validates release artifact signing and integrity
+
+    - id: package_best_practice_enforcement
+      agent: PackageBestPracticeAgent
+      role: Release QA Auditor
+      inputs_spec:
+        - name: signed_release_artifacts
+          description: Signed release artifacts for best practice enforcement.
+          format: Release artifact bundle
+      outputs_spec:
+        - name: package_best_practice_report
+          description: Best practice compliance report for packaging.
+          format: Best practice report artifact
+      agent_tasks:
+        - Verify all packaging steps comply with best practices.
+        - Check security and reproducibility.
+        - Review package for completeness and consistency.
+        - Justify any deviations from best practice.
+      acceptance_criteria:
+        - All packaging steps comply with best practices.
+        - Security and reproducibility enforced.
+        - Package reviewed for completeness and consistency.
+        - Deviations from best practice justified.
+      dependencies:
+        - signed_release_artifacts
+      failure_escalation:
+        - Escalate to QA Auditor if best practices are not followed or deviations are not justified.
+      references: []
+      hitl: true
+      hitl_reason: Human ensures package best practices are enforced
+
+    - id: package_milestone_tracker
+      agent: PackageMilestoneTrackerAgent
+      role: Release PM
+      inputs_spec:
+        - name: package_best_practice_report
+          description: Best practice report for package milestone tracking.
+          format: Best practice report artifact
+      outputs_spec:
+        - name: package_stage_milestone
+          description: Package/release milestones and status.
+          format: List of milestone objects
+      agent_tasks:
+        - List and track all package/release milestones.
+        - Document owners and target dates.
+        - Identify blockers.
+        - Log milestone completion.
+      acceptance_criteria:
+        - All milestones are listed and tracked.
+        - Owners and target dates documented.
+        - Blockers identified.
+        - Milestone completion logged.
+      dependencies:
+        - package_best_practice_report
+      failure_escalation:
+        - Escalate to Release PM if milestones are unclear or blockers not addressed.
+      references: []
+      hitl: true
+      hitl_reason: Human oversight for package milestone tracking
+
+    - id: deployment_manifest
+      agent: DeploymentManifestAgent
+      role: DevOps Engineer
+      inputs_spec:
+        - name: package_stage_milestone
+          description: Package milestone for manifest generation.
+          format: Milestone object
+      outputs_spec:
+        - name: deployment_manifests
+          description: Generated deployment manifests (YAML/JSON).
+          format: List of deployment manifest artifacts
+      agent_tasks:
+        - Generate deployment manifests from release artifacts.
+        - Ensure manifests are valid YAML/JSON and follow org standards.
+        - Include all services, configs, secrets.
+        - Review for completeness and correctness.
+      acceptance_criteria:
+        - Deployment manifests generated from release artifacts.
+        - Valid YAML/JSON, org standards followed.
+        - All services/configs/secrets included.
+        - Manifests reviewed for correctness.
+      dependencies:
+        - package_stage_milestone
+      failure_escalation:
+        - Escalate to DevOps Engineer if manifests are invalid or incomplete.
+      references: []
+      hitl: true
+      hitl_reason: Human reviews deployment manifests for correctness
+
+    - id: changelog_generator
+      agent: ChangelogGeneratorAgent
+      role: Tooling Engineer
+      inputs_spec:
+        - name: deployment_manifests
+          description: Deployment manifests for generating changelog and release notes.
+          format: List of deployment manifest artifacts
+      outputs_spec:
+        - name: changelog_release_notes
+          description: Changelog including user-facing and backend changes.
+          format: Release notes artifact
+      agent_tasks:
+        - Generate changelog from source control and manifests.
+        - Include all user-facing and backend changes.
+        - Ensure notes are clear, complete, and versioned.
+      acceptance_criteria:
+        - Changelog includes all changes, generated from source history.
+        - Release notes are clear, complete, and versioned.
+      dependencies:
+        - deployment_manifests
+      failure_escalation:
+        - Escalate to Tooling Engineer if changelog/release notes are missing or incomplete.
+      references: []
+      hitl: false
+
+    - id: release_registry
+      agent: ReleaseRegistryAgent
+      role: Release Manager
+      inputs_spec:
+        - name: deployment_manifests
+          description: Deployment manifests for registry entry.
+          format: List of deployment manifest artifacts
+        - name: changelog_release_notes
+          description: Release notes for registry entry.
+          format: Release notes artifact
+      outputs_spec:
+        - name: release_registry_entry
+          description: Registry entry for the release.
+          format: Registry entry artifact
+      agent_tasks:
+        - Register release in release management system.
+        - Link registry entry to artifact, changelog, and manifest.
+        - Apply access controls and retention policy.
+      acceptance_criteria:
+        - Release registered in management system.
+        - Entry links artifact, changelog, manifest.
+        - Access controls and retention policy applied.
+      dependencies:
+        - deployment_manifests
+        - changelog_release_notes
+      failure_escalation:
+        - Escalate to Release Manager if registry entry is incomplete or incorrect.
+      references: []
+      hitl: false
+
+    - id: release_integrity
+      agent: ReleaseIntegrityAgent
+      role: Security/QA
+      inputs_spec:
+        - name: release_registry_entry
+          description: Release registry entry for integrity validation.
+          format: Registry entry artifact
+      outputs_spec:
+        - name: integrity_signoff_report
+          description: Integrity signoff report for the release.
+          format: Integrity signoff report artifact
+      agent_tasks:
+        - Validate release integrity before promotion.
+        - Perform signoff on checksums, signatures, audit logs.
+        - Resolve or flag integrity issues.
+      acceptance_criteria:
+        - Release integrity validated before promotion.
+        - Signoff on checksums, signatures, audit logs.
+        - Integrity issues resolved or flagged.
+      dependencies:
+        - release_registry_entry
+      failure_escalation:
+        - Escalate to Security/QA if integrity validation or signoff not performed.
+      references: []
+      hitl: true
+      hitl_reason: Human validates release integrity and signs off
+
+    - id: promotion_automation
+      agent: PromotionAutomationAgent
+      role: DevOps/CI/CD Lead
+      inputs_spec:
+        - name: integrity_signoff_report
+          description: Integrity signoff report for promotion.
+          format: Integrity signoff report artifact
+      outputs_spec:
+        - name: promoted_release_status
+          description: Promotion status for the release.
+          format: Promotion status artifact
+      agent_tasks:
+        - Automate and log promotion process.
+        - Only promote signed and validated artifacts.
+        - Log promotion actions.
+      acceptance_criteria:
+        - Promotion process automated and traceable.
+        - Only signed and validated artifacts promoted.
+        - Promotion actions logged.
+      dependencies:
+        - integrity_signoff_report
+      failure_escalation:
+        - Escalate to CI/CD Lead if promotion is not logged or automation fails.
+      references: []
+      hitl: true
+      hitl_reason: Human oversees release promotion decisions
+
+    - id: release_audit
+      agent: ReleaseAuditAgent
+      role: Compliance Analyst
+      inputs_spec:
+        - name: promoted_release_status
+          description: Promoted release status for audit logging.
+          format: Promotion status artifact
+      outputs_spec:
+        - name: release_audit_log
+          description: Audit log for the release.
+          format: Audit log artifact
+      agent_tasks:
+        - Log all release actions for audit.
+        - Ensure release meets compliance and policy.
+        - Make audit trail available for review.
+      acceptance_criteria:
+        - All release actions are logged and auditable.
+        - Release meets compliance/policy.
+        - Audit trail available for review.
+      dependencies:
+        - promoted_release_status
+      failure_escalation:
+        - Escalate to Compliance Analyst if audit log is incomplete or release non-compliant.
+      references: []
+      hitl: true
+      hitl_reason: Human reviews release audit for compliance
+
+    - id: exception_release
+      agent: ExceptionReleaseAgent
+      role: Security/Release Lead
+      inputs_spec:
+        - name: release_audit_log
+          description: Release audit log for exception approval.
+          format: Audit log artifact
+      outputs_spec:
+        - name: release_exception_approval
+          description: Formal approval and documentation of any release exceptions.
+          format: Exception approval artifact
+      agent_tasks:
+        - Formally document and review all release exceptions.
+        - Require approvals and justifications.
+        - Review exceptions before release.
+      acceptance_criteria:
+        - Release exceptions formally documented.
+        - Approvals and justifications included.
+        - Exceptions reviewed before release.
+      dependencies:
+        - release_audit_log
+      failure_escalation:
+        - Escalate to Security/Release Lead if exceptions are not reviewed or justified.
+      references: []
+      hitl: true
+      hitl_reason: Human approves or rejects release exceptions
+
+    - id: package_incident_feedback_handler
+      agent: IncidentFeedbackHandlerAgent
+      role: Postmortem Owner/Automation
+      inputs_spec:
+        - name: package_incident_report
+          description: Incident report for package/release.
+          format: Incident report artifact
+      outputs_spec:
+        - name: package_incident_feedback_items
+          description: Incident feedback and systemic issues for Retrospective.
+          format: List of feedback items
+      agent_tasks:
+        - Log all incidents and exceptions for learning.
+        - Feed systemic issues to Retrospective.
+      acceptance_criteria:
+        - All incidents/exceptions logged for learning.
+        - Systemic issues fed to Retrospective for improvement.
+      dependencies:
+        - package_incident_report
+      failure_escalation:
+        - Escalate to Postmortem Owner if incidents are not logged or fed back.
+      references: []
+      hitl: false
+
+    - id: synthesis_release_combiner
+      agent: SynthesisReleaseCombinerAgent
+      role: Release PM/Tech Lead
+      inputs_spec:
+        - name: release_registry_entry
+          description: Registry entry for release.
+          format: Registry entry artifact
+        - name: promoted_release_status
+          description: Promotion status for release.
+          format: Promotion status artifact
+        - name: release_audit_log
+          description: Audit log for release.
+          format: Audit log artifact
+        - name: release_exception_approval
+          description: Approval and documentation of release exceptions.
+          format: Exception approval artifact
+      outputs_spec:
+        - name: ready_for_deploy_bundle
+          description: Deployable bundle with all artifacts, audits, signoffs.
+          format: Deployable bundle artifact
+      agent_tasks:
+        - Combine all package/release artifacts, audits, and signoffs.
+        - Flag outstanding issues.
+        - Review and sign off bundle for deploy.
+        - Ensure all referenced artifacts are current and versioned.
+      acceptance_criteria:
+        - All artifacts/audits/signoffs combined and reviewed.
+        - Outstanding issues flagged.
+        - Bundle reviewed and signed off for deploy.
+        - All artifacts current and versioned.
+      dependencies:
+        - release_registry_entry
+        - promoted_release_status
+        - release_audit_log
+        - release_exception_approval
+      failure_escalation:
+        - Escalate to Release PM/Tech Lead if bundle is incomplete or not reviewed.
+      references: []
+      hitl: true
+      hitl_reason: Human validates deploy bundle readiness for production
+
+    - id: artifact_retention_policy
+      agent: ArtifactRetentionPolicyAgent
+      role: Release Automation
+      inputs_spec:
+        - name: ready_for_deploy_bundle
+          description: Deployable bundle for retention policy enforcement.
+          format: Deployable bundle artifact
+      outputs_spec:
+        - name: artifact_retention_report
+          description: Report on retention policy enforcement.
+          format: Retention report artifact
+      agent_tasks:
+        - Enforce retention policy on all release artifacts.
+        - Flag and delete old/unneeded artifacts.
+        - Log all deletion actions.
+      acceptance_criteria:
+        - Retention policy enforced on all artifacts.
+        - Old/unneeded artifacts flagged/deleted.
+        - Deletion actions logged.
+      dependencies:
+        - ready_for_deploy_bundle
+      failure_escalation:
+        - Escalate to Release Automation if retention policy not enforced.
+      references: []
+      hitl: false
+
+    - id: package_kpi_agent
+      agent: StageKPIAgent
+      role: Package KPI Analyst
+      inputs_spec:
+        - name: package_stage_milestone
+          description: Package stage milestone for KPI tracking.
+          format: List of milestone objects
+      outputs_spec:
+        - name: package_kpi_report
+          description: Package KPI report.
+          format: KPI report artifact
+      agent_tasks:
+        - Track/report KPIs (on-schedule releases, integrity rate, rejections, audit pass, promotion, mean time, trends).
+        - Flag trends, anomalies, negative movements for review.
+        - Ensure KPI data is traceable to milestones and release audit logs.
+      acceptance_criteria:
+        - All KPIs tracked, flagged for review as needed.
+        - KPI data traceable to milestone/audit.
+        - Trends compared to baselines.
+      dependencies:
+        - package_stage_milestone
+      failure_escalation:
+        - Escalate to KPI Analyst if KPIs are missing or not updated.
+      references: []
+      hitl: false
+
+    - id: package_success_criteria_tracker
+      agent: SuccessCriteriaTrackerAgent
+      role: Package Success Criteria Tracker
+      inputs_spec:
+        - name: package_stage_milestone
+          description: Package stage milestones for criteria tracking.
+          format: List of milestone objects
+      outputs_spec:
+        - name: package_success_criteria_status
+          description: Status of all entry/exit criteria for package/release stage.
+          format: List of criteria status objects
+      agent_tasks:
+        - List and map all package/release stage entry/exit criteria.
+        - Track status/owner/remediation; escalate at-risk/failed criteria.
+        - Version tracker for audit/handoff.
+      acceptance_criteria:
+        - All stage criteria listed and mapped.
+        - Status/owner/remediation tracked.
+        - At-risk/failed escalated; tracker versioned.
+      dependencies:
+        - package_stage_milestone
+      failure_escalation:
+        - Escalate to Criteria Tracker if criteria not maintained.
+      references: []
+      hitl: false
+
+    - id: package_progress_dashboard
+      agent: ProgressDashboardAgent
+      role: Package Progress Dashboard Owner
+      inputs_spec:
+        - name: package_kpi_report
+          description: Package KPI report for dashboard visualization.
+          format: KPI report artifact
+        - name: package_success_criteria_status
+          description: Success criteria status for dashboard visualization.
+          format: List of criteria status objects
+        - name: package_stage_milestone
+          description: Milestone plan for dashboard visualization.
+          format: List of milestone objects
+      outputs_spec:
+        - name: package_progress_dashboard
+          description: Dashboard visualizing delivery KPIs, integrity, promotion/exception status, audit, and trends.
+          format: Dashboard artifact
+      agent_tasks:
+        - Visualize KPIs, artifact integrity, promotion/exception, audit, trends.
+        - Highlight open blockers or failed integrity checks.
+        - Link to release audit, integrity, milestone tracker.
+        - Update dashboard in real time and review before deployment.
+      acceptance_criteria:
+        - Dashboard visualizes all KPIs, trends, and status.
+        - Updated in real time and reviewed before deployment.
+        - Blockers and failed integrity checks highlighted.
+      dependencies:
+        - package_kpi_report
+        - package_success_criteria_status
+        - package_stage_milestone
+      failure_escalation:
+        - Escalate to Dashboard Owner if dashboard is not current/actionable.
+      references: []
+      hitl: false
+
+    - id: package_observability_export
+      agent: ObservabilityExportAgent
+      role: SRE/Analytics
+      inputs_spec:
+        - name: package_progress_dashboard
+          description: Package progress dashboard for observability export.
+          format: Dashboard artifact
+      outputs_spec:
+        - name: package_observability_export
+          description: Exported pipeline metrics/KPIs for package to analytics/monitoring.
+          format: Export artifact
+      agent_tasks:
+        - Export pipeline metrics/KPIs to analytics/monitoring.
+        - Flag gaps in observability.
+      acceptance_criteria:
+        - Pipeline metrics/KPIs exported to analytics/monitoring.
+        - Gaps in observability are flagged.
+      dependencies:
+        - package_progress_dashboard
+      failure_escalation:
+        - Escalate to SRE/Analytics if metrics not exported or gaps missed.
+      references: []
+      hitl: false
+
+    - id: package_feedback_loop
+      agent: FeedbackLoopAgent
+      role: CI/CD Coach/Automation
+      inputs_spec:
+        - name: package_progress_dashboard
+          description: Package progress dashboard for collecting feedback.
+          format: Dashboard artifact
+      outputs_spec:
+        - name: package_feedback_items
+          description: Issues and improvement suggestions routed to Retrospective.
+          format: List of feedback items
+      agent_tasks:
+        - Route all issues and improvement suggestions to Retrospective.
+        - Track feedback for action and resolution.
+      acceptance_criteria:
+        - All issues and improvement suggestions routed to Retrospective.
+        - Feedback tracked for action and resolution.
+      dependencies:
+        - package_progress_dashboard
+      failure_escalation:
+        - Escalate to CI/CD Coach if feedback is not acted on.
+      references: []
+      hitl: false
+
+    - id: package_audit_log_agent
+      agent: AuditLogAgent
+      role: Compliance Bot
+      inputs_spec:
+        - name: package_progress_dashboard
+          description: Package progress dashboard for audit logging.
+          format: Dashboard artifact
+        - name: package_notification_agent
+          description: Package notification agent delivery log.
+          format: List of notification objects
+      outputs_spec:
+        - name: package_audit_log
+          description: Audit log of all package actions, signoffs, escalations, notifications.
+          format: Audit log artifact
+      agent_tasks:
+        - Record every agent action and transition with timestamp, user/agent, and artifact link.
+        - Log all major events (signoffs, escalations, notifications, exceptions).
+        - Cryptographically sign and archive logs in secure, tamper-evident storage.
+        - Ensure audit log is accessible for compliance review.
+      acceptance_criteria:
+        - All agent actions and transitions are recorded with required details.
+        - Major events are explicitly logged.
+        - Logs are cryptographically signed and archived securely.
+        - Audit log is accessible for compliance review.
+      dependencies:
+        - package_progress_dashboard
+        - package_notification_agent
+      failure_escalation:
+        - Escalate to compliance or audit lead if audit log is incomplete or inaccessible.
+      references: []
+      hitl: false
+    - id: package_evidence_collector
+      agent: EvidenceCollectorAgent
+      role: Compliance Evidence Bot
+      inputs_spec:
+        - name: package_audit_log
+          description: Package audit log for evidence collection.
+          format: Audit log artifact
+        - name: package_success_criteria_status
+          description: Success criteria status for evidence linkage.
+          format: List of criteria status objects
+        - name: package_stage_milestone
+          description: Package milestone plan for evidence linkage.
+          format: List of milestone objects
+      outputs_spec:
+        - name: package_evidence_package
+          description: Evidence package with all signoffs, feedback, KPIs, results.
+          format: Evidence package artifact
+      agent_tasks:
+        - Collect and hash all artifacts, audit logs, signoffs, and KPIs for the stage.
+        - Link evidence to compliance and regulatory requirements.
+        - Archive evidence in tamper-evident storage and maintain access logs.
+      acceptance_criteria:
+        - All required artifacts and evidence are collected and hashed.
+        - Evidence is linked to compliance/regulatory requirements.
+        - Evidence package is archived and access logs are maintained.
+      dependencies:
+        - package_audit_log
+        - package_success_criteria_status
+        - package_stage_milestone
+      failure_escalation:
+        - Escalate to compliance evidence lead if evidence package is incomplete or not archived.
+      references: []
+      hitl: false
+    - id: package_risk_trend_analyzer
+      agent: RiskTrendAnalyzerAgent
+      role: Risk Intelligence Bot
+      inputs_spec:
+        - name: package_escalation_report
+          description: Package escalation report for risk trend analysis.
+          format: Escalation report artifact
+        - name: package_progress_dashboard
+          description: Package progress dashboard for risk trend data.
+          format: Dashboard artifact
+        - name: package_stage_milestone
+          description: Package milestone plan for risk trend context.
+          format: List of milestone objects
+      outputs_spec:
+        - name: package_risk_trend_report
+          description: Risk trend report for package stage (risks, escalations, blockers, recommendations).
+          format: Risk trend report artifact
+      agent_tasks:
+        - Trend all package stage risks, escalations, blockers over time.
+        - Automatically flag and classify recurring/systemic risks.
+        - Share trend report with PMO and leadership.
+        - Recommend mitigation or process changes.
+      acceptance_criteria:
+        - All risks, escalations, blockers are trended over time.
+        - Recurring/systemic risks are flagged and classified.
+        - Trend report is shared with PMO/leadership with recommendations.
+      dependencies:
+        - package_escalation_report
+        - package_progress_dashboard
+        - package_stage_milestone
+      failure_escalation:
+        - Escalate to Risk Intelligence Lead if risk trends or recommendations are missing.
+      references: []
+      hitl: false

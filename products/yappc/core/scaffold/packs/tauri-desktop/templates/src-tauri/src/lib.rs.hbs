@@ -1,0 +1,63 @@
+//! {{displayName}} - Tauri Application Library
+//!
+//! This module contains the core Tauri application logic including:
+//! - IPC command handlers
+//! - Application state management
+//! - Plugin initialization
+
+mod commands;
+mod error;
+mod state;
+
+use state::AppState;
+use tauri::Manager;
+
+/// Initialize and run the Tauri application
+pub fn run() {
+// Initialize logging
+env_logger::Builder::from_env(env_logger::Env::default().default_filter_or("info")).init();
+
+log::info!("Starting {{displayName}}...");
+
+tauri::Builder::default()
+// Register plugins
+.plugin(tauri_plugin_shell::init())
+.plugin(tauri_plugin_dialog::init())
+.plugin(tauri_plugin_fs::init())
+.plugin(tauri_plugin_os::init())
+{{#if enableAutoUpdater}}
+.plugin(tauri_plugin_updater::Builder::new().build())
+{{/if}}
+{{#if enableDeepLinks}}
+.plugin(tauri_plugin_deep_link::init())
+{{/if}}
+// Set up application state
+.setup(|app| {
+log::info!("Application setup complete");
+
+// Initialize app state
+let state = AppState::new();
+app.manage(state);
+
+{{#if enableDevtools}}
+// Open devtools in development
+#[cfg(debug_assertions)]
+{
+if let Some(window) = app.get_webview_window("main") {
+window.open_devtools();
+}
+}
+{{/if}}
+
+Ok(())
+})
+// Register IPC command handlers
+.invoke_handler(tauri::generate_handler![
+commands::greet,
+commands::get_system_stats,
+commands::store_data,
+commands::retrieve_data,
+])
+.run(tauri::generate_context!())
+.expect("error while running tauri application");
+}

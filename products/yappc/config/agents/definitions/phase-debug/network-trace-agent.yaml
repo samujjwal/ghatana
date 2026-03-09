@@ -1,0 +1,70 @@
+id: network-trace-agent
+name: Network Trace Agent
+version: 1.0.0
+description: Analyzes network traces, HTTP request/response logs, and distributed tracing spans to identify latency, timeout, and connectivity issues.
+
+metadata:
+  level: 3
+  domain: debugging
+  tags: [debugging, network, distributed-tracing, latency]
+
+generator:
+  type: PIPELINE
+  steps:
+    - name: trace_collection
+      type: SERVICE_CALL
+      service: observability
+      endpoint: /traces/query
+    - name: trace_analysis
+      type: LLM
+      provider: ANTHROPIC
+      model: claude-3-5-sonnet-20241022
+      temperature: 0.1
+      max_tokens: 2000
+      prompt: |
+        Analyze these network traces for the reported issue:
+        
+        Traces: {{input}}
+        Error Context: {{context}}
+        
+        Identify:
+        1. Slow spans (> p95 latency)
+        2. Failed HTTP calls (4xx, 5xx, timeouts)
+        3. Retry storms or circuit breaker trips
+        4. DNS resolution delays
+        5. Connection pool exhaustion indicators
+        
+        Output as JSON: {slow_spans, failed_calls, retry_storms, dns_issues, pool_exhaustion, root_span}
+
+memory:
+  episodic:
+    enabled: true
+    retention_days: 180
+    categories: [network-analyses, latency-investigations]
+  semantic:
+    enabled: true
+    categories: [network-failure-patterns, service-topology]
+
+tools: [trace_query, http_inspector]
+
+capabilities:
+  - root-cause-analysis
+  - performance-analysis
+
+routing:
+  input_types: [trace-id, span-query, http-log]
+  output_types: [network-analysis-report, latency-breakdown]
+
+delegation:
+  can_delegate_to: []
+  escalates_to: debug-orchestrator
+
+governance:
+  requires_approval: false
+  can_block: false
+  audit_trail: standard
+
+performance:
+  expected_latency_ms: 3000
+  max_latency_ms: 15000
+  timeout_ms: 30000

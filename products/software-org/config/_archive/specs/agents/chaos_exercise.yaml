@@ -1,0 +1,27 @@
+---
+id: "chaos_exercise"
+agent: "ChaosExerciseAgent"
+role: "SRE/Platform Engineer"
+inputs_spec:
+- name: "centralized_logs"
+  description: "Centralized logs for chaos exercise execution."
+  format: "Centralized log artifact"
+outputs_spec:
+- name: "chaos_exercise_report"
+  description: "Report on executed chaos exercises and findings."
+  format: "Chaos exercise report artifact"
+agent_tasks:
+- "Schedule and execute chaos exercises."
+- "Document and share findings."
+- "Create and track remediation plans."
+acceptance_criteria:
+- "Chaos exercises scheduled/executed."
+- "Findings documented/shared."
+- "Remediation plans tracked."
+dependencies:
+- "centralized_logs"
+failure_escalation:
+- "Escalate to SRE/Platform Engineer if chaos exercises not performed."
+references: []
+hitl: true
+hitl_reason: "Human reviews chaos exercise results for system resilience"

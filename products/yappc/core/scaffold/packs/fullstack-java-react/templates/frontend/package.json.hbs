@@ -1,0 +1,33 @@
+{
+"name": "{{projectName}}-frontend",
+"private": true,
+"version": "0.1.0",
+"type": "module",
+"scripts": {
+"dev": "vite",
+"build": "tsc && vite build",
+"preview": "vite preview",
+"lint": "eslint . --ext ts,tsx",
+"test": "vitest run",
+"test:watch": "vitest"{{#if enableE2E}},
+"test:e2e": "playwright test"{{/if}}
+},
+"dependencies": {
+"react": "^18.3.0",
+"react-dom": "^18.3.0",
+"@tanstack/react-query": "^5.50.0"
+},
+"devDependencies": {
+"@types/react": "^18.3.0",
+"@types/react-dom": "^18.3.0",
+"@vitejs/plugin-react": "^4.3.0",
+"typescript": "~5.6.3",
+"vite": "^5.4.0",
+"vitest": "^2.0.0",
+"@testing-library/react": "^16.0.0",
+"@testing-library/jest-dom": "^6.4.0",
+"eslint": "^9.5.0",
+"eslint-plugin-react-hooks": "^4.6.2"{{#if enableE2E}},
+"@playwright/test": "^1.45.0"{{/if}}
+}
+}

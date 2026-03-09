@@ -1,0 +1,27 @@
+---
+id: "precommit_automation"
+agent: "PreCommitAutomationAgent"
+role: "Tooling Engineer"
+inputs_spec:
+- name: "configured_repo"
+  description: "Configured repository for pre-commit hook setup."
+  format: "Repo URL or artifact"
+outputs_spec:
+- name: "precommit_hooks"
+  description: "Enabled pre-commit hooks (lint, format, basic tests, secret scan)."
+  format: "List of hook types"
+agent_tasks:
+- "Configure pre-commit hooks for lint, format, and basic tests."
+- "Block sensitive data or secrets in commits."
+- "Test all hooks for effectiveness."
+- "Notify team of required hooks."
+acceptance_criteria:
+- "Pre-commit hooks check for lint, format, and basic tests."
+- "Sensitive data or secrets are blocked in commits."
+- "All hooks are tested for effectiveness."
+- "Team is notified of required hooks."
+dependencies:
+- "configured_repo"
+failure_escalation:
+- "Escalate to Tooling Engineer or Dev Lead if hooks are missing or ineffective."
+references: []

@@ -1,0 +1,65 @@
+{
+    "name": "python-service-fastapi",
+    "version": "1.0.0",
+    "description": "Python HTTP service with FastAPI framework",
+    "language": "python",
+    "category": "backend",
+    "platform": "server",
+    "buildSystem": "uv",
+    "author": "YAPPC Team",
+    "tags": [
+        "python",
+        "fastapi",
+        "http",
+        "rest",
+        "api",
+        "async"
+    ],
+    "requiredVariables": [
+        "projectName",
+        "pythonVersion"
+    ],
+    "optionalVariables": [
+        "description",
+        "author",
+        "enableSwagger",
+        "enableCors",
+        "enableMetrics",
+        "buildTool"
+    ],
+    "defaults": {
+        "pythonVersion": ">=3.11",
+        "description": "Python service with FastAPI framework",
+        "enableSwagger": "true",
+        "enableCors": "true",
+        "enableMetrics": "true",
+        "buildTool": "uv"
+    },
+    "templates": [
+        "pyproject.toml.hbs",
+        "main.py.hbs",
+        "app/__init__.py.hbs",
+        "app/main.py.hbs",
+        "app/config.py.hbs",
+        "app/routers/__init__.py.hbs",
+        "app/routers/health.py.hbs",
+        "app/routers/api.py.hbs",
+        "app/middleware/cors.py.hbs",
+        "app/middleware/logging.py.hbs",
+        "app/models/__init__.py.hbs",
+        "app/schemas/__init__.py.hbs",
+        "tests/__init__.py.hbs",
+        "tests/test_health.py.hbs",
+        "Makefile.hbs",
+        "Dockerfile.hbs",
+        ".dockerignore.hbs",
+        ".gitignore.hbs",
+        "README.md.hbs"
+    ],
+    "supportedFeatures": [
+        "database",
+        "auth",
+        "observability",
+        "messaging"
+    ]
+}

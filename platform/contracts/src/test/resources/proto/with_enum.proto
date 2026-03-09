@@ -1,0 +1,58 @@
+/*
+ * Copyright (c) ${year} Ghatana Inc.
+ * All rights reserved.
+ *
+ * This source code and the accompanying materials are the confidential
+ * and proprietary information of Ghatana Inc. (“Confidential Information”).
+ * You shall not disclose such Confidential Information and shall use it
+ * only in accordance with the terms of the license agreement you entered
+ * into with Ghatana Inc.
+ *
+ * Unauthorized copying of this file, via any medium, is strictly prohibited.
+ * Proprietary and confidential.
+ */
+syntax = "proto3";
+
+package test.enums;
+
+option java_package = "com.ghatana.contracts.test.enums";
+option java_outer_classname = "EnumMessageProto";
+
+// A message that contains enum fields
+message EnumMessage {
+  // The status of the message
+  Status status = 1;
+
+  // Map of string to status
+  map<string, Status> status_map = 2;
+
+  // Repeated enums
+  repeated Status repeated_status = 3;
+
+  // Optional enum
+  Status optional_status = 4;
+
+  // Enum with custom JSON name
+  Status custom_json_status = 5 [json_name = "customStatus"];
+}
+
+// Status enumeration
+enum Status {
+  // Default status
+  STATUS_UNSPECIFIED = 0;
+
+  // Active status
+  ACTIVE = 1;
+
+  // Inactive status
+  INACTIVE = 2;
+
+  // Pending status
+  PENDING = 3;
+
+  // Completed status
+  COMPLETED = 4;
+
+  // Failed status
+  FAILED = 5;
+}

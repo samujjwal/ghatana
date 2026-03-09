@@ -1,0 +1,291 @@
+# Requirements & Specification Tasks
+# Domain 2 of 22 - Developer Task Universe
+# Reference: developer-tasks.md Part I, Section 2
+
+domain:
+  id: requirements
+  name: "Requirements & Specification"
+  description: "Tasks related to reading, translating, and managing requirements"
+  order: 2
+  icon: "description"
+  color: "#4ECDC4"
+  lifecycle_stages:
+    - intent
+    - context
+    - plan
+
+tasks:
+  - id: req-001
+    name: "Read and Interpret Requirements"
+    description: "Thoroughly read and understand the provided requirements documentation"
+    personas:
+      - Developer
+      - Tech Lead
+      - QA
+    lifecycle_stages:
+      - intent
+      - context
+    automation_level: assisted
+    required_capabilities:
+      - requirement-analysis
+      - domain-understanding
+    input_schema: req-001-input
+    output_schema: req-001-output
+    audit_artifacts:
+      - InputSnapshot
+      - OutputSnapshot
+    ui:
+      icon: "article"
+      color: "#4ECDC4"
+      tags:
+        - requirements
+        - analysis
+        - understanding
+
+  - id: req-002
+    name: "Translate Business to Technical Requirements"
+    description: "Convert business requirements into technical specifications"
+    personas:
+      - Developer
+      - Tech Lead
+    lifecycle_stages:
+      - context
+      - plan
+    automation_level: assisted
+    required_capabilities:
+      - requirement-analysis
+      - technical-writing
+    input_schema: req-002-input
+    output_schema: req-002-output
+    audit_artifacts:
+      - InputSnapshot
+      - OutputSnapshot
+      - DecisionRecord
+    ui:
+      icon: "transform"
+      color: "#4ECDC4"
+      tags:
+        - translation
+        - technical
+        - specification
+
+  - id: req-003
+    name: "Decompose Epics into Stories/Tasks"
+    description: "Break down large epics into manageable user stories and tasks"
+    personas:
+      - Developer
+      - Tech Lead
+      - PM
+    lifecycle_stages:
+      - plan
+    automation_level: assisted
+    required_capabilities:
+      - decomposition
+      - agile-practices
+    input_schema: req-003-input
+    output_schema: req-003-output
+    audit_artifacts:
+      - InputSnapshot
+      - OutputSnapshot
+      - ChangeSet
+    ui:
+      icon: "account_tree"
+      color: "#4ECDC4"
+      tags:
+        - decomposition
+        - stories
+        - planning
+
+  - id: req-004
+    name: "Define Acceptance Criteria"
+    description: "Specify clear, testable acceptance criteria for each requirement"
+    personas:
+      - Developer
+      - Tech Lead
+      - QA
+      - PM
+    lifecycle_stages:
+      - plan
+    automation_level: assisted
+    required_capabilities:
+      - requirement-analysis
+      - testing-knowledge
+    input_schema: req-004-input
+    output_schema: req-004-output
+    audit_artifacts:
+      - InputSnapshot
+      - OutputSnapshot
+    ui:
+      icon: "checklist"
+      color: "#4ECDC4"
+      tags:
+        - acceptance
+        - criteria
+        - testing
+
+  - id: req-005
+    name: "Identify Edge Cases"
+    description: "Document edge cases and boundary conditions for requirements"
+    personas:
+      - Developer
+      - Tech Lead
+      - QA
+    lifecycle_stages:
+      - context
+      - plan
+    automation_level: assisted
+    required_capabilities:
+      - critical-thinking
+      - testing-knowledge
+    input_schema: req-005-input
+    output_schema: req-005-output
+    audit_artifacts:
+      - InputSnapshot
+      - OutputSnapshot
+    ui:
+      icon: "grid_view"
+      color: "#4ECDC4"
+      tags:
+        - edge-cases
+        - boundaries
+        - testing
+
+  - id: req-006
+    name: "Define Non-Functional Requirements"
+    description: "Specify performance, security, reliability, and other NFRs"
+    personas:
+      - Developer
+      - Tech Lead
+      - Security
+      - DevOps
+    lifecycle_stages:
+      - context
+      - plan
+    automation_level: assisted
+    required_capabilities:
+      - requirement-analysis
+      - architecture-knowledge
+    input_schema: req-006-input
+    output_schema: req-006-output
+    audit_artifacts:
+      - InputSnapshot
+      - OutputSnapshot
+      - DecisionRecord
+    ui:
+      icon: "tune"
+      color: "#4ECDC4"
+      tags:
+        - nfr
+        - performance
+        - security
+
+  - id: req-007
+    name: "Resolve Conflicting Requirements"
+    description: "Identify and resolve conflicts between competing requirements"
+    personas:
+      - Developer
+      - Tech Lead
+      - PM
+    lifecycle_stages:
+      - context
+    automation_level: manual
+    required_capabilities:
+      - conflict-resolution
+      - communication
+    input_schema: req-007-input
+    output_schema: req-007-output
+    audit_artifacts:
+      - InputSnapshot
+      - OutputSnapshot
+      - DecisionRecord
+      - ActorLog
+    ui:
+      icon: "merge_type"
+      color: "#4ECDC4"
+      tags:
+        - conflicts
+        - resolution
+        - prioritization
+
+  - id: req-008
+    name: "Track Requirement Changes"
+    description: "Monitor and document changes to requirements over time"
+    personas:
+      - Developer
+      - Tech Lead
+      - PM
+    lifecycle_stages:
+      - context
+      - observe
+    automation_level: automated
+    required_capabilities:
+      - version-control
+      - change-tracking
+    input_schema: req-008-input
+    output_schema: req-008-output
+    audit_artifacts:
+      - InputSnapshot
+      - OutputSnapshot
+      - ChangeSet
+      - TimestampedState
+    ui:
+      icon: "track_changes"
+      color: "#4ECDC4"
+      tags:
+        - tracking
+        - changes
+        - versioning
+
+  - id: req-009
+    name: "Version Requirements"
+    description: "Maintain versioned history of requirements documentation"
+    personas:
+      - Developer
+      - Tech Lead
+    lifecycle_stages:
+      - institutionalize
+    automation_level: automated
+    required_capabilities:
+      - version-control
+      - documentation
+    input_schema: req-009-input
+    output_schema: req-009-output
+    audit_artifacts:
+      - InputSnapshot
+      - OutputSnapshot
+      - ChangeSet
+    ui:
+      icon: "history"
+      color: "#4ECDC4"
+      tags:
+        - versioning
+        - history
+        - documentation
+
+  - id: req-010
+    name: "Map Requirements to Artifacts"
+    description: "Create traceability matrix linking requirements to implementation"
+    personas:
+      - Developer
+      - Tech Lead
+      - QA
+    lifecycle_stages:
+      - verify
+      - institutionalize
+    automation_level: assisted
+    required_capabilities:
+      - traceability
+      - documentation
+    input_schema: req-010-input
+    output_schema: req-010-output
+    audit_artifacts:
+      - InputSnapshot
+      - OutputSnapshot
+      - LineageLinks
+    ui:
+      icon: "link"
+      color: "#4ECDC4"
+      tags:
+        - traceability
+        - mapping
+        - artifacts

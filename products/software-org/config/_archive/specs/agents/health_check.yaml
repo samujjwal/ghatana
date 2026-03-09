@@ -1,0 +1,27 @@
+---
+id: "health_check"
+agent: "HealthCheckAgent"
+role: "SRE"
+inputs_spec:
+- name: "service_mesh_validation"
+  description: "Mesh validation artifact."
+  format: "Mesh validation artifact"
+outputs_spec:
+- name: "health_check_report"
+  description: "Report of health check outcomes for all services."
+  format: "Health check report artifact"
+agent_tasks:
+- "Define and test health checks for all services."
+- "Block or rollback deployments on failing health checks."
+- "Report health status to dashboards/logs."
+acceptance_criteria:
+- "Health checks defined and tested."
+- "Failing checks block/rollback deployments."
+- "Status reported to dashboards/logs."
+dependencies:
+- "service_mesh_validation"
+failure_escalation:
+- "Escalate to SRE if health checks fail or status not reported."
+references: []
+hitl: true
+hitl_reason: "Human reviews health check report for anomalies"

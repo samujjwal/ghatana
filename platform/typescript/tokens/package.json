@@ -1,0 +1,101 @@
+{
+  "name": "@ghatana/tokens",
+  "version": "0.1.0",
+  "description": "Global design tokens for Ghatana platform - framework-agnostic design tokens",
+  "type": "module",
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js"
+    },
+    "./colors": {
+      "types": "./dist/colors.d.ts",
+      "import": "./dist/colors.js"
+    },
+    "./spacing": {
+      "types": "./dist/spacing.d.ts",
+      "import": "./dist/spacing.js"
+    },
+    "./typography": {
+      "types": "./dist/typography.d.ts",
+      "import": "./dist/typography.js"
+    },
+    "./shadows": {
+      "types": "./dist/shadows.d.ts",
+      "import": "./dist/shadows.js"
+    },
+    "./borders": {
+      "types": "./dist/borders.d.ts",
+      "import": "./dist/borders.js"
+    },
+    "./breakpoints": {
+      "types": "./dist/breakpoints.d.ts",
+      "import": "./dist/breakpoints.js"
+    },
+    "./transitions": {
+      "types": "./dist/transitions.d.ts",
+      "import": "./dist/transitions.js"
+    },
+    "./z-index": {
+      "types": "./dist/z-index.d.ts",
+      "import": "./dist/z-index.js"
+    },
+    "./registry": {
+      "types": "./dist/registry.d.ts",
+      "import": "./dist/registry.js"
+    },
+    "./css": {
+      "types": "./dist/css.d.ts",
+      "import": "./dist/css.js"
+    },
+    "./validation": {
+      "types": "./dist/validation.d.ts",
+      "import": "./dist/validation.js"
+    },
+    "./safe-area.css": {
+      "import": "./dist/safe-area.css",
+      "default": "./dist/safe-area.css",
+      "node": "./dist/safe-area.js"
+    }
+    ,
+    "./dist/*": "./dist/*"
+  },
+  "files": [
+    "dist",
+    "src",
+    "README.md",
+    "safe-area.css"
+  ],
+  "scripts": {
+    "build": "tsc",
+    "dev": "tsc --watch",
+    "clean": "rm -rf dist",
+    "type-check": "tsc --noEmit",
+    "test": "vitest run",
+    "tokens:css": "pnpm build && node ./scripts/generate-css.mjs",
+    "tokens:validate": "pnpm build && node ./scripts/validate-tokens.mjs"
+  },
+  "dependencies": {
+    "zod": "^4.3.6"
+  },
+  "devDependencies": {
+    "@types/node": "^25.2.0",
+    "typescript": "^5.9.3",
+    "vitest": "^4.0.18",
+    "@typescript-eslint/parser": "^8.54.0",
+    "@typescript-eslint/eslint-plugin": "^8.54.0",
+    "eslint": "^9.39.2"
+  },
+  "keywords": [
+    "ghatana",
+    "design-tokens",
+    "design-system",
+    "colors",
+    "spacing",
+    "typography"
+  ],
+  "author": "Ghatana Team",
+  "license": "MIT"
+}

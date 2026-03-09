@@ -1,0 +1,23 @@
+{
+  "id": "guides/tutorials-overview",
+  "title": "Tutorials Overview",
+  "description": "Documentation coming soon.",
+  "source": "@site/docs/guides/tutorials-overview.md",
+  "sourceDirName": "guides",
+  "slug": "/guides/tutorials-overview",
+  "permalink": "/docs/guides/tutorials-overview",
+  "draft": false,
+  "unlisted": false,
+  "editUrl": "https://github.com/yappc/app-creator/tree/main/docs-site/docs/guides/tutorials-overview.md",
+  "tags": [],
+  "version": "current",
+  "sidebarPosition": 1,
+  "frontMatter": {
+    "sidebar_position": 1
+  },
+  "sidebar": "guidesSidebar",
+  "next": {
+    "title": "Building Plugins",
+    "permalink": "/docs/guides/building-plugins"
+  }
+}

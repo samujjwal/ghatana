@@ -1,0 +1,118 @@
+syntax = "proto3";
+
+package com.ghatana.refactorer.api.v1;
+
+option java_package = "com.ghatana.refactorer.api.v1";
+option java_multiple_files = true;
+
+// PolyfixService — refactorer gRPC API
+service PolyfixService {
+    // Diagnose a repository for issues
+    rpc Diagnose (DiagnoseRequest) returns (DiagnoseResponse);
+    
+    // Run a refactoring job
+    rpc Run (RunRequest) returns (JobId);
+    
+    // Get the status of a running job
+    rpc GetStatus (JobId) returns (RunStatus);
+    
+    // Get the report for a completed job
+    rpc GetReport (JobId) returns (Report);
+    
+    // Stream progress events for a job
+    rpc StreamProgress (JobId) returns (stream ProgressEvent);
+    
+    // Health check
+    rpc Health (HealthRequest) returns (HealthResponse);
+}
+
+message Language {
+    string id = 1;
+}
+
+message PolicyKV {
+    string key = 1;
+    string value = 2;
+}
+
+message Budget {
+    int32 max_passes = 1;
+    int32 max_edits_per_file = 2;
+    int32 timeout_seconds = 3;
+}
+
+message DiagnoseRequest {
+    string repo_root = 1;
+    repeated string include_globs = 2;
+    repeated string exclude_globs = 3;
+    repeated Language languages = 4;
+    repeated PolicyKV policies = 5;
+    Budget budget = 6;
+    bool formatters = 7;
+    string tenant_id = 8;
+}
+
+message UnifiedDiagnostic {
+    string tool = 1;
+    string rule = 2;
+    string message = 3;
+    string file = 4;
+    int32 line = 5;
+    int32 column = 6;
+    string severity = 7;
+    int64 timestamp = 8;
+    string suggestion = 9;
+    string category = 10;
+}
+
+message DiagnoseResponse {
+    string execution_id = 1;
+    int64 timestamp = 2;
+    repeated UnifiedDiagnostic diagnostics = 3;
+}
+
+message RunRequest {
+    DiagnoseRequest config = 1;
+    bool dry_run = 2;
+    string idempotency_key = 3;
+    string tenant_id = 4;
+}
+
+message JobId {
+    string id = 1;
+}
+
+message RunStatus {
+    string job_id = 1;
+    string state = 2;
+    int32 pass = 3;
+    string started_at = 4;
+    string updated_at = 5;
+    map<string, string> tool_versions = 6;
+    string error_message = 7;
+}
+
+message Report {
+    string job_id = 1;
+    string summary_json = 2;
+    string details_json = 3;
+    string generated_at = 4;
+}
+
+message ProgressEvent {
+    string job_id = 1;
+    string event_type = 2;
+    string message = 3;
+    int32 current_pass = 4;
+    int32 total_passes = 5;
+    int64 timestamp = 6;
+}
+
+message HealthRequest {
+}
+
+message HealthResponse {
+    string status = 1;
+    map<string, string> details = 2;
+    int64 timestamp = 3;
+}

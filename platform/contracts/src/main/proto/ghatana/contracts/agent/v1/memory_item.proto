@@ -1,0 +1,282 @@
+/*
+ * Copyright (c) 2026 Ghatana Inc.
+ * All rights reserved.
+ *
+ * Generic Adaptive Agent (GAA) - Canonical Memory Item Schema
+ * Version: 1.0.0
+ *
+ * Defines the canonical memory item envelope shared across all memory tiers.
+ * All memory items (episodes, facts, procedures, tasks, working, preferences)
+ * share this common schema for cross-tier interoperability.
+ */
+syntax = "proto3";
+
+package ghatana.contracts.agent.v1;
+
+import "google/protobuf/timestamp.proto";
+import "google/protobuf/struct.proto";
+import "ghatana/contracts/agent/v1/memory_events.proto";
+
+option go_package = "github.com/ghatana/contracts/gen/go/agent/v1;agentv1";
+option java_multiple_files = true;
+option java_package = "com.ghatana.contracts.agent.v1";
+option java_outer_classname = "MemoryItemProtos";
+option csharp_namespace = "Ghatana.Contracts.Agent.V1";
+
+// ============================================================================
+// CANONICAL MEMORY ITEM: Cross-tier envelope
+// ============================================================================
+
+/**
+ * MemoryItemProto is the canonical envelope for all memory items.
+ * Every memory tier (episodic, semantic, procedural, task-state, working,
+ * preference) uses this as its wire format.
+ */
+message MemoryItemProto {
+  string id = 1;
+  MemoryItemType type = 2;
+  google.protobuf.Timestamp created_at = 3;
+  google.protobuf.Timestamp updated_at = 4;
+  google.protobuf.Timestamp expires_at = 5;
+  ProvenanceProto provenance = 6;
+  repeated float embedding = 7;
+  ValidityProto validity = 8;
+  repeated MemoryLinkProto links = 9;
+  map<string, string> labels = 10;
+  map<string, string> annotations = 11;
+  string tenant_id = 12;
+  string sphere_id = 13;
+  DataClassificationProto classification = 14;
+
+  oneof content {
+    EpisodeContentProto episode = 20;
+    FactContentProto fact = 21;
+    ProcedureContentProto procedure = 22;
+    TaskStateContentProto task_state = 23;
+    WorkingContentProto working = 24;
+    PreferenceContentProto preference = 25;
+    ArtifactContentProto artifact = 26;
+  }
+}
+
+// ============================================================================
+// ENUMS
+// ============================================================================
+
+enum MemoryItemType {
+  MEMORY_ITEM_TYPE_UNSPECIFIED = 0;
+  MEMORY_ITEM_TYPE_EPISODE = 1;
+  MEMORY_ITEM_TYPE_FACT = 2;
+  MEMORY_ITEM_TYPE_PROCEDURE = 3;
+  MEMORY_ITEM_TYPE_TASK_STATE = 4;
+  MEMORY_ITEM_TYPE_WORKING = 5;
+  MEMORY_ITEM_TYPE_PREFERENCE = 6;
+  MEMORY_ITEM_TYPE_ARTIFACT = 7;
+}
+
+enum ValidityStatus {
+  VALIDITY_STATUS_UNSPECIFIED = 0;
+  VALIDITY_STATUS_ACTIVE = 1;
+  VALIDITY_STATUS_STALE = 2;
+  VALIDITY_STATUS_DEPRECATED = 3;
+  VALIDITY_STATUS_ARCHIVED = 4;
+}
+
+enum LinkType {
+  LINK_TYPE_UNSPECIFIED = 0;
+  LINK_TYPE_SUPPORTS = 1;
+  LINK_TYPE_CONTRADICTS = 2;
+  LINK_TYPE_DERIVED_FROM = 3;
+  LINK_TYPE_SUPERSEDES = 4;
+  LINK_TYPE_RELATED = 5;
+}
+
+enum ArtifactType {
+  ARTIFACT_TYPE_UNSPECIFIED = 0;
+  ARTIFACT_TYPE_DECISION = 1;
+  ARTIFACT_TYPE_TOOL_USE = 2;
+  ARTIFACT_TYPE_OBSERVATION = 3;
+  ARTIFACT_TYPE_ERROR = 4;
+  ARTIFACT_TYPE_LESSON = 5;
+  ARTIFACT_TYPE_ENTITY = 6;
+  ARTIFACT_TYPE_PLAN = 7;
+  ARTIFACT_TYPE_HYPOTHESIS = 8;
+}
+
+enum DataClassificationProto {
+  DATA_CLASSIFICATION_UNSPECIFIED = 0;
+  DATA_CLASSIFICATION_PUBLIC = 1;
+  DATA_CLASSIFICATION_INTERNAL = 2;
+  DATA_CLASSIFICATION_CONFIDENTIAL = 3;
+  DATA_CLASSIFICATION_SECRET = 4;
+  DATA_CLASSIFICATION_PII = 5;
+}
+
+// ============================================================================
+// SUPPORTING MESSAGES
+// ============================================================================
+
+/** Provenance tracks the origin and chain-of-custody for a memory item. */
+message ProvenanceProto {
+  string source = 1;
+  ConfidenceSource confidence_source = 2;
+  string trace_id = 3;
+  string agent_id = 4;
+  string session_id = 5;
+  string parent_item_id = 6;
+}
+
+/** Validity tracks confidence, decay, and lifecycle status. */
+message ValidityProto {
+  double confidence = 1;
+  google.protobuf.Timestamp last_verified = 2;
+  double decay_rate = 3;
+  ValidityStatus status = 4;
+}
+
+/** MemoryLinkProto represents a directed relationship between memory items. */
+message MemoryLinkProto {
+  string target_item_id = 1;
+  LinkType link_type = 2;
+  double strength = 3;
+  string description = 4;
+}
+
+// ============================================================================
+// TIER-SPECIFIC CONTENT
+// ============================================================================
+
+/** Episodic content: a single agent interaction turn. */
+message EpisodeContentProto {
+  string agent_id = 1;
+  string turn_id = 2;
+  string input = 3;
+  string output = 4;
+  string action = 5;
+  google.protobuf.Struct context = 6;
+  repeated string tags = 7;
+  double reward = 8;
+  repeated ToolExecutionProto tool_executions = 9;
+  double cost = 10;
+  int64 latency_ms = 11;
+  string redaction_level = 12;
+}
+
+/** Semantic content: a factual SPO triple with confidence. */
+message FactContentProto {
+  string subject = 1;
+  string predicate = 2;
+  string object = 3;
+  double confidence = 4;
+  string source = 5;
+  google.protobuf.Timestamp learned_at = 6;
+  google.protobuf.Timestamp last_verified = 7;
+  double decay_rate = 8;
+  int32 version = 9;
+  repeated FactVersionProto version_history = 10;
+}
+
+/** Procedure content: a reusable multi-step skill. */
+message ProcedureContentProto {
+  string situation = 1;
+  string action = 2;
+  double confidence = 3;
+  int32 use_count = 4;
+  int32 version = 5;
+  repeated string learned_from_episodes = 6;
+  repeated ProcedureStepProto steps = 7;
+  double success_rate = 8;
+  google.protobuf.Struct prerequisites = 9;
+  google.protobuf.Struct environment_constraints = 10;
+}
+
+/** Task-state content: long-running multi-session workflow state. */
+message TaskStateContentProto {
+  string task_id = 1;
+  string name = 2;
+  string description = 3;
+  string current_phase = 4;
+  repeated TaskPhaseProto phases = 5;
+  repeated TaskCheckpointProto checkpoints = 6;
+  repeated TaskBlockerProto blockers = 7;
+  map<string, string> metadata = 8;
+}
+
+/** Working memory content: ephemeral in-run key-value. */
+message WorkingContentProto {
+  string key = 1;
+  google.protobuf.Struct value = 2;
+  int32 priority = 3;
+}
+
+/** Preference content: user/agent preference. */
+message PreferenceContentProto {
+  string key = 1;
+  string value = 2;
+  string namespace = 3;
+}
+
+/** Typed artifact content for generic domain objects. */
+message ArtifactContentProto {
+  ArtifactType artifact_type = 1;
+  string summary = 2;
+  google.protobuf.Struct structured_data = 3;
+  repeated string tags = 4;
+}
+
+// ============================================================================
+// NESTED TYPES
+// ============================================================================
+
+message ToolExecutionProto {
+  string tool_name = 1;
+  string input = 2;
+  string output = 3;
+  int64 duration_ms = 4;
+  bool success = 5;
+  string error_message = 6;
+}
+
+message FactVersionProto {
+  int32 version = 1;
+  string content = 2;
+  google.protobuf.Timestamp changed_at = 3;
+  string changed_by = 4;
+  string change_reason = 5;
+}
+
+message ProcedureStepProto {
+  int32 ordinal = 1;
+  string description = 2;
+  string tool_name = 3;
+  string expected_outcome = 4;
+  int32 fallback_step = 5;
+}
+
+message TaskPhaseProto {
+  string id = 1;
+  string name = 2;
+  string description = 3;
+  string status = 4;
+  int32 ordinal = 5;
+  google.protobuf.Timestamp started_at = 6;
+  google.protobuf.Timestamp completed_at = 7;
+}
+
+message TaskCheckpointProto {
+  string id = 1;
+  string phase_id = 2;
+  google.protobuf.Struct snapshot = 3;
+  google.protobuf.Timestamp created_at = 4;
+  string description = 5;
+  bool is_restorable = 6;
+}
+
+message TaskBlockerProto {
+  string id = 1;
+  string description = 2;
+  string severity = 3;
+  google.protobuf.Timestamp reported_at = 4;
+  google.protobuf.Timestamp resolved_at = 5;
+  string resolution = 6;
+}

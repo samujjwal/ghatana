@@ -1,0 +1,75 @@
+name: "YAPPC FE: Full E2E Nightly"
+
+on:
+    schedule:
+        - cron: "0 2 * * *" # daily at 02:00 UTC
+    workflow_dispatch: {}
+
+defaults:
+  run:
+    working-directory: products/yappc/frontend
+
+jobs:
+    e2e-full:
+        runs-on: ubuntu-latest
+        timeout-minutes: 180
+        steps:
+            - name: Checkout
+              uses: actions/checkout@v4
+
+            - name: Setup Node.js
+              uses: actions/setup-node@v4
+              with:
+                  node-version: 20
+                  cache: "pnpm"
+
+            - name: Install pnpm
+              run: npm i -g pnpm@10.28.2
+
+            - name: Install dependencies
+              run: pnpm install --frozen-lockfile
+
+            - name: Run unit tests (fast-fail)
+              run: pnpm -w -C apps/web vitest --run
+
+            - name: Install Playwright browsers
+              run: pnpm exec playwright install --with-deps
+
+            - name: Run full E2E suite with seed and traces
+              env:
+                  PLAYWRIGHT_ALWAYS_TRACE: "1"
+                  PLAYWRIGHT_ENABLE_CANVAS: "1"
+                  PLAYWRIGHT_BASE_URL: http://localhost:5173
+                  CI: "1"
+              run: |
+                  # Run the full Playwright suite. Playwright will start the webServer defined in playwright.config.ts
+                  pnpm exec playwright test -c playwright.config.ts --project=chromium --workers=1 --reporter=list
+
+    upload-traces:
+        runs-on: ubuntu-latest
+        needs: e2e-full
+        if: always()
+        steps:
+            - name: Checkout
+              uses: actions/checkout@v4
+
+            - name: Gather artifact summary
+              run: |
+                  mkdir -p test-results
+                  echo "Artifact summary for run" > test-results/e2e-artifact-summary.txt
+                  echo "Files:" >> test-results/e2e-artifact-summary.txt
+                  find . -type f -name '*.zip' -o -path './test-results/*' -maxdepth 3 -print >> test-results/e2e-artifact-summary.txt || true
+
+            - name: Write Actions job summary
+              run: |
+                  echo "### E2E Artifact Summary" >> $GITHUB_STEP_SUMMARY || true
+                  echo "See uploaded artifact 'e2e-full-artifacts' for full traces and screenshots." >> $GITHUB_STEP_SUMMARY || true
+
+            - name: Upload full E2E artifacts
+              uses: actions/upload-artifact@v4
+              with:
+                  name: e2e-full-artifacts
+                  path: |
+                      test-results/**
+                      playwright-report/**
+                      **/*.zip

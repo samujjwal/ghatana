@@ -1,0 +1,29 @@
+# Data-Cloud Agent Catalog
+#
+# Defines agents specific to the Data-Cloud product.
+# Extends the platform catalog with data management and storage capabilities.
+
+catalog:
+  id: "data-cloud"
+  name: "Data-Cloud Agent Catalog"
+  version: "1.0.0"
+
+  # Extends platform catalog (inherits base capabilities)
+  extends:
+    - "platform"
+
+  # Agent definition files (glob patterns relative to this file)
+  agents:
+    - "definitions/**/*-agent.yaml"
+    - "definitions/**/*-orchestrator.yaml"
+
+  # Data-Cloud-specific capabilities extending base taxonomy
+  capabilities:
+    taxonomy: "capabilities/data-cloud-capabilities.yaml"
+
+  metadata:
+    maintainer: "data-cloud-team@ghatana.ai"
+    scope: "data-management"
+    dependencies:
+      - "platform"
+    priority: 200

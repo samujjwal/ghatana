@@ -1,0 +1,115 @@
+id: security-operations-agent
+name: Security Operations Agent
+version: 1.0.0
+description: Monitors security posture. Detects threats and coordinates security incident response.
+
+metadata:
+  level: 2  # Domain Expert
+  domain: operations
+  tags:
+    - security
+    - threat-detection
+    - secops
+    - incident-response
+
+generator:
+  type: PIPELINE
+  steps:
+    - name: security_monitoring
+      type: SERVICE_CALL
+      service: security-service
+      endpoint: /monitor
+    - name: threat_analysis
+      type: LLM
+      provider: ANTHROPIC
+      model: claude-3-5-sonnet-20241022
+      temperature: 0.1
+      max_tokens: 2000
+      prompt: |
+        You are the Security Operations Agent. Analyze security:
+        
+        Security Events: {{events}}
+        Threat Intel: {{intel}}
+        Vulnerabilities: {{vulns}}
+        Compliance Status: {{compliance}}
+        
+        Analyze:
+        1. Active threats/attacks
+        2. Anomalous behavior
+        3. Vulnerability exposure
+        4. Compliance gaps
+        5. Risk assessment
+        6. Recommended actions
+        7. Escalation needs
+        
+        Output as JSON: {
+          active_threats,
+          anomalies,
+          vulnerability_status,
+          compliance_gaps,
+          risk_level,
+          recommended_actions,
+          escalation
+        }
+    - name: response_coordination
+      type: SERVICE_CALL
+      service: security-service
+      endpoint: /respond
+
+memory:
+  episodic:
+    enabled: true
+    retention_days: 730
+    categories:
+      - security-events
+      - incidents
+      - responses
+  semantic:
+    enabled: true
+    categories:
+      - threat-patterns
+      - attack-signatures
+      - defense-strategies
+  procedural:
+    enabled: true
+    categories:
+      - detection-rules
+      - response-playbooks
+      - escalation-paths
+
+tools:
+  - siem_connector
+  - threat_analyzer
+  - response_coordinator
+
+capabilities:
+  - threat-detection
+  - security-monitoring
+  - incident-response
+  - compliance-monitoring
+
+routing:
+  input_types:
+    - security-event
+    - threat-alert
+    - compliance-check
+  output_types:
+    - security-report
+    - threat-assessment
+    - response-plan
+
+delegation:
+  can_delegate_to: []
+  escalates_to:
+    - operations-orchestrator-agent
+    - human-in-the-loop-coordinator
+
+governance:
+  requires_approval: false
+  can_block: true  # Can isolate threats
+  audit_trail: comprehensive
+
+performance:
+  expected_latency_ms: 2000
+  max_latency_ms: 5000
+  timeout_ms: 10000

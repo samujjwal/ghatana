@@ -1,0 +1,93 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ include "yappc.fullname" . }}
+  labels:
+    {{- include "yappc.labels" . | nindent 4 }}
+    app.kubernetes.io/component: api
+spec:
+  {{- if not .Values.autoscaling.enabled }}
+  replicas: {{ .Values.replicaCount.yappc }}
+  {{- end }}
+  selector:
+    matchLabels:
+      {{- include "yappc.selectorLabels" . | nindent 6 }}
+      app.kubernetes.io/component: api
+  template:
+    metadata:
+      annotations:
+        checksum/config: {{ include (print $.Template.BasePath "/configmap.yaml") . | sha256sum }}
+        checksum/secret: {{ include (print $.Template.BasePath "/secret.yaml") . | sha256sum }}
+      labels:
+        {{- include "yappc.selectorLabels" . | nindent 8 }}
+        app.kubernetes.io/component: api
+    spec:
+      securityContext:
+        runAsUser: {{ .Values.securityContext.runAsUser }}
+        runAsGroup: {{ .Values.securityContext.runAsGroup }}
+        fsGroup: {{ .Values.securityContext.fsGroup }}
+        runAsNonRoot: {{ .Values.securityContext.runAsNonRoot }}
+      containers:
+        - name: yappc
+          image: "{{ .Values.image.yappc.repository }}:{{ .Values.image.yappc.tag }}"
+          imagePullPolicy: {{ .Values.image.yappc.pullPolicy }}
+          ports:
+            - name: http
+              containerPort: {{ .Values.service.yappc.http }}
+              protocol: TCP
+            - name: metrics
+              containerPort: {{ .Values.service.yappc.metrics }}
+              protocol: TCP
+          envFrom:
+            - configMapRef:
+                name: {{ include "yappc.fullname" . }}-config
+            - secretRef:
+                name: {{ include "yappc.fullname" . }}-secrets
+          env:
+            - name: JAVA_OPTS
+              value: "-Xmx{{ .Values.config.jvm.xmx }} -Xms{{ .Values.config.jvm.xms }} -XX:+Use{{ .Values.config.jvm.gcType }}"
+          resources:
+            {{- toYaml .Values.resources.yappc | nindent 12 }}
+          livenessProbe:
+            httpGet:
+              path: /health/live
+              port: http
+            initialDelaySeconds: {{ .Values.healthCheck.yappc.liveness.initialDelaySeconds }}
+            periodSeconds: {{ .Values.healthCheck.yappc.liveness.periodSeconds }}
+            timeoutSeconds: {{ .Values.healthCheck.yappc.liveness.timeoutSeconds }}
+            failureThreshold: {{ .Values.healthCheck.yappc.liveness.failureThreshold }}
+          readinessProbe:
+            httpGet:
+              path: /health/ready
+              port: http
+            initialDelaySeconds: {{ .Values.healthCheck.yappc.readiness.initialDelaySeconds }}
+            periodSeconds: {{ .Values.healthCheck.yappc.readiness.periodSeconds }}
+            timeoutSeconds: {{ .Values.healthCheck.yappc.readiness.timeoutSeconds }}
+            failureThreshold: {{ .Values.healthCheck.yappc.readiness.failureThreshold }}
+          startupProbe:
+            httpGet:
+              path: /health/live
+              port: http
+            initialDelaySeconds: {{ .Values.healthCheck.yappc.startup.initialDelaySeconds }}
+            periodSeconds: {{ .Values.healthCheck.yappc.startup.periodSeconds }}
+            timeoutSeconds: {{ .Values.healthCheck.yappc.startup.timeoutSeconds }}
+            failureThreshold: {{ .Values.healthCheck.yappc.startup.failureThreshold }}
+          volumeMounts:
+            - name: logs
+              mountPath: /var/log/yappc
+            - name: cache
+              mountPath: /var/cache/yappc
+      volumes:
+        {{- if .Values.persistence.enabled }}
+        - name: logs
+          persistentVolumeClaim:
+            claimName: {{ include "yappc.fullname" . }}-logs
+        - name: cache
+          persistentVolumeClaim:
+            claimName: {{ include "yappc.fullname" . }}-cache
+        {{- else }}
+        - name: logs
+          emptyDir: {}
+        - name: cache
+          emptyDir: {}
+        {{- end }}

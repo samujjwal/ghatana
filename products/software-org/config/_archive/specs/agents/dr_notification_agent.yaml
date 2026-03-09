@@ -1,0 +1,24 @@
+---
+id: "dr_notification_agent"
+agent: "NotificationAgent"
+role: "IT/PMO Communications"
+inputs_spec:
+- name: "dr_progress_dashboard"
+  description: "DR progress dashboard for notification triggers."
+  format: "Dashboard artifact"
+outputs_spec:
+- name: "dr_notifications"
+  description: "DR notifications sent to stakeholders."
+  format: "List of notification objects"
+agent_tasks:
+- "Notify stakeholders of DR status and issues."
+- "Track notification delivery for audit."
+acceptance_criteria:
+- "Stakeholders notified on DR status/issues."
+- "Notification delivery logged for audit."
+dependencies:
+- "dr_progress_dashboard"
+failure_escalation:
+- "Escalate to IT/PMO if notifications not delivered/logged."
+references: []
+hitl: false

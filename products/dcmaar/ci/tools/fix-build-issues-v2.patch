@@ -1,0 +1,104 @@
+diff --git a/services/desktop/src-tauri/src/db/adapters.rs b/services/desktop/src-tauri/src/db/adapters.rs
+index abc1234..def5678 100644
+--- a/services/desktop/src-tauri/src/db/adapters.rs
++++ b/services/desktop/src-tauri/src/db/adapters.rs
+@@ -40,11 +40,13 @@
+             .and_then(|l| serde_json::from_str(l).ok())
+             .unwrap_or_default();
+ 
+-        let metadata: HashMap<String, serde_json::Value> = db_metric
++        // Convert metadata to HashMap<String, String>
++        let metadata: HashMap<String, String> = db_metric
+             .metadata
+             .as_ref()
+             .and_then(|m| serde_json::from_str(m).ok())
+-            .unwrap_or_default();
++            .map(|v: serde_json::Value| v.as_object().map(|m| m.iter().map(|(k, v)| (k.clone(), v.to_string())).collect()))
++            .unwrap_or_default();
+ 
+         Ok(CommonMetric {
+             id: Uuid::parse_str(&db_metric.metric_id)
+@@ -76,7 +78,7 @@
+             MetricValue::Bool(v) => if *v { 1.0 } else { 0.0 },
+             MetricValue::String(v) => v.parse().unwrap_or(0.0),
+             MetricValue::Distribution(_) => 0.0, // TODO: Handle distribution
+-            MetricValue::Set(_) => 0.0, // TODO: Handle set
++            MetricValue::Set(v) => v.len() as f64, // Return count of items in set
+         };
+ 
+         let metric_type = format!("{:?}", metric.metric_type).to_lowercase();
+@@ -268,8 +270,8 @@
+         let event_type = event.event_type.clone();
+         let activity_type = event.activity_type.clone();
+         let severity = event.severity.to_string();
+-        let labels_json = serde_json::to_string(&event.labels)?;
+-        let related_json = serde_json::to_string(&event.related_events)?;
++        let _labels_json = serde_json::to_string(&event.labels)?;
++        let _related_json = serde_json::to_string(&event.related_events)?;
+         let source = event.source.clone();
+         let tenant_id = event.tenant_id.to_string();
+         let device_id = event.device_id.to_string();
+@@ -506,8 +508,8 @@
+         let action_type = action.action_type.clone();
+         let status = action.status.to_string();
+         let command = action.command.clone();
+-        let labels_json = serde_json::to_string(&action.labels)?;
+-        let metadata_json = serde_json::to_string(&action.metadata)?;
++        let _labels_json = serde_json::to_string(&action.labels)?;
++        let _metadata_json = serde_json::to_string(&action.metadata)?;
+         let created_at = action.created_at.timestamp();
+         let updated_at = action.updated_at.timestamp();
+         let expires_at = action.expires_at.map(|dt| dt.timestamp());
+@@ -583,8 +585,8 @@
+                 let action_type = row.action_type.clone();
+                 let status = row.status.clone();
+                 let command = row.command.clone();
+-                let labels: HashMap<String, String> = serde_json::from_str(&row.labels.unwrap_or_default())?;
+-                let metadata: HashMap<String, serde_json::Value> = serde_json::from_str(&row.metadata.unwrap_or_default())?;
++                let labels: HashMap<String, String> = serde_json::from_str(&row.labels.unwrap_or_default()).unwrap_or_default();
++                let metadata: HashMap<String, String> = serde_json::from_str(&row.metadata.unwrap_or_default()).unwrap_or_default();
+                 let created_at = DateTime::from_timestamp(row.created_at, 0)
+                     .ok_or_else(|| Error::storage("Invalid created_at timestamp"))?;
+                 let updated_at = DateTime::from_timestamp(row.updated_at, 0)
+@@ -629,8 +631,8 @@
+                 let action_type = row.action_type.clone();
+                 let status = row.status.clone();
+                 let command = row.command.clone();
+-                let labels: HashMap<String, String> = serde_json::from_str(&row.labels.unwrap_or_default())?;
+-                let metadata: HashMap<String, serde_json::Value> = serde_json::from_str(&row.metadata.unwrap_or_default())?;
++                let labels: HashMap<String, String> = serde_json::from_str(&row.labels.unwrap_or_default()).unwrap_or_default();
++                let metadata: HashMap<String, String> = serde_json::from_str(&row.metadata.unwrap_or_default()).unwrap_or_default();
+                 let created_at = DateTime::from_timestamp(row.created_at, 0)
+                     .ok_or_else(|| Error::storage("Invalid created_at timestamp"))?;
+                 let updated_at = DateTime::from_timestamp(row.updated_at, 0)
+
+diff --git a/libs/agent-common/src/models/metrics.rs b/libs/agent-common/src/models/metrics.rs
+index 1234567..89abcde 100644
+--- a/libs/agent-common/src/models/metrics.rs
++++ b/libs/agent-common/src/models/metrics.rs
+@@ -15,7 +15,7 @@ pub enum MetricValue {
+     Distribution(Vec<f64>),
+     Summary(Vec<SummaryValue>),
+     Timer(f64),
+-    Set(Vec<String>),
++    Set(Vec<String>), // Represents a set of unique values
+ }
+ 
+ #[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
+@@ -31,7 +31,7 @@ pub struct Metric {
+     pub source: String,
+     pub labels: HashMap<String, String>,
+     #[serde(default)]
+-    pub metadata: HashMap<String, serde_json::Value>,
++    pub metadata: HashMap<String, String>,
+ }
+ 
+ #[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
+@@ -46,7 +46,7 @@ pub struct MetricQuery {
+     pub source: Option<String>,
+     pub start_time: Option<DateTime<Utc>>,
+     pub end_time: Option<DateTime<Utc>>,
+-    pub metadata: Option<HashMap<String, serde_json::Value>>,
++    pub metadata: Option<HashMap<String, String>>,
+     pub labels: Option<HashMap<String, String>>,
+ }

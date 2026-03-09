@@ -1,0 +1,118 @@
+// Package handler provides HTTP request handlers.
+package handler
+
+import (
+"encoding/json"
+"net/http"
+
+"github.com/go-chi/chi/v5"
+)
+
+// Item represents a sample resource.
+type Item struct {
+ID string `json:"id"`
+Name string `json:"name"`
+Description string `json:"description,omitempty"`
+CreatedAt string `json:"created_at,omitempty"`
+}
+
+// Welcome returns a welcome message handler.
+func Welcome() http.HandlerFunc {
+return func(w http.ResponseWriter, r *http.Request) {
+resp := map[string]string{
+"message": "Welcome to {{projectName}} API",
+"version": "v1",
+}
+writeJSON(w, http.StatusOK, resp)
+}
+}
+
+// ListItems returns a handler that lists all items.
+func ListItems() http.HandlerFunc {
+return func(w http.ResponseWriter, r *http.Request) {
+// TODO: Implement actual list logic
+items := []Item{
+{ID: "1", Name: "Sample Item 1", Description: "A sample item"},
+{ID: "2", Name: "Sample Item 2", Description: "Another sample item"},
+}
+writeJSON(w, http.StatusOK, map[string]interface{}{
+"items": items,
+"total": len(items),
+})
+}
+}
+
+// CreateItem returns a handler that creates a new item.
+func CreateItem() http.HandlerFunc {
+return func(w http.ResponseWriter, r *http.Request) {
+var item Item
+if err := json.NewDecoder(r.Body).Decode(&item); err != nil {
+http.Error(w, "Invalid request body", http.StatusBadRequest)
+return
+}
+
+// TODO: Implement actual create logic
+item.ID = "new-id"
+item.CreatedAt = "2024-01-01T00:00:00Z"
+
+writeJSON(w, http.StatusCreated, item)
+}
+}
+
+// GetItem returns a handler that retrieves a single item.
+func GetItem() http.HandlerFunc {
+return func(w http.ResponseWriter, r *http.Request) {
+id := chi.URLParam(r, "id")
+if id == "" {
+http.Error(w, "Item ID is required", http.StatusBadRequest)
+return
+}
+
+// TODO: Implement actual get logic
+item := Item{
+ID: id,
+Name: "Sample Item",
+Description: "This is a sample item",
+CreatedAt: "2024-01-01T00:00:00Z",
+}
+
+writeJSON(w, http.StatusOK, item)
+}
+}
+
+// UpdateItem returns a handler that updates an existing item.
+func UpdateItem() http.HandlerFunc {
+return func(w http.ResponseWriter, r *http.Request) {
+id := chi.URLParam(r, "id")
+if id == "" {
+http.Error(w, "Item ID is required", http.StatusBadRequest)
+return
+}
+
+var item Item
+if err := json.NewDecoder(r.Body).Decode(&item); err != nil {
+http.Error(w, "Invalid request body", http.StatusBadRequest)
+return
+}
+
+// TODO: Implement actual update logic
+item.ID = id
+
+writeJSON(w, http.StatusOK, item)
+}
+}
+
+// DeleteItem returns a handler that deletes an item.
+func DeleteItem() http.HandlerFunc {
+return func(w http.ResponseWriter, r *http.Request) {
+id := chi.URLParam(r, "id")
+if id == "" {
+http.Error(w, "Item ID is required", http.StatusBadRequest)
+return
+}
+
+// TODO: Implement actual delete logic
+
+w.WriteHeader(http.StatusNoContent)
+}
+}

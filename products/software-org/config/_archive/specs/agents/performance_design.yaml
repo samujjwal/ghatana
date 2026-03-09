@@ -1,0 +1,42 @@
+id: performance_design
+agent: PerformanceDesignAgent
+role: Performance Design Lead
+inputs_spec:
+  - name: security_design
+    description: Security design documentation.
+    format: YAML object
+outputs_spec:
+  - name: performance_design
+    description: Performance scenarios, test plans, optimization targets, metrics.
+    format: YAML object
+acceptance_criteria:
+  - All performance-critical flows mapped.
+  - Test plans, optimization targets included.
+  - Peer/SRE review complete.
+agent_tasks:
+  - Identify bottlenecks, resource constraints, load scenarios.
+  - Plan optimization, monitoring, testing.
+  - Document performance targets and test plans.
+dependencies:
+  - security_design
+failure_escalation:
+  - Escalate unresolved performance risks to SRE/lead.
+references: []
+internal_logic:
+  - perception:
+      description: "Identify all performance-critical use cases, bottlenecks, and resource constraints in design."
+  - model:
+      description: "Maintain performance design artifact (scenarios, test plans, optimization targets)."
+  - planning:
+      description: |
+        "Map all performance requirements to measurable targets and design approaches.
+         Flag risks for load, latency, or resource overuse."
+  - action:
+      description: "Output performance design plan and monitoring strategy."
+validation:
+  - "Performance lead review and signoff."
+  - "Audit for target coverage and test planning."
+quality_enhancements:
+  - "Performance design template."
+  - "Metrics for design target coverage and bottleneck risk."
+  - "Automated alerts for performance requirement drift."

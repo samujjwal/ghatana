@@ -1,0 +1,50 @@
+.App { max-width: 1280px; margin: 0 auto; padding: var(--spacing-lg);
+text-align: center; } .App-header { margin-bottom: var(--spacing-2xl); }
+.App-header h1 { font-size: 3.2em; line-height: 1.1; margin-bottom:
+var(--spacing-md); } .App-main { margin: var(--spacing-2xl) 0; }
+
+{{#if enableRouter}}
+  /* Navigation styles */ .navigation { margin-bottom: var(--spacing-xl); }
+  .navigation ul { list-style: none; padding: 0; margin: 0; display: flex;
+  justify-content: center; gap: var(--spacing-lg); } .navigation li { margin: 0;
+  } .navigation a { padding: var(--spacing-sm) var(--spacing-md); border-radius:
+  var(--radius-md); text-decoration: none; transition: all 0.25s; } .navigation
+  a:hover { background-color: var(--color-surface); } /* Page styles */ .home,
+  .about { max-width: 800px; margin: 0 auto; text-align: left; } .home h2,
+  .about h2 { text-align: center; margin-bottom: var(--spacing-xl); } .api-demo
+  { background-color: var(--color-surface); padding: var(--spacing-lg);
+  border-radius: var(--radius-lg); margin: var(--spacing-xl) 0; } .api-demo h3 {
+  margin-top: 0; } .api-demo pre { margin-top: var(--spacing-md); text-align:
+  left; font-size: 0.9em; } .project-info { background-color:
+  var(--color-surface); padding: var(--spacing-lg); border-radius:
+  var(--radius-lg); margin: var(--spacing-xl) 0; } .project-info dl { display:
+  grid; grid-template-columns: 1fr 2fr; gap: var(--spacing-sm)
+  var(--spacing-md); } .project-info dt { font-weight: 600; } .project-info dd {
+  margin: 0; } .tech-stack { margin-top: var(--spacing-xl); } .tech-stack ul {
+  display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: var(--spacing-sm); list-style: none; padding: 0; } .tech-stack li {
+  background-color: var(--color-surface); padding: var(--spacing-sm)
+  var(--spacing-md); border-radius: var(--radius-md); text-align: center; }
+{{else}}
+  .card { padding: var(--spacing-xl); background-color: var(--color-surface);
+  border-radius: var(--radius-lg); margin: var(--spacing-xl) 0; } .card button {
+  font-size: 1.1em; padding: var(--spacing-md) var(--spacing-lg); margin-bottom:
+  var(--spacing-md); } .features { background-color: var(--color-surface);
+  padding: var(--spacing-lg); border-radius: var(--radius-lg); margin:
+  var(--spacing-xl) 0; text-align: left; } .features h2 { text-align: center;
+  margin-bottom: var(--spacing-lg); } .features ul { list-style-type: none;
+  padding: 0; } .features li { padding: var(--spacing-sm) 0; border-bottom: 1px
+  solid var(--color-border); } .features li:last-child { border-bottom: none; }
+{{/if}}
+
+footer { margin-top: var(--spacing-2xl); padding-top: var(--spacing-xl);
+border-top: 1px solid var(--color-border); color: var(--color-text-muted);
+font-size: 0.9em; } /* Responsive design */ @media (max-width: 768px) { .App {
+padding: var(--spacing-md); } .App-header h1 { font-size: 2.4em; }
+
+{{#if enableRouter}}
+  .navigation ul { flex-direction: column; gap: var(--spacing-sm); }
+  .project-info dl { grid-template-columns: 1fr; gap: var(--spacing-sm); }
+  .tech-stack ul { grid-template-columns: 1fr; }
+{{/if}}
+}

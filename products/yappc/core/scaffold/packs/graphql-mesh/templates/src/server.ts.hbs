@@ -1,0 +1,120 @@
+import { createYoga, type YogaServerInstance } from "graphql-yoga";
+import { createBuiltMeshHTTPHandler } from "@graphql-mesh/http";
+import { getMesh, type MeshInstance } from "@graphql-mesh/runtime";
+import type { MeshConfig } from "./types.js";
+import { logger } from "./plugins/logging.js";
+{{#if enableAuth}}
+import { createAuthPlugin } from "./plugins/auth.js";
+{{/if}}
+{{#if enableCaching}}
+import { createCachePlugin } from "./plugins/caching.js";
+{{/if}}
+{{#if enableRateLimiting}}
+import { createRateLimitPlugin } from "./plugins/rate-limit.js";
+{{/if}}
+{{#if enableMetrics}}
+import { usePrometheus } from "@graphql-yoga/plugin-prometheus";
+import { register } from "prom-client";
+{{/if}}
+
+interface Server {
+start: () => Promise<string>;
+    stop: () => Promise<void>;
+        }
+
+        export async function createServer(config: MeshConfig): Promise<Server> {
+            // Build mesh
+            logger.info("Building GraphQL Mesh...");
+            const mesh = await getMesh();
+            logger.info("GraphQL Mesh built successfully");
+
+            // Build plugins array
+            const plugins = [];
+
+            {{#if enableAuth}}
+            if (config.enableAuth) {
+            plugins.push(createAuthPlugin(config));
+            }
+            {{/if}}
+
+            {{#if enableCaching}}
+            if (config.enableCaching) {
+            plugins.push(createCachePlugin(config));
+            }
+            {{/if}}
+
+            {{#if enableRateLimiting}}
+            if (config.enableRateLimiting) {
+            plugins.push(createRateLimitPlugin(config));
+            }
+            {{/if}}
+
+            {{#if enableMetrics}}
+            if (config.enableMetrics) {
+            plugins.push(
+            usePrometheus({
+            registry: register,
+            execute: true,
+            parse: true,
+            validate: true,
+            contextBuilding: true,
+            errors: true,
+            requestCount: true,
+            requestSummary: true,
+            })
+            );
+            }
+            {{/if}}
+
+            // Create Yoga server with Mesh
+            const yoga = createYoga({
+            schema: mesh.schema,
+            plugins: [
+            ...mesh.plugins,
+            ...plugins,
+            ],
+            graphiql: config.enablePlayground ? {
+            title: "{{projectName}} - GraphQL Playground",
+            } : false,
+            maskedErrors: process.env.NODE_ENV === "production",
+            logging: {
+            debug: (...args) => logger.debug(args),
+            info: (...args) => logger.info(args),
+            warn: (...args) => logger.warn(args),
+            error: (...args) => logger.error(args),
+            },
+            cors: config.enableCors ? {
+            origin: config.corsOrigin,
+            credentials: true,
+            } : false,
+            });
+
+            // Create HTTP server
+            const { createServer: createHttpServer } = await import("node:http");
+            const httpServer = createHttpServer(yoga);
+
+            return {
+            async start() {
+            return new Promise((resolve) => {
+            httpServer.listen(config.port, () => {
+            const address = httpServer.address();
+            const port = typeof address === "object" ? address?.port : config.port;
+            resolve(`http://localhost:${port}/graphql`);
+            });
+            });
+            },
+
+            async stop() {
+            // Destroy mesh
+            await mesh.destroy();
+
+            // Close HTTP server
+            return new Promise((resolve, reject) => {
+            httpServer.close((err) => {
+            if (err) reject(err);
+            else resolve();
+            });
+            });
+            },
+            };
+            }

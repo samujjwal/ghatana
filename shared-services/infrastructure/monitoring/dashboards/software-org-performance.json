@@ -1,0 +1,70 @@
+{
+    "dashboard": {
+        "title": "Software-Org Performance",
+        "uid": "software-org-performance",
+        "version": 1,
+        "refresh": "30s",
+        "time": {
+            "from": "now-1h",
+            "to": "now"
+        },
+        "panels": [
+            {
+                "title": "Pipeline Throughput (events/sec)",
+                "targets": [
+                    {
+                        "expr": "rate(software_org.event.processed[1m])"
+                    }
+                ],
+                "gridPos": {
+                    "x": 0,
+                    "y": 0,
+                    "w": 12,
+                    "h": 8
+                }
+            },
+            {
+                "title": "P99 Latency (ms)",
+                "targets": [
+                    {
+                        "expr": "histogram_quantile(0.99, software_org.pipeline.duration_ms)"
+                    }
+                ],
+                "gridPos": {
+                    "x": 12,
+                    "y": 0,
+                    "w": 12,
+                    "h": 8
+                }
+            },
+            {
+                "title": "Error Rate",
+                "targets": [
+                    {
+                        "expr": "rate(software_org.pipeline.errors[1m])"
+                    }
+                ],
+                "gridPos": {
+                    "x": 0,
+                    "y": 8,
+                    "w": 12,
+                    "h": 8
+                }
+            },
+            {
+                "title": "Resource Usage (%)",
+                "targets": [
+                    {
+                        "expr": "100 * (process_resident_memory_bytes / 2147483648)"
+                    }
+                ],
+                "gridPos": {
+                    "x": 12,
+                    "y": 8,
+                    "w": 12,
+                    "h": 8
+                }
+            }
+        ]
+    }
+}

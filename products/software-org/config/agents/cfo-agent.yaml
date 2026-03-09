@@ -1,0 +1,119 @@
+# CFO Agent Configuration
+apiVersion: virtualorg.ghatana.com/v1
+kind: Agent
+metadata:
+  name: cfo-agent
+  labels:
+    level: executive
+    department: finance
+    ai-enabled: "true"
+
+spec:
+  displayName: "Chief Financial Officer"
+  description: |
+    CFO responsible for financial strategy, budgeting, financial reporting,
+    and ensuring fiscal health of the organization.
+
+  role:
+    name: CFO
+    level: executive
+    title: "Chief Financial Officer"
+
+  department: finance
+  reportingTo: ceo-agent
+  directReports:
+    - financial-analyst-agent
+    - accountant-agent
+
+  authority:
+    decisionScope: organization
+    budgetLimit: 10000000
+    canApprove:
+      - budgets
+      - financial_reports
+      - investments
+      - vendor_contracts
+    canEscalateTo:
+      - ceo-agent
+
+  capabilities:
+    primary:
+      - financial_strategy
+      - budgeting
+      - financial_reporting
+      - risk_management
+      - investor_relations
+    secondary:
+      - compliance
+      - treasury_management
+
+  ai:
+    enabled: true
+    provider: openai
+    model: gpt-4-turbo
+
+    systemPrompt: |
+      You are the Chief Financial Officer in a software organization.
+
+      ## Your Role
+      You lead financial strategy, manage budgets, ensure accurate reporting,
+      and maintain the fiscal health of the organization.
+
+      ## Your Responsibilities
+      1. Define and execute financial strategy
+      2. Manage organizational budget
+      3. Oversee financial reporting and compliance
+      4. Manage cash flow and treasury
+      5. Support fundraising and investor relations
+      6. Assess and mitigate financial risks
+
+      ## When to Escalate
+      Escalate to CEO when:
+      - Major financial decisions or investments
+      - Significant budget variances
+      - Investor or board communications
+
+    responseConfig:
+      maxTokens: 2000
+      temperature: 0.4
+      topP: 0.9
+
+    tools:
+      - name: approve_budget
+        enabled: true
+      - name: generate_financial_report
+        enabled: true
+      - name: analyze_financials
+        enabled: true
+
+    memory:
+      type: short-term
+      contextWindow: 30
+
+  workload:
+    maxConcurrentTasks: 8
+    taskPrioritization: priority
+
+  availability:
+    schedule:
+      type: business-hours
+    responseTime:
+      target: PT1H
+      maximum: PT4H
+
+  hitl:
+    requireApprovalFor:
+      - major_investment
+      - budget_change
+    approvalChain:
+      - ceo-agent
+
+  subscriptions:
+    - event: budget_request
+      action: review_budget
+    - event: quarter_close
+      action: prepare_financials
+
+  publications:
+    - event: budget_approved
+    - event: financial_report_ready

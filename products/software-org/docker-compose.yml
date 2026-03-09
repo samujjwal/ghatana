@@ -1,0 +1,56 @@
+version: "3.8"
+
+services:
+  # Backend API (Node.js/Fastify)
+  backend:
+    build:
+      context: apps/backend
+      dockerfile: Dockerfile
+    container_name: software-org-backend
+    environment:
+      DATABASE_URL: postgresql://ghatana:ghatana123@ghatana-postgres:5432/software_org_dev
+      NODE_ENV: development
+      PORT: 3001
+      HOST: 0.0.0.0
+      JWT_SECRET: dev-secret-change-in-production
+      CORS_ORIGIN: http://localhost:3000
+      JAVA_API_MOCK: "true"
+    ports:
+      - "3001:3001"
+    external_links:
+      - ghatana-postgres:postgres
+      - ghatana-redis:redis
+    volumes:
+      - ./apps/backend:/app
+      - /app/node_modules
+    networks:
+      - software-org
+      - ghatana-network
+    command: pnpm dev
+
+  # Frontend (Vite + React)
+  web:
+    build:
+      context: apps/web
+      dockerfile: Dockerfile
+    container_name: software-org-web
+    environment:
+      VITE_API_URL: http://localhost:3001
+      VITE_WS_URL: http://localhost:3001
+      VITE_USE_MOCKS: "false"
+    ports:
+      - "3000:3000"
+    depends_on:
+      - backend
+    volumes:
+      - ./apps/web:/app
+      - /app/node_modules
+    networks:
+      - software-org
+    command: pnpm dev
+
+networks:
+  software-org:
+    driver: bridge
+  ghatana-network:
+    external: true

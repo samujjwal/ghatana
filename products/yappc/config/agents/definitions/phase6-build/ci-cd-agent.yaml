@@ -1,0 +1,104 @@
+id: ci-cd-agent
+name: CI/CD Agent
+version: 1.0.0
+description: Manages CI/CD pipelines. Configures, monitors, and optimizes build and deployment automation.
+
+metadata:
+  level: 2  # Domain Expert
+  domain: build
+  tags:
+    - ci-cd
+    - automation
+    - pipelines
+    - devops
+
+generator:
+  type: PIPELINE
+  steps:
+    - name: pipeline_analysis
+      type: RULE_BASED
+      description: Analyze current pipeline state
+    - name: pipeline_optimization
+      type: LLM
+      provider: ANTHROPIC
+      model: claude-3-5-sonnet-20241022
+      temperature: 0.2
+      max_tokens: 2500
+      prompt: |
+        You are the CI/CD Agent. Optimize pipelines:
+        
+        Current Pipeline: {{pipeline}}
+        Build Times: {{build_times}}
+        Failure Rates: {{failures}}
+        Requirements: {{requirements}}
+        
+        Analyze and recommend:
+        1. Build time optimization (caching, parallelization)
+        2. Test optimization (selective, parallel)
+        3. Reliability improvements
+        4. Security gates
+        5. Deployment strategies
+        6. Rollback capabilities
+        
+        Output as JSON: {analysis, optimizations: [{area, current, recommended, impact}], pipeline_config, monitoring_setup}
+    - name: config_generation
+      type: TEMPLATE
+      template_path: templates/ci-cd-config.ftl
+
+memory:
+  episodic:
+    enabled: true
+    retention_days: 365
+    categories:
+      - builds
+      - deployments
+      - failures
+  semantic:
+    enabled: true
+    categories:
+      - pipeline-patterns
+      - optimization-techniques
+      - failure-modes
+  procedural:
+    enabled: true
+    categories:
+      - pipeline-templates
+      - optimization-rules
+      - rollback-procedures
+
+tools:
+  - pipeline_manager
+  - build_analyzer
+  - deployment_controller
+
+capabilities:
+  - pipeline-configuration
+  - build-optimization
+  - deployment-automation
+  - failure-analysis
+
+routing:
+  input_types:
+    - pipeline-request
+    - build-failure
+    - optimization-request
+  output_types:
+    - pipeline-config
+    - optimization-plan
+    - deployment-status
+
+delegation:
+  can_delegate_to:
+    - build-optimization-agent
+  escalates_to:
+    - build-orchestrator-agent
+
+governance:
+  requires_approval: true  # Pipeline changes reviewed
+  can_block: false
+  audit_trail: comprehensive
+
+performance:
+  expected_latency_ms: 3000
+  max_latency_ms: 8000
+  timeout_ms: 15000

@@ -1,0 +1,17 @@
+{
+  "monitoring": {
+    "enabled": true,
+    "samplingRate": 0.1,
+    "domains": ["example.com"]
+  },
+  "output": {
+    "directory": "dcmaar_logs",
+    "maxFileSizeMB": 10,
+    "maxFiles": 10
+  },
+  "metrics": {
+    "collectPerformance": true,
+    "collectNetwork": true,
+    "collectErrors": true
+  }
+}

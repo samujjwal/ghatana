@@ -1,0 +1,197 @@
+# Operations Domain Tasks
+# These tasks support ongoing operations and maintenance
+
+tasks:
+  - id: monitor-app
+    name: Monitor Application Health
+    description: Monitor application health, performance, and availability
+    domain: operations
+    phase: OPERATIONS
+    complexity: MEDIUM
+    requiredCapabilities:
+      - monitoring
+      - observability
+      - incident-response
+    parameters:
+      monitoringDuration:
+        type: string
+        required: false
+        default: "24h"
+        description: Duration to monitor
+      metrics:
+        type: array
+        required: false
+        description: Specific metrics to focus on
+      alertOnIssues:
+        type: boolean
+        required: false
+        default: true
+        description: Generate alerts for detected issues
+    metadata:
+      version: "1.0"
+      tags: ["monitoring", "health", "observability"]
+
+  - id: analyze-logs
+    name: Analyze Application Logs
+    description: Analyze application logs for errors, patterns, and insights
+    domain: operations
+    phase: OPERATIONS
+    complexity: MEDIUM
+    requiredCapabilities:
+      - log-analysis
+      - observability
+      - troubleshooting
+    parameters:
+      logSource:
+        type: string
+        required: true
+        description: Log source or path
+      timeRange:
+        type: object
+        required: false
+        description: Time range for analysis
+      searchPatterns:
+        type: array
+        required: false
+        description: Patterns to search for
+    metadata:
+      version: "1.0"
+      tags: ["logs", "analysis", "troubleshooting"]
+
+  - id: handle-incident
+    name: Handle Production Incident
+    description: Triage and resolve production incidents with root cause analysis
+    domain: operations
+    phase: OPERATIONS
+    complexity: VERY_COMPLEX
+    requiredCapabilities:
+      - incident-response
+      - troubleshooting
+      - root-cause-analysis
+    parameters:
+      incidentDescription:
+        type: string
+        required: true
+        description: Description of the incident
+      severity:
+        type: string
+        required: true
+        description: Incident severity (critical/high/medium/low)
+      affectedServices:
+        type: array
+        required: false
+        description: Known affected services
+    metadata:
+      version: "1.0"
+      tags: ["incident", "production", "troubleshooting"]
+
+  - id: gen-docs
+    name: Generate Documentation
+    description: Generate comprehensive system documentation from code and configs
+    domain: operations
+    phase: OPERATIONS
+    complexity: MEDIUM
+    requiredCapabilities:
+      - documentation
+      - technical-writing
+    parameters:
+      documentationType:
+        type: string
+        required: false
+        default: "api"
+        description: Type of documentation (api/architecture/runbook)
+      targetAudience:
+        type: string
+        required: false
+        default: "developers"
+        description: Target audience
+      includeExamples:
+        type: boolean
+        required: false
+        default: true
+        description: Include code examples
+    metadata:
+      version: "1.0"
+      tags: ["documentation", "technical-writing"]
+
+  - id: optimize-costs
+    name: Optimize Cloud Costs
+    description: Analyze and optimize cloud infrastructure costs
+    domain: operations
+    phase: OPERATIONS
+    complexity: COMPLEX
+    requiredCapabilities:
+      - cost-optimization
+      - cloud-platforms
+      - finops
+    parameters:
+      cloudProvider:
+        type: string
+        required: true
+        description: Cloud provider
+      analysisScope:
+        type: string
+        required: false
+        default: "all"
+        description: Scope of analysis
+      costThreshold:
+        type: number
+        required: false
+        description: Cost threshold for recommendations
+    metadata:
+      version: "1.0"
+      tags: ["cost", "optimization", "finops"]
+
+  - id: backup-restore
+    name: Backup and Restore
+    description: Perform backup or restore operations for data and configurations
+    domain: operations
+    phase: OPERATIONS
+    complexity: COMPLEX
+    requiredCapabilities:
+      - backup-restore
+      - database-admin
+      - disaster-recovery
+    parameters:
+      operation:
+        type: string
+        required: true
+        description: Operation type (backup/restore)
+      target:
+        type: string
+        required: true
+        description: Target resource or database
+      backupLocation:
+        type: string
+        required: false
+        description: Backup storage location
+    metadata:
+      version: "1.0"
+      tags: ["backup", "restore", "disaster-recovery"]
+
+  - id: scale-resources
+    name: Scale Resources
+    description: Scale application resources based on load or requirements
+    domain: operations
+    phase: OPERATIONS
+    complexity: MEDIUM
+    requiredCapabilities:
+      - auto-scaling
+      - kubernetes
+      - capacity-planning
+    parameters:
+      resource:
+        type: string
+        required: true
+        description: Resource to scale
+      targetCapacity:
+        type: number
+        required: true
+        description: Target capacity (replicas/instances)
+      scalingPolicy:
+        type: object
+        required: false
+        description: Scaling policy configuration
+    metadata:
+      version: "1.0"
+      tags: ["scaling", "capacity", "kubernetes"]

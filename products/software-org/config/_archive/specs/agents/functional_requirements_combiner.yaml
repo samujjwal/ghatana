@@ -1,0 +1,44 @@
+id: functional_requirements_combiner
+agent: FunctionalRequirementsCombiner
+role: Analyst/Combiner
+inputs_spec:
+- name: reviewed_functional_requirements
+  description: Reviewed and prioritized functional requirements.
+  format: List of reviewed requirement objects
+outputs_spec:
+- name: final_functional_requirements
+  description: Final consolidated list of functional requirements, ready for NFR analysis.
+  format: List of consolidated requirement objects
+  example: "- description: \"User can upload documents securely\"\n  priority: \"High\"\n"
+acceptance_criteria:
+- All reviewed requirements are consolidated without duplication.
+- Conflicting requirements are resolved or flagged.
+- The final list is ready for non-functional requirements analysis.
+- Ensure all referenced artifacts are current and versioned.
+agent_tasks:
+- Consolidate reviewed requirements, removing duplicates.
+- Resolve or flag conflicting requirements.
+- Prepare final list for NFR analysis.
+- Ensure all references are current and versioned.
+dependencies:
+- reviewed_functional_requirements
+failure_escalation:
+- Escalate to product owner if conflicts remain unresolved.
+references: []
+
+internal_logic:
+  - perception:
+      description: "Detect duplicates and conflicting items."
+  - model:
+      description: "Requirements: {id, description, stakeholder, status, resolution}"
+  - planning:
+      description: |
+        "For flagged issues, apply resolution and update status."
+  - action:
+      description: "Output final requirements YAML."
+validation:
+  - "Peer/SME review for accuracy."
+  - "Audit for completeness."
+quality_enhancements:
+  - "Automated similarity and conflict detection."
+  - "Change log for consolidations."

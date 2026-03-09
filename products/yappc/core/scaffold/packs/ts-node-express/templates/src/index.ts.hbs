@@ -1,0 +1,22 @@
+import express from 'express';
+import cors from 'cors';
+import helmet from 'helmet';
+import dotenv from 'dotenv';
+import { healthRouter } from './routes/health';
+import { apiRouter } from './routes/api';
+
+dotenv.config();
+
+const app = express();
+const port = process.env.PORT || {{port}};
+
+app.use(helmet());
+app.use(cors());
+app.use(express.json());
+
+app.use('/health', healthRouter);
+app.use('/api', apiRouter);
+
+app.listen(port, () => {
+console.log(`{{projectName}} listening on port ${port}`);
+});

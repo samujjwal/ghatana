@@ -1,0 +1,62 @@
+{
+  "cookies": [],
+  "origins": [
+    {
+      "origin": "http://localhost:5173",
+      "localStorage": [
+        {
+          "name": "diagram-demo-project",
+          "value": "{\"nodes\":[{\"id\":\"n1\",\"data\":{\"label\":\"Frontend App\"},\"position\":{\"x\":200,\"y\":200}},{\"id\":\"n2\",\"data\":{\"label\":\"API Gateway\"},\"position\":{\"x\":400,\"y\":200}}],\"edges\":[{\"id\":\"e1\",\"source\":\"n1\",\"target\":\"n2\"}]}"
+        },
+        {
+          "name": "e2e:mockWorkspaces",
+          "value": "[{\"id\":\"ws-1\",\"name\":\"E2E Workspace (ws-1)\",\"description\":\"Seeded workspace\",\"ownerId\":\"u-e2e\",\"createdAt\":\"2025-10-06T00:59:14.609Z\",\"updatedAt\":\"2025-10-06T00:59:14.609Z\"}]"
+        },
+        {
+          "name": "e2e_created_project",
+          "value": "{\"workspaceId\":\"ws-1\",\"projectId\":\"proj-1\"}"
+        },
+        {
+          "name": "e2e:mockProjects",
+          "value": "[{\"id\":\"proj-1\",\"workspaceId\":\"ws-1\",\"name\":\"E2E Project (proj-1)\",\"description\":\"Seeded project\",\"type\":\"UI\",\"targets\":[\"web\"],\"status\":\"active\",\"createdAt\":\"2025-10-06T00:59:14.609Z\",\"updatedAt\":\"2025-10-06T00:59:14.609Z\"}]"
+        },
+        {
+          "name": "E2E_SIMPLE_PAGES",
+          "value": "1"
+        },
+        {
+          "name": "diagram-project-demo",
+          "value": "{\"nodes\":[{\"id\":\"n1\",\"data\":{\"label\":\"Frontend App\"},\"position\":{\"x\":200,\"y\":200}},{\"id\":\"n2\",\"data\":{\"label\":\"API Gateway\"},\"position\":{\"x\":400,\"y\":200}}],\"edges\":[{\"id\":\"e1\",\"source\":\"n1\",\"target\":\"n2\"}]}"
+        },
+        {
+          "name": "diagram-Demo",
+          "value": "{\"nodes\":[{\"id\":\"n1\",\"data\":{\"label\":\"Frontend App\"},\"position\":{\"x\":200,\"y\":200}},{\"id\":\"n2\",\"data\":{\"label\":\"API Gateway\"},\"position\":{\"x\":400,\"y\":200}}],\"edges\":[{\"id\":\"e1\",\"source\":\"n1\",\"target\":\"n2\"}]}"
+        },
+        {
+          "name": "yappc:canvas",
+          "value": "{\"elements\":[{\"id\":\"node-1\",\"kind\":\"node\",\"type\":\"component\",\"position\":{\"x\":300,\"y\":200},\"size\":{\"width\":150,\"height\":80},\"data\":{\"label\":\"Frontend App\"},\"style\":{}},{\"id\":\"node-2\",\"kind\":\"node\",\"type\":\"api\",\"position\":{\"x\":600,\"y\":200},\"size\":{\"width\":150,\"height\":80},\"data\":{\"label\":\"API Gateway\"},\"style\":{}},{\"id\":\"node-3\",\"kind\":\"node\",\"type\":\"data\",\"position\":{\"x\":900,\"y\":200},\"size\":{\"width\":150,\"height\":80},\"data\":{\"label\":\"Database\"},\"style\":{}}],\"connections\":[{\"id\":\"conn-1\",\"source\":\"node-1\",\"target\":\"node-2\",\"type\":\"default\",\"data\":{}}],\"viewport\":{\"x\":0,\"y\":0,\"zoom\":1},\"metadata\":{\"title\":\"GlobalSeed\",\"description\":\"Seed from global-setup\"}}"
+        },
+        {
+          "name": "E2E_DISABLE_OVERLAYS",
+          "value": "1"
+        },
+        {
+          "name": "diagram-Default",
+          "value": "{\"nodes\":[{\"id\":\"n1\",\"data\":{\"label\":\"Frontend App\"},\"position\":{\"x\":200,\"y\":200}},{\"id\":\"n2\",\"data\":{\"label\":\"API Gateway\"},\"position\":{\"x\":400,\"y\":200}}],\"edges\":[{\"id\":\"e1\",\"source\":\"n1\",\"target\":\"n2\"}]}"
+        },
+        {
+          "name": "diagram-Main",
+          "value": "{\"nodes\":[{\"id\":\"n1\",\"data\":{\"label\":\"Frontend App\"},\"position\":{\"x\":200,\"y\":200}},{\"id\":\"n2\",\"data\":{\"label\":\"API Gateway\"},\"position\":{\"x\":400,\"y\":200}}],\"edges\":[{\"id\":\"e1\",\"source\":\"n1\",\"target\":\"n2\"}]}"
+        },
+        {
+          "name": "yappc:poc:canvas",
+          "value": "{\"version\":\"1.0.0\",\"updatedAt\":\"2025-10-06T00:59:13.434Z\",\"checksum\":\"c1\",\"canvas\":{\"elements\":[{\"id\":\"node-1\",\"kind\":\"node\",\"type\":\"component\",\"position\":{\"x\":300,\"y\":200},\"size\":{\"width\":150,\"height\":80},\"data\":{\"label\":\"Frontend App\"},\"style\":{}},{\"id\":\"node-2\",\"kind\":\"node\",\"type\":\"api\",\"position\":{\"x\":600,\"y\":200},\"size\":{\"width\":150,\"height\":80},\"data\":{\"label\":\"API Gateway\"},\"style\":{}},{\"id\":\"node-3\",\"kind\":\"node\",\"type\":\"data\",\"position\":{\"x\":900,\"y\":200},\"size\":{\"width\":150,\"height\":80},\"data\":{\"label\":\"Database\"},\"style\":{}}],\"connections\":[{\"id\":\"conn-1\",\"source\":\"node-1\",\"target\":\"node-2\",\"type\":\"default\",\"data\":{}}],\"viewport\":{\"x\":0,\"y\":0,\"zoom\":1},\"metadata\":{\"title\":\"GlobalSeed\",\"description\":\"Seed from global-setup\"}},\"viewport\":{\"x\":0,\"y\":0,\"zoom\":1}}"
+        },
+        {
+          "name": "canvas-seed",
+          "value": "{\"elements\":[{\"id\":\"node-1\",\"kind\":\"node\",\"type\":\"component\",\"position\":{\"x\":300,\"y\":200},\"size\":{\"width\":150,\"height\":80},\"data\":{\"label\":\"Frontend App\"},\"style\":{}},{\"id\":\"node-2\",\"kind\":\"node\",\"type\":\"api\",\"position\":{\"x\":600,\"y\":200},\"size\":{\"width\":150,\"height\":80},\"data\":{\"label\":\"API Gateway\"},\"style\":{}},{\"id\":\"node-3\",\"kind\":\"node\",\"type\":\"data\",\"position\":{\"x\":900,\"y\":200},\"size\":{\"width\":150,\"height\":80},\"data\":{\"label\":\"Database\"},\"style\":{}}],\"connections\":[{\"id\":\"conn-1\",\"source\":\"node-1\",\"target\":\"node-2\",\"type\":\"default\",\"data\":{}}],\"viewport\":{\"x\":0,\"y\":0,\"zoom\":1},\"metadata\":{\"title\":\"GlobalSeed\",\"description\":\"Seed from global-setup\"}}"
+        }
+      ]
+    }
+  ]
+}

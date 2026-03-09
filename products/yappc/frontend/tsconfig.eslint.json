@@ -1,0 +1,33 @@
+{
+  "compilerOptions": {
+    "target": "ES2022",
+    "module": "ESNext",
+    "moduleResolution": "NodeNext",
+    "jsx": "react-jsx",
+    "skipLibCheck": true,
+    "noEmit": true
+  },
+  "files": [
+    "types/custom.d.ts",
+    "e2e/tests/**/*",
+    "apps/**/src/**/*.stories.*"
+  ],
+  "include": [
+    "apps/**/src/**/*",
+    "libs/**/src/**/*",
+    "packages/**/src/**/*",
+    "apps/**/src/generated/**/*",
+    "libs/**/src/generated/**/*",
+    "types/**/*",
+    "vitest.config.*",
+    "vitest.*.config.*",
+    "vitest.setup.*"
+  ],
+  "exclude": [
+    "**/node_modules/**",
+    "**/dist/**",
+    "**/build/**",
+    "**/*.generated.*",
+    "**/*.config.d.ts"
+  ]
+}

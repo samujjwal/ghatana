@@ -1,0 +1,121 @@
+id: deploy-orchestrator
+name: Deploy Orchestrator
+version: 1.0.0
+description: Orchestrates end-to-end deployment pipelines — coordinates artifact building, SBOM generation, artifact signing, environment provisioning, canary/blue-green rollout, smoke tests, and rollback decisions across all YAPPC deployment targets (JVM, Node, Tauri).
+
+metadata:
+  level: 2
+  domain: deployment
+  tags: [orchestrator, deployment, ci-cd, rollout, canary]
+
+generator:
+  type: PIPELINE
+  steps:
+    - name: deployment_planning
+      type: LLM
+      provider: ANTHROPIC
+      model: claude-3-5-sonnet-20241022
+      temperature: 0.2
+      max_tokens: 3000
+      prompt: |
+        You are the Deploy Orchestrator. Plan a deployment for the given release:
+        
+        Release: {{input}}
+        Environment: {{context.environment}}
+        Previous deployment: {{context.previous_deployment}}
+        
+        Create a deployment plan covering:
+        1. Pre-deployment checks (tests green, SBOM, signatures, release gate)
+        2. Artifact build matrix (JVM jar, Node bundle, Tauri desktop)
+        3. Environment provisioning (database migrations, config changes)
+        4. Rollout strategy (canary %, blue-green swap, or rolling)
+        5. Smoke test suite to run post-deploy
+        6. Rollback criteria and procedure
+        7. Notification plan (Slack, email, status page)
+        
+        Output as JSON: {
+          pre_checks, build_matrix, provisioning_steps,
+          rollout_strategy, smoke_tests, rollback_criteria,
+          notification_plan, delegation_plan
+        }
+    - name: pre_deployment_gate
+      type: SERVICE_CALL
+      service: agent-dispatcher
+      endpoint: /dispatch
+      description: "Dispatch to release-gate-agent for pre-deploy validation"
+    - name: artifact_pipeline
+      type: SERVICE_CALL
+      service: agent-dispatcher
+      endpoint: /dispatch/batch
+      description: "Dispatch to sbom-generator + artifact-signer in parallel"
+    - name: rollout_execution
+      type: RULE_BASED
+      rules:
+        - "canary: deploy to 5% → monitor 10min → promote to 25% → monitor → full"
+        - "blue-green: deploy to standby → smoke test → swap traffic"
+        - "rolling: update instances one-at-a-time with health checks"
+    - name: post_deploy_verification
+      type: LLM
+      provider: ANTHROPIC
+      model: claude-3-5-sonnet-20241022
+      temperature: 0.1
+      max_tokens: 1500
+      prompt: |
+        Verify deployment success:
+        Smoke test results: {{smoke_results}}
+        Monitoring metrics: {{monitoring_metrics}}
+        Error rates: {{error_rates}}
+        
+        Determine: PROMOTE, HOLD, or ROLLBACK.
+        If rollback, specify reason and rollback steps.
+        
+        Output as JSON: {decision, confidence, metrics_summary, rollback_steps}
+
+memory:
+  episodic:
+    enabled: true
+    retention_days: 365
+    categories: [deployments, rollbacks, incidents]
+  semantic:
+    enabled: true
+    categories: [deployment-patterns, failure-modes, environment-configs]
+  procedural:
+    enabled: true
+    categories: [rollout-procedures, rollback-procedures, smoke-test-suites]
+
+tools: [deployment_coordinator, environment_manager, artifact_registry, health_checker]
+
+capabilities:
+  - deployment-orchestration
+  - rollout-management
+  - rollback-management
+  - environment-provisioning
+
+routing:
+  input_types: [deploy-request, release-candidate, rollback-trigger]
+  output_types: [deployment-report, rollout-status, rollback-report]
+
+delegation:
+  can_delegate_to:
+    - release-gate-agent
+    - sbom-generator-agent
+    - artifact-signer-agent
+    - repo-integration-agent
+    - database-integration-agent
+    - observability-integration-agent
+    - secret-store-integration-agent
+    - artifact-store-integration-agent
+  escalates_to: master-orchestrator-agent
+
+governance:
+  requires_approval: true
+  approval_chain:
+    - release-gate-agent
+    - sentinel
+  can_block: true
+  audit_trail: comprehensive
+
+performance:
+  expected_latency_ms: 60000
+  max_latency_ms: 1800000
+  timeout_ms: 3600000

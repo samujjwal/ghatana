@@ -1,0 +1,28 @@
+---
+id: "compliance_traceability"
+agent: "ComplianceTraceabilityAgent"
+role: "Compliance Analyst"
+inputs_spec:
+- name: "threat_model_report"
+  description: "Threat model report for compliance mapping."
+  format: "Threat model report artifact"
+outputs_spec:
+- name: "compliance_evidence_matrix"
+  description: "Compliance traceability matrix with controls, evidence, gaps."
+  format: "Compliance evidence matrix"
+agent_tasks:
+- "Map compliance requirements to implemented controls."
+- "Flag/assign all compliance gaps."
+- "Provide evidence for each compliance item."
+- "Version traceability matrix for audit/handoff."
+acceptance_criteria:
+- "Compliance requirements mapped to controls."
+- "Gaps flagged/assigned; evidence provided."
+- "Matrix versioned/accessible for audit."
+dependencies:
+- "threat_model_report"
+failure_escalation:
+- "Escalate to Compliance Analyst if traceability is incomplete or matrix not updated."
+references: []
+hitl: true
+hitl_reason: "Human ensures compliance traceability is complete"

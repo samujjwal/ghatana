@@ -1,0 +1,61 @@
+{
+    "name": "dotnet-api-minimal",
+    "version": "1.0.0",
+    "description": ".NET Minimal API service",
+    "language": "csharp",
+    "category": "backend",
+    "platform": "server",
+    "buildSystem": "dotnet",
+    "author": "YAPPC Team",
+    "tags": [
+        "dotnet",
+        "csharp",
+        "minimal-api",
+        "http",
+        "rest",
+        "api"
+    ],
+    "requiredVariables": [
+        "projectName",
+        "targetFramework"
+    ],
+    "optionalVariables": [
+        "description",
+        "author",
+        "enableSwagger",
+        "enableCors",
+        "enableMetrics",
+        "enableNullable"
+    ],
+    "defaults": {
+        "targetFramework": "net8.0",
+        "description": ".NET Minimal API service",
+        "enableSwagger": "true",
+        "enableCors": "true",
+        "enableMetrics": "true",
+        "enableNullable": "true"
+    },
+    "templates": [
+        "{{projectName}}.csproj.hbs",
+        "Program.cs.hbs",
+        "appsettings.json.hbs",
+        "appsettings.Development.json.hbs",
+        "Endpoints/HealthEndpoints.cs.hbs",
+        "Endpoints/ApiEndpoints.cs.hbs",
+        "Models/ApiResponse.cs.hbs",
+        "Services/IHealthService.cs.hbs",
+        "Services/HealthService.cs.hbs",
+        "Middleware/ExceptionMiddleware.cs.hbs",
+        "Extensions/ServiceCollectionExtensions.cs.hbs",
+        "Dockerfile.hbs",
+        ".dockerignore.hbs",
+        ".gitignore.hbs",
+        "README.md.hbs"
+    ],
+    "supportedFeatures": [
+        "database",
+        "auth",
+        "observability",
+        "messaging"
+    ]
+}

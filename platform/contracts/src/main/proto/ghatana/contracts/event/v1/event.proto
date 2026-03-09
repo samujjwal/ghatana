@@ -1,0 +1,344 @@
+/*
+ * Copyright (c) ${year} Ghatana Inc.
+ * All rights reserved.
+ *
+ * This source code and the accompanying materials are the confidential
+ * and proprietary information of Ghatana Inc. (“Confidential Information”).
+ * You shall not disclose such Confidential Information and shall use it
+ * only in accordance with the terms of the license agreement you entered
+ * into with Ghatana Inc.
+ *
+ * Unauthorized copying of this file, via any medium, is strictly prohibited.
+ * Proprietary and confidential.
+ */
+syntax = "proto3";
+
+package ghatana.contracts.event.v1;
+
+import "google/protobuf/timestamp.proto";
+import "google/protobuf/struct.proto";
+import "ghatana/contracts/event/v1/enums.proto";
+import "ghatana/contracts/common/v1/validation.proto";
+import "ghatana/contracts/common/v1/common.proto";
+import "google/api/field_behavior.proto";
+import "ghatana/contracts/event/v1/event_type.proto";
+
+option java_package = "com.ghatana.contracts.event.v1";
+option java_multiple_files = true;
+option java_outer_classname = "EventOuterClass";
+option go_package = "github.com/ghatana/contracts/gen/go/event/v1;eventv1";
+option csharp_namespace = "Ghatana.Contracts.Event.V1";
+
+// UuidProto represents a universally unique identifier (UUID v4 or ULID).
+// This is used for strong consistency and global uniqueness guarantees.
+//
+// Example values:
+// - UUID: "123e4567-e89b-12d3-a456-426614174000"
+// - ULID: "01H7X9Z0YQJ3K4M5N6P7Q8R9S0T"
+message UuidProto {
+  reserved 1000 to max;
+  reserved "reserved_field";
+  string value = 1;
+}
+
+// TraceContextProto contains distributed tracing information following OpenTelemetry/W3C Trace Context.
+// This is used for distributed tracing across service boundaries.
+//
+// Example:
+// ```json
+// {
+//   "trace_id": "4bf92f3577b34da6a3ce929d0e0e4736",
+//   "span_id": "00f067aa0ba902b7",
+//   "parent_span_id": "0b5b9c5a6b6a7c89"
+// }
+// ```
+message TraceContextProto {
+  // Trace ID - globally unique ID for the entire trace
+  string trace_id = 1;
+  
+  // Span ID - unique ID for the current span
+  string span_id = 2;
+  
+  // Parent span ID - the ID of the parent span, if any
+  string parent_span_id = 3;
+  
+  // Reserved for future evolution
+  reserved 1000 to max;
+  reserved "reserved_field";
+}
+
+// =============================================================================
+// Geospatial Types
+// =============================================================================
+
+// GCoordinatesProto represents a geographic point with optional altitude and accuracy information.
+// Follows the WGS 84 coordinate reference system (EPSG:4326).
+//
+// Example:
+// ```json
+// {
+//   "latitude": 37.7749,
+//   "longitude": -122.4194,
+//   "accuracy": 10.5,
+//   "altitude": 52.0,
+//   "altitude_accuracy": 2.0,
+//   "heading": 90.0,
+//   "speed": 5.2
+// }
+// ```
+message GCoordinatesProto {
+  // Latitude in decimal degrees (WGS 84)
+  double latitude = 1;
+  
+  // Longitude in decimal degrees (WGS 84)
+  double longitude = 2;
+  
+  // Horizontal accuracy in meters (optional, 0 if unknown)
+  double accuracy = 3;
+  
+  // Altitude in meters above the WGS 84 reference ellipsoid (optional)
+  double altitude = 4;
+  
+  // Vertical accuracy in meters (optional, 0 if unknown)
+  double altitude_accuracy = 5;
+  
+  // Direction of travel in degrees clockwise from true north (0-359.9, optional)
+  double heading = 6;
+  
+  // Ground speed in meters per second (optional)
+  double speed = 7;
+  
+  // Reserved for future evolution
+  reserved 1000 to max;
+  reserved "reserved_field";
+}
+
+// GLocationProto represents a named geographic point or area.
+//
+// Example:
+// ```json
+// {
+//   "coordinates": {
+//     "latitude": 37.7749,
+//     "longitude": -122.4194,
+//     "accuracy": 10.5
+//   },
+//   "name": "Golden Gate Park, San Francisco, CA"
+// }
+// ```
+message GLocationProto {
+  reserved 1000 to max;
+  reserved "reserved_field";
+  // Geographic coordinates of the location.
+  GCoordinatesProto coordinates = 1;
+
+  // Human-readable name or description of the location.
+  string name = 2;
+}
+
+// GValueProto represents a dynamically-typed value that can be used in the payload.
+// This allows for flexible, schema-less data structures in the event payload.
+// The type field indicates which of the value fields is populated.
+message GValueProto {
+  // The type of the value
+  EventParameterTypeProto type = 1;
+
+  // The actual value, which one is set depends on the type field
+  oneof value {
+    // Primitive types
+    string string_value = 2;     // STRING, CHARACTER, DATE, DATE_TIME, TIME
+    int64 long_value = 3;        // LONG, INTEGER, SHORT, BYTE, TIMESTAMP
+    double double_value = 4;     // DOUBLE, FLOAT
+    bool bool_value = 5;         // BOOLEAN
+    bytes bytes_value = 6;       // For raw bytes
+    
+    // Complex types
+    string decimal_value = 7;    // BIG_DECIMAL as string
+    string big_integer_value = 8; // BIG_INTEGER as string
+    
+    // Container types
+    ArrayValueProto array_value = 20;  // ARRAY, LIST, SET
+    MapValueProto map_value = 21;      // MAP
+    google.protobuf.Struct json_value = 22; // JSON
+    
+    // Special types
+    string enum_value = 30;      // ENUM - value as string
+  }
+  
+  // Reserved for future evolution
+  reserved 1000 to max;
+  reserved "reserved_field";
+}
+
+// ArrayValueProto represents an ordered collection of GValueProto
+message ArrayValueProto {
+  reserved 1000 to max;
+  reserved "reserved_field";
+repeated GValueProto values = 1;
+}
+
+// MapValueProto represents a key-value mapping of string to GValueProto
+// MapValue represents a key-value mapping of string to GValue
+message MapValueProto {
+  reserved 1000 to max;
+  reserved "reserved_field";
+map<string, GValueProto> values = 1;
+}
+
+// EventProto is a simplified event structure used by producers to create events.
+// The runtime will enrich this with additional metadata and validation.
+//
+// Example:
+// ```json
+// {
+//   "id": "123e4567-e89b-12d3-a456-426614174000",
+//   "type": "user.registered",
+//   "source": "auth-service",
+//   "occurrence_time": {
+//     "start_time": "2023-01-01T12:00:00Z",
+//     "end_time": "2023-01-01T12:00:01Z"
+//   },
+//   "payload": {
+//     "user_id": "user123",
+//     "email": "user@example.com"
+//   },
+//   "correlation_id": "req-12345",
+//   "causation_id": "evt-67890"
+// }
+// ```
+message EventProto {
+  // Unique identifier for the event (UUID v4 or ULID)
+  UuidProto id = 1;
+  
+  // Tenant ID for multi-tenancy support
+  string tenant_id = 2;
+  
+  // Event type (e.g., "user.registered", "order.placed")
+  string type = 3;
+  
+  // Version of the event type schema
+  string type_version = 4;
+  
+  // Source of the event (e.g., service name)
+  string source = 5;
+  
+  // When the event occurred (can be a time range)
+  ghatana.contracts.common.v1.TimeIntervalProto occurrence_time = 10;
+  
+  // Bounding time interval for time-based queries
+  ghatana.contracts.common.v1.TimeIntervalProto bounding_interval = 11;
+  
+  // When the event was detected by the system
+  google.protobuf.Timestamp detected_at = 12;
+  
+  // Geographic location where the event occurred (optional)
+  GLocationProto location = 20;
+  
+  // Confidence score (0.0 to 1.0)
+  float confidence = 30;
+  
+  // Confidence level (LOW, MEDIUM, HIGH)
+  EventConfidenceLevelProto confidence_level = 31;
+  
+  // ID of the previous event in the stream (for ordering)
+  UuidProto previous_id = 40;
+  
+  // Idempotency key to prevent duplicate processing
+  string idempotency_key = 41;
+  
+  // Key used for partitioning the event stream
+  string partition_key = 42;
+  
+  // Correlation ID for distributed tracing
+  string correlation_id = 43;
+  
+  // ID of the event that caused this event
+  string causation_id = 44;
+  
+  // Distributed tracing context
+  TraceContextProto trace = 45;
+  
+  // Chain of event IDs that led to this event
+  repeated string provenance = 50;
+  
+  // Optional: Key-value pairs for additional metadata.
+  // For simple string key-value pairs, use this instead of the payload.
+  map<string, string> headers = 60;
+
+  // Optional: Descriptor hash of the payload (e.g., SHA-256 of normalized form)
+  // used for deduplication/idempotency and integrity checks.
+  string descriptor_hash = 70;
+
+  // Required: The event payload as a map of key-value pairs.
+  // This provides a flexible, schema-less way to represent event data.
+  map<string, GValueProto> payload = 100 [deprecated = true];
+
+  // Canonical JSON representation of the payload for lightweight clients.
+  // Exactly one of payload_json or payload_proto SHOULD be set by producers.
+  string payload_json = 101;
+
+  // Canonical protobuf-encoded payload for strongly-typed producers.
+  // The concrete type MUST be registered in the EventCatalog and referenced
+  // by the (type, type_version) fields. If both payload_json and payload_proto
+  // are provided, payload_proto is authoritative.
+  bytes payload_proto = 102;
+}
+
+// =============================================================================
+// Event Batching
+// =============================================================================
+
+// EventBatchProto represents a collection of events that are processed together.
+// Batching events can improve throughput and reduce network overhead.
+//
+// Example:
+// ```json
+// {
+//   "batch_id": "batch-123",
+//   "events": [
+//     { /* event 1 */ },
+//     { /* event 2 */ }
+//   ],
+//   "batch_headers": {
+//     "source": "ingest-service",
+//     "compression": "gzip"
+//   }
+// }
+// ```
+message EventBatchProto {
+  // Unique identifier for this batch
+  UuidProto batch_id = 1;
+  
+  // The events in this batch
+  repeated EventProto events = 2;
+  
+  // Optional: Headers specific to this batch.
+  // These are in addition to any headers on individual events.
+  map<string, string> batch_headers = 3;
+  
+  // Reserved for future evolution
+  reserved 1000 to max;
+  reserved "reserved_field";
+}
+
+// =============================================================================
+// Storage-facing Records (optional helper)
+// =============================================================================
+
+// EventRecordProto captures storage-layer metadata that is not part of the canonical
+// EventRecord captures storage-layer metadata that is not part of the canonical
+// Event envelope but is useful for persistence such as partition/offset.
+message EventRecordProto {
+  reserved 1000 to max;
+  reserved "reserved_field";
+  // The canonical event.
+  EventProto event = 1;
+  // Log identifier or stream name (implementation-defined).
+  string log_id = 2;
+  // Partition identifier within the log.
+  int32 partition = 3;
+  // Monotonic offset/sequence within the partition.
+  int64 offset = 4;
+  // Optional checksum of the serialized record.
+  string checksum = 5;
+}

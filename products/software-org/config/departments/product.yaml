@@ -1,0 +1,193 @@
+# Product Department Configuration
+# Part of Software-Org plugin for Virtual-Org framework
+
+apiVersion: virtualorg.ghatana.com/v1
+kind: Department
+metadata:
+  name: product
+  labels:
+    category: business-operations
+    cost-center: "PRD-001"
+
+spec:
+  displayName: "Product Management"
+  type: PRODUCT
+  description: |
+    Product management department responsible for product strategy, roadmap,
+    feature prioritization, and customer research. Acts as the bridge between
+    business needs and technical implementation.
+
+  hierarchy:
+    parent: null
+    reportingTo: cpo-agent
+    children: []
+
+  settings:
+    maxAgents: 10
+    autoScaleAgents: false
+    taskAssignment:
+      strategy: capability-match
+      loadBalancing: true
+      maxTasksPerAgent: 5
+
+  agents:
+    - ref: agents/cpo-agent.yaml
+    - ref: agents/product-manager-agent.yaml
+    - ref: agents/product-designer-agent.yaml
+
+  workflows:
+    - name: feature-discovery
+      displayName: "Feature Discovery"
+      steps:
+        - name: customer-research
+          agent: product-manager
+          action: conduct_customer_research
+          timeout: PT72H
+        - name: competitive-analysis
+          agent: product-manager
+          action: analyze_competition
+          timeout: PT48H
+          waitFor: [customer-research]
+        - name: opportunity-assessment
+          agent: cpo
+          action: assess_opportunity
+          timeout: PT24H
+          waitFor: [competitive-analysis]
+        - name: feature-specification
+          agent: product-manager
+          action: write_specification
+          timeout: PT48H
+          waitFor: [opportunity-assessment]
+        - name: design-mockups
+          agent: product-designer
+          action: create_design_mockups
+          timeout: PT72H
+          waitFor: [feature-specification]
+        - name: stakeholder-review
+          agent: cpo
+          action: conduct_stakeholder_review
+          timeout: PT24H
+          waitFor: [design-mockups]
+          hitl:
+            required: true
+            approvers: [cpo]
+
+    - name: sprint-planning
+      displayName: "Sprint Planning"
+      steps:
+        - name: backlog-grooming
+          agent: product-manager
+          action: groom_backlog
+          timeout: PT8H
+        - name: prioritization
+          agent: product-manager
+          action: prioritize_features
+          timeout: PT4H
+          waitFor: [backlog-grooming]
+        - name: capacity-planning
+          agent: product-manager
+          action: plan_capacity
+          timeout: PT4H
+          waitFor: [prioritization]
+        - name: sprint-commitment
+          agent: product-manager
+          action: finalize_sprint
+          timeout: PT2H
+          waitFor: [capacity-planning]
+
+  kpis:
+    - name: feature_adoption_rate
+      displayName: "Feature Adoption Rate"
+      type: percentage
+      target: 60
+      warningThreshold: 40
+      criticalThreshold: 25
+
+    - name: time_to_market
+      displayName: "Time to Market"
+      type: duration
+      unit: days
+      target: 30
+      warningThreshold: 45
+      criticalThreshold: 60
+
+    - name: roadmap_delivery
+      displayName: "Roadmap Delivery Rate"
+      type: percentage
+      target: 90
+      warningThreshold: 80
+      criticalThreshold: 70
+
+    - name: customer_feedback_score
+      displayName: "Customer Feedback Score"
+      type: gauge
+      target: 4.5
+      warningThreshold: 4.0
+      criticalThreshold: 3.5
+
+    - name: backlog_health
+      displayName: "Backlog Health Score"
+      type: percentage
+      target: 80
+      warningThreshold: 60
+      criticalThreshold: 40
+
+    - name: product_market_fit
+      displayName: "Product-Market Fit Score"
+      type: percentage
+      target: 70
+      warningThreshold: 50
+      criticalThreshold: 30
+
+  taskTypes:
+    - name: feature_specification
+      priority: normal
+      slaHours: 48
+      requiredCapabilities: [product_management, writing, research]
+
+    - name: customer_research
+      priority: normal
+      slaHours: 72
+      requiredCapabilities: [research, analytics, interviewing]
+
+    - name: roadmap_planning
+      priority: high
+      slaHours: 24
+      requiredCapabilities: [strategy, prioritization]
+
+    - name: design_review
+      priority: normal
+      slaHours: 24
+      requiredCapabilities: [ux_design, product_management]
+
+    - name: competitive_analysis
+      priority: low
+      slaHours: 168
+      requiredCapabilities: [research, market_analysis]
+
+  subscriptions:
+    - event: feature_request_from_prospect
+      source: sales
+      action: evaluate_feature_request
+    - event: feature_request_received
+      source: support
+      action: add_to_backlog
+    - event: customer_feedback
+      source: support
+      action: analyze_feedback
+    - event: bug_reported
+      source: qa
+      action: assess_product_impact
+    - event: campaign_results
+      source: marketing
+      action: analyze_market_response
+
+  publications:
+    - event: feature_request_approved
+      targets: [engineering]
+    - event: feature_released
+      targets: [marketing, sales, support]
+    - event: roadmap_updated
+      targets: [engineering, sales]
+    - event: product_decision_made
+      targets: [engineering, design]

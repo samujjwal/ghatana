@@ -1,0 +1,37 @@
+terraform {
+required_version = ">= 1.0"
+
+required_providers {
+{{#if (eq cloudProvider "aws")}}
+aws = {
+source = "hashicorp/aws"
+version = "~> 5.0"
+}
+{{else if (eq cloudProvider "azure")}}
+azurerm = {
+source = "hashicorp/azurerm"
+version = "~> 3.0"
+}
+{{else if (eq cloudProvider "gcp")}}
+google = {
+source = "hashicorp/google"
+version = "~> 5.0"
+}
+{{/if}}
+}
+}
+
+{{#if (eq cloudProvider "aws")}}
+provider "aws" {
+region = var.region
+}
+{{else if (eq cloudProvider "azure")}}
+provider "azurerm" {
+features {}
+}
+{{else if (eq cloudProvider "gcp")}}
+provider "google" {
+project = var.project_id
+region = var.region
+}
+{{/if}}

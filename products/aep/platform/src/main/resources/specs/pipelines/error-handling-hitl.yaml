@@ -1,0 +1,151 @@
+# ============================================================================
+# Error-Handling Pipeline with HITL and Failure Escalation
+# ============================================================================
+# Pattern: Linear pipeline with error edges, DLQ routing, and human-in-the-loop
+# Flow:    ingest → detect → [hitl-review (error path)] → action
+# Use:     Production pipeline demonstrating resilient error handling patterns
+# ============================================================================
+
+stages:
+  # ---- Stage 1: Ingest with validation ----
+  - name: ingest
+    stageType: STREAM
+    connectorIds:
+      - event-cloud-txn-source
+    workflow:
+      - id: validated-ingester
+        agent: aep:agent:ValidatingIngester:1.0.0
+        role: ingester
+        agentTasks:
+          - Consume and validate raw transaction events
+          - Route malformed events to dead-letter queue
+          - Assign processing metadata (timestamp, traceId, attempt)
+        failureEscalation:
+          - dlq-handler
+        inputsSpec:
+          - name: raw-event
+            format: json
+            description: Raw event from source connector
+        outputsSpec:
+          - name: validated-event
+            format: json
+            description: Validated event ready for detection
+
+  # ---- Stage 2: Hybrid fraud detection with error escalation ----
+  - name: detect
+    stageType: PATTERN
+    workflow:
+      - id: hybrid-detector
+        agent: hybrid-fraud-detector
+        role: detector
+        dependencies:
+          - validated-ingester
+        failureEscalation:
+          - hitl-reviewer
+          - dlq-handler
+        agentTasks:
+          - Run deterministic rules first, then ML scoring
+          - Escalate ambiguous decisions (score in [0.4, 0.7]) to HITL review
+          - Escalate processing errors (model timeout, feature extraction failure) to DLQ
+        acceptanceCriteria:
+          - Clear decisions (score < 0.4 or > 0.7) processed without human intervention
+          - Ambiguous decisions escalated within 100ms
+          - Detection errors never cause event loss
+        inputsSpec:
+          - name: validated-event
+            format: json
+            description: Validated transaction event
+        outputsSpec:
+          - name: detection-result
+            format: json
+            description: Detection result with confidence score and decision
+
+  # ---- Stage 3: Human-in-the-loop review (error/escalation path) ----
+  - name: hitl-review
+    stageType: STREAM
+    workflow:
+      - id: hitl-reviewer
+        agent: aep:agent:HitlReviewCoordinator:1.0.0
+        role: reviewer
+        hitl: true
+        hitlReason: >
+          Ambiguous fraud detection results (confidence between 0.4 and 0.7)
+          require human analyst review to make the final PASS/BLOCK decision.
+          The analyst is presented with transaction context, rule matches,
+          ML scores, and historical account behavior.
+        agentTasks:
+          - Present ambiguous case to fraud analyst with full context
+          - Collect analyst decision (APPROVE / REJECT / ESCALATE)
+          - Record analyst feedback for model retraining pipeline
+          - Enforce SLA timeout (30 min) with auto-escalation to supervisor
+        acceptanceCriteria:
+          - Analyst presented with all relevant evidence within 2 seconds
+          - Decision recorded with full audit trail
+          - SLA timeout auto-escalation fires reliably
+        inputsSpec:
+          - name: detection-result
+            format: json
+            description: Ambiguous detection result requiring human review
+        outputsSpec:
+          - name: reviewed-decision
+            format: json
+            description: Analyst-reviewed decision with feedback annotations
+
+  # ---- Stage 4: Dead-letter queue handler (error path) ----
+  - name: dlq-routing
+    stageType: STREAM
+    connectorIds:
+      - event-cloud-dlq-sink
+    workflow:
+      - id: dlq-handler
+        agent: aep:agent:DeadLetterHandler:1.0.0
+        role: error-handler
+        agentTasks:
+          - Persist failed events with error context and stack trace
+          - Classify failure reason (validation, timeout, model-error, infra)
+          - Emit DLQ depth metrics and alert on threshold breach
+          - Support manual retry via operator dashboard
+        inputsSpec:
+          - name: failed-event
+            format: json
+            description: Event that failed processing with error metadata
+        outputsSpec:
+          - name: dlq-receipt
+            format: json
+            description: DLQ storage receipt with event ID and failure classification
+
+  # ---- Stage 5: Action routing (happy path + HITL reviewed) ----
+  - name: action
+    stageType: STREAM
+    connectorIds:
+      - event-cloud-alert-sink
+      - event-cloud-audit-sink
+    workflow:
+      - id: action-dispatcher
+        agent: aep:agent:ActionDispatcher:1.0.0
+        role: dispatcher
+        dependencies:
+          - hybrid-detector
+          - hitl-reviewer
+        failureEscalation:
+          - dlq-handler
+        agentTasks:
+          - Merge decisions from direct detection and HITL review
+          - Route BLOCK decisions to real-time hold system
+          - Route PASS decisions to audit stream
+          - Emit per-decision latency and outcome telemetry
+        acceptanceCriteria:
+          - No decision dropped — all paths produce an action
+          - Action dispatch latency < 20ms for automated decisions
+          - Full audit trail for every transaction regardless of path
+        inputsSpec:
+          - name: detection-result
+            format: json
+            description: Automated detection result
+          - name: reviewed-decision
+            format: json
+            description: Human-reviewed decision
+        outputsSpec:
+          - name: action-event
+            format: json
+            description: Dispatched action with full decision lineage

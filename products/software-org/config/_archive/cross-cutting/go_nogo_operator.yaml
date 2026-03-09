@@ -1,0 +1,85 @@
+---
+# Cross-Cutting Go/No-Go Decision Operator Template
+# Replaces ~10 stage-specific files: build_go_nogo.yaml, test_go_nogo.yaml, etc.
+#
+# @doc.type operator-template
+# @doc.purpose Cross-cutting go/no-go decision gate for all stages
+# @doc.layer operations
+# @doc.pattern Template
+
+template:
+  id: "${stage}_go_nogo"
+  version: "1.0.0"
+
+operator:
+  type: "GoNoGoOperator"
+  role: "${stage} Decision Gate"
+  category: "cross-cutting"
+
+parameters:
+  stage:
+    type: "string"
+    required: true
+    description: "Stage name for go/no-go decision"
+
+inputs_spec:
+  - name: "${stage}_readiness_report"
+    description: "Readiness report for go/no-go decision."
+    format: "Readiness report artifact"
+    required: true
+
+  - name: "${stage}_success_criteria_status"
+    description: "Status of all success criteria."
+    format: "Criteria status list"
+    required: true
+
+  - name: "${stage}_risk_assessment"
+    description: "Current risk assessment."
+    format: "Risk assessment artifact"
+    required: true
+
+outputs_spec:
+  - name: "${stage}_go_nogo_decision"
+    description: "Go/No-Go decision for ${stage} stage transition."
+    format: "Decision artifact"
+
+  - name: "${stage}_decision_events"
+    description: "Stream of decision events"
+    format: "Event stream"
+    event_type: "ghatana.operations.decision.${stage}"
+
+agent_tasks:
+  - "Evaluate all ${stage} readiness criteria."
+  - "Assess risk tolerance for stage transition."
+  - "Record decision with rationale."
+  - "Emit decision events to EventCloud."
+
+acceptance_criteria:
+  - "Decision is based on documented criteria."
+  - "Decision rationale is recorded."
+  - "Decision is communicated to stakeholders."
+  - "Decision is auditable."
+
+dependencies:
+  - "${stage}_readiness_report"
+  - "${stage}_success_criteria_status"
+  - "${stage}_risk_assessment"
+
+failure_escalation:
+  - "Escalate to Executive Sponsor if decision cannot be made."
+
+config:
+  decision_states:
+    - "go"
+    - "no_go"
+    - "conditional_go"
+    - "defer"
+
+  required_approvers:
+    - "stage_owner"
+    - "quality_lead"
+
+  conditional_go_max_open_items: 3
+  event_cloud_topic: "ghatana.operations.decision"
+
+hitl: true # Human decision required

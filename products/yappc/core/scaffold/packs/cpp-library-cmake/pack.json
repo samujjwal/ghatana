@@ -1,0 +1,23 @@
+{
+    "id": "cpp-library-cmake",
+    "name": "C++ Library with CMake",
+    "description": "C++ library project with CMake build system",
+    "version": "1.0.0",
+    "type": "library",
+    "language": "cpp",
+    "buildSystem": "cmake",
+    "requiredVariables": [
+        "projectName",
+        "cppStandard"
+    ],
+    "optionalVariables": [
+        "description",
+        "author",
+        "enableTesting"
+    ],
+    "defaults": {
+        "cppStandard": "17",
+        "enableTesting": "true"
+    },
+    "features": []
+}

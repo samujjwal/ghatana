@@ -1,0 +1,179 @@
+# YAPPC Phase Transition Events
+# Machine-readable crosswalk of canonical phase transitions (Section D.3)
+#
+# Defines the trigger events and gate agents for each phase boundary.
+# Used by: master-orchestrator-agent, phase-router-agent, event-routing.yaml
+
+apiVersion: ghatana.yappc/v1
+kind: PhaseTransitionEvents
+
+transitions:
+  - from: Discover
+    to: Define
+    trigger_event: discovery.complete
+    gate_agents:
+      - agent_id: agent.yappc.confidence-threshold-agent
+        condition: "confidence >= 0.70"
+        action_on_fail: re-trigger problem-validation-agent (max 2 retries), then HITL
+    required_artifacts:
+      - discovery-report
+      - market-analysis
+      - problem-validation-result
+
+  - from: Define
+    to: Design
+    trigger_event: requirements.complete
+    gate_agents:
+      - agent_id: agent.yappc.requirements-validator-agent
+        condition: "all stories have acceptance criteria"
+        action_on_fail: BLOCK with missing-criteria report
+    required_artifacts:
+      - user-stories
+      - acceptance-criteria
+      - nfr-list
+
+  - from: Design
+    to: Plan
+    trigger_event: architecture.complete
+    gate_agents:
+      - agent_id: agent.yappc.sentinel
+        condition: "threat model reviewed, no critical findings"
+        action_on_fail: BLOCK until security findings addressed
+      - agent_id: agent.yappc.adr-writer-agent
+        condition: "all architectural decisions have ADRs"
+        action_on_fail: WARN, generate missing ADRs
+    required_artifacts:
+      - architecture-document
+      - threat-model
+      - adr-records
+      - domain-model
+
+  - from: Plan
+    to: Build
+    trigger_event: sprint.plan.approved
+    gate_agents:
+      - agent_id: agent.yappc.human-in-the-loop-coordinator
+        condition: "human approval received"
+        action_on_fail: PAUSE until human decision
+      - agent_id: agent.yappc.budget-gate-agent
+        condition: "estimated cost within budget"
+        action_on_fail: BLOCK with cost estimate
+    required_artifacts:
+      - sprint-plan
+      - capacity-plan
+      - dependency-map
+
+  - from: Build
+    to: Test
+    trigger_event: build.ci.passed
+    gate_agents:
+      - agent_id: agent.yappc.quality-guard-agent
+        condition: "quality gate passed (coverage, style, complexity)"
+        action_on_fail: BLOCK with quality report
+      - agent_id: agent.yappc.dependency-gate-agent
+        condition: "no critical vulnerabilities or license violations"
+        action_on_fail: BLOCK with vulnerability/license report
+    required_artifacts:
+      - build-artifact
+      - coverage-report
+      - security-scan-result
+
+  - from: Build
+    to: Debug
+    trigger_event: build.error
+    gate_agents: []
+    automatic: true
+    notes: "Event-driven, no gate — debug is triggered automatically on build failure"
+
+  - from: Test
+    to: Debug
+    trigger_event: test.failed
+    gate_agents: []
+    automatic: true
+    notes: "Event-driven, no gate — debug is triggered automatically on test failure"
+
+  - from: Debug
+    to: Build
+    trigger_event: debug.fix.ready
+    gate_agents:
+      - agent_id: agent.yappc.code-review-orchestrator
+        condition: "fix passes code review"
+        action_on_fail: BLOCK, return to fix-generator-agent
+    required_artifacts:
+      - fix-patch
+      - regression-test
+      - root-cause-analysis
+
+  - from: Test
+    to: Release
+    trigger_event: test.suite.passed
+    gate_agents:
+      - agent_id: agent.yappc.quality-guard-agent
+        condition: "all test suites pass, coverage thresholds met"
+        action_on_fail: BLOCK with test report
+      - agent_id: agent.yappc.sentinel
+        condition: "no security regressions"
+        action_on_fail: BLOCK with security findings
+    required_artifacts:
+      - test-results
+      - coverage-report
+      - performance-test-results
+
+  - from: Release
+    to: Deploy
+    trigger_event: release.ready
+    gate_agents:
+      - agent_id: agent.yappc.sentinel
+        condition: "release approval granted"
+        action_on_fail: BLOCK until security approval
+      - agent_id: agent.yappc.release-governance-agent
+        condition: "security + compliance + quality gates pass"
+        action_on_fail: BLOCK with readiness report
+      - agent_id: agent.yappc.supply-chain-verifier-agent
+        condition: "SBOM signed, artifacts signed, provenance valid"
+        action_on_fail: BLOCK with verification failures
+    required_artifacts:
+      - release-artifact
+      - signed-sbom
+      - signed-artifacts
+      - changelog
+      - release-notes
+
+  - from: Deploy
+    to: Operate
+    trigger_event: deployment.complete
+    gate_agents:
+      - agent_id: agent.yappc.monitoring-agent
+        condition: "post-deployment health check passes"
+        action_on_fail: trigger rollback-coordinator-agent
+      - agent_id: agent.yappc.canary-analysis-agent
+        condition: "canary score >= 90 (if canary deployment)"
+        action_on_fail: HOLD or ROLLBACK based on score
+    required_artifacts:
+      - deployment-record
+      - health-check-result
+      - canary-analysis-report
+
+  - from: Operate
+    to: Improve
+    trigger_event: improvement.trigger
+    gate_agents: []
+    automatic: true
+    trigger_conditions:
+      - incident.resolved
+      - sprint.end
+      - feedback.received
+      - slo.breach.predicted
+    notes: "Automatic transition — any of the trigger conditions initiates improvement"
+
+  - from: Improve
+    to: Discover
+    trigger_event: improvement.institutionalized
+    gate_agents:
+      - agent_id: agent.yappc.knowledge-canonicalization-agent
+        condition: "learnings canonicalized into semantic memory"
+        action_on_fail: WARN, proceed with partial canonicalization
+    required_artifacts:
+      - postmortem-report
+      - pattern-extraction-result
+      - institutionalized-learnings

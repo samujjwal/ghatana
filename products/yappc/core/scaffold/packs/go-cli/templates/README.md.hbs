@@ -1,0 +1,66 @@
+# {{projectName}}
+
+{{#if description}}
+{{description}}
+{{else}}
+A Go CLI application built with Cobra.
+{{/if}}
+
+## Features
+
+- Command-line interface with Cobra
+- Configuration management with Viper
+- Fast and efficient
+
+## Prerequisites
+
+- Go {{goVersion}} or higher
+
+## Installation
+
+```bash
+go mod download
+```
+
+## Usage
+
+```bash
+go run main.go --help
+```
+
+Or after building:
+
+```bash
+./{{kebabCase projectName}} --help
+```
+
+## Development
+
+### Build
+```bash
+make build
+```
+
+### Run
+```bash
+make run
+```
+
+### Test
+```bash
+make test
+```
+
+### Format
+```bash
+make fmt
+```
+
+### Lint
+```bash
+make lint
+```
+
+## License
+
+MIT

@@ -1,0 +1,105 @@
+id: phase-router-agent
+name: Phase Router Agent
+version: 1.0.0
+description: Intelligently routes tasks to appropriate SDLC phase based on task type, current state, dependencies, and context.
+
+metadata:
+  level: 2  # Domain Expert
+  domain: orchestration
+  tags:
+    - routing
+    - phase-selection
+    - context-aware-routing
+    - intelligent-dispatch
+
+generator:
+  type: PIPELINE
+  steps:
+    - name: task_analysis
+      type: LLM
+      provider: ANTHROPIC
+      model: claude-3-5-sonnet-20241022
+      temperature: 0.1
+      max_tokens: 1500
+      prompt: |
+        You are the Phase Router Agent. Determine the correct phase for this task:
+        
+        Task: {{input}}
+        Project State: {{state}}
+        Available Phases: {{phases}}
+        Dependencies: {{dependencies}}
+        
+        Determine:
+        1. Primary phase (where task should execute)
+        2. Prerequisite phases (if any must complete first)
+        3. Follow-up phases (if any should execute after)
+        4. Routing confidence (0-100)
+        5. Alternative routing options
+        
+        Output as JSON: {primary_phase, prerequisites, follow_ups, confidence, alternatives, rationale}
+    - name: dependency_check
+      type: SERVICE_CALL
+      service: dependency-service
+      endpoint: /dependencies/check
+    - name: routing_decision
+      type: RULE_BASED
+      description: Make final routing decision
+
+memory:
+  episodic:
+    enabled: true
+    retention_days: 180
+    categories:
+      - routing-decisions
+      - phase-selections
+      - routing-outcomes
+  semantic:
+    enabled: true
+    categories:
+      - task-patterns
+      - phase-capabilities
+      - routing-rules
+  procedural:
+    enabled: true
+    categories:
+      - routing-logic
+      - dependency-rules
+      - escalation-paths
+
+tools:
+  - task_classifier
+  - dependency_resolver
+  - phase_capability_matcher
+
+capabilities:
+  - intelligent-routing
+  - dependency-analysis
+  - phase-matching
+  - context-aware-dispatch
+  - routing-confidence-scoring
+
+routing:
+  input_types:
+    - task-request
+    - work-item
+    - system-event
+  output_types:
+    - routing-decision
+    - phase-assignment
+    - dependency-report
+
+delegation:
+  can_delegate_to:
+    - dependency-resolution-agent
+  escalates_to:
+    - master-orchestrator-agent
+
+governance:
+  requires_approval: false
+  can_block: false
+  audit_trail: standard
+
+performance:
+  expected_latency_ms: 1000
+  max_latency_ms: 3000
+  timeout_ms: 6000

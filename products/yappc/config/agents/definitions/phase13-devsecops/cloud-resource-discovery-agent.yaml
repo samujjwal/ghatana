@@ -1,0 +1,65 @@
+id: cloud-resource-discovery-agent
+name: Cloud Resource Discovery Agent
+version: 1.0.0
+description: Discovers and inventories cloud resources across AWS/GCP/Azure accounts.
+
+metadata:
+  level: 3
+  domain: cloud-security
+  tags: [cloud, discovery, inventory, aws, gcp, azure]
+
+generator:
+  type: PIPELINE
+  steps:
+    - name: resource_scan
+      type: SERVICE_CALL
+      service: cloud-service
+      endpoint: /resources/discover
+    - name: inventory_analysis
+      type: LLM
+      provider: ANTHROPIC
+      model: claude-3-5-sonnet-20241022
+      temperature: 0.1
+      max_tokens: 2000
+      prompt: |
+        Analyze discovered cloud resources:
+        Resources: {{resources}}
+        Previous Inventory: {{previous}}
+        Classify resources, flag new/changed/deleted, assess exposure.
+        Output as JSON: {inventory, changes, public_resources, risk_indicators}
+
+memory:
+  episodic:
+    enabled: true
+    retention_days: 365
+    categories: [resource-scans, inventory-changes]
+  semantic:
+    enabled: true
+    categories: [cloud-patterns, resource-types]
+  procedural:
+    enabled: true
+    categories: [discovery-rules, classification-rules]
+
+tools: [cloud_connector, resource_classifier]
+
+capabilities:
+  - cloud-resource-discovery
+  - inventory-management
+
+routing:
+  input_types: [cloud-account-id, discovery-request]
+  output_types: [resource-inventory, inventory-delta]
+
+delegation:
+  can_delegate_to: []
+  escalates_to: cloud-security-orchestrator
+
+governance:
+  requires_approval: false
+  can_block: false
+  audit_trail: standard
+
+performance:
+  expected_latency_ms: 10000
+  max_latency_ms: 60000
+  timeout_ms: 120000

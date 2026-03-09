@@ -1,0 +1,41 @@
+---
+id: "synthesis_release_combiner"
+agent: "SynthesisReleaseCombinerAgent"
+role: "Release PM/Tech Lead"
+inputs_spec:
+- name: "release_registry_entry"
+  description: "Registry entry for release."
+  format: "Registry entry artifact"
+- name: "promoted_release_status"
+  description: "Promotion status for release."
+  format: "Promotion status artifact"
+- name: "release_audit_log"
+  description: "Audit log for release."
+  format: "Audit log artifact"
+- name: "release_exception_approval"
+  description: "Approval and documentation of release exceptions."
+  format: "Exception approval artifact"
+outputs_spec:
+- name: "ready_for_deploy_bundle"
+  description: "Deployable bundle with all artifacts, audits, signoffs."
+  format: "Deployable bundle artifact"
+agent_tasks:
+- "Combine all package/release artifacts, audits, and signoffs."
+- "Flag outstanding issues."
+- "Review and sign off bundle for deploy."
+- "Ensure all referenced artifacts are current and versioned."
+acceptance_criteria:
+- "All artifacts/audits/signoffs combined and reviewed."
+- "Outstanding issues flagged."
+- "Bundle reviewed and signed off for deploy."
+- "All artifacts current and versioned."
+dependencies:
+- "release_registry_entry"
+- "promoted_release_status"
+- "release_audit_log"
+- "release_exception_approval"
+failure_escalation:
+- "Escalate to Release PM/Tech Lead if bundle is incomplete or not reviewed."
+references: []
+hitl: true
+hitl_reason: "Human validates deploy bundle readiness for production"

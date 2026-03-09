@@ -1,0 +1,646 @@
+/**
+ * File-based storage for DCMAAR extension
+ * Provides methods to read/write configuration and events to files
+ * with fallback to chrome.storage.local when file system is not available
+ */
+
+// File system entry points
+let configFileHandle = null;
+let eventsFileHandle = null;
+let exportDirHandle = null;
+
+// In-memory cache
+let configCache = null;
+let eventsCache = [];
+
+// Default configuration
+const DEFAULT_CONFIG = {
+  version: '1.0.0',
+  enabled: true,
+  useWebSocket: false,
+  websocketUrl: 'ws://localhost:8080/ws',
+  minLatencyThreshold: 3000,
+  sampleRate: 1.0,
+  maxLocalEvents: 5000,
+  eventRetentionDays: 30,
+  autoExport: false,
+  autoExportPath: 'dcmaer-export',
+  useFileSystem: true,
+  lastExportTime: null,
+  autoExportInterval: 3600000, // 1 hour in milliseconds
+  lastUpdated: Date.now()
+};
+
+// Error class for file system errors
+class FileSystemError extends Error {
+  constructor(message, code) {
+    super(message);
+    this.name = 'FileSystemError';
+    this.code = code;
+  }
+}
+
+class FileStorage {
+  constructor() {
+    this.initialized = false;
+    this.useFileSystem = true; // Default to using file system
+    this.config = { ...DEFAULT_CONFIG };
+    this.events = [];
+    this.pendingWrites = [];
+    this.isWriting = false;
+  }
+
+  /**
+   * Get a file handle, creating it if it doesn't exist
+   */
+  async _getFileHandle(fileName, create = true) {
+    try {
+      // Request directory access if we don't have it yet
+      if (!this.directoryHandle) {
+        this.directoryHandle = await window.showDirectoryPicker({
+          mode: 'readwrite',
+          startIn: 'documents'
+        });
+      }
+      
+      return await this.directoryHandle.getFileHandle(fileName, { create });
+    } catch (error) {
+      console.error('Error getting file handle:', error);
+      throw new FileSystemError(
+        `Failed to access file: ${fileName}`,
+        'FILE_ACCESS_ERROR'
+      );
+    }
+  }
+  
+  /**
+   * Read a file's contents
+   */
+  async _readFile(fileHandle) {
+    try {
+      const file = await fileHandle.getFile();
+      return await file.text();
+    } catch (error) {
+      if (error.name === 'NotFoundError') {
+        return null;
+      }
+      throw new FileSystemError(
+        `Failed to read file: ${error.message}`,
+        'FILE_READ_ERROR'
+      );
+    }
+  }
+  
+  /**
+   * Write data to a file
+   */
+  async _writeFile(fileHandle, data) {
+    try {
+      const writable = await fileHandle.createWritable();
+      await writable.write(data);
+      await writable.close();
+    } catch (error) {
+      throw new FileSystemError(
+        `Failed to write to file: ${error.message}`,
+        'FILE_WRITE_ERROR'
+      );
+    }
+  }
+
+  /**
+   * Initialize file storage with fallback to chrome.storage
+   */
+  async init() {
+    if (this.initialized) return true;
+
+    try {
+      // First try to load from chrome.storage as fallback
+      await this._loadFromChromeStorage();
+      
+      // Check if we should use file system
+      if (this.config.useFileSystem && 'showDirectoryPicker' in window) {
+        try {
+          // Request file system access
+          this.directoryHandle = await window.showDirectoryPicker({
+            mode: 'readwrite',
+            startIn: 'documents'
+          });
+          
+          if (this.directoryHandle) {
+            await this._initializeFileSystem();
+            this.useFileSystem = true;
+            console.log('[FileStorage] Using file system storage');
+          } else {
+            throw new Error('User denied file system access');
+          }
+        } catch (error) {
+          console.warn('[FileStorage] File system access failed, falling back to chrome.storage:', error);
+          this.useFileSystem = false;
+          await this._saveConfigToChrome(this.config);
+        }
+      } else {
+        this.useFileSystem = false;
+        console.log('[FileStorage] Using chrome.storage');
+      }
+
+      this.initialized = true;
+      return true;
+    } catch (error) {
+      console.error('[FileStorage] Initialization failed:', error);
+      this.useFileSystem = false;
+      return false;
+    }
+  }
+
+  /**
+   * Initialize file system storage
+   */
+  async _initializeFileSystem() {
+    try {
+      // Create or get config file
+      configFileHandle = await this._getOrCreateFile('dcmaar-config.json');
+      
+      // Create or get events file
+      eventsFileHandle = await this._getOrCreateFile('dcmaar-events.json');
+      
+      // Create or get export directory
+      exportDirHandle = await this._getOrCreateDirectory('dcmaer-export');
+      
+      // Load initial data
+      await this._loadConfig();
+      await this._loadEvents();
+      
+      return true;
+    } catch (error) {
+      console.error('[FileStorage] Failed to initialize file system:', error);
+      throw error;
+    }
+  }
+
+  /**
+   * Get or create a file in the current directory
+   */
+  async _getOrCreateFile(fileName) {
+    try {
+      return await this.directoryHandle.getFileHandle(fileName, { create: true });
+    } catch (error) {
+      console.error(`[FileStorage] Failed to get/create file ${fileName}:`, error);
+      throw new FileSystemError(
+        `Failed to access file: ${fileName}`,
+        'FILE_ACCESS_ERROR'
+      );
+    }
+  }
+
+  /**
+   * Get or create a directory in the current directory
+   */
+  async _getOrCreateDirectory(dirName) {
+    try {
+      return await this.directoryHandle.getDirectoryHandle(dirName, { create: true });
+    } catch (error) {
+      console.error(`[FileStorage] Failed to get/create directory ${dirName}:`, error);
+      throw new FileSystemError(
+        `Failed to access directory: ${dirName}`,
+        'DIRECTORY_ACCESS_ERROR'
+      );
+    }
+  }
+
+  /**
+   * Load configuration from file or fallback to chrome.storage
+   */
+  async _loadConfig() {
+    if (this.useFileSystem) {
+      try {
+        const file = await configFileHandle.getFile();
+        const text = await file.text();
+        if (text) {
+          this.config = { ...DEFAULT_CONFIG, ...JSON.parse(text) };
+          return this.config;
+        }
+      } catch (error) {
+        console.error('[FileStorage] Failed to load config from file:', error);
+        // Fall through to chrome.storage
+      }
+    }
+    
+    // Fallback to chrome.storage
+    return this._loadFromChromeStorage();
+  }
+
+  /**
+   * Load events from file or fallback to chrome.storage
+   */
+  async _loadEvents() {
+    if (this.useFileSystem) {
+      try {
+        const file = await eventsFileHandle.getFile();
+        const text = await file.text();
+        if (text) {
+          this.events = JSON.parse(text);
+          return this.events;
+        }
+      } catch (error) {
+        console.error('[FileStorage] Failed to load events from file:', error);
+        // Fall through to chrome.storage
+      }
+    }
+    
+    // Fallback to chrome.storage
+    const result = await chrome.storage.local.get('dcmaar_events');
+    this.events = result.dcmaar_events || [];
+    return this.events;
+  }
+
+  /**
+   * Load data from chrome.storage.local
+   */
+  async _loadFromChromeStorage() {
+    try {
+      const result = await chrome.storage.local.get(['dcmaar_config', 'dcmaar_events']);
+      
+      if (result.dcmaar_config) {
+        this.config = { ...DEFAULT_CONFIG, ...result.dcmaar_config };
+      } else {
+        this.config = { ...DEFAULT_CONFIG };
+        await this._saveConfigToChrome(this.config);
+      }
+      
+      this.events = result.dcmaar_events || [];
+      
+      return this.config;
+    } catch (error) {
+      console.error('[FileStorage] Failed to load from chrome.storage:', error);
+      this.config = { ...DEFAULT_CONFIG };
+      this.events = [];
+      return this.config;
+    }
+  }
+
+  /**
+   * Save configuration to file or chrome.storage
+   */
+  async saveConfig(newConfig) {
+    if (!this.initialized) {
+      await this.init();
+    }
+    
+    // Merge with existing config
+    this.config = { ...this.config, ...newConfig, lastUpdated: Date.now() };
+    
+    try {
+      if (this.useFileSystem) {
+        await this._saveConfigToFile();
+      } else {
+        await this._saveConfigToChrome(this.config);
+      }
+      return this.config;
+    } catch (error) {
+      console.error('[FileStorage] Failed to save config:', error);
+      throw error;
+    }
+  }
+
+  /**
+   * Save configuration to file
+   */
+  async _saveConfigToFile() {
+    if (!configFileHandle) {
+      configFileHandle = await this._getOrCreateFile('dcmaer-config.json');
+    }
+    
+    const writable = await configFileHandle.createWritable();
+    await writable.write(JSON.stringify(this.config, null, 2));
+    await writable.close();
+  }
+
+  /**
+   * Save configuration to chrome.storage
+   */
+  async _saveConfigToChrome(config) {
+    try {
+      await chrome.storage.local.set({ dcmaer_config: config });
+    } catch (error) {
+      console.error('[FileStorage] Failed to save config to chrome.storage:', error);
+      throw error;
+    }
+  }
+
+  /**
+   * Get current configuration
+   */
+  async getConfig() {
+    if (!this.initialized) {
+      await this.init();
+    }
+    return { ...this.config };
+  }
+
+  /**
+   * Save events to file or chrome.storage
+   */
+  async saveEvents(events) {
+    if (!this.initialized) {
+      await this.init();
+    }
+    
+    if (!Array.isArray(events)) {
+      events = [events];
+    }
+
+    // Add metadata to events
+    const now = Date.now();
+    const newEvents = events.map(event => ({
+      id: event.id || `${now}-${Math.random().toString(36).substr(2, 9)}`,
+      timestamp: event.timestamp || now,
+      receivedAt: now,
+      ...event
+    }));
+
+    // Add to in-memory cache and sort by timestamp (newest first)
+    this.events = [...this.events, ...newEvents]
+      .sort((a, b) => b.timestamp - a.timestamp)
+      .slice(0, this.config.maxLocalEvents || DEFAULT_CONFIG.maxLocalEvents);
+
+    // Save to storage
+    try {
+      if (this.useFileSystem) {
+        await this._saveEventsToFile();
+      } else {
+        await this._saveEventsToChrome();
+      }
+      
+      // Check if we should auto-export
+      await this._checkAutoExport();
+      
+      return this.events.length;
+    } catch (error) {
+      console.error('[FileStorage] Failed to save events:', error);
+      throw error;
+    }
+  }
+
+  /**
+   * Save events to file
+   */
+  async _saveEventsToFile() {
+    if (!eventsFileHandle) {
+      eventsFileHandle = await this._getOrCreateFile('dcmaer-events.json');
+    }
+    
+    const writable = await eventsFileHandle.createWritable();
+    await writable.write(JSON.stringify(this.events, null, 2));
+    await writable.close();
+  }
+
+  /**
+   * Save events to chrome.storage
+   */
+  async _saveEventsToChrome() {
+    try {
+      await chrome.storage.local.set({ dcmaer_events: this.events });
+    } catch (error) {
+      console.error('[FileStorage] Failed to save events to chrome.storage:', error);
+      throw error;
+    }
+  }
+
+  /**
+   * Check if we should auto-export events
+   */
+  async _checkAutoExport() {
+    if (!this.config.autoExport) return;
+    
+    const now = Date.now();
+    const lastExport = this.config.lastExportTime || 0;
+    const exportInterval = this.config.autoExportInterval || 3600000; // 1 hour
+    
+    if ((now - lastExport) >= exportInterval) {
+      try {
+        await this.exportEvents({ format: 'json' });
+        await this.saveConfig({ lastExportTime: now });
+      } catch (error) {
+        console.error('[FileStorage] Auto-export failed:', error);
+      }
+    }
+  }
+
+  /**
+   * Get events with optional filtering
+   */
+  async getEvents({ 
+    limit = 100, 
+    minTimestamp = 0, 
+    maxTimestamp = Date.now(),
+    type = null,
+    source = null
+  } = {}) {
+    if (!this.initialized) {
+      await this.init();
+    }
+    
+    return this.events
+      .filter(event => {
+        const timeMatch = event.timestamp >= minTimestamp && event.timestamp <= maxTimestamp;
+        const typeMatch = !type || event.type === type;
+        const sourceMatch = !source || event.source === source;
+        return timeMatch && typeMatch && sourceMatch;
+      })
+      .slice(0, limit);
+  }
+
+  /**
+   * Clear all events
+   */
+  async clearEvents() {
+    this.events = [];
+    
+    try {
+      if (this.useFileSystem) {
+        await this._saveEventsToFile();
+      } else {
+        await this._saveEventsToChrome();
+      }
+      return true;
+    } catch (error) {
+      console.error('[FileStorage] Failed to clear events:', error);
+      throw error;
+    }
+  }
+
+  /**
+   * Export events to a file
+   */
+  async exportEvents({ 
+    format = 'json', 
+    filename = null,
+    events = null 
+  } = {}) {
+    if (!this.initialized) {
+      await this.init();
+    }
+    
+    const eventsToExport = events || this.events;
+    if (!eventsToExport || eventsToExport.length === 0) {
+      throw new Error('No events to export');
+    }
+    
+    const timestamp = new Date().toISOString().replace(/[:.]/g, '-');
+    const defaultFilename = `dcmaer-events-${timestamp}.${format}`;
+    const exportFilename = filename || defaultFilename;
+    
+    try {
+      let data;
+      let mimeType;
+      
+      if (format === 'json') {
+        data = JSON.stringify(eventsToExport, null, 2);
+        mimeType = 'application/json';
+      } else if (format === 'csv') {
+        // Convert to CSV
+        if (eventsToExport.length === 0) {
+          data = '';
+        } else {
+          // Get all unique keys from all events
+          const allKeys = new Set();
+          eventsToExport.forEach(event => {
+            Object.keys(event).forEach(key => allKeys.add(key));
+          });
+          
+          const headers = Array.from(allKeys);
+          const rows = eventsToExport.map(event => 
+            headers.map(header => {
+              let value = event[header];
+              if (value === null || value === undefined) {
+                return '';
+              }
+              // Convert objects/arrays to JSON strings
+              if (typeof value === 'object') {
+                value = JSON.stringify(value);
+              }
+              // Escape quotes and wrap in quotes
+              return `"${String(value).replace(/"/g, '""')}"`;
+            }).join(',')
+          );
+          
+          data = [headers.join(','), ...rows].join('\n');
+        }
+        mimeType = 'text/csv';
+      } else {
+        throw new Error(`Unsupported export format: ${format}`);
+      }
+      
+      if (this.useFileSystem && exportDirHandle) {
+        // Save to file system
+        const exportFile = await exportDirHandle.getFileHandle(exportFilename, { create: true });
+        const writable = await exportFile.createWritable();
+        await writable.write(data);
+        await writable.close();
+        
+        return {
+          success: true,
+          path: `dcmaer-export/${exportFilename}`,
+          count: eventsToExport.length,
+          format,
+          mimeType
+        };
+      } else {
+        // Fallback to download
+        const blob = new Blob([data], { type: mimeType });
+        const url = URL.createObjectURL(blob);
+        
+        await chrome.downloads.download({
+          url: url,
+          filename: exportFilename,
+          saveAs: true
+        });
+        
+        return {
+          success: true,
+          path: exportFilename,
+          count: eventsToExport.length,
+          format,
+          mimeType,
+          downloaded: true
+        };
+      }
+    } catch (error) {
+      console.error('[FileStorage] Export failed:', error);
+      throw new Error(`Export failed: ${error.message}`);
+    }
+  }
+  
+  /**
+   * Toggle between file system and chrome.storage
+   */
+  async toggleStorage(useFileSystem) {
+    if (useFileSystem === this.useFileSystem) return true;
+    
+    try {
+      if (useFileSystem) {
+        // Switching to file system
+        this.directoryHandle = await window.showDirectoryPicker({
+          mode: 'readwrite',
+          startIn: 'documents'
+        });
+        
+        if (!this.directoryHandle) return false;
+        
+        await this._initializeFileSystem();
+        this.useFileSystem = true;
+        
+        // Save current data to file system
+        await this._saveConfigToFile();
+        await this._saveEventsToFile();
+        
+        // Update config
+        await this.saveConfig({ useFileSystem: true });
+        
+      } else {
+        // Switching to chrome.storage
+        await this._saveConfigToChrome(this.config);
+        await this._saveEventsToChrome();
+        this.useFileSystem = false;
+        
+        // Update config
+        await chrome.storage.local.set({ 
+          'dcmaer_config': { ...this.config, useFileSystem: false }
+        });
+      }
+      
+      return true;
+      
+    } catch (error) {
+      console.error('[FileStorage] Failed to toggle storage:', error);
+      return false;
+    }
+  }
+  
+  /**
+   * Get storage statistics
+   */
+  async getStats() {
+    if (!this.initialized) {
+      await this.init();
+    }
+    
+    return {
+      storageType: this.useFileSystem ? 'fileSystem' : 'chrome.storage',
+      eventCount: this.events.length,
+      maxEvents: this.config.maxLocalEvents,
+      lastUpdated: this.config.lastUpdated || null,
+      config: {
+        ...this.config,
+        // Omit sensitive data
+        websocketUrl: undefined,
+        lastExportTime: undefined
+      }
+    };
+  }
+}
+
+// Create a singleton instance
+const fileStorage = new FileStorage();
+
+export default fileStorage;

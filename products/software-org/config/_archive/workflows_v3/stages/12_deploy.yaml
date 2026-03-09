@@ -1,0 +1,154 @@
+# Deploy Stage - v3 Operator-Based Definition
+# Uses consolidated operators from operations/domain/release/
+name: Deploy
+description: Production deployment with verification and rollback capability
+domain: release
+
+# Operators used in this stage
+operators:
+  - ref: release/deploy_operator
+    modes: [validate, plan, execute, rollback, verify]
+
+# Cross-cutting operators
+cross_cutting:
+  - ref: cross-cutting/milestone_tracker
+    params:
+      stage: deploy
+  - ref: cross-cutting/best_practice
+    params:
+      stage: deploy
+  - ref: cross-cutting/notification
+    params:
+      stage: deploy
+  - ref: cross-cutting/go_nogo
+    params:
+      stage: deploy
+  - ref: cross-cutting/audit_log
+    params:
+      stage: deploy
+
+# Workflow sequence
+workflow:
+  # Pre-deployment Validation
+  - step: pre_deploy_validation
+    operator: release/deploy_operator
+    mode: validate
+    inputs:
+      - name: package_release_milestone
+      - name: release_artifacts
+    outputs:
+      - name: pre_deploy_validation_report
+
+  # Deployment Planning
+  - step: deployment_planning
+    operator: release/deploy_operator
+    mode: plan
+    inputs:
+      - name: pre_deploy_validation_report
+      - name: release_artifacts
+    outputs:
+      - name: deployment_plan
+    depends_on: [pre_deploy_validation]
+    hitl: true
+    hitl_reason: Human reviews deployment plan
+
+  # Deployment Go/No-Go
+  - step: deploy_go_nogo
+    operator: cross-cutting/go_nogo
+    params:
+      stage: deploy
+    inputs:
+      - name: deployment_plan
+    outputs:
+      - name: deploy_go_nogo_decision
+    depends_on: [deployment_planning]
+    hitl: true
+    hitl_reason: Human makes deployment go/no-go decision
+
+  # Deployment Notification
+  - step: notify_deployment_start
+    operator: cross-cutting/notification
+    params:
+      stage: deploy
+      event_type: deployment_start
+    inputs:
+      - name: deploy_go_nogo_decision
+    outputs:
+      - name: deployment_notification
+    depends_on: [deploy_go_nogo]
+
+  # Deployment Execution
+  - step: execute_deployment
+    operator: release/deploy_operator
+    mode: execute
+    inputs:
+      - name: deployment_plan
+      - name: release_artifacts
+    outputs:
+      - name: deployment_result
+    depends_on: [notify_deployment_start]
+
+  # Post-deployment Verification
+  - step: verify_deployment
+    operator: release/deploy_operator
+    mode: verify
+    inputs:
+      - name: deployment_result
+    outputs:
+      - name: deployment_verification
+    depends_on: [execute_deployment]
+
+  # Conditional Rollback (if verification fails)
+  - step: rollback_deployment
+    operator: release/deploy_operator
+    mode: rollback
+    inputs:
+      - name: deployment_result
+    outputs:
+      - name: rollback_result
+    depends_on: [verify_deployment]
+    condition: deployment_verification.status == 'failed'
+
+  # Deployment Complete Notification
+  - step: notify_deployment_complete
+    operator: cross-cutting/notification
+    params:
+      stage: deploy
+      event_type: deployment_complete
+    inputs:
+      - name: deployment_verification
+    outputs:
+      - name: deployment_complete_notification
+    depends_on: [verify_deployment]
+
+  # Cross-cutting
+  - step: best_practice_check
+    operator: cross-cutting/best_practice
+    params:
+      stage: deploy
+    inputs:
+      - name: deployment_result
+    outputs:
+      - name: best_practice_report
+    depends_on: [notify_deployment_complete]
+
+  - step: track_milestones
+    operator: cross-cutting/milestone_tracker
+    params:
+      stage: deploy
+    inputs:
+      - name: best_practice_report
+    outputs:
+      - name: deploy_stage_milestone
+    depends_on: [best_practice_check]
+
+# Stage entry/exit criteria
+entry_criteria:
+  - Package release complete
+  - Deployment plan approved
+  - Production environment ready
+
+exit_criteria:
+  - Deployment successful
+  - Verification passed
+  - Stakeholders notified

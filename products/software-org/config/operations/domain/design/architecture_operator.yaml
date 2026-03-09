@@ -1,0 +1,272 @@
+# Architecture Operator - Consolidated Design Domain
+# Consolidates: solution_architecture, solution_approach, high_level_design, architecture_review
+# Purpose: End-to-end architecture definition from solution approach through detailed design
+
+id: architecture_operator
+version: "1.0.0"
+domain: design
+category: architecture
+
+description: |
+  Unified architecture operator handling complete architecture lifecycle:
+  - Solution approach and technology decisions
+  - High-level system architecture
+  - Component relationships and boundaries
+  - Architecture review and validation
+  - Design decision documentation
+
+# Operator Modes
+modes:
+  solution_approach:
+    description: "Define solution approach and technology stack"
+    role: Solution Architect
+    inputs:
+      - name: planning_package
+        description: Complete planning stage package
+        required: true
+      - name: technical_constraints
+        description: Technology and platform constraints
+        required: false
+    outputs:
+      - name: solution_approach
+        description: Solution approach document
+        format: yaml_document
+        schema:
+          - approach_id: string
+          - overview: string
+          - technology_stack: object
+          - cloud_model: "public|private|hybrid|on-premise"
+          - deployment_model: "serverless|containers|vms|bare-metal"
+          - key_decisions: list
+          - tradeoffs: list
+          - alternatives_considered: list
+          - constraints_addressed: list
+          - risks: list
+    tasks:
+      - Analyze requirements and constraints
+      - Evaluate technology options
+      - Document key decisions and rationale
+      - Identify tradeoffs and alternatives
+      - Map constraints to solutions
+      - List architectural risks
+    decision_categories:
+      - compute: "Serverless, containers, VMs"
+      - data: "SQL, NoSQL, data lakes"
+      - messaging: "Sync, async, event-driven"
+      - security: "Zero trust, perimeter, hybrid"
+      - integration: "APIs, events, batch"
+
+  architecture:
+    description: "Design system architecture"
+    role: Solution Architect
+    inputs:
+      - name: solution_approach
+        description: Approved solution approach
+        required: true
+      - name: requirements
+        description: Functional and non-functional requirements
+        required: true
+    outputs:
+      - name: solution_architecture
+        description: Complete solution architecture
+        format: yaml_document
+        schema:
+          - architecture_id: string
+          - version: string
+          - overview: string
+          - architecture_style: "microservices|monolithic|modular|serverless|event-driven"
+          - components: list
+          - layers: list
+          - boundaries: list
+          - integrations: list
+          - data_flows: list
+          - security_zones: list
+          - scalability_approach: object
+          - resilience_patterns: list
+          - deployment_topology: object
+    tasks:
+      - Define architecture style and patterns
+      - Identify all major components
+      - Define component boundaries and interfaces
+      - Design data flows
+      - Establish security boundaries
+      - Plan scalability and resilience
+    architecture_patterns:
+      - microservices
+      - event_sourcing
+      - cqrs
+      - saga
+      - api_gateway
+      - service_mesh
+      - circuit_breaker
+
+  high_level_design:
+    description: "Create high-level design document"
+    role: Solution Architect
+    inputs:
+      - name: solution_architecture
+        description: System architecture
+        required: true
+      - name: threat_model
+        description: Security threat model
+        required: false
+    outputs:
+      - name: high_level_design
+        description: High-level design document
+        format: yaml_document
+        schema:
+          - hld_id: string
+          - components: list
+          - interfaces: list
+          - module_relationships: list
+          - data_stores: list
+          - external_systems: list
+          - constraints: list
+          - assumptions: list
+          - design_risks: list
+          - mitigation_strategies: list
+    tasks:
+      - Detail each major component
+      - Define component boundaries
+      - Specify interfaces between modules
+      - Document external dependencies
+      - Address constraints and assumptions
+      - Identify design risks
+
+  review:
+    description: "Conduct architecture review"
+    role: Architecture Review Board
+    inputs:
+      - name: architecture_artifacts
+        description: All architecture documents
+        required: true
+      - name: requirements
+        description: Requirements for validation
+        required: true
+    outputs:
+      - name: architecture_review_report
+        description: Architecture review findings
+        format: yaml_report
+        schema:
+          - review_id: string
+          - review_date: datetime
+          - reviewers: list
+          - artifacts_reviewed: list
+          - findings: list
+          - recommendations: list
+          - decision: "approved|conditional|rejected"
+          - conditions: list
+          - action_items: list
+    tasks:
+      - Review against requirements coverage
+      - Validate architecture patterns
+      - Assess scalability and resilience
+      - Evaluate security design
+      - Check alignment with standards
+      - Document findings and recommendations
+
+# Internal Logic
+internal_logic:
+  perception:
+    description: "Analyze requirements, constraints, and existing patterns"
+    sources:
+      - planning_package
+      - technology_standards
+      - reference_architectures
+  model:
+    description: "Architecture decision tracking"
+    entities:
+      - decision: "{id, category, choice, rationale, alternatives}"
+      - component: "{id, type, boundaries, interfaces, dependencies}"
+      - risk: "{id, description, mitigation, status}"
+    relationships:
+      - decision_affects_component
+      - component_depends_on_component
+      - risk_mitigated_by_pattern
+  planning:
+    strategy: |
+      1. Start with non-functional requirements (scalability, security)
+      2. Select architecture patterns based on requirements
+      3. Document all decisions with rationale
+      4. Validate against constraints
+      5. Iterate based on review feedback
+  action:
+    description: "Output structured architecture artifacts"
+    validation: "Architecture Review Board approval required"
+
+# Quality Assurance
+quality:
+  templates:
+    - solution_approach_template
+    - architecture_document_template
+    - hld_template
+    - review_checklist
+  checklists:
+    - requirements_coverage_checklist
+    - security_checklist
+    - scalability_checklist
+    - resilience_checklist
+  automated_checks:
+    - pattern_consistency
+    - interface_completeness
+    - dependency_cycle_detection
+
+# HITL Configuration
+hitl:
+  enabled: true
+  touchpoints:
+    - solution_approach_approval
+    - architecture_review
+    - hld_sign_off
+  reason: "Architectural decisions have long-term impact"
+
+# Validation Rules
+validation:
+  rules:
+    - "All requirements must map to architecture components"
+    - "All components must have defined interfaces"
+    - "Security requirements must have corresponding zones"
+    - "Scalability approach must address load projections"
+  review_gates:
+    - architecture_review_board
+    - security_review
+    - operations_review
+
+# Escalation
+escalation:
+  triggers:
+    - "Unaddressed requirement"
+    - "Conflicting architectural patterns"
+    - "Unmitigated critical risk"
+  paths:
+    - role: Chief Architect
+      for: "Pattern conflicts, technology decisions"
+    - role: Security Architect
+      for: "Security design issues"
+    - role: Project Sponsor
+      for: "Cost/timeline implications"
+
+# Dependencies
+dependencies:
+  upstream:
+    - plan_synthesis_operator
+  downstream:
+    - component_operator
+    - api_operator
+    - data_model_operator
+    - security_design_operator
+
+# Metrics
+metrics:
+  - name: requirements_coverage
+    description: "Requirements addressed by architecture"
+    target: "100%"
+  - name: decision_documentation
+    description: "Decisions with documented rationale"
+    target: "100%"
+  - name: review_cycle_time
+    description: "Time from submission to approval"
+    target: "<= 5 business days"
+  - name: architecture_stability
+    description: "Major changes after baseline"
+    target: "< 5%"

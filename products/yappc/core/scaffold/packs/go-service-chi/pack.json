@@ -1,0 +1,162 @@
+{
+    "name": "go-service-chi",
+    "version": "1.0.0",
+    "description": "Go HTTP service with Chi router, structured logging, and Go modules",
+    "author": "Ghatana YAPPC Team",
+    "license": "Apache-2.0",
+    "tags": [
+        "go",
+        "golang",
+        "chi",
+        "service",
+        "microservice",
+        "rest",
+        "api"
+    ],
+    "type": "service",
+    "language": "go",
+    "framework": "chi",
+    "dependencies": {
+        "runtime": [
+            "github.com/go-chi/chi/v5",
+            "github.com/go-chi/cors",
+            "github.com/go-chi/httplog/v2",
+            "go.uber.org/zap"
+        ],
+        "build": [
+            "go:1.21+"
+        ],
+        "test": [
+            "github.com/stretchr/testify"
+        ],
+        "devDependencies": [
+            "github.com/cosmtrek/air"
+        ]
+    },
+    "templates": {
+        "go-mod": {
+            "source": "templates/go.mod.hbs",
+            "target": "go.mod",
+            "merge": "replace"
+        },
+        "main-go": {
+            "source": "templates/cmd/server/main.go.hbs",
+            "target": "cmd/{{projectName}}/main.go",
+            "merge": "skip-if-exists"
+        },
+        "config-go": {
+            "source": "templates/internal/config/config.go.hbs",
+            "target": "internal/config/config.go",
+            "merge": "skip-if-exists"
+        },
+        "router-go": {
+            "source": "templates/internal/router/router.go.hbs",
+            "target": "internal/router/router.go",
+            "merge": "skip-if-exists"
+        },
+        "middleware-go": {
+            "source": "templates/internal/middleware/middleware.go.hbs",
+            "target": "internal/middleware/middleware.go",
+            "merge": "skip-if-exists"
+        },
+        "handler-health-go": {
+            "source": "templates/internal/handler/health.go.hbs",
+            "target": "internal/handler/health.go",
+            "merge": "skip-if-exists"
+        },
+        "handler-api-go": {
+            "source": "templates/internal/handler/api.go.hbs",
+            "target": "internal/handler/api.go",
+            "merge": "skip-if-exists"
+        },
+        "makefile": {
+            "source": "templates/Makefile.hbs",
+            "target": "Makefile",
+            "merge": "replace"
+        },
+        "dockerfile": {
+            "source": "templates/Dockerfile.hbs",
+            "target": "Dockerfile",
+            "merge": "replace"
+        },
+        "docker-compose": {
+            "source": "templates/docker-compose.yml.hbs",
+            "target": "docker-compose.yml",
+            "merge": "skip-if-exists"
+        },
+        "gitignore": {
+            "source": "templates/.gitignore.hbs",
+            "target": ".gitignore",
+            "merge": "skip-if-exists"
+        },
+        "air-toml": {
+            "source": "templates/.air.toml.hbs",
+            "target": ".air.toml",
+            "merge": "skip-if-exists"
+        },
+        "readme": {
+            "source": "templates/README.md.hbs",
+            "target": "README.md",
+            "merge": "skip-if-exists"
+        },
+        "main-test": {
+            "source": "templates/cmd/server/main_test.go.hbs",
+            "target": "cmd/{{projectName}}/main_test.go",
+            "merge": "skip-if-exists"
+        }
+    },
+    "hooks": {
+        "pre-generation": [],
+        "post-generation": [
+            "go mod tidy",
+            "go fmt ./..."
+        ]
+    },
+    "variables": {
+        "modulePath": {
+            "type": "string",
+            "description": "Go module path (e.g., github.com/org/project)",
+            "required": true,
+            "validation": "^[a-zA-Z0-9][a-zA-Z0-9._/-]*$"
+        },
+        "projectName": {
+            "type": "string",
+            "description": "Project name (used for binary and directory)",
+            "required": true,
+            "validation": "^[a-z][a-z0-9-]*$"
+        },
+        "description": {
+            "type": "string",
+            "description": "Project description",
+            "default": "A Go service built with Chi router"
+        },
+        "port": {
+            "type": "number",
+            "description": "HTTP server port",
+            "default": 8080
+        },
+        "goVersion": {
+            "type": "string",
+            "description": "Go version",
+            "default": "1.21"
+        },
+        "enableCors": {
+            "type": "boolean",
+            "description": "Enable CORS middleware",
+            "default": true
+        },
+        "enableMetrics": {
+            "type": "boolean",
+            "description": "Enable Prometheus metrics",
+            "default": false
+        }
+    },
+    "requirements": {
+        "go-version": "1.21+",
+        "docker": true,
+        "tools": [
+            "go",
+            "git"
+        ]
+    }
+}

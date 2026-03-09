@@ -1,0 +1,393 @@
+name: Product-Isolated CI
+
+# This workflow implements change-detection-based isolated builds.
+# Only the products whose source files changed are built and tested,
+# dramatically reducing CI duration for large monorepos.
+#
+# Products covered:
+#   - yappc        → products/yappc/**
+#   - aep          → products/aep/**
+#   - data-cloud   → products/data-cloud/**
+#   - audio-video  → products/audio-video/**
+#   - dcmaar       → products/dcmaar/**
+#
+# Platform changes trigger ALL products (platform is a shared dependency).
+
+on:
+  push:
+    branches: [main, develop]
+  pull_request:
+    branches: [main, develop]
+  workflow_dispatch:
+    inputs:
+      force_product:
+        description: "Force-build a specific product (yappc|aep|data-cloud|audio-video|dcmaar|all)"
+        required: false
+        default: ""
+
+concurrency:
+  group: product-isolated-ci-${{ github.ref }}
+  cancel-in-progress: true
+
+env:
+  JAVA_VERSION: '21'
+  NODE_VERSION: '20'
+
+# ─────────────────────────────────────────────────────────────────────────────
+# STEP 1: Detect which products have changed
+# ─────────────────────────────────────────────────────────────────────────────
+jobs:
+  detect-changes:
+    name: Detect Changed Products
+    runs-on: ubuntu-latest
+    outputs:
+      yappc:       ${{ steps.filter.outputs.yappc }}
+      aep:         ${{ steps.filter.outputs.aep }}
+      data-cloud:  ${{ steps.filter.outputs.data_cloud }}
+      audio-video: ${{ steps.filter.outputs.audio_video }}
+      dcmaar:      ${{ steps.filter.outputs.dcmaar }}
+      platform:    ${{ steps.filter.outputs.platform }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Detect file changes
+        id: filter
+        uses: dorny/paths-filter@v3
+        with:
+          filters: |
+            yappc:
+              - 'products/yappc/**'
+            aep:
+              - 'products/aep/**'
+            data_cloud:
+              - 'products/data-cloud/**'
+            audio_video:
+              - 'products/audio-video/**'
+            dcmaar:
+              - 'products/dcmaar/**'
+            platform:
+              - 'platform/**'
+              - 'shared-services/**'
+              - 'gradle/**'
+              - 'build.gradle.kts'
+              - 'settings.gradle.kts'
+              - 'gradle.properties'
+
+      - name: Log change summary
+        run: |
+          echo "### Changed Products" >> $GITHUB_STEP_SUMMARY
+          echo "| Product | Changed |" >> $GITHUB_STEP_SUMMARY
+          echo "| --- | --- |" >> $GITHUB_STEP_SUMMARY
+          echo "| YAPPC       | ${{ steps.filter.outputs.yappc }} |" >> $GITHUB_STEP_SUMMARY
+          echo "| AEP         | ${{ steps.filter.outputs.aep }} |" >> $GITHUB_STEP_SUMMARY
+          echo "| Data Cloud  | ${{ steps.filter.outputs.data_cloud }} |" >> $GITHUB_STEP_SUMMARY
+          echo "| Audio-Video | ${{ steps.filter.outputs.audio_video }} |" >> $GITHUB_STEP_SUMMARY
+          echo "| DCMAAR      | ${{ steps.filter.outputs.dcmaar }} |" >> $GITHUB_STEP_SUMMARY
+          echo "| Platform    | ${{ steps.filter.outputs.platform }} |" >> $GITHUB_STEP_SUMMARY
+
+# ─────────────────────────────────────────────────────────────────────────────
+# STEP 2: Build platform libraries (only when platform itself changes)
+# ─────────────────────────────────────────────────────────────────────────────
+  platform-build:
+    name: Platform Libraries
+    needs: detect-changes
+    if: >
+      needs.detect-changes.outputs.platform == 'true' ||
+      github.event.inputs.force_product == 'all'
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up JDK ${{ env.JAVA_VERSION }}
+        uses: actions/setup-java@v4
+        with:
+          java-version: ${{ env.JAVA_VERSION }}
+          distribution: temurin
+          cache: gradle
+
+      - name: Build platform libraries
+        run: |
+          ./gradlew \
+            :platform:java:core:build \
+            :platform:java:http:build \
+            :platform:java:security:build \
+            :platform:java:audit:build \
+            :platform:java:observability:build \
+            :platform:java:ai-integration:build \
+            :platform:java:agent-framework:build \
+            :platform:java:agent-registry:build \
+            :platform:java:agent-resilience:build \
+            --no-daemon --parallel --build-cache
+
+      - name: Cache platform build outputs
+        uses: actions/cache/save@v4
+        with:
+          path: |
+            platform/**/build/libs/*.jar
+            ~/.gradle/caches
+          key: platform-build-${{ github.sha }}
+
+# ─────────────────────────────────────────────────────────────────────────────
+# STEP 3: YAPPC isolated build (backend + frontend)
+# ─────────────────────────────────────────────────────────────────────────────
+  yappc-backend:
+    name: YAPPC Backend
+    needs: [detect-changes, platform-build]
+    # Run if YAPPC changed, platform changed, or forced
+    if: >
+      always() &&
+      (
+        needs.detect-changes.outputs.yappc == 'true' ||
+        needs.detect-changes.outputs.platform == 'true' ||
+        github.event.inputs.force_product == 'yappc' ||
+        github.event.inputs.force_product == 'all'
+      ) &&
+      !cancelled()
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+
+    services:
+      postgres:
+        image: pgvector/pgvector:pg16
+        env:
+          POSTGRES_DB: yappc_test
+          POSTGRES_USER: yappc
+          POSTGRES_PASSWORD: yappc_test_pass
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up JDK ${{ env.JAVA_VERSION }}
+        uses: actions/setup-java@v4
+        with:
+          java-version: ${{ env.JAVA_VERSION }}
+          distribution: temurin
+          cache: gradle
+
+      - name: Restore platform cache
+        uses: actions/cache/restore@v4
+        with:
+          path: |
+            platform/**/build/libs/*.jar
+            ~/.gradle/caches
+          key: platform-build-${{ github.sha }}
+
+      - name: Build YAPPC Backend
+        run: |
+          ./gradlew \
+            :products:yappc:backend:api:build \
+            :products:yappc:core:ai:build \
+            :products:yappc:core:agents:build \
+            --no-daemon --parallel --build-cache --stacktrace
+
+      - name: Run Tests with Coverage
+        run: |
+          ./gradlew \
+            :products:yappc:backend:api:test \
+            :products:yappc:backend:api:jacocoTestReport \
+            --no-daemon --stacktrace
+        env:
+          DATABASE_URL: jdbc:postgresql://localhost:5432/yappc_test
+          DATABASE_USERNAME: yappc
+          DATABASE_PASSWORD: yappc_test_pass
+
+      - name: Enforce Coverage Threshold
+        run: |
+          ./gradlew :products:yappc:backend:api:jacocoTestCoverageVerification \
+            --no-daemon --stacktrace
+
+      - name: Validate Agent Catalog
+        run: ./gradlew :products:yappc:validateAgentCatalog --no-daemon
+
+      - name: Upload Test Results
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: yappc-backend-test-results
+          path: products/yappc/**/build/test-results/**/*.xml
+          retention-days: 14
+
+  yappc-frontend:
+    name: YAPPC Frontend
+    needs: detect-changes
+    if: >
+      needs.detect-changes.outputs.yappc == 'true' ||
+      needs.detect-changes.outputs.platform == 'true' ||
+      github.event.inputs.force_product == 'yappc' ||
+      github.event.inputs.force_product == 'all'
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Install pnpm
+        run: corepack enable && corepack prepare pnpm@10.28.2 --activate
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: pnpm
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Typecheck
+        working-directory: products/yappc/frontend
+        run: pnpm typecheck
+
+      - name: Lint
+        working-directory: products/yappc/frontend
+        run: pnpm lint
+
+      - name: Unit Tests
+        working-directory: products/yappc/frontend
+        run: pnpm test
+
+      - name: Build
+        working-directory: products/yappc/frontend
+        run: pnpm build:web
+
+      - name: Upload Build Artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: yappc-frontend-dist
+          path: products/yappc/frontend/apps/web/dist/
+          retention-days: 7
+
+# ─────────────────────────────────────────────────────────────────────────────
+# STEP 4: AEP isolated build
+# ─────────────────────────────────────────────────────────────────────────────
+  aep-build:
+    name: AEP Build
+    needs: [detect-changes, platform-build]
+    if: >
+      always() &&
+      (
+        needs.detect-changes.outputs.aep == 'true' ||
+        needs.detect-changes.outputs.platform == 'true' ||
+        github.event.inputs.force_product == 'aep' ||
+        github.event.inputs.force_product == 'all'
+      ) &&
+      !cancelled()
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up JDK ${{ env.JAVA_VERSION }}
+        uses: actions/setup-java@v4
+        with:
+          java-version: ${{ env.JAVA_VERSION }}
+          distribution: temurin
+          cache: gradle
+
+      - name: Restore platform cache
+        uses: actions/cache/restore@v4
+        with:
+          path: |
+            platform/**/build/libs/*.jar
+            ~/.gradle/caches
+          key: platform-build-${{ github.sha }}
+
+      - name: Build AEP
+        run: |
+          ./gradlew :products:aep:build \
+            --no-daemon --parallel --build-cache --stacktrace
+
+      - name: Test AEP
+        run: ./gradlew :products:aep:test --no-daemon
+
+# ─────────────────────────────────────────────────────────────────────────────
+# STEP 5: Data Cloud isolated build
+# ─────────────────────────────────────────────────────────────────────────────
+  data-cloud-build:
+    name: Data Cloud Build
+    needs: [detect-changes, platform-build]
+    if: >
+      always() &&
+      (
+        needs.detect-changes.outputs.data-cloud == 'true' ||
+        needs.detect-changes.outputs.platform == 'true' ||
+        github.event.inputs.force_product == 'data-cloud' ||
+        github.event.inputs.force_product == 'all'
+      ) &&
+      !cancelled()
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up JDK ${{ env.JAVA_VERSION }}
+        uses: actions/setup-java@v4
+        with:
+          java-version: ${{ env.JAVA_VERSION }}
+          distribution: temurin
+          cache: gradle
+
+      - name: Restore platform cache
+        uses: actions/cache/restore@v4
+        with:
+          path: |
+            platform/**/build/libs/*.jar
+            ~/.gradle/caches
+          key: platform-build-${{ github.sha }}
+
+      - name: Build Data Cloud
+        run: |
+          ./gradlew :products:data-cloud:build \
+            --no-daemon --parallel --build-cache --stacktrace
+
+      - name: Test Data Cloud
+        run: ./gradlew :products:data-cloud:test --no-daemon
+
+# ─────────────────────────────────────────────────────────────────────────────
+# STEP 6: Final gate — all required checks must pass
+# ─────────────────────────────────────────────────────────────────────────────
+  ci-gate:
+    name: CI Gate (all products)
+    needs:
+      - detect-changes
+      - platform-build
+      - yappc-backend
+      - yappc-frontend
+      - aep-build
+      - data-cloud-build
+    if: always()
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check all jobs succeeded or were skipped
+        run: |
+          results=(
+            "${{ needs.platform-build.result }}"
+            "${{ needs.yappc-backend.result }}"
+            "${{ needs.yappc-frontend.result }}"
+            "${{ needs.aep-build.result }}"
+            "${{ needs.data-cloud-build.result }}"
+          )
+          for result in "${results[@]}"; do
+            if [[ "$result" != "success" && "$result" != "skipped" ]]; then
+              echo "A required job failed: $result"
+              exit 1
+            fi
+          done
+          echo "All product builds passed or were skipped."

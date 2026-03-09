@@ -1,0 +1,11 @@
+//! {{projectName}} library crate.
+//!
+//! This module exposes the public API for the service.
+
+pub mod config;
+pub mod error;
+pub mod handlers;
+pub mod router;
+
+pub use config::Config;
+pub use error::AppError;

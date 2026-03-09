@@ -1,0 +1,18 @@
+{
+  "id": "guides/video-tutorials",
+  "title": "Video Tutorials",
+  "description": "Comprehensive video tutorial series for learning YAPPC Canvas from basics to advanced features.",
+  "source": "@site/docs/guides/video-tutorials.md",
+  "sourceDirName": "guides",
+  "slug": "/guides/video-tutorials",
+  "permalink": "/docs/guides/video-tutorials",
+  "draft": false,
+  "unlisted": false,
+  "editUrl": "https://github.com/yappc/app-creator/tree/main/docs-site/docs/guides/video-tutorials.md",
+  "tags": [],
+  "version": "current",
+  "sidebarPosition": 4,
+  "frontMatter": {
+    "sidebar_position": 4
+  }
+}

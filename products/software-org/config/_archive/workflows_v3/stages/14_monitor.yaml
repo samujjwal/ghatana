@@ -1,0 +1,137 @@
+# Monitor Stage - v3 Operator-Based Definition
+# Uses consolidated operators from operations/domain/operate/
+name: Monitor
+description: Comprehensive monitoring, metrics collection, and SLO tracking
+domain: operate
+
+# Operators used in this stage
+operators:
+  - ref: operate/monitor_operator
+    modes: [metrics, logs, traces, alert, slo]
+
+# Cross-cutting operators
+cross_cutting:
+  - ref: cross-cutting/milestone_tracker
+    params:
+      stage: monitor
+  - ref: cross-cutting/best_practice
+    params:
+      stage: monitor
+  - ref: cross-cutting/kpi
+    params:
+      stage: monitor
+  - ref: cross-cutting/observability_export
+    params:
+      stage: monitor
+  - ref: cross-cutting/audit_log
+    params:
+      stage: monitor
+
+# Workflow sequence
+workflow:
+  # Metrics Collection
+  - step: collect_metrics
+    operator: operate/monitor_operator
+    mode: metrics
+    inputs:
+      - name: operate_stage_milestone
+    outputs:
+      - name: metrics_data
+
+  # Log Aggregation
+  - step: aggregate_logs
+    operator: operate/monitor_operator
+    mode: logs
+    inputs:
+      - name: operate_stage_milestone
+    outputs:
+      - name: log_data
+    depends_on: [collect_metrics]
+
+  # Trace Collection
+  - step: collect_traces
+    operator: operate/monitor_operator
+    mode: traces
+    inputs:
+      - name: operate_stage_milestone
+    outputs:
+      - name: trace_data
+    depends_on: [collect_metrics]
+
+  # Alert Configuration
+  - step: configure_alerts
+    operator: operate/monitor_operator
+    mode: alert
+    inputs:
+      - name: metrics_data
+    outputs:
+      - name: alert_configuration
+    depends_on: [collect_metrics]
+
+  # SLO Tracking
+  - step: track_slos
+    operator: operate/monitor_operator
+    mode: slo
+    inputs:
+      - name: metrics_data
+      - name: log_data
+    outputs:
+      - name: slo_report
+    depends_on: [aggregate_logs]
+
+  # KPI Collection
+  - step: collect_kpis
+    operator: cross-cutting/kpi
+    params:
+      stage: monitor
+    inputs:
+      - name: metrics_data
+      - name: slo_report
+    outputs:
+      - name: kpi_report
+    depends_on: [track_slos]
+
+  # Observability Export
+  - step: export_observability
+    operator: cross-cutting/observability_export
+    params:
+      stage: monitor
+    inputs:
+      - name: metrics_data
+      - name: log_data
+      - name: trace_data
+    outputs:
+      - name: observability_export
+    depends_on: [collect_traces]
+
+  # Cross-cutting
+  - step: best_practice_check
+    operator: cross-cutting/best_practice
+    params:
+      stage: monitor
+    inputs:
+      - name: slo_report
+    outputs:
+      - name: best_practice_report
+    depends_on: [collect_kpis]
+
+  - step: track_milestones
+    operator: cross-cutting/milestone_tracker
+    params:
+      stage: monitor
+    inputs:
+      - name: best_practice_report
+    outputs:
+      - name: monitor_stage_milestone
+    depends_on: [best_practice_check]
+
+# Stage entry/exit criteria
+entry_criteria:
+  - System operational
+  - Monitoring infrastructure ready
+
+exit_criteria:
+  - All metrics collected
+  - SLOs tracked
+  - Alerts configured
+  - Observability data exported

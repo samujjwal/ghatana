@@ -1,0 +1,208 @@
+# Architecture Domain Tasks
+# These tasks help with architectural planning and system design
+
+tasks:
+  - id: explore-ideas
+    name: Explore Architecture Ideas
+    description: Explore and brainstorm architectural ideas for a new system or feature
+    domain: architecture
+    phase: DESIGN
+    complexity: MEDIUM
+    requiredCapabilities:
+      - architecture-design
+      - brainstorming
+      - system-thinking
+    parameters:
+      projectContext:
+        type: string
+        required: true
+        description: Context about the project and its goals
+      requirements:
+        type: array
+        required: false
+        description: List of known requirements
+      constraints:
+        type: object
+        required: false
+        description: Technical or business constraints
+    metadata:
+      version: "1.0"
+      author: "YAPPC System"
+      tags: ["architecture", "brainstorming", "planning"]
+
+  - id: create-architecture
+    name: Create System Architecture
+    description: Design comprehensive system architecture including components, layers, and interactions
+    domain: architecture
+    phase: DESIGN
+    complexity: COMPLEX
+    requiredCapabilities:
+      - architecture-design
+      - system-design
+      - documentation
+    parameters:
+      projectName:
+        type: string
+        required: true
+        description: Name of the project
+      requirements:
+        type: array
+        required: true
+        description: Functional and non-functional requirements
+      existingSystem:
+        type: object
+        required: false
+        description: Information about existing system (if any)
+      targetScale:
+        type: string
+        required: false
+        default: "medium"
+        description: Expected system scale (small/medium/large)
+    dependencies:
+      - taskId: explore-ideas
+        required: false
+    metadata:
+      version: "1.0"
+      estimatedDuration: "2-4 hours"
+      tags: ["architecture", "design", "documentation"]
+
+  - id: design-patterns
+    name: Select Design Patterns
+    description: Identify and recommend appropriate design patterns for the system
+    domain: architecture
+    phase: DESIGN
+    complexity: MEDIUM
+    requiredCapabilities:
+      - design-patterns
+      - best-practices
+      - architecture-design
+    parameters:
+      architectureDoc:
+        type: string
+        required: true
+        description: Path to architecture document or description
+      problemAreas:
+        type: array
+        required: false
+        description: Specific problem areas to address
+    dependencies:
+      - taskId: create-architecture
+        required: true
+    metadata:
+      version: "1.0"
+      tags: ["patterns", "design", "best-practices"]
+
+  - id: design-datamodel
+    name: Design Data Model
+    description: Design database schema and data models for the system
+    domain: architecture
+    phase: DESIGN
+    complexity: COMPLEX
+    requiredCapabilities:
+      - data-modeling
+      - database-design
+      - schema-design
+    parameters:
+      entities:
+        type: array
+        required: true
+        description: List of domain entities
+      relationships:
+        type: array
+        required: false
+        description: Known relationships between entities
+      databaseType:
+        type: string
+        required: false
+        default: "relational"
+        description: Type of database (relational/nosql/graph)
+    dependencies:
+      - taskId: create-architecture
+        required: true
+    metadata:
+      version: "1.0"
+      tags: ["data-model", "database", "schema"]
+
+  - id: design-api
+    name: Design API Contracts
+    description: Design RESTful or GraphQL API contracts with endpoints, schemas, and documentation
+    domain: architecture
+    phase: DESIGN
+    complexity: MEDIUM
+    requiredCapabilities:
+      - api-design
+      - rest-api
+      - documentation
+    parameters:
+      apiType:
+        type: string
+        required: false
+        default: "REST"
+        description: API type (REST/GraphQL/gRPC)
+      resources:
+        type: array
+        required: true
+        description: List of resources to expose
+      securityRequirements:
+        type: object
+        required: false
+        description: Security and authentication requirements
+    dependencies:
+      - taskId: design-datamodel
+        required: true
+    metadata:
+      version: "1.0"
+      tags: ["api", "rest", "contracts"]
+
+  - id: review-architecture
+    name: Review Architecture
+    description: Comprehensive review of architecture for quality, scalability, and best practices
+    domain: architecture
+    phase: DESIGN
+    complexity: COMPLEX
+    requiredCapabilities:
+      - architecture-review
+      - quality-assurance
+      - best-practices
+    parameters:
+      architectureDoc:
+        type: string
+        required: true
+        description: Path to architecture document
+      focusAreas:
+        type: array
+        required: false
+        description: Specific areas to focus review on
+    dependencies:
+      - taskId: create-architecture
+        required: true
+    metadata:
+      version: "1.0"
+      tags: ["review", "quality", "validation"]
+
+  - id: create-tech-stack
+    name: Define Technology Stack
+    description: Select and document the technology stack for the project
+    domain: architecture
+    phase: DESIGN
+    complexity: MEDIUM
+    requiredCapabilities:
+      - technology-selection
+      - ecosystem-knowledge
+      - architecture-design
+    parameters:
+      projectType:
+        type: string
+        required: true
+        description: Type of project (web/mobile/backend/etc)
+      requirements:
+        type: object
+        required: true
+        description: Technical requirements and constraints
+      teamSkills:
+        type: array
+        required: false
+        description: Existing team skills and expertise
+    metadata:
+      version: "1.0"
+      tags: ["technology", "stack", "tooling"]

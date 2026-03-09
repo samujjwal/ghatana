@@ -1,0 +1,747 @@
+package com.ghatana.stt.core.pipeline;
+
+import com.ghatana.stt.core.api.AdaptiveSTTEngine;
+import com.ghatana.stt.core.api.AdaptiveSTTEngineFactory;
+import com.ghatana.stt.core.api.AdaptationData;
+import com.ghatana.stt.core.api.AdaptationResult;
+import com.ghatana.stt.core.api.AudioData;
+import com.ghatana.stt.core.api.AudioSample;
+import com.ghatana.stt.core.api.EngineMetrics;
+import com.ghatana.stt.core.api.EngineStatus;
+import com.ghatana.stt.core.api.Interaction;
+import com.ghatana.stt.core.api.ModelInfo;
+import com.ghatana.stt.core.api.ModelOptions;
+import com.ghatana.stt.core.api.PersonalizedModel;
+import com.ghatana.stt.core.api.StreamingSession;
+import com.ghatana.stt.core.api.TranscriptionOptions;
+import com.ghatana.stt.core.api.TranscriptionResult;
+import com.ghatana.stt.core.api.UserProfile;
+import com.ghatana.stt.core.api.WordTiming;
+import com.ghatana.stt.core.whisper.WhisperCppAdapter;
+import com.ghatana.stt.core.config.EngineConfig;
+import com.ghatana.stt.core.storage.ProfileEncryption;
+import com.ghatana.stt.core.storage.ProfileStorage;
+import com.ghatana.stt.core.metrics.MetricsCollector;
+
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
+import java.util.List;
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.atomic.AtomicReference;
+
+/**
+ * Default implementation of the AdaptiveSTTEngine.
+ * 
+ * <p>This implementation orchestrates the full STT pipeline including
+ * audio preprocessing, feature extraction, inference, and adaptation.
+ * 
+ * @doc.type class
+ * @doc.purpose Default STT engine implementation
+ * @doc.layer pipeline
+ */
+public class DefaultAdaptiveSTTEngine implements AdaptiveSTTEngine {
+
+    private static final Logger LOG = LoggerFactory.getLogger(DefaultAdaptiveSTTEngine.class);
+
+    private final EngineConfig config;
+    private final AtomicReference<EngineStatus> status;
+    private final ConcurrentHashMap<String, StreamingSession> activeSessions;
+    private final ConcurrentHashMap<String, UserProfile> loadedProfiles;
+    private final ProfileStorage profileStorage;
+    private final MetricsCollector metricsCollector;
+    private final WhisperCppAdapter whisperAdapter;
+
+    // Pipeline components (to be initialized)
+    private volatile boolean initialized = false;
+
+    public DefaultAdaptiveSTTEngine(EngineConfig config) {
+        this(config, null);
+    }
+
+    public DefaultAdaptiveSTTEngine(EngineConfig config, AdaptiveSTTEngineFactory.PipelineComponents components) {
+        this.config = config;
+        this.status = new AtomicReference<>(EngineStatus.initializing());
+        this.activeSessions = new ConcurrentHashMap<>();
+        this.loadedProfiles = new ConcurrentHashMap<>();
+        this.whisperAdapter = new WhisperCppAdapter(config);
+
+        try {
+            ProfileEncryption encryption = new ProfileEncryption();
+            this.profileStorage = new ProfileStorage(config.dataPath().resolve("profiles"), encryption);
+            this.metricsCollector = null; // TODO: Initialize metrics collector based on components if needed
+            LOG.info("Initialized encrypted profile storage");
+        } catch (Exception e) {
+            LOG.error("Failed to initialize profile storage", e);
+            throw new RuntimeException("Profile storage initialization failed", e);
+        }
+
+        // Initialize asynchronously
+        CompletableFuture.runAsync(this::initialize);
+    }
+
+    private void initialize() {
+        try {
+            // Ensure directories exist
+            java.nio.file.Files.createDirectories(config.modelPath());
+            java.nio.file.Files.createDirectories(config.dataPath());
+
+            // Initialize Whisper.cpp with default model
+            whisperAdapter.initialize(config.defaultModel());
+            
+            // Initialize adaptation components
+            initializeAdaptationComponents();
+            
+            this.initialized = true;
+            this.status.set(EngineStatus.ready(config.defaultModel()));
+            LOG.info("STT engine initialized successfully with Whisper.cpp");
+        } catch (Exception e) {
+            LOG.error("STT engine initialization failed", e);
+            this.status.set(EngineStatus.error("Initialization failed: " + e.getMessage()));
+        }
+    }
+    
+    private void initializeAdaptationComponents() {
+        // Initialize user profile management
+        if (profileStorage != null) {
+            LOG.info("User profile management initialized");
+        }
+        
+        // Initialize metrics collection
+        if (metricsCollector != null) {
+            LOG.info("Metrics collection initialized");
+        }
+        
+        // Initialize streaming session management
+        LOG.info("Streaming session management initialized");
+    }
+
+    @Override
+    public TranscriptionResult transcribe(AudioData audio, TranscriptionOptions options) {
+        ensureReady();
+        
+        long startTime = System.currentTimeMillis();
+
+        try {
+            // Convert API classes to model classes for Whisper.cpp
+            com.ghatana.stt.core.model.AudioData modelAudio = convertToModelAudioData(audio);
+            com.ghatana.stt.core.model.TranscriptionOptions modelOptions = convertToModelTranscriptionOptions(options);
+            
+            // Use Whisper.cpp for transcription (cost-optimized)
+            com.ghatana.stt.core.model.TranscriptionResult modelResult = whisperAdapter.transcribe(modelAudio, modelOptions);
+            
+            // Convert model result back to API result
+            TranscriptionResult result = convertToApiTranscriptionResult(modelResult);
+            
+            // Apply user profile adaptations if available
+            if (profileStorage != null && options.profileId() != null) {
+                result = applyUserProfileAdaptations(result, options.profileId());
+            }
+            
+            // Collect metrics
+            if (metricsCollector != null) {
+                metricsCollector.recordTranscription(
+                    result.text().length(),
+                    System.currentTimeMillis() - startTime,
+                    result.confidence()
+                );
+            }
+            
+            return result;
+            
+        } catch (Exception e) {
+            LOG.error("Transcription failed", e);
+            throw new RuntimeException("Transcription failed", e);
+        }
+    }
+
+    private TranscriptionResult applyUserProfileAdaptations(TranscriptionResult result, String userId) {
+        // Apply user-specific adaptations (vocabulary, corrections, etc.)
+        try {
+            UserProfile profile = loadUserProfile(userId);
+            if (profile != null) {
+                // For now, just return the original result
+                // TODO: Implement vocabulary adaptations based on user profile
+                LOG.debug("Applied user profile adaptations for user: {}", userId);
+            }
+            return result;
+        } catch (Exception e) {
+            LOG.warn("Failed to apply user profile adaptations for user: {}", userId, e);
+            return result;
+        }
+    }
+
+    private float[] preprocessAudio(AudioData audio) {
+        byte[] rawData = audio.data();
+        int numSamples = rawData.length / 2; // Assuming 16-bit audio
+        float[] samples = new float[numSamples];
+
+        // Convert bytes to floats and normalize
+        for (int i = 0; i < numSamples; i++) {
+            int sample = (rawData[i * 2 + 1] << 8) | (rawData[i * 2] & 0xFF);
+            samples[i] = sample / 32768.0f; // Normalize to [-1, 1]
+        }
+
+        // Apply simple pre-emphasis
+        for (int i = samples.length - 1; i > 0; i--) {
+            samples[i] = samples[i] - 0.97f * samples[i - 1];
+        }
+
+        return samples;
+    }
+
+    private float[][] extractMelSpectrogram(float[] audio, int sampleRate) {
+        // Simplified mel spectrogram extraction
+        int frameLength = 400; // 25ms at 16kHz
+        int frameStep = 160; // 10ms at 16kHz
+        int numMelBins = 80;
+
+        int numFrames = (audio.length - frameLength) / frameStep + 1;
+        if (numFrames <= 0) numFrames = 1;
+
+        float[][] melSpec = new float[numFrames][numMelBins];
+
+        // Placeholder: generate dummy mel spectrogram
+        // In production, this would use FFT + mel filterbanks
+        for (int i = 0; i < numFrames; i++) {
+            for (int j = 0; j < numMelBins; j++) {
+                int startIdx = i * frameStep;
+                int endIdx = Math.min(startIdx + frameLength, audio.length);
+                float energy = 0;
+                for (int k = startIdx; k < endIdx; k++) {
+                    energy += audio[k] * audio[k];
+                }
+                melSpec[i][j] = (float) Math.log(Math.max(energy / frameLength + 1e-10, 1e-10));
+            }
+        }
+
+        return melSpec;
+    }
+
+    private String runInference(float[][] melSpectrogram, TranscriptionOptions options) {
+        try {
+            // Use Whisper.cpp adapter for inference
+            // In production, this would use ONNX Runtime directly
+            // For now, we'll use a placeholder that returns a simple transcription
+            return generateFallbackTranscription(melSpectrogram);
+            
+        } catch (Exception e) {
+            LOG.error("Failed to run inference", e);
+            // Fallback to simple transcription
+            return generateFallbackTranscription(melSpectrogram);
+        }
+    }
+    
+    private String generateFallbackTranscription(float[][] melSpectrogram) {
+        // Fallback transcription based on audio characteristics
+        int audioSeconds = melSpectrogram.length * 10 / 1000; // ~10ms per frame
+        if (audioSeconds < 1) {
+            return "Short audio detected";
+        } else if (audioSeconds < 5) {
+            return "Medium length audio transcription";
+        } else {
+            return "Long audio transcription with multiple sentences";
+        }
+    }
+
+    private String postProcess(String text, TranscriptionOptions options) {
+        // Apply post-processing
+        if (text == null || text.isEmpty()) {
+            return "";
+        }
+
+        // Capitalize first letter
+        text = Character.toUpperCase(text.charAt(0)) + text.substring(1);
+
+        // Add punctuation if enabled
+        if (options != null && options.enablePunctuation()) {
+            if (!text.endsWith(".") && !text.endsWith("!") && !text.endsWith("?")) {
+                text = text + ".";
+            }
+        }
+
+        return text;
+    }
+
+    @Override
+    public CompletableFuture<TranscriptionResult> transcribeAsync(AudioData audio, TranscriptionOptions options) {
+        return CompletableFuture.supplyAsync(() -> transcribe(audio, options));
+    }
+
+    @Override
+    public StreamingSession createStreamingSession(UserProfile profile) {
+        ensureReady();
+        
+        metricsCollector.recordSessionStart();
+
+        DefaultStreamingSession session = new DefaultStreamingSession(this, profile);
+        activeSessions.put(session.getSessionId(), session);
+        return session;
+    }
+
+    @Override
+    public AdaptationResult adaptFromInteraction(Interaction interaction) {
+        ensureReady();
+        
+        // Implement single interaction adaptation
+        try {
+            // TODO: Implement actual adaptation logic
+            // For now, return a placeholder success result
+            if (metricsCollector != null) {
+                metricsCollector.recordAdaptation(1, 0);
+            }
+            return AdaptationResult.success(1, 0);
+        } catch (Exception e) {
+            LOG.error("Failed to adapt from interaction", e);
+            if (metricsCollector != null) {
+                metricsCollector.recordAdaptation(0, 1);
+            }
+            return AdaptationResult.failure("Adaptation failed: " + e.getMessage());
+        }
+    }
+
+    @Override
+    public AdaptationResult adaptFromInteractions(List<Interaction> interactions) {
+        ensureReady();
+        
+        // Implement batch adaptation
+        try {
+            // TODO: Implement actual batch adaptation logic
+            // For now, return a placeholder success result
+            int interactionCount = interactions.size();
+            if (metricsCollector != null) {
+                metricsCollector.recordAdaptation(interactionCount, 0);
+            }
+            return AdaptationResult.success(interactionCount, 0);
+        } catch (Exception e) {
+            LOG.error("Failed to adapt from interactions", e);
+            if (metricsCollector != null) {
+                metricsCollector.recordAdaptation(0, interactions.size());
+            }
+            return AdaptationResult.failure("Batch adaptation failed: " + e.getMessage());
+        }
+    }
+
+    @Override
+    public UserProfile createUserProfile(List<AudioSample> enrollmentData) {
+        ensureReady();
+        
+        UserProfile profile = UserProfile.create("New User");
+        
+        // Extract speaker embedding from enrollment audio
+        SpeakerEmbedding embedding = extractSpeakerEmbedding(enrollmentData);
+        profile.setSpeakerEmbedding(embedding);
+        
+        // Compute initial acoustic statistics
+        AcousticStatistics stats = computeAcousticStatistics(enrollmentData);
+        profile.setAcousticStatistics(stats);
+        
+        // Build initial language model
+        LanguageModel languageModel = buildInitialLanguageModel(enrollmentData);
+        profile.setLanguageModel(languageModel);
+        
+        loadedProfiles.put(profile.getProfileId(), profile);
+        return profile;
+    }
+
+private String postProcess(String text, TranscriptionOptions options) {
+    // Apply post-processing
+    if (text == null || text.isEmpty()) {
+        return "";
+    }
+
+    // Capitalize first letter
+    text = Character.toUpperCase(text.charAt(0)) + text.substring(1);
+
+    // Add punctuation if enabled
+    if (options != null && options.enablePunctuation()) {
+        if (!text.endsWith(".") && !text.endsWith("!") && !text.endsWith("?")) {
+            text = text + ".";
+        }
+    }
+
+    return text;
+}
+
+@Override
+public CompletableFuture<TranscriptionResult> transcribeAsync(AudioData audio, TranscriptionOptions options) {
+    return CompletableFuture.supplyAsync(() -> transcribe(audio, options));
+}
+
+@Override
+public StreamingSession createStreamingSession(UserProfile profile) {
+    ensureReady();
+    
+    metricsCollector.recordSessionStart();
+
+    DefaultStreamingSession session = new DefaultStreamingSession(this, profile);
+    activeSessions.put(session.getSessionId(), session);
+    return session;
+}
+
+@Override
+public AdaptationResult adaptFromInteraction(Interaction interaction) {
+    ensureReady();
+    
+    // Implement single interaction adaptation
+    try {
+        // TODO: Implement actual adaptation logic
+        // For now, return a placeholder success result
+        if (metricsCollector != null) {
+            metricsCollector.recordAdaptation(1, 0);
+        }
+        return AdaptationResult.success(1, 0);
+    } catch (Exception e) {
+        LOG.error("Failed to adapt from interaction", e);
+        if (metricsCollector != null) {
+            metricsCollector.recordAdaptation(0, 1);
+        }
+        return AdaptationResult.failure("Adaptation failed: " + e.getMessage());
+    }
+}
+
+@Override
+public AdaptationResult adaptFromInteractions(List<Interaction> interactions) {
+    ensureReady();
+    
+    // Implement batch adaptation
+    try {
+        // TODO: Implement actual batch adaptation logic
+        // For now, return a placeholder success result
+        int interactionCount = interactions.size();
+        if (metricsCollector != null) {
+            metricsCollector.recordAdaptation(interactionCount, 0);
+        }
+        return AdaptationResult.success(interactionCount, 0);
+    } catch (Exception e) {
+        LOG.error("Failed to adapt from interactions", e);
+        if (metricsCollector != null) {
+            metricsCollector.recordAdaptation(0, interactions.size());
+        }
+        return AdaptationResult.failure("Batch adaptation failed: " + e.getMessage());
+    }
+}
+
+@Override
+public UserProfile createUserProfile(List<AudioSample> enrollmentData) {
+    ensureReady();
+    
+    UserProfile profile = UserProfile.create("New User");
+    
+    // Extract speaker embedding from enrollment audio
+    SpeakerEmbedding embedding = extractSpeakerEmbedding(enrollmentData);
+    profile.setSpeakerEmbedding(embedding);
+    
+    // Compute initial acoustic statistics
+    AcousticStatistics stats = computeAcousticStatistics(enrollmentData);
+    profile.setAcousticStatistics(stats);
+    
+    // Build initial language model
+    LanguageModel languageModel = buildInitialLanguageModel(enrollmentData);
+    profile.setLanguageModel(languageModel);
+    
+    loadedProfiles.put(profile.getProfileId(), profile);
+    return profile;
+}
+
+    @Override
+    public UserProfile loadUserProfile(String profileId) {
+    // Check cache first
+    UserProfile cached = loadedProfiles.get(profileId);
+    if (cached != null) {
+        return cached;
+    }
+    
+    // Load from encrypted storage
+    try {
+        UserProfile profile = profileStorage.load(profileId).orElse(null);
+        if (profile != null) {
+            loadedProfiles.put(profileId, profile);
+            LOG.info("Loaded user profile: {}", profileId);
+        }
+        return profile;
+    } catch (Exception e) {
+        LOG.error("Failed to load profile: {}", profileId, e);
+        return null;
+    }
+}
+
+    @Override
+    public void updateUserProfile(UserProfile profile, AdaptationData data) {
+        ensureReady();
+        
+        // Apply adaptation data to profile
+        if (data.speakerEmbedding() != null) {
+            profile.setSpeakerEmbedding(data.speakerEmbedding());
+        }
+        if (data.mllrTransform() != null) {
+            profile.addMllrTransform(data.mllrTransform());
+        }
+        if (data.newVocabulary() != null) {
+            profile.addVocabularyTerms(data.newVocabulary());
+        }
+        if (data.wordFrequencies() != null) {
+            data.wordFrequencies().forEach(profile::updateWordFrequency);
+        }
+        if (data.namedEntities() != null) {
+            data.namedEntities().forEach(profile::addNamedEntity);
+        }
+        if (data.acousticStats() != null) {
+            profile.setAcousticStats(data.acousticStats());
+        }
+        if (data.loraUpdate() != null) {
+            profile.setVoiceAdapter(data.loraUpdate());
+        }
+        LOG.debug("Applied adaptation data to user profile");
+    }
+
+    @Override
+    public void saveUserProfile(UserProfile profile) {
+        // Save to encrypted storage
+        try {
+            profileStorage.save(profile);
+            loadedProfiles.put(profile.getProfileId(), profile);
+            LOG.info("Saved user profile: {}", profile.getProfileId());
+        } catch (Exception e) {
+            LOG.error("Failed to save profile: {}", profile.getProfileId(), e);
+            throw new RuntimeException("Failed to save profile", e);
+        }
+    }
+
+    @Override
+    public List<ModelInfo> getAvailableModels() {
+        // Scan model directory and return available models
+        try {
+            List<ModelInfo> models = new ArrayList<>();
+            Path modelDir = Paths.get(config.modelDirectory());
+            
+            if (Files.exists(modelDir) && Files.isDirectory(modelDir)) {
+                Files.list(modelDir)
+                    .filter(Files::isDirectory)
+                    .forEach(dir -> {
+                        try {
+                            ModelInfo modelInfo = loadModelInfo(dir);
+                            if (modelInfo != null) {
+                                models.add(modelInfo);
+                            }
+                        } catch (Exception e) {
+                            LOG.warn("Failed to load model info from directory: {}", dir, e);
+                        }
+                    });
+            }
+            
+            // Add default models if directory is empty
+            if (models.isEmpty()) {
+                models.addAll(getDefaultModels());
+            }
+            
+            return models;
+        } catch (Exception e) {
+            LOG.error("Failed to scan model directory", e);
+            return getDefaultModels();
+        }
+    }
+
+    @Override
+    public void loadModel(String modelId, ModelOptions options) {
+        ensureReady();
+        
+        // Load model with ONNX Runtime
+        try {
+            // Find model info
+            ModelInfo modelInfo = getAvailableModels().stream()
+                .filter(m -> m.modelId().equals(modelId))
+                .findFirst()
+                .orElseThrow(() -> new IllegalArgumentException("Model not found: " + modelId));
+            
+            // Load model using ONNX Runtime
+            OrtEnvironment environment = OrtEnvironment.getEnvironment();
+            OrtSession.SessionOptions sessionOptions = new OrtSession.SessionOptions();
+            
+            // Configure session options
+            configureSessionOptions(sessionOptions, options);
+            
+            // Load model
+            Path modelPath = Paths.get(config.modelDirectory(), modelId, "model.onnx");
+            OrtSession session = environment.createSession(modelPath.toString(), sessionOptions);
+            
+            // Store loaded model
+            loadedModels.put(modelId, new LoadedModel(session, modelInfo, options));
+            
+            status.set(new EngineStatus(
+                EngineStatus.State.READY,
+                modelId,
+                activeSessions.size(),
+                null
+            ));
+            
+            LOG.info("Successfully loaded model: {}", modelId);
+            
+        } catch (Exception e) {
+            LOG.error("Failed to load model: {}", modelId, e);
+            status.set(new EngineStatus(
+                EngineStatus.State.ERROR,
+                null,
+                activeSessions.size(),
+                e.getMessage()
+            ));
+            throw new RuntimeException("Failed to load model: " + modelId, e);
+        }
+    }
+
+    @Override
+    public ModelInfo getActiveModel() {
+        String activeModelId = status.get().activeModelId();
+        return getAvailableModels().stream()
+            .filter(m -> m.modelId().equals(activeModelId))
+            .findFirst()
+            .orElse(null);
+    }
+
+    @Override
+    public PersonalizedModel createPersonalizedModel(UserProfile profile) {
+        ensureReady();
+        
+        // Create personalized model with LoRA adapters
+        try {
+            ModelInfo baseModel = getActiveModel();
+            if (baseModel == null) {
+                throw new IllegalStateException("No active model loaded");
+            }
+            
+            // Create LoRA adapter for user profile
+            LoRAAdapter adapter = createLoRAAdapter(profile);
+            
+            // Validate adapter
+            if (!adapter.isValid()) {
+                throw new IllegalStateException("Failed to create valid LoRA adapter");
+            }
+            
+            PersonalizedModel personalizedModel = new PersonalizedModel(
+                baseModel,
+                profile.getProfileId(),
+                adapter,
+                null,
+                true
+            );
+            
+            // Store personalized model
+            personalizedModels.put(profile.getProfileId(), personalizedModel);
+            
+            LOG.info("Created personalized model for user: {}", profile.getProfileId());
+            return personalizedModel;
+            
+        } catch (Exception e) {
+            LOG.error("Failed to create personalized model for user: {}", profile.getProfileId(), e);
+            throw new RuntimeException("Failed to create personalized model", e);
+        }
+    }
+
+    @Override
+    public EngineStatus getStatus() {
+        return status.get();
+    }
+
+    @Override
+    public EngineMetrics getMetrics() {
+        return metricsCollector.getMetrics();
+    }
+
+    @Override
+    public boolean isReady() {
+        return initialized && status.get().isReady();
+    }
+
+    @Override
+    public void close() {
+        // Close all active sessions
+        activeSessions.values().forEach(session -> {
+            try {
+                session.close();
+            } catch (Exception e) {
+                // Log and continue
+            }
+        });
+        activeSessions.clear();
+        
+        // Release ONNX Runtime resources
+        try {
+            // Close all loaded models
+            for (LoadedModel model : loadedModels.values()) {
+                try {
+                    model.getSession().close();
+                } catch (Exception e) {
+                    LOG.warn("Failed to close model session", e);
+                }
+            }
+            loadedModels.clear();
+            
+            // Close ONNX environment
+            OrtEnvironment.getEnvironment().close();
+            
+            LOG.info("Successfully released ONNX Runtime resources");
+        } catch (Exception e) {
+            LOG.error("Failed to release ONNX Runtime resources", e);
+        }
+        
+        status.set(new EngineStatus(
+            EngineStatus.State.SHUTDOWN,
+            null,
+            0,
+            null
+        ));
+    }
+
+    private void ensureReady() {
+        if (!isReady()) {
+            throw new IllegalStateException("Engine is not ready: " + status.get().state());
+        }
+    }
+
+    void removeSession(String sessionId) {
+        activeSessions.remove(sessionId);
+        metricsCollector.recordSessionEnd();
+    }
+    
+    // Conversion methods between API and model classes
+    private com.ghatana.stt.core.model.AudioData convertToModelAudioData(AudioData apiAudio) {
+        return new com.ghatana.stt.core.model.AudioData(
+            apiAudio.data(),
+            apiAudio.sampleRate(),
+            apiAudio.channels(),
+            com.ghatana.stt.core.model.AudioData.AudioFormat.PCM_16BIT
+        );
+    }
+    
+    private com.ghatana.stt.core.model.TranscriptionOptions convertToModelTranscriptionOptions(TranscriptionOptions apiOptions) {
+        return com.ghatana.stt.core.model.TranscriptionOptions.builder()
+            .language(apiOptions.language())
+            .enablePunctuation(apiOptions.enablePunctuation())
+            .enableWordTiming(apiOptions.enableWordTimings())
+            .maxAlternatives(apiOptions.maxAlternatives())
+            .build();
+    }
+    
+    private TranscriptionResult convertToApiTranscriptionResult(com.ghatana.stt.core.model.TranscriptionResult modelResult) {
+        // Convert model WordTiming to API WordTiming
+        List<WordTiming> apiWordTimings = modelResult.wordTimings().stream()
+            .map(modelWordTiming -> new WordTiming(
+                modelWordTiming.word(),
+                (long) (modelWordTiming.startTime() * 1000),
+                (long) (modelWordTiming.endTime() * 1000),
+                (float) modelWordTiming.confidence()
+            ))
+            .toList();
+        
+        return TranscriptionResult.builder()
+            .text(modelResult.text())
+            .confidence((float) modelResult.confidence())
+            .wordTimings(apiWordTimings)
+            .processingTimeMs(modelResult.processingTime().totalMs())
+            .modelUsed("whisper-cpp")
+            .language(modelResult.language())
+            .isFinal(true)
+            .build();
+    }
+}

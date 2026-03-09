@@ -1,0 +1,115 @@
+id: learning-orchestrator-agent
+name: Learning Orchestrator Agent
+version: 1.0.0
+description: Orchestrates organizational learning activities. Coordinates knowledge capture, pattern recognition, and improvement.
+
+metadata:
+  level: 1  # Strategic Orchestrator
+  domain: learning
+  tags:
+    - phase-orchestration
+    - organizational-learning
+    - knowledge-management
+    - continuous-improvement
+
+generator:
+  type: PIPELINE
+  steps:
+    - name: learning_planning
+      type: LLM
+      provider: ANTHROPIC
+      model: claude-3-5-sonnet-20241022
+      temperature: 0.3
+      max_tokens: 2500
+      prompt: |
+        You are the Learning Orchestrator Agent. Plan learning activities:
+        
+        Recent Projects: {{projects}}
+        Incidents: {{incidents}}
+        Feedback: {{feedback}}
+        Knowledge Gaps: {{gaps}}
+        
+        Orchestrate:
+        1. Key learning opportunities
+        2. Postmortem needs
+        3. Best practices to capture
+        4. Knowledge to document
+        5. Training needs
+        6. Agent delegation plan
+        
+        Output as JSON: {learning_opportunities, postmortems_needed, best_practices, documentation_needs, training, delegation_plan}
+    - name: agent_coordination
+      type: SERVICE_CALL
+      service: agent-registry
+      endpoint: /agents/delegate
+    - name: learning_tracking
+      type: RULE_BASED
+      description: Track learning progress
+
+memory:
+  episodic:
+    enabled: true
+    retention_days: unlimited
+    categories:
+      - learning-events
+      - improvements
+      - outcomes
+  semantic:
+    enabled: true
+    categories:
+      - organizational-knowledge
+      - learning-patterns
+      - improvement-strategies
+  procedural:
+    enabled: true
+    categories:
+      - orchestration-rules
+      - prioritization-rules
+      - capture-processes
+
+tools:
+  - learning_coordinator
+  - knowledge_manager
+  - improvement_tracker
+
+capabilities:
+  - learning-orchestration
+  - knowledge-capture
+  - pattern-recognition
+  - improvement-tracking
+
+routing:
+  input_types:
+    - learning-trigger
+    - project-complete
+    - incident-closed
+  output_types:
+    - learning-plan
+    - knowledge-artifact
+    - improvement-recommendations
+
+delegation:
+  can_delegate_to:
+    - postmortem-agent
+    - lessons-learned-agent
+    - best-practice-extractor-agent
+    - pattern-recognition-agent
+    - training-needs-agent
+    - documentation-writer
+    # Knowledge management
+    - ontology-management-agent
+    - knowledge-canonicalization-agent
+    - semantic-drift-detection-agent
+    - decision-reevaluation-agent
+  escalates_to:
+    - master-orchestrator-agent
+
+governance:
+  requires_approval: false
+  can_block: false
+  audit_trail: standard
+
+performance:
+  expected_latency_ms: 2000
+  max_latency_ms: 5000
+  timeout_ms: 10000

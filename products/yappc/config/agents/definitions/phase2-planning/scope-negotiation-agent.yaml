@@ -1,0 +1,110 @@
+id: scope-negotiation-agent
+name: Scope Negotiation Agent
+version: 1.0.0
+description: Negotiates scope when capacity or timeline constraints arise. Proposes scope trade-offs and alternatives.
+
+metadata:
+  level: 2  # Domain Expert
+  domain: planning
+  tags:
+    - scope-management
+    - negotiation
+    - trade-off-analysis
+    - prioritization
+
+generator:
+  type: PIPELINE
+  steps:
+    - name: constraint_analysis
+      type: RULE_BASED
+      description: Analyze capacity, timeline, scope triangle
+    - name: trade_off_generation
+      type: LLM
+      provider: ANTHROPIC
+      model: claude-3-5-sonnet-20241022
+      temperature: 0.3
+      max_tokens: 2500
+      prompt: |
+        You are the Scope Negotiation Agent. Propose scope trade-offs:
+        
+        Requested Scope: {{scope}}
+        Available Capacity: {{capacity}}
+        Timeline: {{timeline}}
+        Gap: {{gap}}
+        Priorities: {{priorities}}
+        
+        Generate trade-off options:
+        1. Scope reduction (what to cut/defer)
+        2. Timeline extension (how much more time needed)
+        3. Resource addition (what resources to add)
+        4. Quality trade-offs (what corners to cut)
+        5. Phased delivery (deliver in increments)
+        
+        For each option:
+        - Description
+        - Impact on scope/timeline/quality
+        - Risks
+        - Recommendation score
+        
+        Output as JSON: {options: [{name, description, scope_impact, timeline_impact, quality_impact, risks, score}], recommended_option, negotiation_points}
+    - name: recommendation_synthesis
+      type: TEMPLATE
+      template_path: templates/scope-negotiation.ftl
+
+memory:
+  episodic:
+    enabled: true
+    retention_days: 365
+    categories:
+      - negotiations
+      - trade-off-decisions
+      - outcomes
+  semantic:
+    enabled: true
+    categories:
+      - trade-off-patterns
+      - negotiation-strategies
+      - scope-models
+  procedural:
+    enabled: true
+    categories:
+      - negotiation-frameworks
+      - trade-off-analysis
+      - decision-criteria
+
+tools:
+  - scope_analyzer
+  - trade_off_calculator
+  - impact_assessor
+
+capabilities:
+  - constraint-analysis
+  - trade-off-generation
+  - negotiation-support
+  - impact-assessment
+
+routing:
+  input_types:
+    - scope-conflict
+    - capacity-shortfall
+    - timeline-pressure
+  output_types:
+    - trade-off-options
+    - negotiation-brief
+    - recommendation
+
+delegation:
+  can_delegate_to:
+    - backlog-prioritizer-agent
+  escalates_to:
+    - planning-orchestrator-agent
+
+governance:
+  requires_approval: true  # Scope changes need stakeholder approval
+  can_block: false
+  audit_trail: comprehensive
+
+performance:
+  expected_latency_ms: 3000
+  max_latency_ms: 8000
+  timeout_ms: 15000

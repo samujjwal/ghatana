@@ -1,0 +1,807 @@
+/*
+ * Copyright (c) ${year} Ghatana Inc.
+ * All rights reserved.
+ *
+ * This source code and the accompanying materials are the confidential
+ * and proprietary information of Ghatana Inc. (“Confidential Information”).
+ * You shall not disclose such Confidential Information and shall use it
+ * only in accordance with the terms of the license agreement you entered
+ * into with Ghatana Inc.
+ *
+ * Unauthorized copying of this file, via any medium, is strictly prohibited.
+ * Proprietary and confidential.
+ */
+syntax = "proto3";
+
+package ghatana.contracts.agent.v1;
+
+import "google/protobuf/timestamp.proto";
+import "google/protobuf/duration.proto";
+
+option go_package = "github.com/ghatana/contracts/gen/go/agent/v1;agentv1";
+option java_multiple_files = true;
+option java_package = "com.ghatana.contracts.agent.v1";
+option csharp_namespace = "Ghatana.Contracts.Agent.V1";
+
+// AgentManifest defines the metadata, capabilities, and configuration of an agent.
+// It serves as the single source of truth for agent deployment and runtime behavior.
+message AgentManifestProto {
+  // Reserved field numbers for future use
+  reserved 6 to 20, 100 to 200;
+
+  // Required fields for agent identification
+  string api_version = 1;  // Format: "ghatana.contracts/agent/v1"
+  string kind = 2;         // Must be "AgentManifest"
+
+  // Metadata about the agent
+  MetadataProto metadata = 3;
+
+  // Specification of the agent's capabilities and configuration
+  AgentSpecProto spec = 4;
+
+  // Status information about the agent (read-only, populated by the system)
+  AgentStatusProto status = 5;
+}
+
+// Metadata contains identifying information about the agent
+message MetadataProto {
+  // Reserved field numbers for future use
+  reserved 51 to 100, 150 to 200;
+
+  // Required: Unique identifier for the agent
+  string id = 1;
+
+  // Required: Human-readable name of the agent
+  string name = 2;
+
+  // Required: Version of the agent (semver)
+  string version = 3;
+
+  // Optional: Description of the agent's purpose
+  string description = 4;
+
+  // Optional: List of maintainers
+  repeated string maintainers = 5;
+
+  // Optional: Key-value pairs for additional metadata
+  map<string, string> labels = 6;
+
+  // Optional: Creation timestamp (set by the system)
+  google.protobuf.Timestamp creation_timestamp = 7;
+
+  // Optional: Last update timestamp (set by the system)
+  google.protobuf.Timestamp update_timestamp = 8;
+}
+
+// Spec defines the desired state and configuration of the agent
+message AgentSpecProto {
+  // Reserved field numbers for future use
+  reserved 51 to 100, 150 to 200;
+
+  // Runtime configuration for the agent
+  RuntimeProto runtime = 1;
+
+  // Input handlers for the agent
+  repeated InputProto inputs = 2;
+
+  // Output handlers for the agent
+  repeated OutputProto outputs = 3;
+
+  // Processors for the agent
+  repeated ProcessorProto processors = 4;
+
+  // Health check configuration
+  HealthCheckProto health_check = 5;
+
+  // Metrics configuration
+  MetricsProto metrics = 6;
+
+  // Logging configuration
+  LoggingProto logging = 7;
+
+  ResourcesProto resources = 8;
+
+  SecurityContextProto security_context = 9;
+
+  repeated DependencyProto dependencies = 10;
+
+  repeated string args = 11;
+
+  string working_dir = 12;
+
+  int64 run_as_user = 13;
+
+  int64 run_as_group = 14;
+
+  ProbeProto readiness_probe = 15;
+
+  ProbeProto liveness_probe = 16;
+
+  ProbeProto startup_probe = 17;
+
+  LifecycleProto lifecycle = 18;
+
+  repeated string capabilities = 19;
+
+  repeated string input_event_types = 20;
+
+  repeated string output_event_types = 21;
+
+  bool stateful = 22;
+
+  // Whether the agent supports dynamic adaptation
+  bool supports_adaptation = 23;
+
+  // Acceptance criteria for the agent
+  repeated string acceptance_criteria = 24;
+
+  // Validation rules for the agent
+  repeated string validation = 25;
+}
+
+// Runtime configuration for the agent
+message RuntimeProto {
+  // Reserved field numbers for future use
+  reserved 16 to 20, 100 to 200;
+
+  // Runtime type (e.g., "docker", "wasm", "native")
+  string type = 1;
+
+  // Runtime version
+  string version = 2;
+
+  // Entry point for the agent
+  string entrypoint = 3;
+
+  // Command to execute
+  repeated string command = 4;
+
+  // Arguments to pass to the command
+  repeated string args = 5;
+
+  // Environment variables
+  map<string, string> env = 6;
+
+  // Working directory
+  string working_dir = 7;
+
+  // User to run as
+  string user = 8;
+
+  // Group to run as
+  string group = 9;
+
+  // Whether to run in privileged mode
+  bool privileged = 10;
+
+  // Whether to allocate a TTY
+  bool tty = 11;
+
+  // Whether to run in interactive mode
+  bool interactive = 12;
+
+  // Resource limits
+  ResourcesProto resources = 13;
+
+  // Security context
+  SecurityContextProto security_context = 14;
+
+  // Additional runtime-specific configuration
+  map<string, string> config = 15;
+}
+
+// Input defines a source of events for the agent
+message InputProto {
+  // Reserved field numbers for future use
+  reserved 10 to 20, 100 to 200;
+
+  // Unique identifier for the input
+  string id = 1;
+
+  // Input type (e.g., "kafka", "http", "grpc")
+  string type = 2;
+
+  // Event types this input can handle
+  repeated string event_types = 3;
+
+  // Whether this input is enabled
+  bool enabled = 4;
+
+  // Tags for categorization
+  repeated string tags = 5;
+
+  // Human-readable description
+  string description = 6;
+
+  // Configuration specific to the input type
+  map<string, string> config = 7;
+}
+
+// Output defines a destination for events from the agent
+message OutputProto {
+  // Reserved field numbers for future use
+  reserved 10 to 20, 100 to 200;
+
+  // Output name (must be unique within the agent)
+  string name = 1;
+
+  // Output type (e.g., "http", "kafka", "grpc")
+  string type = 2;
+
+  // Output configuration
+  map<string, string> config = 3;
+
+  // Whether the output is enabled
+  bool enabled = 4;
+
+  // Output description
+  string description = 5;
+
+  // Output tags for categorization
+  repeated string tags = 6;
+
+  // Output schema (optional)
+  string schema = 7;
+
+  // Output validation rules (optional)
+  string validation = 8;
+
+  // Output transformation (optional)
+  string transform = 9;
+}
+
+// Processor defines a processing step in the agent's pipeline
+message ProcessorProto {
+  // Reserved field numbers for future use
+  reserved 10 to 20, 100 to 200;
+
+  // Unique identifier for the processor
+  string id = 1;
+
+  // Processor type
+  string type = 2;
+
+  // Input event types this processor accepts
+  repeated string input_types = 3;
+
+  // Output event types this processor produces
+  repeated string output_types = 4;
+
+  // Whether this processor is enabled
+  bool enabled = 5;
+
+  // Tags for categorization
+  repeated string tags = 6;
+
+  // Human-readable description
+  string description = 7;
+
+  // Configuration specific to the processor type
+  map<string, string> config = 8;
+}
+
+// HealthCheck defines health check configuration
+message HealthCheckProto {
+  // Reserved field numbers for future use
+  reserved 8 to 20, 100 to 200;
+
+  // Health check type (e.g., "http", "tcp", "exec")
+  string type = 1;
+
+  // Health check configuration
+  map<string, string> config = 2;
+
+  // Initial delay before starting health checks (in seconds)
+  int32 initial_delay_seconds = 3;
+
+  // Timeout for health check (in seconds)
+  int32 timeout_seconds = 4;
+
+  // How often to perform the health check (in seconds)
+  int32 period_seconds = 5;
+
+  // Number of consecutive successes needed to consider healthy
+  int32 success_threshold = 6;
+
+  // Number of consecutive failures needed to consider unhealthy
+  int32 failure_threshold = 7;
+}
+
+// Metrics configuration
+message MetricsProto {
+  // Reserved field numbers for future use
+  reserved 6 to 20, 100 to 200;
+
+  // Whether metrics collection is enabled
+  bool enabled = 1;
+
+  // Path for metrics endpoint
+  string path = 2;
+
+  // Port for metrics endpoint
+  int32 port = 3;
+
+  // Prefix for all metrics
+  string prefix = 4;
+
+  // How often to collect metrics
+  google.protobuf.Duration interval = 5;
+}
+
+// Logging configuration
+message LoggingProto {
+  // Reserved field numbers for future use
+  reserved 8 to 20, 100 to 200;
+
+  // Log level (e.g., "debug", "info", "warn", "error")
+  string level = 1;
+
+  // Log format (e.g., "json", "text")
+  string format = 2;
+
+  // File to write logs to (if file logging is enabled)
+  string file = 3;
+
+  // Maximum size of log files in MB before rotation
+  int32 max_size_mb = 4;
+
+  // Maximum number of log files to keep
+  int32 max_backups = 5;
+
+  // Maximum age of log files in days
+  int32 max_age_days = 6;
+
+  // Whether to compress rotated log files
+  bool compress = 7;
+}
+
+// Resource requirements and limits
+message ResourcesProto {
+  // Reserved field numbers for future use
+  reserved 8 to 20, 100 to 200;
+
+  // CPU request (e.g., "100m", "0.5")
+  string cpu_request = 1;
+
+  // CPU limit (e.g., "500m", "1")
+  string cpu_limit = 2;
+
+  // Memory request (e.g., "64Mi", "1Gi")
+  string memory_request = 3;
+
+  // Memory limit (e.g., "128Mi", "2Gi")
+  string memory_limit = 4;
+
+  // Storage request (e.g., "1Gi", "10Gi")
+  string storage_request = 5;
+
+  // Storage limit (e.g., "2Gi", "20Gi")
+  string storage_limit = 6;
+
+  // GPU configuration (optional)
+  GpuProto gpu = 7;
+}
+
+// GPU configuration
+message GpuProto {
+  // Reserved field numbers for future use
+  reserved 4 to 20, 100 to 200;
+
+  // Number of GPUs to allocate
+  int32 count = 1;
+
+  // Type of GPU (e.g., "nvidia.com/gpu", "amd.com/gpu")
+  string type = 2;
+
+  // Memory per GPU (e.g., "8Gi")
+  string memory = 3;
+}
+
+// SecurityContext defines security settings for the agent
+message SecurityContextProto {
+  // Reserved field numbers for future use
+  reserved 16 to 20, 100 to 200;
+
+  // Whether to run as non-root user
+  bool run_as_non_root = 1;
+
+  // User ID to run as
+  int64 run_as_user = 2;
+
+  // Group ID to run as
+  int64 run_as_group = 3;
+
+  // Whether the filesystem should be read-only
+  bool read_only_root_filesystem = 4;
+
+  // Capabilities to add
+  repeated string add_capabilities = 5;
+
+  // Capabilities to drop
+  repeated string drop_capabilities = 6;
+
+  // Seccomp profile to use
+  string seccomp_profile = 7;
+
+  // AppArmor profile to use
+  string apparmor_profile = 8;
+
+  // Allow privilege escalation
+  bool allow_privilege_escalation = 9;
+
+  // Privileged mode
+  bool privileged = 10;
+
+  // Readiness probe
+  ProbeProto readiness_probe = 11;
+
+  // Liveness probe
+  ProbeProto liveness_probe = 12;
+
+  // Startup probe
+  ProbeProto startup_probe = 13;
+
+  // Lifecycle hooks
+  LifecycleProto lifecycle = 14;
+
+  // Additional security context configuration
+  map<string, string> config = 15;
+}
+
+// Dependency defines a dependency on another agent or service
+message DependencyProto {
+  // Reserved field numbers for future use
+  reserved 6 to 20, 100 to 200;
+
+  // Name of the dependency
+  string name = 1;
+
+  // Type of dependency (e.g., "agent", "service", "database")
+  string type = 2;
+
+  // Version requirement (e.g., "1.2.3", ">=1.0.0 <2.0.0")
+  string version = 3;
+
+  // Whether this dependency is required
+  bool required = 4;
+
+  // Human-readable description
+  string description = 5;
+}
+
+// HTTPGetAction describes an action based on HTTP Get requests
+message HttpGetActionProto {
+  // Reserved field numbers for future use
+  reserved 5 to 20, 100 to 200;
+
+  // Path to access on the HTTP server
+  string path = 1;
+
+  // Host name to connect to (defaults to pod IP)
+  string host = 2;
+
+  // Scheme to use for connecting to the host (http or https)
+  string scheme = 3;
+
+  // Custom headers to set in the request
+  map<string, string> http_headers = 4;
+}
+
+// TCPSocketAction specifies an action involving a TCP port
+message TcpSocketActionProto {
+  // Reserved field numbers for future use
+  reserved 4 to 20, 100 to 200;
+
+  // Port to connect to
+  oneof port {
+    // Number of port to access on the container
+    int32 number = 1;
+
+    // Name of the port to access on the container
+    string name = 2;
+  }
+
+  // Host name to connect to (defaults to pod IP)
+  string host = 3;
+}
+
+// ExecAction describes a specific command to execute
+message ExecActionProto {
+  // Reserved field numbers for future use
+  reserved 2 to 20, 100 to 200;
+
+  // Command to execute
+  repeated string command = 1;
+}
+
+// Probe defines a health check to determine the state of the agent
+message ProbeProto {
+  // Reserved field numbers for future use
+  reserved 9 to 20, 100 to 200;
+
+  // HTTP GET request to perform
+  HttpGetActionProto http_get = 1;
+
+  // TCP socket to check
+  TcpSocketActionProto tcp_socket = 2;
+
+  // Command to execute
+  ExecActionProto exec = 3;
+
+  // Number of seconds after the container has started before liveness probes are initiated
+  int32 initial_delay_seconds = 4;
+
+  // Number of seconds after which the probe times out
+  int32 timeout_seconds = 5;
+
+  // How often (in seconds) to perform the probe
+  int32 period_seconds = 6;
+
+  // Minimum consecutive successes for the probe to be considered successful after having failed
+  int32 success_threshold = 7;
+
+  // Minimum consecutive failures for the probe to be considered failed after having succeeded
+  int32 failure_threshold = 8;
+}
+
+// Lifecycle defines actions that the management system should take in response to container lifecycle events
+message LifecycleProto {
+  // Reserved field numbers for future use
+  reserved 3 to 20, 100 to 200;
+
+  // PostStart is called immediately after a container is created
+  LifecycleHandlerProto post_start = 1;
+
+  // PreStop is called immediately before a container is terminated
+  LifecycleHandlerProto pre_stop = 2;
+}
+
+// LifecycleHandler defines a specific action that should be taken in a lifecycle hook
+message LifecycleHandlerProto {
+  // Reserved field numbers for future use
+  reserved 4 to 20, 100 to 200;
+
+  // The action to take
+  oneof action {
+    // Exec specifies the action to take
+    ExecActionProto exec = 1;
+
+    // HTTPGet specifies the http request to perform
+    HttpGetActionProto http_get = 2;
+
+    // TCPSocket specifies an action involving a TCP port
+    TcpSocketActionProto tcp_socket = 3;
+  }
+}
+
+
+// Status represents the current state of the agent
+message AgentStatusProto {
+  // Reserved field numbers for future use
+  reserved 16 to 20, 100 to 200;
+
+  // Current phase of the agent (e.g., Pending, Running, Succeeded, Failed)
+  string phase = 1;
+
+  // Human-readable message indicating details about the current status
+  string message = 2;
+
+  // Brief CamelCase reason for the current status
+  string reason = 3;
+
+  // When the agent was last started
+  google.protobuf.Timestamp start_time = 4;
+
+  // Number of times the agent has been restarted
+  int32 restart_count = 5;
+
+  // Agent state (e.g., RUNNING, STOPPED)
+  AgentStateProto state = 6;
+
+  // List of conditions describing the current state of the agent
+  repeated ConditionProto conditions = 7;
+
+  // List of addresses where the agent can be reached
+  repeated string addresses = 8;
+
+  // Observed generation is the most recent generation observed by the controller
+  int64 observed_generation = 9;
+
+  // The generation observed by the deployment controller
+  int64 generation = 10;
+
+  // Status of input handlers
+  repeated InputStatusProto inputs = 11;
+
+  // Status of output handlers
+  repeated OutputStatusProto outputs = 12;
+
+  // Status of processors
+  repeated ProcessorStatusProto processors = 13;
+
+  // Current resource usage
+  ResourceUsageProto resource_usage = 14;
+
+  // Version information
+  VersionInfoProto version_info = 15;
+}
+
+  // AgentState represents the state of an agent
+  enum AgentStateProto {
+    // Default state, unknown status
+    UNKNOWN = 0;
+
+    // The agent is pending and has not been started
+    PENDING = 1;
+
+    // The agent is currently running
+    RUNNING = 2;
+
+    // The agent is running but in a degraded state
+    DEGRADED = 3;
+
+    // The agent is in the process of terminating
+    TERMINATING = 4;
+
+    // The agent has terminated successfully
+    TERMINATED = 5;
+
+    // The agent has failed
+    FAILED = 6;
+
+    // Reserved for future use
+    reserved 7 to 1000;
+  }
+
+  // Condition contains details for the current condition of the agent
+  message ConditionProto {
+    // Reserved field numbers for future use
+    reserved 8 to 20, 100 to 200;
+
+    // Type of condition
+    string type = 1;
+
+    // Status of the condition (True, False, Unknown)
+    string status = 2;
+
+    // Last time the condition transitioned from one status to another
+    google.protobuf.Timestamp last_transition_time = 3;
+
+    // Reason for the condition's last transition
+    string reason = 4;
+
+    // Human-readable message indicating details about the transition
+    string message = 5;
+
+    // Last time the condition was updated
+    google.protobuf.Timestamp last_update_time = 6;
+
+    // Last time the condition was probed
+    google.protobuf.Timestamp last_probe_time = 7;
+  }
+
+  // InputStatus represents the status of an input handler
+  message InputStatusProto {
+    // Reserved field numbers for future use
+    reserved 7 to 20, 100 to 200;
+
+    // Name of the input
+    string name = 1;
+
+    // Whether the input is active
+    bool active = 2;
+
+    // Number of events received
+    int64 events_received = 3;
+
+    // Number of bytes received
+    int64 bytes_received = 4;
+
+    // Last error message, if any
+    string last_error = 5;
+
+    // Timestamp of the last event received
+    google.protobuf.Timestamp last_event_time = 6;
+  }
+
+  // OutputStatus represents the status of an output handler
+  message OutputStatusProto {
+    // Reserved field numbers for future use
+    reserved 7 to 20, 100 to 200;
+
+    // Name of the output
+    string name = 1;
+
+    // Whether the output is active
+    bool active = 2;
+
+    // Number of events sent
+    int64 events_sent = 3;
+
+    // Number of bytes sent
+    int64 bytes_sent = 4;
+
+    // Last error message, if any
+    string last_error = 5;
+
+    // Timestamp of the last event sent
+    google.protobuf.Timestamp last_event_time = 6;
+  }
+
+  // ProcessorStatus represents the status of a processor
+  message ProcessorStatusProto {
+    // Reserved field numbers for future use
+    reserved 7 to 20, 100 to 200;
+
+    // Name of the processor
+    string name = 1;
+
+    // Whether the processor is active
+    bool active = 2;
+
+    // Number of events processed
+    int64 events_processed = 3;
+
+    // Total processing time in nanoseconds
+    int64 processing_time_ns = 4;
+
+    // Last error message, if any
+    string last_error = 5;
+
+    // Timestamp of the last processed event
+    google.protobuf.Timestamp last_processed_time = 6;
+  }
+
+  // ResourceUsage represents the resource usage of the agent
+  message ResourceUsageProto {
+    // Reserved field numbers for future use
+    reserved 7 to 20, 100 to 200;
+
+    // CPU usage in nanocores
+    int64 cpu_usage = 1;
+
+    // Memory usage in bytes
+    int64 memory_usage = 2;
+
+    // Disk usage in bytes
+    int64 disk_usage = 3;
+
+    // Network received in bytes
+    int64 network_rx_bytes = 4;
+
+    // Network transmitted in bytes
+    int64 network_tx_bytes = 5;
+
+    // Timestamp of the measurement
+    google.protobuf.Timestamp timestamp = 6;
+  }
+
+  // VersionInfo contains version information about the agent
+  message VersionInfoProto {
+    // Reserved field numbers for future use
+    reserved 9 to 20, 100 to 200;
+
+    // Version of the agent
+    string version = 1;
+
+    // Git commit hash
+    string git_commit = 2;
+
+    // Git branch
+    string git_branch = 3;
+
+    // State of git tree (clean, dirty)
+    string git_tree_state = 4;
+
+    // Build date in RFC3339 format
+    string build_date = 5;
+
+    // Go version used to build the agent
+    string go_version = 6;
+
+    // Compiler used to build the agent
+    string compiler = 7;
+
+    // Platform the agent was built for
+    string platform = 8;
+  }

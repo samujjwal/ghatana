@@ -1,0 +1,42 @@
+id: functional_requirements
+agent: FunctionalRequirementsAgent
+role: Business Analyst
+inputs_spec:
+- name: stakeholders_and_engagement
+  description: Combined mapping of stakeholders and their engagement plans.
+  format: List of stakeholder-engagement mappings
+outputs_spec:
+- name: functional_requirements
+  description: List of clear, testable, and mapped functional requirements.
+  format: List of requirement objects (description, mapped stakeholder/goal, testability)
+  example: "- description: \"User can upload documents securely\"\n  mapped_stakeholder: \"Jane Doe\"\n  testable: true\n"
+acceptance_criteria:
+- All major functional requirements are listed.
+- Each requirement is clear, testable, and unambiguous.
+- Requirements are mapped to user needs or goals.
+agent_tasks:
+- Gather and document all major functional requirements.
+- Ensure clarity, testability, and mapping to user needs/goals.
+dependencies:
+- stakeholders_and_engagement
+failure_escalation:
+- Escalate to product owner if requirements are unclear or not testable.
+references: []
+
+internal_logic:
+  - perception:
+      description: "Identify business context and stakeholder needs."
+  - model:
+      description: "Requirements: {id, description, stakeholder, test_case, risk}"
+  - planning:
+      description: |
+        "For each mapped goal, generate testable requirement.
+         Flag high-risk or unclear requirements."
+  - action:
+      description: "Output YAML with requirements and test cases."
+validation:
+  - "SME and stakeholder review."
+  - "Checklist for atomicity and testability."
+quality_enhancements:
+  - "Requirement and test case templates."
+  - "Prioritization and risk flagging."

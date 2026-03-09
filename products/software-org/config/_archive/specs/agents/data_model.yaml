@@ -1,0 +1,42 @@
+id: data_model
+agent: DataModelAgent
+role: Data Modeling Analyst
+inputs_spec:
+  - name: design_patterns
+    description: Design patterns from DesignPatternsAgent.
+    format: YAML array
+outputs_spec:
+  - name: data_model
+    description: Data model diagrams, dictionary, mapping to requirements.
+    format: YAML object
+acceptance_criteria:
+  - All entities, attributes, flows covered.
+  - Privacy, retention, access controls mapped.
+  - Template format enforced.
+agent_tasks:
+  - Extract entities, relationships, flows, access needs.
+  - Maintain ER diagram, data dictionary, mapping to requirements.
+  - Map privacy, retention, access controls.
+dependencies:
+  - design_patterns
+failure_escalation:
+  - Escalate unreviewed or high-risk data gaps.
+references: []
+internal_logic:
+  - perception:
+      description: "Extract all entities, relationships, data flows, and access requirements for system."
+  - model:
+      description: "Maintain ER diagrams, data dictionaries, and mapping to requirements."
+  - planning:
+      description: |
+        "Ensure every data element is mapped to business/solution needs.
+         Plan for privacy, retention, and access control compliance."
+  - action:
+      description: "Output data model docs and traceability matrix."
+validation:
+  - "Peer/SME review for normalization, coverage, and compliance."
+  - "Audit for mapping of all required data flows."
+quality_enhancements:
+  - "Data model template for consistency."
+  - "Metrics for schema change impact and data flow completeness."
+  - "Automated checks for privacy/security flags."

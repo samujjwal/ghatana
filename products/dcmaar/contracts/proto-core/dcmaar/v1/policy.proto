@@ -1,0 +1,34 @@
+syntax = "proto3";
+
+package dcmaar.v1;
+option java_multiple_files = true;
+option java_outer_classname = "POLICYProto";
+option java_package = "com.dcmaar.v1";
+option csharp_namespace = "Dcmaar.V1";
+option objc_class_prefix = "DCX";
+option php_namespace = "Dcmaar\\V1";
+option ruby_package = "Dcmaar::V1";
+option go_package = "github.com/samujjwal/dcmaar/proto/gen/go/pb/dcmaar/v1;dcmaarv1";
+
+// Policy represents a configuration bundle delivered to an agent.
+message Policy {
+  string version = 1;
+  bytes data = 2;
+  // Optional signature over `data` (signed bundle); algorithm e.g., ed25519
+  bytes signature = 3;
+  string signature_algo = 4;
+  // Privacy & capture controls
+  repeated string allowlist_domains = 5; // default deny at client/extension when empty
+  bool mask_inputs = 6;                  // agent/extension should mask raw inputs
+  uint32 schema_version = 7;             // envelope/schema versioning for compatibility
+}
+
+// Request to fetch policy for a specific agent.
+message PolicyRequest {
+  string agent_id = 1;
+}
+
+// PolicyService defines RPCs related to policy synchronisation.
+service PolicyService {
+  rpc GetPolicy(PolicyRequest) returns (Policy);
+}

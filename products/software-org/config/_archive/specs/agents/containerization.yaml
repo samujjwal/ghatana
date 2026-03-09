@@ -1,0 +1,30 @@
+---
+id: "containerization"
+agent: "ContainerizationAgent"
+role: "Platform Engineer"
+inputs_spec:
+- name: "modularized_codebase"
+  description: "Codebase to be containerized for deployment."
+  format: "Source repo or artifact"
+outputs_spec:
+- name: "containerized_services"
+  description: "Built/tested container images for all major services."
+  format: "Container registry artifact or image list"
+agent_tasks:
+- "Package major services as containers (Docker, etc.)."
+- "Ensure container files follow security best practices."
+- "Test containers for startup and health."
+- "Verify registry push/pull permissions."
+acceptance_criteria:
+- "All major services are packaged as containers."
+- "Container files (Dockerfile, etc.) follow security best practices."
+- "Containers are tested for correct startup and health."
+- "Container registry push/pull permissions are verified."
+dependencies:
+- "modularized_codebase"
+failure_escalation:
+- "Escalate to Platform Engineer/DevOps if containers do not build or pass health\
+  \ checks."
+references: []
+hitl: true
+hitl_reason: "Human validates containerization workflow and output"

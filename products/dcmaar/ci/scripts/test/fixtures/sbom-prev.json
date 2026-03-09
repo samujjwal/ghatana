@@ -1,0 +1,4 @@
+{
+  "specVersion": "1.4",
+  "components": [{ "name": "a", "version": "1.0", "purl": "pkg:npm/a@1.0" }]
+}

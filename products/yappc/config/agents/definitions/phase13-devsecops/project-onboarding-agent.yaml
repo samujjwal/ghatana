@@ -1,0 +1,70 @@
+id: project-onboarding-agent
+name: Project Onboarding Agent
+version: 1.0.0
+description: Onboards a new project/repository into YAPPC — clones repo, detects language/stack, creates Project record, triggers initial security scan.
+
+metadata:
+  level: 3
+  domain: project-management
+  tags: [onboarding, project, repository, setup]
+
+generator:
+  type: PIPELINE
+  steps:
+    - name: repo_analysis
+      type: SERVICE_CALL
+      service: project-service
+      endpoint: /projects/analyze
+    - name: tech_stack_detection
+      type: LLM
+      provider: ANTHROPIC
+      model: claude-3-5-sonnet-20241022
+      temperature: 0.1
+      max_tokens: 1000
+      prompt: |
+        Analyze repository:
+        Files: {{file_tree}}
+        Package Files: {{package_files}}
+        Detect: primary language, frameworks, build tool, test framework, CI/CD.
+        Output as JSON: {language, frameworks, build_tool, test_framework, cicd, confidence}
+    - name: project_creation
+      type: SERVICE_CALL
+      service: project-service
+      endpoint: /projects/create
+
+memory:
+  episodic:
+    enabled: true
+    retention_days: 365
+    categories: [onboarding-sessions]
+  semantic:
+    enabled: true
+    categories: [tech-stack-patterns, project-archetypes]
+  procedural:
+    enabled: true
+    categories: [onboarding-checklist]
+
+tools: [repo_analyzer, project_creator, scanner_trigger]
+
+capabilities:
+  - project-onboarding
+  - tech-stack-detection
+  - repository-analysis
+
+routing:
+  input_types: [repository-url, workspace-id]
+  output_types: [project-record, onboarding-report]
+
+delegation:
+  can_delegate_to: []
+  escalates_to: products-officer
+
+governance:
+  requires_approval: false
+  can_block: false
+  audit_trail: standard
+
+performance:
+  expected_latency_ms: 5000
+  max_latency_ms: 30000
+  timeout_ms: 60000

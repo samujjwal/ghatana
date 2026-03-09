@@ -1,0 +1,34 @@
+version: '3.8'
+
+services:
+  server:
+    build:
+      context: ./apps/server
+      dockerfile: Dockerfile.opa
+    environment:
+      - CONFIG_FILE=/app/config.rego.yaml
+    volumes:
+      - ./apps/server/config/config.rego.yaml:/app/config.rego.yaml:ro
+      - ./ops/opa-policies/actions.rego:/app/actions.rego:ro
+    depends_on:
+      clickhouse:
+        condition: service_healthy
+    ports:
+      - "50051:50051"
+      - "8080:8080"
+
+  clickhouse:
+    image: clickhouse/clickhouse-server:23.8
+    environment:
+      CLICKHOUSE_DB: testdb
+      CLICKHOUSE_USER: test
+      CLICKHOUSE_PASSWORD: test
+    healthcheck:
+      test: ["CMD", "wget", "--no-verbose", "--spider", "http://localhost:8123/ping"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+    ports:
+      - "9000:9000"
+      - "8123:8123"
+

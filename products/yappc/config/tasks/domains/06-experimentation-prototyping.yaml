@@ -1,0 +1,116 @@
+domain:
+  id: experimentation-prototyping
+  name: "Experimentation & Prototyping"
+  description: "Validate assumptions through experiments, prototypes, and rapid iteration cycles."
+  order: 6
+  icon: "biotech"
+  color: "#26A69A"
+  agent_personas:
+    - "ExperimentDesigner"
+    - "ValidationAgent"
+    - "PrototypeBuilder"
+    - "DataAnalyst"
+  audit_artifacts:
+    - "ExperimentRecord"
+    - "ResultAnalysis"
+    - "PrototypeVersion"
+    - "HypothesisLog"
+  inputs:
+    - "Hypotheses"
+    - "Research findings"
+    - "User feedback"
+    - "Technical constraints"
+  outputs:
+    - "Prototype artifacts"
+    - "Experiment results"
+    - "Validated learnings"
+    - "Feasibility reports"
+
+tasks:
+  # Core experimentation tasks
+  - id: d6-t1
+    name: "Design experiments"
+    description: "Plan experiments with clear hypotheses and success metrics."
+    personas: ["PM", "Tech Lead", "Developer"]
+    lifecycle_stages: ["plan"]
+    automation_level: "assisted"
+  - id: d6-t2
+    name: "Build prototypes"
+    description: "Create low or high fidelity prototypes to validate concepts."
+    personas: ["Developer", "Designer"]
+    lifecycle_stages: ["execute"]
+    automation_level: "manual"
+  - id: d6-t3
+    name: "Run technical spikes"
+    description: "Conduct technical spikes to explore feasibility."
+    personas: ["Developer", "Tech Lead"]
+    lifecycle_stages: ["execute"]
+    automation_level: "manual"
+  - id: d6-t4
+    name: "A/B testing design"
+    description: "Design A/B tests to compare variations systematically."
+    personas: ["PM", "Developer"]
+    lifecycle_stages: ["execute", "verify"]
+    automation_level: "assisted"
+  - id: d6-t5
+    name: "Validate assumptions"
+    description: "Confirm or refute product and technical assumptions."
+    personas: ["PM", "Tech Lead", "Developer"]
+    lifecycle_stages: ["verify"]
+    automation_level: "assisted"
+  - id: d6-t6
+    name: "Analyze experiment results"
+    description: "Interpret experiment data and draw conclusions."
+    personas: ["PM", "Developer"]
+    lifecycle_stages: ["verify", "learn"]
+    automation_level: "assisted"
+
+  # Extended experimentation tasks
+  - id: exp-001
+    name: "Define Hypothesis"
+    description: "Create clear, testable hypotheses with expected outcomes."
+    personas: ["PM", "Tech Lead"]
+    lifecycle_stages: ["plan"]
+    automation_level: "manual"
+  - id: exp-002
+    name: "Design Success Metrics"
+    description: "Define measurable success criteria for experiments."
+    personas: ["PM", "Developer"]
+    lifecycle_stages: ["plan"]
+    automation_level: "assisted"
+  - id: exp-003
+    name: "Create MVP Prototype"
+    description: "Build minimum viable prototype for validation."
+    personas: ["Developer"]
+    lifecycle_stages: ["execute"]
+    automation_level: "manual"
+  - id: exp-004
+    name: "Conduct User Testing"
+    description: "Test prototypes with real users."
+    personas: ["PM", "Developer"]
+    lifecycle_stages: ["verify"]
+    automation_level: "manual"
+  - id: exp-005
+    name: "Technical Feasibility Study"
+    description: "Assess technical viability of proposed solutions."
+    personas: ["Tech Lead", "Developer"]
+    lifecycle_stages: ["execute", "verify"]
+    automation_level: "assisted"
+  - id: exp-006
+    name: "Performance Spike"
+    description: "Evaluate performance characteristics of potential solutions."
+    personas: ["Developer", "Tech Lead"]
+    lifecycle_stages: ["execute"]
+    automation_level: "assisted"
+  - id: exp-007
+    name: "Integration Proof of Concept"
+    description: "Validate integration approaches with external systems."
+    personas: ["Developer", "Tech Lead"]
+    lifecycle_stages: ["execute"]
+    automation_level: "manual"
+  - id: exp-008
+    name: "Document Learnings"
+    description: "Record experiment outcomes and learnings for future reference."
+    personas: ["PM", "Tech Lead", "Developer"]
+    lifecycle_stages: ["learn", "institutionalize"]
+    automation_level: "assisted"

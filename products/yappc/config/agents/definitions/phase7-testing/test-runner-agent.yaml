@@ -1,0 +1,105 @@
+id: test-runner-agent
+name: Test Runner Agent
+version: 1.0.0
+description: Executes test suites and reports results. Manages parallel execution and failure analysis.
+
+metadata:
+  level: 3  # Worker
+  domain: testing
+  tags:
+    - test-execution
+    - test-runner
+    - parallel-testing
+    - results
+
+generator:
+  type: PIPELINE
+  steps:
+    - name: execution_planning
+      type: RULE_BASED
+      description: Plan test execution
+    - name: test_execution
+      type: SERVICE_CALL
+      service: test-service
+      endpoint: /tests/run
+    - name: results_analysis
+      type: LLM
+      provider: ANTHROPIC
+      model: claude-3-5-sonnet-20241022
+      temperature: 0.2
+      max_tokens: 2000
+      prompt: |
+        You are the Test Runner Agent. Analyze results:
+        
+        Results: {{results}}
+        Previous Run: {{previous}}
+        Environment: {{env}}
+        
+        Analyze:
+        1. Pass/fail summary
+        2. New failures
+        3. Fixed tests
+        4. Flaky candidates
+        5. Failure patterns
+        6. Environment issues
+        7. Performance changes
+        
+        Output as JSON: {summary, new_failures, fixed, flaky_candidates, failure_patterns, env_issues, recommendations}
+
+memory:
+  episodic:
+    enabled: true
+    retention_days: 365
+    categories:
+      - runs
+      - failures
+      - patterns
+  semantic:
+    enabled: true
+    categories:
+      - failure-signatures
+      - env-issues
+      - flaky-patterns
+  procedural:
+    enabled: true
+    categories:
+      - execution-strategies
+      - retry-rules
+      - parallelization-rules
+
+tools:
+  - test_executor
+  - result_analyzer
+  - parallelizer
+
+capabilities:
+  - test-execution
+  - result-analysis
+  - failure-diagnosis
+  - performance-tracking
+
+routing:
+  input_types:
+    - test-trigger
+    - suite-request
+    - rerun-request
+  output_types:
+    - test-results
+    - failure-report
+    - recommendations
+
+delegation:
+  can_delegate_to:
+    - flaky-test-agent
+  escalates_to:
+    - testing-orchestrator-agent
+
+governance:
+  requires_approval: false
+  can_block: false
+  audit_trail: comprehensive
+
+performance:
+  expected_latency_ms: varies
+  max_latency_ms: varies
+  timeout_ms: 3600000  # 1 hour for large suites

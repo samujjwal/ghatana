@@ -1,0 +1,62 @@
+{
+    "name": "go-service-gin",
+    "version": "1.0.0",
+    "description": "Go HTTP service with Gin framework",
+    "language": "go",
+    "category": "backend",
+    "platform": "server",
+    "buildSystem": "go-modules",
+    "author": "YAPPC Team",
+    "tags": [
+        "go",
+        "gin",
+        "http",
+        "rest",
+        "api",
+        "service"
+    ],
+    "requiredVariables": [
+        "projectName",
+        "modulePath",
+        "goVersion"
+    ],
+    "optionalVariables": [
+        "description",
+        "author",
+        "enableSwagger",
+        "enableCors",
+        "enableMetrics"
+    ],
+    "defaults": {
+        "goVersion": "1.21",
+        "description": "Go service with Gin framework",
+        "enableSwagger": "true",
+        "enableCors": "true",
+        "enableMetrics": "true"
+    },
+    "templates": [
+        "go.mod.hbs",
+        "main.go.hbs",
+        "cmd/server/main.go.hbs",
+        "internal/config/config.go.hbs",
+        "internal/router/router.go.hbs",
+        "internal/handler/health.go.hbs",
+        "internal/handler/api.go.hbs",
+        "internal/middleware/cors.go.hbs",
+        "internal/middleware/logger.go.hbs",
+        "internal/middleware/recovery.go.hbs",
+        "internal/metrics/metrics.go.hbs",
+        "pkg/response/response.go.hbs",
+        "Makefile.hbs",
+        "Dockerfile.hbs",
+        ".dockerignore.hbs",
+        ".gitignore.hbs",
+        "README.md.hbs"
+    ],
+    "supportedFeatures": [
+        "database",
+        "auth",
+        "observability",
+        "messaging"
+    ]
+}

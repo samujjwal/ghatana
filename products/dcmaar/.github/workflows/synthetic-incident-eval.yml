@@ -1,0 +1,394 @@
+name: Synthetic Incident Evaluation
+# DISABLED: Needs update after services/agent-rs migration to libs/agent-common
+# TODO: Update paths and test commands to reflect new structure
+
+on: []  # Disabled
+# on:
+  push:
+    branches: [ main, develop ]
+  pull_request:
+    branches: [ main ]
+  schedule:
+    # Run nightly at 2 AM UTC
+    - cron: '0 2 * * *'
+
+env:
+  PYTHON_VERSION: "3.11"
+  
+jobs:
+  generate-synthetic-incidents:
+    name: Generate Synthetic Test Data
+    runs-on: ubuntu-latest
+    
+    outputs:
+      scenarios-generated: ${{ steps.generate.outputs.scenarios }}
+      
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+      
+    - name: Set up Python
+      uses: actions/setup-python@v4
+      with:
+        python-version: ${{ env.PYTHON_VERSION }}
+        
+    - name: Install dependencies
+      run: |
+        cd ml/synthetic_incidents
+        pip install -r requirements.txt
+        
+    - name: Generate synthetic incidents
+      id: generate
+      run: |
+        cd ml/synthetic_incidents
+        python generator.py --scenario all --output-dir ./output
+        echo "scenarios=$(ls output/*.json | wc -l)" >> $GITHUB_OUTPUT
+        
+    - name: Upload synthetic data
+      uses: actions/upload-artifact@v4
+      with:
+        name: synthetic-incidents
+        path: ml/synthetic_incidents/output/
+        retention-days: 7
+
+  test-capability-1-redaction:
+    name: Test PII Redaction (Capability 1)
+    runs-on: ubuntu-latest
+    needs: generate-synthetic-incidents
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+      
+    - name: Download synthetic data
+      uses: actions/download-artifact@v4
+      with:
+        name: synthetic-incidents
+        path: test-data/
+        
+    - name: Set up Rust
+      uses: actions-rs/toolchain@v1
+      with:
+        toolchain: stable
+        
+    - name: Run redaction tests
+      run: |
+        cd services/agent-rs
+        cargo test redact --features test-synthetic -- --test-threads=1
+        
+    - name: Evaluate redaction performance
+      run: |
+        cd services/agent-rs
+        cargo run --bin eval-redaction -- --test-data ../../test-data/
+        
+    - name: Check performance thresholds
+      run: |
+        python scripts/check_redaction_performance.py \
+          --results services/agent-rs/target/redaction-results.json \
+          --min-recall 0.90 \
+          --min-precision 0.95 \
+          --max-latency-ms 2
+
+  test-capability-2-sampling:
+    name: Test Adaptive Sampling (Capability 2)  
+    runs-on: ubuntu-latest
+    needs: generate-synthetic-incidents
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+      
+    - name: Download synthetic data  
+      uses: actions/download-artifact@v4
+      with:
+        name: synthetic-incidents
+        path: test-data/
+        
+    - name: Set up Rust
+      uses: actions-rs/toolchain@v1
+      with:
+        toolchain: stable
+        
+    - name: Run sampling bandit tests
+      run: |
+        cd services/agent-rs
+        cargo test sampling --features test-synthetic
+        
+    - name: Evaluate sampling effectiveness
+      run: |
+        cd services/agent-rs  
+        cargo run --bin eval-sampling -- --test-data ../../test-data/
+        
+    - name: Check sampling performance
+      run: |
+        python scripts/check_sampling_performance.py \
+          --results services/agent-rs/target/sampling-results.json \
+          --min-volume-reduction 0.25 \
+          --max-recall-drop 0.02
+
+  test-capability-3-plugins:
+    name: Test WASM Plugins (Capability 3)
+    runs-on: ubuntu-latest
+    needs: generate-synthetic-incidents
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+      
+    - name: Download synthetic data
+      uses: actions/download-artifact@v4
+      with:
+        name: synthetic-incidents
+        path: test-data/
+        
+    - name: Set up Rust
+      uses: actions-rs/toolchain@v1
+      with:
+        toolchain: stable
+        target: wasm32-wasi
+        
+    - name: Build security plugins
+      run: |
+        cd services/agent-rs/src/plugins/security
+        cargo build --target wasm32-wasi --release
+        
+    - name: Run plugin tests
+      run: |
+        cd services/agent-rs
+        cargo test plugins --features test-synthetic
+        
+    - name: Evaluate plugin detection rates
+      run: |
+        cd services/agent-rs
+        cargo run --bin eval-plugins -- --test-data ../../test-data/
+        
+    - name: Check plugin performance
+      run: |
+        python scripts/check_plugin_performance.py \
+          --results services/agent-rs/target/plugin-results.json \
+          --plugins suspicious_dns,shadow_proc,usb_bulk
+
+  test-server-capabilities:
+    name: Test Server Capabilities (4-6)
+    runs-on: ubuntu-latest
+    needs: generate-synthetic-incidents
+    
+    services:
+      postgres:
+        image: postgres:15
+        env:
+          POSTGRES_PASSWORD: testpass
+          POSTGRES_DB: dcmaar_test
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+        ports:
+          - 5432:5432
+          
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+      
+    - name: Download synthetic data
+      uses: actions/download-artifact@v4
+      with:
+        name: synthetic-incidents
+        path: test-data/
+        
+    - name: Set up Go
+      uses: actions/setup-go@v4
+      with:
+        go-version: '1.21'
+        
+    - name: Run database migrations
+      run: |
+        cd services/server
+        go run cmd/migrate/main.go up
+        
+    - name: Test safety filter (Capability 5)
+      run: |
+        cd services/server
+        go test ./internal/ingest/safety/... -v
+        
+    - name: Test change explainer (Capability 6)  
+      run: |
+        cd services/server
+        go test ./internal/explainer/... -v
+        
+    - name: Load synthetic data and run integration tests
+      run: |
+        cd services/server
+        go run cmd/load-synthetic/main.go --data-dir ../../test-data/
+        go test ./internal/integration/... -v -tags=synthetic
+
+  test-desktop-capabilities:
+    name: Test Desktop Capabilities (7, 9)
+    runs-on: ubuntu-latest
+    needs: generate-synthetic-incidents
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+      
+    - name: Download synthetic data
+      uses: actions/download-artifact@v4
+      with:
+        name: synthetic-incidents
+        path: test-data/
+        
+    - name: Set up Node.js
+      uses: actions/setup-node@v4
+      with:
+        node-version: '18'
+        cache: 'npm'
+        cache-dependency-path: services/desktop/package-lock.json
+        
+    - name: Install dependencies
+      run: |
+        cd services/desktop
+        npm ci
+        
+    - name: Run component tests
+      run: |
+        cd services/desktop
+        npm test -- --coverage
+        
+    - name: Test forecast tiles (Capability 7)
+      run: |
+        cd services/desktop
+        npm test -- src/components/forecast/ForecastTiles.test.tsx
+        
+    - name: Test story view (Capability 9)
+      run: |
+        cd services/desktop  
+        npm test -- src/components/incident/StoryView.test.tsx
+        
+    - name: Run E2E tests with synthetic data
+      run: |
+        cd services/desktop
+        npm run test:e2e -- --synthetic-data=../../test-data/
+
+  evaluate-end-to-end:
+    name: End-to-End Evaluation
+    runs-on: ubuntu-latest
+    needs: [test-capability-1-redaction, test-capability-2-sampling, test-capability-3-plugins, test-server-capabilities, test-desktop-capabilities]
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+      
+    - name: Download synthetic data
+      uses: actions/download-artifact@v4
+      with:
+        name: synthetic-incidents
+        path: test-data/
+        
+    - name: Set up Python
+      uses: actions/setup-python@v4
+      with:
+        python-version: ${{ env.PYTHON_VERSION }}
+        
+    - name: Install evaluation dependencies
+      run: |
+        pip install pandas numpy matplotlib seaborn scikit-learn
+        
+    - name: Download all test results
+      uses: actions/download-artifact@v4
+      with:
+        path: test-results/
+        
+    - name: Run comprehensive evaluation
+      run: |
+        python scripts/evaluate_capabilities.py \
+          --synthetic-data test-data/ \
+          --results-dir test-results/ \
+          --output evaluation-report.json
+          
+    - name: Generate evaluation report
+      run: |
+        python scripts/generate_report.py \
+          --evaluation evaluation-report.json \
+          --output evaluation-report.html
+          
+    - name: Upload evaluation report
+      uses: actions/upload-artifact@v4
+      with:
+        name: evaluation-report
+        path: |
+          evaluation-report.json
+          evaluation-report.html
+          
+    - name: Check regression thresholds
+      run: |
+        python scripts/check_regression.py \
+          --evaluation evaluation-report.json \
+          --baseline baseline-performance.json \
+          --fail-on-regression
+          
+    - name: Comment on PR with results
+      if: github.event_name == 'pull_request'
+      uses: actions/github-script@v7
+      with:
+        script: |
+          const fs = require('fs');
+          const evaluation = JSON.parse(fs.readFileSync('evaluation-report.json', 'utf8'));
+          
+          const comment = `## 🤖 Synthetic Incident Evaluation Results
+          
+          ### Summary
+          - **Scenarios Tested**: ${evaluation.scenarios_count}
+          - **Total Events**: ${evaluation.total_events}
+          - **Overall Score**: ${evaluation.overall_score}/100
+          
+          ### Capability Results
+          | Capability | Score | Status |
+          |------------|-------|--------|
+          | 1. PII Redaction | ${evaluation.capability_1.score}/100 | ${evaluation.capability_1.status} |
+          | 2. Adaptive Sampling | ${evaluation.capability_2.score}/100 | ${evaluation.capability_2.status} |
+          | 3. WASM Plugins | ${evaluation.capability_3.score}/100 | ${evaluation.capability_3.status} |
+          | 5. Safety Filter | ${evaluation.capability_5.score}/100 | ${evaluation.capability_5.status} |
+          | 6. Change Explainer | ${evaluation.capability_6.score}/100 | ${evaluation.capability_6.status} |
+          | 7. Forecast Tiles | ${evaluation.capability_7.score}/100 | ${evaluation.capability_7.status} |
+          | 9. Story View | ${evaluation.capability_9.score}/100 | ${evaluation.capability_9.status} |
+          
+          ### Key Metrics
+          - **Precision**: ${evaluation.metrics.precision.toFixed(3)}
+          - **Recall**: ${evaluation.metrics.recall.toFixed(3)}
+          - **Latency P95**: ${evaluation.metrics.latency_p95}ms
+          - **Volume Reduction**: ${(evaluation.metrics.volume_reduction * 100).toFixed(1)}%
+          
+          ${evaluation.overall_score < 80 ? '⚠️ **Performance below threshold**' : '✅ **All checks passed**'}
+          `;
+          
+          github.rest.issues.createComment({
+            issue_number: context.issue.number,
+            owner: context.repo.owner,
+            repo: context.repo.repo,
+            body: comment
+          });
+
+  publish-baseline:
+    name: Update Performance Baseline
+    runs-on: ubuntu-latest
+    needs: evaluate-end-to-end
+    if: github.ref == 'refs/heads/main' && github.event_name == 'push'
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+      
+    - name: Download evaluation results
+      uses: actions/download-artifact@v4
+      with:
+        name: evaluation-report
+        
+    - name: Update baseline
+      run: |
+        cp evaluation-report.json baseline-performance.json
+        git config --local user.email "action@github.com"
+        git config --local user.name "GitHub Action"
+        git add baseline-performance.json
+        git commit -m "Update performance baseline [skip ci]" || exit 0
+        git push

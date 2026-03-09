@@ -1,0 +1,32 @@
+{
+    "id": "python-cli",
+    "name": "Python CLI Application",
+    "description": "Python command-line application with Click framework",
+    "version": "1.0.0",
+    "type": "application",
+    "language": "python",
+    "buildSystem": "python",
+    "requiredVariables": [
+        "projectName",
+        "pythonVersion"
+    ],
+    "optionalVariables": [
+        "description",
+        "author",
+        "buildTool"
+    ],
+    "defaults": {
+        "pythonVersion": ">=3.11",
+        "buildTool": "uv"
+    },
+    "features": [],
+    "dependencies": {
+        "click": "^8.1.0",
+        "rich": "^13.0.0"
+    },
+    "devDependencies": {
+        "pytest": "^7.4.0",
+        "ruff": "^0.1.0",
+        "mypy": "^1.7.0"
+    }
+}

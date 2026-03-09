@@ -1,0 +1,47 @@
+{
+  "name": "@ghatana/dcmaar-plugin-abstractions",
+  "version": "1.0.0",
+  "description": "Plugin abstraction interfaces and implementations for DCMAAR framework",
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "require": "./dist/index.js",
+      "import": "./dist/index.js"
+    },
+    "./interfaces": {
+      "types": "./dist/interfaces/index.d.ts",
+      "require": "./dist/interfaces/index.js",
+      "import": "./dist/interfaces/index.js"
+    },
+    "./implementations": {
+      "types": "./dist/implementations/index.d.ts",
+      "require": "./dist/implementations/index.js",
+      "import": "./dist/implementations/index.js"
+    }
+  },
+  "scripts": {
+    "build": "tsc",
+    "type-check": "tsc --noEmit",
+    "dev": "tsc --watch",
+    "test": "vitest run",
+    "test:watch": "vitest run --watch",
+    "test:coverage": "vitest run --coverage",
+    "clean": "rm -rf dist"
+  },
+  "keywords": [
+    "dcmaar",
+    "plugins",
+    "abstractions"
+  ],
+  "author": "DCMAAR Team",
+  "license": "MIT",
+  "dependencies": {
+    "@ghatana/dcmaar-types": "workspace:*"
+  },
+  "devDependencies": {
+    "typescript": "^5.9.3",
+    "vitest": "^4.0.18"
+  }
+}

@@ -1,0 +1,45 @@
+id: plan_success_criteria_tracker
+agent: SuccessCriteriaTrackerAgent
+role: Plan Success Criteria Tracker
+inputs_spec:
+- name: plan_stage_milestone
+  description: Structured milestone plan for the Plan stage.
+  format: List of milestone objects
+outputs_spec:
+- name: plan_success_criteria_status
+  description: Status of Plan stage success criteria, including progress, blockers, and risks.
+  format: List of criteria status objects (criterion, status, blockers, risks)
+  example: "- criterion: \"Requirements signoff\"\n  status: \"complete\"\n  blockers: []\n  risks: []\n"
+agent_tasks:
+- Define and track Plan stage success criteria.
+- Report progress and blockers for each criterion.
+- Flag risks or issues affecting Plan stage success criteria.
+acceptance_criteria:
+- Plan stage success criteria are clearly defined and tracked.
+- Progress and blockers for each criterion are reported.
+- Any risks or issues affecting Plan stage success criteria are flagged.
+dependencies:
+- plan_stage_milestone
+failure_escalation:
+- Escalate to criteria tracker or PM if criteria are unclear or not met.
+references: []
+hitl: false
+
+internal_logic:
+  - perception:
+      description: "Scan business goals for testability and audit needs."
+  - model:
+      description: "Map criteria to goals, methods, and owners."
+  - planning:
+      description: |
+        "For each goal:
+         - Specify how success will be measured/tested.
+         - Assign responsible party and deadline."
+  - action:
+      description: "Generate YAML: criteria[]"
+validation:
+  - "Review with QA/compliance owner."
+  - "Template audit for completeness."
+quality_enhancements:
+  - "Checklist for SMART, testable, auditable criteria."
+  - "Change log for criteria revisions."

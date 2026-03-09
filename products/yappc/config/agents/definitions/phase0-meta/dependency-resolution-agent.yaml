@@ -1,0 +1,105 @@
+id: dependency-resolution-agent
+name: Dependency Resolution Agent
+version: 1.0.0
+description: Resolves task dependencies, determines execution order, detects circular dependencies, manages dependency graphs.
+
+metadata:
+  level: 3  # Worker
+  domain: orchestration
+  tags:
+    - dependency-management
+    - execution-order
+    - graph-analysis
+    - blocking-detection
+
+generator:
+  type: PIPELINE
+  steps:
+    - name: dependency_graph_construction
+      type: RULE_BASED
+      description: Build dependency graph from task dependencies
+    - name: cycle_detection
+      type: RULE_BASED
+      description: Detect circular dependencies
+    - name: resolution_strategy
+      type: LLM
+      provider: ANTHROPIC
+      model: claude-3-5-sonnet-20241022
+      temperature: 0.1
+      max_tokens: 2000
+      prompt: |
+        You are the Dependency Resolution Agent. Resolve dependencies for these tasks:
+        
+        Tasks: {{tasks}}
+        Dependencies: {{dependencies}}
+        Circular Dependencies: {{cycles}}
+        
+        Provide:
+        1. Execution order (topological sort)
+        2. Parallel execution groups
+        3. Blocking tasks
+        4. Circular dependency resolution strategies
+        5. Critical path
+        
+        Output as JSON: {execution_order, parallel_groups, blockers, cycle_resolutions, critical_path}
+    - name: execution_plan_generation
+      type: TEMPLATE
+      template_path: templates/execution-plan.ftl
+
+memory:
+  episodic:
+    enabled: true
+    retention_days: 180
+    categories:
+      - dependency-resolutions
+      - execution-plans
+      - cycle-detections
+  semantic:
+    enabled: true
+    categories:
+      - dependency-patterns
+      - resolution-strategies
+      - optimization-rules
+  procedural:
+    enabled: true
+    categories:
+      - graph-algorithms
+      - resolution-logic
+      - scheduling-rules
+
+tools:
+  - dependency_graph_analyzer
+  - topological_sorter
+  - critical_path_calculator
+
+capabilities:
+  - dependency-analysis
+  - cycle-detection
+  - execution-ordering
+  - parallel-optimization
+  - critical-path-identification
+
+routing:
+  input_types:
+    - task-set
+    - dependency-graph
+    - execution-request
+  output_types:
+    - execution-plan
+    - dependency-report
+    - resolution-strategy
+
+delegation:
+  can_delegate_to: []
+  escalates_to:
+    - phase-router-agent
+
+governance:
+  requires_approval: false
+  can_block: false
+  audit_trail: standard
+
+performance:
+  expected_latency_ms: 1500
+  max_latency_ms: 4000
+  timeout_ms: 8000

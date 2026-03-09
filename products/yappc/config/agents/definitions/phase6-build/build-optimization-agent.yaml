@@ -1,0 +1,109 @@
+id: build-optimization-agent
+name: Build Optimization Agent
+version: 1.0.0
+description: Optimizes build times and resource usage. Improves caching, parallelization, and efficiency.
+
+metadata:
+  level: 3  # Worker
+  domain: build
+  tags:
+    - build-optimization
+    - performance
+    - caching
+    - parallelization
+
+generator:
+  type: PIPELINE
+  steps:
+    - name: build_analysis
+      type: RULE_BASED
+      description: Collect build metrics
+    - name: optimization_planning
+      type: LLM
+      provider: ANTHROPIC
+      model: claude-3-5-sonnet-20241022
+      temperature: 0.2
+      max_tokens: 2000
+      prompt: |
+        You are the Build Optimization Agent. Optimize builds:
+        
+        Build Times: {{times}}
+        Build Graph: {{graph}}
+        Cache Stats: {{cache}}
+        Resources: {{resources}}
+        
+        Analyze and recommend:
+        1. Critical path optimization
+        2. Cache improvements (hit rate, invalidation)
+        3. Parallelization opportunities
+        4. Resource allocation
+        5. Incremental build improvements
+        6. Test optimization
+        
+        Output as JSON: {
+          current_metrics,
+          optimizations: [{area, current, recommended, expected_improvement, effort}],
+          implementation_order,
+          total_expected_savings
+        }
+    - name: implementation
+      type: SERVICE_CALL
+      service: build-service
+      endpoint: /build/configure
+
+memory:
+  episodic:
+    enabled: true
+    retention_days: 365
+    categories:
+      - optimizations
+      - improvements
+      - regressions
+  semantic:
+    enabled: true
+    categories:
+      - optimization-techniques
+      - caching-strategies
+      - parallelization-patterns
+  procedural:
+    enabled: true
+    categories:
+      - analysis-rules
+      - optimization-catalog
+      - measurement-methods
+
+tools:
+  - build_analyzer
+  - cache_optimizer
+  - resource_allocator
+
+capabilities:
+  - build-analysis
+  - cache-optimization
+  - parallelization
+  - resource-optimization
+
+routing:
+  input_types:
+    - optimization-request
+    - build-metrics
+    - slow-build-alert
+  output_types:
+    - optimization-plan
+    - configuration
+    - metrics-report
+
+delegation:
+  can_delegate_to: []
+  escalates_to:
+    - ci-cd-agent
+
+governance:
+  requires_approval: false
+  can_block: false
+  audit_trail: standard
+
+performance:
+  expected_latency_ms: 3000
+  max_latency_ms: 8000
+  timeout_ms: 15000

@@ -1,0 +1,74 @@
+---
+# Cross-Cutting Best Practice Enforcement Operator Template
+# Replaces ~10 stage-specific files: build_best_practice_enforcement.yaml, etc.
+#
+# @doc.type operator-template
+# @doc.purpose Cross-cutting best practice enforcement for all stages
+# @doc.layer operations
+# @doc.pattern Template
+
+template:
+  id: "${stage}_best_practice_enforcement"
+  version: "1.0.0"
+
+operator:
+  type: "BestPracticeOperator"
+  role: "${stage} Quality Gate"
+  category: "cross-cutting"
+
+parameters:
+  stage:
+    type: "string"
+    required: true
+    description: "Stage name for best practice enforcement"
+
+inputs_spec:
+  - name: "${stage}_artifacts"
+    description: "${stage} artifacts for best practice validation."
+    format: "Artifact list"
+    required: true
+
+outputs_spec:
+  - name: "${stage}_best_practice_report"
+    description: "Best practice compliance report for ${stage}."
+    format: "Compliance report artifact"
+
+  - name: "${stage}_practice_events"
+    description: "Stream of practice violation events"
+    format: "Event stream"
+    event_type: "ghatana.operations.practice.${stage}"
+
+agent_tasks:
+  - "Validate ${stage} artifacts against best practices."
+  - "Flag violations and provide remediation guidance."
+  - "Track practice adoption metrics."
+  - "Emit practice events to EventCloud."
+
+acceptance_criteria:
+  - "All artifacts are validated against best practices."
+  - "Violations are flagged with remediation guidance."
+  - "Practice adoption is measurable."
+
+dependencies:
+  - "${stage}_artifacts"
+
+failure_escalation:
+  - "Escalate to Quality Lead if enforcement fails."
+
+config:
+  practice_categories:
+    - "coding_standards"
+    - "security_practices"
+    - "documentation"
+    - "testing_practices"
+    - "deployment_practices"
+
+  violation_severity:
+    - "info"
+    - "warning"
+    - "error"
+    - "blocker"
+
+  event_cloud_topic: "ghatana.operations.practice"
+
+hitl: false

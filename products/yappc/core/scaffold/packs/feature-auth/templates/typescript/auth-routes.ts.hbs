@@ -1,0 +1,96 @@
+import type { FastifyInstance } from 'fastify';
+import bcrypt from 'bcrypt';
+import { generateTokenPair, verifyToken } from '../services/jwt';
+import type { LoginRequest, RegisterRequest, TokenResponse } from '../types/auth';
+
+export default async function authRoutes(fastify: FastifyInstance) {
+fastify.post<{ Body: LoginRequest }>('/auth/login', async (request, reply) => {
+    const { email, password } = request.body;
+
+    // TODO: Replace with actual user lookup from database
+    const user = await findUserByEmail(email);
+
+    if (!user) {
+    return reply.status(401).send({ error: 'Invalid credentials' });
+    }
+
+    const isValidPassword = await bcrypt.compare(password, user.passwordHash);
+
+    if (!isValidPassword) {
+    return reply.status(401).send({ error: 'Invalid credentials' });
+    }
+
+    const tokens = generateTokenPair(user.id, user.email, user.roles);
+
+    const response: TokenResponse = {
+    accessToken: tokens.accessToken,
+    refreshToken: tokens.refreshToken,
+    tokenType: 'Bearer',
+    expiresIn: 86400, // 24 hours
+    };
+
+    return reply.send(response);
+    });
+
+    fastify.post<{ Body: RegisterRequest }>('/auth/register', async (request, reply) => {
+        const { email, password, name } = request.body;
+
+        // TODO: Replace with actual user creation in database
+        const existingUser = await findUserByEmail(email);
+
+        if (existingUser) {
+        return reply.status(409).send({ error: 'Email already registered' });
+        }
+
+        const passwordHash = await bcrypt.hash(password, 10);
+        const user = await createUser({ email, passwordHash, name });
+
+        const tokens = generateTokenPair(user.id, user.email, user.roles);
+
+        return reply.status(201).send({
+        accessToken: tokens.accessToken,
+        refreshToken: tokens.refreshToken,
+        tokenType: 'Bearer',
+        expiresIn: 86400,
+        });
+        });
+
+        fastify.post<{ Body: { refreshToken: string } }>('/auth/refresh', async (request, reply) => {
+            const { refreshToken } = request.body;
+
+            try {
+            const payload = verifyToken(refreshToken);
+
+            if (payload.type !== 'refresh') {
+            return reply.status(401).send({ error: 'Invalid token type' });
+            }
+
+            // TODO: Fetch user roles from database
+            const tokens = generateTokenPair(payload.sub, payload.email, ['USER']);
+
+            return reply.send({
+            accessToken: tokens.accessToken,
+            refreshToken: tokens.refreshToken,
+            tokenType: 'Bearer',
+            expiresIn: 86400,
+            });
+            } catch {
+            return reply.status(401).send({ error: 'Invalid refresh token' });
+            }
+            });
+
+            fastify.post('/auth/logout', { preHandler: [fastify.authenticate] }, async (request, reply) => {
+            // In stateless JWT, logout is handled client-side
+            // For token blacklisting, add token to a blacklist store
+            return reply.send({ message: 'Logged out successfully' });
+            });
+            }
+
+            // Placeholder functions - replace with actual database operations
+            async function findUserByEmail(_email: string) {
+            return null; // Replace with database lookup
+            }
+
+            async function createUser(_data: { email: string; passwordHash: string; name: string }) {
+            return { id: 'user-id', email: _data.email, roles: ['USER'] }; // Replace with database insert
+            }

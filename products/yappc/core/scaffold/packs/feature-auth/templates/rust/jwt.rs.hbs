@@ -1,0 +1,94 @@
+use jsonwebtoken::{decode, encode, DecodingKey, EncodingKey, Header, Validation};
+use serde::{Deserialize, Serialize};
+use std::time::{Duration, SystemTime, UNIX_EPOCH};
+
+#[derive(Debug, Serialize, Deserialize)]
+pub struct Claims {
+pub sub: String,
+pub email: String,
+pub roles: Vec<String>,
+    pub token_type: TokenType,
+    pub exp: u64,
+    pub iat: u64,
+    }
+
+    #[derive(Debug, Serialize, Deserialize, PartialEq)]
+    #[serde(rename_all = "lowercase")]
+    pub enum TokenType {
+    Access,
+    Refresh,
+    }
+
+    pub struct TokenPair {
+    pub access_token: String,
+    pub refresh_token: String,
+    }
+
+    pub struct JwtService {
+    encoding_key: EncodingKey,
+    decoding_key: DecodingKey,
+    access_token_duration: Duration,
+    refresh_token_duration: Duration,
+    }
+
+    impl JwtService {
+    pub fn new(secret: &str) -> Self {
+    Self {
+    encoding_key: EncodingKey::from_secret(secret.as_bytes()),
+    decoding_key: DecodingKey::from_secret(secret.as_bytes()),
+    access_token_duration: Duration::from_secs(86400), // 24 hours
+    refresh_token_duration: Duration::from_secs(604800), // 7 days
+    }
+    }
+
+    pub fn generate_access_token(&self, user_id: &str, email: &str, roles: Vec<String>) -> Result<String,
+            jsonwebtoken::errors::Error> {
+            let now = SystemTime::now()
+            .duration_since(UNIX_EPOCH)
+            .unwrap()
+            .as_secs();
+
+            let claims = Claims {
+            sub: user_id.to_string(),
+            email: email.to_string(),
+            roles,
+            token_type: TokenType::Access,
+            iat: now,
+            exp: now + self.access_token_duration.as_secs(),
+            };
+
+            encode(&Header::default(), &claims, &self.encoding_key)
+            }
+
+            pub fn generate_refresh_token(&self, user_id: &str, email: &str) -> Result<String,
+                jsonwebtoken::errors::Error> {
+                let now = SystemTime::now()
+                .duration_since(UNIX_EPOCH)
+                .unwrap()
+                .as_secs();
+
+                let claims = Claims {
+                sub: user_id.to_string(),
+                email: email.to_string(),
+                roles: vec![],
+                token_type: TokenType::Refresh,
+                iat: now,
+                exp: now + self.refresh_token_duration.as_secs(),
+                };
+
+                encode(&Header::default(), &claims, &self.encoding_key)
+                }
+
+                pub fn generate_token_pair(&self, user_id: &str, email: &str, roles: Vec<String>) -> Result<TokenPair,
+                        jsonwebtoken::errors::Error> {
+                        Ok(TokenPair {
+                        access_token: self.generate_access_token(user_id, email, roles)?,
+                        refresh_token: self.generate_refresh_token(user_id, email)?,
+                        })
+                        }
+
+                        pub fn verify_token(&self, token: &str) -> Result<Claims, jsonwebtoken::errors::Error> {
+                            let token_data = decode::<Claims>(token, &self.decoding_key, &Validation::default())?;
+                                Ok(token_data.claims)
+                                }
+                                }

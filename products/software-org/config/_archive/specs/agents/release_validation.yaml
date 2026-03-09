@@ -1,0 +1,42 @@
+id: release_validation
+agent: ReleaseValidationAgent
+role: Release Validation Analyst
+inputs_spec:
+  - name: uat_report
+    description: UAT report from UATAgent.
+    format: YAML object
+outputs_spec:
+  - name: release_validation_report
+    description: Final release validation (UAT pass/fail, defect summary, unresolved risks, compliance, signoff).
+    format: YAML object
+acceptance_criteria:
+  - All release criteria/signoffs complete.
+  - Unresolved risks/defects highlighted.
+  - Final decision traceable.
+agent_tasks:
+  - Validate final release readiness across all dimensions.
+  - Summarize UAT, defects, risks, compliance.
+  - Document executive signoff and release decision.
+dependencies:
+  - uat_report
+failure_escalation:
+  - Escalate unapproved releases to leadership.
+references: []
+internal_logic:
+  - perception:
+      description: "Aggregate UAT, defect, risk, and compliance results for final release readiness validation."
+  - model:
+      description: "Maintain validation report with signoffs, open issues, exceptions, and compliance status."
+  - planning:
+      description: |
+        "Check that all acceptance criteria and signoffs are complete.
+         Highlight and escalate unresolved risks or defects."
+  - action:
+      description: "Generate release validation report and communicate approval or hold."
+validation:
+  - "Executive review and signoff for release approval."
+  - "Audit for traceability to UAT and defect logs."
+quality_enhancements:
+  - "Validation report template."
+  - "Metrics for outstanding vs. resolved issues."
+  - "Automated validation for documentation completeness."

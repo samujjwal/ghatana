@@ -1,0 +1,35 @@
+{
+    "name": "@ghatana/tutorputor-domain-loader",
+    "version": "0.1.0",
+    "description": "Domain content loader for physics, chemistry, and other curriculum content",
+    "private": true,
+    "type": "module",
+    "main": "./dist/index.js",
+    "types": "./dist/index.d.ts",
+    "scripts": {
+        "build": "tsc",
+        "dev": "tsx src/cli.ts",
+        "test": "vitest run",
+        "test:watch": "vitest",
+        "load": "tsx src/cli.ts load",
+        "load:physics": "tsx src/cli.ts load --domain=physics",
+        "load:chemistry": "tsx src/cli.ts load --domain=chemistry",
+        "validate": "tsx src/cli.ts validate",
+        "typecheck": "tsc --noEmit"
+    },
+    "dependencies": {
+        "@ghatana/tutorputor-contracts": "workspace:*",
+        "@ghatana/tutorputor-db": "workspace:*",
+        "@prisma/client": "7.3.0",
+        "@prisma/adapter-libsql": "^7.3.0",
+        "@libsql/client": "^0.17.0",
+        "commander": "^14.0.3",
+        "zod": "^4.3.6"
+    },
+    "devDependencies": {
+        "@types/node": "^25.2.0",
+        "tsx": "^4.21.0",
+        "typescript": "^5.9.3",
+        "vitest": "^4.0.18"
+    }
+}

@@ -1,0 +1,129 @@
+{
+  "$schema": "https://json.schemastore.org/tsconfig",
+  "extends": "./config/tsconfig.base.json",
+  "compilerOptions": {
+    "esModuleInterop": true,
+    "strict": true,
+    "skipLibCheck": true,
+    "forceConsistentCasingInFileNames": true,
+    "moduleResolution": "bundler",
+    "resolveJsonModule": true,
+    "isolatedModules": true,
+    "noEmit": true,
+    "jsx": "react-jsx",
+    "allowImportingTsExtensions": true,
+    "strictNullChecks": true,
+    "strictFunctionTypes": false,
+    "strictBindCallApply": false,
+    "noUnusedLocals": false,
+    "noUnusedParameters": false,
+    "noImplicitReturns": false,
+    "noFallthroughCasesInSwitch": false,
+    "moduleDetection": "force",
+    "allowSyntheticDefaultImports": true,
+    "preserveSymlinks": true,
+    "declaration": true,
+    "declarationMap": true,
+    "sourceMap": true,
+    "inlineSources": true,
+    "outDir": "dist",
+    "target": "ES2020",
+    "typeRoots": [
+      "./node_modules/@types",
+      "./src/types"
+    ],
+    "lib": [
+      "ES2020",
+      "DOM",
+      "DOM.Iterable"
+    ],
+    "baseUrl": ".",
+    "paths": {
+      "@core/*": [
+        "src/core/*"
+      ],
+      "@core/utils/*": [
+        "src/core/utils/*"
+      ],
+      "@core/storage/*": [
+        "src/pipeline/storage/*"
+      ],
+      "@core/interfaces": [
+        "src/core/interfaces/index.ts"
+      ],
+      "@communication/*": [
+        "src/communication/*"
+      ],
+      "@app/*": [
+        "src/app/*"
+      ],
+      "@app/background/*": [
+        "src/app/background/*"
+      ],
+      "@interactions/*": [
+        "src/interactions/*"
+      ],
+      "@interactions/content/*": [
+        "src/interactions/content/*"
+      ],
+      "@pipeline/*": [
+        "src/pipeline/*"
+      ],
+      "@pipeline/sources/*": [
+        "src/pipeline/sources/*"
+      ],
+      "@pipeline/sinks/*": [
+        "src/pipeline/sinks/*"
+      ],
+      "@pipeline/modules/scrubber": [
+        "src/types/pipeline/scrubber.d.ts"
+      ],
+      "@shared/*": [
+        "src/shared/*"
+      ],
+      "@shared/config/*": [
+        "src/shared/config/*"
+      ],
+      "@shared/utils/*": [
+        "src/shared/utils/*"
+      ],
+      "@components/*": [
+        "src/components/*"
+      ],
+      "@ui/*": [
+        "src/components/ui/*"
+      ],
+      "@pipeline/modules/*": [
+        "src/types/pipeline/*"
+      ],
+      "@background/*": [
+        "src/app/background/*"
+      ],
+      "@background/persistence": [
+        "src/types/background/persistence.d.ts"
+      ],
+      "@background/transport": [
+        "src/types/background/transport.d.ts"
+      ],
+      "@ghatana/dcmaar-shared-ui-tailwind": [
+        "src/stubs/shared-ui-tailwind.tsx"
+      ],
+      "@ghatana/dcmaar-shared-ui-core": [
+        "src/stubs/shared-ui-core.ts"
+      ],
+      "@ghatana/dcmaar-browser-extension-core": [
+        "../../libs/typescript/browser-extension-core/src"
+      ],
+      "@ghatana/dcmaar-types": [
+        "../../libs/typescript/types/src"
+      ],
+      "@ghatana/dcmaar-plugin-abstractions": [
+        "../../libs/typescript/plugin-abstractions/src"
+      ],
+      "*": [
+        "node_modules/*",
+        "src/types/*"
+      ]
+    }
+  }
+}

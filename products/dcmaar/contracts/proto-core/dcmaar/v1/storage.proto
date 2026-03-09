@@ -1,0 +1,149 @@
+syntax = "proto3";
+
+package dcmaar.v1;
+option java_multiple_files = true;
+option java_outer_classname = "STORAGEProto";
+
+import "dcmaar/v1/enums.proto";
+import "google/protobuf/timestamp.proto";
+import "google/protobuf/struct.proto";
+import "google/protobuf/empty.proto";
+
+option java_package = "com.dcmaar.v1";
+option csharp_namespace = "Dcmaar.V1";
+option objc_class_prefix = "DCX";
+option php_namespace = "Dcmaar\\V1";
+option ruby_package = "Dcmaar::V1";
+option go_package = "github.com/samujjwal/dcmaar/proto/gen/go/pb/dcmaar/v1;dcmaarv1";
+
+// The Command and CommandList types are defined in this file
+
+// Command status
+enum CommandStatus {
+  COMMAND_STATUS_UNSPECIFIED = 0;
+  COMMAND_STATUS_PENDING = 1;
+  COMMAND_STATUS_RUNNING = 2;
+  COMMAND_STATUS_COMPLETED = 3;
+  COMMAND_STATUS_FAILED = 4;
+  COMMAND_STATUS_CANCELLED = 5;
+}
+
+// A command that can be executed by the system
+message Command {
+  // Command ID (UUID)
+  string id = 1;
+  // Command type (e.g., "backup", "sync", "update")
+  string type = 2;
+  // Current status of the command
+  CommandStatus status = 3;
+  // Command payload (JSON)
+  google.protobuf.Struct payload = 4;
+  // Command result (JSON, if completed)
+  google.protobuf.Struct result = 5;
+  // Error message (if failed)
+  string error = 6;
+  // When the command was created
+  google.protobuf.Timestamp created_at = 7;
+  // When the command was last updated
+  google.protobuf.Timestamp updated_at = 8;
+  // When the command was completed (if applicable)
+  google.protobuf.Timestamp completed_at = 9;
+}
+
+// List of commands for sync operations
+message CommandList {
+  repeated Command commands = 1;
+}
+
+// Result of a command execution
+message CommandExecutionResult {
+  // Identifier of the command the status refers to
+  string command_id = 1;
+  // Current status of the command
+  CommandStatus status = 2;
+  // Optional human-readable message
+  string message = 3;
+}
+
+// Storage service for managing data persistence
+service StorageService {
+  // Execute a storage command
+  rpc ExecuteCommand(Command) returns (CommandExecutionResult) {}
+  
+  // Batch execute multiple commands
+  rpc BatchExecute(CommandList) returns (stream CommandExecutionResult) {}
+  
+  // Get storage statistics
+  rpc GetStats(StorageStatsRequest) returns (StorageStats) {}
+  
+  // Get storage health status
+  rpc Health(StorageHealthCheckRequest) returns (StorageHealthCheckResponse) {}
+}
+
+// Request for storage statistics
+message StorageStatsRequest {
+  // Whether to include detailed statistics
+  bool detailed = 1;
+  
+  // Whether to reset statistics after reading
+  bool reset = 2;
+}
+
+// Storage statistics
+message StorageStats {
+  // Total storage size in bytes
+  uint64 total_size_bytes = 1;
+  
+  // Number of items stored
+  uint64 item_count = 2;
+  
+  // Timestamp of the oldest item
+  google.protobuf.Timestamp oldest_item_timestamp = 3;
+  
+  // Timestamp of the newest item
+  google.protobuf.Timestamp newest_item_timestamp = 4;
+  
+  // Detailed statistics by data type
+  map<string, DataTypeStats> data_type_stats = 5;
+  
+  // Storage health status
+  HealthStatus health_status = 6;
+}
+
+// Statistics for a specific data type
+message DataTypeStats {
+  // Number of items of this type
+  uint64 count = 1;
+  
+  // Total size in bytes
+  uint64 size_bytes = 2;
+  
+  // First seen timestamp
+  google.protobuf.Timestamp first_seen = 3;
+  
+  // Last seen timestamp
+  google.protobuf.Timestamp last_seen = 4;
+}
+
+// Health check request specific to storage
+message StorageHealthCheckRequest {
+  // Whether to perform a deep health check
+  bool deep = 1;
+  
+  // Timeout in milliseconds
+  uint32 timeout_ms = 2;
+}
+
+// Health check response specific to storage
+message StorageHealthCheckResponse {
+  // Overall health status
+  HealthStatus status = 1;
+  
+  // Detailed health information
+  map<string, string> details = 2;
+  
+  // Timestamp of the health check
+  google.protobuf.Timestamp timestamp = 3;
+}
+
+// HealthStatus is imported from desktop.proto

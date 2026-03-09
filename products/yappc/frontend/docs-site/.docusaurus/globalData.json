@@ -1,0 +1,221 @@
+{
+  "docusaurus-plugin-content-docs": {
+    "default": {
+      "path": "/docs/",
+      "versions": [
+        {
+          "name": "current",
+          "label": "Next",
+          "isLast": true,
+          "path": "/docs/",
+          "mainDocId": "getting-started",
+          "docs": [
+            {
+              "id": "api/canvas-api",
+              "path": "/docs/api/canvas-api",
+              "sidebar": "guidesSidebar"
+            },
+            {
+              "id": "api/deployment-api",
+              "path": "/docs/api/deployment-api",
+              "sidebar": "guidesSidebar"
+            },
+            {
+              "id": "api/feature-flags-api",
+              "path": "/docs/api/feature-flags-api",
+              "sidebar": "guidesSidebar"
+            },
+            {
+              "id": "api/overview",
+              "path": "/docs/api/overview",
+              "sidebar": "guidesSidebar"
+            },
+            {
+              "id": "canvas/architecture/component-hierarchy",
+              "path": "/docs/canvas/architecture/component-hierarchy",
+              "sidebar": "canvasSidebar"
+            },
+            {
+              "id": "canvas/architecture/overview",
+              "path": "/docs/canvas/architecture/overview",
+              "sidebar": "canvasSidebar"
+            },
+            {
+              "id": "canvas/architecture/rendering-pipeline",
+              "path": "/docs/canvas/architecture/rendering-pipeline",
+              "sidebar": "canvasSidebar"
+            },
+            {
+              "id": "canvas/architecture/state-management",
+              "path": "/docs/canvas/architecture/state-management",
+              "sidebar": "canvasSidebar"
+            },
+            {
+              "id": "canvas/customization",
+              "path": "/docs/canvas/customization",
+              "sidebar": "canvasSidebar"
+            },
+            {
+              "id": "canvas/export-sharing",
+              "path": "/docs/canvas/export-sharing",
+              "sidebar": "canvasSidebar"
+            },
+            {
+              "id": "canvas/extensibility",
+              "path": "/docs/canvas/extensibility",
+              "sidebar": "canvasSidebar"
+            },
+            {
+              "id": "canvas/monitoring",
+              "path": "/docs/canvas/monitoring",
+              "sidebar": "canvasSidebar"
+            },
+            {
+              "id": "canvas/overview",
+              "path": "/docs/canvas/overview",
+              "sidebar": "canvasSidebar"
+            },
+            {
+              "id": "canvas/performance",
+              "path": "/docs/canvas/performance",
+              "sidebar": "canvasSidebar"
+            },
+            {
+              "id": "canvas/quick-start",
+              "path": "/docs/canvas/quick-start",
+              "sidebar": "canvasSidebar"
+            },
+            {
+              "id": "canvas/real-time-collaboration",
+              "path": "/docs/canvas/real-time-collaboration",
+              "sidebar": "canvasSidebar"
+            },
+            {
+              "id": "canvas/security",
+              "path": "/docs/canvas/security",
+              "sidebar": "canvasSidebar"
+            },
+            {
+              "id": "deployment/blue-green",
+              "path": "/docs/deployment/blue-green",
+              "sidebar": "deploymentSidebar"
+            },
+            {
+              "id": "deployment/feature-flags",
+              "path": "/docs/deployment/feature-flags",
+              "sidebar": "deploymentSidebar"
+            },
+            {
+              "id": "deployment/game-day-drills",
+              "path": "/docs/deployment/game-day-drills"
+            },
+            {
+              "id": "deployment/health-checks",
+              "path": "/docs/deployment/health-checks",
+              "sidebar": "deploymentSidebar"
+            },
+            {
+              "id": "deployment/incident-response",
+              "path": "/docs/deployment/incident-response",
+              "sidebar": "deploymentSidebar"
+            },
+            {
+              "id": "deployment/monitoring",
+              "path": "/docs/deployment/monitoring",
+              "sidebar": "deploymentSidebar"
+            },
+            {
+              "id": "deployment/overview",
+              "path": "/docs/deployment/overview",
+              "sidebar": "deploymentSidebar"
+            },
+            {
+              "id": "deployment/pagerduty-integration",
+              "path": "/docs/deployment/pagerduty-integration"
+            },
+            {
+              "id": "deployment/postmortems",
+              "path": "/docs/deployment/postmortems"
+            },
+            {
+              "id": "deployment/rollback",
+              "path": "/docs/deployment/rollback",
+              "sidebar": "deploymentSidebar"
+            },
+            {
+              "id": "deployment/runbooks",
+              "path": "/docs/deployment/runbooks",
+              "sidebar": "deploymentSidebar"
+            },
+            {
+              "id": "examples/basic-canvas",
+              "path": "/docs/examples/basic-canvas",
+              "sidebar": "guidesSidebar"
+            },
+            {
+              "id": "examples/collaborative-editing",
+              "path": "/docs/examples/collaborative-editing",
+              "sidebar": "guidesSidebar"
+            },
+            {
+              "id": "examples/performance-optimization",
+              "path": "/docs/examples/performance-optimization",
+              "sidebar": "guidesSidebar"
+            },
+            {
+              "id": "getting-started",
+              "path": "/docs/",
+              "sidebar": "canvasSidebar"
+            },
+            {
+              "id": "guides/building-plugins",
+              "path": "/docs/guides/building-plugins",
+              "sidebar": "guidesSidebar"
+            },
+            {
+              "id": "guides/custom-components",
+              "path": "/docs/guides/custom-components",
+              "sidebar": "guidesSidebar"
+            },
+            {
+              "id": "guides/theming",
+              "path": "/docs/guides/theming",
+              "sidebar": "guidesSidebar"
+            },
+            {
+              "id": "guides/tutorials-overview",
+              "path": "/docs/guides/tutorials-overview",
+              "sidebar": "guidesSidebar"
+            },
+            {
+              "id": "guides/video-tutorials",
+              "path": "/docs/guides/video-tutorials"
+            }
+          ],
+          "draftIds": [],
+          "sidebars": {
+            "canvasSidebar": {
+              "link": {
+                "path": "/docs/",
+                "label": "getting-started"
+              }
+            },
+            "deploymentSidebar": {
+              "link": {
+                "path": "/docs/deployment/overview",
+                "label": "deployment/overview"
+              }
+            },
+            "guidesSidebar": {
+              "link": {
+                "path": "/docs/guides/tutorials-overview",
+                "label": "guides/tutorials-overview"
+              }
+            }
+          }
+        }
+      ],
+      "breadcrumbs": true
+    }
+  }
+}

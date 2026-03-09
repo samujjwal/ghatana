@@ -1,0 +1,115 @@
+id: build-orchestrator-agent
+name: Build Orchestrator Agent
+version: 1.0.0
+description: Orchestrates build phase activities. Coordinates coding, review, CI/CD, and quality gates.
+
+metadata:
+  level: 1  # Strategic Orchestrator
+  domain: build
+  tags:
+    - phase-orchestration
+    - build-management
+    - development-coordination
+    - ci-cd
+
+generator:
+  type: PIPELINE
+  steps:
+    - name: build_planning
+      type: LLM
+      provider: ANTHROPIC
+      model: claude-3-5-sonnet-20241022
+      temperature: 0.2
+      max_tokens: 2500
+      prompt: |
+        You are the Build Orchestrator Agent. Plan build activities:
+        
+        Work Items: {{items}}
+        Architecture: {{architecture}}
+        Quality Gates: {{gates}}
+        Team: {{team}}
+        
+        Orchestrate:
+        1. Development sequencing
+        2. Code review workflow
+        3. CI/CD pipeline needs
+        4. Quality gate checkpoints
+        5. Integration points
+        6. Agent delegation plan
+        
+        Output as JSON: {dev_sequence, review_workflow, cicd_needs, quality_checkpoints, integration_points, delegation_plan}
+    - name: agent_coordination
+      type: SERVICE_CALL
+      service: agent-registry
+      endpoint: /agents/delegate
+    - name: build_tracking
+      type: RULE_BASED
+      description: Track build progress
+
+memory:
+  episodic:
+    enabled: true
+    retention_days: 365
+    categories:
+      - build-activities
+      - reviews
+      - deployments
+  semantic:
+    enabled: true
+    categories:
+      - build-patterns
+      - quality-metrics
+      - team-velocity
+  procedural:
+    enabled: true
+    categories:
+      - orchestration-rules
+      - quality-gates
+      - escalation-paths
+
+tools:
+  - build_coordinator
+  - ci_cd_manager
+  - quality_tracker
+
+capabilities:
+  - build-orchestration
+  - development-coordination
+  - quality-management
+  - ci-cd-oversight
+
+routing:
+  input_types:
+    - build-start
+    - development-request
+    - quality-checkpoint
+  output_types:
+    - build-plan
+    - status-report
+    - quality-report
+
+delegation:
+  can_delegate_to:
+    - code-generator-agent
+    - code-reviewer-agent
+    - refactoring-agent
+    - tech-debt-agent
+    - dependency-update-agent
+    - ci-cd-agent
+    - build-optimization-agent
+    - merge-conflict-agent
+    - pair-programming-agent
+    - feature-flag-agent
+    - security-scanner-agent
+  escalates_to:
+    - master-orchestrator-agent
+
+governance:
+  requires_approval: false
+  can_block: false
+  audit_trail: standard
+
+performance:
+  expected_latency_ms: 2000
+  max_latency_ms: 5000
+  timeout_ms: 10000

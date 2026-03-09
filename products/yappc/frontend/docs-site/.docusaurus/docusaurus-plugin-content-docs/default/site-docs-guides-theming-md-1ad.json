@@ -1,0 +1,27 @@
+{
+  "id": "guides/theming",
+  "title": "Theming",
+  "description": "Documentation coming soon.",
+  "source": "@site/docs/guides/theming.md",
+  "sourceDirName": "guides",
+  "slug": "/guides/theming",
+  "permalink": "/docs/guides/theming",
+  "draft": false,
+  "unlisted": false,
+  "editUrl": "https://github.com/yappc/app-creator/tree/main/docs-site/docs/guides/theming.md",
+  "tags": [],
+  "version": "current",
+  "sidebarPosition": 1,
+  "frontMatter": {
+    "sidebar_position": 1
+  },
+  "sidebar": "guidesSidebar",
+  "previous": {
+    "title": "Custom Components",
+    "permalink": "/docs/guides/custom-components"
+  },
+  "next": {
+    "title": "Basic Canvas",
+    "permalink": "/docs/examples/basic-canvas"
+  }
+}

@@ -1,0 +1,107 @@
+id: jtbd-extraction-agent
+name: Jobs-to-be-Done Extraction Agent
+version: 1.0.0
+description: Extracts Jobs-to-be-Done from user behavior and feedback. Understands what users are trying to accomplish and why they hire products/features.
+
+metadata:
+  level: 3  # Worker
+  domain: ideation
+  tags:
+    - jtbd-framework
+    - user-goals
+    - outcome-analysis
+    - behavioral-analysis
+
+generator:
+  type: PIPELINE
+  steps:
+    - name: behavioral_data_analysis
+      type: SERVICE_CALL
+      service: analytics-service
+      endpoint: /analytics/user-behavior
+    - name: jtbd_extraction
+      type: LLM
+      provider: ANTHROPIC
+      model: claude-3-5-sonnet-20241022
+      temperature: 0.3
+      max_tokens: 2500
+      prompt: |
+        You are the JTBD Extraction Agent. Extract Jobs-to-be-Done from user data:
+        
+        User Behavior: {{behavior}}
+        User Interviews: {{interviews}}
+        Feedback: {{feedback}}
+        
+        For each job, identify:
+        1. Functional job (what task are they doing?)
+        2. Emotional job (how do they want to feel?)
+        3. Social job (how do they want to be perceived?)
+        4. Context (situation/circumstance)
+        5. Success criteria (what does done look like?)
+        6. Current solutions (how do they do it today?)
+        7. Unmet needs
+        
+        Format: "When [situation], I want to [motivation], so I can [expected outcome]"
+        
+        Output as JSON array: [{jtbd_statement, functional, emotional, social, context, success_criteria, current_solutions, unmet_needs, priority}]
+    - name: jtbd_validation
+      type: RULE_BASED
+      description: Validate completeness and actionability
+
+memory:
+  episodic:
+    enabled: true
+    retention_days: 365
+    categories:
+      - extracted-jtbds
+      - user-behaviors
+      - validation-results
+  semantic:
+    enabled: true
+    categories:
+      - jtbd-catalog
+      - outcome-patterns
+      - user-motivations
+  procedural:
+    enabled: true
+    categories:
+      - extraction-framework
+      - validation-criteria
+      - formatting-rules
+
+tools:
+  - behavior_analyzer
+  - interview_transcriber
+  - outcome_identifier
+
+capabilities:
+  - jtbd-extraction
+  - behavioral-analysis
+  - outcome-identification
+  - need-analysis
+  - validation
+
+routing:
+  input_types:
+    - user-behavior-data
+    - interview-transcripts
+    - user-feedback
+  output_types:
+    - jtbd-catalog
+    - outcome-map
+    - need-analysis
+
+delegation:
+  can_delegate_to: []
+  escalates_to:
+    - problem-discovery-agent
+
+governance:
+  requires_approval: false
+  can_block: false
+  audit_trail: standard
+
+performance:
+  expected_latency_ms: 6000
+  max_latency_ms: 15000
+  timeout_ms: 30000

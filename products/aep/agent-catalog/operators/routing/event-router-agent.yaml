@@ -1,0 +1,42 @@
+id: event-router-agent
+name: Event Router Agent
+version: 1.0.0
+description: Routes events to appropriate destinations based on content-based rules and load balancing
+
+metadata:
+  level: 3
+  domain: event-processing
+  tags: [routing, load-balancing, content-based, filtering, distribution]
+
+aep:
+  operatorType: ROUTING
+  inputEventTypes: ["*"]
+  outputEventTypes: ["routed.*"]
+  backpressure:
+    bufferSize: 3000
+    overflowStrategy: DROP_OLDEST
+
+generator:
+  type: ADAPTIVE
+
+capabilities:
+  - event-routing
+  - load-balancing
+
+tools:
+  - name: routingEngine
+    type: SERVICE
+    endpoint: /aep/routing/rules
+  - name: loadBalancer
+    type: SERVICE
+    endpoint: /aep/routing/balance
+
+memory:
+  type: WORKING
+  scope: routing_state
+  retention: short
+
+resources:
+  memory: "512MB"
+  cpu: "1"
+  timeout: "10s"

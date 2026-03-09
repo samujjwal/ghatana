@@ -1,0 +1,855 @@
+{
+  "console": [
+    {
+      "type": "debug",
+      "text": "[vite] connecting..."
+    },
+    {
+      "type": "debug",
+      "text": "[vite] connected."
+    },
+    {
+      "type": "info",
+      "text": "%cDownload the React DevTools for a better development experience: https://react.dev/link/react-devtools font-weight:bold"
+    },
+    {
+      "type": "debug",
+      "text": "[e2e] fetched dev seed and wrote to localStorage (if absent)"
+    },
+    {
+      "type": "startGroupCollapsed",
+      "text": "%c[MSW] Mocking enabled. color:orangered;font-weight:bold;"
+    },
+    {
+      "type": "log",
+      "text": "%cDocumentation: %chttps://mswjs.io/docs font-weight:bold font-weight:normal"
+    },
+    {
+      "type": "log",
+      "text": "Found an issue? https://github.com/mswjs/msw/issues"
+    },
+    {
+      "type": "log",
+      "text": "Worker script URL: http://localhost:5173/mockServiceWorker.js"
+    },
+    {
+      "type": "log",
+      "text": "Worker scope: http://localhost:5173/"
+    },
+    {
+      "type": "log",
+      "text": "Client ID: %s (%s) 25376f28-b63c-4250-8894-461dc5b17eb9 top-level"
+    },
+    {
+      "type": "endGroup",
+      "text": "console.groupEnd"
+    },
+    {
+      "type": "log",
+      "text": "[MSW] Mock service worker started"
+    },
+    {
+      "type": "log",
+      "text": "[Store Debug] Debugging enabled"
+    },
+    {
+      "type": "log",
+      "text": "[Store Performance] Monitoring enabled"
+    },
+    {
+      "type": "log",
+      "text": "Store debugging tools available at window.__STORE_DEBUG__"
+    },
+    {
+      "type": "debug",
+      "text": "[vite] connecting..."
+    },
+    {
+      "type": "debug",
+      "text": "[vite] connected."
+    },
+    {
+      "type": "info",
+      "text": "%cDownload the React DevTools for a better development experience: https://react.dev/link/react-devtools font-weight:bold"
+    },
+    {
+      "type": "debug",
+      "text": "[e2e] fetched dev seed and wrote to localStorage (if absent)"
+    },
+    {
+      "type": "startGroupCollapsed",
+      "text": "%c[MSW] Mocking enabled. color:orangered;font-weight:bold;"
+    },
+    {
+      "type": "log",
+      "text": "%cDocumentation: %chttps://mswjs.io/docs font-weight:bold font-weight:normal"
+    },
+    {
+      "type": "log",
+      "text": "Found an issue? https://github.com/mswjs/msw/issues"
+    },
+    {
+      "type": "log",
+      "text": "Worker script URL: http://localhost:5173/mockServiceWorker.js"
+    },
+    {
+      "type": "log",
+      "text": "Worker scope: http://localhost:5173/"
+    },
+    {
+      "type": "log",
+      "text": "Client ID: %s (%s) d399f19f-ce96-4a15-a586-34568a127139 top-level"
+    },
+    {
+      "type": "endGroup",
+      "text": "console.groupEnd"
+    },
+    {
+      "type": "log",
+      "text": "[MSW] Mock service worker started"
+    },
+    {
+      "type": "log",
+      "text": "[Store Debug] Debugging enabled"
+    },
+    {
+      "type": "log",
+      "text": "[Store Performance] Monitoring enabled"
+    },
+    {
+      "type": "log",
+      "text": "Store debugging tools available at window.__STORE_DEBUG__"
+    },
+    {
+      "type": "warning",
+      "text": "[React Flow]: It looks like you've created a new nodeTypes or edgeTypes object. If this wasn't on purpose please define the nodeTypes/edgeTypes outside of the component or memoize them. Help: https://reactflow.dev/error#002"
+    },
+    {
+      "type": "warning",
+      "text": "[React Flow]: It looks like you've created a new nodeTypes or edgeTypes object. If this wasn't on purpose please define the nodeTypes/edgeTypes outside of the component or memoize them. Help: https://reactflow.dev/error#002"
+    },
+    {
+      "type": "warning",
+      "text": "[React Flow]: Couldn't create edge for source handle id: \"undefined\", edge id: conn-1. Help: https://reactflow.dev/error#008"
+    },
+    {
+      "type": "warning",
+      "text": "[React Flow]: Couldn't create edge for source handle id: \"undefined\", edge id: conn-1. Help: https://reactflow.dev/error#008"
+    },
+    {
+      "type": "warning",
+      "text": "[React Flow]: Couldn't create edge for source handle id: \"undefined\", edge id: conn-1. Help: https://reactflow.dev/error#008"
+    },
+    {
+      "type": "warning",
+      "text": "[React Flow]: Couldn't create edge for source handle id: \"undefined\", edge id: conn-1. Help: https://reactflow.dev/error#008"
+    },
+    {
+      "type": "log",
+      "text": "Download the Apollo DevTools for a better development experience: %s https://chrome.google.com/webstore/detail/apollo-client-developer-t/jdkknkkbebbapilgoeccciglkfbmbnfm"
+    },
+    {
+      "type": "debug",
+      "text": "[vite] connecting..."
+    },
+    {
+      "type": "debug",
+      "text": "[vite] connected."
+    },
+    {
+      "type": "info",
+      "text": "%cDownload the React DevTools for a better development experience: https://react.dev/link/react-devtools font-weight:bold"
+    },
+    {
+      "type": "debug",
+      "text": "[e2e] fetched dev seed and wrote to localStorage (if absent)"
+    },
+    {
+      "type": "startGroupCollapsed",
+      "text": "%c[MSW] Mocking enabled. color:orangered;font-weight:bold;"
+    },
+    {
+      "type": "log",
+      "text": "%cDocumentation: %chttps://mswjs.io/docs font-weight:bold font-weight:normal"
+    },
+    {
+      "type": "log",
+      "text": "Found an issue? https://github.com/mswjs/msw/issues"
+    },
+    {
+      "type": "log",
+      "text": "Worker script URL: http://localhost:5173/mockServiceWorker.js"
+    },
+    {
+      "type": "log",
+      "text": "Worker scope: http://localhost:5173/"
+    },
+    {
+      "type": "log",
+      "text": "Client ID: %s (%s) e6091f19-d02a-4ff2-a9cd-06bfd95faa43 top-level"
+    },
+    {
+      "type": "endGroup",
+      "text": "console.groupEnd"
+    },
+    {
+      "type": "log",
+      "text": "[MSW] Mock service worker started"
+    },
+    {
+      "type": "log",
+      "text": "[Store Debug] Debugging enabled"
+    },
+    {
+      "type": "log",
+      "text": "[Store Performance] Monitoring enabled"
+    },
+    {
+      "type": "log",
+      "text": "Store debugging tools available at window.__STORE_DEBUG__"
+    },
+    {
+      "type": "warning",
+      "text": "No routes matched location \"/canvas\" "
+    },
+    {
+      "type": "warning",
+      "text": "No routes matched location \"/canvas\" "
+    },
+    {
+      "type": "log",
+      "text": "Download the Apollo DevTools for a better development experience: %s https://chrome.google.com/webstore/detail/apollo-client-developer-t/jdkknkkbebbapilgoeccciglkfbmbnfm"
+    },
+    {
+      "type": "debug",
+      "text": "[vite] connecting..."
+    },
+    {
+      "type": "debug",
+      "text": "[vite] connected."
+    },
+    {
+      "type": "info",
+      "text": "%cDownload the React DevTools for a better development experience: https://react.dev/link/react-devtools font-weight:bold"
+    },
+    {
+      "type": "debug",
+      "text": "[e2e] fetched dev seed and wrote to localStorage (if absent)"
+    },
+    {
+      "type": "startGroupCollapsed",
+      "text": "%c[MSW] Mocking enabled. color:orangered;font-weight:bold;"
+    },
+    {
+      "type": "log",
+      "text": "%cDocumentation: %chttps://mswjs.io/docs font-weight:bold font-weight:normal"
+    },
+    {
+      "type": "log",
+      "text": "Found an issue? https://github.com/mswjs/msw/issues"
+    },
+    {
+      "type": "log",
+      "text": "Worker script URL: http://localhost:5173/mockServiceWorker.js"
+    },
+    {
+      "type": "log",
+      "text": "Worker scope: http://localhost:5173/"
+    },
+    {
+      "type": "log",
+      "text": "Client ID: %s (%s) fed79a73-08b2-4d10-8d52-2b062e38cd63 top-level"
+    },
+    {
+      "type": "endGroup",
+      "text": "console.groupEnd"
+    },
+    {
+      "type": "log",
+      "text": "[MSW] Mock service worker started"
+    },
+    {
+      "type": "log",
+      "text": "[Store Debug] Debugging enabled"
+    },
+    {
+      "type": "log",
+      "text": "[Store Performance] Monitoring enabled"
+    },
+    {
+      "type": "log",
+      "text": "Store debugging tools available at window.__STORE_DEBUG__"
+    },
+    {
+      "type": "warning",
+      "text": "No routes matched location \"/canvas\" "
+    },
+    {
+      "type": "warning",
+      "text": "No routes matched location \"/canvas\" "
+    },
+    {
+      "type": "debug",
+      "text": "[vite] connecting..."
+    },
+    {
+      "type": "debug",
+      "text": "[vite] connected."
+    },
+    {
+      "type": "info",
+      "text": "%cDownload the React DevTools for a better development experience: https://react.dev/link/react-devtools font-weight:bold"
+    },
+    {
+      "type": "debug",
+      "text": "[e2e] fetched dev seed and wrote to localStorage (if absent)"
+    },
+    {
+      "type": "startGroupCollapsed",
+      "text": "%c[MSW] Mocking enabled. color:orangered;font-weight:bold;"
+    },
+    {
+      "type": "log",
+      "text": "%cDocumentation: %chttps://mswjs.io/docs font-weight:bold font-weight:normal"
+    },
+    {
+      "type": "log",
+      "text": "Found an issue? https://github.com/mswjs/msw/issues"
+    },
+    {
+      "type": "log",
+      "text": "Worker script URL: http://localhost:5173/mockServiceWorker.js"
+    },
+    {
+      "type": "log",
+      "text": "Worker scope: http://localhost:5173/"
+    },
+    {
+      "type": "log",
+      "text": "Client ID: %s (%s) 59216f2d-abba-4a3b-85c3-910503b749c2 top-level"
+    },
+    {
+      "type": "endGroup",
+      "text": "console.groupEnd"
+    },
+    {
+      "type": "log",
+      "text": "[MSW] Mock service worker started"
+    },
+    {
+      "type": "log",
+      "text": "[Store Debug] Debugging enabled"
+    },
+    {
+      "type": "log",
+      "text": "[Store Performance] Monitoring enabled"
+    },
+    {
+      "type": "log",
+      "text": "Store debugging tools available at window.__STORE_DEBUG__"
+    },
+    {
+      "type": "warning",
+      "text": "No routes matched location \"/canvas\" "
+    },
+    {
+      "type": "warning",
+      "text": "No routes matched location \"/canvas\" "
+    },
+    {
+      "type": "log",
+      "text": "Download the Apollo DevTools for a better development experience: %s https://chrome.google.com/webstore/detail/apollo-client-developer-t/jdkknkkbebbapilgoeccciglkfbmbnfm"
+    },
+    {
+      "type": "debug",
+      "text": "[vite] connecting..."
+    },
+    {
+      "type": "debug",
+      "text": "[vite] connected."
+    },
+    {
+      "type": "info",
+      "text": "%cDownload the React DevTools for a better development experience: https://react.dev/link/react-devtools font-weight:bold"
+    },
+    {
+      "type": "debug",
+      "text": "[e2e] fetched dev seed and wrote to localStorage (if absent)"
+    },
+    {
+      "type": "startGroupCollapsed",
+      "text": "%c[MSW] Mocking enabled. color:orangered;font-weight:bold;"
+    },
+    {
+      "type": "log",
+      "text": "%cDocumentation: %chttps://mswjs.io/docs font-weight:bold font-weight:normal"
+    },
+    {
+      "type": "log",
+      "text": "Found an issue? https://github.com/mswjs/msw/issues"
+    },
+    {
+      "type": "log",
+      "text": "Worker script URL: http://localhost:5173/mockServiceWorker.js"
+    },
+    {
+      "type": "log",
+      "text": "Worker scope: http://localhost:5173/"
+    },
+    {
+      "type": "log",
+      "text": "Client ID: %s (%s) 7c366e91-2500-4f83-aa1c-4041c82cdeb8 top-level"
+    },
+    {
+      "type": "endGroup",
+      "text": "console.groupEnd"
+    },
+    {
+      "type": "log",
+      "text": "[MSW] Mock service worker started"
+    },
+    {
+      "type": "log",
+      "text": "[Store Debug] Debugging enabled"
+    },
+    {
+      "type": "log",
+      "text": "[Store Performance] Monitoring enabled"
+    },
+    {
+      "type": "log",
+      "text": "Store debugging tools available at window.__STORE_DEBUG__"
+    },
+    {
+      "type": "warning",
+      "text": "No routes matched location \"/canvas\" "
+    },
+    {
+      "type": "warning",
+      "text": "No routes matched location \"/canvas\" "
+    },
+    {
+      "type": "debug",
+      "text": "[vite] connecting..."
+    },
+    {
+      "type": "debug",
+      "text": "[vite] connected."
+    },
+    {
+      "type": "info",
+      "text": "%cDownload the React DevTools for a better development experience: https://react.dev/link/react-devtools font-weight:bold"
+    },
+    {
+      "type": "debug",
+      "text": "[e2e] fetched dev seed and wrote to localStorage (if absent)"
+    },
+    {
+      "type": "startGroupCollapsed",
+      "text": "%c[MSW] Mocking enabled. color:orangered;font-weight:bold;"
+    },
+    {
+      "type": "log",
+      "text": "%cDocumentation: %chttps://mswjs.io/docs font-weight:bold font-weight:normal"
+    },
+    {
+      "type": "log",
+      "text": "Found an issue? https://github.com/mswjs/msw/issues"
+    },
+    {
+      "type": "log",
+      "text": "Worker script URL: http://localhost:5173/mockServiceWorker.js"
+    },
+    {
+      "type": "log",
+      "text": "Worker scope: http://localhost:5173/"
+    },
+    {
+      "type": "log",
+      "text": "Client ID: %s (%s) 0ab285cc-acf1-471d-b469-e2a6f7c00c7d top-level"
+    },
+    {
+      "type": "endGroup",
+      "text": "console.groupEnd"
+    },
+    {
+      "type": "log",
+      "text": "[MSW] Mock service worker started"
+    },
+    {
+      "type": "log",
+      "text": "[Store Debug] Debugging enabled"
+    },
+    {
+      "type": "log",
+      "text": "[Store Performance] Monitoring enabled"
+    },
+    {
+      "type": "log",
+      "text": "Store debugging tools available at window.__STORE_DEBUG__"
+    },
+    {
+      "type": "warning",
+      "text": "No routes matched location \"/canvas\" "
+    },
+    {
+      "type": "warning",
+      "text": "No routes matched location \"/canvas\" "
+    },
+    {
+      "type": "log",
+      "text": "Download the Apollo DevTools for a better development experience: %s https://chrome.google.com/webstore/detail/apollo-client-developer-t/jdkknkkbebbapilgoeccciglkfbmbnfm"
+    },
+    {
+      "type": "debug",
+      "text": "[vite] connecting..."
+    },
+    {
+      "type": "debug",
+      "text": "[vite] connected."
+    },
+    {
+      "type": "info",
+      "text": "%cDownload the React DevTools for a better development experience: https://react.dev/link/react-devtools font-weight:bold"
+    },
+    {
+      "type": "debug",
+      "text": "[e2e] fetched dev seed and wrote to localStorage (if absent)"
+    },
+    {
+      "type": "startGroupCollapsed",
+      "text": "%c[MSW] Mocking enabled. color:orangered;font-weight:bold;"
+    },
+    {
+      "type": "log",
+      "text": "%cDocumentation: %chttps://mswjs.io/docs font-weight:bold font-weight:normal"
+    },
+    {
+      "type": "log",
+      "text": "Found an issue? https://github.com/mswjs/msw/issues"
+    },
+    {
+      "type": "log",
+      "text": "Worker script URL: http://localhost:5173/mockServiceWorker.js"
+    },
+    {
+      "type": "log",
+      "text": "Worker scope: http://localhost:5173/"
+    },
+    {
+      "type": "log",
+      "text": "Client ID: %s (%s) dc5b1b6a-07b2-4b20-b290-c34e53dde624 top-level"
+    },
+    {
+      "type": "endGroup",
+      "text": "console.groupEnd"
+    },
+    {
+      "type": "log",
+      "text": "[MSW] Mock service worker started"
+    },
+    {
+      "type": "log",
+      "text": "[Store Debug] Debugging enabled"
+    },
+    {
+      "type": "log",
+      "text": "[Store Performance] Monitoring enabled"
+    },
+    {
+      "type": "log",
+      "text": "Store debugging tools available at window.__STORE_DEBUG__"
+    },
+    {
+      "type": "warning",
+      "text": "No routes matched location \"/canvas\" "
+    },
+    {
+      "type": "warning",
+      "text": "No routes matched location \"/canvas\" "
+    },
+    {
+      "type": "debug",
+      "text": "[vite] connecting..."
+    },
+    {
+      "type": "debug",
+      "text": "[vite] connected."
+    },
+    {
+      "type": "info",
+      "text": "%cDownload the React DevTools for a better development experience: https://react.dev/link/react-devtools font-weight:bold"
+    },
+    {
+      "type": "debug",
+      "text": "[e2e] fetched dev seed and wrote to localStorage (if absent)"
+    },
+    {
+      "type": "startGroupCollapsed",
+      "text": "%c[MSW] Mocking enabled. color:orangered;font-weight:bold;"
+    },
+    {
+      "type": "log",
+      "text": "%cDocumentation: %chttps://mswjs.io/docs font-weight:bold font-weight:normal"
+    },
+    {
+      "type": "log",
+      "text": "Found an issue? https://github.com/mswjs/msw/issues"
+    },
+    {
+      "type": "log",
+      "text": "Worker script URL: http://localhost:5173/mockServiceWorker.js"
+    },
+    {
+      "type": "log",
+      "text": "Worker scope: http://localhost:5173/"
+    },
+    {
+      "type": "log",
+      "text": "Client ID: %s (%s) 9ca3e258-bc88-48d3-9731-7b5493356089 top-level"
+    },
+    {
+      "type": "endGroup",
+      "text": "console.groupEnd"
+    },
+    {
+      "type": "log",
+      "text": "[MSW] Mock service worker started"
+    },
+    {
+      "type": "log",
+      "text": "[Store Debug] Debugging enabled"
+    },
+    {
+      "type": "log",
+      "text": "[Store Performance] Monitoring enabled"
+    },
+    {
+      "type": "log",
+      "text": "Store debugging tools available at window.__STORE_DEBUG__"
+    },
+    {
+      "type": "warning",
+      "text": "No routes matched location \"/canvas\" "
+    },
+    {
+      "type": "warning",
+      "text": "No routes matched location \"/canvas\" "
+    },
+    {
+      "type": "log",
+      "text": "Download the Apollo DevTools for a better development experience: %s https://chrome.google.com/webstore/detail/apollo-client-developer-t/jdkknkkbebbapilgoeccciglkfbmbnfm"
+    },
+    {
+      "type": "debug",
+      "text": "[vite] connecting..."
+    },
+    {
+      "type": "debug",
+      "text": "[vite] connected."
+    },
+    {
+      "type": "info",
+      "text": "%cDownload the React DevTools for a better development experience: https://react.dev/link/react-devtools font-weight:bold"
+    },
+    {
+      "type": "debug",
+      "text": "[e2e] fetched dev seed and wrote to localStorage (if absent)"
+    },
+    {
+      "type": "startGroupCollapsed",
+      "text": "%c[MSW] Mocking enabled. color:orangered;font-weight:bold;"
+    },
+    {
+      "type": "log",
+      "text": "%cDocumentation: %chttps://mswjs.io/docs font-weight:bold font-weight:normal"
+    },
+    {
+      "type": "log",
+      "text": "Found an issue? https://github.com/mswjs/msw/issues"
+    },
+    {
+      "type": "log",
+      "text": "Worker script URL: http://localhost:5173/mockServiceWorker.js"
+    },
+    {
+      "type": "log",
+      "text": "Worker scope: http://localhost:5173/"
+    },
+    {
+      "type": "log",
+      "text": "Client ID: %s (%s) 4fc40b9a-0914-4f64-9097-f142b48adc4d top-level"
+    },
+    {
+      "type": "endGroup",
+      "text": "console.groupEnd"
+    },
+    {
+      "type": "log",
+      "text": "[MSW] Mock service worker started"
+    },
+    {
+      "type": "log",
+      "text": "[Store Debug] Debugging enabled"
+    },
+    {
+      "type": "log",
+      "text": "[Store Performance] Monitoring enabled"
+    },
+    {
+      "type": "log",
+      "text": "Store debugging tools available at window.__STORE_DEBUG__"
+    },
+    {
+      "type": "warning",
+      "text": "No routes matched location \"/canvas\" "
+    },
+    {
+      "type": "warning",
+      "text": "No routes matched location \"/canvas\" "
+    },
+    {
+      "type": "debug",
+      "text": "[vite] connecting..."
+    },
+    {
+      "type": "debug",
+      "text": "[vite] connected."
+    },
+    {
+      "type": "info",
+      "text": "%cDownload the React DevTools for a better development experience: https://react.dev/link/react-devtools font-weight:bold"
+    },
+    {
+      "type": "debug",
+      "text": "[e2e] fetched dev seed and wrote to localStorage (if absent)"
+    },
+    {
+      "type": "startGroupCollapsed",
+      "text": "%c[MSW] Mocking enabled. color:orangered;font-weight:bold;"
+    },
+    {
+      "type": "log",
+      "text": "%cDocumentation: %chttps://mswjs.io/docs font-weight:bold font-weight:normal"
+    },
+    {
+      "type": "log",
+      "text": "Found an issue? https://github.com/mswjs/msw/issues"
+    },
+    {
+      "type": "log",
+      "text": "Worker script URL: http://localhost:5173/mockServiceWorker.js"
+    },
+    {
+      "type": "log",
+      "text": "Worker scope: http://localhost:5173/"
+    },
+    {
+      "type": "log",
+      "text": "Client ID: %s (%s) 9331bb98-a855-4fe7-8f2a-0ebf2415b3fc top-level"
+    },
+    {
+      "type": "endGroup",
+      "text": "console.groupEnd"
+    },
+    {
+      "type": "log",
+      "text": "[MSW] Mock service worker started"
+    },
+    {
+      "type": "log",
+      "text": "[Store Debug] Debugging enabled"
+    },
+    {
+      "type": "log",
+      "text": "[Store Performance] Monitoring enabled"
+    },
+    {
+      "type": "log",
+      "text": "Store debugging tools available at window.__STORE_DEBUG__"
+    },
+    {
+      "type": "warning",
+      "text": "No routes matched location \"/canvas\" "
+    },
+    {
+      "type": "warning",
+      "text": "No routes matched location \"/canvas\" "
+    },
+    {
+      "type": "log",
+      "text": "Download the Apollo DevTools for a better development experience: %s https://chrome.google.com/webstore/detail/apollo-client-developer-t/jdkknkkbebbapilgoeccciglkfbmbnfm"
+    },
+    {
+      "type": "debug",
+      "text": "[vite] connecting..."
+    },
+    {
+      "type": "debug",
+      "text": "[vite] connected."
+    },
+    {
+      "type": "info",
+      "text": "%cDownload the React DevTools for a better development experience: https://react.dev/link/react-devtools font-weight:bold"
+    },
+    {
+      "type": "debug",
+      "text": "[e2e] fetched dev seed and wrote to localStorage (if absent)"
+    },
+    {
+      "type": "startGroupCollapsed",
+      "text": "%c[MSW] Mocking enabled. color:orangered;font-weight:bold;"
+    },
+    {
+      "type": "log",
+      "text": "%cDocumentation: %chttps://mswjs.io/docs font-weight:bold font-weight:normal"
+    },
+    {
+      "type": "log",
+      "text": "Found an issue? https://github.com/mswjs/msw/issues"
+    },
+    {
+      "type": "log",
+      "text": "Worker script URL: http://localhost:5173/mockServiceWorker.js"
+    },
+    {
+      "type": "log",
+      "text": "Worker scope: http://localhost:5173/"
+    },
+    {
+      "type": "log",
+      "text": "Client ID: %s (%s) 77797ddc-8f1a-463b-aefa-5c02a56047de top-level"
+    },
+    {
+      "type": "endGroup",
+      "text": "console.groupEnd"
+    },
+    {
+      "type": "log",
+      "text": "[MSW] Mock service worker started"
+    },
+    {
+      "type": "log",
+      "text": "[Store Debug] Debugging enabled"
+    },
+    {
+      "type": "log",
+      "text": "[Store Performance] Monitoring enabled"
+    },
+    {
+      "type": "log",
+      "text": "Store debugging tools available at window.__STORE_DEBUG__"
+    },
+    {
+      "type": "warning",
+      "text": "No routes matched location \"/canvas\" "
+    },
+    {
+      "type": "warning",
+      "text": "No routes matched location \"/canvas\" "
+    }
+  ],
+  "pageErrors": [
+    "TypeError: Cannot read properties of undefined (reading 'length')"
+  ]
+}

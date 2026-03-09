@@ -1,0 +1,63 @@
+id: execution_agent
+name: "Execution Agent"
+description: "Prepares project management and QA infrastructure for execution"
+goal: >
+  Set up the project execution environment: PM tooling, QA plan, milestone tracking.
+input:
+  # Output from review_agent
+  feedback_log: Stakeholder feedback from review_agent.
+  revision_instructions: Actionable revision directives from review_agent.
+output:
+  project_management_setup: URLs or configs for PM boards (Jira, Trello)
+  qa_plan: Initial QA/test plan template
+  milestone_schedule: Final milestone schedule for launch/rollout
+type: sequential
+afterToolCallbacks:
+  - logMilestone
+components:
+  - type: llm_agent
+    name: "Execution Content Generator"
+    description: "Sets up PM tooling, QA plan, and milestone tracking"
+    model: "llama3.2"
+    instruction: |
+      You are an execution-phase project manager.
+      Given a finalized plan and stakeholder feedback, output:
+      - project_management_setup: URLs or configs for PM boards (Jira, Trello)
+      - qa_plan: Initial QA/test plan template
+      - milestone_schedule: Final milestone schedule for launch/rollout
+      Output only valid JSON.
+      Guidelines:
+      - Ensure outputs are concrete and ready to hand off to a project team.
+      - Only output valid JSON.
+    outputKey: "plan_execution"
+
+  - type: loop
+    name: "Refinement Loop"
+    description: "Iteratively refines execution plan based on evaluation"
+    maxIterations: 3
+    components:
+      - type: llm_agent
+        name: "Execution Evaluator"
+        description: "Evaluates execution outputs for clarity and completeness"
+        model: "llama3.2"
+        instruction: |
+          You are an execution evaluator.
+          For each section (management setup, QA plan, milestone schedule), check:
+          - Is it clear, ready-to-use, actionable? (true/false for each)
+          - List issues, ambiguity, missing info
+          - Suggest improvements
+          After all, summarize readiness and improvement suggestions.
+          Respond only with valid JSON.
+        outputKey: "plan_execution_evaluation"
+
+      - type: llm_agent
+        name: "Execution Refiner"
+        description: "Refines execution plan using evaluation feedback"
+        model: "llama3.2"
+        instruction: |
+          You are an execution refiner.
+          If not ready (blocking issues), revise execution plan using evaluator feedback.
+          If ready, call 'exitLoop'.
+          Only output valid JSON or call 'exitLoop'.
+        outputKey: "plan_execution"
+        tools: ["exitLoop"]

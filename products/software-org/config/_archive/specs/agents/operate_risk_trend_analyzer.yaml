@@ -1,0 +1,36 @@
+---
+id: "operate_risk_trend_analyzer"
+agent: "RiskTrendAnalyzerAgent"
+role: "Risk Intelligence Bot"
+inputs_spec:
+- name: "operate_escalation_report"
+  description: "Operate escalation report for risk trend analysis."
+  format: "Escalation report artifact"
+- name: "operate_progress_dashboard"
+  description: "Operate progress dashboard for risk trend data."
+  format: "Dashboard artifact"
+- name: "operate_stage_milestone"
+  description: "Operate milestone plan for risk trend context."
+  format: "List of milestone objects"
+outputs_spec:
+- name: "operate_risk_trend_report"
+  description: "Risk trend report (risks, escalations, blockers, recommendations)."
+  format: "Risk trend report artifact"
+agent_tasks:
+- "Trend all operate-stage risks, escalations, blockers over time."
+- "Automatically flag/classify recurring/systemic risks."
+- "Share trend report with PMO and leadership."
+- "Recommend mitigation or process changes."
+acceptance_criteria:
+- "All risks, escalations, blockers are trended over time."
+- "Recurring/systemic risks are flagged/classified."
+- "Trend report shared with PMO/leadership."
+- "Recommendations included."
+dependencies:
+- "operate_escalation_report"
+- "operate_progress_dashboard"
+- "operate_stage_milestone"
+failure_escalation:
+- "Escalate to Risk Intelligence Lead if risk trends or recommendations missing."
+references: []
+hitl: false

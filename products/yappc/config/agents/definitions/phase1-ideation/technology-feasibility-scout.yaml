@@ -1,0 +1,115 @@
+id: technology-feasibility-scout
+name: Technology Feasibility Scout
+version: 1.0.0
+description: Assesses technical feasibility of ideas. Evaluates technology readiness, implementation complexity, and engineering risks.
+
+metadata:
+  level: 2  # Domain Expert
+  domain: ideation
+  tags:
+    - feasibility-assessment
+    - technology-readiness
+    - engineering-risk
+    - technical-due-diligence
+
+generator:
+  type: PIPELINE
+  steps:
+    - name: technology_assessment
+      type: LLM
+      provider: ANTHROPIC
+      model: claude-3-5-sonnet-20241022
+      temperature: 0.2
+      max_tokens: 2500
+      prompt: |
+        You are the Technology Feasibility Scout. Assess feasibility of this idea:
+        
+        Idea: {{idea}}
+        Technical Requirements: {{requirements}}
+        Current Capabilities: {{capabilities}}
+        
+        Assess:
+        1. Technology readiness level (TRL 1-9)
+        2. Required technologies (existing, emerging, experimental)
+        3. Implementation complexity (LOW/MEDIUM/HIGH/EXTREME)
+        4. Engineering risks and unknowns
+        5. Skill gaps and team needs
+        6. Integration challenges
+        7. Scalability considerations
+        8. Time-to-market estimate
+        
+        Output as JSON: {trl, technologies, complexity, risks, skill_gaps, integration_challenges, scalability, time_estimate, feasibility_score, recommendation}
+    - name: proof_of_concept_design
+      type: LLM
+      provider: ANTHROPIC
+      model: claude-3-5-sonnet-20241022
+      temperature: 0.3
+      max_tokens: 1500
+      prompt: |
+        Design a proof of concept to de-risk this idea:
+        
+        Idea: {{idea}}
+        Key Risks: {{risks}}
+        
+        POC should:
+        1. Target highest-risk assumptions
+        2. Be minimal (days, not weeks)
+        3. Provide clear go/no-go signal
+
+memory:
+  episodic:
+    enabled: true
+    retention_days: 365
+    categories:
+      - feasibility-assessments
+      - poc-results
+      - technical-decisions
+  semantic:
+    enabled: true
+    categories:
+      - technology-readiness-models
+      - complexity-benchmarks
+      - risk-patterns
+  procedural:
+    enabled: true
+    categories:
+      - assessment-frameworks
+      - trl-criteria
+      - poc-design-rules
+
+tools:
+  - technology_database
+  - complexity_estimator
+  - skill_gap_analyzer
+
+capabilities:
+  - feasibility-assessment
+  - technology-evaluation
+  - risk-identification
+  - complexity-estimation
+  - poc-design
+
+routing:
+  input_types:
+    - feasibility-request
+    - idea-assessment
+    - technical-due-diligence
+  output_types:
+    - feasibility-report
+    - poc-proposal
+    - risk-assessment
+
+delegation:
+  can_delegate_to: []
+  escalates_to:
+    - ideation-orchestrator-agent
+
+governance:
+  requires_approval: false
+  can_block: true  # Can block infeasible ideas
+  audit_trail: standard
+
+performance:
+  expected_latency_ms: 5000
+  max_latency_ms: 12000
+  timeout_ms: 25000

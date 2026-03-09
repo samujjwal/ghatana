@@ -1,0 +1,46 @@
+use tracing_subscriber::{
+fmt::{self, format::FmtSpan},
+layer::SubscriberExt,
+util::SubscriberInitExt,
+EnvFilter,
+};
+
+/// Initialize logging with tracing-subscriber
+pub fn init_logging() {
+let filter = EnvFilter::try_from_default_env()
+.unwrap_or_else(|_| EnvFilter::new("{{logLevel}}"));
+
+{{#if (eq logFormat "json")}}
+let format = fmt::layer()
+.json()
+.with_span_events(FmtSpan::CLOSE)
+.with_current_span(true)
+.with_target(true)
+.with_file(true)
+.with_line_number(true);
+{{else}}
+let format = fmt::layer()
+.with_span_events(FmtSpan::CLOSE)
+.with_target(true)
+.with_ansi(true);
+{{/if}}
+
+tracing_subscriber::registry()
+.with(filter)
+.with(format)
+.init();
+
+tracing::info!(service = "{{serviceName}}", "Logging initialized");
+}
+
+/// Macro for structured logging with common fields
+#[macro_export]
+macro_rules! log_event {
+($level:ident, $message:expr, $($key:ident = $value:expr),* $(,)?) => {
+tracing::$level!(
+service = "{{serviceName}}",
+$($key = $value,)*
+$message
+)
+};
+}

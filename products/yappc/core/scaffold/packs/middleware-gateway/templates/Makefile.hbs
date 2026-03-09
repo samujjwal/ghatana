@@ -1,0 +1,71 @@
+.PHONY: dev build test lint format clean docker-build docker-run
+
+# Development
+dev:
+pnpm dev
+
+# Build
+build:
+pnpm build
+
+# Test
+test:
+pnpm test
+
+test-watch:
+pnpm test:watch
+
+test-coverage:
+pnpm test:coverage
+
+# Linting
+lint:
+pnpm lint
+
+format:
+pnpm format
+
+check:
+pnpm check
+
+# Clean
+clean:
+rm -rf dist node_modules coverage .tsbuildinfo
+
+# Docker
+docker-build:
+docker build -t {{projectName}}:latest .
+
+docker-run:
+docker run -p {{port}}:{{port}} --rm {{projectName}}:latest
+
+docker-compose-up:
+docker compose up -d
+
+docker-compose-down:
+docker compose down
+
+docker-compose-logs:
+docker compose logs -f
+
+# Install
+install:
+pnpm install
+
+# Help
+help:
+@echo "Available targets:"
+@echo " dev - Run in development mode"
+@echo " build - Build for production"
+@echo " test - Run tests"
+@echo " test-watch - Run tests in watch mode"
+@echo " test-coverage - Run tests with coverage"
+@echo " lint - Run linter"
+@echo " format - Format code"
+@echo " check - Run all checks"
+@echo " clean - Remove build artifacts"
+@echo " docker-build - Build Docker image"
+@echo " docker-run - Run Docker container"
+@echo " docker-compose-up - Start with docker compose"
+@echo " docker-compose-down - Stop docker compose"
+@echo " install - Install dependencies"

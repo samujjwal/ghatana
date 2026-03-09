@@ -1,0 +1,91 @@
+id: quality-guard-agent
+name: Quality Guard Agent
+version: 1.0.0
+description: Enforces quality gates across all phases. Evaluates code coverage, mutation score, style compliance, and complexity thresholds before allowing phase transitions.
+
+metadata:
+  level: 2  # Domain Expert (Guardrail)
+  domain: quality
+  tags:
+    - quality-gate
+    - coverage
+    - mutation-testing
+    - style-compliance
+    - guardrail
+
+generator:
+  type: PIPELINE
+  steps:
+    - name: metric_collection
+      type: SERVICE_CALL
+      service: quality-metrics
+      endpoint: /metrics/collect
+    - name: threshold_evaluation
+      type: RULE_BASED
+      description: Evaluate collected metrics against configured thresholds
+    - name: gate_decision
+      type: RULE_BASED
+      description: >
+        PASS if all thresholds met.
+        WARN if soft thresholds breached.
+        BLOCK if hard thresholds breached.
+
+memory:
+  episodic:
+    enabled: true
+    retention_days: 365
+    categories:
+      - gate-decisions
+      - threshold-breaches
+      - override-requests
+  semantic:
+    enabled: true
+    categories:
+      - quality-trends
+      - project-baselines
+  procedural:
+    enabled: true
+    categories:
+      - threshold-configs
+      - gate-rules
+
+tools:
+  - coverage_analyzer
+  - mutation_score_reader
+  - style_checker
+  - complexity_calculator
+
+capabilities:
+  - test-generation
+  - code-analysis
+
+routing:
+  input_types:
+    - build-artifact
+    - test-results
+    - coverage-report
+  output_types:
+    - gate-decision
+    - quality-report
+
+delegation:
+  can_delegate_to: []
+  escalates_to:
+    - human-in-the-loop-coordinator
+
+governance:
+  requires_approval: false
+  can_block: true
+  audit_trail: comprehensive
+  thresholds:
+    line_coverage_hard: 0.70
+    line_coverage_soft: 0.80
+    mutation_score_hard: 0.60
+    mutation_score_soft: 0.75
+    complexity_max: 15
+    style_violations_max: 0
+
+performance:
+  expected_latency_ms: 500
+  max_latency_ms: 3000
+  timeout_ms: 5000

@@ -1,0 +1,118 @@
+id: rollback-agent
+name: Rollback Agent
+version: 1.0.0
+description: Executes rollbacks safely. Handles emergency and planned rollbacks with minimal impact.
+
+metadata:
+  level: 2  # Domain Expert
+  domain: release
+  tags:
+    - rollback
+    - recovery
+    - emergency
+    - stability
+
+generator:
+  type: PIPELINE
+  steps:
+    - name: rollback_assessment
+      type: LLM
+      provider: ANTHROPIC
+      model: claude-3-5-sonnet-20241022
+      temperature: 0.1
+      max_tokens: 2000
+      prompt: |
+        You are the Rollback Agent. Assess rollback need:
+        
+        Current State: {{state}}
+        Issue: {{issue}}
+        Metrics: {{metrics}}
+        Rollback Options: {{options}}
+        
+        Assess:
+        1. Severity of issue
+        2. Blast radius
+        3. Rollback target version
+        4. Data migration concerns
+        5. Dependencies impacted
+        6. Rollback steps
+        7. Verification criteria
+        8. Communication needs
+        
+        Output as JSON: {
+          severity,
+          blast_radius,
+          target_version,
+          data_concerns,
+          dependencies,
+          rollback_steps,
+          verification,
+          communication,
+          estimated_duration
+        }
+    - name: rollback_execution
+      type: SERVICE_CALL
+      service: deployment-service
+      endpoint: /rollback
+    - name: verification
+      type: SERVICE_CALL
+      service: health-service
+      endpoint: /verify
+
+memory:
+  episodic:
+    enabled: true
+    retention_days: 730
+    categories:
+      - rollbacks
+      - root-causes
+      - outcomes
+  semantic:
+    enabled: true
+    categories:
+      - rollback-patterns
+      - risk-indicators
+      - recovery-strategies
+  procedural:
+    enabled: true
+    categories:
+      - rollback-playbooks
+      - verification-steps
+      - communication-templates
+
+tools:
+  - rollback_executor
+  - state_validator
+  - communication_sender
+
+capabilities:
+  - rollback-assessment
+  - safe-rollback
+  - state-verification
+  - communication
+
+routing:
+  input_types:
+    - rollback-request
+    - emergency-alert
+    - degradation-signal
+  output_types:
+    - rollback-status
+    - verification-report
+    - incident-update
+
+delegation:
+  can_delegate_to: []
+  escalates_to:
+    - release-orchestrator-agent
+    - human-in-the-loop-coordinator
+
+governance:
+  requires_approval: false  # Emergency action
+  can_block: false
+  audit_trail: comprehensive
+
+performance:
+  expected_latency_ms: 2000
+  max_latency_ms: 5000
+  timeout_ms: 900000  # 15 minutes

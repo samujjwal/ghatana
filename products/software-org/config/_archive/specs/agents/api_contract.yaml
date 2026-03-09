@@ -1,0 +1,42 @@
+id: api_contract
+agent: APIContractAgent
+role: API Architect
+inputs_spec:
+  - name: data_model
+    description: Data model from DataModelAgent.
+    format: YAML object
+outputs_spec:
+  - name: api_contract
+    description: API contracts: endpoints, schemas, security, versioning, tests.
+    format: YAML object
+acceptance_criteria:
+  - All endpoints, methods, schemas, security specified.
+  - Examples and tests included.
+  - Template-based output.
+agent_tasks:
+  - Parse data model for endpoints/auth/payloads.
+  - Maintain OpenAPI (or similar) contracts, versioning.
+  - Generate examples, test cases, flag ambiguities.
+dependencies:
+  - data_model
+failure_escalation:
+  - Escalate ambiguous endpoints or missing security/test cases.
+references: []
+internal_logic:
+  - perception:
+      description: "Parse solution and data model for all APIs, endpoints, authentication, and payload schemas."
+  - model:
+      description: "Maintain API contract specs (OpenAPI, versioning), mapped to requirements and test cases."
+  - planning:
+      description: |
+        "For each endpoint, specify method, schema, validation, security, and error handling.
+         Generate examples and flag ambiguities."
+  - action:
+      description: "Generate API contract docs and publish to API registry."
+validation:
+  - "Automated contract/schema validation."
+  - "Peer/QA review for test case generation and endpoint coverage."
+quality_enhancements:
+  - "API contract template for each endpoint."
+  - "Metrics for contract coverage and changes."
+  - "Automated checks in CI pipeline."

@@ -1,0 +1,42 @@
+{
+  "name": "@ghatana/dcmaar-agent-connectors",
+  "version": "0.1.0",
+  "type": "module",
+  "description": "TypeScript connector integration layer for DCMAAR Agent",
+  "private": true,
+  "main": "./dist-ts/index.js",
+  "types": "./dist-ts/index.d.ts",
+  "scripts": {
+    "build": "tsc",
+    "build:napi": "napi build --release --manifest-path crates/agent-napi/Cargo.toml",
+    "build:napi:debug": "napi build --manifest-path crates/agent-napi/Cargo.toml",
+    "build:all": "pnpm run build && pnpm run build:napi",
+    "dev": "tsx watch src-ts/index.ts",
+    "type-check": "tsc --noEmit",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "lint": "eslint src-ts/**/*.ts",
+    "clean": "rimraf dist-ts"
+  },
+  "dependencies": {
+    "@ghatana/dcmaar-connectors": "workspace:*",
+    "eventemitter3": "^5.0.1",
+    "ws": "^8.18.3",
+    "zod": "^4.1.12"
+  },
+  "devDependencies": {
+    "@types/node": "^24.10.0",
+    "@types/ws": "^8.18.1",
+    "@napi-rs/cli": "^3.4.1",
+    "typescript": "^5.9.3",
+    "tsx": "^4.20.6",
+    "vitest": "^4.0.7",
+    "rimraf": "^6.1.0",
+    "@typescript-eslint/eslint-plugin": "^8.46.3",
+    "@typescript-eslint/parser": "^8.46.3",
+    "eslint": "^9.39.1"
+  },
+  "engines": {
+    "node": ">=20.0.0"
+  }
+}

@@ -1,0 +1,68 @@
+//! Application router configuration.
+
+use axum::{
+routing::{get, post, put, delete},
+Router,
+};
+use std::time::Duration;
+use tower_http::{
+cors::{Any, CorsLayer},
+timeout::TimeoutLayer,
+trace::TraceLayer,
+compression::CompressionLayer,
+};
+
+use crate::config::Config;
+use crate::handlers;
+
+/// Creates the application router with all routes and middleware.
+pub fn create_router(config: Config) -> Router {
+// CORS configuration
+let cors = CorsLayer::new()
+.allow_origin(Any)
+.allow_methods(Any)
+.allow_headers(Any);
+
+// Health check routes (no middleware)
+let health_routes = Router::new()
+.route("/health", get(handlers::health))
+.route("/ready", get(handlers::ready))
+.route("/live", get(handlers::live));
+
+// API routes
+let api_routes = Router::new()
+.route("/", get(handlers::welcome))
+.nest("/items", item_routes());
+
+// Combine all routes
+Router::new()
+.merge(health_routes)
+.nest("/api/v1", api_routes)
+.layer(CompressionLayer::new())
+.layer(TimeoutLayer::new(Duration::from_secs(60)))
+.layer(TraceLayer::new_for_http())
+.layer(cors)
+.with_state(AppState::new(config))
+}
+
+/// Item resource routes.
+fn item_routes() -> Router<AppState> {
+    Router::new()
+    .route("/", get(handlers::list_items))
+    .route("/", post(handlers::create_item))
+    .route("/:id", get(handlers::get_item))
+    .route("/:id", put(handlers::update_item))
+    .route("/:id", delete(handlers::delete_item))
+    }
+
+    /// Application state shared across handlers.
+    #[derive(Clone)]
+    pub struct AppState {
+    pub config: Config,
+    }
+
+    impl AppState {
+    pub fn new(config: Config) -> Self {
+    Self { config }
+    }
+    }

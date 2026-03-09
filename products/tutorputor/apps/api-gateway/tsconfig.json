@@ -1,0 +1,41 @@
+{
+  "compilerOptions": {
+    "target": "ES2022",
+    "module": "Node16",
+    "moduleResolution": "Node16",
+    "lib": ["ES2022"],
+    "types": ["node"],
+    "baseUrl": ".",
+    "paths": {
+      "@ghatana/tutorputor-contracts": ["../../contracts/v1/index.ts"],
+      "@ghatana/tutorputor-contracts/*": ["../../contracts/*"]
+    },
+    "outDir": "./dist",
+    "strict": true,
+    "esModuleInterop": true,
+    "forceConsistentCasingInFileNames": true,
+    "skipLibCheck": true,
+    "resolveJsonModule": true,
+  },
+  "include": ["src/**/*.ts", "src/**/*.d.ts"],
+  "exclude": [
+    "dist",
+    "node_modules",
+    "src/e2e/**",
+    "src/**/*.test.ts",
+    "src/**/*.spec.ts",
+    "src/routes/audit.ts",
+    "src/routes/compliance.ts",
+    "src/routes/social.ts",
+    "src/routes/sso.ts",
+    "src/routes/vr-labs.ts",
+    "src/routes/payments.ts",
+    "src/routes/gamification.ts",
+    "src/routes/search.ts",
+    "src/routes/simulation.ts",
+    "src/routes/lti.ts",
+    "src/routes/health.ts",
+    "src/observability/**",
+    "src/stubs/**"
+  ]
+}

@@ -1,0 +1,26 @@
+---
+id: "monitoring_dashboard"
+agent: "MonitoringDashboardAgent"
+role: "SOC Dashboard Owner"
+inputs_spec:
+- name: "improvement_actions"
+  description: "Improvement actions for dashboard visualization."
+  format: "Improvement actions artifact"
+outputs_spec:
+- name: "monitor_dashboard"
+  description: "Real-time security/incident/anomaly dashboard."
+  format: "Dashboard artifact"
+agent_tasks:
+- "Visualize security, incident, anomaly status in real time."
+- "Make dashboard accessible to stakeholders."
+- "Monitor dashboard health/data quality."
+acceptance_criteria:
+- "Security, incident, anomaly status visualized in real time."
+- "Dashboards accessible to stakeholders."
+- "Dashboard health/data quality monitored."
+dependencies:
+- "improvement_actions"
+failure_escalation:
+- "Escalate to SOC Dashboard Owner if dashboard not accessible or current."
+references: []
+hitl: false

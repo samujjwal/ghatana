@@ -1,0 +1,375 @@
+# Implementation / Coding Tasks
+# Domain 7 of 22 - Developer Task Universe
+# Reference: developer-tasks.md Part I, Section 7
+
+domain:
+  id: implementation
+  name: "Implementation / Coding"
+  description: "Core development tasks including writing code, refactoring, and quality improvements"
+  order: 7
+  icon: "code"
+  color: "#2196F3"
+  lifecycle_stages:
+    - execute
+
+tasks:
+  # Core Development Tasks
+  - id: impl-001
+    name: "Write Application Code"
+    description: "Write new application code to implement features"
+    personas:
+      - Developer
+    lifecycle_stages:
+      - execute
+    automation_level: assisted
+    required_capabilities:
+      - code-generation
+      - language-understanding
+    input_schema: impl-001-input
+    output_schema: impl-001-output
+    audit_artifacts:
+      - InputSnapshot
+      - OutputSnapshot
+      - ChangeSet
+    ui:
+      icon: "code"
+      color: "#2196F3"
+      tags:
+        - coding
+        - implementation
+        - development
+      input_hints:
+        - "Describe the functionality to implement"
+        - "Include any specific patterns or conventions to follow"
+      output_hints:
+        - "Review generated code for correctness"
+        - "Ensure error handling is included"
+
+  - id: impl-002
+    name: "Implement Business Logic"
+    description: "Write code that implements business rules and workflows"
+    personas:
+      - Developer
+    lifecycle_stages:
+      - execute
+    automation_level: assisted
+    required_capabilities:
+      - code-generation
+      - domain-understanding
+    input_schema: impl-002-input
+    output_schema: impl-002-output
+    audit_artifacts:
+      - InputSnapshot
+      - OutputSnapshot
+      - ChangeSet
+      - DecisionRecord
+    ui:
+      icon: "business"
+      color: "#2196F3"
+      tags:
+        - business-logic
+        - rules
+        - workflows
+
+  - id: impl-003
+    name: "Build UI Components"
+    description: "Create user interface components and layouts"
+    personas:
+      - Developer
+    lifecycle_stages:
+      - execute
+    automation_level: assisted
+    required_capabilities:
+      - code-generation
+      - ui-design
+    input_schema: impl-003-input
+    output_schema: impl-003-output
+    audit_artifacts:
+      - InputSnapshot
+      - OutputSnapshot
+      - ChangeSet
+    ui:
+      icon: "web"
+      color: "#2196F3"
+      tags:
+        - ui
+        - components
+        - frontend
+
+  - id: impl-004
+    name: "Implement APIs and Handlers"
+    description: "Create API endpoints and request handlers"
+    personas:
+      - Developer
+    lifecycle_stages:
+      - execute
+    automation_level: assisted
+    required_capabilities:
+      - code-generation
+      - api-design
+    input_schema: impl-004-input
+    output_schema: impl-004-output
+    audit_artifacts:
+      - InputSnapshot
+      - OutputSnapshot
+      - ChangeSet
+    ui:
+      icon: "api"
+      color: "#2196F3"
+      tags:
+        - api
+        - backend
+        - handlers
+
+  - id: impl-005
+    name: "Write Database Queries"
+    description: "Create database queries and data access code"
+    personas:
+      - Developer
+    lifecycle_stages:
+      - execute
+    automation_level: assisted
+    required_capabilities:
+      - code-generation
+      - database-knowledge
+    input_schema: impl-005-input
+    output_schema: impl-005-output
+    audit_artifacts:
+      - InputSnapshot
+      - OutputSnapshot
+      - ChangeSet
+    ui:
+      icon: "table_view"
+      color: "#2196F3"
+      tags:
+        - database
+        - queries
+        - data-access
+
+  - id: impl-006
+    name: "Write Migrations"
+    description: "Create database schema migrations"
+    personas:
+      - Developer
+    lifecycle_stages:
+      - execute
+    automation_level: assisted
+    required_capabilities:
+      - code-generation
+      - database-knowledge
+    input_schema: impl-006-input
+    output_schema: impl-006-output
+    audit_artifacts:
+      - InputSnapshot
+      - OutputSnapshot
+      - ChangeSet
+    ui:
+      icon: "swap_vert"
+      color: "#2196F3"
+      tags:
+        - migrations
+        - database
+        - schema
+
+  - id: impl-007
+    name: "Implement Background Jobs/Workflows"
+    description: "Create background processing jobs and async workflows"
+    personas:
+      - Developer
+    lifecycle_stages:
+      - execute
+    automation_level: assisted
+    required_capabilities:
+      - code-generation
+      - async-patterns
+    input_schema: impl-007-input
+    output_schema: impl-007-output
+    audit_artifacts:
+      - InputSnapshot
+      - OutputSnapshot
+      - ChangeSet
+    ui:
+      icon: "schedule_send"
+      color: "#2196F3"
+      tags:
+        - background
+        - jobs
+        - async
+
+  - id: impl-008
+    name: "Implement Feature Flags"
+    description: "Add feature flag support for controlled rollouts"
+    personas:
+      - Developer
+    lifecycle_stages:
+      - execute
+    automation_level: assisted
+    required_capabilities:
+      - code-generation
+      - feature-management
+    input_schema: impl-008-input
+    output_schema: impl-008-output
+    audit_artifacts:
+      - InputSnapshot
+      - OutputSnapshot
+      - ChangeSet
+    ui:
+      icon: "flag"
+      color: "#2196F3"
+      tags:
+        - feature-flags
+        - toggles
+        - rollout
+
+  # Code Quality Tasks
+  - id: impl-009
+    name: "Refactor Code"
+    description: "Improve code structure without changing behavior"
+    personas:
+      - Developer
+    lifecycle_stages:
+      - execute
+    automation_level: assisted
+    required_capabilities:
+      - refactoring
+      - code-analysis
+    input_schema: impl-009-input
+    output_schema: impl-009-output
+    audit_artifacts:
+      - InputSnapshot
+      - OutputSnapshot
+      - ChangeSet
+    ui:
+      icon: "auto_fix_high"
+      color: "#2196F3"
+      tags:
+        - refactoring
+        - cleanup
+        - improvement
+
+  - id: impl-010
+    name: "Improve Readability and Maintainability"
+    description: "Enhance code readability through better naming and structure"
+    personas:
+      - Developer
+    lifecycle_stages:
+      - execute
+    automation_level: assisted
+    required_capabilities:
+      - refactoring
+      - code-review
+    input_schema: impl-010-input
+    output_schema: impl-010-output
+    audit_artifacts:
+      - InputSnapshot
+      - OutputSnapshot
+      - ChangeSet
+    ui:
+      icon: "visibility"
+      color: "#2196F3"
+      tags:
+        - readability
+        - maintainability
+        - quality
+
+  - id: impl-011
+    name: "Remove Duplication"
+    description: "Identify and eliminate code duplication"
+    personas:
+      - Developer
+    lifecycle_stages:
+      - execute
+    automation_level: assisted
+    required_capabilities:
+      - refactoring
+      - code-analysis
+    input_schema: impl-011-input
+    output_schema: impl-011-output
+    audit_artifacts:
+      - InputSnapshot
+      - OutputSnapshot
+      - ChangeSet
+    ui:
+      icon: "content_copy"
+      color: "#2196F3"
+      tags:
+        - duplication
+        - dry
+        - refactoring
+
+  - id: impl-012
+    name: "Apply Design Patterns"
+    description: "Implement appropriate design patterns to solve problems"
+    personas:
+      - Developer
+      - Tech Lead
+    lifecycle_stages:
+      - execute
+    automation_level: assisted
+    required_capabilities:
+      - refactoring
+      - pattern-knowledge
+    input_schema: impl-012-input
+    output_schema: impl-012-output
+    audit_artifacts:
+      - InputSnapshot
+      - OutputSnapshot
+      - ChangeSet
+      - DecisionRecord
+    ui:
+      icon: "pattern"
+      color: "#2196F3"
+      tags:
+        - patterns
+        - design
+        - architecture
+
+  - id: impl-013
+    name: "Enforce Conventions"
+    description: "Apply and enforce coding conventions and standards"
+    personas:
+      - Developer
+    lifecycle_stages:
+      - execute
+    automation_level: automated
+    required_capabilities:
+      - code-analysis
+      - linting
+    input_schema: impl-013-input
+    output_schema: impl-013-output
+    audit_artifacts:
+      - InputSnapshot
+      - OutputSnapshot
+      - ChangeSet
+    ui:
+      icon: "rule"
+      color: "#2196F3"
+      tags:
+        - conventions
+        - standards
+        - linting
+
+  - id: impl-014
+    name: "Remove Dead or Deprecated Code"
+    description: "Identify and remove unused or deprecated code"
+    personas:
+      - Developer
+    lifecycle_stages:
+      - execute
+    automation_level: assisted
+    required_capabilities:
+      - code-analysis
+      - refactoring
+    input_schema: impl-014-input
+    output_schema: impl-014-output
+    audit_artifacts:
+      - InputSnapshot
+      - OutputSnapshot
+      - ChangeSet
+    ui:
+      icon: "delete_sweep"
+      color: "#2196F3"
+      tags:
+        - cleanup
+        - dead-code
+        - maintenance

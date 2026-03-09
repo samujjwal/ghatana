@@ -1,0 +1,472 @@
+# ============================================================================
+# Simulation Engine Alert Rules for TutorPutor
+# ============================================================================
+# Purpose: Alert rules for simulation playback, kernel execution, caching,
+#          and real-time performance monitoring.
+#
+# Domains covered:
+#   - CS_DISCRETE (stacks, queues, graphs)
+#   - PHYSICS (kinematics, circuits, waves)
+#   - CHEMISTRY (reactions, molecules)
+#   - BIOLOGY (cells, gene expression)
+#   - MEDICINE (pharmacokinetics, epidemiology)
+#   - ECONOMICS (markets, auctions)
+#
+# @doc.type configuration
+# @doc.purpose Prometheus alerting rules for simulation engine
+# @doc.layer platform
+# @doc.pattern observability
+# ============================================================================
+
+groups:
+  # ==========================================================================
+  # PLAYBACK PERFORMANCE ALERTS
+  # ==========================================================================
+  - name: simulation-playback-alerts
+    interval: 30s
+    rules:
+      - alert: SimulationPlaybackLatencyHigh
+        expr: histogram_quantile(0.95, rate(simulation_playback_latency_bucket[5m])) > 0.5
+        for: 5m
+        labels:
+          severity: warning
+          service: tutorputor-simulation
+          category: performance
+        annotations:
+          summary: "Simulation playback latency is high"
+          description: "p95 playback latency is {{ $value | humanize }}s (threshold: 500ms) for domain {{ $labels.domain }}"
+          runbook_url: "https://docs.ghatana.io/runbooks/simulation-latency"
+
+      - alert: SimulationPlaybackLatencyCritical
+        expr: histogram_quantile(0.99, rate(simulation_playback_latency_bucket[5m])) > 1.0
+        for: 2m
+        labels:
+          severity: critical
+          service: tutorputor-simulation
+          category: performance
+        annotations:
+          summary: "Simulation playback latency is critically high"
+          description: "p99 playback latency is {{ $value | humanize }}s (threshold: 1s). Immediate investigation required."
+          runbook_url: "https://docs.ghatana.io/runbooks/simulation-latency-critical"
+
+      - alert: SimulationPlaybackErrorRate
+        expr: |
+          (
+            rate(simulation_playback_requests_total{status="error"}[5m])
+            /
+            rate(simulation_playback_requests_total[5m])
+          ) > 0.01
+        for: 5m
+        labels:
+          severity: warning
+          service: tutorputor-simulation
+          category: reliability
+        annotations:
+          summary: "Simulation playback error rate is elevated"
+          description: "Error rate is {{ $value | humanizePercentage }} for domain {{ $labels.domain }}"
+
+      - alert: SimulationPlaybackErrorRateCritical
+        expr: |
+          (
+            rate(simulation_playback_requests_total{status="error"}[5m])
+            /
+            rate(simulation_playback_requests_total[5m])
+          ) > 0.05
+        for: 2m
+        labels:
+          severity: critical
+          service: tutorputor-simulation
+          category: reliability
+        annotations:
+          summary: "Critical simulation playback error rate"
+          description: "Error rate is {{ $value | humanizePercentage }}. User experience severely impacted."
+
+  # ==========================================================================
+  # CACHE PERFORMANCE ALERTS
+  # ==========================================================================
+  - name: simulation-cache-alerts
+    interval: 30s
+    rules:
+      - alert: SimulationCacheHitRateLow
+        expr: |
+          (
+            rate(simulation_cache_hit_total[5m])
+            /
+            (rate(simulation_cache_hit_total[5m]) + rate(simulation_cache_miss_total[5m]))
+          ) < 0.8
+        for: 10m
+        labels:
+          severity: warning
+          service: tutorputor-simulation
+          category: performance
+        annotations:
+          summary: "Simulation cache hit rate is low"
+          description: "Cache hit rate is {{ $value | humanizePercentage }} for domain {{ $labels.domain }} (threshold: 80%)"
+          runbook_url: "https://docs.ghatana.io/runbooks/simulation-cache"
+
+      - alert: SimulationCacheHitRateCritical
+        expr: |
+          (
+            rate(simulation_cache_hit_total[5m])
+            /
+            (rate(simulation_cache_hit_total[5m]) + rate(simulation_cache_miss_total[5m]))
+          ) < 0.5
+        for: 5m
+        labels:
+          severity: critical
+          service: tutorputor-simulation
+          category: performance
+        annotations:
+          summary: "Simulation cache hit rate critically low"
+          description: "Cache hit rate is {{ $value | humanizePercentage }}. High load on compute kernels expected."
+
+      - alert: SimulationCacheEvictionRateHigh
+        expr: rate(simulation_cache_eviction_total[5m]) > 100
+        for: 5m
+        labels:
+          severity: warning
+          service: tutorputor-simulation
+          category: capacity
+        annotations:
+          summary: "High cache eviction rate"
+          description: "Evicting {{ $value | humanize }}/s. Consider increasing cache capacity."
+
+  # ==========================================================================
+  # KERNEL EXECUTION ALERTS
+  # ==========================================================================
+  - name: simulation-kernel-alerts
+    interval: 30s
+    rules:
+      - alert: SimulationKernelErrorRate
+        expr: |
+          (
+            rate(simulation_kernel_errors_total[5m])
+            /
+            rate(simulation_kernel_execution_total[5m])
+          ) > 0.01
+        for: 5m
+        labels:
+          severity: warning
+          service: tutorputor-simulation
+          category: reliability
+        annotations:
+          summary: "Simulation kernel errors detected"
+          description: "Kernel error rate is {{ $value | humanizePercentage }} for error type {{ $labels.error_type }}"
+
+      - alert: SimulationKernelPanicRate
+        expr: rate(simulation_kernel_errors_total{error_type="panic"}[5m]) > 0
+        for: 1m
+        labels:
+          severity: critical
+          service: tutorputor-simulation
+          category: reliability
+        annotations:
+          summary: "Simulation kernel panic detected"
+          description: "Kernel panics are occurring. Domain: {{ $labels.domain }}. Immediate investigation required."
+          runbook_url: "https://docs.ghatana.io/runbooks/kernel-panic"
+
+      - alert: SimulationKernelTimeoutRate
+        expr: rate(simulation_kernel_errors_total{error_type="timeout"}[5m]) > 0.1
+        for: 5m
+        labels:
+          severity: warning
+          service: tutorputor-simulation
+          category: performance
+        annotations:
+          summary: "Simulation kernel timeouts detected"
+          description: "{{ $value | humanize }}/s kernel timeouts for domain {{ $labels.domain }}"
+
+      - alert: SimulationStepExecutionSlow
+        expr: histogram_quantile(0.95, rate(simulation_step_execution_latency_bucket[5m])) > 0.1
+        for: 5m
+        labels:
+          severity: warning
+          service: tutorputor-simulation
+          category: performance
+        annotations:
+          summary: "Simulation step execution is slow"
+          description: "p95 step execution is {{ $value | humanize }}s for domain {{ $labels.domain }} (threshold: 100ms)"
+
+  # ==========================================================================
+  # WASM WORKER ALERTS
+  # ==========================================================================
+  - name: simulation-wasm-alerts
+    interval: 30s
+    rules:
+      - alert: WASMWorkerUtilizationHigh
+        expr: simulation_wasm_worker_utilization > 0.9
+        for: 5m
+        labels:
+          severity: warning
+          service: tutorputor-simulation
+          category: capacity
+        annotations:
+          summary: "WASM worker utilization is high"
+          description: "Worker {{ $labels.worker_id }} utilization is {{ $value | humanizePercentage }}. Consider scaling."
+
+      - alert: WASMWorkerUtilizationCritical
+        expr: simulation_wasm_worker_utilization > 0.98
+        for: 2m
+        labels:
+          severity: critical
+          service: tutorputor-simulation
+          category: capacity
+        annotations:
+          summary: "WASM workers are saturated"
+          description: "Worker utilization is {{ $value | humanizePercentage }}. Simulation quality degraded."
+
+      - alert: WASMMemoryPressure
+        expr: simulation_memory_usage_bytes / simulation_memory_limit_bytes > 0.9
+        for: 5m
+        labels:
+          severity: warning
+          service: tutorputor-simulation
+          category: capacity
+        annotations:
+          summary: "WASM memory pressure detected"
+          description: "Memory usage is at {{ $value | humanizePercentage }} of limit for session {{ $labels.session_id }}"
+
+      - alert: WASMMemoryCritical
+        expr: simulation_memory_usage_bytes / simulation_memory_limit_bytes > 0.95
+        for: 2m
+        labels:
+          severity: critical
+          service: tutorputor-simulation
+          category: capacity
+        annotations:
+          summary: "WASM memory critically high"
+          description: "Memory at {{ $value | humanizePercentage }}. Session may be terminated."
+
+  # ==========================================================================
+  # ANIMATION PERFORMANCE ALERTS
+  # ==========================================================================
+  - name: simulation-animation-alerts
+    interval: 30s
+    rules:
+      - alert: SimulationFPSLow
+        expr: histogram_quantile(0.5, rate(simulation_animation_fps_bucket[5m])) < 30
+        for: 5m
+        labels:
+          severity: warning
+          service: tutorputor-simulation
+          category: user-experience
+        annotations:
+          summary: "Animation frame rate is low"
+          description: "Median FPS is {{ $value | humanize }} (threshold: 30 FPS). User experience degraded."
+
+      - alert: SimulationFPSCritical
+        expr: histogram_quantile(0.5, rate(simulation_animation_fps_bucket[5m])) < 15
+        for: 2m
+        labels:
+          severity: critical
+          service: tutorputor-simulation
+          category: user-experience
+        annotations:
+          summary: "Animation frame rate critically low"
+          description: "Median FPS is {{ $value | humanize }}. Animations appear choppy."
+
+      - alert: SimulationFrameDropRate
+        expr: |
+          (
+            rate(simulation_animation_frames_dropped_total[5m])
+            /
+            rate(simulation_animation_frames_rendered_total[5m])
+          ) > 0.1
+        for: 5m
+        labels:
+          severity: warning
+          service: tutorputor-simulation
+          category: user-experience
+        annotations:
+          summary: "High frame drop rate detected"
+          description: "Dropping {{ $value | humanizePercentage }} of frames. Visual quality impacted."
+
+  # ==========================================================================
+  # REAL-TIME CONNECTION ALERTS
+  # ==========================================================================
+  - name: simulation-connection-alerts
+    interval: 30s
+    rules:
+      - alert: SimulationConnectionDropRate
+        expr: |
+          (
+            rate(simulation_connection_count{state="disconnected"}[5m])
+            /
+            rate(simulation_connection_count{state="connected"}[5m])
+          ) > 0.1
+        for: 5m
+        labels:
+          severity: warning
+          service: tutorputor-simulation
+          category: connectivity
+        annotations:
+          summary: "High connection drop rate"
+          description: "{{ $value | humanizePercentage }} of connections are dropping"
+
+      - alert: SimulationActiveSessionsHigh
+        expr: sum(simulation_active_simulations) > 1000
+        for: 5m
+        labels:
+          severity: warning
+          service: tutorputor-simulation
+          category: capacity
+        annotations:
+          summary: "High number of active simulation sessions"
+          description: "{{ $value }} active sessions. Monitor resource usage."
+
+      - alert: SimulationSessionsNearLimit
+        expr: sum(simulation_active_simulations) > 4500
+        for: 2m
+        labels:
+          severity: critical
+          service: tutorputor-simulation
+          category: capacity
+        annotations:
+          summary: "Active sessions approaching limit"
+          description: "{{ $value }} active sessions. Limit: 5000. Consider scaling."
+
+  # ==========================================================================
+  # AI TUTOR INTEGRATION ALERTS
+  # ==========================================================================
+  - name: simulation-ai-tutor-alerts
+    interval: 30s
+    rules:
+      - alert: AITutorContextLatencyHigh
+        expr: histogram_quantile(0.95, rate(simulation_ai_tutor_context_latency_bucket[5m])) > 0.3
+        for: 5m
+        labels:
+          severity: warning
+          service: tutorputor-simulation
+          category: performance
+        annotations:
+          summary: "AI tutor context generation is slow"
+          description: "p95 context latency is {{ $value | humanize }}s (threshold: 300ms)"
+
+      - alert: AITutorHintGenerationFailed
+        expr: rate(simulation_ai_tutor_hint_failures_total[5m]) > 0.1
+        for: 5m
+        labels:
+          severity: warning
+          service: tutorputor-simulation
+          category: reliability
+        annotations:
+          summary: "AI tutor hint generation failures"
+          description: "{{ $value | humanize }}/s hint generation failures"
+
+      - alert: AITutorExplanationQueueBacklog
+        expr: simulation_ai_tutor_explanation_queue_size > 100
+        for: 5m
+        labels:
+          severity: warning
+          service: tutorputor-simulation
+          category: capacity
+        annotations:
+          summary: "AI tutor explanation queue backlog"
+          description: "{{ $value }} pending explanations. Latency increasing."
+
+  # ==========================================================================
+  # DOMAIN-SPECIFIC ALERTS
+  # ==========================================================================
+  - name: simulation-domain-alerts
+    interval: 60s
+    rules:
+      # Physics domain - numerical stability
+      - alert: PhysicsNumericalInstability
+        expr: rate(simulation_kernel_errors_total{domain="PHYSICS", error_type="numerical_overflow"}[5m]) > 0
+        for: 2m
+        labels:
+          severity: warning
+          service: tutorputor-simulation
+          category: domain-specific
+          domain: physics
+        annotations:
+          summary: "Physics simulation numerical instability"
+          description: "Numerical overflow detected in physics kernel. Check timestep and parameter bounds."
+
+      # Chemistry domain - reaction validation
+      - alert: ChemistryInvalidReaction
+        expr: rate(simulation_kernel_errors_total{domain="CHEMISTRY", error_type="validation_error"}[5m]) > 0.1
+        for: 5m
+        labels:
+          severity: warning
+          service: tutorputor-simulation
+          category: domain-specific
+          domain: chemistry
+        annotations:
+          summary: "Chemistry reaction validation errors"
+          description: "{{ $value | humanize }}/s reaction validation failures"
+
+      # Medicine domain - safety warnings
+      - alert: MedicineSafetyBoundsExceeded
+        expr: rate(simulation_safety_warnings_total{domain="MEDICINE"}[5m]) > 0
+        for: 1m
+        labels:
+          severity: warning
+          service: tutorputor-simulation
+          category: domain-specific
+          domain: medicine
+        annotations:
+          summary: "Medicine simulation safety bounds exceeded"
+          description: "Therapeutic range exceeded in pharmacokinetics simulation. Review required."
+
+      # Biology domain - gene expression limits
+      - alert: BiologyExpressionLimits
+        expr: rate(simulation_kernel_errors_total{domain="BIOLOGY", error_type="expression_bounds"}[5m]) > 0.05
+        for: 5m
+        labels:
+          severity: warning
+          service: tutorputor-simulation
+          category: domain-specific
+          domain: biology
+        annotations:
+          summary: "Biology gene expression bounds exceeded"
+          description: "Gene expression values exceeding biological limits"
+
+  # ==========================================================================
+  # SLO ALERTS
+  # ==========================================================================
+  - name: simulation-slo-alerts
+    interval: 60s
+    rules:
+      - alert: SimulationAvailabilitySLOBreach
+        expr: |
+          1 - (
+            rate(simulation_playback_requests_total{status="success"}[1h])
+            /
+            rate(simulation_playback_requests_total[1h])
+          ) > 0.001
+        for: 5m
+        labels:
+          severity: critical
+          service: tutorputor-simulation
+          category: slo
+        annotations:
+          summary: "Simulation availability SLO breach"
+          description: "Error budget being consumed. Current error rate: {{ $value | humanizePercentage }}"
+
+      - alert: SimulationLatencySLOBreach
+        expr: |
+          histogram_quantile(0.99, rate(simulation_playback_latency_bucket[1h])) > 1.0
+        for: 10m
+        labels:
+          severity: critical
+          service: tutorputor-simulation
+          category: slo
+        annotations:
+          summary: "Simulation latency SLO breach"
+          description: "p99 latency {{ $value | humanize }}s exceeds 1s SLO target"
+
+      - alert: SimulationErrorBudgetBurn
+        expr: |
+          sum(increase(simulation_playback_requests_total{status="error"}[6h]))
+          /
+          sum(increase(simulation_playback_requests_total[6h]))
+          > 0.006
+        for: 10m
+        labels:
+          severity: warning
+          service: tutorputor-simulation
+          category: slo
+        annotations:
+          summary: "Simulation error budget burn rate elevated"
+          description: "6h error rate {{ $value | humanizePercentage }}. Will exhaust monthly budget at this rate."

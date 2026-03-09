@@ -1,0 +1,222 @@
+[
+  {
+    "rank": 1,
+    "format": "javascript",
+    "lines": 58,
+    "tokens": 0,
+    "fragmentPreview": "}\\n          style={{\\n            display: \"block\",\\n            padding: \"1.5rem\",\\n            backgroundColor: \"white\",\\n            borderRadius: \"8px\",\\n            border: \"1px solid var(--color-border, #e0e0e0)\",\\n            textDecoratio",
+    "first": {
+      "file": "apps/web/src/routes/app/projects.tsx",
+      "start": 220,
+      "end": 277,
+      "startLine": 220,
+      "endLine": 277
+    },
+    "second": {
+      "file": "apps/web/src/routes/app/workspaces.tsx",
+      "start": 71,
+      "end": 179,
+      "startLine": 71,
+      "endLine": 179
+    },
+    "suggestion": "Consider extracting into a shared util/component in an appropriate lib (libs/ui, libs/diagram, or libs/mocks) and replace duplicates with imports."
+  },
+  {
+    "rank": 2,
+    "format": "javascript",
+    "lines": 57,
+    "tokens": 0,
+    "fragmentPreview": " }}>\\n                  Last build: 2 minutes ago\\n                </p>\\n              </div>\\n\\n              <div \\n                style={{\\n                  padding: \"1.5rem\",\\n                  backgroundColor: \"white\",\\n                  bord",
+    "first": {
+      "file": "apps/web/src/routes/app/project/overview.tsx",
+      "start": 53,
+      "end": 109,
+      "startLine": 53,
+      "endLine": 109
+    },
+    "second": {
+      "file": "apps/web/src/routes/app/project/overview.tsx",
+      "start": 21,
+      "end": 37,
+      "startLine": 21,
+      "endLine": 37
+    },
+    "suggestion": "Consider extracting into a shared util/component in an appropriate lib (libs/ui, libs/diagram, or libs/mocks) and replace duplicates with imports."
+  },
+  {
+    "rank": 3,
+    "format": "javascript",
+    "lines": 43,
+    "tokens": 0,
+    "fragmentPreview": ",\\n                  borderRadius: \"6px\",\\n                  fontSize: \"0.875rem\",\\n                  cursor: \"pointer\",\\n                  textAlign: \"left\"\\n                }}\\n              >\\n                📝 Create Story\\n              </but",
+    "first": {
+      "file": "apps/web/src/routes/app/project/overview.tsx",
+      "start": 211,
+      "end": 253,
+      "startLine": 211,
+      "endLine": 253
+    },
+    "second": {
+      "file": "apps/web/src/routes/app/project/overview.tsx",
+      "start": 197,
+      "end": 222,
+      "startLine": 197,
+      "endLine": 222
+    },
+    "suggestion": "Consider extracting into a shared util/component in an appropriate lib (libs/ui, libs/diagram, or libs/mocks) and replace duplicates with imports."
+  },
+  {
+    "rank": 4,
+    "format": "javascript",
+    "lines": 38,
+    "tokens": 0,
+    "fragmentPreview": "}}>\\n                <span>5 projects</span>\\n                <span>•</span>\\n                <span>Active today</span>\\n              </div>\\n            </div>\\n          </div>\\n        </Link>\\n\\n        <Link\\n          to=\"/app/w/ws-2/projects\"",
+    "first": {
+      "file": "apps/web/src/routes/app/workspaces.tsx",
+      "start": 121,
+      "end": 158,
+      "startLine": 121,
+      "endLine": 158
+    },
+    "second": {
+      "file": "apps/web/src/routes/app/workspaces.tsx",
+      "start": 71,
+      "end": 102,
+      "startLine": 71,
+      "endLine": 102
+    },
+    "suggestion": "Consider extracting into a shared util/component in an appropriate lib (libs/ui, libs/diagram, or libs/mocks) and replace duplicates with imports."
+  },
+  {
+    "rank": 5,
+    "format": "javascript",
+    "lines": 36,
+    "tokens": 0,
+    "fragmentPreview": "}}\\n            />\\n          </div>\\n\\n          <div>\\n            <label \\n              htmlFor=\"password\"\\n              style={{\\n                display: \"block\",\\n                marginBottom: \"0.5rem\",\\n                fontSize: \"0.875rem\",\\n",
+    "first": {
+      "file": "apps/web/src/routes/login.tsx",
+      "start": 94,
+      "end": 129,
+      "startLine": 94,
+      "endLine": 129
+    },
+    "second": {
+      "file": "apps/web/src/routes/login.tsx",
+      "start": 69,
+      "end": 102,
+      "startLine": 69,
+      "endLine": 102
+    },
+    "suggestion": "Consider extracting into a shared util/component in an appropriate lib (libs/ui, libs/diagram, or libs/mocks) and replace duplicates with imports."
+  },
+  {
+    "rank": 6,
+    "format": "javascript",
+    "lines": 34,
+    "tokens": 0,
+    "fragmentPreview": ",\\n                borderRadius: \"4px\",\\n                fontSize: \"0.75rem\"\\n              }}>\\n                Library\\n              </span>\\n              <span style={{ \\n                padding: \"0.25rem 0.5rem\", \\n                backgroundC",
+    "first": {
+      "file": "apps/web/src/routes/app/projects.tsx",
+      "start": 278,
+      "end": 311,
+      "startLine": 278,
+      "endLine": 311
+    },
+    "second": {
+      "file": "apps/web/src/routes/app/projects.tsx",
+      "start": 180,
+      "end": 213,
+      "startLine": 180,
+      "endLine": 213
+    },
+    "suggestion": "Consider extracting into a shared util/component in an appropriate lib (libs/ui, libs/diagram, or libs/mocks) and replace duplicates with imports."
+  },
+  {
+    "rank": 7,
+    "format": "javascript",
+    "lines": 33,
+    "tokens": 0,
+    "fragmentPreview": "}}\\n            >\\n              ← Back to Workspaces\\n            </Link>\\n          </nav>\\n          <h1 style={{ margin: 0, fontSize: \"2rem\", fontWeight: 600 }}>\\n            {workspaceName}\\n          </h1>\\n          <p style={{ margin: \"0.5r",
+    "first": {
+      "file": "apps/web/src/routes/app/projects.tsx",
+      "start": 84,
+      "end": 116,
+      "startLine": 84,
+      "endLine": 116
+    },
+    "second": {
+      "file": "apps/web/src/routes/app/workspaces.tsx",
+      "start": 40,
+      "end": 69,
+      "startLine": 40,
+      "endLine": 69
+    },
+    "suggestion": "Consider extracting into a shared util/component in an appropriate lib (libs/ui, libs/diagram, or libs/mocks) and replace duplicates with imports."
+  },
+  {
+    "rank": 8,
+    "format": "tsx",
+    "lines": 27,
+    "tokens": 0,
+    "fragmentPreview": " {\\n  // Convert hex to RGB\\n  const hexToRgb = (hex: string): number[] => {\\n    const shorthandRegex = /^#?([a-f\\d])([a-f\\d])([a-f\\d])$/i;\\n    const formattedHex = hex.replace(shorthandRegex, (_, r, g, b) => r + r + g + g + b + b);\\n    const",
+    "first": {
+      "file": "libs/ui/src/theme/testing.tsx",
+      "start": 163,
+      "end": 189,
+      "startLine": 163,
+      "endLine": 189
+    },
+    "second": {
+      "file": "libs/ui/src/theme/testing.tsx",
+      "start": 52,
+      "end": 78,
+      "startLine": 52,
+      "endLine": 78
+    },
+    "suggestion": "Consider extracting into a shared util/component in an appropriate lib (libs/ui, libs/diagram, or libs/mocks) and replace duplicates with imports."
+  },
+  {
+    "rank": 9,
+    "format": "typescript",
+    "lines": 27,
+    "tokens": 0,
+    "fragmentPreview": ") {\\n    return false;\\n  }\\n  \\n  return true;\\n}\\n\\n/**\\n * Parse a semantic version string into its components\\n * @param version - Semantic version string (e.g., \"1.2.3\")\\n * @returns Object with major, minor, and patch numbers\\n */\\nfunction parse",
+    "first": {
+      "file": "libs/store/src/version.ts",
+      "start": 106,
+      "end": 132,
+      "startLine": 106,
+      "endLine": 132
+    },
+    "second": {
+      "file": "libs/ui/src/theme/version.ts",
+      "start": 76,
+      "end": 102,
+      "startLine": 76,
+      "endLine": 102
+    },
+    "suggestion": "Consider extracting into a shared util/component in an appropriate lib (libs/ui, libs/diagram, or libs/mocks) and replace duplicates with imports."
+  },
+  {
+    "rank": 10,
+    "format": "tsx",
+    "lines": 25,
+    "tokens": 0,
+    "fragmentPreview": "}\\n      <Handle\\n        type=\"target\"\\n        position={Position.Left}\\n        isConnectable={isConnectable}\\n        style={{\\n          background: nodeColor,\\n          width: 10,\\n          height: 10,\\n          border: `2px solid ${theme.p",
+    "first": {
+      "file": "libs/diagram/src/components/nodes/DefaultNode.tsx",
+      "start": 51,
+      "end": 75,
+      "startLine": 51,
+      "endLine": 75
+    },
+    "second": {
+      "file": "libs/diagram/src/components/nodes/OutputNode.tsx",
+      "start": 34,
+      "end": 58,
+      "startLine": 34,
+      "endLine": 58
+    },
+    "suggestion": "Consider extracting into a shared util/component in an appropriate lib (libs/ui, libs/diagram, or libs/mocks) and replace duplicates with imports."
+  }
+]

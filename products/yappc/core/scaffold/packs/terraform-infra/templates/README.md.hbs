@@ -1,0 +1,50 @@
+# {{projectName}}
+
+{{#if description}}
+{{description}}
+{{else}}
+Infrastructure as Code using Terraform for {{cloudProvider}}.
+{{/if}}
+
+## Prerequisites
+
+- Terraform >= 1.0
+- {{cloudProvider}} CLI configured
+- Valid {{cloudProvider}} credentials
+
+## Usage
+
+### Initialize
+
+```bash
+terraform init
+```
+
+### Plan
+
+```bash
+terraform plan
+```
+
+### Apply
+
+```bash
+terraform apply
+```
+
+### Destroy
+
+```bash
+terraform destroy
+```
+
+## Structure
+
+- `main.tf` - Main infrastructure definitions
+- `variables.tf` - Input variables
+- `outputs.tf` - Output values
+- `terraform.tfvars` - Variable values (gitignored)
+
+## License
+
+MIT

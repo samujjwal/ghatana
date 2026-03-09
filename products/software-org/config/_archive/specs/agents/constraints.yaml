@@ -1,0 +1,41 @@
+id: constraints
+agent: ConstraintsAgent
+role: Project Manager
+inputs_spec:
+- name: final_non_functional_requirements
+  description: Final list of non-functional requirements.
+  format: List of NFR objects
+outputs_spec:
+- name: project_constraints
+  description: All identified project constraints, with impact on requirements noted.
+  format: List of constraint objects (description, impacted_requirements)
+  example: "- description: \"Must use AWS GovCloud\"\n  impacted_requirements: [\"Data residency\"]\n"
+acceptance_criteria:
+- All project constraints are identified and listed.
+- Each constraint is described clearly.
+- Impact of constraints on requirements is noted.
+agent_tasks:
+- Identify and document all project constraints.
+- Describe each constraint clearly.
+- Note impact of constraints on requirements.
+dependencies:
+- final_non_functional_requirements
+failure_escalation:
+- Escalate to PMO if constraints are unclear or missing.
+references: []
+internal_logic:
+  - perception:
+      description: "Extract and classify constraints from NFRs and context."
+  - model:
+      description: "Constraints: {id, description, type, mapped_nfrs, risk}"
+  - planning:
+      description: |
+        "Map each constraint to supporting NFRs."
+  - action:
+      description: "Output YAML with constraint details."
+validation:
+  - "Lead engineer or SME review."
+  - "Checklist for regulatory and business coverage."
+quality_enhancements:
+  - "Constraint templates and mapping logs."
+  - "Change log for constraints."

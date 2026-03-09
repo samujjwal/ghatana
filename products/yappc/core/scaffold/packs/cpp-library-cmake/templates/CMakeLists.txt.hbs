@@ -1,0 +1,36 @@
+cmake_minimum_required(VERSION 3.15)
+project({{pascalCase projectName}} VERSION 0.1.0 LANGUAGES CXX)
+
+set(CMAKE_CXX_STANDARD {{cppStandard}})
+set(CMAKE_CXX_STANDARD_REQUIRED ON)
+set(CMAKE_CXX_EXTENSIONS OFF)
+
+add_library({{pascalCase projectName}}
+src/{{snakeCase projectName}}.cpp
+)
+
+target_include_directories({{pascalCase projectName}}
+PUBLIC
+$<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR} /include>
+    $<INSTALL_INTERFACE:include>
+        )
+
+        {{#if enableTesting}}
+        enable_testing()
+        add_subdirectory(tests)
+        {{/if}}
+
+        install(TARGETS {{pascalCase projectName}}
+        EXPORT {{pascalCase projectName}}Targets
+        LIBRARY DESTINATION lib
+        ARCHIVE DESTINATION lib
+        RUNTIME DESTINATION bin
+        )
+
+        install(DIRECTORY include/ DESTINATION include)
+
+        install(EXPORT {{pascalCase projectName}}Targets
+        FILE {{pascalCase projectName}}Targets.cmake
+        NAMESPACE {{pascalCase projectName}}::
+        DESTINATION lib/cmake/{{pascalCase projectName}}
+        )

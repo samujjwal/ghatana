@@ -1,0 +1,26 @@
+---
+id: "anomaly_detection"
+agent: "AnomalyDetectionAgent"
+role: "Security Analytics Engineer"
+inputs_spec:
+- name: "aggregated_security_logs"
+  description: "Aggregated logs for anomaly detection."
+  format: "Security logs artifact"
+outputs_spec:
+- name: "anomaly_detection_report"
+  description: "Anomaly detection findings report."
+  format: "Anomaly report artifact"
+agent_tasks:
+- "Apply anomaly detection to all critical logs/telemetry."
+- "Trigger reviews on detected anomalies."
+- "Track anomalies to resolution/explanation."
+acceptance_criteria:
+- "Anomaly detection covers all logs/telemetry."
+- "Detected anomalies trigger review."
+- "All anomalies tracked to closure."
+dependencies:
+- "aggregated_security_logs"
+failure_escalation:
+- "Escalate to Analytics Engineer if anomalies not reviewed/tracked."
+references: []
+hitl: false

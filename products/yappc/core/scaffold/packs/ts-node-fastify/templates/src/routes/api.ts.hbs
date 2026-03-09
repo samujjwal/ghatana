@@ -1,0 +1,303 @@
+/**
+* {{projectName}} - API Routes
+*
+* Main API endpoints for the service.
+*
+* @module routes/api
+*/
+
+import type { FastifyInstance, FastifyReply, FastifyRequest } from 'fastify';
+import { z } from 'zod';
+import { idParamSchema, paginationSchema } from '../schemas/common.js';
+
+// Request/Response schemas
+const createItemSchema = z.object({
+title: z.string().min(1).max(255),
+description: z.string().optional(),
+status: z.enum(['pending', 'active', 'completed']).default('pending'),
+});
+
+const updateItemSchema = createItemSchema.partial();
+
+type CreateItemBody = z.infer<typeof createItemSchema>;
+    type UpdateItemBody = z.infer<typeof updateItemSchema>;
+
+        export async function apiRoutes(app: FastifyInstance): Promise<void> {
+            // List items
+            app.get(
+            '/items',
+            {
+            schema: {
+            tags: ['api'],
+            summary: 'List all items',
+            querystring: {
+            type: 'object',
+            properties: {
+            page: { type: 'integer', minimum: 1, default: 1 },
+            limit: { type: 'integer', minimum: 1, maximum: 100, default: 20 },
+            },
+            },
+            response: {
+            200: {
+            type: 'object',
+            properties: {
+            data: {
+            type: 'array',
+            items: {
+            type: 'object',
+            properties: {
+            id: { type: 'string' },
+            title: { type: 'string' },
+            description: { type: 'string', nullable: true },
+            status: { type: 'string' },
+            createdAt: { type: 'string', format: 'date-time' },
+            updatedAt: { type: 'string', format: 'date-time' },
+            },
+            },
+            },
+            pagination: {
+            type: 'object',
+            properties: {
+            page: { type: 'integer' },
+            limit: { type: 'integer' },
+            total: { type: 'integer' },
+            totalPages: { type: 'integer' },
+            },
+            },
+            },
+            },
+            },
+            },
+            },
+            async (
+            request: FastifyRequest<{ Querystring: { page?: number; limit?: number } }>,
+                _reply: FastifyReply
+                ) => {
+                const { page = 1, limit = 20 } = paginationSchema.parse(request.query);
+                const skip = (page - 1) * limit;
+
+                const [items, total] = await Promise.all([
+                request.server.prisma.item.findMany({
+                skip,
+                take: limit,
+                orderBy: { createdAt: 'desc' },
+                }),
+                request.server.prisma.item.count(),
+                ]);
+
+                return {
+                data: items,
+                pagination: {
+                page,
+                limit,
+                total,
+                totalPages: Math.ceil(total / limit),
+                },
+                };
+                }
+                );
+
+                // Get item by ID
+                app.get(
+                '/items/:id',
+                {
+                schema: {
+                tags: ['api'],
+                summary: 'Get item by ID',
+                params: {
+                type: 'object',
+                properties: {
+                id: { type: 'string' },
+                },
+                required: ['id'],
+                },
+                response: {
+                200: {
+                type: 'object',
+                properties: {
+                id: { type: 'string' },
+                title: { type: 'string' },
+                description: { type: 'string', nullable: true },
+                status: { type: 'string' },
+                createdAt: { type: 'string', format: 'date-time' },
+                updatedAt: { type: 'string', format: 'date-time' },
+                },
+                },
+                404: {
+                type: 'object',
+                properties: {
+                error: { type: 'string' },
+                message: { type: 'string' },
+                },
+                },
+                },
+                },
+                },
+                async (request: FastifyRequest<{ Params: { id: string } }>, reply: FastifyReply) => {
+                    const { id } = idParamSchema.parse(request.params);
+
+                    const item = await request.server.prisma.item.findUnique({
+                    where: { id },
+                    });
+
+                    if (!item) {
+                    reply.status(404);
+                    return { error: 'NotFound', message: `Item with id ${id} not found` };
+                    }
+
+                    return item;
+                    }
+                    );
+
+                    // Create item
+                    app.post(
+                    '/items',
+                    {
+                    schema: {
+                    tags: ['api'],
+                    summary: 'Create a new item',
+                    body: {
+                    type: 'object',
+                    properties: {
+                    title: { type: 'string', minLength: 1, maxLength: 255 },
+                    description: { type: 'string' },
+                    status: { type: 'string', enum: ['pending', 'active', 'completed'] },
+                    },
+                    required: ['title'],
+                    },
+                    response: {
+                    201: {
+                    type: 'object',
+                    properties: {
+                    id: { type: 'string' },
+                    title: { type: 'string' },
+                    description: { type: 'string', nullable: true },
+                    status: { type: 'string' },
+                    createdAt: { type: 'string', format: 'date-time' },
+                    updatedAt: { type: 'string', format: 'date-time' },
+                    },
+                    },
+                    },
+                    },
+                    },
+                    async (request: FastifyRequest<{ Body: CreateItemBody }>, reply: FastifyReply) => {
+                        const body = createItemSchema.parse(request.body);
+
+                        const item = await request.server.prisma.item.create({
+                        data: body,
+                        });
+
+                        reply.status(201);
+                        return item;
+                        }
+                        );
+
+                        // Update item
+                        app.patch(
+                        '/items/:id',
+                        {
+                        schema: {
+                        tags: ['api'],
+                        summary: 'Update an item',
+                        params: {
+                        type: 'object',
+                        properties: {
+                        id: { type: 'string' },
+                        },
+                        required: ['id'],
+                        },
+                        body: {
+                        type: 'object',
+                        properties: {
+                        title: { type: 'string', minLength: 1, maxLength: 255 },
+                        description: { type: 'string' },
+                        status: { type: 'string', enum: ['pending', 'active', 'completed'] },
+                        },
+                        },
+                        response: {
+                        200: {
+                        type: 'object',
+                        properties: {
+                        id: { type: 'string' },
+                        title: { type: 'string' },
+                        description: { type: 'string', nullable: true },
+                        status: { type: 'string' },
+                        createdAt: { type: 'string', format: 'date-time' },
+                        updatedAt: { type: 'string', format: 'date-time' },
+                        },
+                        },
+                        404: {
+                        type: 'object',
+                        properties: {
+                        error: { type: 'string' },
+                        message: { type: 'string' },
+                        },
+                        },
+                        },
+                        },
+                        },
+                        async (
+                        request: FastifyRequest<{ Params: { id: string }; Body: UpdateItemBody }>,
+                            reply: FastifyReply
+                            ) => {
+                            const { id } = idParamSchema.parse(request.params);
+                            const body = updateItemSchema.parse(request.body);
+
+                            try {
+                            const item = await request.server.prisma.item.update({
+                            where: { id },
+                            data: body,
+                            });
+                            return item;
+                            } catch {
+                            reply.status(404);
+                            return { error: 'NotFound', message: `Item with id ${id} not found` };
+                            }
+                            }
+                            );
+
+                            // Delete item
+                            app.delete(
+                            '/items/:id',
+                            {
+                            schema: {
+                            tags: ['api'],
+                            summary: 'Delete an item',
+                            params: {
+                            type: 'object',
+                            properties: {
+                            id: { type: 'string' },
+                            },
+                            required: ['id'],
+                            },
+                            response: {
+                            204: {
+                            type: 'null',
+                            description: 'Item deleted successfully',
+                            },
+                            404: {
+                            type: 'object',
+                            properties: {
+                            error: { type: 'string' },
+                            message: { type: 'string' },
+                            },
+                            },
+                            },
+                            },
+                            },
+                            async (request: FastifyRequest<{ Params: { id: string } }>, reply: FastifyReply) => {
+                                const { id } = idParamSchema.parse(request.params);
+
+                                try {
+                                await request.server.prisma.item.delete({
+                                where: { id },
+                                });
+                                reply.status(204);
+                                return;
+                                } catch {
+                                reply.status(404);
+                                return { error: 'NotFound', message: `Item with id ${id} not found` };
+                                }
+                                }
+                                );
+                                }

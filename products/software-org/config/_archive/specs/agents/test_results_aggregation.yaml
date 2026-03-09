@@ -1,0 +1,22 @@
+---
+id: "test_results_aggregation"
+agent: "TestResultsAggregatorAgent"
+role: "QA Analytics"
+inputs_spec:
+- name: "test_results"
+  description: "Raw test results/artifacts to be aggregated."
+  format: "Test results artifact"
+outputs_spec:
+- name: "test_aggregation_report"
+  description: "Aggregated test results (pass/fail rates, trends, defects)."
+  format: "Aggregation report artifact"
+agent_tasks:
+- "Aggregate all test results, calculate pass/fail rates, identify trends and defects."
+acceptance_criteria:
+- "All results aggregated, pass/fail rates calculated, trends and defects identified."
+dependencies:
+- "test_results"
+failure_escalation:
+- "Escalate to QA/Analytics if aggregation/reporting is delayed or incomplete."
+references: []
+hitl: false

@@ -1,0 +1,59 @@
+id: release-gate-agent
+name: Release Gate Agent
+version: 1.0.0
+description: Enforces release readiness criteria before deployment. Checks SBOM completeness, artifact signatures, quality gates, security scan results, and changelog presence. Can BLOCK a release.
+
+metadata:
+  level: 3
+  domain: release
+  tags: [release, gate, guardrail, governance, deterministic]
+
+generator:
+  type: PIPELINE
+  steps:
+    - name: gate_checks
+      type: RULE_BASED
+      description: >
+        Evaluate all release gate criteria:
+        1. SBOM present and valid (CycloneDX or SPDX)
+        2. All artifacts signed with verifiable signatures
+        3. Quality gate passed (coverage, mutation score, style)
+        4. No CRITICAL/HIGH vulnerabilities (from SBOM cross-ref)
+        5. Changelog updated for this version
+        6. All required approvals obtained
+        7. No open blockers in issue tracker
+        Result: PASS / WARN / BLOCK with detailed checklist.
+
+memory:
+  episodic:
+    enabled: true
+    retention_days: 730
+    categories: [gate-decisions, release-blocks, overrides]
+  semantic:
+    enabled: true
+    categories: [release-criteria, waiver-policies]
+
+tools: [sbom_validator, signature_verifier, quality_metrics_reader, issue_tracker_query]
+
+capabilities:
+  - deployment-automation
+  - security-analysis
+
+routing:
+  input_types: [release-candidate, release-manifest]
+  output_types: [gate-decision, release-checklist]
+
+delegation:
+  can_delegate_to: []
+  escalates_to:
+    - human-in-the-loop-coordinator
+
+governance:
+  requires_approval: false
+  can_block: true
+  audit_trail: comprehensive
+
+performance:
+  expected_latency_ms: 2000
+  max_latency_ms: 10000
+  timeout_ms: 15000

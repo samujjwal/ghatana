@@ -1,0 +1,393 @@
+syntax = "proto3";
+
+package com.ghatana.yappc.api.grpc;
+
+option java_multiple_files = true;
+option java_package = "com.ghatana.yappc.api.grpc";
+option java_outer_classname = "YappcProto";
+
+// ============================================================================
+// Pack Service - Pack discovery and management
+// ============================================================================
+
+service PackService {
+  // List all available packs
+  rpc ListPacks(ListPacksRequest) returns (ListPacksResponse);
+  
+  // Get pack details
+  rpc GetPack(GetPackRequest) returns (PackInfo);
+  
+  // Validate a pack
+  rpc ValidatePack(ValidatePackRequest) returns (PackValidationResult);
+  
+  // Get available languages
+  rpc GetLanguages(Empty) returns (StringListResponse);
+  
+  // Get available categories
+  rpc GetCategories(Empty) returns (StringListResponse);
+  
+  // Get available platforms
+  rpc GetPlatforms(Empty) returns (StringListResponse);
+  
+  // Refresh pack cache
+  rpc RefreshCache(Empty) returns (RefreshResponse);
+}
+
+// ============================================================================
+// Project Service - Project creation and management
+// ============================================================================
+
+service ProjectService {
+  // Create a new project
+  rpc CreateProject(CreateProjectRequest) returns (CreateProjectResponse);
+  
+  // Create project with streaming progress
+  rpc CreateProjectWithProgress(CreateProjectRequest) returns (stream ProgressUpdate);
+  
+  // Add a feature to existing project
+  rpc AddFeature(AddFeatureRequest) returns (AddFeatureResponse);
+  
+  // Add feature with streaming progress
+  rpc AddFeatureWithProgress(AddFeatureRequest) returns (stream ProgressUpdate);
+  
+  // Update a project
+  rpc UpdateProject(UpdateProjectRequest) returns (UpdateProjectResponse);
+  
+  // Get project info
+  rpc GetProjectInfo(ProjectPathRequest) returns (ProjectInfo);
+  
+  // Get project state
+  rpc GetProjectState(ProjectPathRequest) returns (ProjectState);
+  
+  // Validate project
+  rpc ValidateProject(ProjectPathRequest) returns (ProjectValidationResult);
+  
+  // Check for updates
+  rpc CheckUpdates(ProjectPathRequest) returns (UpdateAvailability);
+  
+  // Get project features
+  rpc GetProjectFeatures(ProjectPathRequest) returns (FeatureListResponse);
+  
+  // Export project state
+  rpc ExportState(ProjectPathRequest) returns (ExportStateResponse);
+  
+  // Import project state
+  rpc ImportState(ImportStateRequest) returns (ImportStateResponse);
+}
+
+// ============================================================================
+// Template Service - Template rendering
+// ============================================================================
+
+service TemplateService {
+  // Render a template
+  rpc Render(RenderRequest) returns (RenderResponse);
+  
+  // Validate template syntax
+  rpc ValidateSyntax(ValidateSyntaxRequest) returns (ValidateSyntaxResponse);
+  
+  // Get available helpers
+  rpc GetHelpers(Empty) returns (StringListResponse);
+  
+  // List templates in a pack
+  rpc ListTemplates(ListTemplatesRequest) returns (TemplateListResponse);
+}
+
+// ============================================================================
+// Dependency Service - Dependency analysis
+// ============================================================================
+
+service DependencyService {
+  // Analyze pack dependencies
+  rpc AnalyzePack(AnalyzePackRequest) returns (DependencyAnalysis);
+  
+  // Analyze project dependencies
+  rpc AnalyzeProject(ProjectPathRequest) returns (DependencyAnalysis);
+  
+  // Check conflicts between packs
+  rpc CheckConflicts(CheckConflictsRequest) returns (ConflictListResponse);
+  
+  // Check conflicts when adding a pack
+  rpc CheckAddConflicts(CheckAddConflictsRequest) returns (ConflictListResponse);
+}
+
+// ============================================================================
+// Common Messages
+// ============================================================================
+
+message Empty {}
+
+message StringListResponse {
+  repeated string values = 1;
+}
+
+message RefreshResponse {
+  bool success = 1;
+  string message = 2;
+}
+
+message ProgressUpdate {
+  string step = 1;
+  int32 current = 2;
+  int32 total = 3;
+  string message = 4;
+  string file = 5;
+  double percent = 6;
+}
+
+// ============================================================================
+// Pack Messages
+// ============================================================================
+
+message ListPacksRequest {
+  string language = 1;
+  string category = 2;
+  string platform = 3;
+  string search_query = 4;
+  int32 page = 5;
+  int32 page_size = 6;
+}
+
+message ListPacksResponse {
+  repeated PackInfo packs = 1;
+  int64 total = 2;
+  int32 page = 3;
+  int32 page_size = 4;
+}
+
+message GetPackRequest {
+  string name = 1;
+}
+
+message ValidatePackRequest {
+  string name = 1;
+}
+
+message PackInfo {
+  string name = 1;
+  string version = 2;
+  string description = 3;
+  string language = 4;
+  string category = 5;
+  string platform = 6;
+  string build_system = 7;
+  string archetype = 8;
+  repeated string templates = 9;
+  repeated string required_variables = 10;
+  repeated string optional_variables = 11;
+  map<string, string> defaults = 12;
+  bool is_composition = 13;
+  repeated string composed_packs = 14;
+}
+
+message PackValidationResult {
+  bool valid = 1;
+  repeated string errors = 2;
+  repeated string warnings = 3;
+  int32 template_count = 4;
+}
+
+// ============================================================================
+// Project Messages
+// ============================================================================
+
+message CreateProjectRequest {
+  string pack_name = 1;
+  string project_name = 2;
+  string output_path = 3;
+  map<string, string> variables = 4;
+  bool overwrite = 5;
+  bool dry_run = 6;
+}
+
+message CreateProjectResponse {
+  bool success = 1;
+  string project_path = 2;
+  repeated string files_created = 3;
+  repeated string warnings = 4;
+  string error_message = 5;
+  int64 duration_ms = 6;
+}
+
+message AddFeatureRequest {
+  string project_path = 1;
+  string feature = 2;
+  string type = 3;
+  map<string, string> variables = 4;
+  bool force = 5;
+  bool dry_run = 6;
+}
+
+message AddFeatureResponse {
+  bool success = 1;
+  repeated string files_created = 2;
+  repeated string files_modified = 3;
+  repeated string warnings = 4;
+  string error_message = 5;
+  int64 duration_ms = 6;
+}
+
+message UpdateProjectRequest {
+  string project_path = 1;
+  bool dry_run = 2;
+  bool force = 3;
+  bool backup = 4;
+}
+
+message UpdateProjectResponse {
+  bool success = 1;
+  string from_version = 2;
+  string to_version = 3;
+  repeated string files_updated = 4;
+  repeated string files_added = 5;
+  repeated string files_removed = 6;
+  repeated string conflicts = 7;
+  string error_message = 8;
+  int64 duration_ms = 9;
+}
+
+message ProjectPathRequest {
+  string project_path = 1;
+}
+
+message ProjectInfo {
+  string project_path = 1;
+  string pack_name = 2;
+  string pack_version = 3;
+  string created_at = 4;
+  string updated_at = 5;
+  repeated string features = 6;
+}
+
+message ProjectState {
+  string project_path = 1;
+  string pack_name = 2;
+  string pack_version = 3;
+  map<string, string> variables = 4;
+  repeated FeatureInfo features = 5;
+  repeated string generated_files = 6;
+}
+
+message ProjectValidationResult {
+  bool valid = 1;
+  bool is_yappc_project = 2;
+  repeated string errors = 3;
+  repeated string warnings = 4;
+}
+
+message UpdateAvailability {
+  bool update_available = 1;
+  string current_version = 2;
+  string latest_version = 3;
+  repeated string changes = 4;
+}
+
+message FeatureInfo {
+  string name = 1;
+  string type = 2;
+  string added_at = 3;
+  repeated string files = 4;
+}
+
+message FeatureListResponse {
+  repeated FeatureInfo features = 1;
+}
+
+message ExportStateResponse {
+  bool success = 1;
+  string state_json = 2;
+}
+
+message ImportStateRequest {
+  string project_path = 1;
+  string state_json = 2;
+}
+
+message ImportStateResponse {
+  bool success = 1;
+  string message = 2;
+}
+
+// ============================================================================
+// Template Messages
+// ============================================================================
+
+message RenderRequest {
+  string template = 1;
+  map<string, string> variables = 2;
+}
+
+message RenderResponse {
+  bool success = 1;
+  string output = 2;
+  repeated string errors = 3;
+}
+
+message ValidateSyntaxRequest {
+  string template = 1;
+}
+
+message ValidateSyntaxResponse {
+  bool valid = 1;
+  repeated string errors = 2;
+}
+
+message ListTemplatesRequest {
+  string pack_name = 1;
+}
+
+message TemplateInfo {
+  string name = 1;
+  string path = 2;
+  string type = 3;
+  repeated string required_variables = 4;
+}
+
+message TemplateListResponse {
+  repeated TemplateInfo templates = 1;
+}
+
+// ============================================================================
+// Dependency Messages
+// ============================================================================
+
+message AnalyzePackRequest {
+  string pack_name = 1;
+}
+
+message DependencyAnalysis {
+  repeated DependencyInfo dependencies = 1;
+  repeated DependencyInfo dev_dependencies = 2;
+  repeated ConflictInfo conflicts = 3;
+  bool has_conflicts = 4;
+}
+
+message DependencyInfo {
+  string name = 1;
+  string version = 2;
+  string scope = 3;
+  bool optional = 4;
+  repeated string transitive = 5;
+}
+
+message CheckConflictsRequest {
+  repeated string pack_names = 1;
+}
+
+message CheckAddConflictsRequest {
+  string project_path = 1;
+  string pack_name = 2;
+}
+
+message ConflictInfo {
+  string type = 1;
+  string description = 2;
+  string pack1 = 3;
+  string pack2 = 4;
+  string resolution = 5;
+}
+
+message ConflictListResponse {
+  repeated ConflictInfo conflicts = 1;
+  bool compatible = 2;
+}

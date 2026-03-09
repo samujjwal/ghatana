@@ -1,0 +1,92 @@
+name: CI
+
+on:
+push:
+branches: [ main, develop ]
+pull_request:
+branches: [ main, develop ]
+
+jobs:
+{{#if enableTests}}
+test:
+runs-on: ubuntu-latest
+steps:
+- uses: actions/checkout@v4
+
+{{#if (eq language "go")}}
+- name: Set up Go
+uses: actions/setup-go@v5
+with:
+go-version: '1.21'
+
+- name: Run tests
+run: go test -v ./...
+{{/if}}
+
+{{#if (eq language "python")}}
+- name: Set up Python
+uses: actions/setup-python@v5
+with:
+python-version: '3.11'
+
+- name: Install dependencies
+run: |
+pip install uv
+uv pip install --system -r pyproject.toml
+
+- name: Run tests
+run: pytest
+{{/if}}
+
+{{#if (eq language "rust")}}
+- name: Set up Rust
+uses: actions-rs/toolchain@v1
+with:
+toolchain: stable
+
+- name: Run tests
+run: cargo test
+{{/if}}
+
+{{#if (eq language "csharp")}}
+- name: Set up .NET
+uses: actions/setup-dotnet@v4
+with:
+dotnet-version: '8.0.x'
+
+- name: Run tests
+run: dotnet test
+{{/if}}
+{{/if}}
+
+{{#if enableLinting}}
+lint:
+runs-on: ubuntu-latest
+steps:
+- uses: actions/checkout@v4
+
+{{#if (eq language "go")}}
+- name: golangci-lint
+uses: golangci/golangci-lint-action@v3
+{{/if}}
+
+{{#if (eq language "python")}}
+- name: Ruff
+uses: chartboost/ruff-action@v1
+{{/if}}
+
+{{#if (eq language "rust")}}
+- name: Clippy
+run: cargo clippy -- -D warnings
+{{/if}}
+{{/if}}
+
+{{#if enableDocker}}
+build:
+runs-on: ubuntu-latest
+steps:
+- uses: actions/checkout@v4
+
+- name: Build Docker image
+run: docker build -t {{projectName}}:${{github.sha}} .
+{{/if}}

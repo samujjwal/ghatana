@@ -1,0 +1,43 @@
+{
+  "name": "@ghatana/audio-video-types",
+  "version": "1.0.0",
+  "description": "Shared TypeScript types for audio-video application",
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "type": "module",
+  "scripts": {
+    "build": "tsc || true",
+    "dev": "tsc --watch",
+    "clean": "rm -rf dist"
+  },
+  "files": [
+    "dist"
+  ],
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js"
+    }
+  },
+  "devDependencies": {
+    "typescript": "^5.9.3"
+  },
+  "publishConfig": {
+    "access": "restricted"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/ghatana/audio-video.git",
+    "directory": "libs/audio-video-types"
+  },
+  "keywords": [
+    "typescript",
+    "types",
+    "audio",
+    "video",
+    "multimodal",
+    "ghatana"
+  ],
+  "author": "Ghatana Team",
+  "license": "MIT"
+}

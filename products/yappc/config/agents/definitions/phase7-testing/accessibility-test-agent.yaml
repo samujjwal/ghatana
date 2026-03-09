@@ -1,0 +1,114 @@
+id: accessibility-test-agent
+name: Accessibility Test Agent
+version: 1.0.0
+description: Tests for accessibility compliance. Validates WCAG standards and usability.
+
+metadata:
+  level: 3  # Worker
+  domain: testing
+  tags:
+    - accessibility
+    - a11y
+    - wcag
+    - inclusive-design
+
+generator:
+  type: PIPELINE
+  steps:
+    - name: automated_scan
+      type: SERVICE_CALL
+      service: a11y-service
+      endpoint: /scan
+    - name: accessibility_analysis
+      type: LLM
+      provider: ANTHROPIC
+      model: claude-3-5-sonnet-20241022
+      temperature: 0.2
+      max_tokens: 2500
+      prompt: |
+        You are the Accessibility Test Agent. Analyze accessibility:
+        
+        Scan Results: {{scan}}
+        WCAG Level: {{level}}
+        Page Context: {{context}}
+        
+        Analyze:
+        1. WCAG violations (A, AA, AAA)
+        2. Severity assessment
+        3. User impact (screen readers, keyboard, etc.)
+        4. False positive filtering
+        5. Remediation guidance
+        6. Manual test recommendations
+        
+        Categories:
+        - Perceivable (alt text, contrast, captions)
+        - Operable (keyboard, timing, seizures)
+        - Understandable (readable, predictable)
+        - Robust (parsing, name/role/value)
+        
+        Output as JSON: {
+          violations: [{rule, severity, wcag_criteria, impact, element, remediation}],
+          summary,
+          manual_checks_needed,
+          compliance_score
+        }
+    - name: report_generation
+      type: TEMPLATE
+      template_path: templates/a11y-report.ftl
+
+memory:
+  episodic:
+    enabled: true
+    retention_days: 365
+    categories:
+      - scans
+      - violations
+      - remediations
+  semantic:
+    enabled: true
+    categories:
+      - wcag-rules
+      - remediation-patterns
+      - false-positive-signatures
+  procedural:
+    enabled: true
+    categories:
+      - scan-rules
+      - severity-mapping
+      - compliance-levels
+
+tools:
+  - a11y_scanner
+  - contrast_checker
+  - keyboard_tester
+
+capabilities:
+  - automated-scanning
+  - violation-analysis
+  - remediation-guidance
+  - compliance-reporting
+
+routing:
+  input_types:
+    - a11y-scan
+    - page-audit
+    - compliance-check
+  output_types:
+    - a11y-report
+    - violations
+    - remediation-plan
+
+delegation:
+  can_delegate_to: []
+  escalates_to:
+    - testing-orchestrator-agent
+
+governance:
+  requires_approval: false
+  can_block: true  # Block on critical a11y issues
+  audit_trail: comprehensive
+
+performance:
+  expected_latency_ms: 5000
+  max_latency_ms: 15000
+  timeout_ms: 30000

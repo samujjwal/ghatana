@@ -1,0 +1,28 @@
+import { createServer } from "./server.js";
+import { loadConfig } from "./config.js";
+import { logger } from "./plugins/logging.js";
+
+async function main() {
+const config = loadConfig();
+
+const server = await createServer(config);
+
+// Start the server
+const url = await server.start();
+logger.info(`🚀 GraphQL Mesh Gateway ready at ${url}`);
+
+// Graceful shutdown
+const shutdown = async (signal: string) => {
+logger.info(`${signal} received, shutting down...`);
+await server.stop();
+process.exit(0);
+};
+
+process.on("SIGTERM", () => shutdown("SIGTERM"));
+process.on("SIGINT", () => shutdown("SIGINT"));
+}
+
+main().catch((err) => {
+logger.error({ err }, "Failed to start server");
+process.exit(1);
+});

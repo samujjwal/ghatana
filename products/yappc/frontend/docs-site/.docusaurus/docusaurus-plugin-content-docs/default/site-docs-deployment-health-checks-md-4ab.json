@@ -1,0 +1,27 @@
+{
+  "id": "deployment/health-checks",
+  "title": "Health Checks",
+  "description": "Documentation coming soon.",
+  "source": "@site/docs/deployment/health-checks.md",
+  "sourceDirName": "deployment",
+  "slug": "/deployment/health-checks",
+  "permalink": "/docs/deployment/health-checks",
+  "draft": false,
+  "unlisted": false,
+  "editUrl": "https://github.com/yappc/app-creator/tree/main/docs-site/docs/deployment/health-checks.md",
+  "tags": [],
+  "version": "current",
+  "sidebarPosition": 1,
+  "frontMatter": {
+    "sidebar_position": 1
+  },
+  "sidebar": "deploymentSidebar",
+  "previous": {
+    "title": "Feature Flags",
+    "permalink": "/docs/deployment/feature-flags"
+  },
+  "next": {
+    "title": "Rollback",
+    "permalink": "/docs/deployment/rollback"
+  }
+}

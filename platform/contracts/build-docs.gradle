@@ -1,0 +1,129 @@
+// Documentation generation configuration
+
+// Import the protobuf plugin
+apply plugin: 'com.google.protobuf'
+
+// Configure protobuf plugin
+ext {
+    // Use the same protobuf version as defined in the main build.gradle
+    protobufVersion = '3.25.3'
+}
+
+protobuf {
+    // Configure the protoc executable
+    protoc {
+        // Download from repositories
+        artifact = "com.google.protobuf:protoc:${protobufVersion}"
+    }
+
+    // Configure the protoc-gen-doc plugin
+    plugins {
+        doc {
+            // Use the protoc-gen-doc plugin from the classpath
+            path = 'com.pseudomuto.protoc-gen-doc:protoc-gen-doc:1.5.1:osx-x86_64@exe'
+        }
+    }
+
+    // Configure code generation tasks
+    generateProtoTasks {
+        all().each { task ->
+            // Generate docs for all proto files
+            task.plugins {
+                doc {
+                    outputSubDir = 'html'
+                    option 'html,index.html'
+                }
+            }
+        }
+    }
+}
+
+// Task to generate HTML documentation
+task generateProtoDocumentation(type: Copy) {
+    group = 'Documentation'
+    description = 'Generate HTML documentation from proto files using protoc-gen-doc'
+
+    // Depend on the protobuf generate task
+    dependsOn 'generateProto'
+
+    // Output directory for generated documentation
+    def outputDir = file("$buildDir/docs/proto")
+
+    // Input files are the generated HTML files
+    from("$buildDir/generated/source/proto/main/html") {
+        include '**/*.html'
+    }
+
+    into outputDir
+
+    doLast {
+        println "Generated HTML documentation in: ${outputDir}/index.html"
+    }
+}
+
+// Task to generate Markdown documentation
+task generateProtoMarkdown {
+    group = 'Documentation'
+    description = 'Generate Markdown documentation from proto files using protoc-gen-doc'
+
+    // Depend on the protobuf generate task
+    dependsOn 'generateProto'
+
+    // Output directory for generated documentation
+    def outputDir = file("$buildDir/docs/proto/markdown")
+
+    // Input files
+    def protoFiles = fileTree(dir: 'src/main/proto', include: '**/*.proto')
+
+    inputs.files(protoFiles)
+    outputs.dir(outputDir)
+
+    doLast {
+        // Ensure output directory exists
+        outputDir.mkdirs()
+
+        // Get the absolute path to the protoc-gen-doc executable
+        def protocGenDoc = configurations.runtimeClasspath.find { it.name.startsWith('protoc-gen-doc-') }
+        if (!protocGenDoc) {
+            throw new GradleException("protoc-gen-doc not found in the classpath. Make sure it's added as a dependency.")
+        }
+
+        // Make the file executable if on Unix-like system
+        if (!System.getProperty('os.name').toLowerCase().contains('windows')) {
+            protocGenDoc.setExecutable(true)
+        }
+
+        // Run protoc with the doc plugin
+        exec {
+            workingDir projectDir
+            commandLine 'protoc',
+                "--plugin=protoc-gen-doc=${protocGenDoc.absolutePath}",
+                "--doc_out=${outputDir}",
+                "--doc_opt=markdown,api-docs.md",
+                "-I${projectDir}/src/main/proto"
+            args protoFiles.files.collect { it.relativePath }
+        }
+
+        println "Generated Markdown documentation in: ${outputDir}/api-docs.md"
+    }
+}
+
+// Make documentation generation part of the build
+tasks.named('build') {
+    dependsOn 'generateProtoDocumentation', 'generateProtoMarkdown'
+}
+
+// Clean task for documentation
+tasks.register('cleanDocs', Delete) {
+    delete 'build/docs', 'build/generated/source/proto/main/html'
+}
+
+// Make clean depend on cleanDocs
+tasks.named('clean') {
+    dependsOn 'cleanDocs'
+}
+
+// Ensure the documentation tasks run after the protobuf tasks
+tasks.matching { it.name.startsWith('generateProto') }.all { task ->
+    task.dependsOn 'extractIncludeProto', 'extractProto'
+}

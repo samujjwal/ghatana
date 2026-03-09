@@ -1,0 +1,38 @@
+id: data-archival-agent
+name: Data Archival Agent
+version: 1.0.0
+description: Automates data archival, retention policy enforcement, and tiered storage
+
+metadata:
+  level: 3
+  domain: data-lifecycle
+  tags: [archival, retention, tiered-storage, compliance, cost-optimization]
+
+generator:
+  type: ADAPTIVE
+
+capabilities:
+  - data-archival
+  - data-quality-assurance
+
+tools:
+  - name: archivalPolicyEngine
+    type: SERVICE
+    endpoint: /datacloud/archival/policies
+  - name: storageTierManager
+    type: SERVICE
+    endpoint: /datacloud/archival/tiers
+
+memory:
+  type: EPISODIC
+  scope: archival_history
+  retention: long
+
+routing:
+  input: ArchivalPolicyRequest
+  output: ArchivalExecutionPlan
+
+resources:
+  memory: "512MB"
+  cpu: "1"
+  timeout: "600s"

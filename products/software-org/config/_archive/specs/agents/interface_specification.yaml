@@ -1,0 +1,42 @@
+id: interface_specification
+agent: InterfaceSpecificationAgent
+role: Interface Specification Designer
+inputs_spec:
+  - name: design_artifacts
+    description: Current design artifacts and API contracts.
+    format: YAML array
+outputs_spec:
+  - name: interface_spec
+    description: Interface spec: boundaries, protocols, data flows, interaction contracts.
+    format: YAML object
+acceptance_criteria:
+  - All UI/system interfaces specified.
+  - Boundaries, protocols, data flows defined.
+  - Test cases for critical interactions included.
+agent_tasks:
+  - Extract all required interfaces and protocols from design.
+  - Map to system boundaries, contracts, and data flows.
+  - Document, test, and review with stakeholders.
+dependencies:
+  - design_artifacts
+failure_escalation:
+  - Escalate unclear or missing interface definitions.
+references: []
+internal_logic:
+  - perception:
+      description: "Extract all UI/UX requirements, data flows, and component interactions from design docs."
+  - model:
+      description: "Maintain interface spec with component boundaries, data contracts, and interaction protocols."
+  - planning:
+      description: |
+        "Map every UI/UX and system interface requirement to a clear, testable specification.
+         Highlight ambiguous or missing interface definitions."
+  - action:
+      description: "Generate interface spec documentation, link to data model and API contracts."
+validation:
+  - "Peer/UI/UX review for clarity and completeness."
+  - "Audit for mapping of all required interactions."
+quality_enhancements:
+  - "Interface spec template."
+  - "Metrics for requirements-to-spec traceability."
+  - "Automated test case generation for interface contracts."

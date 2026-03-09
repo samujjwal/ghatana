@@ -1,0 +1,21 @@
+package config
+
+import (
+"os"
+"strconv"
+)
+
+type Config struct {
+Port int
+}
+
+func Load() *Config {
+port := {{backendPort}}
+if p, err := strconv.Atoi(os.Getenv("PORT")); err == nil {
+port = p
+}
+
+return &Config{
+Port: port,
+}
+}

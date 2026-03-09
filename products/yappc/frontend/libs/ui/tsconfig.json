@@ -1,0 +1,73 @@
+{
+  "extends": "../../tsconfig.base.json",
+  "compilerOptions": {
+    "composite": true,
+    "noEmit": false,
+    "emitDeclarationOnly": true,
+    "declaration": true,
+    "declarationMap": true,
+    "outDir": "../../dist/out-tsc/ui",
+    "tsBuildInfoFile": "../../node_modules/.cache/tsbuildinfo/ui.tsbuildinfo",
+    "rootDir": "./src",
+    "jsx": "react-jsx",
+    "baseUrl": ".",
+    "paths": {
+      "@ghatana/yappc-types": [
+        "../../libs/types/src"
+      ],
+      "@ghatana/yappc-types/*": [
+        "../../libs/types/src/*"
+      ],
+      "@ghatana/yappc-types/devsecops/*": [
+        "../../libs/types/src/devsecops/*"
+      ],
+        "../../libs/state/src"
+      ],
+      "@ghatana/yappc-state/*": [
+        "../../libs/state/src/*"
+      ],
+      "@ghatana/yappc-store": [
+        "../../libs/state/src"
+      ],
+      "@ghatana/yappc-store/*": [
+        "../../libs/state/src/*"
+      ],
+      "@ghatana/canvas": [
+        "../canvas/src/index.ts"
+      ],
+      "@ghatana/canvas/*": [
+        "../canvas/src/*"
+      ],
+      "@ghatana/yappc-api": [
+        "../../libs/api/src"
+      ],
+      "@ghatana/yappc-api/*": [
+        "../../libs/api/src/*"
+      ]
+    },
+    "types": [
+      "node",
+      "jest",
+      "@testing-library/jest-dom"
+    ]
+  },
+  "include": [
+    "src/**/*"
+  ],
+  "exclude": [
+    "node_modules",
+    "dist",
+    "**/*.test.*",
+    "**/*.stories.*",
+    "src/canvas-atoms.ts",
+    "src/test"
+  ],
+  "references": [
+    {
+      "path": "../types/tsconfig.json"
+    },
+    {
+      "path": "../state/tsconfig.json"
+    }
+  ]
+}

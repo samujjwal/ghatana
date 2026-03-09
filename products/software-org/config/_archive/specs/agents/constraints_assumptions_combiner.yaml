@@ -1,0 +1,47 @@
+id: constraints_assumptions_combiner
+agent: ConstraintsAssumptionsCombiner
+role: Analyst/Combiner
+inputs_spec:
+- name: project_constraints
+  description: List of project constraints.
+  format: List of constraint objects
+- name: project_assumptions
+  description: List of project assumptions.
+  format: List of assumption objects
+outputs_spec:
+- name: constraints_and_assumptions
+  description: Synthesized view of all constraints and assumptions, with conflicts/gaps flagged.
+  format: List of combined objects (constraint/assumption, mapping, issues)
+  example: "- constraint: \"Must use AWS GovCloud\"\n  assumption: \"Cloud services available in region\"\n  issues: []\n"
+acceptance_criteria:
+- Constraints and assumptions are synthesized into a coherent list.
+- Conflicts or gaps are identified and flagged.
+- Ensure all referenced artifacts are current and versioned.
+agent_tasks:
+- Synthesize constraints and assumptions into a coherent list.
+- Identify and flag conflicts or gaps.
+- Ensure all references are current and versioned.
+dependencies:
+- project_constraints
+- project_assumptions
+hitl: true
+hitl_reason: Human ensures constraints and assumptions are correctly synthesized
+failure_escalation:
+- Escalate to PMO if synthesis is incomplete or conflicts are unresolved.
+references: []
+internal_logic:
+  - perception:
+      description: "Scan for assumption-constraint links, gaps, and conflicts."
+  - model:
+      description: "Mapping: {constraint_id, assumption_ids, conflicts, verification_needed}"
+  - planning:
+      description: |
+        "For each constraint, ensure at least one supporting assumption or flag as gap."
+  - action:
+      description: "Produce mapping YAML."
+validation:
+  - "Peer/lead review for mapping and conflicts."
+  - "Audit for completeness and traceability."
+quality_enhancements:
+  - "Automated gap/conflict detection."
+  - "Change log for mapping."

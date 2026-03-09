@@ -1,0 +1,67 @@
+{{!--
+  Event Schemas Template
+  Generates event schema definitions
+--}}
+{{#if (eq from.language "go")}}
+package events
+
+import "time"
+
+// BaseEvent provides common event fields
+type BaseEvent struct {
+    EventID        string    `json:"id"`
+    EventType      string    `json:"type"`
+    EventVersion   string    `json:"version"`
+    EventTimestamp time.Time `json:"timestamp"`
+}
+
+func (e *BaseEvent) ID() string           { return e.EventID }
+func (e *BaseEvent) Type() string         { return e.EventType }
+func (e *BaseEvent) Version() string      { return e.EventVersion }
+func (e *BaseEvent) Timestamp() time.Time { return e.EventTimestamp }
+
+// Add your domain-specific events here
+// Example:
+// type UserCreatedEvent struct {
+//     BaseEvent
+//     UserID string `json:"user_id"`
+//     Email  string `json:"email"`
+//     Name   string `json:"name"`
+// }
+//
+// func (e *UserCreatedEvent) Data() interface{} {
+//     return map[string]interface{}{
+//         "user_id": e.UserID,
+//         "email":   e.Email,
+//         "name":    e.Name,
+//     }
+// }
+{{/if}}
+{{#if (eq from.language "typescript")}}
+/**
+ * Base event interface
+ */
+export interface BaseEvent {
+  id: string;
+  type: string;
+  version: string;
+  timestamp: string;
+}
+
+/**
+ * Event with typed data
+ */
+export interface Event<T> extends BaseEvent {
+  data: T;
+}
+
+// Add your domain-specific events here
+// Example:
+// export interface UserCreatedEvent extends Event<{
+//   userId: string;
+//   email: string;
+//   name: string;
+// }> {
+//   type: 'user.created';
+// }
+{{/if}}

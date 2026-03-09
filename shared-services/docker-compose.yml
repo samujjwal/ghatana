@@ -1,0 +1,110 @@
+# Docker Compose for local development of shared services
+version: "3.9"
+
+services:
+  auth-gateway:
+    build:
+      context: ../
+      dockerfile: shared-services/Dockerfile
+      args:
+        SERVICE_MODULE: auth-gateway
+    ports:
+      - "8081:8080"
+    environment:
+      - JWT_SECRET=${JWT_SECRET:?JWT_SECRET is required}
+      - ADMIN_USERNAME=${ADMIN_USERNAME:?ADMIN_USERNAME is required}
+      - ADMIN_PASSWORD=${ADMIN_PASSWORD:?ADMIN_PASSWORD is required}
+      - LOG_LEVEL=DEBUG
+    healthcheck:
+      test: ["CMD", "wget", "--spider", "-q", "http://localhost:8080/health"]
+      interval: 10s
+      timeout: 3s
+      retries: 3
+
+  auth-service:
+    build:
+      context: ../
+      dockerfile: shared-services/Dockerfile
+      args:
+        SERVICE_MODULE: auth-service
+    ports:
+      - "8082:8080"
+    environment:
+      - DATABASE_URL=${DATABASE_URL:-jdbc:postgresql://db:5432/auth}
+      - LOG_LEVEL=DEBUG
+    depends_on:
+      db:
+        condition: service_healthy
+
+  ai-inference-service:
+    build:
+      context: ../
+      dockerfile: shared-services/Dockerfile
+      args:
+        SERVICE_MODULE: ai-inference-service
+    ports:
+      - "8083:8080"
+    environment:
+      - OPENAI_API_KEY=${OPENAI_API_KEY}
+      - MODEL_PROVIDER=${MODEL_PROVIDER:-openai}
+      - LOG_LEVEL=DEBUG
+
+  ai-registry:
+    build:
+      context: ../
+      dockerfile: shared-services/Dockerfile
+      args:
+        SERVICE_MODULE: ai-registry
+    ports:
+      - "8084:8080"
+    environment:
+      - DATABASE_URL=${DATABASE_URL:-jdbc:postgresql://db:5432/airegistry}
+      - LOG_LEVEL=DEBUG
+    depends_on:
+      db:
+        condition: service_healthy
+
+  feature-store-ingest:
+    build:
+      context: ../
+      dockerfile: shared-services/Dockerfile
+      args:
+        SERVICE_MODULE: feature-store-ingest
+    ports:
+      - "8085:8080"
+    environment:
+      - REDIS_URL=${REDIS_URL:-redis://redis:6379}
+      - LOG_LEVEL=DEBUG
+    depends_on:
+      redis:
+        condition: service_healthy
+
+  # ── Supporting infrastructure ──────────────────────────────────────
+  db:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:?POSTGRES_USER is required}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?POSTGRES_PASSWORD is required}
+      POSTGRES_DB: ${POSTGRES_DB:-auth}
+    ports:
+      - "5432:5432"
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-postgres}"]
+      interval: 5s
+      timeout: 3s
+      retries: 5
+
+  redis:
+    image: redis:7-alpine
+    ports:
+      - "6379:6379"
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 3s
+      retries: 5
+
+volumes:
+  pgdata:

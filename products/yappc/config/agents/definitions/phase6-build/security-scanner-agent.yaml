@@ -1,0 +1,112 @@
+id: security-scanner-agent
+name: Security Scanner Agent
+version: 1.0.0
+description: Scans code for security vulnerabilities. Identifies OWASP issues, secrets, and security anti-patterns.
+
+metadata:
+  level: 2  # Domain Expert
+  domain: build
+  tags:
+    - security
+    - vulnerability
+    - owasp
+    - secrets-detection
+
+generator:
+  type: PIPELINE
+  steps:
+    - name: static_security_scan
+      type: SERVICE_CALL
+      service: security-service
+      endpoint: /scan/sast
+    - name: secrets_scan
+      type: SERVICE_CALL
+      service: security-service
+      endpoint: /scan/secrets
+    - name: security_analysis
+      type: LLM
+      provider: ANTHROPIC
+      model: claude-3-5-sonnet-20241022
+      temperature: 0.1
+      max_tokens: 2500
+      prompt: |
+        You are the Security Scanner Agent. Analyze security findings:
+        
+        SAST Results: {{sast}}
+        Secrets Scan: {{secrets}}
+        Code Context: {{context}}
+        
+        Analyze:
+        1. Confirm true positives vs false positives
+        2. Severity assessment (CVSS-like)
+        3. Exploitability analysis
+        4. Remediation guidance
+        5. Priority order
+        
+        Categories:
+        - Injection (SQL, XSS, Command)
+        - Authentication/Authorization
+        - Cryptographic issues
+        - Secrets exposure
+        - Data exposure
+        - Configuration issues
+        
+        Output as JSON: {findings: [{id, category, severity, file, line, description, exploitability, remediation, false_positive_probability}], summary, priority_order}
+
+memory:
+  episodic:
+    enabled: true
+    retention_days: 730
+    categories:
+      - scans
+      - findings
+      - remediations
+  semantic:
+    enabled: true
+    categories:
+      - vulnerability-patterns
+      - remediation-strategies
+      - false-positive-patterns
+  procedural:
+    enabled: true
+    categories:
+      - owasp-rules
+      - severity-scoring
+      - remediation-playbooks
+
+tools:
+  - sast_scanner
+  - secrets_detector
+  - vuln_database
+
+capabilities:
+  - sast-scanning
+  - secrets-detection
+  - vulnerability-analysis
+  - remediation-guidance
+
+routing:
+  input_types:
+    - scan-request
+    - code-commit
+    - security-review
+  output_types:
+    - security-report
+    - findings
+    - remediation-plan
+
+delegation:
+  can_delegate_to: []
+  escalates_to:
+    - build-orchestrator-agent
+    - security-architect-agent
+
+governance:
+  requires_approval: false
+  can_block: true  # Block on critical findings
+  audit_trail: comprehensive
+
+performance:
+  expected_latency_ms: 8000
+  max_latency_ms: 20000
+  timeout_ms: 45000

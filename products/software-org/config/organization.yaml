@@ -1,0 +1,149 @@
+# Software Organization Configuration
+# This is the main configuration file that defines the complete software organization
+# using the Virtual-Org configuration-driven architecture.
+
+apiVersion: virtualorg.ghatana.com/v1
+kind: Organization
+metadata:
+  name: software-org
+  namespace: ${TENANT_ID:default-tenant}
+  labels:
+    environment: ${ENVIRONMENT:development}
+    version: "1.0.0"
+    industry: software
+    type: software-organization
+  annotations:
+    description: "Full-stack software development organization with 10 departments and AI-powered agents"
+    created-by: "ghatana-platform"
+    documentation: "docs/SOFTWARE_ORG_PLUGIN_SPECIFICATION.md"
+
+spec:
+  # Basic Information
+  displayName: "Software Organization"
+  description: |
+    Complete software development organization simulation with comprehensive
+    department structure covering engineering, operations, and business functions.
+    AI-powered agents handle routine decisions with human oversight for critical actions.
+
+  # Organization Structure
+  structure:
+    type: hierarchical
+    maxDepth: 4
+
+  # Global Settings
+  settings:
+    defaultTimezone: "America/New_York"
+    workingHours:
+      start: "09:00"
+      end: "17:00"
+      days: [MONDAY, TUESDAY, WEDNESDAY, THURSDAY, FRIDAY]
+
+    # Event Configuration
+    events:
+      enabled: true
+      publishTo: aep
+      eventPrefix: "ghatana.contracts.software_org"
+
+    # KPI Tracking
+    kpis:
+      enabled: true
+      aggregationInterval: PT1H
+      retentionDays: 90
+
+    # Human-in-the-Loop
+    hitl:
+      enabled: true
+      defaultApprovalTimeout: PT24H
+      escalationPolicy: manager-chain
+      confidenceThreshold: 0.7
+
+    # AI Configuration
+    ai:
+      enabled: true
+      defaultProvider: openai
+      fallbackProvider: anthropic
+      maxRetries: 3
+
+    # Security
+    security:
+      auditEnabled: true
+      encryptSensitiveData: true
+      dataRetentionDays: 365
+
+  # Department References (load from separate files)
+  departments:
+    # Technical Departments
+    - ref: departments/engineering.yaml
+    - ref: departments/qa.yaml
+    - ref: departments/devops.yaml
+
+    # Customer-Facing Departments
+    - ref: departments/support.yaml
+    - ref: departments/sales.yaml
+    - ref: departments/marketing.yaml
+
+    # Business Operations Departments
+    - ref: departments/product.yaml
+    - ref: departments/finance.yaml
+    - ref: departments/hr.yaml
+    - ref: departments/compliance.yaml
+
+  # Cross-Department Workflow References
+  workflows:
+    - ref: workflows/sprint-planning.yaml
+    - ref: workflows/incident-response.yaml
+    - ref: workflows/release-management.yaml
+    - ref: workflows/feature-delivery.yaml
+    - ref: workflows/customer-escalation.yaml
+    - ref: workflows/employee-onboarding.yaml
+    - ref: workflows/compliance-audit.yaml
+
+  # Department Interaction Definitions
+  interactions:
+    - ref: interactions/eng-qa-handoff.yaml
+    - ref: interactions/qa-devops-deployment.yaml
+    - ref: interactions/support-engineering-escalation.yaml
+    - ref: interactions/sales-product-feedback.yaml
+    - ref: interactions/marketing-product-launch.yaml
+    - ref: interactions/hr-engineering-hiring.yaml
+    - ref: interactions/compliance-devops-security.yaml
+
+  # Organization-Level KPIs
+  organizationKpis:
+    - name: overall_velocity
+      displayName: "Overall Velocity"
+      type: gauge
+      aggregation: sum
+      sources:
+        - department: engineering
+          kpi: velocity_story_points
+
+    - name: customer_health_score
+      displayName: "Customer Health Score"
+      type: percentage
+      aggregation: weighted_average
+      sources:
+        - department: support
+          kpi: csat_score
+          weight: 0.4
+        - department: sales
+          kpi: nps_score
+          weight: 0.3
+        - department: product
+          kpi: feature_adoption_rate
+          weight: 0.3
+
+    - name: operational_excellence
+      displayName: "Operational Excellence"
+      type: percentage
+      aggregation: weighted_average
+      sources:
+        - department: devops
+          kpi: deployment_success_rate
+          weight: 0.3
+        - department: qa
+          kpi: defect_escape_rate
+          weight: 0.3
+        - department: compliance
+          kpi: audit_compliance_rate
+          weight: 0.4

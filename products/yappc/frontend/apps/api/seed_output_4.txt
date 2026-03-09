@@ -1,0 +1,16 @@
+npm warn Unknown project config "shamefully-hoist". This will stop working in the next major version of npm.
+npm warn Unknown project config "strict-peer-dependencies". This will stop working in the next major version of npm.
+npm warn Unknown project config "auto-install-peers". This will stop working in the next major version of npm.
+npm warn Unknown project config "lockfile". This will stop working in the next major version of npm.
+npm warn Unknown project config "prefer-frozen-lockfile". This will stop working in the next major version of npm.
+/home/samujjwal/Developments/ghatana/products/yappc/app-creator/apps/api/prisma/seed.ts:19
+  throw new Error('DATABASE_URL is not defined');
+        ^
+
+Error: DATABASE_URL is not defined
+    at <anonymous> (/home/samujjwal/Developments/ghatana/products/yappc/app-creator/apps/api/prisma/seed.ts:19:9)
+    at ModuleJob.run (node:internal/modules/esm/module_job:377:25)
+    at async onImport.tracePromise.__proto__ (node:internal/modules/esm/loader:691:26)
+    at async asyncRunEntryPointWithESMLoader (node:internal/modules/run_main:101:5)
+
+Node.js v24.10.0

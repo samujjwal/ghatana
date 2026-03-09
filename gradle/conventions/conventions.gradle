@@ -1,0 +1,95 @@
+subprojects {
+    plugins.withId('java') {
+        apply plugin: 'jacoco'
+        java {
+            toolchain {
+                languageVersion = JavaLanguageVersion.of(21)
+            }
+        }
+
+        tasks.withType(JavaCompile).configureEach {
+            options.encoding = 'UTF-8'
+            options.compilerArgs.add("-parameters")
+        }
+
+        tasks.withType(Test).configureEach {
+            useJUnitPlatform()
+            testLogging {
+                events "passed", "skipped", "failed"
+                showStandardStreams = true
+            }
+            jacoco {
+                destinationFile = file("${buildDir}/jacoco/test.exec")
+            }
+            finalizedBy 'jacocoTestReport'
+            
+            // Enable JaCoCo agent (opt-out via -PdisableJacocoAgent=true)
+            def jacocoAgentEnabled = !(project.hasProperty('disableJacocoAgent') || rootProject.hasProperty('disableJacocoAgent'))
+            if (jacocoAgentEnabled) {
+                // Note: jacocoInstrumentationSettings() removed in Gradle 9.x
+                // JaCoCo agent is automatically configured by the jacoco plugin
+                
+                // Add JVM arguments for JaCoCo (append to any existing args)
+                // Use the explicit jacocoAgent configuration (contains the pinned agent JAR)
+                jvmArgs += [
+                    "-javaagent:${project.configurations.jacocoAgent.asPath}=destfile=${buildDir}/jacoco/test.exec"
+                ]
+            } else {
+                project.logger.lifecycle("JaCoCo javaagent disabled for project ${project.path} (set -PdisableJacocoAgent=false to enable)")
+            }
+        }
+
+        tasks.named('jacocoTestReport', JacocoReport).configure {
+            dependsOn tasks.test
+            // Ensure resources are processed before generating the report to avoid
+            // implicit dependency issues detected by Gradle validation
+            if (tasks.findByName('processResources')) {
+                dependsOn tasks.processResources
+            }
+            reports {
+                xml.required = true
+                html.required = true
+            }
+            executionData.setFrom(fileTree(buildDir).include("jacoco/test.exec"))
+            sourceDirectories.setFrom(files(sourceSets.main.allSource.srcDirs))
+            classDirectories.setFrom(files(sourceSets.main.output))
+            // Note: afterEvaluate removed for Gradle 9.x compatibility
+            // Basic class directory filtering is handled by JaCoCo plugin
+        }
+
+        // Shared Integration Test convention
+        sourceSets {
+            if (!findByName('integrationTest')) {
+                integrationTest {
+                    java.srcDir file('src/integration-test/java')
+                    resources.srcDir file('src/integration-test/resources')
+                }
+            }
+        }
+
+        configurations {
+            if (findByName('integrationTestImplementation') && findByName('testImplementation')) {
+                integrationTestImplementation.extendsFrom testImplementation, implementation
+            }
+            if (findByName('integrationTestRuntimeOnly') && findByName('testRuntimeOnly')) {
+                integrationTestRuntimeOnly.extendsFrom testRuntimeOnly, runtimeOnly
+            }
+        }
+
+        tasks.register('integrationTest', Test) {
+            description = 'Runs integration tests.'
+            group = 'verification'
+            testClassesDirs = sourceSets.integrationTest.output.classesDirs
+            classpath = sourceSets.integrationTest.runtimeClasspath
+            useJUnitPlatform()
+            testLogging {
+                events "passed", "skipped", "failed"
+            }
+            shouldRunAfter tasks.test
+        }
+
+        tasks.named('check').configure {
+            dependsOn tasks.named('integrationTest')
+        }
+    }
+}

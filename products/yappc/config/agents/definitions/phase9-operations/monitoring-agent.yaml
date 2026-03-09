@@ -1,0 +1,111 @@
+id: monitoring-agent
+name: Monitoring Agent
+version: 1.0.0
+description: Monitors system health and performance. Detects anomalies and alerts on issues.
+
+metadata:
+  level: 2  # Domain Expert
+  domain: operations
+  tags:
+    - monitoring
+    - alerting
+    - anomaly-detection
+    - observability
+
+generator:
+  type: PIPELINE
+  steps:
+    - name: metrics_collection
+      type: SERVICE_CALL
+      service: metrics-service
+      endpoint: /collect
+    - name: anomaly_detection
+      type: LLM
+      provider: ANTHROPIC
+      model: claude-3-5-sonnet-20241022
+      temperature: 0.2
+      max_tokens: 2000
+      prompt: |
+        You are the Monitoring Agent. Analyze metrics:
+        
+        Current Metrics: {{metrics}}
+        Baselines: {{baselines}}
+        Recent Alerts: {{alerts}}
+        Deployments: {{deployments}}
+        
+        Analyze:
+        1. Anomalies detected
+        2. Trend analysis
+        3. Correlation with events
+        4. Potential root causes
+        5. Alert recommendations
+        6. Dashboard insights
+        
+        Output as JSON: {
+          anomalies: [{metric, current, baseline, severity, potential_cause}],
+          trends,
+          correlations,
+          alert_recommendations,
+          insights
+        }
+    - name: alert_management
+      type: RULE_BASED
+      description: Apply alerting rules
+
+memory:
+  episodic:
+    enabled: true
+    retention_days: 365
+    categories:
+      - anomalies
+      - alerts
+      - correlations
+  semantic:
+    enabled: true
+    categories:
+      - baseline-models
+      - anomaly-patterns
+      - correlation-rules
+  procedural:
+    enabled: true
+    categories:
+      - detection-rules
+      - alerting-thresholds
+      - correlation-logic
+
+tools:
+  - metrics_collector
+  - anomaly_detector
+  - alert_manager
+
+capabilities:
+  - metrics-monitoring
+  - anomaly-detection
+  - trend-analysis
+  - alerting
+
+routing:
+  input_types:
+    - metrics-stream
+    - monitoring-request
+    - threshold-config
+  output_types:
+    - health-report
+    - alert
+    - anomaly-report
+
+delegation:
+  can_delegate_to: []
+  escalates_to:
+    - operations-orchestrator-agent
+    - incident-response-agent
+
+governance:
+  requires_approval: false
+  can_block: false
+  audit_trail: standard
+
+performance:
+  expected_latency_ms: 1000
+  max_latency_ms: 3000
+  timeout_ms: 5000

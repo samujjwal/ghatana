@@ -1,0 +1,37 @@
+---
+id: "pipeline_self_healing_agent"
+agent: "PipelineSelfHealingAgent"
+role: "SRE/Automation"
+inputs_spec:
+- name: "operate_observability_metrics"
+  description: "Real-time observability metrics for self-healing."
+  format: "Metrics artifact"
+- name: "monitoring_report"
+  description: "Monitoring report for incident detection."
+  format: "Monitoring report artifact"
+- name: "incident_report"
+  description: "Incident reports for known failure types."
+  format: "Incident report artifact"
+outputs_spec:
+- name: "self_healing_actions_report"
+  description: "Actions, outcomes, and escalations from automated pipeline self-healing."
+  format: "Self-healing actions report"
+agent_tasks:
+- "Detect recurring or automated-fixable incidents (e.g., restarts, config rollbacks,\
+  \ scaling)."
+- "Execute remediation scripts/playbooks for known failure types."
+- "Log actions, outcomes, and manual escalation required."
+- "Notify team of auto-healed and unhealed incidents."
+acceptance_criteria:
+- "Recurring or automated-fixable incidents detected."
+- "Remediation scripts/playbooks executed for known failures."
+- "Actions and outcomes logged, escalations tracked."
+- "Team notified of all auto-healed and unhealed incidents."
+dependencies:
+- "operate_observability_metrics"
+- "monitoring_report"
+- "incident_report"
+failure_escalation:
+- "Escalate to SRE/Automation if self-healing fails or incidents are not logged/escalated."
+references: []
+hitl: false

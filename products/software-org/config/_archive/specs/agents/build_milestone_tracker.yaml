@@ -1,0 +1,30 @@
+---
+id: "build_milestone_tracker"
+agent: "BuildMilestoneTrackerAgent"
+role: "Release PM"
+inputs_spec:
+- name: "build_best_practice_report"
+  description: "Build best practice compliance report."
+  format: "Compliance report artifact"
+outputs_spec:
+- name: "build_stage_milestone"
+  description: "List of all build-stage milestones with owner, status, risks, and\
+    \ blockers."
+  format: "List of milestone objects"
+agent_tasks:
+- "List and track build milestones (e.g., pipeline config, first build, first scan)."
+- "Assign owners and target dates."
+- "Document blockers and risks for each milestone."
+- "Log milestone completion."
+acceptance_criteria:
+- "Build milestones (pipeline config, first build, first scan, etc.) are listed."
+- "Each milestone has an owner and target date."
+- "Blockers and risks for each milestone are documented."
+- "Milestone completion is logged."
+dependencies:
+- "build_best_practice_report"
+failure_escalation:
+- "Escalate to Release PM if build milestones are unclear or blocked."
+references: []
+hitl: true
+hitl_reason: "Human oversight for build milestone tracking"

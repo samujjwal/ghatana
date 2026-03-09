@@ -1,0 +1,118 @@
+id: willingness-to-pay-agent
+name: Willingness to Pay Agent
+version: 1.0.0
+description: Assesses user willingness to pay for features/products. Designs pricing experiments and analyzes price sensitivity.
+
+metadata:
+  level: 3  # Worker
+  domain: ideation
+  tags:
+    - pricing-research
+    - willingness-to-pay
+    - price-sensitivity
+    - monetization
+
+generator:
+  type: PIPELINE
+  steps:
+    - name: wtp_research_design
+      type: LLM
+      provider: ANTHROPIC
+      model: claude-3-5-sonnet-20241022
+      temperature: 0.2
+      max_tokens: 2000
+      prompt: |
+        You are the Willingness to Pay Agent. Design pricing research:
+        
+        Product/Feature: {{product}}
+        Target Segment: {{segment}}
+        Competitive Pricing: {{competitors}}
+        
+        Design research to determine:
+        1. Optimal price point
+        2. Price sensitivity (elasticity)
+        3. Value perception drivers
+        4. Price-feature trade-offs
+        5. Segment willingness variations
+        
+        Methods: Van Westendorp, Gabor-Granger, conjoint analysis, A/B pricing tests
+        
+        Output as JSON: {method, survey_design, sample_size, analysis_plan, expected_outputs}
+    - name: research_execution
+      type: SERVICE_CALL
+      service: research-service
+      endpoint: /research/pricing
+    - name: results_analysis
+      type: LLM
+      provider: ANTHROPIC
+      model: claude-3-5-sonnet-20241022
+      temperature: 0.1
+      max_tokens: 1500
+      prompt: |
+        Analyze pricing research results:
+        
+        Results: {{results}}
+        
+        Provide:
+        1. Optimal price point
+        2. Price elasticity curve
+        3. Revenue-maximizing price
+        4. Penetration pricing recommendation
+        5. Segment-specific pricing
+
+memory:
+  episodic:
+    enabled: true
+    retention_days: 730
+    categories:
+      - pricing-studies
+      - wtp-results
+      - pricing-decisions
+  semantic:
+    enabled: true
+    categories:
+      - pricing-methodologies
+      - elasticity-models
+      - segment-behaviors
+  procedural:
+    enabled: true
+    categories:
+      - research-protocols
+      - analysis-methods
+      - pricing-formulas
+
+tools:
+  - pricing_survey_generator
+  - price_analyzer
+  - elasticity_calculator
+
+capabilities:
+  - wtp-research-design
+  - price-sensitivity-analysis
+  - optimal-pricing
+  - segment-analysis
+
+routing:
+  input_types:
+    - pricing-research-request
+    - product-pricing
+    - monetization-question
+  output_types:
+    - wtp-report
+    - optimal-price-recommendation
+    - pricing-strategy
+
+delegation:
+  can_delegate_to: []
+  escalates_to:
+    - opportunity-sizing-agent
+
+governance:
+  requires_approval: false
+  can_block: false
+  audit_trail: standard
+
+performance:
+  expected_latency_ms: 4000
+  max_latency_ms: 10000
+  timeout_ms: 20000

@@ -1,0 +1,87 @@
+id: audit-trail-agent
+name: Audit Trail Agent
+version: 1.0.0
+description: Records all agent decisions, actions, and interactions in immutable audit log. Enables compliance auditing, forensics, and accountability.
+
+metadata:
+  level: 3  # Worker
+  domain: governance
+  tags:
+    - audit-logging
+    - compliance
+    - forensics
+    - accountability
+    - always-on
+
+generator:
+  type: PIPELINE
+  steps:
+    - name: event_enrichment
+      type: RULE_BASED
+      description: Add metadata (timestamp, agent ID, user, context, classification)
+    - name: sensitive_data_redaction
+      type: RULE_BASED
+      description: Redact PII/secrets per governance policy
+    - name: log_persistence
+      type: SERVICE_CALL
+      service: event-log-store
+      endpoint: /audit/append
+      description: Append to immutable event log
+    - name: alert_generation
+      type: RULE_BASED
+      description: Generate alerts for high-risk events
+
+memory:
+  episodic:
+    enabled: true
+    retention_days: 2555  # 7 years for compliance
+    categories:
+      - audit-events
+      - agent-actions
+      - user-interactions
+      - policy-decisions
+  semantic:
+    enabled: false  # Pure event sourcing, no semantic layer
+  procedural:
+    enabled: true
+    categories:
+      - logging-policies
+      - redaction-rules
+      - retention-policies
+
+tools:
+  - event_log_append
+  - sensitive_data_redactor
+  - alert_dispatcher
+
+capabilities:
+  - immutable-logging
+  - event-enrichment
+  - sensitive-data-redaction
+  - compliance-reporting
+  - forensic-support
+
+routing:
+  input_types:
+    - agent-decision
+    - user-action
+    - system-event
+    - policy-enforcement
+  output_types:
+    - audit-event
+    - compliance-report
+    - alert
+
+delegation:
+  can_delegate_to: []
+  escalates_to: []  # Foundational infrastructure
+
+governance:
+  requires_approval: false
+  can_block: false  # Observes, doesn't block
+  audit_trail: self  # Logs its own operations
+
+performance:
+  expected_latency_ms: 500
+  max_latency_ms: 1500
+  timeout_ms: 3000

@@ -1,0 +1,76 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ include "virtualorg-agent.fullname" . }}
+  namespace: {{ .Values.global.namespace }}
+  labels:
+    {{- include "virtualorg-agent.labels" . | nindent 4 }}
+  {{- with .Values.service.annotations }}
+  annotations:
+    {{- toYaml . | nindent 4 }}
+  {{- end }}
+spec:
+  type: {{ .Values.service.type }}
+  selector:
+    {{- include "virtualorg-agent.selectorLabels" . | nindent 4 }}
+  ports:
+    - name: http
+      port: {{ .Values.service.port }}
+      targetPort: http
+      protocol: TCP
+    - name: metrics
+      port: {{ .Values.service.metricsPort }}
+      targetPort: metrics
+      protocol: TCP
+
+---
+{{- range $role, $config := .Values.agents }}
+{{- if $config.enabled }}
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ include "virtualorg-agent.fullname" $ }}-{{ $role | kebabcase }}
+  namespace: {{ $.Values.global.namespace }}
+  labels:
+    {{- include "virtualorg-agent.labels" $ | nindent 4 }}
+    role: {{ $role | kebabcase }}
+spec:
+  type: ClusterIP
+  selector:
+    {{- include "virtualorg-agent.selectorLabels" $ | nindent 4 }}
+    role: {{ $role | kebabcase }}
+  ports:
+    - name: http
+      port: {{ $.Values.service.port }}
+      targetPort: http
+      protocol: TCP
+    - name: metrics
+      port: {{ $.Values.service.metricsPort }}
+      targetPort: metrics
+      protocol: TCP
+---
+{{- end }}
+{{- end }}
+
+# Headless service for direct pod communication
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ include "virtualorg-agent.fullname" . }}-headless
+  namespace: {{ .Values.global.namespace }}
+  labels:
+    {{- include "virtualorg-agent.labels" . | nindent 4 }}
+spec:
+  type: ClusterIP
+  clusterIP: None
+  selector:
+    {{- include "virtualorg-agent.selectorLabels" . | nindent 4 }}
+  ports:
+    - name: http
+      port: {{ .Values.service.port }}
+      targetPort: http
+      protocol: TCP
+    - name: metrics
+      port: {{ .Values.service.metricsPort }}
+      targetPort: metrics
+      protocol: TCP

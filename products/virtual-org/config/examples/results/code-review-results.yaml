@@ -1,0 +1,332 @@
+apiVersion: virtualorg.ghatana.com/v1
+kind: ResultProcessor
+metadata:
+  name: code-review-results
+  namespace: engineering
+  labels:
+    source: code-review
+    processing: standard
+  annotations:
+    description: "Processes code review results with routing and notifications"
+
+spec:
+  displayName: "Code Review Results Processor"
+  description: |
+    Processes results from code review actions, validating output format,
+    enriching with metadata, routing based on severity, and storing for
+    analytics.
+
+  # Source configuration - where results come from
+  source:
+    type: action
+    actionRef: code-review
+    filter:
+      includeStatuses:
+        - completed
+        - completed-with-warnings
+      excludeStatuses:
+        - cancelled
+      minConfidence: 0.7
+
+  # Processing pipeline
+  pipeline:
+    # Validation step
+    validation:
+      enabled: true
+      schemaRef: code-review-output-schema
+      rules:
+        - name: has-comments
+          field: "reviewComments"
+          rule: "isArray && length >= 0"
+          message: "Review comments must be an array"
+          severity: error
+        - name: valid-score
+          field: "summary.overallScore"
+          rule: "value >= 0 && value <= 10"
+          message: "Overall score must be between 0 and 10"
+          severity: error
+        - name: has-recommendation
+          field: "summary.recommendation"
+          rule: "isNotEmpty"
+          message: "Recommendation is required"
+          severity: warning
+      onInvalid: quarantine
+      quarantineDestination: review-results-dlq
+
+    # Transformation steps
+    transformation:
+      - name: flatten-comments
+        type: mapping
+        enabled: true
+        order: 1
+        mapping:
+          "flatComments": "reviewComments[*].message"
+          "severityCounts": "groupBy(reviewComments, 'severity')"
+
+      - name: calculate-metrics
+        type: expression
+        enabled: true
+        order: 2
+        expression: |
+          {
+            "criticalCount": count(reviewComments, severity == 'critical'),
+            "totalIssues": length(reviewComments),
+            "qualityGrade": overallScore >= 8 ? 'A' : overallScore >= 6 ? 'B' : 'C'
+          }
+
+      - name: normalize-timestamps
+        type: mapping
+        enabled: true
+        order: 3
+        mapping:
+          "processedAt": "now()"
+          "reviewedAt": "metadata.completedAt"
+
+    # Enrichment steps
+    enrichment:
+      - name: add-repository-info
+        type: lookup
+        enabled: true
+        source: repository-service
+        sourceEndpoint: "/api/repositories/${inputs.repository}"
+        fields:
+          - sourceField: "name"
+            targetField: "repositoryName"
+          - sourceField: "team"
+            targetField: "owningTeam"
+          - sourceField: "language"
+            targetField: "primaryLanguage"
+        caching:
+          enabled: true
+          ttl: "1h"
+          maxSize: 1000
+        fallback:
+          repositoryName: "unknown"
+          owningTeam: "unassigned"
+
+      - name: add-author-info
+        type: lookup
+        enabled: true
+        source: user-service
+        sourceEndpoint: "/api/users/${inputs.authorId}"
+        fields:
+          - sourceField: "displayName"
+            targetField: "authorName"
+          - sourceField: "team"
+            targetField: "authorTeam"
+        caching:
+          enabled: true
+          ttl: "4h"
+
+    # Normalization
+    normalization:
+      enabled: true
+      targetFormat: json
+      dateFormat: ISO8601
+      timezone: UTC
+      nullHandling: remove
+      trimStrings: true
+      lowercase:
+        - authorEmail
+        - repository
+
+    # Classification
+    classification:
+      enabled: true
+      type: rule-based
+      categories:
+        - name: critical-security
+          description: "Critical security issues found"
+          rules:
+            - "criticalCount > 0 && any(reviewComments.category == 'security')"
+          priority: 1
+        - name: high-priority
+          description: "High priority issues"
+          rules:
+            - "summary.recommendation == 'request-changes'"
+          priority: 2
+        - name: standard
+          description: "Standard review results"
+          rules:
+            - "true"
+          priority: 100
+      defaultCategory: standard
+
+  # Routing configuration
+  routing:
+    enabled: true
+    defaultDestination: review-results-queue
+    rules:
+      - name: critical-security-route
+        condition: "classification == 'critical-security'"
+        destination: security-alerts-queue
+        destinationType: queue
+        priority: 1
+        metadata:
+          alertLevel: critical
+          requiresImmediate: "true"
+
+      - name: high-priority-route
+        condition: "classification == 'high-priority'"
+        destination: priority-reviews-queue
+        destinationType: queue
+        priority: 2
+
+      - name: analytics-copy
+        condition: "true"
+        destination: analytics-topic
+        destinationType: topic
+        priority: 100
+    deadLetterDestination: review-results-dlq
+    multicast: true # Send to multiple matching destinations
+
+  # Aggregation configuration
+  aggregation:
+    enabled: true
+    type: streaming
+    groupBy:
+      - repository
+      - authorTeam
+    window:
+      type: time
+      size: "1h"
+      slide: "15m"
+      flushOnComplete: true
+    operations:
+      - name: total_reviews
+        type: count
+        outputField: reviewCount
+      - name: avg_score
+        type: average
+        field: summary.overallScore
+        outputField: averageScore
+      - name: critical_count
+        type: sum
+        field: criticalCount
+        outputField: totalCriticalIssues
+    outputDestination: review-aggregates-topic
+
+  # Storage configuration
+  storage:
+    enabled: true
+    type: event-cloud
+    destination: review-results-cloud
+    retention:
+      duration: "180d"
+      policy: time-based
+      archiveAfter: "90d"
+      archiveDestination: s3://ghatana-archive/reviews
+      deleteAfter: "365d"
+    partitioning:
+      enabled: true
+      strategy: composite
+      keys:
+        - repository
+        - authorTeam
+      timePartition: daily
+    compression:
+      enabled: true
+      algorithm: zstd
+      level: 3
+    encryption:
+      enabled: true
+      algorithm: AES-256-GCM
+      keyRef: review-results-key
+    indexing:
+      enabled: true
+      fields:
+        - field: repository
+          type: keyword
+          filterable: true
+          sortable: true
+        - field: summary.overallScore
+          type: numeric
+          filterable: true
+          sortable: true
+        - field: processedAt
+          type: datetime
+          filterable: true
+          sortable: true
+        - field: classification
+          type: keyword
+          filterable: true
+      fullTextSearch:
+        enabled: true
+        fields:
+          - flatComments
+          - summary.keyFindings
+        analyzer: standard
+
+  # Notification configuration
+  notification:
+    enabled: true
+    channels:
+      - name: slack-engineering
+        type: slack
+        endpoint: "${SLACK_WEBHOOK_URL}"
+        template: review-notification
+      - name: email-alerts
+        type: email
+        endpoint: smtp://mail.internal
+        template: review-email
+    rules:
+      - name: critical-alert
+        condition: "classification == 'critical-security'"
+        channels:
+          - slack-engineering
+          - email-alerts
+        priority: critical
+        recipients:
+          - security-team@company.com
+          - "${authorTeam}-lead@company.com"
+      - name: author-notification
+        condition: "summary.recommendation == 'request-changes'"
+        channels:
+          - slack-engineering
+        priority: normal
+        template: changes-requested
+        recipients:
+          - "${authorEmail}"
+    throttling:
+      enabled: true
+      maxPerHour: 100
+      groupBy:
+        - repository
+        - classification
+      digest:
+        enabled: true
+        interval: "30m"
+        maxItems: 20
+
+  # Error handling
+  errorHandling:
+    strategy: retry-then-dlq
+    maxRetries: 3
+    retryDelay: "30s"
+    deadLetterQueue: review-results-dlq
+    alertOnFailure: true
+    fallback:
+      enabled: true
+      type: default-value
+      value:
+        status: "processing-failed"
+        error: "${error.message}"
+
+  # Metrics
+  metrics:
+    enabled: true
+    counters:
+      - results_processed_total
+      - results_routed_total
+      - results_failed_total
+    histograms:
+      - name: processing_duration
+        field: processingTimeMs
+        buckets: [10, 50, 100, 250, 500, 1000]
+      - name: review_score_distribution
+        field: summary.overallScore
+        buckets: [2, 4, 6, 8, 10]
+    labels:
+      - repository
+      - classification
+      - authorTeam

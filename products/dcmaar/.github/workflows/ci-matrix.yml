@@ -1,0 +1,220 @@
+name: CI (Full Component Matrix)
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+jobs:
+  # Agent (Rust) Matrix
+  agent-matrix:
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        features: [default, wasm, metrics]
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Rust
+        uses: dtolnay/rust-toolchain@stable
+        with:
+          components: rustfmt, clippy
+
+      - name: Cache Rust dependencies
+        uses: actions/cache@v3
+        with:
+          path: |
+            ~/.cargo/bin/
+            ~/.cargo/registry/index/
+            ~/.cargo/registry/cache/
+            ~/.cargo/git/db/
+            target/
+          key: ${{ runner.os }}-cargo-${{ hashFiles('**/Cargo.lock') }}
+
+      - name: Build agent with features
+        working-directory: client/agent
+        run: |
+          if [ "${{ matrix.features }}" = "wasm" ]; then
+            cargo build --features wasm --verbose
+          elif [ "${{ matrix.features }}" = "metrics" ]; then
+            cargo build --features metrics --verbose
+          else
+            cargo build --verbose
+          fi
+
+      - name: Test agent
+        working-directory: client/agent
+        run: |
+          if [ "${{ matrix.features }}" = "wasm" ]; then
+            cargo test --features wasm --verbose
+          elif [ "${{ matrix.features }}" = "metrics" ]; then
+            cargo test --features metrics --verbose
+          else
+            cargo test --verbose
+          fi
+
+      - name: Clippy check
+        working-directory: client/agent
+        run: cargo clippy -- -D warnings
+
+  # Desktop (Tauri/React) Matrix
+  desktop-matrix:
+    runs-on: ubuntu-latest
+      strategy:
+      fail-fast: false
+      matrix:
+        node-version: [18]
+        build-type: [development, production]
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ matrix.node-version }}
+          cache: "pnpm"
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v2
+        with:
+          version: latest
+      - name: Cache pnpm store
+        uses: actions/cache@v4
+        with:
+          path: ~/.pnpm-store
+          key: ${{ runner.os }}-pnpm-${{ hashFiles('**/pnpm-lock.yaml') }}
+          restore-keys: |
+            ${{ runner.os }}-pnpm-
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v2
+        with:
+          version: latest
+
+      - name: Install dependencies
+        working-directory: services/desktop
+        run: pnpm install
+
+      - name: Lint desktop
+        working-directory: services/desktop
+        run: pnpm run lint
+
+      - name: Type check
+        working-directory: services/desktop
+        run: pnpm run type-check
+
+      - name: Build desktop
+        working-directory: services/desktop
+        run: |
+          if [ "${{ matrix.build-type }}" = "production" ]; then
+            pnpm run build
+          else
+            pnpm run build:dev
+          fi
+
+      - name: Test desktop
+        working-directory: services/desktop
+        run: pnpm run test
+
+  # Extension (Chrome MV3) Matrix
+  extension-matrix:
+    runs-on: ubuntu-latest
+      strategy:
+      fail-fast: false
+      matrix:
+        node-version: [18]
+        target: [chrome, firefox]
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ matrix.node-version }}
+          cache: "pnpm"
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v2
+        with:
+          version: latest
+      - name: Cache pnpm store
+        uses: actions/cache@v4
+        with:
+          path: ~/.pnpm-store
+          key: ${{ runner.os }}-pnpm-${{ hashFiles('**/pnpm-lock.yaml') }}
+          restore-keys: |
+            ${{ runner.os }}-pnpm-
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v2
+        with:
+          version: latest
+
+      - name: Install dependencies
+        working-directory: services/extension
+        run: pnpm install
+
+      - name: Lint extension
+        working-directory: services/extension
+        run: pnpm run lint
+
+      - name: Type check
+        working-directory: services/extension
+        run: pnpm run type-check
+
+      - name: Build extension for target
+        working-directory: services/extension
+        run: |
+          if [ "${{ matrix.target }}" = "firefox" ]; then
+            pnpm run build:firefox
+          else
+            pnpm run build:chrome
+          fi
+
+      - name: Test extension
+        working-directory: services/extension
+        run: pnpm run test
+
+      - name: Upload extension artifacts
+        uses: actions/upload-artifact@v3
+        with:
+          name: extension-${{ matrix.target }}-node${{ matrix.node-version }}
+          path: services/extension/dist/
+
+  # Server Matrix (Legacy)
+  server-matrix:
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        tag: [default, opa]
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Go
+        uses: actions/setup-go@v5
+        with:
+          go-version: "1.25.x"
+          cache: true
+
+      - name: Build server
+        working-directory: services/server
+        run: |
+          if [ "${{ matrix.tag }}" = "opa" ]; then
+            go build -tags=opa -v ./cmd/server
+          else
+            go build -v ./cmd/server
+          fi
+
+      - name: Test server
+        working-directory: services/server
+        run: |
+          if [ "${{ matrix.tag }}" = "opa" ]; then
+            go test -tags=opa -v ./...
+          else
+            go test -v ./...
+          fi

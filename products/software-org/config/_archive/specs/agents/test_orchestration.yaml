@@ -1,0 +1,31 @@
+---
+id: "test_orchestration"
+agent: "TestOrchestrationAgent"
+role: "QA Lead"
+inputs_spec:
+- name: "build_stage_milestone"
+  description: "Build stage milestones and outputs for test planning."
+  format: "List of milestone objects"
+outputs_spec:
+- name: "test_execution_plan"
+  description: "Full test plan including all required test types, scheduling, owners,\
+    \ environments, blockers."
+  format: "Test execution plan artifact"
+agent_tasks:
+- "Create comprehensive test plan with all required test types (unit, integration,\
+  \ e2e, security, performance, chaos)."
+- "Define scheduling/sequencing and required environments/data."
+- "Assign test owners and flag blockers/missing test types."
+acceptance_criteria:
+- "All required test types are included."
+- "Test scheduling/sequencing is clear."
+- "Required environments/data are specified."
+- "Test owners assigned."
+- "Blockers/missing types are flagged."
+dependencies:
+- "build_stage_milestone"
+failure_escalation:
+- "Escalate to QA Lead/Release Manager if plan is incomplete."
+references: []
+hitl: true
+hitl_reason: "Human ensures test orchestration covers all needed types"

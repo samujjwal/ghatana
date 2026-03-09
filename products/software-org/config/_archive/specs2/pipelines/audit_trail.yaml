@@ -1,0 +1,5 @@
+stages:
+  - name: stage-audit-trail
+    workflow:
+      - include: ../agents/stage_audit_trail.yaml
+

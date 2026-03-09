@@ -1,0 +1,29 @@
+---
+id: "policy_drift_detection"
+agent: "PolicyDriftDetectionAgent"
+role: "Security/Compliance Automation"
+inputs_spec:
+- name: "deployment_progress_dashboard"
+  description: "Deployment progress dashboard artifact."
+  format: "Dashboard artifact"
+outputs_spec:
+- name: "drift_report"
+  description: "Policy/configuration drift report for deployed environments."
+  format: "Drift report artifact"
+agent_tasks:
+- "Detect configuration or policy drift in all deployed environments."
+- "Generate a drift report with actionable remediation steps."
+- "Route drift findings to compliance and operations teams."
+acceptance_criteria:
+- "Configuration/policy drift is detected and logged for all deployments."
+- "Drift report includes actionable remediation."
+- "Drift report is sent to compliance/ops and linked for audit."
+dependencies:
+- "deployment_progress_dashboard"
+failure_escalation:
+- "Escalate to compliance or ops lead if critical drift is detected or remediation\
+  \ is not actionable."
+references:
+- "NIST SP 800-53 CM-6"
+- "CIS Controls 5.5"
+hitl: false

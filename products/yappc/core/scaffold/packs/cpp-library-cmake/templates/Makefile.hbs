@@ -1,0 +1,14 @@
+.PHONY: build test clean install
+
+build:
+mkdir -p build
+cd build && cmake .. && cmake --build .
+
+test: build
+cd build && ctest
+
+clean:
+rm -rf build/
+
+install: build
+cd build && cmake --install .

@@ -1,0 +1,40 @@
+package router
+
+import (
+"{{modulePath}}/internal/config"
+"{{modulePath}}/internal/handler"
+{{#if enableCors}}
+"{{modulePath}}/internal/middleware"
+{{/if}}
+
+"github.com/gin-gonic/gin"
+)
+
+func Setup(cfg *config.Config) *gin.Engine {
+if cfg.Environment == "production" {
+gin.SetMode(gin.ReleaseMode)
+}
+
+r := gin.New()
+r.Use(gin.Logger())
+r.Use(gin.Recovery())
+{{#if enableCors}}
+r.Use(middleware.CORS(cfg.CorsOrigins))
+{{/if}}
+
+// Health check
+r.GET("/health", handler.Health)
+
+// API routes
+v1 := r.Group("/api/v1")
+{
+v1.GET("/hello", handler.Hello)
+}
+
+{{#if enableMetrics}}
+// Metrics endpoint
+r.GET("/metrics", handler.Metrics)
+{{/if}}
+
+return r
+}

@@ -1,0 +1,34 @@
+---
+id: "package_evidence_collector"
+agent: "EvidenceCollectorAgent"
+role: "Compliance Evidence Bot"
+inputs_spec:
+- name: "package_audit_log"
+  description: "Package audit log for evidence collection."
+  format: "Audit log artifact"
+- name: "package_success_criteria_status"
+  description: "Success criteria status for evidence linkage."
+  format: "List of criteria status objects"
+- name: "package_stage_milestone"
+  description: "Package milestone plan for evidence linkage."
+  format: "List of milestone objects"
+outputs_spec:
+- name: "package_evidence_package"
+  description: "Evidence package with all signoffs, feedback, KPIs, results."
+  format: "Evidence package artifact"
+agent_tasks:
+- "Collect and hash all artifacts, audit logs, signoffs, and KPIs for the stage."
+- "Link evidence to compliance and regulatory requirements."
+- "Archive evidence in tamper-evident storage and maintain access logs."
+acceptance_criteria:
+- "All required artifacts and evidence are collected and hashed."
+- "Evidence is linked to compliance/regulatory requirements."
+- "Evidence package is archived and access logs are maintained."
+dependencies:
+- "package_audit_log"
+- "package_success_criteria_status"
+- "package_stage_milestone"
+failure_escalation:
+- "Escalate to compliance evidence lead if evidence package is incomplete or not archived."
+references: []
+hitl: false

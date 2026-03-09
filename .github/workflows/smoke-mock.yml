@@ -1,0 +1,63 @@
+name: "Smoke test — mock-config-server"
+
+on:
+    pull_request:
+        types: [opened, synchronize, reopened]
+
+jobs:
+    smoke-mock:
+        name: Smoke mock-config-server
+        runs-on: ubuntu-latest
+        timeout-minutes: 10
+        steps:
+            - name: Checkout repository
+              uses: actions/checkout@v4
+
+            - name: Setup Node.js 20
+              uses: actions/setup-node@v4
+              with:
+                  node-version: "20"
+                  cache: "pnpm"
+
+            - name: Enable pnpm via corepack
+              run: |
+                  corepack enable
+                  corepack prepare pnpm@10 --activate
+
+            - name: Install workspace dependencies (pnpm)
+              run: pnpm install --frozen-lockfile
+              working-directory: dcmaar
+
+            - name: Make scripts executable
+              run: chmod +x dcmaar/scripts/*.sh
+
+            - name: Run smoke test (mock-config-server)
+              run: ./dcmaar/scripts/smoke-mock.sh
+
+            - name: Upload mock-server logs
+              if: always()
+              uses: actions/upload-artifact@v4
+              with:
+                  name: mock-server-log
+                  path: dcmaar/logs/mock-server.log
+
+            - name: Upload /config response
+              if: always()
+              uses: actions/upload-artifact@v4
+              with:
+                  name: mock-config-log
+                  path: dcmaar/logs/mock-config.log
+
+            - name: Upload /validate response
+              if: always()
+              uses: actions/upload-artifact@v4
+              with:
+                  name: mock-validate-log
+                  path: dcmaar/logs/mock-validate.log
+
+            - name: Upload /apply response
+              if: always()
+              uses: actions/upload-artifact@v4
+              with:
+                  name: mock-apply-log
+                  path: dcmaar/logs/mock-apply.log

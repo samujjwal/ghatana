@@ -1,0 +1,164 @@
+groups:
+  - name: flashit_gateway_alerts
+    rules:
+      # High error rate on gateway
+      - alert: GatewayHighErrorRate
+        expr: rate(http_request_errors_total{job="flashit-gateway"}[5m]) / rate(http_requests_total{job="flashit-gateway"}[5m]) > 0.05
+        for: 5m
+        labels:
+          severity: critical
+          service: gateway
+        annotations:
+          summary: "Gateway error rate above 5%"
+          description: "Error rate is {{ $value | humanizePercentage }} over the last 5 minutes."
+
+      # High latency (p95 > 2s)
+      - alert: GatewayHighLatency
+        expr: histogram_quantile(0.95, rate(http_request_duration_seconds_bucket{job="flashit-gateway"}[5m])) > 2
+        for: 5m
+        labels:
+          severity: warning
+          service: gateway
+        annotations:
+          summary: "Gateway p95 latency above 2 seconds"
+          description: "p95 latency is {{ $value | humanizeDuration }}."
+
+      # Gateway down
+      - alert: GatewayDown
+        expr: up{job="flashit-gateway"} == 0
+        for: 1m
+        labels:
+          severity: critical
+          service: gateway
+        annotations:
+          summary: "FlashIt Gateway is down"
+          description: "The gateway has been unreachable for more than 1 minute."
+
+  - name: flashit_agent_alerts
+    rules:
+      # Java Agent high error rate
+      - alert: AgentHighErrorRate
+        expr: rate(http_request_errors_total{job="flashit-agent"}[5m]) / rate(http_requests_total{job="flashit-agent"}[5m]) > 0.1
+        for: 5m
+        labels:
+          severity: critical
+          service: java-agent
+        annotations:
+          summary: "Java Agent error rate above 10%"
+          description: "Error rate is {{ $value | humanizePercentage }}."
+
+      # Agent down
+      - alert: AgentDown
+        expr: up{job="flashit-agent"} == 0
+        for: 2m
+        labels:
+          severity: critical
+          service: java-agent
+        annotations:
+          summary: "FlashIt Java Agent is down"
+          description: "The Java Agent has been unreachable for more than 2 minutes."
+
+      # Agent high memory usage
+      - alert: AgentHighMemory
+        expr: jvm_memory_used_bytes{job="flashit-agent",area="heap"} / jvm_memory_max_bytes{job="flashit-agent",area="heap"} > 0.85
+        for: 10m
+        labels:
+          severity: warning
+          service: java-agent
+        annotations:
+          summary: "Java Agent heap usage above 85%"
+          description: "Heap usage is {{ $value | humanizePercentage }}."
+
+  - name: flashit_circuit_breaker_alerts
+    rules:
+      # Circuit breaker open
+      - alert: CircuitBreakerOpen
+        expr: circuit_breaker_state{job="flashit-gateway"} == 2
+        for: 1m
+        labels:
+          severity: critical
+          service: gateway
+        annotations:
+          summary: "Circuit breaker OPEN for {{ $labels.circuit }}"
+          description: "Circuit breaker {{ $labels.circuit }} has been open for more than 1 minute."
+
+      # High circuit breaker failure rate
+      - alert: CircuitBreakerHighFailures
+        expr: rate(circuit_breaker_failures_total{job="flashit-gateway"}[5m]) > 0.5
+        for: 3m
+        labels:
+          severity: warning
+          service: gateway
+        annotations:
+          summary: "High failure rate on circuit {{ $labels.circuit }}"
+          description: "Failure rate is {{ $value }} failures/sec."
+
+  - name: flashit_infrastructure_alerts
+    rules:
+      # Database down
+      - alert: PostgresDown
+        expr: up{job="postgres"} == 0
+        for: 1m
+        labels:
+          severity: critical
+          service: postgres
+        annotations:
+          summary: "PostgreSQL is down"
+          description: "PostgreSQL has been unreachable for more than 1 minute."
+
+      # Redis down
+      - alert: RedisDown
+        expr: up{job="redis"} == 0
+        for: 1m
+        labels:
+          severity: critical
+          service: redis
+        annotations:
+          summary: "Redis is down"
+          description: "Redis has been unreachable for more than 1 minute."
+
+      # High DB connection pool usage
+      - alert: DBConnectionPoolExhausted
+        expr: db_pool_active_connections{job="flashit-gateway"} / db_pool_max_connections{job="flashit-gateway"} > 0.9
+        for: 5m
+        labels:
+          severity: warning
+          service: postgres
+        annotations:
+          summary: "DB connection pool above 90%"
+          description: "Active connections: {{ $value | humanizePercentage }} of max."
+
+  - name: flashit_business_alerts
+    rules:
+      # AI service degraded
+      - alert: AIServiceDegraded
+        expr: rate(ai_request_errors_total{job="flashit-gateway"}[5m]) / rate(ai_requests_total{job="flashit-gateway"}[5m]) > 0.2
+        for: 5m
+        labels:
+          severity: warning
+          service: ai
+        annotations:
+          summary: "AI service error rate above 20%"
+          description: "AI service is degraded with {{ $value | humanizePercentage }} error rate."
+
+      # High AI token usage (cost control)
+      - alert: HighAITokenUsage
+        expr: increase(ai_tokens_used_total{job="flashit-gateway"}[1h]) > 100000
+        for: 0m
+        labels:
+          severity: warning
+          service: ai
+        annotations:
+          summary: "High AI token usage: {{ $value }} tokens in last hour"
+          description: "Token usage spike detected. Check for runaway AI requests."
+
+      # Transcription queue backlog
+      - alert: TranscriptionBacklog
+        expr: transcription_queue_size{job="flashit-gateway"} > 50
+        for: 10m
+        labels:
+          severity: warning
+          service: transcription
+        annotations:
+          summary: "Transcription queue backlog: {{ $value }} items"
+          description: "Transcription queue has been above 50 items for 10 minutes."

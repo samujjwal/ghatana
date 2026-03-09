@@ -1,0 +1,74 @@
+[package]
+name = "agent-plugin"
+version.workspace = true
+edition.workspace = true
+authors.workspace = true
+license.workspace = true
+description = "Plugin system for the DCMaar agent"
+publish = false
+
+[features]
+default = ["wasm"]
+wasm = ["wasmtime", "wasmtime-wasi", "wasmparser"]
+
+[dependencies]
+# Internal crates
+agent-types = { workspace = true, features = ["serde"] }
+dcmaar-agent-common = { path = "../../../../libs/rust/agent-framework/agent-common", features = ["storage", "config"] }
+
+# Async traits
+async-trait = { workspace = true }
+
+# UUID
+uuid = { workspace = true, features = ["v4", "serde"] }
+
+# Plugin system
+wasmtime = { workspace = true, optional = true, features = ["async", "component-model"] }
+wasmtime-wasi = { workspace = true, optional = true, features = ["preview2"] }
+wasmparser = { workspace = true, optional = true }
+
+# Async runtime
+tokio = { workspace = true, features = ["rt-multi-thread", "sync", "fs", "macros"] }
+
+# Error handling
+thiserror = { workspace = true }
+anyhow = { workspace = true }
+
+# Logging
+tracing = { workspace = true }
+
+# Serialization
+serde = { workspace = true, features = ["derive"] }
+serde_json = { workspace = true }
+serde_derive = { workspace = true }
+
+# Configuration
+serde_yaml = { workspace = true }
+
+# Metrics
+metrics = { workspace = true }
+metrics-exporter-prometheus = { workspace = true }
+prometheus = { workspace = true }
+
+# Logging
+slog = { workspace = true }
+slog-json = { workspace = true }
+slog-async = { workspace = true }
+
+# Procedural macros
+agent-plugin-macros = { path = "../agent-plugin-macros" }
+proc-macro2 = { workspace = true }
+quote = { workspace = true }
+syn = { workspace = true, features = ["full", "extra-traits"] }
+
+# Hostname detection
+hostname = { workspace = true }
+
+# Testing
+[dev-dependencies]
+tempfile = { workspace = true }
+pretty_assertions = { workspace = true }
+chrono = { workspace = true }
+slog-term = { workspace = true }
+slog-async = { workspace = true }
+slog = { workspace = true }

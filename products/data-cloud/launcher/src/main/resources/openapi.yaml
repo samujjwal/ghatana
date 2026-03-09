@@ -1,0 +1,1420 @@
+openapi: 3.0.3
+info:
+  title: Ghatana Data-Cloud API
+  description: |
+    REST API for the Ghatana Data-Cloud — a unified data platform providing
+    entity persistence, event sourcing, collection management, webhooks,
+    knowledge graph operations, and embedded storage backends.
+
+    All multi-tenant endpoints accept an `X-Tenant-Id` header for tenant
+    isolation. The default tenant is `default`.
+  version: 1.0.0
+  contact:
+    name: Ghatana Platform Team
+    url: https://github.com/samujjwal/ghatana
+  license:
+    name: Apache 2.0
+    url: https://www.apache.org/licenses/LICENSE-2.0.html
+
+servers:
+  - url: http://localhost:8082
+    description: Local development (Data-Cloud standalone)
+  - url: https://datacloud.ghatana.local
+    description: Production Data-Cloud
+
+tags:
+  - name: Health
+    description: Health, readiness, and liveness probes
+  - name: Entities
+    description: Entity CRUD (launcher endpoints)
+  - name: Events
+    description: Event sourcing (append & query)
+  - name: Collections
+    description: Collection management (platform controller)
+  - name: Webhooks
+    description: Webhook subscriptions
+  - name: Graph
+    description: Knowledge graph nodes, edges, paths
+  - name: AI Inference
+    description: AI model serving endpoints
+
+paths:
+  # ========== Health ==========
+  /health:
+    get:
+      summary: Health check
+      operationId: getHealth
+      tags: [Health]
+      responses:
+        '200':
+          description: Service is healthy
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HealthResponse'
+              example:
+                status: UP
+                timestamp: "2026-02-03T12:00:00Z"
+                service: datacloud
+
+  /ready:
+    get:
+      summary: Readiness probe
+      operationId: getReady
+      tags: [Health]
+      responses:
+        '200':
+          description: Service is ready
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/StatusResponse'
+
+  /live:
+    get:
+      summary: Liveness probe
+      operationId: getLive
+      tags: [Health]
+      responses:
+        '200':
+          description: Service is alive
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/StatusResponse'
+
+  /info:
+    get:
+      summary: Service information
+      operationId: getInfo
+      tags: [Health]
+      responses:
+        '200':
+          description: Service metadata
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/InfoResponse'
+
+  /metrics:
+    get:
+      summary: Runtime metrics
+      operationId: getMetrics
+      tags: [Health]
+      responses:
+        '200':
+          description: JVM and service metrics
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MetricsResponse'
+
+  # ========== Entity CRUD ==========
+  /api/v1/entities/{collection}:
+    post:
+      summary: Save an entity
+      description: |
+        Creates or upserts an entity in the given collection.
+        Returns the persisted entity with version and timestamps.
+      operationId: saveEntity
+      tags: [Entities]
+      parameters:
+        - $ref: '#/components/parameters/CollectionPath'
+        - $ref: '#/components/parameters/TenantIdQuery'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              additionalProperties: true
+              description: Arbitrary entity data
+            example:
+              name: Acme Widget
+              price: 19.99
+              tags: [widget, acme]
+      responses:
+        '200':
+          description: Entity saved
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/EntitySaveResult'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+
+    get:
+      summary: Query entities in a collection
+      description: Returns entities matching query criteria with pagination.
+      operationId: queryEntities
+      tags: [Entities]
+      parameters:
+        - $ref: '#/components/parameters/CollectionPath'
+        - $ref: '#/components/parameters/TenantIdQuery'
+        - name: limit
+          in: query
+          description: Maximum results (default 100)
+          schema:
+            type: integer
+            default: 100
+            maximum: 1000
+      responses:
+        '200':
+          description: Matching entities
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/EntityQueryResult'
+
+  /api/v1/entities/{collection}/{id}:
+    get:
+      summary: Get entity by ID
+      operationId: getEntity
+      tags: [Entities]
+      parameters:
+        - $ref: '#/components/parameters/CollectionPath'
+        - $ref: '#/components/parameters/EntityId'
+        - $ref: '#/components/parameters/TenantIdQuery'
+      responses:
+        '200':
+          description: Entity found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Entity'
+        '404':
+          $ref: '#/components/responses/NotFound'
+
+    delete:
+      summary: Delete entity by ID
+      operationId: deleteEntity
+      tags: [Entities]
+      parameters:
+        - $ref: '#/components/parameters/CollectionPath'
+        - $ref: '#/components/parameters/EntityId'
+        - $ref: '#/components/parameters/TenantIdQuery'
+      responses:
+        '200':
+          description: Entity deleted
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  deleted:
+                    type: boolean
+                  id:
+                    type: string
+                  collection:
+                    type: string
+                  timestamp:
+                    type: string
+                    format: date-time
+        '404':
+          $ref: '#/components/responses/NotFound'
+
+  # ========== Events ==========
+  /api/v1/events:
+    post:
+      summary: Append an event
+      description: |
+        Appends a domain event to the event store.
+        Returns the assigned offset.
+      operationId: appendEvent
+      tags: [Events]
+      parameters:
+        - $ref: '#/components/parameters/TenantIdQuery'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/EventAppendRequest'
+            example:
+              type: order.created
+              payload:
+                orderId: ord-456
+                total: 79.99
+      responses:
+        '200':
+          description: Event appended
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/EventAppendResult'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+
+    get:
+      summary: Query events
+      description: |
+        Retrieves events optionally filtered by type.
+      operationId: queryEvents
+      tags: [Events]
+      parameters:
+        - $ref: '#/components/parameters/TenantIdQuery'
+        - name: type
+          in: query
+          description: Filter by event type
+          schema:
+            type: string
+        - name: limit
+          in: query
+          description: Maximum results (default 100)
+          schema:
+            type: integer
+            default: 100
+      responses:
+        '200':
+          description: Matching events
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/EventQueryResult'
+
+  # ========== Collections ==========
+  /api/collections:
+    post:
+      summary: Create a collection
+      operationId: createCollection
+      tags: [Collections]
+      parameters:
+        - $ref: '#/components/parameters/TenantIdHeader'
+        - $ref: '#/components/parameters/UserIdHeader'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateCollectionRequest'
+            example:
+              name: products
+      responses:
+        '201':
+          description: Collection created
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CollectionResponse'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+
+    get:
+      summary: List collections
+      operationId: listCollections
+      tags: [Collections]
+      parameters:
+        - $ref: '#/components/parameters/TenantIdHeader'
+        - name: page
+          in: query
+          schema:
+            type: integer
+            default: 0
+        - name: size
+          in: query
+          schema:
+            type: integer
+            default: 10
+            maximum: 100
+      responses:
+        '200':
+          description: Paginated collection list
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PaginatedCollections'
+
+  /api/collections/{collectionId}:
+    get:
+      summary: Get collection by ID
+      operationId: getCollection
+      tags: [Collections]
+      parameters:
+        - $ref: '#/components/parameters/CollectionId'
+        - $ref: '#/components/parameters/TenantIdHeader'
+      responses:
+        '200':
+          description: Collection found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CollectionResponse'
+        '404':
+          $ref: '#/components/responses/NotFound'
+
+    put:
+      summary: Update a collection
+      operationId: updateCollection
+      tags: [Collections]
+      parameters:
+        - $ref: '#/components/parameters/CollectionId'
+        - $ref: '#/components/parameters/TenantIdHeader'
+        - $ref: '#/components/parameters/UserIdHeader'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UpdateCollectionRequest'
+      responses:
+        '200':
+          description: Collection updated
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CollectionResponse'
+        '404':
+          $ref: '#/components/responses/NotFound'
+
+    delete:
+      summary: Delete a collection
+      operationId: deleteCollection
+      tags: [Collections]
+      parameters:
+        - $ref: '#/components/parameters/CollectionId'
+        - $ref: '#/components/parameters/TenantIdHeader'
+      responses:
+        '200':
+          description: Collection deleted
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+        '404':
+          $ref: '#/components/responses/NotFound'
+
+  # ========== Webhooks ==========
+  /api/webhooks:
+    post:
+      summary: Create a webhook
+      operationId: createWebhook
+      tags: [Webhooks]
+      parameters:
+        - $ref: '#/components/parameters/TenantIdHeader'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/WebhookCreateRequest'
+            example:
+              eventType: entity.created
+              url: https://example.com/hooks/entity
+              environment: production
+              maxRetries: 3
+      responses:
+        '201':
+          description: Webhook created
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Webhook'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+
+    get:
+      summary: List webhooks
+      operationId: listWebhooks
+      tags: [Webhooks]
+      parameters:
+        - $ref: '#/components/parameters/TenantIdHeader'
+      responses:
+        '200':
+          description: Webhook list
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  webhooks:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/Webhook'
+                  count:
+                    type: integer
+
+  /api/webhooks/{id}:
+    get:
+      summary: Get webhook by ID
+      operationId: getWebhook
+      tags: [Webhooks]
+      parameters:
+        - $ref: '#/components/parameters/WebhookId'
+        - $ref: '#/components/parameters/TenantIdHeader'
+      responses:
+        '200':
+          description: Webhook found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Webhook'
+        '404':
+          $ref: '#/components/responses/NotFound'
+
+    put:
+      summary: Update a webhook
+      operationId: updateWebhook
+      tags: [Webhooks]
+      parameters:
+        - $ref: '#/components/parameters/WebhookId'
+        - $ref: '#/components/parameters/TenantIdHeader'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/WebhookUpdateRequest'
+      responses:
+        '200':
+          description: Webhook updated
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Webhook'
+        '404':
+          $ref: '#/components/responses/NotFound'
+
+    delete:
+      summary: Delete a webhook
+      operationId: deleteWebhook
+      tags: [Webhooks]
+      parameters:
+        - $ref: '#/components/parameters/WebhookId'
+        - $ref: '#/components/parameters/TenantIdHeader'
+      responses:
+        '200':
+          description: Webhook deleted
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+
+  # ========== Knowledge Graph ==========
+  /api/v1/graph/nodes:
+    post:
+      summary: Create a graph node
+      operationId: createNode
+      tags: [Graph]
+      parameters:
+        - $ref: '#/components/parameters/TenantIdHeader'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/GraphNode'
+            example:
+              label: Person
+              properties:
+                name: Alice
+                age: 30
+      responses:
+        '200':
+          description: Node created
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/GraphNode'
+
+  /api/v1/graph/nodes/query:
+    post:
+      summary: Query graph nodes
+      operationId: queryNodes
+      tags: [Graph]
+      parameters:
+        - $ref: '#/components/parameters/TenantIdHeader'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/GraphQuery'
+      responses:
+        '200':
+          description: Matching nodes
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  nodes:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/GraphNode'
+                  count:
+                    type: integer
+
+  /api/v1/graph/nodes/batch:
+    post:
+      summary: Batch create nodes
+      operationId: batchCreateNodes
+      tags: [Graph]
+      parameters:
+        - $ref: '#/components/parameters/TenantIdHeader'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: array
+              items:
+                $ref: '#/components/schemas/GraphNode'
+      responses:
+        '200':
+          description: Nodes created
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  nodes:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/GraphNode'
+                  count:
+                    type: integer
+
+  /api/v1/graph/nodes/{id}:
+    get:
+      summary: Get a node by ID
+      operationId: getNode
+      tags: [Graph]
+      parameters:
+        - $ref: '#/components/parameters/GraphNodeId'
+        - $ref: '#/components/parameters/TenantIdHeader'
+      responses:
+        '200':
+          description: Node found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/GraphNode'
+        '404':
+          $ref: '#/components/responses/NotFound'
+
+    put:
+      summary: Update a node
+      operationId: updateNode
+      tags: [Graph]
+      parameters:
+        - $ref: '#/components/parameters/GraphNodeId'
+        - $ref: '#/components/parameters/TenantIdHeader'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/GraphNode'
+      responses:
+        '200':
+          description: Node updated
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/GraphNode'
+        '404':
+          $ref: '#/components/responses/NotFound'
+
+    delete:
+      summary: Delete a node
+      operationId: deleteNode
+      tags: [Graph]
+      parameters:
+        - $ref: '#/components/parameters/GraphNodeId'
+        - $ref: '#/components/parameters/TenantIdHeader'
+      responses:
+        '200':
+          description: Node deleted
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                  message:
+                    type: string
+
+  /api/v1/graph/nodes/{id}/neighbors:
+    get:
+      summary: Get neighboring nodes
+      operationId: getNeighbors
+      tags: [Graph]
+      parameters:
+        - $ref: '#/components/parameters/GraphNodeId'
+        - $ref: '#/components/parameters/TenantIdHeader'
+        - name: depth
+          in: query
+          required: true
+          description: Traversal depth
+          schema:
+            type: integer
+            minimum: 1
+            maximum: 10
+      responses:
+        '200':
+          description: Neighbor nodes
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  neighbors:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/GraphNode'
+                  count:
+                    type: integer
+        '404':
+          $ref: '#/components/responses/NotFound'
+
+  /api/v1/graph/nodes/{id}/edges:
+    get:
+      summary: Get edges for a node
+      operationId: getNodeEdges
+      tags: [Graph]
+      parameters:
+        - $ref: '#/components/parameters/GraphNodeId'
+        - $ref: '#/components/parameters/TenantIdHeader'
+      responses:
+        '200':
+          description: Edges connected to the node
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  edges:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/GraphEdge'
+                  count:
+                    type: integer
+
+  /api/v1/graph/edges:
+    post:
+      summary: Create a graph edge
+      operationId: createEdge
+      tags: [Graph]
+      parameters:
+        - $ref: '#/components/parameters/TenantIdHeader'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/GraphEdge'
+            example:
+              label: KNOWS
+              sourceNodeId: node-1
+              targetNodeId: node-2
+              weight: 1.0
+              properties:
+                since: "2024-01-01"
+      responses:
+        '200':
+          description: Edge created
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/GraphEdge'
+
+  /api/v1/graph/edges/{id}:
+    get:
+      summary: Get an edge by ID
+      operationId: getEdge
+      tags: [Graph]
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+        - $ref: '#/components/parameters/TenantIdHeader'
+      responses:
+        '200':
+          description: Edge found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/GraphEdge'
+        '404':
+          $ref: '#/components/responses/NotFound'
+
+  /api/v1/graph/edges/query:
+    post:
+      summary: Query graph edges
+      operationId: queryEdges
+      tags: [Graph]
+      parameters:
+        - $ref: '#/components/parameters/TenantIdHeader'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/GraphQuery'
+      responses:
+        '200':
+          description: Matching edges
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  edges:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/GraphEdge'
+                  count:
+                    type: integer
+
+  /api/v1/graph/path/shortest:
+    post:
+      summary: Find shortest path between two nodes
+      operationId: findShortestPath
+      tags: [Graph]
+      parameters:
+        - $ref: '#/components/parameters/TenantIdHeader'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PathRequest'
+            example:
+              sourceNodeId: node-1
+              targetNodeId: node-5
+              tenantId: default
+      responses:
+        '200':
+          description: Shortest path found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PathResult'
+
+  /api/v1/graph/path/all:
+    post:
+      summary: Find all paths between two nodes
+      operationId: findAllPaths
+      tags: [Graph]
+      parameters:
+        - $ref: '#/components/parameters/TenantIdHeader'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              allOf:
+                - $ref: '#/components/schemas/PathRequest'
+                - type: object
+                  properties:
+                    maxLength:
+                      type: integer
+                      description: Maximum path length
+                      default: 10
+      responses:
+        '200':
+          description: All paths found
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  paths:
+                    type: array
+                    items:
+                      type: array
+                      items:
+                        $ref: '#/components/schemas/GraphNode'
+                  count:
+                    type: integer
+
+  # ========== AI Inference ==========
+  /ai/infer:
+    post:
+      summary: Real-time AI inference
+      description: |
+        Runs an AI inference request against a deployed model.
+        Returns the prediction score, model metadata, and timing.
+      operationId: infer
+      tags: [AI Inference]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/InferenceRequest'
+            example:
+              tenantId: acme-corp
+              taskId: classification
+              entityId: entity-123
+              featureNames: [age, income, location]
+              context: "credit scoring"
+      responses:
+        '200':
+          description: Inference result
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/InferenceResult'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+
+  /ai/admin/targets:
+    get:
+      summary: List active model targets
+      operationId: listModelTargets
+      tags: [AI Inference]
+      parameters:
+        - name: tenantId
+          in: query
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Active model targets
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  tenantId:
+                    type: string
+                  targets:
+                    type: array
+                    items:
+                      type: object
+                      properties:
+                        modelName:
+                          type: string
+                        version:
+                          type: string
+                        status:
+                          type: string
+
+  /ai/health:
+    get:
+      summary: AI service health
+      operationId: getAiHealth
+      tags: [AI Inference]
+      responses:
+        '200':
+          description: AI service is healthy
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: string
+                  service:
+                    type: string
+                  timestamp:
+                    type: string
+                    format: date-time
+
+# ========================================================================
+# Components
+# ========================================================================
+components:
+  parameters:
+    TenantIdHeader:
+      name: X-Tenant-Id
+      in: header
+      description: Tenant identifier for multi-tenant isolation
+      schema:
+        type: string
+        default: default
+
+    TenantIdQuery:
+      name: tenantId
+      in: query
+      description: Tenant identifier
+      schema:
+        type: string
+        default: default
+
+    UserIdHeader:
+      name: X-User-Id
+      in: header
+      description: User performing the operation
+      schema:
+        type: string
+        default: system
+
+    CollectionPath:
+      name: collection
+      in: path
+      required: true
+      description: Collection name
+      schema:
+        type: string
+
+    CollectionId:
+      name: collectionId
+      in: path
+      required: true
+      description: Collection UUID
+      schema:
+        type: string
+        format: uuid
+
+    EntityId:
+      name: id
+      in: path
+      required: true
+      description: Entity identifier
+      schema:
+        type: string
+
+    WebhookId:
+      name: id
+      in: path
+      required: true
+      description: Webhook UUID
+      schema:
+        type: string
+        format: uuid
+
+    GraphNodeId:
+      name: id
+      in: path
+      required: true
+      description: Graph node identifier
+      schema:
+        type: string
+
+  responses:
+    BadRequest:
+      description: Invalid request
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponse'
+
+    NotFound:
+      description: Resource not found
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponse'
+
+  schemas:
+    # ---------- Health ----------
+    HealthResponse:
+      type: object
+      properties:
+        status:
+          type: string
+          enum: [UP, DOWN]
+        timestamp:
+          type: string
+          format: date-time
+        service:
+          type: string
+
+    StatusResponse:
+      type: object
+      properties:
+        status:
+          type: string
+        timestamp:
+          type: string
+          format: date-time
+
+    InfoResponse:
+      type: object
+      properties:
+        service:
+          type: string
+        version:
+          type: string
+        description:
+          type: string
+        timestamp:
+          type: string
+          format: date-time
+
+    MetricsResponse:
+      type: object
+      properties:
+        service:
+          type: string
+        uptime_seconds:
+          type: integer
+          format: int64
+        memory_used_mb:
+          type: integer
+          format: int64
+        memory_free_mb:
+          type: integer
+          format: int64
+        processors:
+          type: integer
+        timestamp:
+          type: string
+          format: date-time
+
+    # ---------- Entities ----------
+    Entity:
+      type: object
+      properties:
+        id:
+          type: string
+        collection:
+          type: string
+        data:
+          type: object
+          additionalProperties: true
+        version:
+          type: integer
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
+
+    EntitySaveResult:
+      type: object
+      properties:
+        id:
+          type: string
+        collection:
+          type: string
+        version:
+          type: integer
+        createdAt:
+          type: string
+          format: date-time
+        timestamp:
+          type: string
+          format: date-time
+
+    EntityQueryResult:
+      type: object
+      properties:
+        entities:
+          type: array
+          items:
+            type: object
+            properties:
+              id:
+                type: string
+              collection:
+                type: string
+              data:
+                type: object
+                additionalProperties: true
+              version:
+                type: integer
+        count:
+          type: integer
+        timestamp:
+          type: string
+          format: date-time
+
+    # ---------- Events ----------
+    EventAppendRequest:
+      type: object
+      required: [type]
+      properties:
+        type:
+          type: string
+          description: Event type identifier
+        payload:
+          type: object
+          additionalProperties: true
+
+    EventAppendResult:
+      type: object
+      properties:
+        offset:
+          type: integer
+          format: int64
+          description: Assigned event offset
+        eventType:
+          type: string
+        timestamp:
+          type: string
+          format: date-time
+
+    EventQueryResult:
+      type: object
+      properties:
+        events:
+          type: array
+          items:
+            type: object
+            properties:
+              type:
+                type: string
+              payload:
+                type: object
+                additionalProperties: true
+              timestamp:
+                type: string
+                format: date-time
+        count:
+          type: integer
+        timestamp:
+          type: string
+          format: date-time
+
+    # ---------- Collections ----------
+    CreateCollectionRequest:
+      type: object
+      required: [name]
+      properties:
+        name:
+          type: string
+          description: Collection name (must be unique per tenant)
+
+    UpdateCollectionRequest:
+      type: object
+      properties:
+        name:
+          type: string
+
+    CollectionResponse:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        name:
+          type: string
+        tenantId:
+          type: string
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
+
+    PaginatedCollections:
+      type: object
+      properties:
+        items:
+          type: array
+          items:
+            $ref: '#/components/schemas/CollectionResponse'
+        totalCount:
+          type: integer
+        hasMore:
+          type: boolean
+
+    # ---------- Webhooks ----------
+    WebhookCreateRequest:
+      type: object
+      required: [eventType, url]
+      properties:
+        eventType:
+          type: string
+          description: Event type to subscribe to
+        url:
+          type: string
+          format: uri
+          description: Webhook delivery URL
+        environment:
+          type: string
+          description: Target environment label
+        maxRetries:
+          type: integer
+          default: 3
+        retryDelayMs:
+          type: integer
+          default: 1000
+        deliveryTimeoutSeconds:
+          type: integer
+          default: 30
+
+    WebhookUpdateRequest:
+      type: object
+      properties:
+        url:
+          type: string
+          format: uri
+        enabled:
+          type: boolean
+
+    Webhook:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        tenantId:
+          type: string
+        eventType:
+          type: string
+        url:
+          type: string
+          format: uri
+        environment:
+          type: string
+        enabled:
+          type: boolean
+        maxRetries:
+          type: integer
+        retryDelayMs:
+          type: integer
+        deliveryTimeoutSeconds:
+          type: integer
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
+
+    # ---------- Knowledge Graph ----------
+    GraphNode:
+      type: object
+      properties:
+        id:
+          type: string
+        tenantId:
+          type: string
+        label:
+          type: string
+          description: Node type label (e.g. Person, Organization)
+        properties:
+          type: object
+          additionalProperties: true
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
+
+    GraphEdge:
+      type: object
+      properties:
+        id:
+          type: string
+        tenantId:
+          type: string
+        label:
+          type: string
+          description: Relationship type (e.g. KNOWS, OWNS)
+        sourceNodeId:
+          type: string
+        targetNodeId:
+          type: string
+        weight:
+          type: number
+          format: double
+          default: 1.0
+        direction:
+          type: string
+          enum: [DIRECTED, UNDIRECTED, BIDIRECTIONAL]
+          default: DIRECTED
+        properties:
+          type: object
+          additionalProperties: true
+        createdAt:
+          type: string
+          format: date-time
+
+    GraphQuery:
+      type: object
+      properties:
+        tenantId:
+          type: string
+        label:
+          type: string
+        filters:
+          type: object
+          additionalProperties: true
+          description: Property filters
+        limit:
+          type: integer
+          default: 100
+        offset:
+          type: integer
+          default: 0
+
+    PathRequest:
+      type: object
+      required: [sourceNodeId, targetNodeId]
+      properties:
+        sourceNodeId:
+          type: string
+        targetNodeId:
+          type: string
+        tenantId:
+          type: string
+
+    PathResult:
+      type: object
+      properties:
+        path:
+          type: array
+          items:
+            $ref: '#/components/schemas/GraphNode'
+          description: Ordered nodes in the shortest path
+        length:
+          type: integer
+          description: Number of hops
+
+    # ---------- AI Inference ----------
+    InferenceRequest:
+      type: object
+      required: [tenantId, taskId, entityId]
+      properties:
+        tenantId:
+          type: string
+        taskId:
+          type: string
+          description: ML task identifier
+        entityId:
+          type: string
+          description: Entity to score
+        featureNames:
+          type: array
+          items:
+            type: string
+          description: Specific features to use
+        context:
+          type: string
+          description: Additional inference context
+
+    InferenceResult:
+      type: object
+      properties:
+        score:
+          type: number
+          format: double
+        modelName:
+          type: string
+        latencyMs:
+          type: integer
+          format: int64
+        tokensUsed:
+          type: integer
+        tenantId:
+          type: string
+
+    # ---------- Errors ----------
+    ErrorResponse:
+      type: object
+      properties:
+        error:
+          type: string
+        code:
+          type: integer
+        timestamp:
+          type: string
+          format: date-time

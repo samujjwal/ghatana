@@ -1,0 +1,26 @@
+---
+id: "e2e_test"
+agent: "E2ETestAgent"
+role: "QA Engineer"
+inputs_spec:
+- name: "test_stage_milestone"
+  description: "Test stage milestones to trigger end-to-end tests."
+  format: "List of milestone objects"
+outputs_spec:
+- name: "e2e_test_report"
+  description: "End-to-end test results covering user workflows."
+  format: "E2E test report artifact"
+agent_tasks:
+- "Validate full user workflows with end-to-end tests."
+- "Use real-world scenarios, triage/report failures, version results."
+acceptance_criteria:
+- "End-to-end tests validate full user workflows."
+- "Test scenarios reflect real-world usage."
+- "Test failures are triaged and reported."
+- "Results are versioned with releases."
+dependencies:
+- "test_stage_milestone"
+failure_escalation:
+- "Escalate to QA if key workflows are missing from E2E or have unresolved failures."
+references: []
+hitl: false

@@ -1,0 +1,27 @@
+---
+id: "test_env_provisioner"
+agent: "TestEnvironmentProvisionerAgent"
+role: "DevOps/TestOps Automation"
+inputs_spec:
+- name: "test_data_package"
+  description: "Test data package for environment setup."
+  format: "Test data artifact"
+outputs_spec:
+- name: "test_environment_url"
+  description: "Ephemeral test environment (URL or access credentials) for manual/automated\
+    \ tests."
+  format: "Environment URL/credentials"
+agent_tasks:
+- "Provision ephemeral test environments with latest code/configs."
+- "Load test data, verify environment health."
+- "Provide URLs/access, clean up after completion."
+acceptance_criteria:
+- "Environments provisioned, data loaded, health verified."
+- "URLs/access provided for all tests."
+- "Cleanup performed post-test."
+dependencies:
+- "test_data_package"
+failure_escalation:
+- "Escalate to DevOps/TestOps if environments fail or cleanup incomplete."
+references: []
+hitl: false

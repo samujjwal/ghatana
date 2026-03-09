@@ -1,0 +1,34 @@
+---
+id: "traceability_link"
+agent: "TraceabilityLinkAgent"
+role: "Technical Writer/Analyst"
+inputs_spec:
+- name: "stored_artifacts"
+  description: "Registry-stored artifacts."
+  format: "Artifact registry reference"
+- name: "sbom_files"
+  description: "SBOM files for dependency and supply chain mapping."
+  format: "SBOM file artifact"
+- name: "build_logs_audit_trail"
+  description: "Build logs and audit trail for traceability matrix."
+  format: "Audit log artifact"
+outputs_spec:
+- name: "artifact_traceability_matrix"
+  description: "Complete mapping of artifacts to requirements, tests, and source commits."
+  format: "Traceability matrix artifact"
+agent_tasks:
+- "Map each artifact to requirements, tests, and source commits."
+- "Ensure matrix completeness."
+- "Flag gaps for action."
+acceptance_criteria:
+- "Each artifact is mapped to requirements, tests, and source commits."
+- "Traceability matrix is complete and accessible."
+- "Gaps in traceability are flagged."
+dependencies:
+- "stored_artifacts"
+- "sbom_files"
+- "build_logs_audit_trail"
+failure_escalation:
+- "Escalate to Dev Lead or QA if matrix is incomplete or gaps unaddressed."
+references: []
+hitl: false

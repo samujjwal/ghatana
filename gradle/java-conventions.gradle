@@ -1,0 +1,210 @@
+// Java version and toolchain configuration for all projects
+
+// Apply Java plugin if not already applied
+if (!project.plugins.hasPlugin('java')) {
+    project.plugins.apply('java')
+}
+if (!project.plugins.hasPlugin('java-library')) {
+    project.plugins.apply('java-library')
+}
+
+// Configure source sets for all Java projects
+project.afterEvaluate {
+    // Only configure if the Java plugin is applied
+    if (project.plugins.hasPlugin('java')) {
+        // Standard source sets configuration
+        project.sourceSets {
+            main {
+                java {
+                    srcDirs = ['src/main/java']
+                }
+                resources {
+                    srcDirs = ['src/main/resources']
+                }
+            }
+            
+            test {
+                java {
+                    srcDirs = ['src/test/java']
+                }
+                resources {
+                    srcDirs = ['src/test/resources']
+                }
+            }
+            
+            // Optional: Integration test source set
+            if (project.hasProperty('enableIntegrationTests')) {
+                integrationTest {
+                    java {
+                        srcDirs = ['src/integrationTest/java']
+                        compileClasspath += sourceSets.main.output
+                        runtimeClasspath += sourceSets.main.output
+                    }
+                    resources {
+                        srcDirs = ['src/integrationTest/resources']
+                    }
+                    compileClasspath += sourceSets.test.compileClasspath
+                    runtimeClasspath += sourceSets.test.runtimeClasspath
+                }
+            }
+            
+            // Optional: Functional test source set
+            if (project.hasProperty('enableFunctionalTests')) {
+                functionalTest {
+                    java {
+                        srcDirs = ['src/functionalTest/java']
+                        compileClasspath += sourceSets.main.output
+                        runtimeClasspath += sourceSets.main.output
+                    }
+                    resources {
+                        srcDirs = ['src/functionalTest/resources']
+                    }
+                    compileClasspath += sourceSets.test.compileClasspath
+                    runtimeClasspath += sourceSets.test.runtimeClasspath
+                }
+            }
+            
+            // Optional: Performance test source set (JMH)
+            if (project.hasProperty('enableJmh')) {
+                jmh {
+                    java {
+                        srcDirs = ['src/jmh/java']
+                        compileClasspath += sourceSets.main.output
+                        runtimeClasspath += sourceSets.main.output
+                    }
+                    resources {
+                        srcDirs = ['src/jmh/resources']
+                    }
+                }
+            }
+        }
+        
+        // Configure test tasks for additional source sets
+        if (project.hasProperty('enableIntegrationTests')) {
+            project.task('integrationTest', type: Test) {
+                description = 'Runs integration tests.'
+                group = 'verification'
+                
+                testClassesDirs = project.sourceSets.integrationTest.output.classesDirs
+                classpath = project.sourceSets.integrationTest.runtimeClasspath
+                
+                shouldRunAfter 'test'
+                
+                useJUnitPlatform()
+                
+                testLogging {
+                    events 'passed', 'skipped', 'failed'
+                    showStandardStreams = true
+                }
+            }
+            
+            project.tasks.named('check').configure {
+                dependsOn 'integrationTest'
+            }
+        }
+        
+        if (project.hasProperty('enableFunctionalTests')) {
+            project.task('functionalTest', type: Test) {
+                description = 'Runs functional tests.'
+                group = 'verification'
+                
+                testClassesDirs = project.sourceSets.functionalTest.output.classesDirs
+                classpath = project.sourceSets.functionalTest.runtimeClasspath
+                
+                shouldRunAfter 'test', 'integrationTest'
+                
+                useJUnitPlatform()
+                
+                testLogging {
+                    events 'passed', 'skipped', 'failed'
+                    showStandardStreams = true
+                }
+            }
+            
+            project.tasks.named('check').configure {
+                dependsOn 'functionalTest'
+            }
+        }
+    }
+}
+
+// Configure Java toolchain early for dependency resolution
+if (project.plugins.hasPlugin('java')) {
+    project.java {
+        toolchain {
+            // Only set languageVersion if not already set to avoid conflicts
+            if (!languageVersion.present) {
+                languageVersion.set(JavaLanguageVersion.of(21))
+            }
+        }
+    }
+}
+
+// Configure Java toolchain
+project.afterEvaluate {
+    // Only configure if the Java plugin is applied
+    if (project.plugins.hasPlugin('java')) {
+        project.java {
+            // Only add JAR tasks if they don't already exist
+            if (!project.tasks.findByName('javadocJar')) {
+                withJavadocJar()
+            }
+            
+            if (!project.tasks.findByName('sourcesJar')) {
+                withSourcesJar()
+            }
+        }
+        
+        // Configure Java compilation for all projects
+        project.tasks.withType(JavaCompile).configureEach {
+            options.encoding = 'UTF-8'
+            options.incremental = true
+            options.compilerArgs += ['-parameters', '-Xlint:all,-processing']
+        }
+        
+        // Configure Javadoc for all projects
+        project.tasks.withType(Javadoc).configureEach {
+            options.encoding = 'UTF-8'
+            options.addBooleanOption('html5', true)
+            
+            // Suppress warnings for missing Javadoc comments
+            options.addStringOption('Xdoclint:none', '-quiet')
+        }
+        
+        // Configure tests for all projects
+        project.tasks.named('test', Test) { testTask ->
+            useJUnitPlatform()
+            
+            // Set JVM arguments for tests
+            jvmArgs = [
+                '-Xmx1g',
+                '--enable-preview',
+                '-Djava.util.logging.manager=org.apache.logging.log4j.jul.LogManager'
+            ]
+            
+            // Always run tests, even when nothing changed
+            dependsOn 'cleanTest'
+            
+            // Show test results
+            testLogging {
+                events 'passed', 'skipped', 'failed'
+                showStandardStreams = true
+            }
+        }
+        
+        // Configure JAR manifest for all projects
+        project.tasks.named('jar') { jarTask ->
+            manifest {
+                attributes(
+                    'Implementation-Title': project.name,
+                    'Implementation-Version': project.version,
+                    'Built-By': System.getProperty('user.name'),
+                    'Built-JDK': JavaVersion.current(),
+                    'Build-Timestamp': new Date().format("yyyy-MM-dd'T'HH:mm:ss.SSSZ"),
+                    'Created-By': "Gradle ${project.gradle.gradleVersion}",
+                    'Build-Jdk': System.getProperty('java.version')
+                )
+            }
+        }
+    }
+}

@@ -1,0 +1,119 @@
+# Sales Director Agent Configuration
+apiVersion: virtualorg.ghatana.com/v1
+kind: Agent
+metadata:
+  name: sales-director-agent
+  labels:
+    level: director
+    department: sales
+    ai-enabled: "true"
+
+spec:
+  displayName: "Sales Director"
+  description: |
+    Sales Director responsible for sales strategy, team leadership,
+    revenue targets, and key account relationships.
+
+  role:
+    name: SalesDirector
+    level: director
+    title: "Sales Director"
+
+  department: sales
+  reportingTo: ceo-agent
+  directReports:
+    - account-executive-agent
+    - sdr-agent
+
+  authority:
+    decisionScope: department
+    budgetLimit: 500000
+    canApprove:
+      - deals
+      - discounts
+      - contracts
+      - hiring
+    canEscalateTo:
+      - ceo-agent
+
+  capabilities:
+    primary:
+      - sales_strategy
+      - team_leadership
+      - deal_negotiation
+      - forecasting
+      - key_accounts
+    secondary:
+      - market_analysis
+      - partnership_development
+
+  ai:
+    enabled: true
+    provider: openai
+    model: gpt-4-turbo
+
+    systemPrompt: |
+      You are a Sales Director in a software organization.
+
+      ## Your Role
+      You lead the sales team, define sales strategy, manage key accounts,
+      and drive revenue growth to meet organizational targets.
+
+      ## Your Responsibilities
+      1. Define and execute sales strategy
+      2. Lead and develop sales team
+      3. Manage key customer relationships
+      4. Forecast revenue and pipeline
+      5. Negotiate major deals
+      6. Report to executive leadership
+
+      ## When to Escalate
+      Escalate to CEO when:
+      - Strategic partnership opportunities
+      - Deals requiring executive involvement
+      - Major pricing or contract exceptions
+
+    responseConfig:
+      maxTokens: 2000
+      temperature: 0.5
+      topP: 0.9
+
+    tools:
+      - name: approve_deal
+        enabled: true
+      - name: generate_forecast
+        enabled: true
+      - name: update_pipeline
+        enabled: true
+
+    memory:
+      type: short-term
+      contextWindow: 30
+
+  workload:
+    maxConcurrentTasks: 10
+    taskPrioritization: priority
+
+  availability:
+    schedule:
+      type: business-hours
+    responseTime:
+      target: PT30M
+      maximum: PT2H
+
+  hitl:
+    requireApprovalFor:
+      - major_deal
+      - strategic_discount
+    approvalChain:
+      - ceo-agent
+
+  subscriptions:
+    - event: deal_escalated
+      action: review_deal
+    - event: quarter_end_approaching
+      action: review_pipeline
+
+  publications:
+    - event: deal_approved
+    - event: forecast_updated

@@ -1,0 +1,50 @@
+[package]
+name = "agent-config"
+version.workspace = true
+edition.workspace = true
+authors.workspace = true
+license.workspace = true
+description = "Configuration management for the DCMaar agent"
+publish = false
+
+[features]
+default = ["yaml"]
+yaml = ["dep:serde_yaml"]
+validator = ["dep:validator"]
+
+[dependencies]
+# Internal crates
+agent-types = { workspace = true, features = ["serde"] }
+
+# Directory utilities
+dirs = "5.0"
+
+# Configuration
+config = { workspace = true }
+figment = { workspace = true }
+serde = { workspace = true, features = ["derive"] }
+humantime-serde = "1.1"
+serde_yaml = { workspace = true, optional = true }
+toml = { workspace = true, features = ["serde"] }
+serde_json = { workspace = true }
+validator = { workspace = true, optional = true }
+
+# Error handling
+anyhow = { workspace = true }
+thiserror = { workspace = true }
+
+# UUID generation
+uuid = { workspace = true, features = ["v4", "serde"] }
+
+# Logging
+tracing = { workspace = true }
+
+# File system
+walkdir = { workspace = true }
+
+# Async runtime
+tokio = { workspace = true, features = ["rt-multi-thread", "sync"] }
+
+[dev-dependencies]
+tempfile = "3.10"
+pretty_assertions = "1.4"

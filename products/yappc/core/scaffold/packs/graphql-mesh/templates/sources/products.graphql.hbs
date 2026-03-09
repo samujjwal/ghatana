@@ -1,0 +1,83 @@
+# Products Service GraphQL Schema
+# Example source schema for testing
+
+type Product {
+id: ID!
+name: String!
+description: String
+price: Float!
+currency: String!
+stock: Int!
+category: Category!
+createdById: ID!
+createdAt: String!
+updatedAt: String!
+}
+
+type Category {
+id: ID!
+name: String!
+description: String
+products: [Product!]!
+}
+
+type Query {
+product(id: ID!): Product
+products(
+limit: Int
+offset: Int
+categoryId: ID
+search: String
+): ProductConnection!
+categories: [Category!]!
+category(id: ID!): Category
+}
+
+type ProductConnection {
+nodes: [Product!]!
+totalCount: Int!
+pageInfo: PageInfo!
+}
+
+type PageInfo {
+hasNextPage: Boolean!
+hasPreviousPage: Boolean!
+startCursor: String
+endCursor: String
+}
+
+type Mutation {
+createProduct(input: CreateProductInput!): Product!
+updateProduct(id: ID!, input: UpdateProductInput!): Product!
+deleteProduct(id: ID!): Boolean!
+updateStock(id: ID!, quantity: Int!): Product!
+}
+
+input CreateProductInput {
+name: String!
+description: String
+price: Float!
+currency: String
+stock: Int!
+categoryId: ID!
+}
+
+input UpdateProductInput {
+name: String
+description: String
+price: Float
+stock: Int
+categoryId: ID
+}
+
+type Subscription {
+productUpdated(id: ID): Product!
+stockChanged(productId: ID!): StockChange!
+}
+
+type StockChange {
+productId: ID!
+previousStock: Int!
+newStock: Int!
+change: Int!
+}

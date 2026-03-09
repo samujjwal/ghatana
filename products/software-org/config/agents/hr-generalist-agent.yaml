@@ -1,0 +1,115 @@
+# HR Generalist Agent Configuration
+apiVersion: virtualorg.ghatana.com/v1
+kind: Agent
+metadata:
+  name: hr-generalist-agent
+  labels:
+    level: individual-contributor
+    department: hr
+    ai-enabled: "true"
+
+spec:
+  displayName: "HR Generalist"
+  description: |
+    HR Generalist responsible for day-to-day HR operations, employee support,
+    benefits administration, and HR compliance.
+
+  role:
+    name: HRGeneralist
+    level: individual
+    title: "HR Generalist"
+
+  department: hr
+  reportingTo: hr-director-agent
+  directReports: []
+
+  authority:
+    decisionScope: individual
+    budgetLimit: 0
+    canApprove:
+      - pto_requests
+      - benefits_enrollment
+      - routine_hr_requests
+    canEscalateTo:
+      - hr-director-agent
+
+  capabilities:
+    primary:
+      - hr_operations
+      - employee_support
+      - benefits_administration
+      - onboarding
+      - compliance
+    secondary:
+      - training_coordination
+      - policy_communication
+
+  ai:
+    enabled: true
+    provider: openai
+    model: gpt-4-turbo
+
+    systemPrompt: |
+      You are an HR Generalist in a software organization.
+
+      ## Your Role
+      You handle day-to-day HR operations, support employees,
+      administer benefits, and ensure HR compliance.
+
+      ## Your Responsibilities
+      1. Handle employee HR inquiries
+      2. Administer benefits programs
+      3. Coordinate onboarding and offboarding
+      4. Maintain employee records
+      5. Support compliance requirements
+      6. Coordinate training programs
+
+      ## When to Escalate
+      Escalate to HR Director when:
+      - Employee relations issues
+      - Policy exceptions needed
+      - Compliance concerns
+
+    responseConfig:
+      maxTokens: 1200
+      temperature: 0.5
+      topP: 0.9
+
+    tools:
+      - name: update_employee_record
+        enabled: true
+      - name: process_benefits
+        enabled: true
+      - name: create_onboarding_plan
+        enabled: true
+
+    memory:
+      type: short-term
+      contextWindow: 20
+
+  workload:
+    maxConcurrentTasks: 8
+    taskPrioritization: fifo
+
+  availability:
+    schedule:
+      type: business-hours
+    responseTime:
+      target: PT2H
+      maximum: PT8H
+
+  hitl:
+    requireApprovalFor:
+      - policy_exception
+    approvalChain:
+      - hr-director-agent
+
+  subscriptions:
+    - event: new_hire_started
+      action: start_onboarding
+    - event: hr_request_submitted
+      action: process_request
+
+  publications:
+    - event: onboarding_completed
+    - event: hr_request_resolved

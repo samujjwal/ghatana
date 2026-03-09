@@ -1,0 +1,138 @@
+syntax = "proto3";
+
+package tutorputor.ai_learning;
+
+option java_package = "com.ghatana.tutorputor.contracts.ai";
+option java_outer_classname = "AiLearningProto";
+
+// =============================================================================
+// AI Learning Service Definition
+//Handles AI-driven learning path generation and assessment grading
+// =============================================================================
+
+service AiLearningService {
+  // Generate a personalized learning path
+  rpc GenerateLearningPath(GeneratePathRequest) returns (GeneratePathResponse);
+
+  // Grade an assessment submission
+  rpc GradeAssessment(GradeAssessmentRequest) returns (GradeAssessmentResponse);
+
+  // Generate assessment items based on topic/objective
+  rpc GenerateAssessmentItems(GenerateItemsRequest) returns (GenerateItemsResponse);
+
+  // Suggest remedial content for weak areas
+  rpc SuggestRemediation(RemediationRequest) returns (RemediationResponse);
+}
+
+// -----------------------------------------------------------------------------
+// Messages: Generation
+// -----------------------------------------------------------------------------
+
+message GenerateItemsRequest {
+  string topic = 1;
+  repeated string objectives = 2; // Learning objectives
+  string difficulty = 3; // "easy", "medium", "hard"
+  int32 count = 4;
+  string learner_level = 5;
+}
+
+message GenerateItemsResponse {
+  repeated AssessmentItemProto items = 1;
+}
+
+message AssessmentItemProto {
+  string prompt = 1;
+  string type = 2; // "multiple_choice_single", "short_answer"
+  repeated AssessmentItemChoiceProto choices = 3;
+  double points = 4;
+  string correct_answer_explanation = 5;
+}
+
+message AssessmentItemChoiceProto {
+  string id = 1; // "A", "B", etc.
+  string label = 2;
+  bool is_correct = 3;
+  string rationale = 4;
+}
+
+// -----------------------------------------------------------------------------
+// Messages: Learning Path
+// -----------------------------------------------------------------------------
+
+message GeneratePathRequest {
+  string subject = 1;
+  string goal = 2; // e.g., "Master Calculus", "Learn Python Basics"
+  string learner_level = 3; // e.g., "Beginner", "Intermediate"
+  repeated string preferences = 4; // e.g., "Visual", "Video-heavy"
+  string context_id = 5;
+}
+
+message GeneratePathResponse {
+  string path_id = 1;
+  string title = 2;
+  string description = 3;
+  repeated LearningNode nodes = 4;
+}
+
+message LearningNode {
+  string id = 1;
+  string title = 2;
+  string type = 3; // "VIDEO", "PROJECT", "QUIZ", "READING"
+  string description = 4;
+  int32 estimated_minutes = 5;
+  repeated string prerequisites = 6; // IDs of prerequisite nodes
+  repeated string learning_objectives = 7;
+}
+
+// -----------------------------------------------------------------------------
+// Messages: Grading
+// -----------------------------------------------------------------------------
+
+message GradeAssessmentRequest {
+  string assessment_id = 1;
+  string student_id = 2;
+  repeated AnswerSubmission answers = 3;
+}
+
+message AnswerSubmission {
+  string question_id = 1;
+  string text_response = 2; // For open-ended
+  string selected_option_id = 3; // For MCQ
+  string question_text = 4; // Adding context for AI
+}
+
+message GradeAssessmentResponse {
+  double total_score = 1; // 0.0 to 100.0
+  repeated QuestionFeedback feedback = 2;
+  string overall_comments = 3;
+  bool passed = 4;
+}
+
+message QuestionFeedback {
+  string question_id = 1;
+  double score = 2; // e.g., 0.0 to 1.0 (normalized)
+  string feedback_text = 3;
+  string correct_answer_explanation = 4;
+  bool is_correct = 5;
+}
+
+// -----------------------------------------------------------------------------
+// Messages: Remediation
+// -----------------------------------------------------------------------------
+
+message RemediationRequest {
+  string student_id = 1;
+  string topic = 2;
+  repeated string struggle_concepts = 3;
+}
+
+message RemediationResponse {
+  repeated RemedialResource resources = 1;
+}
+
+message RemedialResource {
+  string title = 1;
+  string url = 2; // Or internal content_id
+  string type = 3; 
+  string reasoning = 4; // Why this was suggested
+}

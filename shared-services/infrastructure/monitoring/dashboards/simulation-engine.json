@@ -1,0 +1,927 @@
+{
+    "dashboard": {
+        "title": "Simulation Engine - Performance & Observability",
+        "description": "Metrics for TutorPutor simulation playback, rendering, and domain-specific performance",
+        "tags": [
+            "tutorputor",
+            "simulation",
+            "education",
+            "performance"
+        ],
+        "timezone": "browser",
+        "schemaVersion": 16,
+        "version": 1,
+        "refresh": "30s",
+        "annotations": {
+            "list": [
+                {
+                    "name": "Deployments",
+                    "enable": true,
+                    "datasource": "prometheus",
+                    "expr": "changes(deployment_timestamp[5m]) > 0"
+                }
+            ]
+        },
+        "templating": {
+            "list": [
+                {
+                    "name": "domain",
+                    "label": "Domain",
+                    "type": "query",
+                    "query": "label_values(simulation_playback_duration_seconds, domain)",
+                    "current": {
+                        "text": "All",
+                        "value": "$__all"
+                    },
+                    "multi": true,
+                    "includeAll": true
+                },
+                {
+                    "name": "tenant",
+                    "label": "Tenant",
+                    "type": "query",
+                    "query": "label_values(simulation_playback_duration_seconds, tenant_id)",
+                    "current": {
+                        "text": "All",
+                        "value": "$__all"
+                    },
+                    "multi": true,
+                    "includeAll": true
+                }
+            ]
+        },
+        "panels": [
+            {
+                "id": 1,
+                "title": "Simulation Overview",
+                "type": "row",
+                "collapsed": false,
+                "gridPos": {
+                    "x": 0,
+                    "y": 0,
+                    "w": 24,
+                    "h": 1
+                }
+            },
+            {
+                "id": 2,
+                "title": "Active Simulations",
+                "type": "stat",
+                "targets": [
+                    {
+                        "expr": "sum(simulation_active_sessions{domain=~\"$domain\", tenant_id=~\"$tenant\"})",
+                        "legendFormat": "Active"
+                    }
+                ],
+                "fieldConfig": {
+                    "defaults": {
+                        "color": {
+                            "mode": "thresholds"
+                        },
+                        "thresholds": {
+                            "steps": [
+                                {
+                                    "value": 0,
+                                    "color": "green"
+                                },
+                                {
+                                    "value": 100,
+                                    "color": "yellow"
+                                },
+                                {
+                                    "value": 500,
+                                    "color": "red"
+                                }
+                            ]
+                        }
+                    }
+                },
+                "gridPos": {
+                    "x": 0,
+                    "y": 1,
+                    "w": 4,
+                    "h": 4
+                }
+            },
+            {
+                "id": 3,
+                "title": "Playback Starts/min",
+                "type": "stat",
+                "targets": [
+                    {
+                        "expr": "sum(rate(simulation_playback_started_total{domain=~\"$domain\", tenant_id=~\"$tenant\"}[1m])) * 60",
+                        "legendFormat": "Starts/min"
+                    }
+                ],
+                "fieldConfig": {
+                    "defaults": {
+                        "unit": "short"
+                    }
+                },
+                "gridPos": {
+                    "x": 4,
+                    "y": 1,
+                    "w": 4,
+                    "h": 4
+                }
+            },
+            {
+                "id": 4,
+                "title": "Completion Rate",
+                "type": "gauge",
+                "targets": [
+                    {
+                        "expr": "sum(rate(simulation_playback_completed_total{domain=~\"$domain\"}[5m])) / sum(rate(simulation_playback_started_total{domain=~\"$domain\"}[5m])) * 100",
+                        "legendFormat": "Completion %"
+                    }
+                ],
+                "fieldConfig": {
+                    "defaults": {
+                        "unit": "percent",
+                        "min": 0,
+                        "max": 100,
+                        "thresholds": {
+                            "steps": [
+                                {
+                                    "value": 0,
+                                    "color": "red"
+                                },
+                                {
+                                    "value": 70,
+                                    "color": "yellow"
+                                },
+                                {
+                                    "value": 90,
+                                    "color": "green"
+                                }
+                            ]
+                        }
+                    }
+                },
+                "gridPos": {
+                    "x": 8,
+                    "y": 1,
+                    "w": 4,
+                    "h": 4
+                }
+            },
+            {
+                "id": 5,
+                "title": "Error Rate",
+                "type": "stat",
+                "targets": [
+                    {
+                        "expr": "sum(rate(simulation_errors_total{domain=~\"$domain\", tenant_id=~\"$tenant\"}[5m])) / sum(rate(simulation_playback_started_total{domain=~\"$domain\", tenant_id=~\"$tenant\"}[5m])) * 100",
+                        "legendFormat": "Error %"
+                    }
+                ],
+                "fieldConfig": {
+                    "defaults": {
+                        "unit": "percent",
+                        "thresholds": {
+                            "steps": [
+                                {
+                                    "value": 0,
+                                    "color": "green"
+                                },
+                                {
+                                    "value": 1,
+                                    "color": "yellow"
+                                },
+                                {
+                                    "value": 5,
+                                    "color": "red"
+                                }
+                            ]
+                        }
+                    }
+                },
+                "gridPos": {
+                    "x": 12,
+                    "y": 1,
+                    "w": 4,
+                    "h": 4
+                }
+            },
+            {
+                "id": 6,
+                "title": "Cache Hit Rate",
+                "type": "gauge",
+                "targets": [
+                    {
+                        "expr": "sum(rate(simulation_cache_hits_total[5m])) / (sum(rate(simulation_cache_hits_total[5m])) + sum(rate(simulation_cache_misses_total[5m]))) * 100",
+                        "legendFormat": "Cache Hit %"
+                    }
+                ],
+                "fieldConfig": {
+                    "defaults": {
+                        "unit": "percent",
+                        "min": 0,
+                        "max": 100,
+                        "thresholds": {
+                            "steps": [
+                                {
+                                    "value": 0,
+                                    "color": "red"
+                                },
+                                {
+                                    "value": 60,
+                                    "color": "yellow"
+                                },
+                                {
+                                    "value": 85,
+                                    "color": "green"
+                                }
+                            ]
+                        }
+                    }
+                },
+                "gridPos": {
+                    "x": 16,
+                    "y": 1,
+                    "w": 4,
+                    "h": 4
+                }
+            },
+            {
+                "id": 7,
+                "title": "Avg Steps/Session",
+                "type": "stat",
+                "targets": [
+                    {
+                        "expr": "avg(simulation_steps_per_session{domain=~\"$domain\"})",
+                        "legendFormat": "Steps"
+                    }
+                ],
+                "fieldConfig": {
+                    "defaults": {
+                        "unit": "short"
+                    }
+                },
+                "gridPos": {
+                    "x": 20,
+                    "y": 1,
+                    "w": 4,
+                    "h": 4
+                }
+            },
+            {
+                "id": 8,
+                "title": "Playback Latency (p50, p95, p99)",
+                "type": "graph",
+                "targets": [
+                    {
+                        "expr": "histogram_quantile(0.50, rate(simulation_playback_duration_seconds_bucket{domain=~\"$domain\"}[5m]))",
+                        "legendFormat": "p50 - {{domain}}"
+                    },
+                    {
+                        "expr": "histogram_quantile(0.95, rate(simulation_playback_duration_seconds_bucket{domain=~\"$domain\"}[5m]))",
+                        "legendFormat": "p95 - {{domain}}"
+                    },
+                    {
+                        "expr": "histogram_quantile(0.99, rate(simulation_playback_duration_seconds_bucket{domain=~\"$domain\"}[5m]))",
+                        "legendFormat": "p99 - {{domain}}"
+                    }
+                ],
+                "yaxes": [
+                    {
+                        "format": "s",
+                        "label": "Duration"
+                    }
+                ],
+                "gridPos": {
+                    "x": 0,
+                    "y": 5,
+                    "w": 12,
+                    "h": 8
+                }
+            },
+            {
+                "id": 9,
+                "title": "Step Execution Time Distribution",
+                "type": "heatmap",
+                "targets": [
+                    {
+                        "expr": "sum(rate(simulation_step_duration_ms_bucket{domain=~\"$domain\"}[5m])) by (le)",
+                        "legendFormat": "{{le}}"
+                    }
+                ],
+                "gridPos": {
+                    "x": 12,
+                    "y": 5,
+                    "w": 12,
+                    "h": 8
+                }
+            },
+            {
+                "id": 10,
+                "title": "Domain Performance",
+                "type": "row",
+                "collapsed": false,
+                "gridPos": {
+                    "x": 0,
+                    "y": 13,
+                    "w": 24,
+                    "h": 1
+                }
+            },
+            {
+                "id": 11,
+                "title": "Simulations by Domain",
+                "type": "piechart",
+                "targets": [
+                    {
+                        "expr": "sum by (domain) (simulation_playback_started_total)",
+                        "legendFormat": "{{domain}}"
+                    }
+                ],
+                "gridPos": {
+                    "x": 0,
+                    "y": 14,
+                    "w": 8,
+                    "h": 8
+                }
+            },
+            {
+                "id": 12,
+                "title": "Domain Latency Comparison (p95)",
+                "type": "bargauge",
+                "targets": [
+                    {
+                        "expr": "histogram_quantile(0.95, sum by (domain, le) (rate(simulation_playback_duration_seconds_bucket[5m])))",
+                        "legendFormat": "{{domain}}"
+                    }
+                ],
+                "fieldConfig": {
+                    "defaults": {
+                        "unit": "s",
+                        "thresholds": {
+                            "steps": [
+                                {
+                                    "value": 0,
+                                    "color": "green"
+                                },
+                                {
+                                    "value": 2,
+                                    "color": "yellow"
+                                },
+                                {
+                                    "value": 5,
+                                    "color": "red"
+                                }
+                            ]
+                        }
+                    }
+                },
+                "gridPos": {
+                    "x": 8,
+                    "y": 14,
+                    "w": 8,
+                    "h": 8
+                }
+            },
+            {
+                "id": 13,
+                "title": "Entity Count by Domain",
+                "type": "graph",
+                "targets": [
+                    {
+                        "expr": "avg by (domain) (simulation_entity_count{domain=~\"$domain\"})",
+                        "legendFormat": "{{domain}}"
+                    }
+                ],
+                "yaxes": [
+                    {
+                        "format": "short",
+                        "label": "Entities"
+                    }
+                ],
+                "gridPos": {
+                    "x": 16,
+                    "y": 14,
+                    "w": 8,
+                    "h": 8
+                }
+            },
+            {
+                "id": 14,
+                "title": "Rendering & Canvas",
+                "type": "row",
+                "collapsed": false,
+                "gridPos": {
+                    "x": 0,
+                    "y": 22,
+                    "w": 24,
+                    "h": 1
+                }
+            },
+            {
+                "id": 15,
+                "title": "Frame Rate (FPS)",
+                "type": "graph",
+                "targets": [
+                    {
+                        "expr": "avg(simulation_render_fps{domain=~\"$domain\"})",
+                        "legendFormat": "Avg FPS"
+                    },
+                    {
+                        "expr": "min(simulation_render_fps{domain=~\"$domain\"})",
+                        "legendFormat": "Min FPS"
+                    }
+                ],
+                "yaxes": [
+                    {
+                        "format": "short",
+                        "label": "FPS",
+                        "min": 0,
+                        "max": 60
+                    }
+                ],
+                "thresholds": [
+                    {
+                        "value": 30,
+                        "color": "yellow",
+                        "op": "lt"
+                    },
+                    {
+                        "value": 15,
+                        "color": "red",
+                        "op": "lt"
+                    }
+                ],
+                "gridPos": {
+                    "x": 0,
+                    "y": 23,
+                    "w": 8,
+                    "h": 8
+                }
+            },
+            {
+                "id": 16,
+                "title": "Render Time per Frame (ms)",
+                "type": "graph",
+                "targets": [
+                    {
+                        "expr": "histogram_quantile(0.50, rate(simulation_render_frame_ms_bucket[5m]))",
+                        "legendFormat": "p50"
+                    },
+                    {
+                        "expr": "histogram_quantile(0.95, rate(simulation_render_frame_ms_bucket[5m]))",
+                        "legendFormat": "p95"
+                    }
+                ],
+                "yaxes": [
+                    {
+                        "format": "ms",
+                        "label": "Render Time"
+                    }
+                ],
+                "gridPos": {
+                    "x": 8,
+                    "y": 23,
+                    "w": 8,
+                    "h": 8
+                }
+            },
+            {
+                "id": 17,
+                "title": "Canvas Operations/sec",
+                "type": "graph",
+                "targets": [
+                    {
+                        "expr": "sum(rate(simulation_canvas_operations_total{operation=\"draw\"}[1m]))",
+                        "legendFormat": "Draw"
+                    },
+                    {
+                        "expr": "sum(rate(simulation_canvas_operations_total{operation=\"clear\"}[1m]))",
+                        "legendFormat": "Clear"
+                    },
+                    {
+                        "expr": "sum(rate(simulation_canvas_operations_total{operation=\"transform\"}[1m]))",
+                        "legendFormat": "Transform"
+                    }
+                ],
+                "yaxes": [
+                    {
+                        "format": "ops",
+                        "label": "Operations/sec"
+                    }
+                ],
+                "gridPos": {
+                    "x": 16,
+                    "y": 23,
+                    "w": 8,
+                    "h": 8
+                }
+            },
+            {
+                "id": 18,
+                "title": "Chemistry Domain",
+                "type": "row",
+                "collapsed": true,
+                "gridPos": {
+                    "x": 0,
+                    "y": 31,
+                    "w": 24,
+                    "h": 1
+                },
+                "panels": [
+                    {
+                        "id": 19,
+                        "title": "WASM Load Time",
+                        "type": "graph",
+                        "targets": [
+                            {
+                                "expr": "histogram_quantile(0.95, rate(chemistry_wasm_load_seconds_bucket[5m]))",
+                                "legendFormat": "WASM Load p95"
+                            }
+                        ],
+                        "yaxes": [
+                            {
+                                "format": "s",
+                                "label": "Time"
+                            }
+                        ],
+                        "gridPos": {
+                            "x": 0,
+                            "y": 32,
+                            "w": 8,
+                            "h": 8
+                        }
+                    },
+                    {
+                        "id": 20,
+                        "title": "Molecule Render Time",
+                        "type": "graph",
+                        "targets": [
+                            {
+                                "expr": "histogram_quantile(0.50, rate(chemistry_molecule_render_ms_bucket[5m]))",
+                                "legendFormat": "p50"
+                            },
+                            {
+                                "expr": "histogram_quantile(0.95, rate(chemistry_molecule_render_ms_bucket[5m]))",
+                                "legendFormat": "p95"
+                            }
+                        ],
+                        "yaxes": [
+                            {
+                                "format": "ms",
+                                "label": "Render Time"
+                            }
+                        ],
+                        "gridPos": {
+                            "x": 8,
+                            "y": 32,
+                            "w": 8,
+                            "h": 8
+                        }
+                    },
+                    {
+                        "id": 21,
+                        "title": "Atoms/Bonds per Simulation",
+                        "type": "graph",
+                        "targets": [
+                            {
+                                "expr": "avg(chemistry_atoms_count)",
+                                "legendFormat": "Atoms"
+                            },
+                            {
+                                "expr": "avg(chemistry_bonds_count)",
+                                "legendFormat": "Bonds"
+                            }
+                        ],
+                        "yaxes": [
+                            {
+                                "format": "short",
+                                "label": "Count"
+                            }
+                        ],
+                        "gridPos": {
+                            "x": 16,
+                            "y": 32,
+                            "w": 8,
+                            "h": 8
+                        }
+                    }
+                ]
+            },
+            {
+                "id": 22,
+                "title": "Physics Domain",
+                "type": "row",
+                "collapsed": true,
+                "gridPos": {
+                    "x": 0,
+                    "y": 32,
+                    "w": 24,
+                    "h": 1
+                },
+                "panels": [
+                    {
+                        "id": 23,
+                        "title": "Physics Step Computation",
+                        "type": "graph",
+                        "targets": [
+                            {
+                                "expr": "histogram_quantile(0.95, rate(physics_step_computation_ms_bucket[5m]))",
+                                "legendFormat": "p95"
+                            }
+                        ],
+                        "yaxes": [
+                            {
+                                "format": "ms",
+                                "label": "Time"
+                            }
+                        ],
+                        "gridPos": {
+                            "x": 0,
+                            "y": 33,
+                            "w": 8,
+                            "h": 8
+                        }
+                    },
+                    {
+                        "id": 24,
+                        "title": "Collision Detection Time",
+                        "type": "graph",
+                        "targets": [
+                            {
+                                "expr": "histogram_quantile(0.95, rate(physics_collision_detection_ms_bucket[5m]))",
+                                "legendFormat": "p95"
+                            }
+                        ],
+                        "yaxes": [
+                            {
+                                "format": "ms",
+                                "label": "Time"
+                            }
+                        ],
+                        "gridPos": {
+                            "x": 8,
+                            "y": 33,
+                            "w": 8,
+                            "h": 8
+                        }
+                    },
+                    {
+                        "id": 25,
+                        "title": "Bodies/Vectors per Simulation",
+                        "type": "graph",
+                        "targets": [
+                            {
+                                "expr": "avg(physics_bodies_count)",
+                                "legendFormat": "Bodies"
+                            },
+                            {
+                                "expr": "avg(physics_vectors_count)",
+                                "legendFormat": "Vectors"
+                            }
+                        ],
+                        "yaxes": [
+                            {
+                                "format": "short",
+                                "label": "Count"
+                            }
+                        ],
+                        "gridPos": {
+                            "x": 16,
+                            "y": 33,
+                            "w": 8,
+                            "h": 8
+                        }
+                    }
+                ]
+            },
+            {
+                "id": 26,
+                "title": "Biology & Medicine Domain",
+                "type": "row",
+                "collapsed": true,
+                "gridPos": {
+                    "x": 0,
+                    "y": 33,
+                    "w": 24,
+                    "h": 1
+                },
+                "panels": [
+                    {
+                        "id": 27,
+                        "title": "PK Model Computation Time",
+                        "type": "graph",
+                        "targets": [
+                            {
+                                "expr": "histogram_quantile(0.95, rate(medicine_pk_computation_ms_bucket[5m]))",
+                                "legendFormat": "p95"
+                            }
+                        ],
+                        "yaxes": [
+                            {
+                                "format": "ms",
+                                "label": "Time"
+                            }
+                        ],
+                        "gridPos": {
+                            "x": 0,
+                            "y": 34,
+                            "w": 8,
+                            "h": 8
+                        }
+                    },
+                    {
+                        "id": 28,
+                        "title": "Epidemiology Iterations/Step",
+                        "type": "graph",
+                        "targets": [
+                            {
+                                "expr": "avg(medicine_epidemiology_iterations_per_step)",
+                                "legendFormat": "Iterations"
+                            }
+                        ],
+                        "yaxes": [
+                            {
+                                "format": "short",
+                                "label": "Iterations"
+                            }
+                        ],
+                        "gridPos": {
+                            "x": 8,
+                            "y": 34,
+                            "w": 8,
+                            "h": 8
+                        }
+                    },
+                    {
+                        "id": 29,
+                        "title": "Biology Cell Organelles Count",
+                        "type": "graph",
+                        "targets": [
+                            {
+                                "expr": "avg(biology_organelles_count)",
+                                "legendFormat": "Organelles"
+                            }
+                        ],
+                        "yaxes": [
+                            {
+                                "format": "short",
+                                "label": "Count"
+                            }
+                        ],
+                        "gridPos": {
+                            "x": 16,
+                            "y": 34,
+                            "w": 8,
+                            "h": 8
+                        }
+                    }
+                ]
+            },
+            {
+                "id": 30,
+                "title": "AI Tutor Integration",
+                "type": "row",
+                "collapsed": false,
+                "gridPos": {
+                    "x": 0,
+                    "y": 34,
+                    "w": 24,
+                    "h": 1
+                }
+            },
+            {
+                "id": 31,
+                "title": "Tutor Requests/min",
+                "type": "graph",
+                "targets": [
+                    {
+                        "expr": "sum(rate(simulation_tutor_requests_total{domain=~\"$domain\"}[1m])) * 60",
+                        "legendFormat": "Requests/min"
+                    }
+                ],
+                "yaxes": [
+                    {
+                        "format": "short",
+                        "label": "Requests"
+                    }
+                ],
+                "gridPos": {
+                    "x": 0,
+                    "y": 35,
+                    "w": 8,
+                    "h": 8
+                }
+            },
+            {
+                "id": 32,
+                "title": "Tutor Response Latency",
+                "type": "graph",
+                "targets": [
+                    {
+                        "expr": "histogram_quantile(0.50, rate(simulation_tutor_response_seconds_bucket[5m]))",
+                        "legendFormat": "p50"
+                    },
+                    {
+                        "expr": "histogram_quantile(0.95, rate(simulation_tutor_response_seconds_bucket[5m]))",
+                        "legendFormat": "p95"
+                    }
+                ],
+                "yaxes": [
+                    {
+                        "format": "s",
+                        "label": "Latency"
+                    }
+                ],
+                "gridPos": {
+                    "x": 8,
+                    "y": 35,
+                    "w": 8,
+                    "h": 8
+                }
+            },
+            {
+                "id": 33,
+                "title": "Tutor Token Usage",
+                "type": "graph",
+                "targets": [
+                    {
+                        "expr": "sum(rate(simulation_tutor_tokens_total{type=\"input\"}[5m]))",
+                        "legendFormat": "Input Tokens"
+                    },
+                    {
+                        "expr": "sum(rate(simulation_tutor_tokens_total{type=\"output\"}[5m]))",
+                        "legendFormat": "Output Tokens"
+                    }
+                ],
+                "yaxes": [
+                    {
+                        "format": "short",
+                        "label": "Tokens/sec"
+                    }
+                ],
+                "gridPos": {
+                    "x": 16,
+                    "y": 35,
+                    "w": 8,
+                    "h": 8
+                }
+            },
+            {
+                "id": 34,
+                "title": "Errors & Alerts",
+                "type": "row",
+                "collapsed": false,
+                "gridPos": {
+                    "x": 0,
+                    "y": 43,
+                    "w": 24,
+                    "h": 1
+                }
+            },
+            {
+                "id": 35,
+                "title": "Errors by Type",
+                "type": "graph",
+                "targets": [
+                    {
+                        "expr": "sum by (error_type) (rate(simulation_errors_total{domain=~\"$domain\"}[5m]))",
+                        "legendFormat": "{{error_type}}"
+                    }
+                ],
+                "yaxes": [
+                    {
+                        "format": "short",
+                        "label": "Errors/sec"
+                    }
+                ],
+                "gridPos": {
+                    "x": 0,
+                    "y": 44,
+                    "w": 12,
+                    "h": 8
+                }
+            },
+            {
+                "id": 36,
+                "title": "Errors by Domain",
+                "type": "graph",
+                "targets": [
+                    {
+                        "expr": "sum by (domain) (rate(simulation_errors_total[5m]))",
+                        "legendFormat": "{{domain}}"
+                    }
+                ],
+                "yaxes": [
+                    {
+                        "format": "short",
+                        "label": "Errors/sec"
+                    }
+                ],
+                "gridPos": {
+                    "x": 12,
+                    "y": 44,
+                    "w": 12,
+                    "h": 8
+                }
+            }
+        ]
+    }
+}

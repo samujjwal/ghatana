@@ -1,0 +1,381 @@
+syntax = "proto3";
+
+package dcmaar.v1;
+
+option go_package = "github.com/samujjwal/dcmaar/proto/gen/go/pb/dcmaar/v1;dcmaarv1";
+option java_multiple_files = true;
+option java_outer_classname = "DesktopProto";
+option java_package = "com.dcmaar.v1";
+option csharp_namespace = "Dcmaar.V1";
+option objc_class_prefix = "DCX";
+option php_namespace = "Dcmaar\\V1";
+option ruby_package = "Dcmaar::V1";
+
+import "dcmaar/v1/common.proto";
+import "dcmaar/v1/metrics.proto";
+import "dcmaar/v1/events.proto";
+import "dcmaar/v1/actions.proto";
+import "dcmaar/v1/query.proto";
+import "dcmaar/v1/enums.proto";
+import "google/protobuf/timestamp.proto";
+import "google/protobuf/empty.proto";
+import "validate/validate.proto";
+
+// DesktopService provides the main interface for desktop-agent communication
+service DesktopService {
+  // StreamMetrics streams metrics from agent to desktop
+  rpc StreamMetrics(StreamMetricsRequest) returns (stream MetricEnvelope) {}
+  
+  // StreamEvents streams events from agent to desktop
+  rpc StreamEvents(StreamEventsRequest) returns (stream EventEnvelope) {}
+  
+  // ExecuteCommand executes a command on the agent
+  rpc ExecuteCommand(CommandRequest) returns (CommandResponse) {}
+  
+  // GetAgentConfig retrieves agent configuration
+  rpc GetAgentConfig(GetConfigRequest) returns (AgentConfig) {}
+  
+  // UpdateAgentConfig updates agent configuration
+  rpc UpdateAgentConfig(UpdateConfigRequest) returns (AgentConfig) {}
+  
+  // GetAgentHealth checks agent health status
+  rpc GetAgentHealth(google.protobuf.Empty) returns (HealthResponse) {}
+  
+  // SubscribeToActions subscribes to action notifications
+  rpc SubscribeToActions(SubscribeActionsRequest) returns (stream ActionNotification) {}
+}
+
+// CommandRequest defines a command to execute on the agent
+message CommandRequest {
+  // Unique command ID for tracking
+  string command_id = 1 [
+    (validate.rules).string.uuid = true
+  ];
+  
+  // Command name/type
+  string command = 2 [
+    (validate.rules).string = {min_len: 1, max_len: 255}
+  ];
+  
+  // Command arguments
+  repeated string args = 3 [
+    (validate.rules).repeated = {max_items: 100}
+  ];
+  
+  // Command timeout in milliseconds
+  uint32 timeout_ms = 4 [
+    (validate.rules).uint32 = {gte: 1000, lte: 300000}
+  ];
+  
+  // Working directory for command execution
+  string working_dir = 5 [
+    (validate.rules).string = {max_len: 4096}
+  ];
+  
+  // Environment variables
+  map<string, string> env = 6 [
+    (validate.rules).map = {
+      max_pairs: 100,
+      keys: {string: {max_len: 255}},
+      values: {string: {max_len: 4096}}
+    }
+  ];
+  
+  // Execution context metadata
+  map<string, string> metadata = 7;
+}
+
+// CommandResponse contains the result of command execution
+message CommandResponse {
+  // Command ID from request
+  string command_id = 1;
+  
+  // Exit code
+  int32 exit_code = 2;
+  
+  // Standard output
+  string stdout = 3 [
+    (validate.rules).string = {max_len: 1048576}  // 1MB limit
+  ];
+  
+  // Standard error
+  string stderr = 4 [
+    (validate.rules).string = {max_len: 1048576}  // 1MB limit
+  ];
+  
+  // Execution duration in milliseconds
+  uint64 duration_ms = 5;
+  
+  // Timestamp when command started
+  google.protobuf.Timestamp started_at = 6;
+  
+  // Timestamp when command completed
+  google.protobuf.Timestamp completed_at = 7;
+  
+  // Error message if command failed
+  string error = 8;
+  
+  // Additional metadata
+  map<string, string> metadata = 9;
+}
+
+// GetConfigRequest requests agent configuration
+message GetConfigRequest {
+  // Configuration sections to retrieve (empty = all)
+  repeated string sections = 1;
+  
+  // Include sensitive values (requires elevated permissions)
+  bool include_sensitive = 2;
+}
+
+// UpdateConfigRequest updates agent configuration
+message UpdateConfigRequest {
+  // Configuration to update
+  AgentConfig config = 1 [
+    (validate.rules).message.required = true
+  ];
+  
+  // Merge with existing config (true) or replace (false)
+  bool merge = 2;
+  
+  // Validate only, don't apply
+  bool dry_run = 3;
+}
+
+// AgentConfig represents agent configuration
+message AgentConfig {
+  // Agent identity
+  string agent_id = 1 [
+    (validate.rules).string = {min_len: 1, max_len: 255}
+  ];
+  
+  // Agent version
+  string version = 2;
+  
+  // Collection settings
+  CollectionConfig collection = 3;
+  
+  // Storage settings
+  StorageConfig storage = 4;
+  
+  // Network settings
+  NetworkConfig network = 5;
+  
+  // Security settings
+  SecurityConfig security = 6;
+  
+  // Feature flags
+  map<string, bool> features = 7;
+  
+  // Custom settings
+  map<string, string> custom = 8;
+  
+  // Configuration metadata
+  Metadata metadata = 9;
+}
+
+// CollectionConfig defines data collection settings
+message CollectionConfig {
+  // Enable metric collection
+  bool enabled = 1;
+  
+  // Collection interval in milliseconds
+  uint32 interval_ms = 2 [
+    (validate.rules).uint32 = {gte: 1000, lte: 3600000}
+  ];
+  
+  // Maximum batch size
+  uint32 batch_size = 3 [
+    (validate.rules).uint32 = {gte: 1, lte: 10000}
+  ];
+  
+  // Maximum retry attempts
+  uint32 max_retries = 4 [
+    (validate.rules).uint32 = {lte: 10}
+  ];
+  
+  // Retry delay in milliseconds
+  uint32 retry_delay_ms = 5 [
+    (validate.rules).uint32 = {gte: 100, lte: 60000}
+  ];
+  
+  // Metrics to collect
+  repeated string metrics = 6;
+  
+  // Events to collect
+  repeated ActivityType events = 7;
+}
+
+// StorageConfig defines storage settings
+message StorageConfig {
+  // Storage path
+  string path = 1 [
+    (validate.rules).string = {max_len: 4096}
+  ];
+  
+  // Maximum storage size in MB
+  uint32 max_size_mb = 2 [
+    (validate.rules).uint32 = {gte: 1, lte: 102400}
+  ];
+  
+  // Retention period in days
+  uint32 retention_days = 3 [
+    (validate.rules).uint32 = {gte: 1, lte: 365}
+  ];
+  
+  // Enable compression
+  bool compression_enabled = 4;
+  
+  // Compression type
+  CompressionType compression_type = 5;
+}
+
+// NetworkConfig defines network settings
+message NetworkConfig {
+  // Server endpoint
+  string endpoint = 1 [
+    (validate.rules).string = {uri: true}
+  ];
+  
+  // Connection timeout in milliseconds
+  uint32 timeout_ms = 2 [
+    (validate.rules).uint32 = {gte: 1000, lte: 60000}
+  ];
+  
+  // Enable TLS
+  bool tls_enabled = 3;
+  
+  // TLS certificate path
+  string tls_cert_path = 4;
+  
+  // TLS key path
+  string tls_key_path = 5;
+  
+  // TLS CA certificate path
+  string tls_ca_path = 6;
+  
+  // Maximum concurrent connections
+  uint32 max_connections = 7 [
+    (validate.rules).uint32 = {gte: 1, lte: 1000}
+  ];
+}
+
+// SecurityConfig defines security settings
+message SecurityConfig {
+  // Enable authentication
+  bool auth_enabled = 1;
+  
+  // Authentication token
+  string auth_token = 2;
+  
+  // Enable encryption at rest
+  bool encryption_enabled = 3;
+  
+  // Encryption key alias
+  string encryption_key_alias = 4;
+  
+  // Allowed hosts for data collection
+  repeated string allowed_hosts = 5;
+  
+  // Blocked hosts
+  repeated string blocked_hosts = 6;
+}
+
+// HealthResponse contains agent health status
+message HealthResponse {
+  // Overall health status
+  HealthStatus status = 1;
+  
+  // Agent version
+  string version = 2;
+  
+  // Uptime in seconds
+  uint64 uptime_seconds = 3;
+  
+  // Component health checks
+  repeated ComponentHealth components = 4;
+  
+  // Resource usage
+  ResourceUsage resources = 5;
+  
+  // Last error (if any)
+  string last_error = 6;
+  // Health check timestamp
+  google.protobuf.Timestamp timestamp = 7;
+}
+
+// ComponentHealth represents health of a single component
+message ComponentHealth {
+  // Component name
+  string name = 1;
+  // Component status
+  HealthStatus status = 2;
+  
+  // Status message
+  string message = 3;
+  
+  // Last check timestamp
+  google.protobuf.Timestamp last_check = 4;
+  
+  // Component metadata
+  map<string, string> metadata = 5;
+}
+
+// ResourceUsage represents system resource usage
+message ResourceUsage {
+  // CPU usage percentage (0-100)
+  double cpu_percent = 1;
+  
+  // Memory usage in bytes
+  uint64 memory_bytes = 2;
+  
+  // Memory usage percentage (0-100)
+  double memory_percent = 3;
+  
+  // Disk usage in bytes
+  uint64 disk_bytes = 4;
+  
+  // Disk usage percentage (0-100)
+  double disk_percent = 5;
+  
+  // Network bytes sent
+  uint64 network_sent_bytes = 6;
+  
+  // Network bytes received
+  uint64 network_received_bytes = 7;
+}
+
+// SubscribeActionsRequest subscribes to action notifications
+message SubscribeActionsRequest {
+  // Action types to subscribe to (empty = all)
+  repeated string action_types = 1;
+  
+  // Filter criteria
+  repeated Filter filters = 2;
+}
+
+// ActionNotification represents an action notification
+message ActionNotification {
+  // Notification ID
+  string id = 1 [
+    (validate.rules).string.uuid = true
+  ];
+  
+  // Action type
+  string action_type = 2;
+  
+  // Action data
+  bytes data = 3;
+  
+  // Notification timestamp
+  google.protobuf.Timestamp timestamp = 4;
+  
+  // Severity
+  EventSeverity severity = 5;
+  
+  // Source component
+  string source = 6;
+  
+  // Additional metadata
+  map<string, string> metadata = 7;
+}

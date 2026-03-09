@@ -1,0 +1,14 @@
+[Unit]
+Description=DCMAR Rust Agent
+After=network.target
+
+[Service]
+Type=simple
+User=dcmaar
+WorkingDirectory=/opt/dcmaar
+ExecStart=/opt/dcmaar/client/agent/target/release/agent-rs --config /etc/dcmaar/agent-config.yaml
+Restart=on-failure
+RestartSec=5
+
+[Install]
+WantedBy=multi-user.target

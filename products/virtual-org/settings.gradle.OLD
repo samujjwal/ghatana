@@ -1,0 +1,32 @@
+rootProject.name = 'virtual-org'
+
+// Include parent build for shared libraries only when building this project standalone.
+// When this repository is built from the root multi-project build, the root
+// build already includes the virtual-org modules and we must NOT include the
+// parent again (that causes composite/included-build cycles and confusing task
+// ownership). Guarding the include keeps the standalone developer experience
+// while avoiding composite build wiring when running the root build.
+def parentBuildDir = file('../..').canonicalFile
+if (parentBuildDir.exists() && !rootDir.canonicalFile.equals(parentBuildDir)) {
+	includeBuild('../..')
+} else {
+	logger.lifecycle("Skipping includeBuild('../..') because parent is same as current root or not present")
+}
+
+// Include applications
+include 'engine:service'
+
+// Include modules (flattened structure)
+include 'modules:framework'
+include 'modules:agent'
+include 'modules:operator-adapter'
+include 'modules:integration'
+include 'modules:workflow'
+
+// Set project directories
+project(':engine:service').projectDir = file('engine/service')
+project(':modules:framework').projectDir = file('modules/framework')
+project(':modules:agent').projectDir = file('modules/agent')
+project(':modules:operator-adapter').projectDir = file('modules/operator-adapter')
+project(':modules:integration').projectDir = file('modules/integration')
+project(':modules:workflow').projectDir = file('modules/workflow')

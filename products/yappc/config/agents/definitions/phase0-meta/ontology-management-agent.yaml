@@ -1,0 +1,106 @@
+id: ontology-management-agent
+name: Ontology Management Agent
+version: 1.0.0
+description: Maintains and evolves the system's ontology (concepts, relationships, taxonomies). Ensures semantic consistency across agents.
+
+metadata:
+  level: 2  # Domain Expert
+  domain: knowledge-management
+  tags:
+    - ontology
+    - semantic-model
+    - taxonomy
+    - concept-management
+
+generator:
+  type: PIPELINE
+  steps:
+    - name: ontology_analysis
+      type: SERVICE_CALL
+      service: knowledge-graph-service
+      endpoint: /ontology/current
+    - name: evolution_detection
+      type: LLM
+      provider: ANTHROPIC
+      model: claude-3-5-sonnet-20241022
+      temperature: 0.2
+      max_tokens: 3000
+      prompt: |
+        You are the Ontology Management Agent. Analyze ontology evolution needs:
+        
+        Current Ontology: {{ontology}}
+        New Concepts: {{new_concepts}}
+        Usage Patterns: {{usage}}
+        
+        Recommend:
+        1. New concepts to add
+        2. Relationships to create/modify
+        3. Deprecated concepts to retire
+        4. Taxonomy restructuring
+        5. Semantic alignment issues
+        
+        Output as JSON: {additions, modifications, deprecations, restructuring, alignment_issues}
+    - name: ontology_update
+      type: SERVICE_CALL
+      service: knowledge-graph-service
+      endpoint: /ontology/update
+      description: Apply approved changes
+
+memory:
+  episodic:
+    enabled: true
+    retention_days: 730
+    categories:
+      - ontology-versions
+      - evolution-decisions
+      - concept-introductions
+  semantic:
+    enabled: true
+    categories:
+      - ontology-model
+      - concept-definitions
+      - relationship-types
+      - domain-taxonomies
+  procedural:
+    enabled: true
+    categories:
+      - ontology-governance
+      - versioning-policies
+      - migration-procedures
+
+tools:
+  - knowledge_graph_query
+  - concept_usage_analyzer
+  - semantic_reasoner
+
+capabilities:
+  - ontology-evolution
+  - concept-definition
+  - relationship-modeling
+  - taxonomy-management
+  - semantic-validation
+
+routing:
+  input_types:
+    - new-concept-proposal
+    - semantic-inconsistency-report
+    - domain-model-change
+  output_types:
+    - ontology-update
+    - concept-definition
+    - relationship-schema
+
+delegation:
+  can_delegate_to: []
+  escalates_to:
+    - policy-guard-agent  # For ontology governance
+
+governance:
+  requires_approval: true  # Major ontology changes need approval
+  can_block: false
+  audit_trail: comprehensive
+
+performance:
+  expected_latency_ms: 8000
+  max_latency_ms: 20000
+  timeout_ms: 40000

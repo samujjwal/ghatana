@@ -1,0 +1,27 @@
+---
+id: "incident_response"
+agent: "IncidentResponseAgent"
+role: "SRE/Incident Lead"
+inputs_spec:
+- name: "centralized_logs"
+  description: "Centralized logs for incident detection."
+  format: "Centralized log artifact"
+outputs_spec:
+- name: "incident_tickets"
+  description: "Incident response tickets, root cause, and postmortem."
+  format: "List of incident ticket artifacts"
+agent_tasks:
+- "Track and prioritize all incidents."
+- "Assign and follow up response actions."
+- "Record root cause and postmortem for each incident."
+acceptance_criteria:
+- "All incidents tracked and prioritized."
+- "Response actions assigned/followed up."
+- "Root cause/postmortem recorded."
+dependencies:
+- "centralized_logs"
+failure_escalation:
+- "Escalate to Incident Lead if incidents untracked or postmortem missing."
+references: []
+hitl: true
+hitl_reason: "Human reviews and manages incident response tickets"

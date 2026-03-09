@@ -1,0 +1,67 @@
+/**
+* Mesh configuration types
+*/
+export interface MeshConfig {
+port: number;
+enablePlayground: boolean;
+enableIntrospection: boolean;
+{{#if enableAuth}}
+enableAuth: boolean;
+jwtSecret?: string;
+{{/if}}
+{{#if enableCaching}}
+enableCaching: boolean;
+cacheMaxAge: number;
+{{/if}}
+{{#if enableRateLimiting}}
+enableRateLimiting: boolean;
+rateLimitMax: number;
+{{/if}}
+{{#if enableMetrics}}
+enableMetrics: boolean;
+{{/if}}
+{{#if enableCors}}
+enableCors: boolean;
+corsOrigin: string;
+{{/if}}
+logLevel: "debug" | "info" | "warn" | "error";
+}
+
+{{#if enableAuth}}
+/**
+* JWT payload for authenticated requests
+*/
+export interface JwtPayload {
+sub: string;
+iat: number;
+exp: number;
+roles?: string[];
+permissions?: string[];
+[key: string]: unknown;
+}
+
+/**
+* Authenticated user context
+*/
+export interface AuthContext {
+userId: string;
+roles: string[];
+permissions: string[];
+}
+{{/if}}
+
+/**
+* GraphQL context type
+*/
+export interface GraphQLContext {
+{{#if enableAuth}}
+auth?: AuthContext;
+{{/if}}
+requestId: string;
+startTime: bigint;
+}
+
+// Extend Yoga context
+declare module "graphql-yoga" {
+interface YogaInitialContext extends GraphQLContext {}
+}

@@ -1,0 +1,115 @@
+# Demand Gen Agent Configuration
+apiVersion: virtualorg.ghatana.com/v1
+kind: Agent
+metadata:
+  name: demand-gen-agent
+  labels:
+    level: individual-contributor
+    department: marketing
+    ai-enabled: "true"
+
+spec:
+  displayName: "Demand Generation Specialist"
+  description: |
+    Demand Generation Specialist responsible for lead generation campaigns,
+    paid advertising, email marketing, and pipeline contribution.
+
+  role:
+    name: DemandGenSpecialist
+    level: individual
+    title: "Demand Generation Specialist"
+
+  department: marketing
+  reportingTo: marketing-director-agent
+  directReports: []
+
+  authority:
+    decisionScope: individual
+    budgetLimit: 25000
+    canApprove:
+      - ad_campaigns
+      - email_campaigns
+      - landing_pages
+    canEscalateTo:
+      - marketing-director-agent
+
+  capabilities:
+    primary:
+      - paid_advertising
+      - email_marketing
+      - lead_generation
+      - campaign_management
+      - analytics
+    secondary:
+      - seo
+      - conversion_optimization
+
+  ai:
+    enabled: true
+    provider: openai
+    model: gpt-4-turbo
+
+    systemPrompt: |
+      You are a Demand Generation Specialist in a software organization.
+
+      ## Your Role
+      You drive lead generation through paid advertising, email marketing,
+      and other demand generation programs.
+
+      ## Your Responsibilities
+      1. Plan and execute demand gen campaigns
+      2. Manage paid advertising (Google, LinkedIn, etc.)
+      3. Create and optimize email campaigns
+      4. Build and test landing pages
+      5. Track and report on campaign performance
+      6. Optimize for lead quality and cost
+
+      ## When to Escalate
+      Escalate to Marketing Director when:
+      - Campaign budget needs increase
+      - New channel or vendor evaluation
+      - Campaign underperforming significantly
+
+    responseConfig:
+      maxTokens: 1500
+      temperature: 0.5
+      topP: 0.9
+
+    tools:
+      - name: create_campaign
+        enabled: true
+      - name: analyze_performance
+        enabled: true
+      - name: optimize_ads
+        enabled: true
+
+    memory:
+      type: short-term
+      contextWindow: 25
+
+  workload:
+    maxConcurrentTasks: 6
+    taskPrioritization: priority
+
+  availability:
+    schedule:
+      type: business-hours
+    responseTime:
+      target: PT1H
+      maximum: PT4H
+
+  hitl:
+    requireApprovalFor:
+      - large_campaign
+    approvalChain:
+      - marketing-director-agent
+
+  subscriptions:
+    - event: campaign_requested
+      action: plan_campaign
+    - event: lead_goal_updated
+      action: adjust_campaigns
+
+  publications:
+    - event: campaign_launched
+    - event: leads_generated

@@ -1,0 +1,110 @@
+domain:
+  id: build-cicd-deployment
+  name: "Build, CI/CD & Deployment"
+  description: "Automate build and deployment processes."
+  order: 19
+  icon: "rocket_launch"
+  color: "#29B6F6"
+  agent_personas:
+    - "PipelineExecutor"
+    - "DeploymentAgent"
+    - "ReleaseManager"
+  audit_artifacts:
+    - "BuildLog"
+    - "DeploymentRecord"
+    - "ReleaseNotes"
+  inputs:
+    - "Source artifacts"
+    - "Configuration"
+  outputs:
+    - "Deployed systems"
+    - "Release artifacts"
+
+tasks:
+  # Core ICS CI/CD tasks
+  - id: d19-t1
+    name: "Build pipelines"
+    description: "Configure CI pipelines."
+    personas: ["DevOps", "Developer"]
+    lifecycle_stages: ["execute"]
+    automation_level: "automated"
+  - id: d19-t2
+    name: "Artifact packaging"
+    description: "Package code for deployment."
+    personas: ["DevOps", "Developer"]
+    lifecycle_stages: ["execute"]
+    automation_level: "automated"
+  - id: d19-t3
+    name: "Deployment execution"
+    description: "Deploy to environments."
+    personas: ["DevOps"]
+    lifecycle_stages: ["execute"]
+    automation_level: "automated"
+  - id: d19-t4
+    name: "Rollback execution"
+    description: "Revert failed deployments."
+    personas: ["DevOps"]
+    lifecycle_stages: ["execute"]
+    automation_level: "assisted"
+
+  # Migrated from legacy cicd domain
+  - id: cicd-001
+    name: "Configure Build Pipeline"
+    description: "Set up automated build processes."
+    personas: ["DevOps", "Developer"]
+    lifecycle_stages: ["execute"]
+    automation_level: "assisted"
+  - id: cicd-002
+    name: "Configure Test Pipeline"
+    description: "Integrate automated testing into pipeline."
+    personas: ["DevOps", "QA"]
+    lifecycle_stages: ["execute"]
+    automation_level: "assisted"
+  - id: cicd-003
+    name: "Configure Deployment Pipeline"
+    description: "Set up automated deployment processes."
+    personas: ["DevOps"]
+    lifecycle_stages: ["execute"]
+    automation_level: "assisted"
+  - id: cicd-004
+    name: "Manage Environment Configurations"
+    description: "Handle environment-specific configurations."
+    personas: ["DevOps"]
+    lifecycle_stages: ["execute"]
+    automation_level: "assisted"
+  - id: cicd-005
+    name: "Implement Blue-Green Deployments"
+    description: "Set up zero-downtime deployment strategies."
+    personas: ["DevOps"]
+    lifecycle_stages: ["execute"]
+    automation_level: "assisted"
+  - id: cicd-006
+    name: "Configure Feature Flags"
+    description: "Implement feature flag management."
+    personas: ["DevOps", "Developer"]
+    lifecycle_stages: ["execute"]
+    automation_level: "assisted"
+  - id: cicd-007
+    name: "Manage Secrets in Pipeline"
+    description: "Securely handle secrets in CI/CD."
+    personas: ["DevOps", "Security"]
+    lifecycle_stages: ["execute"]
+    automation_level: "assisted"
+  - id: cicd-008
+    name: "Implement Canary Releases"
+    description: "Set up gradual rollout strategies."
+    personas: ["DevOps"]
+    lifecycle_stages: ["execute"]
+    automation_level: "assisted"
+  - id: cicd-009
+    name: "Monitor Pipeline Health"
+    description: "Track and improve pipeline performance."
+    personas: ["DevOps"]
+    lifecycle_stages: ["observe"]
+    automation_level: "automated"
+  - id: cicd-010
+    name: "Manage Release Notes"
+    description: "Generate and maintain release documentation."
+    personas: ["DevOps", "Developer"]
+    lifecycle_stages: ["execute"]
+    automation_level: "assisted"

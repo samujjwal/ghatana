@@ -1,0 +1,227 @@
+{
+  "id": "eventcloud-eventlog-monitoring",
+  "title": "EventCloud - EventLog Monitoring",
+  "tags": ["eventcloud", "eventlog", "monitoring"],
+  "timezone": "browser",
+  "refresh": "30s",
+  "time": {
+    "from": "now-1h",
+    "to": "now"
+  },
+  "templating": {
+    "list": [
+      {
+        "name": "tenant",
+        "label": "Tenant",
+        "type": "query",
+        "query": "label_values(eventcloud_request_count, tenant)",
+        "multi": true,
+        "includeAll": true
+      },
+      {
+        "name": "service",
+        "label": "Service",
+        "type": "query",
+        "query": "label_values(eventcloud_request_count{tenant=~\"$tenant\"}, service)",
+        "multi": true,
+        "includeAll": true
+      },
+      {
+        "name": "instance",
+        "label": "Instance",
+        "type": "query",
+        "query": "label_values(eventcloud_request_count{tenant=~\"$tenant\",service=~\"$service\"}, instance)",
+        "multi": true,
+        "includeAll": true
+      }
+    ]
+  },
+  "panels": [
+    {
+      "id": 1,
+      "title": "Event Ingestion Rate",
+      "type": "timeseries",
+      "gridPos": {"h": 8, "w": 12, "x": 0, "y": 0},
+      "targets": [
+        {
+          "expr": "rate(eventcloud_event_count{tenant=~\"$tenant\",service=~\"$service\"}[5m])",
+          "legendFormat": "{{tenant}}/{{service}} - {{instance}}",
+          "interval": "30s",
+          "refId": "A"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "events/sec",
+          "min": 0
+        }
+      },
+      "options": {
+        "legend": {
+          "displayMode": "table",
+          "placement": "bottom"
+        }
+      }
+    },
+    {
+      "id": 2,
+      "title": "Event Processing Duration",
+      "type": "timeseries",
+      "gridPos": {"h": 8, "w": 12, "x": 12, "y": 0},
+      "targets": [
+        {
+          "expr": "histogram_quantile(0.95, rate(eventcloud_event_processing_duration_bucket{tenant=~\"$tenant\",service=~\"$service\"}[5m]))",
+          "legendFormat": "95th percentile - {{tenant}}/{{service}}",
+          "interval": "30s",
+          "refId": "A"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "ms",
+          "min": 0
+        }
+      }
+    },
+    {
+      "id": 3,
+      "title": "Request Success Rate",
+      "type": "stat",
+      "gridPos": {"h": 6, "w": 6, "x": 0, "y": 8},
+      "targets": [
+        {
+          "expr": "rate(eventcloud_request_count{tenant=~\"$tenant\",service=~\"$service\",status!~\"5..\"}[5m]) / rate(eventcloud_request_count{tenant=~\"$tenant\",service=~\"$service\"}[5m]) * 100",
+          "legendFormat": "Success Rate %",
+          "interval": "30s",
+          "refId": "A"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "percent",
+          "min": 0,
+          "max": 100,
+          "thresholds": {
+            "steps": [
+              {"color": "red", "value": 0},
+              {"color": "yellow", "value": 95},
+              {"color": "green", "value": 99}
+            ]
+          }
+        }
+      }
+    },
+    {
+      "id": 4,
+      "title": "Error Rate",
+      "type": "stat",
+      "gridPos": {"h": 6, "w": 6, "x": 6, "y": 8},
+      "targets": [
+        {
+          "expr": "rate(eventcloud_error_count{tenant=~\"$tenant\",service=~\"$service\"}[5m])",
+          "legendFormat": "Errors/sec",
+          "interval": "30s",
+          "refId": "A"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "errors/sec",
+          "min": 0,
+          "thresholds": {
+            "steps": [
+              {"color": "green", "value": 0},
+              {"color": "yellow", "value": 1},
+              {"color": "red", "value": 10}
+            ]
+          }
+        }
+      }
+    },
+    {
+      "id": 5,
+      "title": "Active Connections",
+      "type": "gauge",
+      "gridPos": {"h": 6, "w": 6, "x": 12, "y": 8},
+      "targets": [
+        {
+          "expr": "eventcloud_request_count{tenant=~\"$tenant\",service=~\"$service\",status=\"active\"}",
+          "legendFormat": "Active",
+          "interval": "30s",
+          "refId": "A"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "connections",
+          "min": 0,
+          "max": 1000
+        }
+      }
+    },
+    {
+      "id": 6,
+      "title": "Storage Utilization",
+      "type": "gauge",
+      "gridPos": {"h": 6, "w": 6, "x": 18, "y": 8},
+      "targets": [
+        {
+          "expr": "eventcloud_storage_utilization{tenant=~\"$tenant\",service=~\"$service\"}",
+          "legendFormat": "Storage %",
+          "interval": "30s",
+          "refId": "A"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "percent",
+          "min": 0,
+          "max": 100,
+          "thresholds": {
+            "steps": [
+              {"color": "green", "value": 0},
+              {"color": "yellow", "value": 70},
+              {"color": "red", "value": 90}
+            ]
+          }
+        }
+      }
+    }
+  ],
+  "annotations": {
+    "list": [
+      {
+        "name": "Deployments",
+        "datasource": "prometheus",
+        "expr": "eventcloud_deployment{service=~\"$service\"}",
+        "iconColor": "rgba(0, 211, 255, 1)"
+      },
+      {
+        "name": "Incidents",
+        "datasource": "prometheus", 
+        "expr": "eventcloud_incident{service=~\"$service\"}",
+        "iconColor": "rgba(255, 96, 96, 1)"
+      }
+    ]
+  },
+  "links": [
+    {
+      "title": "Pattern Dashboard",
+      "url": "/d/eventcloud-pattern-monitoring",
+      "type": "dashboards",
+      "icon": "cloud"
+    },
+    {
+      "title": "LLM Dashboard",
+      "url": "/d/eventcloud-llm-monitoring",
+      "type": "dashboards",
+      "icon": "bolt"
+    },
+    {
+      "title": "System Overview",
+      "url": "/d/eventcloud-system-overview",
+      "type": "dashboards",
+      "icon": "external link"
+    }
+  ]
+}

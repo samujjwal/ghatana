@@ -1,0 +1,6 @@
+packages:
+  - 'client/*'
+  - 'backend/gateway'
+  - 'backend/modules/*'
+  - 'backend/agent'
+  - 'libs/ts/*'

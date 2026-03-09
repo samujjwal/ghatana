@@ -1,0 +1,20 @@
+<Project Sdk="Microsoft.NET.Sdk.Web">
+
+    <PropertyGroup>
+        <TargetFramework>{{targetFramework}}</TargetFramework>
+        {{#if enableNullable}}
+        <Nullable>enable</Nullable>
+        {{/if}}
+        <ImplicitUsings>enable</ImplicitUsings>
+    </PropertyGroup>
+
+    <ItemGroup>
+        {{#if enableSwagger}}
+        <PackageReference Include="Swashbuckle.AspNetCore" Version="6.5.0" />
+        {{/if}}
+        {{#if enableMetrics}}
+        <PackageReference Include="prometheus-net.AspNetCore" Version="8.2.0" />
+        {{/if}}
+    </ItemGroup>
+
+</Project>

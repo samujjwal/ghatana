@@ -1,0 +1,70 @@
+{
+    "dashboard": {
+        "title": "Software-Org Compliance",
+        "uid": "software-org-compliance",
+        "version": 1,
+        "refresh": "1m",
+        "time": {
+            "from": "now-24h",
+            "to": "now"
+        },
+        "panels": [
+            {
+                "title": "Policy Violations (Last 24h)",
+                "targets": [
+                    {
+                        "expr": "increase(software_org.policy.violations[24h])"
+                    }
+                ],
+                "gridPos": {
+                    "x": 0,
+                    "y": 0,
+                    "w": 12,
+                    "h": 8
+                }
+            },
+            {
+                "title": "Audit Events (Last 24h)",
+                "targets": [
+                    {
+                        "expr": "increase(software_org.audit.events[24h])"
+                    }
+                ],
+                "gridPos": {
+                    "x": 12,
+                    "y": 0,
+                    "w": 12,
+                    "h": 8
+                }
+            },
+            {
+                "title": "Access Denials",
+                "targets": [
+                    {
+                        "expr": "rate(software_org.auth.denied[5m])"
+                    }
+                ],
+                "gridPos": {
+                    "x": 0,
+                    "y": 8,
+                    "w": 12,
+                    "h": 8
+                }
+            },
+            {
+                "title": "Data Breaches Detected",
+                "targets": [
+                    {
+                        "expr": "increase(software_org.security.breaches_detected[24h])"
+                    }
+                ],
+                "gridPos": {
+                    "x": 12,
+                    "y": 8,
+                    "w": 12,
+                    "h": 8
+                }
+            }
+        ]
+    }
+}

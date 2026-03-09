@@ -1,0 +1,209 @@
+# {{projectName}}
+
+A high-performance API Gateway built with Fastify, featuring routing, rate limiting, authentication, circuit breaker,
+and observability.
+
+## Features
+
+{{#if enableRateLimiting}}
+- ✅ **Rate Limiting** - Protect upstream services from overload
+{{/if}}
+{{#if enableAuth}}
+- ✅ **JWT Authentication** - Secure API endpoints with JWT tokens
+{{/if}}
+{{#if enableCircuitBreaker}}
+- ✅ **Circuit Breaker** - Graceful degradation when upstreams fail
+{{/if}}
+{{#if enableMetrics}}
+- ✅ **Prometheus Metrics** - Monitor gateway performance
+{{/if}}
+{{#if enableCors}}
+- ✅ **CORS** - Cross-origin resource sharing support
+{{/if}}
+- ✅ **Health Checks** - Kubernetes-ready liveness and readiness probes
+- ✅ **Request Logging** - Structured logging with Pino
+- ✅ **Request/Response Transformation** - Modify requests before forwarding
+- ✅ **Service Discovery** - Dynamic upstream resolution
+
+## Quick Start
+
+### Prerequisites
+
+- Node.js 22+
+- pnpm 9+
+
+### Installation
+
+```bash
+pnpm install
+```
+
+### Development
+
+```bash
+pnpm dev
+```
+
+The gateway will start on [http://localhost:{{port}}](http://localhost:{{port}}).
+
+### Production
+
+```bash
+pnpm build
+pnpm start
+```
+
+## Configuration
+
+### Gateway Configuration
+
+Edit `config/gateway.yaml`:
+
+```yaml
+port: {{port}}
+logLevel: {{logLevel}}
+{{#if enableRateLimiting}}
+rateLimiting:
+max: {{rateLimitMax}}
+timeWindow: "{{rateLimitTimeWindow}}"
+{{/if}}
+{{#if enableCircuitBreaker}}
+circuitBreaker:
+threshold: {{circuitBreakerThreshold}}
+timeout: {{circuitBreakerTimeout}}
+{{/if}}
+```
+
+### Routes Configuration
+
+Edit `config/routes.yaml`:
+
+```yaml
+routes:
+- prefix: /api/users
+upstream: http://user-service:3000
+methods: [GET, POST, PUT, DELETE]
+timeout: 30000
+auth: true
+rateLimit:
+max: 100
+timeWindow: "1m"
+```
+
+### Environment Variables
+
+| Variable | Description | Default |
+|----------|-------------|---------|
+| `PORT` | Server port | `{{port}}` |
+| `LOG_LEVEL` | Log level (debug, info, warn, error) | `{{logLevel}}` |
+{{#if enableAuth}}
+| `JWT_SECRET` | Secret for JWT verification | Required |
+{{/if}}
+{{#if enableCors}}
+| `CORS_ORIGIN` | Allowed CORS origins | `{{corsOrigin}}` |
+{{/if}}
+
+## API Endpoints
+
+### Health Checks
+
+- `GET /health` - Basic health check
+- `GET /health/ready` - Detailed readiness check
+- `GET /health/live` - Kubernetes liveness probe
+
+{{#if enableMetrics}}
+### Metrics
+
+- `GET /metrics` - Prometheus metrics
+{{/if}}
+
+## Docker
+
+### Build
+
+```bash
+docker build -t {{projectName}}:latest .
+```
+
+### Run
+
+```bash
+docker run -p {{port}}:{{port}} {{projectName}}:latest
+```
+
+### Docker Compose
+
+```bash
+docker compose up -d
+```
+
+## Testing
+
+```bash
+# Run tests
+pnpm test
+
+# Watch mode
+pnpm test:watch
+
+# Coverage
+pnpm test:coverage
+```
+
+## Project Structure
+
+```
+├── config/
+│ ├── gateway.yaml # Gateway configuration
+│ └── routes.yaml # Route definitions
+├── src/
+│ ├── index.ts # Entry point
+│ ├── gateway.ts # Gateway factory
+│ ├── config.ts # Configuration loader
+│ ├── types.ts # TypeScript types
+│ ├── routes/
+│ │ ├── config.ts # Route registration
+│ │ └── health.ts # Health endpoints
+│ ├── middleware/
+│ │ ├── auth.ts # JWT authentication
+│ │ ├── rate-limit.ts # Rate limiting
+│ │ ├── circuit-breaker.ts # Circuit breaker
+│ │ ├── transform.ts # Request/response transformation
+│ │ └── logging.ts # Structured logging
+│ └── services/
+│ ├── upstream.ts # Upstream service management
+│ └── discovery.ts # Service discovery
+├── tests/
+│ ├── gateway.test.ts # Gateway tests
+│ └── setup.ts # Test setup
+├── Dockerfile
+├── docker-compose.yml
+└── package.json
+```
+
+## Architecture
+
+```
+┌─────────────────────────────────────────────────────────────┐
+│ API Gateway │
+├─────────────────────────────────────────────────────────────┤
+│ ┌─────────┐ ┌───────────┐ ┌──────────┐ ┌────────────┐ │
+│ │ CORS │→ │ Rate Limit│→ │ Auth │→ │ Logging │ │
+│ └─────────┘ └───────────┘ └──────────┘ └────────────┘ │
+├─────────────────────────────────────────────────────────────┤
+│ ┌────────────────┐ ┌──────────────────────────────────┐ │
+│ │ Route Matching │→ │ Circuit Breaker + Proxy │ │
+│ └────────────────┘ └──────────────────────────────────┘ │
+├─────────────────────────────────────────────────────────────┤
+│ ┌──────────────────────────────────────────────────────┐ │
+│ │ Upstream Services │ │
+│ │ ┌──────────┐ ┌──────────┐ ┌──────────┐ │ │
+│ │ │ Users │ │ Products │ │ Orders │ ... │ │
+│ │ └──────────┘ └──────────┘ └──────────┘ │ │
+│ └──────────────────────────────────────────────────────┘ │
+└─────────────────────────────────────────────────────────────┘
+```
+
+## License
+
+MIT

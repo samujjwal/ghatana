@@ -1,0 +1,237 @@
+agents:
+  # Development Persona Agents
+  - id: "code-development-agent"
+    name: "Code Development Assistant"
+    type: "development"
+    description: "AI-powered coding assistant for developers with advanced refactoring and code analysis"
+    personas: ["developer", "tech-lead"]
+    domains: ["development"]
+    phases: ["develop", "test"]
+    capabilities:
+      - "intelligent-code-completion"
+      - "automated-refactoring"
+      - "code-review-assistance"
+      - "unit-test-generation"
+      - "technical-debt-analysis"
+      - "pattern-detection"
+      - "dependency-optimization"
+    configuration:
+      languages: ["java", "typescript", "javascript", "python", "rust", "go"]
+      ai_models: ["gpt-4", "claude-3", "codex"]
+      max_file_size: "50MB"
+      timeout: "60s"
+      confidence_threshold: 0.85
+      auto_apply: false
+    integrations:
+      - "vscode"
+      - "intellij"
+      - "github"
+      - "gitlab"
+
+  # Security Persona Agents
+  - id: "security-guardian-agent"
+    name: "Security Guardian"
+    type: "security"
+    description: "Comprehensive security analysis and threat detection agent for security engineers"
+    personas: ["security-engineer", "compliance-officer"]
+    domains: ["security"]
+    phases: ["secure", "test", "govern"]
+    capabilities:
+      - "vulnerability-scanning"
+      - "threat-modeling"
+      - "security-code-analysis"
+      - "compliance-checking"
+      - "penetration-testing"
+      - "security-policy-enforcement"
+      - "incident-analysis"
+    configuration:
+      scan_depth: "comprehensive"
+      compliance_standards: ["OWASP", "NIST", "SOC2", "ISO27001", "GDPR"]
+      severity_threshold: "medium"
+      auto_remediation: false
+      alert_escalation: true
+    integrations:
+      - "sonarqube"
+      - "checkmarx"
+      - "veracode"
+      - "snyk"
+      - "aqua-security"
+
+  # DevOps Persona Agents
+  - id: "infrastructure-orchestrator"
+    name: "Infrastructure Orchestrator"
+    type: "infrastructure"
+    description: "Intelligent infrastructure management and CI/CD optimization agent for DevOps engineers"
+    personas: ["devops-engineer", "sre", "infrastructure-architect"]
+    domains: ["operations"]
+    phases: ["deploy", "monitor", "operate"]
+    capabilities:
+      - "infrastructure-as-code"
+      - "deployment-automation"
+      - "container-orchestration"
+      - "monitoring-setup"
+      - "auto-scaling"
+      - "incident-remediation"
+      - "capacity-planning"
+    configuration:
+      cloud_providers: ["aws", "azure", "gcp", "kubernetes"]
+      deployment_strategies: ["blue-green", "canary", "rolling"]
+      monitoring_tools: ["prometheus", "grafana", "datadog", "newrelic"]
+      auto_scaling: true
+      cost_optimization: true
+    integrations:
+      - "terraform"
+      - "ansible"
+      - "helm"
+      - "jenkins"
+      - "github-actions"
+      - "gitlab-ci"
+
+  # QA Persona Agents
+  - id: "quality-validator"
+    name: "Quality Validation Engine"
+    type: "quality"
+    description: "Advanced testing automation and quality assurance agent for QA engineers"
+    personas: ["qa-engineer"]
+    domains: ["quality"]
+    phases: ["test", "verify", "validate"]
+    capabilities:
+      - "automated-test-generation"
+      - "test-case-optimization"
+      - "visual-regression-testing"
+      - "performance-testing"
+      - "accessibility-testing"
+      - "cross-browser-testing"
+      - "api-testing"
+    configuration:
+      test_frameworks: ["selenium", "cypress", "playwright", "jest", "junit"]
+      coverage_threshold: 90
+      performance_benchmarks: true
+      accessibility_standards: ["WCAG", "ADA"]
+      parallel_execution: true
+      test_data_management: true
+    integrations:
+      - "selenium-grid"
+      - "browserstack"
+      - "sauce-labs"
+      - "percy"
+      - "lighthouse"
+
+  # Product Persona Agents
+  - id: "product-intelligence-agent"
+    name: "Product Intelligence Engine"
+    type: "product"
+    description: "AI-powered product analytics and user behavior analysis for product managers"
+    personas: ["product-manager", "product-owner", "business-analyst"]
+    domains: ["product"]
+    phases: ["intake", "plan", "analyze", "deliver"]
+    capabilities:
+      - "user-behavior-analysis"
+      - "feature-impact-prediction"
+      - "a-b-test-optimization"
+      - "requirement-prioritization"
+      - "market-trend-analysis"
+      - "user-feedback-synthesis"
+      - "roadmap-optimization"
+    configuration:
+      analytics_tools: ["google-analytics", "mixpanel", "amplitude", "hotjar"]
+      ml_models: ["feature-adoption", "churn-prediction", "user-segmentation"]
+      prediction_horizon: "6-months"
+      confidence_interval: 0.95
+    integrations:
+      - "jira"
+      - "confluence"
+      - "productboard"
+      - "pendo"
+      - "fullstory"
+
+  # Cross-Functional Agents
+  - id: "collaboration-facilitator"
+    name: "Cross-Team Collaboration Agent"
+    type: "collaboration"
+    description: "Intelligent coordination and communication agent for cross-functional teams"
+    personas: ["tech-lead", "engineering-manager", "product-manager", "devops-engineer"]
+    domains: ["development", "security", "operations", "quality", "product"]
+    phases: ["intake", "plan", "develop", "test", "deploy", "operate"]
+    capabilities:
+      - "workflow-orchestration"
+      - "cross-team-communication"
+      - "dependency-tracking"
+      - "progress-synchronization"
+      - "blockers-identification"
+      - "meeting-optimization"
+      - "decision-tracking"
+    configuration:
+      communication_channels: ["slack", "teams", "discord"]
+      project_tools: ["jira", "asana", "linear", "monday"]
+      notification_rules: "intelligent-filtering"
+      escalation_paths: "role-based"
+    integrations:
+      - "slack"
+      - "microsoft-teams"
+      - "jira"
+      - "github"
+      - "confluence"
+
+  # Executive/Management Persona Agents
+  - id: "executive-insights-agent"
+    name: "Executive Insights Dashboard"
+    type: "executive"
+    description: "High-level metrics and strategic insights agent for executives and managers"
+    personas: ["executive", "engineering-manager", "program-manager"]
+    domains: ["product", "operations"]
+    phases: ["govern", "operate", "deliver"]
+    capabilities:
+      - "strategic-kpi-tracking"
+      - "team-performance-analytics"
+      - "risk-assessment"
+      - "roi-analysis"
+      - "resource-optimization"
+      - "trend-forecasting"
+      - "executive-reporting"
+    configuration:
+      reporting_frequency: "weekly"
+      kpi_categories: ["delivery", "quality", "security", "performance", "cost"]
+      drill_down_levels: 3
+      predictive_analytics: true
+    integrations:
+      - "tableau"
+      - "power-bi"
+      - "looker"
+      - "datadog"
+      - "jira"
+
+# Agent Coordination and Orchestration
+agent_orchestration:
+  workflows:
+    - name: "cross-functional-handoff"
+      description: "Automated handoff between persona-specific agents during phase transitions"
+      triggers:
+        - "phase-completion"
+        - "quality-gate-passed"
+        - "approval-received"
+      coordination_rules:
+        - "development-to-security": "code-development-agent" → "security-guardian-agent"
+        - "security-to-qa": "security-guardian-agent" → "quality-validator"
+        - "qa-to-devops": "quality-validator" → "infrastructure-orchestrator"
+        - "cross-team-sync": "collaboration-facilitator" monitors all transitions
+
+  shared_context:
+    - "project-metadata"
+    - "compliance-requirements"
+    - "security-constraints"
+    - "performance-benchmarks"
+    - "business-objectives"
+
+  escalation_matrix:
+    technical_issues: ["tech-lead", "engineering-manager"]
+    security_incidents: ["security-engineer", "compliance-officer"]
+    quality_failures: ["qa-engineer", "tech-lead"]
+    deployment_issues: ["devops-engineer", "sre"]
+    business_blockers: ["product-manager", "program-manager"]
+      - "test-coverage"
+      - "security-scanning"
+    configuration:
+      rules-file: "quality-rules.json"
+      severity-levels: ["error", "warning", "info"]
+      auto-fix: true

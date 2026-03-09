@@ -1,0 +1,112 @@
+domain:
+  id: observability-analytics
+  name: "Observability & Analytics"
+  description: "Analyze system data for insights."
+  order: 23
+  icon: "analytics"
+  color: "#42A5F5"
+  agent_personas:
+    - "MetricsAnalyst"
+    - "InsightGenerator"
+    - "DashboardBuilder"
+  audit_artifacts:
+    - "MetricDefinition"
+    - "AnalysisReport"
+    - "Dashboard"
+  inputs:
+    - "Telemetry data"
+    - "Logs"
+    - "Traces"
+  outputs:
+    - "Insights"
+    - "Reports"
+    - "Dashboards"
+
+tasks:
+  # Core ICS observability tasks
+  - id: d23-t1
+    name: "Define metrics"
+    description: "Establish key metrics."
+    personas: ["Developer", "DevOps"]
+    lifecycle_stages: ["plan", "observe"]
+    automation_level: "assisted"
+  - id: d23-t2
+    name: "Build dashboards"
+    description: "Visualize data."
+    personas: ["Developer", "DevOps"]
+    lifecycle_stages: ["observe"]
+    automation_level: "assisted"
+  - id: d23-t3
+    name: "Analyze trends"
+    description: "Identify patterns over time."
+    personas: ["Developer", "DevOps"]
+    lifecycle_stages: ["observe", "learn"]
+    automation_level: "assisted"
+  - id: d23-t4
+    name: "Identify anomalies"
+    description: "Detect unusual behavior."
+    personas: ["Developer", "DevOps"]
+    lifecycle_stages: ["observe"]
+    automation_level: "automated"
+
+  # Migrated from legacy observability domain
+  - id: obs-001
+    name: "Implement Logging"
+    description: "Add structured logging to applications."
+    personas: ["Developer"]
+    lifecycle_stages: ["execute"]
+    automation_level: "assisted"
+  - id: obs-002
+    name: "Implement Metrics"
+    description: "Add application and business metrics."
+    personas: ["Developer"]
+    lifecycle_stages: ["execute"]
+    automation_level: "assisted"
+  - id: obs-003
+    name: "Implement Distributed Tracing"
+    description: "Add tracing across services."
+    personas: ["Developer", "DevOps"]
+    lifecycle_stages: ["execute"]
+    automation_level: "assisted"
+  - id: obs-004
+    name: "Configure Alerting"
+    description: "Set up meaningful alerts."
+    personas: ["DevOps"]
+    lifecycle_stages: ["observe"]
+    automation_level: "assisted"
+  - id: obs-005
+    name: "Build Monitoring Dashboards"
+    description: "Create dashboards for system health."
+    personas: ["DevOps"]
+    lifecycle_stages: ["observe"]
+    automation_level: "assisted"
+  - id: obs-006
+    name: "Define SLOs/SLIs"
+    description: "Establish service level objectives."
+    personas: ["Developer", "DevOps", "PM"]
+    lifecycle_stages: ["plan", "observe"]
+    automation_level: "assisted"
+  - id: obs-007
+    name: "Log Analysis"
+    description: "Analyze logs for insights."
+    personas: ["Developer", "DevOps"]
+    lifecycle_stages: ["observe"]
+    automation_level: "assisted"
+  - id: obs-008
+    name: "Performance Baselining"
+    description: "Establish performance baselines."
+    personas: ["Developer", "DevOps"]
+    lifecycle_stages: ["observe"]
+    automation_level: "assisted"
+  - id: obs-009
+    name: "Error Budget Tracking"
+    description: "Monitor error budget consumption."
+    personas: ["DevOps"]
+    lifecycle_stages: ["observe"]
+    automation_level: "automated"
+  - id: obs-010
+    name: "Capacity Planning Analytics"
+    description: "Analyze data for capacity planning."
+    personas: ["DevOps"]
+    lifecycle_stages: ["observe", "plan"]
+    automation_level: "assisted"

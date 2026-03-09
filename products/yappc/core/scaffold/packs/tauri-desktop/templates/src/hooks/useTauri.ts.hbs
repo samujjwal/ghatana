@@ -1,0 +1,98 @@
+import { useState, useCallback } from "react";
+import { greet as greetCommand, getAppInfo, type AppInfo } from "@/lib/tauri-bridge";
+
+/**
+* Hook for the greet command
+*/
+export function useTauriGreet() {
+const [greeting, setGreeting] = useState<string | null>(null);
+    const [isLoading, setIsLoading] = useState(false);
+    const [error, setError] = useState<Error | null>(null);
+
+        const greet = useCallback(async (name: string) => {
+        setIsLoading(true);
+        setError(null);
+        try {
+        const result = await greetCommand(name);
+        setGreeting(result);
+        return result;
+        } catch (err) {
+        const error = err instanceof Error ? err : new Error(String(err));
+        setError(error);
+        throw error;
+        } finally {
+        setIsLoading(false);
+        }
+        }, []);
+
+        const reset = useCallback(() => {
+        setGreeting(null);
+        setError(null);
+        }, []);
+
+        return { greeting, greet, isLoading, error, reset };
+        }
+
+        /**
+        * Hook for fetching app/system information
+        */
+        export function useTauriInfo() {
+        const [info, setInfo] = useState<AppInfo | null>(null);
+            const [isLoading, setIsLoading] = useState(false);
+            const [error, setError] = useState<Error | null>(null);
+
+                const fetchInfo = useCallback(async () => {
+                setIsLoading(true);
+                setError(null);
+                try {
+                const appInfo = await getAppInfo();
+                setInfo(appInfo);
+                return appInfo;
+                } catch (err) {
+                const error = err instanceof Error ? err : new Error(String(err));
+                setError(error);
+                throw error;
+                } finally {
+                setIsLoading(false);
+                }
+                }, []);
+
+                return { info, fetchInfo, isLoading, error };
+                }
+
+                /**
+                * Generic hook for Tauri commands
+                */
+                export function useTauriCommand<TArgs extends unknown[], TResult>(
+                    commandFn: (...args: TArgs) => Promise<TResult>
+                        ) {
+                        const [data, setData] = useState<TResult | null>(null);
+                            const [isLoading, setIsLoading] = useState(false);
+                            const [error, setError] = useState<Error | null>(null);
+
+                                const execute = useCallback(
+                                async (...args: TArgs) => {
+                                setIsLoading(true);
+                                setError(null);
+                                try {
+                                const result = await commandFn(...args);
+                                setData(result);
+                                return result;
+                                } catch (err) {
+                                const error = err instanceof Error ? err : new Error(String(err));
+                                setError(error);
+                                throw error;
+                                } finally {
+                                setIsLoading(false);
+                                }
+                                },
+                                [commandFn]
+                                );
+
+                                const reset = useCallback(() => {
+                                setData(null);
+                                setError(null);
+                                }, []);
+
+                                return { data, execute, isLoading, error, reset };
+                                }

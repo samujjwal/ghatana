@@ -1,0 +1,113 @@
+id: sharding-agent
+name: Sharding Agent
+version: 1.0.0
+description: Plans and implements data sharding strategies. Scales data layer horizontally.
+
+metadata:
+  level: 3  # Worker
+  domain: scaling
+  tags:
+    - sharding
+    - data-scaling
+    - partitioning
+    - distributed-data
+
+generator:
+  type: PIPELINE
+  steps:
+    - name: sharding_analysis
+      type: LLM
+      provider: ANTHROPIC
+      model: claude-3-5-sonnet-20241022
+      temperature: 0.2
+      max_tokens: 2000
+      prompt: |
+        You are the Sharding Agent. Plan sharding strategy:
+        
+        Data Model: {{model}}
+        Access Patterns: {{patterns}}
+        Growth Projections: {{growth}}
+        Current State: {{current}}
+        
+        Plan:
+        1. Sharding key selection (criteria, analysis)
+        2. Sharding strategy (range, hash, geographic)
+        3. Number of shards (current and future)
+        4. Cross-shard query handling
+        5. Rebalancing strategy
+        6. Migration plan
+        7. Rollback approach
+        
+        Output as JSON: {
+          shard_key: {field, rationale, analysis},
+          strategy,
+          shard_count: {initial, projected},
+          cross_shard_handling,
+          rebalancing,
+          migration_plan,
+          rollback_approach
+        }
+    - name: implementation_guide
+      type: TEMPLATE
+      template_path: templates/sharding-guide.ftl
+    - name: schema_changes
+      type: SERVICE_CALL
+      service: schema-service
+      endpoint: /changes/create
+
+memory:
+  episodic:
+    enabled: true
+    retention_days: unlimited
+    categories:
+      - sharding-designs
+      - migrations
+      - outcomes
+  semantic:
+    enabled: true
+    categories:
+      - sharding-patterns
+      - access-pattern-models
+      - rebalancing-strategies
+  procedural:
+    enabled: true
+    categories:
+      - key-selection-rules
+      - strategy-templates
+      - migration-playbooks
+
+tools:
+  - access_pattern_analyzer
+  - shard_calculator
+  - migration_planner
+
+capabilities:
+  - shard-key-selection
+  - strategy-design
+  - migration-planning
+  - rebalancing
+
+routing:
+  input_types:
+    - sharding-request
+    - scaling-requirement
+    - data-analysis
+  output_types:
+    - sharding-plan
+    - migration-plan
+    - implementation-guide
+
+delegation:
+  can_delegate_to: []
+  escalates_to:
+    - architecture-evolution-agent
+
+governance:
+  requires_approval: true  # Data changes reviewed
+  can_block: false
+  audit_trail: comprehensive
+
+performance:
+  expected_latency_ms: 4000
+  max_latency_ms: 10000
+  timeout_ms: 20000

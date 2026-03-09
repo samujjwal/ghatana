@@ -1,0 +1,72 @@
+description: "Spring Boot REST controller with CRUD operations"
+author: "YAPPC Team"
+version: "1.0.0"
+tags:
+  - spring-boot
+  - rest
+  - controller
+  - crud
+
+variables:
+  packageName:
+    name: "packageName"
+    type: "string"
+    description: "Java package name"
+    required: true
+
+  controllerName:
+    name: "controllerName"
+    type: "string"
+    description: "Name of the controller class"
+    required: true
+
+  entityName:
+    name: "entityName"
+    type: "string"
+    description: "Name of the entity"
+    required: true
+
+  basePath:
+    name: "basePath"
+    type: "string"
+    description: "Base API path"
+    required: true
+
+  serviceName:
+    name: "serviceName"
+    type: "string"
+    description: "Name of the service class"
+    required: true
+
+  operations:
+    name: "operations"
+    type: "object"
+    description: "CRUD operations to include"
+    required: false
+    defaultValue:
+      create: true
+      read: true
+      update: true
+      delete: true
+      search: false
+
+dependencies:
+  - spring-boot-starter-web
+  - spring-boot-starter-validation
+  - lombok
+
+examples:
+  - name: "User REST Controller"
+    description: "REST controller for User management"
+    variables:
+      packageName: "com.example.demo"
+      controllerName: "UserController"
+      entityName: "User"
+      basePath: "/api/users"
+      serviceName: "UserService"
+      operations:
+        create: true
+        read: true
+        update: true
+        delete: true
+        search: true

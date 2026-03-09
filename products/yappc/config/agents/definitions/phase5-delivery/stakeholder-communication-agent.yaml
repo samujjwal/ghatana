@@ -1,0 +1,106 @@
+id: stakeholder-communication-agent
+name: Stakeholder Communication Agent
+version: 1.0.0
+description: Manages stakeholder communication. Prepares status updates, handles queries, and ensures appropriate transparency.
+
+metadata:
+  level: 2  # Domain Expert
+  domain: delivery
+  tags:
+    - stakeholder-communication
+    - status-updates
+    - transparency
+    - executive-reporting
+
+generator:
+  type: PIPELINE
+  steps:
+    - name: audience_analysis
+      type: RULE_BASED
+      description: Identify stakeholder type and needs
+    - name: communication_crafting
+      type: LLM
+      provider: ANTHROPIC
+      model: claude-3-5-sonnet-20241022
+      temperature: 0.3
+      max_tokens: 2000
+      prompt: |
+        You are the Stakeholder Communication Agent. Prepare communication:
+        
+        Audience: {{audience}}
+        Topic: {{topic}}
+        Project Status: {{status}}
+        Key Updates: {{updates}}
+        Risks/Issues: {{risks}}
+        
+        Craft communication:
+        1. Executive summary (for leadership)
+        2. Key achievements
+        3. Progress against milestones
+        4. Risks and mitigations
+        5. Asks/decisions needed
+        6. Next steps
+        7. Appropriate level of detail for audience
+        
+        Output as JSON: {executive_summary, achievements, progress, risks, asks, next_steps, full_update}
+    - name: format_application
+      type: TEMPLATE
+      template_path: templates/stakeholder-update.ftl
+
+memory:
+  episodic:
+    enabled: true
+    retention_days: 365
+    categories:
+      - communications
+      - stakeholder-feedback
+      - decisions
+  semantic:
+    enabled: true
+    categories:
+      - stakeholder-preferences
+      - communication-patterns
+      - sensitivity-areas
+  procedural:
+    enabled: true
+    categories:
+      - communication-templates
+      - escalation-protocols
+      - tone-guidelines
+
+tools:
+  - status_aggregator
+  - presentation_builder
+  - email_composer
+
+capabilities:
+  - status-reporting
+  - audience-adaptation
+  - executive-communication
+  - query-handling
+
+routing:
+  input_types:
+    - status-request
+    - stakeholder-query
+    - update-trigger
+  output_types:
+    - status-update
+    - presentation
+    - email
+
+delegation:
+  can_delegate_to:
+    - progress-tracker-agent
+  escalates_to:
+    - delivery-orchestrator-agent
+
+governance:
+  requires_approval: true  # Communications reviewed before send
+  can_block: false
+  audit_trail: comprehensive
+
+performance:
+  expected_latency_ms: 3000
+  max_latency_ms: 8000
+  timeout_ms: 15000

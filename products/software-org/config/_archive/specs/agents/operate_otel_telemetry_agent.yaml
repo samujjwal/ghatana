@@ -1,0 +1,27 @@
+---
+id: "operate_otel_telemetry_agent"
+agent: "OpenTelemetryAgent"
+role: "Observability Automation"
+inputs_spec:
+- name: "operate_progress_dashboard"
+  description: "Operational dashboard containing real-time metrics, traces, and logs."
+  format: "Dashboard artifact"
+outputs_spec:
+- name: "operate_otel_telemetry_report"
+  description: "Distributed traces, metrics, logs collected via OpenTelemetry."
+  format: "Telemetry report artifact"
+agent_tasks:
+- "Collect distributed traces, metrics, and logs from production/ops environments\
+  \ via OpenTelemetry."
+- "Send telemetry to central observability platforms (e.g., Grafana, Datadog)."
+- "Flag trace gaps or SLO/SLA breaches for follow-up."
+acceptance_criteria:
+- "Distributed telemetry is collected, linked to SLO/SLA and incident data."
+- "Telemetry sent to observability platforms."
+- "Gaps/SLO breaches are flagged."
+dependencies:
+- "operate_progress_dashboard"
+failure_escalation:
+- "Escalate to SRE/observability lead if telemetry is missing or incomplete."
+references: []
+hitl: false

@@ -1,0 +1,42 @@
+id: solution_success_criteria
+agent: SolutionSuccessCriteriaAgent
+role: Solution QA/Validation Lead
+inputs_spec:
+  - name: business_goals
+    description: Business goals with KPIs.
+    format: YAML object
+outputs_spec:
+  - name: success_criteria
+    description: Acceptance criteria, validation methods, and owners.
+    format: YAML array
+acceptance_criteria:
+  - Testable criteria for each business goal.
+  - Validation method and owner for each criterion.
+  - All criteria reviewed by QA.
+agent_tasks:
+  - Define testable acceptance criteria.
+  - Map each to validation method and owner.
+  - Review for clarity/testability.
+dependencies:
+  - business_goals
+failure_escalation:
+  - Escalate ambiguous/non-testable criteria to QA lead.
+references: []
+internal_logic:
+  - perception:
+      description: "Extract solution goals and deliverables; define measurable success criteria for each."
+  - model:
+      description: "Track mapping of goals to acceptance criteria; record methods for objective validation."
+  - planning:
+      description: |
+        "For each solution goal, define how it will be measured, tested, and who is accountable.
+         Flag ambiguous or untestable criteria for review."
+  - action:
+      description: "Produce acceptance criteria list; update accountability assignments."
+validation:
+  - "QA review of all criteria for testability and clarity."
+  - "Signoff required for each success metric by accountable owner."
+quality_enhancements:
+  - "Success criteria template standardizes measurement approach."
+  - "Automated check for missing or overlapping criteria."
+  - "Maintain traceability matrix for audit."

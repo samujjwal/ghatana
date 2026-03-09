@@ -1,0 +1,50 @@
+id: design_risk_trend_analyzer
+agent: RiskTrendAnalyzerAgent
+role: Risk Intelligence Bot
+inputs_spec:
+- name: design_escalation_report
+  description: Design escalation report artifact.
+  format: Structured escalation report
+- name: design_progress_dashboard
+  description: Design progress dashboard artifact.
+  format: Dashboard artifact
+- name: design_stage_milestone
+  description: Design stage milestone plan.
+  format: List of milestone objects
+outputs_spec:
+- name: design_risk_trend_report
+  description: Trend report of all design risks, escalations, and blockers, with recurring/systemic risks flagged and mitigation recommendations.
+  format: Risk trend report artifact (risks, escalations, blockers, trends, flagged_systemic, recommendations)
+  example: 'risks: ["API ambiguity"]
+
+    escalations: ["API contract delay"]
+
+    blockers: []
+
+    trends: ["Improving"]
+
+    flagged_systemic: ["Recurring ambiguity"]
+
+    recommendations: ["Improve API review process"]
+
+    '
+agent_tasks:
+- Trend all risks, escalations, and blockers over time.
+- Automatically flag and classify recurring or systemic risks.
+- Share risk trend report with PMO and leadership.
+- Include recommendations for mitigation or process changes.
+acceptance_criteria:
+- All risks, escalations, and blockers are trended over time.
+- Recurring or systemic risks are automatically flagged and classified.
+- Risk trend report is shared with PMO and leadership.
+- Recommendations for mitigation or process changes are included.
+dependencies:
+- design_escalation_report
+- design_progress_dashboard
+- design_stage_milestone
+failure_escalation:
+- Escalate to risk intelligence lead if trends or recommendations are missing.
+references: []
+hitl: false
+
+# [!!] No custom enhancement found.

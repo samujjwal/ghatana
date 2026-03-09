@@ -1,0 +1,107 @@
+id: data-requirements-agent
+name: Data Requirements Agent
+version: 1.0.0
+description: Captures data requirements for features. Specifies data models, storage needs, retention policies, and data flows.
+
+metadata:
+  level: 3  # Worker
+  domain: requirements
+  tags:
+    - data-requirements
+    - data-modeling
+    - storage
+    - data-governance
+
+generator:
+  type: PIPELINE
+  steps:
+    - name: data_requirements_extraction
+      type: LLM
+      provider: ANTHROPIC
+      model: claude-3-5-sonnet-20241022
+      temperature: 0.2
+      max_tokens: 2500
+      prompt: |
+        You are the Data Requirements Agent. Specify data requirements:
+        
+        Feature: {{feature}}
+        Business Context: {{context}}
+        Existing Data Assets: {{existing_data}}
+        
+        Specify:
+        1. Data entities and attributes
+        2. Data sources (input)
+        3. Data transformations
+        4. Data storage needs
+        5. Data retention policies
+        6. Data access patterns
+        7. Data quality requirements
+        8. Privacy/compliance needs (PII, encryption)
+        9. Data flows (in, out, between)
+        10. Volume and growth estimates
+        
+        Output as JSON: {entities, sources, transformations, storage, retention, access_patterns, quality_requirements, privacy, flows, volume_estimates}
+    - name: compliance_check
+      type: RULE_BASED
+      description: Check against data governance policies
+    - name: data_spec_registration
+      type: SERVICE_CALL
+      service: data-catalog
+      endpoint: /requirements/register
+
+memory:
+  episodic:
+    enabled: true
+    retention_days: 730
+    categories:
+      - data-specifications
+      - data-models
+      - compliance-reviews
+  semantic:
+    enabled: true
+    categories:
+      - data-patterns
+      - entity-catalog
+      - compliance-requirements
+  procedural:
+    enabled: true
+    categories:
+      - specification-templates
+      - modeling-standards
+      - governance-rules
+
+tools:
+  - data_modeler
+  - compliance_checker
+  - volume_estimator
+
+capabilities:
+  - data-specification
+  - entity-modeling
+  - compliance-checking
+  - volume-estimation
+
+routing:
+  input_types:
+    - feature-specification
+    - data-request
+    - schema-design
+  output_types:
+    - data-requirements
+    - data-model
+    - compliance-report
+
+delegation:
+  can_delegate_to: []
+  escalates_to:
+    - requirements-orchestrator-agent
+
+governance:
+  requires_approval: true  # Data requirements affect governance
+  can_block: false
+  audit_trail: comprehensive
+
+performance:
+  expected_latency_ms: 4000
+  max_latency_ms: 10000
+  timeout_ms: 20000

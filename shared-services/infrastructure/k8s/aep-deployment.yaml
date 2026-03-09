@@ -1,0 +1,98 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: aep
+  namespace: ghatana
+  labels:
+    app: aep
+    component: event-processor
+    version: v1
+spec:
+  replicas: 3
+  selector:
+    matchLabels:
+      app: aep
+  template:
+    metadata:
+      labels:
+        app: aep
+        component: event-processor
+        version: v1
+    spec:
+      serviceAccountName: aep
+      containers:
+      - name: aep
+        image: ghatana/aep:1.0.0-SNAPSHOT
+        imagePullPolicy: IfNotPresent
+        ports:
+        - name: http
+          containerPort: 8080
+          protocol: TCP
+        - name: metrics
+          containerPort: 9090
+          protocol: TCP
+        env:
+        - name: AEP_INSTANCE_ID
+          valueFrom:
+            fieldRef:
+              fieldPath: metadata.name
+        - name: AEP_WORKERS
+          value: "4"
+        - name: AEP_HTTP_ENABLED
+          value: "true"
+        - name: AEP_HTTP_PORT
+          value: "8080"
+        - name: AEP_METRICS_PORT
+          value: "9090"
+        - name: JAVA_OPTS
+          value: "-Xms512m -Xmx1g -XX:+UseG1GC -XX:MaxGCPauseMillis=200"
+        envFrom:
+        - configMapRef:
+            name: aep-config
+        resources:
+          requests:
+            memory: "512Mi"
+            cpu: "500m"
+          limits:
+            memory: "2Gi"
+            cpu: "2000m"
+        livenessProbe:
+          httpGet:
+            path: /health
+            port: http
+          initialDelaySeconds: 60
+          periodSeconds: 10
+          timeoutSeconds: 5
+          failureThreshold: 3
+        readinessProbe:
+          httpGet:
+            path: /health
+            port: http
+          initialDelaySeconds: 30
+          periodSeconds: 5
+          timeoutSeconds: 3
+          failureThreshold: 3
+        volumeMounts:
+        - name: logs
+          mountPath: /app/logs
+        - name: data
+          mountPath: /app/data
+      volumes:
+      - name: logs
+        emptyDir: {}
+      - name: data
+        persistentVolumeClaim:
+          claimName: aep-data
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: aep-data
+  namespace: ghatana
+spec:
+  accessModes:
+    - ReadWriteOnce
+  resources:
+    requests:
+      storage: 10Gi
+  storageClassName: standard

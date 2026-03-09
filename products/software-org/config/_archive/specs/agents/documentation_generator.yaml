@@ -1,0 +1,24 @@
+---
+id: "documentation_generator"
+agent: "DocumentationGeneratorAgent"
+role: "Tech Writer/Automation"
+inputs_spec:
+- name: "modularized_codebase"
+  description: "Final modularized codebase."
+  format: "Source repo or artifact"
+outputs_spec:
+- name: "generated_documentation"
+  description: "Auto-generated and/or updated documentation for all modules and APIs."
+  format: "Documentation artifact"
+agent_tasks:
+- "Generate or update documentation for all modules and APIs."
+- "Ensure docs are accessible, versioned, and up-to-date."
+acceptance_criteria:
+- "Documentation is generated/updated for all modules and APIs."
+- "All docs are accessible, versioned, and up-to-date."
+dependencies:
+- "modularized_codebase"
+failure_escalation:
+- "Escalate to Tech Writer or Doc Owner if docs are incomplete or out of date."
+references: []
+hitl: false

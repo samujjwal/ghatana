@@ -1,0 +1,107 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: audio-video
+  namespace: ghatana
+  labels:
+    app: audio-video
+    component: media-processing
+    version: v1
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: audio-video
+  template:
+    metadata:
+      labels:
+        app: audio-video
+        component: media-processing
+        version: v1
+    spec:
+      serviceAccountName: audio-video
+      containers:
+      - name: audio-video
+        image: ghatana/audio-video:1.0.0-SNAPSHOT
+        imagePullPolicy: IfNotPresent
+        ports:
+        - name: http
+          containerPort: 8085
+          protocol: TCP
+        - name: metrics
+          containerPort: 9095
+          protocol: TCP
+        - name: grpc
+          containerPort: 50051
+          protocol: TCP
+        env:
+        - name: AV_INSTANCE_ID
+          valueFrom:
+            fieldRef:
+              fieldPath: metadata.name
+        - name: AV_HTTP_PORT
+          value: "8085"
+        - name: AV_METRICS_PORT
+          value: "9095"
+        - name: AV_GRPC_PORT
+          value: "50051"
+        - name: JAVA_OPTS
+          value: "-Xms512m -Xmx2g -XX:+UseG1GC -XX:MaxGCPauseMillis=200"
+        envFrom:
+        - configMapRef:
+            name: audio-video-config
+        - secretRef:
+            name: audio-video-secrets
+            optional: true
+        resources:
+          requests:
+            memory: "1Gi"
+            cpu: "1000m"
+          limits:
+            memory: "4Gi"
+            cpu: "4000m"
+        livenessProbe:
+          httpGet:
+            path: /health
+            port: http
+          initialDelaySeconds: 90
+          periodSeconds: 10
+          timeoutSeconds: 5
+          failureThreshold: 3
+        readinessProbe:
+          httpGet:
+            path: /health
+            port: http
+          initialDelaySeconds: 45
+          periodSeconds: 5
+          timeoutSeconds: 3
+          failureThreshold: 3
+        volumeMounts:
+        - name: logs
+          mountPath: /app/logs
+        - name: models
+          mountPath: /app/models
+        - name: scratch
+          mountPath: /app/scratch
+      volumes:
+      - name: logs
+        emptyDir: {}
+      - name: models
+        persistentVolumeClaim:
+          claimName: audio-video-models
+      - name: scratch
+        emptyDir:
+          sizeLimit: 5Gi
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: audio-video-models
+  namespace: ghatana
+spec:
+  accessModes:
+    - ReadWriteOnce
+  resources:
+    requests:
+      storage: 20Gi
+  storageClassName: standard

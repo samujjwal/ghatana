@@ -1,0 +1,51 @@
+{
+    "name": "microservices-composition",
+    "version": "1.0.0",
+    "description": "Microservices architecture with gateway and multiple services",
+    "language": "polyglot",
+    "category": "composition",
+    "platform": "server",
+    "buildSystem": "polyglot",
+    "author": "YAPPC Team",
+    "tags": [
+        "microservices",
+        "composition",
+        "gateway",
+        "polyglot"
+    ],
+    "isComposition": true,
+    "composedPacks": [
+        "middleware-gateway",
+        "go-service-chi",
+        "python-service-fastapi",
+        "ts-react-vite",
+        "docker-compose",
+        "k8s-manifests"
+    ],
+    "requiredVariables": [
+        "projectName",
+        "services"
+    ],
+    "optionalVariables": [
+        "enableObservability",
+        "enableTracing",
+        "enableServiceMesh"
+    ],
+    "defaults": {
+        "enableObservability": "true",
+        "enableTracing": "true",
+        "enableServiceMesh": "false"
+    },
+    "templates": [
+        "Makefile.hbs",
+        "docker-compose.yml.hbs",
+        ".env.example.hbs",
+        "gateway/routes.json.hbs",
+        "shared/proto/api.proto.hbs",
+        "k8s/namespace.yaml.hbs",
+        "k8s/gateway.yaml.hbs",
+        "scripts/setup.sh.hbs",
+        "scripts/deploy.sh.hbs",
+        "README.md.hbs"
+    ]
+}

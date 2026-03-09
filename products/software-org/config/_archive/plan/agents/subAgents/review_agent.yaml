@@ -1,0 +1,63 @@
+id: review_agent
+name: "Review Agent"
+description: "Coordinates stakeholder review and aggregates feedback"
+goal: >
+  Gather, consolidate, and structure stakeholder feedback on the complete product plan, and produce actionable revision instructions.
+input:
+  # Output from planning_agent
+  implementation_backlog: Task backlog from planning_agent.
+  task_estimates: Time/effort estimates from planning_agent.
+  resource_assignments: Role assignments from planning_agent.
+  milestone_schedule: Project timeline from planning_agent.
+output:
+  feedback_log: List of structured feedback items (by stakeholder)
+  revision_instructions: Summarized directives for next revision cycle
+type: sequential
+afterToolCallbacks:
+  - logMilestone
+components:
+  - type: llm_agent
+    name: "Review Content Generator"
+    description: "Gathers, structures, and summarizes stakeholder feedback"
+    model: "llama3.2"
+    instruction: |
+      You are a stakeholder review facilitator.
+      Given a complete product plan, simulate or summarize:
+      - feedback_log: List of feedback items (stakeholder, comment, request)
+      - revision_instructions: Summarized actionable change directives
+      Output valid JSON only.
+      Guidelines:
+      - Structure and clarify all feedback, avoid duplication.
+      - Only output valid JSON.
+    outputKey: "plan_review"
+
+  - type: loop
+    name: "Refinement Loop"
+    description: "Iteratively refines review output based on evaluation"
+    maxIterations: 3
+    components:
+      - type: llm_agent
+        name: "Review Evaluator"
+        description: "Evaluates feedback structure, clarity, and actionability"
+        model: "llama3.2"
+        instruction: |
+          You are a review evaluator.
+          For each field (feedback_log, revision_instructions), check:
+          - Is it clear, structured, actionable? (true/false for each)
+          - Issues, ambiguity, missing info
+          - Suggest improvements
+          After all, summarize readiness and improvement suggestions.
+          Respond only with valid JSON.
+        outputKey: "plan_review_evaluation"
+
+      - type: llm_agent
+        name: "Review Refiner"
+        description: "Refines review output using evaluation feedback"
+        model: "llama3.2"
+        instruction: |
+          You are a review refiner.
+          If not ready (blocking issues), revise feedback content using evaluator suggestions.
+          If ready, call 'exitLoop'.
+          Only output valid JSON or call 'exitLoop'.
+        outputKey: "plan_review"
+        tools: ["exitLoop"]

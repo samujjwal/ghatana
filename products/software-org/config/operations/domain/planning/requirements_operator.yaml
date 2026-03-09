@@ -1,0 +1,222 @@
+# Requirements Operator - Consolidated Planning Domain
+# Consolidates: requirements_gathering, functional_requirements, non_functional_requirements, requirements_traceability
+# Purpose: End-to-end requirements management from gathering through traceability
+
+id: requirements_operator
+version: "1.0.0"
+domain: planning
+category: requirements_management
+
+description: |
+  Unified requirements operator handling the complete requirements lifecycle:
+  - Requirements gathering from stakeholders and context
+  - Functional requirements analysis and documentation
+  - Non-functional requirements (NFRs) identification
+  - Requirements traceability and gap analysis
+
+# Operator Modes - Select based on pipeline needs
+modes:
+  gather:
+    description: "Initial requirements gathering from stakeholders and context"
+    role: Business Analyst
+    inputs:
+      - name: product_context
+        description: Product idea, domain context, and initial scope
+        required: true
+      - name: stakeholder_inputs
+        description: Stakeholder interviews, surveys, and feedback
+        required: false
+    outputs:
+      - name: raw_requirements
+        description: Unstructured list of gathered requirements
+        format: yaml_list
+    tasks:
+      - Conduct stakeholder interviews and workshops
+      - Extract requirements from existing documentation
+      - Document initial requirements with source attribution
+      - Flag ambiguous or conflicting requirements
+
+  analyze_functional:
+    description: "Analyze and structure functional requirements"
+    role: Business Analyst
+    inputs:
+      - name: raw_requirements
+        description: Gathered requirements from stakeholders
+        required: true
+      - name: stakeholder_mapping
+        description: Stakeholder roles and areas of interest
+        required: false
+    outputs:
+      - name: functional_requirements
+        description: Structured, testable functional requirements
+        format: yaml_list
+        schema:
+          - id: string
+          - description: string
+          - stakeholder: string
+          - priority: "critical|high|medium|low"
+          - testable: boolean
+          - acceptance_criteria: list
+    tasks:
+      - Transform raw requirements into structured format
+      - Ensure each requirement is atomic and testable
+      - Map requirements to stakeholders and business goals
+      - Identify dependencies between requirements
+      - Flag requirements needing clarification
+
+  analyze_nfr:
+    description: "Identify and document non-functional requirements"
+    role: Solution Architect
+    inputs:
+      - name: functional_requirements
+        description: Finalized functional requirements
+        required: true
+      - name: constraints
+        description: Project constraints and limitations
+        required: false
+    outputs:
+      - name: non_functional_requirements
+        description: Categorized NFRs with metrics
+        format: yaml_list
+        schema:
+          - id: string
+          - category: "performance|security|scalability|reliability|usability|maintainability|compliance"
+          - description: string
+          - metric: string
+          - threshold: string
+          - risk_level: "high|medium|low"
+    nfr_categories:
+      - performance: "Response time, throughput, resource utilization"
+      - security: "Authentication, authorization, data protection, audit"
+      - scalability: "Horizontal/vertical scaling, load handling"
+      - reliability: "Availability, fault tolerance, recovery"
+      - usability: "Accessibility, learnability, user experience"
+      - maintainability: "Code quality, documentation, modularity"
+      - compliance: "Regulatory, industry standards, legal"
+    tasks:
+      - Extract implicit NFRs from functional requirements
+      - Define measurable metrics for each NFR
+      - Categorize by quality attribute
+      - Assess risk and priority
+      - Map NFRs to architectural decisions
+
+  trace:
+    description: "Create and maintain requirements traceability matrix"
+    role: QA Analyst
+    inputs:
+      - name: requirements_package
+        description: Complete requirements (functional + NFR)
+        required: true
+      - name: test_cases
+        description: Defined test cases
+        required: false
+      - name: design_artifacts
+        description: Design documents and specifications
+        required: false
+    outputs:
+      - name: traceability_matrix
+        description: Requirements to tests/artifacts mapping
+        format: yaml_matrix
+        schema:
+          - requirement_id: string
+          - requirement_desc: string
+          - mapped_tests: list
+          - mapped_artifacts: list
+          - coverage_status: "covered|partial|gap"
+          - gaps: list
+    tasks:
+      - Link each requirement to test cases
+      - Map requirements to design artifacts
+      - Identify coverage gaps
+      - Flag untested requirements
+      - Generate traceability report
+
+# Internal Logic (applicable to all modes)
+internal_logic:
+  perception:
+    description: "Extract context, stakeholder needs, and existing documentation"
+    sources:
+      - stakeholder_inputs
+      - existing_documentation
+      - domain_context
+  model:
+    description: "Requirements knowledge graph"
+    entities:
+      - requirement: "{id, description, type, stakeholder, priority, status}"
+      - nfr: "{id, category, metric, threshold}"
+      - trace_link: "{requirement_id, test_id, artifact_id}"
+    relationships:
+      - requirement_depends_on_requirement
+      - requirement_maps_to_stakeholder
+      - requirement_verified_by_test
+  planning:
+    strategy: |
+      1. Prioritize by business value and risk
+      2. Ensure atomic, testable requirements
+      3. Maintain bidirectional traceability
+      4. Flag gaps early for resolution
+  action:
+    description: "Output structured YAML artifacts"
+    validation: "SME review required for critical requirements"
+
+# Quality Assurance
+quality:
+  templates:
+    - functional_requirement_template
+    - nfr_template
+    - traceability_matrix_template
+  checklists:
+    - atomicity_checklist
+    - testability_checklist
+    - coverage_checklist
+  automated_checks:
+    - requirement_uniqueness
+    - circular_dependency_detection
+    - orphan_requirement_detection
+
+# Validation Rules
+validation:
+  rules:
+    - "Each requirement must have unique ID"
+    - "Functional requirements must be testable"
+    - "NFRs must have measurable metrics"
+    - "All requirements must map to stakeholder or goal"
+  review_gates:
+    - stakeholder_review
+    - technical_review
+    - qa_review
+
+# Escalation
+escalation:
+  triggers:
+    - "Ambiguous or conflicting requirements"
+    - "Missing stakeholder sign-off"
+    - "Traceability gaps > 10%"
+  paths:
+    - role: Product Owner
+      for: "Business requirement conflicts"
+    - role: Solution Architect
+      for: "NFR feasibility concerns"
+    - role: QA Lead
+      for: "Testability issues"
+
+# Dependencies
+dependencies:
+  upstream:
+    - stakeholder_operator
+    - business_goals_operator
+  downstream:
+    - design_operator
+    - test_strategy_operator
+
+# Metrics
+metrics:
+  - name: requirements_coverage
+    description: "Percentage of requirements with test cases"
+    target: ">= 95%"
+  - name: requirements_stability
+    description: "Change rate after baseline"
+    target: "< 10% per sprint"
+  - name: traceability_completeness
+    description: "Requirements with full trace links"
+    target: "100%"

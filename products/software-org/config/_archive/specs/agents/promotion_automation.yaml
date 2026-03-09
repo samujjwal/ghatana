@@ -1,0 +1,27 @@
+---
+id: "promotion_automation"
+agent: "PromotionAutomationAgent"
+role: "DevOps/CI/CD Lead"
+inputs_spec:
+- name: "integrity_signoff_report"
+  description: "Integrity signoff report for promotion."
+  format: "Integrity signoff report artifact"
+outputs_spec:
+- name: "promoted_release_status"
+  description: "Promotion status for the release."
+  format: "Promotion status artifact"
+agent_tasks:
+- "Automate and log promotion process."
+- "Only promote signed and validated artifacts."
+- "Log promotion actions."
+acceptance_criteria:
+- "Promotion process automated and traceable."
+- "Only signed and validated artifacts promoted."
+- "Promotion actions logged."
+dependencies:
+- "integrity_signoff_report"
+failure_escalation:
+- "Escalate to CI/CD Lead if promotion is not logged or automation fails."
+references: []
+hitl: true
+hitl_reason: "Human oversees release promotion decisions"

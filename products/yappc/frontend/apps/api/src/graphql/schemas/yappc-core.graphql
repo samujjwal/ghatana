@@ -1,0 +1,163 @@
+# YAPPC Core Schema
+# Implements the Canonical JSON Schemas for Personas, Domains, Dashboards, and Flows.
+
+# ============================================================================
+# STATIC DOMAIN TYPES (Backed by YAML Configs)
+# ============================================================================
+
+"""
+A Persona represents a user role or archetype within the system.
+Defined in personas.yaml.
+"""
+type Persona {
+  id: ID!
+  label: String!
+  description: String
+  category: String # TECHNICAL, BUSINESS, etc.
+  icon: String
+  color: String
+  focusAreas: [String!]!
+  permissions: [String!]!
+}
+
+"""
+A Domain represents a functional area of the DevSecOps lifecycle.
+Defined in domains.yaml.
+"""
+type Domain {
+  id: ID!
+  name: String!
+  description: String
+  personas: [Persona!]!
+  phases: [String!]!
+  capabilities: [Capability!]!
+  icon: String
+  color: String
+}
+
+"""
+A Capability groups permissions, widgets, and actions for a specific domain feature.
+"""
+type Capability {
+  id: ID!
+  domainId: String!
+  display: CapabilityDisplay!
+  requiredPermissions: [String!]!
+  defaultWidgets: [Widget!]!
+  defaultActions: [Action!]!
+  policyHints: JSON
+}
+
+type CapabilityDisplay {
+  label: String!
+  description: String
+  icon: String
+}
+
+# ============================================================================
+# DYNAMIC UI TYPES (Dashboards, Widgets, Actions)
+# ============================================================================
+
+"""
+A Dashboard is a composed view of widgets and actions for a specific persona/domain.
+"""
+type Dashboard {
+  id: ID!
+  domainId: String!
+  title: String
+  layout: JSON! # Grid layout configuration
+  widgets: [Widget!]!
+  actions: [Action!]!
+  audience: JSON # { levels: [], personas: [] }
+}
+
+"""
+A Widget is a UI component bound to a data query.
+"""
+type Widget {
+  id: ID!
+  type: String! # metric, table, chart, list, status, graph, markdown
+  title: String!
+  dataBinding: JSON! # { queryRef, jsonPath, refresh }
+  filters: [JSON!]
+  thresholds: [JSON!]
+  actions: [String!] # IDs of actions available in this widget
+  perf: JSON # { lazy: true }
+}
+
+"""
+An Action represents an executable operation with UI and Policy constraints.
+"""
+type Action {
+  id: ID!
+  label: String!
+  permission: String!
+  capabilityId: String
+  entityType: String
+  
+  ui: JSON! # { presentation, confirm, formSchemaRef }
+  execution: JSON! # { kind, operationName }
+  audit: JSON! # { enabled, entitySnapshot }
+  policy: JSON # { policyIds }
+}
+
+"""
+A Policy Rule defining constraints and approvals.
+"""
+type Policy {
+  id: ID!
+  appliesTo: JSON!
+  constraints: JSON!
+  approval: JSON!
+  separationOfDuties: JSON
+}
+
+# ============================================================================
+# FLOW ENGINE TYPES (Golden Flows)
+# ============================================================================
+
+"""
+Represents the current state of a workflow (Product, Dev, Ops, etc.)
+"""
+type FlowState {
+  flowId: String!
+  instanceId: ID!
+  currentState: String!
+  context: JSON!
+  history: [FlowHistoryItem!]!
+  availableTransitions: [String!]!
+  artifacts: [JSON!]
+  activeTasks: [String!] # IDs of tasks active in this state (from config/tasks)
+}
+
+type FlowHistoryItem {
+  state: String!
+  event: String!
+  timestamp: DateTime!
+  actorId: String
+}
+
+# ============================================================================
+# QUERIES & MUTATIONS
+# ============================================================================
+
+extend type Query {
+  # Static Data
+  personas: [Persona!]!
+  persona(id: ID!): Persona
+  domains: [Domain!]!
+  domain(id: ID!): Domain
+  
+  # Dynamic Data
+  dashboard(id: ID!): Dashboard
+  dashboards(domainId: String): [Dashboard!]!
+  
+  # Flow Data
+  flowState(instanceId: ID!): FlowState
+}
+
+extend type Mutation {
+  # Flow Execution
+  startFlow(flowId: String!, input: JSON): FlowState!
+  transitionFlow(instanceId: ID!, event: String!, payload: JSON): FlowState!
+}

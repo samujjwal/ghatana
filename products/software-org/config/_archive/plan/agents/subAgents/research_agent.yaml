@@ -1,0 +1,65 @@
+id: research_agent
+name: "Research Agent"
+description: "Conducts user, market, and competitor analysis"
+goal: >
+  Deliver actionable user personas and market/competitor insights to inform requirements and design.
+input:
+  # Output from scoping_agent
+  product_goals: Main product objectives from scoping_agent.
+  in_scope_features: Features included in project scope from scoping_agent.
+  out_of_scope_features: Features explicitly excluded from scoping_agent.
+  feature_prioritization: Feature prioritization from scoping_agent.
+output:
+  user_personas: Array of user personas (demographics, needs, pain points)
+  market_analysis: Structured summary of relevant trends and unmet needs
+  competitor_report: Key competitor/alternative products, strengths/weaknesses
+type: sequential
+afterToolCallbacks:
+  - logMilestone
+components:
+  - type: llm_agent
+    name: "Research Content Generator"
+    description: "Generates user personas and market/competitor insights"
+    model: "llama3.2"
+    instruction: |
+      You are a product research analyst.
+      Given product scope/goals, produce:
+      - user_personas: Array of personas (demographics, needs, pain points)
+      - market_analysis: Structured summary of market trends and unmet needs
+      - competitor_report: Key competitors, their strengths/weaknesses
+      Output only valid JSON.
+      Guidelines:
+      - Use plausible, actionable insights.
+      - Only output valid JSON, no commentary.
+    outputKey: "plan_market_research"
+
+  - type: loop
+    name: "Refinement Loop"
+    description: "Iteratively refines market research based on evaluation"
+    maxIterations: 1
+    components:
+      - type: llm_agent
+        name: "Research Evaluator"
+        description: "Evaluates research for clarity, realism, and actionability"
+        model: "llama3.2"
+        instruction: |
+          You are a research evaluator.
+          For each field (personas, market_analysis, competitor_report), assess:
+          - Is it clear, realistic, actionable? (true/false for each)
+          - List issues, missing info, ambiguity.
+          - Suggest improvements.
+          After all, summarize readiness, blockers, and improvement suggestions.
+          Respond only with valid JSON.
+        outputKey: "plan_research_evaluation"
+
+      - type: llm_agent
+        name: "Research Refiner"
+        description: "Refines research output using evaluator feedback"
+        model: "llama3.2"
+        instruction: |
+          You are a research refiner.
+          If research is not ready (blocking issues), revise the research content based on evaluator feedback and extracted suggestions.
+          If ready, call 'exitLoop'.
+          Only output valid JSON or call 'exitLoop'.
+        outputKey: "plan_market_research"
+        tools: ["exitLoop"]

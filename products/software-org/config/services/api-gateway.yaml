@@ -1,0 +1,21 @@
+service:
+  id: svc-api-gateway
+  name: "API Gateway"
+  description: "Central API gateway for all external traffic"
+  department_id: engineering
+  tier: tier-1
+  risk_level: critical
+  slo:
+    availability: 99.99
+    latency_p95_ms: 50
+    error_rate_threshold: 0.1
+  dependencies: []
+  dependents: []
+  environments:
+    - name: production
+      replicas: 3
+  integration_ids: []
+  tags: [gateway, api]
+  repository:
+    url: "https://github.com/example/api-gateway"
+    branch: main

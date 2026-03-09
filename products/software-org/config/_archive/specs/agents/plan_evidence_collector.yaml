@@ -1,0 +1,62 @@
+id: plan_evidence_collector
+agent: EvidenceCollectorAgent
+role: Compliance Evidence Bot
+inputs_spec:
+- name: plan_audit_log
+  description: Plan stage audit log artifact.
+  format: Audit log artifact
+- name: plan_success_criteria_status
+  description: Status of Plan stage success criteria.
+  format: List of criteria status objects
+- name: plan_stage_milestone
+  description: Plan stage milestone plan.
+  format: List of milestone objects
+outputs_spec:
+- name: plan_evidence_package
+  description: Evidence package for Plan stage, including all artifacts, audit logs, signoffs, and KPIs, linked to compliance requirements.
+  format: Evidence package artifact (artifacts, hashes, compliance_links, archive_location, access_logs)
+  example: 'artifacts: ["requirements.md", "audit_log.json"]
+
+    hashes: ["abc123", "def456"]
+
+    compliance_links: ["GDPR", "HIPAA"]
+
+    archive_location: "s3://evidence/"
+
+    access_logs: ["2024-07-01T10:00:00Z - user1"]
+
+    '
+agent_tasks:
+- Collect and hash all artifacts, audit logs, signoffs, and KPIs for the Plan stage.
+- Link evidence to compliance and regulatory requirements.
+- Archive evidence package in tamper-evident storage.
+- Maintain access logs for evidence package.
+acceptance_criteria:
+- Collects and hashes all artifacts, audit logs, signoffs, and KPIs for the stage.
+- Evidence is linked to compliance and regulatory requirements.
+- Evidence package is archived in tamper-evident storage.
+- Access logs for evidence package are maintained.
+dependencies:
+- plan_audit_log
+- plan_success_criteria_status
+- plan_stage_milestone
+failure_escalation:
+- Escalate to compliance lead if evidence package is incomplete or not archived securely.
+references: []
+hitl: false
+internal_logic:
+  - perception:
+      description: "Extract artifacts and proof from audit log."
+  - model:
+      description: "Evidence: { id, event, artifact, control, source, timestamp, link, reviewer, status }"
+  - planning:
+      description: |
+        "Ensure every log/control has corresponding evidence."
+  - action:
+      description: "Produce YAML evidence record."
+validation:
+  - "Reviewer/SME sign-off."
+  - "Audit for completeness and integrity."
+quality_enhancements:
+  - "Evidence and control linking templates."
+  - "Automated artifact capture."

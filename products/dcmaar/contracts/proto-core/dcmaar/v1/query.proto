@@ -1,0 +1,359 @@
+syntax = "proto3";
+
+package dcmaar.v1;
+option java_multiple_files = true;
+option java_outer_classname = "QUERYProto";
+option java_package = "com.dcmaar.v1";
+option csharp_namespace = "Dcmaar.V1";
+option objc_class_prefix = "DCX";
+option php_namespace = "Dcmaar\\V1";
+option ruby_package = "Dcmaar::V1";
+option go_package = "github.com/samujjwal/dcmaar/proto/gen/go/pb/dcmaar/v1;dcmaarv1";
+
+import "google/protobuf/timestamp.proto";
+import "google/protobuf/duration.proto";
+import "dcmaar/v1/common.proto";
+import "dcmaar/v1/events.proto";
+import "dcmaar/v1/metrics.proto";
+import "dcmaar/v1/storage.proto";
+import "validate/validate.proto";
+
+// Query service for retrieving stored data
+service QueryService {
+  // Get events matching the given criteria
+  rpc GetEvents(GetEventsRequest) returns (GetEventsResponse) {}
+  
+  // Get metrics matching the given criteria
+  rpc GetMetrics(GetMetricsRequest) returns (GetMetricsResponse) {}
+  
+  // Get commands matching the given criteria
+  rpc GetCommands(GetCommandsRequest) returns (GetCommandsResponse) {}
+  
+  // Stream events matching the given criteria
+  rpc StreamEvents(StreamEventsRequest) returns (stream EventWithMetadata) {}
+  
+  // Stream metrics matching the given criteria
+  rpc StreamMetrics(StreamMetricsRequest) returns (stream MetricWithLabels) {}
+  
+  // Query browser events with optimized querying
+  rpc QueryBrowserEvents(QueryBrowserEventsRequest) returns (QueryBrowserEventsResponse) {}
+  
+  // Query events with advanced filtering and pagination
+  rpc QueryEvents(QueryEventsRequest) returns (QueryEventsResponse) {}
+}
+
+// Sorting direction for query results
+enum SortDirection {
+  SORT_DIRECTION_UNSPECIFIED = 0;
+  SORT_DIRECTION_ASC = 1;
+  SORT_DIRECTION_DESC = 2;
+}
+
+// Field to sort events by
+enum EventSortField {
+  EVENT_SORT_FIELD_UNSPECIFIED = 0;
+  EVENT_SORT_FIELD_TIMESTAMP = 1;
+  EVENT_SORT_FIELD_EVENT_TYPE = 2;
+  EVENT_SORT_FIELD_SOURCE_TYPE = 3;
+  EVENT_SORT_FIELD_DEVICE_ID = 4;
+  EVENT_SORT_FIELD_SESSION_ID = 5;
+}
+
+// Filter condition for event queries
+message EventFilterCondition {
+  // Field path to filter on (e.g., "event_type", "source_type", "browser.url")
+  string field = 1 [(validate.rules).string.min_len = 1];
+
+  // Value to compare against
+  oneof single_value {
+    string string_value = 2;
+    int64 int_value = 3;
+    double float_value = 4;
+    bool bool_value = 5;
+  }
+
+  // Comparison operator
+  string operator = 6 [(validate.rules).string = {
+    in: ["=", "!=", "<", "<=", ">", ">=", "~", "!~", "in", "not_in"]
+  }];
+
+  // For IN/NOT_IN operations
+  repeated string string_values = 7;
+  repeated int64 int_values = 8;
+}
+
+// Combined filter with logical operators
+message EventFilter {
+  // List of conditions that must all be true (AND)
+  repeated EventFilterCondition all_of = 1;
+  
+  // List of conditions where at least one must be true (OR)
+  repeated EventFilterCondition any_of = 2;
+  
+  // Negate the entire filter (NOT)
+  bool not = 3;
+}
+
+// Event query request
+message QueryEventsRequest {
+  // Filter criteria
+  EventFilter filter = 1;
+  
+  // Time range for the query
+  TimeRange time_range = 2;
+  
+  // Fields to include in the response
+  repeated string fields = 3;
+  
+  // Pagination
+  int32 page_size = 4 [(validate.rules).int32 = {
+    gte: 1,
+    lte: 1000
+  }];
+  
+  string page_token = 5;
+  
+  // Sorting
+  message SortOption {
+    EventSortField field = 1;
+    SortDirection direction = 2;
+  }
+  
+  repeated SortOption sort = 6;
+  
+  // Grouping
+  repeated string group_by = 7;
+  
+  // Aggregations
+  message Aggregation {
+    string field = 1;
+    string function = 2; // count, sum, avg, min, max, etc.
+    string alias = 3;
+  }
+  
+  repeated Aggregation aggregations = 8;
+  
+  // Whether to include the total count in the response
+  bool include_total = 9;
+}
+
+// Event query response
+message QueryEventsResponse {
+  // Matching events
+  repeated EventWithMetadata events = 1;
+  
+  // Pagination token for the next page
+  string next_page_token = 2;
+  
+  // Total number of results (if include_total was true)
+  int32 total_count = 3;
+  
+  // Aggregated results (if any aggregations were requested)
+  repeated AggregationResult aggregations = 4;
+  
+  // Status of the operation
+  Status status = 5;
+}
+
+// Result of an aggregation
+message AggregationResult {
+  // Field that was aggregated
+  string field = 1;
+  
+  // Aggregation function that was applied
+  string function = 2;
+  
+  // Alias for the result (if specified)
+  string alias = 3;
+  
+  // Result value
+  oneof value {
+    int64 int_value = 4;
+    double float_value = 5;
+    string string_value = 6;
+    bool bool_value = 7;
+  }
+  
+  // For grouped results
+  map<string, string> group_values = 8;
+}
+
+// Request for QueryBrowserEvents
+message QueryBrowserEventsRequest {
+  // Filter by tenant ID
+  string tenant_id = 1;
+  
+  // Filter by device ID
+  string device_id = 2;
+  
+  // Filter by domain
+  string domain = 3;
+  
+  // Start time for the query range
+  google.protobuf.Timestamp start_time = 4;
+  
+  // End time for the query range
+  google.protobuf.Timestamp end_time = 5;
+  
+  // Maximum number of results to return
+  int32 page_size = 6 [(validate.rules).int32 = {
+    gte: 1,
+    lte: 1000
+  }];
+  
+  // Pagination token
+  string page_token = 7;
+  
+  // Additional filter criteria
+  repeated EventFilterCondition filters = 8;
+  
+  // Sort order
+  repeated EventSortField sort_by = 9;
+  
+  // Sort direction
+  SortDirection sort_direction = 10;
+}
+
+// Response for QueryBrowserEvents
+message QueryBrowserEventsResponse {
+  // The list of browser events
+  repeated BrowserEvent events = 1;
+  
+  // Token for the next page of results
+  string next_page_token = 2;
+  
+  // Total number of results available
+  int32 total_count = 3;
+  
+  // Status of the operation
+  Status status = 4;
+}
+
+// Request for GetEvents
+message GetEventsRequest {
+  // Filter criteria
+  Filter filter = 1;
+  
+  // Time range
+  TimeRange time_range = 2;
+  
+  // Pagination options
+  PaginationRequest pagination = 3;
+  
+  // Fields to include in the response
+  repeated string fields = 4;
+}
+
+// Response for GetEvents
+message GetEventsResponse {
+  // Matching events
+  repeated EventWithMetadata events = 1;
+  
+  // Pagination information
+  PaginationResponse pagination = 2;
+  
+  // Status of the operation
+  Status status = 3;
+}
+
+// Request for GetMetrics
+message GetMetricsRequest {
+  // Filter criteria
+  Filter filter = 1;
+  
+  // Time range
+  TimeRange time_range = 2;
+  
+  // Pagination options
+  PaginationRequest pagination = 3;
+  
+  // Fields to include in the response
+  repeated string fields = 4;
+  
+  // Whether to aggregate the results
+  bool aggregate = 5;
+  
+  // Time window for aggregation
+  google.protobuf.Duration window = 6;
+}
+
+// Response for GetMetrics
+message GetMetricsResponse {
+  // Matching metrics
+  repeated MetricWithLabels metrics = 1;
+  
+  // Pagination information
+  PaginationResponse pagination = 2;
+  
+  // Status of the operation
+  Status status = 3;
+}
+
+// Request for GetCommands
+message GetCommandsRequest {
+  // Filter criteria
+  Filter filter = 1;
+  
+  // Time range
+  TimeRange time_range = 2;
+  
+  // Pagination options
+  PaginationRequest pagination = 3;
+  
+  // Fields to include in the response
+  repeated string fields = 4;
+}
+
+// Response for GetCommands
+message GetCommandsResponse {
+  // Matching commands
+  repeated Command commands = 1;
+  
+  // Pagination information
+  PaginationResponse pagination = 2;
+  
+  // Status of the operation
+  Status status = 3;
+}
+
+// Request for StreamEvents
+message StreamEventsRequest {
+  // Filter criteria
+  Filter filter = 1;
+  
+  // Time range
+  TimeRange time_range = 2;
+  
+  // Fields to include in the response
+  repeated string fields = 3;
+  
+  // Whether to include existing events
+  bool include_existing = 4;
+  
+  // Maximum number of events to return (0 for no limit)
+  int32 limit = 5;
+  
+  // Whether to follow new events as they arrive
+  bool follow = 6;
+}
+
+// Request for StreamMetrics
+message StreamMetricsRequest {
+  // Filter criteria
+  Filter filter = 1;
+  
+  // Time range
+  TimeRange time_range = 2;
+  
+  // Fields to include in the response
+  repeated string fields = 3;
+  
+  // Whether to include existing metrics
+  bool include_existing = 4;
+  
+  // Time window for aggregation
+  google.protobuf.Duration window = 5;
+  
+  // Whether to follow new metrics as they arrive
+  bool follow = 6;
+}

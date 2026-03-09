@@ -1,0 +1,196 @@
+# Support Department Configuration
+# Part of Software-Org plugin for Virtual-Org framework
+
+apiVersion: virtualorg.ghatana.com/v1
+kind: Department
+metadata:
+  name: support
+  labels:
+    category: customer-facing
+    cost-center: "SUP-001"
+
+spec:
+  displayName: "Customer Support"
+  type: SUPPORT
+  description: |
+    Customer support department responsible for handling customer inquiries,
+    troubleshooting issues, and ensuring customer satisfaction. Acts as the
+    primary interface between customers and the technical organization.
+
+  hierarchy:
+    parent: null
+    reportingTo: cpo-agent
+    children: []
+
+  settings:
+    maxAgents: 30
+    autoScaleAgents: true
+    taskAssignment:
+      strategy: round-robin
+      loadBalancing: true
+      maxTasksPerAgent: 10
+
+    # Support-specific: SLA tiers
+    slaTiers:
+      - name: enterprise
+        responseTime: PT1H
+        resolutionTime: PT4H
+      - name: professional
+        responseTime: PT4H
+        resolutionTime: PT24H
+      - name: standard
+        responseTime: PT24H
+        resolutionTime: PT72H
+
+  agents:
+    - ref: agents/support-manager-agent.yaml
+    - ref: agents/support-engineer-agent.yaml
+    - ref: agents/support-specialist-agent.yaml
+
+  workflows:
+    - name: ticket-resolution
+      displayName: "Ticket Resolution"
+      steps:
+        - name: ticket-triage
+          agent: support-specialist
+          action: triage_ticket
+          timeout: PT30M
+        - name: initial-response
+          agent: support-specialist
+          action: send_initial_response
+          timeout: PT1H
+          waitFor: [ticket-triage]
+        - name: investigation
+          agent: support-engineer
+          action: investigate_issue
+          timeout: PT4H
+          waitFor: [initial-response]
+        - name: resolution
+          agent: support-engineer
+          action: resolve_issue
+          timeout: PT8H
+          waitFor: [investigation]
+        - name: customer-followup
+          agent: support-specialist
+          action: follow_up_with_customer
+          timeout: PT24H
+          waitFor: [resolution]
+
+    - name: escalation
+      displayName: "Technical Escalation"
+      steps:
+        - name: prepare-escalation
+          agent: support-engineer
+          action: prepare_escalation_package
+          timeout: PT1H
+        - name: create-engineering-ticket
+          agent: support-manager
+          action: create_engineering_ticket
+          timeout: PT30M
+          waitFor: [prepare-escalation]
+        - name: track-resolution
+          agent: support-engineer
+          action: track_engineering_resolution
+          timeout: PT48H
+          waitFor: [create-engineering-ticket]
+        - name: communicate-resolution
+          agent: support-specialist
+          action: communicate_resolution_to_customer
+          timeout: PT4H
+          waitFor: [track-resolution]
+
+  kpis:
+    - name: csat_score
+      displayName: "Customer Satisfaction Score"
+      type: percentage
+      target: 90
+      warningThreshold: 85
+      criticalThreshold: 80
+
+    - name: first_response_time
+      displayName: "First Response Time"
+      type: duration
+      unit: hours
+      target: 1
+      warningThreshold: 2
+      criticalThreshold: 4
+
+    - name: resolution_time
+      displayName: "Average Resolution Time"
+      type: duration
+      unit: hours
+      target: 8
+      warningThreshold: 16
+      criticalThreshold: 24
+
+    - name: first_contact_resolution
+      displayName: "First Contact Resolution Rate"
+      type: percentage
+      target: 70
+      warningThreshold: 60
+      criticalThreshold: 50
+
+    - name: ticket_backlog
+      displayName: "Open Ticket Backlog"
+      type: gauge
+      unit: tickets
+      target: 20
+      warningThreshold: 50
+      criticalThreshold: 100
+
+    - name: escalation_rate
+      displayName: "Escalation Rate"
+      type: percentage
+      target: 10
+      warningThreshold: 20
+      criticalThreshold: 30
+
+  taskTypes:
+    - name: customer_inquiry
+      priority: normal
+      slaHours: 8
+      requiredCapabilities: [customer_communication, product_knowledge]
+
+    - name: bug_report
+      priority: high
+      slaHours: 4
+      requiredCapabilities: [troubleshooting, product_knowledge]
+
+    - name: feature_request
+      priority: low
+      slaHours: 48
+      requiredCapabilities: [customer_communication, product_knowledge]
+
+    - name: critical_incident
+      priority: critical
+      slaHours: 1
+      requiredCapabilities: [troubleshooting, escalation]
+
+    - name: onboarding_support
+      priority: normal
+      slaHours: 24
+      requiredCapabilities: [customer_communication, training]
+
+  subscriptions:
+    - event: incident_detected
+      source: devops
+      action: prepare_customer_communication
+    - event: incident_resolved
+      source: devops
+      action: notify_affected_customers
+    - event: feature_released
+      source: product
+      action: update_knowledge_base
+    - event: bug_fixed
+      source: engineering
+      action: notify_reporters
+
+  publications:
+    - event: customer_escalation
+      targets: [engineering]
+    - event: feature_request_received
+      targets: [product]
+    - event: bug_reported
+      targets: [qa, engineering]
+    - event: customer_feedback
+      targets: [product, sales]

@@ -1,0 +1,21 @@
+{
+    "name": "@ghatana/tutorputor-assessments",
+    "version": "0.1.0",
+    "private": true,
+    "description": "Assessment helper functions for tutorputor, including simulation-based items",
+    "type": "module",
+    "main": "./src/index.ts",
+    "types": "./src/index.ts",
+    "scripts": {
+        "test": "vitest",
+        "test:watch": "vitest --watch",
+        "typecheck": "tsc --noEmit"
+    },
+    "dependencies": {
+        "@ghatana/tutorputor-contracts": "workspace:*"
+    },
+    "devDependencies": {
+        "typescript": "^5.9.3",
+        "vitest": "^4.0.18"
+    }
+}

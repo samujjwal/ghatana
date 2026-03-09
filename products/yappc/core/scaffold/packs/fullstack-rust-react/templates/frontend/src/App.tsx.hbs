@@ -1,0 +1,38 @@
+import { useQuery } from "@tanstack/react-query";
+import { apiClient } from "./api/client";
+
+function App() {
+const { data: health } = useQuery({
+queryKey: ["health"],
+queryFn: () => apiClient.get<{ status: string }>("/api/health"),
+    });
+
+    const { data: example } = useQuery({
+    queryKey: ["example"],
+    queryFn: () => apiClient.get<{ success: boolean; data: string[] }>("/api/example"),
+        });
+
+        return (
+        <div style={{ maxWidth: "800px" , margin: "0 auto" , padding: "20px" }}>
+            <h1>{{projectName}}</h1>
+
+            <section>
+                <h2>Backend Health (Rust/Axum)</h2>
+                <pre>{JSON.stringify(health, null, 2)}</pre>
+            </section>
+
+            <section>
+                <h2>Example Data</h2>
+                {example?.success && (
+                <ul>
+                    {example.data.map((item, i) => (
+                    <li key={i}>{item}</li>
+                    ))}
+                </ul>
+                )}
+            </section>
+        </div>
+        );
+        }
+
+        export default App;

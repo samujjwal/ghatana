@@ -1,0 +1,146 @@
+{{#if enableRateLimiting}}
+import type { FastifyInstance, FastifyRequest, FastifyReply } from "fastify";
+import type { RouteConfig } from "../types.js";
+import { logger } from "./logging.js";
+
+interface RateLimitState {
+count: number;
+resetAt: number;
+}
+
+/**
+* In-memory rate limiter with per-route configuration support
+*/
+export class RateLimiter {
+private limits = new Map<string, RateLimitState>();
+    private readonly defaultMax: number;
+    private readonly defaultTimeWindow: number;
+
+    constructor(defaultMax = {{rateLimitMax}}, defaultTimeWindowMs = 60000) {
+    this.defaultMax = defaultMax;
+    this.defaultTimeWindow = defaultTimeWindowMs;
+
+    // Cleanup expired entries every minute
+    setInterval(() => this.cleanup(), 60000);
+    }
+
+    /**
+    * Check and update rate limit for a key
+    */
+    check(key: string, max?: number, timeWindow?: number): RateLimitResult {
+    const now = Date.now();
+    const limitMax = max ?? this.defaultMax;
+    const limitWindow = timeWindow ?? this.defaultTimeWindow;
+
+    let state = this.limits.get(key);
+
+    // Reset if window expired
+    if (!state || now >= state.resetAt) {
+    state = {
+    count: 0,
+    resetAt: now + limitWindow,
+    };
+    }
+
+    state.count++;
+    this.limits.set(key, state);
+
+    const remaining = Math.max(0, limitMax - state.count);
+    const allowed = state.count <= limitMax; return { allowed, limit: limitMax, remaining, resetAt: new
+        Date(state.resetAt), retryAfter: allowed ? 0 : Math.ceil((state.resetAt - now) / 1000), }; } /** * Get rate
+        limit key for a request */ getKey(request: FastifyRequest, route?: RouteConfig): string { // Use user ID if
+        authenticated, otherwise IP const identifier=(request as FastifyRequest & { user?: { id: string } }).user?.id ??
+        request.ip; if (route) { return `${identifier}:${route.prefix}`; } return identifier; } /** * Cleanup expired
+        entries */ private cleanup() { const now=Date.now(); let cleaned=0; for (const [key, state] of this.limits) { if
+        (now>= state.resetAt) {
+        this.limits.delete(key);
+        cleaned++;
+        }
+        }
+
+        if (cleaned > 0) {
+        logger.debug({ cleaned }, "Cleaned up expired rate limit entries");
+        }
+        }
+        }
+
+        export interface RateLimitResult {
+        allowed: boolean;
+        limit: number;
+        remaining: number;
+        resetAt: Date;
+        retryAfter: number;
+        }
+
+        /**
+        * Create rate limit middleware for a specific route
+        */
+        export function createRouteRateLimiter(
+        rateLimiter: RateLimiter,
+        route: RouteConfig
+        ) {
+        const max = route.rateLimit?.max;
+        const timeWindow = route.rateLimit?.timeWindow
+        ? parseTimeWindow(route.rateLimit.timeWindow)
+        : undefined;
+
+        return async (request: FastifyRequest, reply: FastifyReply) => {
+        const key = rateLimiter.getKey(request, route);
+        const result = rateLimiter.check(key, max, timeWindow);
+
+        // Set rate limit headers
+        reply.header("X-RateLimit-Limit", result.limit);
+        reply.header("X-RateLimit-Remaining", result.remaining);
+        reply.header("X-RateLimit-Reset", result.resetAt.toISOString());
+
+        if (!result.allowed) {
+        reply.header("Retry-After", result.retryAfter);
+
+        logger.warn(
+        { key, route: route.prefix },
+        "Rate limit exceeded"
+        );
+
+        return reply.status(429).send({
+        error: "Too Many Requests",
+        message: "Rate limit exceeded",
+        retryAfter: result.retryAfter,
+        });
+        }
+        };
+        }
+
+        /**
+        * Parse time window string to milliseconds
+        */
+        function parseTimeWindow(window: string): number {
+        const match = window.match(/^(\d+)(ms|s|m|h)$/);
+        if (!match) {
+        throw new Error(`Invalid time window format: ${window}`);
+        }
+
+        const value = parseInt(match[1], 10);
+        const unit = match[2];
+
+        switch (unit) {
+        case "ms":
+        return value;
+        case "s":
+        return value * 1000;
+        case "m":
+        return value * 60 * 1000;
+        case "h":
+        return value * 60 * 60 * 1000;
+        default:
+        throw new Error(`Unknown time unit: ${unit}`);
+        }
+        }
+
+        /**
+        * Global instance
+        */
+        export const rateLimiter = new RateLimiter();
+        {{else}}
+        // Rate limiting is disabled. Enable it in pack.json to use rate limiting.
+        export {};
+        {{/if}}

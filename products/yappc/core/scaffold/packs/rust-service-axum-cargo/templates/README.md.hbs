@@ -1,0 +1,123 @@
+# {{projectName}}
+
+{{description}}
+
+Generated with [YAPPC](https://github.com/ghatana/yappc) using the `rust-service-axum-cargo` pack.
+
+## Features
+
+- 🚀 [Axum](https://github.com/tokio-rs/axum) web framework
+- ⚡ [Tokio](https://tokio.rs/) async runtime
+- 📝 Structured logging with [tracing](https://github.com/tokio-rs/tracing)
+- 🐳 Docker and docker-compose ready
+- 🔄 Hot reload with [cargo-watch](https://github.com/watchexec/cargo-watch)
+- ✅ Health check endpoints (`/health`, `/ready`, `/live`)
+- 🔒 CORS middleware configured
+- 🗜️ Gzip compression
+- ⏱️ Request timeout handling
+
+## Prerequisites
+
+- Rust {{rustVersion}} or higher
+- Docker (optional)
+- [cargo-watch](https://github.com/watchexec/cargo-watch) for hot reload (optional)
+
+## Getting Started
+
+### Run in development mode
+
+```bash
+# With hot reload
+make dev
+
+# Or without hot reload
+make run
+```
+
+### Run tests
+
+```bash
+make test
+```
+
+### Build for production
+
+```bash
+make release
+```
+
+### Run with Docker
+
+```bash
+# Build image
+make docker-build
+
+# Run container
+make docker-run
+
+# Or use docker-compose
+docker-compose up -d
+```
+
+## Project Structure
+
+```
+.
+├── src/
+│ ├── main.rs # Application entry point
+│ ├── lib.rs # Library exports
+│ ├── config.rs # Configuration management
+│ ├── router.rs # Router configuration
+│ ├── handlers.rs # HTTP handlers
+│ └── error.rs # Error types
+├── Cargo.toml
+├── Dockerfile
+├── docker-compose.yml
+├── Makefile
+├── rustfmt.toml
+├── clippy.toml
+└── README.md
+```
+
+## API Endpoints
+
+| Method | Path | Description |
+|--------|------|-------------|
+| GET | `/health` | Health check with version |
+| GET | `/ready` | Readiness check |
+| GET | `/live` | Liveness check |
+| GET | `/api/v1/` | Welcome message |
+| GET | `/api/v1/items` | List items |
+| POST | `/api/v1/items` | Create item |
+| GET | `/api/v1/items/:id` | Get item |
+| PUT | `/api/v1/items/:id` | Update item |
+| DELETE | `/api/v1/items/:id` | Delete item |
+
+## Environment Variables
+
+| Variable | Default | Description |
+|----------|---------|-------------|
+| `PORT` | `{{port}}` | HTTP server port |
+| `LOG_LEVEL` | `info` | Logging level (debug, info, warn, error) |
+| `ENVIRONMENT` | `development` | Environment (development, staging, production) |
+| `SERVICE_NAME` | `{{projectName}}` | Service name for tracing |
+| `RUST_LOG` | `info` | Rust logging filter |
+
+## Available Make Commands
+
+```bash
+make help # Show all available commands
+make build # Build release binary
+make build-debug # Build debug binary
+make test # Run tests
+make lint # Run clippy and check formatting
+make fmt # Format code
+make dev # Run with hot reload
+make run # Run the application
+make clean # Clean build artifacts
+make doc # Generate documentation
+```
+
+## License
+
+Apache-2.0

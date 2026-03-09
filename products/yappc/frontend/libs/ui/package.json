@@ -1,0 +1,116 @@
+{
+  "name": "@ghatana/yappc-ui",
+  "private": true,
+  "version": "0.0.1",
+  "type": "module",
+  "main": "./src/index.ts",
+  "types": "./dist/types/index.d.ts",
+  "exports": {
+    ".": {
+      "import": "./src/index.ts",
+      "types": "./dist/types/index.d.ts"
+    },
+    "./tokens": {
+      "import": "./src/tokens/index.ts",
+      "types": "./dist/types/tokens/index.d.ts"
+    },
+    "./components/DevSecOps": {
+      "import": "./src/components/DevSecOps/index.ts",
+      "types": "./dist/types/components/DevSecOps/index.d.ts"
+    },
+    "./components/CommandPalette": {
+      "import": "./src/components/CommandPalette.tsx",
+      "types": "./dist/types/components/CommandPalette.d.ts"
+    },
+    "./components/Breadcrumb/Breadcrumb.tailwind": {
+      "import": "./src/components/Breadcrumb/Breadcrumb.tailwind.tsx",
+      "types": "./dist/types/components/Breadcrumb/Breadcrumb.tailwind.d.ts"
+    },
+    "./components/Breadcrumb": {
+      "import": "./src/components/Breadcrumb/index.ts",
+      "types": "./dist/types/components/Breadcrumb/index.d.ts"
+    },
+    "./components/Shortcuts/ShortcutHelper": {
+      "import": "./src/components/Shortcuts/ShortcutHelper.tsx",
+      "types": "./dist/types/components/Shortcuts/ShortcutHelper.d.ts"
+    },
+    "./utils/*": {
+      "import": "./src/utils/*",
+      "types": "./dist/types/utils/*"
+    },
+    "./utils": {
+      "import": "./src/utils/index.ts",
+      "types": "./dist/types/utils/index.d.ts"
+    },
+    "./state": {
+      "import": "./src/state/index.ts",
+      "types": "./dist/types/state/index.d.ts"
+    },
+    "./state/*": {
+      "import": "./src/state/*",
+      "types": "./dist/types/state/*"
+    },
+    "./hooks": {
+      "import": "./src/hooks/index.ts",
+      "types": "./dist/types/hooks/index.d.ts"
+    },
+    "./hooks/*": {
+      "import": "./src/hooks/*",
+      "types": "./dist/types/hooks/*"
+    }
+  },
+  "peerDependencies": {
+    "@tanstack/react-query": "^5.0.0",
+    "react": "^18.0.0 || ^19.0.0",
+    "react-dom": "^18.0.0 || ^19.0.0"
+  },
+  "dependencies": {
+    "@base-ui/react": "^1.1.0",
+    "@dnd-kit/core": "^6.3.1",
+    "@dnd-kit/sortable": "^10.0.0",
+    "@dnd-kit/utilities": "^3.2.2",
+    "@floating-ui/react": "^0.27.17",
+    "@floating-ui/react-dom": "^2.1.7",
+    "@ghatana/yappc-crdt": "workspace:*",
+    "framer-motion": "^12.31.0",
+    "jotai": "^2.17.0",
+    "jotai-devtools": "^0.13.0",
+    "zod": "^4.3.6"
+  },
+  "scripts": {
+    "build:types": "rm -rf ./dist && rm -f ../../node_modules/.cache/tsbuildinfo/ui.types.tsbuildinfo && tsc -p tsconfig.types.json",
+    "test": "vitest",
+    "test:watch": "vitest --watch",
+    "test:ui": "vitest --ui",
+    "storybook": "storybook dev -p 6006",
+    "build-storybook": "storybook build"
+  },
+  "devDependencies": {
+    "@storybook/addon-a11y": "^10.2.4",
+    "@storybook/addon-docs": "^10.2.4",
+    "@storybook/addon-links": "^10.2.4",
+    "@storybook/addon-themes": "^10.2.4",
+    "@storybook/react-vite": "^10.2.4",
+    "@tailwindcss/forms": "^0.5.11",
+    "@tailwindcss/typography": "^0.5.19",
+    "@testing-library/jest-dom": "^6.9.1",
+    "@testing-library/react": "^16.3.2",
+    "@testing-library/user-event": "^14.6.1",
+    "@types/react": "^19.2.10",
+    "@types/react-dom": "^19.2.3",
+    "@ghatana/yappc-types": "workspace:*",
+    "autoprefixer": "^10.4.24",
+    "clsx": "^2.1.1",
+    "eslint-plugin-storybook": "^10.2.4",
+    "jest-axe": "^10.0.0",
+    "jsdom": "^28.0.0",
+    "postcss": "^8.5.6",
+    "storybook": "^10.2.4",
+    "tailwind-merge": "^3.4.0",
+    "tailwindcss": "^4.1.18",
+    "tailwindcss-animate": "^1.0.7",
+    "typescript": "^5.9.3",
+    "vite": "^7.3.1",
+    "vitest": "^4.0.18"
+  }
+}

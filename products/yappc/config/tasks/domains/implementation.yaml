@@ -1,0 +1,295 @@
+# Implementation Domain Tasks
+# These tasks support code generation and implementation
+
+tasks:
+  - id: scaffold-code
+    name: Scaffold Project Structure
+    description: Generate initial project structure with folders, configs, and boilerplate
+    domain: implementation
+    phase: IMPLEMENTATION
+    complexity: MEDIUM
+    requiredCapabilities:
+      - code-generation
+      - project-setup
+      - scaffolding
+    parameters:
+      projectName:
+        type: string
+        required: true
+        description: Name of the project
+      projectType:
+        type: string
+        required: true
+        description: Type of project (web/mobile/api/etc)
+      techStack:
+        type: object
+        required: true
+        description: Selected technology stack
+      includeTests:
+        type: boolean
+        required: false
+        default: true
+        description: Whether to include test setup
+    metadata:
+      version: "1.0"
+      tags: ["scaffolding", "setup", "boilerplate"]
+
+  - id: generate-domain
+    name: Generate Domain Models
+    description: Generate domain models, entities, and value objects from data model design
+    domain: implementation
+    phase: IMPLEMENTATION
+    complexity: MEDIUM
+    requiredCapabilities:
+      - code-generation
+      - domain-modeling
+      - java
+    parameters:
+      dataModelPath:
+        type: string
+        required: true
+        description: Path to data model specification
+      targetLanguage:
+        type: string
+        required: false
+        default: "java"
+        description: Target programming language
+      includeValidation:
+        type: boolean
+        required: false
+        default: true
+        description: Include validation logic
+    metadata:
+      version: "1.0"
+      tags: ["domain", "models", "entities"]
+
+  - id: generate-services
+    name: Generate Service Layer
+    description: Generate service classes with business logic placeholders
+    domain: implementation
+    phase: IMPLEMENTATION
+    complexity: COMPLEX
+    requiredCapabilities:
+      - code-generation
+      - service-layer
+      - java
+    parameters:
+      domainModels:
+        type: array
+        required: true
+        description: List of domain models
+      apiSpec:
+        type: string
+        required: false
+        description: Path to API specification
+      includeTransactions:
+        type: boolean
+        required: false
+        default: true
+        description: Include transaction management
+    dependencies:
+      - taskId: generate-domain
+        required: true
+    metadata:
+      version: "1.0"
+      tags: ["services", "business-logic", "layer"]
+
+  - id: generate-repositories
+    name: Generate Repository Layer
+    description: Generate repository interfaces and implementations for data access
+    domain: implementation
+    phase: IMPLEMENTATION
+    complexity: MEDIUM
+    requiredCapabilities:
+      - code-generation
+      - database-access
+      - jpa
+    parameters:
+      entities:
+        type: array
+        required: true
+        description: List of entities
+      databaseType:
+        type: string
+        required: false
+        default: "relational"
+        description: Database type
+      ormFramework:
+        type: string
+        required: false
+        default: "JPA"
+        description: ORM framework to use
+    dependencies:
+      - taskId: generate-domain
+        required: true
+    metadata:
+      version: "1.0"
+      tags: ["repository", "database", "data-access"]
+
+  - id: generate-api
+    name: Generate API Layer
+    description: Generate REST controllers or GraphQL resolvers from API specification
+    domain: implementation
+    phase: IMPLEMENTATION
+    complexity: MEDIUM
+    requiredCapabilities:
+      - code-generation
+      - rest-api
+      - spring-boot
+    parameters:
+      apiSpec:
+        type: string
+        required: true
+        description: Path to OpenAPI or GraphQL schema
+      framework:
+        type: string
+        required: false
+        default: "spring-boot"
+        description: Web framework to use
+      includeValidation:
+        type: boolean
+        required: false
+        default: true
+        description: Include request validation
+    dependencies:
+      - taskId: generate-services
+        required: true
+    metadata:
+      version: "1.0"
+      tags: ["api", "controllers", "rest"]
+
+  - id: implement-feature
+    name: Implement Feature
+    description: Implement a specific feature across all layers (domain, service, API)
+    domain: implementation
+    phase: IMPLEMENTATION
+    complexity: COMPLEX
+    requiredCapabilities:
+      - code-implementation
+      - full-stack
+      - java
+    parameters:
+      featureName:
+        type: string
+        required: true
+        description: Name of the feature
+      specification:
+        type: string
+        required: true
+        description: Feature specification or story
+      codebaseContext:
+        type: object
+        required: true
+        description: Context about existing codebase
+    metadata:
+      version: "1.0"
+      tags: ["feature", "implementation", "full-stack"]
+
+  - id: refactor-code
+    name: Refactor Code
+    description: Refactor existing code to improve quality, maintainability, or performance
+    domain: implementation
+    phase: IMPLEMENTATION
+    complexity: COMPLEX
+    requiredCapabilities:
+      - refactoring
+      - code-quality
+      - design-patterns
+    parameters:
+      targetFiles:
+        type: array
+        required: true
+        description: Files or modules to refactor
+      refactoringType:
+        type: string
+        required: false
+        description: Type of refactoring (extract-method/rename/etc)
+      goals:
+        type: array
+        required: false
+        description: Refactoring goals (maintainability/performance/etc)
+    metadata:
+      version: "1.0"
+      tags: ["refactoring", "quality", "improvement"]
+
+  - id: fix-bugs
+    name: Fix Bugs
+    description: Analyze and fix reported bugs with root cause analysis
+    domain: implementation
+    phase: IMPLEMENTATION
+    complexity: MEDIUM
+    requiredCapabilities:
+      - debugging
+      - root-cause-analysis
+      - java
+    parameters:
+      bugReport:
+        type: string
+        required: true
+        description: Bug description and reproduction steps
+      affectedFiles:
+        type: array
+        required: false
+        description: Known affected files
+      logs:
+        type: string
+        required: false
+        description: Error logs or stack traces
+    metadata:
+      version: "1.0"
+      tags: ["bug-fix", "debugging", "maintenance"]
+
+  - id: optimize-performance
+    name: Optimize Performance
+    description: Analyze and optimize code performance based on profiling data
+    domain: implementation
+    phase: IMPLEMENTATION
+    complexity: VERY_COMPLEX
+    requiredCapabilities:
+      - performance-optimization
+      - profiling
+      - java
+    parameters:
+      targetArea:
+        type: string
+        required: true
+        description: Area to optimize (api/database/algorithm/etc)
+      profilingData:
+        type: object
+        required: false
+        description: Profiling or metrics data
+      performanceGoal:
+        type: string
+        required: true
+        description: Performance goal or target
+    metadata:
+      version: "1.0"
+      tags: ["performance", "optimization", "profiling"]
+
+  - id: add-documentation
+    name: Add Code Documentation
+    description: Generate comprehensive code documentation including JavaDoc and README
+    domain: implementation
+    phase: IMPLEMENTATION
+    complexity: SIMPLE
+    requiredCapabilities:
+      - documentation
+      - technical-writing
+    parameters:
+      targetFiles:
+        type: array
+        required: true
+        description: Files to document
+      documentationType:
+        type: string
+        required: false
+        default: "javadoc"
+        description: Type of documentation to generate
+      includeExamples:
+        type: boolean
+        required: false
+        default: true
+        description: Include usage examples
+    metadata:
+      version: "1.0"
+      tags: ["documentation", "javadoc", "readme"]

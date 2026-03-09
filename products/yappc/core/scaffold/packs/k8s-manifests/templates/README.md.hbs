@@ -1,0 +1,27 @@
+# {{projectName}} Kubernetes Manifests
+
+This pack provides Kubernetes base manifests and a starter Helm chart for {{projectName}}.
+
+## Contents
+- Namespace
+- Deployment + Service + Ingress
+- ConfigMap + Secret
+- HPA, PDB, NetworkPolicy, ServiceAccount, RBAC
+- Starter Helm chart (Chart.yaml, values.yaml, helpers)
+
+## Usage
+
+```bash
+kubectl apply -f k8s/namespace.yaml
+kubectl apply -f k8s/
+```
+
+Helm chart:
+
+```bash
+helm install {{kebabCase projectName}} ./helm -n {{kebabCase projectName}}
+```
+
+## Customization
+- Set container image/tag in values.yaml and k8s/deployment.yaml.
+- Adjust resources, env vars, and ingress hosts.

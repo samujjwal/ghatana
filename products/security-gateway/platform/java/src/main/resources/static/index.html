@@ -1,0 +1,292 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>API Key Authentication Example</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            line-height: 1.6;
+            margin: 0;
+            padding: 20px;
+            color: #333;
+        }
+        h1 {
+            color: #2c3e50;
+            border-bottom: 2px solid #3498db;
+            padding-bottom: 10px;
+        }
+        h2 {
+            color: #2980b9;
+        }
+        .container {
+            max-width: 800px;
+            margin: 0 auto;
+        }
+        .endpoint {
+            background-color: #f9f9f9;
+            border-left: 4px solid #3498db;
+            padding: 10px 20px;
+            margin-bottom: 20px;
+        }
+        .endpoint h3 {
+            margin-top: 0;
+            color: #2980b9;
+        }
+        .endpoint p {
+            margin-bottom: 10px;
+        }
+        .endpoint code {
+            background-color: #f1f1f1;
+            padding: 2px 5px;
+            border-radius: 3px;
+            font-family: monospace;
+        }
+        .form-group {
+            margin-bottom: 15px;
+        }
+        label {
+            display: block;
+            margin-bottom: 5px;
+            font-weight: bold;
+        }
+        input[type="text"] {
+            width: 100%;
+            padding: 8px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            box-sizing: border-box;
+        }
+        button {
+            background-color: #3498db;
+            color: white;
+            border: none;
+            padding: 10px 15px;
+            border-radius: 4px;
+            cursor: pointer;
+        }
+        button:hover {
+            background-color: #2980b9;
+        }
+        .response {
+            margin-top: 20px;
+            padding: 15px;
+            background-color: #f1f1f1;
+            border-left: 4px solid #27ae60;
+            white-space: pre-wrap;
+        }
+        .error {
+            border-left-color: #e74c3c;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>API Key Authentication Example</h1>
+        
+        <p>This example demonstrates how to use API key authentication to protect API endpoints.</p>
+        
+        <h2>Available Endpoints</h2>
+        
+        <div class="endpoint">
+            <h3>Public Endpoint</h3>
+            <p>This endpoint is public and does not require authentication.</p>
+            <p><code>GET /public</code></p>
+            <button onclick="callPublicEndpoint()">Call Public Endpoint</button>
+            <div id="publicResponse" class="response" style="display: none;"></div>
+        </div>
+        
+        <div class="endpoint">
+            <h3>Protected Endpoint</h3>
+            <p>This endpoint requires API key authentication.</p>
+            <p><code>GET /protected</code></p>
+            <div class="form-group">
+                <label for="protectedApiKey">API Key:</label>
+                <input type="text" id="protectedApiKey" placeholder="Enter your API key">
+            </div>
+            <button onclick="callProtectedEndpoint()">Call Protected Endpoint</button>
+            <div id="protectedResponse" class="response" style="display: none;"></div>
+        </div>
+        
+        <div class="endpoint">
+            <h3>Admin Endpoint</h3>
+            <p>This endpoint requires API key authentication with the ADMIN role.</p>
+            <p><code>GET /admin</code></p>
+            <div class="form-group">
+                <label for="adminApiKey">API Key:</label>
+                <input type="text" id="adminApiKey" placeholder="Enter your admin API key">
+            </div>
+            <button onclick="callAdminEndpoint()">Call Admin Endpoint</button>
+            <div id="adminResponse" class="response" style="display: none;"></div>
+        </div>
+        
+        <div class="endpoint">
+            <h3>API Key Management</h3>
+            <p>This endpoint allows you to list and create API keys.</p>
+            <p><code>GET /api-keys</code></p>
+            <div class="form-group">
+                <label for="managementApiKey">API Key:</label>
+                <input type="text" id="managementApiKey" placeholder="Enter your API key">
+            </div>
+            <button onclick="listApiKeys()">List API Keys</button>
+            <div id="listResponse" class="response" style="display: none;"></div>
+            
+            <p><code>POST /api-keys?name=NAME&description=DESCRIPTION&owner=OWNER</code></p>
+            <div class="form-group">
+                <label for="createApiKey">API Key:</label>
+                <input type="text" id="createApiKey" placeholder="Enter your API key">
+            </div>
+            <div class="form-group">
+                <label for="createName">Name:</label>
+                <input type="text" id="createName" placeholder="Enter API key name">
+            </div>
+            <div class="form-group">
+                <label for="createDescription">Description:</label>
+                <input type="text" id="createDescription" placeholder="Enter API key description">
+            </div>
+            <div class="form-group">
+                <label for="createOwner">Owner:</label>
+                <input type="text" id="createOwner" placeholder="Enter API key owner">
+            </div>
+            <button onclick="createApiKey()">Create API Key</button>
+            <div id="createResponse" class="response" style="display: none;"></div>
+        </div>
+    </div>
+
+    <script>
+        function callPublicEndpoint() {
+            fetch('/public')
+                .then(response => response.text())
+                .then(data => {
+                    const responseElement = document.getElementById('publicResponse');
+                    responseElement.textContent = data;
+                    responseElement.style.display = 'block';
+                    responseElement.classList.remove('error');
+                })
+                .catch(error => {
+                    const responseElement = document.getElementById('publicResponse');
+                    responseElement.textContent = 'Error: ' + error.message;
+                    responseElement.style.display = 'block';
+                    responseElement.classList.add('error');
+                });
+        }
+
+        function callProtectedEndpoint() {
+            const apiKey = document.getElementById('protectedApiKey').value;
+            
+            fetch('/protected', {
+                headers: {
+                    'X-API-Key': apiKey
+                }
+            })
+                .then(response => {
+                    if (!response.ok) {
+                        throw new Error('HTTP status ' + response.status);
+                    }
+                    return response.text();
+                })
+                .then(data => {
+                    const responseElement = document.getElementById('protectedResponse');
+                    responseElement.textContent = data;
+                    responseElement.style.display = 'block';
+                    responseElement.classList.remove('error');
+                })
+                .catch(error => {
+                    const responseElement = document.getElementById('protectedResponse');
+                    responseElement.textContent = 'Error: ' + error.message;
+                    responseElement.style.display = 'block';
+                    responseElement.classList.add('error');
+                });
+        }
+
+        function callAdminEndpoint() {
+            const apiKey = document.getElementById('adminApiKey').value;
+            
+            fetch('/admin', {
+                headers: {
+                    'X-API-Key': apiKey
+                }
+            })
+                .then(response => {
+                    if (!response.ok) {
+                        throw new Error('HTTP status ' + response.status);
+                    }
+                    return response.text();
+                })
+                .then(data => {
+                    const responseElement = document.getElementById('adminResponse');
+                    responseElement.textContent = data;
+                    responseElement.style.display = 'block';
+                    responseElement.classList.remove('error');
+                })
+                .catch(error => {
+                    const responseElement = document.getElementById('adminResponse');
+                    responseElement.textContent = 'Error: ' + error.message;
+                    responseElement.style.display = 'block';
+                    responseElement.classList.add('error');
+                });
+        }
+
+        function listApiKeys() {
+            const apiKey = document.getElementById('managementApiKey').value;
+            
+            fetch('/api-keys', {
+                headers: {
+                    'X-API-Key': apiKey
+                }
+            })
+                .then(response => {
+                    if (!response.ok) {
+                        throw new Error('HTTP status ' + response.status);
+                    }
+                    return response.text();
+                })
+                .then(data => {
+                    const responseElement = document.getElementById('listResponse');
+                    responseElement.textContent = data;
+                    responseElement.style.display = 'block';
+                    responseElement.classList.remove('error');
+                })
+                .catch(error => {
+                    const responseElement = document.getElementById('listResponse');
+                    responseElement.textContent = 'Error: ' + error.message;
+                    responseElement.style.display = 'block';
+                    responseElement.classList.add('error');
+                });
+        }
+
+        function createApiKey() {
+            const apiKey = document.getElementById('createApiKey').value;
+            const name = document.getElementById('createName').value;
+            const description = document.getElementById('createDescription').value;
+            const owner = document.getElementById('createOwner').value;
+            
+            fetch(`/api-keys?name=${encodeURIComponent(name)}&description=${encodeURIComponent(description)}&owner=${encodeURIComponent(owner)}`, {
+                method: 'POST',
+                headers: {
+                    'X-API-Key': apiKey
+                }
+            })
+                .then(response => {
+                    if (!response.ok) {
+                        throw new Error('HTTP status ' + response.status);
+                    }
+                    return response.text();
+                })
+                .then(data => {
+                    const responseElement = document.getElementById('createResponse');
+                    responseElement.textContent = data;
+                    responseElement.style.display = 'block';
+                    responseElement.classList.remove('error');
+                })
+                .catch(error => {
+                    const responseElement = document.getElementById('createResponse');
+                    responseElement.textContent = 'Error: ' + error.message;
+                    responseElement.style.display = 'block';
+                    responseElement.classList.add('error');
+                });
+        }
+    </script>
+</body>
+</html>

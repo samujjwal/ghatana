@@ -1,0 +1,26 @@
+---
+id: "operate_slo_monitor_agent"
+agent: "SLOMonitorAgent"
+role: "SRE/Automation"
+inputs_spec:
+- name: "operate_otel_telemetry_report"
+  description: "Telemetry report with traces and SLO data."
+  format: "Telemetry report artifact"
+outputs_spec:
+- name: "operate_slo_status_report"
+  description: "SLO/SLA compliance status, breaches, and near-misses."
+  format: "SLO/SLA status report artifact"
+agent_tasks:
+- "Monitor and report on operational SLO/SLA compliance."
+- "Escalate breaches or near-misses to ops and product owners."
+- "Visualize compliance in dashboards/reports."
+acceptance_criteria:
+- "SLO/SLA compliance is tracked and reported."
+- "Breaches and near-misses are escalated."
+- "Compliance status is visible to all stakeholders."
+dependencies:
+- "operate_otel_telemetry_report"
+failure_escalation:
+- "Escalate to SRE or product owner if SLO/SLA compliance is not monitored or reported."
+references: []
+hitl: false

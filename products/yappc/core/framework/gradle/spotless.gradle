@@ -1,0 +1,38 @@
+// Common Spotless configuration for all projects
+apply plugin: 'com.diffplug.spotless'
+
+spotless {
+    java {
+        target 'src/**/*.java'
+        
+        // Apply Google Java Format with AOSP style (4 spaces)
+        googleJavaFormat('1.17.0').aosp()
+        
+        // License header
+        licenseHeaderFile rootProject.file('config/checkstyle/header.java')
+        
+        // Clean up code
+        removeUnusedImports()
+        formatAnnotations()
+        trimTrailingWhitespace()
+        endWithNewline()
+    }
+    
+    format 'misc', {
+        target '**/*.gradle', '**/*.md', '**/.gitignore'
+        trimTrailingWhitespace()
+        endWithNewline()
+    }
+    
+    format 'xml', {
+        target '**/*.xml'
+        indentWithSpaces(4)
+        trimTrailingWhitespace()
+        endWithNewline()
+    }
+}
+
+// Ensure Spotless runs before check
+tasks.named('check') {
+    dependsOn 'spotlessCheck'
+}

@@ -1,0 +1,27 @@
+---
+id: "deployment_strategy"
+agent: "DeploymentStrategyAgent"
+role: "Release/DevOps Engineer"
+inputs_spec:
+- name: "manifest_validation_report"
+  description: "Validation report for deployment strategy selection."
+  format: "Manifest validation report artifact"
+outputs_spec:
+- name: "deployment_rollout_status"
+  description: "Status of deployment rollout and strategy selection."
+  format: "Rollout status artifact"
+agent_tasks:
+- "Select deployment strategy (canary, rolling, blue/green, etc.)."
+- "Document strategy and rationale."
+- "Define rollback/promotion paths."
+- "Obtain stakeholder signoff."
+acceptance_criteria:
+- "Strategy is selected, documented, and signed off."
+- "Rollback/promotion paths defined."
+dependencies:
+- "manifest_validation_report"
+failure_escalation:
+- "Escalate to Release/DevOps if strategy not documented/signed off."
+references: []
+hitl: true
+hitl_reason: "Human selects and validates deployment strategy"

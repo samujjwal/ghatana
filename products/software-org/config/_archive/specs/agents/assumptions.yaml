@@ -1,0 +1,42 @@
+id: assumptions
+agent: AssumptionsAgent
+role: Technical Lead
+inputs_spec:
+- name: project_constraints
+  description: List of project constraints, with impacted requirements.
+  format: List of constraint objects
+outputs_spec:
+- name: project_assumptions
+  description: Explicitly listed project assumptions, with mapping to requirements or constraints.
+  format: List of assumption objects (description, mapped_requirement_or_constraint, risk_level)
+  example: "- description: \"Users will have SSO available\"\n  mapped_constraint: \"Must use company IdP\"\n  risk_level: \"Medium\"\n"
+acceptance_criteria:
+- All project assumptions are explicitly listed.
+- Unverified or risky assumptions are flagged.
+- Assumptions are mapped to requirements or constraints.
+agent_tasks:
+- List all project assumptions.
+- Flag unverified or risky assumptions.
+- Map assumptions to requirements or constraints.
+dependencies:
+- project_constraints
+failure_escalation:
+- Escalate to technical lead if assumptions are not validated.
+references: []
+
+internal_logic:
+  - perception:
+      description: "Extract implicit/explicit assumptions from constraints and context."
+  - model:
+      description: "Assumptions: {id, description, mapped_constraints, rationale, risk}"
+  - planning:
+      description: |
+        "Flag risky or unverified assumptions for follow-up."
+  - action:
+      description: "Produce YAML with assumptions."
+validation:
+  - "SME review and stakeholder sign-off for all critical assumptions."
+  - "Checklist for risk and mapping."
+quality_enhancements:
+  - "Assumption templates with verification logs."
+  - "Risk log for all assumptions."

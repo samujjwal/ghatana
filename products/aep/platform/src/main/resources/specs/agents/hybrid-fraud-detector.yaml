@@ -1,0 +1,24 @@
+# ═══════════════════════════════════════════════════════════════════════════════
+# Hybrid Agent — Combined Rule + ML Detection
+# ═══════════════════════════════════════════════════════════════════════════════
+# Routes events through deterministic rules first. If rules cannot decide
+# with sufficient confidence, escalates to the probabilistic ML model.
+
+agentId: hybrid-fraud-detector
+type: HYBRID
+version: "1.0.0"
+timeout: PT15S
+confidenceThreshold: 0.7
+failureMode: FAIL_FAST
+metricsEnabled: true
+labels:
+  team: security
+  domain: fraud
+  pattern: hybrid
+
+# ─── Hybrid-specific ────────────────────────────────────────────────────────
+strategy: DETERMINISTIC_FIRST
+deterministicAgentId: fraud-rule-detector
+probabilisticAgentId: anomaly-ml-scorer
+escalationConfidenceThreshold: 0.7
+fallbackPath: DETERMINISTIC_FIRST

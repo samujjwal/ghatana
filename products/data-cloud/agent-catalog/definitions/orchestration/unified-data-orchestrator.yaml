@@ -1,0 +1,65 @@
+id: unified-data-orchestrator
+name: Unified Data Orchestrator
+version: 1.0.0
+description: High-level orchestrator that coordinates all data operations across storage, query, migration, and governance
+
+metadata:
+  level: 1
+  domain: orchestration
+  tags: [data, orchestration, unified, coordination, cross-domain]
+
+generator:
+  type: PIPELINE
+  steps:
+    - name: analyze_request
+      type: RULE_BASED
+      rules:
+        - Identify data operation type
+        - Determine required capabilities
+        - Select appropriate worker agents
+    - name: coordinate_execution
+      type: LLM
+      provider: OPENAI
+      model: gpt-4
+      temperature: 0.2
+      prompt: |
+        Orchestrate data operations:
+        Request: {{request}}
+        Available Agents: {{agents}}
+        Coordinate storage, query, migration, and quality checks
+
+capabilities:
+  - data-pipeline-orchestration
+  - data-management
+  - data-quality
+
+tools:
+  - name: orchestrationEngine
+    type: SERVICE
+    endpoint: /platform/orchestrate/coordinate
+
+delegation:
+  can_delegate_to:
+    - entity-storage-agent
+    - event-stream-storage-agent
+    - query-optimization-agent
+    - data-migration-agent
+    - data-replication-agent
+    - data-archival-agent
+    - data-lineage-agent
+    - data-quality-agent
+    - data-pipeline-orchestrator-agent
+
+memory:
+  type: SEMANTIC
+  scope: orchestration_history
+  retention: long
+
+routing:
+  input: DataOrchestrationRequest
+  output: DataOrchestrationResult
+
+resources:
+  memory: "2GB"
+  cpu: "4"
+  timeout: "600s"

@@ -1,0 +1,13 @@
+apiVersion: policy/v1
+kind: PodDisruptionBudget
+metadata:
+  name: governance-service-pdb
+  namespace: ghatana
+  labels:
+    app: governance-service
+spec:
+  minAvailable: 2
+  selector:
+    matchLabels:
+      app: governance-service
+  unhealthyPodEvictionPolicy: IfHealthyBudget

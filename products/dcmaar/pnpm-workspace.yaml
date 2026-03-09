@@ -1,0 +1,31 @@
+packages:
+  # Framework components (moved from apps/)
+  - framework/desktop
+  - framework/browser-extension
+  - framework/browser-extension/host
+  - framework/agent-daemon
+
+  # Guardian application and its packages
+  - "apps/guardian/apps/*"
+  - "apps/guardian/packages/*"
+  - "apps/guardian/libs/*"
+  - "apps/guardian/backend"
+
+  # Shared packages
+  - packages/*
+  - core/shared-ts/connectors
+  - core/shared-ts/ts-packages/*
+  - libs/typescript/*
+
+onlyBuiltDependencies:
+  - "@bufbuild/buf"
+  - "@parcel/watcher"
+  - core-js
+  - es5-ext
+  - esbuild
+  - grpc-tools
+  - libxmljs2
+  - msw
+  - protobufjs
+  - protoc-gen-js
+  - unrs-resolver

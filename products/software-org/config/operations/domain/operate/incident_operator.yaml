@@ -1,0 +1,339 @@
+# Incident Operator - Consolidated Operations Domain
+# Consolidates: incident_handler, postmortem, disaster recovery, on-call management
+# Purpose: Complete incident management from detection through resolution and learning
+
+id: incident_operator
+version: "1.0.0"
+domain: operate
+category: incident_management
+
+description: |
+  Unified incident operator handling complete incident lifecycle:
+  - Incident detection and classification
+  - Response coordination
+  - Communication management
+  - Resolution and recovery
+  - Post-incident review and learning
+
+# Operator Modes
+modes:
+  detect:
+    description: "Detect and classify incidents"
+    role: Monitoring/On-Call
+    inputs:
+      - name: alert
+        description: Triggered alert
+        required: true
+      - name: context
+        description: System context and recent changes
+        required: false
+    outputs:
+      - name: incident_record
+        description: Created incident record
+        format: yaml_document
+        schema:
+          - incident_id: string
+          - title: string
+          - description: string
+          - severity: "sev1|sev2|sev3|sev4"
+          - status: "detected|triaging|mitigating|resolved|closed"
+          - detected_at: datetime
+          - affected_services: list
+          - affected_users: string
+          - initial_responder: string
+    severity_definitions:
+      sev1: "Critical - Major business impact, total outage"
+      sev2: "High - Significant impact, partial outage"
+      sev3: "Medium - Moderate impact, degraded service"
+      sev4: "Low - Minor impact, cosmetic issues"
+    tasks:
+      - Acknowledge alert
+      - Assess impact and severity
+      - Create incident record
+      - Notify relevant parties
+      - Begin initial triage
+
+  respond:
+    description: "Coordinate incident response"
+    role: Incident Commander
+    inputs:
+      - name: incident_record
+        description: Active incident
+        required: true
+      - name: runbooks
+        description: Relevant runbooks
+        required: false
+    outputs:
+      - name: response_log
+        description: Incident response timeline
+        format: yaml_document
+        schema:
+          - incident_id: string
+          - timeline: list
+          - actions_taken: list
+          - responders: list
+          - escalations: list
+          - current_status: string
+    response_roles:
+      - incident_commander: "Leads response, makes decisions"
+      - communications: "Manages stakeholder updates"
+      - technical_lead: "Leads technical investigation"
+      - scribe: "Documents timeline and actions"
+    tasks:
+      - Assemble response team
+      - Follow runbooks
+      - Coordinate investigation
+      - Make mitigation decisions
+      - Manage escalations
+
+  communicate:
+    description: "Manage incident communication"
+    role: Communications Lead
+    inputs:
+      - name: incident_record
+        description: Active incident
+        required: true
+      - name: stakeholder_list
+        description: Communication recipients
+        required: true
+    outputs:
+      - name: communication_log
+        description: Incident communications
+        format: yaml_document
+        schema:
+          - incident_id: string
+          - communications: list
+          - status_page_updates: list
+          - internal_updates: list
+          - customer_notifications: list
+    communication_schema:
+      - timestamp: datetime
+      - type: "status_page|internal|customer|executive"
+      - channel: string
+      - message: string
+      - sender: string
+    tasks:
+      - Update status page
+      - Send internal updates
+      - Notify customers
+      - Brief executives
+      - Manage queries
+
+  resolve:
+    description: "Resolve and recover from incident"
+    role: Technical Lead
+    inputs:
+      - name: incident_record
+        description: Active incident
+        required: true
+      - name: mitigation_actions
+        description: Actions to resolve
+        required: true
+    outputs:
+      - name: resolution_record
+        description: Incident resolution details
+        format: yaml_document
+        schema:
+          - incident_id: string
+          - resolution_time: datetime
+          - root_cause: string
+          - resolution_actions: list
+          - verification_steps: list
+          - follow_up_items: list
+          - metrics: object
+    recovery_patterns:
+      - rollback: "Revert to previous version"
+      - failover: "Switch to backup system"
+      - scale: "Add capacity"
+      - config_change: "Modify configuration"
+      - code_fix: "Deploy hotfix"
+    tasks:
+      - Implement mitigation
+      - Verify resolution
+      - Monitor for recurrence
+      - Document resolution
+      - Plan follow-ups
+
+  postmortem:
+    description: "Conduct post-incident review"
+    role: Incident Commander
+    inputs:
+      - name: incident_record
+        description: Resolved incident
+        required: true
+      - name: response_log
+        description: Response timeline
+        required: true
+    outputs:
+      - name: postmortem_report
+        description: Post-incident analysis
+        format: yaml_document
+        schema:
+          - incident_id: string
+          - postmortem_date: datetime
+          - summary: string
+          - impact: object
+          - timeline: list
+          - root_cause_analysis: object
+          - contributing_factors: list
+          - what_went_well: list
+          - what_went_poorly: list
+          - action_items: list
+          - lessons_learned: list
+    postmortem_culture:
+      - blameless: "Focus on systems, not people"
+      - learning: "Improve from every incident"
+      - transparency: "Share findings openly"
+      - action_oriented: "Track action items"
+    tasks:
+      - Gather timeline and data
+      - Conduct blameless review
+      - Identify root causes
+      - Document lessons learned
+      - Create action items
+
+  dr:
+    description: "Execute disaster recovery"
+    role: DR Coordinator
+    inputs:
+      - name: disaster_event
+        description: Disaster requiring DR
+        required: true
+      - name: dr_plan
+        description: Disaster recovery plan
+        required: true
+    outputs:
+      - name: dr_execution_record
+        description: DR execution results
+        format: yaml_document
+        schema:
+          - dr_id: string
+          - event_type: string
+          - activated_at: datetime
+          - rto_target: number
+          - rpo_target: number
+          - actual_recovery_time: number
+          - actual_data_loss: number
+          - steps_executed: list
+          - issues: list
+          - lessons_learned: list
+    dr_metrics:
+      - rto: "Recovery Time Objective"
+      - rpo: "Recovery Point Objective"
+      - mtpd: "Maximum Tolerable Period of Disruption"
+    tasks:
+      - Activate DR plan
+      - Execute recovery steps
+      - Verify service restoration
+      - Validate data integrity
+      - Document execution
+
+# Internal Logic
+internal_logic:
+  perception:
+    description: "Detect incidents from multiple signals"
+    sources:
+      - monitoring_alerts
+      - user_reports
+      - automated_detection
+  model:
+    description: "Incident management knowledge graph"
+    entities:
+      - incident: "{id, severity, status, timeline}"
+      - action: "{type, timestamp, result}"
+      - postmortem: "{root_cause, actions, lessons}"
+    relationships:
+      - incident_resolved_by_action
+      - postmortem_analyzes_incident
+      - action_prevents_recurrence
+  planning:
+    strategy: |
+      1. Detect quickly
+      2. Respond systematically
+      3. Communicate proactively
+      4. Resolve safely
+      5. Learn continuously
+  action:
+    description: "Coordinate incident response"
+    validation: "Resolution verified before closing"
+
+# Quality Assurance
+quality:
+  templates:
+    - incident_report_template
+    - postmortem_template
+    - communication_template
+  checklists:
+    - response_checklist
+    - communication_checklist
+    - postmortem_checklist
+  automated_checks:
+    - sla_tracking
+    - action_item_tracking
+    - recurrence_detection
+
+# SLA Targets
+sla_targets:
+  sev1:
+    response_time: "5 minutes"
+    update_frequency: "15 minutes"
+    resolution_target: "1 hour"
+  sev2:
+    response_time: "15 minutes"
+    update_frequency: "30 minutes"
+    resolution_target: "4 hours"
+  sev3:
+    response_time: "1 hour"
+    update_frequency: "2 hours"
+    resolution_target: "24 hours"
+  sev4:
+    response_time: "4 hours"
+    update_frequency: "daily"
+    resolution_target: "7 days"
+
+# Validation Rules
+validation:
+  rules:
+    - "All incidents must have severity"
+    - "Sev1/Sev2 require postmortem"
+    - "Action items must have owners"
+    - "Communication SLAs must be met"
+  review_gates:
+    - postmortem_review
+    - action_item_completion
+
+# Escalation
+escalation:
+  triggers:
+    - "Resolution time exceeded"
+    - "Incident escalation requested"
+    - "Executive notification required"
+  paths:
+    - role: On-Call Manager
+      for: "Team escalation"
+    - role: VP Engineering
+      for: "Sev1 incidents"
+    - role: Executive Team
+      for: "Customer-facing Sev1"
+
+# Dependencies
+dependencies:
+  upstream:
+    - monitor_operator
+  downstream:
+    - improvement_operator
+
+# Metrics
+metrics:
+  - name: mttd
+    description: "Mean time to detect"
+    target: "<= 5 minutes"
+  - name: mttr
+    description: "Mean time to resolve"
+    target: "<= 1 hour (Sev1)"
+  - name: incident_recurrence
+    description: "Same-cause incidents"
+    target: "< 5%"
+  - name: action_item_completion
+    description: "Postmortem actions completed"
+    target: ">= 95%"

@@ -1,0 +1,70 @@
+id: prisma-expert-agent
+name: Prisma Expert Agent
+version: 1.0.0
+description: Specialized code generation and review for Prisma ORM patterns — schema modeling, migrations, client queries, relation handling, and PostgreSQL optimization.
+
+metadata:
+  level: 3
+  domain: build
+  tags: [build, prisma, postgresql, orm, schema, framework-specific]
+
+generator:
+  type: PIPELINE
+  steps:
+    - name: prisma_code_generation
+      type: LLM
+      provider: ANTHROPIC
+      model: claude-3-5-sonnet-20241022
+      temperature: 0.3
+      max_tokens: 4000
+      prompt: |
+        You are a Prisma ORM expert. Generate or review code following Prisma patterns:
+        
+        Request: {{input}}
+        Context: {{context}}
+        
+        Prisma conventions:
+        - schema.prisma for model definitions
+        - Use @relation for explicit relation naming
+        - Use @id with @default(cuid()) or @default(uuid())
+        - Use @@index for query-critical columns
+        - Use prisma migrate for schema changes
+        - Use Prisma Client's type-safe queries
+        - Avoid raw SQL unless for performance-critical paths
+        - Use transactions for multi-model writes
+        - Follow YAPPC's existing prisma/ directory for schema
+        
+        Output as JSON: {code, file_path, explanation, prisma_patterns_used, migration_needed, warnings}
+
+memory:
+  episodic:
+    enabled: true
+    retention_days: 180
+    categories: [prisma-code-generations, schema-changes]
+  semantic:
+    enabled: true
+    categories: [prisma-patterns, schema-conventions]
+
+tools: [source_reader, prisma_schema_parser]
+
+capabilities:
+  - schema-design
+  - code-generation
+
+routing:
+  input_types: [code-request, schema-request, migration-request]
+  output_types: [source-code, schema-diff, migration-sql]
+
+delegation:
+  can_delegate_to: []
+  escalates_to: db-guardian
+
+governance:
+  requires_approval: false
+  can_block: false
+  audit_trail: standard
+
+performance:
+  expected_latency_ms: 5000
+  max_latency_ms: 20000
+  timeout_ms: 45000

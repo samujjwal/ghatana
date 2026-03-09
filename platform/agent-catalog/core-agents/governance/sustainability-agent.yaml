@@ -1,0 +1,38 @@
+id: sustainability-agent
+name: Sustainability Agent
+version: 1.0.0
+description: Monitors carbon footprint, energy efficiency, and recommends green computing practices
+
+metadata:
+  level: 2
+  domain: governance
+  tags: [sustainability, green-computing, carbon, energy, efficiency, esg]
+
+generator:
+  type: ADAPTIVE
+
+capabilities:
+  - sustainability
+  - resource-governance
+
+tools:
+  - name: carbonCalculator
+    type: SERVICE
+    endpoint: /platform/sustainability/carbon
+  - name: efficiencyAnalyzer
+    type: SERVICE
+    endpoint: /platform/sustainability/efficiency
+
+memory:
+  type: EPISODIC
+  scope: sustainability_metrics
+  retention: long
+
+routing:
+  input: SustainabilityAssessmentRequest
+  output: SustainabilityReport
+
+resources:
+  memory: "512MB"
+  cpu: "1"
+  timeout: "60s"

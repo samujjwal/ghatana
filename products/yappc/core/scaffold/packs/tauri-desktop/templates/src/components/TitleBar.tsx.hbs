@@ -1,0 +1,155 @@
+import { useCallback, useEffect, useState } from "react";
+import { getCurrentWindow } from "@tauri-apps/api/window";
+
+interface TitleBarProps {
+title: string;
+}
+
+export function TitleBar({ title }: TitleBarProps) {
+const [isMaximized, setIsMaximized] = useState(false);
+
+useEffect(() => {
+const appWindow = getCurrentWindow();
+
+// Check initial state
+appWindow.isMaximized().then(setIsMaximized);
+
+// Listen for window state changes
+const unlisten = appWindow.onResized(() => {
+appWindow.isMaximized().then(setIsMaximized);
+});
+
+return () => {
+unlisten.then((fn) => fn());
+};
+}, []);
+
+const handleMinimize = useCallback(async () => {
+await getCurrentWindow().minimize();
+}, []);
+
+const handleMaximize = useCallback(async () => {
+const appWindow = getCurrentWindow();
+if (await appWindow.isMaximized()) {
+await appWindow.unmaximize();
+} else {
+await appWindow.maximize();
+}
+}, []);
+
+const handleClose = useCallback(async () => {
+await getCurrentWindow().close();
+}, []);
+
+return (
+<div className="titlebar" data-tauri-drag-region>
+    <div className="titlebar-title" data-tauri-drag-region>
+        {title}
+    </div>
+    <div className="titlebar-buttons">
+        <button type="button" className="titlebar-button" onClick={handleMinimize} aria-label="Minimize">
+            <MinimizeIcon />
+        </button>
+        <button type="button" className="titlebar-button" onClick={handleMaximize} aria-label={isMaximized ? "Restore"
+            : "Maximize" }>
+            {isMaximized ?
+            <RestoreIcon /> :
+            <MaximizeIcon />}
+        </button>
+        <button type="button" className="titlebar-button titlebar-button-close" onClick={handleClose}
+            aria-label="Close">
+            <CloseIcon />
+        </button>
+    </div>
+    <style>
+        {
+            ` .titlebar {
+                height: 32px;
+                background-color: var(--bg-secondary);
+                display: flex;
+                justify-content: space-between;
+                align-items: center;
+                padding-left: 12px;
+                border-bottom: 1px solid var(--border-color);
+                user-select: none;
+                -webkit-user-select: none;
+            }
+
+            .titlebar-title {
+                font-size: 13px;
+                font-weight: 500;
+                color: var(--text-secondary);
+            }
+
+            .titlebar-buttons {
+                display: flex;
+                height: 100%;
+            }
+
+            .titlebar-button {
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                width: 46px;
+                height: 100%;
+                background: transparent;
+                border: none;
+                cursor: pointer;
+                color: var(--text-secondary);
+                transition: background-color 0.15s, color 0.15s;
+            }
+
+            .titlebar-button:hover {
+                background-color: var(--bg-tertiary);
+                color: var(--text-primary);
+            }
+
+            .titlebar-button-close:hover {
+                background-color: #e81123;
+                color: white;
+            }
+
+            .titlebar-button svg {
+                width: 10px;
+                height: 10px;
+            }
+
+            `
+        }
+    </style>
+</div>
+);
+}
+
+function MinimizeIcon() {
+return (
+<svg viewBox="0 0 10 1" fill="currentColor">
+    <rect width="10" height="1" />
+</svg>
+);
+}
+
+function MaximizeIcon() {
+return (
+<svg viewBox="0 0 10 10" fill="none" stroke="currentColor" strokeWidth="1">
+    <rect x="0.5" y="0.5" width="9" height="9" />
+</svg>
+);
+}
+
+function RestoreIcon() {
+return (
+<svg viewBox="0 0 10 10" fill="none" stroke="currentColor" strokeWidth="1">
+    <path d="M2.5 0.5h7v7" />
+    <rect x="0.5" y="2.5" width="7" height="7" />
+</svg>
+);
+}
+
+function CloseIcon() {
+return (
+<svg viewBox="0 0 10 10" fill="none" stroke="currentColor" strokeWidth="1.5">
+    <path d="M1 1l8 8M9 1l-8 8" />
+</svg>
+);
+}

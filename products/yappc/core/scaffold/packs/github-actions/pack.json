@@ -1,0 +1,44 @@
+{
+    "name": "github-actions",
+    "version": "1.0.0",
+    "description": "GitHub Actions CI/CD workflows",
+    "language": "yaml",
+    "category": "ci-cd",
+    "platform": "github",
+    "buildSystem": "github-actions",
+    "author": "YAPPC Team",
+    "tags": [
+        "github",
+        "actions",
+        "ci",
+        "cd",
+        "automation"
+    ],
+    "requiredVariables": [
+        "projectName",
+        "language"
+    ],
+    "optionalVariables": [
+        "enableTests",
+        "enableLinting",
+        "enableSecurity",
+        "enableDocker",
+        "enableDeploy"
+    ],
+    "defaults": {
+        "enableTests": "true",
+        "enableLinting": "true",
+        "enableSecurity": "true",
+        "enableDocker": "true",
+        "enableDeploy": "false"
+    },
+    "templates": [
+        ".github/workflows/ci.yml.hbs",
+        ".github/workflows/cd.yml.hbs",
+        ".github/workflows/security.yml.hbs",
+        ".github/workflows/release.yml.hbs",
+        ".github/dependabot.yml.hbs",
+        ".github/CODEOWNERS.hbs",
+        "README.md.hbs"
+    ]
+}

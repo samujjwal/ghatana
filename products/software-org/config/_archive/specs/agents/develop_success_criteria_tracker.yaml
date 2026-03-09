@@ -1,0 +1,29 @@
+---
+id: "develop_success_criteria_tracker"
+agent: "SuccessCriteriaTrackerAgent"
+role: "Develop Success Criteria Tracker"
+inputs_spec:
+- name: "develop_stage_milestone"
+  description: "Milestones and entry/exit criteria."
+  format: "List of milestone objects"
+outputs_spec:
+- name: "develop_success_criteria_status"
+  description: "Success criteria status (met/not met/at risk, owner, remediation)."
+  format: "List of criteria status objects"
+agent_tasks:
+- "List all development stage entry/exit criteria, map to milestone or code review\
+  \ artifacts."
+- "Assign status, owner, and required remediation for each."
+- "Escalate at-risk or failed criteria for review."
+- "Version tracker for audit/handoff."
+acceptance_criteria:
+- "All development stage entry/exit criteria are explicitly listed and mapped."
+- "{For each criterion=status, owner, remediation.}"
+- "At-risk or failed criteria are escalated for review."
+- "Tracker is versioned for audit and handoff."
+dependencies:
+- "develop_stage_milestone"
+failure_escalation:
+- "Escalate to Dev Lead or PM if success criteria are not tracked or resolved."
+references: []
+hitl: false

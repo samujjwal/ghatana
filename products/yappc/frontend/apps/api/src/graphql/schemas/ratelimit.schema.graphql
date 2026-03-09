@@ -1,0 +1,248 @@
+"""
+Rate Limiting GraphQL Schema
+
+Defines types, queries, and mutations for rate limit management including
+user tier management, quota tracking, and upgrade workflows.
+
+@doc.type graphql
+@doc.purpose Rate limiting API schema
+@doc.layer product
+@doc.pattern Schema
+"""
+
+enum RateLimitTier {
+  "Free tier with basic limits"
+  FREE
+
+  "Professional tier with higher limits"
+  PRO
+
+  "Enterprise tier with unlimited access"
+  ENTERPRISE
+}
+
+"""
+Rate limit configuration for a user
+"""
+type RateLimitConfig {
+  "User identifier"
+  userId: ID!
+
+  "Current tier"
+  tier: RateLimitTier!
+
+  "Requests allowed per hour"
+  requestsPerHour: Int!
+
+  "Requests allowed per day"
+  requestsPerDay: Int!
+
+  "Remaining requests this hour"
+  remainingHourly: Int!
+
+  "Remaining requests today"
+  remainingDaily: Int!
+
+  "Time when hourly limit resets"
+  resetTime: DateTime!
+
+  "When this tier was activated"
+  upgradedAt: DateTime
+
+  "When next upgrade is eligible"
+  nextUpgradeEligible: DateTime
+}
+
+"""
+Rate limit status for current user
+"""
+type RateLimitStatus {
+  "User or IP identifier"
+  identifier: ID!
+
+  "Current tier"
+  tier: RateLimitTier!
+
+  "Requests used this hour"
+  used: Int!
+
+  "Request limit this hour"
+  limit: Int!
+
+  "Remaining requests available"
+  remaining: Int!
+
+  "Usage percentage (0-100)"
+  percentage: Float!
+
+  "When limit resets"
+  resetTime: DateTime!
+
+  "Whether user is currently limited"
+  isLimited: Boolean!
+
+  "Timestamp of last request"
+  lastRequestAt: DateTime
+
+  "Status color indicator"
+  statusColor: String!
+
+  "Status label"
+  statusLabel: String!
+}
+
+"""
+Rate limit tier information
+"""
+type RateLimitTierInfo {
+  "Tier name"
+  name: String!
+
+  "Tier description"
+  description: String!
+
+  "Requests per hour"
+  requestsPerHour: Int!
+
+  "Requests per day"
+  requestsPerDay: Int!
+
+  "Burst size (concurrent requests)"
+  burstSize: Int!
+
+  "Monthly cost"
+  monthlyCost: Float!
+
+  "Features included"
+  features: [String!]!
+}
+
+"""
+Rate limit metrics
+"""
+type RateLimitMetrics {
+  "Total active users"
+  totalActiveUsers: Int!
+
+  "Total requests processed"
+  totalRequests: Int!
+
+  "Number of limited users"
+  limitedUsers: Int!
+
+  "Percentage of limited users"
+  limitPercentage: Float!
+
+  "Average requests per user"
+  averageRequestsPerUser: Float!
+
+  "Peak requests per second"
+  peakRequestsPerSecond: Int!
+}
+
+"""
+Rate limit upgrade request
+"""
+type UpgradeRequest {
+  "Request ID"
+  id: ID!
+
+  "User ID"
+  userId: ID!
+
+  "Requested tier"
+  requestedTier: RateLimitTier!
+
+  "Current tier"
+  currentTier: RateLimitTier!
+
+  "Request status"
+  status: String!
+
+  "When request was created"
+  createdAt: DateTime!
+
+  "When request was processed"
+  processedAt: DateTime
+}
+
+# Queries
+
+type Query {
+  """
+  Get current user's rate limit status
+  """
+  myRateLimitStatus: RateLimitStatus!
+
+  """
+  Get rate limit configuration for a user
+  """
+  rateLimitConfig(userId: ID!): RateLimitConfig
+
+  """
+  Get rate limit status for any identifier
+  """
+  rateLimitStatus(identifier: ID!): RateLimitStatus!
+
+  """
+  List available rate limit tiers
+  """
+  rateLimitTiers: [RateLimitTierInfo!]!
+
+  """
+  Get tier info by name
+  """
+  rateLimitTier(name: RateLimitTier!): RateLimitTierInfo!
+
+  """
+  Get rate limiting system metrics (admin only)
+  """
+  rateLimitMetrics: RateLimitMetrics!
+
+  """
+  Get all upgrade requests (admin only)
+  """
+  upgradeRequests(status: String, limit: Int): [UpgradeRequest!]!
+}
+
+# Mutations
+
+type Mutation {
+  """
+  Request a tier upgrade
+  """
+  requestUpgrade(
+    requestedTier: RateLimitTier!
+  ): UpgradeRequest!
+
+  """
+  Approve tier upgrade (admin only)
+  """
+  approveUpgrade(requestId: ID!): RateLimitConfig!
+
+  """
+  Reject tier upgrade (admin only)
+  """
+  rejectUpgrade(requestId: ID!, reason: String): UpgradeRequest!
+
+  """
+  Manually upgrade user tier (admin only)
+  """
+  upgradeUserTier(
+    userId: ID!
+    tier: RateLimitTier!
+  ): RateLimitConfig!
+
+  """
+  Reset user rate limit (admin only)
+  """
+  resetRateLimit(userId: ID!): RateLimitStatus!
+
+  """
+  Downgrade tier (for cancellation)
+  """
+  downgradeToFree: RateLimitConfig!
+}
+
+scalar DateTime
+

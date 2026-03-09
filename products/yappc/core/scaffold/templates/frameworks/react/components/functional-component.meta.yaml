@@ -1,0 +1,82 @@
+description: "React functional component with hooks support"
+author: "YAPPC Team"
+version: "1.0.0"
+tags:
+  - react
+  - component
+  - functional
+  - hooks
+
+variables:
+  componentName:
+    name: "componentName"
+    type: "string"
+    description: "Name of the component (PascalCase)"
+    required: true
+
+  description:
+    name: "description"
+    type: "string"
+    description: "Component description"
+    required: true
+
+  hasProps:
+    name: "hasProps"
+    type: "boolean"
+    description: "Whether component accepts props"
+    required: false
+    defaultValue: false
+
+  propTypes:
+    name: "propTypes"
+    type: "array"
+    description: "Array of prop definitions"
+    required: false
+    defaultValue: []
+
+  useState:
+    name: "useState"
+    type: "boolean"
+    description: "Whether to use useState hook"
+    required: false
+    defaultValue: false
+
+  useEffect:
+    name: "useEffect"
+    type: "boolean"
+    description: "Whether to use useEffect hook"
+    required: false
+    defaultValue: false
+
+  exportType:
+    name: "exportType"
+    type: "string"
+    description: "Export type: 'default' or 'named'"
+    required: false
+    defaultValue: "named"
+
+dependencies:
+  - react
+
+examples:
+  - name: "Simple component"
+    description: "Basic functional component without props"
+    variables:
+      componentName: "HelloWorld"
+      description: "Simple hello world component"
+
+  - name: "Component with props and state"
+    description: "Component with props interface and useState"
+    variables:
+      componentName: "UserProfile"
+      description: "Display user profile information"
+      hasProps: true
+      propTypes:
+        - name: "userId"
+          type: "string"
+          optional: false
+        - name: "onUpdate"
+          type: "() => void"
+          optional: true
+      useState: true
+      exportType: "default"

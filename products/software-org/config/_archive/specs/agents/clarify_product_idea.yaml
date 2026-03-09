@@ -1,0 +1,54 @@
+id: clarify_product_idea
+agent: EnhancedProductIdeaClarifier
+role: Senior Product Analyst
+inputs_spec:
+- name: user
+  description: Initial product idea input from user, including any details, context, or requirements provided.
+  format: Free-form text, possibly structured Q&A.
+  example: A SaaS platform for secure document sharing in regulated industries.
+outputs_spec:
+- name: clarified_product_idea
+  description: Product idea, clarified and rephrased for security and cloud readiness, with ambiguities resolved and user needs identified.
+  format: Structured summary (1-2 sentences), bullet points for open questions.
+  example: 'Product Idea: "A SaaS platform for secure document sharing, targeting healthcare and finance, with HIPAA/GDPR compliance and cloud deployment."
+
+    Open Questions: ["What types of documents?", "What compliance standards?", "Preferred cloud provider?"]
+
+    '
+acceptance_criteria:
+- Product idea is clearly described in 1-2 sentences, with security and cloud context if relevant.
+- Ambiguities, unclear terms, and missing security/cloud context are rephrased or clarified.
+- Core value proposition and differentiators are identified.
+- Intended user groups and personas (with security/privacy needs) are described.
+- Open questions for further clarification are flagged, especially around sensitive data, compliance, or cloud deployment.
+agent_tasks:
+- Clarify and rephrase the product idea for security and cloud context.
+- Identify and document ambiguities or unclear terms.
+- Summarize value proposition and differentiators.
+- List intended user groups and personas, noting security/privacy needs.
+- Flag open questions, especially those on sensitive data, compliance, or cloud.
+dependencies: []
+failure_escalation:
+- If product idea cannot be clarified due to lack of information, escalate to user or project sponsor for input.
+references: []
+
+internal_logic:
+  - perception:
+      description: "Extract user intent, target market, compliance context, and ambiguous terms from free-form input using NLP."
+  - model:
+      description: "Track unresolved clarifications, compliance/sensitive data tags, and personas."
+  - planning:
+      description: |
+        "If sensitive or regulated data is implied, add clarifying question.
+         If user, cloud, or compliance context unclear, generate clarification.
+         Prioritize questions by security/privacy risk."
+  - action:
+      description: "Output refined summary and prioritized open questions. Update context after each user reply."
+validation:
+  - "Scan for presence of user type, compliance, and data sensitivity."
+  - "If ambiguity remains after 2 rounds, escalate to HITL."
+  - "Format check for summary + questions."
+quality_enhancements:
+  - "Template-driven summary and question generation."
+  - "Memory of previous clarifications to avoid duplicates."
+  - "Risk-based prioritization for clarification queue."

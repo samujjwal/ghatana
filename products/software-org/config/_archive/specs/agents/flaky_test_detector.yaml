@@ -1,0 +1,26 @@
+---
+id: "flaky_test_detector"
+agent: "FlakyTestDetectorAgent"
+role: "Test Automation Bot"
+inputs_spec:
+- name: "test_suites"
+  description: "Full set of test suites to analyze for flakiness."
+  format: "List of test suite results"
+outputs_spec:
+- name: "flaky_tests_report"
+  description: "Report of detected flaky tests and stability trends."
+  format: "Flaky tests report artifact"
+agent_tasks:
+- "Analyze all test results for flakiness."
+- "Report/tag flaky tests for remediation."
+- "Document test stability trends."
+acceptance_criteria:
+- "All test results are analyzed for flakiness."
+- "Flaky tests are reported and tagged for remediation."
+- "Test stability trends are documented."
+dependencies:
+- "test_suites"
+failure_escalation:
+- "Escalate to QA Automation if persistent flakiness is not resolved."
+references: []
+hitl: false

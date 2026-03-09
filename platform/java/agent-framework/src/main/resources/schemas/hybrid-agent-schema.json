@@ -1,0 +1,76 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://ghatana.com/schemas/agent/v1/hybrid-agent.json",
+  "title": "Hybrid Agent Configuration",
+  "description": "Schema for HYBRID agent type — combines deterministic and probabilistic sub-agents with routing strategies",
+  "allOf": [
+    { "$ref": "agent-base-schema.json" }
+  ],
+  "properties": {
+    "spec": {
+      "properties": {
+        "type": { "const": "HYBRID" },
+        "hybrid": {
+          "$ref": "#/$defs/HybridSpec"
+        }
+      },
+      "required": ["type", "hybrid"]
+    }
+  },
+
+  "$defs": {
+    "HybridSpec": {
+      "type": "object",
+      "properties": {
+        "routing": {
+          "$ref": "#/$defs/RoutingConfig"
+        },
+        "deterministicAgentId": {
+          "type": "string",
+          "description": "Reference to a registered deterministic agent"
+        },
+        "probabilisticAgentId": {
+          "type": "string",
+          "description": "Reference to a registered probabilistic agent"
+        },
+        "deterministic": {
+          "description": "Inline deterministic agent config (alternative to agentId reference)",
+          "$ref": "deterministic-agent-schema.json#/$defs/DeterministicSpec"
+        },
+        "probabilistic": {
+          "description": "Inline probabilistic agent config (alternative to agentId reference)",
+          "$ref": "probabilistic-agent-schema.json#/$defs/ProbabilisticSpec"
+        }
+      },
+      "required": ["routing"],
+      "additionalProperties": false
+    },
+
+    "RoutingConfig": {
+      "type": "object",
+      "properties": {
+        "strategy": {
+          "type": "string",
+          "enum": ["DETERMINISTIC_FIRST", "PROBABILISTIC_FIRST", "PARALLEL"],
+          "default": "DETERMINISTIC_FIRST",
+          "description": "Primary routing strategy"
+        },
+        "escalationConfidenceThreshold": {
+          "type": "number",
+          "minimum": 0,
+          "maximum": 1,
+          "default": 0.7,
+          "description": "Confidence below which the secondary agent is consulted"
+        },
+        "fallbackPath": {
+          "type": "string",
+          "enum": ["DETERMINISTIC_FIRST", "PROBABILISTIC_FIRST", "PARALLEL"],
+          "default": "DETERMINISTIC_FIRST",
+          "description": "Fallback strategy on primary failure"
+        }
+      },
+      "required": ["strategy"],
+      "additionalProperties": false
+    }
+  }
+}

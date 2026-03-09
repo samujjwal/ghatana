@@ -1,0 +1,228 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://ghatana.com/schemas/agent/v1/deterministic-agent.json",
+  "title": "Deterministic Agent Configuration",
+  "description": "Schema for DETERMINISTIC agent type — rule-based, threshold, FSM, exact-match, pattern",
+  "allOf": [
+    { "$ref": "agent-base-schema.json" }
+  ],
+  "properties": {
+    "spec": {
+      "properties": {
+        "type": { "const": "DETERMINISTIC" },
+        "deterministic": {
+          "$ref": "#/$defs/DeterministicSpec"
+        }
+      },
+      "required": ["type", "deterministic"]
+    }
+  },
+
+  "$defs": {
+    "DeterministicSpec": {
+      "type": "object",
+      "properties": {
+        "subtype": {
+          "type": "string",
+          "enum": ["RULE_BASED", "THRESHOLD", "PATTERN", "FSM", "EXACT_MATCH"],
+          "default": "RULE_BASED"
+        },
+        "rules": {
+          "type": "array",
+          "items": { "$ref": "#/$defs/Rule" },
+          "description": "Rules for RULE_BASED subtype"
+        },
+        "evaluateAllRules": {
+          "type": "boolean",
+          "default": false,
+          "description": "If true, evaluate all rules (not short-circuit on first match)"
+        },
+        "thresholds": {
+          "type": "array",
+          "items": { "$ref": "#/$defs/Threshold" },
+          "description": "Thresholds for THRESHOLD subtype"
+        },
+        "fsm": {
+          "$ref": "#/$defs/FSMDefinition",
+          "description": "State machine for FSM subtype"
+        },
+        "fsmEntityKeyField": {
+          "type": "string",
+          "default": "entityId",
+          "description": "Input field used as entity identifier for FSM state tracking"
+        },
+        "exactMatch": {
+          "$ref": "#/$defs/ExactMatchConfig",
+          "description": "Lookup table for EXACT_MATCH subtype"
+        },
+        "defaultActions": {
+          "type": "object",
+          "additionalProperties": true,
+          "description": "Actions to apply when no rule matches"
+        }
+      },
+      "required": ["subtype"],
+      "additionalProperties": false
+    },
+
+    "Rule": {
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "Unique rule identifier"
+        },
+        "name": {
+          "type": "string",
+          "description": "Human-readable rule name"
+        },
+        "description": { "type": "string" },
+        "priority": {
+          "type": "integer",
+          "minimum": 0,
+          "default": 100,
+          "description": "Lower number = higher priority"
+        },
+        "conditions": {
+          "type": "array",
+          "items": { "$ref": "#/$defs/RuleCondition" },
+          "minItems": 1,
+          "description": "All conditions must match (AND logic)"
+        },
+        "actions": {
+          "type": "object",
+          "additionalProperties": true,
+          "description": "Actions to merge into output on match"
+        },
+        "terminal": {
+          "type": "boolean",
+          "default": true,
+          "description": "If true, stop evaluating further rules after this match"
+        }
+      },
+      "required": ["id", "name", "conditions", "actions"],
+      "additionalProperties": false
+    },
+
+    "RuleCondition": {
+      "type": "object",
+      "properties": {
+        "field": {
+          "type": "string",
+          "description": "Dot-path field reference (e.g., 'user.country')"
+        },
+        "operator": {
+          "type": "string",
+          "enum": [
+            "GREATER_THAN", "GREATER_THAN_OR_EQUAL",
+            "LESS_THAN", "LESS_THAN_OR_EQUAL",
+            "EQUALS", "NOT_EQUALS",
+            "CONTAINS", "NOT_CONTAINS",
+            "STARTS_WITH", "ENDS_WITH",
+            "REGEX", "IN", "NOT_IN",
+            "IS_NULL", "IS_NOT_NULL"
+          ]
+        },
+        "value": {
+          "description": "Expected value (type depends on operator)"
+        }
+      },
+      "required": ["field", "operator"],
+      "additionalProperties": false
+    },
+
+    "Threshold": {
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "field": {
+          "type": "string",
+          "description": "Dot-path to the numeric field"
+        },
+        "activationThreshold": {
+          "type": "number",
+          "description": "Value at which threshold activates"
+        },
+        "deactivationThreshold": {
+          "type": "number",
+          "description": "Hysteresis: value at which threshold deactivates (optional)"
+        },
+        "upperBound": {
+          "type": "boolean",
+          "default": true,
+          "description": "true = activates above threshold; false = activates below"
+        }
+      },
+      "required": ["id", "field", "activationThreshold"],
+      "additionalProperties": false
+    },
+
+    "FSMDefinition": {
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "name": { "type": "string" },
+        "states": {
+          "type": "array",
+          "items": { "type": "string" },
+          "minItems": 2
+        },
+        "initialState": { "type": "string" },
+        "finalStates": {
+          "type": "array",
+          "items": { "type": "string" }
+        },
+        "transitions": {
+          "type": "array",
+          "items": { "$ref": "#/$defs/FSMTransition" }
+        }
+      },
+      "required": ["id", "states", "initialState", "transitions"],
+      "additionalProperties": false
+    },
+
+    "FSMTransition": {
+      "type": "object",
+      "properties": {
+        "name": { "type": "string" },
+        "fromState": { "type": "string" },
+        "toState": { "type": "string" },
+        "guard": {
+          "type": "array",
+          "items": { "$ref": "#/$defs/RuleCondition" },
+          "description": "Conditions that must hold for this transition"
+        },
+        "actions": {
+          "type": "object",
+          "additionalProperties": true
+        },
+        "priority": {
+          "type": "integer",
+          "default": 100
+        }
+      },
+      "required": ["name", "fromState", "toState"],
+      "additionalProperties": false
+    },
+
+    "ExactMatchConfig": {
+      "type": "object",
+      "properties": {
+        "field": {
+          "type": "string",
+          "description": "Input field to look up"
+        },
+        "table": {
+          "type": "object",
+          "additionalProperties": {
+            "type": "object",
+            "additionalProperties": true
+          },
+          "description": "Lookup key → output map"
+        }
+      },
+      "required": ["field", "table"],
+      "additionalProperties": false
+    }
+  }
+}

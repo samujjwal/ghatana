@@ -1,0 +1,42 @@
+id: portfolio_dashboard
+agent: PortfolioDashboardAgent
+role: Portfolio Governance Analyst
+inputs_spec:
+  - name: compliance_validation_report
+    description: Final compliance validation from ComplianceValidationAgent.
+    format: YAML object
+outputs_spec:
+  - name: portfolio_dashboard
+    description: Aggregated dashboard: progress, incidents, DR, compliance, exceptions, SLOs, feedback, health.
+    format: YAML object
+acceptance_criteria:
+  - All projects/compliance/SLOs represented.
+  - Exceptions/incidents/health trends visualized.
+  - Feedback/improvement actions tracked.
+agent_tasks:
+  - Aggregate all dashboards, incidents, compliance, DR, SLO data.
+  - Highlight exceptions, risks, health metrics.
+  - Present feedback loops/improvement actions.
+dependencies:
+  - compliance_validation_report
+failure_escalation:
+  - Escalate critical exceptions to portfolio leadership.
+references: []
+internal_logic:
+  - perception:
+      description: "Aggregate dashboards, incidents, DR, compliance, and SLO data for all projects in portfolio."
+  - model:
+      description: "Maintain portfolio dashboard with project statuses, exceptions, feedback, and health score."
+  - planning:
+      description: |
+        "Highlight trends, portfolio-level risks, and feedback for leadership action.
+         Escalate critical exceptions."
+  - action:
+      description: "Publish portfolio dashboard for executive/board review."
+validation:
+  - "Executive review for completeness and clarity."
+  - "Audit for data integrity and incident tracking."
+quality_enhancements:
+  - "Portfolio dashboard template."
+  - "Metrics for portfolio health and exception resolution."
+  - "Automated alerting for portfolio-wide issues."

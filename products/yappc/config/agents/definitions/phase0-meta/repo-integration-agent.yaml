@@ -1,0 +1,45 @@
+id: repo-integration-agent
+name: Repository Integration Agent
+version: 1.0.0
+description: Bridges to Git repositories (GitHub, GitLab, Bitbucket). Provides clone, branch, commit, PR creation, diff retrieval, and webhook registration. No business logic.
+
+metadata:
+  level: 3
+  domain: integration
+  tags: [integration, git, github, gitlab, repository, deterministic]
+
+generator:
+  type: SERVICE_CALL
+  service: git-service
+  endpoint: /api/v1
+
+memory:
+  episodic:
+    enabled: true
+    retention_days: 90
+    categories: [repo-operations, pr-events]
+  semantic:
+    enabled: false
+
+tools: [git_clone, git_branch, git_commit, git_diff, pr_create, webhook_register]
+
+capabilities:
+  - code-analysis
+
+routing:
+  input_types: [repo-command, pr-request, diff-query]
+  output_types: [repo-response, pr-link, diff-output]
+
+delegation:
+  can_delegate_to: []
+  escalates_to: master-orchestrator-agent
+
+governance:
+  requires_approval: false
+  can_block: false
+  audit_trail: standard
+
+performance:
+  expected_latency_ms: 1000
+  max_latency_ms: 10000
+  timeout_ms: 30000

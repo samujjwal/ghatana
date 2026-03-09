@@ -1,0 +1,126 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+    <!-- Service Identity -->
+    <key>Label</key>
+    <string>com.dcmaar.agent</string>
+    
+    <!-- Program Configuration -->
+    <key>Program</key>
+    <string>/usr/local/bin/dcmaar-agent</string>
+    
+    <key>ProgramArguments</key>
+    <array>
+        <string>/usr/local/bin/dcmaar-agent</string>
+        <string>--config</string>
+        <string>/usr/local/etc/dcmaar/agent.toml</string>
+    </array>
+    
+    <!-- Execution Environment -->
+    <key>UserName</key>
+    <string>_dcmaar</string>
+    
+    <key>GroupName</key>
+    <string>_dcmaar</string>
+    
+    <key>WorkingDirectory</key>
+    <string>/usr/local/var/lib/dcmaar</string>
+    
+    <!-- Runtime Behavior -->
+    <key>RunAtLoad</key>
+    <true/>
+    
+    <key>KeepAlive</key>
+    <dict>
+        <key>SuccessfulExit</key>
+        <false/>
+        <key>Crashed</key>
+        <true/>
+    </dict>
+    
+    <!-- Resource Limits -->
+    <key>SoftResourceLimits</key>
+    <dict>
+        <key>NumberOfFiles</key>
+        <integer>65536</integer>
+        <key>NumberOfProcesses</key>
+        <integer>32768</integer>
+    </dict>
+    
+    <!-- Logging Configuration -->
+    <key>StandardOutPath</key>
+    <string>/usr/local/var/log/dcmaar/agent.log</string>
+    
+    <key>StandardErrorPath</key>
+    <string>/usr/local/var/log/dcmaar/agent-error.log</string>
+    
+    <!-- Environment Variables -->
+    <key>EnvironmentVariables</key>
+    <dict>
+        <key>RUST_LOG</key>
+        <string>info</string>
+        <key>DCMAAR_CONFIG_DIR</key>
+        <string>/usr/local/etc/dcmaar</string>
+        <key>DCMAAR_DATA_DIR</key>
+        <string>/usr/local/var/lib/dcmaar</string>
+        <key>DCMAAR_LOG_DIR</key>
+        <string>/usr/local/var/log/dcmaar</string>
+    </dict>
+    
+    <!-- Network Configuration -->
+    <key>Sockets</key>
+    <dict>
+        <key>AdminSocket</key>
+        <dict>
+            <key>SockServiceName</key>
+            <string>8787</string>
+            <key>SockType</key>
+            <string>stream</string>
+            <key>SockFamily</key>
+            <string>IPv4</string>
+        </dict>
+    </dict>
+    
+    <!-- Security Settings -->
+    <key>ProcessType</key>
+    <string>Background</string>
+    
+    <key>Nice</key>
+    <integer>0</integer>
+    
+    <!-- Throttling -->
+    <key>ThrottleInterval</key>
+    <integer>10</integer>
+    
+    <!-- Exit Timeout -->
+    <key>ExitTimeOut</key>
+    <integer>30</integer>
+    
+    <!-- Launch Conditions -->
+    <key>LaunchOnlyOnce</key>
+    <false/>
+    
+    <!-- Watchdog Configuration -->
+    <key>StartCalendarInterval</key>
+    <dict>
+        <key>Minute</key>
+        <integer>0</integer>
+    </dict>
+    
+    <!-- Service Dependencies -->
+    <key>LaunchEvents</key>
+    <dict>
+        <key>com.apple.networkd</key>
+        <dict>
+            <key>com.apple.networkd.network_detection</key>
+            <array>
+                <dict>
+                    <key>networkUUID</key>
+                    <string>*</string>
+                </dict>
+            </array>
+        </dict>
+    </dict>
+</dict>
+</plist>

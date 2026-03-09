@@ -1,0 +1,70 @@
+id: replay-debugger-agent
+name: Replay Debugger Agent
+version: 1.0.0
+description: Replays recorded events or request sequences against the codebase to reproduce timing-dependent or state-dependent bugs that are hard to reproduce manually.
+
+metadata:
+  level: 3
+  domain: debugging
+  tags: [debugging, replay, time-travel, event-sourcing]
+
+generator:
+  type: PIPELINE
+  steps:
+    - name: event_replay
+      type: SERVICE_CALL
+      service: event-replay
+      endpoint: /replay/execute
+    - name: divergence_analysis
+      type: LLM
+      provider: ANTHROPIC
+      model: claude-3-5-sonnet-20241022
+      temperature: 0.1
+      max_tokens: 2000
+      prompt: |
+        Analyze the replay results for divergence from expected behavior:
+        
+        Replay Log: {{input}}
+        Expected Behavior: {{expected}}
+        Original Event Sequence: {{events}}
+        
+        Identify:
+        1. First point of divergence from expected state
+        2. State differences at divergence point
+        3. Timing-sensitive operations that may be race conditions
+        4. Non-deterministic operations (random, clock, external calls)
+        5. Recommended determinism controls for reliable reproduction
+        
+        Output as JSON: {divergence_point, state_diff, race_conditions, non_deterministic_ops, controls}
+
+memory:
+  episodic:
+    enabled: true
+    retention_days: 180
+    categories: [replay-sessions, race-conditions]
+  semantic:
+    enabled: true
+    categories: [non-determinism-sources, replay-strategies]
+
+tools: [event_replayer, state_comparator]
+
+capabilities:
+  - root-cause-analysis
+
+routing:
+  input_types: [event-sequence, replay-request]
+  output_types: [replay-report, divergence-analysis]
+
+delegation:
+  can_delegate_to: []
+  escalates_to: debug-orchestrator
+
+governance:
+  requires_approval: false
+  can_block: false
+  audit_trail: comprehensive
+
+performance:
+  expected_latency_ms: 10000
+  max_latency_ms: 60000
+  timeout_ms: 120000

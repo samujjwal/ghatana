@@ -1,0 +1,258 @@
+/*
+ * Copyright (c) 2025 Ghatana Inc.
+ * All rights reserved.
+ *
+ * Virtual Organization - Agent role definitions
+ */
+syntax = "proto3";
+
+package virtualorg.v1;
+
+import "google/protobuf/timestamp.proto";
+import "virtualorg/v1/decision.proto";
+import "virtualorg/v1/task.proto";
+
+option java_package = "com.ghatana.virtualorg.v1";
+option java_multiple_files = true;
+option java_outer_classname = "AgentRoleOuterClass";
+
+// Agent role definition
+enum AgentRoleProto {
+  AGENT_ROLE_UNKNOWN = 0;
+
+  // Executive roles
+  AGENT_ROLE_CEO = 1;
+  AGENT_ROLE_CTO = 2;
+  AGENT_ROLE_CPO = 3;
+  AGENT_ROLE_CFO = 4;
+
+  // Engineering roles
+  AGENT_ROLE_ARCHITECT = 10;
+  AGENT_ROLE_SENIOR_ENGINEER = 11;
+  AGENT_ROLE_ENGINEER = 12;
+  AGENT_ROLE_JUNIOR_ENGINEER = 13;
+  AGENT_ROLE_TEAM_LEAD = 14;
+
+  // Quality assurance
+  AGENT_ROLE_QA_LEAD = 20;
+  AGENT_ROLE_QA_ENGINEER = 21;
+  AGENT_ROLE_TEST_AUTOMATION_ENGINEER = 22;
+
+  // Operations
+  AGENT_ROLE_DEVOPS_LEAD = 30;
+  AGENT_ROLE_DEVOPS_ENGINEER = 31;
+  AGENT_ROLE_SRE = 32;
+
+  // Product roles
+  AGENT_ROLE_PRODUCT_MANAGER = 40;
+  AGENT_ROLE_BUSINESS_ANALYST = 41;
+  AGENT_ROLE_UX_DESIGNER = 42;
+
+  // Research roles
+  AGENT_ROLE_RESEARCHER = 50;
+  AGENT_ROLE_DATA_SCIENTIST = 51;
+  AGENT_ROLE_ML_ENGINEER = 52;
+
+  // Security roles
+  AGENT_ROLE_SECURITY_ENGINEER = 60;
+  AGENT_ROLE_SECURITY_ANALYST = 61;
+
+  // Support roles
+  AGENT_ROLE_TECH_WRITER = 70;
+  AGENT_ROLE_CUSTOMER_SUPPORT = 71;
+}
+
+// Virtual organization agent configuration
+message VirtualOrgAgentProto {
+  reserved 100 to max;
+
+  // Agent ID
+  string agent_id = 1;
+
+  // Agent name
+  string name = 2;
+
+  // Role
+  AgentRoleProto role = 3;
+
+  // Current state
+  AgentStateProto state = 4;
+
+  // Decision authority
+  DecisionAuthorityProto authority = 5;
+
+  // Tool IDs available to this agent
+  repeated string tool_ids = 6;
+
+  // LLM configuration
+  LLMConfigProto llm_config = 7;
+
+  // Memory configuration
+  MemoryConfigProto memory_config = 8;
+
+  // Created timestamp
+  google.protobuf.Timestamp created_at = 9;
+
+  // Last active timestamp
+  google.protobuf.Timestamp last_active_at = 10;
+
+  // Current task ID
+  string current_task_id = 11;
+
+  // Task queue
+  repeated string task_queue = 12;
+
+  // Performance metrics
+  AgentPerformanceProto performance = 13;
+
+  // Metadata
+  map<string, string> metadata = 14;
+}
+
+// Agent state
+enum AgentStateProto {
+  AGENT_STATE_UNKNOWN = 0;
+  AGENT_STATE_IDLE = 1;
+  AGENT_STATE_BUSY = 2;
+  AGENT_STATE_WAITING = 3;
+  AGENT_STATE_ERROR = 4;
+  AGENT_STATE_PAUSED = 5;
+  AGENT_STATE_TERMINATED = 6;
+}
+
+// LLM configuration
+message LLMConfigProto {
+  reserved 100 to max;
+
+  // Model name (e.g., "gpt-4", "claude-3")
+  string model = 1;
+
+  // Temperature for sampling
+  float temperature = 2;
+
+  // Maximum tokens
+  int32 max_tokens = 3;
+
+  // Timeout in seconds
+  int32 timeout_seconds = 4;
+
+  // Additional parameters
+  map<string, string> parameters = 5;
+
+  // Whether to use local model
+  bool use_local = 6;
+
+  // Model provider
+  string provider = 7;
+}
+
+// Memory configuration
+message MemoryConfigProto {
+  reserved 100 to max;
+
+  // Short-term memory size
+  int32 short_term_size = 1;
+
+  // Long-term memory enabled
+  bool long_term_enabled = 2;
+
+  // Vector store type
+  string vector_store_type = 3;
+
+  // Embedding model
+  string embedding_model = 4;
+
+  // Memory retention policy
+  MemoryRetentionProto retention = 5;
+}
+
+// Memory retention policy
+message MemoryRetentionProto {
+  reserved 100 to max;
+
+  // Short-term memory TTL in seconds
+  int32 short_term_ttl_seconds = 1;
+
+  // Long-term memory max items
+  int32 long_term_max_items = 2;
+
+  // Cleanup frequency in seconds
+  int32 cleanup_frequency_seconds = 3;
+}
+
+// Agent performance metrics
+message AgentPerformanceProto {
+  reserved 100 to max;
+
+  // Total tasks completed
+  int64 tasks_completed = 1;
+
+  // Total tasks failed
+  int64 tasks_failed = 2;
+
+  // Average task completion time in seconds
+  double avg_completion_time_seconds = 3;
+
+  // Success rate (0.0 to 1.0)
+  float success_rate = 4;
+
+  // Average confidence score
+  float avg_confidence = 5;
+
+  // Total LLM tokens used
+  int64 total_tokens_used = 6;
+
+  // Total tool calls made
+  int64 total_tool_calls = 7;
+
+  // Last updated
+  google.protobuf.Timestamp last_updated = 8;
+}
+
+// Tool definition for agents
+message ToolProto {
+  reserved 100 to max;
+
+  // Tool ID
+  string tool_id = 1;
+
+  // Tool name
+  string name = 2;
+
+  // Description
+  string description = 3;
+
+  // Tool type
+  ToolTypeProto type = 4;
+
+  // Parameter schema (JSON schema)
+  string parameter_schema = 5;
+
+  // Return type
+  string return_type = 6;
+
+  // Whether tool is enabled
+  bool enabled = 7;
+
+  // Timeout in seconds
+  int32 timeout_seconds = 8;
+
+  // Maximum retries
+  int32 max_retries = 9;
+
+  // Metadata
+  map<string, string> metadata = 10;
+}
+
+// Tool type
+enum ToolTypeProto {
+  TOOL_TYPE_UNKNOWN = 0;
+  TOOL_TYPE_GIT = 1;
+  TOOL_TYPE_CODE_EXECUTION = 2;
+  TOOL_TYPE_FILE_OPERATION = 3;
+  TOOL_TYPE_DATABASE = 4;
+  TOOL_TYPE_HTTP = 5;
+  TOOL_TYPE_SHELL = 6;
+  TOOL_TYPE_AI = 7;
+  TOOL_TYPE_CUSTOM = 8;
+}

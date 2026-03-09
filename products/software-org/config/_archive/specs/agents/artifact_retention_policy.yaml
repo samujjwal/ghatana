@@ -1,0 +1,26 @@
+---
+id: "artifact_retention_policy"
+agent: "ArtifactRetentionPolicyAgent"
+role: "Release Automation"
+inputs_spec:
+- name: "ready_for_test_package"
+  description: "Test package output for artifact retention enforcement."
+  format: "Release/test package artifact"
+outputs_spec:
+- name: "artifact_retention_report"
+  description: "Report of artifact retention/deletion actions."
+  format: "Artifact retention log"
+agent_tasks:
+- "Enforce artifact retention and deletion policies."
+- "Flag old or unneeded artifacts for deletion."
+- "Log all deletion actions for audit."
+acceptance_criteria:
+- "Artifact retention/deletion policy is enforced."
+- "Old/unneeded artifacts are flagged for deletion."
+- "Deletion actions are logged and auditable."
+dependencies:
+- "ready_for_test_package"
+failure_escalation:
+- "Escalate to Release Automation Lead if deletion is missed or policy gaps."
+references: []
+hitl: false

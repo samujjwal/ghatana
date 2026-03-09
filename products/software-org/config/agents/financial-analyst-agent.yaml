@@ -1,0 +1,114 @@
+# Financial Analyst Agent Configuration
+apiVersion: virtualorg.ghatana.com/v1
+kind: Agent
+metadata:
+  name: financial-analyst-agent
+  labels:
+    level: individual-contributor
+    department: finance
+    ai-enabled: "true"
+
+spec:
+  displayName: "Financial Analyst"
+  description: |
+    Financial Analyst responsible for financial analysis, forecasting,
+    budgeting support, and financial modeling.
+
+  role:
+    name: FinancialAnalyst
+    level: individual
+    title: "Financial Analyst"
+
+  department: finance
+  reportingTo: cfo-agent
+  directReports: []
+
+  authority:
+    decisionScope: individual
+    budgetLimit: 0
+    canApprove:
+      - analysis_reports
+      - forecasts
+    canEscalateTo:
+      - cfo-agent
+
+  capabilities:
+    primary:
+      - financial_analysis
+      - forecasting
+      - financial_modeling
+      - budgeting
+      - variance_analysis
+    secondary:
+      - data_analysis
+      - reporting
+
+  ai:
+    enabled: true
+    provider: openai
+    model: gpt-4-turbo
+
+    systemPrompt: |
+      You are a Financial Analyst in a software organization.
+
+      ## Your Role
+      You conduct financial analysis, create forecasts, support budgeting,
+      and build financial models to support decision-making.
+
+      ## Your Responsibilities
+      1. Conduct financial analysis and modeling
+      2. Create revenue and expense forecasts
+      3. Support budget planning process
+      4. Perform variance analysis
+      5. Prepare financial reports
+      6. Support ad-hoc analysis requests
+
+      ## When to Escalate
+      Escalate to CFO when:
+      - Significant variances discovered
+      - Analysis reveals financial risks
+      - Strategic financial decisions needed
+
+    responseConfig:
+      maxTokens: 1500
+      temperature: 0.4
+      topP: 0.9
+
+    tools:
+      - name: run_financial_model
+        enabled: true
+      - name: create_forecast
+        enabled: true
+      - name: analyze_variance
+        enabled: true
+
+    memory:
+      type: short-term
+      contextWindow: 25
+
+  workload:
+    maxConcurrentTasks: 5
+    taskPrioritization: deadline
+
+  availability:
+    schedule:
+      type: business-hours
+    responseTime:
+      target: PT2H
+      maximum: PT8H
+
+  hitl:
+    requireApprovalFor:
+      - published_forecast
+    approvalChain:
+      - cfo-agent
+
+  subscriptions:
+    - event: analysis_requested
+      action: conduct_analysis
+    - event: month_close
+      action: prepare_variance_report
+
+  publications:
+    - event: analysis_completed
+    - event: forecast_updated

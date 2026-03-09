@@ -1,0 +1,34 @@
+---
+id: "secure_evidence_collector"
+agent: "EvidenceCollectorAgent"
+role: "Compliance Evidence Bot"
+inputs_spec:
+- name: "secure_audit_log"
+  description: "Secure audit log for evidence collection."
+  format: "Audit log artifact"
+- name: "secure_success_criteria_status"
+  description: "Secure success criteria status for evidence linkage."
+  format: "List of criteria status objects"
+- name: "secure_stage_milestone"
+  description: "Secure milestone plan for evidence linkage."
+  format: "List of milestone objects"
+outputs_spec:
+- name: "secure_evidence_package"
+  description: "Evidence package with all Secure signoffs, feedback, and results."
+  format: "Evidence package artifact"
+agent_tasks:
+- "Collect all signoffs, feedback, and Secure test results as evidence."
+- "Archive Secure results and link for traceability."
+- "Maintain access logs and evidence hash."
+acceptance_criteria:
+- "Evidence package includes all Secure signoffs, feedback, and results."
+- "Results are archived and traceable."
+- "Access logs and hashes are maintained."
+dependencies:
+- "secure_audit_log"
+- "secure_success_criteria_status"
+- "secure_stage_milestone"
+failure_escalation:
+- "Escalate to compliance evidence lead if evidence package is incomplete or not archived."
+references: []
+hitl: false

@@ -1,0 +1,94 @@
+//! IPC Command Handlers
+//!
+//! This module contains all Tauri command handlers that can be invoked
+//! from the frontend via `@tauri-apps/api/core`.
+
+use crate::error::AppError;
+use crate::state::AppState;
+use serde::{Deserialize, Serialize};
+use tauri::State;
+
+/// Response for system statistics
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct SystemStats {
+pub memory_used: u64,
+pub cpu_count: usize,
+pub hostname: String,
+}
+
+/// Greet command - simple example of IPC communication
+#[tauri::command]
+pub fn greet(name: &str) -> String {
+log::info!("Greet command called with name: {}", name);
+format!("Hello, {}! Welcome to {{displayName}}!", name)
+}
+
+/// Get system statistics
+#[tauri::command]
+pub async fn get_system_stats() -> Result<SystemStats, AppError> {
+    log::info!("Getting system stats...");
+
+    // Note: In a real app, you'd use system info crates like `sysinfo`
+    let stats = SystemStats {
+    memory_used: 0,
+    cpu_count: num_cpus(),
+    hostname: hostname(),
+    };
+
+    Ok(stats)
+    }
+
+    /// Store data in application state
+    #[tauri::command]
+    pub async fn store_data(
+    key: String,
+    value: String,
+    state: State<'_, AppState>,
+        ) -> Result<(), AppError> {
+            log::info!("Storing data: {} = {}", key, value);
+            state.store(&key, value)?;
+            Ok(())
+            }
+
+            /// Retrieve data from application state
+            #[tauri::command]
+            pub async fn retrieve_data(
+            key: String,
+            state: State<'_, AppState>,
+                ) -> Result<Option<String>, AppError> {
+                    log::info!("Retrieving data for key: {}", key);
+                    Ok(state.get(&key))
+                    }
+
+                    /// Get the number of CPUs (simple implementation)
+                    fn num_cpus() -> usize {
+                    std::thread::available_parallelism()
+                    .map(|p| p.get())
+                    .unwrap_or(1)
+                    }
+
+                    /// Get the hostname (simple implementation)
+                    fn hostname() -> String {
+                    std::env::var("HOSTNAME")
+                    .or_else(|_| std::env::var("COMPUTERNAME"))
+                    .unwrap_or_else(|_| "unknown".to_string())
+                    }
+
+                    #[cfg(test)]
+                    mod tests {
+                    use super::*;
+
+                    #[test]
+                    fn test_greet() {
+                    let result = greet("World");
+                    assert!(result.contains("Hello, World!"));
+                    }
+
+                    #[tokio::test]
+                    async fn test_get_system_stats() {
+                    let result = get_system_stats().await;
+                    assert!(result.is_ok());
+                    let stats = result.unwrap();
+                    assert!(stats.cpu_count > 0);
+                    }
+                    }

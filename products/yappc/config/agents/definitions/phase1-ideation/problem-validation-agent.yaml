@@ -1,0 +1,120 @@
+id: problem-validation-agent
+name: Problem Validation Agent
+version: 1.0.0
+description: Validates that problems are real, significant, and worth solving. Gathers evidence through user research, data analysis, and experiments.
+
+metadata:
+  level: 2  # Domain Expert
+  domain: ideation
+  tags:
+    - problem-validation
+    - evidence-gathering
+    - user-research
+    - validation-experiments
+
+generator:
+  type: PIPELINE
+  steps:
+    - name: validation_planning
+      type: LLM
+      provider: ANTHROPIC
+      model: claude-3-5-sonnet-20241022
+      temperature: 0.2
+      max_tokens: 2000
+      prompt: |
+        You are the Problem Validation Agent. Plan validation for this problem:
+        
+        Problem Statement: {{problem}}
+        Assumptions: {{assumptions}}
+        Target Users: {{users}}
+        
+        Design validation approach:
+        1. Validation questions (what must be true?)
+        2. Evidence needed (quantitative, qualitative)
+        3. Research methods (interviews, surveys, analytics, experiments)
+        4. Success criteria (how to know problem is real?)
+        5. Timeline and resources
+        
+        Output as JSON: {questions, evidence_types, methods, success_criteria, timeline, cost}
+    - name: validation_execution
+      type: SERVICE_CALL
+      service: research-service
+      endpoint: /research/execute
+    - name: results_analysis
+      type: LLM
+      provider: ANTHROPIC
+      model: claude-3-5-sonnet-20241022
+      temperature: 0.1
+      max_tokens: 2000
+      prompt: |
+        Analyze validation results:
+        
+        Results: {{results}}
+        Success Criteria: {{criteria}}
+        
+        Determine:
+        1. Validation status (VALIDATED/INVALIDATED/INCONCLUSIVE)
+        2. Evidence strength
+        3. Confidence level
+        4. Surprises or new insights
+        5. Recommendation (proceed, pivot, stop)
+
+memory:
+  episodic:
+    enabled: true
+    retention_days: 730
+    categories:
+      - validation-studies
+      - research-results
+      - validation-decisions
+  semantic:
+    enabled: true
+    categories:
+      - validation-methods
+      - evidence-standards
+      - research-best-practices
+  procedural:
+    enabled: true
+    categories:
+      - validation-frameworks
+      - research-protocols
+      - analysis-procedures
+
+tools:
+  - research_executor
+  - data_analyzer
+  - evidence_aggregator
+
+capabilities:
+  - validation-planning
+  - research-design
+  - evidence-gathering
+  - results-analysis
+  - validation-decision
+
+routing:
+  input_types:
+    - problem-statement
+    - validation-request
+    - hypothesis-test
+  output_types:
+    - validation-plan
+    - validation-report
+    - evidence-package
+
+delegation:
+  can_delegate_to:
+    - fake-door-experiment-agent
+    - prototype-validation-agent
+  escalates_to:
+    - ideation-orchestrator-agent
+
+governance:
+  requires_approval: false
+  can_block: false
+  audit_trail: comprehensive
+
+performance:
+  expected_latency_ms: 4000
+  max_latency_ms: 10000
+  timeout_ms: 20000

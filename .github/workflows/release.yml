@@ -1,0 +1,105 @@
+name: Release
+
+on:
+  workflow_dispatch:
+    inputs:
+      version:
+        description: "Version to release (e.g., 1.0.0)"
+        required: true
+        default: ""
+      module:
+        description: "Module path to release (e.g., :products:multi-agent:core)"
+        required: true
+        default: ""
+
+env:
+  GRADLE_OPTS: -Dorg.gradle.daemon=false -Dorg.gradle.parallel=true -Dorg.gradle.caching=true
+  GRADLE_BUILD_OPTS: --no-daemon --stacktrace --info
+  JAVA_VERSION: "21"
+
+jobs:
+  release:
+    name: Release ${{ github.event.inputs.module }}
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+        with:
+          fetch-depth: 0
+
+      - name: Set up JDK ${{ env.JAVA_VERSION }}
+        uses: actions/setup-java@v3
+        with:
+          distribution: "temurin"
+          java-version: ${{ env.JAVA_VERSION }}
+          cache: "gradle"
+
+      - name: Grant execute permission for gradlew
+        run: chmod +x gradlew
+
+      - name: Set Git identity
+        run: |
+          git config --global user.name "GitHub Actions"
+          git config --global user.email "actions@github.com"
+
+      - name: Release to Maven Central
+        if: github.event.inputs.module != ''
+        env:
+          OSSRH_USERNAME: ${{ secrets.OSSRH_USERNAME }}
+          OSSRH_PASSWORD: ${{ secrets.OSSRH_PASSWORD }}
+          SIGNING_KEY: ${{ secrets.OSSRH_SIGNING_KEY }}
+          SIGNING_PASSWORD: ${{ secrets.OSSRH_SIGNING_PASSWORD }}
+        run: |
+          VERSION=${{ github.event.inputs.version }}
+          MODULE=${{ github.event.inputs.module }}
+
+          # Update version in the module's build.gradle
+          if [ -n "$VERSION" ] && [ -n "$MODULE" ]; then
+            # This is a simplified version - you might need to adjust based on your version management
+            sed -i "s/version = .*/version = '$VERSION'/" ${MODULE//:/\/}/build.gradle
+            
+            # Commit and tag the version
+            git add ${MODULE//:/\/}/build.gradle
+            git commit -m "Release $MODULE $VERSION"
+            git tag -a "$MODULE-$VERSION" -m "Release $MODULE $VERSION"
+            git push origin "$MODULE-$VERSION"
+            
+            # Publish to Maven Central
+            ./gradlew "$MODULE:publishToSonatype" "$MODULE:closeAndReleaseSonatypeStagingRepository" \
+              -PossrhUsername="$OSSRH_USERNAME" \
+              -PossrhPassword="$OSSRH_PASSWORD" \
+              -PsigningKey="$SIGNING_KEY" \
+              -PsigningPassword="$SIGNING_PASSWORD" \
+              $GRADLE_BUILD_OPTS
+          else
+            echo "Module path or version not provided"
+            exit 1
+          fi
+
+      - name: Create GitHub Release
+        if: github.event.inputs.module != ''
+        uses: softprops/action-gh-release@v1
+        with:
+          tag_name: ${{ github.event.inputs.module }}-${{ github.event.inputs.version }}
+          name: ${{ github.event.inputs.module }} ${{ github.event.inputs.version }}
+          body: |
+            ## What's Changed
+
+            ### Added
+            - Initial release of ${{ github.event.inputs.module }}
+
+            ## How to Use
+
+            ```gradle
+            dependencies {
+                implementation '${{ github.event.inputs.module }}:${{ github.event.inputs.version }}'
+            }
+            ```
+          draft: false
+          prerelease: false
+          files: |
+            ${{ github.event.inputs.module }}/build/libs/*.jar
+            ${{ github.event.inputs.module }}/build/publications/mavenJava/pom-default.xml
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

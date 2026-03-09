@@ -1,0 +1,60 @@
+[project]
+name = "{{kebabCase projectName}}"
+version = "0.1.0"
+{{#if description}}
+description = "{{description}}"
+{{/if}}
+{{#if author}}
+authors = [{name = "{{author}}"}]
+{{/if}}
+requires-python = "{{pythonVersion}}"
+dependencies = [
+"click>=8.1.0",
+"rich>=13.0.0",
+]
+
+[project.scripts]
+{{snakeCase projectName}} = "{{snakeCase projectName}}.cli:main"
+
+{{#if buildTool}}
+{{#eq buildTool "uv"}}
+[tool.uv]
+dev-dependencies = [
+"pytest>=7.4.0",
+"ruff>=0.1.0",
+"mypy>=1.7.0",
+]
+{{/eq}}
+{{#eq buildTool "poetry"}}
+[tool.poetry.dependencies]
+python = "{{pythonVersion}}"
+click = "^8.1.0"
+rich = "^13.0.0"
+
+[tool.poetry.group.dev.dependencies]
+pytest = "^7.4.0"
+ruff = "^0.1.0"
+mypy = "^1.7.0"
+
+[build-system]
+requires = ["poetry-core"]
+build-backend = "poetry.core.masonry.api"
+{{/eq}}
+{{else}}
+[tool.uv]
+dev-dependencies = [
+"pytest>=7.4.0",
+"ruff>=0.1.0",
+"mypy>=1.7.0",
+]
+{{/if}}
+
+[tool.ruff]
+target-version = "py311"
+line-length = 100
+
+[tool.mypy]
+python_version = "3.11"
+warn_return_any = true
+warn_unused_configs = true
+disallow_untyped_defs = true

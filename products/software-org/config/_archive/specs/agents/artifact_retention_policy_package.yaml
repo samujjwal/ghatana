@@ -1,0 +1,26 @@
+---
+id: "artifact_retention_policy_package"
+agent: "ArtifactRetentionPolicyAgent"
+role: "Release Automation"
+inputs_spec:
+- name: "ready_for_deploy_bundle"
+  description: "Deployable bundle for retention policy enforcement."
+  format: "Deployable bundle artifact"
+outputs_spec:
+- name: "artifact_retention_report"
+  description: "Report on retention policy enforcement."
+  format: "Retention report artifact"
+agent_tasks:
+- "Enforce retention policy on all release artifacts."
+- "Flag and delete old/unneeded artifacts."
+- "Log all deletion actions."
+acceptance_criteria:
+- "Retention policy enforced on all artifacts."
+- "Old/unneeded artifacts flagged/deleted."
+- "Deletion actions logged."
+dependencies:
+- "ready_for_deploy_bundle"
+failure_escalation:
+- "Escalate to Release Automation if retention policy not enforced."
+references: []
+hitl: false

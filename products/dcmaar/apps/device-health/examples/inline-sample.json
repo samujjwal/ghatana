@@ -1,0 +1,20 @@
+{
+  "source": {
+    "type": "inline",
+    "options": {
+      "config": {
+        "payload": {
+          "source": {"type": "inline"},
+          "privacy": {"samplingRate": 0.2}
+        }
+      }
+    }
+  },
+  "sink": {
+    "type": "http",
+    "options": {
+      "url": "https://ingest.example.com/ingest",
+      "timeoutMs": 10000
+    }
+  }
+}

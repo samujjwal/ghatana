@@ -1,0 +1,26 @@
+---
+id: "build_audit"
+agent: "BuildAuditAgent"
+role: "Compliance Analyst"
+inputs_spec:
+- name: "stored_artifacts"
+  description: "Artifacts in registry for audit trail creation."
+  format: "Artifact registry reference"
+outputs_spec:
+- name: "build_logs_audit_trail"
+  description: "Build logs and audit trail for each artifact."
+  format: "Audit log artifact"
+agent_tasks:
+- "Collect build logs and audit trails for each artifact."
+- "Ensure all compliance-relevant activities are logged."
+- "Guarantee audit records are immutable and accessible for review."
+acceptance_criteria:
+- "Build logs and audit trails are collected for each artifact."
+- "All compliance-relevant activities are logged."
+- "Audit records are immutable and accessible for review."
+dependencies:
+- "stored_artifacts"
+failure_escalation:
+- "Escalate to Compliance Analyst or Security if audit records are incomplete."
+references: []
+hitl: false

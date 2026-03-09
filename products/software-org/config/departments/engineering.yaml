@@ -1,0 +1,188 @@
+# Engineering Department Configuration
+# Part of Software-Org plugin for Virtual-Org framework
+
+apiVersion: virtualorg.ghatana.com/v1
+kind: Department
+metadata:
+  name: engineering
+  labels:
+    category: technical
+    cost-center: "ENG-001"
+
+spec:
+  # Basic Info
+  displayName: "Engineering"
+  type: ENGINEERING
+  description: |
+    Software development and architecture department responsible for building,
+    maintaining, and evolving the technical platform. Handles feature development,
+    bug fixes, code reviews, and technical debt management.
+
+  # Organizational Position
+  hierarchy:
+    parent: null
+    reportingTo: cto-agent
+    children: []
+
+  # Department Settings
+  settings:
+    maxAgents: 50
+    autoScaleAgents: false
+    taskAssignment:
+      strategy: capability-match
+      loadBalancing: true
+      maxTasksPerAgent: 5
+
+  # Agent Definitions
+  agents:
+    - ref: agents/cto-agent.yaml
+    - ref: agents/architect-lead-agent.yaml
+    - ref: agents/senior-engineer-agent.yaml
+    - ref: agents/engineer-agent.yaml
+    - ref: agents/junior-engineer-agent.yaml
+
+  # Department-Specific Workflows
+  workflows:
+    - name: code-review
+      displayName: "Code Review Process"
+      steps:
+        - name: submit-pr
+          agent: engineer
+          action: create_pull_request
+          timeout: PT1H
+        - name: automated-checks
+          agent: system
+          action: run_ci_pipeline
+          timeout: PT30M
+          waitFor: [submit-pr]
+        - name: code-review
+          agent: senior-engineer
+          action: review_code
+          timeout: PT24H
+          waitFor: [automated-checks]
+        - name: approval
+          agent: architect-lead
+          action: approve_merge
+          timeout: PT4H
+          waitFor: [code-review]
+          conditions:
+            - field: review_status
+              operator: equals
+              value: approved
+
+    - name: feature-development
+      displayName: "Feature Development"
+      steps:
+        - name: task-breakdown
+          agent: senior-engineer
+          action: break_down_feature
+          timeout: PT4H
+        - name: development
+          agent: engineer
+          action: implement_feature
+          timeout: PT40H
+          waitFor: [task-breakdown]
+        - name: unit-testing
+          agent: engineer
+          action: write_tests
+          timeout: PT8H
+          waitFor: [development]
+        - name: documentation
+          agent: engineer
+          action: update_documentation
+          timeout: PT4H
+          waitFor: [unit-testing]
+
+  # KPI Definitions
+  kpis:
+    - name: velocity_story_points
+      displayName: "Sprint Velocity"
+      type: gauge
+      unit: points
+      target: 50
+      warningThreshold: 40
+      criticalThreshold: 30
+      aggregationPeriod: P2W
+
+    - name: code_coverage
+      displayName: "Code Coverage"
+      type: percentage
+      target: 80
+      warningThreshold: 70
+      criticalThreshold: 60
+
+    - name: pr_cycle_time
+      displayName: "PR Cycle Time"
+      type: duration
+      unit: hours
+      target: 24
+      warningThreshold: 48
+      criticalThreshold: 72
+
+    - name: bug_fix_time
+      displayName: "Bug Fix Time"
+      type: duration
+      unit: hours
+      target: 8
+      warningThreshold: 16
+      criticalThreshold: 24
+
+    - name: technical_debt_ratio
+      displayName: "Technical Debt Ratio"
+      type: percentage
+      target: 15
+      warningThreshold: 25
+      criticalThreshold: 35
+
+  # Task Types This Department Handles
+  taskTypes:
+    - name: feature_development
+      priority: normal
+      slaHours: 40
+      requiredCapabilities: [coding, testing, documentation]
+      estimationPoints: [1, 2, 3, 5, 8, 13]
+
+    - name: bug_fix
+      priority: high
+      slaHours: 8
+      requiredCapabilities: [debugging, coding, testing]
+      estimationPoints: [1, 2, 3, 5]
+
+    - name: code_review
+      priority: normal
+      slaHours: 24
+      requiredCapabilities: [code_review, architecture]
+
+    - name: technical_debt
+      priority: low
+      slaHours: 80
+      requiredCapabilities: [refactoring, coding, testing]
+
+    - name: spike_research
+      priority: normal
+      slaHours: 16
+      requiredCapabilities: [research, documentation]
+
+  # Event Subscriptions
+  subscriptions:
+    - event: feature_request_approved
+      source: product
+      action: create_development_tasks
+    - event: bug_reported
+      source: qa
+      action: triage_and_assign
+    - event: security_vulnerability_found
+      source: compliance
+      action: prioritize_security_fix
+    - event: deployment_failed
+      source: devops
+      action: investigate_failure
+
+  # Event Publications
+  publications:
+    - event: feature_completed
+      targets: [qa, product]
+    - event: code_merged
+      targets: [devops]
+    - event: architecture_decision_made
+      targets: [product, compliance]

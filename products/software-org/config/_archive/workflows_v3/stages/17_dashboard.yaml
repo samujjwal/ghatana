@@ -1,0 +1,75 @@
+# Dashboard Stage - v3 Operator-Based Definition
+# Uses cross-cutting operators for comprehensive dashboarding
+name: Dashboard
+description: Executive and operational dashboards with real-time visibility
+domain: operate
+
+# Cross-cutting operators (dashboards are primarily cross-cutting)
+cross_cutting:
+  - ref: cross-cutting/progress_dashboard
+    params:
+      stage: dashboard
+  - ref: cross-cutting/kpi
+    params:
+      stage: dashboard
+  - ref: cross-cutting/risk_trend
+    params:
+      stage: dashboard
+  - ref: cross-cutting/observability_export
+    params:
+      stage: dashboard
+
+# Workflow sequence
+workflow:
+  # Progress Dashboard
+  - step: generate_progress_dashboard
+    operator: cross-cutting/progress_dashboard
+    params:
+      stage: dashboard
+    inputs:
+      - name: all_stage_milestones
+    outputs:
+      - name: progress_dashboard
+
+  # KPI Dashboard
+  - step: generate_kpi_dashboard
+    operator: cross-cutting/kpi
+    params:
+      stage: dashboard
+    inputs:
+      - name: all_kpi_reports
+    outputs:
+      - name: kpi_dashboard
+    depends_on: [generate_progress_dashboard]
+
+  # Risk Dashboard
+  - step: generate_risk_dashboard
+    operator: cross-cutting/risk_trend
+    params:
+      stage: dashboard
+    inputs:
+      - name: all_risk_reports
+    outputs:
+      - name: risk_dashboard
+    depends_on: [generate_kpi_dashboard]
+
+  # Observability Dashboard
+  - step: generate_observability_dashboard
+    operator: cross-cutting/observability_export
+    params:
+      stage: dashboard
+    inputs:
+      - name: all_observability_data
+    outputs:
+      - name: observability_dashboard
+    depends_on: [generate_risk_dashboard]
+
+# Stage entry/exit criteria
+entry_criteria:
+  - Data sources connected
+  - Dashboard requirements defined
+
+exit_criteria:
+  - Dashboards generated
+  - Real-time data flowing
+  - Stakeholder access configured

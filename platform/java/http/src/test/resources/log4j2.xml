@@ -1,0 +1,49 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<Configuration status="WARN" monitorInterval="30">
+    <Properties>
+        <Property name="LOG_PATTERN">%d{yyyy-MM-dd HH:mm:ss.SSS} [%t] %-5level %logger{36} - %msg%n</Property>
+    </Properties>
+    
+    <Appenders>
+        <Console name="Console" target="SYSTEM_OUT">
+            <PatternLayout pattern="${LOG_PATTERN}"/>
+        </Console>
+        
+        <!-- File appender for test logs -->
+        <RollingFile name="File" 
+                    fileName="${sys:java.io.tmpdir}/yappc-tests.log"
+                    filePattern="${sys:java.io.tmpdir}/yappc-tests-%d{yyyy-MM-dd}-%i.log">
+            <PatternLayout pattern="${LOG_PATTERN}"/>
+            <Policies>
+                <SizeBasedTriggeringPolicy size="10 MB"/>
+                <TimeBasedTriggeringPolicy interval="1" modulate="true"/>
+            </Policies>
+            <DefaultRolloverStrategy max="10"/>
+        </RollingFile>
+    </Appenders>
+    
+    <Loggers>
+        <!-- Default root logger -->
+        <Root level="INFO">
+            <AppenderRef ref="Console"/>
+            <AppenderRef ref="File"/>
+        </Root>
+        
+        <!-- Application logging -->
+        <Logger name="com.ghatana" level="DEBUG" additivity="false">
+            <AppenderRef ref="Console"/>
+            <AppenderRef ref="File"/>
+        </Logger>
+        
+        <!-- Test logging -->
+        <Logger name="org.junit" level="WARN"/>
+        <Logger name="org.testcontainers" level="WARN"/>
+        <Logger name="org.hibernate" level="WARN"/>
+        <Logger name="org.springframework" level="WARN"/>
+        
+        <!-- Disable verbose logging from these packages -->
+        <Logger name="org.apache" level="WARN"/>
+        <Logger name="com.zaxxer" level="WARN"/>
+        <Logger name="io.netty" level="WARN"/>
+    </Loggers>
+</Configuration>

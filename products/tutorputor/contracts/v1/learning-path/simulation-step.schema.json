@@ -1,0 +1,223 @@
+{
+    "$schema": "http://json-schema.org/draft-07/schema#",
+    "$id": "https://tutorputor.ghatana.com/schemas/v1/learning-path/simulation-step.json",
+    "title": "SimulationStep",
+    "description": "Schema for a simulation step in a learning path - treats simulations as first-class learning steps",
+    "type": "object",
+    "required": [
+        "id",
+        "type",
+        "simulationId",
+        "manifestId",
+        "domain",
+        "difficulty",
+        "estimatedTimeMinutes"
+    ],
+    "properties": {
+        "id": {
+            "type": "string",
+            "description": "Unique identifier for the learning path step"
+        },
+        "type": {
+            "type": "string",
+            "const": "simulation",
+            "description": "Step type - always 'simulation' for simulation steps"
+        },
+        "simulationId": {
+            "type": "string",
+            "description": "Reference to the simulation instance"
+        },
+        "manifestId": {
+            "type": "string",
+            "description": "Reference to the simulation manifest"
+        },
+        "domain": {
+            "type": "string",
+            "enum": [
+                "CS_DISCRETE",
+                "PHYSICS",
+                "ECONOMICS",
+                "CHEMISTRY",
+                "BIOLOGY",
+                "MEDICINE",
+                "ENGINEERING",
+                "MATHEMATICS"
+            ],
+            "description": "Simulation domain"
+        },
+        "difficulty": {
+            "type": "string",
+            "enum": [
+                "INTRO",
+                "INTERMEDIATE",
+                "ADVANCED"
+            ],
+            "description": "Difficulty level of the simulation"
+        },
+        "skills": {
+            "type": "array",
+            "items": {
+                "type": "object",
+                "required": [
+                    "skillId",
+                    "name"
+                ],
+                "properties": {
+                    "skillId": {
+                        "type": "string",
+                        "description": "Unique skill identifier"
+                    },
+                    "name": {
+                        "type": "string",
+                        "description": "Human-readable skill name"
+                    },
+                    "weight": {
+                        "type": "number",
+                        "minimum": 0,
+                        "maximum": 1,
+                        "default": 1,
+                        "description": "Weight of skill contribution (0-1)"
+                    }
+                }
+            },
+            "description": "Skills that this simulation teaches or assesses"
+        },
+        "prerequisites": {
+            "type": "array",
+            "items": {
+                "type": "object",
+                "required": [
+                    "stepId"
+                ],
+                "properties": {
+                    "stepId": {
+                        "type": "string",
+                        "description": "ID of the prerequisite step"
+                    },
+                    "type": {
+                        "type": "string",
+                        "enum": [
+                            "required",
+                            "recommended"
+                        ],
+                        "default": "required",
+                        "description": "Whether the prerequisite is required or recommended"
+                    },
+                    "minScore": {
+                        "type": "number",
+                        "minimum": 0,
+                        "maximum": 100,
+                        "description": "Minimum score required on prerequisite (if applicable)"
+                    }
+                }
+            },
+            "description": "Prerequisites for this simulation step"
+        },
+        "estimatedTimeMinutes": {
+            "type": "integer",
+            "minimum": 1,
+            "description": "Estimated time to complete the simulation in minutes"
+        },
+        "assessmentRefs": {
+            "type": "array",
+            "items": {
+                "type": "object",
+                "required": [
+                    "assessmentId"
+                ],
+                "properties": {
+                    "assessmentId": {
+                        "type": "string",
+                        "description": "Reference to an assessment"
+                    },
+                    "position": {
+                        "type": "string",
+                        "enum": [
+                            "pre",
+                            "post",
+                            "inline"
+                        ],
+                        "default": "post",
+                        "description": "When the assessment should be presented"
+                    },
+                    "required": {
+                        "type": "boolean",
+                        "default": false,
+                        "description": "Whether completing the assessment is required"
+                    }
+                }
+            },
+            "description": "Assessments associated with this simulation step"
+        },
+        "learningObjectives": {
+            "type": "array",
+            "items": {
+                "type": "string"
+            },
+            "description": "Learning objective IDs covered by this simulation"
+        },
+        "metadata": {
+            "type": "object",
+            "properties": {
+                "title": {
+                    "type": "string",
+                    "description": "Display title for the step"
+                },
+                "description": {
+                    "type": "string",
+                    "description": "Short description of what the learner will do"
+                },
+                "thumbnailUrl": {
+                    "type": "string",
+                    "format": "uri",
+                    "description": "URL to a thumbnail image"
+                },
+                "tags": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    },
+                    "description": "Tags for categorization and search"
+                },
+                "keywords": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    },
+                    "description": "Keywords for search optimization"
+                }
+            },
+            "description": "Additional metadata for display and search"
+        },
+        "completionCriteria": {
+            "type": "object",
+            "properties": {
+                "minTimeSpentSeconds": {
+                    "type": "integer",
+                    "minimum": 0,
+                    "description": "Minimum time that must be spent on simulation"
+                },
+                "requiredSteps": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    },
+                    "description": "Simulation step IDs that must be completed"
+                },
+                "minInteractions": {
+                    "type": "integer",
+                    "minimum": 0,
+                    "description": "Minimum number of interactions required"
+                },
+                "assessmentPassScore": {
+                    "type": "number",
+                    "minimum": 0,
+                    "maximum": 100,
+                    "description": "Minimum score on associated assessments"
+                }
+            },
+            "description": "Criteria for considering this step complete"
+        }
+    },
+    "additionalProperties": false
+}

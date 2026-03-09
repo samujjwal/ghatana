@@ -1,0 +1,998 @@
+name: Build (Automated, Containerized, and Scanned)
+workflow:
+  - id: build_pipeline
+    agent: BuildPipelineAgent
+    role: DevOps Engineer
+    inputs_spec:
+      - name: develop_stage_milestone
+        description: List of milestones signaling readiness for build pipeline configuration.
+        format: List of milestone objects
+    outputs_spec:
+      - name: pipeline_configured
+        description: Configured, versioned build pipeline (CI as code) with all required steps.
+        format: Pipeline config artifact or repo reference
+    agent_tasks:
+      - Define and version build pipeline in code.
+      - Ensure pipeline executes automatically on code changes.
+      - Include build, test, package, and scan steps.
+      - Retain build logs.
+      - Configure automatic failure reporting.
+    acceptance_criteria:
+      - Build pipeline is defined and versioned in code (CI as code).
+      - Pipeline executes automatically on code changes.
+      - All pipeline steps (build, test, package, scan) are present.
+      - Build logs are retained and accessible.
+      - Pipeline failures are automatically reported to the team.
+    dependencies:
+      - develop_stage_milestone
+    failure_escalation:
+      - Escalate to DevOps or CI Owner if pipeline is misconfigured or missing steps.
+    references: []
+
+  - id: build_best_practice_enforcement
+    agent: BuildBestPracticeAgent
+    role: CI Pipeline Auditor
+    inputs_spec:
+      - name: pipeline_configured
+        description: Configured build pipeline artifact.
+        format: Pipeline config artifact
+    outputs_spec:
+      - name: build_best_practice_report
+        description: Compliance report for all pipeline build steps and security requirements.
+        format: Compliance report artifact
+    agent_tasks:
+      - Review all build steps for best practice compliance.
+      - Confirm security scanning and artifact verification are included.
+      - Ensure sensitive variables are managed securely.
+      - Flag and justify any deviation from best practices.
+      - Document best practice compliance.
+    acceptance_criteria:
+      - All build steps follow approved best practices.
+      - Security scanning and artifact verification are included in the pipeline.
+      - Sensitive variables are managed securely.
+      - Deviation from best practices is flagged and justified.
+      - Best practice compliance is documented.
+    dependencies:
+      - pipeline_configured
+    failure_escalation:
+      - Escalate to CI Auditor if non-compliance found.
+    references: []
+    hitl: true
+    hitl_reason: Human ensures build best practices are enforced in CI/CD
+
+  - id: build_milestone_tracker
+    agent: BuildMilestoneTrackerAgent
+    role: Release PM
+    inputs_spec:
+      - name: build_best_practice_report
+        description: Build best practice compliance report.
+        format: Compliance report artifact
+    outputs_spec:
+      - name: build_stage_milestone
+        description: List of all build-stage milestones with owner, status, risks, and blockers.
+        format: List of milestone objects
+    agent_tasks:
+      - List and track build milestones (e.g., pipeline config, first build, first scan).
+      - Assign owners and target dates.
+      - Document blockers and risks for each milestone.
+      - Log milestone completion.
+    acceptance_criteria:
+      - Build milestones (pipeline config, first build, first scan, etc.) are listed.
+      - Each milestone has an owner and target date.
+      - Blockers and risks for each milestone are documented.
+      - Milestone completion is logged.
+    dependencies:
+      - build_best_practice_report
+    failure_escalation:
+      - Escalate to Release PM if build milestones are unclear or blocked.
+    references: []
+    hitl: true
+    hitl_reason: Human oversight for build milestone tracking 
+
+  - id: build_artifacts
+    agent: ArtifactBuilder
+    role: CI/CD Runner
+    inputs_spec:
+      - name: build_stage_milestone
+        description: List of build-stage milestones required for artifact build.
+        format: List of milestone objects
+    outputs_spec:
+      - name: build_artifacts
+        description: Versioned build artifacts generated automatically by pipeline.
+        format: Artifact repo or package
+    agent_tasks:
+      - Generate build artifacts automatically by pipeline.
+      - Store artifacts in a versioned repository.
+      - Prevent failed builds from creating artifacts.
+      - Report build status to relevant stakeholders.
+    acceptance_criteria:
+      - Build artifacts are generated automatically by the pipeline.
+      - Artifacts are stored in a versioned repository.
+      - Failed builds do not create artifacts.
+      - Build status is reported to all relevant stakeholders.
+    dependencies:
+      - build_stage_milestone
+    failure_escalation:
+      - Escalate to CI/CD Runner or DevOps if artifacts are missing or invalid.
+    references: []
+
+  - id: sast
+    agent: SASTAgent
+    role: Security Engineer
+    inputs_spec:
+      - name: build_artifacts
+        description: Artifacts to be scanned with static analysis tools.
+        format: Artifact repo/package
+    outputs_spec:
+      - name: sast_report
+        description: Static Application Security Testing (SAST) scan report.
+        format: SAST report artifact
+    agent_tasks:
+      - Run SAST scan on all build artifacts.
+      - Report all findings with severity.
+      - Block promotion on critical/high issues unless approved.
+      - Store SAST report for traceability.
+    acceptance_criteria:
+      - Static application security tests are executed on all build artifacts.
+      - All findings are reported with severity.
+      - Critical and high issues block promotion unless approved.
+      - SAST report is stored for traceability.
+    dependencies:
+      - build_artifacts
+    failure_escalation:
+      - Escalate to Security Lead if scan is incomplete or findings not addressed.
+    references: []
+    hitl: true
+    hitl_reason: Human reviews SAST scan results for critical vulnerabilities
+
+  - id: build_metrics
+    agent: BuildMetricsAgent
+    role: CI Metrics Bot
+    inputs_spec:
+      - name: build_artifacts
+        description: Build artifacts for generating pipeline metrics.
+        format: Artifact repo/package
+    outputs_spec:
+      - name: build_metrics_report
+        description: Report with build duration, pass/fail rates, and frequency.
+        format: Metrics report artifact
+    agent_tasks:
+      - Track build duration, pass/fail rates, and build frequency.
+      - Make metrics accessible to stakeholders.
+      - Flag anomalies in build trends.
+    acceptance_criteria:
+      - Build duration, pass/fail rates, and frequency are tracked.
+      - Metrics are accessible to project stakeholders.
+      - Anomalies in build trends are flagged.
+    dependencies:
+      - build_artifacts
+    failure_escalation:
+      - Escalate to Metrics Owner if metrics are missing or inaccurate.
+    references: []
+    hitl: false
+
+  - id: sbom
+    agent: SBOMAgent
+    role: Tooling Engineer
+    inputs_spec:
+      - name: build_artifacts
+        description: Build artifacts for generating SBOM.
+        format: Artifact repo/package
+    outputs_spec:
+      - name: sbom_files
+        description: Software Bill of Materials (SBOM) for each build.
+        format: SBOM file artifact
+    agent_tasks:
+      - Generate SBOM for each build.
+      - Include all runtime and build-time dependencies.
+      - Store and link SBOM to build artifacts.
+      - Track changes in dependencies.
+    acceptance_criteria:
+      - Software Bill of Materials is generated for each build.
+      - SBOM includes all runtime and build-time dependencies.
+      - SBOM is stored and linked to build artifacts.
+      - Changes in dependencies are tracked.
+    dependencies:
+      - build_artifacts
+    failure_escalation:
+      - Escalate to Tooling Engineer if SBOM is incomplete or not generated.
+    references: []
+
+  - id: build_supply_chain_risk
+    agent: BuildSupplyChainRiskAgent
+    role: Supply Chain Automation
+    inputs_spec:
+      - name: sbom_files
+        description: SBOM files for scanning supply chain risk.
+        format: SBOM file artifact
+    outputs_spec:
+      - name: supply_chain_risk_report
+        description: Scan report for supply chain risks, especially vulnerable dependencies.
+        format: Supply chain risk report artifact
+    agent_tasks:
+      - Scan SBOM for supply chain risks.
+      - Flag all critical supply chain issues.
+      - Report findings to security and release teams.
+    acceptance_criteria:
+      - SBOM is scanned for supply chain risks.
+      - All critical supply chain issues are flagged.
+      - Risk findings are reported to security and release teams.
+    dependencies:
+      - sbom_files
+    failure_escalation:
+      - Escalate to Supply Chain Lead or Security if risk report is incomplete.
+    references: []
+    hitl: false
+
+  - id: container_build
+    agent: ContainerBuildAgent
+    role: Platform Engineer
+    inputs_spec:
+      - name: build_artifacts
+        description: Build artifacts for creating container images.
+        format: Artifact repo/package
+    outputs_spec:
+      - name: container_images
+        description: Container images built from code and dependencies.
+        format: Container image artifact/registry
+    agent_tasks:
+      - Build container images from the latest code and dependencies.
+      - Tag images uniquely and traceably to source commit/build.
+      - Apply container hardening best practices.
+      - Store image build logs.
+    acceptance_criteria:
+      - Container images are built from the latest code and dependencies.
+      - Image tags are unique and traceable to source commit/build.
+      - Images follow container hardening best practices.
+      - Image build logs are stored.
+    dependencies:
+      - build_artifacts
+    failure_escalation:
+      - Escalate to Platform Engineer or DevOps if image build fails or tags are missing.
+    references: []
+    hitl: false
+
+  - id: container_scan
+    agent: ContainerScanAgent
+    role: Security Engineer
+    inputs_spec:
+      - name: container_images
+        description: Container images for vulnerability scanning.
+        format: Container image artifact/registry
+    outputs_spec:
+      - name: image_scan_report
+        description: Scan report for vulnerabilities in container images.
+        format: Container scan report artifact
+    agent_tasks:
+      - Scan all container images for known vulnerabilities.
+      - Include OS, language, and third-party components in scan.
+      - Block promotion on critical findings unless approved.
+      - Store container scan report for audit.
+    acceptance_criteria:
+      - All container images are scanned for known vulnerabilities.
+      - Scan includes OS, language, and third-party components.
+      - Critical findings block promotion unless approved.
+      - Container scan report is stored for audit.
+    dependencies:
+      - container_images
+    failure_escalation:
+      - Escalate to Security Lead if critical findings are not resolved or report is missing.
+    references: []
+    hitl: true
+    hitl_reason: Human reviews container scan results for actionable issues
+
+  - id: artifact_signing
+    agent: ArtifactSigningAgent
+    role: Release Engineer
+    inputs_spec:
+      - name: container_images
+        description: Container images/artifacts for signing.
+        format: Container image artifact/registry
+    outputs_spec:
+      - name: signed_artifacts
+        description: Cryptographically signed release artifacts.
+        format: Signed artifact or signature manifest
+    agent_tasks:
+      - Sign all release artifacts cryptographically.
+      - Document signature verification process.
+      - Prevent unsigned artifacts from promotion.
+    acceptance_criteria:
+      - All release artifacts are cryptographically signed.
+      - Signature verification process is documented.
+      - Unsigned artifacts are not promoted.
+    dependencies:
+      - container_images
+    failure_escalation:
+      - Escalate to Release Engineer or Security if signing process is incomplete.
+    references: []
+    hitl: true
+    hitl_reason: Human ensures artifact signing is performed and validated
+
+  - id: artifact_registry
+    agent: ArtifactRegistryAgent
+    role: DevOps/Registry Admin
+    inputs_spec:
+      - name: signed_artifacts
+        description: Signed release artifacts for registry storage.
+        format: Signed artifact or manifest
+    outputs_spec:
+      - name: stored_artifacts
+        description: Artifacts stored in secured, access-controlled registry.
+        format: Artifact registry reference
+    agent_tasks:
+      - Store all artifacts in secured, access-controlled registry.
+      - Ensure artifact metadata (version, commit, build ID) is complete.
+      - Log all registry access.
+    acceptance_criteria:
+      - All artifacts are stored in a secured, access-controlled registry.
+      - Artifact metadata (version, commit, build ID) is complete.
+      - Registry access is logged.
+    dependencies:
+      - signed_artifacts
+    failure_escalation:
+      - Escalate to Registry Admin or Security if registry is misconfigured or logs are missing.
+    references: []
+    hitl: false
+
+  - id: build_audit
+    agent: BuildAuditAgent
+    role: Compliance Analyst
+    inputs_spec:
+      - name: stored_artifacts
+        description: Artifacts in registry for audit trail creation.
+        format: Artifact registry reference
+    outputs_spec:
+      - name: build_logs_audit_trail
+        description: Build logs and audit trail for each artifact.
+        format: Audit log artifact
+    agent_tasks:
+      - Collect build logs and audit trails for each artifact.
+      - Ensure all compliance-relevant activities are logged.
+      - Guarantee audit records are immutable and accessible for review.
+    acceptance_criteria:
+      - Build logs and audit trails are collected for each artifact.
+      - All compliance-relevant activities are logged.
+      - Audit records are immutable and accessible for review.
+    dependencies:
+      - stored_artifacts
+    failure_escalation:
+      - Escalate to Compliance Analyst or Security if audit records are incomplete.
+    references: []
+    hitl: false
+
+  - id: traceability_link
+    agent: TraceabilityLinkAgent
+    role: Technical Writer/Analyst
+    inputs_spec:
+      - name: stored_artifacts
+        description: Registry-stored artifacts.
+        format: Artifact registry reference
+      - name: sbom_files
+        description: SBOM files for dependency and supply chain mapping.
+        format: SBOM file artifact
+      - name: build_logs_audit_trail
+        description: Build logs and audit trail for traceability matrix.
+        format: Audit log artifact
+    outputs_spec:
+      - name: artifact_traceability_matrix
+        description: Complete mapping of artifacts to requirements, tests, and source commits.
+        format: Traceability matrix artifact
+    agent_tasks:
+      - Map each artifact to requirements, tests, and source commits.
+      - Ensure matrix completeness.
+      - Flag gaps for action.
+    acceptance_criteria:
+      - Each artifact is mapped to requirements, tests, and source commits.
+      - Traceability matrix is complete and accessible.
+      - Gaps in traceability are flagged.
+    dependencies:
+      - stored_artifacts
+      - sbom_files
+      - build_logs_audit_trail
+    failure_escalation:
+      - Escalate to Dev Lead or QA if matrix is incomplete or gaps unaddressed.
+    references: []
+    hitl: false
+
+  - id: build_best_practice
+    agent: BuildBestPracticeAgent
+    role: Standards Lead/CI Auditor
+    inputs_spec:
+      - name: stored_artifacts
+        description: Artifacts stored in registry.
+        format: Artifact registry reference
+      - name: build_logs_audit_trail
+        description: Audit logs for the build.
+        format: Audit log artifact
+      - name: artifact_traceability_matrix
+        description: Traceability matrix for the build.
+        format: Traceability matrix artifact
+    outputs_spec:
+      - name: build_best_practices_report
+        description: Review report of compliance with build standards and best practices.
+        format: Compliance report artifact
+    agent_tasks:
+      - Review build process for compliance with standards.
+      - Attach best practice reports to release documentation.
+      - Ensure action items from previous build reviews are addressed.
+    acceptance_criteria:
+      - Build process is reviewed for full compliance with standards.
+      - All best practice reports are attached to release documentation.
+      - Action items from previous build reviews are addressed.
+    dependencies:
+      - stored_artifacts
+      - build_logs_audit_trail
+      - artifact_traceability_matrix
+    failure_escalation:
+      - Escalate to Standards Lead if issues are found or action items unaddressed.
+    references: []
+    hitl: true
+    hitl_reason: Human reviews build best practices report for compliance
+
+  - id: synthesis_combiner
+    agent: SynthesisCombinerAgent
+    role: Lead DevOps/PM
+    inputs_spec:
+      - name: stored_artifacts
+        description: All stored release artifacts.
+        format: Artifact registry reference
+      - name: build_logs_audit_trail
+        description: Full audit trail/logs for the build.
+        format: Audit log artifact
+      - name: artifact_traceability_matrix
+        description: Traceability matrix for release.
+        format: Traceability matrix artifact
+      - name: build_best_practices_report
+        description: Build best practice review report.
+        format: Compliance report artifact
+    outputs_spec:
+      - name: ready_for_test_package
+        description: Complete, bundled package for Test stage.
+        format: Release/test package artifact
+    agent_tasks:
+      - Bundle all build outputs, logs, and traceability for Test stage.
+      - Flag missing or failed deliverables.
+      - Confirm explicit readiness for Test.
+      - Ensure all referenced artifacts are current and versioned.
+    acceptance_criteria:
+      - All build outputs, logs, and traceability are bundled for the Test stage.
+      - Missing or failed deliverables are flagged.
+      - Readiness for Test stage is explicitly confirmed.
+      - All referenced artifacts are current and versioned.
+    dependencies:
+      - stored_artifacts
+      - build_logs_audit_trail
+      - artifact_traceability_matrix
+      - build_best_practices_report
+    failure_escalation:
+      - Escalate to DevOps/PM if bundle is incomplete or unreadiness is detected.
+    references: []
+    hitl: true
+    hitl_reason: Human validates test package readiness
+
+  - id: artifact_retention_policy
+    agent: ArtifactRetentionPolicyAgent
+    role: Release Automation
+    inputs_spec:
+      - name: ready_for_test_package
+        description: Test package output for artifact retention enforcement.
+        format: Release/test package artifact
+    outputs_spec:
+      - name: artifact_retention_report
+        description: Report of artifact retention/deletion actions.
+        format: Artifact retention log
+    agent_tasks:
+      - Enforce artifact retention and deletion policies.
+      - Flag old or unneeded artifacts for deletion.
+      - Log all deletion actions for audit.
+    acceptance_criteria:
+      - Artifact retention/deletion policy is enforced.
+      - Old/unneeded artifacts are flagged for deletion.
+      - Deletion actions are logged and auditable.
+    dependencies:
+      - ready_for_test_package
+    failure_escalation:
+      - Escalate to Release Automation Lead if deletion is missed or policy gaps.
+    references: []
+    hitl: false
+
+  - id: build_kpi_agent
+    agent: StageKPIAgent
+    role: Build KPI Analyst
+    inputs_spec:
+      - name: build_stage_milestone
+        description: Build stage milestones for KPI tracking.
+        format: List of milestone objects
+    outputs_spec:
+      - name: build_kpi_report
+        description: Build KPIs report (frequency, duration, pass/fail, traceability, vulnerabilities, SAST/container scan pass rate, supply chain risk).
+        format: KPI report artifact
+    agent_tasks:
+      - Track and report on build frequency, duration, pass/fail, artifact traceability, vulnerability findings, supply chain risk, scan pass rate.
+      - Visualize trends, flag anomalies, and compare to baselines.
+    acceptance_criteria:
+      - All key KPIs are defined, tracked, and flagged for review if negative movement.
+      - KPI data is traceable to milestones and logs.
+      - Outliers and deviations are flagged.
+    dependencies:
+      - build_stage_milestone
+    failure_escalation:
+      - Escalate to KPI Analyst or PM if KPIs missing, unclear, or not updated.
+    references: []
+    hitl: false
+
+  - id: build_success_criteria_tracker
+    agent: SuccessCriteriaTrackerAgent
+    role: Build Success Criteria Tracker
+    inputs_spec:
+      - name: build_stage_milestone
+        description: Build stage milestones.
+        format: List of milestone objects
+    outputs_spec:
+      - name: build_success_criteria_status
+        description: Status for all build stage entry/exit criteria.
+        format: List of criteria status objects
+    agent_tasks:
+      - List/map all build stage entry/exit criteria.
+      - Track status, owner, remediation.
+      - Escalate at-risk/failed criteria.
+      - Version tracker for audit/handoff.
+    acceptance_criteria:
+      - All build stage entry/exit criteria are explicitly listed and mapped to pipeline/milestone artifacts.
+      - For each criterion: status (Met/Not Met/At Risk), owner, and required remediation documented.
+      - At-risk or failed criteria are escalated for review.
+      - Tracker is versioned for audit and handoff.
+    dependencies:
+      - build_stage_milestone
+    failure_escalation:
+      - Escalate to Build Success Criteria Tracker or PM if status is unclear or criteria not met.
+    references: []
+    hitl: false
+
+  - id: build_escalation_handler
+    agent: EscalationHandlerAgent
+    role: Project Escalation Manager
+    inputs_spec:
+      - name: build_success_criteria_status
+        description: Status of build success criteria.
+        format: List of criteria status objects
+    outputs_spec:
+      - name: build_escalation_report
+        description: Escalation report for unresolved blockers and owners/deadlines.
+        format: Escalation report artifact
+    agent_tasks:
+      - Review all "At Risk" or "Not Met" criteria.
+      - Assign owners/deadlines.
+      - Make escalation status visible in dashboard and audit log.
+    acceptance_criteria:
+      - All "At Risk" or "Not Met" criteria are reviewed for escalation.
+      - Owners and deadlines are assigned.
+      - Escalation status is visible in the dashboard and audit log.
+    dependencies:
+      - build_success_criteria_status
+    failure_escalation:
+      - Escalate to PM if blockers remain unresolved or escalation is not visible.
+    references: []
+    hitl: true
+    hitl_reason: Human ensures appropriate escalation/action for unresolved blockers
+
+  - id: build_remediation_tracker
+    agent: RemediationTrackerAgent
+    role: Exception Bot
+    inputs_spec:
+      - name: build_success_criteria_status
+        description: Build success criteria status report.
+        format: List of criteria status objects
+      - name: build_escalation_report
+        description: Build escalation report.
+        format: Escalation report artifact
+    outputs_spec:
+      - name: build_remediation_status
+        description: Tracker for remediation status of failed/at-risk items.
+        format: Remediation status artifact
+    agent_tasks:
+      - Track all failed/at-risk items for remediation.
+      - Assign owners, deadlines, and actions.
+      - Update remediation status until resolution or escalation.
+    acceptance_criteria:
+      - All failed or at-risk items are tracked for remediation.
+      - Owners, deadlines, and actions are recorded.
+      - Remediation status is updated until resolution or final escalation.
+    dependencies:
+      - build_success_criteria_status
+      - build_escalation_report
+    failure_escalation:
+      - Escalate to Exception Bot or PM if remediation stalls.
+    references: []
+    hitl: false
+
+  - id: build_readiness_checker
+    agent: ReadinessCheckerAgent
+    role: Gatekeeper Bot
+    inputs_spec:
+      - name: build_stage_milestone
+        description: Build stage milestone plan.
+        format: List of milestone objects
+      - name: build_best_practice_report
+        description: Best practice compliance report.
+        format: Compliance report artifact
+      - name: build_kpi_report
+        description: Latest Build KPI report.
+        format: KPI report artifact
+    outputs_spec:
+      - name: build_readiness_status
+        description: Readiness status for Build stage (criteria, issues, approvals, evidence, ready flag).
+        format: Status artifact
+    agent_tasks:
+      - Ensure all mandatory build criteria are met.
+      - Ensure no open critical issues.
+      - Confirm approvals and evidence are present.
+      - Mark "Ready for next stage" only if above are true.
+    acceptance_criteria:
+      - All mandatory build criteria are met.
+      - No open critical issues in milestones, best practice, or KPI.
+      - All required approvals and evidence are present.
+      - Stage is marked "Ready for next stage" only if above are true.
+    dependencies:
+      - build_stage_milestone
+      - build_best_practice_report
+      - build_kpi_report
+    failure_escalation:
+      - Escalate to Gatekeeper or PM if readiness not achieved.
+    references: []
+    hitl: false
+
+  - id: build_go_nogo
+    agent: GoNoGoDecisionAgent
+    role: Stage Owner/Stakeholders
+    inputs_spec:
+      - name: build_readiness_status
+        description: Build readiness status for decision.
+        format: Status artifact
+    outputs_spec:
+      - name: build_go_nogo_decision
+        description: Go/No-Go decision and rationale for next stage.
+        format: Go/No-Go decision artifact
+    agent_tasks:
+      - Review blockers, risks, criteria.
+      - Record Go/No-Go decision and rationale.
+    acceptance_criteria:
+      - All blockers, risks, and criteria reviewed.
+      - Go/No-Go decision and rationale recorded.
+    dependencies:
+      - build_readiness_status
+    failure_escalation:
+      - Escalate to Stage Owner/PM if decision is not recorded.
+    references: []
+    hitl: true
+    hitl_reason: Human review required for Go/No-Go decision
+
+  - id: build_progress_dashboard
+    agent: ProgressDashboardAgent
+    role: Build Progress Dashboard Owner
+    inputs_spec:
+      - name: build_kpi_report
+        description: Latest build KPIs for dashboard.
+        format: KPI report artifact
+      - name: build_success_criteria_status
+        description: Success criteria status for dashboard visualization.
+        format: List of criteria status objects
+      - name: build_stage_milestone
+        description: Build milestone plan for dashboard.
+        format: List of milestone objects
+    outputs_spec:
+      - name: build_progress_dashboard
+        description: Dashboard of build frequency, duration, traceability, supply chain findings, scan results, and KPIs.
+        format: Dashboard artifact
+    agent_tasks:
+      - Visualize build frequency, duration, artifact traceability, supply chain findings, scan results, and KPIs.
+      - Show open build, security, or traceability blockers.
+      - Link to logs, scan reports, milestone status.
+      - Highlight critical path, blocked dependencies, bottlenecks, overdue milestones.
+    acceptance_criteria:
+      - Dashboard visualizes all KPIs, blockers, scan results.
+      - Dashboard updated in real time and reviewed before Test handoff.
+      - Critical path, blocked dependencies, bottlenecks are visually emphasized.
+    dependencies:
+      - build_kpi_report
+      - build_success_criteria_status
+      - build_stage_milestone
+    failure_escalation:
+      - Escalate to Dashboard Owner/PM if dashboard not up-to-date.
+    references: []
+    hitl: false
+
+
+  - id: build_otel_telemetry_agent
+    agent: OpenTelemetryAgent
+    role: Observability Automation
+    inputs_spec:
+      - name: build_progress_dashboard
+        description: Build progress dashboard containing metrics, traces, and logs.
+        format: Dashboard artifact
+    outputs_spec:
+      - name: build_otel_telemetry_report
+        description: Distributed traces, metrics, and logs collected via OpenTelemetry.
+        format: Telemetry report artifact
+    agent_tasks:
+      - Collect distributed traces, metrics, and logs via OpenTelemetry instrumentation.
+      - Send telemetry to central observability platforms (Grafana, Datadog, etc.).
+      - Flag trace gaps or SLO misses for follow-up.
+      - Link telemetry data to key build artifacts.
+    acceptance_criteria:
+      - Distributed traces, metrics, and logs are collected via OpenTelemetry.
+      - Telemetry is sent to central observability platforms.
+      - Trace gaps or SLO misses are flagged and reported.
+      - Telemetry data is linked to all key build artifacts.
+    dependencies:
+      - build_progress_dashboard
+    failure_escalation:
+      - Escalate to Observability/Analytics lead if telemetry not collected or gaps unflagged.
+    references: []
+    hitl: false
+
+  - id: build_slo_monitor_agent
+    agent: SLOMonitorAgent
+    role: SRE/Automation
+    inputs_spec:
+      - name: build_otel_telemetry_report
+        description: Telemetry report containing traces and SLO data.
+        format: Telemetry report artifact
+    outputs_spec:
+      - name: build_slo_status_report
+        description: SLO compliance status, breaches, and near-misses for Build stage.
+        format: SLO status report artifact
+    agent_tasks:
+      - Track and report on Build stage service-level objectives (SLOs).
+      - Escalate any breach or near-miss to operations and product owners.
+      - Visualize SLO compliance status in dashboards and summary reports.
+    acceptance_criteria:
+      - SLOs are tracked and reported.
+      - Any breach or near-miss is escalated.
+      - SLO compliance status visualized in dashboards and reports.
+    dependencies:
+      - build_otel_telemetry_report
+    failure_escalation:
+      - Escalate to SRE/Product Owner if SLOs are missed or not visualized.
+    references: []
+    hitl: false
+
+  - id: build_observability_export
+    agent: ObservabilityExportAgent
+    role: SRE/Analytics
+    inputs_spec:
+      - name: build_progress_dashboard
+        description: Build progress dashboard for observability export.
+        format: Dashboard artifact
+    outputs_spec:
+      - name: build_observability_export
+        description: Pipeline metrics/KPIs exported to analytics/monitoring.
+        format: Export artifact
+    agent_tasks:
+      - Export pipeline metrics/KPIs to external analytics or monitoring.
+      - Flag any gaps in observability.
+    acceptance_criteria:
+      - Pipeline metrics/KPIs exported to external analytics/monitoring.
+      - Gaps in observability are flagged.
+    dependencies:
+      - build_progress_dashboard
+    failure_escalation:
+      - Escalate to SRE/Analytics if metrics not exported or gaps missed.
+    references: []
+    hitl: false
+
+  - id: build_feedback_loop
+    agent: FeedbackLoopAgent
+    role: CI/CD Coach/Automation
+    inputs_spec:
+      - name: build_progress_dashboard
+        description: Build progress dashboard with issues/improvements.
+        format: Dashboard artifact
+    outputs_spec:
+      - name: build_feedback_items
+        description: Feedback/improvements for build, routed to Retrospective.
+        format: List of feedback items
+    agent_tasks:
+      - Route all build issues/improvement suggestions to Retrospective.
+      - Track feedback for closure/action.
+    acceptance_criteria:
+      - All issues/improvement suggestions are routed to Retrospective.
+      - Feedback is tracked for closure/action.
+    dependencies:
+      - build_progress_dashboard
+    failure_escalation:
+      - Escalate to CI/CD coach if feedback is not acted on or routed.
+    references: []
+    hitl: false
+
+  - id: build_notification_agent
+    agent: NotificationAgent
+    role: PMO Communications
+    inputs_spec:
+      - name: build_progress_dashboard
+        description: Build dashboard with key events and blockers.
+        format: Dashboard artifact
+      - name: build_escalation_report
+        description: Escalation report for build notifications.
+        format: Escalation report artifact
+    outputs_spec:
+      - name: build_notifications
+        description: Notifications sent to stakeholders with events, blockers, escalations, risks, and audit log.
+        format: List of notification objects
+    agent_tasks:
+      - Notify stakeholders on key stage events.
+      - Communicate blockers, escalations, and major risks in real time.
+      - Log notification delivery for audit.
+    acceptance_criteria:
+      - All stakeholders receive updates on key stage events.
+      - Blockers, escalations, and major risks are communicated in real time.
+      - Notification delivery is logged for audit.
+    dependencies:
+      - build_progress_dashboard
+      - build_escalation_report
+    failure_escalation:
+      - Escalate to PMO if notifications not delivered or logged.
+    references: []
+    hitl: false
+
+  - id: build_audit_log_agent
+    agent: AuditLogAgent
+    role: Compliance Bot
+    inputs_spec:
+      - name: build_progress_dashboard
+        description: Build progress dashboard for audit logging.
+        format: Dashboard artifact
+      - name: build_notification_agent
+        description: Notification delivery logs.
+        format: List of notification objects
+      - name: build_success_criteria_status
+        description: Build success criteria status for log correlation.
+        format: List of criteria status objects
+      - name: build_stage_milestone
+        description: Build milestone plan for audit completeness.
+        format: List of milestone objects
+    outputs_spec:
+      - name: build_audit_log
+        description: Complete, cryptographically signed audit log of agent actions, transitions, signoffs, escalations, and notifications.
+        format: Audit log artifact
+    agent_tasks:
+      - Record every agent action and transition with timestamp, user/agent, and artifact link.
+      - Log major events (signoffs, escalations, notifications, exceptions).
+      - Cryptographically sign and archive logs in a secure, tamper-evident location.
+      - Ensure audit log is accessible for compliance review.
+    acceptance_criteria:
+      - Every agent action and transition is recorded.
+      - Major events are explicitly logged.
+      - Logs are cryptographically signed and archived.
+      - Audit log is accessible for compliance review.
+    dependencies:
+      - build_progress_dashboard
+      - build_notification_agent
+      - build_success_criteria_status
+      - build_stage_milestone
+    failure_escalation:
+      - Escalate to compliance/audit lead if logs incomplete/inaccessible.
+    references: []
+    hitl: false
+
+  - id: build_evidence_collector
+    agent: EvidenceCollectorAgent
+    role: Compliance Evidence Bot
+    inputs_spec:
+      - name: build_audit_log
+        description: Build stage audit log for evidence package.
+        format: Audit log artifact
+      - name: build_success_criteria_status
+        description: Status of build stage success criteria.
+        format: List of criteria status objects
+      - name: build_stage_milestone
+        description: Build stage milestone plan.
+        format: List of milestone objects
+      - name: build_progress_dashboard
+        description: Build progress dashboard for evidence.
+        format: Dashboard artifact
+    outputs_spec:
+      - name: build_evidence_package
+        description: Evidence package for Build stage, including artifacts, audit logs, signoffs, KPIs, compliance links, archive location, access logs.
+        format: Evidence package artifact
+    agent_tasks:
+      - Collect and hash all artifacts, audit logs, signoffs, and KPIs for the stage.
+      - Link evidence to compliance and regulatory requirements.
+      - Archive evidence in tamper-evident storage.
+      - Maintain access logs for evidence package.
+    acceptance_criteria:
+      - All artifacts, audit logs, signoffs, KPIs are collected/hashed.
+      - Evidence is linked to compliance requirements.
+      - Package is archived securely, access logs maintained.
+    dependencies:
+      - build_audit_log
+      - build_success_criteria_status
+      - build_stage_milestone
+      - build_progress_dashboard
+    failure_escalation:
+      - Escalate to compliance/evidence lead if evidence is incomplete or not archived.
+    references: []
+    hitl: false
+
+  - id: documentation_generator
+    agent: DocumentationGeneratorAgent
+    role: Tech Writer/Automation
+    inputs_spec:
+      - name: modularized_codebase
+        description: Final modularized codebase for doc generation.
+        format: Source repo or artifact
+    outputs_spec:
+      - name: generated_documentation
+        description: Generated or updated documentation for all modules and APIs.
+        format: Documentation artifact
+    agent_tasks:
+      - Generate/update documentation for all modules and APIs.
+      - Ensure docs are accessible, versioned, and up-to-date.
+    acceptance_criteria:
+      - Documentation generated/updated for all modules and APIs.
+      - Docs accessible, versioned, up-to-date.
+    dependencies:
+      - modularized_codebase
+    failure_escalation:
+      - Escalate to Tech Writer/Doc Owner if docs are incomplete/outdated.
+    references: []
+    hitl: false
+
+  - id: build_lbom_agent
+    agent: LBOMAgent
+    role: Legal/Compliance
+    inputs_spec:
+      - name: sbom_files
+        description: SBOM files for license bill of materials analysis.
+        format: SBOM file artifact
+    outputs_spec:
+      - name: build_lbom_report
+        description: License bill of materials report for all artifacts.
+        format: LBOM report artifact
+    agent_tasks:
+      - Generate LBOM for all artifacts.
+      - Track license risks and link to compliance.
+    acceptance_criteria:
+      - License bill of materials is generated for all artifacts.
+      - License risks tracked, compliance-linked.
+    dependencies:
+      - sbom_files
+    failure_escalation:
+      - Escalate to Legal/Compliance if LBOM missing or incomplete.
+    references: []
+    hitl: false
+  - id: build_risk_trend_analyzer
+    agent: RiskTrendAnalyzerAgent
+    role: Risk Intelligence Bot
+    inputs_spec:
+      - name: build_escalation_report
+        description: Escalation report from Build stage.
+        format: Escalation report artifact
+      - name: build_progress_dashboard
+        description: Build stage progress dashboard.
+        format: Dashboard artifact
+      - name: build_stage_milestone
+        description: Build stage milestone plan.
+        format: Milestone artifact
+    outputs_spec:
+      - name: build_risk_trend_report
+        description: Risk trend analysis for Build stage.
+        format: Risk trend report artifact
+    agent_tasks:
+      - Trend all risks, escalations, blockers over time.
+      - Automatically flag/classify recurring/systemic risks.
+      - Share trend report with PMO/leadership.
+      - Recommend mitigation/process changes.
+    acceptance_criteria:
+      - Risks, escalations, blockers trended over time.
+      - Recurring/systemic risks flagged/classified.
+      - Trend report shared with PMO/leadership.
+      - Recommendations included.
+    dependencies:
+      - build_escalation_report
+      - build_progress_dashboard
+      - build_stage_milestone
+    failure_escalation:
+      - Escalate to Risk Intelligence if trends/recommendations missing.
+    references: []
+    hitl: false

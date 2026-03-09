@@ -1,0 +1,28 @@
+{
+  "languages": ["java", "typescript", "python"],
+  "schemaPaths": ["schemas", "custom-schemas"],
+  "budgets": {
+    "maxPasses": 5,
+    "maxEditsPerFile": 10
+  },
+  "policies": {
+    "tsAllowTemporaryAny": false,
+    "pythonAddMissingImports": true,
+    "bashEnforceStrictMode": true,
+    "jsonAutofillRequiredDefaults": false
+  },
+  "tools": {
+    "node": "/usr/local/bin/node",
+    "eslint": "eslint",
+    "tsc": "./node_modules/.bin/tsc",
+    "prettier": "prettier",
+    "ruff": "ruff",
+    "black": "black",
+    "mypy": "mypy",
+    "shellcheck": "shellcheck",
+    "shfmt": "shfmt",
+    "cargo": "cargo",
+    "rustfmt": "rustfmt",
+    "semgrep": "semgrep"
+  }
+}

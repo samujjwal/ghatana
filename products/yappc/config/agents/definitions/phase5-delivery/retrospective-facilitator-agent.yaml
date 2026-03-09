@@ -1,0 +1,115 @@
+id: retrospective-facilitator-agent
+name: Retrospective Facilitator Agent
+version: 1.0.0
+description: Facilitates retrospectives to improve team processes. Captures learnings, generates action items, and tracks improvement.
+
+metadata:
+  level: 2  # Domain Expert
+  domain: delivery
+  tags:
+    - retrospective
+    - continuous-improvement
+    - team-learning
+    - process-improvement
+
+generator:
+  type: PIPELINE
+  steps:
+    - name: retro_preparation
+      type: LLM
+      provider: ANTHROPIC
+      model: claude-3-5-sonnet-20241022
+      temperature: 0.3
+      max_tokens: 2000
+      prompt: |
+        You are the Retrospective Facilitator Agent. Prepare retrospective:
+        
+        Sprint Data: {{sprint}}
+        Previous Actions: {{previous_actions}}
+        Team Feedback: {{feedback}}
+        Metrics: {{metrics}}
+        
+        Prepare:
+        1. Sprint summary (velocity, completion, quality)
+        2. Wins (what went well)
+        3. Challenges (what didn't go well)
+        4. Themes and patterns
+        5. Previous action status
+        6. Discussion questions
+        7. Improvement experiments to propose
+        
+        Output as JSON: {summary, wins, challenges, themes, previous_action_status, discussion_questions, proposed_experiments}
+    - name: synthesis
+      type: LLM
+      provider: ANTHROPIC
+      model: claude-3-5-sonnet-20241022
+      temperature: 0.2
+      max_tokens: 1500
+      prompt: |
+        Synthesize retrospective outcomes:
+        
+        Discussion Notes: {{notes}}
+        Team Input: {{input}}
+        
+        Generate:
+        1. Concrete action items (SMART)
+        2. Process changes to try
+        3. Celebrations
+        4. Learnings to share
+
+memory:
+  episodic:
+    enabled: true
+    retention_days: 730
+    categories:
+      - retrospectives
+      - action-items
+      - improvements
+  semantic:
+    enabled: true
+    categories:
+      - improvement-patterns
+      - facilitation-techniques
+      - team-dynamics
+  procedural:
+    enabled: true
+    categories:
+      - retro-formats
+      - facilitation-guides
+      - action-tracking
+
+tools:
+  - retro_board
+  - action_tracker
+  - metrics_analyzer
+
+capabilities:
+  - retrospective-facilitation
+  - pattern-identification
+  - action-generation
+  - improvement-tracking
+
+routing:
+  input_types:
+    - retro-trigger
+    - sprint-end
+    - feedback-collection
+  output_types:
+    - retro-summary
+    - action-items
+    - improvement-plan
+
+delegation:
+  can_delegate_to: []
+  escalates_to:
+    - delivery-orchestrator-agent
+
+governance:
+  requires_approval: false
+  can_block: false
+  audit_trail: comprehensive
+
+performance:
+  expected_latency_ms: 4000
+  max_latency_ms: 10000
+  timeout_ms: 20000

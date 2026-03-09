@@ -1,0 +1,286 @@
+# Maintenance Tasks
+# Domain 17 of 22 - Developer Task Universe
+# Reference: developer-tasks.md Part I, Section 17
+
+domain:
+  id: maintenance
+  name: "Maintenance"
+  description: "Tasks related to bug fixes, technical debt, and system maintenance"
+  order: 17
+  icon: "build_circle"
+  color: "#78909C"
+  lifecycle_stages:
+    - execute
+    - verify
+
+tasks:
+  - id: maint-001
+    name: "Fix Bugs"
+    description: "Investigate and fix reported bugs"
+    personas:
+      - Developer
+    lifecycle_stages:
+      - execute
+      - verify
+    automation_level: assisted
+    required_capabilities:
+      - debugging
+      - coding
+    input_schema: maint-001-input
+    output_schema: maint-001-output
+    audit_artifacts:
+      - InputSnapshot
+      - OutputSnapshot
+      - ChangeSet
+      - BugFixRecord
+    ui:
+      icon: "bug_report"
+      color: "#78909C"
+      tags:
+        - bugs
+        - fixes
+        - maintenance
+
+  - id: maint-002
+    name: "Address Technical Debt"
+    description: "Identify and resolve technical debt"
+    personas:
+      - Developer
+      - Tech Lead
+    lifecycle_stages:
+      - plan
+      - execute
+    automation_level: assisted
+    required_capabilities:
+      - refactoring
+      - code-analysis
+    input_schema: maint-002-input
+    output_schema: maint-002-output
+    audit_artifacts:
+      - InputSnapshot
+      - OutputSnapshot
+      - ChangeSet
+      - TechDebtRecord
+    ui:
+      icon: "credit_score"
+      color: "#78909C"
+      tags:
+        - technical-debt
+        - cleanup
+        - improvement
+
+  - id: maint-003
+    name: "Upgrade Dependencies"
+    description: "Update project dependencies to newer versions"
+    personas:
+      - Developer
+    lifecycle_stages:
+      - execute
+      - verify
+    automation_level: assisted
+    required_capabilities:
+      - dependency-management
+      - testing
+    input_schema: maint-003-input
+    output_schema: maint-003-output
+    audit_artifacts:
+      - InputSnapshot
+      - OutputSnapshot
+      - ChangeSet
+      - DependencyReport
+    ui:
+      icon: "upgrade"
+      color: "#78909C"
+      tags:
+        - dependencies
+        - upgrades
+        - maintenance
+
+  - id: maint-004
+    name: "Migrate to New Technology"
+    description: "Plan and execute technology migrations"
+    personas:
+      - Developer
+      - Tech Lead
+    lifecycle_stages:
+      - plan
+      - execute
+    automation_level: assisted
+    required_capabilities:
+      - migration
+      - architecture
+    input_schema: maint-004-input
+    output_schema: maint-004-output
+    audit_artifacts:
+      - InputSnapshot
+      - OutputSnapshot
+      - ChangeSet
+      - MigrationRecord
+    ui:
+      icon: "transform"
+      color: "#78909C"
+      tags:
+        - migration
+        - technology
+        - modernization
+
+  - id: maint-005
+    name: "Deprecate Features"
+    description: "Mark features for deprecation and removal"
+    personas:
+      - Developer
+      - Tech Lead
+    lifecycle_stages:
+      - plan
+      - execute
+    automation_level: manual
+    required_capabilities:
+      - analysis
+      - communication
+    input_schema: maint-005-input
+    output_schema: maint-005-output
+    audit_artifacts:
+      - InputSnapshot
+      - OutputSnapshot
+      - DecisionRecord
+      - DeprecationNotice
+    ui:
+      icon: "do_not_disturb"
+      color: "#78909C"
+      tags:
+        - deprecation
+        - lifecycle
+        - cleanup
+
+  - id: maint-006
+    name: "Hotfix Production Issues"
+    description: "Apply urgent fixes to production systems"
+    personas:
+      - Developer
+      - DevOps
+    lifecycle_stages:
+      - execute
+    automation_level: manual
+    required_capabilities:
+      - debugging
+      - deployment
+      - incident-response
+    input_schema: maint-006-input
+    output_schema: maint-006-output
+    audit_artifacts:
+      - InputSnapshot
+      - OutputSnapshot
+      - ChangeSet
+      - IncidentRecord
+    ui:
+      icon: "emergency"
+      color: "#78909C"
+      tags:
+        - hotfix
+        - production
+        - urgent
+
+  - id: maint-007
+    name: "Clean Up Code"
+    description: "Remove unused code and improve organization"
+    personas:
+      - Developer
+    lifecycle_stages:
+      - execute
+    automation_level: assisted
+    required_capabilities:
+      - refactoring
+      - code-analysis
+    input_schema: maint-007-input
+    output_schema: maint-007-output
+    audit_artifacts:
+      - InputSnapshot
+      - OutputSnapshot
+      - ChangeSet
+    ui:
+      icon: "cleaning_services"
+      color: "#78909C"
+      tags:
+        - cleanup
+        - organization
+        - refactoring
+
+  - id: maint-008
+    name: "Optimize Build Configuration"
+    description: "Improve build and project configuration"
+    personas:
+      - Developer
+      - DevOps
+    lifecycle_stages:
+      - execute
+    automation_level: assisted
+    required_capabilities:
+      - build-systems
+      - optimization
+    input_schema: maint-008-input
+    output_schema: maint-008-output
+    audit_artifacts:
+      - InputSnapshot
+      - OutputSnapshot
+      - ChangeSet
+    ui:
+      icon: "tune"
+      color: "#78909C"
+      tags:
+        - build
+        - configuration
+        - optimization
+
+  - id: maint-009
+    name: "Archive Legacy Code"
+    description: "Archive and document legacy code"
+    personas:
+      - Developer
+      - Tech Lead
+    lifecycle_stages:
+      - execute
+      - institutionalize
+    automation_level: manual
+    required_capabilities:
+      - documentation
+      - version-control
+    input_schema: maint-009-input
+    output_schema: maint-009-output
+    audit_artifacts:
+      - InputSnapshot
+      - OutputSnapshot
+      - DecisionRecord
+      - ArchiveRecord
+    ui:
+      icon: "archive"
+      color: "#78909C"
+      tags:
+        - legacy
+        - archive
+        - cleanup
+
+  - id: maint-010
+    name: "System Health Maintenance"
+    description: "Perform regular system health checks and maintenance"
+    personas:
+      - DevOps
+    lifecycle_stages:
+      - observe
+      - execute
+    automation_level: automated
+    required_capabilities:
+      - system-admin
+      - monitoring
+    input_schema: maint-010-input
+    output_schema: maint-010-output
+    audit_artifacts:
+      - InputSnapshot
+      - OutputSnapshot
+      - HealthReport
+    ui:
+      icon: "monitor_heart"
+      color: "#78909C"
+      tags:
+        - health
+        - maintenance
+        - monitoring

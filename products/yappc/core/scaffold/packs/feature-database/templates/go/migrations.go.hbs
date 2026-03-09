@@ -1,0 +1,73 @@
+package database
+
+import (
+"context"
+"embed"
+"fmt"
+
+"github.com/golang-migrate/migrate/v4"
+_ "github.com/golang-migrate/migrate/v4/database/postgres"
+"github.com/golang-migrate/migrate/v4/source/iofs"
+)
+
+//go:embed migrations/*.sql
+var migrationsFS embed.FS
+
+// Migrator handles database migrations
+type Migrator struct {
+migrate *migrate.Migrate
+}
+
+// NewMigrator creates a new migration instance
+func NewMigrator(cfg *Config) (*Migrator, error) {
+source, err := iofs.New(migrationsFS, "migrations")
+if err != nil {
+return nil, fmt.Errorf("failed to create migration source: %w", err)
+}
+
+dbURL := fmt.Sprintf(
+"postgres://%s:%s@%s:%d/%s?sslmode=disable",
+cfg.Username,
+cfg.Password,
+cfg.Host,
+cfg.Port,
+cfg.Database,
+)
+
+m, err := migrate.NewWithSourceInstance("iofs", source, dbURL)
+if err != nil {
+return nil, fmt.Errorf("failed to create migrator: %w", err)
+}
+
+return &Migrator{migrate: m}, nil
+}
+
+// Up runs all pending migrations
+func (m *Migrator) Up(ctx context.Context) error {
+if err := m.migrate.Up(); err != nil && err != migrate.ErrNoChange {
+return fmt.Errorf("migration up failed: %w", err)
+}
+return nil
+}
+
+// Down rolls back all migrations
+func (m *Migrator) Down(ctx context.Context) error {
+if err := m.migrate.Down(); err != nil && err != migrate.ErrNoChange {
+return fmt.Errorf("migration down failed: %w", err)
+}
+return nil
+}
+
+// Version returns the current migration version
+func (m *Migrator) Version() (uint, bool, error) {
+return m.migrate.Version()
+}
+
+// Close closes the migrator
+func (m *Migrator) Close() error {
+sourceErr, dbErr := m.migrate.Close()
+if sourceErr != nil {
+return sourceErr
+}
+return dbErr
+}

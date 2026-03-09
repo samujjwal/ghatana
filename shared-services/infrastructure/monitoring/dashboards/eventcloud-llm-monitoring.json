@@ -1,0 +1,259 @@
+{
+  "id": "eventcloud-llm-monitoring",
+  "title": "EventCloud - LLM Monitoring",
+  "tags": ["eventcloud", "llm", "ai", "monitoring"],
+  "timezone": "browser",
+  "refresh": "30s",
+  "time": {
+    "from": "now-1h",
+    "to": "now"
+  },
+  "templating": {
+    "list": [
+      {
+        "name": "tenant",
+        "label": "Tenant",
+        "type": "query",
+        "query": "label_values(eventcloud_llm_calls, tenant)",
+        "multi": true,
+        "includeAll": true
+      },
+      {
+        "name": "model",
+        "label": "LLM Model",
+        "type": "query",
+        "query": "label_values(eventcloud_llm_calls{tenant=~\"$tenant\"}, model)",
+        "multi": true,
+        "includeAll": true
+      },
+      {
+        "name": "operation",
+        "label": "Operation",
+        "type": "query",
+        "query": "label_values(eventcloud_llm_calls{tenant=~\"$tenant\"}, operation)",
+        "multi": true,
+        "includeAll": true
+      }
+    ]
+  },
+  "panels": [
+    {
+      "id": 1,
+      "title": "LLM Call Rate",
+      "type": "timeseries",
+      "gridPos": {"h": 8, "w": 12, "x": 0, "y": 0},
+      "targets": [
+        {
+          "expr": "rate(eventcloud_llm_calls{tenant=~\"$tenant\",model=~\"$model\",operation=~\"$operation\"}[5m])",
+          "legendFormat": "{{tenant}}/{{model}}/{{operation}}",
+          "interval": "30s",
+          "refId": "A"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "calls/sec",
+          "min": 0
+        }
+      },
+      "options": {
+        "legend": {
+          "displayMode": "table",
+          "placement": "bottom"
+        }
+      }
+    },
+    {
+      "id": 2,
+      "title": "LLM Response Latency",
+      "type": "timeseries",
+      "gridPos": {"h": 8, "w": 12, "x": 12, "y": 0},
+      "targets": [
+        {
+          "expr": "histogram_quantile(0.95, rate(eventcloud_llm_latency_bucket{tenant=~\"$tenant\",model=~\"$model\"}[5m]))",
+          "legendFormat": "95th percentile - {{model}}",
+          "interval": "30s",
+          "refId": "A"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "ms",
+          "min": 0
+        }
+      }
+    },
+    {
+      "id": 3,
+      "title": "LLM Error Rate",
+      "type": "timeseries",
+      "gridPos": {"h": 8, "w": 12, "x": 0, "y": 8},
+      "targets": [
+        {
+          "expr": "rate(eventcloud_llm_errors{tenant=~\"$tenant\",model=~\"$model\"}[5m])",
+          "legendFormat": "{{tenant}}/{{model}} - {{error_type}}",
+          "interval": "30s",
+          "refId": "A"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "errors/sec",
+          "min": 0
+        }
+      }
+    },
+    {
+      "id": 4,
+      "title": "Token Usage",
+      "type": "timeseries",
+      "gridPos": {"h": 8, "w": 12, "x": 12, "y": 8},
+      "targets": [
+        {
+          "expr": "rate(eventcloud_llm_tokens_total{tenant=~\"$tenant\",model=~\"$model\"}[5m])",
+          "legendFormat": "{{type}} - {{model}}",
+          "interval": "30s",
+          "refId": "A"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "tokens/sec",
+          "min": 0
+        }
+      }
+    },
+    {
+      "id": 5,
+      "title": "Model Availability",
+      "type": "stat",
+      "gridPos": {"h": 6, "w": 6, "x": 0, "y": 16},
+      "targets": [
+        {
+          "expr": "avg(up{job=\"llm-service\",tenant=~\"$tenant\"}) * 100",
+          "legendFormat": "Availability %",
+          "interval": "30s",
+          "refId": "A"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "percent",
+          "min": 0,
+          "max": 100,
+          "thresholds": {
+            "steps": [
+              {"color": "red", "value": 0},
+              {"color": "yellow", "value": 95},
+              {"color": "green", "value": 99}
+            ]
+          }
+        }
+      }
+    },
+    {
+      "id": 6,
+      "title": "Estimated Cost",
+      "type": "stat",
+      "gridPos": {"h": 6, "w": 6, "x": 6, "y": 16},
+      "targets": [
+        {
+          "expr": "sum(rate(eventcloud_llm_cost_estimate{tenant=~\"$tenant\"}[1h]))",
+          "legendFormat": "$/hour",
+          "interval": "30s",
+          "refId": "A"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "currencyUSD",
+          "min": 0,
+          "thresholds": {
+            "steps": [
+              {"color": "green", "value": 0},
+              {"color": "yellow", "value": 50},
+              {"color": "red", "value": 200}
+            ]
+          }
+        }
+      }
+    },
+    {
+      "id": 7,
+      "title": "Active LLM Sessions",
+      "type": "gauge",
+      "gridPos": {"h": 6, "w": 6, "x": 12, "y": 16},
+      "targets": [
+        {
+          "expr": "eventcloud_llm_active_sessions{tenant=~\"$tenant\"}",
+          "legendFormat": "Sessions",
+          "interval": "30s",
+          "refId": "A"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "sessions",
+          "min": 0,
+          "max": 100
+        }
+      }
+    },
+    {
+      "id": 8,
+      "title": "Pattern Recommendations",
+      "type": "stat",
+      "gridPos": {"h": 6, "w": 6, "x": 18, "y": 16},
+      "targets": [
+        {
+          "expr": "increase(eventcloud_pattern_recommendations{tenant=~\"$tenant\"}[1h])",
+          "legendFormat": "Recommendations/hour",
+          "interval": "30s",
+          "refId": "A"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "recommendations",
+          "min": 0
+        }
+      }
+    }
+  ],
+  "annotations": {
+    "list": [
+      {
+        "name": "Model Updates",
+        "datasource": "prometheus",
+        "expr": "eventcloud_llm_model_updated{tenant=~\"$tenant\"}",
+        "iconColor": "rgba(128, 0, 255, 1)"
+      },
+      {
+        "name": "Rate Limits",
+        "datasource": "prometheus",
+        "expr": "eventcloud_llm_rate_limited{tenant=~\"$tenant\"}",
+        "iconColor": "rgba(255, 193, 7, 1)"
+      }
+    ]
+  },
+  "links": [
+    {
+      "title": "EventLog Dashboard",
+      "url": "/d/eventcloud-eventlog-monitoring",
+      "type": "dashboards",
+      "icon": "logs"
+    },
+    {
+      "title": "Pattern Dashboard",
+      "url": "/d/eventcloud-pattern-monitoring",
+      "type": "dashboards",
+      "icon": "cloud"
+    },
+    {
+      "title": "System Overview",
+      "url": "/d/eventcloud-system-overview",
+      "type": "dashboards",
+      "icon": "external link"
+    }
+  ]
+}

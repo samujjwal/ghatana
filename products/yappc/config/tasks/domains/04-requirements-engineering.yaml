@@ -1,0 +1,101 @@
+domain:
+  id: requirements-engineering
+  name: "Requirements Engineering"
+  description: "Define and trace functional and non-functional requirements."
+  order: 4
+  icon: "assignment"
+  color: "#4ECDC4"
+  agent_personas:
+    - "RequirementsAuthor"
+    - "SpecValidator"
+    - "RequirementsAnalyst"
+  audit_artifacts:
+    - "RequirementVersion"
+    - "TraceLink"
+    - "AcceptanceCriteria"
+  inputs:
+    - "Intent"
+    - "Context"
+    - "User needs"
+    - "Stakeholder interviews"
+  outputs:
+    - "Requirements spec"
+    - "Traceability matrix"
+    - "User stories"
+
+tasks:
+  # Core ICS requirements tasks
+  - id: d4-t1
+    name: "Write functional requirements"
+    description: "Document what the system should do."
+    personas: ["Developer", "Tech Lead", "PM"]
+    lifecycle_stages: ["context", "plan"]
+    automation_level: "assisted"
+  - id: d4-t2
+    name: "Write non-functional requirements"
+    description: "Document performance, security, etc."
+    personas: ["Developer", "Tech Lead", "Security", "QA"]
+    lifecycle_stages: ["context", "plan"]
+    automation_level: "assisted"
+  - id: d4-t3
+    name: "Define acceptance criteria"
+    description: "Set criteria for task completion."
+    personas: ["Developer", "Tech Lead", "QA", "PM"]
+    lifecycle_stages: ["plan"]
+    automation_level: "assisted"
+  - id: d4-t4
+    name: "Define edge cases"
+    description: "Identify boundary conditions."
+    personas: ["Developer", "Tech Lead", "QA"]
+    lifecycle_stages: ["context", "plan"]
+    automation_level: "assisted"
+  - id: d4-t5
+    name: "Trace requirements"
+    description: "Link requirements to intent and tests."
+    personas: ["Developer", "Tech Lead", "QA"]
+    lifecycle_stages: ["plan", "verify"]
+    automation_level: "assisted"
+  - id: d4-t6
+    name: "Version specifications"
+    description: "Manage requirement versions."
+    personas: ["Developer", "Tech Lead"]
+    lifecycle_stages: ["plan", "execute"]
+    automation_level: "automated"
+
+  # Migrated from legacy requirements domain
+  - id: req-001
+    name: "Read and Interpret Requirements"
+    description: "Thoroughly read and understand the provided requirements documentation."
+    personas: ["Developer", "Tech Lead", "QA"]
+    lifecycle_stages: ["intent", "context"]
+    automation_level: "assisted"
+  - id: req-002
+    name: "Translate Business to Technical Requirements"
+    description: "Convert business requirements into technical specifications."
+    personas: ["Developer", "Tech Lead"]
+    lifecycle_stages: ["context", "plan"]
+    automation_level: "assisted"
+  - id: req-003
+    name: "Decompose Epics into Stories/Tasks"
+    description: "Break down large epics into manageable user stories and tasks."
+    personas: ["Developer", "Tech Lead", "PM"]
+    lifecycle_stages: ["plan"]
+    automation_level: "assisted"
+  - id: req-004
+    name: "Prioritize Requirements"
+    description: "Work with stakeholders to prioritize requirements by value and risk."
+    personas: ["Developer", "Tech Lead", "PM"]
+    lifecycle_stages: ["plan"]
+    automation_level: "assisted"
+  - id: req-005
+    name: "Identify Dependencies Between Requirements"
+    description: "Map dependencies to understand sequencing constraints."
+    personas: ["Developer", "Tech Lead"]
+    lifecycle_stages: ["plan"]
+    automation_level: "assisted"
+  - id: req-006
+    name: "Estimate Requirements Complexity"
+    description: "Assess the complexity of each requirement for planning."
+    personas: ["Developer", "Tech Lead"]
+    lifecycle_stages: ["plan"]
+    automation_level: "assisted"

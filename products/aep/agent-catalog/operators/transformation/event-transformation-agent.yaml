@@ -1,0 +1,60 @@
+id: event-transformation-agent
+name: Event Transformation Agent
+version: 1.0.0
+description: Transforms event formats, enriches data, and applies mapping rules
+
+metadata:
+  level: 3
+  domain: event-processing
+  tags: [transformation, enrichment, mapping, filtering, conversion]
+
+aep:
+  operatorType: TRANSFORMATION
+  inputEventTypes: ["raw.*"]
+  outputEventTypes: ["transformed.*"]
+  backpressure:
+    bufferSize: 2000
+    overflowStrategy: BLOCK
+  reliability:
+    checkpointInterval: "20s"
+    maxRetries: 3
+
+generator:
+  type: PIPELINE
+  steps:
+    - name: parse_input
+      type: SERVICE_CALL
+      service: event-parser
+      endpoint: /aep/transform/parse
+    - name: apply_mapping
+      type: LLM
+      provider: ANTHROPIC
+      model: claude-3-5-sonnet-20241022
+      temperature: 0.1
+      prompt: |
+        Transform event:
+        Input: {{event}}
+        Mapping Rules: {{rules}}
+        Output Schema: {{output_schema}}
+
+capabilities:
+  - event-transformation
+  - data-enrichment
+
+tools:
+  - name: transformationEngine
+    type: SERVICE
+    endpoint: /aep/transform/apply
+  - name: enrichmentService
+    type: SERVICE
+    endpoint: /aep/transform/enrich
+
+memory:
+  type: EPISODIC
+  scope: transformation_patterns
+  retention: medium
+
+resources:
+  memory: "1GB"
+  cpu: "2"
+  timeout: "30s"

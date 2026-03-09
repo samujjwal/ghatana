@@ -1,0 +1,44 @@
+# Local config for running server with Rego policy engine in dev
+
+server:
+  host: "127.0.0.1"
+  port: 50051
+  shutdown_timeout: 30s
+
+database:
+  host: "localhost"
+  port: 9000
+  user: "test"
+  password: "test"
+  name: "testdb"
+  max_open_conns: 10
+  max_idle_conns: 5
+  conn_max_lifetime: 30m
+
+cache:
+  enabled: false
+  backend: "memory"
+  ttl: 2m
+
+logging:
+  level: "info"
+  format: "json"
+
+metrics:
+  enabled: true
+  port: 8082
+  path: "/metrics"
+  namespace: "dcmaar"
+  subsystem: "server"
+  read_timeout: 10s
+  write_timeout: 10s
+
+identity:
+  ttl: 2m
+
+policy:
+  ttl: 1m
+  deny_by_default: true
+  use_rego: true
+  rego_policy_file: ops/opa-policies/actions.rego
+

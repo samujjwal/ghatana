@@ -1,0 +1,212 @@
+# Cross-Department Event Flows Configuration
+# Defines how events flow between departments in the software organization
+apiVersion: virtualorg.ghatana.com/v1
+kind: FlowConfiguration
+metadata:
+  name: software-org-flows
+  namespace: software-org
+  labels:
+    environment: ${ENVIRONMENT:development}
+  annotations:
+    description: "Cross-department event routing configuration"
+
+spec:
+  # Global flow settings
+  settings:
+    enableMetrics: true
+    enableAuditLog: true
+    defaultTimeout: PT5M
+
+  # Flow definitions
+  flows:
+    # ==========================================
+    # Engineering Department Flows
+    # ==========================================
+    - id: engineering-to-qa
+      displayName: "Engineering → QA"
+      description: "Routes feature completions to QA for testing"
+      sourceDepartment: engineering
+      targetDepartment: qa
+      sourceEventType: FeatureRequestCreated
+      targetEventType: TestSuiteCreated
+      transformations:
+        test_type: functional_testing
+        coverage_requirement: 85
+      fieldMappings:
+        feature_id: source_feature_id
+      conditions: {}
+
+    - id: engineering-to-qa-security
+      displayName: "Engineering → QA (Security)"
+      description: "Routes security features for security testing"
+      sourceDepartment: engineering
+      targetDepartment: qa
+      sourceEventType: FeatureRequestCreated
+      targetEventType: TestSuiteCreated
+      transformations:
+        test_type: security_testing
+        coverage_requirement: 100
+      fieldMappings:
+        feature_id: source_feature_id
+      conditions:
+        category: security
+
+    # ==========================================
+    # QA Department Flows
+    # ==========================================
+    - id: qa-to-devops
+      displayName: "QA → DevOps"
+      description: "Routes test completions to DevOps for deployment"
+      sourceDepartment: qa
+      targetDepartment: devops
+      sourceEventType: QualityGateEvaluation
+      targetEventType: DeploymentRequested
+      transformations:
+        deployment_type: standard
+      fieldMappings:
+        test_suite_id: source_test_id
+        build_id: build_id
+      conditions:
+        result: PASS
+
+    # ==========================================
+    # DevOps Department Flows
+    # ==========================================
+    - id: devops-to-support
+      displayName: "DevOps → Support"
+      description: "Routes deployment completions to support for awareness"
+      sourceDepartment: devops
+      targetDepartment: support
+      sourceEventType: DeploymentSucceeded
+      targetEventType: ReleaseNotification
+      transformations:
+        notification_type: deployment
+      fieldMappings:
+        deployment_id: source_deployment_id
+        version: deployed_version
+
+    - id: devops-monitoring
+      displayName: "DevOps Monitoring"
+      description: "Routes incidents detected by monitoring"
+      sourceDepartment: devops
+      targetDepartment: devops
+      sourceEventType: InfrastructureThresholdBreach
+      targetEventType: IncidentDetected
+      transformations:
+        incident_source: monitoring
+        auto_created: true
+
+    # ==========================================
+    # Support Department Flows
+    # ==========================================
+    - id: support-to-engineering
+      displayName: "Support → Engineering"
+      description: "Escalates bug reports from support to engineering"
+      sourceDepartment: support
+      targetDepartment: engineering
+      sourceEventType: BugReportCreated
+      targetEventType: BugAssigned
+      transformations:
+        escalation_source: support
+      fieldMappings:
+        ticket_id: source_ticket_id
+        severity: priority
+      conditions:
+        requires_development: true
+
+    # ==========================================
+    # Product Department Flows
+    # ==========================================
+    - id: product-to-engineering
+      displayName: "Product → Engineering"
+      description: "Routes approved features to engineering"
+      sourceDepartment: product
+      targetDepartment: engineering
+      sourceEventType: FeatureApproved
+      targetEventType: FeatureRequestCreated
+      fieldMappings:
+        roadmap_item_id: source_roadmap_id
+        priority: priority
+        description: feature_description
+
+    # ==========================================
+    # Sales Department Flows
+    # ==========================================
+    - id: sales-to-finance
+      displayName: "Sales → Finance"
+      description: "Routes closed deals to finance for processing"
+      sourceDepartment: sales
+      targetDepartment: finance
+      sourceEventType: DealClosed
+      targetEventType: RevenueRecognitionRequested
+      transformations:
+        processing_type: standard
+      fieldMappings:
+        deal_id: source_deal_id
+        amount: deal_value
+        customer_id: customer_id
+
+    - id: marketing-to-sales
+      displayName: "Marketing → Sales"
+      description: "Routes qualified leads to sales"
+      sourceDepartment: marketing
+      targetDepartment: sales
+      sourceEventType: LeadQualified
+      targetEventType: LeadAssigned
+      transformations:
+        lead_source: marketing
+      fieldMappings:
+        lead_id: source_lead_id
+        score: lead_score
+
+    # ==========================================
+    # Finance Department Flows
+    # ==========================================
+    - id: finance-to-product
+      displayName: "Finance → Product"
+      description: "Routes budget approvals to product for planning"
+      sourceDepartment: finance
+      targetDepartment: product
+      sourceEventType: BudgetApproved
+      targetEventType: BudgetAllocationNotification
+      fieldMappings:
+        budget_id: source_budget_id
+        amount: approved_amount
+        quarter: fiscal_quarter
+
+    # ==========================================
+    # HR Department Flows
+    # ==========================================
+    - id: hr-to-engineering
+      displayName: "HR → Engineering"
+      description: "Routes new hire onboarding to engineering"
+      sourceDepartment: hr
+      targetDepartment: engineering
+      sourceEventType: NewHireOnboarded
+      targetEventType: TeamMemberAdded
+      transformations:
+        onboarding_status: pending
+      fieldMappings:
+        employee_id: new_member_id
+        role: assigned_role
+        team: assigned_team
+      conditions:
+        department: engineering
+
+    # ==========================================
+    # Compliance Department Flows
+    # ==========================================
+    - id: compliance-to-devops
+      displayName: "Compliance → DevOps"
+      description: "Routes compliance audit requirements to devops"
+      sourceDepartment: compliance
+      targetDepartment: devops
+      sourceEventType: AuditRequirementCreated
+      targetEventType: ComplianceCheckRequested
+      transformations:
+        check_type: audit
+        priority: high
+      fieldMappings:
+        audit_id: source_audit_id
+        framework: compliance_framework
+        requirements: audit_requirements

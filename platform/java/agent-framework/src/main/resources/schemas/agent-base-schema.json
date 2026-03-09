@@ -1,0 +1,173 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://ghatana.com/schemas/agent/v1/agent-base.json",
+  "title": "Ghatana Agent Base Configuration",
+  "description": "Base schema shared by all agent type configurations",
+  "type": "object",
+  "properties": {
+    "apiVersion": {
+      "type": "string",
+      "const": "agent.ghatana.com/v1",
+      "description": "API version for agent configuration"
+    },
+    "kind": {
+      "type": "string",
+      "enum": ["AgentDefinition"],
+      "description": "Resource kind"
+    },
+    "metadata": {
+      "$ref": "#/$defs/Metadata"
+    },
+    "spec": {
+      "$ref": "#/$defs/AgentSpec"
+    }
+  },
+  "required": ["apiVersion", "kind", "metadata", "spec"],
+  "additionalProperties": false,
+
+  "$defs": {
+    "Metadata": {
+      "type": "object",
+      "properties": {
+        "name": {
+          "type": "string",
+          "pattern": "^[a-z][a-z0-9-]{1,62}[a-z0-9]$",
+          "description": "Unique agent name (DNS-compatible)"
+        },
+        "namespace": {
+          "type": "string",
+          "default": "default",
+          "description": "Logical namespace for grouping agents"
+        },
+        "version": {
+          "type": "string",
+          "pattern": "^\\d+\\.\\d+\\.\\d+$",
+          "description": "Semantic version"
+        },
+        "labels": {
+          "type": "object",
+          "additionalProperties": { "type": "string" },
+          "description": "Key-value labels for discovery and filtering"
+        },
+        "annotations": {
+          "type": "object",
+          "additionalProperties": { "type": "string" },
+          "description": "Non-identifying metadata"
+        }
+      },
+      "required": ["name"],
+      "additionalProperties": false
+    },
+
+    "AgentSpec": {
+      "type": "object",
+      "properties": {
+        "type": {
+          "type": "string",
+          "enum": ["DETERMINISTIC", "PROBABILISTIC", "HYBRID", "ADAPTIVE", "COMPOSITE", "REACTIVE"],
+          "description": "Agent type"
+        },
+        "description": {
+          "type": "string",
+          "description": "Human-readable description"
+        },
+        "timeout": {
+          "$ref": "#/$defs/Duration",
+          "default": "5s",
+          "description": "Processing timeout per invocation"
+        },
+        "confidenceThreshold": {
+          "type": "number",
+          "minimum": 0,
+          "maximum": 1,
+          "default": 0.5,
+          "description": "Minimum confidence to accept a result"
+        },
+        "failureMode": {
+          "type": "string",
+          "enum": ["FAIL_FAST", "RETRY", "FALLBACK", "SKIP", "DEAD_LETTER", "CIRCUIT_BREAKER"],
+          "default": "FAIL_FAST"
+        },
+        "resilience": {
+          "$ref": "#/$defs/Resilience"
+        },
+        "observability": {
+          "$ref": "#/$defs/Observability"
+        },
+        "properties": {
+          "type": "object",
+          "additionalProperties": true,
+          "description": "Custom key-value properties"
+        },
+        "labels": {
+          "type": "object",
+          "additionalProperties": { "type": "string" }
+        },
+        "requiredCapabilities": {
+          "type": "array",
+          "items": { "type": "string" },
+          "description": "Capabilities this agent requires from the runtime"
+        }
+      },
+      "required": ["type"],
+      "additionalProperties": true
+    },
+
+    "Resilience": {
+      "type": "object",
+      "properties": {
+        "maxRetries": {
+          "type": "integer",
+          "minimum": 0,
+          "default": 0
+        },
+        "retryBackoff": {
+          "$ref": "#/$defs/Duration",
+          "default": "100ms"
+        },
+        "maxRetryBackoff": {
+          "$ref": "#/$defs/Duration",
+          "default": "5s"
+        },
+        "circuitBreakerThreshold": {
+          "type": "integer",
+          "minimum": 1,
+          "default": 5,
+          "description": "Consecutive failures before circuit opens"
+        },
+        "circuitBreakerReset": {
+          "$ref": "#/$defs/Duration",
+          "default": "30s"
+        }
+      },
+      "additionalProperties": false
+    },
+
+    "Observability": {
+      "type": "object",
+      "properties": {
+        "metricsEnabled": {
+          "type": "boolean",
+          "default": true
+        },
+        "tracingEnabled": {
+          "type": "boolean",
+          "default": true
+        },
+        "tracingSampleRate": {
+          "type": "number",
+          "minimum": 0,
+          "maximum": 1,
+          "default": 0.1
+        }
+      },
+      "additionalProperties": false
+    },
+
+    "Duration": {
+      "type": "string",
+      "pattern": "^\\d+(\\.\\d+)?(ms|s|m|h)$",
+      "description": "Duration string (e.g., '100ms', '5s', '1m', '1h')"
+    }
+  }
+}

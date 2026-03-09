@@ -1,0 +1,81 @@
+---
+# Cross-Cutting Escalation Handler Operator Template
+# Replaces ~8 stage-specific files: build_escalation_handler.yaml, etc.
+#
+# @doc.type operator-template
+# @doc.purpose Cross-cutting escalation handling for all stages
+# @doc.layer operations
+# @doc.pattern Template
+
+template:
+  id: "${stage}_escalation_handler"
+  version: "1.0.0"
+
+operator:
+  type: "EscalationOperator"
+  role: "${stage} Escalation Manager"
+  category: "cross-cutting"
+
+parameters:
+  stage:
+    type: "string"
+    required: true
+    description: "Stage name for escalation handling"
+
+inputs_spec:
+  - name: "${stage}_blockers"
+    description: "Blockers requiring escalation."
+    format: "Blocker list"
+    required: true
+
+  - name: "${stage}_risk_assessment"
+    description: "Risk assessment for escalation priority."
+    format: "Risk assessment artifact"
+    required: false
+
+outputs_spec:
+  - name: "${stage}_escalation_report"
+    description: "Escalation report with status and resolutions."
+    format: "Escalation report artifact"
+
+  - name: "${stage}_escalation_events"
+    description: "Stream of escalation events"
+    format: "Event stream"
+    event_type: "ghatana.operations.escalation.${stage}"
+
+agent_tasks:
+  - "Identify items requiring escalation in ${stage}."
+  - "Route escalations to appropriate owners."
+  - "Track escalation resolution status."
+  - "Emit escalation events to EventCloud."
+
+acceptance_criteria:
+  - "All blockers are evaluated for escalation."
+  - "Escalations are routed and tracked."
+  - "Resolution SLAs are monitored."
+
+dependencies:
+  - "${stage}_blockers"
+
+failure_escalation:
+  - "Meta-escalate to Executive Sponsor if escalation process fails."
+
+config:
+  escalation_levels:
+    - level: 1
+      owner: "team_lead"
+      sla_hours: 4
+    - level: 2
+      owner: "manager"
+      sla_hours: 8
+    - level: 3
+      owner: "director"
+      sla_hours: 24
+    - level: 4
+      owner: "executive"
+      sla_hours: 48
+
+  auto_escalate_on_sla_breach: true
+  event_cloud_topic: "ghatana.operations.escalation"
+
+hitl: true # Human involvement in escalation

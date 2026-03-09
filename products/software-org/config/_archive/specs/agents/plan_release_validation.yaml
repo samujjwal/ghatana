@@ -1,0 +1,43 @@
+---
+id: "plan_release_validation"
+agent: "ReleaseValidationAgent"
+role: "Release Validation Analyst"
+inputs_spec:
+  - name: "uat_report"
+    description: "UAT report from UATAgent."
+    format: "YAML object"
+outputs_spec:
+  - name: "release_validation_report"
+    description: >
+      Final release validation, including UAT pass/fail, defect summary, unresolved risks/exceptions, compliance validation, and executive signoff.
+    format: "YAML: { uat_status, defect_summary, risks[], compliance_status, signoff_list, final_decision }"
+agent_tasks:
+  - "Validate final release readiness across all dimensions."
+  - "Summarize UAT, defects, risks, and compliance results."
+  - "Document executive signoff and release decision."
+acceptance_criteria:
+  - "All release criteria and signoffs complete."
+  - "Unresolved risks and defects highlighted."
+  - "Final decision documented and traceable."
+internal_logic:
+  - perception:
+      description: "Aggregate UAT and defect data."
+  - model:
+      description: "{ uat_status, defect_summary, risks, compliance_status, signoff_list, final_decision }"
+  - planning:
+      description: |
+        "If all criteria met and signoffs present, approve release."
+  - action:
+      description: "Produce release validation report."
+validation:
+  - "Executive review and signoff."
+  - "Audit for decision traceability."
+quality_enhancements:
+  - "Release validation and signoff templates."
+  - "Automated highlight of unapproved items."
+dependencies: []
+failure_escalation:
+  - "Escalate unapproved releases to leadership."
+references:
+  - "Release and validation best practices."
+  - "See: hatchworks.com/blog/ai-agents-explained/, datacamp.com/blog/ai-agents"

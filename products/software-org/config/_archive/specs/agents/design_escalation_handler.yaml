@@ -1,0 +1,37 @@
+id: design_escalation_handler
+agent: EscalationHandlerAgent
+role: Project Escalation Manager
+inputs_spec:
+- name: design_success_criteria_status
+  description: Status of design stage success criteria.
+  format: List of criteria status objects
+outputs_spec:
+- name: design_escalation_report
+  description: Escalation report for unresolved blockers, owners, deadlines, and dashboard visibility.
+  format: 'Structured escalation report (sections: at_risk_criteria, owners, deadlines, status)'
+  example: 'at_risk_criteria: ["API contract defined"]
+
+    owners: ["API Architect"]
+
+    deadlines: ["2024-09-05"]
+
+    status: "escalated"
+
+    '
+agent_tasks:
+- Review all "At Risk" or "Not Met" criteria for escalation.
+- Assign owners and deadlines for resolution.
+- Make escalation status visible in dashboard and audit log.
+acceptance_criteria:
+- All "At Risk" or "Not Met" criteria are reviewed for escalation.
+- Owners and deadlines for resolution are assigned.
+- Escalation status is visible in the dashboard and audit log.
+dependencies:
+- design_success_criteria_status
+failure_escalation:
+- Escalate to escalation manager or PM if blockers are not resolved.
+references: []
+hitl: true
+hitl_reason: Human ensures appropriate escalation/action for unresolved blockers
+
+# [!!] No custom enhancement found.

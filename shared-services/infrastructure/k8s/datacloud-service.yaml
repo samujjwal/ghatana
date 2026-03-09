@@ -1,0 +1,40 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: datacloud
+  namespace: ghatana
+  labels:
+    app: datacloud
+    component: data-platform
+spec:
+  type: ClusterIP
+  selector:
+    app: datacloud
+  ports:
+  - name: http
+    port: 8090
+    targetPort: http
+    protocol: TCP
+  - name: metrics
+    port: 9091
+    targetPort: metrics
+    protocol: TCP
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: datacloud-headless
+  namespace: ghatana
+  labels:
+    app: datacloud
+    component: data-platform
+spec:
+  type: ClusterIP
+  clusterIP: None
+  selector:
+    app: datacloud
+  ports:
+  - name: http
+    port: 8090
+    targetPort: http
+    protocol: TCP

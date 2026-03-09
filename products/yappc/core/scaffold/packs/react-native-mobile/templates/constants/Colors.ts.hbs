@@ -1,0 +1,34 @@
+/**
+* Color palette for light and dark themes
+*/
+export const Colors = {
+light: {
+text: "#11181C",
+textSecondary: "#687076",
+background: "#FFFFFF",
+card: "#F4F4F5",
+tint: "#0A7EA4",
+border: "#E4E4E7",
+tabIconDefault: "#687076",
+tabIconSelected: "#0A7EA4",
+success: "#22C55E",
+warning: "#F59E0B",
+error: "#EF4444",
+},
+dark: {
+text: "#ECEDEE",
+textSecondary: "#9BA1A6",
+background: "#151718",
+card: "#27272A",
+tint: "#0EA5E9",
+border: "#3F3F46",
+tabIconDefault: "#9BA1A6",
+tabIconSelected: "#0EA5E9",
+success: "#22C55E",
+warning: "#F59E0B",
+error: "#EF4444",
+},
+} as const;
+
+export type ColorScheme = keyof typeof Colors;
+export type ThemeColors = typeof Colors.light;

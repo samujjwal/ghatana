@@ -1,0 +1,27 @@
+---
+id: "policy_gate"
+agent: "PolicyGateAgent"
+role: "CI/CD Gatekeeper/Tool"
+inputs_spec:
+- name: "rbac_policies"
+  description: "RBAC policy files for CI/CD policy gate."
+  format: "RBAC policy files"
+outputs_spec:
+- name: "policy_gate_status"
+  description: "Status of policy gates in CI/CD pipeline."
+  format: "Policy gate status report"
+agent_tasks:
+- "Implement security policy gates in CI/CD pipeline."
+- "Block/alert on failing policies."
+- "Log all policy gate status changes."
+acceptance_criteria:
+- "Policy gates implemented in CI/CD."
+- "Failing policies block/alert deployments."
+- "Status changes logged."
+dependencies:
+- "rbac_policies"
+failure_escalation:
+- "Escalate to Gatekeeper if policy gates are not blocking insecure deployments."
+references: []
+hitl: true
+hitl_reason: "Human validates policy gate status for deployments"

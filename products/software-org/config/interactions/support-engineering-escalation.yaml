@@ -1,0 +1,87 @@
+# Support to Engineering Escalation Interaction
+apiVersion: virtualorg.ghatana.com/v1
+kind: Interaction
+metadata:
+  name: support-engineering-escalation
+  namespace: software-org
+  labels:
+    type: escalation
+    departments: [support, engineering]
+
+spec:
+  displayName: "Support to Engineering Escalation"
+  description: |
+    Defines the interaction pattern when support escalates
+    technical issues to engineering for investigation.
+
+  participants:
+    source:
+      department: support
+      agents:
+        - support-engineer-agent
+        - support-manager-agent
+    target:
+      department: engineering
+      agents:
+        - senior-engineer-agent
+        - architect-lead-agent
+
+  trigger:
+    events:
+      - type: support.escalation.created
+      - type: bug.critical.reported
+      - type: customer.blocker.identified
+
+  protocol:
+    type: sync
+    timeout: PT1H
+
+  escalation:
+    priority:
+      critical:
+        responseTime: PT15M
+        resolutionTarget: PT4H
+      high:
+        responseTime: PT1H
+        resolutionTarget: PT24H
+      medium:
+        responseTime: PT4H
+        resolutionTarget: PT72H
+
+    requirements:
+      - name: issue_description
+        description: "Clear description of the issue"
+        mandatory: true
+      - name: reproduction_steps
+        description: "Steps to reproduce the issue"
+        mandatory: true
+      - name: customer_impact
+        description: "Description of customer impact"
+        mandatory: true
+      - name: logs_attached
+        description: "Relevant logs attached"
+        mandatory: false
+
+    artifacts:
+      - type: support_ticket
+        required: true
+      - type: logs
+        required: false
+      - type: screenshots
+        required: false
+
+  notifications:
+    onTrigger:
+      - channel: slack
+        target: "#engineering-escalations"
+        template: "🚨 Escalation: {{issue_title}} - Priority: {{priority}}"
+      - channel: pagerduty
+        condition: "priority == 'critical'"
+    onComplete:
+      - channel: slack
+        target: "#support"
+        template: "Escalation resolved: {{issue_title}}"
+
+  sla:
+    acknowledgment: PT15M
+    completion: PT24H

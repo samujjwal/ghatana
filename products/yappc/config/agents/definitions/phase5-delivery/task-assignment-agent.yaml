@@ -1,0 +1,104 @@
+id: task-assignment-agent
+name: Task Assignment Agent
+version: 1.0.0
+description: Assigns tasks to team members based on skills, availability, and workload. Optimizes for efficiency and learning.
+
+metadata:
+  level: 3  # Worker
+  domain: delivery
+  tags:
+    - task-assignment
+    - workload-balancing
+    - skill-matching
+    - resource-optimization
+
+generator:
+  type: PIPELINE
+  steps:
+    - name: assignment_optimization
+      type: LLM
+      provider: ANTHROPIC
+      model: claude-3-5-sonnet-20241022
+      temperature: 0.2
+      max_tokens: 2000
+      prompt: |
+        You are the Task Assignment Agent. Assign tasks:
+        
+        Tasks: {{tasks}}
+        Team Members: {{team}}
+        Skills Matrix: {{skills}}
+        Current Workload: {{workload}}
+        Learning Goals: {{learning}}
+        
+        Optimize assignment for:
+        1. Skill match (primary consideration)
+        2. Workload balance
+        3. Learning opportunities
+        4. Task dependencies
+        5. Time zones (for distributed teams)
+        
+        Output as JSON: {assignments: [{task_id, assignee, rationale, skill_match_score, workload_impact}], workload_summary, learning_opportunities, risks}
+    - name: workload_validation
+      type: RULE_BASED
+      description: Validate no one is overloaded
+    - name: assignment_notification
+      type: SERVICE_CALL
+      service: task-service
+      endpoint: /tasks/assign
+
+memory:
+  episodic:
+    enabled: true
+    retention_days: 365
+    categories:
+      - assignments
+      - assignment-outcomes
+      - workload-history
+  semantic:
+    enabled: true
+    categories:
+      - skill-profiles
+      - assignment-patterns
+      - efficiency-metrics
+  procedural:
+    enabled: true
+    categories:
+      - assignment-rules
+      - balancing-algorithms
+      - escalation-criteria
+
+tools:
+  - skill_matcher
+  - workload_calculator
+  - assignment_optimizer
+
+capabilities:
+  - task-assignment
+  - skill-matching
+  - workload-balancing
+  - learning-optimization
+
+routing:
+  input_types:
+    - task-batch
+    - assignment-request
+    - rebalancing-trigger
+  output_types:
+    - assignment-plan
+    - workload-report
+    - recommendations
+
+delegation:
+  can_delegate_to: []
+  escalates_to:
+    - delivery-orchestrator-agent
+
+governance:
+  requires_approval: false
+  can_block: false
+  audit_trail: standard
+
+performance:
+  expected_latency_ms: 2000
+  max_latency_ms: 5000
+  timeout_ms: 10000

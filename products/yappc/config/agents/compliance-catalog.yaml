@@ -1,0 +1,393 @@
+apiVersion: ghatana.yappc/v2
+kind: DomainAgentCatalog
+
+metadata:
+  name: compliance
+  version: 1.0.0
+  description: "Compliance frameworks, auditing, and regulatory adherence agents"
+  domain: compliance
+  agentCount: 24
+
+spec:
+  agents:
+    # Level 1: Compliance Orchestrators
+    - id: compliance-audit-orchestrator
+      name: Compliance Audit Orchestrator
+      level: 1
+      type: orchestrator
+      description: "Coordinates comprehensive compliance audits across all frameworks"
+      domain: compliance
+      capabilities:
+        - compliance-audit
+        - framework-coordination
+        - gap-analysis
+      routing:
+        input_types: [compliance_request, audit_trigger]
+        output_types: [audit_plan, gap_report]
+      governance:
+        requires_approval: true
+        audit_trail: comprehensive
+      tags: [compliance, audit, orchestration]
+
+    - id: security-posture-orchestrator
+      name: Security Posture Orchestrator
+      level: 1
+      type: orchestrator
+      description: "Coordinates security posture assessment across the organization"
+      domain: compliance
+      capabilities:
+        - security-posture
+        - risk-assessment
+        - control-evaluation
+      routing:
+        input_types: [posture_check, security_assessment]
+        output_types: [posture_report, risk_summary]
+      tags: [security, posture, compliance]
+
+    # Level 2: Framework Experts
+    - id: soc2-compliance-agent
+      name: SOC 2 Compliance Agent
+      level: 2
+      type: domain-expert
+      description: "Ensures SOC 2 Trust Services Criteria compliance"
+      domain: compliance
+      capabilities:
+        - soc2-compliance
+        - trust-services-criteria
+        - audit-preparation
+      memory:
+        semantic:
+          enabled: true
+          categories: [soc2-controls, audit-evidence]
+      tools:
+        - soc2_checker
+        - evidence_collector
+      tags: [soc2, compliance, audit]
+
+    - id: gdpr-compliance-agent
+      name: GDPR Compliance Agent
+      level: 2
+      type: domain-expert
+      description: "Ensures GDPR data protection compliance"
+      domain: compliance
+      capabilities:
+        - gdpr-compliance
+        - data-protection
+        - privacy-rights
+      memory:
+        semantic:
+          enabled: true
+          categories: [gdpr-articles, data-mapping]
+      tools:
+        - gdpr_checker
+        - data_mapper
+      tags: [gdpr, privacy, compliance]
+
+    - id: hipaa-compliance-agent
+      name: HIPAA Compliance Agent
+      level: 2
+      type: domain-expert
+      description: "Ensures HIPAA healthcare data compliance"
+      domain: compliance
+      capabilities:
+        - hipaa-compliance
+        - phi-protection
+        - healthcare-security
+      tools:
+        - hipaa_checker
+      tags: [hipaa, healthcare, compliance]
+
+    - id: pci-dss-compliance-agent
+      name: PCI DSS Compliance Agent
+      level: 2
+      type: domain-expert
+      description: "Ensures PCI DSS payment card compliance"
+      domain: compliance
+      capabilities:
+        - pci-dss-compliance
+        - payment-security
+        - cardholder-data-protection
+      tools:
+        - pci_checker
+      tags: [pci-dss, payments, compliance]
+
+    # Level 3: Compliance Workers
+    - id: compliance-control-evaluation-agent
+      name: Compliance Control Evaluation Agent
+      level: 3
+      type: worker
+      description: "Evaluates specific compliance controls for effectiveness"
+      domain: compliance
+      capabilities:
+        - control-evaluation
+        - effectiveness-testing
+        - gap-identification
+      tools:
+        - control_tester
+        - gap_analyzer
+      tags: [compliance, controls, evaluation]
+
+    - id: compliance-gap-analysis-agent
+      name: Compliance Gap Analysis Agent
+      level: 3
+      type: worker
+      description: "Analyzes gaps between current state and compliance requirements"
+      domain: compliance
+      capabilities:
+        - gap-analysis
+        - requirement-mapping
+        - remediation-planning
+      tools:
+        - gap_analyzer
+        - remediation_planner
+      tags: [compliance, gap-analysis, remediation]
+
+    - id: iso-27001-compliance-agent
+      name: ISO 27001 Compliance Agent
+      level: 3
+      type: worker
+      description: "Ensures ISO 27001 information security management compliance"
+      domain: compliance
+      capabilities:
+        - iso27001-compliance
+        - isms-management
+        - risk-treatment
+      tools:
+        - iso27001_checker
+      tags: [iso27001, isms, compliance]
+
+    - id: nist-compliance-agent
+      name: NIST Compliance Agent
+      level: 3
+      type: worker
+      description: "Ensures NIST Cybersecurity Framework compliance"
+      domain: compliance
+      capabilities:
+        - nist-compliance
+        - cybersecurity-framework
+        - csf-alignment
+      tools:
+        - nist_checker
+      tags: [nist, cybersecurity, compliance]
+
+    - id: audit-evidence-collector
+      name: Audit Evidence Collector Agent
+      level: 3
+      type: worker
+      description: "Collects and organizes evidence for compliance audits"
+      domain: compliance
+      capabilities:
+        - evidence-collection
+        - documentation-organization
+        - artifact-management
+      tools:
+        - evidence_collector
+        - artifact_manager
+      tags: [audit, evidence, collection]
+
+    - id: policy-validator
+      name: Policy Validator Agent
+      level: 3
+      type: worker
+      description: "Validates organizational policies against compliance requirements"
+      domain: compliance
+      capabilities:
+        - policy-validation
+        - requirement-alignment
+        - update-recommendations
+      tools:
+        - policy_checker
+        - alignment_analyzer
+      tags: [compliance, policies, validation]
+
+    - id: data-classification-agent
+      name: Data Classification Agent
+      level: 3
+      type: worker
+      description: "Classifies data according to sensitivity and compliance requirements"
+      domain: compliance
+      capabilities:
+        - data-classification
+        - sensitivity-analysis
+        - protection-mapping
+      tools:
+        - classifier
+        - sensitivity_analyzer
+      tags: [data, classification, compliance]
+
+    - id: retention-policy-enforcer
+      name: Retention Policy Enforcer Agent
+      level: 3
+      type: worker
+      description: "Enforces data retention policies for compliance"
+      domain: compliance
+      capabilities:
+        - retention-enforcement
+        - lifecycle-management
+        - deletion-coordination
+      tools:
+        - retention_manager
+        - deletion_coordinator
+      tags: [retention, compliance, lifecycle]
+
+    - id: access-control-reviewer
+      name: Access Control Reviewer Agent
+      level: 3
+      type: worker
+      description: "Reviews access controls for compliance with least privilege"
+      domain: compliance
+      capabilities:
+        - access-review
+        - privilege-analysis
+        - permission-audit
+      tools:
+        - access_reviewer
+        - privilege_analyzer
+      tags: [access-control, compliance, review]
+
+    - id: encryption-compliance-agent
+      name: Encryption Compliance Agent
+      level: 3
+      type: worker
+      description: "Validates encryption practices for data protection compliance"
+      domain: compliance
+      capabilities:
+        - encryption-validation
+        - key-management-review
+        - algorithm-compliance
+      tools:
+        - encryption_checker
+      tags: [encryption, compliance, security]
+
+    - id: breach-notification-agent
+      name: Breach Notification Agent
+      level: 3
+      type: worker
+      description: "Manages breach notification workflows per regulations"
+      domain: compliance
+      capabilities:
+        - breach-assessment
+        - notification-workflows
+        - regulatory-reporting
+      tools:
+        - breach_assessor
+        - notification_manager
+      tags: [breach, notification, compliance]
+
+    - id: third-party-risk-assessor
+      name: Third Party Risk Assessor Agent
+      level: 3
+      type: worker
+      description: "Assesses compliance risks from third-party vendors"
+      domain: compliance
+      capabilities:
+        - vendor-assessment
+        - risk-evaluation
+        - due-diligence
+      tools:
+        - vendor_assessor
+        - risk_calculator
+      tags: [third-party, risk, compliance]
+
+    - id: continuous-monitoring-agent
+      name: Continuous Monitoring Agent
+      level: 3
+      type: worker
+      description: "Continuously monitors compliance posture"
+      domain: compliance
+      capabilities:
+        - continuous-monitoring
+        - drift-detection
+        - alert-generation
+      memory:
+        episodic:
+          enabled: true
+          retention_days: 90
+      tags: [monitoring, compliance, continuous]
+
+    - id: audit-report-generator
+      name: Audit Report Generator Agent
+      level: 3
+      type: worker
+      description: "Generates compliance audit reports for stakeholders"
+      domain: compliance
+      capabilities:
+        - report-generation
+        - dashboard-creation
+        - executive-summaries
+      tools:
+        - report_generator
+        - dashboard_creator
+      tags: [audit, reports, compliance]
+
+    - id: privacy-impact-assessor
+      name: Privacy Impact Assessor Agent
+      level: 3
+      type: worker
+      description: "Assesses privacy impacts of new features and systems"
+      domain: compliance
+      capabilities:
+        - privacy-assessment
+        - impact-analysis
+        - pia-generation
+      tools:
+        - privacy_assessor
+        - pia_generator
+      tags: [privacy, impact, compliance]
+
+    - id: consent-management-agent
+      name: Consent Management Agent
+      level: 3
+      type: worker
+      description: "Manages user consent for data processing compliance"
+      domain: compliance
+      capabilities:
+        - consent-tracking
+        - preference-management
+        - withdrawal-processing
+      tools:
+        - consent_manager
+      tags: [consent, privacy, compliance]
+
+  hierarchy:
+    level1:
+      - compliance-audit-orchestrator
+      - security-posture-orchestrator
+    level2:
+      - soc2-compliance-agent
+      - gdpr-compliance-agent
+      - hipaa-compliance-agent
+      - pci-dss-compliance-agent
+    level3:
+      - compliance-control-evaluation-agent
+      - compliance-gap-analysis-agent
+      - iso-27001-compliance-agent
+      - nist-compliance-agent
+      - audit-evidence-collector
+      - policy-validator
+      - data-classification-agent
+      - retention-policy-enforcer
+      - access-control-reviewer
+      - encryption-compliance-agent
+      - breach-notification-agent
+      - third-party-risk-assessor
+      - continuous-monitoring-agent
+      - audit-report-generator
+      - privacy-impact-assessor
+      - consent-management-agent
+
+  capability_routing:
+    compliance-audit:
+      primary: compliance-audit-orchestrator
+    soc2-compliance:
+      primary: soc2-compliance-agent
+    gdpr-compliance:
+      primary: gdpr-compliance-agent
+    hipaa-compliance:
+      primary: hipaa-compliance-agent
+    pci-dss-compliance:
+      primary: pci-dss-compliance-agent
+    control-evaluation:
+      primary: compliance-control-evaluation-agent
+    gap-analysis:
+      primary: compliance-gap-analysis-agent

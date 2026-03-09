@@ -1,0 +1,357 @@
+apiVersion: ghatana.yappc/v2
+kind: DomainAgentCatalog
+
+metadata:
+  name: devsecops
+  version: 1.0.0
+  description: "Security scanning, DevOps operations, and deployment agents"
+  domain: devsecops
+  agentCount: 39
+
+spec:
+  agents:
+    # Release Agents (4)
+    - id: sbom-signer-agent
+      name: SBOM Signer Agent
+      level: 3
+      type: worker
+      description: "Generates and cryptographically signs SBOMs for supply chain verification"
+      domain: devsecops
+      capabilities:
+        - supply-chain-security
+        - sbom-generation
+        - cryptographic-signing
+      memory:
+        episodic:
+          enabled: true
+          retention_days: 90
+      tags: [security, release, supply-chain]
+
+    - id: supply-chain-verifier-agent
+      name: Supply Chain Verifier Agent
+      level: 3
+      type: worker
+      description: "Verifies dependencies against known vulnerability databases"
+      domain: devsecops
+      capabilities:
+        - supply-chain-security
+        - vulnerability-scanning
+        - dependency-verification
+      tools:
+        - vulnerability_scanner
+        - sbom_analyzer
+      tags: [security, supply-chain, verification]
+
+    - id: canary-analysis-agent
+      name: Canary Analysis Agent
+      level: 3
+      type: worker
+      description: "Analyzes canary deployment metrics to determine rollout safety"
+      domain: devsecops
+      capabilities:
+        - deployment-orchestration
+        - canary-analysis
+        - metrics-evaluation
+      memory:
+        episodic:
+          enabled: true
+          retention_days: 30
+      tags: [deployment, release, monitoring]
+
+    - id: rollback-coordinator-agent
+      name: Rollback Coordinator Agent
+      level: 3
+      type: worker
+      description: "Coordinates automatic rollback when deployment issues are detected"
+      domain: devsecops
+      capabilities:
+        - deployment-orchestration
+        - rollback-coordination
+        - incident-response
+      routing:
+        input_types: [deployment_failure, rollback_request]
+        output_types: [rollback_command, status_update]
+      tags: [deployment, rollback, incident-response]
+
+    # Security Agents (20)
+    - id: cloud-resource-discovery-agent
+      name: Cloud Resource Discovery Agent
+      level: 3
+      type: worker
+      description: "Discovers and catalogs cloud resources across all providers"
+      domain: devsecops
+      capabilities:
+        - cloud-security
+        - resource-discovery
+        - asset-inventory
+      tools:
+        - cloud_scanner
+        - resource_mapper
+      tags: [security, cloud, discovery]
+
+    - id: cloud-resource-risk-agent
+      name: Cloud Resource Risk Agent
+      level: 3
+      type: worker
+      description: "Evaluates security risks in cloud resource configurations"
+      domain: devsecops
+      capabilities:
+        - cloud-security
+        - risk-assessment
+        - configuration-analysis
+      memory:
+        semantic:
+          enabled: true
+          categories: [risk-patterns, security-configs]
+      tags: [security, cloud, risk]
+
+    - id: vulnerability-scoring-agent
+      name: Vulnerability Scoring Agent
+      level: 3
+      type: worker
+      description: "Scores vulnerabilities using CVSS and contextual risk factors"
+      domain: devsecops
+      capabilities:
+        - security-assessment
+        - vulnerability-scoring
+        - risk-prioritization
+      tools:
+        - cvss_calculator
+        - risk_scorer
+      tags: [security, vulnerability, scoring]
+
+    # Guardrail Agents (3)
+    - id: release-governance-agent
+      name: Release Governance Agent
+      level: 1
+      type: orchestrator
+      description: "Orchestrates release governance with approval workflows and compliance gates"
+      domain: devsecops
+      capabilities:
+        - release-governance
+        - approval-workflows
+        - compliance-gates
+      governance:
+        requires_approval: true
+        veto_power: true
+        audit_trail: comprehensive
+      routing:
+        input_types: [release_request, deployment_approval]
+        output_types: [approval_decision, gate_status]
+      tags: [governance, release, compliance]
+
+    - id: budget-gate-agent
+      name: Budget Gate Agent
+      level: 2
+      type: domain-expert
+      description: "Evaluates budget constraints and cost implications before deployments"
+      domain: devsecops
+      capabilities:
+        - cost-governance
+        - budget-validation
+        - resource-optimization
+      governance:
+        requires_approval: true
+        veto_power: true
+      routing:
+        input_types: [deployment_request, cost_analysis]
+        output_types: [budget_approval, cost_warning]
+      tags: [governance, cost, budget]
+
+    - id: dependency-gate-agent
+      name: Dependency Gate Agent
+      level: 2
+      type: domain-expert
+      description: "Validates dependency changes for security and compatibility risks"
+      domain: devsecops
+      capabilities:
+        - dependency-governance
+        - security-gates
+        - compatibility-validation
+      governance:
+        requires_approval: true
+        veto_power: true
+      tools:
+        - dependency_checker
+        - compatibility_analyzer
+      tags: [governance, dependencies, security]
+
+    # Additional DevSecOps Workers (12)
+    - id: security-scan-coordinator
+      name: Security Scan Coordinator
+      level: 2
+      type: domain-expert
+      description: "Coordinates security scans across all stages"
+      capabilities:
+        - security-coordination
+        - scan-orchestration
+      tags: [security, coordination, scanning]
+
+    - id: penetration-testing-agent
+      name: Penetration Testing Agent
+      level: 3
+      type: worker
+      description: "Automated penetration testing for deployed applications"
+      capabilities:
+        - security-testing
+        - penetration-testing
+      tools:
+        - pen_test_suite
+      tags: [security, testing, pentest]
+
+    - id: infrastructure-as-code-scanner
+      name: IaC Security Scanner
+      level: 3
+      type: worker
+      description: "Scans Terraform, CloudFormation, and other IaC for security issues"
+      capabilities:
+        - cloud-security
+        - iac-scanning
+      tools:
+        - iac_scanner
+      tags: [security, iac, scanning]
+
+    - id: secrets-detection-agent
+      name: Secrets Detection Agent
+      level: 3
+      type: worker
+      description: "Detects exposed secrets in code and configurations"
+      capabilities:
+        - secret-detection
+        - exposure-analysis
+      tools:
+        - secret_scanner
+      tags: [security, secrets, detection]
+
+    - id: compliance-scan-agent
+      name: Compliance Scan Agent
+      level: 3
+      type: worker
+      description: "Scans infrastructure for compliance with security standards"
+      capabilities:
+        - compliance-scanning
+        - security-standards
+      tags: [security, compliance, scanning]
+
+    - id: container-security-agent
+      name: Container Security Agent
+      level: 3
+      type: worker
+      description: "Scans container images for vulnerabilities and misconfigurations"
+      capabilities:
+        - container-security
+        - image-scanning
+      tools:
+        - container_scanner
+      tags: [security, containers, scanning]
+
+    - id: dast-agent
+      name: DAST Agent
+      level: 3
+      type: worker
+      description: "Dynamic Application Security Testing for running applications"
+      capabilities:
+        - dynamic-testing
+        - runtime-security
+      tools:
+        - dast_scanner
+      tags: [security, dast, testing]
+
+    - id: sast-agent
+      name: SAST Agent
+      level: 3
+      type: worker
+      description: "Static Application Security Testing for source code"
+      capabilities:
+        - static-testing
+        - code-analysis
+      tools:
+        - sast_scanner
+      tags: [security, sast, code-analysis]
+
+    - id: network-security-agent
+      name: Network Security Agent
+      level: 3
+      type: worker
+      description: "Analyzes network configurations for security vulnerabilities"
+      capabilities:
+        - network-security
+        - configuration-analysis
+      tags: [security, network, configuration]
+
+    - id: incident-response-agent
+      name: Incident Response Agent
+      level: 2
+      type: domain-expert
+      description: "Coordinates incident response workflows"
+      capabilities:
+        - incident-response
+        - incident-coordination
+      routing:
+        input_types: [security_incident, breach_alert]
+        output_types: [response_plan, containment_action]
+      tags: [security, incident-response, coordination]
+
+    - id: threat-modeling-agent
+      name: Threat Modeling Agent
+      level: 3
+      type: worker
+      description: "Creates and updates threat models for applications"
+      capabilities:
+        - threat-modeling
+        - security-design
+      memory:
+        semantic:
+          enabled: true
+          categories: [threat-patterns, mitigations]
+      tags: [security, threat-modeling, design]
+
+  hierarchy:
+    level1:
+      - release-governance-agent
+    level2:
+      - budget-gate-agent
+      - dependency-gate-agent
+      - security-scan-coordinator
+      - incident-response-agent
+    level3:
+      - sbom-signer-agent
+      - supply-chain-verifier-agent
+      - canary-analysis-agent
+      - rollback-coordinator-agent
+      - cloud-resource-discovery-agent
+      - cloud-resource-risk-agent
+      - vulnerability-scoring-agent
+      - penetration-testing-agent
+      - infrastructure-as-code-scanner
+      - secrets-detection-agent
+      - compliance-scan-agent
+      - container-security-agent
+      - dast-agent
+      - sast-agent
+      - network-security-agent
+      - threat-modeling-agent
+
+  capability_routing:
+    supply-chain-security:
+      primary: sbom-signer-agent
+      fallback:
+        - supply-chain-verifier-agent
+    deployment-orchestration:
+      primary: canary-analysis-agent
+      fallback:
+        - rollback-coordinator-agent
+    release-governance:
+      primary: release-governance-agent
+    cost-governance:
+      primary: budget-gate-agent
+    dependency-governance:
+      primary: dependency-gate-agent
+    cloud-security:
+      primary: cloud-resource-discovery-agent
+      fallback:
+        - cloud-resource-risk-agent
+    security-assessment:
+      primary: vulnerability-scoring-agent
+    incident-response:
+      primary: incident-response-agent

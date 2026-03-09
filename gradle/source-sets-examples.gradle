@@ -1,0 +1,204 @@
+// Example Source Set Configurations for Different Module Types
+// Copy the relevant section to your module's build.gradle file
+
+// =============================================================================
+// STANDARD JAVA LIBRARY MODULE (most common)
+// =============================================================================
+// Example: libs/java/common-utils/build.gradle
+/*
+plugins {
+    id 'java-library'
+}
+
+// Standard source sets (automatically applied by Java plugin)
+sourceSets {
+    main {
+        java.srcDir('src/main/java')
+        resources.srcDir('src/main/resources')
+    }
+    
+    test {
+        java.srcDir('src/test/java')
+        resources.srcDir('src/test/resources')
+    }
+}
+*/
+
+// =============================================================================
+// MULTI-SOURCE MODULE (e.g., generated sources)
+// =============================================================================
+// Example: contracts/proto/build.gradle
+/*
+plugins {
+    id 'java-library'
+    id 'com.google.protobuf' version '0.9.4'
+}
+
+sourceSets {
+    main {
+        java {
+            srcDir('src/main/java')
+            srcDir('build/generated/source/proto/main/java')
+        }
+        resources {
+            srcDir('src/main/resources')
+        }
+    }
+    
+    test {
+        java.srcDir('src/test/java')
+        resources.srcDir('src/test/resources')
+    }
+}
+*/
+
+// =============================================================================
+// MODULE WITH INTEGRATION TESTS
+// =============================================================================
+// Example: products/data-cloud/core/build.gradle
+/*
+plugins {
+    id 'java-library'
+}
+
+// Enable integration tests
+ext.enableIntegrationTests = true
+
+// Apply source sets configuration
+apply from: "$rootDir/gradle/source-sets.gradle"
+
+// Additional dependencies for integration tests
+dependencies {
+    integrationTestImplementation sourceSets.main.output
+    integrationTestImplementation sourceSets.test.output
+    integrationTestImplementation libs.testcontainers.junit.jupiter
+    integrationTestImplementation libs.testcontainers.postgresql
+}
+*/
+
+// =============================================================================
+// MODULE WITH FUNCTIONAL TESTS
+// =============================================================================
+// Example: products/aep/orchestrator/build.gradle
+/*
+plugins {
+    id 'java-library'
+}
+
+// Enable functional tests
+ext.enableFunctionalTests = true
+
+// Apply source sets configuration
+apply from: "$rootDir/gradle/source-sets.gradle"
+
+// Additional dependencies for functional tests
+dependencies {
+    functionalTestImplementation sourceSets.main.output
+    functionalTestImplementation libs.test.wiremock
+    functionalTestImplementation libs.cucumber.java
+}
+*/
+
+// =============================================================================
+// PERFORMANCE BENCHMARKING MODULE (JMH)
+// =============================================================================
+// Example: libs/java/common-utils/build.gradle
+/*
+plugins {
+    id 'java-library'
+    id 'me.champeau.jmh' version '0.7.2'
+}
+
+// Enable JMH
+ext.enableJmh = true
+
+// Apply source sets configuration
+apply from: "$rootDir/gradle/source-sets.gradle"
+
+// JMH dependencies
+jmh {
+    includes = ['.*Benchmark.*']
+    iterations = 5
+    benchmarkMode = ['thrpt']
+    batchSize = 1
+    fork = 2
+    failOnError = true
+    forceGC = true
+    jvm = 'java'
+    jvmArgs = ['-Xms2G', '-Xmx2G']
+    timeOnIteration = '1s'
+    warmup = '1s'
+    warmupBatchSize = 1
+    warmupForks = 1
+    warmupIterations = 3
+}
+
+dependencies {
+    jmhImplementation libs.jmh.core
+    jmhAnnotationProcessor libs.jmh.generator.annprocess
+}
+*/
+
+// =============================================================================
+// KOTLIN MULTIPLATFORM MODULE
+// =============================================================================
+// Example: products/yappc/backend/api/build.gradle.kts
+/*
+plugins {
+    id 'org.jetbrains.kotlin.jvm'
+    id 'java-library'
+}
+
+sourceSets {
+    main {
+        java.srcDir('src/main/java')
+        kotlin.srcDir('src/main/kotlin')
+        resources.srcDir('src/main/resources')
+    }
+    
+    test {
+        java.srcDir('src/test/java')
+        kotlin.srcDir('src/test/kotlin')
+        resources.srcDir('src/test/resources')
+    }
+}
+*/
+
+// =============================================================================
+// CUSTOM SOURCE DIRECTORY STRUCTURE
+// =============================================================================
+// For projects that use non-standard directory layouts
+/*
+sourceSets {
+    main {
+        java {
+            srcDirs = [
+                'src/java',           // Custom main source
+                'src/gen/java',       // Generated sources
+                'build/generated/sources' // Build-time generated
+            ]
+        }
+        resources {
+            srcDirs = [
+                'src/resources',
+                'src/conf'
+            ]
+        }
+    }
+    
+    test {
+        java {
+            srcDirs = [
+                'test/java',
+                'test/integration/java'
+            ]
+        }
+        resources {
+            srcDirs = [
+                'test/resources',
+                'test/fixtures'
+            ]
+        }
+    }
+}
+*/

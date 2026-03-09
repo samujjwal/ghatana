@@ -1,0 +1,54 @@
+{
+    "name": "@ghatana/yappc-crdt",
+    "version": "0.1.0",
+    "description": "CRDT (Conflict-free Replicated Data Types) library for real-time collaboration in YAPPC",
+    "type": "module",
+    "main": "./src/index.ts",
+    "types": "./src/index.ts",
+    "exports": {
+        ".": {
+            "import": "./src/index.ts",
+            "types": "./src/index.ts"
+        },
+        "./core": {
+            "import": "./src/core/index.ts",
+            "types": "./src/core/index.ts"
+        },
+        "./ide": {
+            "import": "./src/ide/index.ts",
+            "types": "./src/ide/index.ts"
+        },
+        "./conflict-resolution": {
+            "import": "./src/conflict-resolution/index.ts",
+            "types": "./src/conflict-resolution/index.ts"
+        },
+        "./websocket": {
+            "import": "./src/websocket/index.ts",
+            "types": "./src/websocket/index.ts"
+        }
+    },
+    "scripts": {
+        "type-check": "tsc --noEmit",
+        "lint": "eslint src --ext .ts,.tsx",
+        "test": "vitest run",
+        "test:watch": "vitest"
+    },
+    "dependencies": {},
+    "devDependencies": {
+        "@types/node": "^25.2.0",
+        "typescript": "^5.9.3",
+        "vitest": "^4.0.18"
+    },
+    "keywords": [
+        "crdt",
+        "conflict-free",
+        "replicated-data-types",
+        "collaboration",
+        "real-time",
+        "vector-clock",
+        "operational-transformation",
+        "conflict-resolution"
+    ],
+    "author": "YAPPC Team",
+    "license": "MIT"
+}

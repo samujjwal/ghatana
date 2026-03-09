@@ -1,0 +1,124 @@
+domain:
+  id: system-architecture-design
+  name: "System & Architecture Design"
+  description: "Design system architecture, APIs, and data models."
+  order: 9
+  icon: "architecture"
+  color: "#96CEB4"
+  agent_personas:
+    - "ArchitecturePlanner"
+    - "SystemDesigner"
+    - "APIDesigner"
+  audit_artifacts:
+    - "ADR"
+    - "ArchitectureSnapshot"
+    - "DecisionRecord"
+  inputs:
+    - "Requirements"
+    - "Constraints"
+    - "Technical context"
+  outputs:
+    - "Architecture diagrams"
+    - "Design decisions"
+    - "API contracts"
+
+tasks:
+  # Core ICS architecture tasks
+  - id: d9-t1
+    name: "System architecture"
+    description: "Define high-level system structure."
+    personas: ["Tech Lead", "Developer"]
+    lifecycle_stages: ["plan"]
+    automation_level: "assisted"
+  - id: d9-t2
+    name: "API design"
+    description: "Design API contracts."
+    personas: ["Developer", "Tech Lead"]
+    lifecycle_stages: ["plan"]
+    automation_level: "assisted"
+  - id: d9-t3
+    name: "Data model design"
+    description: "Design database schemas and data structures."
+    personas: ["Developer", "Tech Lead"]
+    lifecycle_stages: ["plan"]
+    automation_level: "assisted"
+  - id: d9-t4
+    name: "Security architecture"
+    description: "Design security controls and mechanisms."
+    personas: ["Developer", "Tech Lead", "Security"]
+    lifecycle_stages: ["plan"]
+    automation_level: "assisted"
+  - id: d9-t5
+    name: "Scalability planning"
+    description: "Plan for system growth and load."
+    personas: ["Developer", "Tech Lead", "DevOps"]
+    lifecycle_stages: ["plan"]
+    automation_level: "assisted"
+  - id: d9-t6
+    name: "Design reviews"
+    description: "Review designs with peers."
+    personas: ["Developer", "Tech Lead"]
+    lifecycle_stages: ["plan", "verify"]
+    automation_level: "manual"
+
+  # Migrated from legacy architecture domain
+  - id: arch-001
+    name: "Design System Architecture"
+    description: "Create high-level system architecture with components and interactions."
+    personas: ["Tech Lead", "Developer"]
+    lifecycle_stages: ["plan"]
+    automation_level: "assisted"
+  - id: arch-002
+    name: "Define Component and Service Boundaries"
+    description: "Establish clear boundaries between components and services."
+    personas: ["Tech Lead", "Developer"]
+    lifecycle_stages: ["plan"]
+    automation_level: "assisted"
+  - id: arch-003
+    name: "Design APIs"
+    description: "Design REST, GraphQL, or gRPC APIs with proper contracts."
+    personas: ["Developer", "Tech Lead"]
+    lifecycle_stages: ["plan"]
+    automation_level: "assisted"
+  - id: arch-004
+    name: "Design Data Models and Schemas"
+    description: "Create data models, database schemas, and entity relationships."
+    personas: ["Developer", "Tech Lead"]
+    lifecycle_stages: ["plan"]
+    automation_level: "assisted"
+  - id: arch-005
+    name: "Define State Management Strategies"
+    description: "Design how state will be managed across the application."
+    personas: ["Developer", "Tech Lead"]
+    lifecycle_stages: ["plan"]
+    automation_level: "assisted"
+  - id: arch-006
+    name: "Design Integration Points"
+    description: "Define how the system integrates with external services."
+    personas: ["Developer", "Tech Lead", "DevOps"]
+    lifecycle_stages: ["plan"]
+    automation_level: "assisted"
+  - id: arch-007
+    name: "Define Error-Handling Strategy"
+    description: "Design comprehensive error handling and recovery patterns."
+    personas: ["Developer", "Tech Lead"]
+    lifecycle_stages: ["plan"]
+    automation_level: "assisted"
+  - id: arch-008
+    name: "Design Caching Strategy"
+    description: "Plan caching layers for performance optimization."
+    personas: ["Developer", "Tech Lead"]
+    lifecycle_stages: ["plan"]
+    automation_level: "assisted"
+  - id: arch-009
+    name: "Document Architecture Decisions"
+    description: "Create Architecture Decision Records (ADRs) for key decisions."
+    personas: ["Developer", "Tech Lead"]
+    lifecycle_stages: ["plan"]
+    automation_level: "assisted"
+  - id: arch-010
+    name: "Plan Observability Strategy"
+    description: "Design logging, metrics, and tracing approaches."
+    personas: ["Developer", "Tech Lead", "DevOps"]
+    lifecycle_stages: ["plan"]
+    automation_level: "assisted"

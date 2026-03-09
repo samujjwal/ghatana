@@ -1,0 +1,26 @@
+---
+id: "monitoring_agent"
+agent: "MonitoringAgent"
+role: "SRE/Automation"
+inputs_spec:
+- name: "infrastructure_progress_dashboard"
+  description: "Infrastructure progress dashboard for monitoring input."
+  format: "Dashboard artifact"
+outputs_spec:
+- name: "monitoring_report"
+  description: "System health and metrics monitoring report."
+  format: "Monitoring report artifact"
+agent_tasks:
+- "Monitor system health and metrics in real time."
+- "Generate alerts for anomalies or outages."
+- "Log monitoring data for later analysis."
+acceptance_criteria:
+- "System health and metrics monitored in real time."
+- "Alerts generated for anomalies/outages."
+- "Monitoring data logged for analysis."
+dependencies:
+- "infrastructure_progress_dashboard"
+failure_escalation:
+- "Escalate to SRE/Automation if monitoring or alerting fails."
+references: []
+hitl: false

@@ -1,0 +1,20 @@
+package {{packageName}}.controller;
+
+import java.util.Map;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.RestController;
+
+/**
+* Health check controller.
+*/
+@RestController
+public class HealthController {
+
+@GetMapping("/health")
+public Map<String, Object> health() {
+    return Map.of(
+    "status", "ok",
+    "timestamp", java.time.Instant.now().toString(),
+    "uptime", java.lang.management.ManagementFactory.getRuntimeMXBean().getUptime());
+    }
+    }

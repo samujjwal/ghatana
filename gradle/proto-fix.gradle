@@ -1,0 +1,454 @@
+// Gradle configuration to fix implicit dependency detection in Gradle 9.1+
+// for Protobuf Gradle plugin tasks with multi-path project inclusion
+//
+// Usage: apply from: rootProject.file('gradle/proto-fix.gradle')
+//
+// Problem: Gradle 9.1+ validates that tasks declare dependencies on tasks whose
+// outputs they consume. The Protobuf Gradle plugin creates extraction tasks
+// (extractProto, extractIncludeProto, etc.) that don't declare explicit dependencies
+// on generation tasks that consume their outputs. When projects are included via
+// multiple paths (full path + alias), Gradle's validation detects the mismatch
+// and fails the build.
+//
+// Solution: Use mustRunAfter to establish ordering constraints that satisfy
+// Gradle's implicit dependency validation without creating strict dependencies.
+//
+// NOTE: Using gradle.projectsEvaluated instead of afterEvaluate to avoid conflicts
+// with configuration-on-demand and other plugins that use afterEvaluate.
+
+gradle.projectsEvaluated {
+    // Fix main GenerateProtoTask dependencies - use class name string to avoid class resolution issues
+    tasks.findAll { it.class.name == 'com.google.protobuf.gradle.GenerateProtoTask' }.each { task ->
+        // Skip test-related tasks - handled separately below
+        if (!(task.name =~ /Test/)) {
+            def extractProtoTask = tasks.findByName('extractProto')
+            if (extractProtoTask) {
+                task.mustRunAfter(extractProtoTask)
+            }
+            
+            def extractIncludeProtoTask = tasks.findByName('extractIncludeProto')
+            if (extractIncludeProtoTask) {
+                task.mustRunAfter(extractIncludeProtoTask)
+            }
+        }
+    }
+
+    // Additional cross-check: map generateProto tasks to any extract* task whose
+    // outputs they appear to consume (by path substring matching). This is a
+    // last-resort mapping to catch cases where projects don't share identical
+    // projectDir values but one project's generateProto still reads another
+    // project's extracted-protos output.
+    gradle.projectsEvaluated {
+        try {
+            def extractEntries = []
+            def extractNames = ['extractProto', 'extractIncludeProto', 'extractTestProto', 'extractTestIncludeProto', 'extractTestFixturesProto', 'extractTestFixturesIncludeProto']
+
+            rootProject.allprojects.each { p ->
+                extractNames.each { exName ->
+                    try {
+                        def ext = p.tasks.findByName(exName)
+                        if (ext != null) {
+                            ext.outputs.files.each { outFile ->
+                                extractEntries << [task: ext, out: outFile.toString()]
+                            }
+                        }
+                    } catch (Exception ignore) {
+                        // ignore task inspection errors
+                    }
+                }
+            }
+
+            // For each generateProto, if any extract output path looks like it's
+            // being consumed by that generate task, add ordering.
+            rootProject.allprojects.each { p ->
+                try {
+                    p.tasks.findAll { it.class.name == 'com.google.protobuf.gradle.GenerateProtoTask' }.each { gen ->
+                        try {
+                            def genPaths = [] as Set
+                            // gather candidate input/output paths for the generate task
+                            try { gen.inputs.files.each { f -> genPaths << f.toString() } } catch (e) {}
+                            try { gen.outputs.files.each { f -> genPaths << f.toString() } } catch (e) {}
+
+                            extractEntries.each { entry ->
+                                try {
+                                    def outPath = entry.out
+                                    // if the generate task references the extract output (substring match)
+                                    if (genPaths.any { gp -> gp.contains(outPath) || outPath.contains(gp) }) {
+                                        // Prefer an explicit dependency when possible so Gradle's
+                                        // implicit-dependency validation is satisfied. Fall back
+                                        // to ordering when the dependency cannot be wired.
+                                        try {
+                                            gen.dependsOn(entry.task)
+                                        } catch (Exception ignoreDep) {
+                                            // If dependsOn can't be wired (e.g., task from included build),
+                                            // at least enforce ordering to reduce flakiness.
+                                            try { gen.mustRunAfter(entry.task) } catch (e) {}
+                                        }
+                                    }
+                                } catch (Exception ignore) {
+                                    // continue
+                                }
+                            }
+                        } catch (Exception ignoreGen) {
+                            // ignore per-task issues
+                        }
+                    }
+                } catch (Exception ignoreProj) {
+                    // ignore per-project issues
+                }
+            }
+        } catch (Exception ignoreAll) {
+            // defensive - don't fail the build configuration
+        }
+
+        // Attempt to handle extract tasks produced in included/composite builds.
+        // This is best-effort: we try to discover extracted-protos directories under
+        // each included build's projectDir and, if possible, obtain a Task instance
+        // from the IncludedBuild to use for ordering. If we can't obtain the producer
+        // task object, fall back to ordering the consumer after all extract* tasks
+        // found in the main build (coarse but safe).
+        try {
+            gradle.includedBuilds.each { ib ->
+                try {
+                    def ibDir = null
+                    try { ibDir = ib.projectDir } catch (e) { ibDir = null }
+                    if (ibDir == null) return
+
+                    // collect candidate extracted-protos directories under the included build
+                    def includedExtractDirs = [] as Set
+                    try {
+                        new File(ibDir.toString()).eachFileRecurse { f ->
+                            if (f.isDirectory() && f.name == 'extracted-protos') {
+                                includedExtractDirs << f.toString()
+                            }
+                        }
+                    } catch (e) {
+                        // ignore FS issues
+                    }
+
+                    if (includedExtractDirs.isEmpty()) return
+
+                    // For each generateProto in the main build, check if it references
+                    // any of the included extract dirs and try to order it after the
+                    // corresponding included-build extract task.
+                    rootProject.allprojects.each { p ->
+                        try {
+                            p.tasks.findAll { it.class.name == 'com.google.protobuf.gradle.GenerateProtoTask' }.each { gen ->
+                                try {
+                                    def genPaths = [] as Set
+                                    try { gen.inputs.files.each { f -> genPaths << f.toString() } } catch (e) {}
+                                    try { gen.outputs.files.each { f -> genPaths << f.toString() } } catch (e) {}
+
+                                    def matches = includedExtractDirs.findAll { dir -> genPaths.any { gp -> gp.contains(dir) || dir.contains(gp) } }
+                                                    if (matches) {
+                                                        // Prefer to run the included build's extract tasks before generate.
+                                                        // Creating a GradleBuild task that invokes the included build's
+                                                        // extract tasks is a robust way to ensure order even when the
+                                                        // included build's Task instances aren't accessible.
+                                                        try {
+                                                            def gradleBuildTaskName = "protoExtractFromIncluded_${ib.name}"
+                                                            def gradleBuildTask = rootProject.tasks.findByName(gradleBuildTaskName)
+                                                            if (gradleBuildTask == null) {
+                                                                gradleBuildTask = rootProject.tasks.register(gradleBuildTaskName, org.gradle.api.tasks.GradleBuild) { gb ->
+                                                                    try {
+                                                                        gb.dir = ibDir
+                                                                        gb.tasks = ['extractProto','extractIncludeProto','extractTestProto','extractTestIncludeProto','extractTestFixturesProto','extractTestFixturesIncludeProto']
+                                                                        gb.buildFile = new File(ibDir, 'build.gradle')
+                                                                    } catch (e) {
+                                                                        // ignore configuration issues for the GradleBuild
+                                                                    }
+                                                                }
+                                                            }
+
+                                                            // Ensure the generate task runs after the GradleBuild that triggers the included extract tasks
+                                                            try {
+                                                                gen.mustRunAfter(rootProject.tasks.named(gradleBuildTaskName))
+                                                            } catch (e) {
+                                                                // ignore if can't wire the provider
+                                                            }
+                                                        } catch (e) {
+                                                            // As a last resort, fall back to ordering after all extract* tasks in the main build
+                                                            try {
+                                                                def allExtracts = rootProject.allprojects.collectMany { pr ->
+                                                                    pr.tasks.findAll { t -> t.name ==~ /(?i)extract.*Proto/ }
+                                                                }
+                                                                allExtracts.each { ex ->
+                                                                    try { gen.mustRunAfter(ex) } catch (ex2) {}
+                                                                }
+                                                            } catch (ex3) {
+                                                                // ignore fallback ordering failures
+                                                            }
+                                                        }
+                                                    }
+                                } catch (Exception ignoreGen) {}
+                            }
+                        } catch (Exception ignoreProj) {}
+                    }
+                } catch (Exception ignoreIB) {}
+            }
+        } catch (Exception ignoreIncluded) {
+            // defensive
+        }
+    }
+
+    // Cross-project ordering must be done after all projects are evaluated so
+    // that the extract tasks exist in alias/producer projects. Use
+    // gradle.projectsEvaluated to avoid touching other projects too early.
+    gradle.projectsEvaluated {
+        // For every project in the build, look for GenerateProtoTask instances
+        // and ensure they are ordered after extract tasks from any alias project
+        // that points at the same physical projectDir.
+        rootProject.allprojects.each { proj ->
+            try {
+                proj.tasks.findAll { it.class.name == 'com.google.protobuf.gradle.GenerateProtoTask' }.each { genTask ->
+                    def localProjDir = proj.projectDir?.toString()
+                    if (!localProjDir) return
+
+                    rootProject.allprojects.findAll { p ->
+                        p.path != proj.path && p.projectDir?.toString() == localProjDir
+                    }.each { aliasProj ->
+                        ['extractProto', 'extractIncludeProto', 'extractTestProto', 'extractTestIncludeProto', 'extractTestFixturesProto', 'extractTestFixturesIncludeProto'].each { exName ->
+                            try {
+                                def ext = aliasProj.tasks.findByName(exName)
+                                if (ext) {
+                                    try {
+                                        genTask.dependsOn(ext)
+                                    } catch (Exception ignoreDep) {
+                                        try { genTask.mustRunAfter(ext) } catch (e) {}
+                                    }
+                                }
+                            } catch (Exception ignore) {
+                                // defensive: ignore alias project task side-effects
+                            }
+                        }
+                    }
+                }
+            } catch (Exception ignore) {
+                // defensive: continue if a project can't be inspected
+            }
+        }
+
+        // Also ensure ProcessResources ordering across projects for extracted outputs
+        rootProject.allprojects.each { proj ->
+            try {
+                proj.tasks.findAll { it.class.name == 'org.gradle.api.tasks.bundling.ProcessResources' }.each { procRes ->
+                    try {
+                        def extractedOutput = procRes.outputs.files.find { f -> f.toString().contains('extracted-protos') }
+                        if (extractedOutput) {
+                            def producerProject = rootProject.allprojects.find { prod ->
+                                try {
+                                    def pd = prod.projectDir
+                                    return extractedOutput.toString().contains(pd.toString())
+                                } catch (e) {
+                                    return false
+                                }
+                            }
+
+                            if (producerProject != null) {
+                                ['extractProto', 'extractIncludeProto', 'extractTestProto', 'extractTestIncludeProto', 'extractTestFixturesProto', 'extractTestFixturesIncludeProto'].each { extractName ->
+                                    try {
+                                        def ext = producerProject.tasks.findByName(extractName)
+                                        if (ext) {
+                                            try {
+                                                procRes.dependsOn(ext)
+                                            } catch (Exception ignoreDep) {
+                                                try { procRes.mustRunAfter(ext) } catch (e) {}
+                                            }
+                                        }
+                                    } catch (Exception ignore) {
+                                        // ignore
+                                    }
+                                }
+                            }
+                        }
+                    } catch (MissingPropertyException ignored) {
+                        // be defensive
+                    }
+                }
+            } catch (Exception ignore) {
+                // ignore per-project inspection issues
+            }
+        }
+    }
+    
+    // Fix test GenerateProtoTask dependencies
+    tasks.findAll { it.class.name == 'com.google.protobuf.gradle.GenerateProtoTask' }.each { task ->
+        if (task.name =~ /Test/ && !(task.name =~ /Fixtures/)) {
+            def extractTestProtoTask = tasks.findByName('extractTestProto')
+            if (extractTestProtoTask) {
+                task.mustRunAfter(extractTestProtoTask)
+            }
+            
+            def extractTestIncludeProtoTask = tasks.findByName('extractTestIncludeProto')
+            if (extractTestIncludeProtoTask) {
+                task.mustRunAfter(extractTestIncludeProtoTask)
+            }
+        }
+    }
+    
+    // Fix test fixtures GenerateProtoTask dependencies (for modules with java-test-fixtures)
+    tasks.findAll { it.class.name == 'com.google.protobuf.gradle.GenerateProtoTask' }.each { task ->
+        if (task.name =~ /TestFixtures/) {
+            def extractTestFixturesProtoTask = tasks.findByName('extractTestFixturesProto')
+            if (extractTestFixturesProtoTask) {
+                task.mustRunAfter(extractTestFixturesProtoTask)
+            }
+            
+            def extractTestFixturesIncludeProtoTask = tasks.findByName('extractTestFixturesIncludeProto')
+            if (extractTestFixturesIncludeProtoTask) {
+                task.mustRunAfter(extractTestFixturesIncludeProtoTask)
+            }
+        }
+    }
+    
+    // Fix ProcessResources tasks for test fixtures (depends on generated proto code)
+    tasks.findAll { it.class.name == 'org.gradle.api.tasks.bundling.ProcessResources' }.each { task ->
+        if (task.name == 'processTestFixturesResources') {
+            def extractTestFixturesProtoTask = tasks.findByName('extractTestFixturesProto')
+            if (extractTestFixturesProtoTask) {
+                try {
+                    task.dependsOn(extractTestFixturesProtoTask)
+                } catch (Exception ignoreDep) {
+                    try { task.mustRunAfter(extractTestFixturesProtoTask) } catch (e) {}
+                }
+            }
+        }
+    }
+
+    // Cross-project fix: some modules are reachable via multiple project paths (aliases).
+    // For each local ProcessResources that consumes an "extracted-protos" output, try
+    // to find the project that produced that output (by matching its projectDir) and
+    // order the local ProcessResources after that project's extractProto-like tasks.
+    tasks.findAll { it.class.name == 'org.gradle.api.tasks.bundling.ProcessResources' }.each { procRes ->
+        try {
+            def extractedOutput = procRes.outputs.files.find { f -> f.toString().contains('extracted-protos') }
+            if (extractedOutput) {
+                // Find the producing project by matching the extracted path to a projectDir
+                def producerProject = rootProject.allprojects.find { proj ->
+                    try {
+                        def pd = proj.projectDir
+                        return extractedOutput.toString().contains(pd.toString())
+                    } catch (e) {
+                        return false
+                    }
+                }
+
+                    if (producerProject != null) {
+                    // Look for the common extract task names on that project and order after them
+                    ['extractProto', 'extractIncludeProto', 'extractTestProto', 'extractTestIncludeProto', 'extractTestFixturesProto', 'extractTestFixturesIncludeProto'].each { extractName ->
+                        try {
+                            def ext = producerProject.tasks.findByName(extractName)
+                            if (ext) {
+                                try {
+                                    procRes.dependsOn(ext)
+                                } catch (Exception ignoreDep) {
+                                    try { procRes.mustRunAfter(ext) } catch (e) {}
+                                }
+                            }
+                        } catch (Exception ignore) {
+                            // ignore any project-specific task creation side-effects
+                        }
+                    }
+                }
+            }
+        } catch (MissingPropertyException ignored) {
+            // be defensive in case outputs aren't available at this time for some plugins
+        }
+    }
+}
+
+// Final strong lock: for any two project entries that point at the same
+// physical projectDir, explicitly wire extract* -> (generateProto | processResources)
+// by adding dependsOn where possible. This is a catch-all to handle any
+// remaining alias / includeBuild permutations that escaped earlier heuristics.
+try {
+    rootProject.allprojects.each { pa ->
+        try {
+            def paDir = pa.projectDir?.canonicalFile?.toString()
+            if (!paDir) return
+
+            rootProject.allprojects.findAll { pb -> pb.path != pa.path && pb.projectDir?.canonicalFile?.toString() == paDir }
+                .each { pb ->
+                    // for every extract task in pa, make pb's generate/process tasks depend on it
+                    ['extractProto','extractIncludeProto','extractTestProto','extractTestIncludeProto','extractTestFixturesProto','extractTestFixturesIncludeProto'].each { exName ->
+                        try {
+                            def ext = pa.tasks.findByName(exName)
+                            if (ext == null) return
+
+                            // wire GenerateProtoTask in pb
+                            pb.tasks.findAll { it.class.name == 'com.google.protobuf.gradle.GenerateProtoTask' }.each { gen ->
+                                try { gen.dependsOn(ext) } catch (Exception e) { try { gen.mustRunAfter(ext) } catch (ignore) {} }
+                            }
+
+                            // wire ProcessResources in pb
+                            pb.tasks.findAll { it.class.name == 'org.gradle.api.tasks.bundling.ProcessResources' }.each { pr ->
+                                try { pr.dependsOn(ext) } catch (Exception e) { try { pr.mustRunAfter(ext) } catch (ignore) {} }
+                            }
+                        } catch (Exception ignoreEx) {}
+                    }
+                }
+        } catch (Exception ignorePa) {}
+    }
+} catch (Exception ignoreAll) {
+    // defensive
+}
+
+// Targeted short-term unblock: explicit wiring for the frequently-failing
+// pair discovered during verification. If the modules project produces
+// extracted-protos that a product-path consumer consumes, Gradle 9.1 will
+// require an explicit dependency. Add a minimal, focused dependsOn (with
+// mustRunAfter fallback) for this specific pair so that the full build can
+// progress while longer-term canonicalization work continues.
+try {
+    def prodPathCandidates = [':products:yappc:core:refactorer:service-grpc-api', ':modules:service-grpc-api']
+    def modPath = ':modules:service-grpc-api'
+    def prodProj = null
+    // prefer the product path if it exists, otherwise fall back to modules path
+    prodPathCandidates.each { p -> if (prodProj == null) prodProj = rootProject.findProject(p) }
+    def modProj = rootProject.findProject(modPath)
+    if (prodProj != null && modProj != null) {
+        ['extractProto', 'extractIncludeProto', 'extractTestProto', 'extractTestIncludeProto'].each { exName ->
+            try {
+                def ext = modProj.tasks.findByName(exName)
+                if (ext != null) {
+                    prodProj.tasks.findAll { it.class.name == 'com.google.protobuf.gradle.GenerateProtoTask' }.each { gen ->
+                        try { gen.dependsOn(ext) } catch (Exception e) { try { gen.mustRunAfter(ext) } catch (ignore) {} }
+                    }
+                    // also ensure any ProcessResources in the product runs after the extract
+                    prodProj.tasks.findAll { it.class.name == 'org.gradle.api.tasks.bundling.ProcessResources' }.each { pr ->
+                        try { pr.dependsOn(ext) } catch (Exception e) { try { pr.mustRunAfter(ext) } catch (ignore) {} }
+                    }
+                }
+            } catch (Exception ignore) {}
+        }
+    }
+} catch (Exception ignoreAll) {
+    // defensive - don't let this short-term hack fail configuration
+}
+
+// Extra aggressive lookup by task path: attempt to wire by absolute task path
+// if earlier findProject/findByName didn't succeed. This helps when the
+// task instances live in different project objects or when aliasing confuses
+// lookup by project/task name.
+try {
+    def consumers = [':products:yappc:core:refactorer:service-grpc-api:generateProto', ':modules:service-grpc-api:generateProto']
+    def producers = [':modules:service-grpc-api:extractProto', ':modules:service-grpc-api:extractIncludeProto']
+
+    consumers.each { cPath ->
+        try {
+            def consumerTask = rootProject.tasks.findByPath(cPath)
+            if (consumerTask == null) return
+
+            producers.each { pPath ->
+                try {
+                    def producerTask = rootProject.tasks.findByPath(pPath)
+                    if (producerTask != null) {
+                        try { consumerTask.dependsOn(producerTask) } catch (Exception e) { try { consumerTask.mustRunAfter(producerTask) } catch (ignore) {} }
+                    }
+                } catch (Exception ignoreP) {}
+            }
+        } catch (Exception ignoreC) {}
+    }
+} catch (Exception ignoreAll2) {
+    // ignore
+}

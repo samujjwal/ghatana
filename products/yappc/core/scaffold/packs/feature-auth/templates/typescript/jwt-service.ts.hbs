@@ -1,0 +1,70 @@
+import jwt from 'jsonwebtoken';
+
+interface TokenPayload {
+sub: string;
+email: string;
+roles: string[];
+type?: 'access' | 'refresh';
+}
+
+interface TokenPair {
+accessToken: string;
+refreshToken: string;
+}
+
+const JWT_SECRET = process.env.JWT_SECRET || '{{jwtSecret}}';
+const ACCESS_TOKEN_EXPIRY = '{{jwtExpiration}}';
+const REFRESH_TOKEN_EXPIRY = '{{refreshTokenExpiration}}';
+
+export function generateAccessToken(userId: string, email: string, roles: string[]): string {
+const payload: TokenPayload = {
+sub: userId,
+email,
+roles,
+type: 'access',
+};
+
+return jwt.sign(payload, JWT_SECRET, { expiresIn: ACCESS_TOKEN_EXPIRY });
+}
+
+export function generateRefreshToken(userId: string, email: string): string {
+const payload: TokenPayload = {
+sub: userId,
+email,
+roles: [],
+type: 'refresh',
+};
+
+return jwt.sign(payload, JWT_SECRET, { expiresIn: REFRESH_TOKEN_EXPIRY });
+}
+
+export function generateTokenPair(userId: string, email: string, roles: string[]): TokenPair {
+return {
+accessToken: generateAccessToken(userId, email, roles),
+refreshToken: generateRefreshToken(userId, email),
+};
+}
+
+export function verifyToken(token: string): TokenPayload {
+return jwt.verify(token, JWT_SECRET) as TokenPayload;
+}
+
+export function decodeToken(token: string): TokenPayload | null {
+try {
+return jwt.decode(token) as TokenPayload;
+} catch {
+return null;
+}
+}
+
+export function isTokenExpired(token: string): boolean {
+try {
+jwt.verify(token, JWT_SECRET);
+return false;
+} catch (error) {
+if (error instanceof jwt.TokenExpiredError) {
+return true;
+}
+throw error;
+}
+}

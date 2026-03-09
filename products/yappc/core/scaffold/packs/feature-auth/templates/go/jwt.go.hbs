@@ -1,0 +1,124 @@
+package auth
+
+import (
+"errors"
+"time"
+
+"github.com/golang-jwt/jwt/v5"
+)
+
+// TokenType represents the type of JWT token
+type TokenType string
+
+const (
+AccessToken TokenType = "access"
+RefreshToken TokenType = "refresh"
+)
+
+// Claims represents JWT claims
+type Claims struct {
+jwt.RegisteredClaims
+Email string `json:"email"`
+Roles []string `json:"roles"`
+TokenType TokenType `json:"token_type"`
+}
+
+// TokenPair represents an access and refresh token pair
+type TokenPair struct {
+AccessToken string `json:"access_token"`
+RefreshToken string `json:"refresh_token"`
+TokenType string `json:"token_type"`
+ExpiresIn int64 `json:"expires_in"`
+}
+
+// JWTService handles JWT token operations
+type JWTService struct {
+secret []byte
+accessTokenExpiration time.Duration
+refreshTokenExpiration time.Duration
+}
+
+// NewJWTService creates a new JWT service
+func NewJWTService(secret string, accessExp, refreshExp time.Duration) *JWTService {
+return &JWTService{
+secret: []byte(secret),
+accessTokenExpiration: accessExp,
+refreshTokenExpiration: refreshExp,
+}
+}
+
+// GenerateAccessToken creates a new access token
+func (s *JWTService) GenerateAccessToken(userID, email string, roles []string) (string, error) {
+now := time.Now()
+claims := Claims{
+RegisteredClaims: jwt.RegisteredClaims{
+Subject: userID,
+IssuedAt: jwt.NewNumericDate(now),
+ExpiresAt: jwt.NewNumericDate(now.Add(s.accessTokenExpiration)),
+},
+Email: email,
+Roles: roles,
+TokenType: AccessToken,
+}
+
+token := jwt.NewWithClaims(jwt.SigningMethodHS256, claims)
+return token.SignedString(s.secret)
+}
+
+// GenerateRefreshToken creates a new refresh token
+func (s *JWTService) GenerateRefreshToken(userID, email string) (string, error) {
+now := time.Now()
+claims := Claims{
+RegisteredClaims: jwt.RegisteredClaims{
+Subject: userID,
+IssuedAt: jwt.NewNumericDate(now),
+ExpiresAt: jwt.NewNumericDate(now.Add(s.refreshTokenExpiration)),
+},
+Email: email,
+Roles: []string{},
+TokenType: RefreshToken,
+}
+
+token := jwt.NewWithClaims(jwt.SigningMethodHS256, claims)
+return token.SignedString(s.secret)
+}
+
+// GenerateTokenPair creates both access and refresh tokens
+func (s *JWTService) GenerateTokenPair(userID, email string, roles []string) (*TokenPair, error) {
+accessToken, err := s.GenerateAccessToken(userID, email, roles)
+if err != nil {
+return nil, err
+}
+
+refreshToken, err := s.GenerateRefreshToken(userID, email)
+if err != nil {
+return nil, err
+}
+
+return &TokenPair{
+AccessToken: accessToken,
+RefreshToken: refreshToken,
+TokenType: "Bearer",
+ExpiresIn: int64(s.accessTokenExpiration.Seconds()),
+}, nil
+}
+
+// ValidateToken validates a JWT token and returns claims
+func (s *JWTService) ValidateToken(tokenString string) (*Claims, error) {
+token, err := jwt.ParseWithClaims(tokenString, &Claims{}, func(token *jwt.Token) (interface{}, error) {
+if _, ok := token.Method.(*jwt.SigningMethodHMAC); !ok {
+return nil, errors.New("unexpected signing method")
+}
+return s.secret, nil
+})
+
+if err != nil {
+return nil, err
+}
+
+if claims, ok := token.Claims.(*Claims); ok && token.Valid {
+return claims, nil
+}
+
+return nil, errors.New("invalid token")
+}

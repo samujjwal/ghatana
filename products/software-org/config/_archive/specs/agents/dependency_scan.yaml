@@ -1,0 +1,29 @@
+---
+id: "dependency_scan"
+agent: "DependencyScanAgent"
+role: "Security Engineer"
+inputs_spec:
+- name: "configured_repo"
+  description: "Configured repository to scan dependencies."
+  format: "Repo URL or manifest"
+outputs_spec:
+- name: "dependency_scan_report"
+  description: "Report of known vulnerabilities in project dependencies."
+  format: "Scan report artifact"
+agent_tasks:
+- "Scan all dependencies for known vulnerabilities."
+- "Flag high and critical issues."
+- "Make reports available to all developers."
+- "Configure automated alerts for new risks."
+acceptance_criteria:
+- "All dependencies are scanned for known vulnerabilities."
+- "High and critical issues are flagged."
+- "Reports are available to all developers."
+- "Automated alerts are configured for new risks."
+dependencies:
+- "configured_repo"
+failure_escalation:
+- "Escalate to Security Lead if critical issues not resolved."
+references: []
+hitl: true
+hitl_reason: "Human reviews dependency scan results for critical issues"

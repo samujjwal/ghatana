@@ -1,0 +1,285 @@
+# Engineering to QA Handoff Interaction
+
+apiVersion: virtualorg.ghatana.com/v1
+kind: DepartmentInteraction
+metadata:
+  name: engineering-qa-handoff
+  labels:
+    flow-type: handoff
+    source: engineering
+    target: qa
+
+spec:
+  displayName: "Engineering to QA Handoff"
+  description: |
+    Automated handoff process for completed features from Engineering to QA.
+    Ensures proper documentation, test criteria, and resource allocation
+    for effective quality assurance.
+
+  # Participating Departments
+  participants:
+    source:
+      department: engineering
+      agents:
+        - lead-engineer
+        - senior-engineer
+        - engineer
+    target:
+      department: qa
+      agents:
+        - qa-lead
+        - qa-engineer
+        - automation-engineer
+
+  # Trigger Conditions
+  triggers:
+    # Event-based trigger
+    - type: event
+      event: feature_development_completed
+      conditions:
+        - field: status
+          operator: equals
+          value: ready_for_qa
+        - field: tests.unit_coverage
+          operator: gte
+          value: 80
+
+    # Manual trigger for expedited handoffs
+    - type: manual
+      allowedActors:
+        - lead-engineer
+        - cto-agent
+
+  # Handoff Process
+  process:
+    steps:
+      # Step 1: Prepare Handoff Package
+      - id: prepare-handoff
+        name: "Prepare Handoff Package"
+        actor: source.lead-engineer
+        action: compile_handoff_package
+        inputs:
+          feature_branch: ${trigger.event.branch}
+          pull_request: ${trigger.event.pr_id}
+        outputs:
+          - test_plan
+          - acceptance_criteria
+          - technical_notes
+          - known_issues
+          - test_data_requirements
+        timeout: PT2H
+
+      # Step 2: Validate Code Quality
+      - id: validate-quality
+        name: "Validate Code Quality Gates"
+        actor: system
+        action: run_quality_checks
+        waitFor: [prepare-handoff]
+        inputs:
+          branch: ${trigger.event.branch}
+          quality_gates:
+            - unit_test_coverage: 80
+            - static_analysis_issues: 0
+            - security_vulnerabilities: 0
+        outputs:
+          - quality_report
+          - gate_status
+
+      # Step 3: Create QA Ticket
+      - id: create-qa-ticket
+        name: "Create QA Ticket"
+        actor: system
+        action: create_task
+        waitFor: [validate-quality]
+        condition: ${steps.validate-quality.outputs.gate_status} == "passed"
+        inputs:
+          department: qa
+          type: feature_testing
+          priority: ${trigger.event.priority}
+          data:
+            feature_name: ${trigger.event.feature_name}
+            test_plan: ${steps.prepare-handoff.outputs.test_plan}
+            acceptance_criteria: ${steps.prepare-handoff.outputs.acceptance_criteria}
+            technical_notes: ${steps.prepare-handoff.outputs.technical_notes}
+            known_issues: ${steps.prepare-handoff.outputs.known_issues}
+            test_data: ${steps.prepare-handoff.outputs.test_data_requirements}
+        outputs:
+          - qa_ticket_id
+
+      # Step 4: Assign QA Engineer
+      - id: assign-qa-engineer
+        name: "Assign QA Engineer"
+        actor: target.qa-lead
+        action: assign_task
+        waitFor: [create-qa-ticket]
+        inputs:
+          ticket_id: ${steps.create-qa-ticket.outputs.qa_ticket_id}
+          criteria:
+            required_skills: ${trigger.event.required_test_skills}
+            availability: required
+        strategy: capability-match
+        outputs:
+          - assigned_engineer
+          - estimated_duration
+
+      # Step 5: QA Acknowledgment
+      - id: acknowledge-handoff
+        name: "QA Acknowledges Handoff"
+        actor: target.qa-engineer
+        action: acknowledge
+        waitFor: [assign-qa-engineer]
+        inputs:
+          ticket_id: ${steps.create-qa-ticket.outputs.qa_ticket_id}
+          estimated_completion: ${steps.assign-qa-engineer.outputs.estimated_duration}
+        timeout: PT2H
+        onTimeout: escalate_to_qa_lead
+        outputs:
+          - acknowledgment_timestamp
+          - qa_estimated_completion
+
+      # Step 6: Knowledge Transfer Session (for complex features)
+      - id: knowledge-transfer
+        name: "Knowledge Transfer Session"
+        actor: source.senior-engineer
+        action: conduct_knowledge_transfer
+        waitFor: [acknowledge-handoff]
+        condition: ${trigger.event.complexity} in ["high", "critical"]
+        inputs:
+          feature: ${trigger.event.feature_name}
+          qa_engineer: ${steps.assign-qa-engineer.outputs.assigned_engineer}
+        outputs:
+          - session_notes
+          - additional_test_cases
+        timeout: PT4H
+
+      # Step 7: Complete Handoff
+      - id: complete-handoff
+        name: "Complete Handoff"
+        actor: system
+        action: finalize_handoff
+        waitFor: [acknowledge-handoff, knowledge-transfer]
+        inputs:
+          source_department: engineering
+          target_department: qa
+          ticket_id: ${steps.create-qa-ticket.outputs.qa_ticket_id}
+        outputs:
+          - handoff_completion_time
+          - handoff_record_id
+
+  # Communication & Notifications
+  notifications:
+    - event: handoff_initiated
+      channels: [slack]
+      recipients:
+        - ${steps.prepare-handoff.actor}
+        - ${target.qa-lead}
+      message: |
+        🔄 Feature handoff initiated: ${trigger.event.feature_name}
+        From: Engineering
+        To: QA
+        Priority: ${trigger.event.priority}
+
+    - event: quality_gates_failed
+      channels: [slack, email]
+      recipients:
+        - ${source.lead-engineer}
+        - ${trigger.event.developer}
+      message: |
+        ⚠️ Quality gates failed for: ${trigger.event.feature_name}
+        Issues: ${steps.validate-quality.outputs.quality_report}
+        Please fix and re-submit.
+
+    - event: qa_assigned
+      channels: [slack]
+      recipients:
+        - ${steps.assign-qa-engineer.outputs.assigned_engineer}
+        - ${source.lead-engineer}
+      message: |
+        ✅ QA assigned for: ${trigger.event.feature_name}
+        QA Engineer: ${steps.assign-qa-engineer.outputs.assigned_engineer}
+        Estimated completion: ${steps.assign-qa-engineer.outputs.estimated_duration}
+
+    - event: handoff_completed
+      channels: [slack]
+      recipients:
+        - ${source.lead-engineer}
+        - engineering-team
+      message: |
+        ✅ Handoff complete: ${trigger.event.feature_name}
+        QA ticket: ${steps.create-qa-ticket.outputs.qa_ticket_id}
+        Testing begins immediately.
+
+    - event: acknowledgment_timeout
+      channels: [slack, pagerduty]
+      recipients:
+        - ${target.qa-lead}
+        - ${target.qa-manager}
+      message: |
+        ⏰ QA acknowledgment timeout for: ${trigger.event.feature_name}
+        Please review and assign urgently.
+
+  # SLA Configuration
+  sla:
+    acknowledgmentTime: PT2H
+    completionTime: PT24H
+
+    escalationPolicy:
+      - after: PT2H
+        condition: step == "acknowledge-handoff" && status != "completed"
+        escalateTo: qa-lead
+        action: notify
+        message: "QA acknowledgment pending for 2 hours"
+
+      - after: PT4H
+        condition: step == "acknowledge-handoff" && status != "completed"
+        escalateTo: qa-manager
+        action: escalate
+        message: "QA acknowledgment overdue - escalating"
+
+      - after: PT8H
+        condition: workflow_status == "in_progress"
+        escalateTo: cto-agent
+        action: escalate
+        message: "Handoff process stalled - executive attention required"
+
+  # Metrics & Tracking
+  metrics:
+    - name: handoff_cycle_time
+      description: "Time from handoff initiation to completion"
+      type: duration
+      target: PT4H
+
+    - name: qa_acknowledgment_time
+      description: "Time from ticket creation to QA acknowledgment"
+      type: duration
+      target: PT1H
+
+    - name: quality_gate_pass_rate
+      description: "Percentage of handoffs passing quality gates"
+      type: percentage
+      target: 95
+
+    - name: handoff_rejection_rate
+      description: "Percentage of handoffs rejected by QA"
+      type: percentage
+      target: 5
+
+  # Quality Gates
+  qualityGates:
+    - name: unit_test_coverage
+      required: true
+      threshold: 80
+      failureAction: block_handoff
+
+    - name: code_review_approved
+      required: true
+      failureAction: block_handoff
+
+    - name: documentation_complete
+      required: true
+      failureAction: warn_and_proceed
+
+    - name: no_critical_issues
+      required: true
+      threshold: 0
+      failureAction: block_handoff

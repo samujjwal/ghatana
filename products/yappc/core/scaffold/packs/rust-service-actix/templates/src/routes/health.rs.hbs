@@ -1,0 +1,30 @@
+use actix_web::{web, HttpResponse, Responder};
+use serde_json::json;
+
+pub fn configure(cfg: &mut web::ServiceConfig) {
+cfg.service(
+web::scope("/health")
+.route("", web::get().to(health_check))
+.route("/ready", web::get().to(readiness))
+.route("/live", web::get().to(liveness)),
+);
+}
+
+async fn health_check() -> impl Responder {
+HttpResponse::Ok().json(json!({
+"status": "healthy",
+"service": "{{projectName}}"
+}))
+}
+
+async fn readiness() -> impl Responder {
+HttpResponse::Ok().json(json!({
+"status": "ready"
+}))
+}
+
+async fn liveness() -> impl Responder {
+HttpResponse::Ok().json(json!({
+"status": "alive"
+}))
+}

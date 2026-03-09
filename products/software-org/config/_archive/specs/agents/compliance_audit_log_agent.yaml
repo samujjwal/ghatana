@@ -1,0 +1,28 @@
+---
+id: "compliance_audit_log_agent"
+agent: "AuditLogAgent"
+role: "Compliance Bot"
+inputs_spec:
+- name: "compliance_progress_dashboard"
+  description: "Compliance progress dashboard for audit logging."
+  format: "Dashboard artifact"
+- name: "compliance_notification_agent"
+  description: "Notification agent delivery log."
+  format: "List of notification objects"
+outputs_spec:
+- name: "compliance_audit_log"
+  description: "Audit log of compliance actions, results, notifications."
+  format: "Audit log artifact"
+agent_tasks:
+- "Log all compliance actions, results, notifications."
+- "Track approval/rejection and signoff."
+acceptance_criteria:
+- "All compliance and regulatory actions, results, and notifications are logged."
+- "Approval/rejection and signoff are tracked."
+dependencies:
+- "compliance_progress_dashboard"
+- "compliance_notification_agent"
+failure_escalation:
+- "Escalate to compliance or audit lead if audit log is incomplete or inaccessible."
+references: []
+hitl: false

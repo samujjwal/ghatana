@@ -1,0 +1,26 @@
+---
+id: "test_data_management"
+agent: "TestDataManagementAgent"
+role: "Data Steward"
+inputs_spec:
+- name: "test_stage_milestone"
+  description: "Test stage milestones to trigger data management."
+  format: "List of milestone objects"
+outputs_spec:
+- name: "test_data_report"
+  description: "Versioned test data management and masking report."
+  format: "Test data report artifact"
+agent_tasks:
+- "Version/manage test data for each run."
+- "Mask/synthesize sensitive data."
+- "Flag and document data gaps/issues."
+acceptance_criteria:
+- "Test data is versioned and managed for each run."
+- "Sensitive data is masked or synthesized."
+- "Test data gaps or issues are flagged."
+dependencies:
+- "test_stage_milestone"
+failure_escalation:
+- "Escalate to Data Steward if test data is missing or sensitive data exposed."
+references: []
+hitl: false

@@ -1,0 +1,275 @@
+# Documentation Tasks
+# Domain 16 of 22 - Developer Task Universe
+# Reference: developer-tasks.md Part I, Section 16
+
+domain:
+  id: documentation
+  name: "Documentation"
+  description: "Tasks related to creating and maintaining documentation"
+  order: 16
+  icon: "description"
+  color: "#26A69A"
+  lifecycle_stages:
+    - execute
+    - institutionalize
+
+tasks:
+  - id: doc-001
+    name: "Write Code Comments"
+    description: "Add inline comments and code documentation"
+    personas:
+      - Developer
+    lifecycle_stages:
+      - execute
+    automation_level: assisted
+    required_capabilities:
+      - documentation
+      - code-generation
+    input_schema: doc-001-input
+    output_schema: doc-001-output
+    audit_artifacts:
+      - InputSnapshot
+      - OutputSnapshot
+      - ChangeSet
+    ui:
+      icon: "code"
+      color: "#26A69A"
+      tags:
+        - comments
+        - inline
+        - documentation
+
+  - id: doc-002
+    name: "Write README Files"
+    description: "Create and maintain README documentation"
+    personas:
+      - Developer
+    lifecycle_stages:
+      - execute
+      - institutionalize
+    automation_level: assisted
+    required_capabilities:
+      - documentation
+      - technical-writing
+    input_schema: doc-002-input
+    output_schema: doc-002-output
+    audit_artifacts:
+      - InputSnapshot
+      - OutputSnapshot
+      - ChangeSet
+    ui:
+      icon: "article"
+      color: "#26A69A"
+      tags:
+        - readme
+        - getting-started
+        - documentation
+
+  - id: doc-003
+    name: "Write API Documentation"
+    description: "Document API endpoints and contracts"
+    personas:
+      - Developer
+    lifecycle_stages:
+      - execute
+    automation_level: assisted
+    required_capabilities:
+      - documentation
+      - api-knowledge
+    input_schema: doc-003-input
+    output_schema: doc-003-output
+    audit_artifacts:
+      - InputSnapshot
+      - OutputSnapshot
+      - ChangeSet
+    ui:
+      icon: "api"
+      color: "#26A69A"
+      tags:
+        - api
+        - openapi
+        - documentation
+
+  - id: doc-004
+    name: "Write Architecture Decision Records"
+    description: "Document architectural decisions with ADRs"
+    personas:
+      - Tech Lead
+      - Developer
+    lifecycle_stages:
+      - institutionalize
+    automation_level: assisted
+    required_capabilities:
+      - documentation
+      - architecture
+    input_schema: doc-004-input
+    output_schema: doc-004-output
+    audit_artifacts:
+      - InputSnapshot
+      - OutputSnapshot
+      - DecisionRecord
+      - ADR
+    ui:
+      icon: "description"
+      color: "#26A69A"
+      tags:
+        - adr
+        - decisions
+        - architecture
+
+  - id: doc-005
+    name: "Write Runbooks"
+    description: "Create operational runbooks and procedures"
+    personas:
+      - DevOps
+      - Developer
+    lifecycle_stages:
+      - institutionalize
+    automation_level: assisted
+    required_capabilities:
+      - documentation
+      - operations
+    input_schema: doc-005-input
+    output_schema: doc-005-output
+    audit_artifacts:
+      - InputSnapshot
+      - OutputSnapshot
+      - ChangeSet
+    ui:
+      icon: "menu_book"
+      color: "#26A69A"
+      tags:
+        - runbooks
+        - operations
+        - procedures
+
+  - id: doc-006
+    name: "Write User Guides"
+    description: "Create end-user documentation and guides"
+    personas:
+      - Developer
+      - PM
+    lifecycle_stages:
+      - institutionalize
+    automation_level: assisted
+    required_capabilities:
+      - documentation
+      - technical-writing
+    input_schema: doc-006-input
+    output_schema: doc-006-output
+    audit_artifacts:
+      - InputSnapshot
+      - OutputSnapshot
+      - ChangeSet
+    ui:
+      icon: "help"
+      color: "#26A69A"
+      tags:
+        - user-guide
+        - help
+        - documentation
+
+  - id: doc-007
+    name: "Write Technical Specifications"
+    description: "Create detailed technical specification documents"
+    personas:
+      - Tech Lead
+      - Developer
+    lifecycle_stages:
+      - plan
+      - institutionalize
+    automation_level: assisted
+    required_capabilities:
+      - documentation
+      - technical-writing
+    input_schema: doc-007-input
+    output_schema: doc-007-output
+    audit_artifacts:
+      - InputSnapshot
+      - OutputSnapshot
+      - SpecificationDocument
+    ui:
+      icon: "engineering"
+      color: "#26A69A"
+      tags:
+        - specifications
+        - technical
+        - design
+
+  - id: doc-008
+    name: "Maintain Changelog"
+    description: "Keep changelog updated with changes"
+    personas:
+      - Developer
+    lifecycle_stages:
+      - execute
+    automation_level: automated
+    required_capabilities:
+      - documentation
+      - version-control
+    input_schema: doc-008-input
+    output_schema: doc-008-output
+    audit_artifacts:
+      - InputSnapshot
+      - OutputSnapshot
+      - ChangeSet
+    ui:
+      icon: "history"
+      color: "#26A69A"
+      tags:
+        - changelog
+        - history
+        - releases
+
+  - id: doc-009
+    name: "Update Diagrams"
+    description: "Create and maintain system diagrams"
+    personas:
+      - Developer
+      - Tech Lead
+    lifecycle_stages:
+      - execute
+    automation_level: assisted
+    required_capabilities:
+      - documentation
+      - visualization
+    input_schema: doc-009-input
+    output_schema: doc-009-output
+    audit_artifacts:
+      - InputSnapshot
+      - OutputSnapshot
+      - ChangeSet
+      - Diagram
+    ui:
+      icon: "account_tree"
+      color: "#26A69A"
+      tags:
+        - diagrams
+        - visualization
+        - architecture
+
+  - id: doc-010
+    name: "Review Documentation"
+    description: "Review and improve existing documentation"
+    personas:
+      - Developer
+      - Tech Lead
+    lifecycle_stages:
+      - verify
+    automation_level: assisted
+    required_capabilities:
+      - documentation
+      - review
+    input_schema: doc-010-input
+    output_schema: doc-010-output
+    audit_artifacts:
+      - InputSnapshot
+      - OutputSnapshot
+      - ReviewComments
+    ui:
+      icon: "fact_check"
+      color: "#26A69A"
+      tags:
+        - review
+        - quality
+        - documentation

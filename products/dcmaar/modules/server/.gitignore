@@ -1,0 +1,280 @@
+# Binaries for programs and plugins
+*.exe
+*.exe~
+*.dll
+*.so
+*.dylib
+bin/
+dist/
+
+# Test binary, built with `go test -c`
+*.test
+
+# Output of the go coverage tool
+*.out
+coverage.html
+
+# Dependency directories (remove the comment below to include it)
+vendor/
+
+# Go workspace file
+go.work
+
+# IDE specific files
+.idea/
+.vscode/
+*.swp
+*.swo
+*~
+
+# Environment files
+.env
+.env.local
+.env.*.local
+!.env.example
+
+# Log files
+*.log
+
+# Local development files
+.local-*
+
+# OS generated files
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db
+
+# Build output
+build/
+
+# Debug files
+debug/
+
+# Local development directories
+.air
+
+# IDE specific
+.idea/
+*.iml
+*.sublime-workspace
+*.sublime-project
+
+# Local development overrides
+docker-compose.override.yml
+
+# Local configuration overrides
+config/local*
+!config/local.example.*
+
+# Test output
+testdata/
+
+# Profiling output
+*.pprof
+
+# Go build cache
+/.cache/
+
+# Go workspace file
+go.work
+
+# Go module files
+/go.sum
+
+# IDE specific files (VSCode)
+.vscode/*
+!.vscode/settings.json
+!.vscode/tasks.json
+!.vscode/launch.json
+!.vscode/extensions.json
+
+# IDE specific files (GoLand)
+.idea/
+*.iml
+
+# Local development environment files
+.env.local
+.env.development.local
+.env.test.local
+.env.production.local
+
+# Debug files
+*.debug
+
+# Local development overrides (Docker)
+docker-compose.override.yml
+
+# Local development database files
+*.db
+*.db-journal
+*.sqlite3
+
+# Local development certificates and keys
+*.pem
+*.key
+*.crt
+*.csr
+
+# Editor directories and files
+.idea
+.vscode
+*.suo
+*.ntvs*
+*.njsproj
+*.sln
+*.sw?
+
+# Local development scripts
+scripts/local/
+
+# Local development environment
+.envrc
+.direnv/
+
+# Local development overrides
+override/
+
+# Local development cache
+.cache/
+
+# Local development logs
+logs/
+
+# Local development data
+data/
+
+# Local development temp files
+tmp/
+
+# Local development build output
+out/
+
+# Local development coverage output
+coverage/
+
+# Local development test output
+.testoutput/
+
+# Local development vendor directory
+vendor/
+
+# Local development go modules
+go.work
+
+# Local development environment files
+.env
+
+# Local development docker files
+docker-compose.override.yml
+
+# Local development IDE files
+.idea/
+.vscode/
+
+# Local development OS files
+.DS_Store
+
+# Local development temp files
+*.tmp
+
+# Local development log files
+*.log
+
+# Local development database files
+*.db
+
+# Local development binary files
+*.exe
+*.dll
+*.so
+*.dylib
+
+# Local development test files
+*.test
+
+# Local development coverage files
+*.out
+
+# Local development vendor directory
+/vendor/
+
+# Local development go modules
+/go.sum
+
+# Local development environment files
+/.env
+
+# Local development docker files
+/docker-compose.override.yml
+
+# Local development IDE files
+/.idea/
+/.vscode/
+
+# Local development OS files
+/.DS_Store
+
+# Local development temp files
+/*.tmp
+
+# Local development log files
+/*.log
+
+# Local development database files
+/*.db
+
+# Local development binary files
+/*.exe
+/*.dll
+/*.so
+/*.dylib
+
+# Local development test files
+/*.test
+
+# Local development coverage files
+/*.out
+
+# Local development vendor directory
+/vendor/
+
+# Local development go modules
+/go.sum
+
+# Local development environment files
+/.env
+
+# Local development docker files
+/docker-compose.override.yml
+
+# Local development IDE files
+/.idea/
+/.vscode/
+
+# Local development OS files
+/.DS_Store
+
+# Local development temp files
+/*.tmp
+
+# Local development log files
+/*.log
+
+# Local development database files
+/*.db
+
+# Local development binary files
+/*.exe
+/*.dll
+/*.so
+/*.dylib
+
+# Local development test files
+/*.test
+
+# Local development coverage files
+/*.out

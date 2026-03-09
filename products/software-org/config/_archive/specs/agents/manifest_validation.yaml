@@ -1,0 +1,29 @@
+---
+id: "manifest_validation"
+agent: "ManifestValidationAgent"
+role: "DevOps/SRE"
+inputs_spec:
+- name: "deploy_stage_milestone"
+  description: "Milestone tracker artifact."
+  format: "List of milestone objects"
+outputs_spec:
+- name: "manifest_validation_report"
+  description: "Validation report for deployment manifests."
+  format: "Manifest validation report artifact"
+agent_tasks:
+- "Validate all deployment manifests for syntax and schema."
+- "Check environment-specific variables and secrets."
+- "Block deployment for invalid/incomplete manifests."
+- "Archive validation logs."
+acceptance_criteria:
+- "All manifests validated for syntax/schema."
+- "Variables/secrets checked."
+- "Invalid/incomplete manifests block deployment."
+- "Validation logs are archived."
+dependencies:
+- "deploy_stage_milestone"
+failure_escalation:
+- "Escalate to DevOps/SRE if manifests invalid or logs missing."
+references: []
+hitl: true
+hitl_reason: "Human reviews manifest validation report for errors"

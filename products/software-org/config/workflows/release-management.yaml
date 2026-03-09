@@ -1,0 +1,888 @@
+# Release Management Workflow Configuration
+# Coordinated release process with autonomous rollout and monitoring
+apiVersion: virtualorg.ghatana.com/v1
+kind: Workflow
+metadata:
+  name: release-management
+  namespace: software-org
+  labels:
+    domain: devops
+    cadence: weekly
+    autonomy-level: high
+  annotations:
+    description: "Autonomous release management workflow for coordinated production deployments"
+    owner: devops-department
+    release-cadence: "weekly"
+
+spec:
+  # Workflow trigger conditions
+  trigger:
+    schedule:
+      # Weekly releases on Tuesday at 10 AM
+      cron: "0 10 * * 2"
+      timezone: "America/Los_Angeles"
+    events:
+      - type: release.requested
+        source: release-management
+      - type: hotfix.approved
+        source: incident-management
+    manual:
+      enabled: true
+      authorizedRoles:
+        - devops-lead
+        - cto
+
+  # Workflow execution configuration
+  execution:
+    mode: sequential
+    timeout: 8h
+    retryPolicy:
+      maxRetries: 1
+      backoffMultiplier: 2
+      initialDelay: 30m
+
+  # Workflow context
+  context:
+    inputs:
+      - name: release_type
+        type: enum
+        values: [scheduled, hotfix, emergency]
+        default: scheduled
+      - name: release_version
+        type: string
+        source: auto # Auto-generated based on semver
+      - name: target_environments
+        type: string_list
+        default: [staging, production]
+      - name: release_notes
+        type: string
+        source: generated
+
+    outputs:
+      - name: release_successful
+        type: boolean
+      - name: deployed_version
+        type: string
+      - name: release_summary
+        type: document
+
+  # Workflow stages
+  stages:
+    - id: prepare-release
+      name: "Prepare Release"
+      description: "Gather changes, generate release notes, and prepare release candidate"
+
+      agent: devops-lead-agent
+
+      action:
+        type: ai-decision
+        operation: release-preparation
+        tools:
+          - list-merged-prs
+          - categorize-changes
+          - check-compatibility
+          - generate-release-notes
+          - create-release-branch
+
+        prompt: |
+          Prepare release candidate for deployment:
+
+          Release type: {{release_type}}
+          Last release: {{last_release_version}}
+
+          Tasks:
+          1. List all merged PRs since last release
+          2. Categorize changes (features, fixes, breaking)
+          3. Check for breaking changes requiring migration
+          4. Generate comprehensive release notes
+          5. Determine semantic version bump
+          6. Create release branch/tag
+
+          Output:
+          - Release version (semver)
+          - Categorized change list
+          - Release notes
+          - Migration requirements (if any)
+          - Risk assessment
+
+      outputs:
+        - name: release_version
+          type: string
+        - name: change_summary
+          type: change_list
+        - name: release_notes
+          type: document
+        - name: migrations_required
+          type: migration_list
+        - name: risk_level
+          type: enum
+          values: [low, medium, high]
+
+      transitions:
+        - on: success
+          goto: release-validation
+        - on: failure
+          goto: escalate-release-failure
+
+    - id: release-validation
+      name: "Validate Release Candidate"
+      description: "Run comprehensive validation on release candidate"
+
+      agent: qa-engineer-agent
+
+      action:
+        type: automated
+        operation: release-validation
+
+        steps:
+          - name: build-release
+            tool: build-release
+            params:
+              version: "{{release_version}}"
+              branch: release/{{release_version}}
+
+          - name: run-unit-tests
+            tool: run-tests
+            params:
+              type: unit
+              coverage_threshold: 80
+
+          - name: run-integration-tests
+            tool: run-tests
+            params:
+              type: integration
+
+          - name: run-e2e-tests
+            tool: run-tests
+            params:
+              type: e2e
+
+          - name: security-scan
+            tool: security-scan
+            params:
+              type: full
+
+          - name: dependency-audit
+            tool: dependency-audit
+            params:
+              severity_threshold: high
+
+      outputs:
+        - name: validation_result
+          type: enum
+          values: [passed, failed]
+        - name: test_results
+          type: test_report
+        - name: security_findings
+          type: security_report
+        - name: dependency_issues
+          type: issue_list
+
+      transitions:
+        - on: success
+          conditions:
+            - field: validation_result
+              operator: eq
+              value: passed
+          goto: release-approval
+        - on: success
+          goto: fix-validation-issues
+
+    - id: fix-validation-issues
+      name: "Fix Validation Issues"
+      description: "Address issues found during validation"
+
+      agent: senior-engineer-agent
+
+      action:
+        type: ai-decision
+        operation: fix-issues
+        tools:
+          - analyze-failures
+          - apply-fixes
+          - update-dependencies
+          - run-local-tests
+
+        prompt: |
+          Fix validation issues for release:
+
+          Test failures: {{test_results.failures}}
+          Security findings: {{security_findings}}
+          Dependency issues: {{dependency_issues}}
+
+          For each issue:
+          1. Analyze root cause
+          2. Implement fix
+          3. Verify fix locally
+          4. Cherry-pick to release branch
+
+      maxIterations: 2
+
+      transitions:
+        - on: success
+          goto: release-validation # Re-validate
+        - on: max_iterations_exceeded
+          goto: escalate-release-failure
+
+    - id: release-approval
+      name: "Release Approval"
+      description: "Get approval for production release"
+
+      agent: devops-lead-agent
+
+      action:
+        type: ai-decision
+        operation: approval-preparation
+        tools:
+          - generate-release-brief
+          - assess-deployment-risk
+          - check-maintenance-windows
+
+        prompt: |
+          Prepare release approval request:
+
+          Version: {{release_version}}
+          Changes: {{change_summary}}
+          Risk level: {{risk_level}}
+
+          Prepare:
+          - Executive summary
+          - Impact assessment
+          - Deployment timeline
+          - Rollback criteria
+          - Communication plan
+
+      outputs:
+        - name: release_brief
+          type: document
+        - name: deployment_timeline
+          type: schedule
+        - name: rollback_criteria
+          type: criteria_list
+
+      # Release approval checkpoint
+      hitl:
+        required: true
+        checkpoint: "release-approval"
+        approvers:
+          - role: devops-lead
+          - role: cto
+        timeout: 4h
+        minApprovals: 1
+        escalationPath:
+          - level: 1
+            after: 2h
+            notify: cto
+        presentation:
+          format: release-approval
+          highlights:
+            - release_version
+            - change_summary
+            - risk_level
+            - deployment_timeline
+
+      transitions:
+        - on: approved
+          goto: deploy-staging
+        - on: rejected
+          goto: handle-rejection
+
+    - id: handle-rejection
+      name: "Handle Release Rejection"
+      description: "Process release rejection feedback"
+
+      agent: devops-lead-agent
+
+      action:
+        type: ai-decision
+        operation: rejection-handling
+
+        prompt: |
+          Handle release rejection:
+
+          Rejection reason: {{hitl_feedback}}
+
+          Determine:
+          1. Required changes
+          2. Whether to defer release
+          3. Next steps
+
+      transitions:
+        - on: success
+          conditions:
+            - field: action
+              operator: eq
+              value: defer
+          goto: complete
+        - on: success
+          goto: prepare-release # Restart with changes
+
+    - id: deploy-staging
+      name: "Deploy to Staging"
+      description: "Deploy release to staging environment"
+
+      agent: devops-engineer-agent
+
+      action:
+        type: automated
+        operation: staging-deployment
+
+        steps:
+          - name: notify-start
+            tool: send-notification
+            params:
+              channel: "#releases"
+              message: "🔄 Starting staging deployment: v{{release_version}}"
+
+          - name: deploy
+            tool: deploy-release
+            params:
+              version: "{{release_version}}"
+              environment: staging
+
+          - name: run-smoke-tests
+            tool: run-smoke-tests
+            params:
+              environment: staging
+
+          - name: run-sanity-tests
+            tool: run-sanity-tests
+            params:
+              environment: staging
+
+      outputs:
+        - name: staging_deployment_status
+          type: enum
+          values: [success, failed]
+        - name: staging_test_results
+          type: test_report
+
+      transitions:
+        - on: success
+          conditions:
+            - field: staging_deployment_status
+              operator: eq
+              value: success
+          goto: staging-validation
+        - on: success
+          goto: staging-rollback
+
+    - id: staging-rollback
+      name: "Rollback Staging"
+      description: "Rollback failed staging deployment"
+
+      agent: devops-engineer-agent
+
+      action:
+        type: automated
+        operation: staging-rollback
+
+        steps:
+          - name: rollback
+            tool: rollback-deployment
+            params:
+              environment: staging
+
+          - name: notify
+            tool: send-notification
+            params:
+              channel: "#releases"
+              message: "⚠️ Staging deployment rolled back: v{{release_version}}"
+
+      transitions:
+        - on: success
+          goto: escalate-release-failure
+
+    - id: staging-validation
+      name: "Staging Validation"
+      description: "Comprehensive staging validation before production"
+
+      agent: qa-engineer-agent
+
+      action:
+        type: ai-decision
+        operation: staging-validation
+        tools:
+          - run-regression-tests
+          - run-performance-tests
+          - validate-migrations
+          - check-feature-flags
+
+        prompt: |
+          Perform staging validation for release v{{release_version}}:
+
+          Run:
+          1. Full regression test suite
+          2. Performance/load tests
+          3. Validate database migrations
+          4. Verify feature flag states
+          5. Check integrations
+
+          Report issues and overall readiness.
+
+      outputs:
+        - name: staging_validation_result
+          type: enum
+          values: [passed, failed]
+        - name: regression_results
+          type: test_report
+        - name: performance_results
+          type: performance_report
+        - name: issues_found
+          type: issue_list
+
+      # Staging sign-off
+      hitl:
+        required: true
+        checkpoint: "staging-sign-off"
+        approvers:
+          - role: qa-engineer
+          - role: devops-lead
+        timeout: 2h
+        presentation:
+          format: staging-report
+          highlights:
+            - staging_validation_result
+            - regression_results
+            - performance_results
+
+      transitions:
+        - on: approved
+          goto: production-preparation
+        - on: rejected
+          goto: fix-staging-issues
+
+    - id: fix-staging-issues
+      name: "Fix Staging Issues"
+      description: "Fix issues found in staging"
+
+      agent: senior-engineer-agent
+
+      action:
+        type: ai-decision
+        operation: fix-staging
+        tools:
+          - analyze-issues
+          - implement-fixes
+          - cherry-pick-to-release
+
+      transitions:
+        - on: success
+          goto: deploy-staging # Redeploy
+        - on: failure
+          goto: escalate-release-failure
+
+    - id: production-preparation
+      name: "Production Preparation"
+      description: "Final preparation before production deployment"
+
+      agent: devops-lead-agent
+
+      action:
+        type: automated
+        operation: prod-preparation
+
+        steps:
+          - name: check-maintenance-window
+            tool: check-maintenance-window
+            params:
+              required_duration: 2h
+
+          - name: notify-stakeholders
+            tool: send-notification
+            params:
+              channel: "#company-wide"
+              message: "📢 Production release v{{release_version}} scheduled for {{deployment_time}}"
+
+          - name: create-backup
+            tool: create-database-backup
+            params:
+              environment: production
+
+          - name: verify-rollback-ready
+            tool: verify-rollback-readiness
+            params:
+              version: "{{previous_version}}"
+
+      outputs:
+        - name: backup_id
+          type: string
+        - name: rollback_verified
+          type: boolean
+
+      transitions:
+        - on: success
+          goto: deploy-production
+        - on: failure
+          goto: escalate-release-failure
+
+    - id: deploy-production
+      name: "Deploy to Production"
+      description: "Execute production deployment with canary rollout"
+
+      agent: devops-engineer-agent
+
+      action:
+        type: automated
+        operation: production-deployment
+
+        steps:
+          - name: announce-start
+            tool: send-notification
+            params:
+              channel: "#releases"
+              message: "🚀 Starting production deployment: v{{release_version}}"
+
+          # Canary deployment - 5%
+          - name: canary-5
+            tool: deploy-canary
+            params:
+              version: "{{release_version}}"
+              percentage: 5
+
+          - name: monitor-canary-5
+            tool: monitor-canary
+            params:
+              duration: 10m
+              error_threshold: 0.5 # 0.5% error rate
+              latency_threshold_p99: 500 # ms
+
+          # Expand to 25%
+          - name: canary-25
+            tool: expand-canary
+            params:
+              percentage: 25
+            condition: "{{steps.monitor-canary-5.output.healthy}}"
+
+          - name: monitor-canary-25
+            tool: monitor-canary
+            params:
+              duration: 15m
+              error_threshold: 0.5
+
+          # Expand to 50%
+          - name: canary-50
+            tool: expand-canary
+            params:
+              percentage: 50
+            condition: "{{steps.monitor-canary-25.output.healthy}}"
+
+          - name: monitor-canary-50
+            tool: monitor-canary
+            params:
+              duration: 15m
+              error_threshold: 0.5
+
+          # Full rollout
+          - name: full-rollout
+            tool: expand-canary
+            params:
+              percentage: 100
+            condition: "{{steps.monitor-canary-50.output.healthy}}"
+
+          - name: monitor-full
+            tool: monitor-deployment
+            params:
+              duration: 30m
+              error_threshold: 0.5
+
+      outputs:
+        - name: production_deployment_status
+          type: enum
+          values: [success, rolled-back]
+        - name: deployment_duration
+          type: duration
+        - name: canary_metrics
+          type: metrics_report
+
+      transitions:
+        - on: success
+          conditions:
+            - field: production_deployment_status
+              operator: eq
+              value: success
+          goto: post-deployment-verification
+        - on: success
+          goto: production-rollback
+        - on: step_failure
+          goto: production-rollback
+
+    - id: production-rollback
+      name: "Production Rollback"
+      description: "Emergency rollback of production deployment"
+
+      agent: devops-engineer-agent
+
+      action:
+        type: automated
+        operation: production-rollback
+        priority: critical
+
+        steps:
+          - name: alert
+            tool: send-notification
+            params:
+              channel: "#incidents"
+              message: "🔴 ROLLBACK: v{{release_version}} - Reverting to v{{previous_version}}"
+
+          - name: rollback
+            tool: rollback-canary
+            params:
+              environment: production
+
+          - name: verify
+            tool: verify-deployment
+            params:
+              environment: production
+              expected_version: "{{previous_version}}"
+
+          - name: monitor
+            tool: monitor-deployment
+            params:
+              duration: 15m
+
+      outputs:
+        - name: rollback_status
+          type: enum
+          values: [success, failed]
+        - name: rollback_reason
+          type: string
+
+      # Post-rollback review
+      hitl:
+        required: true
+        checkpoint: "rollback-review"
+        approvers:
+          - role: devops-lead
+          - role: cto
+        timeout: 24h
+
+      transitions:
+        - on: success
+          goto: post-rollback-analysis
+        - on: failure
+          goto: escalate-release-failure
+
+    - id: post-rollback-analysis
+      name: "Post-Rollback Analysis"
+      description: "Analyze rollback causes and plan remediation"
+
+      agent: devops-lead-agent
+
+      action:
+        type: ai-decision
+        operation: rollback-analysis
+        tools:
+          - analyze-canary-metrics
+          - analyze-error-logs
+          - identify-root-cause
+          - generate-incident-report
+
+        prompt: |
+          Analyze production rollback:
+
+          Release: v{{release_version}}
+          Rollback reason: {{rollback_reason}}
+          Canary metrics: {{canary_metrics}}
+
+          Determine:
+          1. Root cause of deployment failure
+          2. Why it wasn't caught in staging
+          3. Required fixes before re-release
+          4. Process improvements needed
+
+      outputs:
+        - name: root_cause_analysis
+          type: document
+        - name: required_fixes
+          type: fix_list
+        - name: process_improvements
+          type: recommendation_list
+
+      transitions:
+        - on: success
+          goto: complete
+
+    - id: post-deployment-verification
+      name: "Post-Deployment Verification"
+      description: "Verify production deployment health"
+
+      agent: devops-engineer-agent
+
+      action:
+        type: automated
+        operation: post-deployment-verification
+
+        steps:
+          - name: verify-health
+            tool: check-production-health
+            params:
+              services: all
+
+          - name: verify-metrics
+            tool: check-key-metrics
+            params:
+              metrics:
+                - error_rate
+                - latency_p99
+                - request_rate
+                - cpu_usage
+                - memory_usage
+
+          - name: verify-features
+            tool: run-production-smoke-tests
+            params:
+              critical_paths: true
+
+      outputs:
+        - name: health_status
+          type: enum
+          values: [healthy, degraded, unhealthy]
+        - name: metrics_status
+          type: metrics_report
+
+      transitions:
+        - on: success
+          conditions:
+            - field: health_status
+              operator: eq
+              value: healthy
+          goto: finalize-release
+        - on: success
+          goto: production-rollback
+
+    - id: finalize-release
+      name: "Finalize Release"
+      description: "Complete release process with documentation and notifications"
+
+      agent: devops-lead-agent
+
+      action:
+        type: automated
+        operation: release-finalization
+
+        steps:
+          - name: create-github-release
+            tool: create-github-release
+            params:
+              version: "{{release_version}}"
+              notes: "{{release_notes}}"
+              artifacts: "{{build_artifacts}}"
+
+          - name: update-changelog
+            tool: update-changelog
+            params:
+              version: "{{release_version}}"
+              changes: "{{change_summary}}"
+
+          - name: notify-success
+            tool: send-notification
+            params:
+              channel: "#releases"
+              message: "✅ Release v{{release_version}} successfully deployed to production!"
+
+          - name: notify-company
+            tool: send-notification
+            params:
+              channel: "#company-wide"
+              message: |
+                🎉 **Release v{{release_version}} is live!**
+
+                {{release_notes_summary}}
+
+          - name: record-metrics
+            tool: record-release-metrics
+            params:
+              version: "{{release_version}}"
+              duration: "{{workflow.duration}}"
+              rollback: false
+
+      outputs:
+        - name: github_release_url
+          type: string
+        - name: release_metrics
+          type: map
+
+    - id: escalate-release-failure
+      name: "Escalate Release Failure"
+      description: "Escalate critical release failures to leadership"
+
+      agent: cto-agent
+
+      action:
+        type: escalation
+        operation: release-escalation
+
+        notification:
+          channels:
+            - slack: "#leadership"
+            - pagerduty:
+                severity: high
+          urgency: high
+
+        context:
+          include:
+            - release_version
+            - failure_stage
+            - failure_details
+            - attempted_remediations
+            - recommended_action
+
+      hitl:
+        required: true
+        checkpoint: "release-escalation"
+        approvers:
+          - role: cto
+          - role: devops-lead
+        timeout: 4h
+
+      transitions:
+        - on: resolved
+          goto: "{{return_stage}}"
+        - on: cancelled
+          goto: complete
+
+    - id: complete
+      name: "Release Complete"
+      description: "Record release completion status"
+
+      action:
+        type: automated
+        operation: record-completion
+
+        steps:
+          - name: record-status
+            tool: record-release-status
+            params:
+              version: "{{release_version}}"
+              status: "{{workflow.status}}"
+              duration: "{{workflow.duration}}"
+
+  # Post-workflow actions
+  postActions:
+    - type: metrics
+      data:
+        release_version: "{{release_version}}"
+        release_type: "{{release_type}}"
+        total_duration: "{{workflow.duration}}"
+        deployment_time: "{{deploy-production.duration}}"
+        rollback_occurred: "{{rollback_occurred}}"
+        human_approvals: "{{hitl_count}}"
+        test_pass_rate: "{{test_pass_rate}}"
+
+    - type: audit-log
+      data:
+        workflow: release-management
+        version: "{{release_version}}"
+        participants: "{{workflow.agents}}"
+        approvals: "{{workflow.hitl_log}}"
+
+    - type: retrospective
+      trigger:
+        conditions:
+          - field: rollback_occurred
+            operator: eq
+            value: true
+          - field: total_duration
+            operator: gt
+            value: 6h

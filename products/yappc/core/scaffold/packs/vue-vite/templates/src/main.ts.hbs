@@ -1,0 +1,22 @@
+import { createApp } from 'vue'
+{{#if enablePinia}}
+import { createPinia } from 'pinia'
+{{/if}}
+import App from './App.vue'
+{{#if enableRouter}}
+import router from './router'
+{{/if}}
+{{#if enableTailwind}}
+import './assets/main.css'
+{{/if}}
+
+const app = createApp(App)
+
+{{#if enablePinia}}
+app.use(createPinia())
+{{/if}}
+{{#if enableRouter}}
+app.use(router)
+{{/if}}
+
+app.mount('#app')

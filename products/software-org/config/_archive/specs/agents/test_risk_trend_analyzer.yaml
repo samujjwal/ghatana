@@ -1,0 +1,31 @@
+---
+id: "test_risk_trend_analyzer"
+agent: "RiskTrendAnalyzerAgent"
+role: "Risk Intelligence Bot"
+inputs_spec:
+- name: "test_escalation_report"
+  description: "Escalation report for Test stage."
+  format: "Escalation report artifact"
+- name: "test_progress_dashboard"
+  description: "Dashboard artifact for Test stage."
+  format: "Dashboard artifact"
+outputs_spec:
+- name: "test_risk_trend_report"
+  description: "Trend report on all risks, escalations, blockers, with recurring/systemic\
+    \ risks and recommendations."
+  format: "Risk trend report artifact"
+agent_tasks:
+- "Trend all risks, escalations, blockers over time."
+- "Flag/classify recurring/systemic risks."
+- "Share report with leadership, include recommendations."
+acceptance_criteria:
+- "Risks/escalations/blockers trended."
+- "Recurring/systemic risks flagged."
+- "Recommendations included."
+dependencies:
+- "test_escalation_report"
+- "test_progress_dashboard"
+failure_escalation:
+- "Escalate to Risk Intelligence Lead if trends/recommendations missing."
+references: []
+hitl: false

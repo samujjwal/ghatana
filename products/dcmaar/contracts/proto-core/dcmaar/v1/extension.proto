@@ -1,0 +1,152 @@
+syntax = "proto3";
+
+package dcmaar.v1;
+option java_multiple_files = true;
+option java_outer_classname = "EXTENSIONProto";
+option java_package = "com.dcmaar.v1";
+option csharp_namespace = "Dcmaar.V1";
+option objc_class_prefix = "DCX";
+option php_namespace = "Dcmaar\\V1";
+option ruby_package = "Dcmaar::V1";
+option go_package = "github.com/samujjwal/dcmaar/proto/gen/go/pb/dcmaar/v1;dcmaarv1";
+
+import "dcmaar/v1/common.proto";
+
+// ExtensionMessage is the top-level message for all extension communication
+message ExtensionMessage {
+  // MessageType defines the type of the extension message
+  enum MessageType {
+    UNKNOWN = 0;
+
+    // Initialization and handshake
+    HANDSHAKE_REQUEST = 1;
+    HANDSHAKE_RESPONSE = 2;
+
+    // Event collection
+    EVENT_BATCH = 10;
+    EVENT_ACK = 11;
+
+    // Configuration
+    CONFIG_UPDATE = 20;
+    CONFIG_REQUEST = 21;
+    CONFIG_RESPONSE = 22;
+
+    // Health check
+    PING = 30;
+    PONG = 31;
+
+    // Error responses
+    ERROR = 99;
+  }
+
+  // Unique message ID for request/response correlation
+  string message_id = 1;
+
+  // Timestamp when the message was created (unix ms)
+  int64 timestamp = 2;
+
+  // Type of the message
+  MessageType type = 3;
+
+  // Payload is a JSON-encoded string containing the actual message data
+  string payload = 4;
+
+  // Error details if the message represents an error
+  Error error = 5;
+}
+
+// HandshakeRequest is sent by the extension during initialization
+message HandshakeRequest {
+  // Extension version
+  string version = 1;
+  
+  // Browser information
+  BrowserInfo browser = 2;
+  
+  // Capabilities supported by the extension
+  repeated string capabilities = 3;
+}
+
+// Browser information
+message BrowserInfo {
+  string name = 1;
+  string version = 2;
+  string os = 3;
+  string arch = 4;
+}
+
+// HandshakeResponse is sent by the agent in response to HandshakeRequest
+message HandshakeResponse {
+  // Agent version
+  string version = 1;
+  
+  // Agent configuration
+  ExtensionConfig config = 2;
+  
+  // List of required permissions
+  repeated string required_permissions = 3;
+}
+
+// Extension configuration
+message ExtensionConfig {
+  // Whether event collection is enabled
+  bool enabled = 1;
+  
+  // List of domains to monitor (empty means all)
+  repeated string allowed_domains = 2;
+  
+  // Event collection settings
+  EventCollectionSettings event_settings = 3;
+  
+  // How often to send batched events (in ms)
+  int32 batch_interval_ms = 4;
+  
+  // Maximum batch size before sending
+  int32 max_batch_size = 5;
+}
+
+// Event collection settings
+message EventCollectionSettings {
+  bool collect_clicks = 1;
+  bool collect_page_views = 2;
+  bool collect_network_requests = 3;
+  bool collect_console_logs = 4;
+  bool collect_errors = 5;
+  
+  // List of URL patterns to exclude from collection
+  repeated string exclude_urls = 10;
+  
+  // List of domains to exclude from collection
+  repeated string exclude_domains = 11;
+}
+
+// Batch of events from the extension
+message ExtensionEventBatch {
+  // Unique batch ID
+  string batch_id = 1;
+  
+  // List of events in the batch
+  repeated Event events = 2;
+  
+  // Session information
+  string session_id = 3;
+  
+  // User/device context
+  string user_id = 4;
+  string device_id = 5;
+}
+
+// Acknowledgment for received events
+message ExtensionEventAck {
+  // ID of the batch being acknowledged
+  string batch_id = 1;
+  
+  // Whether the events were successfully processed
+  bool success = 2;
+  
+  // Optional message (e.g., error details if success=false)
+  string message = 3;
+  
+  // Timestamp when the events were processed (unix ms)
+  int64 processed_at = 4;
+}

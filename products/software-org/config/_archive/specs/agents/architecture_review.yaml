@@ -1,0 +1,39 @@
+id: architecture_review
+agent: ArchitectureReviewAgent
+role: Lead Architect
+inputs_spec:
+- name: solution_stage_milestone
+  description: Solution stage milestone plan with architecture milestone and status.
+  format: List of milestone objects
+outputs_spec:
+- name: architecture_signoff
+  description: Final review and signoff on solution architecture, with reviewer comments and risk discussion.
+  format: 'Structured signoff document (sections: review, comments, risks, signoff_status)'
+  example: 'review: "All components align with requirements"
+
+    comments: ["Consider caching"]
+
+    risks: ["Latency"]
+
+    signoff_status: "approved"
+
+    '
+agent_tasks:
+- Conduct full architecture review by a qualified human.
+- Discuss all identified architectural risks and issues.
+- Document reviewer comments.
+- Record final signoff or rejection.
+acceptance_criteria:
+- Full architecture is reviewed by a qualified human.
+- All identified architectural risks and issues are discussed.
+- Reviewer comments are documented.
+- Final signoff/rejection is clearly recorded.
+dependencies:
+- solution_stage_milestone
+failure_escalation:
+- Escalate to lead architect or PM if signoff is withheld or issues unresolved.
+references: []
+hitl: true
+hitl_reason: Human provides final review and signoff on architecture
+
+# [!!] No custom enhancement found.

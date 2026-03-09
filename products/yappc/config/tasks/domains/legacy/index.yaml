@@ -1,0 +1,238 @@
+# Domain Index
+# Master index of all task domains for the YAPPC system
+# This file is auto-generated from domain YAML files
+
+domains:
+  - id: problem-understanding
+    file: 01-problem-understanding.yaml
+    name: "Problem Understanding"
+    order: 1
+    task_count: 10
+    icon: "psychology"
+    color: "#FF6B6B"
+
+  - id: requirements
+    file: 02-requirements.yaml
+    name: "Requirements"
+    order: 2
+    task_count: 10
+    icon: "description"
+    color: "#4ECDC4"
+
+  - id: research
+    file: 03-research.yaml
+    name: "Research"
+    order: 3
+    task_count: 10
+    icon: "search"
+    color: "#45B7D1"
+
+  - id: architecture
+    file: 04-architecture.yaml
+    name: "Architecture"
+    order: 4
+    task_count: 11
+    icon: "architecture"
+    color: "#96CEB4"
+
+  - id: planning
+    file: 05-planning.yaml
+    name: "Planning"
+    order: 5
+    task_count: 10
+    icon: "event_note"
+    color: "#FFEAA7"
+
+  - id: dev-environment
+    file: 06-dev-environment.yaml
+    name: "Dev Environment"
+    order: 6
+    task_count: 8
+    icon: "computer"
+    color: "#DDA0DD"
+
+  - id: implementation
+    file: 07-implementation.yaml
+    name: "Implementation"
+    order: 7
+    task_count: 14
+    icon: "code"
+    color: "#2196F3"
+
+  - id: testing
+    file: 08-testing.yaml
+    name: "Testing"
+    order: 8
+    task_count: 13
+    icon: "science"
+    color: "#66BB6A"
+
+  - id: debugging
+    file: 09-debugging.yaml
+    name: "Debugging"
+    order: 9
+    task_count: 10
+    icon: "bug_report"
+    color: "#EF5350"
+
+  - id: data-database
+    file: 10-data-database.yaml
+    name: "Data & Database"
+    order: 10
+    task_count: 10
+    icon: "storage"
+    color: "#8D6E63"
+
+  - id: security
+    file: 11-security.yaml
+    name: "Security"
+    order: 11
+    task_count: 10
+    icon: "security"
+    color: "#D32F2F"
+
+  - id: performance
+    file: 12-performance.yaml
+    name: "Performance"
+    order: 12
+    task_count: 10
+    icon: "speed"
+    color: "#FF9800"
+
+  - id: observability
+    file: 13-observability.yaml
+    name: "Observability"
+    order: 13
+    task_count: 10
+    icon: "visibility"
+    color: "#7B1FA2"
+
+  - id: cicd
+    file: 14-cicd.yaml
+    name: "CI/CD & DevOps"
+    order: 14
+    task_count: 10
+    icon: "autorenew"
+    color: "#00897B"
+
+  - id: code-review
+    file: 15-code-review.yaml
+    name: "Code Review"
+    order: 15
+    task_count: 10
+    icon: "rate_review"
+    color: "#5C6BC0"
+
+  - id: documentation
+    file: 16-documentation.yaml
+    name: "Documentation"
+    order: 16
+    task_count: 10
+    icon: "description"
+    color: "#26A69A"
+
+  - id: maintenance
+    file: 17-maintenance.yaml
+    name: "Maintenance"
+    order: 17
+    task_count: 10
+    icon: "build_circle"
+    color: "#78909C"
+
+  - id: collaboration
+    file: 18-collaboration.yaml
+    name: "Collaboration"
+    order: 18
+    task_count: 10
+    icon: "groups"
+    color: "#AB47BC"
+
+  - id: learning
+    file: 19-learning.yaml
+    name: "Learning & Growth"
+    order: 19
+    task_count: 10
+    icon: "school"
+    color: "#FFA726"
+
+  - id: ai-augmented
+    file: 20-ai-augmented.yaml
+    name: "AI-Augmented Development"
+    order: 20
+    task_count: 10
+    icon: "smart_toy"
+    color: "#EC407A"
+
+  - id: governance
+    file: 21-governance.yaml
+    name: "Governance"
+    order: 21
+    task_count: 10
+    icon: "gavel"
+    color: "#5D4037"
+
+  - id: meta
+    file: 22-meta.yaml
+    name: "Meta Tasks"
+    order: 22
+    task_count: 10
+    icon: "hub"
+    color: "#607D8B"
+
+# Summary Statistics
+summary:
+  total_domains: 22
+  total_tasks: 216
+  categories:
+    discovery:
+      domains:
+        - problem-understanding
+        - requirements
+        - research
+      task_count: 30
+    design:
+      domains:
+        - architecture
+        - planning
+      task_count: 21
+    development:
+      domains:
+        - dev-environment
+        - implementation
+        - testing
+        - debugging
+      task_count: 45
+    data:
+      domains:
+        - data-database
+      task_count: 10
+    security:
+      domains:
+        - security
+      task_count: 10
+    quality:
+      domains:
+        - performance
+        - code-review
+      task_count: 20
+    operations:
+      domains:
+        - observability
+        - cicd
+        - maintenance
+      task_count: 30
+    collaboration:
+      domains:
+        - collaboration
+        - documentation
+      task_count: 20
+    growth:
+      domains:
+        - learning
+        - ai-augmented
+      task_count: 20
+    governance:
+      domains:
+        - governance
+        - meta
+      task_count: 20

@@ -1,0 +1,847 @@
+name: Monitor & Respond (Security Observability and Incident Response)
+workflow:
+  - id: security_monitoring_config
+    agent: SecurityMonitoringConfigAgent
+    role: Security Operations Engineer
+    inputs_spec:
+      - name: deployment_complete_status
+        description: Deployment completion status artifact.
+        format: Deployment status artifact
+    outputs_spec:
+      - name: security_monitoring_config
+        description: Security monitoring configuration for all critical assets/services.
+        format: Monitoring config artifact
+    agent_tasks:
+      - Configure monitoring for all critical assets/services.
+      - Aggregate and retain security logs as per policy.
+      - Define alert rules for threats/anomalies.
+      - Version-control configuration changes.
+    acceptance_criteria:
+      - Monitoring config covers all assets/services.
+      - Logs aggregated/retained per policy.
+      - Alert rules defined for threats/anomalies.
+      - Configuration changes version-controlled.
+    dependencies:
+      - deployment_complete_status
+    failure_escalation:
+      - Escalate to Security Ops if config incomplete or misconfigured.
+    references: []
+    hitl: false
+
+  - id: monitor_best_practice_enforcement
+    agent: MonitorBestPracticeAgent
+    role: Security QA Auditor
+    inputs_spec:
+      - name: security_monitoring_config
+        description: Security monitoring configuration for review.
+        format: Monitoring config artifact
+    outputs_spec:
+      - name: monitor_best_practice_report
+        description: Best practice and compliance review report.
+        format: Best practice report artifact
+    agent_tasks:
+      - Review security monitoring and response practices for best practice and compliance.
+      - Ensure all required controls are in place.
+      - Flag and track gaps or deviations.
+      - Review remediation actions.
+    acceptance_criteria:
+      - Practices reviewed for best practice/compliance.
+      - All controls in place.
+      - Gaps/deviations flagged/tracked.
+      - Remediation actions reviewed.
+    dependencies:
+      - security_monitoring_config
+    failure_escalation:
+      - Escalate to QA Lead if gaps not flagged or remediation not reviewed.
+    references: []
+    hitl: true
+    hitl_reason: Human reviews monitoring for best practice and compliance
+
+  - id: monitor_milestone_tracker
+    agent: MonitorMilestoneTrackerAgent
+    role: Security PM
+    inputs_spec:
+      - name: monitor_best_practice_report
+        description: Best practice report for milestone tracking.
+        format: Best practice report artifact
+    outputs_spec:
+      - name: monitor_stage_milestone
+        description: Monitoring/response milestones with owners and due dates.
+        format: List of milestone objects
+    agent_tasks:
+      - Define/track all milestones.
+      - Assign owners/due dates.
+      - Track/escalate blockers/delays.
+      - Log/validate milestone completion.
+    acceptance_criteria:
+      - All milestones tracked.
+      - Owners/due dates assigned.
+      - Blockers/delays escalated.
+      - Completion logged/validated.
+    dependencies:
+      - monitor_best_practice_report
+    failure_escalation:
+      - Escalate to Security PM if milestones untracked or incomplete.
+    references: []
+    hitl: true
+    hitl_reason: Human oversight for monitoring milestone tracking
+
+  - id: security_log_aggregation
+    agent: SecurityLogAggregationAgent
+    role: Security Engineer
+    inputs_spec:
+      - name: monitor_stage_milestone
+        description: Monitoring milestones for log aggregation.
+        format: List of milestone objects
+    outputs_spec:
+      - name: aggregated_security_logs
+        description: Centralized and accessible security logs.
+        format: Security logs artifact
+    agent_tasks:
+      - Centralize logs from all sources.
+      - Monitor log ingestion pipelines.
+      - Apply retention/privacy policies.
+      - Ensure access is auditable.
+    acceptance_criteria:
+      - Logs centralized and accessible.
+      - Ingestion monitored for failures.
+      - Retention/privacy enforced.
+      - Access is auditable.
+    dependencies:
+      - monitor_stage_milestone
+    failure_escalation:
+      - Escalate to Security Engineer if logs missing or not accessible.
+    references: []
+    hitl: false
+
+  - id: anomaly_detection
+    agent: AnomalyDetectionAgent
+    role: Security Analytics Engineer
+    inputs_spec:
+      - name: aggregated_security_logs
+        description: Aggregated logs for anomaly detection.
+        format: Security logs artifact
+    outputs_spec:
+      - name: anomaly_detection_report
+        description: Anomaly detection findings report.
+        format: Anomaly report artifact
+    agent_tasks:
+      - Apply anomaly detection to all critical logs/telemetry.
+      - Trigger reviews on detected anomalies.
+      - Track anomalies to resolution/explanation.
+    acceptance_criteria:
+      - Anomaly detection covers all logs/telemetry.
+      - Detected anomalies trigger review.
+      - All anomalies tracked to closure.
+    dependencies:
+      - aggregated_security_logs
+    failure_escalation:
+      - Escalate to Analytics Engineer if anomalies not reviewed/tracked.
+    references: []
+    hitl: false
+
+  - id: siem_alerting
+    agent: SIEMAlertingAgent
+    role: SIEM Engineer
+    inputs_spec:
+      - name: anomaly_detection_report
+        description: Anomaly detection report for SIEM alerting.
+        format: Anomaly report artifact
+    outputs_spec:
+      - name: siem_alerts
+        description: SIEM alerts for key threat signatures/patterns.
+        format: Alert artifact
+    agent_tasks:
+      - Define SIEM rules for threats/patterns.
+      - Tune alerts/reduce false positives.
+      - Route alerts to correct team/channel.
+      - Track alert resolution.
+    acceptance_criteria:
+      - SIEM rules defined/tuned.
+      - Alerts routed to correct team/channel.
+      - Alert resolution tracked.
+    dependencies:
+      - anomaly_detection_report
+    failure_escalation:
+      - Escalate to SIEM Engineer if alerts misrouted or unresolved.
+    references: []
+    hitl: false
+
+  - id: threat_intel_enrichment
+    agent: ThreatIntelEnrichmentAgent
+    role: Threat Intelligence Analyst
+    inputs_spec:
+      - name: siem_alerts
+        description: SIEM alerts for enrichment.
+        format: Alert artifact
+    outputs_spec:
+      - name: enriched_alerts
+        description: Alerts enriched with threat intel.
+        format: Enriched alert artifact
+    agent_tasks:
+      - Integrate/update threat intel feeds.
+      - Enrich alerts/incidents with latest threat context.
+      - Log enrichment actions.
+    acceptance_criteria:
+      - Threat intel feeds integrated/updated.
+      - Alerts enriched with latest context.
+      - Enrichment actions logged.
+    dependencies:
+      - siem_alerts
+    failure_escalation:
+      - Escalate to Threat Intelligence Analyst if enrichment not performed.
+    references: []
+    hitl: false
+
+  - id: incident_triage
+    agent: IncidentTriageAgent
+    role: SOC Analyst
+    inputs_spec:
+      - name: enriched_alerts
+        description: Enriched alerts for triage.
+        format: Enriched alert artifact
+    outputs_spec:
+      - name: triaged_incidents
+        description: Prioritized, logged, and escalated incidents.
+        format: Incident artifact
+    agent_tasks:
+      - Prioritize incidents by severity/business impact.
+      - Log triage actions.
+      - Escalate high/critical incidents immediately.
+      - Human review of triage accuracy.
+    acceptance_criteria:
+      - All incidents prioritized/logged.
+      - Escalations performed for high/critical incidents.
+      - Human review of triage.
+    dependencies:
+      - enriched_alerts
+    failure_escalation:
+      - Escalate to SOC lead if triage actions missing or inaccurate.
+    references: []
+    hitl: true
+    hitl_reason: Human reviews and prioritizes incidents
+
+  - id: monitor_incident_feedback_handler
+    agent: IncidentFeedbackHandlerAgent
+    role: Postmortem Owner/Automation
+    inputs_spec:
+      - name: monitor_incident_report
+        description: Monitor incident reports for feedback.
+        format: Incident report artifact
+    outputs_spec:
+      - name: monitor_incident_feedback_items
+        description: Incident feedback items for learning and improvement.
+        format: List of feedback items
+    agent_tasks:
+      - Log all incidents/exceptions for learning.
+      - Feed systemic issues to Retrospective.
+    acceptance_criteria:
+      - Incidents/exceptions logged for learning.
+      - Systemic issues routed to Retrospective.
+    dependencies:
+      - monitor_incident_report
+    failure_escalation:
+      - Escalate to Postmortem Owner if feedback not tracked.
+    references: []
+    hitl: false
+
+  - id: response_automation
+    agent: ResponseAutomationAgent
+    role: IR Automation Engineer
+    inputs_spec:
+      - name: triaged_incidents
+        description: Triaged incidents for automated response.
+        format: Incident artifact
+    outputs_spec:
+      - name: automated_response_log
+        description: Automated response log and human signoff.
+        format: Response log artifact
+    agent_tasks:
+      - Define/version automated response playbooks.
+      - Log/review response actions for effectiveness.
+      - Require human signoff for critical automated responses.
+    acceptance_criteria:
+      - Playbooks defined/versioned.
+      - Actions logged/reviewed.
+      - Human signoff on critical responses.
+    dependencies:
+      - triaged_incidents
+    failure_escalation:
+      - Escalate to IR Automation Engineer if actions unreviewed or not logged.
+    references: []
+    hitl: true
+    hitl_reason: Human signoff required for critical automated responses
+
+  - id: incident_comm
+    agent: IncidentCommAgent
+    role: Incident Manager
+    inputs_spec:
+      - name: automated_response_log
+        description: Automated response log for incident comms.
+        format: Response log artifact
+    outputs_spec:
+      - name: incident_communication_log
+        description: Incident communication log.
+        format: Communication log artifact
+    agent_tasks:
+      - Define communication procedures for incident notification/escalation.
+      - Log stakeholder updates.
+      - Document customer/partner notification steps for major incidents.
+    acceptance_criteria:
+      - Communication procedures defined.
+      - Stakeholder updates logged.
+      - Customer/partner notification steps documented.
+    dependencies:
+      - automated_response_log
+    failure_escalation:
+      - Escalate to Incident Manager if communication not logged/documented.
+    references: []
+    hitl: false
+
+  - id: forensics_agent
+    agent: ForensicsAgent
+    role: Forensic Analyst
+    inputs_spec:
+      - name: incident_communication_log
+        description: Incident communication log for forensics.
+        format: Communication log artifact
+    outputs_spec:
+      - name: forensics_report
+        description: Forensic data collection and investigation report.
+        format: Forensics report artifact
+    agent_tasks:
+      - Automate/repeat forensic data collection.
+      - Ensure chain-of-custody/evidence integrity.
+      - Document investigation results.
+      - Human review for completeness.
+    acceptance_criteria:
+      - Data collection automated/repeatable.
+      - Chain-of-custody/evidence integrity ensured.
+      - Investigation documented.
+      - Human review for completeness.
+    dependencies:
+      - incident_communication_log
+    failure_escalation:
+      - Escalate to Forensic Analyst if evidence incomplete/integrity missing.
+    references: []
+    hitl: true
+    hitl_reason: Human reviews forensics and evidence for legal/compliance
+
+  - id: postmortem_agent
+    agent: PostmortemAgent
+    role: Incident/Postmortem Lead
+    inputs_spec:
+      - name: forensics_report
+        description: Forensics report for postmortem.
+        format: Forensics report artifact
+    outputs_spec:
+      - name: postmortem_report
+        description: Postmortem analysis and action item report.
+        format: Postmortem report artifact
+    agent_tasks:
+      - Complete postmortem reports for all major incidents.
+      - Analyze root causes/contributing factors.
+      - Document/assign/track action items.
+      - Human review/signoff of report.
+    acceptance_criteria:
+      - Postmortem reports completed.
+      - Root causes/contributing factors analyzed.
+      - Action items documented/assigned/tracked.
+      - Report reviewed/signed off.
+    dependencies:
+      - forensics_report
+    failure_escalation:
+      - Escalate to Incident Lead if postmortem incomplete/not reviewed.
+    references: []
+    hitl: true
+    hitl_reason: Human signs off postmortem analysis
+
+  - id: continuous_improvement
+    agent: ContinuousImprovementAgent
+    role: Security/Process Engineer
+    inputs_spec:
+      - name: postmortem_report
+        description: Postmortem report for continuous improvement.
+        format: Postmortem report artifact
+    outputs_spec:
+      - name: improvement_actions
+        description: Captured and tracked improvement actions.
+        format: Improvement actions artifact
+    agent_tasks:
+      - Capture/review lessons learned from incidents.
+      - Propose/track process/tooling improvements.
+      - Monitor/report status of improvement actions.
+    acceptance_criteria:
+      - Lessons learned captured/reviewed.
+      - Process/tooling improvements proposed/tracked.
+      - Status monitored/reported.
+    dependencies:
+      - postmortem_report
+    failure_escalation:
+      - Escalate to Security/Process Engineer if actions not tracked.
+    references: []
+    hitl: false
+
+  - id: monitoring_dashboard
+    agent: MonitoringDashboardAgent
+    role: SOC Dashboard Owner
+    inputs_spec:
+      - name: improvement_actions
+        description: Improvement actions for dashboard visualization.
+        format: Improvement actions artifact
+    outputs_spec:
+      - name: monitor_dashboard
+        description: Real-time security/incident/anomaly dashboard.
+        format: Dashboard artifact
+    agent_tasks:
+      - Visualize security, incident, anomaly status in real time.
+      - Make dashboard accessible to stakeholders.
+      - Monitor dashboard health/data quality.
+    acceptance_criteria:
+      - Security, incident, anomaly status visualized in real time.
+      - Dashboards accessible to stakeholders.
+      - Dashboard health/data quality monitored.
+    dependencies:
+      - improvement_actions
+    failure_escalation:
+      - Escalate to SOC Dashboard Owner if dashboard not accessible or current.
+    references: []
+    hitl: false
+
+  - id: monitor_observability_export
+    agent: ObservabilityExportAgent
+    role: SRE/Analytics
+    inputs_spec:
+      - name: monitor_progress_dashboard
+        description: Monitor progress dashboard for observability export.
+        format: Dashboard artifact
+    outputs_spec:
+      - name: monitor_observability_export
+        description: Pipeline metrics/KPIs exported to analytics/monitoring.
+        format: Export artifact
+    agent_tasks:
+      - Export pipeline metrics/KPIs to analytics/monitoring.
+      - Flag gaps in observability.
+    acceptance_criteria:
+      - Metrics/KPIs exported to analytics/monitoring.
+      - Gaps in observability flagged.
+    dependencies:
+      - monitor_progress_dashboard
+    failure_escalation:
+      - Escalate to SRE/Analytics if metrics not exported/gaps not flagged.
+    references: []
+    hitl: false
+
+  - id: monitor_feedback_loop
+    agent: FeedbackLoopAgent
+    role: CI/CD Coach/Automation
+    inputs_spec:
+      - name: monitor_progress_dashboard
+        description: Monitor progress dashboard for collecting feedback.
+        format: Dashboard artifact
+    outputs_spec:
+      - name: monitor_feedback_items
+        description: Issues/improvement suggestions routed to Retrospective.
+        format: List of feedback items
+    agent_tasks:
+      - Route all issues/improvement suggestions to Retrospective.
+      - Track feedback for action/resolution.
+    acceptance_criteria:
+      - All issues/improvement suggestions routed to Retrospective.
+      - Feedback tracked for action/resolution.
+    dependencies:
+      - monitor_progress_dashboard
+    failure_escalation:
+      - Escalate to CI/CD Coach if feedback not acted on.
+    references: []
+    hitl: false
+
+  - id: synthesis_monitor_combiner
+    agent: SynthesisMonitorCombinerAgent
+    role: Security Lead/PM
+    inputs_spec:
+      - name: monitor_dashboard
+        description: Monitor dashboard for synthesis/combine.
+        format: Dashboard artifact
+      - name: improvement_actions
+        description: Improvement actions for combine.
+        format: Improvement actions artifact
+      - name: postmortem_report
+        description: Postmortem report for combine.
+        format: Postmortem report artifact
+    outputs_spec:
+      - name: monitor_respond_final_status
+        description: Final readiness/status for Monitor & Respond stage.
+        format: Readiness status artifact
+    agent_tasks:
+      - Combine all outputs (monitoring, response, postmortem, improvement).
+      - Flag gaps/missed incidents.
+      - Human review/signoff final status.
+    acceptance_criteria:
+      - All outputs combined.
+      - Gaps/missed incidents flagged.
+      - Final status reviewed/signed off.
+    dependencies:
+      - monitor_dashboard
+      - improvement_actions
+      - postmortem_report
+    failure_escalation:
+      - Escalate to Security Lead/PM if final status not reviewed/signed off.
+    references: []
+    hitl: true
+    hitl_reason: Human reviews overall status and readiness for next phase
+
+  - id: monitor_kpi_agent
+    agent: StageKPIAgent
+    role: Monitor KPI Analyst
+    inputs_spec:
+      - name: monitor_stage_milestone
+        description: Monitor stage milestone for KPI tracking.
+        format: List of milestone objects
+    outputs_spec:
+      - name: monitor_kpi_report
+        description: Monitor KPI report, including MTTD/MTTR, postmortem rates, log/alert coverage.
+        format: KPI report artifact
+    agent_tasks:
+      - Track MTTD, MTTR for incident detection/response.
+      - Track postmortem completion/action closure rates.
+      - Track security log/alert coverage.
+      - Flag trends/recurring incidents.
+    acceptance_criteria:
+      - All KPIs tracked/reported.
+      - Trends/recurring incidents flagged.
+    dependencies:
+      - monitor_stage_milestone
+    failure_escalation:
+      - Escalate to Monitor KPI Analyst if KPIs missing or unreviewed.
+    references: []
+    hitl: false
+
+  - id: monitor_success_criteria_tracker
+    agent: SuccessCriteriaTrackerAgent
+    role: Monitor Success Criteria Tracker
+    inputs_spec:
+      - name: monitor_stage_milestone
+        description: Monitor stage milestones for criteria tracking.
+        format: List of milestone objects
+    outputs_spec:
+      - name: monitor_success_criteria_status
+        description: Monitor & Respond criteria mapped to detection, alerting, and response runbooks.
+        format: List of criteria status objects
+    agent_tasks:
+      - Map criteria to detection, alerting, and response runbooks.
+      - Confirm coverage for all major assets and threat types.
+      - Document open incidents or gaps.
+      - Ensure tracker reviewed by Security or SOC lead at stage exit.
+    acceptance_criteria:
+      - Criteria mapped to detection/alerting/runbooks.
+      - Coverage confirmed for all major assets/threat types.
+      - Open incidents/gaps documented.
+      - Tracker reviewed at stage exit.
+    dependencies:
+      - monitor_stage_milestone
+    failure_escalation:
+      - Escalate to Security or SOC lead if criteria not reviewed or gaps not documented.
+    references: []
+    hitl: false
+
+  - id: monitor_progress_dashboard
+    agent: ProgressDashboardAgent
+    role: Monitor Progress Dashboard Owner
+    inputs_spec:
+      - name: monitor_kpi_report
+        description: Monitor KPI report for dashboard visualization.
+        format: KPI report artifact
+      - name: monitor_success_criteria_status
+        description: Monitor success criteria status for dashboard visualization.
+        format: List of criteria status objects
+      - name: monitor_stage_milestone
+        description: Monitor stage milestone plan for dashboard visualization.
+        format: List of milestone objects
+    outputs_spec:
+      - name: monitor_progress_dashboard
+        description: Real-time incident, detection, and KPI status dashboard.
+        format: Dashboard artifact
+    agent_tasks:
+      - Visualize incident, detection, and KPI status in real time.
+      - Track postmortem and improvement actions.
+      - Ensure dashboard reviewed and signed by Security/SOC lead.
+    acceptance_criteria:
+      - Incident, detection, and KPI status visualized in real time.
+      - Postmortem and improvement actions tracked.
+      - Dashboard reviewed and signed by Security/SOC lead.
+    dependencies:
+      - monitor_kpi_report
+      - monitor_success_criteria_status
+      - monitor_stage_milestone
+    failure_escalation:
+      - Escalate to Dashboard Owner if dashboard not current or not signed off.
+    references: []
+    hitl: false
+
+  - id: monitor_audit_log_agent
+    agent: AuditLogAgent
+    role: Compliance Bot
+    inputs_spec:
+      - name: monitor_progress_dashboard
+        description: Monitor progress dashboard for audit logging.
+        format: Dashboard artifact
+      - name: monitor_notification_agent
+        description: Notification agent delivery log.
+        format: List of notification objects
+    outputs_spec:
+      - name: monitor_audit_log
+        description: Audit log of all Monitor & Respond actions, signoffs, escalations, notifications.
+        format: Audit log artifact
+    agent_tasks:
+      - Record every agent action and transition with timestamp, user/agent, and artifact link.
+      - Log all major events (signoffs, escalations, notifications, exceptions).
+      - Cryptographically sign and archive logs in secure, tamper-evident storage.
+      - Ensure audit log is accessible for compliance review.
+    acceptance_criteria:
+      - Every agent action and transition is recorded with required details.
+      - Major events explicitly logged.
+      - Logs cryptographically signed and archived securely.
+      - Audit log accessible for compliance review.
+    dependencies:
+      - monitor_progress_dashboard
+      - monitor_notification_agent
+    failure_escalation:
+      - Escalate to compliance or audit lead if audit log is incomplete or inaccessible.
+    references: []
+    hitl: false
+
+  - id: monitoring_agent
+    agent: MonitoringAgent
+    role: SRE/Automation
+    inputs_spec:
+      - name: infrastructure_progress_dashboard
+        description: Infrastructure progress dashboard for monitoring input.
+        format: Dashboard artifact
+    outputs_spec:
+      - name: monitoring_report
+        description: System health and metrics monitoring report.
+        format: Monitoring report artifact
+    agent_tasks:
+      - Monitor system health and metrics in real time.
+      - Generate alerts for anomalies or outages.
+      - Log monitoring data for later analysis.
+    acceptance_criteria:
+      - System health and metrics monitored in real time.
+      - Alerts generated for anomalies/outages.
+      - Monitoring data logged for analysis.
+    dependencies:
+      - infrastructure_progress_dashboard
+    failure_escalation:
+      - Escalate to SRE/Automation if monitoring or alerting fails.
+    references: []
+    hitl: false
+
+  - id: incident_response_agent
+    agent: IncidentResponseAgent
+    role: Incident Manager
+    inputs_spec:
+      - name: infrastructure_progress_dashboard
+        description: Infrastructure progress dashboard for incident detection.
+        format: Dashboard artifact
+    outputs_spec:
+      - name: incident_report
+        description: Incident detection and response report.
+        format: Incident report artifact
+    agent_tasks:
+      - Detect and triage incidents promptly.
+      - Document all response actions.
+      - Record incident resolution and lessons learned.
+    acceptance_criteria:
+      - Incidents detected and triaged promptly.
+      - Response actions documented.
+      - Incident resolution and lessons learned recorded.
+    dependencies:
+      - infrastructure_progress_dashboard
+    failure_escalation:
+      - Escalate to Incident Manager if incidents not detected/triaged.
+    references: []
+    hitl: false
+
+  - id: monitor/operate_incident_feedback_handler
+    agent: IncidentFeedbackHandlerAgent
+    role: Postmortem Owner/Automation
+    inputs_spec:
+      - name: monitor/operate_incident_report
+        description: Incident report for monitor/operate feedback.
+        format: Incident report artifact
+    outputs_spec:
+      - name: monitor/operate_incident_feedback_items
+        description: Monitor/Operate incident feedback for Retrospective.
+        format: List of feedback items
+    agent_tasks:
+      - Log all incidents and exceptions for learning.
+      - Feed systemic issues to Retrospective for improvement.
+    acceptance_criteria:
+      - Incidents and exceptions logged for learning.
+      - Systemic issues routed to Retrospective for improvement.
+    dependencies:
+      - monitor/operate_incident_report
+    failure_escalation:
+      - Escalate to Postmortem Owner if feedback not tracked.
+    references: []
+    hitl: false
+
+  - id: monitor_evidence_collector
+    agent: EvidenceCollectorAgent
+    role: Compliance Evidence Bot
+    inputs_spec:
+      - name: monitor_audit_log
+        description: Monitor audit log for evidence collection.
+        format: Audit log artifact
+      - name: monitor_success_criteria_status
+        description: Monitor success criteria status for evidence linkage.
+        format: List of criteria status objects
+      - name: monitor_stage_milestone
+        description: Monitor stage milestone plan for evidence linkage.
+        format: List of milestone objects
+    outputs_spec:
+      - name: monitor_evidence_package
+        description: Evidence package with all signoffs, feedback, KPIs, and results.
+        format: Evidence package artifact
+    agent_tasks:
+      - Collect and hash all artifacts, audit logs, signoffs, and KPIs for the stage.
+      - Link evidence to compliance and regulatory requirements.
+      - Archive evidence package in tamper-evident storage and maintain access logs.
+    acceptance_criteria:
+      - All required artifacts and evidence are collected and hashed.
+      - Evidence is linked to compliance/regulatory requirements.
+      - Evidence package is archived and access logs are maintained.
+    dependencies:
+      - monitor_audit_log
+      - monitor_success_criteria_status
+      - monitor_stage_milestone
+    failure_escalation:
+      - Escalate to compliance evidence lead if evidence package is incomplete or not archived.
+    references: []
+    hitl: false
+
+  - id: monitor_risk_trend_analyzer
+    agent: RiskTrendAnalyzerAgent
+    role: Risk Intelligence Bot
+    inputs_spec:
+      - name: monitor_escalation_report
+        description: Monitor escalation report for risk trend analysis.
+        format: Escalation report artifact
+      - name: monitor_progress_dashboard
+        description: Monitor progress dashboard for risk trend data.
+        format: Dashboard artifact
+      - name: monitor_stage_milestone
+        description: Monitor stage milestone plan for risk trend context.
+        format: List of milestone objects
+    outputs_spec:
+      - name: monitor_risk_trend_report
+        description: Risk trend report for monitor stage (risks, escalations, blockers, recommendations).
+        format: Risk trend report artifact
+    agent_tasks:
+      - Trend all monitor-stage risks, escalations, and blockers over time.
+      - Automatically flag and classify recurring/systemic risks.
+      - Share trend report with PMO and leadership.
+      - Recommend mitigation or process changes.
+    acceptance_criteria:
+      - All risks, escalations, and blockers are trended over time.
+      - Recurring or systemic risks are flagged and classified.
+      - Trend report shared with PMO/leadership with recommendations.
+    dependencies:
+      - monitor_escalation_report
+      - monitor_progress_dashboard
+      - monitor_stage_milestone
+    failure_escalation:
+      - Escalate to Risk Intelligence Lead if trends or recommendations are missing.
+    references: []
+    hitl: false
+
+  - id: monitor_policy_drift_detector
+    agent: PolicyDriftDetectorAgent
+    role: Compliance Automation
+    inputs_spec:
+      - name: monitor_milestone_tracker
+        description: Monitor milestone tracker for drift detection.
+        format: Milestone tracker artifact
+      - name: monitor_progress_dashboard
+        description: Monitor progress dashboard for drift status.
+        format: Dashboard artifact
+    outputs_spec:
+      - name: monitor_policy_drift_report
+        description: Report on policy/config drift and status for monitor stage.
+        format: Drift report artifact
+    agent_tasks:
+      - Compare actual deployed configs/policies to approved definitions.
+      - Flag, categorize, and timestamp all drift or changes.
+      - Escalate critical drift for review.
+      - Maintain drift detection history for trend analysis.
+    acceptance_criteria:
+      - Deployed configs/policies compared to approved definitions.
+      - Drift or changes flagged, categorized, and timestamped.
+      - Critical drift escalated for review.
+      - Drift detection history maintained.
+    dependencies:
+      - monitor_milestone_tracker
+      - monitor_progress_dashboard
+    failure_escalation:
+      - Escalate to compliance lead if drift not flagged or reported.
+    references: []
+    hitl: false
+
+  - id: monitor_sla_reporter
+    agent: SLAComplianceReporterAgent
+    role: Service Quality Bot
+    inputs_spec:
+      - name: monitor_progress_dashboard
+        description: Monitor progress dashboard for SLA monitoring.
+        format: Dashboard artifact
+      - name: monitor_kpi_report
+        description: Monitor KPI report for SLA monitoring.
+        format: KPI report artifact
+    outputs_spec:
+      - name: monitor_sla_report
+        description: SLA compliance report for all services in monitor stage.
+        format: SLA compliance report artifact
+    agent_tasks:
+      - Monitor SLO/SLA metrics for breaches and trends.
+      - Trigger notification and root cause entry on breach.
+      - Archive report for audit and share with stakeholders.
+      - Recommend improvements if trends worsen.
+    acceptance_criteria:
+      - All SLO/SLA metrics monitored for breaches and trends.
+      - Any breach triggers automated notification and root cause entry.
+      - SLA compliance report is archived for audit and shared with stakeholders.
+      - SLA improvement recommendations are generated if trends worsen.
+    dependencies:
+      - monitor_progress_dashboard
+      - monitor_kpi_report
+    failure_escalation:
+      - Escalate to Service Quality Bot if SLA report not archived or breaches unaddressed.
+    references: []
+    hitl: false
+
+  - id: monitor_policy_reconciliation
+    agent: PolicyReconciliationAgent
+    role: Compliance Automation
+    inputs_spec:
+      - name: monitor_progress_dashboard
+        description: Monitor progress dashboard for reconciliation triggers.
+        format: Dashboard artifact
+    outputs_spec:
+      - name: monitor_policy_recon_report
+        description: Report on policy reconciliation actions and status for monitor stage.
+        format: Policy reconciliation report artifact
+    agent_tasks:
+      - Compare all live environment policies/configs to source of truth.
+      - Flag and report any drift to compliance.
+      - Assign remediation plans if mismatches found.
+    acceptance_criteria:
+      - All live environment policies/configs match source of truth.
+      - Any drift is flagged and reported to compliance.
+      - Remediation plans assigned if mismatches found.
+    dependencies:
+      - monitor_progress_dashboard
+    failure_escalation:
+      - Escalate to compliance automation if drift/mismatches are not remediated.
+    references: []
+    hitl: false

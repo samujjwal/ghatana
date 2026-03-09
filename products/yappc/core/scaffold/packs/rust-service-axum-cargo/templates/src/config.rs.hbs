@@ -1,0 +1,67 @@
+//! Application configuration.
+
+use serde::Deserialize;
+use std::env;
+
+/// Application configuration.
+#[derive(Debug, Clone, Deserialize)]
+pub struct Config {
+/// HTTP server port
+pub port: u16,
+/// Log level
+pub log_level: String,
+/// Environment (development, staging, production)
+pub environment: String,
+/// Service name for tracing
+pub service_name: String,
+}
+
+impl Config {
+/// Load configuration from environment variables.
+pub fn load() -> anyhow::Result<Self> {
+    Ok(Self {
+    port: env::var("PORT")
+    .unwrap_or_else(|_| "{{port}}".to_string())
+    .parse()
+    .unwrap_or({{port}}),
+    log_level: env::var("LOG_LEVEL").unwrap_or_else(|_| "info".to_string()),
+    environment: env::var("ENVIRONMENT").unwrap_or_else(|_| "development".to_string()),
+    service_name: env::var("SERVICE_NAME")
+    .unwrap_or_else(|_| "{{projectName}}".to_string()),
+    })
+    }
+
+    /// Returns true if running in development mode.
+    pub fn is_development(&self) -> bool {
+    self.environment == "development"
+    }
+
+    /// Returns true if running in production mode.
+    pub fn is_production(&self) -> bool {
+    self.environment == "production"
+    }
+    }
+
+    impl Default for Config {
+    fn default() -> Self {
+    Self {
+    port: {{port}},
+    log_level: "info".to_string(),
+    environment: "development".to_string(),
+    service_name: "{{projectName}}".to_string(),
+    }
+    }
+    }
+
+    #[cfg(test)]
+    mod tests {
+    use super::*;
+
+    #[test]
+    fn test_default_config() {
+    let config = Config::default();
+    assert_eq!(config.port, {{port}});
+    assert_eq!(config.log_level, "info");
+    assert!(config.is_development());
+    }
+    }

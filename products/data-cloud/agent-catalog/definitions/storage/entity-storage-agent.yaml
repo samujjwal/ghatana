@@ -1,0 +1,38 @@
+id: entity-storage-agent
+name: Entity Storage Agent
+version: 1.0.0
+description: Manages entity persistence with CRUD operations, versioning, and consistency
+
+metadata:
+  level: 3
+  domain: data-management
+  tags: [entity, storage, crud, versioning, persistence]
+
+generator:
+  type: DETERMINISTIC
+  
+capabilities:
+  - entity-storage
+  - data-replication
+  
+tools:
+  - name: dataCloudEntityStore
+    type: SERVICE
+    endpoint: /datacloud/entities
+  - name: versionManager
+    type: SERVICE
+    endpoint: /datacloud/versions
+
+memory:
+  type: WORKING
+  scope: session
+  retention: short
+
+routing:
+  input: EntityOperationRequest
+  output: EntityOperationResult
+
+resources:
+  memory: "512MB"
+  cpu: "1"
+  timeout: "30s"

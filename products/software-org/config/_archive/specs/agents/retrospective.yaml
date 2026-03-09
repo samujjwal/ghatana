@@ -1,0 +1,42 @@
+id: retrospective
+agent: RetrospectiveAgent
+role: Continuous Improvement Facilitator
+inputs_spec:
+  - name: handover_package
+    description: Handover package from HandoverPackageAgent.
+    format: YAML object
+outputs_spec:
+  - name: retrospective_report
+    description: Lessons learned, improvement log, actionable recommendations.
+    format: YAML object
+acceptance_criteria:
+  - Feedback collected from all teams/stakeholders.
+  - Action items assigned, tracked, reviewed.
+  - Closure rate and improvement metrics documented.
+agent_tasks:
+  - Gather feedback/metrics from design, review, handover.
+  - Analyze recurring issues, improvement opportunities.
+  - Produce report, log, assign actions, track closure.
+dependencies:
+  - handover_package
+failure_escalation:
+  - Escalate open/unresolved improvements to steering group.
+references: []
+internal_logic:
+  - perception:
+      description: "Collect feedback, metrics, incidents, and outcome data from design and prior stages."
+  - model:
+      description: "Maintain lessons learned, improvement log, and actionable recommendations."
+  - planning:
+      description: |
+        "Analyze success/failure patterns, recurring issues, and improvement opportunities.
+         Assign actions to responsible owners."
+  - action:
+      description: "Produce retrospective report and update improvement backlog."
+validation:
+  - "Team/executive review and signoff."
+  - "Audit for follow-up on action items."
+quality_enhancements:
+  - "Retrospective template."
+  - "Metrics for closure of action items and improvements implemented."
+  - "Automated feedback loop for future design cycles."

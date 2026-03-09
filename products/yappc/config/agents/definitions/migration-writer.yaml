@@ -1,0 +1,33 @@
+id: agent.yappc.migration-writer
+name: Migration Writer
+description: Database migration script generation agent
+version: 1.0.0
+type: worker
+category: data-engineering
+
+capabilities:
+  - migration-script-generation
+  - schema-evolution
+  - data-migration
+  - rollback-planning
+
+requirements:
+  - database-systems
+  - migration-tools
+  - schema-management
+
+parameters:
+  database_type:
+    type: string
+    default: "postgresql"
+    description: Target database system
+  
+  migration_tool:
+    type: string
+    default: "flyway"
+    description: Migration tool to use
+
+metadata:
+  author: "YAPPC Team"
+  level: 3
+  tags: [database, migration, schema, data]

@@ -1,0 +1,174 @@
+/*
+ * Copyright (c) 2026 Ghatana Inc.
+ * All rights reserved.
+ *
+ * Generic Adaptive Agent (GAA) - Learning Service API
+ * Version: 1.0.0
+ *
+ * Defines the gRPC service APIs for the learning plane:
+ * trace grading, skill promotion, rollback, and evaluation gates.
+ */
+syntax = "proto3";
+
+package ghatana.contracts.learning.v1;
+
+import "google/protobuf/timestamp.proto";
+import "google/protobuf/struct.proto";
+
+option go_package = "github.com/ghatana/contracts/gen/go/learning/v1;learningv1";
+option java_multiple_files = true;
+option java_package = "com.ghatana.contracts.learning.v1";
+option java_outer_classname = "LearningServiceProtos";
+option csharp_namespace = "Ghatana.Contracts.Learning.V1";
+
+// ============================================================================
+// LEARNING SERVICE
+// ============================================================================
+
+service LearningService {
+  /** Grade an agent execution trace for quality assessment. */
+  rpc GradeTrace(GradeTraceRequest) returns (GradeTraceResponse);
+
+  /** Promote a learned skill/procedure to production tier. */
+  rpc PromoteSkill(PromoteSkillRequest) returns (PromoteSkillResponse);
+
+  /** Rollback a skill to a previous version. */
+  rpc Rollback(RollbackRequest) returns (RollbackResponse);
+
+  /** Evaluate a proposed update through evaluation gates. */
+  rpc EvaluateUpdate(EvaluateUpdateRequest) returns (EvaluateUpdateResponse);
+
+  /** List all versions of a skill/procedure. */
+  rpc ListSkillVersions(ListSkillVersionsRequest) returns (ListSkillVersionsResponse);
+}
+
+// ============================================================================
+// TRACE GRADING
+// ============================================================================
+
+message GradeTraceRequest {
+  string tenant_id = 1;
+  string trace_id = 2;
+  repeated string dimension_names = 3;
+}
+
+message GradeTraceResponse {
+  string trace_id = 1;
+  double overall_score = 2;
+  map<string, double> dimension_scores = 3;
+  repeated string recommendations = 4;
+  int32 episode_count = 5;
+}
+
+// ============================================================================
+// SKILL PROMOTION
+// ============================================================================
+
+message PromoteSkillRequest {
+  string tenant_id = 1;
+  string procedure_id = 2;
+  int32 from_version = 3;
+}
+
+message PromoteSkillResponse {
+  string procedure_id = 1;
+  int32 from_version = 2;
+  int32 to_version = 3;
+  google.protobuf.Timestamp promoted_at = 4;
+  bool evaluation_passed = 5;
+  EvaluationResultEntry regression_results = 6;
+}
+
+// ============================================================================
+// ROLLBACK
+// ============================================================================
+
+message RollbackRequest {
+  string tenant_id = 1;
+  string procedure_id = 2;
+  int32 to_version = 3;
+  string reason = 4;
+}
+
+message RollbackResponse {
+  string procedure_id = 1;
+  int32 from_version = 2;
+  int32 to_version = 3;
+  google.protobuf.Timestamp rolled_back_at = 4;
+  string reason = 5;
+}
+
+// ============================================================================
+// EVALUATION GATES
+// ============================================================================
+
+message EvaluateUpdateRequest {
+  string tenant_id = 1;
+  UpdateCandidateEntry candidate = 2;
+  EvaluationContextEntry context = 3;
+}
+
+message EvaluateUpdateResponse {
+  bool passed = 1;
+  double score = 2;
+  EvaluationResultEntry regression_results = 3;
+  repeated SafetyCheckEntry safety_checks = 4;
+  repeated string recommendations = 5;
+  repeated string blockers = 6;
+}
+
+message UpdateCandidateEntry {
+  string type = 1;
+  google.protobuf.Struct content = 2;
+  repeated string derived_from = 3;
+  string proposed_by = 4;
+}
+
+message EvaluationContextEntry {
+  repeated string replay_trace_ids = 1;
+  string golden_dataset_id = 2;
+  repeated string safety_policy_ids = 3;
+  double min_score_threshold = 4;
+  double regression_tolerance = 5;
+}
+
+message EvaluationResultEntry {
+  double precision = 1;
+  double recall = 2;
+  double f1_score = 3;
+  int32 traces_replayed = 4;
+  int32 improvements = 5;
+  int32 regressions = 6;
+  int32 unchanged = 7;
+}
+
+message SafetyCheckEntry {
+  string check_name = 1;
+  bool passed = 2;
+  string details = 3;
+}
+
+// ============================================================================
+// SKILL VERSION MANAGEMENT
+// ============================================================================
+
+message ListSkillVersionsRequest {
+  string tenant_id = 1;
+  string procedure_id = 2;
+}
+
+message ListSkillVersionsResponse {
+  string procedure_id = 1;
+  repeated SkillVersionEntry versions = 2;
+  int32 current_version = 3;
+}
+
+message SkillVersionEntry {
+  int32 version = 1;
+  google.protobuf.Struct content = 2;
+  google.protobuf.Timestamp created_at = 3;
+  string created_by = 4;
+  double success_rate = 5;
+  int32 usage_count = 6;
+  string status = 7;
+}

@@ -1,0 +1,30 @@
+---
+id: "build_pipeline"
+agent: "BuildPipelineAgent"
+role: "DevOps Engineer"
+inputs_spec:
+- name: "develop_stage_milestone"
+  description: "List of milestones signaling readiness for build pipeline configuration."
+  format: "List of milestone objects"
+outputs_spec:
+- name: "pipeline_configured"
+  description: "Configured, versioned build pipeline (CI as code) with all required\
+    \ steps."
+  format: "Pipeline config artifact or repo reference"
+agent_tasks:
+- "Define and version build pipeline in code."
+- "Ensure pipeline executes automatically on code changes."
+- "Include build, test, package, and scan steps."
+- "Retain build logs."
+- "Configure automatic failure reporting."
+acceptance_criteria:
+- "Build pipeline is defined and versioned in code (CI as code)."
+- "Pipeline executes automatically on code changes."
+- "All pipeline steps (build, test, package, scan) are present."
+- "Build logs are retained and accessible."
+- "Pipeline failures are automatically reported to the team."
+dependencies:
+- "develop_stage_milestone"
+failure_escalation:
+- "Escalate to DevOps or CI Owner if pipeline is misconfigured or missing steps."
+references: []

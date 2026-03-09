@@ -1,0 +1,28 @@
+---
+id: "security_monitoring_config"
+agent: "SecurityMonitoringConfigAgent"
+role: "Security Operations Engineer"
+inputs_spec:
+- name: "deployment_complete_status"
+  description: "Deployment completion status artifact."
+  format: "Deployment status artifact"
+outputs_spec:
+- name: "security_monitoring_config"
+  description: "Security monitoring configuration for all critical assets/services."
+  format: "Monitoring config artifact"
+agent_tasks:
+- "Configure monitoring for all critical assets/services."
+- "Aggregate and retain security logs as per policy."
+- "Define alert rules for threats/anomalies."
+- "Version-control configuration changes."
+acceptance_criteria:
+- "Monitoring config covers all assets/services."
+- "Logs aggregated/retained per policy."
+- "Alert rules defined for threats/anomalies."
+- "Configuration changes version-controlled."
+dependencies:
+- "deployment_complete_status"
+failure_escalation:
+- "Escalate to Security Ops if config incomplete or misconfigured."
+references: []
+hitl: false

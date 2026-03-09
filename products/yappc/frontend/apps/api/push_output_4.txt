@@ -1,0 +1,19 @@
+npm warn Unknown project config "shamefully-hoist". This will stop working in the next major version of npm.
+npm warn Unknown project config "strict-peer-dependencies". This will stop working in the next major version of npm.
+npm warn Unknown project config "auto-install-peers". This will stop working in the next major version of npm.
+npm warn Unknown project config "lockfile". This will stop working in the next major version of npm.
+npm warn Unknown project config "prefer-frozen-lockfile". This will stop working in the next major version of npm.
+Environment variables loaded from .env
+Prisma schema loaded from prisma/schema.prisma
+Datasource "db": PostgreSQL database "tutorputor", schema "public" at "localhost:5433"
+Error: ERROR: cannot drop table requirements because other objects depend on it
+DETAIL: materialized view quality_statistics depends on table requirements
+HINT: Use DROP ... CASCADE to drop the dependent objects too.
+   0: sql_schema_connector::apply_migration::migration_step
+           with step=DropTable { table_id: TableId(5) }
+             at schema-engine/connectors/sql-schema-connector/src/apply_migration.rs:28
+   1: sql_schema_connector::apply_migration::apply_migration
+             at schema-engine/connectors/sql-schema-connector/src/apply_migration.rs:11
+   2: schema_core::state::SchemaPush
+             at schema-engine/core/src/state.rs:545
+

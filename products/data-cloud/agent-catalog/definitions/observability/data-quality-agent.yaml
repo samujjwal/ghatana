@@ -1,0 +1,53 @@
+id: data-quality-agent
+name: Data Quality Agent
+version: 1.0.0
+description: Automated data quality checks, anomaly detection, and quality scoring
+
+metadata:
+  level: 3
+  domain: data-observability
+  tags: [quality, validation, anomaly-detection, scoring, profiling]
+
+generator:
+  type: PIPELINE
+  steps:
+    - name: data_profiling
+      type: SERVICE_CALL
+      service: data-profiler
+      endpoint: /datacloud/quality/profile
+    - name: quality_analysis
+      type: LLM
+      provider: ANTHROPIC
+      model: claude-3-5-sonnet-20241022
+      temperature: 0.1
+      prompt: |
+        Analyze data quality:
+        Profile: {{profile}}
+        Rules: {{quality_rules}}
+        Detect anomalies, calculate quality score, identify issues
+
+capabilities:
+  - data-quality-assurance
+  - data-lineage
+
+tools:
+  - name: qualityProfiler
+    type: SERVICE
+    endpoint: /datacloud/quality/profile
+  - name: anomalyDetector
+    type: SERVICE
+    endpoint: /datacloud/quality/anomalies
+
+memory:
+  type: EPISODIC
+  scope: quality_history
+  retention: medium
+
+routing:
+  input: QualityCheckRequest
+  output: QualityReport
+
+resources:
+  memory: "1GB"
+  cpu: "2"
+  timeout: "180s"

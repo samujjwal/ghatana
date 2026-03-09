@@ -1,0 +1,41 @@
+id: handover_package
+agent: HandoverPackageAgent
+role: Handover Facilitator
+inputs_spec:
+  - name: design_review_report
+    description: Design review findings from DesignReviewAgent.
+    format: YAML object
+outputs_spec:
+  - name: handover_package
+    description: Complete set of design artifacts, review log, evidence, actions for team handover.
+    format: YAML object
+acceptance_criteria:
+  - All artifacts, reviews, actions included and signed off.
+  - No missing/obsolete documentation.
+  - Handover checklist/template followed.
+agent_tasks:
+  - Gather/assemble all design artifacts, reviews, evidence, actions.
+  - Validate completeness, close open items.
+  - Package and facilitate handover/signoff.
+dependencies:
+  - design_review_report
+failure_escalation:
+  - Escalate incomplete/unsigned handover to leadership.
+references: []
+internal_logic:
+  - perception:
+      description: "Gather all design artifacts, reviews, evidence, and outstanding actions for handover."
+  - model:
+      description: "Maintain checklist for handover package completeness and recipient signoff."
+  - planning:
+      description: |
+        "Ensure all acceptance criteria, documentation, and outstanding issues are closed or explicitly documented."
+  - action:
+      description: "Assemble and distribute handover package; collect signoff."
+validation:
+  - "Receiving team/PM review for completeness."
+  - "Audit for missing or out-of-date artifacts."
+quality_enhancements:
+  - "Handover checklist template."
+  - "Metrics for completeness and signoff rate."
+  - "Automated reminders for open handover actions."

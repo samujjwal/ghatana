@@ -1,0 +1,33 @@
+id: data_model_design
+agent: SolutionApproachAgent
+role: Data Architect
+inputs_spec:
+- name: design_stage_milestone
+  description: Design stage milestone plan.
+  format: List of milestone objects
+outputs_spec:
+- name: data_models
+  description: Data models for all key entities, with types, relationships, constraints, normalization, and sensitive data flags.
+  format: List of data model objects (entity, fields, relationships, constraints, normalization, sensitive_fields)
+  example: "- entity: \"User\"\n  fields: [\"id\", \"name\", \"email\"]\n  relationships: [\"User-Role\"]\n  constraints: [\"email unique\"]\n  normalization: \"3NF\"\n  sensitive_fields: [\"email\"]\n"
+agent_tasks:
+- Define and document data models for all key entities.
+- Specify data types, relationships, and constraints.
+- Justify normalization and denormalization choices.
+- Identify and flag sensitive data fields.
+- Ensure data model aligns with API contracts and business logic.
+acceptance_criteria:
+- Data models for all key entities are defined and documented.
+- Data types, relationships, and constraints are specified.
+- Normalization and denormalization choices are justified.
+- Sensitive data fields are identified and flagged.
+- Data model aligns with API contracts and business logic.
+dependencies:
+- design_stage_milestone
+failure_escalation:
+- Escalate to Data Architect or PM if data models are incomplete or incorrect.
+references: []
+hitl: true
+hitl_reason: Human reviews data models for correctness and normalization
+
+# [!!] No custom enhancement found.

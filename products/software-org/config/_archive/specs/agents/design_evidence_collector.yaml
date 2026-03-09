@@ -1,0 +1,48 @@
+id: design_evidence_collector
+agent: EvidenceCollectorAgent
+role: Compliance Evidence Bot
+inputs_spec:
+- name: design_audit_log
+  description: Design stage audit log artifact.
+  format: Audit log artifact
+- name: design_success_criteria_status
+  description: Status of design stage success criteria.
+  format: List of criteria status objects
+- name: design_stage_milestone
+  description: Design stage milestone plan.
+  format: List of milestone objects
+outputs_spec:
+- name: design_evidence_package
+  description: Evidence package for Design stage, including all artifacts, audit logs, signoffs, and KPIs, linked to compliance requirements.
+  format: Evidence package artifact (artifacts, hashes, compliance_links, archive_location, access_logs)
+  example: 'artifacts: ["api_contracts.yaml", "audit_log.json"]
+
+    hashes: ["abc123", "def456"]
+
+    compliance_links: ["GDPR", "HIPAA"]
+
+    archive_location: "s3://evidence/"
+
+    access_logs: ["2024-09-01T10:00:00Z - user1"]
+
+    '
+agent_tasks:
+- Collect and hash all artifacts, audit logs, signoffs, and KPIs for the Design stage.
+- Link evidence to compliance and regulatory requirements.
+- Archive evidence package in tamper-evident storage.
+- Maintain access logs for evidence package.
+acceptance_criteria:
+- Collects and hashes all artifacts, audit logs, signoffs, and KPIs for the stage.
+- Evidence is linked to compliance and regulatory requirements.
+- Evidence package is archived in tamper-evident storage.
+- Access logs for evidence package are maintained.
+dependencies:
+- design_audit_log
+- design_success_criteria_status
+- design_stage_milestone
+failure_escalation:
+- Escalate to compliance lead if evidence package is incomplete or not archived securely.
+references: []
+hitl: false
+
+# [!!] No custom enhancement found.

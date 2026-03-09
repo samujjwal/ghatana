@@ -1,0 +1,112 @@
+domain:
+  id: task-decomposition-estimation
+  name: "Task Decomposition & Estimation"
+  description: "Break down work and estimate effort."
+  order: 10
+  icon: "list_alt"
+  color: "#FFEE58"
+  agent_personas:
+    - "TaskPlanner"
+    - "EstimationAgent"
+    - "SprintPlanner"
+  audit_artifacts:
+    - "PlanVersion"
+    - "EstimationLog"
+    - "SprintPlan"
+  inputs:
+    - "Design specs"
+    - "Requirements"
+    - "Team capacity"
+  outputs:
+    - "Task breakdown"
+    - "Estimates"
+    - "Sprint backlog"
+
+tasks:
+  # Core ICS decomposition tasks
+  - id: d10-t1
+    name: "Break work into tasks"
+    description: "Decompose features into actionable tasks."
+    personas: ["Developer", "Tech Lead"]
+    lifecycle_stages: ["plan"]
+    automation_level: "assisted"
+  - id: d10-t2
+    name: "Estimate effort"
+    description: "Assign time or point estimates."
+    personas: ["Developer", "Tech Lead"]
+    lifecycle_stages: ["plan"]
+    automation_level: "assisted"
+  - id: d10-t3
+    name: "Identify dependencies"
+    description: "Map task dependencies."
+    personas: ["Developer", "Tech Lead"]
+    lifecycle_stages: ["plan"]
+    automation_level: "assisted"
+  - id: d10-t4
+    name: "Capacity planning"
+    description: "Plan work based on team capacity."
+    personas: ["Tech Lead", "PM"]
+    lifecycle_stages: ["plan"]
+    automation_level: "assisted"
+
+  # Migrated from legacy planning domain
+  - id: plan-001
+    name: "Create Sprint/Iteration Plan"
+    description: "Plan work for the upcoming sprint or iteration."
+    personas: ["Developer", "Tech Lead", "PM"]
+    lifecycle_stages: ["plan"]
+    automation_level: "assisted"
+  - id: plan-002
+    name: "Break Down Tasks"
+    description: "Decompose user stories into specific development tasks."
+    personas: ["Developer", "Tech Lead"]
+    lifecycle_stages: ["plan"]
+    automation_level: "assisted"
+  - id: plan-003
+    name: "Estimate Task Effort"
+    description: "Provide time or story point estimates for tasks."
+    personas: ["Developer", "Tech Lead"]
+    lifecycle_stages: ["plan"]
+    automation_level: "assisted"
+  - id: plan-004
+    name: "Identify Task Dependencies"
+    description: "Map dependencies between tasks for proper sequencing."
+    personas: ["Developer", "Tech Lead"]
+    lifecycle_stages: ["plan"]
+    automation_level: "assisted"
+  - id: plan-005
+    name: "Sequence Tasks"
+    description: "Order tasks based on dependencies and priorities."
+    personas: ["Developer", "Tech Lead"]
+    lifecycle_stages: ["plan"]
+    automation_level: "assisted"
+  - id: plan-006
+    name: "Assign Tasks"
+    description: "Allocate tasks to team members based on skills."
+    personas: ["Tech Lead", "PM"]
+    lifecycle_stages: ["plan"]
+    automation_level: "assisted"
+  - id: plan-007
+    name: "Risk Assessment"
+    description: "Identify and assess risks for the planned work."
+    personas: ["Developer", "Tech Lead"]
+    lifecycle_stages: ["plan"]
+    automation_level: "assisted"
+  - id: plan-008
+    name: "Define Milestones"
+    description: "Set key milestones for tracking progress."
+    personas: ["Tech Lead", "PM"]
+    lifecycle_stages: ["plan"]
+    automation_level: "assisted"
+  - id: plan-009
+    name: "Plan Contingencies"
+    description: "Prepare backup plans for identified risks."
+    personas: ["Developer", "Tech Lead"]
+    lifecycle_stages: ["plan"]
+    automation_level: "assisted"
+  - id: plan-010
+    name: "Track Plan Progress"
+    description: "Monitor progress against the plan."
+    personas: ["Developer", "Tech Lead", "PM"]
+    lifecycle_stages: ["execute", "observe"]
+    automation_level: "automated"

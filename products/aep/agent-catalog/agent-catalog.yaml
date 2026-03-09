@@ -1,0 +1,29 @@
+# AEP Agent Catalog
+#
+# Defines agents specific to the Agentic Event Processing product.
+# Extends the platform catalog with event-processing capabilities.
+
+catalog:
+  id: "aep"
+  name: "Agentic Event Processing Catalog"
+  version: "1.0.0"
+
+  # Extends platform catalog (inherits base capabilities)
+  extends:
+    - "platform"
+
+  # Agent definition files (glob patterns relative to this file)
+  agents:
+    - "operators/**/*-agent.yaml"
+    - "operators/**/*-orchestrator.yaml"
+
+  # AEP-specific capabilities extending base taxonomy
+  capabilities:
+    taxonomy: "capabilities/aep-capabilities.yaml"
+
+  metadata:
+    maintainer: "aep-team@ghatana.ai"
+    scope: "event-processing"
+    dependencies:
+      - "platform"
+    priority: 200

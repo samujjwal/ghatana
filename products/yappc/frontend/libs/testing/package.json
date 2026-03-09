@@ -1,0 +1,46 @@
+{
+    "name": "@ghatana/yappc-testing",
+    "version": "1.0.0",
+    "description": "Unified testing utilities, helpers, and mocks for YAPPC",
+    "type": "module",
+    "main": "./src/index.ts",
+    "types": "./src/index.ts",
+    "exports": {
+        ".": {
+            "import": "./src/index.ts",
+            "types": "./src/index.ts"
+        },
+        "./helpers": {
+            "import": "./src/helpers/index.ts",
+            "types": "./src/helpers/index.ts"
+        },
+        "./mocks": {
+            "import": "./src/mocks/index.ts",
+            "types": "./src/mocks/index.ts"
+        },
+        "./utils": {
+            "import": "./src/utils/index.ts",
+            "types": "./src/utils/index.ts"
+        }
+    },
+    "scripts": {
+        "build": "tsc",
+        "test": "vitest run",
+        "lint": "eslint src --ext .ts,.tsx",
+        "type-check": "tsc --noEmit"
+    },
+    "devDependencies": {
+        "@types/node": "^25.2.0",
+        "typescript": "^5.9.3",
+        "vitest": "^4.0.18"
+    },
+    "keywords": [
+        "testing",
+        "test-utils",
+        "mocks",
+        "helpers",
+        "vitest"
+    ],
+    "author": "YAPPC Team",
+    "license": "MIT"
+}

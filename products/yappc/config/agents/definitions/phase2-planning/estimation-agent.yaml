@@ -1,0 +1,106 @@
+id: estimation-agent
+name: Estimation Agent
+version: 1.0.0
+description: Provides effort and duration estimates for work items. Uses historical data, complexity analysis, and estimation techniques.
+
+metadata:
+  level: 3  # Worker
+  domain: planning
+  tags:
+    - estimation
+    - effort-sizing
+    - complexity-analysis
+    - historical-learning
+
+generator:
+  type: PIPELINE
+  steps:
+    - name: complexity_analysis
+      type: LLM
+      provider: ANTHROPIC
+      model: claude-3-5-sonnet-20241022
+      temperature: 0.2
+      max_tokens: 2000
+      prompt: |
+        You are the Estimation Agent. Estimate this work item:
+        
+        Work Item: {{item}}
+        Historical Similar Items: {{similar}}
+        Team Context: {{team}}
+        
+        Analyze:
+        1. Complexity factors (technical, domain, integration)
+        2. Unknowns and risks
+        3. Dependencies
+        4. Required skills
+        
+        Estimate using:
+        - Three-point estimation (optimistic, likely, pessimistic)
+        - Story points (if applicable)
+        - Duration in days
+        
+        Output as JSON: {complexity_factors, unknowns, dependencies, optimistic, likely, pessimistic, story_points, duration_days, confidence, assumptions}
+    - name: historical_calibration
+      type: RULE_BASED
+      description: Calibrate against historical accuracy
+    - name: estimate_registration
+      type: SERVICE_CALL
+      service: estimation-service
+      endpoint: /estimates/register
+
+memory:
+  episodic:
+    enabled: true
+    retention_days: 730
+    categories:
+      - estimates
+      - actuals
+      - accuracy-tracking
+  semantic:
+    enabled: true
+    categories:
+      - complexity-patterns
+      - estimation-benchmarks
+      - accuracy-models
+  procedural:
+    enabled: true
+    categories:
+      - estimation-techniques
+      - calibration-formulas
+      - confidence-calculation
+
+tools:
+  - complexity_analyzer
+  - historical_matcher
+  - accuracy_tracker
+
+capabilities:
+  - effort-estimation
+  - complexity-analysis
+  - historical-calibration
+  - confidence-scoring
+
+routing:
+  input_types:
+    - work-item
+    - estimation-request
+    - re-estimation-trigger
+  output_types:
+    - estimate
+    - estimation-report
+    - accuracy-analysis
+
+delegation:
+  can_delegate_to: []
+  escalates_to:
+    - sprint-planner-agent
+
+governance:
+  requires_approval: false
+  can_block: false
+  audit_trail: standard
+
+performance:
+  expected_latency_ms: 2000
+  max_latency_ms: 5000
+  timeout_ms: 10000

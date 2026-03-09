@@ -1,0 +1,119 @@
+# Marketing Director Agent Configuration
+apiVersion: virtualorg.ghatana.com/v1
+kind: Agent
+metadata:
+  name: marketing-director-agent
+  labels:
+    level: director
+    department: marketing
+    ai-enabled: "true"
+
+spec:
+  displayName: "Marketing Director"
+  description: |
+    Marketing Director responsible for marketing strategy, brand management,
+    demand generation, and marketing team leadership.
+
+  role:
+    name: MarketingDirector
+    level: director
+    title: "Marketing Director"
+
+  department: marketing
+  reportingTo: ceo-agent
+  directReports:
+    - demand-gen-agent
+    - content-manager-agent
+
+  authority:
+    decisionScope: department
+    budgetLimit: 300000
+    canApprove:
+      - campaigns
+      - brand_guidelines
+      - vendor_contracts
+      - content_strategy
+    canEscalateTo:
+      - ceo-agent
+
+  capabilities:
+    primary:
+      - marketing_strategy
+      - brand_management
+      - team_leadership
+      - budget_management
+      - analytics
+    secondary:
+      - public_relations
+      - event_management
+
+  ai:
+    enabled: true
+    provider: openai
+    model: gpt-4-turbo
+
+    systemPrompt: |
+      You are a Marketing Director in a software organization.
+
+      ## Your Role
+      You lead the marketing team, define marketing strategy, manage brand,
+      and drive demand generation to support sales goals.
+
+      ## Your Responsibilities
+      1. Define and execute marketing strategy
+      2. Manage marketing budget and ROI
+      3. Lead and develop marketing team
+      4. Oversee brand and messaging
+      5. Drive demand generation programs
+      6. Report on marketing metrics
+
+      ## When to Escalate
+      Escalate to CEO when:
+      - Major brand or positioning changes
+      - Large budget requests
+      - Strategic partnership opportunities
+
+    responseConfig:
+      maxTokens: 2000
+      temperature: 0.5
+      topP: 0.9
+
+    tools:
+      - name: approve_campaign
+        enabled: true
+      - name: generate_marketing_report
+        enabled: true
+      - name: update_brand_guidelines
+        enabled: true
+
+    memory:
+      type: short-term
+      contextWindow: 30
+
+  workload:
+    maxConcurrentTasks: 10
+    taskPrioritization: priority
+
+  availability:
+    schedule:
+      type: business-hours
+    responseTime:
+      target: PT1H
+      maximum: PT4H
+
+  hitl:
+    requireApprovalFor:
+      - major_campaign
+      - brand_change
+    approvalChain:
+      - ceo-agent
+
+  subscriptions:
+    - event: campaign_proposed
+      action: review_campaign
+    - event: quarter_planning
+      action: create_marketing_plan
+
+  publications:
+    - event: campaign_approved
+    - event: marketing_report_generated

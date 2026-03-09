@@ -1,0 +1,30 @@
+# Build stage
+FROM golang:{{goVersion}}-alpine AS builder
+
+WORKDIR /app
+
+COPY go.mod go.sum ./
+RUN go mod download
+
+COPY . .
+RUN CGO_ENABLED=0 GOOS=linux go build -o server .
+
+# Runtime stage
+FROM alpine:3.20
+
+RUN apk add --no-cache ca-certificates
+
+WORKDIR /app
+COPY --from=builder /app/server .
+
+RUN addgroup -g 1001 -S appgroup && \
+    adduser -u 1001 -S appuser -G appgroup
+USER appuser
+
+ENV PORT={{backendPort}}
+EXPOSE {{backendPort}}
+
+HEALTHCHECK --interval=30s --timeout=3s \
+    CMD wget --no-verbose --tries=1 --spider http://localhost:{{backendPort}}/api/health || exit 1
+
+CMD ["./server"]

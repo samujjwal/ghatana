@@ -1,0 +1,229 @@
+{
+  "name": "ts-react-vite",
+  "version": "1.0.0",
+  "description": "TypeScript React application with Vite, modern tooling, and best practices",
+  "author": "Ghatana YAPPC Team",
+  "license": "Apache-2.0",
+  "tags": ["typescript", "react", "vite", "frontend", "spa", "pwa"],
+  "type": "application",
+  "language": "typescript",
+  "framework": "react",
+  "dependencies": {
+    "runtime": [
+      "react:^18.3.1",
+      "react-dom:^18.3.1",
+      "react-router-dom:^6.28.0"
+    ],
+    "build": ["node:18+", "pnpm:8+"],
+    "devDependencies": [
+      "typescript:^5.6.3",
+      "vite:^5.4.8",
+      "@vitejs/plugin-react-swc:^3.7.1",
+      "eslint:^9.12.0",
+      "@typescript-eslint/eslint-plugin:^8.8.1",
+      "@typescript-eslint/parser:^8.8.1",
+      "prettier:^3.3.3",
+      "vitest:^2.1.2",
+      "@testing-library/react:^16.0.1",
+      "@testing-library/jest-dom:^6.6.2"
+    ],
+    "plugins": ["@vitejs/plugin-react-swc", "@vitejs/plugin-pwa"]
+  },
+  "templates": {
+    "package-json": {
+      "source": "templates/package.json.hbs",
+      "target": "package.json",
+      "merge": "replace"
+    },
+    "tsconfig": {
+      "source": "templates/tsconfig.json.hbs",
+      "target": "tsconfig.json",
+      "merge": "replace"
+    },
+    "tsconfig-node": {
+      "source": "templates/tsconfig.node.json.hbs",
+      "target": "tsconfig.node.json",
+      "merge": "replace"
+    },
+    "vite-config": {
+      "source": "templates/vite.config.ts.hbs",
+      "target": "vite.config.ts",
+      "merge": "replace"
+    },
+    "eslint-config": {
+      "source": "templates/.eslintrc.json.hbs",
+      "target": ".eslintrc.json",
+      "merge": "replace"
+    },
+    "prettier-config": {
+      "source": "templates/.prettierrc.hbs",
+      "target": ".prettierrc",
+      "merge": "replace"
+    },
+    "index-html": {
+      "source": "templates/index.html.hbs",
+      "target": "index.html",
+      "merge": "replace"
+    },
+    "main-tsx": {
+      "source": "templates/src/main.tsx.hbs",
+      "target": "src/main.tsx",
+      "merge": "skip-if-exists"
+    },
+    "app-tsx": {
+      "source": "templates/src/App.tsx.hbs",
+      "target": "src/App.tsx",
+      "merge": "skip-if-exists"
+    },
+    "app-css": {
+      "source": "templates/src/App.css.hbs",
+      "target": "src/App.css",
+      "merge": "skip-if-exists"
+    },
+    "index-css": {
+      "source": "templates/src/index.css.hbs",
+      "target": "src/index.css",
+      "merge": "skip-if-exists"
+    },
+    "router": {
+      "source": "templates/src/components/Router.tsx.hbs",
+      "target": "src/components/Router.tsx",
+      "merge": "skip-if-exists"
+    },
+    "home-page": {
+      "source": "templates/src/pages/Home.tsx.hbs",
+      "target": "src/pages/Home.tsx",
+      "merge": "skip-if-exists"
+    },
+    "about-page": {
+      "source": "templates/src/pages/About.tsx.hbs",
+      "target": "src/pages/About.tsx",
+      "merge": "skip-if-exists"
+    },
+    "api-client": {
+      "source": "templates/src/services/api.ts.hbs",
+      "target": "src/services/api.ts",
+      "merge": "skip-if-exists"
+    },
+    "types": {
+      "source": "templates/src/types/index.ts.hbs",
+      "target": "src/types/index.ts",
+      "merge": "skip-if-exists"
+    },
+    "dockerfile": {
+      "source": "templates/Dockerfile.hbs",
+      "target": "Dockerfile",
+      "merge": "replace",
+      "condition": "enableDocker"
+    },
+    "docker-compose": {
+      "source": "templates/docker-compose.yml.hbs",
+      "target": "docker-compose.yml",
+      "merge": "skip-if-exists",
+      "condition": "enableDocker"
+    },
+    "nginx-config": {
+      "source": "templates/nginx.conf.hbs",
+      "target": "nginx.conf",
+      "merge": "replace",
+      "condition": "enableDocker"
+    },
+    "vitest-config": {
+      "source": "templates/vitest.config.ts.hbs",
+      "target": "vitest.config.ts",
+      "merge": "replace"
+    },
+    "app-test": {
+      "source": "templates/src/__tests__/App.test.tsx.hbs",
+      "target": "src/__tests__/App.test.tsx",
+      "merge": "skip-if-exists"
+    },
+    "test-setup": {
+      "source": "templates/src/test-setup.ts.hbs",
+      "target": "src/test-setup.ts",
+      "merge": "replace"
+    }
+  },
+  "hooks": {
+    "pre-generation": ["yappc doctor --tools node,pnpm"],
+    "post-generation": [
+      "yappc codemod --format-imports --fix-common",
+      "pnpm install", 
+      "pnpm run typecheck", 
+      "pnpm run lint"
+    ]
+  },
+  "variables": {
+    "projectName": {
+      "type": "string",
+      "description": "Project name (used for package.json and HTML title)",
+      "required": true,
+      "validation": "^[a-z][a-z0-9-]*$"
+    },
+    "description": {
+      "type": "string",
+      "description": "Project description",
+      "required": true
+    },
+    "author": {
+      "type": "string",
+      "description": "Author name",
+      "required": true
+    },
+    "version": {
+      "type": "string",
+      "description": "Initial version",
+      "default": "0.1.0",
+      "validation": "^\\d+\\.\\d+\\.\\d+$"
+    },
+    "license": {
+      "type": "string",
+      "description": "License type",
+      "default": "MIT",
+      "options": ["MIT", "Apache-2.0", "GPL-3.0", "BSD-3-Clause", "ISC"]
+    },
+    "port": {
+      "type": "number",
+      "description": "Development server port",
+      "default": 3000
+    },
+    "enableRouter": {
+      "type": "boolean",
+      "description": "Enable React Router for SPA navigation",
+      "default": true
+    },
+    "enablePWA": {
+      "type": "boolean",
+      "description": "Enable Progressive Web App features",
+      "default": false
+    },
+    "enableDocker": {
+      "type": "boolean",
+      "description": "Generate Docker configuration",
+      "default": true
+    },
+    "cssFramework": {
+      "type": "string",
+      "description": "CSS framework to use",
+      "default": "vanilla",
+      "options": [
+        "vanilla",
+        "tailwind",
+        "styled-components",
+        "emotion",
+        "chakra-ui"
+      ]
+    },
+    "stateManagement": {
+      "type": "string",
+      "description": "State management library",
+      "default": "react-hooks",
+      "options": ["react-hooks", "zustand", "redux-toolkit", "jotai", "valtio"]
+    }
+  },
+  "requirements": {
+    "node-version": "18+",
+    "pnpm": true,
+    "tools": ["node", "pnpm"]
+  }
+}

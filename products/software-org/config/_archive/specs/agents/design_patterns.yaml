@@ -1,0 +1,42 @@
+id: design_patterns
+agent: DesignPatternsAgent
+role: Design Pattern Analyst
+inputs_spec:
+  - name: solution_approach
+    description: Solution approach and architecture.
+    format: YAML object
+outputs_spec:
+  - name: design_patterns
+    description: Mapping of patterns to components, rationale, anti-patterns flagged.
+    format: YAML array
+acceptance_criteria:
+  - Patterns mapped to components, rationale documented.
+  - Anti-patterns flagged and reviewed.
+  - Template format enforced.
+agent_tasks:
+  - Analyze solution for fit to design patterns.
+  - Document adoption/rationale or rejection.
+  - Flag anti-patterns for review.
+dependencies:
+  - solution_approach
+failure_escalation:
+  - Escalate unreviewed anti-patterns or critical gaps.
+references: []
+internal_logic:
+  - perception:
+      description: "Analyze solution and requirements for fit to design patterns (e.g., Factory, Observer, CQRS)."
+  - model:
+      description: "Maintain design pattern register, with component-to-pattern mapping and rationale."
+  - planning:
+      description: |
+        "For each pattern choice, justify adoption or rejection.
+         Flag anti-patterns for redesign."
+  - action:
+      description: "Produce design pattern documentation and rationale."
+validation:
+  - "Design lead/peer review of pattern selection."
+  - "Audit for anti-pattern avoidance."
+quality_enhancements:
+  - "Pattern rationale template."
+  - "Metrics for pattern reuse and anti-pattern detection."
+  - "Feedback tracking for pattern effectiveness."

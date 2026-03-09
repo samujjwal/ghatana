@@ -1,0 +1,205 @@
+name: CI/CD Pipeline
+
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
+  workflow_dispatch:
+
+env:
+  GO_VERSION: '1.25'
+  RUST_VERSION: '1.75'
+  DOCKER_IMAGE: ghcr.io/samujjwal/dcmaar
+
+jobs:
+  test:
+    name: Run Tests
+    runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:15
+        env:
+          POSTGRES_PASSWORD: test
+          POSTGRES_DB: testdb
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+
+    steps:
+    - uses: actions/checkout@v4
+
+    # Set up Go
+    - name: Set up Go
+      uses: actions/setup-go@v4
+      with:
+        go-version: ${{ env.GO_VERSION }}
+
+    # Set up Rust
+    - name: Set up Rust
+      uses: actions-rs/toolchain@v1
+      with:
+        toolchain: ${{ env.RUST_VERSION }}
+        profile: minimal
+        components: rustfmt, clippy
+        override: true
+
+    # Cache dependencies
+    - name: Cache Go modules
+      uses: actions/cache@v3
+      with:
+        path: ~/go/pkg/mod
+        key: ${{ runner.os }}-go-${{ hashFiles('**/go.sum') }}
+        restore-keys: |
+          ${{ runner.os }}-go-
+
+    - name: Cache Rust dependencies
+      uses: actions/cache@v3
+      with:
+        path: |
+          ~/.cargo/registry
+          ~/.cargo/git
+          target
+        key: ${{ runner.os }}-cargo-${{ hashFiles('**/Cargo.lock') }}
+
+    # Run Go tests
+    - name: Run Go tests
+      working-directory: ./services/server
+      run: |
+        go test -v -race -coverprofile=coverage.txt -covermode=atomic ./...
+
+    # Run Rust tests
+    - name: Run Rust tests
+      run: |
+        cargo test --workspace --verbose
+
+    # Run E2E smoke tests
+    - name: Run E2E smoke tests
+      working-directory: ./tools/smoke
+      run: |
+        chmod +x e2e-walk-data.sh
+        ./e2e-walk-data.sh
+
+  build:
+    name: Build and Push
+    needs: test
+    runs-on: ubuntu-latest
+    if: github.ref == 'refs/heads/main' && github.event_name != 'pull_request'
+
+    steps:
+    - uses: actions/checkout@v4
+
+    - name: Set up Docker Buildx
+      uses: docker/setup-buildx-action@v2
+
+    - name: Login to GitHub Container Registry
+      uses: docker/login-action@v2
+      with:
+        registry: ghcr.io
+        username: ${{ github.actor }}
+        password: ${{ secrets.GITHUB_TOKEN }}
+
+    - name: Extract metadata (tags, labels) for Docker
+      id: meta
+      uses: docker/metadata-action@v4
+      with:
+        images: ${{ env.DOCKER_IMAGE }}
+        tags: |
+          type=sha,format=long
+          type=ref,event=branch
+          type=ref,event=pr
+          type=semver,pattern={{version}}
+          type=semver,pattern={{major}}.{{minor}}
+
+    - name: Build and push
+      uses: docker/build-push-action@v4
+      with:
+        context: .
+        push: true
+        tags: ${{ steps.meta.outputs.tags }}
+        labels: ${{ steps.meta.outputs.labels }}
+
+  deploy-staging:
+    name: Deploy to Staging
+    needs: build
+    runs-on: ubuntu-latest
+    environment: staging
+    if: github.ref == 'refs/heads/main' && github.event_name != 'pull_request'
+
+    steps:
+    - name: Deploy to Kubernetes
+      uses: Azure/k8s-deploy@v4
+      with:
+        namespace: staging
+        manifests: |
+          k8s/staging/deployment.yaml
+          k8s/staging/service.yaml
+          k8s/staging/ingress.yaml
+        images: |
+          ${{ env.DOCKER_IMAGE }}:${{ github.sha }}
+
+    - name: Verify deployment
+      run: |
+        # Run verification tests against staging
+        ./tools/smoke/verify-staging.sh
+
+  deploy-production:
+    name: Deploy to Production
+    needs: [test, build, deploy-staging]
+    runs-on: ubuntu-latest
+    environment: production
+    if: github.ref == 'refs/heads/main' && github.event_name != 'pull_request'
+
+    steps:
+    - name: Deploy to Production with Canary
+      uses: Azure/k8s-deploy@v4
+      with:
+        namespace: production
+        strategy: canary
+        traffic-split-method: smi
+        baseline-and-canary-replicas: 2
+        action: deploy  # deploy, promote, reject, breakglass
+        manifests: |
+          k8s/production/canary-deployment.yaml
+          k8s/production/service.yaml
+
+    - name: Run Canary Analysis
+      run: |
+        # Run canary analysis for 5 minutes
+        ./tools/canary/analyze.sh --duration 5m --threshold 0.1
+
+    - name: Promote Canary
+      if: success()
+      uses: Azure/k8s-deploy@v4
+      with:
+        namespace: production
+        strategy: canary
+        action: promote
+
+    - name: Rollback on Failure
+      if: failure()
+      uses: Azure/k8s-deploy@v4
+      with:
+        namespace: production
+        strategy: canary
+        action: reject
+
+  notify:
+    name: Notify Status
+    needs: [deploy-production]
+    runs-on: ubuntu-latest
+    if: always()
+
+    steps:
+    - name: Send Slack Notification
+      uses: rtCamp/action-slack-notify@v2
+      env:
+        SLACK_WEBHOOK: ${{ secrets.SLACK_WEBHOOK }}
+        SLACK_CHANNEL: deployments
+        SLACK_TITLE: "Deployment ${{ job.status }}"
+        SLACK_MESSAGE: "Deployment completed with status: ${{ job.status }}"
+        SLACK_COLOR: ${{ job.status == 'success' && 'good' || 'danger' }}

@@ -1,0 +1,35 @@
+---
+id: "test_progress_dashboard"
+agent: "ProgressDashboardAgent"
+role: "Test Progress Dashboard Owner"
+inputs_spec:
+- name: "test_coverage_report"
+  description: "Latest code/test coverage report."
+  format: "Coverage report artifact"
+- name: "test_success_criteria_status"
+  description: "Status for all test stage criteria."
+  format: "List of criteria status objects"
+- name: "test_execution_plan"
+  description: "Test execution plan for dashboard visualization."
+  format: "Test execution plan artifact"
+outputs_spec:
+- name: "test_progress_dashboard"
+  description: "Dashboard showing test coverage, criteria, plan, bottlenecks, and\
+    \ critical paths."
+  format: "Dashboard artifact"
+agent_tasks:
+- "Visualize test coverage, criteria, execution plan in dashboard."
+- "Update dashboard in real time for team."
+- "Highlight critical path, blocked dependencies, bottlenecks, overdue milestones."
+acceptance_criteria:
+- "Dashboard visualizes test coverage, criteria, plan, and bottlenecks."
+- "Dashboard is updated in real time for the team."
+- "Critical path and blockers are highlighted."
+dependencies:
+- "test_coverage_report"
+- "test_success_criteria_status"
+- "test_execution_plan"
+failure_escalation:
+- "Escalate to Dashboard Owner/QA if dashboard is not current or actionable."
+references: []
+hitl: false

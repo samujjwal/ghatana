@@ -1,0 +1,275 @@
+syntax = "proto3";
+
+package ghatana.tutorputor.v1;
+
+import "tutorputor_content_generation.proto";
+
+option java_multiple_files = true;
+option java_package = "com.ghatana.tutorputor.contracts.v1";
+option java_outer_classname = "ValidationProto";
+
+// ============================================================================
+// Validation Service
+// ============================================================================
+
+service ValidationService {
+  // Validate content for correctness, completeness, concreteness, conciseness
+  rpc ValidateContent(ValidateContentRequest) returns (ValidateContentResponse);
+  
+  // Check fact accuracy against authoritative sources
+  rpc VerifyFact(VerifyFactRequest) returns (VerifyFactResponse);
+  
+  // Check correctness of multiple claims
+  rpc CheckCorrectness(CheckCorrectnessRequest) returns (CheckCorrectnessResponse);
+  
+  // Check completeness (all claims have examples/evidence/tasks)
+  rpc CheckCompleteness(CheckCompletenessRequest) returns (CheckCompletenessResponse);
+  
+  // Check concreteness (abstract concepts have concrete examples)
+  rpc CheckConcreteness(CheckConcretenessRequest) returns (CheckConcretenessResponse);
+  
+  // Check conciseness (reading level, word count)
+  rpc CheckConciseness(CheckConcisenessRequest) returns (CheckConcisenessResponse);
+}
+
+// ============================================================================
+// Validate Content (Comprehensive)
+// ============================================================================
+
+message ValidateContentRequest {
+  string request_id = 1;
+  string experience_id = 2;
+  ContentToValidate content = 3;
+  ValidationConfig config = 4;
+}
+
+message ValidateContentResponse {
+  string request_id = 1;
+  ValidationReport report = 2;
+}
+
+message ContentToValidate {
+  string title = 1;
+  string domain = 2;
+  GradeLevel grade_level = 3;
+  repeated ClaimToValidate claims = 4;
+  repeated EvidenceToValidate evidences = 5;
+  repeated TaskToValidate tasks = 6;
+}
+
+message ClaimToValidate {
+  string claim_ref = 1;
+  string text = 2;
+  BloomLevel bloom_level = 3;
+}
+
+message EvidenceToValidate {
+  string evidence_ref = 1;
+  string claim_ref = 2;
+  string type = 3;
+  string description = 4;
+}
+
+message TaskToValidate {
+  string task_ref = 1;
+  string claim_ref = 2;
+  string type = 3;
+  string prompt = 4;
+}
+
+message ValidationConfig {
+  bool check_correctness = 1;
+  bool check_completeness = 2;
+  bool check_concreteness = 3;
+  bool check_conciseness = 4;
+  float min_confidence_threshold = 5; // 0-1
+}
+
+message ValidationReport {
+  bool passed = 1;
+  float overall_score = 2; // 0-100
+  CorrectnessReport correctness = 3;
+  CompletenessReport completeness = 4;
+  ConcretenessReport concreteness = 5;
+  ConcisenessReport conciseness = 6;
+  repeated ValidationIssue issues = 7;
+  repeated string recommendations = 8;
+}
+
+message CorrectnessReport {
+  float score = 1; // 0-100
+  int32 total_facts = 2;
+  int32 verified_facts = 3;
+  int32 contradicted_facts = 4;
+  repeated FactCheckResult fact_checks = 5;
+  repeated string recommendations = 6;
+}
+
+// ============================================================================
+// Fact Verification
+// ============================================================================
+
+message VerifyFactRequest {
+  string request_id = 1;
+  string claim = 2;
+  string domain = 3;
+  repeated string knowledge_bases = 4; // "wikipedia", "wolfram", etc.
+}
+
+message VerifyFactResponse {
+  string request_id = 1;
+  FactCheckResult result = 2;
+}
+
+message FactCheckResult {
+  VerificationStatus status = 1;
+  float confidence = 2; // 0-1
+  repeated Source supporting_sources = 3;
+  repeated Contradiction contradictions = 4;
+  string explanation = 5;
+}
+
+message Source {
+  string name = 1;
+  string url = 2;
+  string excerpt = 3;
+  float relevance_score = 4;
+}
+
+message Contradiction {
+  string source_name = 1;
+  string contradicting_text = 2;
+  string explanation = 3;
+}
+
+// ============================================================================
+// Check Correctness (Multiple Claims)
+// ============================================================================
+
+message CheckCorrectnessRequest {
+  string request_id = 1;
+  repeated string claims = 2;
+  string domain = 3;
+  repeated string knowledge_bases = 4;
+}
+
+message CheckCorrectnessResponse {
+  string request_id = 1;
+  CorrectnessReport report = 2;
+}
+
+// ============================================================================
+// Completeness Check
+// ============================================================================
+
+message CheckCompletenessRequest {
+  string request_id = 1;
+  string experience_id = 2;
+  repeated ClaimCompleteness claims = 3;
+}
+
+message CheckCompletenessResponse {
+  string request_id = 1;
+  CompletenessReport report = 2;
+}
+
+message ClaimCompleteness {
+  string claim_ref = 1;
+  int32 example_count = 2;
+  int32 evidence_count = 3;
+  int32 task_count = 4;
+  bool has_simulation = 5;
+  bool has_animation = 6;
+}
+
+message CompletenessReport {
+  float score = 1; // 0-100
+  int32 total_claims = 2;
+  int32 complete_claims = 3;
+  repeated IncompleteClaim incomplete_claims = 4;
+  repeated string recommendations = 5;
+}
+
+message IncompleteClaim {
+  string claim_ref = 1;
+  repeated string missing_content_types = 2; // "example", "evidence", "task", etc.
+  string recommendation = 3;
+}
+
+// ============================================================================
+// Concreteness Check
+// ============================================================================
+
+message CheckConcretenessRequest {
+  string request_id = 1;
+  repeated ClaimConcreteness claims = 2;
+  GradeLevel grade_level = 3;
+}
+
+message CheckConcretenessResponse {
+  string request_id = 1;
+  ConcretenessReport report = 2;
+}
+
+message ClaimConcreteness {
+  string claim_ref = 1;
+  string claim_text = 2;
+  int32 example_count = 3;
+  repeated string example_types = 4;
+}
+
+message ConcretenessReport {
+  float score = 1; // 0-100
+  repeated AbstractConcept abstract_concepts = 2;
+  float example_to_concept_ratio = 3;
+  repeated string recommendations = 4;
+}
+
+message AbstractConcept {
+  string concept = 1;
+  string claim_ref = 2;
+  bool has_concrete_example = 3;
+  string recommendation = 4;
+}
+
+// ============================================================================
+// Conciseness Check
+// ============================================================================
+
+message CheckConcisenessRequest {
+  string request_id = 1;
+  string content_text = 2;
+  GradeLevel grade_level = 3;
+}
+
+message CheckConcisenessResponse {
+  string request_id = 1;
+  ConcisenessReport report = 2;
+}
+
+message ConcisenessReport {
+  float score = 1; // 0-100
+  float reading_level = 2; // Flesch-Kincaid grade level
+  int32 word_count = 3;
+  int32 max_word_count = 4; // Based on grade level
+  repeated VerboseSection verbose_sections = 5;
+  repeated string simplification_suggestions = 6;
+}
+
+message VerboseSection {
+  string text = 1;
+  string simplified_suggestion = 2;
+  string rationale = 3;
+}
+
+// ============================================================================
+// Common Types (GradeLevel, BloomLevel, Severity, ValidationIssue imported from content_generation.proto)
+// ============================================================================
+
+enum VerificationStatus {
+  VERIFICATION_STATUS_UNSPECIFIED = 0;
+  VERIFIED = 1;
+  PARTIALLY_VERIFIED = 2;
+  CONTRADICTED = 3;
+  INSUFFICIENT_INFO = 4;
+}

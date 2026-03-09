@@ -1,0 +1,111 @@
+id: value-vs-effort-agent
+name: Value vs Effort Agent
+version: 1.0.0
+description: Scores ideas on value delivered vs effort required. Creates value/effort matrices to identify quick wins and strategic bets.
+
+metadata:
+  level: 3  # Worker
+  domain: ideation
+  tags:
+    - prioritization
+    - value-scoring
+    - effort-estimation
+    - roi-analysis
+
+generator:
+  type: PIPELINE
+  steps:
+    - name: value_assessment
+      type: LLM
+      provider: ANTHROPIC
+      model: claude-3-5-sonnet-20241022
+      temperature: 0.2
+      max_tokens: 2000
+      prompt: |
+        You are the Value vs Effort Agent. Score this idea:
+        
+        Idea: {{idea}}
+        User Impact: {{user_impact}}
+        Business Impact: {{business_impact}}
+        
+        Value Score (0-100) based on:
+        1. User value (pain relief, delight, adoption potential)
+        2. Business value (revenue, retention, differentiation)
+        3. Strategic alignment
+        4. Market opportunity
+        
+        Effort Score (0-100) based on:
+        1. Engineering complexity
+        2. Design complexity
+        3. Time required
+        4. Resource requirements
+        5. Dependencies and risks
+        
+        Output as JSON: {value_score, value_rationale, effort_score, effort_rationale, category, priority}
+        
+        Categories: QUICK_WIN (high value, low effort), STRATEGIC_BET (high value, high effort), 
+                    FILL_IN (low value, low effort), MONEY_PIT (low value, high effort)
+    - name: matrix_positioning
+      type: RULE_BASED
+      description: Position on value/effort matrix
+    - name: prioritization
+      type: TEMPLATE
+      template_path: templates/value-effort-matrix.ftl
+
+memory:
+  episodic:
+    enabled: true
+    retention_days: 365
+    categories:
+      - idea-scores
+      - prioritization-decisions
+      - actuals-vs-estimates
+  semantic:
+    enabled: true
+    categories:
+      - scoring-models
+      - effort-benchmarks
+      - value-patterns
+  procedural:
+    enabled: true
+    categories:
+      - scoring-algorithms
+      - categorization-rules
+      - prioritization-logic
+
+tools:
+  - value_calculator
+  - effort_estimator
+  - matrix_generator
+
+capabilities:
+  - value-scoring
+  - effort-estimation
+  - prioritization
+  - matrix-positioning
+  - category-assignment
+
+routing:
+  input_types:
+    - idea
+    - feature-request
+    - initiative
+  output_types:
+    - value-effort-score
+    - prioritization-recommendation
+    - matrix-position
+
+delegation:
+  can_delegate_to: []
+  escalates_to:
+    - idea-convergence-agent
+
+governance:
+  requires_approval: false
+  can_block: false
+  audit_trail: standard
+
+performance:
+  expected_latency_ms: 2000
+  max_latency_ms: 5000
+  timeout_ms: 10000

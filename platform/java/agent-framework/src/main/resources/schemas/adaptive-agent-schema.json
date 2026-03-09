@@ -1,0 +1,107 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://ghatana.com/schemas/agent/v1/adaptive-agent.json",
+  "title": "Adaptive Agent Configuration",
+  "description": "Schema for ADAPTIVE agent type — multi-armed bandits, self-tuning, A/B testing",
+  "allOf": [
+    { "$ref": "agent-base-schema.json" }
+  ],
+  "properties": {
+    "spec": {
+      "properties": {
+        "type": { "const": "ADAPTIVE" },
+        "adaptive": {
+          "$ref": "#/$defs/AdaptiveSpec"
+        }
+      },
+      "required": ["type", "adaptive"]
+    }
+  },
+
+  "$defs": {
+    "AdaptiveSpec": {
+      "type": "object",
+      "properties": {
+        "subtype": {
+          "type": "string",
+          "enum": ["BANDIT", "REINFORCEMENT", "SELF_TUNING", "AB_TEST"],
+          "default": "BANDIT"
+        },
+        "bandit": {
+          "$ref": "#/$defs/BanditConfig"
+        },
+        "tunedParameter": {
+          "type": "string",
+          "description": "Name of the parameter being optimized (appears as output key)"
+        },
+        "parameterRange": {
+          "$ref": "#/$defs/ParameterRange"
+        },
+        "objective": {
+          "$ref": "#/$defs/ObjectiveConfig"
+        }
+      },
+      "required": ["tunedParameter"],
+      "additionalProperties": false
+    },
+
+    "BanditConfig": {
+      "type": "object",
+      "properties": {
+        "algorithm": {
+          "type": "string",
+          "enum": ["UCB1", "THOMPSON_SAMPLING", "EPSILON_GREEDY"],
+          "default": "UCB1"
+        },
+        "armCount": {
+          "type": "integer",
+          "minimum": 2,
+          "default": 10,
+          "description": "Number of discrete arms (parameter value bins)"
+        },
+        "explorationRate": {
+          "type": "number",
+          "minimum": 0,
+          "maximum": 1,
+          "default": 0.1,
+          "description": "Epsilon for EPSILON_GREEDY algorithm"
+        }
+      },
+      "additionalProperties": false
+    },
+
+    "ParameterRange": {
+      "type": "object",
+      "properties": {
+        "min": {
+          "type": "number",
+          "default": 0.0,
+          "description": "Minimum parameter value"
+        },
+        "max": {
+          "type": "number",
+          "default": 1.0,
+          "description": "Maximum parameter value"
+        }
+      },
+      "additionalProperties": false
+    },
+
+    "ObjectiveConfig": {
+      "type": "object",
+      "properties": {
+        "metric": {
+          "type": "string",
+          "default": "f1_score",
+          "description": "Name of the metric to optimize"
+        },
+        "maximize": {
+          "type": "boolean",
+          "default": true,
+          "description": "true = maximize the metric; false = minimize"
+        }
+      },
+      "additionalProperties": false
+    }
+  }
+}

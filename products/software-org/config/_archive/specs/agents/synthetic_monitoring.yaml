@@ -1,0 +1,26 @@
+---
+id: "synthetic_monitoring"
+agent: "SyntheticMonitoringAgent"
+role: "QA/SRE"
+inputs_spec:
+- name: "centralized_logs"
+  description: "Centralized logs for synthetic check execution."
+  format: "Centralized log artifact"
+outputs_spec:
+- name: "synthetic_monitoring_reports"
+  description: "Synthetic monitoring reports and alert results."
+  format: "Synthetic monitoring report artifact"
+agent_tasks:
+- "Configure synthetic checks for user journeys."
+- "Schedule and execute checks."
+- "Alert on failures and incidents."
+acceptance_criteria:
+- "Synthetic checks configured for major user journeys."
+- "Checks run at scheduled intervals."
+- "Failures trigger alerts/incidents."
+dependencies:
+- "centralized_logs"
+failure_escalation:
+- "Escalate to QA/SRE if checks missing or failures not alerted."
+references: []
+hitl: false

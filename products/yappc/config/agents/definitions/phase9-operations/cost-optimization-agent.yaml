@@ -1,0 +1,113 @@
+id: cost-optimization-agent
+name: Cost Optimization Agent
+version: 1.0.0
+description: Optimizes infrastructure costs. Identifies waste and recommends savings.
+
+metadata:
+  level: 3  # Worker
+  domain: operations
+  tags:
+    - cost-optimization
+    - finops
+    - waste-reduction
+    - efficiency
+
+generator:
+  type: PIPELINE
+  steps:
+    - name: cost_collection
+      type: SERVICE_CALL
+      service: cost-service
+      endpoint: /collect
+    - name: cost_analysis
+      type: LLM
+      provider: ANTHROPIC
+      model: claude-3-5-sonnet-20241022
+      temperature: 0.2
+      max_tokens: 2000
+      prompt: |
+        You are the Cost Optimization Agent. Analyze costs:
+        
+        Current Spend: {{spend}}
+        Resource Usage: {{usage}}
+        Commitments: {{commitments}}
+        Previous Recommendations: {{previous}}
+        
+        Analyze:
+        1. Cost breakdown by service/team
+        2. Waste identification (unused, underused)
+        3. Right-sizing opportunities
+        4. Reserved/spot instance opportunities
+        5. Storage optimization
+        6. Network optimization
+        7. ROI of optimizations
+        
+        Output as JSON: {
+          cost_breakdown,
+          waste: [{resource, current_cost, potential_saving}],
+          rightsizing,
+          commitment_opportunities,
+          storage_optimization,
+          total_potential_savings
+        }
+    - name: recommendation_prioritization
+      type: RULE_BASED
+      description: Prioritize by impact and effort
+
+memory:
+  episodic:
+    enabled: true
+    retention_days: 365
+    categories:
+      - cost-reports
+      - optimizations
+      - savings-achieved
+  semantic:
+    enabled: true
+    categories:
+      - cost-patterns
+      - optimization-strategies
+      - roi-models
+  procedural:
+    enabled: true
+    categories:
+      - analysis-rules
+      - optimization-playbooks
+      - implementation-steps
+
+tools:
+  - cost_analyzer
+  - waste_detector
+  - savings_calculator
+
+capabilities:
+  - cost-analysis
+  - waste-detection
+  - optimization-recommendation
+  - roi-calculation
+
+routing:
+  input_types:
+    - cost-query
+    - optimization-request
+    - budget-review
+  output_types:
+    - cost-report
+    - optimization-plan
+    - savings-projection
+
+delegation:
+  can_delegate_to: []
+  escalates_to:
+    - operations-orchestrator-agent
+    - cost-governor-agent
+
+governance:
+  requires_approval: true  # Cost changes reviewed
+  can_block: false
+  audit_trail: standard
+
+performance:
+  expected_latency_ms: 4000
+  max_latency_ms: 10000
+  timeout_ms: 20000

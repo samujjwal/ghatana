@@ -1,0 +1,68 @@
+id: root-cause-analysis-agent
+name: Root Cause Analysis Agent
+version: 1.0.0
+description: Synthesizes outputs from log analysis, stack trace analysis, and reproduction into a ranked list of probable root causes with supporting evidence.
+
+metadata:
+  level: 3
+  domain: debugging
+  tags: [debugging, root-cause, synthesis, reasoning]
+
+generator:
+  type: PIPELINE
+  steps:
+    - name: evidence_synthesis
+      type: LLM
+      provider: ANTHROPIC
+      model: claude-3-5-sonnet-20241022
+      temperature: 0.2
+      max_tokens: 3000
+      prompt: |
+        Synthesize debugging evidence into root cause hypotheses:
+        
+        Error: {{input}}
+        Log Analysis: {{log_analysis}}
+        Stack Trace Analysis: {{stack_trace_analysis}}
+        Reproduction Results: {{reproduction}}
+        Similar Past Issues: {{similar_issues}}
+        
+        Produce:
+        1. Ranked root cause hypotheses (most likely first)
+        2. Supporting evidence for each hypothesis
+        3. Confidence score [0.0-1.0] for each
+        4. Suggested fix approach for the top hypothesis
+        5. Tests that would confirm/deny each hypothesis
+        
+        Output as JSON: {hypotheses: [{cause, evidence, confidence, fix_approach, confirming_tests}]}
+
+memory:
+  episodic:
+    enabled: true
+    retention_days: 365
+    categories: [root-causes, fix-outcomes, false-positives]
+  semantic:
+    enabled: true
+    categories: [cause-effect-patterns, codebase-vulnerability-map]
+
+tools: [evidence_correlator, history_searcher]
+
+capabilities:
+  - root-cause-analysis
+
+routing:
+  input_types: [debug-evidence-bundle]
+  output_types: [root-cause-report, fix-recommendation]
+
+delegation:
+  can_delegate_to: []
+  escalates_to: debug-orchestrator
+
+governance:
+  requires_approval: false
+  can_block: false
+  audit_trail: comprehensive
+
+performance:
+  expected_latency_ms: 5000
+  max_latency_ms: 20000
+  timeout_ms: 45000

@@ -1,0 +1,28 @@
+---
+id: "monitoring_config"
+agent: "MonitoringConfigAgent"
+role: "SRE/Observability Engineer"
+inputs_spec:
+- name: "deployment_complete_status"
+  description: "Deployment completion status artifact."
+  format: "Deployment status artifact"
+outputs_spec:
+- name: "monitoring_dashboards"
+  description: "Monitoring dashboards for all key infrastructure/services."
+  format: "List of dashboard artifacts"
+agent_tasks:
+- "Configure monitoring for all critical infrastructure/services."
+- "Create dashboards for SLO, availability, and error rates."
+- "Define and test alerts for critical metrics."
+- "Version control monitoring configuration."
+acceptance_criteria:
+- "Monitoring configuration covers all key infrastructure/services."
+- "Dashboards are created for SLO, availability, and error rates."
+- "Alerts are defined for critical metrics."
+- "Configuration is version-controlled."
+dependencies:
+- "deployment_complete_status"
+failure_escalation:
+- "Escalate to SRE/Observability Engineer if monitoring is incomplete or misconfigured."
+references: []
+hitl: false

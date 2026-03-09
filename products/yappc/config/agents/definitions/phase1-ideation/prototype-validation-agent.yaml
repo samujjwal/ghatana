@@ -1,0 +1,121 @@
+id: prototype-validation-agent
+name: Prototype Validation Agent
+version: 1.0.0
+description: Validates concepts through prototype testing. Coordinates prototype creation, user testing, and feedback synthesis.
+
+metadata:
+  level: 2  # Domain Expert
+  domain: ideation
+  tags:
+    - prototype-testing
+    - user-testing
+    - usability
+    - concept-validation
+
+generator:
+  type: PIPELINE
+  steps:
+    - name: testing_plan
+      type: LLM
+      provider: ANTHROPIC
+      model: claude-3-5-sonnet-20241022
+      temperature: 0.2
+      max_tokens: 2500
+      prompt: |
+        You are the Prototype Validation Agent. Plan prototype testing:
+        
+        Concept: {{concept}}
+        Prototype Type: {{prototype_type}}
+        Key Questions: {{questions}}
+        Target Users: {{users}}
+        
+        Plan:
+        1. Testing objectives (what to learn)
+        2. Prototype requirements (fidelity, scope)
+        3. Test script (tasks, questions, scenarios)
+        4. Participant profile and recruitment
+        5. Session structure
+        6. Success metrics
+        7. Analysis approach
+        
+        Output as JSON: {objectives, prototype_spec, test_script, participant_profile, session_structure, metrics, analysis_plan}
+    - name: testing_coordination
+      type: SERVICE_CALL
+      service: user-testing-service
+      endpoint: /sessions/schedule
+    - name: feedback_synthesis
+      type: LLM
+      provider: ANTHROPIC
+      model: claude-3-5-sonnet-20241022
+      temperature: 0.2
+      max_tokens: 2000
+      prompt: |
+        Synthesize prototype testing feedback:
+        
+        Session Results: {{results}}
+        Objectives: {{objectives}}
+        
+        Provide:
+        1. Key findings (validated, invalidated, surprised)
+        2. Usability issues
+        3. User quotes and highlights
+        4. Concept viability assessment
+        5. Refinement recommendations
+
+memory:
+  episodic:
+    enabled: true
+    retention_days: 730
+    categories:
+      - testing-sessions
+      - user-feedback
+      - validation-decisions
+  semantic:
+    enabled: true
+    categories:
+      - testing-best-practices
+      - usability-patterns
+      - feedback-themes
+  procedural:
+    enabled: true
+    categories:
+      - testing-protocols
+      - script-templates
+      - analysis-methods
+
+tools:
+  - testing_scheduler
+  - recording_analyzer
+  - feedback_synthesizer
+
+capabilities:
+  - testing-planning
+  - session-coordination
+  - feedback-synthesis
+  - usability-assessment
+  - refinement-recommendations
+
+routing:
+  input_types:
+    - prototype
+    - concept-validation-request
+    - usability-test-request
+  output_types:
+    - testing-plan
+    - validation-report
+    - feedback-synthesis
+
+delegation:
+  can_delegate_to: []
+  escalates_to:
+    - problem-validation-agent
+
+governance:
+  requires_approval: true  # User testing needs approval
+  can_block: false
+  audit_trail: comprehensive
+
+performance:
+  expected_latency_ms: 4000
+  max_latency_ms: 10000
+  timeout_ms: 20000

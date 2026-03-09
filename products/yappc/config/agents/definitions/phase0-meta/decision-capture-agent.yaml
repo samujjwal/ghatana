@@ -1,0 +1,104 @@
+id: decision-capture-agent
+name: Decision Capture Agent
+version: 1.0.0
+description: Captures and structures all significant decisions made by agents and humans. Creates decision records with context, rationale, alternatives, and outcomes.
+
+metadata:
+  level: 3  # Worker
+  domain: decision-intelligence
+  tags:
+    - decision-recording
+    - rationale-capture
+    - knowledge-preservation
+    - always-on
+
+generator:
+  type: PIPELINE
+  steps:
+    - name: decision_detection
+      type: RULE_BASED
+      description: Identify decision points in interactions
+    - name: decision_structuring
+      type: LLM
+      provider: ANTHROPIC
+      model: claude-3-5-sonnet-20241022
+      temperature: 0.1
+      max_tokens: 2000
+      prompt: |
+        You are the Decision Capture Agent. Structure this decision:
+        
+        Decision Point: {{decision}}
+        Context: {{context}}
+        Alternatives Considered: {{alternatives}}
+        
+        Create decision record with:
+        1. Decision statement (clear, actionable)
+        2. Context (who, what, when, where, why)
+        3. Options evaluated
+        4. Decision criteria
+        5. Chosen option and rationale
+        6. Expected outcomes
+        7. Stakeholders impacted
+        
+        Output as JSON: {statement, context, options, criteria, chosen, rationale, expected_outcomes, stakeholders}
+    - name: decision_persistence
+      type: SERVICE_CALL
+      service: decision-log-service
+      endpoint: /decisions/record
+
+memory:
+  episodic:
+    enabled: true
+    retention_days: 1095  # 3 years
+    categories:
+      - decision-records
+      - decision-contexts
+      - decision-outcomes
+  semantic:
+    enabled: true
+    categories:
+      - decision-patterns
+      - decision-frameworks
+      - criteria-models
+  procedural:
+    enabled: true
+    categories:
+      - capture-templates
+      - structuring-rules
+      - recording-protocols
+
+tools:
+  - decision_log_writer
+  - context_extractor
+
+capabilities:
+  - decision-detection
+  - context-capture
+  - rationale-structuring
+  - alternative-documentation
+  - outcome-tracking
+
+routing:
+  input_types:
+    - agent-decision
+    - human-decision
+    - team-decision
+    - policy-decision
+  output_types:
+    - decision-record
+    - decision-log-entry
+
+delegation:
+  can_delegate_to: []
+  escalates_to:
+    - audit-trail-agent
+
+governance:
+  requires_approval: false
+  can_block: false  # Passive recording
+  audit_trail: self
+
+performance:
+  expected_latency_ms: 1500
+  max_latency_ms: 4000
+  timeout_ms: 8000

@@ -1,0 +1,187 @@
+{
+    "name": "fullstack-java-react",
+    "version": "1.0.0",
+    "description": "Full-stack monorepo with Java Spring Boot backend and React TypeScript frontend",
+    "category": "fullstack",
+    "language": "multi",
+    "runtime": "multi",
+    "buildTool": "gradle",
+    "templates": [
+        {
+            "source": "root/settings.gradle.kts.hbs",
+            "target": "settings.gradle.kts"
+        },
+        {
+            "source": "root/build.gradle.kts.hbs",
+            "target": "build.gradle.kts"
+        },
+        {
+            "source": "root/package.json.hbs",
+            "target": "package.json"
+        },
+        {
+            "source": "root/pnpm-workspace.yaml.hbs",
+            "target": "pnpm-workspace.yaml"
+        },
+        {
+            "source": "root/Makefile.hbs",
+            "target": "Makefile"
+        },
+        {
+            "source": "root/.gitignore.hbs",
+            "target": ".gitignore"
+        },
+        {
+            "source": "root/README.md.hbs",
+            "target": "README.md"
+        },
+        {
+            "source": "root/docker-compose.yml.hbs",
+            "target": "docker-compose.yml"
+        },
+        {
+            "source": "backend/build.gradle.kts.hbs",
+            "target": "backend/build.gradle.kts"
+        },
+        {
+            "source": "backend/src/main/java/Application.java.hbs",
+            "target": "backend/src/main/java/{{packagePath}}/Application.java"
+        },
+        {
+            "source": "backend/src/main/java/config/WebConfig.java.hbs",
+            "target": "backend/src/main/java/{{packagePath}}/config/WebConfig.java"
+        },
+        {
+            "source": "backend/src/main/java/controller/ApiController.java.hbs",
+            "target": "backend/src/main/java/{{packagePath}}/controller/ApiController.java"
+        },
+        {
+            "source": "backend/src/main/java/controller/HealthController.java.hbs",
+            "target": "backend/src/main/java/{{packagePath}}/controller/HealthController.java"
+        },
+        {
+            "source": "backend/src/main/java/service/ExampleService.java.hbs",
+            "target": "backend/src/main/java/{{packagePath}}/service/ExampleService.java"
+        },
+        {
+            "source": "backend/src/main/java/dto/ApiResponse.java.hbs",
+            "target": "backend/src/main/java/{{packagePath}}/dto/ApiResponse.java"
+        },
+        {
+            "source": "backend/src/main/resources/application.yaml.hbs",
+            "target": "backend/src/main/resources/application.yaml"
+        },
+        {
+            "source": "backend/src/test/java/ApplicationTests.java.hbs",
+            "target": "backend/src/test/java/{{packagePath}}/ApplicationTests.java"
+        },
+        {
+            "source": "backend/Dockerfile.hbs",
+            "target": "backend/Dockerfile"
+        },
+        {
+            "source": "frontend/package.json.hbs",
+            "target": "frontend/package.json"
+        },
+        {
+            "source": "frontend/tsconfig.json.hbs",
+            "target": "frontend/tsconfig.json"
+        },
+        {
+            "source": "frontend/vite.config.ts.hbs",
+            "target": "frontend/vite.config.ts"
+        },
+        {
+            "source": "frontend/index.html.hbs",
+            "target": "frontend/index.html"
+        },
+        {
+            "source": "frontend/src/main.tsx.hbs",
+            "target": "frontend/src/main.tsx"
+        },
+        {
+            "source": "frontend/src/App.tsx.hbs",
+            "target": "frontend/src/App.tsx"
+        },
+        {
+            "source": "frontend/src/api/client.ts.hbs",
+            "target": "frontend/src/api/client.ts"
+        },
+        {
+            "source": "frontend/src/hooks/useApi.ts.hbs",
+            "target": "frontend/src/hooks/useApi.ts"
+        },
+        {
+            "source": "frontend/src/components/Layout.tsx.hbs",
+            "target": "frontend/src/components/Layout.tsx"
+        },
+        {
+            "source": "frontend/Dockerfile.hbs",
+            "target": "frontend/Dockerfile"
+        }
+    ],
+    "variables": {
+        "projectName": {
+            "type": "string",
+            "description": "Project name",
+            "required": true
+        },
+        "packageName": {
+            "type": "string",
+            "description": "Java package name (e.g., com.example.app)",
+            "default": "com.example.app"
+        },
+        "packagePath": {
+            "type": "string",
+            "description": "Java package path (auto-derived)",
+            "computed": "packageName.replace(/\\./g, '/')"
+        },
+        "backendPort": {
+            "type": "number",
+            "description": "Backend server port",
+            "default": 8080
+        },
+        "frontendPort": {
+            "type": "number",
+            "description": "Frontend dev server port",
+            "default": 5173
+        },
+        "javaVersion": {
+            "type": "string",
+            "description": "Java version",
+            "default": "21"
+        },
+        "nodeVersion": {
+            "type": "string",
+            "description": "Node.js version",
+            "default": "22"
+        },
+        "enableSwagger": {
+            "type": "boolean",
+            "description": "Enable Swagger/OpenAPI docs",
+            "default": true
+        },
+        "enableAuth": {
+            "type": "boolean",
+            "description": "Enable JWT authentication",
+            "default": false
+        },
+        "enableDocker": {
+            "type": "boolean",
+            "description": "Include Docker configuration",
+            "default": true
+        },
+        "enableE2E": {
+            "type": "boolean",
+            "description": "Include E2E tests with Playwright",
+            "default": true
+        }
+    },
+    "postCreate": [
+        "./gradlew build -x test",
+        "pnpm install"
+    ],
+    "devCommand": "make dev",
+    "buildCommand": "make build",
+    "testCommand": "make test"
+}

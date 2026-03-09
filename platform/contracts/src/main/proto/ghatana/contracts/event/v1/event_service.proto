@@ -1,0 +1,333 @@
+/*
+ * Copyright (c) ${year} Ghatana Inc.
+ * All rights reserved.
+ *
+ * This source code and the accompanying materials are the confidential
+ * and proprietary information of Ghatana Inc. (“Confidential Information”).
+ * You shall not disclose such Confidential Information and shall use it
+ * only in accordance with the terms of the license agreement you entered
+ * into with Ghatana Inc.
+ *
+ * Unauthorized copying of this file, via any medium, is strictly prohibited.
+ * Proprietary and confidential.
+ */
+syntax = "proto3";
+
+package ghatana.contracts.event.v1;
+
+import "ghatana/contracts/event/v1/request_response.proto";
+import "ghatana/contracts/common/v1/common.proto";
+import "ghatana/contracts/common/v1/validation.proto";
+import "ghatana/contracts/common/v1/status.proto";
+import "ghatana/contracts/common/v1/envelope.proto";
+import "google/protobuf/struct.proto";
+import "google/protobuf/timestamp.proto";
+import "google/protobuf/any.proto";
+import "google/api/annotations.proto";
+
+option java_package = "com.ghatana.contracts.event.v1";
+option java_multiple_files = true;
+option java_outer_classname = "EventServiceProto";
+option go_package = "github.com/ghatana/contracts/gen/go/event/v1;eventv1";
+option csharp_namespace = "Ghatana.Contracts.Event.V1";
+
+// EventService provides a unified interface for event ingestion and querying.
+// This service acts as a facade that combines the functionality of both
+// ingestion and query services for simplified client usage.
+//
+// Example usage:
+//
+//   // Ingest a single event
+//   rpc Ingest(IngestRequestProto) returns (IngestResponseProto);
+//
+//   // Query events with filters
+//   rpc Query(QueryEventsRequestProto) returns (stream QueryEventsResponseProto);
+//
+//   // Get a specific event by ID
+//   rpc GetEvent(GetEventRequestProto) returns (GetEventResponseProto);
+service EventService {
+  // Ingest a single event
+  //
+  // This is a simple unary RPC for ingesting a single event. For high-throughput
+  // scenarios, consider using the streaming IngestStream method instead.
+  //
+  // Required permissions:
+  // - events:ingest
+  //
+  // Example:
+  //   request:  { event: { id: "01H7X9Z0YQJ3K4M5N6P7Q8R9S0T", type: "order.created", ... } }
+  //   response: { event: { ... } }
+  rpc Ingest(IngestRequestProto) returns (IngestResponseProto) {
+    option (google.api.http) = {
+      post: "/v1/events:ingest"
+      body: "*"
+    };
+  }
+
+  // Ingest multiple events in a batch
+  //
+  // This is a client-streaming RPC that allows ingesting multiple events in a
+  // single request. The response contains a summary of the ingestion results.
+  //
+  // Required permissions:
+  // - events:ingest
+  //
+  // Example:
+  //   request:  { events: [{...}, {...}], idempotency_key: "batch-123" }
+  //   response: { success_count: 2, error_count: 0, events: [...] }
+  rpc IngestBatch(IngestBatchRequestProto) returns (IngestBatchResponseProto) {
+    option (google.api.http) = {
+      post: "/v1/events:ingestBatch"
+      body: "*"
+    };
+  }
+
+  // Ingest events using bidirectional streaming
+  //
+  // This is a bidirectional streaming RPC that allows for high-throughput
+  // event ingestion with per-event acknowledgments. The client can send
+  // multiple events and receive responses as they are processed.
+  //
+  // Required permissions:
+  // - events:ingest
+  //
+  // Example:
+  //   client sends:  { event: { id: "01H7X9Z0YQJ3K4M5N6P7Q8R9S0T", ... } }
+  //   server sends:  { event: { ... }, status: { code: 0 } }
+  rpc IngestStream(stream IngestRequestProto) returns (stream IngestResponseProto);
+
+  // Query events with filters and pagination
+  //
+  // This is a server-streaming RPC that returns a stream of events matching
+  // the specified filters. The results are paginated using the page_token
+  // field in the response.
+  //
+  // Required permissions:
+  // - events:query
+  //
+  // Example:
+  //   request:  { type_prefix: "order.", limit: 10 }
+  //   response: { events: [...], next_page_token: "..." }
+  rpc Query(QueryEventsRequestProto) returns (stream QueryEventsResponseProto);
+
+  // Get a specific event by ID
+  //
+  // This is a simple unary RPC for retrieving a single event by its unique
+  // identifier. If the event is not found, a NOT_FOUND error is returned.
+  //
+  // Required permissions:
+  // - events:read
+  //
+  // Example:
+  //   request:  { event_id: "01H7X9Z0YQJ3K4M5N6P7Q8R9S0T" }
+  //   response: { event: { ... } }
+  rpc GetEvent(GetEventRequestProto) returns (GetEventResponseProto) {
+    option (google.api.http) = {
+      get: "/v1/events/{event_id}"
+    };
+  }
+}
+
+// EventQueryService provides advanced querying capabilities for events.
+// This service is optimized for complex event queries and analytics.
+service EventQueryService {
+  // Execute a custom query against the event store
+  //
+  // This RPC allows executing custom queries using a SQL-like syntax.
+  // The query is executed against the event store and returns a stream of results.
+  //
+  // Required permissions:
+  // - events:query:advanced
+  //
+  // Example:
+  //   request:  { query: "SELECT * FROM events WHERE type = 'order.created'" }
+  //   response: { results: [{...}, {...}], query_plan: "..." }
+  rpc ExecuteQuery(ExecuteQueryRequestProto) returns (stream ExecuteQueryResponseProto);
+
+  // Get query execution plan
+  //
+  // This RPC returns the execution plan for a query without executing it.
+  // Useful for debugging and optimizing complex queries.
+  //
+  // Required permissions:
+  // - events:query:explain
+  //
+  // Example:
+  //   request:  { query: "SELECT * FROM events WHERE type = 'order.created'" }
+  //   response: { plan: "...", estimated_cost: 1234 }
+  rpc ExplainQuery(ExplainQueryRequestProto) returns (ExplainQueryResponseProto);
+}
+
+// Request to execute a custom query
+message ExecuteQueryRequestProto {
+  // Reserved for future evolution
+  reserved 1000 to max;
+  reserved "reserved_field";
+  // Optional envelope for cross-cutting metadata (non-breaking addition)
+  ghatana.contracts.common.v1.Envelope envelope = 20;
+  // The query to execute (SQL-like syntax)
+  string query = 1 [
+    (ghatana.contracts.common.v1.validation) = {
+      required: true,
+      min_len: 1,
+      error_message: "Query is required and must not be empty"
+    }
+  ];
+
+  // Maximum number of results to return (0 for no limit)
+  int32 limit = 3 [
+    (ghatana.contracts.common.v1.validation) = {
+      min_value: 0,
+      error_message: "Limit must be a non-negative number"
+    }
+  ];
+
+  // Query execution timeout in milliseconds
+  int64 timeout_ms = 4 [
+    (ghatana.contracts.common.v1.validation) = {
+      min_value: 0,
+      error_message: "Timeout must be a non-negative number"
+    }
+  ];
+
+  // Additional query parameters
+  map<string, string> parameters = 5;
+
+  // Whether to include the query execution plan in the response
+  bool include_plan = 6;
+
+  // Whether to include statistics in the response
+  bool include_stats = 7;
+}
+
+// Response from executing a custom query
+message ExecuteQueryResponseProto {
+  // Reserved for future evolution
+  reserved 1000 to max;
+  reserved "reserved_field";
+  // Query results as a list of records
+  repeated google.protobuf.Struct results = 1;
+
+  // Query execution statistics
+  QueryStatsProto stats = 2;
+
+  // The query execution plan (if requested)
+  string query_plan = 3;
+
+  // Token for the next page of results
+  string next_page_token = 4;
+
+  // Common status information
+  ghatana.contracts.common.v1.StatusProto status = 5;
+
+  // The query that was executed
+  string query = 6;
+
+  // The time the query was executed
+  google.protobuf.Timestamp executed_at = 7;
+
+  // The number of results returned in this response
+  int32 result_count = 8;
+
+  // The total number of results available
+  int64 total_results = 9;
+}
+
+// Request to explain a query
+message ExplainQueryRequestProto {
+  // Reserved for future evolution
+  reserved 1000 to max;
+  reserved "reserved_field";
+  // The query to explain
+  string query = 1 [
+    (ghatana.contracts.common.v1.validation) = {
+      required: true,
+      min_len: 1,
+      error_message: "Query is required and must not be empty"
+    }
+  ];
+
+  // Whether to include detailed execution plan
+  bool include_details = 2;
+
+  // The format of the explanation (text, json, etc.)
+  string format = 3;
+
+  // Whether to include statistics in the explanation
+  bool include_stats = 4;
+}
+
+// Response from explaining a query
+message ExplainQueryResponseProto {
+  // Reserved for future evolution
+  reserved 1000 to max;
+  reserved "reserved_field";
+  // The query execution plan
+  string plan = 1;
+
+  // Whether the query is valid
+  bool valid = 2;
+
+  // Error message if the query is invalid
+  string error = 3;
+
+  // Common status information
+  ghatana.contracts.common.v1.StatusProto status = 4;
+
+  // The query that was explained
+  string query = 5;
+
+  // The time the explanation was generated
+  google.protobuf.Timestamp explained_at = 6;
+
+  // Estimated cost of the query
+  int64 estimated_cost = 7;
+
+  // Estimated number of rows returned by the query
+  int64 estimated_rows = 8;
+
+  // List of warnings about the query
+  repeated string warnings = 9;
+}
+
+// Query execution statistics
+message QueryStatsProto {
+  // Reserved for future evolution
+  reserved 1000 to max;
+  reserved "reserved_field";
+  // Number of records processed
+  int64 records_processed = 1;
+
+  // Time taken to execute the query in milliseconds
+  int64 execution_time_ms = 2;
+
+  // Number of bytes processed
+  int64 bytes_processed = 3;
+
+  // When the query started
+  google.protobuf.Timestamp started_at = 4;
+
+  // When the query completed
+  google.protobuf.Timestamp completed_at = 5;
+
+  // The number of partitions read
+  int32 partitions_read = 6;
+
+  // The number of partitions processed
+  int32 partitions_processed = 7;
+
+  // The number of rows read
+  int64 rows_read = 8;
+
+  // The number of rows written
+  int64 rows_written = 9;
+
+  // The amount of data scanned in bytes
+  int64 data_scanned_bytes = 10;
+
+  // The amount of data returned in bytes
+  int64 data_returned_bytes = 11;
+
+  // The amount of data written in bytes
+  int64 data_written_bytes = 12;
+}

@@ -1,0 +1,271 @@
+/*
+ * Copyright (c) 2025 Ghatana Inc.
+ * All rights reserved.
+ *
+ * Virtual Organization - Decision and authority definitions
+ */
+syntax = "proto3";
+
+package virtualorg.v1;
+
+import "google/protobuf/timestamp.proto";
+
+option java_package = "com.ghatana.virtualorg.v1";
+option java_multiple_files = true;
+option java_outer_classname = "DecisionOuterClass";
+
+// DecisionProto represents a decision made by an agent
+message DecisionProto {
+  reserved 100 to max;
+
+  // Unique identifier
+  string decision_id = 1;
+
+  // Agent who made the decision
+  string agent_id = 2;
+
+  // Type of decision
+  DecisionTypeProto type = 3;
+
+  // Related task ID
+  string task_id = 4;
+
+  // Decision context
+  map<string, string> context = 5;
+
+  // Options that were considered
+  repeated OptionProto options_considered = 6;
+
+  // The chosen option
+  OptionProto chosen_option = 7;
+
+  // Reasoning for the decision
+  string reasoning = 8;
+
+  // Confidence level (0.0 to 1.0)
+  float confidence = 9;
+
+  // Whether approval was required
+  bool required_approval = 10;
+
+  // Who approved the decision
+  string approved_by = 11;
+
+  // When it was approved
+  google.protobuf.Timestamp approved_at = 12;
+
+  // Impact assessment
+  ImpactProto impact_assessment = 13;
+
+  // When the decision was made
+  google.protobuf.Timestamp created_at = 14;
+
+  // Whether the decision is reversible
+  bool reversible = 15;
+
+  // Tags for categorization
+  repeated string tags = 16;
+
+  // Metadata
+  map<string, string> metadata = 17;
+}
+
+// Type of decision
+enum DecisionTypeProto {
+  DECISION_TYPE_UNKNOWN = 0;
+  DECISION_TYPE_IMPLEMENT_FEATURE = 1;
+  DECISION_TYPE_CODE_REVIEW = 2;
+  DECISION_TYPE_BUG_FIX = 3;
+  DECISION_TYPE_REFACTOR = 4;
+  DECISION_TYPE_ARCHITECTURE_CHANGE = 5;
+  DECISION_TYPE_TECHNOLOGY_CHOICE = 6;
+  DECISION_TYPE_BUDGET_ALLOCATION = 7;
+  DECISION_TYPE_STRATEGIC = 8;
+  DECISION_TYPE_DEPLOYMENT = 9;
+  DECISION_TYPE_SECURITY = 10;
+  DECISION_TYPE_PERFORMANCE = 11;
+  DECISION_TYPE_APPROVED = 12;      // Decision approved
+  DECISION_TYPE_REJECTED = 13;      // Decision rejected
+  DECISION_TYPE_ESCALATED = 14;     // Decision escalated to higher authority
+  DECISION_TYPE_DEFERRED = 15;      // Decision deferred
+  DECISION_TYPE_PENDING = 16;       // Decision pending
+}
+
+// Option that was considered
+message OptionProto {
+  reserved 100 to max;
+
+  // Description of the option
+  string description = 1;
+
+  // Pros of this option
+  repeated string pros = 2;
+
+  // Cons of this option
+  repeated string cons = 3;
+
+  // Estimated impact
+  ImpactProto estimated_impact = 4;
+
+  // Score assigned to this option
+  float score = 5;
+
+  // Supporting evidence
+  repeated string evidence = 6;
+}
+
+// Impact assessment
+message ImpactProto {
+  reserved 100 to max;
+
+  // Cost impact
+  CostImpactProto cost = 1;
+
+  // Time impact
+  TimeImpactProto time = 2;
+
+  // Risk level
+  RiskLevelProto risk = 3;
+
+  // Affected systems
+  repeated string affected_systems = 4;
+
+  // Affected stakeholders
+  repeated string affected_stakeholders = 5;
+
+  // Overall impact score (0.0 to 1.0)
+  float overall_score = 6;
+}
+
+// Cost impact
+message CostImpactProto {
+  reserved 100 to max;
+
+  // Estimated cost in USD
+  double estimated_usd = 1;
+
+  // Cost category
+  CostCategoryProto category = 2;
+
+  // Justification
+  string justification = 3;
+}
+
+// Cost category
+enum CostCategoryProto {
+  COST_CATEGORY_UNKNOWN = 0;
+  COST_CATEGORY_LOW = 1;       // < $1000
+  COST_CATEGORY_MEDIUM = 2;    // $1000 - $10000
+  COST_CATEGORY_HIGH = 3;      // $10000 - $100000
+  COST_CATEGORY_VERY_HIGH = 4; // > $100000
+}
+
+// Time impact
+message TimeImpactProto {
+  reserved 100 to max;
+
+  // Estimated time in hours
+  double estimated_hours = 1;
+
+  // Time category
+  TimeCategoryProto category = 2;
+
+  // Justification
+  string justification = 3;
+}
+
+// Time category
+enum TimeCategoryProto {
+  TIME_CATEGORY_UNKNOWN = 0;
+  TIME_CATEGORY_IMMEDIATE = 1;  // < 1 hour
+  TIME_CATEGORY_SHORT = 2;      // 1-8 hours
+  TIME_CATEGORY_MEDIUM = 3;     // 1-5 days
+  TIME_CATEGORY_LONG = 4;       // 1-4 weeks
+  TIME_CATEGORY_VERY_LONG = 5;  // > 1 month
+}
+
+// Risk level
+enum RiskLevelProto {
+  RISK_LEVEL_UNKNOWN = 0;
+  RISK_LEVEL_LOW = 1;
+  RISK_LEVEL_MEDIUM = 2;
+  RISK_LEVEL_HIGH = 3;
+  RISK_LEVEL_CRITICAL = 4;
+}
+
+// Decision authority defines what an agent can decide
+message DecisionAuthorityProto {
+  reserved 100 to max;
+
+  // Types of decisions this agent can make autonomously
+  repeated DecisionTypeProto can_decide = 1;
+
+  // Types of decisions that must be escalated
+  repeated DecisionTypeProto must_escalate = 2;
+
+  // Limits on decision authority
+  map<string, AuthorityLimitProto> limits = 3;
+
+  // Who to escalate to
+  string escalation_target = 4;
+}
+
+// Limit on authority
+message AuthorityLimitProto {
+  reserved 100 to max;
+
+  // Maximum monetary amount
+  double max_amount = 1;
+
+  // Maximum lines of code
+  int32 max_lines = 2;
+
+  // Maximum impact score
+  int32 max_impact = 3;
+
+  // Custom limits
+  map<string, string> custom_limits = 4;
+}
+
+// Escalation request
+message EscalationRequestProto {
+  reserved 100 to max;
+
+  // Unique identifier
+  string escalation_id = 1;
+
+  // Task being escalated
+  string task_id = 2;
+
+  // Decision being escalated
+  string decision_id = 3;
+
+  // Agent requesting escalation
+  string from_agent_id = 4;
+
+  // Target agent for escalation
+  string to_agent_id = 5;
+
+  // Reason for escalation
+  string reason = 6;
+
+  // Current status
+  EscalationStatusProto status = 7;
+
+  // Timestamps
+  google.protobuf.Timestamp created_at = 8;
+  google.protobuf.Timestamp resolved_at = 9;
+
+  // Resolution
+  string resolution = 10;
+}
+
+// Escalation status
+enum EscalationStatusProto {
+  ESCALATION_STATUS_UNKNOWN = 0;
+  ESCALATION_STATUS_PENDING = 1;
+  ESCALATION_STATUS_IN_REVIEW = 2;
+  ESCALATION_STATUS_APPROVED = 3;
+  ESCALATION_STATUS_REJECTED = 4;
+  ESCALATION_STATUS_CANCELLED = 5;
+}

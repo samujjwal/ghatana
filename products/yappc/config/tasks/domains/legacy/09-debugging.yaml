@@ -1,0 +1,282 @@
+# Debugging Tasks
+# Domain 9 of 22 - Developer Task Universe
+# Reference: developer-tasks.md Part I, Section 9
+
+domain:
+  id: debugging
+  name: "Debugging"
+  description: "Tasks related to diagnosing and fixing issues"
+  order: 9
+  icon: "bug_report"
+  color: "#EF5350"
+  lifecycle_stages:
+    - execute
+    - verify
+    - observe
+
+tasks:
+  - id: debug-001
+    name: "Reproduce Issues"
+    description: "Replicate reported bugs in a controlled environment"
+    personas:
+      - Developer
+      - QA
+    lifecycle_stages:
+      - execute
+    automation_level: assisted
+    required_capabilities:
+      - debugging
+      - environment-management
+    input_schema: debug-001-input
+    output_schema: debug-001-output
+    audit_artifacts:
+      - InputSnapshot
+      - OutputSnapshot
+      - DecisionRecord
+    ui:
+      icon: "repeat"
+      color: "#EF5350"
+      tags:
+        - reproduction
+        - bugs
+        - investigation
+
+  - id: debug-002
+    name: "Analyze Logs"
+    description: "Review application and system logs to identify issues"
+    personas:
+      - Developer
+      - DevOps
+    lifecycle_stages:
+      - observe
+      - execute
+    automation_level: assisted
+    required_capabilities:
+      - log-analysis
+      - pattern-recognition
+    input_schema: debug-002-input
+    output_schema: debug-002-output
+    audit_artifacts:
+      - InputSnapshot
+      - OutputSnapshot
+      - DecisionRecord
+    ui:
+      icon: "article"
+      color: "#EF5350"
+      tags:
+        - logs
+        - analysis
+        - investigation
+
+  - id: debug-003
+    name: "Debug Runtime Issues"
+    description: "Use debugging tools to diagnose runtime problems"
+    personas:
+      - Developer
+    lifecycle_stages:
+      - execute
+    automation_level: manual
+    required_capabilities:
+      - debugging
+      - runtime-analysis
+    input_schema: debug-003-input
+    output_schema: debug-003-output
+    audit_artifacts:
+      - InputSnapshot
+      - OutputSnapshot
+      - DecisionRecord
+    ui:
+      icon: "troubleshoot"
+      color: "#EF5350"
+      tags:
+        - debugging
+        - runtime
+        - breakpoints
+
+  - id: debug-004
+    name: "Debug Production Issues"
+    description: "Diagnose and resolve issues in production environment"
+    personas:
+      - Developer
+      - DevOps
+    lifecycle_stages:
+      - observe
+      - execute
+    automation_level: assisted
+    required_capabilities:
+      - debugging
+      - observability
+      - incident-response
+    input_schema: debug-004-input
+    output_schema: debug-004-output
+    audit_artifacts:
+      - InputSnapshot
+      - OutputSnapshot
+      - DecisionRecord
+      - IncidentRecord
+    ui:
+      icon: "emergency"
+      color: "#EF5350"
+      tags:
+        - production
+        - incidents
+        - troubleshooting
+
+  - id: debug-005
+    name: "Analyze Stack Traces"
+    description: "Interpret exception stack traces to find root causes"
+    personas:
+      - Developer
+    lifecycle_stages:
+      - execute
+    automation_level: assisted
+    required_capabilities:
+      - debugging
+      - code-analysis
+    input_schema: debug-005-input
+    output_schema: debug-005-output
+    audit_artifacts:
+      - InputSnapshot
+      - OutputSnapshot
+      - DecisionRecord
+    ui:
+      icon: "layers"
+      color: "#EF5350"
+      tags:
+        - stack-traces
+        - exceptions
+        - root-cause
+
+  - id: debug-006
+    name: "Debug Memory Issues"
+    description: "Diagnose memory leaks and memory-related problems"
+    personas:
+      - Developer
+    lifecycle_stages:
+      - execute
+      - verify
+    automation_level: assisted
+    required_capabilities:
+      - debugging
+      - performance-analysis
+    input_schema: debug-006-input
+    output_schema: debug-006-output
+    audit_artifacts:
+      - InputSnapshot
+      - OutputSnapshot
+      - DecisionRecord
+    ui:
+      icon: "memory"
+      color: "#EF5350"
+      tags:
+        - memory
+        - leaks
+        - profiling
+
+  - id: debug-007
+    name: "Debug Concurrency Issues"
+    description: "Diagnose race conditions, deadlocks, and threading issues"
+    personas:
+      - Developer
+    lifecycle_stages:
+      - execute
+      - verify
+    automation_level: manual
+    required_capabilities:
+      - debugging
+      - concurrency-analysis
+    input_schema: debug-007-input
+    output_schema: debug-007-output
+    audit_artifacts:
+      - InputSnapshot
+      - OutputSnapshot
+      - DecisionRecord
+    ui:
+      icon: "sync_alt"
+      color: "#EF5350"
+      tags:
+        - concurrency
+        - race-conditions
+        - deadlocks
+
+  - id: debug-008
+    name: "Debug Network Issues"
+    description: "Diagnose connectivity, latency, and network-related problems"
+    personas:
+      - Developer
+      - DevOps
+    lifecycle_stages:
+      - observe
+      - execute
+    automation_level: assisted
+    required_capabilities:
+      - debugging
+      - network-analysis
+    input_schema: debug-008-input
+    output_schema: debug-008-output
+    audit_artifacts:
+      - InputSnapshot
+      - OutputSnapshot
+      - DecisionRecord
+    ui:
+      icon: "wifi"
+      color: "#EF5350"
+      tags:
+        - network
+        - connectivity
+        - latency
+
+  - id: debug-009
+    name: "Analyze Error Patterns"
+    description: "Identify recurring error patterns across the system"
+    personas:
+      - Developer
+      - DevOps
+    lifecycle_stages:
+      - observe
+      - learn
+    automation_level: assisted
+    required_capabilities:
+      - pattern-recognition
+      - observability
+    input_schema: debug-009-input
+    output_schema: debug-009-output
+    audit_artifacts:
+      - InputSnapshot
+      - OutputSnapshot
+      - DecisionRecord
+    ui:
+      icon: "pattern"
+      color: "#EF5350"
+      tags:
+        - patterns
+        - errors
+        - analysis
+
+  - id: debug-010
+    name: "Root Cause Analysis"
+    description: "Perform systematic analysis to identify underlying causes"
+    personas:
+      - Developer
+      - Tech Lead
+    lifecycle_stages:
+      - learn
+      - institutionalize
+    automation_level: manual
+    required_capabilities:
+      - debugging
+      - analysis
+    input_schema: debug-010-input
+    output_schema: debug-010-output
+    audit_artifacts:
+      - InputSnapshot
+      - OutputSnapshot
+      - DecisionRecord
+      - RootCauseReport
+    ui:
+      icon: "search"
+      color: "#EF5350"
+      tags:
+        - root-cause
+        - analysis
+        - investigation

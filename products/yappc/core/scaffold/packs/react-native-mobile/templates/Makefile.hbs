@@ -1,0 +1,100 @@
+.PHONY: all install start ios android web test lint typecheck clean prebuild help
+
+# Default target
+all: install
+
+# Install dependencies
+install:
+pnpm install
+
+# Start development server
+start:
+pnpm start
+
+# Start with cleared cache
+start-clear:
+pnpm start:clear
+
+# Run on iOS simulator
+ios:
+pnpm ios
+
+# Run on Android emulator
+android:
+pnpm android
+
+# Run web version
+web:
+pnpm web
+
+# Generate native projects
+prebuild:
+pnpm prebuild
+
+# Clean prebuild and regenerate
+prebuild-clean:
+pnpm prebuild:clean
+
+# Run tests
+test:
+pnpm test
+
+# Run tests in watch mode
+test-watch:
+pnpm test:watch
+
+# Run tests with coverage
+test-coverage:
+pnpm test:coverage
+
+# Lint code
+lint:
+pnpm lint
+
+# TypeScript type checking
+typecheck:
+pnpm typecheck
+
+# Clean build artifacts
+clean:
+rm -rf node_modules/
+rm -rf .expo/
+rm -rf dist/
+rm -rf ios/
+rm -rf android/
+rm -rf coverage/
+
+# EAS Build - Development
+build-dev:
+pnpm build:dev
+
+# EAS Build - Preview
+build-preview:
+pnpm build:preview
+
+# EAS Build - Production
+build-prod:
+pnpm build:production
+
+# Submit to stores
+submit:
+pnpm submit
+
+# Help
+help:
+@echo "Available commands:"
+@echo " make install - Install dependencies"
+@echo " make start - Start development server"
+@echo " make start-clear - Start with cleared cache"
+@echo " make ios - Run on iOS simulator"
+@echo " make android - Run on Android emulator"
+@echo " make web - Run web version"
+@echo " make prebuild - Generate native projects"
+@echo " make test - Run tests"
+@echo " make lint - Lint code"
+@echo " make typecheck - Check TypeScript types"
+@echo " make clean - Clean build artifacts"
+@echo " make build-dev - EAS Build (development)"
+@echo " make build-preview - EAS Build (preview)"
+@echo " make build-prod - EAS Build (production)"
+@echo " make help - Show this help"

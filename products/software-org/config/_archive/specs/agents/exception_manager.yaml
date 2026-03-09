@@ -1,0 +1,27 @@
+---
+id: "exception_manager"
+agent: "ExceptionManagerAgent"
+role: "Security/Compliance Lead"
+inputs_spec:
+- name: "security_audit_logs"
+  description: "Security audit logs for exception review."
+  format: "Audit log artifact"
+outputs_spec:
+- name: "exception_approvals"
+  description: "Documented, signed-off security exceptions."
+  format: "Exception approval artifact"
+agent_tasks:
+- "Formally document all security exceptions."
+- "Require signoff from responsible authority."
+- "Review/store justifications."
+- "Track expiry/review dates for exceptions."
+acceptance_criteria:
+- "Security exceptions documented, justified, and signed-off."
+- "Expiry/review dates tracked."
+dependencies:
+- "security_audit_logs"
+failure_escalation:
+- "Escalate to Security/Compliance Lead if exceptions are not signed-off or tracked."
+references: []
+hitl: true
+hitl_reason: "Human approves/rejects security exceptions"

@@ -1,0 +1,42 @@
+id: traceability
+agent: TraceabilityAgent
+role: Traceability Matrix Analyst
+inputs_spec:
+  - name: synthesized_solution
+    description: Synthesized solution and traceability matrix from SynthesisAgent.
+    format: YAML object
+outputs_spec:
+  - name: traceability_matrix
+    description: Matrix linking requirements, solution components, risks, controls, and criteria.
+    format: YAML array
+acceptance_criteria:
+  - All requirements and solution components fully traceable.
+  - Risks, controls, and compliance mapped.
+  - No gaps or broken links in matrix.
+agent_tasks:
+  - Build traceability matrix covering every requirement, solution element, and control.
+  - Link risks, criteria, and compliance mapping.
+  - Highlight any missing or broken links.
+dependencies:
+  - synthesized_solution
+failure_escalation:
+  - Escalate untraceable requirements/controls to PM.
+references: []
+internal_logic:
+  - perception:
+      description: "Link each requirement, control, acceptance criterion, and documentation artifact to ensure end-to-end traceability."
+  - model:
+      description: "Maintain traceability matrix with status, owner, and link integrity."
+  - planning:
+      description: |
+        "For missing or broken links, flag for escalation.
+         Highlight areas where traceability is unclear."
+  - action:
+      description: "Output full traceability matrix and report gaps."
+validation:
+  - "Audit for complete coverage of all requirements and controls."
+  - "Automated link integrity checker."
+quality_enhancements:
+  - "Traceability template."
+  - "Visualization of linkages for audit/review."
+  - "Metrics for traceability completeness."

@@ -1,0 +1,36 @@
+---
+id: "develop_readiness_checker"
+agent: "ReadinessCheckerAgent"
+role: "Gatekeeper Bot"
+inputs_spec:
+- name: "develop_stage_milestone"
+  description: "Development milestones."
+  format: "List of milestone objects"
+- name: "develop_best_practice_report"
+  description: "Best practice review report."
+  format: "Compliance report"
+- name: "develop_kpi_report"
+  description: "Latest KPI report."
+  format: "KPI report artifact"
+outputs_spec:
+- name: "develop_readiness_status"
+  description: "Readiness status for Develop stage."
+  format: "Status artifact"
+agent_tasks:
+- "Check all mandatory develop criteria are met."
+- "Ensure no open critical issues in milestones, best practice, or KPI."
+- "Verify all required approvals and evidence are present."
+- "Mark stage ready only if above are true."
+acceptance_criteria:
+- "All mandatory develop criteria are met."
+- "No open critical issues in milestones, best practice, or KPI."
+- "All required approvals and evidence are present."
+- "Stage is marked \"Ready for next stage\" only if above are true."
+dependencies:
+- "develop_stage_milestone"
+- "develop_best_practice_report"
+- "develop_kpi_report"
+failure_escalation:
+- "Escalate to Gatekeeper or PM if readiness not achieved."
+references: []
+hitl: false

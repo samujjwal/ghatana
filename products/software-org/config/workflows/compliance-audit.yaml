@@ -1,0 +1,152 @@
+# Compliance Audit Workflow Configuration
+apiVersion: virtualorg.ghatana.com/v1
+kind: Workflow
+metadata:
+  name: compliance-audit
+  namespace: software-org
+  labels:
+    domain: compliance
+    cadence: quarterly
+    autonomy-level: medium
+  annotations:
+    description: "Quarterly compliance audit process"
+    owner: compliance-department
+
+spec:
+  trigger:
+    schedule:
+      cron: "0 9 1 */3 *"
+      timezone: "America/Los_Angeles"
+    events:
+      - type: audit.scheduled
+      - type: audit.requested
+    manual:
+      enabled: true
+      authorizedRoles:
+        - compliance-officer
+        - ceo
+
+  execution:
+    mode: sequential
+    timeout: 2w
+    retryPolicy:
+      maxRetries: 2
+      backoffMultiplier: 2
+      initialDelay: 1d
+
+  context:
+    inputs:
+      - name: audit_type
+        type: string
+        default: quarterly
+      - name: scope
+        type: string_list
+
+  stages:
+    - id: prepare-audit
+      name: "Prepare Audit"
+      description: "Gather documentation and prepare audit scope"
+      agent: compliance-officer-agent
+      action:
+        type: ai-decision
+        operation: audit-preparation
+      transitions:
+        - on: success
+          goto: collect-evidence
+
+    - id: collect-evidence
+      name: "Collect Evidence"
+      description: "Gather evidence from all departments"
+      agent: compliance-officer-agent
+      action:
+        type: automated
+        operation: evidence-collection
+      transitions:
+        - on: success
+          goto: security-review
+
+    - id: security-review
+      name: "Security Review"
+      description: "Review security controls and practices"
+      agent: security-analyst-agent
+      action:
+        type: ai-decision
+        operation: security-assessment
+      transitions:
+        - on: success
+          goto: risk-assessment
+
+    - id: risk-assessment
+      name: "Risk Assessment"
+      description: "Assess risks and gaps"
+      agent: risk-manager-agent
+      action:
+        type: ai-decision
+        operation: risk-evaluation
+      transitions:
+        - on: success
+          goto: compile-findings
+
+    - id: compile-findings
+      name: "Compile Findings"
+      description: "Compile audit findings and recommendations"
+      agent: compliance-officer-agent
+      action:
+        type: ai-decision
+        operation: findings-compilation
+      transitions:
+        - on: success
+          goto: review-report
+
+    - id: review-report
+      name: "Review Report"
+      description: "Review and approve audit report"
+      agent: compliance-officer-agent
+      action:
+        type: automated
+        operation: report-review
+      hitl:
+        required: true
+        checkpoint: "audit-report-approval"
+        approvers:
+          - role: ceo
+        timeout: 48h
+      transitions:
+        - on: approved
+          goto: distribute-report
+        - on: rejected
+          goto: compile-findings
+
+    - id: distribute-report
+      name: "Distribute Report"
+      description: "Distribute audit report to stakeholders"
+      agent: compliance-officer-agent
+      action:
+        type: automated
+        operation: report-distribution
+      transitions:
+        - on: success
+          goto: create-remediation-plan
+
+    - id: create-remediation-plan
+      name: "Create Remediation Plan"
+      description: "Create plan to address findings"
+      agent: compliance-officer-agent
+      action:
+        type: ai-decision
+        operation: remediation-planning
+      transitions:
+        - on: success
+          goto: complete
+
+    - id: complete
+      name: "Complete Audit"
+      action:
+        type: automated
+        operation: finalize
+
+  postActions:
+    - type: audit-log
+      data:
+        workflow: compliance-audit
+        outcome: "{{workflow.status}}"

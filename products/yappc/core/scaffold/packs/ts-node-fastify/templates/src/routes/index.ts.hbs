@@ -1,0 +1,20 @@
+/**
+* {{projectName}} - Route Registration
+*
+* Registers all application routes.
+*
+* @module routes
+*/
+
+import type { FastifyInstance } from 'fastify';
+import { config } from '../config.js';
+import { healthRoutes } from './health.js';
+import { apiRoutes } from './api.js';
+
+export async function registerRoutes(app: FastifyInstance): Promise<void> {
+    // Health check routes (no prefix)
+    await app.register(healthRoutes);
+
+    // API routes with prefix
+    await app.register(apiRoutes, { prefix: config.apiPrefix });
+    }

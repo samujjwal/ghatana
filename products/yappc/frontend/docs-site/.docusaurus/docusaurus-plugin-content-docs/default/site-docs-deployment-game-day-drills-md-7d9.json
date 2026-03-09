@@ -1,0 +1,18 @@
+{
+  "id": "deployment/game-day-drills",
+  "title": "Game-Day Drills",
+  "description": "Structured chaos engineering exercises and incident response drills to validate YAPPC Canvas operational readiness, improve team coordination, and build muscle memory for handling production incidents.",
+  "source": "@site/docs/deployment/game-day-drills.md",
+  "sourceDirName": "deployment",
+  "slug": "/deployment/game-day-drills",
+  "permalink": "/docs/deployment/game-day-drills",
+  "draft": false,
+  "unlisted": false,
+  "editUrl": "https://github.com/yappc/app-creator/tree/main/docs-site/docs/deployment/game-day-drills.md",
+  "tags": [],
+  "version": "current",
+  "sidebarPosition": 7,
+  "frontMatter": {
+    "sidebar_position": 7
+  }
+}

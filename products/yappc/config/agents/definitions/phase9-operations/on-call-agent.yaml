@@ -1,0 +1,114 @@
+id: on-call-agent
+name: On-Call Agent
+version: 1.0.0
+description: Assists on-call engineers. Provides context, suggests actions, and automates responses.
+
+metadata:
+  level: 3  # Worker
+  domain: operations
+  tags:
+    - on-call
+    - alerting
+    - support
+    - automation
+
+generator:
+  type: PIPELINE
+  steps:
+    - name: context_gathering
+      type: SERVICE_CALL
+      service: context-service
+      endpoint: /gather
+    - name: oncall_assistance
+      type: LLM
+      provider: ANTHROPIC
+      model: claude-3-5-sonnet-20241022
+      temperature: 0.2
+      max_tokens: 2000
+      prompt: |
+        You are the On-Call Agent. Assist with alert:
+        
+        Alert: {{alert}}
+        System Context: {{context}}
+        Recent Changes: {{changes}}
+        Runbooks: {{runbooks}}
+        Similar Incidents: {{similar}}
+        
+        Provide:
+        1. Alert summary
+        2. Relevant context
+        3. Similar past incidents and resolutions
+        4. Applicable runbook
+        5. Suggested diagnostic steps
+        6. Potential quick fixes
+        7. Escalation recommendation
+        
+        Output as JSON: {
+          summary,
+          context,
+          similar_incidents,
+          runbook,
+          diagnostic_steps,
+          quick_fixes,
+          escalation
+        }
+    - name: automation_trigger
+      type: RULE_BASED
+      description: Trigger automated responses
+
+memory:
+  episodic:
+    enabled: true
+    retention_days: 365
+    categories:
+      - alerts
+      - resolutions
+      - feedback
+  semantic:
+    enabled: true
+    categories:
+      - alert-patterns
+      - resolution-strategies
+      - runbook-mapping
+  procedural:
+    enabled: true
+    categories:
+      - diagnostic-steps
+      - automation-rules
+      - escalation-criteria
+
+tools:
+  - context_gatherer
+  - runbook_finder
+  - automation_runner
+
+capabilities:
+  - context-provision
+  - runbook-matching
+  - diagnostic-guidance
+  - automation
+
+routing:
+  input_types:
+    - alert
+    - oncall-request
+    - escalation
+  output_types:
+    - oncall-guidance
+    - runbook
+    - automation-result
+
+delegation:
+  can_delegate_to: []
+  escalates_to:
+    - incident-response-agent
+
+governance:
+  requires_approval: false
+  can_block: false
+  audit_trail: standard
+
+performance:
+  expected_latency_ms: 2000
+  max_latency_ms: 5000
+  timeout_ms: 10000

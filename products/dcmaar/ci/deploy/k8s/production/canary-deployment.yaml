@@ -1,0 +1,189 @@
+apiVersion: argoproj.io/v1alpha1
+kind: Rollout
+metadata:
+  name: dcmaar-production
+  namespace: production
+  labels:
+    app: dcmaar
+    environment: production
+spec:
+  replicas: 5
+  revisionHistoryLimit: 5
+  selector:
+    matchLabels:
+      app: dcmaar
+      environment: production
+  strategy:
+    canary:
+      canaryMetadata:
+        labels:
+          deployment: canary
+      stableMetadata:
+        labels:
+          deployment: stable
+      maxSurge: "25%"
+      maxUnavailable: 0
+      steps:
+      - setWeight: 5
+      - pause: { duration: 5m }  # Initial canary phase (5% traffic)
+      - setWeight: 25
+      - pause: { duration: 10m } # Ramp up to 25% traffic
+      - setWeight: 50
+      - pause: { duration: 10m } # Ramp up to 50% traffic
+      - setWeight: 100
+      - pause: { duration: 5m }  # Full rollout
+      analysis:
+        templates:
+        - templateName: success-rate
+        startingStep: 2  # Start analysis after initial canary phase
+        args:
+        - name: traefik
+          value: traefik
+        - name: namespace
+          value: production
+        - name: service
+          value: dcmar-service
+  template:
+    metadata:
+      labels:
+        app: dcmaar
+        environment: production
+      annotations:
+        prometheus.io/scrape: "true"
+        prometheus.io/port: "8080"
+        prometheus.io/path: "/metrics"
+    spec:
+      containers:
+      - name: dcmaar
+        image: ghcr.io/samujjwal/dcmaar:${CANARY_IMAGE_TAG:-latest}
+        imagePullPolicy: IfNotPresent
+        ports:
+        - containerPort: 8080
+          name: http
+        - containerPort: 8081
+          name: grpc
+        env:
+        - name: ENVIRONMENT
+          value: "production"
+        - name: LOG_LEVEL
+          value: "info"
+        - name: DATABASE_URL
+          valueFrom:
+            secretKeyRef:
+              name: dcmaar-secrets
+              key: database-url
+        - name: REDIS_URL
+          valueFrom:
+            secretKeyRef:
+              name: dcmaar-secrets
+              key: redis-url
+        resources:
+          requests:
+            cpu: 200m
+            memory: 256Mi
+          limits:
+            cpu: 1000m
+            memory: 1Gi
+        livenessProbe:
+          httpGet:
+            path: /healthz
+            port: 8080
+          initialDelaySeconds: 30
+          periodSeconds: 10
+          timeoutSeconds: 5
+          failureThreshold: 3
+        readinessProbe:
+          httpGet:
+            path: /ready
+            port: 8080
+          initialDelaySeconds: 5
+          periodSeconds: 5
+          timeoutSeconds: 3
+          failureThreshold: 1
+        startupProbe:
+          httpGet:
+            path: /healthz
+            port: 8080
+          failureThreshold: 30
+          periodSeconds: 10
+        volumeMounts:
+        - name: config-volume
+          mountPath: /etc/dcmaar
+          readOnly: true
+      volumes:
+      - name: config-volume
+        configMap:
+          name: dcmaar-config
+          optional: false
+      imagePullSecrets:
+      - name: ghcr-credentials
+      nodeSelector:
+        node-role.kubernetes.io/production: "true"
+      tolerations:
+      - key: "dedicated"
+        operator: "Equal"
+        value: "production"
+        effect: "NoSchedule"
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 1000
+        fsGroup: 2000
+        seccompProfile:
+          type: RuntimeDefault
+---
+# AnalysisTemplate for canary validation
+apiVersion: argoproj.io/v1alpha1
+kind: AnalysisTemplate
+metadata:
+  name: success-rate
+  namespace: production
+spec:
+  args:
+  - name: traefik
+  - name: namespace
+  - name: service
+  metrics:
+  - name: success-rate
+    interval: 30s
+    successCondition: result[0] > 0.99
+    failureLimit: 3
+    provider:
+      prometheus:
+        address: http://prometheus-operated.monitoring.svc:9090
+        query: >
+          sum(rate(traefik_service_requests_total{
+            namespace="{{args.namespace}}",
+            service="{{args.service}}",
+            code=~"^5..$"
+          }[1m]))
+          /
+          sum(rate(traefik_service_requests_total{
+            namespace="{{args.namespace}}",
+            service="{{args.service}}"
+          }[1m]))
+          or vector(0)
+---
+# Service for canary traffic
+apiVersion: v1
+kind: Service
+metadata:
+  name: dcmar-canary
+  namespace: production
+  labels:
+    app: dcmaar
+    environment: production
+spec:
+  type: ClusterIP
+  selector:
+    app: dcmaar
+    environment: production
+    deployment: canary
+  ports:
+  - name: http
+    port: 80
+    targetPort: 8080
+    protocol: TCP
+  - name: grpc
+    port: 50051
+    targetPort: 8081
+    protocol: TCP

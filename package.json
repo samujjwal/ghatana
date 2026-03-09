@@ -1,0 +1,37 @@
+{
+  "name": "@ghatana/monorepo",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Ghatana Platform Monorepo",
+  "engines": {
+    "node": ">=18.0.0",
+    "pnpm": ">=8.0.0"
+  },
+  "packageManager": "pnpm@10.30.3",
+  "scripts": {
+    "build": "pnpm -r --filter './platform/typescript/**' --filter './products/*/ui' build",
+    "build:platform": "pnpm -r --filter './platform/typescript/**' build",
+    "build:data-cloud-ui": "pnpm --filter '@ghatana/data-cloud-ui' build",
+    "build:yappc": "pnpm --filter './products/yappc/**' build",
+    "dev": "pnpm -r --parallel --filter './products/*/ui' dev",
+    "dev:data-cloud": "pnpm --filter '@ghatana/data-cloud-ui' dev",
+    "test": "pnpm -r test",
+    "test:ui": "pnpm -r --filter './platform/typescript/**' --filter './products/*/ui' test",
+    "lint": "pnpm -r lint",
+    "format": "prettier --write \"**/*.{ts,tsx,js,jsx,json,md}\"",
+    "clean": "pnpm -r --parallel exec rm -rf node_modules dist build .turbo",
+    "typecheck": "pnpm -r --parallel --filter './platform/typescript/**' --filter './products/*/ui' exec tsc --noEmit"
+  },
+  "devDependencies": {
+    "@types/node": "^20.11.0",
+    "prettier": "^3.2.4",
+    "turbo": "^1.12.0",
+    "typescript": "^5.3.3"
+  },
+  "pnpm": {
+    "overrides": {
+      "react": "^19.2.4",
+      "react-dom": "^19.2.4"
+    }
+  }
+}

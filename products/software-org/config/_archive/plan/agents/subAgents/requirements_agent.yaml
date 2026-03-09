@@ -1,0 +1,61 @@
+id: requirements_agent
+name: "Requirements Agent"
+description: "Generates user stories and acceptance criteria"
+goal: >
+  Translate personas and features into implementation-ready user stories with clear acceptance criteria and prioritization.
+input:
+  # Output from research_agent
+  user_personas: User personas from research_agent.
+  market_analysis: Market trends and needs from research_agent.
+  competitor_report: Competitor analysis from research_agent.
+output:
+  user_stories: List of user stories (role, goal, benefit)
+  acceptance_criteria: List of clear, testable acceptance criteria per story
+  prioritization: Ordered list or scoring (Must-have, Should-have, Could-have)
+type: sequential
+afterToolCallbacks:
+  - logMilestone
+components:
+  - type: llm_agent
+    name: "Requirements Content Generator"
+    description: "Produces prioritized user stories and acceptance criteria"
+    model: "llama3.2"
+    instruction: |
+      You are a requirements engineer.
+      Using personas and prioritized features, produce:
+      - user_stories: As a [persona], I want [feature] so that [benefit]
+      - acceptance_criteria: Testable criteria for each story
+      - prioritization: Must-have, should-have, could-have
+      Output valid JSON only.
+    outputKey: "plan_requirements"
+
+  - type: loop
+    name: "Refinement Loop"
+    description: "Iteratively refines requirements based on evaluation"
+    maxIterations: 3
+    components:
+      - type: llm_agent
+        name: "Requirements Evaluator"
+        description: "Evaluates requirements for clarity and completeness"
+        model: "llama3.2"
+        instruction: |
+          You are a requirements evaluator.
+          For each story/criteria, assess:
+          - Clear, actionable, testable? (true/false for each)
+          - Issues, ambiguity, missing info
+          - Suggestions to improve
+          After all, summarize readiness and improvement suggestions.
+          Respond only with valid JSON.
+        outputKey: "plan_requirements_evaluation"
+
+      - type: llm_agent
+        name: "Requirements Refiner"
+        description: "Refines user stories/criteria using evaluation feedback"
+        model: "llama3.2"
+        instruction: |
+          You are a requirements refiner.
+          If not ready (blocking issues), revise requirements using evaluator feedback.
+          If ready, call 'exitLoop'.
+          Only output valid JSON or call 'exitLoop'.
+        outputKey: "plan_requirements"
+        tools: ["exitLoop"]

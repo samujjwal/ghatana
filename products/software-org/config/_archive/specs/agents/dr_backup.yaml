@@ -1,0 +1,27 @@
+---
+id: "dr_backup"
+agent: "DRBackupAgent"
+role: "Ops/SRE"
+inputs_spec:
+- name: "centralized_logs"
+  description: "Centralized logs for backup validation."
+  format: "Centralized log artifact"
+outputs_spec:
+- name: "dr_backup_test_results"
+  description: "DR backup test results for compliance."
+  format: "Backup test results artifact"
+agent_tasks:
+- "Enforce/monitor DR backup schedule."
+- "Test backups regularly for restore."
+- "Log and review backup failures."
+acceptance_criteria:
+- "Backup schedule enforced/monitored."
+- "Backups tested regularly for restore."
+- "Failures logged and reviewed."
+dependencies:
+- "centralized_logs"
+failure_escalation:
+- "Escalate to Ops/SRE if DR backups fail or are untested."
+references: []
+hitl: true
+hitl_reason: "Human validates DR backup tests"

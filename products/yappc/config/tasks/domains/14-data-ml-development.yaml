@@ -1,0 +1,118 @@
+domain:
+  id: data-ml-development
+  name: "Data & ML Development"
+  description: "Build data pipelines and ML models."
+  order: 14
+  icon: "model_training"
+  color: "#EC407A"
+  agent_personas:
+    - "MLBuilder"
+    - "DataPipelineAgent"
+    - "DataEngineer"
+  audit_artifacts:
+    - "ModelVersion"
+    - "DataLineage"
+    - "SchemaVersion"
+  inputs:
+    - "Data"
+    - "Objectives"
+    - "Requirements"
+  outputs:
+    - "Models"
+    - "Pipelines"
+    - "Schemas"
+
+tasks:
+  # Core ICS data/ML tasks
+  - id: d14-t1
+    name: "Data pipelines"
+    description: "Build ETL/ELT pipelines."
+    personas: ["Developer", "Data Engineer"]
+    lifecycle_stages: ["execute"]
+    automation_level: "assisted"
+  - id: d14-t2
+    name: "Feature engineering"
+    description: "Create features for models."
+    personas: ["Developer", "Data Scientist"]
+    lifecycle_stages: ["execute"]
+    automation_level: "assisted"
+  - id: d14-t3
+    name: "Model training"
+    description: "Train ML models."
+    personas: ["Data Scientist"]
+    lifecycle_stages: ["execute"]
+    automation_level: "assisted"
+  - id: d14-t4
+    name: "Prompt engineering"
+    description: "Optimize LLM prompts."
+    personas: ["Developer", "Data Scientist"]
+    lifecycle_stages: ["execute"]
+    automation_level: "assisted"
+  - id: d14-t5
+    name: "Model evaluation"
+    description: "Assess model performance."
+    personas: ["Data Scientist"]
+    lifecycle_stages: ["verify"]
+    automation_level: "assisted"
+
+  # Migrated from legacy data-database domain
+  - id: data-001
+    name: "Design Database Schema"
+    description: "Create database schemas and relationships."
+    personas: ["Developer", "Tech Lead"]
+    lifecycle_stages: ["plan"]
+    automation_level: "assisted"
+  - id: data-002
+    name: "Write Database Migrations"
+    description: "Create migration scripts for schema changes."
+    personas: ["Developer"]
+    lifecycle_stages: ["execute"]
+    automation_level: "assisted"
+  - id: data-003
+    name: "Optimize Queries"
+    description: "Improve database query performance."
+    personas: ["Developer"]
+    lifecycle_stages: ["execute", "verify"]
+    automation_level: "assisted"
+  - id: data-004
+    name: "Implement Data Validation"
+    description: "Add data integrity constraints."
+    personas: ["Developer"]
+    lifecycle_stages: ["execute"]
+    automation_level: "assisted"
+  - id: data-005
+    name: "Setup Database Indexes"
+    description: "Create indexes for query optimization."
+    personas: ["Developer"]
+    lifecycle_stages: ["execute"]
+    automation_level: "assisted"
+  - id: data-006
+    name: "Implement Caching Layer"
+    description: "Add caching for data access."
+    personas: ["Developer"]
+    lifecycle_stages: ["execute"]
+    automation_level: "assisted"
+  - id: data-007
+    name: "Data Backup Strategy"
+    description: "Implement backup and recovery procedures."
+    personas: ["DevOps", "Developer"]
+    lifecycle_stages: ["plan", "execute"]
+    automation_level: "assisted"
+  - id: data-008
+    name: "Database Monitoring"
+    description: "Monitor database performance and health."
+    personas: ["DevOps"]
+    lifecycle_stages: ["observe"]
+    automation_level: "automated"
+  - id: data-009
+    name: "Data Anonymization"
+    description: "Implement data anonymization for privacy."
+    personas: ["Developer", "Security"]
+    lifecycle_stages: ["execute"]
+    automation_level: "assisted"
+  - id: data-010
+    name: "Data Archival"
+    description: "Implement data lifecycle and archival."
+    personas: ["Developer", "DevOps"]
+    lifecycle_stages: ["execute"]
+    automation_level: "assisted"

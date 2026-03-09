@@ -1,0 +1,137 @@
+# Employee Onboarding Workflow Configuration
+apiVersion: virtualorg.ghatana.com/v1
+kind: Workflow
+metadata:
+  name: employee-onboarding
+  namespace: software-org
+  labels:
+    domain: hr
+    cadence: on-demand
+    autonomy-level: high
+  annotations:
+    description: "Automated employee onboarding process"
+    owner: hr-department
+
+spec:
+  trigger:
+    events:
+      - type: employee.hired
+      - type: onboarding.requested
+    manual:
+      enabled: true
+      authorizedRoles:
+        - hr-director
+        - hr-generalist
+
+  execution:
+    mode: sequential
+    timeout: 5d
+    retryPolicy:
+      maxRetries: 3
+      backoffMultiplier: 2
+      initialDelay: 1h
+
+  context:
+    inputs:
+      - name: employee_id
+        type: string
+      - name: department
+        type: string
+      - name: start_date
+        type: date
+      - name: role
+        type: string
+
+  stages:
+    - id: prepare-accounts
+      name: "Prepare Accounts"
+      description: "Create necessary accounts and access"
+      agent: hr-generalist-agent
+      action:
+        type: automated
+        operation: account-provisioning
+        steps:
+          - name: create-email
+            tool: create-email-account
+          - name: create-slack
+            tool: create-slack-account
+          - name: create-github
+            tool: create-github-account
+      transitions:
+        - on: success
+          goto: setup-equipment
+
+    - id: setup-equipment
+      name: "Setup Equipment"
+      description: "Order and configure equipment"
+      agent: hr-generalist-agent
+      action:
+        type: automated
+        operation: equipment-setup
+      transitions:
+        - on: success
+          goto: schedule-orientation
+
+    - id: schedule-orientation
+      name: "Schedule Orientation"
+      description: "Schedule orientation sessions"
+      agent: hr-generalist-agent
+      action:
+        type: automated
+        operation: orientation-scheduling
+      transitions:
+        - on: success
+          goto: assign-buddy
+
+    - id: assign-buddy
+      name: "Assign Buddy"
+      description: "Assign onboarding buddy from team"
+      agent: hr-generalist-agent
+      action:
+        type: ai-decision
+        operation: buddy-assignment
+      transitions:
+        - on: success
+          goto: create-onboarding-plan
+
+    - id: create-onboarding-plan
+      name: "Create Onboarding Plan"
+      description: "Create personalized 30-60-90 day plan"
+      agent: hr-generalist-agent
+      action:
+        type: ai-decision
+        operation: plan-creation
+      hitl:
+        required: true
+        checkpoint: "plan-review"
+        approvers:
+          - role: hr-director
+        timeout: 24h
+      transitions:
+        - on: approved
+          goto: notify-stakeholders
+        - on: rejected
+          goto: create-onboarding-plan
+
+    - id: notify-stakeholders
+      name: "Notify Stakeholders"
+      description: "Notify manager and team of new hire"
+      agent: hr-generalist-agent
+      action:
+        type: automated
+        operation: stakeholder-notification
+      transitions:
+        - on: success
+          goto: complete
+
+    - id: complete
+      name: "Complete Onboarding Setup"
+      action:
+        type: automated
+        operation: finalize
+
+  postActions:
+    - type: audit-log
+      data:
+        workflow: employee-onboarding
+        outcome: "{{workflow.status}}"

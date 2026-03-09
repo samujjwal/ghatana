@@ -1,0 +1,203 @@
+# DevOps Department Configuration
+# Part of Software-Org plugin for Virtual-Org framework
+
+apiVersion: virtualorg.ghatana.com/v1
+kind: Department
+metadata:
+  name: devops
+  labels:
+    category: technical
+    cost-center: "OPS-001"
+
+spec:
+  displayName: "DevOps"
+  type: DEVOPS
+  description: |
+    Infrastructure, deployment, and operations department responsible for
+    CI/CD pipelines, cloud infrastructure, monitoring, and incident response.
+    Ensures reliability, scalability, and security of production systems.
+
+  hierarchy:
+    parent: null
+    reportingTo: cto-agent
+    children: []
+
+  settings:
+    maxAgents: 15
+    autoScaleAgents: false
+    taskAssignment:
+      strategy: capability-match
+      loadBalancing: true
+      maxTasksPerAgent: 3
+
+    # DevOps-specific: 24/7 on-call rotation
+    onCall:
+      enabled: true
+      rotationPeriod: P1W
+      escalationTimeout: PT15M
+
+  agents:
+    - ref: agents/devops-lead-agent.yaml
+    - ref: agents/devops-engineer-agent.yaml
+    - ref: agents/sre-agent.yaml
+
+  workflows:
+    - name: deployment
+      displayName: "Production Deployment"
+      steps:
+        - name: pre-deployment-checks
+          agent: devops-engineer
+          action: run_pre_deployment_checks
+          timeout: PT30M
+        - name: create-deployment-plan
+          agent: devops-lead
+          action: create_deployment_plan
+          timeout: PT1H
+          waitFor: [pre-deployment-checks]
+        - name: deploy-staging
+          agent: devops-engineer
+          action: deploy_to_staging
+          timeout: PT30M
+          waitFor: [create-deployment-plan]
+        - name: staging-verification
+          agent: system
+          action: run_smoke_tests
+          timeout: PT15M
+          waitFor: [deploy-staging]
+        - name: deploy-production
+          agent: devops-engineer
+          action: deploy_to_production
+          timeout: PT30M
+          waitFor: [staging-verification]
+          hitl:
+            required: true
+            approvers: [devops-lead]
+        - name: post-deployment-monitoring
+          agent: sre
+          action: monitor_deployment
+          timeout: PT2H
+          waitFor: [deploy-production]
+
+    - name: incident-response
+      displayName: "Incident Response"
+      steps:
+        - name: alert-triage
+          agent: sre
+          action: triage_alert
+          timeout: PT5M
+        - name: severity-assessment
+          agent: devops-lead
+          action: assess_severity
+          timeout: PT10M
+          waitFor: [alert-triage]
+        - name: mitigation
+          agent: devops-engineer
+          action: apply_mitigation
+          timeout: PT30M
+          waitFor: [severity-assessment]
+        - name: root-cause-analysis
+          agent: sre
+          action: perform_rca
+          timeout: PT4H
+          waitFor: [mitigation]
+        - name: postmortem
+          agent: devops-lead
+          action: create_postmortem
+          timeout: PT24H
+          waitFor: [root-cause-analysis]
+
+  kpis:
+    - name: deployment_frequency
+      displayName: "Deployment Frequency"
+      type: rate
+      unit: deployments/day
+      target: 5
+      warningThreshold: 2
+      criticalThreshold: 1
+
+    - name: deployment_success_rate
+      displayName: "Deployment Success Rate"
+      type: percentage
+      target: 99
+      warningThreshold: 95
+      criticalThreshold: 90
+
+    - name: mean_time_to_recovery
+      displayName: "Mean Time to Recovery (MTTR)"
+      type: duration
+      unit: minutes
+      target: 30
+      warningThreshold: 60
+      criticalThreshold: 120
+
+    - name: change_failure_rate
+      displayName: "Change Failure Rate"
+      type: percentage
+      target: 5
+      warningThreshold: 10
+      criticalThreshold: 15
+
+    - name: infrastructure_uptime
+      displayName: "Infrastructure Uptime"
+      type: percentage
+      target: 99.9
+      warningThreshold: 99.5
+      criticalThreshold: 99.0
+
+    - name: lead_time_for_changes
+      displayName: "Lead Time for Changes"
+      type: duration
+      unit: hours
+      target: 24
+      warningThreshold: 72
+      criticalThreshold: 168
+
+  taskTypes:
+    - name: deployment
+      priority: high
+      slaHours: 4
+      requiredCapabilities: [kubernetes, ci_cd, monitoring]
+
+    - name: incident_response
+      priority: critical
+      slaHours: 1
+      requiredCapabilities: [troubleshooting, kubernetes, monitoring]
+
+    - name: infrastructure_change
+      priority: normal
+      slaHours: 24
+      requiredCapabilities: [terraform, cloud_infrastructure]
+
+    - name: security_patching
+      priority: high
+      slaHours: 8
+      requiredCapabilities: [security, infrastructure]
+
+    - name: capacity_planning
+      priority: low
+      slaHours: 80
+      requiredCapabilities: [monitoring, cost_optimization]
+
+  subscriptions:
+    - event: code_merged
+      source: engineering
+      action: trigger_ci_pipeline
+    - event: quality_gate_passed
+      source: qa
+      action: prepare_deployment
+    - event: security_scan_completed
+      source: compliance
+      action: review_security_findings
+    - event: alert_triggered
+      source: monitoring
+      action: initiate_incident_response
+
+  publications:
+    - event: deployment_completed
+      targets: [qa, product, support]
+    - event: deployment_failed
+      targets: [engineering]
+    - event: incident_detected
+      targets: [engineering, support]
+    - event: incident_resolved
+      targets: [support, product]

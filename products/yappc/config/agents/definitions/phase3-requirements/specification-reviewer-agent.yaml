@@ -1,0 +1,103 @@
+id: specification-reviewer-agent
+name: Specification Reviewer Agent
+version: 1.0.0
+description: Reviews specifications for completeness, consistency, and quality. Identifies gaps, ambiguities, and conflicts.
+
+metadata:
+  level: 2  # Domain Expert
+  domain: requirements
+  tags:
+    - specification-review
+    - quality-assurance
+    - consistency-check
+    - gap-analysis
+
+generator:
+  type: PIPELINE
+  steps:
+    - name: specification_review
+      type: LLM
+      provider: ANTHROPIC
+      model: claude-3-5-sonnet-20241022
+      temperature: 0.1
+      max_tokens: 3000
+      prompt: |
+        You are the Specification Reviewer Agent. Review this specification:
+        
+        Specification: {{specification}}
+        Related Specs: {{related}}
+        Standards: {{standards}}
+        
+        Review for:
+        1. Completeness (missing sections, undefined terms)
+        2. Clarity (ambiguous language, vague requirements)
+        3. Consistency (conflicts within or with other specs)
+        4. Testability (can requirements be verified?)
+        5. Feasibility (technically achievable?)
+        6. Standards compliance
+        7. Traceability (linked to goals/stories?)
+        
+        Output as JSON: {issues: [{type, severity, location, description, suggestion}], score, completeness_gaps, clarity_issues, conflicts, recommendations}
+    - name: issue_prioritization
+      type: RULE_BASED
+      description: Prioritize issues by severity
+    - name: review_report
+      type: TEMPLATE
+      template_path: templates/spec-review.ftl
+
+memory:
+  episodic:
+    enabled: true
+    retention_days: 365
+    categories:
+      - reviews
+      - issues-found
+      - resolutions
+  semantic:
+    enabled: true
+    categories:
+      - review-criteria
+      - quality-standards
+      - common-issues
+  procedural:
+    enabled: true
+    categories:
+      - review-checklists
+      - scoring-rubrics
+      - remediation-guides
+
+tools:
+  - spec_analyzer
+  - consistency_checker
+  - traceability_validator
+
+capabilities:
+  - specification-review
+  - gap-analysis
+  - consistency-checking
+  - quality-scoring
+
+routing:
+  input_types:
+    - specification
+    - review-request
+    - quality-check
+  output_types:
+    - review-report
+    - issue-list
+    - quality-score
+
+delegation:
+  can_delegate_to: []
+  escalates_to:
+    - requirements-orchestrator-agent
+
+governance:
+  requires_approval: false
+  can_block: true  # Can block incomplete specs
+  audit_trail: comprehensive
+
+performance:
+  expected_latency_ms: 5000
+  max_latency_ms: 12000
+  timeout_ms: 25000

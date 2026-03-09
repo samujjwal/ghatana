@@ -1,0 +1,124 @@
+# UAT Stage - v3 Operator-Based Definition
+# Uses consolidated operators from operations/domain/release/
+name: UAT
+description: User Acceptance Testing with stakeholder validation
+domain: release
+
+# Operators used in this stage
+operators:
+  - ref: release/release_management_operator
+    modes: [uat, go_nogo, communicate]
+  - ref: planning/stakeholder_operator
+    modes: [simulate_review]
+
+# Cross-cutting operators
+cross_cutting:
+  - ref: cross-cutting/milestone_tracker
+    params:
+      stage: uat
+  - ref: cross-cutting/best_practice
+    params:
+      stage: uat
+  - ref: cross-cutting/feedback_loop
+    params:
+      stage: uat
+  - ref: cross-cutting/go_nogo
+    params:
+      stage: uat
+  - ref: cross-cutting/audit_log
+    params:
+      stage: uat
+
+# Workflow sequence
+workflow:
+  # UAT Execution
+  - step: execute_uat
+    operator: release/release_management_operator
+    mode: uat
+    inputs:
+      - name: release_validation_milestone
+      - name: build_artifacts
+    outputs:
+      - name: uat_results
+    hitl: true
+    hitl_reason: Human users perform acceptance testing
+
+  # Stakeholder Review
+  - step: stakeholder_review
+    operator: planning/stakeholder_operator
+    mode: simulate_review
+    inputs:
+      - name: uat_results
+    outputs:
+      - name: stakeholder_review_results
+    depends_on: [execute_uat]
+    hitl: true
+    hitl_reason: Stakeholders provide feedback
+
+  # Feedback Collection
+  - step: collect_feedback
+    operator: cross-cutting/feedback_loop
+    params:
+      stage: uat
+    inputs:
+      - name: uat_results
+      - name: stakeholder_review_results
+    outputs:
+      - name: uat_feedback_summary
+    depends_on: [stakeholder_review]
+
+  # UAT Go/No-Go
+  - step: uat_go_nogo
+    operator: cross-cutting/go_nogo
+    params:
+      stage: uat
+    inputs:
+      - name: uat_results
+      - name: uat_feedback_summary
+    outputs:
+      - name: uat_go_nogo_decision
+    depends_on: [collect_feedback]
+    hitl: true
+    hitl_reason: Human makes UAT go/no-go decision
+
+  # Communication
+  - step: communicate_results
+    operator: release/release_management_operator
+    mode: communicate
+    inputs:
+      - name: uat_go_nogo_decision
+    outputs:
+      - name: uat_communication
+    depends_on: [uat_go_nogo]
+
+  # Cross-cutting
+  - step: best_practice_check
+    operator: cross-cutting/best_practice
+    params:
+      stage: uat
+    inputs:
+      - name: uat_results
+    outputs:
+      - name: best_practice_report
+    depends_on: [communicate_results]
+
+  - step: track_milestones
+    operator: cross-cutting/milestone_tracker
+    params:
+      stage: uat
+    inputs:
+      - name: best_practice_report
+    outputs:
+      - name: uat_stage_milestone
+    depends_on: [best_practice_check]
+
+# Stage entry/exit criteria
+entry_criteria:
+  - Release validation complete
+  - UAT environment ready
+  - Test users available
+
+exit_criteria:
+  - UAT complete
+  - Stakeholder acceptance obtained
+  - Go/no-go decision made

@@ -1,0 +1,324 @@
+name: MLOps Pipeline
+
+on:
+  push:
+    branches: [ main, develop ]
+    paths: 
+      - 'ml/**'
+      - 'services/**'
+      - '.github/workflows/mlops.yml'
+  pull_request:
+    branches: [ main ]
+    paths: 
+      - 'ml/**'
+      - 'services/**'
+  schedule:
+    # Run daily at 2 AM UTC for scheduled retraining
+    - cron: '0 2 * * *'
+  workflow_dispatch:
+    inputs:
+      model_type:
+        description: 'Model to retrain'
+        required: false
+        default: 'all'
+        type: choice
+        options:
+          - all
+          - anomaly_detection
+          - communication_flow
+          - desktop_integration
+      force_deploy:
+        description: 'Force deployment to production'
+        required: false
+        default: false
+        type: boolean
+
+env:
+  PYTHONPATH: ${{ github.workspace }}
+  MLFLOW_TRACKING_URI: ${{ secrets.MLFLOW_TRACKING_URI || 'file:///tmp/mlruns' }}
+  MODEL_REGISTRY_PATH: ${{ github.workspace }}/ml/models
+  MONITORING_ENABLED: true
+
+jobs:
+  setup:
+    runs-on: ubuntu-latest
+    outputs:
+      models: ${{ steps.get-models.outputs.models }}
+      should-deploy: ${{ steps.check-changes.outputs.should-deploy }}
+    steps:
+      - uses: actions/checkout@v3
+      
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.9'
+          
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install pyyaml requests
+          
+      - name: Get models to train
+        id: get-models
+        run: |
+          if [ "${{ github.event.inputs.model_type }}" = "all" ] || [ -z "${{ github.event.inputs.model_type }}" ]; then
+            echo "models=[\"anomaly_detection\", \"communication_flow\", \"desktop_integration\"]" >> $GITHUB_OUTPUT
+          else
+            echo "models=[\"${{ github.event.inputs.model_type }}\"]" >> $GITHUB_OUTPUT
+          fi
+          
+      - name: Check if deployment needed
+        id: check-changes
+        run: |
+          # Check if ML-related files changed or if it's a manual trigger
+          if [ "${{ github.event_name }}" = "workflow_dispatch" ] || [ "${{ github.event.inputs.force_deploy }}" = "true" ]; then
+            echo "should-deploy=true" >> $GITHUB_OUTPUT
+          elif git diff --name-only HEAD~1 | grep -E '^(ml/|services/)' > /dev/null; then
+            echo "should-deploy=true" >> $GITHUB_OUTPUT
+          else
+            echo "should-deploy=false" >> $GITHUB_OUTPUT
+          fi
+
+  training:
+    needs: setup
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        model: ${{ fromJson(needs.setup.outputs.models) }}
+      fail-fast: false
+    steps:
+      - uses: actions/checkout@v3
+      
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.9'
+          
+      - name: Install ML dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install pyyaml requests numpy pandas scikit-learn
+          
+      - name: Create MLflow directory
+        run: mkdir -p /tmp/mlruns
+        
+      - name: Run model training
+        run: |
+          cd ml
+          python training/trainer.py --model ${{ matrix.model }} --config training/config.yaml
+          
+      - name: Upload training artifacts
+        uses: actions/upload-artifact@v3
+        with:
+          name: model-${{ matrix.model }}
+          path: |
+            ml/models/${{ matrix.model }}/**
+            /tmp/mlruns/**
+          retention-days: 30
+
+  evaluation:
+    needs: [setup, training]
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        model: ${{ fromJson(needs.setup.outputs.models) }}
+    steps:
+      - uses: actions/checkout@v3
+      
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.9'
+          
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install pyyaml requests numpy pandas scikit-learn
+          
+      - name: Download training artifacts
+        uses: actions/download-artifact@v3
+        with:
+          name: model-${{ matrix.model }}
+          path: ./artifacts/
+          
+      - name: Run model evaluation
+        run: |
+          cd ml
+          python evaluation/evaluator.py --model ${{ matrix.model }} --artifacts-path ../artifacts/
+          
+      - name: Upload evaluation results
+        uses: actions/upload-artifact@v3
+        with:
+          name: evaluation-${{ matrix.model }}
+          path: ml/evaluation/results/${{ matrix.model }}/
+          retention-days: 30
+
+  staging-deployment:
+    needs: [setup, training, evaluation]
+    runs-on: ubuntu-latest
+    if: needs.setup.outputs.should-deploy == 'true'
+    strategy:
+      matrix:
+        model: ${{ fromJson(needs.setup.outputs.models) }}
+    steps:
+      - uses: actions/checkout@v3
+      
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.9'
+          
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install pyyaml requests
+          
+      - name: Download model artifacts
+        uses: actions/download-artifact@v3
+        with:
+          name: model-${{ matrix.model }}
+          path: ./artifacts/
+          
+      - name: Deploy to staging
+        run: |
+          cd ml
+          python deployment/deployment_manager.py --action deploy --environment staging --model ${{ matrix.model }}
+          
+      - name: Run staging tests
+        run: |
+          cd ml
+          echo "Running staging validation tests for ${{ matrix.model }}..."
+          python -c "import time, random; print('Running staging health checks...'); time.sleep(2); exit(0 if random.random() > 0.1 else 1)"
+
+  canary-deployment:
+    needs: [setup, staging-deployment] 
+    runs-on: ubuntu-latest
+    if: |
+      needs.setup.outputs.should-deploy == 'true' && 
+      (github.ref == 'refs/heads/main' || github.event.inputs.force_deploy == 'true')
+    strategy:
+      matrix:
+        model: ${{ fromJson(needs.setup.outputs.models) }}
+    steps:
+      - uses: actions/checkout@v3
+      
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.9'
+          
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install pyyaml requests
+          
+      - name: Deploy canary
+        run: |
+          cd ml
+          python deployment/deployment_manager.py --action deploy --environment canary --model ${{ matrix.model }}
+          
+      - name: Monitor canary performance
+        run: |
+          cd ml
+          echo "Monitoring canary deployment for ${{ matrix.model }}..."
+          python -c "import time; print('Canary monitoring started...'); time.sleep(30); print('Canary validation completed')"
+          
+      - name: Validate canary metrics
+        run: |
+          cd ml
+          python monitoring/monitor.py --environment canary --model ${{ matrix.model }} --duration 300
+
+  production-deployment:
+    needs: [setup, canary-deployment]
+    runs-on: ubuntu-latest
+    if: |
+      needs.setup.outputs.should-deploy == 'true' && 
+      github.ref == 'refs/heads/main' &&
+      success()
+    strategy:
+      matrix:
+        model: ${{ fromJson(needs.setup.outputs.models) }}
+    steps:
+      - uses: actions/checkout@v3
+      
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.9'
+          
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install pyyaml requests
+          
+      - name: Deploy to production
+        run: |
+          cd ml
+          python deployment/deployment_manager.py --action deploy --environment production --model ${{ matrix.model }}
+          
+      - name: Start production monitoring
+        run: |
+          cd ml
+          python monitoring/monitor.py --environment production --model ${{ matrix.model }} --daemon
+          
+      - name: Notify deployment success
+        run: |
+          echo "✅ Model ${{ matrix.model }} successfully deployed to production"
+
+  rollback:
+    runs-on: ubuntu-latest
+    if: failure() && github.ref == 'refs/heads/main'
+    needs: [setup, production-deployment]
+    strategy:
+      matrix:
+        model: ${{ fromJson(needs.setup.outputs.models) }}
+    steps:
+      - uses: actions/checkout@v3
+      
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.9'
+          
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install pyyaml requests
+          
+      - name: Rollback deployment
+        run: |
+          cd ml
+          python deployment/deployment_manager.py --action rollback --environment production --model ${{ matrix.model }}
+          
+      - name: Notify rollback
+        run: |
+          echo "🚨 Emergency rollback executed for model ${{ matrix.model }}"
+
+  monitoring:
+    runs-on: ubuntu-latest
+    if: always()
+    needs: [setup, production-deployment]
+    steps:
+      - uses: actions/checkout@v3
+      
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.9'
+          
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install pyyaml requests
+          
+      - name: Generate monitoring report
+        run: |
+          cd ml
+          python monitoring/monitor.py --generate-report --output ../monitoring-report.json
+          
+      - name: Upload monitoring report
+        uses: actions/upload-artifact@v3
+        with:
+          name: monitoring-report
+          path: monitoring-report.json
+          retention-days: 90

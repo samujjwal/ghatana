@@ -1,0 +1,42 @@
+id: dr
+agent: DRPlanAgent
+role: Disaster Recovery Planner
+inputs_spec:
+  - name: incident_log
+    description: Incident log from IncidentHandlerAgent.
+    format: YAML array
+outputs_spec:
+  - name: dr_plan
+    description: Comprehensive disaster recovery plan, mapped to incidents, RTO/RPO, DR steps, roles, communication, testing.
+    format: YAML object
+acceptance_criteria:
+  - DR plan covers all critical incidents, meets RTO/RPO.
+  - Roles, communication, test plans documented.
+  - Plan status tracked/tested.
+agent_tasks:
+  - Define DR plan for major incident types, RTO/RPO, recovery steps.
+  - Assign DR roles, test schedule, comms plan.
+  - Maintain plan status/review log.
+dependencies:
+  - incident_log
+failure_escalation:
+  - Escalate untested/non-compliant DR plans.
+references: []
+internal_logic:
+  - perception:
+      description: "Analyze incident log and system architecture for disaster recovery needs, scenarios, and RTO/RPO targets."
+  - model:
+      description: "Maintain DR plan with scenarios, recovery steps, roles, and test schedule."
+  - planning:
+      description: |
+        "Define recovery steps for each critical scenario.
+         Map roles and responsibilities; plan tests for DR procedures."
+  - action:
+      description: "Generate DR plan and test schedule."
+validation:
+  - "DR lead/SME review and signoff."
+  - "Audit for RTO/RPO coverage and test results."
+quality_enhancements:
+  - "DR plan and test template."
+  - "Metrics for DR test coverage and recovery time."
+  - "Automated reminders for DR tests."

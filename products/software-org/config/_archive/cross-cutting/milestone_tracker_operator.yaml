@@ -1,0 +1,70 @@
+---
+# Cross-Cutting Milestone Tracker Operator Template
+# Replaces ~12 stage-specific files: build_milestone_tracker.yaml, etc.
+#
+# @doc.type operator-template
+# @doc.purpose Cross-cutting milestone tracking for all stages
+# @doc.layer operations
+# @doc.pattern Template
+
+template:
+  id: "${stage}_milestone_tracker"
+  version: "1.0.0"
+
+operator:
+  type: "MilestoneTrackerOperator"
+  role: "${stage} Milestone Tracker"
+  category: "cross-cutting"
+
+parameters:
+  stage:
+    type: "string"
+    required: true
+    description: "Stage name for milestone tracking"
+
+inputs_spec:
+  - name: "${stage}_plan"
+    description: "${stage} plan with milestone definitions."
+    format: "Plan artifact"
+    required: true
+
+outputs_spec:
+  - name: "${stage}_stage_milestone"
+    description: "Milestone tracking for ${stage} with status, dates, blockers."
+    format: "List of milestone objects"
+
+  - name: "${stage}_milestone_events"
+    description: "Stream of milestone status change events"
+    format: "Event stream"
+    event_type: "ghatana.operations.milestone.${stage}"
+
+agent_tasks:
+  - "Track all ${stage} milestones with target and actual dates."
+  - "Calculate variance and flag at-risk milestones."
+  - "Update critical path analysis."
+  - "Emit milestone events to EventCloud."
+
+acceptance_criteria:
+  - "All milestones are tracked with current status."
+  - "Variance from plan is calculated and visible."
+  - "At-risk milestones trigger alerts."
+
+dependencies:
+  - "${stage}_plan"
+
+failure_escalation:
+  - "Escalate to PM if milestone tracking fails."
+
+config:
+  milestone_states:
+    - "not_started"
+    - "in_progress"
+    - "completed"
+    - "at_risk"
+    - "missed"
+    - "deferred"
+
+  at_risk_threshold_days: 2
+  event_cloud_topic: "ghatana.operations.milestone"
+
+hitl: false

@@ -1,0 +1,83 @@
+version: '3.8'
+
+services:
+  test-runner:
+    build:
+      context: .
+      dockerfile: Dockerfile.test
+    environment:
+      - ENVIRONMENT=test
+      - LOG_LEVEL=debug
+      - CLICKHOUSE_HOST=clickhouse-test
+      - CLICKHOUSE_PORT=9000
+      - REDIS_ADDR=redis-test:6379
+    depends_on:
+      clickhouse-test:
+        condition: service_healthy
+      redis-test:
+        condition: service_healthy
+    networks:
+      - test-network
+
+  clickhouse-test:
+    image: clickhouse/clickhouse-server:23.3
+    environment:
+      - CLICKHOUSE_DB=test
+      - CLICKHOUSE_USER=test
+      - CLICKHOUSE_PASSWORD=test
+      - CLICKHOUSE_DEFAULT_ACCESS_MANAGEMENT=1
+    ports:
+      - "19000:9000"
+      - "18123:8123"
+    healthcheck:
+      test: ["CMD", "wget", "--spider", "http://localhost:8123/ping"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+    volumes:
+      - clickhouse-test-data:/var/lib/clickhouse/
+      - ./testdata/clickhouse/init.sql:/docker-entrypoint-initdb.d/init.sql
+    networks:
+      - test-network
+
+  redis-test:
+    image: redis:7.0
+    command: redis-server --save 60 1 --loglevel warning
+    ports:
+      - "16379:6379"
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+    volumes:
+      - redis-test-data:/data
+    networks:
+      - test-network
+
+  test-coverage:
+    image: golang:1.20
+    volumes:
+      - .:/app
+      - go-modules:/go/pkg/mod
+    working_dir: /app
+    command: >
+      sh -c "go test -v -coverprofile=coverage.out -covermode=atomic ./... &&
+             go tool cover -html=coverage.out -o coverage.html"
+    environment:
+      - CGO_ENABLED=0
+      - GO111MODULE=on
+    depends_on:
+      - clickhouse-test
+      - redis-test
+    networks:
+      - test-network
+
+networks:
+  test-network:
+    driver: bridge
+
+volumes:
+  clickhouse-test-data:
+  redis-test-data:
+  go-modules:

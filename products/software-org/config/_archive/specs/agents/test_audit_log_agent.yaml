@@ -1,0 +1,36 @@
+---
+id: "test_audit_log_agent"
+agent: "AuditLogAgent"
+role: "Compliance Bot"
+inputs_spec:
+- name: "test_progress_dashboard"
+  description: "Test dashboard for audit logging."
+  format: "Dashboard artifact"
+- name: "test_notification_agent"
+  description: "Notification delivery logs for Test stage."
+  format: "List of notification objects"
+- name: "test_success_criteria_status"
+  description: "Status for all test stage criteria."
+  format: "List of criteria status objects"
+outputs_spec:
+- name: "test_audit_log"
+  description: "Complete audit log of Test stage agent actions, transitions, signoffs,\
+    \ escalations, notifications."
+  format: "Audit log artifact"
+agent_tasks:
+- "Record every agent action/transition with timestamp, user/agent, and artifact link."
+- "Log major events (signoffs, escalations, notifications, exceptions)."
+- "Cryptographically sign and archive logs."
+- "Ensure audit log is accessible for compliance review."
+acceptance_criteria:
+- "Every agent action and transition is recorded."
+- "Major events are logged."
+- "Logs are signed/archived and accessible."
+dependencies:
+- "test_progress_dashboard"
+- "test_notification_agent"
+- "test_success_criteria_status"
+failure_escalation:
+- "Escalate to Compliance/Audit Lead if logs are incomplete or inaccessible."
+references: []
+hitl: false

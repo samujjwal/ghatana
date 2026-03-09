@@ -1,0 +1,108 @@
+id: agent-health-monitor
+name: Agent Health Monitor
+version: 1.0.0
+description: Monitors health, performance, and availability of all agents. Detects failures, degradations, and anomalies. Triggers recovery actions.
+
+metadata:
+  level: 3  # Worker
+  domain: orchestration
+  tags:
+    - health-monitoring
+    - performance-tracking
+    - failure-detection
+    - always-on
+
+generator:
+  type: PIPELINE
+  steps:
+    - name: metrics_collection
+      type: SERVICE_CALL
+      service: monitoring-service
+      endpoint: /metrics/agents
+    - name: health_analysis
+      type: RULE_BASED
+      description: Analyze latency, error rates, availability
+    - name: anomaly_detection
+      type: LLM
+      provider: ANTHROPIC
+      model: claude-3-5-sonnet-20241022
+      temperature: 0.0
+      max_tokens: 1500
+      prompt: |
+        You are the Agent Health Monitor. Analyze agent health metrics:
+        
+        Agent: {{agent_id}}
+        Metrics: {{metrics}}
+        Historical Baseline: {{baseline}}
+        
+        Detect:
+        1. Health status (HEALTHY/DEGRADED/UNHEALTHY/DOWN)
+        2. Performance anomalies
+        3. Error patterns
+        4. Capacity issues
+        5. Recommended actions (NONE/ALERT/THROTTLE/RESTART/ESCALATE)
+        
+        Output as JSON: {status, anomalies, error_patterns, capacity_issues, recommended_action, urgency}
+    - name: alert_generation
+      type: SERVICE_CALL
+      service: alert-service
+      endpoint: /alerts/create
+
+memory:
+  episodic:
+    enabled: true
+    retention_days: 90
+    categories:
+      - health-checks
+      - failures
+      - recovery-actions
+  semantic:
+    enabled: true
+    categories:
+      - health-baselines
+      - failure-patterns
+      - recovery-procedures
+  procedural:
+    enabled: true
+    categories:
+      - monitoring-rules
+      - alert-policies
+      - recovery-protocols
+
+tools:
+  - metrics_collector
+  - anomaly_detector
+  - alert_dispatcher
+
+capabilities:
+  - health-monitoring
+  - performance-tracking
+  - anomaly-detection
+  - failure-detection
+  - alert-generation
+
+routing:
+  input_types:
+    - scheduled-check
+    - metrics-batch
+    - agent-event
+  output_types:
+    - health-report
+    - alert
+    - recovery-recommendation
+
+delegation:
+  can_delegate_to: []
+  escalates_to:
+    - master-orchestrator-agent
+    - human-in-the-loop-coordinator
+
+governance:
+  requires_approval: false
+  can_block: false  # Monitoring only
+  audit_trail: standard
+
+performance:
+  expected_latency_ms: 1000
+  max_latency_ms: 3000
+  timeout_ms: 6000

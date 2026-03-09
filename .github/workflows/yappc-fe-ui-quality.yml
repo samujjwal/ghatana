@@ -1,0 +1,166 @@
+name: "YAPPC FE: UI Quality & DoD Enforcement"
+
+on:
+  pull_request:
+    types: [opened, edited, synchronize, reopened]
+      paths: ['products/yappc/frontend/**']
+  push:
+    branches: [main]
+
+      paths: ['products/yappc/frontend/**']
+defaults:
+  run:
+    working-directory: products/yappc/frontend
+
+jobs:
+  ui-quality:
+    name: UI Quality Checks
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      pull-requests: write
+      issues: write
+    steps:
+      - uses: ./.github/actions/setup-pnpm
+        with:
+          node-version: "20"
+          cache-pnpm-store: "true"
+
+      - name: Run ESLint
+        run: pnpm -w -s lint
+
+      - name: Run duplication check (jscpd)
+        run: pnpm run jscpd
+
+      - name: Dependency boundary check (dependency-cruiser)
+        run: |
+          pnpm run depcruise -- --output-type dot > depcruise.dot
+          pnpm run depcruise:report
+
+      - name: Render depcruise graph (container)
+        if: always()
+        uses: addnab/docker-run-action@v4
+        with:
+          image: docker.io/graphviz/graphviz:latest
+          options: --entrypoint ""
+          run: |
+            sh -c "if [ -f depcruise.dot ]; then dot -Tsvg depcruise.dot -o depcruise.svg; fi"
+
+      - name: Size limit (apps/web)
+        run: |
+          pnpm -C apps/web run build --silent
+          pnpm -C apps/web run size
+
+      - name: DoD verifier
+        env:
+          GITHUB_EVENT_PATH: ${{ github.event_path }}
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GITHUB_REPOSITORY: ${{ github.repository }}
+        run: node ./scripts/verify-dod.js
+
+      - name: Route smoke tests (web)
+        run: pnpm run test:smoke:web
+
+      - name: Upload report (if any)
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: ui-quality-report
+          path: |
+            .jscpd-report.html
+            depcruise-report.txt
+            depcruise.svg
+            libs/ui/storybook-static/
+
+      - name: Post CI summary to PR
+        if: github.event_name == 'pull_request'
+        env:
+          GITHUB_EVENT_PATH: ${{ github.event_path }}
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GITHUB_REPOSITORY: ${{ github.repository }}
+        run: node ./scripts/post-ci-summary.js
+
+  storybook-quality:
+    name: Storybook Build & A11y
+    runs-on: ubuntu-latest
+    needs: ui-quality
+    steps:
+      - uses: ./.github/actions/setup-pnpm
+        with:
+          node-version: "20"
+          cache-pnpm-store: "true"
+
+      - name: Build Storybook
+        run: pnpm --filter @ghatana/yappc-ui build-storybook
+
+      - name: Run Axe accessibility tests
+        run: |
+          # Install axe-core CLI
+          npx @axe-core/cli --help
+
+          # Start a simple HTTP server for Storybook static files
+          cd libs/ui/storybook-static
+          npx http-server . -p 6006 -s &
+          SERVER_PID=$!
+
+          # Wait for server to start
+          sleep 5
+
+          # Run axe against key story pages
+          echo "Running accessibility tests on Storybook..."
+          npx @axe-core/cli http://localhost:6006/iframe.html?id=components-button--primary \
+              --exit --tags wcag2a,wcag2aa --reporter json > axe-results-button.json || echo "Button accessibility issues found"
+
+          npx @axe-core/cli http://localhost:6006/iframe.html?id=components-input--default \
+              --exit --tags wcag2a,wcag2aa --reporter json > axe-results-input.json || echo "Input accessibility issues found"
+
+          npx @axe-core/cli http://localhost:6006/iframe.html?id=components-card--default \
+              --exit --tags wcag2a,wcag2aa --reporter json > axe-results-card.json || echo "Card accessibility issues found"
+
+          # Stop the server
+          kill $SERVER_PID
+
+          # Check for critical violations
+          echo "Analyzing accessibility results..."
+          node -e "
+          const fs = require('fs');
+          const files = ['axe-results-button.json', 'axe-results-input.json', 'axe-results-card.json'];
+          let totalViolations = 0;
+          let criticalViolations = 0;
+
+          files.forEach(file => {
+            if (fs.existsSync(file)) {
+              try {
+                const data = JSON.parse(fs.readFileSync(file, 'utf8'));
+                if (data.violations) {
+                  totalViolations += data.violations.length;
+                  const critical = data.violations.filter(v => v.impact === 'critical' || v.impact === 'serious');
+                  criticalViolations += critical.length;
+                  console.log(\`\${file}: \${data.violations.length} violations (\${critical.length} critical/serious)\`);
+                }
+              } catch(e) {
+                console.log(\`Error parsing \${file}: \${e.message}\`);
+              }
+            }
+          });
+
+          console.log(\`Total violations: \${totalViolations} (Critical/Serious: \${criticalViolations})\`);
+
+          if (criticalViolations > 0) {
+            console.error('❌ Critical accessibility violations found!');
+            process.exit(1);
+          } else {
+            console.log('✅ No critical accessibility violations found');
+          }
+          "
+        continue-on-error: false
+
+      - name: Upload Storybook build & a11y results
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: storybook-a11y-report
+          path: |
+            libs/ui/storybook-static/
+            axe-results-*.json
+          retention-days: 7

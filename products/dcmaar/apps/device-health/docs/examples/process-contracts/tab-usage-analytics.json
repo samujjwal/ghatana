@@ -1,0 +1,141 @@
+{
+  "id": "tab-usage-analytics",
+  "metadata": {
+    "name": "Tab Usage Analytics",
+    "description": "Tracks and analyzes tab usage patterns to identify productivity insights",
+    "version": "1.0.0",
+    "author": "DCMAAR Team",
+    "tags": ["analytics", "productivity", "tabs"],
+    "createdAt": 1706745600000,
+    "updatedAt": 1706745600000
+  },
+  "collect": {
+    "id": "collect",
+    "sources": [
+      {
+        "id": "tab-events-source",
+        "type": "browser-events",
+        "strategy": "event-driven",
+        "config": {
+          "eventTypes": ["tabs"],
+          "includeInactive": false
+        },
+        "filters": [
+          {
+            "field": "payload.url",
+            "operator": "regex",
+            "value": "^https?://"
+          }
+        ],
+        "samplingRate": 1.0,
+        "batchSize": 100
+      }
+    ],
+    "mergeStrategy": "union",
+    "timeoutMs": 10000,
+    "retry": {
+      "maxAttempts": 3,
+      "backoffMs": 1000
+    }
+  },
+  "analyze": {
+    "id": "analyze",
+    "operations": [
+      {
+        "id": "aggregate-by-domain",
+        "strategy": "aggregate",
+        "config": {
+          "groupBy": "payload.url",
+          "metrics": ["count"],
+          "fields": []
+        },
+        "order": 100,
+        "continueOnError": false
+      },
+      {
+        "id": "classify-by-category",
+        "strategy": "classify",
+        "config": {
+          "categories": {
+            "work": ["github.com", "stackoverflow.com", "docs.google.com"],
+            "social": ["twitter.com", "facebook.com", "linkedin.com"],
+            "entertainment": ["youtube.com", "netflix.com", "reddit.com"]
+          }
+        },
+        "order": 200,
+        "continueOnError": true
+      }
+    ],
+    "parallel": false,
+    "timeoutMs": 15000
+  },
+  "report": {
+    "id": "report",
+    "destinations": [
+      {
+        "id": "local-storage",
+        "type": "store",
+        "delivery": "store",
+        "config": {
+          "storageType": "local",
+          "key": "tab-usage-reports",
+          "maxReports": 50
+        },
+        "format": "json"
+      },
+      {
+        "id": "user-notification",
+        "type": "notification",
+        "delivery": "notification",
+        "config": {
+          "title": "Tab Usage Report",
+          "priority": "low"
+        },
+        "format": "markdown",
+        "when": {
+          "field": "summary.eventsCollected",
+          "operator": "gt",
+          "value": 10
+        }
+      }
+    ],
+    "aggregate": true,
+    "includeMetadata": true,
+    "includeSummary": true,
+    "timeoutMs": 10000
+  },
+  "security": {
+    "maxExecutionTimeMs": 30000,
+    "maxMemoryBytes": 52428800,
+    "maxEventsPerBatch": 1000,
+    "allowedNetworkPatterns": [],
+    "deniedNetworkPatterns": ["file://*", "chrome://*", "chrome-extension://*"],
+    "allowedBrowserAPIs": ["storage", "tabs", "runtime", "notifications"],
+    "sandboxed": true
+  },
+  "privacy": {
+    "redactionRules": [
+      {
+        "pattern": "\\b[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\\.[A-Z|a-z]{2,}\\b",
+        "replacement": "[EMAIL]"
+      },
+      {
+        "pattern": "password|token|secret|key",
+        "replacement": "[REDACTED]"
+      }
+    ],
+    "encryptFields": [],
+    "anonymize": false,
+    "requireConsent": false
+  },
+  "enabled": true,
+  "schedule": "0 */6 * * *",
+  "priority": 100,
+  "maxConcurrentExecutions": 1,
+  "timeoutMs": 60000,
+  "onError": "retry",
+  "variables": {
+    "minEventsThreshold": 5,
+    "reportingInterval": "6h"
+  }
+}

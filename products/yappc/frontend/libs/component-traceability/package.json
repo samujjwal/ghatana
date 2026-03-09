@@ -1,0 +1,30 @@
+{
+  "name": "@ghatana/yappc-component-traceability",
+  "version": "1.0.0",
+  "description": "Component traceability management for YAPPC",
+  "type": "module",
+  "main": "./src/index.ts",
+  "types": "./src/index.ts",
+  "exports": {
+    ".": "./src/index.ts",
+    "./types": "./src/types.ts"
+  },
+  "scripts": {
+    "type-check": "tsc --noEmit",
+    "lint": "eslint src --ext .ts"
+  },
+  "dependencies": {},
+  "devDependencies": {
+    "@types/node": "^25.2.0",
+    "typescript": "^5.9.3"
+  },
+  "keywords": [
+    "traceability",
+    "component",
+    "requirement",
+    "coverage",
+    "analysis"
+  ],
+  "author": "YAPPC Team",
+  "license": "MIT"
+}

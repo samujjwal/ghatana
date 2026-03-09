@@ -1,0 +1,27 @@
+{
+  "id": "examples/performance-optimization",
+  "title": "Performance Optimization",
+  "description": "Documentation coming soon.",
+  "source": "@site/docs/examples/performance-optimization.md",
+  "sourceDirName": "examples",
+  "slug": "/examples/performance-optimization",
+  "permalink": "/docs/examples/performance-optimization",
+  "draft": false,
+  "unlisted": false,
+  "editUrl": "https://github.com/yappc/app-creator/tree/main/docs-site/docs/examples/performance-optimization.md",
+  "tags": [],
+  "version": "current",
+  "sidebarPosition": 1,
+  "frontMatter": {
+    "sidebar_position": 1
+  },
+  "sidebar": "guidesSidebar",
+  "previous": {
+    "title": "Collaborative Editing",
+    "permalink": "/docs/examples/collaborative-editing"
+  },
+  "next": {
+    "title": "Overview",
+    "permalink": "/docs/api/overview"
+  }
+}

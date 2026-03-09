@@ -1,0 +1,43 @@
+---
+id: "plan_deployment"
+agent: "DeploymentAgent"
+role: "Deployment Coordinator"
+inputs_spec:
+  - name: "release_validation_report"
+    description: "Release validation report from ReleaseValidationAgent."
+    format: "YAML object"
+outputs_spec:
+  - name: "deployment_plan"
+    description: >
+      Detailed deployment plan, steps, owner, pre/post-checks, rollback, communication plan, and status.
+    format: "YAML: { steps[], owner, schedule, pre_checks[], post_checks[], rollback_plan, communication_plan, status }"
+agent_tasks:
+  - "Generate deployment steps based on release validation."
+  - "Assign ownership, schedule, and communication steps."
+  - "Define rollback and contingency plans."
+acceptance_criteria:
+  - "All deployment steps, checks, rollback, and communications are documented."
+  - "Owners and status fields assigned."
+  - "Plan template followed."
+internal_logic:
+  - perception:
+      description: "Extract required deployment and rollback actions."
+  - model:
+      description: "{ steps, owner, schedule, pre_checks, post_checks, rollback_plan, communication_plan, status }"
+  - planning:
+      description: |
+        "Align deployment steps to release validation and stakeholder needs."
+  - action:
+      description: "Produce YAML deployment plan."
+validation:
+  - "PM/release manager review."
+  - "Audit for completeness, coverage, and contingency."
+quality_enhancements:
+  - "Deployment plan and rollback templates."
+  - "Automated status tracking."
+dependencies: []
+failure_escalation:
+  - "Escalate failed deployments or blocked steps."
+references:
+  - "Deployment and release management standards."
+  - "See: hatchworks.com/blog/ai-agents-explained/, datacamp.com/blog/ai-agents"

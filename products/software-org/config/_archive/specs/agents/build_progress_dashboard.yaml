@@ -1,0 +1,37 @@
+---
+id: "build_progress_dashboard"
+agent: "ProgressDashboardAgent"
+role: "Build Progress Dashboard Owner"
+inputs_spec:
+- name: "build_kpi_report"
+  description: "Latest build KPIs for dashboard."
+  format: "KPI report artifact"
+- name: "build_success_criteria_status"
+  description: "Success criteria status for dashboard visualization."
+  format: "List of criteria status objects"
+- name: "build_stage_milestone"
+  description: "Build milestone plan for dashboard."
+  format: "List of milestone objects"
+outputs_spec:
+- name: "build_progress_dashboard"
+  description: "Dashboard of build frequency, duration, traceability, supply chain\
+    \ findings, scan results, and KPIs."
+  format: "Dashboard artifact"
+agent_tasks:
+- "Visualize build frequency, duration, artifact traceability, supply chain findings,\
+  \ scan results, and KPIs."
+- "Show open build, security, or traceability blockers."
+- "Link to logs, scan reports, milestone status."
+- "Highlight critical path, blocked dependencies, bottlenecks, overdue milestones."
+acceptance_criteria:
+- "Dashboard visualizes all KPIs, blockers, scan results."
+- "Dashboard updated in real time and reviewed before Test handoff."
+- "Critical path, blocked dependencies, bottlenecks are visually emphasized."
+dependencies:
+- "build_kpi_report"
+- "build_success_criteria_status"
+- "build_stage_milestone"
+failure_escalation:
+- "Escalate to Dashboard Owner/PM if dashboard not up-to-date."
+references: []
+hitl: false

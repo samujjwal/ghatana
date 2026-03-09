@@ -1,0 +1,264 @@
+# ============================================================================
+# AlertManager Configuration for Ghatana Platform
+# ============================================================================
+# Handles alert routing, grouping, silencing, and notifications
+
+global:
+  # Global configuration
+  resolve_timeout: 5m
+  smtp_from: "alerts@ghatana.com"
+  smtp_smarthost: "smtp.example.com:587"
+  smtp_auth_username: "alerts@ghatana.com"
+  smtp_auth_password: "${SMTP_PASSWORD}"
+  smtp_require_tls: true
+
+# ============================================================================
+# Templates for alert notifications
+# ============================================================================
+templates:
+  - "/etc/alertmanager/templates/*.tmpl"
+
+# ============================================================================
+# Routing Configuration
+# ============================================================================
+route:
+  # Default receiver for ungrouped alerts
+  receiver: "default-receiver"
+
+  # Group alerts by these labels
+  group_by: ["alertname", "cluster", "service"]
+
+  # Wait time before sending group notification
+  group_wait: 30s
+
+  # Wait time before sending update on existing group
+  group_interval: 5m
+
+  # Wait time before re-sending alert
+  repeat_interval: 12h
+
+  # Child routes with specific matching and receivers
+  routes:
+    # ========================================================================
+    # CRITICAL ALERTS - Immediate page to on-call
+    # ========================================================================
+    - match:
+        severity: critical
+      receiver: "pagerduty-critical"
+      group_wait: 10s
+      repeat_interval: 5m
+      continue: true # Also send to other receivers
+
+    - match:
+        severity: critical
+      receiver: "slack-critical"
+      group_wait: 10s
+
+    # ========================================================================
+    # WARNING ALERTS - Send to team channels
+    # ========================================================================
+    - match:
+        severity: warning
+      receiver: "slack-warnings"
+      group_wait: 5m
+      repeat_interval: 6h
+
+    # ========================================================================
+    # SERVICE-SPECIFIC ROUTES
+    # ========================================================================
+    - match:
+        service: "requirement-ai-service"
+      receiver: "ai-team-slack"
+      routes:
+        - match:
+            severity: critical
+          receiver: "ai-team-pagerduty"
+
+    - match:
+        service: "eventcloud"
+      receiver: "platform-team-slack"
+      routes:
+        - match:
+            severity: critical
+          receiver: "platform-team-pagerduty"
+
+    - match:
+        service: "auth-gateway"
+      receiver: "security-team-slack"
+      routes:
+        - match:
+            severity: critical
+          receiver: "security-team-pagerduty"
+
+    # ========================================================================
+    # CATEGORY-SPECIFIC ROUTES
+    # ========================================================================
+    - match:
+        category: "security"
+      receiver: "security-team"
+      group_by: ["alertname", "tenant"]
+      repeat_interval: 1h
+
+    - match:
+        category: "data-quality"
+      receiver: "data-team"
+      group_by: ["alertname", "dataset"]
+      repeat_interval: 4h
+
+    # ========================================================================
+    # TENANT-SPECIFIC ROUTES
+    # ========================================================================
+    - match_re:
+        tenant: ".+" # Any tenant
+      receiver: "tenant-alerts"
+      group_by: ["tenant", "alertname"]
+      routes:
+        - match:
+            tenant: "enterprise-client-1"
+          receiver: "vip-client-alerts"
+          repeat_interval: 15m
+
+# ============================================================================
+# Inhibition Rules (suppress alerts based on other alerts)
+# ============================================================================
+inhibit_rules:
+  # Suppress warning if critical alert is firing
+  - source_match:
+      severity: "critical"
+    target_match:
+      severity: "warning"
+    equal: ["alertname", "service", "instance"]
+
+  # Suppress specific alerts when service is down
+  - source_match:
+      alertname: "ServiceDown"
+    target_match_re:
+      alertname: "(HighLatency|HighErrorRate|ResourceExhaustion)"
+    equal: ["service"]
+
+  # Suppress duplicate alerts from same source
+  - source_match:
+      alertname: "DatabaseDown"
+    target_match:
+      alertname: "DatabaseConnectionPoolExhausted"
+    equal: ["instance"]
+
+# ============================================================================
+# Receivers (notification channels)
+# ============================================================================
+receivers:
+  # Default receiver (logs only)
+  - name: "default-receiver"
+    webhook_configs:
+      - url: "http://alertmanager-webhook:8080/alerts"
+
+  # ========================================================================
+  # PAGERDUTY RECEIVERS
+  # ========================================================================
+  - name: "pagerduty-critical"
+    pagerduty_configs:
+      - routing_key: "${PAGERDUTY_CRITICAL_KEY}"
+        severity: "critical"
+        description: "{{ .GroupLabels.alertname }}: {{ .CommonAnnotations.summary }}"
+        details:
+          firing: "{{ .Alerts.Firing | len }}"
+          resolved: "{{ .Alerts.Resolved | len }}"
+          service: "{{ .GroupLabels.service }}"
+
+  - name: "ai-team-pagerduty"
+    pagerduty_configs:
+      - routing_key: "${PAGERDUTY_AI_TEAM_KEY}"
+
+  - name: "platform-team-pagerduty"
+    pagerduty_configs:
+      - routing_key: "${PAGERDUTY_PLATFORM_TEAM_KEY}"
+
+  - name: "security-team-pagerduty"
+    pagerduty_configs:
+      - routing_key: "${PAGERDUTY_SECURITY_TEAM_KEY}"
+
+  # ========================================================================
+  # SLACK RECEIVERS
+  # ========================================================================
+  - name: "slack-critical"
+    slack_configs:
+      - api_url: "${SLACK_WEBHOOK_URL}"
+        channel: "#alerts-critical"
+        username: "Ghatana Alertmanager"
+        icon_emoji: ":rotating_light:"
+        color: "danger"
+        title: ":fire: {{ .GroupLabels.alertname }} - {{ .GroupLabels.service }}"
+        text: |
+          {{ range .Alerts }}
+          *Summary:* {{ .Annotations.summary }}
+          *Description:* {{ .Annotations.description }}
+          *Severity:* {{ .Labels.severity }}
+          *Instance:* {{ .Labels.instance }}
+          {{ if .Annotations.runbook_url }}*Runbook:* {{ .Annotations.runbook_url }}{{ end }}
+          {{ end }}
+
+  - name: "slack-warnings"
+    slack_configs:
+      - api_url: "${SLACK_WEBHOOK_URL}"
+        channel: "#alerts-warnings"
+        username: "Ghatana Alertmanager"
+        icon_emoji: ":warning:"
+        color: "warning"
+        title: ":warning: {{ .GroupLabels.alertname }}"
+        text: "{{ .CommonAnnotations.summary }}"
+
+  - name: "ai-team-slack"
+    slack_configs:
+      - api_url: "${SLACK_WEBHOOK_URL}"
+        channel: "#team-ai-alerts"
+
+  - name: "platform-team-slack"
+    slack_configs:
+      - api_url: "${SLACK_WEBHOOK_URL}"
+        channel: "#team-platform-alerts"
+
+  - name: "security-team-slack"
+    slack_configs:
+      - api_url: "${SLACK_WEBHOOK_URL}"
+        channel: "#team-security-alerts"
+
+  # ========================================================================
+  # EMAIL RECEIVERS
+  # ========================================================================
+  - name: "security-team"
+    email_configs:
+      - to: "security-team@ghatana.com"
+        headers:
+          Subject: "[SECURITY] {{ .GroupLabels.alertname }}"
+        html: |
+          <h2>{{ .GroupLabels.alertname }}</h2>
+          {{ range .Alerts }}
+          <p><strong>Summary:</strong> {{ .Annotations.summary }}</p>
+          <p><strong>Description:</strong> {{ .Annotations.description }}</p>
+          <p><strong>Severity:</strong> {{ .Labels.severity }}</p>
+          {{ end }}
+
+  - name: "data-team"
+    email_configs:
+      - to: "data-team@ghatana.com"
+
+  # ========================================================================
+  # WEBHOOK RECEIVERS
+  # ========================================================================
+  - name: "tenant-alerts"
+    webhook_configs:
+      - url: "http://tenant-notification-service:8080/alerts"
+        send_resolved: true
+        http_config:
+          authorization:
+            credentials: "${WEBHOOK_TOKEN}"
+
+  - name: "vip-client-alerts"
+    webhook_configs:
+      - url: "http://vip-notification-service:8080/alerts"
+        send_resolved: true
+# ============================================================================
+# Time-based Muting (maintenance windows)
+# ============================================================================
+# Use amtool to create silences:
+# amtool silence add alertname="ServiceDown" service="api" --duration=2h --comment="Planned maintenance"

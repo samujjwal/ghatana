@@ -1,0 +1,23 @@
+import "@testing-library/react-native/extend-expect";
+
+// Mock expo modules
+jest.mock("expo-font");
+jest.mock("expo-splash-screen", () => ({
+preventAutoHideAsync: jest.fn(),
+hideAsync: jest.fn(),
+}));
+jest.mock("expo-constants", () => ({
+expoConfig: {
+name: "TestApp",
+slug: "test-app",
+version: "1.0.0",
+},
+}));
+jest.mock("@react-native-async-storage/async-storage", () =>
+require("@react-native-async-storage/async-storage/jest/async-storage-mock")
+);
+jest.mock("expo-secure-store", () => ({
+getItemAsync: jest.fn(),
+setItemAsync: jest.fn(),
+deleteItemAsync: jest.fn(),
+}));

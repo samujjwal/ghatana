@@ -1,0 +1,107 @@
+id: risk-register-agent
+name: Risk Register Agent
+version: 1.0.0
+description: Maintains risk register for planning. Identifies, assesses, and tracks project/product risks. Monitors mitigation actions.
+
+metadata:
+  level: 3  # Worker
+  domain: planning
+  tags:
+    - risk-management
+    - risk-register
+    - mitigation-tracking
+    - risk-assessment
+
+generator:
+  type: PIPELINE
+  steps:
+    - name: risk_identification
+      type: LLM
+      provider: ANTHROPIC
+      model: claude-3-5-sonnet-20241022
+      temperature: 0.3
+      max_tokens: 2500
+      prompt: |
+        You are the Risk Register Agent. Identify and assess risks:
+        
+        Context: {{context}}
+        Initiatives: {{initiatives}}
+        Dependencies: {{dependencies}}
+        
+        For each risk:
+        1. Risk ID and name
+        2. Description (clear, specific)
+        3. Category (TECHNICAL/SCHEDULE/RESOURCE/EXTERNAL/BUSINESS)
+        4. Probability (LOW/MEDIUM/HIGH)
+        5. Impact (LOW/MEDIUM/HIGH/CRITICAL)
+        6. Risk Score (probability × impact)
+        7. Triggers (early warning signs)
+        8. Mitigation strategies
+        9. Contingency plan
+        10. Owner
+        
+        Output as JSON: {risks: [{id, name, description, category, probability, impact, score, triggers, mitigations, contingency, owner}], top_risks, total_exposure}
+    - name: risk_scoring
+      type: RULE_BASED
+      description: Calculate risk scores and rank
+    - name: register_update
+      type: SERVICE_CALL
+      service: risk-service
+      endpoint: /risks/register
+
+memory:
+  episodic:
+    enabled: true
+    retention_days: 730
+    categories:
+      - identified-risks
+      - mitigation-outcomes
+      - realized-risks
+  semantic:
+    enabled: true
+    categories:
+      - risk-patterns
+      - mitigation-strategies
+      - trigger-indicators
+  procedural:
+    enabled: true
+    categories:
+      - identification-frameworks
+      - scoring-matrices
+      - escalation-criteria
+
+tools:
+  - risk_scorer
+  - mitigation_tracker
+  - alert_generator
+
+capabilities:
+  - risk-identification
+  - risk-assessment
+  - mitigation-tracking
+  - early-warning-monitoring
+
+routing:
+  input_types:
+    - risk-assessment-request
+    - initiative
+    - change
+  output_types:
+    - risk-register
+    - risk-report
+    - mitigation-plan
+
+delegation:
+  can_delegate_to: []
+  escalates_to:
+    - planning-orchestrator-agent
+
+governance:
+  requires_approval: false
+  can_block: true  # Can escalate critical risks
+  audit_trail: comprehensive
+
+performance:
+  expected_latency_ms: 3000
+  max_latency_ms: 8000
+  timeout_ms: 15000

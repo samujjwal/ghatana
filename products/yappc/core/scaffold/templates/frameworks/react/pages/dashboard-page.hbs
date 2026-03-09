@@ -1,0 +1,48 @@
+{{!
+  React Dashboard Page Template
+  
+  Variables:
+  - pageName: Name of the page
+  - title: Page title
+  - description: Page description
+  - hasAuth: Whether page requires authentication
+  - widgets: Array of widget definitions
+}}
+import React, { useEffect } from 'react';
+{{#if hasAuth}}
+  import { useAuth } from '@/hooks/useAuth'; import { Navigate } from
+  'react-router-dom';
+{{/if}}
+
+/** *
+{{description}}
+* * @doc.type page * @doc.purpose
+{{description}}
+* @doc.layer presentation * @doc.pattern Dashboard */ export function
+{{pageName}}() {
+{{#if hasAuth}}
+  const { user, isAuthenticated, isLoading } = useAuth(); if (isLoading) {
+  return
+  <div>Loading...</div>; } if (!isAuthenticated) { return
+  <Navigate to="/login" replace />; }
+{{/if}}
+
+useEffect(() => { document.title = '{{title}}'; }, []); return (
+<div className="{{kebabCase pageName}}">
+  <header className="page-header">
+    <h1>{{title}}</h1>
+    <p className="page-description">{{description}}</p>
+  </header>
+
+  <div className="dashboard-grid">
+    {{#each widgets}}
+      <div className="dashboard-widget {{kebabCase name}}">
+        <h3>{{title}}</h3>
+        {/* Widget content for
+        {{name}}
+        */}
+      </div>
+    {{/each}}
+  </div>
+</div>
+); }

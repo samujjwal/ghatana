@@ -1,0 +1,257 @@
+syntax = "proto3";
+
+package ghatana.contracts.pipeline.v1;
+
+import "google/protobuf/empty.proto";
+import "google/protobuf/timestamp.proto";
+import "google/protobuf/field_mask.proto";
+import "ghatana/contracts/common/v1/common.proto";
+import "ghatana/contracts/agent/v1/agent_manifest.proto";
+import "ghatana/contracts/common/v1/envelope.proto";
+
+option java_multiple_files = true;
+option java_package = "com.ghatana.contracts.pipeline.v1";
+option java_outer_classname = "PipelineRegistryProto";
+option go_package = "github.com/ghatana/contracts/gen/go/pipeline/v1;pipelinev1";
+option csharp_namespace = "Ghatana.Contracts.Pipeline.V1";
+
+// PipelineRegistryService provides management and querying of pipeline definitions
+service PipelineRegistryService {
+  // Create a new pipeline
+  rpc CreatePipeline(CreatePipelineRequestProto) returns (PipelineProto) {}
+
+  // Get a pipeline by ID
+  rpc GetPipeline(GetPipelineRequestProto) returns (PipelineProto) {}
+
+  // Update an existing pipeline
+  rpc UpdatePipeline(UpdatePipelineRequestProto) returns (PipelineProto) {}
+
+  // Delete a pipeline
+  rpc DeletePipeline(DeletePipelineRequestProto) returns (google.protobuf.Empty) {}
+
+  // List pipelines with filtering and pagination
+  rpc ListPipelines(ListPipelinesRequestProto) returns (ListPipelinesResponseProto) {}
+
+  // Validate a pipeline configuration
+  rpc ValidatePipeline(ValidatePipelineRequestProto) returns (ValidatePipelineResponseProto) {}
+}
+
+// Pipeline represents a data processing pipeline
+message PipelineProto {
+  // Unique identifier for the pipeline
+  string id = 1;
+
+  // Human-readable name of the pipeline
+  string name = 2;
+
+  // Description of what the pipeline does
+  string description = 3;
+
+  // Current version of the pipeline
+  string version = 4;
+
+  // Pipeline configuration (JSON) - DEPRECATED: Use structured_config instead
+  // Kept for backward compatibility during migration
+  string config = 5 [deprecated = true];
+
+  // List of agents in the pipeline
+  repeated ghatana.contracts.agent.v1.AgentManifestProto agents = 6;
+
+  // Creation timestamp
+  google.protobuf.Timestamp created_at = 7;
+
+  // Last update timestamp
+  google.protobuf.Timestamp updated_at = 8;
+
+  // Status of the pipeline
+  PipelineStatusProto status = 9;
+
+  // Metadata for the pipeline
+  map<string, string> metadata = 10;
+
+  // Structured pipeline configuration (NEW - preferred)
+  PipelineConfigProto structured_config = 11;
+
+  // Pipeline stages/steps
+  repeated PipelineStageProto stages = 12;
+}
+
+// Structured pipeline configuration
+message PipelineConfigProto {
+  // Input event streams
+  repeated string inputs = 1;
+
+  // Output event streams
+  repeated string outputs = 2;
+
+  // Pipeline-level parameters
+  map<string, string> parameters = 3;
+
+  // Error handling strategy
+  ErrorHandlingProto error_handling = 4;
+
+  // Retry configuration
+  RetryConfigProto retry_config = 5;
+
+  // Resource requirements
+  ResourceRequirementsProto resources = 6;
+}
+
+// Pipeline stage/step
+message PipelineStageProto {
+  // Unique identifier for this stage
+  string id = 1;
+
+  // Stage name
+  string name = 2;
+
+  // Stage type (FILTER, MAP, AGGREGATE, etc.)
+  string type = 3;
+
+  // Operator ID to execute
+  string operator_id = 4;
+
+  // Stage-specific configuration
+  map<string, string> config = 5;
+
+  // Dependencies (stage IDs that must complete before this)
+  repeated string depends_on = 6;
+
+  // Timeout for stage execution
+  int64 timeout_ms = 7;
+
+  // Whether this stage is enabled
+  bool enabled = 8;
+}
+
+// Error handling strategy
+message ErrorHandlingProto {
+  // Strategy: FAIL_FAST, CONTINUE, DEAD_LETTER
+  string strategy = 1;
+
+  // Dead letter queue topic (if strategy = DEAD_LETTER)
+  string dead_letter_topic = 2;
+
+  // Maximum errors before failing
+  int32 max_errors = 3;
+}
+
+// Retry configuration
+message RetryConfigProto {
+  // Maximum retry attempts
+  int32 max_attempts = 1;
+
+  // Initial backoff in milliseconds
+  int64 initial_backoff_ms = 2;
+
+  // Maximum backoff in milliseconds
+  int64 max_backoff_ms = 3;
+
+  // Backoff multiplier
+  double backoff_multiplier = 4;
+}
+
+// Resource requirements
+message ResourceRequirementsProto {
+  // CPU cores (e.g., 0.5, 1.0, 2.0)
+  double cpu_cores = 1;
+
+  // Memory in MB
+  int64 memory_mb = 2;
+
+  // Max concurrent executions
+  int32 max_concurrency = 3;
+}
+
+// Pipeline status
+enum PipelineStatusProto {
+  PIPELINE_STATUS_UNSPECIFIED = 0;
+  PIPELINE_STATUS_DRAFT = 1;
+  PIPELINE_STATUS_ACTIVE = 2;
+  PIPELINE_STATUS_PAUSED = 3;
+  PIPELINE_STATUS_ERROR = 4;
+  PIPELINE_STATUS_DELETED = 5;
+}
+
+// Request to create a new pipeline
+message CreatePipelineRequestProto {
+  // Optional envelope for cross-cutting metadata (non-breaking addition)
+  ghatana.contracts.common.v1.Envelope envelope = 20;
+  // The pipeline to create
+  PipelineProto pipeline = 1;
+
+  // If true, the pipeline will be validated but not created
+  bool validate_only = 2;
+}
+
+// Request to get a pipeline
+message GetPipelineRequestProto {
+  // The ID of the pipeline to retrieve
+  string id = 1;
+}
+
+// Request to update a pipeline
+message UpdatePipelineRequestProto {
+  // The pipeline to update
+  PipelineProto pipeline = 1;
+
+  // The field mask indicating which fields to update
+  google.protobuf.FieldMask update_mask = 2;
+
+  // If true, the pipeline will be validated but not updated
+  bool validate_only = 3;
+}
+
+// Request to delete a pipeline
+message DeletePipelineRequestProto {
+  // The ID of the pipeline to delete
+  string id = 1;
+
+  // If true, the pipeline will be force deleted
+  bool force = 2;
+}
+
+// Request to list pipelines
+message ListPipelinesRequestProto {
+  // Maximum number of pipelines to return
+  int32 page_size = 1;
+
+  // Token to retrieve the next page of results
+  string page_token = 2;
+
+  // Filter expression
+  string filter = 3;
+
+  // Fields to include in the response
+  google.protobuf.FieldMask read_mask = 4;
+}
+
+// Response to list pipelines
+message ListPipelinesResponseProto {
+  // The list of pipelines
+  repeated PipelineProto pipelines = 1;
+
+  // Token to retrieve the next page of results
+  string next_page_token = 2;
+
+  // Total number of pipelines matching the request
+  int32 total_size = 3;
+}
+
+// Request to validate a pipeline
+message ValidatePipelineRequestProto {
+  // The pipeline to validate
+  PipelineProto pipeline = 1;
+}
+
+// Response to validate a pipeline
+message ValidatePipelineResponseProto {
+  // Whether the pipeline is valid
+  bool valid = 1;
+
+  // List of validation errors if any
+  repeated string errors = 2;
+
+  // List of validation warnings if any
+  repeated string warnings = 3;
+}

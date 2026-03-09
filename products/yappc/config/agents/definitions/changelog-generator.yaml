@@ -1,0 +1,69 @@
+id: "changelog-generator"
+name: "Changelog Generator"
+version: "1.0.0"
+description: "Generates release notes and changelogs from commit history and PRs"
+
+metadata:
+  level: 3  # Worker level
+  domain: "documentation"
+  tags: ["changelog", "release-notes", "versioning"]
+
+generator:
+  type: "pipeline"
+  steps:
+    - type: "rule-based"
+      rules:
+        - "Parse git commit messages"
+        - "Extract conventional commit types (feat, fix, break, chore)"
+        - "Group by category"
+        - "Link to PR/issue numbers"
+    - type: "template"
+      engine: "liquid"
+      template_path: "templates/docs/changelog.md.liquid"
+    - type: "llm"
+      provider: "openai"
+      model: "gpt-3.5-turbo"
+      temperature: 0.5
+      prompt: |
+        Enhance release notes:
+        {{raw_changelog}}
+        
+        Improve:
+        1. Rewrite technical commits for user clarity
+        2. Highlight breaking changes prominently
+        3. Add upgrade instructions if needed
+        4. Group by theme (features, fixes, improvements)
+
+memory:
+  episodic:
+    enabled: true
+    retention_days: 30
+  semantic:
+    enabled: true
+    categories: ["release-patterns", "changelog-formats"]
+  procedural:
+    enabled: false
+
+tools:
+  - "git_log"
+  - "git_diff"
+  - "file_read"
+  - "file_write"
+
+capabilities:
+  - "changelog-generation"
+  - "release-notes-generation"
+  - "breaking-change-documentation"
+
+routing:
+  input_types: ["ReleaseRequest", "VersionTag", "CommitHistory"]
+  output_types: ["Changelog", "ReleaseNotes"]
+
+delegation:
+  can_delegate_to: []
+  escalates_to: "documentation-orchestrator"
+
+performance:
+  expected_latency_ms: 2000
+  max_latency_ms: 5000
+  timeout_ms: 8000

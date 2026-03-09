@@ -1,0 +1,31 @@
+---
+id: "build_best_practice_enforcement"
+agent: "BuildBestPracticeAgent"
+role: "CI Pipeline Auditor"
+inputs_spec:
+- name: "pipeline_configured"
+  description: "Configured build pipeline artifact."
+  format: "Pipeline config artifact"
+outputs_spec:
+- name: "build_best_practice_report"
+  description: "Compliance report for all pipeline build steps and security requirements."
+  format: "Compliance report artifact"
+agent_tasks:
+- "Review all build steps for best practice compliance."
+- "Confirm security scanning and artifact verification are included."
+- "Ensure sensitive variables are managed securely."
+- "Flag and justify any deviation from best practices."
+- "Document best practice compliance."
+acceptance_criteria:
+- "All build steps follow approved best practices."
+- "Security scanning and artifact verification are included in the pipeline."
+- "Sensitive variables are managed securely."
+- "Deviation from best practices is flagged and justified."
+- "Best practice compliance is documented."
+dependencies:
+- "pipeline_configured"
+failure_escalation:
+- "Escalate to CI Auditor if non-compliance found."
+references: []
+hitl: true
+hitl_reason: "Human ensures build best practices are enforced in CI/CD"

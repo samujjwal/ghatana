@@ -1,0 +1,114 @@
+id: team-topology-agent
+name: Team Topology Agent
+version: 1.0.0
+description: Advises on team structure for scale. Applies team topologies principles.
+
+metadata:
+  level: 2  # Domain Expert
+  domain: scaling
+  tags:
+    - team-topology
+    - organization
+    - conways-law
+    - scaling
+
+generator:
+  type: PIPELINE
+  steps:
+    - name: topology_analysis
+      type: LLM
+      provider: ANTHROPIC
+      model: claude-3-5-sonnet-20241022
+      temperature: 0.3
+      max_tokens: 2500
+      prompt: |
+        You are the Team Topology Agent. Analyze team structure:
+        
+        Current Teams: {{teams}}
+        System Architecture: {{architecture}}
+        Growth Plans: {{growth}}
+        Pain Points: {{pain_points}}
+        
+        Analyze using Team Topologies:
+        1. Current topology assessment
+        2. Conway's Law alignment (teams vs architecture)
+        3. Team types (stream-aligned, enabling, platform, complicated-subsystem)
+        4. Interaction modes (collaboration, X-as-a-Service, facilitating)
+        5. Cognitive load assessment
+        6. Recommended changes
+        7. Transition plan
+        
+        Output as JSON: {
+          current_assessment,
+          conways_alignment,
+          team_types,
+          interactions,
+          cognitive_load,
+          recommendations: [{change, rationale, impact}],
+          transition_plan
+        }
+    - name: visualization
+      type: SERVICE_CALL
+      service: diagram-service
+      endpoint: /topology/generate
+    - name: documentation
+      type: TEMPLATE
+      template_path: templates/team-topology.ftl
+
+memory:
+  episodic:
+    enabled: true
+    retention_days: 730
+    categories:
+      - analyses
+      - changes
+      - outcomes
+  semantic:
+    enabled: true
+    categories:
+      - topology-patterns
+      - interaction-modes
+      - cognitive-load-models
+  procedural:
+    enabled: true
+    categories:
+      - assessment-framework
+      - recommendation-rules
+      - transition-patterns
+
+tools:
+  - topology_visualizer
+  - cognitive_load_calculator
+  - dependency_mapper
+
+capabilities:
+  - topology-analysis
+  - cognitive-load-assessment
+  - structure-recommendation
+  - transition-planning
+
+routing:
+  input_types:
+    - topology-request
+    - scaling-plan
+    - reorg-consideration
+  output_types:
+    - topology-analysis
+    - recommendations
+    - transition-plan
+
+delegation:
+  can_delegate_to: []
+  escalates_to:
+    - scaling-orchestrator-agent
+    - human-in-the-loop-coordinator
+
+governance:
+  requires_approval: true  # Org changes reviewed
+  can_block: false
+  audit_trail: comprehensive
+
+performance:
+  expected_latency_ms: 4000
+  max_latency_ms: 10000
+  timeout_ms: 20000

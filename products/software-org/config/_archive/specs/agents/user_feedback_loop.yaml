@@ -1,0 +1,24 @@
+---
+id: "user_feedback_loop"
+agent: "FeedbackLoopAgent"
+role: "CI/CD Coach/Automation"
+inputs_spec:
+- name: "user_progress_dashboard"
+  description: "User/UAT progress dashboard for collecting feedback."
+  format: "Dashboard artifact"
+outputs_spec:
+- name: "user_feedback_items"
+  description: "Issues and improvement suggestions from UAT routed to Retrospective."
+  format: "List of feedback items"
+agent_tasks:
+- "Route all UAT/user issues and improvement suggestions to Retrospective."
+- "Track feedback for action and resolution."
+acceptance_criteria:
+- "All issues and improvement suggestions are routed to Retrospective."
+- "Feedback is tracked for action and resolution."
+dependencies:
+- "user_progress_dashboard"
+failure_escalation:
+- "Escalate to CI/CD coach if feedback is not acted on."
+references: []
+hitl: false

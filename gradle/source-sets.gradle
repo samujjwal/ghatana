@@ -1,0 +1,113 @@
+// Source Sets Configuration for Ghatana Project
+// This file defines standard source and test folder configurations
+// Apply this to any module that needs custom source set configuration
+
+// Standard Java source sets configuration
+sourceSets {
+    main {
+        java {
+            srcDirs = ['src/main/java']
+        }
+        resources {
+            srcDirs = ['src/main/resources']
+        }
+    }
+    
+    test {
+        java {
+            srcDirs = ['src/test/java']
+        }
+        resources {
+            srcDirs = ['src/test/resources']
+        }
+    }
+    
+    // Optional: Integration test source set
+    if (project.hasProperty('enableIntegrationTests')) {
+        integrationTest {
+            java {
+                srcDirs = ['src/integrationTest/java']
+                compileClasspath += sourceSets.main.output
+                runtimeClasspath += sourceSets.main.output
+            }
+            resources {
+                srcDirs = ['src/integrationTest/resources']
+            }
+            compileClasspath += sourceSets.test.compileClasspath
+            runtimeClasspath += sourceSets.test.runtimeClasspath
+        }
+    }
+    
+    // Optional: Functional test source set
+    if (project.hasProperty('enableFunctionalTests')) {
+        functionalTest {
+            java {
+                srcDirs = ['src/functionalTest/java']
+                compileClasspath += sourceSets.main.output
+                runtimeClasspath += sourceSets.main.output
+            }
+            resources {
+                srcDirs = ['src/functionalTest/resources']
+            }
+            compileClasspath += sourceSets.test.compileClasspath
+            runtimeClasspath += sourceSets.test.runtimeClasspath
+        }
+    }
+    
+    // Optional: Performance test source set (JMH)
+    if (project.hasProperty('enableJmh')) {
+        jmh {
+            java {
+                srcDirs = ['src/jmh/java']
+                compileClasspath += sourceSets.main.output
+                runtimeClasspath += sourceSets.main.output
+            }
+            resources {
+                srcDirs = ['src/jmh/resources']
+            }
+        }
+    }
+}
+
+// Configure test tasks for additional source sets
+if (project.hasProperty('enableIntegrationTests')) {
+    task integrationTest(type: Test) {
+        description = 'Runs integration tests.'
+        group = 'verification'
+        
+        testClassesDirs = sourceSets.integrationTest.output.classesDirs
+        classpath = sourceSets.integrationTest.runtimeClasspath
+        
+        shouldRunAfter test
+        
+        useJUnitPlatform()
+        
+        testLogging {
+            events 'passed', 'skipped', 'failed'
+            showStandardStreams = true
+        }
+    }
+    
+    check.dependsOn integrationTest
+}
+
+if (project.hasProperty('enableFunctionalTests')) {
+    task functionalTest(type: Test) {
+        description = 'Runs functional tests.'
+        group = 'verification'
+        
+        testClassesDirs = sourceSets.functionalTest.output.classesDirs
+        classpath = sourceSets.functionalTest.runtimeClasspath
+        
+        shouldRunAfter test, integrationTest
+        
+        useJUnitPlatform()
+        
+        testLogging {
+            events 'passed', 'skipped', 'failed'
+            showStandardStreams = true
+        }
+    }
+    
+    check.dependsOn functionalTest
+}

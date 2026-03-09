@@ -1,0 +1,43 @@
+---
+id: "plan_compliance_validation"
+agent: "ComplianceValidationAgent"
+role: "Compliance Validation Analyst"
+inputs_spec:
+  - name: "dr_plan"
+    description: "DR plan from DRPlanAgent."
+    format: "YAML object"
+outputs_spec:
+  - name: "compliance_validation_report"
+    description: >
+      Final compliance validation: controls, evidence, exceptions, remediation plan, and signoff.
+    format: "YAML: { controls[], evidence[], exceptions[], remediation_plan, signoff_list, compliance_status }"
+agent_tasks:
+  - "Validate compliance coverage for all critical requirements, controls, and incidents."
+  - "Document exceptions, remediation, and signoff."
+  - "Summarize compliance status."
+acceptance_criteria:
+  - "All required controls and evidence validated."
+  - "Exceptions and remediations documented."
+  - "Signoff and compliance status fields filled."
+internal_logic:
+  - perception:
+      description: "Extract compliance and control requirements."
+  - model:
+      description: "{ controls, evidence, exceptions, remediation_plan, signoff_list, compliance_status }"
+  - planning:
+      description: |
+        "Document remediations for non-compliance."
+  - action:
+      description: "Produce YAML compliance report."
+validation:
+  - "Compliance officer/SME review."
+  - "Audit for evidence and signoff."
+quality_enhancements:
+  - "Compliance and evidence templates."
+  - "Automated exception tracking."
+dependencies: []
+failure_escalation:
+  - "Escalate failed or unsigned compliance items."
+references:
+  - "Compliance validation best practices."
+  - "See: hatchworks.com/blog/ai-agents-explained/, datacamp.com/blog/ai-agents"

@@ -1,0 +1,48 @@
+# Build stage
+FROM golang:1.25-alpine AS builder
+
+WORKDIR /app
+
+# Install build tools
+RUN apk add --no-cache git gcc musl-dev
+
+# Download dependencies
+COPY go.mod go.sum ./
+RUN go mod download
+
+# Copy source code
+COPY . .
+
+# Install air for live reloading
+RUN go install github.com/cosmtrek/air@latest
+
+# Development stage
+FROM golang:1.25-alpine
+
+WORKDIR /app
+
+# Install runtime dependencies
+RUN apk add --no-cache curl jq
+
+# Copy Go modules
+COPY --from=builder /go/pkg/mod /go/pkg/mod
+
+# Copy air binary
+COPY --from=builder /go/bin/air /bin/air
+
+# Copy source code
+COPY . .
+
+# Air configuration
+COPY .air.toml ./
+
+# Default configuration
+COPY config/config.docker.yaml /app/config/config.docker.yaml
+
+# Expose ports
+EXPOSE 8080  # gRPC server
+EXPOSE 8081  # Metrics
+EXPOSE 2345  # Debug port
+
+# Start with live reloading
+CMD ["air", "-c", ".air.toml"]

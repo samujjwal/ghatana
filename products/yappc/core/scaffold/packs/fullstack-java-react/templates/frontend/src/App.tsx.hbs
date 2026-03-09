@@ -1,0 +1,42 @@
+import { useApi } from "./hooks/useApi";
+import { Layout } from "./components/Layout";
+
+function App() {
+const { data: health, isLoading: healthLoading } = useApi<{ status: string; timestamp: string; }>("/api/health");
+
+    const { data: example, isLoading: exampleLoading } = useApi<{ success: boolean; data: string[]; }>("/api/example");
+
+        return (
+        <Layout>
+            <h1>{{projectName}}</h1>
+
+            <section>
+                <h2>Backend Health</h2>
+                {healthLoading ? (
+                <p>Loading...</p>
+                ) : health ? (
+                <pre>{JSON.stringify(health, null, 2)}</pre>
+                ) : (
+                <p>Failed to connect to backend</p>
+                )}
+            </section>
+
+            <section>
+                <h2>Example Data</h2>
+                {exampleLoading ? (
+                <p>Loading...</p>
+                ) : example?.success ? (
+                <ul>
+                    {example.data.map((item, i) => (
+                    <li key={i}>{item}</li>
+                    ))}
+                </ul>
+                ) : (
+                <p>No data available</p>
+                )}
+            </section>
+        </Layout>
+        );
+        }
+
+        export default App;

@@ -1,0 +1,16 @@
+{
+    "name": "@ghatana/dcmaar-backend-shim",
+    "version": "0.0.0",
+    "private": true,
+    "description": "Shim package to allow product-level build scripts to find the backend (proxies to apps/backend)",
+    "scripts": {
+        "build": "cd ../apps/backend && pnpm run build",
+        "dev": "cd ../apps/backend && pnpm run dev",
+        "start": "cd ../apps/backend && pnpm run start",
+        "lint": "cd ../apps/backend && pnpm run lint",
+        "test": "cd ../apps/backend && pnpm run test",
+        "test:coverage": "cd ../apps/backend && pnpm run test:coverage",
+        "db:migrate": "cd ../apps/backend && pnpm run db:migrate",
+        "db:seed": "cd ../apps/backend && pnpm run db:seed"
+    }
+}

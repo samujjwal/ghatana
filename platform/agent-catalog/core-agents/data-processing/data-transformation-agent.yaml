@@ -1,0 +1,49 @@
+id: data-transformation-agent
+name: Data Transformation Agent
+version: 1.0.0
+description: Transforms structured data between formats and schemas (ETL/batch). Not for event-stream payloads — use AEP event-transformation-agent for streaming.
+
+metadata:
+  level: 3
+  domain: data-processing
+  tags: [transformation, mapping, conversion, etl, batch, structured-data]
+
+generator:
+  type: PIPELINE
+  steps:
+    - name: parse_source
+      type: SERVICE_CALL
+      service: data-parser
+      endpoint: /platform/transform/parse
+    - name: apply_transformation
+      type: LLM
+      provider: ANTHROPIC
+      model: claude-3-5-sonnet-20241022
+      temperature: 0.1
+      prompt: |
+        Transform data:
+        Source: {{source_data}}
+        Target Format: {{target_format}}
+        Mapping Rules: {{mappings}}
+
+capabilities:
+  - data-transformation  # platform standard-capabilities: data-processing.transformation
+  - json-schema-validation
+
+tools:
+  - name: transformationEngine
+    type: SERVICE
+    endpoint: /platform/transform/apply
+  - name: mappingResolver
+    type: SERVICE
+    endpoint: /platform/transform/mappings
+
+memory:
+  type: EPISODIC
+  scope: transformation_rules
+  retention: medium
+
+resources:
+  memory: "512MB"
+  cpu: "1"
+  timeout: "60s"

@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<FindBugsFilter>
+    <!-- Exclude all generated protobuf code from build/generated -->
+    <Match>
+        <Source name="~.*/build/generated/.*" />
+    </Match>
+</FindBugsFilter>

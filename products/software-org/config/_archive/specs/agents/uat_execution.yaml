@@ -1,0 +1,25 @@
+---
+id: "uat_execution"
+agent: "UATExecutionAgent"
+role: "Test User/QA"
+inputs_spec:
+- name: "uat_plan"
+  description: "UAT plan with defined scenarios, test users, and test data."
+  format: "UAT plan artifact"
+outputs_spec:
+- name: "uat_results"
+  description: "Results from UAT execution including feedback and defect reports."
+  format: "UAT results artifact"
+agent_tasks:
+- "Execute all UAT scenarios."
+- "Capture user feedback and defect reports."
+acceptance_criteria:
+- "All UAT scenarios are executed."
+- "User feedback and defect reports are captured."
+dependencies:
+- "uat_plan"
+failure_escalation:
+- "Escalate to QA or PM if UAT scenarios cannot be executed or feedback not captured."
+references: []
+hitl: true
+hitl_reason: "Human validation of UAT execution and feedback capture"

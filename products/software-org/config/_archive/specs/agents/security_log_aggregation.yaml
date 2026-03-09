@@ -1,0 +1,28 @@
+---
+id: "security_log_aggregation"
+agent: "SecurityLogAggregationAgent"
+role: "Security Engineer"
+inputs_spec:
+- name: "monitor_stage_milestone"
+  description: "Monitoring milestones for log aggregation."
+  format: "List of milestone objects"
+outputs_spec:
+- name: "aggregated_security_logs"
+  description: "Centralized and accessible security logs."
+  format: "Security logs artifact"
+agent_tasks:
+- "Centralize logs from all sources."
+- "Monitor log ingestion pipelines."
+- "Apply retention/privacy policies."
+- "Ensure access is auditable."
+acceptance_criteria:
+- "Logs centralized and accessible."
+- "Ingestion monitored for failures."
+- "Retention/privacy enforced."
+- "Access is auditable."
+dependencies:
+- "monitor_stage_milestone"
+failure_escalation:
+- "Escalate to Security Engineer if logs missing or not accessible."
+references: []
+hitl: false

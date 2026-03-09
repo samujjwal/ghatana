@@ -1,0 +1,48 @@
+#!/bin/bash
+
+# Only check proto files that are staged for commit
+STAGED_PROTOS=$(git diff --cached --name-only --diff-filter=ACM "*.proto")
+
+if [ -n "$STAGED_PROTOS" ]; then
+  echo "🔍 Validating staged proto files..."
+  
+  # Check if buf is installed
+  if ! command -v buf &> /dev/null; then
+    echo "❌ buf is not installed. Please install it first:"
+    echo "  brew install bufbuild/buf/buf (macOS)"
+    echo "  or curl -sSL https://buf.build/install.sh | sh (Linux)"
+    exit 1
+  fi
+  
+  # Run buf lint on staged files
+  echo "🧹 Running proto linter..."
+  echo "$STAGED_PROTOS" | xargs buf lint --error-format=json || {
+    echo "❌ Proto linting failed"
+    exit 1
+  }
+  
+  # Check for breaking changes against main
+  echo "🔍 Checking for breaking changes..."
+  if git rev-parse --verify main >/dev/null 2>&1; then
+    buf breaking --against '.git#branch=main' --path "$(echo "$STAGED_PROTOS" | tr '\n' ',' | sed 's/,$//')" || {
+      echo "❌ Breaking changes detected against main branch"
+      echo "   If these changes are intentional, please update the proto version"
+      exit 1
+    }
+  else
+    echo "⚠️  Main branch not found, skipping breaking change detection"
+  fi
+  
+  # Regenerate code to ensure it's up to date
+  echo "🔄 Regenerating code..."
+  make proto
+  
+  # Add any generated files to the commit
+  git add $(git diff --name-only --cached)
+  
+  echo "✅ Proto validation passed!"
+else
+  echo "ℹ️  No proto files staged for commit"
+fi
+
+exit 0

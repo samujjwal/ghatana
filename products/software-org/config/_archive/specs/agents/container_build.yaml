@@ -1,0 +1,28 @@
+---
+id: "container_build"
+agent: "ContainerBuildAgent"
+role: "Platform Engineer"
+inputs_spec:
+- name: "build_artifacts"
+  description: "Build artifacts for creating container images."
+  format: "Artifact repo/package"
+outputs_spec:
+- name: "container_images"
+  description: "Container images built from code and dependencies."
+  format: "Container image artifact/registry"
+agent_tasks:
+- "Build container images from the latest code and dependencies."
+- "Tag images uniquely and traceably to source commit/build."
+- "Apply container hardening best practices."
+- "Store image build logs."
+acceptance_criteria:
+- "Container images are built from the latest code and dependencies."
+- "Image tags are unique and traceable to source commit/build."
+- "Images follow container hardening best practices."
+- "Image build logs are stored."
+dependencies:
+- "build_artifacts"
+failure_escalation:
+- "Escalate to Platform Engineer or DevOps if image build fails or tags are missing."
+references: []
+hitl: false

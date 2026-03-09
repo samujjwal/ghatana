@@ -1,0 +1,27 @@
+---
+id: "rbac_policy"
+agent: "RBACPolicyAgent"
+role: "Cloud/Security Engineer"
+inputs_spec:
+- name: "secrets_manager_integration"
+  description: "Secrets manager integration artifact."
+  format: "Secrets manager artifact"
+outputs_spec:
+- name: "rbac_policies"
+  description: "RBAC policies, versioned as code."
+  format: "RBAC policy files"
+agent_tasks:
+- "Define/version RBAC policies as code."
+- "Enforce least privilege for services/users."
+- "Document access reviews; track policy changes."
+acceptance_criteria:
+- "RBAC policies are defined and versioned as code."
+- "Least privilege enforced; access reviews documented."
+- "Policy changes tracked/auditable."
+dependencies:
+- "secrets_manager_integration"
+failure_escalation:
+- "Escalate to Cloud/Security Lead if RBAC is not least privilege or not auditable."
+references: []
+hitl: true
+hitl_reason: "Human reviews RBAC policies for least privilege"

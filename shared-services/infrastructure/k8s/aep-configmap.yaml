@@ -1,0 +1,22 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: aep-config
+  namespace: ghatana
+  labels:
+    app: aep
+    component: event-processor
+data:
+  # AEP Configuration
+  AEP_ENABLE_METRICS: "true"
+  AEP_ENABLE_TRACING: "false"
+  AEP_MAX_PIPELINES_PER_TENANT: "100"
+  
+  # Logging Configuration
+  LOG_LEVEL: "INFO"
+  LOG_FORMAT: "json"
+  
+  # Performance Tuning
+  WORKER_THREAD_POOL_SIZE: "4"
+  EVENT_BATCH_SIZE: "100"
+  EVENT_BATCH_TIMEOUT_MS: "1000"

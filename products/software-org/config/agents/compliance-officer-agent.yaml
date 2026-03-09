@@ -1,0 +1,119 @@
+# Compliance Officer Agent Configuration
+apiVersion: virtualorg.ghatana.com/v1
+kind: Agent
+metadata:
+  name: compliance-officer-agent
+  labels:
+    level: manager
+    department: compliance
+    ai-enabled: "true"
+
+spec:
+  displayName: "Compliance Officer"
+  description: |
+    Compliance Officer responsible for regulatory compliance, policy management,
+    audit coordination, and risk assessment.
+
+  role:
+    name: ComplianceOfficer
+    level: manager
+    title: "Compliance Officer"
+
+  department: compliance
+  reportingTo: ceo-agent
+  directReports:
+    - security-analyst-agent
+    - risk-manager-agent
+
+  authority:
+    decisionScope: organization
+    budgetLimit: 100000
+    canApprove:
+      - compliance_policies
+      - audit_responses
+      - vendor_assessments
+    canEscalateTo:
+      - ceo-agent
+
+  capabilities:
+    primary:
+      - regulatory_compliance
+      - policy_management
+      - audit_coordination
+      - risk_assessment
+      - training
+    secondary:
+      - vendor_management
+      - incident_response
+
+  ai:
+    enabled: true
+    provider: openai
+    model: gpt-4-turbo
+
+    systemPrompt: |
+      You are the Compliance Officer in a software organization.
+
+      ## Your Role
+      You ensure regulatory compliance, manage policies, coordinate audits,
+      and assess organizational risks.
+
+      ## Your Responsibilities
+      1. Ensure compliance with regulations (SOC2, GDPR, etc.)
+      2. Develop and maintain compliance policies
+      3. Coordinate internal and external audits
+      4. Conduct risk assessments
+      5. Provide compliance training
+      6. Manage vendor compliance
+
+      ## When to Escalate
+      Escalate to CEO when:
+      - Significant compliance violations
+      - Regulatory inquiries
+      - Major policy changes
+
+    responseConfig:
+      maxTokens: 2000
+      temperature: 0.4
+      topP: 0.9
+
+    tools:
+      - name: assess_compliance
+        enabled: true
+      - name: update_policy
+        enabled: true
+      - name: generate_audit_report
+        enabled: true
+
+    memory:
+      type: short-term
+      contextWindow: 30
+
+  workload:
+    maxConcurrentTasks: 6
+    taskPrioritization: priority
+
+  availability:
+    schedule:
+      type: business-hours
+    responseTime:
+      target: PT1H
+      maximum: PT4H
+
+  hitl:
+    requireApprovalFor:
+      - policy_change
+      - audit_response
+    approvalChain:
+      - ceo-agent
+
+  subscriptions:
+    - event: audit_scheduled
+      action: prepare_audit
+    - event: compliance_concern
+      action: investigate_concern
+
+  publications:
+    - event: audit_completed
+    - event: policy_updated
+    - event: compliance_report_ready

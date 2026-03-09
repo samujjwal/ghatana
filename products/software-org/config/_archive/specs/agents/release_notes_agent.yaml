@@ -1,0 +1,24 @@
+---
+id: "release_notes_agent"
+agent: "ReleaseNotesAgent"
+role: "Technical Writer"
+inputs_spec:
+- name: "release_candidate_validation_report"
+  description: "Validation report for generating release notes."
+  format: "Validation report artifact"
+outputs_spec:
+- name: "release_notes"
+  description: "Release notes including new features, bug fixes, known issues, and\
+    \ upgrade instructions."
+  format: "Release notes artifact"
+agent_tasks:
+- "Generate release notes from artifacts, tests, and change logs."
+- "Include all new features, bug fixes, known issues, and upgrade instructions."
+acceptance_criteria:
+- "Release notes are generated with all required content."
+dependencies:
+- "release_candidate_validation_report"
+failure_escalation:
+- "Escalate to Technical Writer or Release Manager if notes are incomplete or missing."
+references: []
+hitl: false

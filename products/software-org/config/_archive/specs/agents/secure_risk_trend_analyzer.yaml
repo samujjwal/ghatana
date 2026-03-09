@@ -1,0 +1,35 @@
+---
+id: "secure_risk_trend_analyzer"
+agent: "RiskTrendAnalyzerAgent"
+role: "Risk Intelligence Bot"
+inputs_spec:
+- name: "secure_escalation_report"
+  description: "Secure escalation report for risk trend analysis."
+  format: "Escalation report artifact"
+- name: "secure_progress_dashboard"
+  description: "Secure progress dashboard for risk data."
+  format: "Dashboard artifact"
+- name: "secure_stage_milestone"
+  description: "Secure milestone plan for risk context."
+  format: "List of milestone objects"
+outputs_spec:
+- name: "secure_risk_trend_report"
+  description: "Risk trend report on Secure stage risks, escalations, and blockers."
+  format: "Risk trend report artifact"
+agent_tasks:
+- "Trend all Secure risks, escalations, and blockers over time."
+- "Flag recurring/systemic risks and classify."
+- "Share trend report with PMO and leadership."
+- "Recommend mitigation or process improvements."
+acceptance_criteria:
+- "All Secure risks, escalations, and blockers are trended over time."
+- "Recurring/systemic risks are flagged and classified."
+- "Trend report shared with PMO/leadership with recommendations."
+dependencies:
+- "secure_escalation_report"
+- "secure_progress_dashboard"
+- "secure_stage_milestone"
+failure_escalation:
+- "Escalate to Risk Intelligence Lead if trends/recommendations missing."
+references: []
+hitl: false

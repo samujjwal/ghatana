@@ -1,0 +1,66 @@
+id: reproduction-agent
+name: Reproduction Agent
+version: 1.0.0
+description: Attempts to reproduce the reported bug by constructing minimal test cases or scenarios that trigger the same failure.
+
+metadata:
+  level: 3
+  domain: debugging
+  tags: [debugging, reproduction, test-case-generation]
+
+generator:
+  type: PIPELINE
+  steps:
+    - name: scenario_construction
+      type: LLM
+      provider: ANTHROPIC
+      model: claude-3-5-sonnet-20241022
+      temperature: 0.3
+      max_tokens: 2000
+      prompt: |
+        Construct a minimal reproduction for this bug:
+        
+        Error: {{input}}
+        Stack Trace: {{stack_trace}}
+        Source Context: {{context}}
+        
+        Generate:
+        1. Minimal test case that triggers the failure
+        2. Required setup/fixtures
+        3. Expected vs actual behavior
+        4. Environmental factors (JVM flags, DB state, config)
+        
+        Output as JSON: {test_case, setup, expected, actual, environment, reproducible}
+
+memory:
+  episodic:
+    enabled: true
+    retention_days: 180
+    categories: [reproductions, flaky-tests]
+  semantic:
+    enabled: true
+    categories: [reproduction-strategies, environment-factors]
+
+tools: [test_runner, environment_inspector]
+
+capabilities:
+  - root-cause-analysis
+  - test-generation
+
+routing:
+  input_types: [bug-report, test-failure, error-context]
+  output_types: [reproduction-case, minimal-test]
+
+delegation:
+  can_delegate_to: []
+  escalates_to: debug-orchestrator
+
+governance:
+  requires_approval: false
+  can_block: false
+  audit_trail: standard
+
+performance:
+  expected_latency_ms: 5000
+  max_latency_ms: 20000
+  timeout_ms: 45000

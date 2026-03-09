@@ -1,0 +1,276 @@
+# Code Review Tasks
+# Domain 15 of 22 - Developer Task Universe
+# Reference: developer-tasks.md Part I, Section 15
+
+domain:
+  id: code-review
+  name: "Code Review"
+  description: "Tasks related to reviewing code and providing feedback"
+  order: 15
+  icon: "rate_review"
+  color: "#5C6BC0"
+  lifecycle_stages:
+    - verify
+    - learn
+
+tasks:
+  - id: review-001
+    name: "Review Pull Requests"
+    description: "Review code changes in pull/merge requests"
+    personas:
+      - Developer
+      - Tech Lead
+    lifecycle_stages:
+      - verify
+    automation_level: assisted
+    required_capabilities:
+      - code-review
+      - analysis
+    input_schema: review-001-input
+    output_schema: review-001-output
+    audit_artifacts:
+      - InputSnapshot
+      - OutputSnapshot
+      - VerificationResult
+      - ReviewComments
+    ui:
+      icon: "compare"
+      color: "#5C6BC0"
+      tags:
+        - pull-request
+        - review
+        - code-quality
+
+  - id: review-002
+    name: "Provide Code Feedback"
+    description: "Give constructive feedback on code quality"
+    personas:
+      - Developer
+      - Tech Lead
+    lifecycle_stages:
+      - verify
+      - learn
+    automation_level: manual
+    required_capabilities:
+      - code-review
+      - communication
+    input_schema: review-002-input
+    output_schema: review-002-output
+    audit_artifacts:
+      - InputSnapshot
+      - OutputSnapshot
+      - ReviewComments
+    ui:
+      icon: "comment"
+      color: "#5C6BC0"
+      tags:
+        - feedback
+        - code-quality
+        - mentoring
+
+  - id: review-003
+    name: "Pair Programming"
+    description: "Collaborate on code through pair programming"
+    personas:
+      - Developer
+    lifecycle_stages:
+      - execute
+      - learn
+    automation_level: manual
+    required_capabilities:
+      - collaboration
+      - coding
+    input_schema: review-003-input
+    output_schema: review-003-output
+    audit_artifacts:
+      - OutputSnapshot
+      - ChangeSet
+    ui:
+      icon: "people"
+      color: "#5C6BC0"
+      tags:
+        - pair-programming
+        - collaboration
+        - learning
+
+  - id: review-004
+    name: "Review Architecture Decisions"
+    description: "Evaluate architectural choices and patterns"
+    personas:
+      - Tech Lead
+      - Developer
+    lifecycle_stages:
+      - verify
+    automation_level: manual
+    required_capabilities:
+      - architecture-review
+      - design-review
+    input_schema: review-004-input
+    output_schema: review-004-output
+    audit_artifacts:
+      - InputSnapshot
+      - OutputSnapshot
+      - DecisionRecord
+      - ReviewComments
+    ui:
+      icon: "architecture"
+      color: "#5C6BC0"
+      tags:
+        - architecture
+        - design
+        - review
+
+  - id: review-005
+    name: "Review API Design"
+    description: "Evaluate API contracts and design quality"
+    personas:
+      - Developer
+      - Tech Lead
+    lifecycle_stages:
+      - verify
+    automation_level: assisted
+    required_capabilities:
+      - api-review
+      - design-review
+    input_schema: review-005-input
+    output_schema: review-005-output
+    audit_artifacts:
+      - InputSnapshot
+      - OutputSnapshot
+      - ReviewComments
+    ui:
+      icon: "api"
+      color: "#5C6BC0"
+      tags:
+        - api
+        - design
+        - review
+
+  - id: review-006
+    name: "Review Test Coverage"
+    description: "Evaluate test quality and coverage"
+    personas:
+      - Developer
+      - QA
+    lifecycle_stages:
+      - verify
+    automation_level: assisted
+    required_capabilities:
+      - testing
+      - code-review
+    input_schema: review-006-input
+    output_schema: review-006-output
+    audit_artifacts:
+      - InputSnapshot
+      - OutputSnapshot
+      - VerificationResult
+      - ReviewComments
+    ui:
+      icon: "coverage"
+      color: "#5C6BC0"
+      tags:
+        - testing
+        - coverage
+        - review
+
+  - id: review-007
+    name: "Review Documentation"
+    description: "Evaluate code documentation quality"
+    personas:
+      - Developer
+      - Tech Lead
+    lifecycle_stages:
+      - verify
+    automation_level: assisted
+    required_capabilities:
+      - documentation
+      - code-review
+    input_schema: review-007-input
+    output_schema: review-007-output
+    audit_artifacts:
+      - InputSnapshot
+      - OutputSnapshot
+      - ReviewComments
+    ui:
+      icon: "menu_book"
+      color: "#5C6BC0"
+      tags:
+        - documentation
+        - quality
+        - review
+
+  - id: review-008
+    name: "Address Review Comments"
+    description: "Respond to and resolve code review feedback"
+    personas:
+      - Developer
+    lifecycle_stages:
+      - execute
+    automation_level: manual
+    required_capabilities:
+      - coding
+      - communication
+    input_schema: review-008-input
+    output_schema: review-008-output
+    audit_artifacts:
+      - InputSnapshot
+      - OutputSnapshot
+      - ChangeSet
+    ui:
+      icon: "reply_all"
+      color: "#5C6BC0"
+      tags:
+        - feedback
+        - resolution
+        - iteration
+
+  - id: review-009
+    name: "Approve or Request Changes"
+    description: "Make final decision on code review"
+    personas:
+      - Developer
+      - Tech Lead
+    lifecycle_stages:
+      - verify
+    automation_level: manual
+    required_capabilities:
+      - code-review
+      - decision-making
+    input_schema: review-009-input
+    output_schema: review-009-output
+    audit_artifacts:
+      - InputSnapshot
+      - OutputSnapshot
+      - DecisionRecord
+    ui:
+      icon: "how_to_vote"
+      color: "#5C6BC0"
+      tags:
+        - approval
+        - decision
+        - review
+
+  - id: review-010
+    name: "Mentor Through Reviews"
+    description: "Use code reviews as teaching opportunities"
+    personas:
+      - Tech Lead
+    lifecycle_stages:
+      - learn
+      - institutionalize
+    automation_level: manual
+    required_capabilities:
+      - mentoring
+      - communication
+    input_schema: review-010-input
+    output_schema: review-010-output
+    audit_artifacts:
+      - OutputSnapshot
+      - ReviewComments
+    ui:
+      icon: "school"
+      color: "#5C6BC0"
+      tags:
+        - mentoring
+        - teaching
+        - learning

@@ -1,0 +1,254 @@
+# Accessibility Audit Workflow
+#
+# Runs accessibility audits on PR changes using axe-core and custom validators.
+# Blocks PRs that introduce accessibility violations beyond the threshold.
+#
+# @doc.type workflow
+# @doc.purpose Automated WCAG compliance checks
+# @doc.layer cicd
+# @doc.pattern CI/CD Pipeline
+
+name: Accessibility Audit
+
+on:
+    pull_request:
+        branches:
+            - main
+            - develop
+        paths:
+            - "products/**/src/**/*.tsx"
+            - "products/**/src/**/*.ts"
+            - "libs/**/src/**/*.tsx"
+            - "libs/**/src/**/*.ts"
+            - ".github/workflows/a11y-audit.yml"
+
+# Ensure only one audit runs per PR
+concurrency:
+    group: a11y-${{ github.ref }}
+    cancel-in-progress: true
+
+jobs:
+    accessibility-audit:
+        name: Run Accessibility Audit
+        runs-on: ubuntu-latest
+        timeout-minutes: 15
+
+        permissions:
+            contents: read
+            pull-requests: write # To post comments
+
+        steps:
+            - name: Checkout code
+              uses: actions/checkout@v4
+              with:
+                  fetch-depth: 0 # Need full history for comparison
+
+            - name: Setup Node.js
+              uses: actions/setup-node@v4
+              with:
+                  node-version: "20"
+                  cache: "pnpm"
+
+            - name: Setup pnpm
+              uses: pnpm/action-setup@v2
+              with:
+                  version: 8
+
+            - name: Install dependencies
+              run: pnpm install --frozen-lockfile
+
+            - name: Build components
+              run: pnpm run build
+              continue-on-error: true
+
+            - name: Run Accessibility Auditor
+              id: a11y-audit
+              run: |
+                  pnpm run test:a11y --json > a11y-report.json
+              continue-on-error: true
+
+            - name: Parse Audit Results
+              id: parse-results
+              uses: actions/github-script@v7
+              with:
+                  script: |
+                      const fs = require('fs');
+                      const report = JSON.parse(fs.readFileSync('a11y-report.json', 'utf8'));
+
+                      // Count violations by severity
+                      const violations = {
+                        critical: 0,
+                        serious: 0,
+                        moderate: 0,
+                        minor: 0
+                      };
+
+                      if (report.violations) {
+                        report.violations.forEach(v => {
+                          if (v.impact === 'critical') violations.critical++;
+                          else if (v.impact === 'serious') violations.serious++;
+                          else if (v.impact === 'moderate') violations.moderate++;
+                          else violations.minor++;
+                        });
+                      }
+
+                      // Set outputs
+                      core.setOutput('critical', violations.critical);
+                      core.setOutput('serious', violations.serious);
+                      core.setOutput('moderate', violations.moderate);
+                      core.setOutput('minor', violations.minor);
+                      core.setOutput('total', violations.critical + violations.serious + violations.moderate + violations.minor);
+
+                      // Save report for artifact
+                      fs.writeFileSync('a11y-summary.json', JSON.stringify(violations, null, 2));
+
+                      return violations;
+
+            - name: Generate HTML Report
+              if: always()
+              run: |
+                  node -e "
+                  const fs = require('fs');
+                  const report = JSON.parse(fs.readFileSync('a11y-report.json', 'utf8'));
+
+                  let html = '<html><head><title>Accessibility Audit Report</title>';
+                  html += '<style>body{font-family:sans-serif;max-width:1200px;margin:20px auto;padding:20px}';
+                  html += '.violation{border:1px solid #ddd;padding:15px;margin:10px 0;border-radius:4px}';
+                  html += '.critical{border-left:4px solid #d32f2f}.serious{border-left:4px solid #f57c00}';
+                  html += '.moderate{border-left:4px solid #fbc02d}.minor{border-left:4px solid #388e3c}';
+                  html += 'h1{color:#333}h2{color:#666;margin-top:30px}.tag{display:inline-block;padding:3px 8px;border-radius:3px;font-size:12px;margin-right:5px}';
+                  html += '.tag-critical{background:#ffebee;color:#d32f2f}.tag-serious{background:#fff3e0;color:#f57c00}';
+                  html += '.tag-moderate{background:#fffde7;color:#fbc02d}.tag-minor{background:#e8f5e9;color:#388e3c}</style></head><body>';
+                  html += '<h1>Accessibility Audit Report</h1>';
+                  html += '<p>Generated: ' + new Date().toISOString() + '</p>';
+
+                  if (report.violations && report.violations.length > 0) {
+                    html += '<h2>Violations Found: ' + report.violations.length + '</h2>';
+                    
+                    report.violations.forEach(v => {
+                      html += '<div class=\"violation ' + v.impact + '\">';
+                      html += '<span class=\"tag tag-' + v.impact + '\">' + v.impact.toUpperCase() + '</span>';
+                      html += '<h3>' + v.description + '</h3>';
+                      html += '<p><strong>Rule:</strong> ' + v.id + '</p>';
+                      html += '<p><strong>WCAG:</strong> ' + (v.tags || []).join(', ') + '</p>';
+                      html += '<p><strong>Help:</strong> <a href=\"' + v.helpUrl + '\">' + v.helpUrl + '</a></p>';
+                      if (v.nodes && v.nodes.length > 0) {
+                        html += '<p><strong>Elements affected:</strong> ' + v.nodes.length + '</p>';
+                        html += '<ul>';
+                        v.nodes.slice(0, 5).forEach(n => {
+                          html += '<li><code>' + (n.html || '').substring(0, 100) + '</code></li>';
+                        });
+                        html += '</ul>';
+                      }
+                      html += '</div>';
+                    });
+                  } else {
+                    html += '<h2 style=\"color:#388e3c\">✓ No violations found!</h2>';
+                  }
+
+                  html += '</body></html>';
+                  fs.writeFileSync('a11y-report.html', html);
+                  "
+
+            - name: Upload Audit Report
+              if: always()
+              uses: actions/upload-artifact@v4
+              with:
+                  name: accessibility-report
+                  path: |
+                      a11y-report.json
+                      a11y-report.html
+                      a11y-summary.json
+                  retention-days: 30
+
+            - name: Post PR Comment
+              if: always()
+              uses: actions/github-script@v7
+              with:
+                  script: |
+                      const fs = require('fs');
+                      const violations = JSON.parse(fs.readFileSync('a11y-summary.json', 'utf8'));
+
+                      const total = violations.critical + violations.serious + violations.moderate + violations.minor;
+                      const failed = violations.critical > 2 || violations.serious > 5;
+
+                      const emoji = failed ? '❌' : total === 0 ? '✅' : '⚠️';
+                      const status = failed ? 'FAILED' : total === 0 ? 'PASSED' : 'WARNING';
+
+                      const body = `## ${emoji} Accessibility Audit ${status}
+
+                      **Violations Summary:**
+
+                      | Severity | Count |
+                      |----------|-------|
+                      | 🔴 Critical | ${violations.critical} |
+                      | 🟠 Serious | ${violations.serious} |
+                      | 🟡 Moderate | ${violations.moderate} |
+                      | 🟢 Minor | ${violations.minor} |
+                      | **Total** | **${total}** |
+
+                      **Thresholds:**
+                      - Critical: Max 2 (Current: ${violations.critical}) ${violations.critical > 2 ? '❌' : '✅'}
+                      - Serious: Max 5 (Current: ${violations.serious}) ${violations.serious > 5 ? '❌' : '✅'}
+
+                      ${failed ? '**❌ This PR introduces accessibility violations beyond the acceptable threshold.**\n\nPlease fix the issues before merging.' : ''}
+                      ${total === 0 ? '**✅ No accessibility violations found! Great work!**' : ''}
+
+                      <details>
+                      <summary>📊 View full report</summary>
+
+                      Download the detailed HTML report from the workflow artifacts.
+
+                      **WCAG Compliance Levels:**
+                      - Level A: Basic accessibility
+                      - Level AA: Addresses major barriers (target)
+                      - Level AAA: Highest level
+
+                      **Resources:**
+                      - [WCAG Guidelines](https://www.w3.org/WAI/WCAG21/quickref/)
+                      - [Axe Rules](https://github.com/dequelabs/axe-core/blob/develop/doc/rule-descriptions.md)
+                      </details>
+                      `;
+
+                      await github.rest.issues.createComment({
+                        owner: context.repo.owner,
+                        repo: context.repo.repo,
+                        issue_number: context.issue.number,
+                        body: body
+                      });
+
+            - name: Check Thresholds
+              if: always()
+              run: |
+                  CRITICAL=${{ steps.parse-results.outputs.critical }}
+                  SERIOUS=${{ steps.parse-results.outputs.serious }}
+
+                  echo "Critical violations: $CRITICAL (max: 2)"
+                  echo "Serious violations: $SERIOUS (max: 5)"
+
+                  if [ "$CRITICAL" -gt 2 ] || [ "$SERIOUS" -gt 5 ]; then
+                    echo "❌ Accessibility violations exceed threshold"
+                    exit 1
+                  else
+                    echo "✅ Accessibility violations within acceptable range"
+                  fi
+
+            - name: Update Status Badge
+              if: github.event_name == 'pull_request' && github.event.pull_request.head.repo.full_name == github.repository
+              continue-on-error: true
+              run: |
+                  TOTAL=${{ steps.parse-results.outputs.total }}
+                  if [ "$TOTAL" -eq 0 ]; then
+                    COLOR="brightgreen"
+                    MESSAGE="passing"
+                  elif [ "${{ steps.parse-results.outputs.critical }}" -gt 2 ] || [ "${{ steps.parse-results.outputs.serious }}" -gt 5 ]; then
+                    COLOR="red"
+                    MESSAGE="failing"
+                  else
+                    COLOR="yellow"
+                    MESSAGE="warning"
+                  fi
+
+                  # Generate badge URL
+                  BADGE_URL="https://img.shields.io/badge/a11y-${MESSAGE}-${COLOR}"
+                  echo "Badge URL: $BADGE_URL"

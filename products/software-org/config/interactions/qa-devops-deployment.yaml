@@ -1,0 +1,73 @@
+# QA to DevOps Deployment Interaction
+apiVersion: virtualorg.ghatana.com/v1
+kind: Interaction
+metadata:
+  name: qa-devops-deployment
+  namespace: software-org
+  labels:
+    type: handoff
+    departments: [qa, devops]
+
+spec:
+  displayName: "QA to DevOps Deployment"
+  description: |
+    Defines the interaction pattern when QA approves a release
+    and hands off to DevOps for deployment.
+
+  participants:
+    source:
+      department: qa
+      agents:
+        - qa-lead-agent
+    target:
+      department: devops
+      agents:
+        - devops-lead-agent
+        - devops-engineer-agent
+
+  trigger:
+    events:
+      - type: qa.testing.completed
+      - type: release.approved
+      - type: hotfix.approved
+
+  protocol:
+    type: async
+    timeout: PT2H
+
+  handoff:
+    requirements:
+      - name: qa_sign_off
+        description: "QA lead has signed off on release"
+        mandatory: true
+      - name: regression_tests_passed
+        description: "All regression tests passing"
+        mandatory: true
+      - name: performance_validated
+        description: "Performance benchmarks met"
+        mandatory: false
+      - name: security_scan_passed
+        description: "Security scan completed without critical issues"
+        mandatory: true
+
+    artifacts:
+      - type: test_report
+        required: true
+      - type: release_candidate
+        required: true
+      - type: deployment_checklist
+        required: true
+
+  notifications:
+    onTrigger:
+      - channel: slack
+        target: "#devops"
+        template: "Release ready for deployment: {{release_version}}"
+    onComplete:
+      - channel: slack
+        target: "#releases"
+        template: "Deployment completed: {{release_version}}"
+
+  sla:
+    acknowledgment: PT30M
+    completion: PT4H

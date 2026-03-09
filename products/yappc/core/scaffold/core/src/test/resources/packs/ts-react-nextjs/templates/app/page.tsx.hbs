@@ -1,0 +1,85 @@
+export default function HomePage() {
+  return (
+    <main{{#if enableTailwind}} className="container mx-auto px-4 py-8"{{/if}}>
+      <div{{#if enableTailwind}} className="max-w-4xl mx-auto text-center"{{/if}}>
+        <h1{{#if enableTailwind}} className="text-4xl font-bold text-gray-900 dark:text-white mb-6"{{/if}}>
+          Welcome to {{projectName}}
+        </h1>
+        
+        <p{{#if enableTailwind}} className="text-xl text-gray-600 dark:text-gray-300 mb-8"{{/if}}>
+          {{description}}
+        </p>
+
+        <div{{#if enableTailwind}} className="grid md:grid-cols-2 lg:grid-cols-3 gap-6 mt-12"{{/if}}>
+          <FeatureCard
+            title="⚡ Next.js 15"
+            description="App Router, Server Components, and Turbopack for lightning-fast development"
+          />
+          
+          <FeatureCard
+            title="🔷 TypeScript"
+            description="Type-safe development with full IntelliSense support"
+          />
+          
+          <FeatureCard
+            title="🎨 Modern Styling"
+            description="{{#if enableTailwind}}Tailwind CSS{{else}}CSS Modules{{/if}} for beautiful, responsive designs"
+          />
+          
+          <FeatureCard
+            title="🔧 Development Tools"
+            description="ESLint, Prettier, and hot reload for optimal DX"
+          />
+          
+          <FeatureCard
+            title="📦 Production Ready"
+            description="{{#if enableDocker}}Docker support and {{/if}}optimized builds for deployment"
+          />
+          
+          <FeatureCard
+            title="🚀 Performance"
+            description="Image optimization, code splitting, and server-side rendering"
+          />
+        </div>
+        
+        <div{{#if enableTailwind}} className="mt-12 space-x-4"{{/if}}>
+          <a
+            href="https://nextjs.org/docs"
+            target="_blank"
+            rel="noopener noreferrer"
+            {{#if enableTailwind}}className="inline-block bg-blue-600 text-white px-6 py-3 rounded-lg font-semibold hover:bg-blue-700 transition-colors"{{/if}}
+          >
+            Next.js Documentation
+          </a>
+          
+          <a
+            href="https://react.dev"
+            target="_blank"
+            rel="noopener noreferrer"
+            {{#if enableTailwind}}className="inline-block bg-gray-800 text-white px-6 py-3 rounded-lg font-semibold hover:bg-gray-900 transition-colors"{{/if}}
+          >
+            React Documentation
+          </a>
+        </div>
+      </div>
+    </main>
+  )
+}
+
+interface FeatureCardProps {
+  title: string
+  description: string
+}
+
+function FeatureCard({ title, description }: FeatureCardProps) {
+  return (
+    <div{{#if enableTailwind}} className="bg-white dark:bg-gray-800 p-6 rounded-lg shadow-md border border-gray-200 dark:border-gray-700"{{/if}}>
+      <h3{{#if enableTailwind}} className="text-lg font-semibold text-gray-900 dark:text-white mb-2"{{/if}}>
+        {title}
+      </h3>
+      <p{{#if enableTailwind}} className="text-gray-600 dark:text-gray-300"{{/if}}>
+        {description}
+      </p>
+    </div>
+  )
+}

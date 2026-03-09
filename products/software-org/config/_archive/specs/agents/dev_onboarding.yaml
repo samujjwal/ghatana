@@ -1,0 +1,30 @@
+---
+id: "dev_onboarding"
+agent: "DevOnboardingAgent"
+role: "Team Lead"
+inputs_spec:
+- name: "secure_coding_guidelines"
+  description: "Secure coding guidelines for onboarding."
+  format: "Guidelines document"
+outputs_spec:
+- name: "onboarding_session"
+  description: "Record of onboarding session, including completion and topics covered."
+  format: "Onboarding session record"
+agent_tasks:
+- "Provide onboarding materials and walkthroughs for new team members."
+- "Ensure access to all repos, docs, tools."
+- "Highlight team-specific best practices."
+- "Record onboarding completion."
+acceptance_criteria:
+- "Onboarding materials are complete and current."
+- "New team members have access to all repos, docs, and tools."
+- "Introductory walkthroughs are provided."
+- "Team-specific best practices are highlighted."
+- "Onboarding completion is recorded."
+dependencies:
+- "secure_coding_guidelines"
+failure_escalation:
+- "Escalate to Team Lead or PM if onboarding is not complete for new members."
+references: []
+hitl: true
+hitl_reason: "Human ensures onboarding quality and addresses team questions"

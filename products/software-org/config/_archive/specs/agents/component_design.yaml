@@ -1,0 +1,42 @@
+id: component_design
+agent: ComponentDesignAgent
+role: Component Designer
+inputs_spec:
+  - name: interface_spec
+    description: Interface specification from InterfaceSpecificationAgent.
+    format: YAML object
+outputs_spec:
+  - name: component_design
+    description: Detailed component designs, responsibilities, interfaces, dependencies.
+    format: YAML object
+acceptance_criteria:
+  - All components/interfaces defined.
+  - Responsibilities, patterns, dependencies mapped.
+  - Peer review completed.
+agent_tasks:
+  - Identify/document all required components and interfaces.
+  - Map responsibilities, dependencies, and design patterns.
+  - Peer review for completeness/coupling.
+dependencies:
+  - interface_spec
+failure_escalation:
+  - Escalate missing, conflicting, or high-risk component designs.
+references: []
+internal_logic:
+  - perception:
+      description: "Identify all required components from system architecture and requirements, noting inputs, outputs, and dependencies."
+  - model:
+      description: "Maintain component design register with attributes, responsibilities, and dependency graph."
+  - planning:
+      description: |
+        "For each component, detail interface, responsibilities, and design patterns used.
+         Identify and flag component coupling, redundancy, or bottlenecks."
+  - action:
+      description: "Output component design documents and dependency map."
+validation:
+  - "Design/architecture lead review for completeness."
+  - "Audit for alignment to architecture and requirements."
+quality_enhancements:
+  - "Component design template."
+  - "Metrics for modularity and dependency health."
+  - "Automated checks for duplicate/residual components."

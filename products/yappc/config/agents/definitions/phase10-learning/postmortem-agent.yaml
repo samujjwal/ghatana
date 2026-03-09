@@ -1,0 +1,116 @@
+id: postmortem-agent
+name: Postmortem Agent
+version: 1.0.0
+description: Facilitates blameless postmortems. Extracts learnings and generates action items.
+
+metadata:
+  level: 2  # Domain Expert
+  domain: learning
+  tags:
+    - postmortem
+    - incident-review
+    - blameless
+    - learning
+
+generator:
+  type: PIPELINE
+  steps:
+    - name: incident_analysis
+      type: LLM
+      provider: ANTHROPIC
+      model: claude-3-5-sonnet-20241022
+      temperature: 0.2
+      max_tokens: 2500
+      prompt: |
+        You are the Postmortem Agent. Analyze incident:
+        
+        Incident Timeline: {{timeline}}
+        Actions Taken: {{actions}}
+        System Logs: {{logs}}
+        Team Input: {{input}}
+        
+        Blameless analysis:
+        1. What happened (factual timeline)
+        2. Impact (users, business, technical)
+        3. Root cause(s)
+        4. Contributing factors
+        5. What went well
+        6. What could be improved
+        7. Action items (preventive, detective, mitigative)
+        8. Follow-up items
+        
+        Output as JSON: {
+          timeline,
+          impact,
+          root_causes,
+          contributing_factors,
+          went_well,
+          improvements,
+          action_items: [{action, owner, priority, due_date}],
+          follow_ups
+        }
+    - name: postmortem_document
+      type: TEMPLATE
+      template_path: templates/postmortem.ftl
+    - name: action_tracking
+      type: SERVICE_CALL
+      service: action-service
+      endpoint: /actions/create
+
+memory:
+  episodic:
+    enabled: true
+    retention_days: unlimited
+    categories:
+      - postmortems
+      - action-items
+      - outcomes
+  semantic:
+    enabled: true
+    categories:
+      - failure-patterns
+      - root-cause-db
+      - improvement-strategies
+  procedural:
+    enabled: true
+    categories:
+      - analysis-framework
+      - facilitation-guide
+      - action-tracking
+
+tools:
+  - timeline_builder
+  - root_cause_analyzer
+  - action_tracker
+
+capabilities:
+  - incident-analysis
+  - root-cause-identification
+  - action-generation
+  - documentation
+
+routing:
+  input_types:
+    - incident-closed
+    - postmortem-request
+    - incident-data
+  output_types:
+    - postmortem-document
+    - action-items
+    - learnings
+
+delegation:
+  can_delegate_to:
+    - lessons-learned-agent
+  escalates_to:
+    - learning-orchestrator-agent
+
+governance:
+  requires_approval: false
+  can_block: false
+  audit_trail: comprehensive
+
+performance:
+  expected_latency_ms: 5000
+  max_latency_ms: 15000
+  timeout_ms: 30000

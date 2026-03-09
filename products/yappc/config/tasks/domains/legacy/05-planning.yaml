@@ -1,0 +1,277 @@
+# Task Planning & Execution Planning Tasks
+# Domain 5 of 22 - Developer Task Universe
+# Reference: developer-tasks.md Part I, Section 5
+
+domain:
+  id: planning
+  name: "Task Planning & Execution Planning"
+  description: "Tasks related to breaking down work, estimation, and planning execution"
+  order: 5
+  icon: "event_note"
+  color: "#FFEAA7"
+  lifecycle_stages:
+    - plan
+
+tasks:
+  - id: plan-001
+    name: "Break Work into Tasks/Subtasks"
+    description: "Decompose work items into actionable tasks and subtasks"
+    personas:
+      - Developer
+      - Tech Lead
+    lifecycle_stages:
+      - plan
+    automation_level: assisted
+    required_capabilities:
+      - decomposition
+      - planning
+    input_schema: plan-001-input
+    output_schema: plan-001-output
+    audit_artifacts:
+      - InputSnapshot
+      - OutputSnapshot
+      - ChangeSet
+    ui:
+      icon: "format_list_bulleted"
+      color: "#FFEAA7"
+      tags:
+        - breakdown
+        - tasks
+        - decomposition
+
+  - id: plan-002
+    name: "Estimate Effort"
+    description: "Provide time and effort estimates for tasks"
+    personas:
+      - Developer
+      - Tech Lead
+    lifecycle_stages:
+      - plan
+    automation_level: assisted
+    required_capabilities:
+      - estimation
+      - experience-based-judgment
+    input_schema: plan-002-input
+    output_schema: plan-002-output
+    audit_artifacts:
+      - InputSnapshot
+      - OutputSnapshot
+      - DecisionRecord
+    ui:
+      icon: "schedule"
+      color: "#FFEAA7"
+      tags:
+        - estimation
+        - effort
+        - time
+
+  - id: plan-003
+    name: "Identify Dependencies"
+    description: "Map dependencies between tasks, teams, and external systems"
+    personas:
+      - Developer
+      - Tech Lead
+    lifecycle_stages:
+      - plan
+    automation_level: assisted
+    required_capabilities:
+      - dependency-analysis
+      - planning
+    input_schema: plan-003-input
+    output_schema: plan-003-output
+    audit_artifacts:
+      - InputSnapshot
+      - OutputSnapshot
+      - LineageLinks
+    ui:
+      icon: "share"
+      color: "#FFEAA7"
+      tags:
+        - dependencies
+        - blocking
+        - sequence
+
+  - id: plan-004
+    name: "Prioritize Tasks"
+    description: "Order tasks by priority based on value, risk, and dependencies"
+    personas:
+      - Developer
+      - Tech Lead
+      - PM
+    lifecycle_stages:
+      - plan
+    automation_level: assisted
+    required_capabilities:
+      - prioritization
+      - value-analysis
+    input_schema: plan-004-input
+    output_schema: plan-004-output
+    audit_artifacts:
+      - InputSnapshot
+      - OutputSnapshot
+      - DecisionRecord
+    ui:
+      icon: "low_priority"
+      color: "#FFEAA7"
+      tags:
+        - prioritization
+        - ordering
+        - value
+
+  - id: plan-005
+    name: "Define Execution Order"
+    description: "Determine the optimal sequence for executing tasks"
+    personas:
+      - Developer
+      - Tech Lead
+    lifecycle_stages:
+      - plan
+    automation_level: assisted
+    required_capabilities:
+      - sequencing
+      - dependency-analysis
+    input_schema: plan-005-input
+    output_schema: plan-005-output
+    audit_artifacts:
+      - InputSnapshot
+      - OutputSnapshot
+    ui:
+      icon: "sort"
+      color: "#FFEAA7"
+      tags:
+        - sequence
+        - order
+        - execution
+
+  - id: plan-006
+    name: "Identify Risks and Mitigations"
+    description: "Document execution risks and mitigation strategies"
+    personas:
+      - Developer
+      - Tech Lead
+    lifecycle_stages:
+      - plan
+    automation_level: assisted
+    required_capabilities:
+      - risk-analysis
+      - mitigation-planning
+    input_schema: plan-006-input
+    output_schema: plan-006-output
+    audit_artifacts:
+      - InputSnapshot
+      - OutputSnapshot
+      - DecisionRecord
+    ui:
+      icon: "report_problem"
+      color: "#FFEAA7"
+      tags:
+        - risks
+        - mitigation
+        - planning
+
+  - id: plan-007
+    name: "Define Test Strategy"
+    description: "Plan the testing approach for the implementation"
+    personas:
+      - Developer
+      - Tech Lead
+      - QA
+    lifecycle_stages:
+      - plan
+    automation_level: assisted
+    required_capabilities:
+      - test-planning
+      - quality-assurance
+    input_schema: plan-007-input
+    output_schema: plan-007-output
+    audit_artifacts:
+      - InputSnapshot
+      - OutputSnapshot
+      - DecisionRecord
+    ui:
+      icon: "science"
+      color: "#FFEAA7"
+      tags:
+        - testing
+        - strategy
+        - quality
+
+  - id: plan-008
+    name: "Define Rollout and Rollback Strategy"
+    description: "Plan deployment approach including rollback procedures"
+    personas:
+      - Developer
+      - Tech Lead
+      - DevOps
+    lifecycle_stages:
+      - plan
+    automation_level: assisted
+    required_capabilities:
+      - deployment-planning
+      - risk-management
+    input_schema: plan-008-input
+    output_schema: plan-008-output
+    audit_artifacts:
+      - InputSnapshot
+      - OutputSnapshot
+      - DecisionRecord
+    ui:
+      icon: "published_with_changes"
+      color: "#FFEAA7"
+      tags:
+        - rollout
+        - rollback
+        - deployment
+
+  - id: plan-009
+    name: "Create Implementation Checklist"
+    description: "Generate a comprehensive checklist for implementation"
+    personas:
+      - Developer
+      - Tech Lead
+    lifecycle_stages:
+      - plan
+    automation_level: assisted
+    required_capabilities:
+      - planning
+      - documentation
+    input_schema: plan-009-input
+    output_schema: plan-009-output
+    audit_artifacts:
+      - InputSnapshot
+      - OutputSnapshot
+    ui:
+      icon: "playlist_add_check"
+      color: "#FFEAA7"
+      tags:
+        - checklist
+        - implementation
+        - tracking
+
+  - id: plan-010
+    name: "Update Task Tracking Systems"
+    description: "Create and update tickets in project management tools"
+    personas:
+      - Developer
+      - Tech Lead
+    lifecycle_stages:
+      - plan
+      - execute
+      - observe
+    automation_level: automated
+    required_capabilities:
+      - integration
+      - project-management
+    input_schema: plan-010-input
+    output_schema: plan-010-output
+    audit_artifacts:
+      - InputSnapshot
+      - OutputSnapshot
+      - ChangeSet
+    ui:
+      icon: "assignment"
+      color: "#FFEAA7"
+      tags:
+        - tracking
+        - tickets
+        - project-management

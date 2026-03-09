@@ -1,0 +1,82 @@
+version: '3.8'
+
+services:
+  # Development Dashboard with hot reload
+  dashboard-dev:
+    build:
+      context: .
+      dockerfile: Dockerfile.dev
+    container_name: guardian-dashboard-dev
+    ports:
+      - "5173:5173"
+    environment:
+      - NODE_ENV=development
+      - VITE_API_URL=http://localhost:3000
+      - VITE_WS_URL=ws://localhost:3000
+    volumes:
+      - .:/app
+      - /app/node_modules
+    networks:
+      - guardian-network
+    command: npm run dev
+    depends_on:
+      - backend-dev
+
+  # Backend API Development
+  backend-dev:
+    build:
+      context: ../backend
+      dockerfile: Dockerfile.dev
+    container_name: guardian-backend-dev
+    ports:
+      - "3000:3000"
+    environment:
+      - NODE_ENV=development
+      - DATABASE_URL=postgresql://guardian:guardian@db-dev:5432/guardian
+      - JWT_SECRET=dev-secret-key
+      - REDIS_URL=redis://redis-dev:6379
+    volumes:
+      - ../backend:/app
+      - /app/node_modules
+    networks:
+      - guardian-network
+    command: npm run dev
+    depends_on:
+      - db-dev
+      - redis-dev
+
+  # PostgreSQL Database Development
+  db-dev:
+    image: postgres:15-alpine
+    container_name: guardian-db-dev
+    environment:
+      - POSTGRES_USER=guardian
+      - POSTGRES_PASSWORD=guardian
+      - POSTGRES_DB=guardian
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres-dev-data:/var/lib/postgresql/data
+    networks:
+      - guardian-network
+
+  # Redis Development
+  redis-dev:
+    image: redis:7-alpine
+    container_name: guardian-redis-dev
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis-dev-data:/data
+    networks:
+      - guardian-network
+
+networks:
+  guardian-network:
+    driver: bridge
+
+volumes:
+  postgres-dev-data:
+    driver: local
+  redis-dev-data:
+    driver: local

@@ -1,0 +1,121 @@
+package observability
+
+import (
+"encoding/json"
+"net/http"
+"runtime"
+"sync"
+"time"
+)
+
+// HealthStatus represents the overall health status
+type HealthStatus struct {
+Status string `json:"status"`
+Service string `json:"service"`
+Timestamp string `json:"timestamp"`
+Checks map[string]HealthCheckResult `json:"checks"`
+}
+
+// HealthCheckResult represents a single health check result
+type HealthCheckResult struct {
+Status string `json:"status"`
+Message string `json:"message,omitempty"`
+Details map[string]interface{} `json:"details,omitempty"`
+}
+
+// HealthCheck represents a health check function
+type HealthCheck struct {
+Name string
+Check func() HealthCheckResult
+}
+
+var (
+healthChecks []HealthCheck
+mu sync.RWMutex
+)
+
+// RegisterHealthCheck registers a health check
+func RegisterHealthCheck(check HealthCheck) {
+mu.Lock()
+defer mu.Unlock()
+healthChecks = append(healthChecks, check)
+}
+
+// RunHealthChecks runs all registered health checks
+func RunHealthChecks() HealthStatus {
+mu.RLock()
+defer mu.RUnlock()
+
+results := make(map[string]HealthCheckResult)
+overallStatus := "healthy"
+
+for _, check := range healthChecks {
+result := check.Check()
+results[check.Name] = result
+
+if result.Status == "unhealthy" {
+overallStatus = "unhealthy"
+} else if result.Status == "degraded" && overallStatus != "unhealthy" {
+overallStatus = "degraded"
+}
+}
+
+return HealthStatus{
+Status: overallStatus,
+Service: "{{serviceName}}",
+Timestamp: time.Now().Format(time.RFC3339),
+Checks: results,
+}
+}
+
+// LivenessHandler handles liveness probe requests
+func LivenessHandler(w http.ResponseWriter, r *http.Request) {
+w.Header().Set("Content-Type", "application/json")
+w.WriteHeader(http.StatusOK)
+json.NewEncoder(w).Encode(map[string]string{
+"status": "healthy",
+"service": "{{serviceName}}",
+})
+}
+
+// ReadinessHandler handles readiness probe requests
+func ReadinessHandler(w http.ResponseWriter, r *http.Request) {
+status := RunHealthChecks()
+
+w.Header().Set("Content-Type", "application/json")
+if status.Status == "healthy" {
+w.WriteHeader(http.StatusOK)
+} else {
+w.WriteHeader(http.StatusServiceUnavailable)
+}
+json.NewEncoder(w).Encode(status)
+}
+
+func init() {
+// Register default memory health check
+RegisterHealthCheck(HealthCheck{
+Name: "memory",
+Check: func() HealthCheckResult {
+var m runtime.MemStats
+runtime.ReadMemStats(&m)
+
+heapUsedMB := m.Alloc / 1024 / 1024
+heapTotalMB := m.Sys / 1024 / 1024
+
+status := "healthy"
+if float64(m.Alloc)/float64(m.Sys) > 0.9 {
+status = "degraded"
+}
+
+return HealthCheckResult{
+Status: status,
+Message: "Memory usage within limits",
+Details: map[string]interface{}{
+"heap_used_mb": heapUsedMB,
+"heap_total_mb": heapTotalMB,
+"num_gc": m.NumGC,
+},
+}
+},
+})
+}

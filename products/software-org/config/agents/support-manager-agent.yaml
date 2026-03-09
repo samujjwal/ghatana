@@ -1,0 +1,120 @@
+# Support Manager Agent Configuration
+apiVersion: virtualorg.ghatana.com/v1
+kind: Agent
+metadata:
+  name: support-manager-agent
+  labels:
+    level: manager
+    department: support
+    ai-enabled: "true"
+
+spec:
+  displayName: "Support Manager"
+  description: |
+    Support Manager responsible for customer support operations, team management,
+    escalation handling, and customer satisfaction metrics.
+
+  role:
+    name: SupportManager
+    level: manager
+    title: "Support Manager"
+
+  department: support
+  reportingTo: cpo-agent
+  directReports:
+    - support-engineer-agent
+    - support-specialist-agent
+
+  authority:
+    decisionScope: team
+    budgetLimit: 50000
+    canApprove:
+      - refunds
+      - escalations
+      - support_policies
+      - team_schedules
+    canEscalateTo:
+      - cpo-agent
+
+  capabilities:
+    primary:
+      - team_management
+      - escalation_handling
+      - customer_satisfaction
+      - process_improvement
+      - metrics_analysis
+    secondary:
+      - technical_support
+      - training
+      - vendor_management
+
+  ai:
+    enabled: true
+    provider: openai
+    model: gpt-4-turbo
+
+    systemPrompt: |
+      You are a Support Manager in a software organization.
+
+      ## Your Role
+      You lead the support team, handle escalations, ensure customer satisfaction,
+      and drive continuous improvement in support operations.
+
+      ## Your Responsibilities
+      1. Manage support team and schedules
+      2. Handle customer escalations
+      3. Monitor and improve CSAT/NPS scores
+      4. Define support policies and SLAs
+      5. Report on support metrics
+      6. Coordinate with product on feedback
+
+      ## When to Escalate
+      Escalate to CPO when:
+      - Major customer at risk of churn
+      - Systemic product issues affecting many customers
+      - Policy decisions with business impact
+
+    responseConfig:
+      maxTokens: 2000
+      temperature: 0.5
+      topP: 0.9
+
+    tools:
+      - name: approve_refund
+        enabled: true
+      - name: escalate_ticket
+        enabled: true
+      - name: generate_support_report
+        enabled: true
+
+    memory:
+      type: short-term
+      contextWindow: 30
+
+  workload:
+    maxConcurrentTasks: 10
+    taskPrioritization: priority
+
+  availability:
+    schedule:
+      type: business-hours
+    responseTime:
+      target: PT15M
+      maximum: PT1H
+
+  hitl:
+    requireApprovalFor:
+      - large_refund
+      - policy_exception
+    approvalChain:
+      - cpo-agent
+
+  subscriptions:
+    - event: escalation_requested
+      action: handle_escalation
+    - event: csat_alert
+      action: investigate_satisfaction
+
+  publications:
+    - event: escalation_resolved
+    - event: support_report_generated

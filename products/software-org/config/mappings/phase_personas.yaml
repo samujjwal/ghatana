@@ -1,0 +1,104 @@
+phases:
+  - id: PRODUCT_LIFECYCLE_PHASE_PROBLEM_DISCOVERY
+    display_name: "Phase 1 – Problem Discovery & Ideation"
+    personas:
+      - product_manager
+      - ux_researcher
+      - ux_designer
+      - service_designer
+      - business_sme
+      - data_analyst
+      - solution_architect
+      - security_architect
+      - customer_success
+      - marketing_strategist
+      - compliance_officer
+      - innovation_lead
+      - executive_sponsor
+  - id: PRODUCT_LIFECYCLE_PHASE_IDEATION
+    display_name: "Phase 2 – Product Definition & Roadmapping"
+    personas:
+      - product_manager
+      - ux_researcher
+      - ux_designer
+      - business_sme
+      - data_analyst
+      - solution_architect
+      - security_architect
+      - compliance_officer
+      - marketing_strategist
+      - release_program_manager
+      - executive_sponsor
+      - product_designer
+  - id: PRODUCT_LIFECYCLE_PHASE_PLAN_AND_SCOPE
+    display_name: "Phase 3 – Architecture & System Design"
+    personas:
+      - solution_architect
+      - technical_architect
+      - data_architect
+      - security_architect
+      - ux_designer
+      - devops_engineer
+      - software_engineering_lead
+      - compliance_officer
+      - performance_reliability_engineer
+      - product_manager
+  - id: PRODUCT_LIFECYCLE_PHASE_DESIGN_AND_ARCHITECTURE
+    display_name: "Phase 4 – Implementation"
+    personas:
+      - backend_engineer
+      - frontend_engineer
+      - fullstack_engineer
+      - mobile_engineer
+      - data_engineer
+      - devops_engineer
+      - security_engineer
+      - qa_engineer
+      - software_engineering_lead
+      - product_manager
+  - id: PRODUCT_LIFECYCLE_PHASE_BUILD_AND_INTEGRATE
+    display_name: "Phase 5 – Build & Package"
+    personas:
+      - build_release_engineer
+      - devops_engineer
+      - security_engineer
+      - qa_engineer
+      - software_engineering_lead
+      - product_manager
+      - compliance_officer
+  - id: PRODUCT_LIFECYCLE_PHASE_VALIDATE_AND_HARDEN
+    display_name: "Phase 6 – Verification & Security Testing"
+    personas:
+      - qa_engineer
+      - security_engineer
+      - performance_reliability_engineer
+      - software_engineering_lead
+      - product_manager
+  - id: PRODUCT_LIFECYCLE_PHASE_RELEASE
+    display_name: "Phase 7 – Release Management"
+    personas:
+      - release_program_manager
+      - build_release_engineer
+      - devops_engineer
+      - product_manager
+      - marketing_strategist
+      - compliance_officer
+  - id: PRODUCT_LIFECYCLE_PHASE_OPERATE
+    display_name: "Phase 8 – Deployment & Environment Management"
+    personas:
+      - devops_engineer
+      - sre
+      - security_engineer
+      - compliance_officer
+      - product_manager
+  - id: PRODUCT_LIFECYCLE_PHASE_FEEDBACK_AND_LEARNING
+    display_name: "Phase 9 – Operate & Monitor / Phase 10 – Feedback & Learning"
+    personas:
+      - sre
+      - devops_engineer
+      - security_engineer
+      - performance_reliability_engineer
+      - data_analyst
+      - customer_success
+      - product_manager
+      - innovation_lead

@@ -1,0 +1,31 @@
+# ═══════════════════════════════════════════════════════════════════════════════
+# Probabilistic Agent — ML-Based Anomaly Scorer
+# ═══════════════════════════════════════════════════════════════════════════════
+# Scores transactions using a trained XGBoost model served via HTTP.
+# Supports shadow mode for A/B testing new model versions.
+
+agentId: anomaly-ml-scorer
+type: PROBABILISTIC
+version: "3.2.0"
+timeout: PT10S
+confidenceThreshold: 0.85
+maxRetries: 2
+retryBackoff: PT0.5S
+failureMode: CIRCUIT_BREAKER
+metricsEnabled: true
+labels:
+  team: ml-platform
+  domain: fraud
+  model-family: xgboost
+
+# ─── Probabilistic-specific ─────────────────────────────────────────────────
+subtype: ML_MODEL
+modelName: fraud-xgboost-v3
+modelVersion: "3.2"
+modelEndpoint: http://ml-service:8080/v1/predict
+inferenceTimeout: PT0.2S
+batchSize: 32
+shadowMode: false
+fallbackEndpoints:
+  - http://ml-backup-1:8080/v1/predict
+  - http://ml-backup-2:8080/v1/predict

@@ -1,0 +1,101 @@
+# AEP-Specific Capability Definitions
+#
+# Extends the platform capability taxonomy with event-processing-specific
+# capabilities. These are available to all agents in the AEP catalog.
+
+aep_capabilities:
+
+  - id: "kafka-ingestion"
+    name: "Kafka Ingestion"
+    category: "event-processing.ingestion"
+    version: "1.0"
+    description: "Ingests events from Apache Kafka topics"
+    parameters:
+      - name: "bootstrapServers"
+        type: "string"
+        required: true
+      - name: "groupId"
+        type: "string"
+        required: true
+      - name: "autoOffsetReset"
+        type: "enum"
+        values: ["earliest", "latest"]
+        default: "latest"
+
+  - id: "http-ingestion"
+    name: "HTTP Ingestion"
+    category: "event-processing.ingestion"
+    version: "1.0"
+    description: "Ingests events via HTTP/REST endpoints"
+
+  - id: "file-ingestion"
+    name: "File Ingestion"
+    category: "event-processing.ingestion"
+    version: "1.0"
+    description: "Ingests events from file systems (local, S3, GCS)"
+
+  - id: "content-based-routing"
+    name: "Content-Based Routing"
+    category: "event-processing.routing"
+    version: "1.0"
+    description: "Routes events based on payload content matching rules"
+
+  - id: "load-balancing"
+    name: "Load Balancing"
+    category: "event-processing.routing"
+    version: "1.0"
+    description: "Distributes events across downstream operators"
+
+  - id: "event-deduplication"
+    name: "Event Deduplication"
+    category: "event-processing.filtering"
+    version: "1.0"
+    description: "Detects and removes duplicate events using idempotency keys"
+
+  - id: "dead-letter-handling"
+    name: "Dead Letter Handling"
+    category: "event-processing.routing"
+    version: "1.0"
+    description: "Routes failed events to dead-letter queues for later replay"
+
+  - id: "rate-limiting"
+    name: "Rate Limiting"
+    category: "event-processing.filtering"
+    version: "1.0"
+    description: "Limits event throughput per operator or stream"
+
+  - id: "backpressure-management"
+    name: "Backpressure Management"
+    category: "event-processing.flow-control"
+    version: "1.0"
+    description: "Manages flow control between operators in the pipeline"
+
+  - id: "event-ingestion"
+    name: "Event Ingestion"
+    category: "event-processing.ingestion"
+    version: "1.0"
+    description: "Ingests events from external sources into AEP pipelines"
+
+  - id: "stream-processing"
+    name: "Stream Processing"
+    category: "event-processing.aggregation"
+    version: "1.0"
+    description: "Processes continuous event streams with windowing and aggregation"
+
+  - id: "event-transformation"
+    name: "Event Transformation"
+    category: "event-processing.transformation"
+    version: "1.0"
+    description: "Transforms event payloads between formats and schemas within AEP pipelines"
+
+  - id: "data-enrichment"
+    name: "Data Enrichment"
+    category: "event-processing.transformation"
+    version: "1.0"
+    description: "Enriches events with additional context from external sources or lookups"
+
+  - id: "event-validation"
+    name: "Event Validation"
+    category: "event-processing.filtering"
+    version: "1.0"
+    description: "Validates event payloads against schemas and business rules at ingestion"

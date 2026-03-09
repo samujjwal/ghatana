@@ -1,0 +1,51 @@
+import type { MeshTransform, MeshTransformOptions } from "@graphql-mesh/types";
+import { filterSchema, pruneSchema } from "@graphql-tools/utils";
+import type { GraphQLSchema } from "graphql";
+
+/**
+* Custom transform to filter schema based on user roles
+*/
+export default class FilterSchemaTransform implements MeshTransform {
+constructor(private options: MeshTransformOptions<Record<string, unknown>>) {}
+
+    transformSchema(
+    schema: GraphQLSchema,
+    _subgraphConfig: unknown
+    ): GraphQLSchema {
+    const config = this.options.config as {
+    excludeTypes?: string[];
+    excludeFields?: Record<string, string[]>;
+        };
+
+        // Filter out specified types
+        let filteredSchema = filterSchema({
+        schema,
+        typeFilter: (typeName) => {
+        return !config.excludeTypes?.includes(typeName);
+        },
+        fieldFilter: (typeName, fieldName) => {
+        const excludedFields = config.excludeFields?.[typeName];
+        if (!excludedFields) return true;
+        return !excludedFields.includes(fieldName);
+        },
+        });
+
+        // Prune unreachable types
+        filteredSchema = pruneSchema(filteredSchema);
+
+        return filteredSchema;
+        }
+        }
+
+        /**
+        * Usage in .meshrc.yaml:
+        *
+        * transforms:
+        * - ./src/transforms/filter-schema.ts:
+        * excludeTypes:
+        * - InternalType
+        * excludeFields:
+        * User:
+        * - password
+        * - internalId
+        */

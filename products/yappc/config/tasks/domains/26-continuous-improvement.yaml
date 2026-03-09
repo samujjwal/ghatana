@@ -1,0 +1,111 @@
+domain:
+  id: continuous-improvement
+  name: "Continuous Improvement & Innovation"
+  description: "Drive innovation and process improvement."
+  order: 26
+  icon: "upgrade"
+  color: "#AB47BC"
+  agent_personas:
+    - "ImprovementAgent"
+    - "InnovationScout"
+    - "ProcessOptimizer"
+  audit_artifacts:
+    - "ImprovementProposal"
+    - "ImpactAssessment"
+    - "ProcessChange"
+  inputs:
+    - "Metrics"
+    - "Feedback"
+    - "Retrospectives"
+  outputs:
+    - "Improvement proposals"
+    - "Process changes"
+
+tasks:
+  # Core ICS improvement tasks
+  - id: d26-t1
+    name: "Identify improvement opportunities"
+    description: "Find areas for growth."
+    personas: ["Developer", "Tech Lead"]
+    lifecycle_stages: ["learn"]
+    automation_level: "assisted"
+  - id: d26-t2
+    name: "Propose innovations"
+    description: "Suggest new ideas."
+    personas: ["Developer", "Tech Lead"]
+    lifecycle_stages: ["learn"]
+    automation_level: "manual"
+  - id: d26-t3
+    name: "Pilot new tools/processes"
+    description: "Test new approaches."
+    personas: ["Developer", "Tech Lead"]
+    lifecycle_stages: ["execute"]
+    automation_level: "assisted"
+  - id: d26-t4
+    name: "Evaluate impact"
+    description: "Measure success of changes."
+    personas: ["Developer", "Tech Lead", "PM"]
+    lifecycle_stages: ["verify", "learn"]
+    automation_level: "assisted"
+
+  # Migrated from legacy meta domain
+  - id: meta-001
+    name: "Reflect on Work"
+    description: "Regularly reflect on work patterns and outcomes."
+    personas: ["Developer"]
+    lifecycle_stages: ["learn"]
+    automation_level: "manual"
+  - id: meta-002
+    name: "Improve Personal Workflow"
+    description: "Optimize personal development workflow."
+    personas: ["Developer"]
+    lifecycle_stages: ["learn", "institutionalize"]
+    automation_level: "assisted"
+  - id: meta-003
+    name: "Track Time and Effort"
+    description: "Monitor time spent on different activities."
+    personas: ["Developer"]
+    lifecycle_stages: ["observe"]
+    automation_level: "automated"
+  - id: meta-004
+    name: "Set Goals"
+    description: "Set personal and professional goals."
+    personas: ["Developer"]
+    lifecycle_stages: ["plan"]
+    automation_level: "manual"
+  - id: meta-005
+    name: "Review and Adjust"
+    description: "Regularly review and adjust approaches."
+    personas: ["Developer"]
+    lifecycle_stages: ["learn"]
+    automation_level: "manual"
+  - id: meta-006
+    name: "Automate Repetitive Tasks"
+    description: "Identify and automate repetitive work."
+    personas: ["Developer"]
+    lifecycle_stages: ["execute", "learn"]
+    automation_level: "assisted"
+  - id: meta-007
+    name: "Optimize Development Environment"
+    description: "Improve development tools and setup."
+    personas: ["Developer"]
+    lifecycle_stages: ["execute"]
+    automation_level: "assisted"
+  - id: meta-008
+    name: "Build Productivity Habits"
+    description: "Develop effective work habits."
+    personas: ["Developer"]
+    lifecycle_stages: ["institutionalize"]
+    automation_level: "manual"
+  - id: meta-009
+    name: "Seek Feedback"
+    description: "Request and incorporate feedback."
+    personas: ["Developer"]
+    lifecycle_stages: ["learn"]
+    automation_level: "manual"
+  - id: meta-010
+    name: "Contribute to Process Improvement"
+    description: "Suggest and implement process improvements."
+    personas: ["Developer", "Tech Lead"]
+    lifecycle_stages: ["learn", "institutionalize"]
+    automation_level: "assisted"

@@ -1,0 +1,76 @@
+# Data-Cloud Capability Definitions
+#
+# Extends the platform capability taxonomy with Data-Cloud-specific capabilities
+# for data management, entity storage, event streaming, and query processing.
+
+capabilities:
+  # --- Data Storage ---
+  - id: "entity-storage"
+    name: "Entity Storage"
+    category: "data-management"
+    description: "Persistent entity storage with CRUD operations and versioning"
+    level: "worker"
+
+  - id: "entity-event-storage"
+    name: "Entity Event Storage"
+    category: "data-management"
+    description: "Append-only event record storage in Data-Cloud with replay and subscription (storage tier; AEP handles stream processing)"
+    level: "worker"
+
+  - id: "query-processing"
+    name: "Query Processing"
+    category: "data-management"
+    description: "Structured and semantic query execution over stored data"
+    level: "worker"
+
+  # --- Data Lifecycle ---
+  - id: "data-replication"
+    name: "Data Replication"
+    category: "data-lifecycle"
+    description: "Cross-node data replication and consistency management"
+    level: "worker"
+
+  - id: "data-archival"
+    name: "Data Archival"
+    category: "data-lifecycle"
+    description: "Automated data archival and retention policy enforcement"
+    level: "worker"
+
+  - id: "schema-evolution"
+    name: "Schema Evolution"
+    category: "data-lifecycle"
+    description: "Forward-compatible schema migration and validation"
+    level: "worker"
+
+  # --- Data Observability ---
+  - id: "data-lineage"
+    name: "Data Lineage"
+    category: "data-observability"
+    description: "Tracking data provenance and transformation history"
+    level: "worker"
+
+  - id: "data-quality-assurance"
+    name: "Data Quality Assurance"
+    category: "data-observability"
+    description: "Automated data quality checks, profiling, and anomaly detection at the storage tier (extends platform data-quality-check)"
+    level: "worker"
+
+  # --- Data Orchestration ---
+  - id: "data-pipeline-orchestration"
+    name: "Data Pipeline Orchestration"
+    category: "orchestration"
+    description: "Coordination of multi-stage data processing pipelines"
+    level: "orchestrator"
+
+categories:
+  - id: "data-management"
+    name: "Data Management"
+    description: "Core data storage, retrieval, and query capabilities"
+
+  - id: "data-lifecycle"
+    name: "Data Lifecycle"
+    description: "Data replication, archival, and schema management"
+
+  - id: "data-observability"
+    name: "Data Observability"
+    description: "Data lineage, quality, and monitoring capabilities"

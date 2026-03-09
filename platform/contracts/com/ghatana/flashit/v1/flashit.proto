@@ -1,0 +1,349 @@
+/*
+ * Copyright (c) 2025 Ghatana Inc.
+ * All rights reserved.
+ *
+ * Flashit Context System Protocol Buffer Definitions
+ * Phase 0 - Multimodal MVP Implementation
+ */
+syntax = "proto3";
+
+package ghatana.flashit.v1;
+
+import "google/protobuf/timestamp.proto";
+import "google/protobuf/struct.proto";
+
+option java_package = "com.ghatana.flashit.grpc.v1";
+option java_multiple_files = true;
+option java_outer_classname = "FlashitProto";
+
+// =============================================================================
+// Core Domain Messages - Moments and Spheres
+// =============================================================================
+
+/**
+ * ContextEvent represents a captured Moment with multimodal content.
+ * This is the core event type that flows through data-cloud for persistence,
+ * indexing, and AI processing.
+ */
+message ContextEvent {
+  // Unique event ID (UUID)
+  string id = 1;
+
+  // User who created this Moment
+  string user_id = 2;
+
+  // Sphere ID (privacy boundary)
+  string sphere_id = 3;
+
+  // When this Moment was captured (client timestamp)
+  google.protobuf.Timestamp captured_at = 4;
+
+  // When this event was ingested (server timestamp)
+  google.protobuf.Timestamp ingested_at = 5;
+
+  // The content of the Moment (text, audio, video, etc.)
+  MomentContent content = 6;
+
+  // Extracted or user-provided signals (emotions, context tags)
+  MomentSignals signals = 7;
+
+  // Links to other Moments (Phase 1 feature)
+  repeated string linked_moment_ids = 8;
+
+  // Metadata (device info, location if permitted, etc.)
+  map<string, string> metadata = 9;
+
+  // Event version for schema evolution
+  int32 version = 10;
+}
+
+/**
+ * Content payload of a Moment - supports multimodal input
+ */
+message MomentContent {
+  // Plain text content (always present, even if transcribed from audio)
+  string text = 1;
+
+  // Optional: Audio transcription if source was voice
+  string transcript = 2;
+
+  // Optional: Media references (S3 keys or URLs)
+  repeated MediaReference media = 3;
+
+  // Content type hint
+  ContentType type = 4;
+}
+
+/**
+ * Reference to media stored in S3 or other object storage
+ */
+message MediaReference {
+  // Unique media ID
+  string id = 1;
+
+  // Media type
+  MediaType type = 2;
+
+  // Storage key (S3 key)
+  string storage_key = 3;
+
+  // Public URL (if applicable, with expiry)
+  string url = 4;
+
+  // Duration for audio/video (milliseconds)
+  int64 duration_ms = 5;
+
+  // File size in bytes
+  int64 size_bytes = 6;
+
+  // MIME type
+  string mime_type = 7;
+}
+
+/**
+ * User-provided or AI-extracted signals about the Moment
+ */
+message MomentSignals {
+  // Emotional tags (e.g., "happy", "anxious", "reflective")
+  repeated string emotions = 1;
+
+  // Contextual tags (e.g., "work", "family", "project-x")
+  repeated string tags = 2;
+
+  // Detected intent (future: from AI analysis)
+  string intent = 3;
+
+  // Sentiment score (-1.0 to 1.0)
+  float sentiment_score = 4;
+
+  // Importance rating (1-5 scale, user-provided)
+  int32 importance = 5;
+
+  // Detected entities (people, places, topics)
+  repeated string entities = 6;
+}
+
+/**
+ * Sphere definition - privacy boundary for Moments
+ */
+message SphereInfo {
+  // Sphere ID
+  string id = 1;
+
+  // Owner user ID
+  string user_id = 2;
+
+  // Sphere name
+  string name = 3;
+
+  // Description
+  string description = 4;
+
+  // Sphere type
+  SphereType type = 5;
+
+  // Visibility level
+  SphereVisibility visibility = 6;
+
+  // When created
+  google.protobuf.Timestamp created_at = 7;
+
+  // Last updated
+  google.protobuf.Timestamp updated_at = 8;
+}
+
+// =============================================================================
+// Enums
+// =============================================================================
+
+enum ContentType {
+  CONTENT_TYPE_UNSPECIFIED = 0;
+  TEXT = 1;
+  VOICE = 2;
+  VIDEO = 3;
+  IMAGE = 4;
+  MIXED = 5;
+}
+
+enum MediaType {
+  MEDIA_TYPE_UNSPECIFIED = 0;
+  AUDIO = 1;
+  VIDEO = 2;
+  IMAGE = 3;
+  DOCUMENT = 4;
+}
+
+enum SphereType {
+  SPHERE_TYPE_UNSPECIFIED = 0;
+  PERSONAL = 1;
+  SHARED = 2;
+  WORK = 3;
+  FAMILY = 4;
+  PROJECT = 5;
+  CUSTOM = 6;
+}
+
+enum SphereVisibility {
+  SPHERE_VISIBILITY_UNSPECIFIED = 0;
+  PRIVATE = 1;
+  INVITE_ONLY = 2;
+  LINK_SHARED = 3;
+  PUBLIC = 4;
+}
+
+// =============================================================================
+// API Request/Response Messages
+// =============================================================================
+
+/**
+ * Request to create a new Moment
+ */
+message CreateMomentRequest {
+  // Sphere to place this Moment in
+  string sphere_id = 1;
+
+  // Content of the Moment
+  MomentContent content = 2;
+
+  // Optional signals
+  MomentSignals signals = 3;
+
+  // Optional metadata
+  map<string, string> metadata = 4;
+
+  // Client-side captured timestamp
+  google.protobuf.Timestamp captured_at = 5;
+}
+
+/**
+ * Response after creating a Moment
+ */
+message CreateMomentResponse {
+  // The created Moment ID
+  string moment_id = 1;
+
+  // The full ContextEvent
+  ContextEvent event = 2;
+
+  // Server ingestion timestamp
+  google.protobuf.Timestamp ingested_at = 3;
+}
+
+/**
+ * Request to retrieve a Moment
+ */
+message GetMomentRequest {
+  // Moment ID to retrieve
+  string moment_id = 1;
+
+  // Requesting user ID (for access check)
+  string user_id = 2;
+}
+
+/**
+ * Response with Moment details
+ */
+message GetMomentResponse {
+  // The Moment's ContextEvent
+  ContextEvent event = 1;
+
+  // Whether the user can edit this Moment
+  bool can_edit = 2;
+}
+
+/**
+ * Request to search/query Moments
+ */
+message SearchMomentsRequest {
+  // User making the request
+  string user_id = 1;
+
+  // Optional: Filter by Sphere
+  repeated string sphere_ids = 2;
+
+  // Optional: Full-text search query
+  string query = 3;
+
+  // Optional: Filter by tags
+  repeated string tags = 4;
+
+  // Optional: Filter by emotions
+  repeated string emotions = 5;
+
+  // Optional: Time range
+  TimeRange time_range = 6;
+
+  // Pagination
+  int32 limit = 7;
+  string page_token = 8;
+}
+
+/**
+ * Response with search results
+ */
+message SearchMomentsResponse {
+  // Matching Moments
+  repeated ContextEvent moments = 1;
+
+  // Next page token
+  string next_page_token = 2;
+
+  // Total count (approximate)
+  int64 total_count = 3;
+}
+
+/**
+ * Time range filter
+ */
+message TimeRange {
+  google.protobuf.Timestamp start = 1;
+  google.protobuf.Timestamp end = 2;
+}
+
+/**
+ * Request to create a Sphere
+ */
+message CreateSphereRequest {
+  // User creating the Sphere
+  string user_id = 1;
+
+  // Sphere name
+  string name = 2;
+
+  // Description
+  string description = 3;
+
+  // Sphere type
+  SphereType type = 4;
+
+  // Visibility level
+  SphereVisibility visibility = 5;
+}
+
+/**
+ * Response after creating a Sphere
+ */
+message CreateSphereResponse {
+  // The created Sphere
+  SphereInfo sphere = 1;
+}
+
+/**
+ * Request to list Spheres accessible to a user
+ */
+message ListSpheresRequest {
+  // User making the request
+  string user_id = 1;
+
+  // Optional: Include only owned Spheres
+  bool owned_only = 2;
+}
+
+/**
+ * Response with list of Spheres
+ */
+message ListSpheresResponse {
+  // Accessible Spheres
+  repeated SphereInfo spheres = 1;
+}
+

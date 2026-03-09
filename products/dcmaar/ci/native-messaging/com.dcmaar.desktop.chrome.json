@@ -1,0 +1,7 @@
+{
+  "name": "com.dcmaar.desktop",
+  "description": "DCMAR Desktop App Connection",
+  "path": "/usr/bin/dcmar-desktop-host",
+  "type": "stdio",
+  "allowed_origins": ["chrome-extension://__EXTENSION_ID__/"]
+}

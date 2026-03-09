@@ -1,0 +1,162 @@
+# Build Stage - v3 Operator-Based Definition
+# Uses consolidated operators from operations/domain/build/
+name: Build
+description: Automated build pipeline, containerization, and artifact generation
+domain: build
+
+# Operators used in this stage
+operators:
+  - ref: build/build_pipeline_operator
+    modes: [configure, execute, artifacts, container, metrics]
+  - ref: build/code_quality_operator
+    modes: [quality_gate]
+  - ref: build/security_scan_operator
+    modes: [sast, sca, secrets]
+
+# Cross-cutting operators
+cross_cutting:
+  - ref: cross-cutting/milestone_tracker
+    params:
+      stage: build
+  - ref: cross-cutting/best_practice
+    params:
+      stage: build
+  - ref: cross-cutting/kpi
+    params:
+      stage: build
+  - ref: cross-cutting/audit_log
+    params:
+      stage: build
+
+# Workflow sequence
+workflow:
+  # Pipeline Configuration
+  - step: configure_pipeline
+    operator: build/build_pipeline_operator
+    mode: configure
+    inputs:
+      - name: develop_stage_milestone
+    outputs:
+      - name: pipeline_config
+    hitl: true
+    hitl_reason: Human reviews pipeline configuration
+
+  # Build Execution
+  - step: execute_build
+    operator: build/build_pipeline_operator
+    mode: execute
+    inputs:
+      - name: pipeline_config
+      - name: source_code
+    outputs:
+      - name: build_output
+    depends_on: [configure_pipeline]
+
+  # Security Scans
+  - step: sast_scan
+    operator: build/security_scan_operator
+    mode: sast
+    inputs:
+      - name: source_code
+    outputs:
+      - name: sast_report
+    depends_on: [execute_build]
+
+  - step: sca_scan
+    operator: build/security_scan_operator
+    mode: sca
+    inputs:
+      - name: source_code
+    outputs:
+      - name: sca_report
+    depends_on: [execute_build]
+
+  - step: secrets_scan
+    operator: build/security_scan_operator
+    mode: secrets
+    inputs:
+      - name: source_code
+    outputs:
+      - name: secrets_report
+    depends_on: [execute_build]
+
+  # Quality Gate
+  - step: quality_gate
+    operator: build/code_quality_operator
+    mode: quality_gate
+    inputs:
+      - name: build_output
+      - name: sast_report
+      - name: sca_report
+      - name: secrets_report
+    outputs:
+      - name: quality_gate_result
+    depends_on: [sast_scan, sca_scan, secrets_scan]
+
+  # Artifact Generation
+  - step: generate_artifacts
+    operator: build/build_pipeline_operator
+    mode: artifacts
+    inputs:
+      - name: build_output
+      - name: quality_gate_result
+    outputs:
+      - name: build_artifacts
+    depends_on: [quality_gate]
+
+  # Container Build
+  - step: build_container
+    operator: build/build_pipeline_operator
+    mode: container
+    inputs:
+      - name: build_artifacts
+    outputs:
+      - name: container_image
+    depends_on: [generate_artifacts]
+
+  # Build Metrics
+  - step: collect_metrics
+    operator: build/build_pipeline_operator
+    mode: metrics
+    inputs:
+      - name: build_output
+      - name: quality_gate_result
+      - name: container_image
+    outputs:
+      - name: build_metrics
+    depends_on: [build_container]
+
+  # Cross-cutting
+  - step: best_practice_check
+    operator: cross-cutting/best_practice
+    params:
+      stage: build
+    inputs:
+      - name: pipeline_config
+      - name: quality_gate_result
+    outputs:
+      - name: best_practice_report
+    depends_on: [collect_metrics]
+
+  - step: track_milestones
+    operator: cross-cutting/milestone_tracker
+    params:
+      stage: build
+    inputs:
+      - name: best_practice_report
+    outputs:
+      - name: build_stage_milestone
+    depends_on: [best_practice_check]
+
+# Stage entry/exit criteria
+entry_criteria:
+  - Develop stage complete
+  - Source code available
+  - Pipeline configuration defined
+
+exit_criteria:
+  - Build successful
+  - Security scans complete
+  - Quality gates passed
+  - Artifacts generated
+  - Container image built

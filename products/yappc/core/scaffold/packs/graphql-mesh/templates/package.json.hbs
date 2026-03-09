@@ -1,0 +1,64 @@
+{
+"name": "{{projectName}}",
+"version": "0.1.0",
+"type": "module",
+"description": "GraphQL Mesh Gateway",
+"scripts": {
+"dev": "mesh dev",
+"build": "mesh build && tsc",
+"start": "node dist/index.js",
+"mesh:build": "mesh build",
+"mesh:validate": "mesh validate",
+"mesh:serve": "mesh serve",
+"test": "vitest run",
+"test:watch": "vitest watch",
+"test:coverage": "vitest run --coverage",
+"lint": "biome lint .",
+"format": "biome format --write .",
+"check": "biome check .",
+"typecheck": "tsc --noEmit"
+},
+"dependencies": {
+"@graphql-mesh/cli": "^0.94.0",
+"@graphql-mesh/compose-cli": "^1.0.0",
+"@graphql-mesh/graphql": "^0.98.0",
+"@graphql-mesh/http": "^0.99.0",
+"@graphql-mesh/openapi": "^0.100.0",
+"@graphql-mesh/runtime": "^0.99.0",
+"@graphql-mesh/store": "^0.98.0",
+"@graphql-mesh/transform-filter-schema": "^0.98.0",
+"@graphql-mesh/transform-prefix": "^0.98.0",
+"@graphql-mesh/transform-rename": "^0.98.0",
+{{#if enableCaching}}
+"@graphql-mesh/cache-inmemory-lru": "^0.98.0",
+{{/if}}
+"@graphql-yoga/plugin-response-cache": "^3.0.0",
+"graphql": "^16.9.0",
+"graphql-yoga": "^5.6.0",
+{{#if enableAuth}}
+"@graphql-yoga/plugin-jwt": "^3.0.0",
+"jose": "^5.6.0",
+{{/if}}
+{{#if enableMetrics}}
+"@graphql-yoga/plugin-prometheus": "^5.0.0",
+"prom-client": "^15.1.0",
+{{/if}}
+{{#if enableRateLimiting}}
+"@graphql-yoga/plugin-rate-limiter": "^3.0.0",
+{{/if}}
+"pino": "^9.3.0",
+"yaml": "^2.5.0",
+"zod": "^3.23.0"
+},
+"devDependencies": {
+"@biomejs/biome": "1.9.4",
+"@types/node": "^22.5.0",
+"pino-pretty": "^11.2.0",
+"typescript": "~5.6.3",
+"vitest": "^2.0.0"
+},
+"engines": {
+"node": ">=22.0.0"
+},
+"packageManager": "pnpm@9.12.0"
+}

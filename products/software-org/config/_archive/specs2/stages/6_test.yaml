@@ -1,0 +1,1146 @@
+name: Test (Functional, Security, and Chaos Testing)
+workflow:
+  - id: test_orchestration
+    agent: TestOrchestrationAgent
+    role: QA Lead
+    inputs_spec:
+      - name: build_stage_milestone
+        description: Build stage milestones and outputs for test planning.
+        format: List of milestone objects
+    outputs_spec:
+      - name: test_execution_plan
+        description: Full test plan including all required test types, scheduling, owners, environments, blockers.
+        format: Test execution plan artifact
+    agent_tasks:
+      - Create comprehensive test plan with all required test types (unit, integration, e2e, security, performance, chaos).
+      - Define scheduling/sequencing and required environments/data.
+      - Assign test owners and flag blockers/missing test types.
+    acceptance_criteria:
+      - All required test types are included.
+      - Test scheduling/sequencing is clear.
+      - Required environments/data are specified.
+      - Test owners assigned.
+      - Blockers/missing types are flagged.
+    dependencies:
+      - build_stage_milestone
+    failure_escalation:
+      - Escalate to QA Lead/Release Manager if plan is incomplete.
+    references: []
+    hitl: true
+    hitl_reason: Human ensures test orchestration covers all needed types
+
+  - id: test_data_generator
+    agent: TestDataGeneratorAgent
+    role: QA Automation
+    inputs_spec:
+      - name: test_execution_plan
+        description: Test execution plan defining test cases and data needs.
+        format: Test execution plan artifact
+    outputs_spec:
+      - name: test_data_package
+        description: Generated, anonymized test data for all scenarios, positive/negative/edge/invalid cases.
+        format: Test data package artifact
+    agent_tasks:
+      - Generate realistic, anonymized test data for all scenarios.
+      - Cover positive, negative, edge, invalid cases.
+      - Version and link data package to test plan.
+    acceptance_criteria:
+      - Realistic, anonymized test data generated for all scenarios.
+      - Data covers all required cases.
+      - Data package is versioned/linked to plan.
+    dependencies:
+      - test_execution_plan
+    failure_escalation:
+      - Escalate to QA/DevOps if test data is missing or incomplete.
+    references: []
+    hitl: false
+
+  - id: test_env_provisioner
+    agent: TestEnvironmentProvisionerAgent
+    role: DevOps/TestOps Automation
+    inputs_spec:
+      - name: test_data_package
+        description: Test data package for environment setup.
+        format: Test data artifact
+    outputs_spec:
+      - name: test_environment_url
+        description: Ephemeral test environment (URL or access credentials) for manual/automated tests.
+        format: Environment URL/credentials
+    agent_tasks:
+      - Provision ephemeral test environments with latest code/configs.
+      - Load test data, verify environment health.
+      - Provide URLs/access, clean up after completion.
+    acceptance_criteria:
+      - Environments provisioned, data loaded, health verified.
+      - URLs/access provided for all tests.
+      - Cleanup performed post-test.
+    dependencies:
+      - test_data_package
+    failure_escalation:
+      - Escalate to DevOps/TestOps if environments fail or cleanup incomplete.
+    references: []
+    hitl: false
+
+  - id: test_best_practice_enforcement
+    agent: TestBestPracticeAgent
+    role: Test QA Auditor
+    inputs_spec:
+      - name: test_execution_plan
+        description: Test plan for best practice review.
+        format: Test execution plan artifact
+    outputs_spec:
+      - name: test_best_practice_report
+        description: Review report for best practices, coverage, risk.
+        format: Test practice compliance report
+    agent_tasks:
+      - Review test plan/cases for best practice alignment.
+      - Define and track required coverage.
+      - Document risks of insufficient coverage.
+    acceptance_criteria:
+      - All test plans/cases reviewed for best practice.
+      - Required test coverage defined/tracked.
+      - Risks of insufficient coverage documented.
+    dependencies:
+      - test_execution_plan
+    failure_escalation:
+      - Escalate to QA Auditor/Lead if coverage or best practices are missing.
+    references: []
+    hitl: true
+    hitl_reason: Human ensures test best practices are enforced
+
+  - id: test_scheduling
+    agent: TestSchedulingAgent
+    role: QA/Automation
+    inputs_spec:
+      - name: test_execution_plan
+        description: Test execution plan with scheduling info.
+        format: Test execution plan artifact
+    outputs_spec:
+      - name: test_schedule
+        description: Test schedule with order, timing, resources, constraints.
+        format: Test schedule artifact
+    agent_tasks:
+      - Define order/timing for all test runs.
+      - Allocate test resources and address constraints.
+    acceptance_criteria:
+      - Test scheduling/order/timing/resources/constraints are clearly defined.
+    dependencies:
+      - test_execution_plan
+    failure_escalation:
+      - Escalate to QA Lead if scheduling not clear or actionable.
+    references: []
+    hitl: false
+
+  - id: test_env_monitoring
+    agent: TestEnvironmentMonitoringAgent
+    role: SRE/QA
+    inputs_spec:
+      - name: test_environment_url
+        description: URL/credentials for test environment monitoring.
+        format: Environment URL/credentials
+    outputs_spec:
+      - name: test_env_health_report
+        description: Health and status report for all ephemeral test environments.
+        format: Health report artifact
+    agent_tasks:
+      - Monitor all ephemeral test environments for health/status.
+      - Report anomalies, failures, performance issues.
+    acceptance_criteria:
+      - Environment health and status monitored/reported.
+      - Anomalies/failures are flagged.
+    dependencies:
+      - test_environment_url
+    failure_escalation:
+      - Escalate to SRE/DevOps if environments are unhealthy.
+    references: []
+    hitl: false
+
+  - id: test_execution
+    agent: TestExecutionAgent
+    role: QA/Automation
+    inputs_spec:
+      - name: test_schedule
+        description: Test schedule artifact for execution.
+        format: Test schedule artifact
+      - name: test_environment_url
+        description: Ephemeral environment for running tests.
+        format: Environment URL/credentials
+    outputs_spec:
+      - name: test_results
+        description: Full test execution results (pass/fail, logs, artifacts).
+        format: Test results artifact
+    agent_tasks:
+      - Execute all tests per schedule in the provided environment.
+      - Collect and store results, logs, artifacts.
+    acceptance_criteria:
+      - All scheduled tests executed.
+      - Results, logs, and artifacts are stored.
+    dependencies:
+      - test_schedule
+      - test_environment_url
+    failure_escalation:
+      - Escalate to QA/Automation if tests fail or results missing.
+    references: []
+    hitl: false
+
+  - id: test_results_aggregation
+    agent: TestResultsAggregatorAgent
+    role: QA Analytics
+    inputs_spec:
+      - name: test_results
+        description: Raw test results/artifacts to be aggregated.
+        format: Test results artifact
+    outputs_spec:
+      - name: test_aggregation_report
+        description: Aggregated test results (pass/fail rates, trends, defects).
+        format: Aggregation report artifact
+    agent_tasks:
+      - Aggregate all test results, calculate pass/fail rates, identify trends and defects.
+    acceptance_criteria:
+      - All results aggregated, pass/fail rates calculated, trends and defects identified.
+    dependencies:
+      - test_results
+    failure_escalation:
+      - Escalate to QA/Analytics if aggregation/reporting is delayed or incomplete.
+    references: []
+    hitl: false
+
+  - id: test_defect_triage
+    agent: TestDefectTriageAgent
+    role: QA/Dev Lead
+    inputs_spec:
+      - name: test_aggregation_report
+        description: Aggregated report with test defects.
+        format: Aggregation report artifact
+    outputs_spec:
+      - name: test_defect_log
+        description: Triage log for defects found in test runs.
+        format: Defect log artifact
+    agent_tasks:
+      - Triage all test defects (severity, owners, status).
+      - Assign remediation actions or escalate as needed.
+    acceptance_criteria:
+      - All defects triaged, owners/status/remediation assigned.
+    dependencies:
+      - test_aggregation_report
+    failure_escalation:
+      - Escalate to QA/Dev Lead if defects are not triaged or owners not assigned.
+    references: []
+    hitl: true
+    hitl_reason: Human ensures appropriate triage and ownership of test defects
+
+  - id: test_coverage_enforcement
+    agent: TestCoverageEnforcementAgent
+    role: QA Lead
+    inputs_spec:
+      - name: test_aggregation_report
+        description: Aggregated test results for measuring coverage.
+        format: Aggregation report artifact
+    outputs_spec:
+      - name: test_coverage_report
+        description: Code/test coverage report with threshold status.
+        format: Coverage report artifact
+    agent_tasks:
+      - Measure and report test coverage for all key components.
+      - Enforce minimum thresholds.
+      - Flag and escalate coverage gaps.
+    acceptance_criteria:
+      - Coverage measured, thresholds enforced, gaps flagged/escalated.
+    dependencies:
+      - test_aggregation_report
+    failure_escalation:
+      - Escalate to QA Lead if coverage thresholds are not met.
+    references: []
+    hitl: true
+    hitl_reason: Human reviews test coverage report for adequacy
+
+  - id: regression_test
+    agent: RegressionTestAgent
+    role: QA Engineer
+    inputs_spec:
+      - name: test_aggregation_report
+        description: Aggregated report from prior test runs.
+        format: Aggregation report artifact
+    outputs_spec:
+      - name: regression_test_report
+        description: Results and issues from regression tests.
+        format: Regression test report artifact
+    agent_tasks:
+      - Run regression tests based on prior aggregation.
+      - Document failures and regression trends.
+      - Flag any recurring regressions for escalation.
+    acceptance_criteria:
+      - All critical regression scenarios are tested.
+      - Failures and trends are documented.
+      - Recurring regressions are flagged for remediation/escalation.
+    dependencies:
+      - test_aggregation_report
+    failure_escalation:
+      - Escalate to QA Lead if recurring regressions go unresolved.
+    references: []
+    hitl: false
+
+  - id: exploratory_test
+    agent: ExploratoryTestAgent
+    role: QA/Tester
+    inputs_spec:
+      - name: test_environment_url
+        description: URL/access to test environment for exploratory tests.
+        format: Environment URL/credentials
+    outputs_spec:
+      - name: exploratory_test_report
+        description: Observations and findings from exploratory testing sessions.
+        format: Exploratory test report artifact
+    agent_tasks:
+      - Perform exploratory testing in ephemeral environments.
+      - Document unexpected findings, usability issues, and edge case defects.
+    acceptance_criteria:
+      - Key exploratory test sessions are performed.
+      - Unexpected findings, usability issues, and edge cases are documented.
+    dependencies:
+      - test_environment_url
+    failure_escalation:
+      - Escalate to QA or Product Owner if exploratory findings are not reviewed.
+    references: []
+    hitl: false
+
+  - id: security_test
+    agent: SecurityTestAgent
+    role: Security Tester
+    inputs_spec:
+      - name: test_environment_url
+        description: Test environment to run security tests against.
+        format: Environment URL/credentials
+    outputs_spec:
+      - name: security_test_report
+        description: Vulnerability findings, test vectors, evidence, and signoff.
+        format: Security test report artifact
+    agent_tasks:
+      - Perform security tests (SAST, DAST, fuzz, pen-test).
+      - Document vulnerabilities, vectors, and supporting evidence.
+      - Obtain human signoff for test closure.
+    acceptance_criteria:
+      - All required security test types are performed.
+      - Vulnerabilities and test vectors are documented.
+      - Human signoff for test closure.
+    dependencies:
+      - test_environment_url
+    failure_escalation:
+      - Escalate to Security Lead if critical vulnerabilities are unaddressed.
+    references: []
+    hitl: true
+    hitl_reason: Human ensures security findings are reviewed and acted on
+
+  - id: performance_test
+    agent: PerformanceTestAgent
+    role: QA/Performance Engineer
+    inputs_spec:
+      - name: test_environment_url
+        description: Test environment URL/credentials for load and performance tests.
+        format: Environment URL/credentials
+    outputs_spec:
+      - name: performance_test_report
+        description: Performance test results, metrics, bottlenecks, recommendations.
+        format: Performance test report artifact
+    agent_tasks:
+      - Run load and performance tests (throughput, latency, stress).
+      - Collect metrics and identify bottlenecks.
+      - Recommend improvements as needed.
+    acceptance_criteria:
+      - Performance/load/stress tests executed.
+      - Metrics and bottlenecks are documented.
+      - Recommendations are provided where needed.
+    dependencies:
+      - test_environment_url
+    failure_escalation:
+      - Escalate to Engineering Lead if performance goals not met.
+    references: []
+    hitl: false
+
+  - id: chaos_test
+    agent: ChaosTestAgent
+    role: SRE/Resilience Engineer
+    inputs_spec:
+      - name: test_environment_url
+        description: Test environment for chaos and resilience testing.
+        format: Environment URL/credentials
+    outputs_spec:
+      - name: chaos_test_report
+        description: Chaos test execution, system recovery, lessons learned.
+        format: Chaos test report artifact
+    agent_tasks:
+      - Run chaos/resilience/failure scenario tests.
+      - Observe system recovery and document findings.
+      - Identify system weaknesses and improvement actions.
+    acceptance_criteria:
+      - Chaos/resilience/failure scenario tests performed.
+      - System recovery and weaknesses are documented.
+      - Improvement actions identified and tracked.
+    dependencies:
+      - test_environment_url
+    failure_escalation:
+      - Escalate to SRE or Lead Engineer if system does not recover as expected.
+    references: []
+    hitl: false
+
+  - id: uat
+    agent: UATAgent
+    role: UAT Coordinator
+    inputs_spec:
+      - name: test_environment_url
+        description: Environment for UAT execution.
+        format: Environment URL/credentials
+      - name: test_data_package
+        description: Data package for user acceptance test cases.
+        format: Test data artifact
+    outputs_spec:
+      - name: uat_report
+        description: User acceptance test results, user feedback, signoff.
+        format: UAT report artifact
+    agent_tasks:
+      - Conduct UAT sessions with actual users or their proxies.
+      - Collect feedback and document user test results.
+      - Record signoff or outstanding concerns.
+    acceptance_criteria:
+      - All UAT scenarios tested and feedback collected.
+      - User signoff or concerns documented.
+    dependencies:
+      - test_environment_url
+      - test_data_package
+    failure_escalation:
+      - Escalate to UAT Coordinator or Product Owner if users cannot sign off or feedback is ignored.
+    references: []
+    hitl: true
+    hitl_reason: Human ensures UAT is executed and user feedback is captured
+
+  - id: accessibility_test
+    agent: AccessibilityTestAgent
+    role: Accessibility QA
+    inputs_spec:
+      - name: test_environment_url
+        description: Environment for accessibility and compliance testing.
+        format: Environment URL/credentials
+    outputs_spec:
+      - name: accessibility_test_report
+        description: Results of accessibility and ADA/WCAG compliance tests.
+        format: Accessibility report artifact
+    agent_tasks:
+      - Run accessibility/ADA/WCAG tests.
+      - Document compliance or violations.
+    acceptance_criteria:
+      - Accessibility/ADA/WCAG tests are executed.
+      - Compliance or violations are documented.
+    dependencies:
+      - test_environment_url
+    failure_escalation:
+      - Escalate to Accessibility Lead if violations found.
+    references: []
+    hitl: false
+
+  - id: test_success_criteria_tracker
+    agent: SuccessCriteriaTrackerAgent
+    role: Test Success Criteria Tracker
+    inputs_spec:
+      - name: test_aggregation_report
+        description: Aggregated test results for criteria tracking.
+        format: Aggregation report artifact
+    outputs_spec:
+      - name: test_success_criteria_status
+        description: Status for all test stage entry/exit criteria.
+        format: List of criteria status objects
+    agent_tasks:
+      - List all test stage entry/exit criteria.
+      - Track status, owner, remediation.
+      - Escalate at-risk/failed criteria.
+      - Version tracker for audit/handoff.
+    acceptance_criteria:
+      - All test stage entry/exit criteria are listed/mapped.
+      - Status, owner, remediation are tracked.
+      - At-risk/failed criteria escalated.
+      - Tracker versioned for audit/handoff.
+    dependencies:
+      - test_aggregation_report
+    failure_escalation:
+      - Escalate to QA/Test Success Tracker if status not maintained.
+    references: []
+    hitl: false
+
+  - id: test_escalation_handler
+    agent: EscalationHandlerAgent
+    role: QA/Test Escalation Manager
+    inputs_spec:
+      - name: test_success_criteria_status
+        description: Status for all test stage criteria.
+        format: List of criteria status objects
+    outputs_spec:
+      - name: test_escalation_report
+        description: Escalation report for unresolved test blockers and owners/deadlines.
+        format: Escalation report artifact
+    agent_tasks:
+      - Review "At Risk" or "Not Met" criteria.
+      - Assign owners and deadlines.
+      - Make escalation status visible in dashboard and audit log.
+    acceptance_criteria:
+      - All "At Risk" or "Not Met" criteria reviewed for escalation.
+      - Owners/deadlines assigned.
+      - Escalation status visible in dashboard/audit log.
+    dependencies:
+      - test_success_criteria_status
+    failure_escalation:
+      - Escalate to QA/Test Escalation Manager or PM if blockers remain unresolved.
+    references: []
+    hitl: true
+    hitl_reason: Human oversight for unresolved test blockers
+
+  - id: test_remediation_tracker
+    agent: RemediationTrackerAgent
+    role: Exception Bot
+    inputs_spec:
+      - name: test_success_criteria_status
+        description: Status for all test stage criteria.
+        format: List of criteria status objects
+      - name: test_escalation_report
+        description: Test escalation report.
+        format: Escalation report artifact
+    outputs_spec:
+      - name: test_remediation_status
+        description: Remediation status tracker for failed or at-risk items.
+        format: Remediation status artifact
+    agent_tasks:
+      - Track failed/at-risk items for remediation.
+      - Assign owners, deadlines, actions.
+      - Update status until resolution/escalation.
+    acceptance_criteria:
+      - All failed/at-risk items tracked for remediation.
+      - Owners, deadlines, actions recorded.
+      - Status updated until resolution/escalation.
+    dependencies:
+      - test_success_criteria_status
+      - test_escalation_report
+    failure_escalation:
+      - Escalate to QA Lead/PM if remediation stalls.
+    references: []
+    hitl: false
+
+  - id: test_readiness_checker
+    agent: ReadinessCheckerAgent
+    role: Gatekeeper Bot
+    inputs_spec:
+      - name: test_execution_plan
+        description: Test execution plan with all test types, coverage, and owner assignments.
+        format: Test execution plan artifact
+      - name: test_best_practice_report
+        description: Test best practice report confirming test readiness.
+        format: Test practice compliance report
+      - name: test_coverage_report
+        description: Latest code/test coverage report.
+        format: Coverage report artifact
+    outputs_spec:
+      - name: test_readiness_status
+        description: Readiness status for Test stage (criteria, issues, approvals, evidence, ready flag).
+        format: Status artifact
+    agent_tasks:
+      - Check all mandatory Test stage criteria are met.
+      - Ensure no open critical issues in plan, coverage, or best practices.
+      - Verify all required approvals and evidence are present.
+      - Mark "Ready for next stage" only if above are true.
+    acceptance_criteria:
+      - All mandatory test criteria are met.
+      - No open critical issues in plan, coverage, or best practices.
+      - All required approvals and evidence are present.
+      - Stage is marked "Ready for next stage" only if above are true.
+    dependencies:
+      - test_execution_plan
+      - test_best_practice_report
+      - test_coverage_report
+    failure_escalation:
+      - Escalate to Gatekeeper/PM if readiness is not achieved.
+    references: []
+    hitl: false
+
+  - id: test_go_nogo
+    agent: GoNoGoDecisionAgent
+    role: Stage Owner/Stakeholders
+    inputs_spec:
+      - name: test_readiness_status
+        description: Readiness status for Test stage.
+        format: Status artifact
+    outputs_spec:
+      - name: test_go_nogo_decision
+        description: Go/No-Go decision for Test stage handoff.
+        format: Go/No-Go decision artifact
+    agent_tasks:
+      - Review all blockers, risks, and criteria.
+      - Record Go/No-Go decision and rationale.
+    acceptance_criteria:
+      - All blockers, risks, and criteria reviewed.
+      - Go/No-Go decision and rationale recorded.
+    dependencies:
+      - test_readiness_status
+    failure_escalation:
+      - Escalate to Stage Owner/PM if decision is not recorded.
+    references: []
+    hitl: true
+    hitl_reason: Human review required for Go/No-Go decision
+
+  - id: test_progress_dashboard
+    agent: ProgressDashboardAgent
+    role: Test Progress Dashboard Owner
+    inputs_spec:
+      - name: test_coverage_report
+        description: Latest code/test coverage report.
+        format: Coverage report artifact
+      - name: test_success_criteria_status
+        description: Status for all test stage criteria.
+        format: List of criteria status objects
+      - name: test_execution_plan
+        description: Test execution plan for dashboard visualization.
+        format: Test execution plan artifact
+    outputs_spec:
+      - name: test_progress_dashboard
+        description: Dashboard showing test coverage, criteria, plan, bottlenecks, and critical paths.
+        format: Dashboard artifact
+    agent_tasks:
+      - Visualize test coverage, criteria, execution plan in dashboard.
+      - Update dashboard in real time for team.
+      - Highlight critical path, blocked dependencies, bottlenecks, overdue milestones.
+    acceptance_criteria:
+      - Dashboard visualizes test coverage, criteria, plan, and bottlenecks.
+      - Dashboard is updated in real time for the team.
+      - Critical path and blockers are highlighted.
+    dependencies:
+      - test_coverage_report
+      - test_success_criteria_status
+      - test_execution_plan
+    failure_escalation:
+      - Escalate to Dashboard Owner/QA if dashboard is not current or actionable.
+    references: []
+    hitl: false
+
+  - id: test_observability_export
+    agent: ObservabilityExportAgent
+    role: SRE/Analytics
+    inputs_spec:
+      - name: test_progress_dashboard
+        description: Test progress dashboard for observability export.
+        format: Dashboard artifact
+    outputs_spec:
+      - name: test_observability_export
+        description: Pipeline metrics/KPIs exported to analytics/monitoring.
+        format: Export artifact
+    agent_tasks:
+      - Export pipeline metrics/KPIs to external analytics or monitoring.
+      - Flag any gaps in observability.
+    acceptance_criteria:
+      - Pipeline metrics/KPIs exported to external analytics/monitoring.
+      - Gaps in observability are flagged.
+    dependencies:
+      - test_progress_dashboard
+    failure_escalation:
+      - Escalate to SRE/Analytics if metrics not exported or gaps missed.
+    references: []
+    hitl: false
+
+  - id: test_feedback_loop
+    agent: FeedbackLoopAgent
+    role: CI/CD Coach/Automation
+    inputs_spec:
+      - name: test_progress_dashboard
+        description: Test dashboard for feedback collection.
+        format: Dashboard artifact
+    outputs_spec:
+      - name: test_feedback_items
+        description: List of issues/improvement suggestions routed to Retrospective and tracked for closure.
+        format: List of feedback items
+    agent_tasks:
+      - Route all issues/improvement suggestions to Retrospective.
+      - Track feedback for closure/action.
+    acceptance_criteria:
+      - All issues and improvement suggestions are routed to Retrospective.
+      - Feedback tracked for closure/action.
+    dependencies:
+      - test_progress_dashboard
+    failure_escalation:
+      - Escalate to CI/CD coach if feedback is not acted on or routed.
+    references: []
+    hitl: false
+
+  - id: test_notification_agent
+    agent: NotificationAgent
+    role: PMO Communications
+    inputs_spec:
+      - name: test_progress_dashboard
+        description: Test dashboard with key events and blockers.
+        format: Dashboard artifact
+      - name: test_escalation_report
+        description: Escalation report for test notifications.
+        format: Escalation report artifact
+    outputs_spec:
+      - name: test_notifications
+        description: Notifications sent to stakeholders with events, blockers, escalations, risks, and audit log.
+        format: List of notification objects
+    agent_tasks:
+      - Notify stakeholders on key stage events.
+      - Communicate blockers, escalations, and major risks in real time.
+      - Log notification delivery for audit.
+    acceptance_criteria:
+      - All stakeholders receive updates on key stage events.
+      - Blockers, escalations, and major risks are communicated in real time.
+      - Notification delivery is logged for audit.
+    dependencies:
+      - test_progress_dashboard
+      - test_escalation_report
+    failure_escalation:
+      - Escalate to PMO if notifications not delivered or logged.
+    references: []
+    hitl: false
+
+  - id: test_audit_log_agent
+    agent: AuditLogAgent
+    role: Compliance Bot
+    inputs_spec:
+      - name: test_progress_dashboard
+        description: Test dashboard for audit logging.
+        format: Dashboard artifact
+      - name: test_notification_agent
+        description: Notification delivery logs for Test stage.
+        format: List of notification objects
+      - name: test_success_criteria_status
+        description: Status for all test stage criteria.
+        format: List of criteria status objects
+    outputs_spec:
+      - name: test_audit_log
+        description: Complete audit log of Test stage agent actions, transitions, signoffs, escalations, notifications.
+        format: Audit log artifact
+    agent_tasks:
+      - Record every agent action/transition with timestamp, user/agent, and artifact link.
+      - Log major events (signoffs, escalations, notifications, exceptions).
+      - Cryptographically sign and archive logs.
+      - Ensure audit log is accessible for compliance review.
+    acceptance_criteria:
+      - Every agent action and transition is recorded.
+      - Major events are logged.
+      - Logs are signed/archived and accessible.
+    dependencies:
+      - test_progress_dashboard
+      - test_notification_agent
+      - test_success_criteria_status
+    failure_escalation:
+      - Escalate to Compliance/Audit Lead if logs are incomplete or inaccessible.
+    references: []
+    hitl: false
+
+  - id: test_evidence_collector
+    agent: EvidenceCollectorAgent
+    role: Compliance Evidence Bot
+    inputs_spec:
+      - name: test_audit_log
+        description: Audit log for Test stage.
+        format: Audit log artifact
+      - name: test_success_criteria_status
+        description: Status of Test stage success criteria.
+        format: List of criteria status objects
+    outputs_spec:
+      - name: test_evidence_package
+        description: Evidence package for Test stage, including all artifacts, logs, signoffs, KPIs, and compliance links.
+        format: Evidence package artifact
+    agent_tasks:
+      - Collect/hash all artifacts, audit logs, signoffs, KPIs.
+      - Link evidence to compliance requirements.
+      - Archive package securely, maintain access logs.
+    acceptance_criteria:
+      - All artifacts, logs, signoffs, KPIs are collected and hashed.
+      - Evidence is linked to compliance requirements.
+      - Package is archived securely, access logs maintained.
+    dependencies:
+      - test_audit_log
+      - test_success_criteria_status
+    failure_escalation:
+      - Escalate to Evidence Lead/Compliance if evidence is incomplete or not archived.
+    references: []
+    hitl: false
+
+  - id: test_risk_trend_analyzer
+    agent: RiskTrendAnalyzerAgent
+    role: Risk Intelligence Bot
+    inputs_spec:
+      - name: test_escalation_report
+        description: Escalation report for Test stage.
+        format: Escalation report artifact
+      - name: test_progress_dashboard
+        description: Dashboard artifact for Test stage.
+        format: Dashboard artifact
+    outputs_spec:
+      - name: test_risk_trend_report
+        description: Trend report on all risks, escalations, blockers, with recurring/systemic risks and recommendations.
+        format: Risk trend report artifact
+    agent_tasks:
+      - Trend all risks, escalations, blockers over time.
+      - Flag/classify recurring/systemic risks.
+      - Share report with leadership, include recommendations.
+    acceptance_criteria:
+      - Risks/escalations/blockers trended.
+      - Recurring/systemic risks flagged.
+      - Recommendations included.
+    dependencies:
+      - test_escalation_report
+      - test_progress_dashboard
+    failure_escalation:
+      - Escalate to Risk Intelligence Lead if trends/recommendations missing.
+    references: []
+    hitl: false
+
+  - id: documentation_generator
+    agent: DocumentationGeneratorAgent
+    role: Tech Writer/Automation
+    inputs_spec:
+      - name: test_execution_plan
+        description: Test execution plan for doc generation.
+        format: Test execution plan artifact
+    outputs_spec:
+      - name: generated_documentation
+        description: Generated or updated documentation for all test scenarios, cases, and results.
+        format: Documentation artifact
+    agent_tasks:
+      - Generate/update documentation for all test scenarios, cases, and results.
+      - Ensure docs are accessible, versioned, up-to-date.
+    acceptance_criteria:
+      - Documentation is generated/updated for all test scenarios, cases, results.
+      - Docs are accessible, versioned, up-to-date.
+    dependencies:
+      - test_execution_plan
+    failure_escalation:
+      - Escalate to Tech Writer/QA if docs are incomplete or outdated.
+    references: []
+    hitl: false
+
+  - id: test_milestone_tracker
+    agent: TestMilestoneTrackerAgent
+    role: Test PM
+    inputs_spec:
+      - name: test_best_practice_report
+        description: Test best practice compliance report.
+        format: Compliance report artifact
+    outputs_spec:
+      - name: test_stage_milestone
+        description: Test stage milestones with owner, status, risks, blockers.
+        format: List of milestone objects
+    agent_tasks:
+      - List and track all test milestones (e.g., environment ready, data prepared, test suite completed).
+      - Assign owners and target dates.
+      - Document blockers and risks for each milestone.
+      - Log milestone completion and status updates.
+    acceptance_criteria:
+      - All test milestones are clearly listed.
+      - Each milestone has a target date and owner.
+      - Milestone dependencies are mapped.
+      - Milestone status is up-to-date.
+      - Blockers to test progress are tracked.
+    dependencies:
+      - test_best_practice_report
+    failure_escalation:
+      - Escalate to Test PM if test milestones are unclear or blocked.
+    references: []
+    hitl: true
+    hitl_reason: Human oversight for test milestone tracking
+
+  - id: unit_test
+    agent: UnitTestAgent
+    role: Developer/QA
+    inputs_spec:
+      - name: test_stage_milestone
+        description: Test stage milestones to trigger unit tests.
+        format: List of milestone objects
+    outputs_spec:
+      - name: unit_test_report
+        description: Unit test results, coverage, failures, documentation.
+        format: Unit test report artifact
+    agent_tasks:
+      - Ensure all modules/components have associated unit tests.
+      - Test normal, edge, and error conditions.
+      - Store and link results to code version.
+      - Document failing/skipped tests with rationale.
+    acceptance_criteria:
+      - All modules/components have associated unit tests.
+      - Test cases cover normal, edge, and error conditions.
+      - Test results are stored and linked to code version.
+      - Failing or skipped tests are documented with rationale.
+    dependencies:
+      - test_stage_milestone
+    failure_escalation:
+      - Escalate to QA if coverage or critical failures not addressed.
+    references: []
+    hitl: true
+    hitl_reason: Human reviews unit test results for coverage and accuracy
+
+  - id: integration_test
+    agent: IntegrationTestAgent
+    role: QA Engineer
+    inputs_spec:
+      - name: test_stage_milestone
+        description: Test stage milestones to trigger integration tests.
+        format: List of milestone objects
+    outputs_spec:
+      - name: integration_test_report
+        description: Results of integration tests across system interfaces.
+        format: Integration test report artifact
+    agent_tasks:
+      - Test all system integrations/interfaces.
+      - Store results and report issues for remediation.
+    acceptance_criteria:
+      - All system integrations/interfaces are tested.
+      - Integration test results are stored.
+      - Issues found are reported and tracked for remediation.
+    dependencies:
+      - test_stage_milestone
+    failure_escalation:
+      - Escalate to QA or Dev Lead if integrations are untested or failing.
+    references: []
+    hitl: false
+
+  - id: e2e_test
+    agent: E2ETestAgent
+    role: QA Engineer
+    inputs_spec:
+      - name: test_stage_milestone
+        description: Test stage milestones to trigger end-to-end tests.
+        format: List of milestone objects
+    outputs_spec:
+      - name: e2e_test_report
+        description: End-to-end test results covering user workflows.
+        format: E2E test report artifact
+    agent_tasks:
+      - Validate full user workflows with end-to-end tests.
+      - Use real-world scenarios, triage/report failures, version results.
+    acceptance_criteria:
+      - End-to-end tests validate full user workflows.
+      - Test scenarios reflect real-world usage.
+      - Test failures are triaged and reported.
+      - Results are versioned with releases.
+    dependencies:
+      - test_stage_milestone
+    failure_escalation:
+      - Escalate to QA if key workflows are missing from E2E or have unresolved failures.
+    references: []
+    hitl: false
+
+  - id: flaky_test_detector
+    agent: FlakyTestDetectorAgent
+    role: Test Automation Bot
+    inputs_spec:
+      - name: test_suites
+        description: Full set of test suites to analyze for flakiness.
+        format: List of test suite results
+    outputs_spec:
+      - name: flaky_tests_report
+        description: Report of detected flaky tests and stability trends.
+        format: Flaky tests report artifact
+    agent_tasks:
+      - Analyze all test results for flakiness.
+      - Report/tag flaky tests for remediation.
+      - Document test stability trends.
+    acceptance_criteria:
+      - All test results are analyzed for flakiness.
+      - Flaky tests are reported and tagged for remediation.
+      - Test stability trends are documented.
+    dependencies:
+      - test_suites
+    failure_escalation:
+      - Escalate to QA Automation if persistent flakiness is not resolved.
+    references: []
+    hitl: false
+
+  - id: test_data_management
+    agent: TestDataManagementAgent
+    role: Data Steward
+    inputs_spec:
+      - name: test_stage_milestone
+        description: Test stage milestones to trigger data management.
+        format: List of milestone objects
+    outputs_spec:
+      - name: test_data_report
+        description: Versioned test data management and masking report.
+        format: Test data report artifact
+    agent_tasks:
+      - Version/manage test data for each run.
+      - Mask/synthesize sensitive data.
+      - Flag and document data gaps/issues.
+    acceptance_criteria:
+      - Test data is versioned and managed for each run.
+      - Sensitive data is masked or synthesized.
+      - Test data gaps or issues are flagged.
+    dependencies:
+      - test_stage_milestone
+    failure_escalation:
+      - Escalate to Data Steward if test data is missing or sensitive data exposed.
+    references: []
+    hitl: false
+
+  - id: test_result_management
+    agent: TestResultManagementAgent
+    role: QA Lead
+    inputs_spec:
+      - name: unit_test_report
+        description: Unit test results.
+        format: Unit test report artifact
+      - name: integration_test_report
+        description: Integration test results.
+        format: Integration test report artifact
+      - name: e2e_test_report
+        description: E2E test results.
+        format: E2E test report artifact
+      - name: security_test_report
+        description: Security test results.
+        format: Security test report artifact
+      - name: performance_test_report
+        description: Performance test results.
+        format: Performance test report artifact
+      - name: chaos_test_report
+        description: Chaos test results.
+        format: Chaos test report artifact
+    outputs_spec:
+      - name: consolidated_test_results
+        description: Consolidated results for all test types.
+        format: Consolidated test results artifact
+    agent_tasks:
+      - Consolidate all test results in a single location.
+      - Ensure results are accessible to relevant teams.
+      - Escalate major failures or regressions.
+    acceptance_criteria:
+      - All test results are consolidated in a single location.
+      - Results are accessible to relevant teams.
+      - Major failures or regressions are escalated.
+    dependencies:
+      - unit_test_report
+      - integration_test_report
+      - e2e_test_report
+      - security_test_report
+      - performance_test_report
+      - chaos_test_report
+    failure_escalation:
+      - Escalate to QA Lead if results are missing or regressions unaddressed.
+    references: []
+    hitl: false
+
+  - id: test_audit
+    agent: TestAuditAgent
+    role: Compliance Analyst
+    inputs_spec:
+      - name: consolidated_test_results
+        description: Consolidated test results for audit.
+        format: Consolidated test results artifact
+    outputs_spec:
+      - name: test_audit_report
+        description: Test audit compliance report.
+        format: Audit report artifact
+    agent_tasks:
+      - Collect all test artifacts and evidence for each run.
+      - Satisfy compliance requirements and store audit logs.
+    acceptance_criteria:
+      - Test artifacts and evidence are collected for each run.
+      - All compliance requirements are satisfied.
+      - Audit logs are stored securely.
+    dependencies:
+      - consolidated_test_results
+    failure_escalation:
+      - Escalate to Compliance Analyst if audit evidence is incomplete.
+    references: []
+    hitl: false
+
+  - id: test_best_practice
+    agent: TestBestPracticeAgent
+    role: QA Standards Lead
+    inputs_spec:
+      - name: consolidated_test_results
+        description: Consolidated test results for best practice review.
+        format: Consolidated test results artifact
+      - name: test_audit_report
+        description: Audit report for best practice alignment.
+        format: Audit report artifact
+    outputs_spec:
+      - name: test_best_practices_report
+        description: Report of all test best practice findings and remediation.
+        format: Best practice compliance report
+    agent_tasks:
+      - Review all executed tests for adherence to best practice.
+      - Track and close issues.
+      - Update test documentation as needed.
+    acceptance_criteria:
+      - All executed tests are reviewed for adherence to best practice.
+      - Issues found are tracked to closure.
+      - Test documentation is updated as needed.
+    dependencies:
+      - consolidated_test_results
+      - test_audit_report
+    failure_escalation:
+      - Escalate to QA Standards Lead if best practices are not followed.
+    references: []
+    hitl: true
+    hitl_reason: Human ensures all test best practices are followed
+
+  - id: synthesis_combiner
+    agent: SynthesisCombinerAgent
+    role: Test Lead/PM
+    inputs_spec:
+      - name: consolidated_test_results
+        description: Consolidated test results for release readiness.
+        format: Consolidated test results artifact
+      - name: test_data_report
+        description: Test data management report.
+        format: Test data report artifact
+      - name: test_audit_report
+        description: Test audit compliance report.
+        format: Audit report artifact
+      - name: test_best_practices_report
+        description: Best practice compliance report.
+        format: Best practice compliance report
+    outputs_spec:
+      - name: ready_for_release_package
+        description: Combined, reviewed package for release readiness.
+        format: Release-ready package artifact
+    agent_tasks:
+      - Combine all test reports, audit logs, and results into a release-ready package.
+      - Flag missing/failed tests.
+      - Review/sign off package for release.
+      - Ensure all referenced artifacts are current and versioned.
+    acceptance_criteria:
+      - All test reports, audit logs, and results are combined into a release-ready package.
+      - Missing or failed tests are flagged.
+      - Package is reviewed and signed off for release.
+      - Ensure all referenced artifacts are current and versioned.
+    dependencies:
+      - consolidated_test_results
+      - test_data_report
+      - test_audit_report
+      - test_best_practices_report
+    failure_escalation:
+      - Escalate to Test Lead/PM if package is incomplete or not reviewed.
+    references: []
+    hitl: true
+    hitl_reason: Human validates release readiness from test outputs
+
+  - id: test_kpi_agent
+    agent: StageKPIAgent
+    role: Test KPI Analyst
+    inputs_spec:
+      - name: test_stage_milestone
+        description: Test stage milestones for KPI tracking.
+        format: List of milestone objects
+    outputs_spec:
+      - name: test_kpi_report
+        description: Test KPI report.
+        format: KPI report artifact
+    agent_tasks:
+      - Track and report KPIs (coverage %, escape rate, pass rate, time to resolve failures, flaky test rate, bottlenecks).
+      - Visualize trends, flag anomalies, compare to baselines.
+    acceptance_criteria:
+      - All key KPIs are defined, tracked, and flagged for review if negative movement.
+      - KPI data is traceable to test_stage_milestone and consolidated_test_results.
+      - KPI trends are visualized and compared to baselines.
+      - Outliers and deviations are flagged for review.
+    dependencies:
+      - test_stage_milestone
+    failure_escalation:
+      - Escalate to KPI Analyst or PM if KPIs are missing or not updated.
+    references: []
+    hitl: false

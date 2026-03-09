@@ -1,0 +1,117 @@
+domain:
+  id: context-gathering-synthesis
+  name: "Context Gathering & Synthesis"
+  description: "Gather and synthesize context from existing systems, history, and domain knowledge."
+  order: 3
+  icon: "inventory_2"
+  color: "#5C6BC0"
+  agent_personas:
+    - "ContextAggregator"
+    - "DependencyAnalyzer"
+    - "DomainExpert"
+    - "ResearchAgent"
+  audit_artifacts:
+    - "ContextSnapshot"
+    - "DependencyGraph"
+    - "ConstraintMatrix"
+    - "TechDebtInventory"
+  inputs:
+    - "Prior artifacts"
+    - "System docs"
+    - "Logs/data"
+    - "Codebase"
+    - "Architecture diagrams"
+  outputs:
+    - "Context snapshot"
+    - "Constraint list"
+    - "Dependency maps"
+    - "Technical analysis"
+
+tasks:
+  # Core context tasks
+  - id: d3-t1
+    name: "Review existing systems"
+    description: "Analyze current system architecture and design patterns."
+    personas: ["Tech Lead", "Developer"]
+    lifecycle_stages: ["context"]
+    automation_level: "assisted"
+  - id: d3-t2
+    name: "Review historical decisions"
+    description: "Understand past architectural decisions (ADRs) and their rationale."
+    personas: ["Tech Lead", "Developer"]
+    lifecycle_stages: ["context"]
+    automation_level: "assisted"
+  - id: d3-t3
+    name: "Gather constraints"
+    description: "Identify technical, business, and regulatory constraints."
+    personas: ["PM", "Tech Lead"]
+    lifecycle_stages: ["context"]
+    automation_level: "manual"
+  - id: d3-t4
+    name: "Analyze dependencies"
+    description: "Map out system dependencies and integration points."
+    personas: ["Tech Lead", "Developer"]
+    lifecycle_stages: ["context"]
+    automation_level: "assisted"
+  - id: d3-t5
+    name: "Normalize context"
+    description: "Standardize gathered information into consistent format."
+    personas: ["Tech Lead", "Developer"]
+    lifecycle_stages: ["context"]
+    automation_level: "assisted"
+  - id: d3-t6
+    name: "Identify gaps"
+    description: "Find missing information or capabilities."
+    personas: ["PM", "Tech Lead", "Developer"]
+    lifecycle_stages: ["context"]
+    automation_level: "assisted"
+
+  # Extended context tasks
+  - id: ctx-001
+    name: "Analyze Codebase Structure"
+    description: "Understand the current codebase architecture, modules, and patterns."
+    personas: ["Developer", "Tech Lead"]
+    lifecycle_stages: ["context"]
+    automation_level: "automated"
+  - id: ctx-002
+    name: "Review API Contracts"
+    description: "Analyze existing API definitions, contracts, and compatibility."
+    personas: ["Developer", "Tech Lead"]
+    lifecycle_stages: ["context"]
+    automation_level: "assisted"
+  - id: ctx-003
+    name: "Map Data Flows"
+    description: "Trace how data moves through the system end-to-end."
+    personas: ["Developer", "Tech Lead"]
+    lifecycle_stages: ["context"]
+    automation_level: "assisted"
+  - id: ctx-004
+    name: "Identify Technical Debt"
+    description: "Document known technical debt, workarounds, and limitations."
+    personas: ["Developer", "Tech Lead"]
+    lifecycle_stages: ["context", "observe"]
+    automation_level: "assisted"
+  - id: ctx-005
+    name: "Analyze Performance Baselines"
+    description: "Understand current performance characteristics and bottlenecks."
+    personas: ["Developer", "Tech Lead"]
+    lifecycle_stages: ["context", "observe"]
+    automation_level: "assisted"
+  - id: ctx-006
+    name: "Map Integration Points"
+    description: "Document external integrations, third-party services, and their contracts."
+    personas: ["Developer", "Tech Lead"]
+    lifecycle_stages: ["context"]
+    automation_level: "assisted"
+  - id: ctx-007
+    name: "Gather Operational Context"
+    description: "Understand deployment, scaling, and operational requirements."
+    personas: ["Developer", "Tech Lead", "SRE"]
+    lifecycle_stages: ["context"]
+    automation_level: "assisted"
+  - id: ctx-008
+    name: "Review Security Context"
+    description: "Understand security requirements, past vulnerabilities, and compliance needs."
+    personas: ["Tech Lead", "Security"]
+    lifecycle_stages: ["context"]
+    automation_level: "assisted"

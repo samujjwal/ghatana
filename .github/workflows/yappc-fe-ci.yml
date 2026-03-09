@@ -1,0 +1,79 @@
+name: "YAPPC FE: CI"
+
+on:
+  push:
+    branches: [main, develop]
+    paths: ['products/yappc/frontend/**']
+  pull_request:
+    branches: [main, develop]
+    paths: ['products/yappc/frontend/**']
+  workflow_dispatch:
+
+defaults:
+  run:
+    working-directory: products/yappc/frontend
+
+jobs:
+  ci:
+    name: CI
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+
+      - name: Enable pnpm via corepack
+        run: |
+          corepack enable
+          corepack prepare pnpm@10.28.2 --activate
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Typecheck
+        run: pnpm run test:typecheck
+
+      - name: Lint
+        run: pnpm run lint
+
+      - name: Unit tests
+        run: pnpm run test
+
+      - name: Build web
+        run: pnpm run build:web
+
+      - name: Bundle Size Check
+        run: node scripts/bundle-size-tracker.js check
+        continue-on-error: false
+
+      - name: Performance Regression Tests
+        run: pnpm test libs/canvas/src/__tests__/performance.test.ts
+
+      - name: Install Playwright browsers
+        run: pnpm exec playwright install --with-deps
+
+      - name: Run Playwright E2E tests
+        run: pnpm run test:e2e
+
+      - name: Run quality audit (best-effort)
+        run: pnpm run audit:quality || true
+
+      - name: Upload quality artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: quality-audit
+          path: .quality-audit/**
+
+      - name: Upload bundle analysis
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: bundle-analysis
+          path: |
+            bundle-size-report.json
+            performance-report.json
+          retention-days: 30

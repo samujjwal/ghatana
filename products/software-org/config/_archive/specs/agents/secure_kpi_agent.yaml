@@ -1,0 +1,26 @@
+---
+id: "secure_kpi_agent"
+agent: "StageKPIAgent"
+role: "Secure KPI Analyst"
+inputs_spec:
+- name: "secure_stage_milestone"
+  description: "Secure stage milestones for KPI tracking."
+  format: "List of milestone objects"
+outputs_spec:
+- name: "secure_kpi_report"
+  description: "Secure stage KPIs report."
+  format: "KPI report artifact"
+agent_tasks:
+- "Track and report Secure KPIs (policy as code coverage, compliance rate, vulnerability\
+  \ closure, etc.)."
+- "Visualize trends and flag anomalies."
+acceptance_criteria:
+- "KPIs defined/tracked; trends flagged for review."
+- "KPI data traceable to milestones/audit logs."
+- "KPI trends visualized/compared to baselines."
+dependencies:
+- "secure_stage_milestone"
+failure_escalation:
+- "Escalate to KPI Analyst if Secure KPIs are missing or not updated."
+references: []
+hitl: false

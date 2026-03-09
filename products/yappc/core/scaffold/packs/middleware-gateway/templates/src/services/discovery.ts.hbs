@@ -1,0 +1,191 @@
+import type { RouteConfig } from "../types.js";
+import { logger } from "../middleware/logging.js";
+
+interface ServiceInstance {
+id: string;
+name: string;
+host: string;
+port: number;
+metadata?: Record<string, string>;
+    health: "healthy" | "unhealthy" | "unknown";
+    lastHeartbeat: Date;
+    }
+
+    interface DiscoveryOptions {
+    /** How often to check for stale instances (ms) */
+    cleanupInterval?: number;
+    /** Time before instance is considered stale (ms) */
+    staleTimeout?: number;
+    }
+
+    /**
+    * Simple in-memory service discovery
+    * For production, integrate with Consul, etcd, or Kubernetes service discovery
+    */
+    export class ServiceDiscovery {
+    private services = new Map<string, ServiceInstance[]>();
+        private readonly options: Required<DiscoveryOptions>;
+            private cleanupTimer?: NodeJS.Timeout;
+            private roundRobinIndex = new Map<string, number>();
+
+                constructor(options?: DiscoveryOptions) {
+                this.options = {
+                cleanupInterval: options?.cleanupInterval ?? 30000,
+                staleTimeout: options?.staleTimeout ?? 60000,
+                };
+
+                this.startCleanup();
+                }
+
+                /**
+                * Register a service instance
+                */
+                register(instance: Omit<ServiceInstance, "health" | "lastHeartbeat">): void {
+                    const instances = this.services.get(instance.name) ?? [];
+
+                    const existing = instances.findIndex((i) => i.id === instance.id);
+                    const newInstance: ServiceInstance = {
+                    ...instance,
+                    health: "healthy",
+                    lastHeartbeat: new Date(),
+                    };
+
+                    if (existing >= 0) {
+                    instances[existing] = newInstance;
+                    } else {
+                    instances.push(newInstance);
+                    }
+
+                    this.services.set(instance.name, instances);
+                    logger.info({ service: instance.name, id: instance.id }, "Service registered");
+                    }
+
+                    /**
+                    * Deregister a service instance
+                    */
+                    deregister(serviceName: string, instanceId: string): boolean {
+                    const instances = this.services.get(serviceName);
+                    if (!instances) return false;
+
+                    const index = instances.findIndex((i) => i.id === instanceId);
+                    if (index < 0) return false; instances.splice(index, 1); if (instances.length===0) {
+                        this.services.delete(serviceName); } else { this.services.set(serviceName, instances); }
+                        logger.info({ service: serviceName, id: instanceId }, "Service deregistered" ); return true; }
+                        /** * Heartbeat from a service instance */ heartbeat(serviceName: string, instanceId: string):
+                        boolean { const instances=this.services.get(serviceName); if (!instances) return false; const
+                        instance=instances.find((i)=> i.id === instanceId);
+                        if (!instance) return false;
+
+                        instance.lastHeartbeat = new Date();
+                        instance.health = "healthy";
+                        return true;
+                        }
+
+                        /**
+                        * Get all instances of a service
+                        */
+                        getInstances(serviceName: string): ServiceInstance[] {
+                        return this.services.get(serviceName)?.filter((i) => i.health === "healthy") ?? [];
+                        }
+
+                        /**
+                        * Get a service URL using round-robin load balancing
+                        */
+                        getServiceUrl(serviceName: string): string | undefined {
+                        const instances = this.getInstances(serviceName);
+                        if (instances.length === 0) return undefined;
+
+                        // Round-robin selection
+                        const currentIndex = this.roundRobinIndex.get(serviceName) ?? 0;
+                        const instance = instances[currentIndex % instances.length];
+                        this.roundRobinIndex.set(serviceName, currentIndex + 1);
+
+                        return `http://${instance.host}:${instance.port}`;
+                        }
+
+                        /**
+                        * Resolve route upstream using service discovery
+                        */
+                        resolveUpstream(route: RouteConfig): string {
+                        const { upstream } = route;
+
+                        // Check if upstream is a service name (starts with "service://")
+                        if (upstream.startsWith("service://")) {
+                        const serviceName = upstream.replace("service://", "");
+                        const url = this.getServiceUrl(serviceName);
+
+                        if (!url) {
+                        logger.warn({ service: serviceName }, "No healthy instances found");
+                        throw new Error(`No healthy instances for service: ${serviceName}`);
+                        }
+
+                        return url;
+                        }
+
+                        // Return as-is if it's a direct URL
+                        return upstream;
+                        }
+
+                        /**
+                        * Get all registered services
+                        */
+                        getAllServices(): Map<string, ServiceInstance[]> {
+                            return new Map(this.services);
+                            }
+
+                            /**
+                            * Start periodic cleanup of stale instances
+                            */
+                            private startCleanup(): void {
+                            this.cleanupTimer = setInterval(() => {
+                            this.cleanupStaleInstances();
+                            }, this.options.cleanupInterval);
+                            }
+
+                            /**
+                            * Remove stale service instances
+                            */
+                            private cleanupStaleInstances(): void {
+                            const now = Date.now();
+                            let cleaned = 0;
+
+                            for (const [name, instances] of this.services) {
+                            const active = instances.filter((instance) => {
+                            const stale = now - instance.lastHeartbeat.getTime() > this.options.staleTimeout;
+
+                            if (stale) {
+                            logger.warn({ service: name, id: instance.id }, "Removing stale instance");
+                            cleaned++;
+                            }
+
+                            return !stale;
+                            });
+
+                            if (active.length === 0) {
+                            this.services.delete(name);
+                            } else {
+                            this.services.set(name, active);
+                            }
+                            }
+
+                            if (cleaned > 0) {
+                            logger.info({ cleaned }, "Cleaned up stale service instances");
+                            }
+                            }
+
+                            /**
+                            * Shutdown discovery service
+                            */
+                            shutdown(): void {
+                            if (this.cleanupTimer) {
+                            clearInterval(this.cleanupTimer);
+                            }
+                            this.services.clear();
+                            this.roundRobinIndex.clear();
+                            }
+                            }
+
+                            /**
+                            * Global service discovery instance
+                            */
+                            export const serviceDiscovery = new ServiceDiscovery();

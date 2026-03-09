@@ -1,0 +1,127 @@
+---
+# Cross-Cutting Notification Operator Template
+# Replaces 13 stage-specific files: build_notification_agent.yaml, test_notification_agent.yaml, etc.
+#
+# Usage: Instantiate with stage parameter to create stage-specific notification agent
+# Parameters:
+#   - stage: The stage name (plan, solution, design, develop, build, test, secure,
+#            compliance, uat, release, operate, dr, retro)
+#
+# @doc.type operator-template
+# @doc.purpose Cross-cutting stakeholder notifications for all stages
+# @doc.layer operations
+# @doc.pattern Template
+
+template:
+  id: "${stage}_notification_agent"
+  version: "1.0.0"
+
+operator:
+  type: "NotificationOperator"
+  role: "PMO Communications"
+  category: "cross-cutting"
+
+parameters:
+  stage:
+    type: "string"
+    required: true
+    description: "Stage name for which to create notification agent"
+    allowed_values:
+      - "plan"
+      - "solution"
+      - "design"
+      - "develop"
+      - "build"
+      - "test"
+      - "secure"
+      - "compliance"
+      - "uat"
+      - "release"
+      - "operate"
+      - "dr"
+      - "retro"
+
+inputs_spec:
+  - name: "${stage}_progress_dashboard"
+    description: "${stage} dashboard with key events and blockers."
+    format: "Dashboard artifact"
+    required: true
+
+  - name: "${stage}_escalation_report"
+    description: "Escalation report for ${stage} notifications."
+    format: "Escalation report artifact"
+    required: false
+
+  - name: "${stage}_risk_assessment"
+    description: "Risk assessment for ${stage} stage."
+    format: "Risk assessment artifact"
+    required: false
+
+outputs_spec:
+  - name: "${stage}_notifications"
+    description: "Notifications sent to stakeholders with events, blockers, escalations, risks, and audit log."
+    format: "List of notification objects"
+
+  - name: "${stage}_notification_events"
+    description: "Stream of notification delivery events"
+    format: "Event stream"
+    event_type: "ghatana.operations.notification.${stage}"
+
+agent_tasks:
+  - "Notify stakeholders on key ${stage} stage events."
+  - "Communicate blockers, escalations, and major risks in real time."
+  - "Log notification delivery for audit."
+  - "Route notifications via appropriate channels (email, Slack, Teams, PagerDuty)."
+  - "Emit notification events to EventCloud."
+
+acceptance_criteria:
+  - "All stakeholders receive updates on key stage events."
+  - "Blockers, escalations, and major risks are communicated in real time."
+  - "Notification delivery is logged for audit."
+  - "Notification delivery rate exceeds 99%."
+
+dependencies:
+  - "${stage}_progress_dashboard"
+
+failure_escalation:
+  - "Escalate to PMO if notifications not delivered or logged."
+  - "Emit ${stage}.notification.failure event to EventCloud."
+
+config:
+  # Notification channels
+  channels:
+    - type: "email"
+      enabled: true
+      priority_threshold: "medium"
+    - type: "slack"
+      enabled: true
+      channel: "#${stage}-notifications"
+    - type: "teams"
+      enabled: true
+      channel: "${stage}-updates"
+    - type: "pagerduty"
+      enabled: true
+      priority_threshold: "critical"
+
+  # Notification types
+  notification_types:
+    - "stage_started"
+    - "stage_completed"
+    - "blocker_detected"
+    - "escalation_triggered"
+    - "risk_threshold_exceeded"
+    - "milestone_achieved"
+    - "milestone_missed"
+
+  # Rate limiting
+  rate_limit_per_minute: 60
+  cooldown_seconds: 300 # Don't re-notify same issue within 5 min
+
+  # Observability
+  event_cloud_topic: "ghatana.operations.notification"
+
+references:
+  - "Incident Communication Best Practices"
+  - "Stakeholder Communication Plan Template"
+
+hitl: false

@@ -1,0 +1,80 @@
+import { prisma, PrismaClient } from './client';
+
+export interface BaseEntity {
+id: string;
+createdAt: Date;
+updatedAt: Date;
+}
+
+export interface PaginationOptions {
+page?: number;
+pageSize?: number;
+}
+
+export interface PaginatedResult<T> {
+    data: T[];
+    total: number;
+    page: number;
+    pageSize: number;
+    totalPages: number;
+    }
+
+    export abstract class BaseRepository<T extends BaseEntity> {
+        protected db: PrismaClient;
+        protected abstract modelName: string;
+
+        constructor() {
+        this.db = prisma;
+        }
+
+        protected get model(): any {
+        return (this.db as any)[this.modelName];
+        }
+
+        async findById(id: string): Promise<T | null> {
+            return this.model.findUnique({ where: { id } });
+            }
+
+            async findAll(options?: PaginationOptions): Promise<PaginatedResult<T>> {
+                const page = options?.page ?? 1;
+                const pageSize = options?.pageSize ?? 10;
+                const skip = (page - 1) * pageSize;
+
+                const [data, total] = await Promise.all([
+                this.model.findMany({
+                skip,
+                take: pageSize,
+                orderBy: { createdAt: 'desc' },
+                }),
+                this.model.count(),
+                ]);
+
+                return {
+                data,
+                total,
+                page,
+                pageSize,
+                totalPages: Math.ceil(total / pageSize),
+                };
+                }
+
+                async create(data: Omit<T, 'id' | 'createdAt' | 'updatedAt'>): Promise<T> {
+                        return this.model.create({ data });
+                        }
+
+                        async update(id: string, data: Partial<Omit<T, 'id' | 'createdAt' | 'updatedAt'>>): Promise<T> {
+                                return this.model.update({
+                                where: { id },
+                                data,
+                                });
+                                }
+
+                                async delete(id: string): Promise<void> {
+                                    await this.model.delete({ where: { id } });
+                                    }
+
+                                    async exists(id: string): Promise<boolean> {
+                                        const count = await this.model.count({ where: { id } });
+                                        return count > 0;
+                                        }
+                                        }

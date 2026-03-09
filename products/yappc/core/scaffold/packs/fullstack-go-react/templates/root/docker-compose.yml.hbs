@@ -1,0 +1,30 @@
+{{#if enableDocker}}
+services:
+backend:
+build:
+context: ./backend
+dockerfile: Dockerfile
+ports:
+- "{{backendPort}}:{{backendPort}}"
+environment:
+- PORT={{backendPort}}
+networks:
+- app-network
+
+frontend:
+build:
+context: ./frontend
+dockerfile: Dockerfile
+args:
+- VITE_API_URL=http://localhost:{{backendPort}}
+ports:
+- "{{frontendPort}}:80"
+depends_on:
+- backend
+networks:
+- app-network
+
+networks:
+app-network:
+driver: bridge
+{{/if}}

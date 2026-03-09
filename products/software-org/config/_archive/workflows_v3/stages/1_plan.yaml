@@ -1,0 +1,262 @@
+# Plan Stage - v3 Operator-Based Definition
+# Uses consolidated operators from operations/domain/planning/
+name: Plan
+description: Product discovery, business goals, stakeholder engagement, and requirements gathering
+domain: planning
+
+# Operators used in this stage (from operations/domain/planning/)
+operators:
+  - ref: planning/product_discovery_operator
+    modes: [clarify, generate_questions, refine]
+  - ref: planning/business_goals_operator
+    modes:
+      [
+        define_goals,
+        define_criteria,
+        identify_constraints,
+        document_assumptions,
+        combine,
+      ]
+  - ref: planning/stakeholder_operator
+    modes: [identify, map, engage, simulate_review]
+  - ref: planning/requirements_operator
+    modes: [gather, analyze_functional, analyze_nfr, trace]
+  - ref: planning/plan_synthesis_operator
+    modes: [validate, package, handoff]
+
+# Cross-cutting operators for this stage
+cross_cutting:
+  - ref: cross-cutting/milestone_tracker
+    params:
+      stage: plan
+  - ref: cross-cutting/best_practice
+    params:
+      stage: plan
+  - ref: cross-cutting/kpi
+    params:
+      stage: plan
+  - ref: cross-cutting/audit_log
+    params:
+      stage: plan
+
+# Workflow sequence using operators
+workflow:
+  # Product Discovery Phase
+  - step: clarify_product_idea
+    operator: planning/product_discovery_operator
+    mode: clarify
+    inputs:
+      - name: user_input
+        description: Initial product idea from user
+    outputs:
+      - name: clarified_product_idea
+    hitl: true
+    hitl_reason: Human validates clarification accuracy
+
+  - step: generate_clarification_questions
+    operator: planning/product_discovery_operator
+    mode: generate_questions
+    inputs:
+      - name: clarified_product_idea
+    outputs:
+      - name: clarification_questions
+    depends_on: [clarify_product_idea]
+
+  - step: refine_product_idea
+    operator: planning/product_discovery_operator
+    mode: refine
+    inputs:
+      - name: clarified_product_idea
+      - name: clarification_answers
+    outputs:
+      - name: refined_product_idea
+    depends_on: [generate_clarification_questions]
+    hitl: true
+    hitl_reason: Human provides answers to clarification questions
+
+  # Business Goals Phase
+  - step: define_business_goals
+    operator: planning/business_goals_operator
+    mode: define_goals
+    inputs:
+      - name: refined_product_idea
+    outputs:
+      - name: business_goals
+    depends_on: [refine_product_idea]
+
+  - step: define_success_criteria
+    operator: planning/business_goals_operator
+    mode: define_criteria
+    inputs:
+      - name: business_goals
+    outputs:
+      - name: success_criteria
+    depends_on: [define_business_goals]
+
+  - step: identify_constraints
+    operator: planning/business_goals_operator
+    mode: identify_constraints
+    inputs:
+      - name: business_goals
+    outputs:
+      - name: constraints
+    depends_on: [define_business_goals]
+
+  - step: document_assumptions
+    operator: planning/business_goals_operator
+    mode: document_assumptions
+    inputs:
+      - name: business_goals
+      - name: constraints
+    outputs:
+      - name: assumptions
+    depends_on: [identify_constraints]
+
+  # Stakeholder Phase
+  - step: identify_stakeholders
+    operator: planning/stakeholder_operator
+    mode: identify
+    inputs:
+      - name: refined_product_idea
+      - name: business_goals
+    outputs:
+      - name: stakeholder_list
+    depends_on: [define_business_goals]
+
+  - step: map_stakeholders
+    operator: planning/stakeholder_operator
+    mode: map
+    inputs:
+      - name: stakeholder_list
+    outputs:
+      - name: stakeholder_map
+    depends_on: [identify_stakeholders]
+
+  - step: plan_engagement
+    operator: planning/stakeholder_operator
+    mode: engage
+    inputs:
+      - name: stakeholder_map
+    outputs:
+      - name: engagement_plan
+    depends_on: [map_stakeholders]
+
+  # Requirements Phase
+  - step: gather_requirements
+    operator: planning/requirements_operator
+    mode: gather
+    inputs:
+      - name: refined_product_idea
+      - name: business_goals
+      - name: stakeholder_map
+    outputs:
+      - name: raw_requirements
+    depends_on: [map_stakeholders]
+
+  - step: analyze_functional_requirements
+    operator: planning/requirements_operator
+    mode: analyze_functional
+    inputs:
+      - name: raw_requirements
+    outputs:
+      - name: functional_requirements
+    depends_on: [gather_requirements]
+
+  - step: analyze_nfr
+    operator: planning/requirements_operator
+    mode: analyze_nfr
+    inputs:
+      - name: raw_requirements
+    outputs:
+      - name: non_functional_requirements
+    depends_on: [gather_requirements]
+
+  - step: trace_requirements
+    operator: planning/requirements_operator
+    mode: trace
+    inputs:
+      - name: functional_requirements
+      - name: non_functional_requirements
+      - name: business_goals
+    outputs:
+      - name: requirements_traceability_matrix
+    depends_on: [analyze_functional_requirements, analyze_nfr]
+
+  # Cross-cutting: Best Practice Check
+  - step: best_practice_check
+    operator: cross-cutting/best_practice
+    params:
+      stage: plan
+    inputs:
+      - name: functional_requirements
+      - name: non_functional_requirements
+    outputs:
+      - name: best_practice_report
+    depends_on: [trace_requirements]
+
+  # Cross-cutting: Milestone Tracking
+  - step: track_milestones
+    operator: cross-cutting/milestone_tracker
+    params:
+      stage: plan
+    inputs:
+      - name: best_practice_report
+    outputs:
+      - name: plan_stage_milestone
+    depends_on: [best_practice_check]
+
+  # Synthesis Phase
+  - step: validate_plan
+    operator: planning/plan_synthesis_operator
+    mode: validate
+    inputs:
+      - name: functional_requirements
+      - name: non_functional_requirements
+      - name: requirements_traceability_matrix
+      - name: stakeholder_map
+    outputs:
+      - name: validation_report
+    depends_on: [track_milestones]
+    hitl: true
+    hitl_reason: Human reviews plan completeness
+
+  - step: package_plan
+    operator: planning/plan_synthesis_operator
+    mode: package
+    inputs:
+      - name: refined_product_idea
+      - name: business_goals
+      - name: success_criteria
+      - name: constraints
+      - name: assumptions
+      - name: stakeholder_map
+      - name: engagement_plan
+      - name: functional_requirements
+      - name: non_functional_requirements
+      - name: requirements_traceability_matrix
+      - name: validation_report
+    outputs:
+      - name: plan_package
+    depends_on: [validate_plan]
+
+  - step: handoff_to_design
+    operator: planning/plan_synthesis_operator
+    mode: handoff
+    inputs:
+      - name: plan_package
+    outputs:
+      - name: ready_for_solution_package
+    depends_on: [package_plan]
+
+# Stage entry/exit criteria
+entry_criteria:
+  - Product idea or vision exists
+  - Sponsorship identified
+  - Initial stakeholders available
+
+exit_criteria:
+  - All requirements documented and traced
+  - Stakeholder map complete
+  - Business goals with success criteria defined
+  - Ready for design package created
+  - Best practice compliance verified

@@ -1,0 +1,96 @@
+package auth
+
+import (
+"encoding/json"
+"net/http"
+)
+
+// LoginRequest represents a login request
+type LoginRequest struct {
+Email string `json:"email"`
+Password string `json:"password"`
+}
+
+// RefreshRequest represents a token refresh request
+type RefreshRequest struct {
+RefreshToken string `json:"refresh_token"`
+}
+
+// Handler handles authentication endpoints
+type Handler struct {
+jwtService *JWTService
+}
+
+// NewHandler creates a new auth handler
+func NewHandler(jwtService *JWTService) *Handler {
+return &Handler{jwtService: jwtService}
+}
+
+// Login handles user login
+func (h *Handler) Login(w http.ResponseWriter, r *http.Request) {
+var req LoginRequest
+if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+respondWithError(w, http.StatusBadRequest, "Invalid request body")
+return
+}
+
+// TODO: Replace with actual user lookup and password verification
+user, err := verifyCredentials(req.Email, req.Password)
+if err != nil {
+respondWithError(w, http.StatusUnauthorized, "Invalid credentials")
+return
+}
+
+tokens, err := h.jwtService.GenerateTokenPair(user.ID, user.Email, user.Roles)
+if err != nil {
+respondWithError(w, http.StatusInternalServerError, "Failed to generate tokens")
+return
+}
+
+w.Header().Set("Content-Type", "application/json")
+json.NewEncoder(w).Encode(tokens)
+}
+
+// Refresh handles token refresh
+func (h *Handler) Refresh(w http.ResponseWriter, r *http.Request) {
+var req RefreshRequest
+if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+respondWithError(w, http.StatusBadRequest, "Invalid request body")
+return
+}
+
+claims, err := h.jwtService.ValidateToken(req.RefreshToken)
+if err != nil {
+respondWithError(w, http.StatusUnauthorized, "Invalid refresh token")
+return
+}
+
+if claims.TokenType != RefreshToken {
+respondWithError(w, http.StatusUnauthorized, "Invalid token type")
+return
+}
+
+// TODO: Fetch user roles from database
+tokens, err := h.jwtService.GenerateTokenPair(claims.Subject, claims.Email, []string{"USER"})
+if err != nil {
+respondWithError(w, http.StatusInternalServerError, "Failed to generate tokens")
+return
+}
+
+w.Header().Set("Content-Type", "application/json")
+json.NewEncoder(w).Encode(tokens)
+}
+
+// Logout handles user logout
+func (h *Handler) Logout(w http.ResponseWriter, r *http.Request) {
+// In stateless JWT, logout is handled client-side
+// For token blacklisting, add token to a blacklist store
+w.Header().Set("Content-Type", "application/json")
+json.NewEncoder(w).Encode(map[string]string{"message": "Logged out successfully"})
+}
+
+// Placeholder - replace with actual user verification
+func verifyCredentials(email, password string) (*User, error) {
+// TODO: Implement actual credential verification
+return nil, nil
+}

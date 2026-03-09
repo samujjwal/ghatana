@@ -1,0 +1,106 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: datacloud
+  namespace: ghatana
+  labels:
+    app: datacloud
+    component: data-platform
+    version: v1
+spec:
+  replicas: 3
+  selector:
+    matchLabels:
+      app: datacloud
+  template:
+    metadata:
+      labels:
+        app: datacloud
+        component: data-platform
+        version: v1
+    spec:
+      serviceAccountName: datacloud
+      containers:
+      - name: datacloud
+        image: ghatana/datacloud:1.0.0-SNAPSHOT
+        imagePullPolicy: IfNotPresent
+        ports:
+        - name: http
+          containerPort: 8090
+          protocol: TCP
+        - name: metrics
+          containerPort: 9091
+          protocol: TCP
+        env:
+        - name: DATACLOUD_INSTANCE_ID
+          valueFrom:
+            fieldRef:
+              fieldPath: metadata.name
+        - name: DATACLOUD_MAX_CONNECTIONS
+          value: "20"
+        - name: DATACLOUD_HTTP_ENABLED
+          value: "true"
+        - name: DATACLOUD_HTTP_PORT
+          value: "8090"
+        - name: DATACLOUD_METRICS_PORT
+          value: "9091"
+        - name: JAVA_OPTS
+          value: "-Xms512m -Xmx2g -XX:+UseG1GC -XX:MaxGCPauseMillis=200"
+        envFrom:
+        - configMapRef:
+            name: datacloud-config
+        - secretRef:
+            name: datacloud-secrets
+            optional: true
+        resources:
+          requests:
+            memory: "1Gi"
+            cpu: "500m"
+          limits:
+            memory: "4Gi"
+            cpu: "2000m"
+        livenessProbe:
+          httpGet:
+            path: /health
+            port: http
+          initialDelaySeconds: 60
+          periodSeconds: 10
+          timeoutSeconds: 5
+          failureThreshold: 3
+        readinessProbe:
+          httpGet:
+            path: /health
+            port: http
+          initialDelaySeconds: 30
+          periodSeconds: 5
+          timeoutSeconds: 3
+          failureThreshold: 3
+        volumeMounts:
+        - name: logs
+          mountPath: /app/logs
+        - name: data
+          mountPath: /app/data
+        - name: config
+          mountPath: /app/config
+      volumes:
+      - name: logs
+        emptyDir: {}
+      - name: data
+        persistentVolumeClaim:
+          claimName: datacloud-data
+      - name: config
+        configMap:
+          name: datacloud-config
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: datacloud-data
+  namespace: ghatana
+spec:
+  accessModes:
+    - ReadWriteOnce
+  resources:
+    requests:
+      storage: 50Gi
+  storageClassName: standard

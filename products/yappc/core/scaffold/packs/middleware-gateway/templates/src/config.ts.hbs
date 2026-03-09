@@ -1,0 +1,108 @@
+import { readFileSync, existsSync } from "node:fs";
+import { join } from "node:path";
+import { parse as parseYaml } from "yaml";
+import { z } from "zod";
+import type { GatewayConfig, RouteConfig } from "./types.js";
+
+// Gateway configuration schema
+const GatewayConfigSchema = z.object({
+port: z.number().default({{port}}),
+logLevel: z.enum(["debug", "info", "warn", "error"]).default("{{logLevel}}"),
+{{#if enableCors}}
+corsOrigin: z.string().default("{{corsOrigin}}"),
+{{/if}}
+{{#if enableRateLimiting}}
+rateLimiting: z.object({
+max: z.number().default({{rateLimitMax}}),
+timeWindow: z.string().default("{{rateLimitTimeWindow}}"),
+}).optional(),
+{{/if}}
+{{#if enableAuth}}
+jwtSecret: z.string().optional(),
+{{/if}}
+{{#if enableCircuitBreaker}}
+circuitBreaker: z.object({
+threshold: z.number().default({{circuitBreakerThreshold}}),
+timeout: z.number().default({{circuitBreakerTimeout}}),
+}).optional(),
+{{/if}}
+});
+
+// Route configuration schema
+const RouteConfigSchema = z.object({
+routes: z.array(z.object({
+prefix: z.string(),
+upstream: z.string(),
+methods: z.array(z.string()).optional(),
+timeout: z.number().optional(),
+retries: z.number().optional(),
+auth: z.boolean().optional(),
+rateLimit: z.object({
+max: z.number(),
+timeWindow: z.string(),
+}).optional(),
+transform: z.object({
+request: z.record(z.string()).optional(),
+response: z.record(z.string()).optional(),
+}).optional(),
+headers: z.record(z.string()).optional(),
+stripPrefix: z.boolean().optional(),
+})),
+});
+
+export function loadConfig(): GatewayConfig {
+// Load from environment variables first
+const envConfig: Partial<GatewayConfig> = {
+    port: process.env.PORT ? parseInt(process.env.PORT, 10) : undefined,
+    logLevel: process.env.LOG_LEVEL as GatewayConfig["logLevel"] | undefined,
+    {{#if enableAuth}}
+    jwtSecret: process.env.JWT_SECRET,
+    {{/if}}
+    {{#if enableCors}}
+    corsOrigin: process.env.CORS_ORIGIN,
+    {{/if}}
+    };
+
+    // Try to load from config file
+    const configPath = join(process.cwd(), "config", "gateway.yaml");
+    let fileConfig: Partial<GatewayConfig> = {};
+
+        if (existsSync(configPath)) {
+        try {
+        const content = readFileSync(configPath, "utf-8");
+        fileConfig = parseYaml(content) ?? {};
+        } catch (err) {
+        console.warn(`Warning: Could not parse ${configPath}`, err);
+        }
+        }
+
+        // Merge configs (env > file > defaults)
+        const merged = {
+        ...fileConfig,
+        ...Object.fromEntries(
+        Object.entries(envConfig).filter(([_, v]) => v !== undefined)
+        ),
+        };
+
+        // Validate and return
+        return GatewayConfigSchema.parse(merged);
+        }
+
+        export function loadRoutesConfig(): RouteConfig[] {
+        const configPath = join(process.cwd(), "config", "routes.yaml");
+
+        if (!existsSync(configPath)) {
+        console.warn(`Warning: Routes config not found at ${configPath}`);
+        return [];
+        }
+
+        try {
+        const content = readFileSync(configPath, "utf-8");
+        const parsed = parseYaml(content);
+        const validated = RouteConfigSchema.parse(parsed);
+        return validated.routes;
+        } catch (err) {
+        console.error(`Error loading routes config:`, err);
+        return [];
+        }
+        }

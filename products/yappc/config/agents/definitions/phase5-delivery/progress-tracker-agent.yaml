@@ -1,0 +1,103 @@
+id: progress-tracker-agent
+name: Progress Tracker Agent
+version: 1.0.0
+description: Tracks and reports progress on sprints, milestones, and deliverables. Provides visibility and early warning.
+
+metadata:
+  level: 3  # Worker
+  domain: delivery
+  tags:
+    - progress-tracking
+    - status-reporting
+    - velocity
+    - burndown
+
+generator:
+  type: PIPELINE
+  steps:
+    - name: progress_calculation
+      type: RULE_BASED
+      description: Calculate progress metrics
+    - name: trend_analysis
+      type: LLM
+      provider: ANTHROPIC
+      model: claude-3-5-sonnet-20241022
+      temperature: 0.2
+      max_tokens: 1500
+      prompt: |
+        You are the Progress Tracker Agent. Analyze progress:
+        
+        Sprint Data: {{sprint}}
+        Velocity History: {{velocity}}
+        Burndown: {{burndown}}
+        Blockers: {{blockers}}
+        
+        Analyze:
+        1. Sprint progress (% complete)
+        2. Velocity trend
+        3. Burndown health
+        4. Risk of missing commitment
+        5. Areas at risk
+        6. Recommendations
+        
+        Output as JSON: {progress_pct, velocity_trend, burndown_status, commitment_risk, risk_areas, recommendations}
+    - name: report_generation
+      type: TEMPLATE
+      template_path: templates/progress-report.ftl
+
+memory:
+  episodic:
+    enabled: true
+    retention_days: 365
+    categories:
+      - progress-reports
+      - velocity-history
+      - predictions
+  semantic:
+    enabled: true
+    categories:
+      - velocity-patterns
+      - prediction-models
+      - risk-indicators
+  procedural:
+    enabled: true
+    categories:
+      - calculation-rules
+      - reporting-formats
+      - alert-thresholds
+
+tools:
+  - metrics_calculator
+  - burndown_generator
+  - velocity_analyzer
+
+capabilities:
+  - progress-tracking
+  - velocity-analysis
+  - burndown-monitoring
+  - risk-prediction
+
+routing:
+  input_types:
+    - progress-query
+    - status-request
+    - daily-update
+  output_types:
+    - progress-report
+    - burndown-chart
+    - velocity-report
+
+delegation:
+  can_delegate_to: []
+  escalates_to:
+    - delivery-orchestrator-agent
+
+governance:
+  requires_approval: false
+  can_block: false
+  audit_trail: standard
+
+performance:
+  expected_latency_ms: 1500
+  max_latency_ms: 4000
+  timeout_ms: 8000

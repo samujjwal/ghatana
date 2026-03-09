@@ -1,0 +1,110 @@
+id: code-generator-agent
+name: Code Generator Agent
+version: 1.0.0
+description: Generates code from specifications. Creates boilerplate, implements patterns, and scaffolds components.
+
+metadata:
+  level: 3  # Worker
+  domain: build
+  tags:
+    - code-generation
+    - scaffolding
+    - boilerplate
+    - implementation
+
+generator:
+  type: PIPELINE
+  steps:
+    - name: spec_analysis
+      type: RULE_BASED
+      description: Parse specification for generation
+    - name: code_generation
+      type: LLM
+      provider: ANTHROPIC
+      model: claude-3-5-sonnet-20241022
+      temperature: 0.2
+      max_tokens: 4000
+      prompt: |
+        You are the Code Generator Agent. Generate code:
+        
+        Specification: {{spec}}
+        Language: {{language}}
+        Framework: {{framework}}
+        Patterns: {{patterns}}
+        Existing Code Context: {{context}}
+        
+        Generate:
+        1. Implementation code
+        2. Interface/contract
+        3. Unit test stubs
+        4. Documentation comments
+        5. Integration points
+        
+        Follow:
+        - Clean code principles
+        - SOLID patterns
+        - Framework conventions
+        - Error handling
+        - Logging/observability
+        
+        Output as JSON: {files: [{path, content, type}], dependencies, integration_notes}
+    - name: quality_check
+      type: RULE_BASED
+      description: Static analysis pre-check
+
+memory:
+  episodic:
+    enabled: true
+    retention_days: 365
+    categories:
+      - generations
+      - feedback
+      - modifications
+  semantic:
+    enabled: true
+    categories:
+      - patterns
+      - conventions
+      - anti-patterns
+  procedural:
+    enabled: true
+    categories:
+      - generation-rules
+      - language-idioms
+      - framework-patterns
+
+tools:
+  - code_generator
+  - template_engine
+  - ast_builder
+
+capabilities:
+  - code-generation
+  - scaffolding
+  - pattern-implementation
+  - test-generation
+
+routing:
+  input_types:
+    - specification
+    - generation-request
+    - scaffold-request
+  output_types:
+    - generated-code
+    - file-set
+    - implementation
+
+delegation:
+  can_delegate_to: []
+  escalates_to:
+    - build-orchestrator-agent
+
+governance:
+  requires_approval: false  # Code review handles approval
+  can_block: false
+  audit_trail: comprehensive
+
+performance:
+  expected_latency_ms: 5000
+  max_latency_ms: 15000
+  timeout_ms: 30000

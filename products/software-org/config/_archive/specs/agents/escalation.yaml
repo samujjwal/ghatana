@@ -1,0 +1,42 @@
+id: escalation
+agent: EscalationAgent
+role: Escalation Manager
+inputs_spec:
+  - name: feedback_record
+    description: Feedback record from FeedbackAgent.
+    format: YAML array
+outputs_spec:
+  - name: escalation_log
+    description: Log of escalated issues, risks, unresolved actions with owners, path, outcome.
+    format: YAML array
+acceptance_criteria:
+  - All escalated items logged/tracked to resolution.
+  - Owners/escalation paths assigned.
+  - Priority/outcome fields filled.
+agent_tasks:
+  - Identify/log issues/actions requiring escalation.
+  - Assign owner, path, track resolution.
+  - Document status, outcome, timestamp.
+dependencies:
+  - feedback_record
+failure_escalation:
+  - Escalate unresolved escalations to executive/steering committee.
+references: []
+internal_logic:
+  - perception:
+      description: "Scan feedback, incidents, and unresolved issues for escalation triggers."
+  - model:
+      description: "Maintain escalation log with issue, owner, path, status, and resolution."
+  - planning:
+      description: |
+        "Assign escalation paths and owners; prioritize by severity and business impact.
+         Track escalation progress and outcomes."
+  - action:
+      description: "Log escalations and update status until resolved."
+validation:
+  - "PM/executive review for escalation handling."
+  - "Audit for response time and closure."
+quality_enhancements:
+  - "Escalation template for consistent handling."
+  - "Metrics for time-to-resolution and number of escalations."
+  - "Automated escalation alerts for overdue items."

@@ -1,0 +1,62 @@
+id: design_agent
+name: "Design Agent"
+description: "Creates UX wireframes and interaction flows"
+goal: >
+  Generate actionable UX/UI wireframes and describe core interaction flows based on user stories, personas, and architecture.
+input:
+  # Output from architecture_agent
+  architecture_outline: System components and relationships from architecture_agent.
+  technology_stack: Recommended technologies from architecture_agent.
+  risk_register: Technical risks and mitigations from architecture_agent.
+output:
+  wireframes: List or link to key wireframe sketches/descriptions
+  interaction_flows: Step-by-step description of primary user interactions
+type: sequential
+afterToolCallbacks:
+  - logMilestone
+components:
+  - type: llm_agent
+    name: "Design Content Generator"
+    description: "Generates wireframe sketches and user flows"
+    model: "llama3.2"
+    instruction: |
+      You are a lead UX/UI designer.
+      Using user stories, personas, and architecture, create:
+      - wireframes: List or describe key wireframe sketches for primary screens
+      - interaction_flows: Step-by-step descriptions of main user interactions
+      Output only valid JSON.
+      Guidelines:
+      - Focus on clarity, usability, and actionable outputs.
+      - Do not include commentary, explanations, or markdown—only valid JSON.
+    outputKey: "plan_design"
+
+  - type: loop
+    name: "Refinement Loop"
+    description: "Iteratively refines design output based on evaluation"
+    maxIterations: 3
+    components:
+      - type: llm_agent
+        name: "Design Evaluator"
+        description: "Evaluates design for clarity, usability, and completeness"
+        model: "llama3.2"
+        instruction: |
+          You are a design evaluator.
+          For each field (wireframes, interaction_flows), check:
+          - Is it clear, actionable, and user-centered? (true/false for each)
+          - List issues, missing info, or ambiguity.
+          - Suggest improvements for each field.
+          After all, summarize readiness and improvement suggestions.
+          Respond only with valid JSON.
+        outputKey: "plan_design_evaluation"
+
+      - type: llm_agent
+        name: "Design Refiner"
+        description: "Refines design output using evaluation feedback"
+        model: "llama3.2"
+        instruction: |
+          You are a design refiner.
+          If not ready (blocking issues), revise design content using evaluator feedback.
+          If ready, call 'exitLoop'.
+          Only output valid JSON or call 'exitLoop'.
+        outputKey: "plan_design"
+        tools: ["exitLoop"]

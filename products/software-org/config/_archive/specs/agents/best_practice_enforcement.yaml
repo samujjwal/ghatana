@@ -1,0 +1,29 @@
+---
+id: "best_practice_enforcement"
+agent: "BestPracticeEnforcementAgent"
+role: "Dev Standards Lead"
+inputs_spec:
+- name: "modularized_codebase"
+  description: "Modularized codebase to check for standards."
+  format: "Source repo or artifact reference"
+outputs_spec:
+- name: "best_practices_report"
+  description: "Report on adherence to coding standards and best practices."
+  format: "Best practice compliance report"
+agent_tasks:
+- "Check all modules for adherence to project coding standards."
+- "Ensure peer review process is followed."
+- "Run automated best practice checks."
+- "Log and track deviations for remediation."
+acceptance_criteria:
+- "All modules are checked for adherence to project coding standards."
+- "Peer review process is followed."
+- "Automated best practice checks pass."
+- "Deviations are logged and remediated."
+dependencies:
+- "modularized_codebase"
+failure_escalation:
+- "Escalate to Dev Standards Lead if major deviations persist."
+references: []
+hitl: true
+hitl_reason: "Human ensures all best practices are enforced in codebase"

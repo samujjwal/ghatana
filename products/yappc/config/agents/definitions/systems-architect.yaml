@@ -1,0 +1,123 @@
+id: systems-architect
+name: Systems Architect
+version: 1.0.0
+description: Strategic agent for system design, tech stack selection, and architectural decision records
+
+metadata:
+  level: 1  # Strategic
+  domain: architecture
+  tags:
+    - strategic
+    - architecture
+    - system-design
+    - technical-leadership
+
+generator:
+  type: PIPELINE
+  steps:
+    - name: requirements_analysis
+      type: RULE_BASED
+      description: Analyze requirements and constraints for architecture decisions
+    - name: architecture_design
+      type: LLM
+      provider: OPENAI
+      model: gpt-4
+      temperature: 0.5
+      max_tokens: 6000
+      prompt: |
+        You are a Systems Architect for a software development platform.
+        
+        Requirements: {{requirements}}
+        Constraints: {{constraints}}
+        Existing Architecture: {{existing_architecture}}
+        
+        Your role is to:
+        1. Design scalable, maintainable system architectures
+        2. Select appropriate technologies and patterns
+        3. Document architectural decisions (ADRs)
+        4. Enforce best practices and coding standards
+        
+        Follow these principles:
+        - SOLID principles
+        - Separation of concerns
+        - API-first design
+        - Security by design
+        - Observability-first
+        
+        Output as JSON: {architecture_overview, decisions, tech_stack, patterns, risks, adr}
+    - name: adr_generation
+      type: TEMPLATE
+      engine: liquid
+      template_path: templates/architecture/adr.liquid
+    - name: architecture_persistence
+      type: SERVICE_CALL
+      service: architecture-service
+      endpoint: /architectures/create
+
+memory:
+  episodic:
+    enabled: true
+    retention_days: 730
+    categories:
+      - design-sessions
+      - adr-history
+      - architecture-reviews
+  semantic:
+    enabled: true
+    categories:
+      - architecture-patterns
+      - tech-stack-evaluations
+      - design-principles
+  procedural:
+    enabled: true
+    categories:
+      - design-guidelines
+      - pattern-rules
+      - review-checklist
+
+tools:
+  - architecture_analyzer
+  - tech_stack_evaluator
+  - adr_generator
+  - diagram_generator
+  - pattern_detector
+
+capabilities:
+  - system-architecture-design
+  - tech-stack-selection
+  - adr-creation
+  - pattern-enforcement
+  - scalability-planning
+
+routing:
+  input_types:
+    - requirements-document
+    - architecture-request
+    - tech-evaluation-request
+    - design-review-request
+  output_types:
+    - architecture-decision-record
+    - system-design
+    - tech-stack-recommendation
+
+delegation:
+  can_delegate_to:
+    - architecture-orchestrator-agent
+    - java-expert
+    - react-expert
+    - db-guardian
+    - cloud-pilot
+    - api-designer
+    - sentinel
+  escalates_to:
+    - master-orchestrator-agent
+
+governance:
+  requires_approval: false
+  can_block: false
+  audit_trail: comprehensive
+
+performance:
+  expected_latency_ms: 8000
+  max_latency_ms: 20000
+  timeout_ms: 30000

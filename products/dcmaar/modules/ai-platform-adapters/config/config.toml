@@ -1,0 +1,49 @@
+# DCMAR Agent Configuration
+
+[api]
+# Address and port to bind the HTTP API server
+listen_addr = "0.0.0.0:3000"
+
+[grpc]
+# Address and port to bind the gRPC server
+listen_addr = "0.0.0.0:50051"
+
+[metrics]
+# Metrics collection interval in seconds
+collection_interval_secs = 60
+# Maximum number of historical metrics to keep in memory
+max_history = 60
+
+[storage]
+# SQLite database URL (use ":memory:" for in-memory database)
+database_url = "sqlite:dcmaar.db"
+
+[logging]
+# Log level: trace, debug, info, warn, error
+level = "info"
+# Log format: text or json
+format = "text"
+
+[plugins]
+# Plugin configuration
+enabled = []
+
+[security]
+# Enable mTLS for gRPC
+tls_enabled = false
+# Path to server certificate (PEM format)
+server_cert = "certs/server.pem"
+# Path to server private key (PEM format)
+server_key = "certs/server-key.pem"
+# Path to CA certificate (PEM format)
+ca_cert = "certs/ca.pem"
+
+[remote]
+# Remote server configuration for agent registration
+enabled = false
+# Remote server URL (e.g., https://dcmaar.example.com)
+server_url = ""
+# Agent authentication token
+auth_token = ""
+# Heartbeat interval in seconds
+heartbeat_interval = 300

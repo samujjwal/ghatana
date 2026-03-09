@@ -1,0 +1,26 @@
+---
+id: "dr_progress_dashboard"
+agent: "ProgressDashboardAgent"
+role: "DR Dashboard Owner"
+inputs_spec:
+- name: "backup_validation_report"
+  description: "Backup validation report for dashboard."
+  format: "Backup validation report artifact"
+- name: "dr_test_report"
+  description: "DR test report for dashboard."
+  format: "DR test report artifact"
+outputs_spec:
+- name: "dr_progress_dashboard"
+  description: "Dashboard showing backup and DR test status."
+  format: "Dashboard artifact"
+agent_tasks:
+- "Visualize backup validation and DR test status for the org."
+acceptance_criteria:
+- "Dashboard visualizes backup and DR test status."
+dependencies:
+- "backup_validation_report"
+- "dr_test_report"
+failure_escalation:
+- "Escalate to DR Dashboard Owner if dashboard not updated."
+references: []
+hitl: false

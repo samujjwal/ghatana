@@ -1,0 +1,81 @@
+server:
+  port: 8080
+  servlet:
+    context-path: /api
+
+spring:
+  application:
+    name: yappc-services
+  
+  datasource:
+    url: ${JDBC_URL:jdbc:postgresql://localhost:5432/yappc}
+    username: ${JDBC_USERNAME:ghatana}
+    password: ${JDBC_PASSWORD:ghatana123}
+    driver-class-name: org.postgresql.Driver
+    hikari:
+      maximum-pool-size: 10
+      minimum-idle: 2
+      idle-timeout: 30000
+      connection-timeout: 20000
+      max-lifetime: 1800000
+
+  flyway:
+    enabled: true
+    locations: classpath:db/migration
+    baseline-on-migrate: true
+
+  jackson:
+    serialization:
+      write-dates-as-timestamps: false
+    deserialization:
+      fail-on-unknown-properties: false
+
+logging:
+  level:
+    com.ghatana.yappc: INFO
+    io.activej: WARN
+  pattern:
+    console: "%d{yyyy-MM-dd HH:mm:ss} [%thread] %-5level %logger{36} - %msg%n"
+
+yappc:
+  security:
+    jwt:
+      secret: ${JWT_SECRET:your-secret-key-change-in-production}
+      access-token-expiry: 3600
+      refresh-token-expiry: 604800
+    password:
+      bcrypt-cost: 12
+  
+  websocket:
+    enabled: true
+    endpoint: /ws
+    allowed-origins: "*"
+  
+  ai:
+    enabled: true
+    provider: ${AI_PROVIDER:openai}
+    openai:
+      api-key: ${OPENAI_API_KEY:}
+      model: gpt-4
+    
+  notifications:
+    enabled: true
+    email:
+      enabled: ${EMAIL_ENABLED:false}
+      host: ${EMAIL_HOST:}
+      port: ${EMAIL_PORT:587}
+      username: ${EMAIL_USERNAME:}
+      password: ${EMAIL_PASSWORD:}
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info,metrics,prometheus
+  endpoint:
+    health:
+      show-details: when-authorized
+  metrics:
+    export:
+      prometheus:
+        enabled: true

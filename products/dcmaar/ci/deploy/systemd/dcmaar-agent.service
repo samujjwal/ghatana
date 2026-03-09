@@ -1,0 +1,51 @@
+[Unit]
+Description=dcmaar Agent - Observability Agent Service
+Documentation=https://github.com/yappc/dcmaar
+After=network-online.target
+Wants=network-online.target
+StartLimitIntervalSec=0
+
+[Service]
+Type=notify
+Restart=always
+RestartSec=5
+User=dcmaar
+Group=dcmaar
+ExecStart=/opt/dcmaar/bin/dcmaar-agent --config=/etc/dcmaar/agent.toml
+ExecReload=/bin/kill -HUP $MAINPID
+KillMode=mixed
+KillSignal=SIGTERM
+TimeoutStopSec=30
+LimitNOFILE=65536
+LimitNPROC=32768
+
+# Security settings
+CapabilityBoundingSet=CAP_NET_BIND_SERVICE CAP_SYS_RESOURCE
+AmbientCapabilities=CAP_NET_BIND_SERVICE CAP_SYS_RESOURCE
+NoNewPrivileges=yes
+PrivateTmp=yes
+ProtectSystem=strict
+ProtectHome=yes
+ReadWritePaths=/var/lib/dcmaar /var/log/dcmaar /tmp
+ProtectKernelTunables=yes
+ProtectKernelModules=yes
+ProtectControlGroups=yes
+RestrictRealtime=yes
+RestrictSUIDSGID=yes
+RemoveIPC=yes
+RestrictNamespaces=yes
+
+# Logging
+StandardOutput=journal
+StandardError=journal
+SyslogIdentifier=dcmaar-agent
+
+# Environment
+Environment=RUST_LOG=info
+Environment=DCMAAR_CONFIG_DIR=/etc/dcmaar
+Environment=DCMAAR_DATA_DIR=/var/lib/dcmaar
+Environment=DCMAAR_LOG_DIR=/var/log/dcmaar
+
+[Install]
+WantedBy=multi-user.target
+Alias=dcmaar.service

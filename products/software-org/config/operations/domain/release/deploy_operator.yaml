@@ -1,0 +1,307 @@
+# Deploy Operator - Consolidated Release Domain
+# Consolidates: deployment, release validation, rollout, rollback
+# Purpose: Complete deployment orchestration from release validation through rollback
+
+id: deploy_operator
+version: "1.0.0"
+domain: release
+category: deployment
+
+description: |
+  Unified deployment operator handling complete release lifecycle:
+  - Release validation and approval
+  - Deployment strategy execution
+  - Environment promotion
+  - Rollback management
+  - Post-deployment verification
+
+# Operator Modes
+modes:
+  validate:
+    description: "Validate release for deployment"
+    role: Release Manager
+    inputs:
+      - name: build_artifacts
+        description: Build artifacts to deploy
+        required: true
+      - name: test_results
+        description: Test execution results
+        required: true
+      - name: security_scan
+        description: Security scan results
+        required: true
+    outputs:
+      - name: release_validation
+        description: Release validation result
+        format: yaml_document
+        schema:
+          - validation_id: string
+          - artifact_version: string
+          - timestamp: datetime
+          - checks: list
+          - passed: boolean
+          - blockers: list
+          - warnings: list
+          - signoffs: list
+    validation_checks:
+      - tests_passed: "All required tests pass"
+      - coverage_met: "Coverage thresholds met"
+      - security_clear: "No critical vulnerabilities"
+      - artifacts_signed: "Artifacts properly signed"
+      - changelog_present: "Release notes documented"
+      - approvals_obtained: "Required approvals collected"
+    tasks:
+      - Verify all quality gates passed
+      - Check security scan results
+      - Validate artifact integrity
+      - Collect required approvals
+      - Document release decision
+
+  plan:
+    description: "Create deployment plan"
+    role: Release Manager
+    inputs:
+      - name: release_validation
+        description: Validated release
+        required: true
+      - name: target_environment
+        description: Deployment target
+        required: true
+      - name: deployment_config
+        description: Deployment configuration
+        required: false
+    outputs:
+      - name: deployment_plan
+        description: Detailed deployment plan
+        format: yaml_document
+        schema:
+          - plan_id: string
+          - version: string
+          - target_environment: string
+          - strategy: string
+          - steps: list
+          - schedule: object
+          - rollback_plan: object
+          - communication_plan: object
+          - health_checks: list
+    deployment_strategies:
+      - rolling: "Gradual instance replacement"
+      - blue_green: "Full environment swap"
+      - canary: "Incremental traffic shift"
+      - recreate: "Full replacement (downtime)"
+      - feature_flags: "Feature-based rollout"
+    tasks:
+      - Select deployment strategy
+      - Define deployment steps
+      - Create rollback plan
+      - Plan health checks
+      - Schedule communication
+
+  execute:
+    description: "Execute deployment"
+    role: Deployment System
+    inputs:
+      - name: deployment_plan
+        description: Approved deployment plan
+        required: true
+      - name: artifacts
+        description: Artifacts to deploy
+        required: true
+    outputs:
+      - name: deployment_result
+        description: Deployment execution result
+        format: yaml_document
+        schema:
+          - deployment_id: string
+          - plan_id: string
+          - start_time: datetime
+          - end_time: datetime
+          - status: "success|failed|rolled_back|partial"
+          - steps_executed: list
+          - health_check_results: list
+          - metrics: object
+          - issues: list
+    tasks:
+      - Execute deployment steps
+      - Monitor deployment progress
+      - Run health checks
+      - Collect deployment metrics
+      - Handle failures
+
+  rollback:
+    description: "Execute rollback procedure"
+    role: Deployment System
+    inputs:
+      - name: deployment_result
+        description: Failed deployment to rollback
+        required: true
+      - name: rollback_plan
+        description: Rollback procedure
+        required: true
+    outputs:
+      - name: rollback_result
+        description: Rollback execution result
+        format: yaml_document
+        schema:
+          - rollback_id: string
+          - deployment_id: string
+          - trigger: string
+          - start_time: datetime
+          - end_time: datetime
+          - status: "success|failed"
+          - steps_executed: list
+          - restored_version: string
+    rollback_triggers:
+      - health_check_failure
+      - error_rate_spike
+      - manual_trigger
+      - timeout
+    tasks:
+      - Initiate rollback
+      - Execute rollback steps
+      - Verify restoration
+      - Notify stakeholders
+      - Document incident
+
+  verify:
+    description: "Post-deployment verification"
+    role: QA/Ops
+    inputs:
+      - name: deployment_result
+        description: Completed deployment
+        required: true
+      - name: verification_config
+        description: Verification checks
+        required: true
+    outputs:
+      - name: verification_result
+        description: Post-deployment verification
+        format: yaml_document
+        schema:
+          - verification_id: string
+          - deployment_id: string
+          - timestamp: datetime
+          - checks: list
+          - overall_status: "healthy|degraded|unhealthy"
+          - metrics: object
+          - recommendations: list
+    verification_checks:
+      - application_health: "Application responding"
+      - api_health: "API endpoints working"
+      - integration_health: "Integrations functional"
+      - performance_baseline: "Performance acceptable"
+      - error_rates: "Error rates normal"
+    tasks:
+      - Run smoke tests
+      - Check application health
+      - Verify integrations
+      - Compare performance baseline
+      - Monitor error rates
+
+# Internal Logic
+internal_logic:
+  perception:
+    description: "Monitor deployment status and health"
+    sources:
+      - deployment_system
+      - health_checks
+      - metrics_system
+  model:
+    description: "Deployment knowledge graph"
+    entities:
+      - deployment: "{id, version, status, environment}"
+      - artifact: "{id, version, checksum}"
+      - health_check: "{type, status, metrics}"
+    relationships:
+      - deployment_deploys_artifact
+      - deployment_targets_environment
+      - health_check_verifies_deployment
+  planning:
+    strategy: |
+      1. Validate before deploy
+      2. Deploy incrementally
+      3. Health check continuously
+      4. Rollback automatically on failure
+      5. Verify post-deployment
+  action:
+    description: "Execute deployments with safety controls"
+    validation: "Health checks must pass"
+
+# Quality Assurance
+quality:
+  templates:
+    - deployment_plan_template
+    - rollback_plan_template
+    - verification_checklist
+  checklists:
+    - pre_deployment_checklist
+    - post_deployment_checklist
+    - rollback_checklist
+  automated_checks:
+    - health_check_automation
+    - metrics_monitoring
+    - alert_integration
+
+# Safety Controls
+safety_controls:
+  pre_deployment:
+    - artifact_verification
+    - environment_validation
+    - dependency_check
+  during_deployment:
+    - health_monitoring
+    - error_rate_tracking
+    - automatic_pause
+  post_deployment:
+    - smoke_testing
+    - performance_validation
+    - user_impact_monitoring
+
+# Validation Rules
+validation:
+  rules:
+    - "All validation checks must pass"
+    - "Rollback plan must be defined"
+    - "Health checks must be configured"
+    - "Communication plan must exist"
+  review_gates:
+    - release_manager_approval
+    - ops_readiness_check
+
+# Escalation
+escalation:
+  triggers:
+    - "Deployment failure"
+    - "Rollback required"
+    - "Health check failure"
+  paths:
+    - role: Release Manager
+      for: "Deployment decisions"
+    - role: On-Call Engineer
+      for: "Deployment issues"
+    - role: Incident Manager
+      for: "Production incidents"
+
+# Dependencies
+dependencies:
+  upstream:
+    - security_scan_operator
+    - test_execution_operator
+  downstream:
+    - monitor_operator
+    - incident_operator
+
+# Metrics
+metrics:
+  - name: deployment_success_rate
+    description: "Successful deployments percentage"
+    target: ">= 99%"
+  - name: deployment_duration
+    description: "Average deployment time"
+    target: "<= 15 minutes"
+  - name: rollback_rate
+    description: "Deployments requiring rollback"
+    target: "< 1%"
+  - name: mttr
+    description: "Mean time to recover from failed deployment"
+    target: "<= 15 minutes"

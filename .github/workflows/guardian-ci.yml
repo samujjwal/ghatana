@@ -1,0 +1,50 @@
+name: Guardian CI
+
+on:
+    push:
+        paths:
+            - "products/dcmaar/apps/guardian/**"
+    pull_request:
+        paths:
+            - "products/dcmaar/apps/guardian/**"
+
+jobs:
+    guardian-build:
+        runs-on: ubuntu-latest
+        steps:
+            - name: Checkout
+              uses: actions/checkout@v4
+
+            - name: Use Node.js 18
+              uses: actions/setup-node@v4
+              with:
+                  node-version: "18"
+                  cache: "pnpm"
+
+            - name: Install pnpm
+              run: corepack enable && corepack prepare pnpm@latest --activate
+
+            - name: Install dependencies
+              run: pnpm install --frozen-lockfile
+
+            - name: Install Playwright browsers
+              run: npx playwright install --with-deps
+
+            - name: Lint
+              run: pnpm -w dlx eslint "products/dcmaar/apps/guardian/**/*.{ts,tsx,js,jsx}" --max-warnings=0
+
+            - name: Backend type-check
+              run: pnpm --filter ./products/dcmaar/apps/guardian/apps/backend... -w --silent || true
+
+            - name: Build guardian product
+              working-directory: products/dcmaar/apps/guardian
+              run: make build-quick
+
+            - name: Upload artifacts
+              if: success()
+              uses: actions/upload-artifact@v4
+              with:
+                  name: guardian-dist
+                  path: |
+                      apps/backend/dist/**
+                      apps/parent-dashboard/dist/**

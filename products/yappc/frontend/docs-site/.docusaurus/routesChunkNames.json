@@ -1,0 +1,212 @@
+{
+  "/docs/__docusaurus/debug-e58": {
+    "__comp": "__comp---theme-debug-config-23-a-2ff",
+    "__context": {
+      "plugin": "plugin---docs-docusaurus-debugb-38-c84"
+    }
+  },
+  "/docs/__docusaurus/debug/config-2ce": {
+    "__comp": "__comp---theme-debug-config-23-a-2ff",
+    "__context": {
+      "plugin": "plugin---docs-docusaurus-debugb-38-c84"
+    }
+  },
+  "/docs/__docusaurus/debug/content-11b": {
+    "__comp": "__comp---theme-debug-contentba-8-ce7",
+    "__context": {
+      "plugin": "plugin---docs-docusaurus-debugb-38-c84"
+    },
+    "__props": "__props---docs-docusaurus-debug-content-344-8d5"
+  },
+  "/docs/__docusaurus/debug/globalData-f13": {
+    "__comp": "__comp---theme-debug-global-dataede-0fa",
+    "__context": {
+      "plugin": "plugin---docs-docusaurus-debugb-38-c84"
+    }
+  },
+  "/docs/__docusaurus/debug/metadata-bff": {
+    "__comp": "__comp---theme-debug-site-metadata-68-e-3d4",
+    "__context": {
+      "plugin": "plugin---docs-docusaurus-debugb-38-c84"
+    }
+  },
+  "/docs/__docusaurus/debug/registry-830": {
+    "__comp": "__comp---theme-debug-registry-679-501",
+    "__context": {
+      "plugin": "plugin---docs-docusaurus-debugb-38-c84"
+    }
+  },
+  "/docs/__docusaurus/debug/routes-13e": {
+    "__comp": "__comp---theme-debug-routes-946-699",
+    "__context": {
+      "plugin": "plugin---docs-docusaurus-debugb-38-c84"
+    }
+  },
+  "/docs/search-320": {
+    "__comp": "__comp---theme-search-page-1-a-4-d6f",
+    "__context": {
+      "plugin": "plugin---docs-searchc-14-a12"
+    }
+  },
+  "/docs/-c0a": {
+    "__comp": "__comp---theme-docs-root-5-e-9-0b6",
+    "__context": {
+      "plugin": "plugin---docs-aba-4f5"
+    }
+  },
+  "/docs/-ea2": {
+    "__comp": "__comp---theme-doc-version-roota-7-b-5de",
+    "__props": "__props---docs-11-b-f70"
+  },
+  "/docs/-e08": {
+    "__comp": "__comp---theme-doc-roota-94-67a"
+  },
+  "/docs/api/canvas-api-b14": {
+    "__comp": "__comp---theme-doc-item-178-a40",
+    "content": "content---docs-api-canvas-api-899-69b"
+  },
+  "/docs/api/deployment-api-e52": {
+    "__comp": "__comp---theme-doc-item-178-a40",
+    "content": "content---docs-api-deployment-apiab-5-0c6"
+  },
+  "/docs/api/feature-flags-api-102": {
+    "__comp": "__comp---theme-doc-item-178-a40",
+    "content": "content---docs-api-feature-flags-apia-7-b-54e"
+  },
+  "/docs/api/overview-d8a": {
+    "__comp": "__comp---theme-doc-item-178-a40",
+    "content": "content---docs-api-overview-65-d-0e3"
+  },
+  "/docs/canvas/architecture/component-hierarchy-bdc": {
+    "__comp": "__comp---theme-doc-item-178-a40",
+    "content": "content---docs-canvas-architecture-component-hierarchy-4-e-2-872"
+  },
+  "/docs/canvas/architecture/overview-15b": {
+    "__comp": "__comp---theme-doc-item-178-a40",
+    "content": "content---docs-canvas-architecture-overview-38-b-e68"
+  },
+  "/docs/canvas/architecture/rendering-pipeline-851": {
+    "__comp": "__comp---theme-doc-item-178-a40",
+    "content": "content---docs-canvas-architecture-rendering-pipeline-119-8b4"
+  },
+  "/docs/canvas/architecture/state-management-f31": {
+    "__comp": "__comp---theme-doc-item-178-a40",
+    "content": "content---docs-canvas-architecture-state-management-13-e-060"
+  },
+  "/docs/canvas/customization-a84": {
+    "__comp": "__comp---theme-doc-item-178-a40",
+    "content": "content---docs-canvas-customizatione-1-a-406"
+  },
+  "/docs/canvas/export-sharing-cbc": {
+    "__comp": "__comp---theme-doc-item-178-a40",
+    "content": "content---docs-canvas-export-sharing-216-f1b"
+  },
+  "/docs/canvas/extensibility-af6": {
+    "__comp": "__comp---theme-doc-item-178-a40",
+    "content": "content---docs-canvas-extensibility-42-f-911"
+  },
+  "/docs/canvas/monitoring-ebd": {
+    "__comp": "__comp---theme-doc-item-178-a40",
+    "content": "content---docs-canvas-monitoring-041-877"
+  },
+  "/docs/canvas/overview-674": {
+    "__comp": "__comp---theme-doc-item-178-a40",
+    "content": "content---docs-canvas-overview-6-c-8-955"
+  },
+  "/docs/canvas/performance-6ce": {
+    "__comp": "__comp---theme-doc-item-178-a40",
+    "content": "content---docs-canvas-performancef-8-a-004"
+  },
+  "/docs/canvas/quick-start-b4d": {
+    "__comp": "__comp---theme-doc-item-178-a40",
+    "content": "content---docs-canvas-quick-start-6-ba-858"
+  },
+  "/docs/canvas/real-time-collaboration-d1c": {
+    "__comp": "__comp---theme-doc-item-178-a40",
+    "content": "content---docs-canvas-real-time-collaboration-7-d-7-0bb"
+  },
+  "/docs/canvas/security-4f9": {
+    "__comp": "__comp---theme-doc-item-178-a40",
+    "content": "content---docs-canvas-security-075-cb2"
+  },
+  "/docs/deployment/blue-green-ba0": {
+    "__comp": "__comp---theme-doc-item-178-a40",
+    "content": "content---docs-deployment-blue-greenf-6-a-506"
+  },
+  "/docs/deployment/feature-flags-f28": {
+    "__comp": "__comp---theme-doc-item-178-a40",
+    "content": "content---docs-deployment-feature-flags-727-719"
+  },
+  "/docs/deployment/game-day-drills-fe9": {
+    "__comp": "__comp---theme-doc-item-178-a40",
+    "content": "content---docs-deployment-game-day-drills-7-d-9-ee4"
+  },
+  "/docs/deployment/health-checks-348": {
+    "__comp": "__comp---theme-doc-item-178-a40",
+    "content": "content---docs-deployment-health-checks-4-ab-b44"
+  },
+  "/docs/deployment/incident-response-a3d": {
+    "__comp": "__comp---theme-doc-item-178-a40",
+    "content": "content---docs-deployment-incident-responseb-46-60c"
+  },
+  "/docs/deployment/monitoring-632": {
+    "__comp": "__comp---theme-doc-item-178-a40",
+    "content": "content---docs-deployment-monitoring-2-fd-e9a"
+  },
+  "/docs/deployment/overview-8d5": {
+    "__comp": "__comp---theme-doc-item-178-a40",
+    "content": "content---docs-deployment-overview-694-a6a"
+  },
+  "/docs/deployment/pagerduty-integration-826": {
+    "__comp": "__comp---theme-doc-item-178-a40",
+    "content": "content---docs-deployment-pagerduty-integration-957-83d"
+  },
+  "/docs/deployment/postmortems-a5b": {
+    "__comp": "__comp---theme-doc-item-178-a40",
+    "content": "content---docs-deployment-postmortemse-45-d89"
+  },
+  "/docs/deployment/rollback-c06": {
+    "__comp": "__comp---theme-doc-item-178-a40",
+    "content": "content---docs-deployment-rollbackbcc-0e4"
+  },
+  "/docs/deployment/runbooks-278": {
+    "__comp": "__comp---theme-doc-item-178-a40",
+    "content": "content---docs-deployment-runbooks-338-72b"
+  },
+  "/docs/examples/basic-canvas-71d": {
+    "__comp": "__comp---theme-doc-item-178-a40",
+    "content": "content---docs-examples-basic-canvasd-2-d-8d2"
+  },
+  "/docs/examples/collaborative-editing-8a3": {
+    "__comp": "__comp---theme-doc-item-178-a40",
+    "content": "content---docs-examples-collaborative-editing-659-cb7"
+  },
+  "/docs/examples/performance-optimization-570": {
+    "__comp": "__comp---theme-doc-item-178-a40",
+    "content": "content---docs-examples-performance-optimizationda-0-a1c"
+  },
+  "/docs/guides/building-plugins-2d8": {
+    "__comp": "__comp---theme-doc-item-178-a40",
+    "content": "content---docs-guides-building-plugins-89-e-5e9"
+  },
+  "/docs/guides/custom-components-124": {
+    "__comp": "__comp---theme-doc-item-178-a40",
+    "content": "content---docs-guides-custom-components-920-9f9"
+  },
+  "/docs/guides/theming-f4b": {
+    "__comp": "__comp---theme-doc-item-178-a40",
+    "content": "content---docs-guides-theming-1-ad-e37"
+  },
+  "/docs/guides/tutorials-overview-571": {
+    "__comp": "__comp---theme-doc-item-178-a40",
+    "content": "content---docs-guides-tutorials-overview-39-d-184"
+  },
+  "/docs/guides/video-tutorials-670": {
+    "__comp": "__comp---theme-doc-item-178-a40",
+    "content": "content---docs-guides-video-tutorials-278-479"
+  },
+  "/docs/-4fe": {
+    "__comp": "__comp---theme-doc-item-178-a40",
+    "content": "content---docs-d-58-e68"
+  }
+}

@@ -1,0 +1,2 @@
+{"payload":{"type":"flush","issuedAt":1700000000000},"jws":"","kid":"sample"}
+{"payload":{"type":"setSampling","value":0.25,"issuedAt":1700000005000},"jws":"","kid":"sample"}

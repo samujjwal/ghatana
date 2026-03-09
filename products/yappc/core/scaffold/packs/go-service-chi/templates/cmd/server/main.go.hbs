@@ -1,0 +1,71 @@
+// Package main is the entry point for {{projectName}} service.
+// {{description}}
+package main
+
+import (
+"context"
+"log/slog"
+"net/http"
+"os"
+"os/signal"
+"syscall"
+"time"
+
+"{{modulePath}}/internal/config"
+"{{modulePath}}/internal/router"
+)
+
+var (
+version = "dev"
+buildTime = "unknown"
+)
+
+func main() {
+// Load configuration
+cfg := config.Load()
+
+// Setup structured logging
+logLevel := slog.LevelInfo
+if cfg.LogLevel == "debug" {
+logLevel = slog.LevelDebug
+}
+
+logger := slog.New(slog.NewJSONHandler(os.Stdout, &slog.HandlerOptions{
+Level: logLevel,
+}))
+slog.SetDefault(logger)
+
+logger.Info("Starting {{projectName}}",
+slog.String("version", version),
+slog.String("build_time", buildTime),
+slog.String("port", cfg.Port),
+)
+
+// Create router
+r := router.New(cfg, logger, version)
+
+// Create server
+server := &http.Server{
+Addr: ":" + cfg.Port,
+Handler: r,
+ReadTimeout: 15 * time.Second,
+WriteTimeout: 15 * time.Second,
+IdleTimeout: 60 * time.Second,
+}
+
+// Start server in goroutine
+go func() {
+logger.Info("Server listening", slog.String("addr", server.Addr))
+if err := server.ListenAndServe(); err != nil && err != http.ErrServerClosed {
+logger.Error("Server error", slog.String("error", err.Error()))
+os.Exit(1)
+}
+}()
+
+// Wait for interrupt signal
+quit := make(chan os.Signal, 1)
+signal.Notify(quit, syscall.SIGINT, syscall.SIGTERM)
+<-quit logger.Info("Shutting down server...") // Graceful shutdown with timeout ctx, cancel
+    :=context.WithTimeout(context.Background(), 30*time.Second) defer cancel() if err :=server.Shutdown(ctx); err !=nil
+    { logger.Error("Server shutdown error", slog.String("error", err.Error())) os.Exit(1) } logger.Info("Server stopped
+    gracefully") }

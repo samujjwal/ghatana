@@ -1,0 +1,47 @@
+[package]
+name = "agent-telemetry"
+version.workspace = true
+edition.workspace = true
+authors.workspace = true
+license.workspace = true
+description = "Telemetry and observability for the DCMaar agent"
+publish = false
+
+[features]
+default = ["opentelemetry-otlp"]
+opentelemetry-otlp = ["dep:opentelemetry-otlp"]
+opentelemetry-jaeger = ["dep:opentelemetry-jaeger"]
+
+[dependencies]
+# Internal crates
+agent-types = { workspace = true, features = ["serde"] }
+
+# Async traits
+async-trait = { workspace = true }
+
+# Telemetry
+tracing = { workspace = true }
+tracing-subscriber = { workspace = true }
+tracing-opentelemetry = { workspace = true }
+opentelemetry = { workspace = true }
+opentelemetry-otlp = { workspace = true, optional = true }
+opentelemetry-jaeger = { workspace = true, optional = true }
+opentelemetry_sdk = { workspace = true }
+
+# Async runtime
+tokio = { workspace = true, features = ["rt-multi-thread", "sync"] }
+
+# Error handling
+anyhow = { workspace = true }
+thiserror = { workspace = true }
+
+# Serialization
+serde = { workspace = true, features = ["derive"] }
+serde_json = { workspace = true }
+
+# Time handling
+chrono = { workspace = true }
+
+[dev-dependencies]
+tempfile = "3.10"
+pretty_assertions = "1.4"

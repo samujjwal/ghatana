@@ -1,0 +1,273 @@
+# DCMaar Agent Connector Configuration
+#
+# This file defines the connector system configuration for the DCMaar agent.
+# Connectors manage telemetry data flow between sources (metrics, events) and
+# sinks (storage, external systems).
+#
+# Configuration Presets:
+# - agent-only: Standalone agent (internal metrics → ingest sink)
+# - extension-bridge: Agent + Extension bridge
+# - desktop-bridge: Agent + Desktop bridge
+# - full-platform: Complete platform integration
+# - development: Development mode with console output
+# - high-throughput: High-performance with batching
+
+# Global connector settings
+enabled = true
+version = "1.0.0"
+
+# ============================================================================
+# SOURCES
+# ============================================================================
+# Sources generate telemetry data (metrics, events, traces)
+
+[[sources]]
+id = "agent-metrics-source"
+type = "internal"
+enabled = true
+debug = false
+
+[sources.metadata]
+description = "Internal metrics from MetricsService"
+collectInterval = 5000  # Collect every 5 seconds
+
+# Example: Bridge source for Extension telemetry
+# Uncomment to enable Extension → Agent bridge
+#
+# [[sources]]
+# id = "extension-bridge-source"
+# type = "bridge"
+# enabled = false
+# port = 9000
+# host = "localhost"
+# debug = false
+#
+# [sources.metadata]
+# protocol = "dcmaar-bridge-v1"
+# description = "Receives telemetry from Extension via WebSocket"
+
+# Example: Bridge source for Desktop telemetry
+# Uncomment to enable Desktop → Agent bridge
+#
+# [[sources]]
+# id = "desktop-bridge-source"
+# type = "bridge"
+# enabled = false
+# port = 9001
+# host = "localhost"
+# debug = false
+#
+# [sources.metadata]
+# protocol = "dcmaar-bridge-v1"
+# description = "Receives telemetry from Desktop via WebSocket"
+
+# ============================================================================
+# SINKS
+# ============================================================================
+# Sinks consume telemetry data and send it to storage or external systems
+
+[[sinks]]
+id = "ingest-sink"
+type = "ingest"
+enabled = true
+max_retries = 3
+timeout = 30000  # 30 seconds
+
+[sinks.metadata]
+batchSize = 100         # Events per batch
+batchInterval = 5000    # Flush every 5 seconds
+description = "Routes events to Rust IngestService → Postgres"
+
+# Example: Console sink for development/debugging
+# Uncomment to enable console output
+#
+# [[sinks]]
+# id = "console-sink"
+# type = "console"
+# enabled = false
+# max_retries = 0
+# timeout = 1000
+#
+# [sinks.metadata]
+# pretty = true                    # Pretty-print with box drawing
+# filter = ""                      # Optional: filter by event type (e.g., "metric.cpu")
+# description = "Outputs events to console for debugging"
+
+# Example: gRPC sink for external platform
+# Uncomment to enable gRPC export
+#
+# [[sinks]]
+# id = "grpc-server-sink"
+# type = "grpc"
+# enabled = false
+# url = "https://localhost:50051"
+# max_retries = 3
+# timeout = 30000
+#
+# [sinks.metadata]
+# description = "Sends metrics to external gRPC server"
+# tls = true
+# compression = true
+
+# ============================================================================
+# ROUTING
+# ============================================================================
+# Routing rules connect sources to sinks (many-to-many)
+
+[[routing]]
+source_id = "agent-metrics-source"
+sink_ids = ["ingest-sink"]
+# filter = "metric.*"  # Optional: route only metrics matching pattern
+
+# Example: Route Extension bridge to multiple sinks
+#
+# [[routing]]
+# source_id = "extension-bridge-source"
+# sink_ids = ["ingest-sink", "console-sink"]
+
+# Example: Route Desktop bridge to ingest
+#
+# [[routing]]
+# source_id = "desktop-bridge-source"
+# sink_ids = ["ingest-sink"]
+
+# ============================================================================
+# GLOBAL SETTINGS
+# ============================================================================
+
+[settings]
+max_connections = 100        # Maximum concurrent connections
+pool_size = 10               # Connection pool size
+enable_pooling = true        # Enable connection pooling
+health_check_interval_secs = 60    # Health check every 60 seconds
+auto_reconnect = true        # Automatically reconnect on failure
+reconnect_delay_ms = 5000    # Wait 5 seconds before reconnect
+
+# ============================================================================
+# PRESET CONFIGURATIONS
+# ============================================================================
+# Uncomment one of the following preset blocks to quickly configure common
+# deployment scenarios. Each preset replaces the entire configuration above.
+
+# --- PRESET: AGENT ONLY (default) ---
+# Standalone agent with internal metrics only
+# ✓ Already configured above
+
+# --- PRESET: EXTENSION BRIDGE ---
+# Agent + Extension bridge via WebSocket
+#
+# [[sources]]
+# id = "agent-metrics-source"
+# type = "internal"
+# enabled = true
+#
+# [[sources]]
+# id = "extension-bridge-source"
+# type = "bridge"
+# enabled = true
+# port = 9000
+#
+# [[sinks]]
+# id = "ingest-sink"
+# type = "ingest"
+# enabled = true
+#
+# [[routing]]
+# source_id = "agent-metrics-source"
+# sink_ids = ["ingest-sink"]
+#
+# [[routing]]
+# source_id = "extension-bridge-source"
+# sink_ids = ["ingest-sink"]
+
+# --- PRESET: DESKTOP BRIDGE ---
+# Agent + Desktop bridge via WebSocket
+# (Similar to Extension Bridge, but port 9001)
+
+# --- PRESET: FULL PLATFORM ---
+# Complete platform: Agent + Extension + Desktop
+#
+# [[sources]]
+# id = "agent-metrics-source"
+# type = "internal"
+# enabled = true
+#
+# [[sources]]
+# id = "extension-bridge-source"
+# type = "bridge"
+# enabled = true
+# port = 9000
+#
+# [[sources]]
+# id = "desktop-bridge-source"
+# type = "bridge"
+# enabled = true
+# port = 9001
+#
+# [[sinks]]
+# id = "ingest-sink"
+# type = "ingest"
+# enabled = true
+#
+# [[sinks]]
+# id = "grpc-server-sink"
+# type = "grpc"
+# enabled = true
+# url = "https://localhost:50051"
+#
+# [[routing]]
+# source_id = "agent-metrics-source"
+# sink_ids = ["ingest-sink", "grpc-server-sink"]
+#
+# [[routing]]
+# source_id = "extension-bridge-source"
+# sink_ids = ["ingest-sink"]
+#
+# [[routing]]
+# source_id = "desktop-bridge-source"
+# sink_ids = ["ingest-sink"]
+
+# --- PRESET: DEVELOPMENT ---
+# Development mode with console output
+#
+# [[sources]]
+# id = "agent-metrics-source"
+# type = "internal"
+# enabled = true
+#
+# [[sinks]]
+# id = "console-sink"
+# type = "console"
+# enabled = true
+# [sinks.metadata]
+# pretty = true
+#
+# [[routing]]
+# source_id = "agent-metrics-source"
+# sink_ids = ["console-sink"]
+
+# --- PRESET: HIGH THROUGHPUT ---
+# High-performance configuration with aggressive batching
+#
+# [[sources]]
+# id = "agent-metrics-source"
+# type = "internal"
+# enabled = true
+# [sources.metadata]
+# collectInterval = 1000  # Collect every 1 second
+#
+# [[sinks]]
+# id = "ingest-sink"
+# type = "ingest"
+# enabled = true
+# [sinks.metadata]
+# batchSize = 500         # Larger batches
+# batchInterval = 2000    # Flush more frequently
+#
+# [[routing]]
+# source_id = "agent-metrics-source"
+# sink_ids = ["ingest-sink"]
+#
+# [settings]
+# max_connections = 200
+# pool_size = 20

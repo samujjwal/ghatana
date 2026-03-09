@@ -1,0 +1,56 @@
+# {{projectName}}
+
+{{#if description}}
+{{description}}
+{{else}}
+A C++ library built with CMake.
+{{/if}}
+
+## Features
+
+- Modern C++{{cppStandard}}
+- CMake build system
+{{#if enableTesting}}
+- Unit testing with Google Test
+{{/if}}
+
+## Prerequisites
+
+- CMake 3.15 or higher
+- C++{{cppStandard}} compatible compiler
+
+## Building
+
+```bash
+mkdir build
+cd build
+cmake ..
+cmake --build .
+```
+
+{{#if enableTesting}}
+## Testing
+
+```bash
+cd build
+ctest
+```
+{{/if}}
+
+## Installation
+
+```bash
+cd build
+cmake --install .
+```
+
+## Usage
+
+```cmake
+find_package({{pascalCase projectName}} REQUIRED)
+target_link_libraries(your_target {{pascalCase projectName}}::{{pascalCase projectName}})
+```
+
+## License
+
+MIT

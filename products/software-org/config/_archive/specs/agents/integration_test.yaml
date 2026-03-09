@@ -1,0 +1,25 @@
+---
+id: "integration_test"
+agent: "IntegrationTestAgent"
+role: "QA Engineer"
+inputs_spec:
+- name: "test_stage_milestone"
+  description: "Test stage milestones to trigger integration tests."
+  format: "List of milestone objects"
+outputs_spec:
+- name: "integration_test_report"
+  description: "Results of integration tests across system interfaces."
+  format: "Integration test report artifact"
+agent_tasks:
+- "Test all system integrations/interfaces."
+- "Store results and report issues for remediation."
+acceptance_criteria:
+- "All system integrations/interfaces are tested."
+- "Integration test results are stored."
+- "Issues found are reported and tracked for remediation."
+dependencies:
+- "test_stage_milestone"
+failure_escalation:
+- "Escalate to QA or Dev Lead if integrations are untested or failing."
+references: []
+hitl: false

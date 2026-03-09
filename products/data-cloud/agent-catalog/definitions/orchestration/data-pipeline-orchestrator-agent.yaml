@@ -1,0 +1,62 @@
+id: data-pipeline-orchestrator-agent
+name: Data Pipeline Orchestrator Agent
+version: 1.0.0
+description: Coordinates multi-stage data processing pipelines with dependency management
+
+metadata:
+  level: 2
+  domain: orchestration
+  tags: [pipeline, orchestration, workflow, data-processing, coordination]
+
+generator:
+  type: PIPELINE
+  steps:
+    - name: pipeline_planning
+      type: RULE_BASED
+      rules:
+        - Analyze stage dependencies
+        - Determine optimal execution order
+        - Identify parallelization opportunities
+    - name: execution_coordination
+      type: LLM
+      provider: OPENAI
+      model: gpt-4
+      temperature: 0.2
+      prompt: |
+        Coordinate data pipeline:
+        Stages: {{stages}}
+        Dependencies: {{dependencies}}
+        Manage execution, handle failures, ensure data consistency
+
+capabilities:
+  - data-pipeline-orchestration
+  - data-quality
+
+tools:
+  - name: pipelineManager
+    type: SERVICE
+    endpoint: /datacloud/pipelines/manage
+  - name: stageExecutor
+    type: SERVICE
+    endpoint: /datacloud/pipelines/execute
+
+delegation:
+  can_delegate_to:
+    - data-migration-agent
+    - data-quality-agent
+    - query-optimization-agent
+    - data-replication-agent
+
+memory:
+  type: SEMANTIC
+  scope: pipeline_history
+  retention: long
+
+routing:
+  input: PipelineOrchestrationRequest
+  output: PipelineExecutionResult
+
+resources:
+  memory: "2GB"
+  cpu: "4"
+  timeout: "3600s"

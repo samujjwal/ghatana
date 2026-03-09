@@ -1,0 +1,70 @@
+id: heap-dump-analyzer-agent
+name: Heap Dump Analyzer Agent
+version: 1.0.0
+description: Analyzes JVM heap dumps to identify memory leaks, excessive object retention, and GC pressure contributing to OutOfMemoryErrors or performance degradation.
+
+metadata:
+  level: 3
+  domain: debugging
+  tags: [debugging, heap-dump, memory-leak, jvm]
+
+generator:
+  type: PIPELINE
+  steps:
+    - name: heap_parse
+      type: SERVICE_CALL
+      service: jvm-diagnostics
+      endpoint: /heap/analyze
+    - name: leak_analysis
+      type: LLM
+      provider: ANTHROPIC
+      model: claude-3-5-sonnet-20241022
+      temperature: 0.1
+      max_tokens: 2000
+      prompt: |
+        Analyze this heap dump summary for memory issues:
+        
+        Heap Summary: {{input}}
+        Application Context: {{context}}
+        
+        Identify:
+        1. Dominator tree — objects retaining the most heap
+        2. Suspected leak paths (retained sets growing over time)
+        3. GC root chains for suspected leaks
+        4. Class histogram anomalies
+        5. Recommended fix (close resource, weak reference, cache eviction)
+        
+        Output as JSON: {dominators, leak_suspects, gc_root_chains, anomalies, recommendations}
+
+memory:
+  episodic:
+    enabled: true
+    retention_days: 180
+    categories: [heap-analyses, memory-leak-fixes]
+  semantic:
+    enabled: true
+    categories: [common-leak-patterns, jvm-memory-model]
+
+tools: [heap_parser, gc_log_reader]
+
+capabilities:
+  - root-cause-analysis
+  - performance-analysis
+
+routing:
+  input_types: [heap-dump-path, heap-summary]
+  output_types: [heap-analysis-report, memory-leak-report]
+
+delegation:
+  can_delegate_to: []
+  escalates_to: debug-orchestrator
+
+governance:
+  requires_approval: false
+  can_block: false
+  audit_trail: standard
+
+performance:
+  expected_latency_ms: 10000
+  max_latency_ms: 60000
+  timeout_ms: 120000

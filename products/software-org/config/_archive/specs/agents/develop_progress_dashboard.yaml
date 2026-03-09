@@ -1,0 +1,39 @@
+---
+id: "develop_progress_dashboard"
+agent: "ProgressDashboardAgent"
+role: "Develop Progress Dashboard Owner"
+inputs_spec:
+- name: "develop_kpi_report"
+  description: "Latest KPI report."
+  format: "KPI report artifact"
+- name: "develop_success_criteria_status"
+  description: "Success criteria status."
+  format: "List of criteria status objects"
+- name: "develop_stage_milestone"
+  description: "Milestones for progress tracking."
+  format: "List of milestone objects"
+outputs_spec:
+- name: "develop_progress_dashboard"
+  description: "Dashboard visualizing code quality, coverage, cycle, vulnerabilities,\
+    \ KPIs, blockers."
+  format: "Dashboard artifact"
+agent_tasks:
+- "Visualize KPIs, code quality, coverage, review cycle, vulnerability findings, and\
+  \ blockers."
+- "Update dashboard in real time."
+- "Highlight critical path milestones, blocked dependencies, and bottlenecks."
+acceptance_criteria:
+- "Dashboard visualizes code quality, test coverage, review cycle, vulnerability findings,\
+  \ and all KPIs."
+- "Shows open code review, security, or quality blockers."
+- "Links to peer review, static analysis, and milestone status."
+- "Dashboard is updated in real time and reviewed before Build handoff."
+- "Critical path, blocked dependencies, and bottlenecks are visible."
+dependencies:
+- "develop_kpi_report"
+- "develop_success_criteria_status"
+- "develop_stage_milestone"
+failure_escalation:
+- "Escalate to Dashboard Owner or PM if dashboard is outdated or not actionable."
+references: []
+hitl: false

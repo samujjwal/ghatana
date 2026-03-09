@@ -1,0 +1,206 @@
+{{#if enableCircuitBreaker}}
+import CircuitBreaker from "opossum";
+import type { CircuitState, CircuitStats } from "../types.js";
+import { logger } from "./logging.js";
+
+interface CircuitBreakerOptions {
+/** Failure threshold percentage (0-100) */
+threshold?: number;
+/** Reset timeout in milliseconds */
+timeout?: number;
+/** Rolling window size for stats */
+rollingCountTimeout?: number;
+/** Bucket count for rolling stats */
+rollingCountBuckets?: number;
+/** Volume threshold before circuit can trip */
+volumeThreshold?: number;
+}
+
+const DEFAULT_OPTIONS: Required<CircuitBreakerOptions> = {
+    threshold: {{circuitBreakerThreshold}},
+    timeout: {{circuitBreakerTimeout}},
+    rollingCountTimeout: 10000,
+    rollingCountBuckets: 10,
+    volumeThreshold: 5,
+    };
+
+    /**
+    * Manages circuit breakers for upstream services
+    */
+    export class CircuitBreakerManager {
+    private circuits = new Map<string, CircuitBreaker>();
+        private readonly options: Required<CircuitBreakerOptions>;
+
+            constructor(options?: CircuitBreakerOptions) {
+            this.options = { ...DEFAULT_OPTIONS, ...options };
+            }
+
+            /**
+            * Get or create a circuit breaker for a service
+            */
+            getCircuit<T>(
+                name: string,
+                action: () => Promise<T>,
+                    customOptions?: CircuitBreakerOptions
+                    ): CircuitBreaker<[], T> {
+                        let circuit = this.circuits.get(name) as CircuitBreaker<[], T> | undefined;
+
+                            if (!circuit) {
+                            const opts = { ...this.options, ...customOptions };
+
+                            circuit = new CircuitBreaker(action, {
+                            errorThresholdPercentage: opts.threshold,
+                            resetTimeout: opts.timeout,
+                            rollingCountTimeout: opts.rollingCountTimeout,
+                            rollingCountBuckets: opts.rollingCountBuckets,
+                            volumeThreshold: opts.volumeThreshold,
+                            });
+
+                            // Set up event handlers
+                            circuit.on("success", () => {
+                            logger.debug({ circuit: name }, "Circuit breaker: success");
+                            });
+
+                            circuit.on("failure", (err) => {
+                            logger.warn({ circuit: name, error: err?.message }, "Circuit breaker: failure");
+                            });
+
+                            circuit.on("open", () => {
+                            logger.error({ circuit: name }, "Circuit breaker: OPENED (requests will fail fast)");
+                            });
+
+                            circuit.on("halfOpen", () => {
+                            logger.info({ circuit: name }, "Circuit breaker: half-open (testing recovery)");
+                            });
+
+                            circuit.on("close", () => {
+                            logger.info({ circuit: name }, "Circuit breaker: closed (service recovered)");
+                            });
+
+                            circuit.on("fallback", () => {
+                            logger.debug({ circuit: name }, "Circuit breaker: fallback executed");
+                            });
+
+                            this.circuits.set(name, circuit);
+                            }
+
+                            return circuit;
+                            }
+
+                            /**
+                            * Execute an action through a circuit breaker
+                            */
+                            async execute<T>(
+                                name: string,
+                                action: () => Promise<T>,
+                                    fallback?: () => T
+                                    ): Promise<T> {
+                                        const circuit = this.getCircuit(name, action);
+
+                                        if (fallback) {
+                                        circuit.fallback(fallback);
+                                        }
+
+                                        return circuit.fire();
+                                        }
+
+                                        /**
+                                        * Check if a circuit is open
+                                        */
+                                        isOpen(name: string): boolean {
+                                        const circuit = this.circuits.get(name);
+                                        return circuit ? !circuit.closed : false;
+                                        }
+
+                                        /**
+                                        * Get circuit state
+                                        */
+                                        getState(name: string): CircuitState | undefined {
+                                        const circuit = this.circuits.get(name);
+                                        if (!circuit) return undefined;
+
+                                        if (circuit.opened) return "open";
+                                        if (circuit.halfOpen) return "half-open";
+                                        return "closed";
+                                        }
+
+                                        /**
+                                        * Get statistics for a circuit
+                                        */
+                                        getStats(name: string): CircuitStats | undefined {
+                                        const circuit = this.circuits.get(name);
+                                        if (!circuit) return undefined;
+
+                                        const stats = circuit.stats;
+                                        return {
+                                        state: this.getState(name) ?? "closed",
+                                        failures: stats.failures,
+                                        successes: stats.successes,
+                                        rejected: stats.rejects,
+                                        fallbacks: stats.fallbacks,
+                                        };
+                                        }
+
+                                        /**
+                                        * Get all circuit stats
+                                        */
+                                        getAllStats(): Record<string, CircuitStats> {
+                                            const result: Record<string, CircuitStats> = {};
+
+                                                for (const [name] of this.circuits) {
+                                                const stats = this.getStats(name);
+                                                if (stats) {
+                                                result[name] = stats;
+                                                }
+                                                }
+
+                                                return result;
+                                                }
+
+                                                /**
+                                                * Force close a circuit (for recovery)
+                                                */
+                                                forceClose(name: string): boolean {
+                                                const circuit = this.circuits.get(name);
+                                                if (circuit) {
+                                                circuit.close();
+                                                logger.info({ circuit: name }, "Circuit breaker: force closed");
+                                                return true;
+                                                }
+                                                return false;
+                                                }
+
+                                                /**
+                                                * Force open a circuit (for maintenance)
+                                                */
+                                                forceOpen(name: string): boolean {
+                                                const circuit = this.circuits.get(name);
+                                                if (circuit) {
+                                                circuit.open();
+                                                logger.info({ circuit: name }, "Circuit breaker: force opened");
+                                                return true;
+                                                }
+                                                return false;
+                                                }
+
+                                                /**
+                                                * Shutdown all circuits
+                                                */
+                                                shutdown(): void {
+                                                for (const [name, circuit] of this.circuits) {
+                                                circuit.shutdown();
+                                                logger.debug({ circuit: name }, "Circuit breaker: shutdown");
+                                                }
+                                                this.circuits.clear();
+                                                }
+                                                }
+
+                                                /**
+                                                * Global circuit breaker manager instance
+                                                */
+                                                export const circuitBreakerManager = new CircuitBreakerManager();
+                                                {{else}}
+                                                // Circuit breaker is disabled. Enable it in pack.json to use circuit
+                                                breaker.
+                                                export {};
+                                                {{/if}}

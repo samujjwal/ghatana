@@ -1,0 +1,225 @@
+name: Performance Budgets
+
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - 'products/yappc/frontend/**'
+      - 'products/dcmaar/apps/**'
+      - 'products/flashit/client/**'
+      - 'products/tutorputor/apps/**'
+  workflow_dispatch:
+
+concurrency:
+  group: performance-${{ github.ref }}
+  cancel-in-progress: true
+
+env:
+  NODE_VERSION: '20'
+
+jobs:
+  lighthouse-ci:
+    name: Lighthouse CI
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+
+    strategy:
+      fail-fast: false
+      matrix:
+        product:
+          - name: yappc-frontend
+            path: products/yappc/frontend/apps/web
+            url: http://localhost:5173
+            budgets:
+              performance: 90
+              accessibility: 95
+              best-practices: 90
+              seo: 90
+              fcp: 1800
+              lcp: 2500
+              tti: 3500
+              cls: 0.1
+          - name: dcmaar-parent
+            path: products/dcmaar/apps/parent-dashboard
+            url: http://localhost:3000
+            budgets:
+              performance: 85
+              accessibility: 95
+              best-practices: 85
+              seo: 85
+              fcp: 2000
+              lcp: 3000
+              tti: 4000
+              cls: 0.15
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Install pnpm
+        run: corepack enable && corepack prepare pnpm@10.28.2 --activate
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: 'pnpm'
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Build application
+        working-directory: ${{ matrix.product.path }}
+        run: pnpm build
+
+      - name: Start preview server
+        working-directory: ${{ matrix.product.path }}
+        run: |
+          pnpm preview &
+          echo $! > .preview-pid
+          sleep 10
+        env:
+          PORT: ${{ matrix.product.url == 'http://localhost:5173' && '5173' || '3000' }}
+
+      - name: Wait for server
+        run: |
+          npx wait-on ${{ matrix.product.url }} --timeout 60000
+
+      - name: Run Lighthouse CI
+        uses: treosh/lighthouse-ci-action@v11
+        with:
+          urls: |
+            ${{ matrix.product.url }}
+            ${{ matrix.product.url }}/app
+          budgetPath: .github/lighthouse/budget.json
+          uploadArtifacts: true
+          temporaryPublicStorage: true
+
+      - name: Check Performance Budgets
+        run: |
+          echo "=== Performance Budget Check ==="
+          echo "Performance: ${{ matrix.product.budgets.performance }}"
+          echo "Accessibility: ${{ matrix.product.budgets.accessibility }}"
+          echo "FCP: ${{ matrix.product.budgets.fcp }}ms"
+          echo "LCP: ${{ matrix.product.budgets.lcp }}ms"
+          echo "TTI: ${{ matrix.product.budgets.tti }}ms"
+          echo "CLS: ${{ matrix.product.budgets.cls }}"
+
+      - name: Stop preview server
+        if: always()
+        working-directory: ${{ matrix.product.path }}
+        run: |
+          if [ -f .preview-pid ]; then
+            kill $(cat .preview-pid) || true
+            rm .preview-pid
+          fi
+
+      - name: Upload Lighthouse reports
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: lighthouse-${{ matrix.product.name }}
+          path: .lighthouseci/
+          retention-days: 30
+
+  bundle-size:
+    name: Bundle Size Analysis
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Install pnpm
+        run: corepack enable && corepack prepare pnpm@10.28.2 --activate
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: 'pnpm'
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Build YAPPC Frontend
+        working-directory: products/yappc/frontend
+        run: pnpm build:web
+
+      - name: Analyze bundle size
+        working-directory: products/yappc/frontend/apps/web
+        run: |
+          echo "=== Bundle Size Analysis ==="
+          du -sh dist/
+          du -sh dist/assets/*.js | sort -h
+          
+          # Check total bundle size
+          TOTAL_SIZE=$(du -sb dist/ | cut -f1)
+          MAX_SIZE=$((5 * 1024 * 1024))  # 5MB limit
+          
+          if [ $TOTAL_SIZE -gt $MAX_SIZE ]; then
+            echo "::error::Bundle size ($TOTAL_SIZE bytes) exceeds limit ($MAX_SIZE bytes)"
+            exit 1
+          fi
+          
+          echo "✅ Bundle size within budget: $(du -sh dist/ | cut -f1)"
+
+      - name: Check for large chunks
+        working-directory: products/yappc/frontend/apps/web
+        run: |
+          echo "=== Large Chunk Detection ==="
+          LARGE_CHUNKS=$(find dist/assets -name "*.js" -size +500k)
+          
+          if [ -n "$LARGE_CHUNKS" ]; then
+            echo "::warning::Found large chunks (>500KB):"
+            echo "$LARGE_CHUNKS" | while read file; do
+              echo "  - $(basename $file): $(du -h $file | cut -f1)"
+            done
+          else
+            echo "✅ No chunks exceed 500KB"
+          fi
+
+  performance-summary:
+    name: Performance Summary
+    runs-on: ubuntu-latest
+    needs: [lighthouse-ci, bundle-size]
+    if: always()
+
+    steps:
+      - name: Comment on PR
+        if: github.event_name == 'pull_request'
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const lighthouseStatus = '${{ needs.lighthouse-ci.result }}';
+            const bundleStatus = '${{ needs.bundle-size.result }}';
+            
+            const statusIcon = (status) => status === 'success' ? '✅' : '❌';
+            
+            const body = `## Performance Budget Report
+            
+            | Check | Status |
+            |-------|--------|
+            | Lighthouse CI | ${statusIcon(lighthouseStatus)} ${lighthouseStatus} |
+            | Bundle Size | ${statusIcon(bundleStatus)} ${bundleStatus} |
+            
+            ### Performance Budgets
+            - **Performance Score:** ≥90
+            - **Accessibility Score:** ≥95
+            - **First Contentful Paint:** ≤1.8s
+            - **Largest Contentful Paint:** ≤2.5s
+            - **Time to Interactive:** ≤3.5s
+            - **Cumulative Layout Shift:** ≤0.1
+            - **Total Bundle Size:** ≤5MB
+            - **Max Chunk Size:** ≤500KB
+            
+            [View detailed Lighthouse reports](https://github.com/${context.repo.owner}/${context.repo.repo}/actions/runs/${context.runId})
+            `;
+            
+            github.rest.issues.createComment({
+              issue_number: context.issue.number,
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              body: body
+            });

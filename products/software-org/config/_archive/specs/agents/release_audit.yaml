@@ -1,0 +1,27 @@
+---
+id: "release_audit"
+agent: "ReleaseAuditAgent"
+role: "Compliance Analyst"
+inputs_spec:
+- name: "promoted_release_status"
+  description: "Promoted release status for audit logging."
+  format: "Promotion status artifact"
+outputs_spec:
+- name: "release_audit_log"
+  description: "Audit log for the release."
+  format: "Audit log artifact"
+agent_tasks:
+- "Log all release actions for audit."
+- "Ensure release meets compliance and policy."
+- "Make audit trail available for review."
+acceptance_criteria:
+- "All release actions are logged and auditable."
+- "Release meets compliance/policy."
+- "Audit trail available for review."
+dependencies:
+- "promoted_release_status"
+failure_escalation:
+- "Escalate to Compliance Analyst if audit log is incomplete or release non-compliant."
+references: []
+hitl: true
+hitl_reason: "Human reviews release audit for compliance"

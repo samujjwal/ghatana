@@ -1,0 +1,125 @@
+# ============================================================================
+# Linear Fraud Detection Pipeline
+# ============================================================================
+# Pattern: Sequential auto-chained stages (no explicit dependencies)
+# Flow:    ingest → validate → enrich → detect → alert
+# Use:     Basic real-time transaction fraud screening
+# ============================================================================
+
+stages:
+  # ---- Stage 1: Ingest raw transaction events ----
+  - name: ingest
+    stageType: STREAM
+    connectorIds:
+      - event-cloud-txn-source
+    workflow:
+      - id: txn-ingester
+        agent: aep:agent:TransactionIngester:1.0.0
+        role: ingester
+        agentTasks:
+          - Consume raw transaction events from EventCloud
+          - Normalize event schema to internal TransactionEvent format
+          - Assign processing timestamp and correlation ID
+        inputsSpec:
+          - name: raw-event
+            format: json
+            description: Raw transaction event from payment gateway
+        outputsSpec:
+          - name: normalized-event
+            format: json
+            description: Normalized TransactionEvent with correlation ID
+
+  # ---- Stage 2: Validate transaction fields ----
+  - name: validate
+    stageType: STREAM
+    workflow:
+      - id: txn-validator
+        agent: aep:agent:TransactionValidator:1.0.0
+        role: validator
+        agentTasks:
+          - Validate required fields (amount, currency, merchantId, accountId)
+          - Check data types and value ranges
+          - Flag incomplete or malformed events for DLQ routing
+        acceptanceCriteria:
+          - All required fields present and correctly typed
+          - Amount > 0 and currency is valid ISO 4217
+          - Events with validation errors routed to DLQ
+        inputsSpec:
+          - name: normalized-event
+            format: json
+            description: Normalized TransactionEvent from ingester
+        outputsSpec:
+          - name: validated-event
+            format: json
+            description: Validated TransactionEvent
+
+  # ---- Stage 3: Enrich with account and merchant context ----
+  - name: enrich
+    stageType: STREAM
+    workflow:
+      - id: context-enricher
+        agent: aep:agent:ContextEnricher:1.0.0
+        role: enricher
+        agentTasks:
+          - Retrieve account risk profile from account service
+          - Retrieve merchant risk category from merchant registry
+          - Attach geolocation context based on IP/device metadata
+          - Compute velocity features (txn count last 1h, 24h, 7d)
+        references:
+          - account-service-v2-api
+          - merchant-registry-api
+        inputsSpec:
+          - name: validated-event
+            format: json
+            description: Validated transaction event
+        outputsSpec:
+          - name: enriched-event
+            format: json
+            description: Transaction event with account/merchant context and velocity features
+
+  # ---- Stage 4: Rule-based fraud detection ----
+  - name: detect
+    stageType: PATTERN
+    workflow:
+      - id: fraud-detector
+        agent: deterministic-fraud-detector
+        role: detector
+        agentTasks:
+          - Apply configurable fraud detection rules
+          - Score transactions against rule-based thresholds
+          - Classify as PASS / REVIEW / BLOCK
+        acceptanceCriteria:
+          - All configured rules evaluated per transaction
+          - Decision latency < 50ms p99
+          - False positive rate < 5%
+        inputsSpec:
+          - name: enriched-event
+            format: json
+            description: Enriched transaction with context and velocity features
+        outputsSpec:
+          - name: fraud-decision
+            format: json
+            description: Fraud decision with score, classification, and matched rules
+
+  # ---- Stage 5: Alert and action ----
+  - name: alert
+    stageType: STREAM
+    connectorIds:
+      - event-cloud-alert-sink
+    workflow:
+      - id: alert-dispatcher
+        agent: reactive-alert-trigger
+        role: alerter
+        agentTasks:
+          - Route BLOCK decisions to immediate block queue
+          - Route REVIEW decisions to analyst review queue
+          - Emit metrics for all decisions
+          - Send real-time alerts for high-severity blocks
+        inputsSpec:
+          - name: fraud-decision
+            format: json
+            description: Fraud decision from detector
+        outputsSpec:
+          - name: alert-event
+            format: json
+            description: Alert event dispatched to downstream systems

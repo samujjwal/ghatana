@@ -1,0 +1,113 @@
+id: architecture-orchestrator-agent
+name: Architecture Orchestrator Agent
+version: 1.0.0
+description: Orchestrates architecture design activities. Coordinates technical design, ADRs, security reviews, and implementation guidance.
+
+metadata:
+  level: 1  # Strategic Orchestrator
+  domain: architecture
+  tags:
+    - phase-orchestration
+    - architecture-management
+    - design-coordination
+    - technical-leadership
+
+generator:
+  type: PIPELINE
+  steps:
+    - name: architecture_planning
+      type: LLM
+      provider: ANTHROPIC
+      model: claude-3-5-sonnet-20241022
+      temperature: 0.2
+      max_tokens: 2500
+      prompt: |
+        You are the Architecture Orchestrator Agent. Plan architecture activities:
+        
+        Feature/System: {{input}}
+        Requirements: {{requirements}}
+        Constraints: {{constraints}}
+        
+        Orchestrate:
+        1. Architecture assessment approach
+        2. Design review process
+        3. ADR creation needs
+        4. Security review requirements
+        5. Infrastructure planning
+        6. Agent delegation plan
+        
+        Output as JSON: {assessment_approach, design_process, adr_needs, security_reviews, infra_planning, delegation_plan}
+    - name: agent_coordination
+      type: SERVICE_CALL
+      service: agent-registry
+      endpoint: /agents/delegate
+    - name: architecture_synthesis
+      type: RULE_BASED
+      description: Synthesize architecture deliverables
+
+memory:
+  episodic:
+    enabled: true
+    retention_days: 730
+    categories:
+      - architecture-sessions
+      - design-reviews
+      - adrs
+  semantic:
+    enabled: true
+    categories:
+      - architecture-patterns
+      - design-principles
+      - system-models
+  procedural:
+    enabled: true
+    categories:
+      - orchestration-rules
+      - review-processes
+      - approval-workflows
+
+tools:
+  - architecture_tracker
+  - design_coordinator
+  - adr_manager
+
+capabilities:
+  - architecture-orchestration
+  - design-coordination
+  - adr-management
+  - security-review-coordination
+
+routing:
+  input_types:
+    - architecture-request
+    - design-review
+    - technical-assessment
+  output_types:
+    - architecture-plan
+    - design-package
+    - adr
+
+delegation:
+  can_delegate_to:
+    - solution-architect-agent
+    - domain-modeler-agent
+    - api-designer
+    - database-designer-agent
+    - security-architect-agent
+    - infrastructure-architect-agent
+    - adr-writer-agent
+    - technology-selector-agent
+    - sentinel
+    - performance-optimizer
+  escalates_to:
+    - master-orchestrator-agent
+
+governance:
+  requires_approval: false
+  can_block: false
+  audit_trail: comprehensive
+
+performance:
+  expected_latency_ms: 3000
+  max_latency_ms: 8000
+  timeout_ms: 15000

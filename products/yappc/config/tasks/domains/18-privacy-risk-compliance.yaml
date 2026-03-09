@@ -1,0 +1,111 @@
+domain:
+  id: privacy-risk-compliance
+  name: "Privacy, Risk & Compliance"
+  description: "Ensure compliance and manage risks."
+  order: 18
+  icon: "gavel"
+  color: "#5C6BC0"
+  agent_personas:
+    - "ComplianceAgent"
+    - "RiskAssessor"
+    - "GovernanceOfficer"
+  audit_artifacts:
+    - "ComplianceEvidence"
+    - "RiskRegister"
+    - "PolicyRecord"
+  inputs:
+    - "Data flows"
+    - "Policies"
+    - "Regulations"
+  outputs:
+    - "Compliance reports"
+    - "Risk assessments"
+
+tasks:
+  # Core ICS compliance tasks
+  - id: d18-t1
+    name: "Privacy impact analysis"
+    description: "Assess privacy risks."
+    personas: ["Security", "Developer"]
+    lifecycle_stages: ["plan", "verify"]
+    automation_level: "assisted"
+  - id: d18-t2
+    name: "Compliance checks"
+    description: "Verify adherence to regulations."
+    personas: ["Security"]
+    lifecycle_stages: ["verify"]
+    automation_level: "assisted"
+  - id: d18-t3
+    name: "Audit preparation"
+    description: "Prepare for external audits."
+    personas: ["Security", "DevOps"]
+    lifecycle_stages: ["verify"]
+    automation_level: "assisted"
+  - id: d18-t4
+    name: "Risk tracking"
+    description: "Monitor identified risks."
+    personas: ["Security", "Tech Lead"]
+    lifecycle_stages: ["observe"]
+    automation_level: "assisted"
+
+  # Migrated from legacy governance domain
+  - id: gov-001
+    name: "Code Standards Compliance"
+    description: "Ensure code follows established standards."
+    personas: ["Developer"]
+    lifecycle_stages: ["execute", "verify"]
+    automation_level: "automated"
+  - id: gov-002
+    name: "Licensing Compliance"
+    description: "Verify license compatibility."
+    personas: ["Developer", "Tech Lead"]
+    lifecycle_stages: ["verify"]
+    automation_level: "automated"
+  - id: gov-003
+    name: "Security Policy Compliance"
+    description: "Follow security policies and standards."
+    personas: ["Developer", "Security"]
+    lifecycle_stages: ["execute", "verify"]
+    automation_level: "assisted"
+  - id: gov-004
+    name: "Data Privacy Compliance"
+    description: "Ensure data handling meets privacy requirements."
+    personas: ["Developer", "Security"]
+    lifecycle_stages: ["execute", "verify"]
+    automation_level: "assisted"
+  - id: gov-005
+    name: "Accessibility Compliance"
+    description: "Meet accessibility standards."
+    personas: ["Developer", "QA"]
+    lifecycle_stages: ["execute", "verify"]
+    automation_level: "assisted"
+  - id: gov-006
+    name: "Audit Trail Maintenance"
+    description: "Maintain proper audit logs."
+    personas: ["Developer", "DevOps"]
+    lifecycle_stages: ["execute"]
+    automation_level: "automated"
+  - id: gov-007
+    name: "Change Management"
+    description: "Follow change management procedures."
+    personas: ["Developer", "DevOps"]
+    lifecycle_stages: ["execute"]
+    automation_level: "assisted"
+  - id: gov-008
+    name: "Risk Assessment"
+    description: "Assess and document technical risks."
+    personas: ["Developer", "Tech Lead"]
+    lifecycle_stages: ["plan", "verify"]
+    automation_level: "assisted"
+  - id: gov-009
+    name: "Regulatory Compliance"
+    description: "Ensure compliance with industry regulations."
+    personas: ["Security", "Tech Lead"]
+    lifecycle_stages: ["verify"]
+    automation_level: "assisted"
+  - id: gov-010
+    name: "Policy Documentation"
+    description: "Document policies and procedures."
+    personas: ["Tech Lead", "Security"]
+    lifecycle_stages: ["execute"]
+    automation_level: "assisted"

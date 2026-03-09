@@ -1,0 +1,75 @@
+{{!
+  Spring Boot JPA Entity Template
+  
+  Variables:
+  - entityName: Name of the entity
+  - tableName: Database table name
+  - fields: Array of field definitions
+  - hasAudit: Whether to include audit fields
+  - hasVersion: Whether to include @Version for optimistic locking
+}}
+package
+{{packageName}}.entity; import jakarta.persistence.*; import lombok.*;
+{{#if hasAudit}}
+  import org.springframework.data.annotation.CreatedDate; import
+  org.springframework.data.annotation.LastModifiedDate; import
+  org.springframework.data.jpa.domain.support.AuditingEntityListener;
+{{/if}}
+
+import java.time.LocalDateTime; import java.io.Serializable; /** * JPA entity
+for
+{{entityName}}. * * @doc.type entity * @doc.purpose Represent
+{{entityName}}
+in the database * @doc.layer data * @doc.pattern JPA Entity */ @Entity
+@Table(name = "{{tableName}}") @Getter @Setter @NoArgsConstructor
+@AllArgsConstructor @Builder
+{{#if hasAudit}}
+  @EntityListeners(AuditingEntityListener.class)
+{{/if}}
+public class
+{{entityName}}
+implements Serializable { private static final long serialVersionUID = 1L; @Id
+@GeneratedValue(strategy = GenerationType.IDENTITY) private Long id;
+
+{{#each fields}}
+  {{#if column}}
+    @Column(name = "{{column}}"{{#if nullable}}, nullable =
+      {{nullable}}{{/if}}{{#if unique}}, unique = {{unique}}{{/if}}{{#if
+      length
+    }}, length = {{length}}{{/if}})
+  {{/if}}
+  {{#if validation}}
+    {{#each validation}}
+      @{{this}}
+    {{/each}}
+  {{/if}}
+  private
+  {{type}}
+  {{name}};
+
+{{/each}}
+
+{{#if hasVersion}}
+  @Version private Long version;
+
+{{/if}}
+{{#if hasAudit}}
+  @CreatedDate @Column(name = "created_at", nullable = false, updatable = false)
+  private LocalDateTime createdAt; @LastModifiedDate @Column(name =
+  "updated_at") private LocalDateTime updatedAt;
+
+{{/if}}
+@Override public boolean equals(Object o) { if (this == o) return true; if (!(o
+instanceof
+{{entityName}})) return false;
+{{entityName}}
+that = ({{entityName}}) o; return id != null && id.equals(that.id); } @Override
+public int hashCode() { return getClass().hashCode(); } @Override public String
+toString() { return "{{entityName}}{" + "id=" + id +
+{{#each fields}}
+  ",
+  {{name}}=" +
+  {{name}}
+  +
+{{/each}}
+'}'; } }

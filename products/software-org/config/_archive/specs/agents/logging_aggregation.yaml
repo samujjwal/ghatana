@@ -1,0 +1,27 @@
+---
+id: "logging_aggregation"
+agent: "LoggingAggregationAgent"
+role: "DevOps/Observability Engineer"
+inputs_spec:
+- name: "operate_stage_milestone"
+  description: "Operate stage milestones for log aggregation trigger."
+  format: "List of milestone objects"
+outputs_spec:
+- name: "centralized_logs"
+  description: "Centralized log storage and aggregation."
+  format: "Centralized log artifact"
+agent_tasks:
+- "Set up centralized logging for all critical infra."
+- "Ensure reliable log ingestion and retention."
+- "Ensure logs accessible for incident review."
+acceptance_criteria:
+- "Centralized logging set up for all critical infrastructure."
+- "Log ingestion reliable and monitored."
+- "Retention policy applied."
+- "Logs accessible for incident review."
+dependencies:
+- "operate_stage_milestone"
+failure_escalation:
+- "Escalate to DevOps/Observability Engineer if logs missing or not accessible."
+references: []
+hitl: false

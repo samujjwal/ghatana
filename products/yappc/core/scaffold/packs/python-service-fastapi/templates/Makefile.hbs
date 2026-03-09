@@ -1,0 +1,40 @@
+.PHONY: install run test lint format clean
+
+install:
+{{#if buildTool}}
+{{#eq buildTool "uv"}}
+uv sync
+{{/eq}}
+{{#eq buildTool "poetry"}}
+poetry install
+{{/eq}}
+{{else}}
+uv sync
+{{/if}}
+
+run:
+{{#if buildTool}}
+{{#eq buildTool "uv"}}
+uv run uvicorn app.main:app --reload
+{{/eq}}
+{{#eq buildTool "poetry"}}
+poetry run uvicorn app.main:app --reload
+{{/eq}}
+{{else}}
+uvicorn app.main:app --reload
+{{/if}}
+
+test:
+pytest
+
+lint:
+ruff check .
+mypy .
+
+format:
+ruff format .
+
+clean:
+find . -type d -name __pycache__ -exec rm -rf {} +
+find . -type f -name "*.pyc" -delete
+rm -rf .pytest_cache .mypy_cache .ruff_cache

@@ -1,0 +1,248 @@
+# DevOps Department Configuration
+
+apiVersion: virtualorg.ghatana.com/v1
+kind: Department
+metadata:
+  name: devops
+  labels:
+    category: infrastructure
+    cost-center: "OPS-001"
+
+spec:
+  displayName: "DevOps & Infrastructure"
+  type: DEVOPS
+  description: "Infrastructure, CI/CD, deployment, and operations"
+
+  hierarchy:
+    parent: null
+    reportingTo: cto-agent
+
+  settings:
+    maxAgents: 15
+    autoScaleAgents: true
+
+    # DevOps operates 24/7 with on-call rotation
+    availability:
+      schedule: always
+      onCall:
+        enabled: true
+        rotationPeriod: P1W
+        escalationTimeout: PT15M
+
+    taskAssignment:
+      strategy: on-call-first # On-call gets critical tasks
+      fallbackStrategy: capability-match
+
+  agents:
+    - name: devops-lead
+      displayName: "DevOps Lead"
+      role:
+        level: lead
+        title: "DevOps Team Lead"
+      reportingTo: cto-agent
+      authority:
+        canApprove:
+          - production_deployment
+          - infrastructure_changes
+          - access_requests
+      capabilities:
+        primary:
+          - infrastructure_management
+          - ci_cd
+          - kubernetes
+          - cloud_platforms
+          - incident_management
+      ai:
+        enabled: true
+        systemPrompt: |
+          You are a DevOps Lead responsible for:
+          - Infrastructure architecture and management
+          - CI/CD pipeline design and maintenance
+          - Production deployments and rollbacks
+          - Incident response coordination
+          - Cost optimization
+
+          For deployments:
+          1. Verify all tests pass
+          2. Check infrastructure readiness
+          3. Ensure rollback plan exists
+          4. Coordinate with on-call team
+          5. Monitor post-deployment metrics
+
+    - name: devops-engineer
+      displayName: "DevOps Engineer"
+      role:
+        level: individual
+      reportingTo: devops-lead
+      capabilities:
+        primary:
+          - kubernetes
+          - terraform
+          - ci_cd
+          - monitoring
+          - scripting
+
+    - name: on-call-engineer
+      displayName: "On-Call Engineer"
+      role:
+        level: individual
+      reportingTo: devops-lead
+      availability:
+        schedule: on-call-rotation
+        responseTime:
+          target: PT5M
+          maximum: PT15M
+      capabilities:
+        primary:
+          - incident_response
+          - troubleshooting
+          - kubernetes
+          - monitoring
+      ai:
+        enabled: true
+        systemPrompt: |
+          You are an on-call DevOps engineer. Priority order:
+          1. Acknowledge incidents immediately
+          2. Assess severity and impact
+          3. Mitigate user impact first
+          4. Investigate root cause
+          5. Document and communicate status
+
+  taskTypes:
+    - name: deployment
+      priority: normal
+      slaHours: 2
+      requiredCapabilities: [ci_cd, kubernetes]
+
+    - name: hotfix_deployment
+      priority: critical
+      slaMinutes: 30
+      requiredCapabilities: [ci_cd, kubernetes, incident_response]
+      escalation:
+        - at: 50%
+          to: devops-lead
+          action: notify
+        - at: 80%
+          to: cto-agent
+          action: escalate
+
+    - name: infrastructure_change
+      priority: normal
+      slaHours: 8
+      requiredCapabilities: [terraform, cloud_platforms]
+      hitl:
+        required: true
+        approvers: [devops-lead]
+
+    - name: incident_response
+      priority: critical
+      slaMinutes: 15
+      requiredCapabilities: [incident_response, troubleshooting]
+      assignment:
+        strategy: on-call-first
+
+  kpis:
+    - name: deployment_success_rate
+      displayName: "Deployment Success Rate"
+      type: percentage
+      target: 99
+      warningThreshold: 95
+      criticalThreshold: 90
+
+    - name: mttr
+      displayName: "Mean Time to Recovery"
+      type: duration
+      unit: minutes
+      target: 30
+      warningThreshold: 60
+      criticalThreshold: 120
+
+    - name: change_failure_rate
+      displayName: "Change Failure Rate"
+      type: percentage
+      target: 5
+      warningThreshold: 10
+      criticalThreshold: 15
+
+    - name: infrastructure_cost
+      displayName: "Infrastructure Cost"
+      type: currency
+      unit: USD
+      target: 50000
+      warningThreshold: 60000
+      criticalThreshold: 75000
+
+  workflows:
+    - name: production-deployment
+      trigger:
+        type: manual
+        approvers: [lead-engineer, devops-lead]
+      steps:
+        - name: pre-deployment-check
+          agent: devops-engineer
+          action: run_pre_deployment_checks
+
+        - name: backup
+          agent: devops-engineer
+          action: create_backup
+          waitFor: [pre-deployment-check]
+
+        - name: deploy
+          agent: devops-engineer
+          action: execute_deployment
+          waitFor: [backup]
+
+        - name: health-check
+          agent: devops-engineer
+          action: run_health_checks
+          waitFor: [deploy]
+
+        - name: rollback-if-needed
+          agent: devops-engineer
+          action: rollback
+          condition: health_check.failed
+
+    - name: incident-response
+      trigger:
+        type: event
+        event: incident_detected
+      steps:
+        - name: acknowledge
+          agent: on-call-engineer
+          action: acknowledge_incident
+          timeout: PT5M
+
+        - name: triage
+          agent: on-call-engineer
+          action: triage_incident
+          waitFor: [acknowledge]
+
+        - name: notify-stakeholders
+          agent: system
+          action: send_notifications
+          waitFor: [triage]
+
+        - name: mitigate
+          agent: on-call-engineer
+          action: apply_mitigation
+          waitFor: [triage]
+
+        - name: resolve
+          agent: devops-engineer
+          action: implement_fix
+          waitFor: [mitigate]
+
+        - name: post-mortem
+          agent: devops-lead
+          action: schedule_post_mortem
+          waitFor: [resolve]
+
+  subscriptions:
+    - event: deployment_requested
+      action: initiate_deployment_workflow
+
+    - event: alert_fired
+      action: create_incident
+
+    - event: infrastructure_drift_detected
+      action: reconcile_infrastructure

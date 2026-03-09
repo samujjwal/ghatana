@@ -1,0 +1,1082 @@
+{
+    "domain": "Language_Arts_Humanities",
+    "levels": {
+        "Foundational": {
+            "concepts": [
+                {
+                    "id": "arts_F_1",
+                    "name": "Language & Alphabet: reading, writing, phonetics basics",
+                    "description": "Introduction to language fundamentals: letters/alphabet (or characters), phonetics, basic reading and writing skills, understanding of simple words and sentences; basic grammar (nouns, verbs, simple sentence structure).",
+                    "prerequisites": [],
+                    "audience_tags": [
+                        "K-12",
+                        "Independent_Study"
+                    ],
+                    "keywords": [
+                        "alphabet",
+                        "phonetics",
+                        "reading",
+                        "writing",
+                        "basic grammar",
+                        "sentence",
+                        "word",
+                        "language",
+                        "literacy"
+                    ],
+                    "simulation_metadata": {
+                        "simulation_type": "interactive_exercise + visualization",
+                        "recommended_interactivity": "low",
+                        "purpose": "Provide interactive drills for letter recognition, phoneme-sound mapping, basic word formation; simple reading comprehension exercises; writing practice.",
+                        "estimated_time": "15 min"
+                    },
+                    "cross_domain_links": [],
+                    "learning_object_metadata": {
+                        "author": "TutorPutor Team",
+                        "version": "1.0.0",
+                        "status": "published",
+                        "intended_end_user_role": [
+                            "student",
+                            "self-learner"
+                        ],
+                        "context": [
+                            "self-study",
+                            "classroom literacy"
+                        ],
+                        "difficulty": "easy",
+                        "typical_learning_time": "20 min",
+                        "learning_object_type": "exercise + conceptual_explanation",
+                        "creation_date": "2025-12-05",
+                        "last_modified": "2025-12-05"
+                    },
+                    "pedagogical_metadata": {
+                        "learning_objectives": [
+                            "Recognize and write letters/characters (alphabet).",
+                            "Understand basic phonetics — map letters to sounds.",
+                            "Read simple words and sentences; write basic sentences."
+                        ],
+                        "competencies": [
+                            "literacy",
+                            "phonemic awareness",
+                            "writing",
+                            "reading comprehension"
+                        ],
+                        "scaffolding_level": "standalone",
+                        "accessibility_notes": ""
+                    }
+                },
+                {
+                    "id": "arts_F_2",
+                    "name": "Basic Grammar & Sentence Structure",
+                    "description": "Teach parts of speech (noun, verb, adjective, adverb, pronoun, simple prepositions/conjunctions), basic sentence syntax (subject-verb-object), simple punctuation (period, comma, question mark); building correct sentences for communication.",
+                    "prerequisites": [
+                        "arts_F_1"
+                    ],
+                    "audience_tags": [
+                        "K-12",
+                        "Independent_Study"
+                    ],
+                    "keywords": [
+                        "grammar",
+                        "noun",
+                        "verb",
+                        "adjective",
+                        "sentence structure",
+                        "syntax",
+                        "punctuation",
+                        "reading",
+                        "writing"
+                    ],
+                    "simulation_metadata": {
+                        "simulation_type": "interactive_exercise",
+                        "recommended_interactivity": "low",
+                        "purpose": "Provide exercises for sentence building, grammar drills (identify parts of speech), playful sentence rearrangements to correct grammar, punctuation practice.",
+                        "estimated_time": "20 min"
+                    },
+                    "cross_domain_links": [],
+                    "learning_object_metadata": {
+                        "author": "TutorPutor Team",
+                        "version": "1.0.0",
+                        "status": "published",
+                        "intended_end_user_role": [
+                            "student",
+                            "self-learner"
+                        ],
+                        "context": [
+                            "self-study",
+                            "classroom literacy"
+                        ],
+                        "difficulty": "easy",
+                        "typical_learning_time": "25 min",
+                        "learning_object_type": "exercise + conceptual_explanation",
+                        "creation_date": "2025-12-05",
+                        "last_modified": "2025-12-05"
+                    },
+                    "pedagogical_metadata": {
+                        "learning_objectives": [
+                            "Identify basic parts of speech in simple sentences.",
+                            "Construct grammatically correct simple sentences.",
+                            "Use correct punctuation in simple writing."
+                        ],
+                        "competencies": [
+                            "grammar understanding",
+                            "writing skills",
+                            "reading comprehension",
+                            "language structure"
+                        ],
+                        "scaffolding_level": "scaffolded",
+                        "accessibility_notes": ""
+                    }
+                },
+                {
+                    "id": "arts_F_3",
+                    "name": "Reading Comprehension & Basic Writing (short stories, paragraphs)",
+                    "description": "Develop early reading comprehension skills — read short texts (stories, paragraphs), understand meaning, infer simple ideas; basic writing: write short paragraphs, express simple ideas in writing clearly.",
+                    "prerequisites": [
+                        "arts_F_2"
+                    ],
+                    "audience_tags": [
+                        "K-12",
+                        "Independent_Study"
+                    ],
+                    "keywords": [
+                        "reading comprehension",
+                        "writing",
+                        "paragraph",
+                        "short story",
+                        "vocabulary",
+                        "understanding",
+                        "expression",
+                        "writing skills"
+                    ],
+                    "simulation_metadata": {
+                        "simulation_type": "reading_exercise + writing_exercise",
+                        "recommended_interactivity": "low",
+                        "purpose": "Present short reading passages; provide comprehension questions; allow user to write simple paragraphs or summaries; practice expression and understanding.",
+                        "estimated_time": "25 min"
+                    },
+                    "cross_domain_links": [],
+                    "learning_object_metadata": {
+                        "author": "TutorPutor Team",
+                        "version": "1.0.0",
+                        "status": "published",
+                        "intended_end_user_role": [
+                            "student",
+                            "self-learner"
+                        ],
+                        "context": [
+                            "self-study",
+                            "classroom literacy"
+                        ],
+                        "difficulty": "easy",
+                        "typical_learning_time": "30 min",
+                        "learning_object_type": "exercise + conceptual_explanation",
+                        "creation_date": "2025-12-05",
+                        "last_modified": "2025-12-05"
+                    },
+                    "pedagogical_metadata": {
+                        "learning_objectives": [
+                            "Read and understand short texts; answer questions about content.",
+                            "Summarize or paraphrase ideas from reading.",
+                            "Write simple paragraphs expressing ideas clearly."
+                        ],
+                        "competencies": [
+                            "reading comprehension",
+                            "writing skills",
+                            "vocabulary",
+                            "expression"
+                        ],
+                        "scaffolding_level": "scaffolded",
+                        "accessibility_notes": ""
+                    }
+                },
+                {
+                    "id": "arts_F_4",
+                    "name": "Introduction to Visual Arts: shapes, colors, drawing basics",
+                    "description": "Early exposure to visual arts — basic shapes, colors, drawing simple forms, understanding visual composition, color theory fundamentals (primary/secondary colors), recognize lines/shapes/space in art or illustrations.",
+                    "prerequisites": [],
+                    "audience_tags": [
+                        "K-12",
+                        "Independent_Study"
+                    ],
+                    "keywords": [
+                        "visual art",
+                        "drawing",
+                        "color theory",
+                        "shape",
+                        "composition",
+                        "art basics",
+                        "lines",
+                        "space",
+                        "drawing skills"
+                    ],
+                    "simulation_metadata": {
+                        "simulation_type": "drawing_exercise + interactive_canvas",
+                        "recommended_interactivity": "low",
+                        "purpose": "Provide a drawing canvas for users to draw shapes, practice color mixing, basic composition tasks; simple exercises to understand visual elements.",
+                        "estimated_time": "20 min"
+                    },
+                    "cross_domain_links": [],
+                    "learning_object_metadata": {
+                        "author": "TutorPutor Team",
+                        "version": "1.0.0",
+                        "status": "published",
+                        "intended_end_user_role": [
+                            "student",
+                            "self-learner",
+                            "child learner"
+                        ],
+                        "context": [
+                            "self-study",
+                            "art class"
+                        ],
+                        "difficulty": "easy",
+                        "typical_learning_time": "25 min",
+                        "learning_object_type": "exercise + creative activity",
+                        "creation_date": "2025-12-05",
+                        "last_modified": "2025-12-05"
+                    },
+                    "pedagogical_metadata": {
+                        "learning_objectives": [
+                            "Recognize basic shapes, colors, and visual elements.",
+                            "Draw simple forms and practice color mixing.",
+                            "Understand basic visual composition (space, shape, color)."
+                        ],
+                        "competencies": [
+                            "visual literacy",
+                            "fine motor skills",
+                            "artistic expression",
+                            "color theory basics"
+                        ],
+                        "scaffolding_level": "standalone",
+                        "accessibility_notes": ""
+                    }
+                },
+                {
+                    "id": "arts_F_5",
+                    "name": "Introduction to Music: rhythm, melody, basic instruments or voice",
+                    "description": "Basic musical literacy: understanding rhythm, beat, simple melodies, singing or simple instrument playing; recognize basic musical patterns; simple notation (if applicable), and appreciation of sounds and music structure.",
+                    "prerequisites": [],
+                    "audience_tags": [
+                        "K-12",
+                        "Independent_Study"
+                    ],
+                    "keywords": [
+                        "music",
+                        "rhythm",
+                        "melody",
+                        "pitch",
+                        "beat",
+                        "singing",
+                        "instrument",
+                        "music basics",
+                        "sound pattern"
+                    ],
+                    "simulation_metadata": {
+                        "simulation_type": "audio_interactive_exercise",
+                        "recommended_interactivity": "low",
+                        "purpose": "Provide simple rhythm and melody exercises; allow user to clap or produce beats, recognize intervals; simple singing or instrument simulation to practice melody and rhythm.",
+                        "estimated_time": "20 min"
+                    },
+                    "cross_domain_links": [],
+                    "learning_object_metadata": {
+                        "author": "TutorPutor Team",
+                        "version": "1.0.0",
+                        "status": "published",
+                        "intended_end_user_role": [
+                            "student",
+                            "self-learner",
+                            "child learner"
+                        ],
+                        "context": [
+                            "self-study",
+                            "music class"
+                        ],
+                        "difficulty": "easy",
+                        "typical_learning_time": "25 min",
+                        "learning_object_type": "exercise + creative activity",
+                        "creation_date": "2025-12-05",
+                        "last_modified": "2025-12-05"
+                    },
+                    "pedagogical_metadata": {
+                        "learning_objectives": [
+                            "Understand basic rhythm, beat, and melody.",
+                            "Recognize simple musical patterns.",
+                            "Perform simple melodies or rhythms using voice or virtual instrument."
+                        ],
+                        "competencies": [
+                            "musical literacy",
+                            "listening skills",
+                            "rhythm understanding",
+                            "creative expression"
+                        ],
+                        "scaffolding_level": "standalone",
+                        "accessibility_notes": ""
+                    }
+                }
+            ]
+        },
+        "Intermediate": {
+            "concepts": [
+                {
+                    "id": "arts_I_1",
+                    "name": "Grammar & Writing: paragraphs, essays, grammar, vocabulary expansion",
+                    "description": "Advance writing skills: structured paragraphs, basic essays, coherent writing, correct grammar & syntax, vocabulary growth, basic style; reading moderately complex texts (stories, essays, articles) and understanding context, tone, main idea.",
+                    "prerequisites": [
+                        "arts_F_3",
+                        "arts_F_2"
+                    ],
+                    "audience_tags": [
+                        "College",
+                        "Independent_Study"
+                    ],
+                    "keywords": [
+                        "essay writing",
+                        "paragraph structure",
+                        "grammar",
+                        "vocabulary",
+                        "reading comprehension",
+                        "writing style",
+                        "syntax",
+                        "text analysis",
+                        "writing skills"
+                    ],
+                    "simulation_metadata": {
+                        "simulation_type": "writing_exercise + reading_exercise",
+                        "recommended_interactivity": "low to medium",
+                        "purpose": "Provide writing prompts for paragraphs and short essays; allow vocabulary drills; reading comprehension tasks with moderate complexity; grammar correction tools/exercises.",
+                        "estimated_time": "30 min"
+                    },
+                    "cross_domain_links": [],
+                    "learning_object_metadata": {
+                        "author": "TutorPutor Team",
+                        "version": "1.0.0",
+                        "status": "draft",
+                        "intended_end_user_role": [
+                            "student",
+                            "self-learner",
+                            "secondary/college learner"
+                        ],
+                        "context": [
+                            "self-study",
+                            "language class"
+                        ],
+                        "difficulty": "intermediate",
+                        "typical_learning_time": "35 min",
+                        "learning_object_type": "exercise + conceptual_explanation",
+                        "creation_date": "2025-12-05",
+                        "last_modified": "2025-12-05"
+                    },
+                    "pedagogical_metadata": {
+                        "learning_objectives": [
+                            "Write coherent paragraphs and short essays with correct grammar and structure.",
+                            "Expand vocabulary and use varied word choice.",
+                            "Read and comprehend moderately complex texts; analyze main ideas and tone."
+                        ],
+                        "competencies": [
+                            "writing skills",
+                            "reading comprehension",
+                            "language structure",
+                            "critical reading"
+                        ],
+                        "scaffolding_level": "scaffolded",
+                        "accessibility_notes": ""
+                    }
+                },
+                {
+                    "id": "arts_I_2",
+                    "name": "Literature Appreciation: stories, poetry, drama, basic literary analysis",
+                    "description": "Introduce literature: reading short stories, poems, simple dramas; understanding narrative structure, themes, characters, tone, imagery, metaphor; basic literary analysis — summarizing plot, identifying themes, interpreting meaning.",
+                    "prerequisites": [
+                        "arts_I_1",
+                        "arts_F_3"
+                    ],
+                    "audience_tags": [
+                        "College",
+                        "Independent_Study"
+                    ],
+                    "keywords": [
+                        "literature",
+                        "short story",
+                        "poetry",
+                        "drama",
+                        "theme",
+                        "character",
+                        "plot",
+                        "imagery",
+                        "analysis",
+                        "interpretation"
+                    ],
+                    "simulation_metadata": {
+                        "simulation_type": "reading_exercise + interactive_annotation",
+                        "recommended_interactivity": "low to medium",
+                        "purpose": "Provide text passages (stories, poems, drama excerpts); allow user to annotate, highlight metaphors/themes; ask guided questions for interpretation; provide writing prompts for reflection or analysis.",
+                        "estimated_time": "35 min"
+                    },
+                    "cross_domain_links": [],
+                    "learning_object_metadata": {
+                        "author": "TutorPutor Team",
+                        "version": "1.0.0",
+                        "status": "draft",
+                        "intended_end_user_role": [
+                            "student",
+                            "self-learner",
+                            "secondary/college learner"
+                        ],
+                        "context": [
+                            "self-study",
+                            "literature class"
+                        ],
+                        "difficulty": "intermediate",
+                        "typical_learning_time": "40 min",
+                        "learning_object_type": "exercise + conceptual_explanation",
+                        "creation_date": "2025-12-05",
+                        "last_modified": "2025-12-05"
+                    },
+                    "pedagogical_metadata": {
+                        "learning_objectives": [
+                            "Read and understand stories, poems, and drama excerpts.",
+                            "Identify plot, character, themes, literary devices (metaphor, imagery, tone).",
+                            "Interpret and analyze meaning; write short reflections or analyses."
+                        ],
+                        "competencies": [
+                            "literary analysis",
+                            "critical reading",
+                            "interpretation",
+                            "writing skills"
+                        ],
+                        "scaffolding_level": "scaffolded",
+                        "accessibility_notes": ""
+                    }
+                },
+                {
+                    "id": "arts_I_3",
+                    "name": "Visual Arts: drawing, painting, composition, color theory intermediate",
+                    "description": "Develop visual art skills: drawing realistically, basic shading, color mixing, composition principles (balance, contrast, focal point), perspective drawing (basic), understanding of different media (pencil, watercolor, digital).",
+                    "prerequisites": [
+                        "arts_F_4"
+                    ],
+                    "audience_tags": [
+                        "K-12",
+                        "Independent_Study",
+                        "College"
+                    ],
+                    "keywords": [
+                        "drawing",
+                        "painting",
+                        "composition",
+                        "color theory",
+                        "perspective",
+                        "art media",
+                        "visual arts",
+                        "shading",
+                        "contrast",
+                        "balance"
+                    ],
+                    "simulation_metadata": {
+                        "simulation_type": "digital_canvas + drawing_exercise",
+                        "recommended_interactivity": "medium",
+                        "purpose": "Provide drawing/painting digital canvas with tools; exercises on shading, perspective, composition; color mixing tasks; create simple artworks using learned techniques.",
+                        "estimated_time": "40 min"
+                    },
+                    "cross_domain_links": [],
+                    "learning_object_metadata": {
+                        "author": "TutorPutor Team",
+                        "version": "0.1.0",
+                        "status": "draft",
+                        "intended_end_user_role": [
+                            "student",
+                            "self-learner",
+                            "art student"
+                        ],
+                        "context": [
+                            "self-study",
+                            "art class"
+                        ],
+                        "difficulty": "intermediate",
+                        "typical_learning_time": "45 min",
+                        "learning_object_type": "exercise + creative activity",
+                        "creation_date": "2025-12-05",
+                        "last_modified": "2025-12-05"
+                    },
+                    "pedagogical_metadata": {
+                        "learning_objectives": [
+                            "Draw and paint with basic realistic shading and perspective.",
+                            "Apply composition principles to visual artwork.",
+                            "Use color theory to mix colors and create visually balanced images."
+                        ],
+                        "competencies": [
+                            "visual artistry",
+                            "composition",
+                            "color theory",
+                            "creative expression"
+                        ],
+                        "scaffolding_level": "scaffolded",
+                        "accessibility_notes": ""
+                    }
+                },
+                {
+                    "id": "arts_I_4",
+                    "name": "Music Theory & Practice: reading music, rhythms, melody & harmony basics",
+                    "description": "Learn musical notation, rhythms, scales, basic harmony (chords), reading sheet music, simple instrument playing or voice practice, ear training, basic composition of simple melodies.",
+                    "prerequisites": [
+                        "arts_F_5"
+                    ],
+                    "audience_tags": [
+                        "K-12",
+                        "Independent_Study",
+                        "College"
+                    ],
+                    "keywords": [
+                        "music theory",
+                        "notation",
+                        "rhythm",
+                        "melody",
+                        "harmony",
+                        "scale",
+                        "chords",
+                        "sheet music",
+                        "ear training",
+                        "composition"
+                    ],
+                    "simulation_metadata": {
+                        "simulation_type": "music_training_exercise + interactive_notation_editor",
+                        "recommended_interactivity": "medium",
+                        "purpose": "Provide exercises for reading notation, rhythm training, playing or simulating instrument/voice, composing simple melodies, ear-training tasks to recognize intervals or chords.",
+                        "estimated_time": "35 min"
+                    },
+                    "cross_domain_links": [],
+                    "learning_object_metadata": {
+                        "author": "TutorPutor Team",
+                        "version": "0.1.0",
+                        "status": "draft",
+                        "intended_end_user_role": [
+                            "student",
+                            "self-learner",
+                            "music learner"
+                        ],
+                        "context": [
+                            "self-study",
+                            "music class"
+                        ],
+                        "difficulty": "intermediate",
+                        "typical_learning_time": "40 min",
+                        "learning_object_type": "exercise + creative activity",
+                        "creation_date": "2025-12-05",
+                        "last_modified": "2025-12-05"
+                    },
+                    "pedagogical_metadata": {
+                        "learning_objectives": [
+                            "Read basic music notation and rhythms.",
+                            "Understand scales, chords, and basic harmony.",
+                            "Compose or play simple melodies using learned theory."
+                        ],
+                        "competencies": [
+                            "musical literacy",
+                            "composition",
+                            "ear training",
+                            "creative expression"
+                        ],
+                        "scaffolding_level": "scaffolded",
+                        "accessibility_notes": ""
+                    }
+                }
+            ]
+        },
+        "Advanced": {
+            "concepts": [
+                {
+                    "id": "arts_A_1",
+                    "name": "Advanced Writing & Composition: essays, creative writing, critical writing, rhetoric",
+                    "description": "Develop strong writing skills: structured essays (analysis, argument, narrative), creative writing (stories, poetry), understanding rhetoric, audience, style, tone; research-based writing, persuasive essays, critical reflection, editing and revision skills.",
+                    "prerequisites": [
+                        "arts_I_1",
+                        "arts_I_2"
+                    ],
+                    "audience_tags": [
+                        "University_Advanced",
+                        "Independent_Study"
+                    ],
+                    "keywords": [
+                        "essay writing",
+                        "creative writing",
+                        "rhetoric",
+                        "critical writing",
+                        "narrative",
+                        "persuasive writing",
+                        "style",
+                        "tone",
+                        "editing",
+                        "revision"
+                    ],
+                    "simulation_metadata": {
+                        "simulation_type": "writing_workshop + peer_review_simulation + interactive_editor",
+                        "recommended_interactivity": "medium-high",
+                        "purpose": "Provide structured writing assignments (analytical essay, persuasive essay, creative writing); include tools for drafting, feedback simulations (peer review), revision cycles; practice rhetoric, structure, style, argumentation and creativity.",
+                        "estimated_time": "1 hr"
+                    },
+                    "cross_domain_links": [],
+                    "learning_object_metadata": {
+                        "author": "TutorPutor Team",
+                        "version": "0.1.0",
+                        "status": "draft",
+                        "intended_end_user_role": [
+                            "student",
+                            "advanced student",
+                            "self-learner",
+                            "writer"
+                        ],
+                        "context": [
+                            "university writing class",
+                            "creative writing workshop",
+                            "self-study"
+                        ],
+                        "difficulty": "hard",
+                        "typical_learning_time": "1–1.5 hr",
+                        "learning_object_type": "exercise + creative module",
+                        "creation_date": "2025-12-05",
+                        "last_modified": "2025-12-05"
+                    },
+                    "pedagogical_metadata": {
+                        "learning_objectives": [
+                            "Compose structured essays (analytical, argumentative, narrative) with coherent argument and style.",
+                            "Write creative texts (stories, poetry) with voice, style, and narrative structure.",
+                            "Apply rhetorical techniques, adapt tone and style for different audiences, revise and refine writing through feedback."
+                        ],
+                        "competencies": [
+                            "advanced writing",
+                            "critical thinking",
+                            "creative expression",
+                            "rhetorical skills",
+                            "revision/editing"
+                        ],
+                        "scaffolding_level": "scaffolded",
+                        "accessibility_notes": ""
+                    }
+                },
+                {
+                    "id": "arts_A_2",
+                    "name": "Literary Analysis & Criticism: novels, plays, poetry — thematic, structural, historical analysis",
+                    "description": "Advanced study of literature: reading longer works (novels, full plays, poetry collections), analyzing themes, characters, plot structure, literary devices, historical/social context, genre conventions, comparative analysis, critical essays.",
+                    "prerequisites": [
+                        "arts_I_2",
+                        "arts_A_1"
+                    ],
+                    "audience_tags": [
+                        "University_Advanced",
+                        "Independent_Study",
+                        "Research"
+                    ],
+                    "keywords": [
+                        "literary analysis",
+                        "criticism",
+                        "novel",
+                        "play",
+                        "poetry",
+                        "theme",
+                        "symbolism",
+                        "historical context",
+                        "genre",
+                        "critical essay"
+                    ],
+                    "simulation_metadata": {
+                        "simulation_type": "reading_exercise + annotation + essay_writing + discussion_simulation",
+                        "recommended_interactivity": "medium-high",
+                        "purpose": "Provide full-length texts (or excerpts) for close reading; tools for annotation, note-taking; guided analysis tasks (themes, context, characters); assignments for critical essays; simulated discussion/debate environment to explore interpretations.",
+                        "estimated_time": "2 hr"
+                    },
+                    "cross_domain_links": [],
+                    "learning_object_metadata": {
+                        "author": "TutorPutor Team",
+                        "version": "0.1.0",
+                        "status": "draft",
+                        "intended_end_user_role": [
+                            "student",
+                            "advanced student",
+                            "researcher",
+                            "literature enthusiast"
+                        ],
+                        "context": [
+                            "literature coursework",
+                            "self-study",
+                            "book club/study"
+                        ],
+                        "difficulty": "hard",
+                        "typical_learning_time": "2–3 hr",
+                        "learning_object_type": "exercise + critical module",
+                        "creation_date": "2025-12-05",
+                        "last_modified": "2025-12-05"
+                    },
+                    "pedagogical_metadata": {
+                        "learning_objectives": [
+                            "Perform close reading and annotate literary texts effectively.",
+                            "Identify and analyze themes, literary devices, context, character development, and structure.",
+                            "Write critical essays interpreting literature, compare works across authors/periods, and situate in historical/social context."
+                        ],
+                        "competencies": [
+                            "critical reading",
+                            "literary criticism",
+                            "historical/social analysis",
+                            "writing skills",
+                            "comparative thinking"
+                        ],
+                        "scaffolding_level": "scaffolded",
+                        "accessibility_notes": ""
+                    }
+                },
+                {
+                    "id": "arts_A_3",
+                    "name": "Visual Arts Advanced: digital art, design fundamentals, art history, composition theory",
+                    "description": "Advanced visual arts: digital art creation or traditional media advanced techniques, principles of design (balance, contrast, typography, layout), color theory deep dive, composition theory; also introduction to art history — movements, styles, cultural contexts, critique and analysis of artworks.",
+                    "prerequisites": [
+                        "arts_I_3",
+                        "arts_F_4"
+                    ],
+                    "audience_tags": [
+                        "University_Advanced",
+                        "Independent_Study",
+                        "Research"
+                    ],
+                    "keywords": [
+                        "digital art",
+                        "design",
+                        "composition",
+                        "typography",
+                        "color theory",
+                        "art history",
+                        "art critique",
+                        "visual design",
+                        "layout",
+                        "art movements"
+                    ],
+                    "simulation_metadata": {
+                        "simulation_type": "digital_art_studio + interactive_canvas + art_history_exploration",
+                        "recommended_interactivity": "medium-high",
+                        "purpose": "Provide a digital art studio for users to create artworks; assign design tasks (layout, typography, composition); provide galleries with art history content; allow users to analyze and critique artworks; optionally create art in different styles or movements.",
+                        "estimated_time": "2 hr"
+                    },
+                    "cross_domain_links": [],
+                    "learning_object_metadata": {
+                        "author": "TutorPutor Team",
+                        "version": "0.1.0",
+                        "status": "draft",
+                        "intended_end_user_role": [
+                            "art student",
+                            "advanced learner",
+                            "self-learner",
+                            "designer"
+                        ],
+                        "context": [
+                            "art coursework",
+                            "self-study",
+                            "digital design practice"
+                        ],
+                        "difficulty": "hard",
+                        "typical_learning_time": "2–2.5 hr",
+                        "learning_object_type": "creative module + critical module",
+                        "creation_date": "2025-12-05",
+                        "last_modified": "2025-12-05"
+                    },
+                    "pedagogical_metadata": {
+                        "learning_objectives": [
+                            "Create art with advanced techniques using digital or traditional media.",
+                            "Apply design principles to produce visually balanced, effective compositions.",
+                            "Understand and critique artworks in historical and cultural context; analyze style, themes, and art movements."
+                        ],
+                        "competencies": [
+                            "visual design",
+                            "artistic creation",
+                            "historical analysis",
+                            "creative thinking",
+                            "art critique"
+                        ],
+                        "scaffolding_level": "scaffolded",
+                        "accessibility_notes": ""
+                    }
+                },
+                {
+                    "id": "arts_A_4",
+                    "name": "Music Composition & Theory Advanced: harmony, composition, musical analysis",
+                    "description": "Advanced music studies: deeper music theory (harmony, chord progressions, counterpoint, arrangement), composing original music, music analysis (structure, style, genre, history), possibly orchestration or digital music production, understanding cultural/historical context of music genres.",
+                    "prerequisites": [
+                        "arts_I_4",
+                        "arts_F_5"
+                    ],
+                    "audience_tags": [
+                        "University_Advanced",
+                        "Independent_Study",
+                        "Research"
+                    ],
+                    "keywords": [
+                        "music composition",
+                        "harmony",
+                        "counterpoint",
+                        "arrangement",
+                        "music analysis",
+                        "genre",
+                        "music history",
+                        "digital music production",
+                        "theory",
+                        "composition"
+                    ],
+                    "simulation_metadata": {
+                        "simulation_type": "music_composition_tool + audio_engine + interactive_exercise",
+                        "recommended_interactivity": "high",
+                        "purpose": "Provide composition tools (MIDI or notation), allow user to compose, arrange, and produce music; provide analysis tasks of existing works; simulate instrument sounds; study music history and styles; produce original music pieces.",
+                        "estimated_time": "2–3 hr"
+                    },
+                    "cross_domain_links": [],
+                    "learning_object_metadata": {
+                        "author": "TutorPutor Team",
+                        "version": "0.1.0",
+                        "status": "draft",
+                        "intended_end_user_role": [
+                            "music student",
+                            "composer",
+                            "self-learner"
+                        ],
+                        "context": [
+                            "music coursework",
+                            "self-study",
+                            "creative composition"
+                        ],
+                        "difficulty": "hard",
+                        "typical_learning_time": "2–3 hr",
+                        "learning_object_type": "creative module + analysis module",
+                        "creation_date": "2025-12-05",
+                        "last_modified": "2025-12-05"
+                    },
+                    "pedagogical_metadata": {
+                        "learning_objectives": [
+                            "Compose original music pieces using harmony, melody, arrangement.",
+                            "Analyze musical works (structure, genre, historical context, style).",
+                            "Understand and apply advanced music theory, and produce music using digital or real instruments."
+                        ],
+                        "competencies": [
+                            "music composition",
+                            "theory",
+                            "creative expression",
+                            "music analysis",
+                            "production skills"
+                        ],
+                        "scaffolding_level": "scaffolded",
+                        "accessibility_notes": ""
+                    }
+                }
+            ]
+        },
+        "Research_Independent": {
+            "concepts": [
+                {
+                    "id": "arts_R_1",
+                    "name": "Literary Theory & Comparative Literature: critical theory, historical context, cross-cultural studies",
+                    "description": "Explore advanced literary theory (structuralism, post-structuralism, postcolonialism, feminism, critical theory), comparative literature studies across languages/cultures/eras; critical essays, theory application, textual interpretation across contexts, cross-cultural literary analysis.",
+                    "prerequisites": [
+                        "arts_A_2",
+                        "arts_A_1"
+                    ],
+                    "audience_tags": [
+                        "Research",
+                        "Independent_Study",
+                        "University_Advanced"
+                    ],
+                    "keywords": [
+                        "literary theory",
+                        "comparative literature",
+                        "critical theory",
+                        "postcolonialism",
+                        "structuralism",
+                        "deconstruction",
+                        "theory",
+                        "textual analysis",
+                        "cross-cultural literature",
+                        "literary criticism"
+                    ],
+                    "simulation_metadata": {
+                        "simulation_type": "text_analysis_tool + annotation + research_module + discussion_simulation",
+                        "recommended_interactivity": "high",
+                        "purpose": "Provide a corpus of texts across languages, cultures, and historical periods; tools for annotation, comparative textual analysis, critical writing; simulated discussion/debate environments; support research-style essays and theoretical interpretation.",
+                        "estimated_time": "3–4 hr"
+                    },
+                    "cross_domain_links": [],
+                    "learning_object_metadata": {
+                        "author": "TutorPutor Team",
+                        "version": "0.1.0",
+                        "status": "draft",
+                        "intended_end_user_role": [
+                            "researcher",
+                            "advanced student",
+                            "self-learner",
+                            "literature scholar"
+                        ],
+                        "context": [
+                            "comparative literature research",
+                            "self-study",
+                            "academic writing"
+                        ],
+                        "difficulty": "very_hard",
+                        "typical_learning_time": "4 hr",
+                        "learning_object_type": "research module + critical analysis",
+                        "creation_date": "2025-12-05",
+                        "last_modified": "2025-12-05"
+                    },
+                    "pedagogical_metadata": {
+                        "learning_objectives": [
+                            "Apply advanced literary theories to interpret texts.",
+                            "Compare and analyze literature across cultures, languages, and historical periods.",
+                            "Produce scholarly critical essays using theoretical frameworks and textual evidence."
+                        ],
+                        "competencies": [
+                            "theoretical reasoning",
+                            "comparative analysis",
+                            "critical thinking",
+                            "academic writing",
+                            "cross-cultural understanding"
+                        ],
+                        "scaffolding_level": "scaffolded",
+                        "accessibility_notes": ""
+                    }
+                },
+                {
+                    "id": "arts_R_2",
+                    "name": "Digital Media, Art & Multimedia Theory: studying digital art, media, film, interactive media",
+                    "description": "Study modern media: digital arts, multimedia, film, interactive media — theory of media, analysis of film/literature/media, multimedia storytelling, digital art history, impact of modern media; creation and critique of digital media artworks.",
+                    "prerequisites": [
+                        "arts_A_3",
+                        "arts_A_4"
+                    ],
+                    "audience_tags": [
+                        "Research",
+                        "Independent_Study",
+                        "University_Advanced"
+                    ],
+                    "keywords": [
+                        "digital media",
+                        "film theory",
+                        "multimedia",
+                        "digital art",
+                        "media analysis",
+                        "interactive media",
+                        "storytelling",
+                        "media history",
+                        "visual media",
+                        "media criticism"
+                    ],
+                    "simulation_metadata": {
+                        "simulation_type": "media_creation_tool + interactive_multimedia_editor + analysis_module",
+                        "recommended_interactivity": "high",
+                        "purpose": "Provide tools for creating digital media (video, animation, interactive art), allow analysis of existing media (film clips, digital artworks), support multimedia storytelling projects, and enable critique and reflection on media, culture, and society.",
+                        "estimated_time": "3–4 hr"
+                    },
+                    "cross_domain_links": [],
+                    "learning_object_metadata": {
+                        "author": "TutorPutor Team",
+                        "version": "0.1.0",
+                        "status": "draft",
+                        "intended_end_user_role": [
+                            "media student",
+                            "digital artist",
+                            "researcher",
+                            "self-learner"
+                        ],
+                        "context": [
+                            "media studies",
+                            "digital art coursework",
+                            "self-study"
+                        ],
+                        "difficulty": "very_hard",
+                        "typical_learning_time": "4 hr",
+                        "learning_object_type": "project + simulation + creative module",
+                        "creation_date": "2025-12-05",
+                        "last_modified": "2025-12-05"
+                    },
+                    "pedagogical_metadata": {
+                        "learning_objectives": [
+                            "Analyze digital art and media using media theory frameworks.",
+                            "Create multimedia works (video, interactive, digital art) applying principles of storytelling, design, and media aesthetics.",
+                            "Reflect on sociocultural impact of media; critique media works from social, historical, and cultural perspectives."
+                        ],
+                        "competencies": [
+                            "media literacy",
+                            "digital art creation",
+                            "critical media analysis",
+                            "multimedia storytelling",
+                            "creative production"
+                        ],
+                        "scaffolding_level": "scaffolded",
+                        "accessibility_notes": ""
+                    }
+                },
+                {
+                    "id": "arts_R_3",
+                    "name": "Comparative Linguistics, Language History & Cultural Studies",
+                    "description": "Study languages comparatively: historical linguistics, language families, etymology, language evolution; study cultural contexts, how language and culture interrelate; research writing on language change, dialects, sociolinguistics, multilingualism, translation studies.",
+                    "prerequisites": [
+                        "arts_I_1",
+                        "arts_A_1"
+                    ],
+                    "audience_tags": [
+                        "Research",
+                        "Independent_Study",
+                        "University_Advanced"
+                    ],
+                    "keywords": [
+                        "linguistics",
+                        "historical linguistics",
+                        "language history",
+                        "sociolinguistics",
+                        "dialect",
+                        "translation",
+                        "culture",
+                        "language families",
+                        "etymology",
+                        "multilingualism"
+                    ],
+                    "simulation_metadata": {
+                        "simulation_type": "language_analysis_tool + dataset_explorer + research_module",
+                        "recommended_interactivity": "high",
+                        "purpose": "Provide datasets of languages (vocabulary, phonetics, grammar structures), allow user to analyze language evolution, compare languages, explore cognates, reconstruct proto-forms, study sociolinguistic patterns, simulate language change over time.",
+                        "estimated_time": "3–4 hr"
+                    },
+                    "cross_domain_links": [],
+                    "learning_object_metadata": {
+                        "author": "TutorPutor Team",
+                        "version": "0.1.0",
+                        "status": "draft",
+                        "intended_end_user_role": [
+                            "linguist",
+                            "researcher",
+                            "advanced student",
+                            "self-learner"
+                        ],
+                        "context": [
+                            "linguistics research",
+                            "cultural studies",
+                            "self-study"
+                        ],
+                        "difficulty": "very_hard",
+                        "typical_learning_time": "4 hr",
+                        "learning_object_type": "research module + analytical module",
+                        "creation_date": "2025-12-05",
+                        "last_modified": "2025-12-05"
+                    },
+                    "pedagogical_metadata": {
+                        "learning_objectives": [
+                            "Compare and analyze languages for structural and historical relationships.",
+                            "Research and write about language evolution, sociolinguistics, and multilingualism.",
+                            "Explore translation challenges, dialect variation, and cultural implications of language differences."
+                        ],
+                        "competencies": [
+                            "linguistic analysis",
+                            "cultural reasoning",
+                            "historical linguistics",
+                            "comparative study",
+                            "research methodology"
+                        ],
+                        "scaffolding_level": "scaffolded",
+                        "accessibility_notes": ""
+                    }
+                }
+            ]
+        }
+    }
+}

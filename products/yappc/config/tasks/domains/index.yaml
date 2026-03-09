@@ -1,0 +1,212 @@
+# Domain Index
+# Master index of all task domains for the YAPPC system
+# This file is auto-generated from domain YAML files
+
+domains:
+  - id: intent-problem-framing
+    file: 01-intent-problem-framing.yaml
+    name: "Intent & Problem Framing"
+    order: 1
+    task_count: 7
+    icon: "lightbulb"
+    color: "#FFA726"
+
+  - id: stakeholder-user-understanding
+    file: 02-stakeholder-user-understanding.yaml
+    name: "Stakeholder & User Understanding"
+    order: 2
+    task_count: 6
+    icon: "people"
+    color: "#AB47BC"
+
+  - id: context-gathering-synthesis
+    file: 03-context-gathering.yaml
+    name: "Context Gathering & Synthesis"
+    order: 3
+    task_count: 6
+    icon: "inventory_2"
+    color: "#5C6BC0"
+
+  - id: requirements-engineering
+    file: 04-requirements-engineering.yaml
+    name: "Requirements Engineering"
+    order: 4
+    task_count: 6
+    icon: "assignment"
+    color: "#42A5F5"
+
+  - id: research-discovery
+    file: 05-research-discovery.yaml
+    name: "Research & Discovery"
+    order: 5
+    task_count: 6
+    icon: "science"
+    color: "#26C6DA"
+
+  - id: experimentation-prototyping
+    file: 06-experimentation-prototyping.yaml
+    name: "Experimentation & Prototyping"
+    order: 6
+    task_count: 6
+    icon: "biotech"
+    color: "#26A69A"
+
+  - id: product-experience-design
+    file: 07-product-experience-design.yaml
+    name: "Product & Experience Design"
+    order: 7
+    task_count: 6
+    icon: "design_services"
+    color: "#66BB6A"
+
+  - id: visual-brand-design
+    file: 08-visual-brand-design.yaml
+    name: "Visual & Brand Design"
+    order: 8
+    task_count: 5
+    icon: "palette"
+    color: "#9CCC65"
+
+  - id: system-architecture-design
+    file: 09-system-architecture.yaml
+    name: "System & Architecture Design"
+    order: 9
+    task_count: 6
+    icon: "architecture"
+    color: "#D4E157"
+
+  - id: task-decomposition-estimation
+    file: 10-task-decomposition.yaml
+    name: "Task Decomposition & Estimation"
+    order: 10
+    task_count: 4
+    icon: "list_alt"
+    color: "#FFEE58"
+
+  - id: dependency-program-coordination
+    file: 11-dependency-coordination.yaml
+    name: "Dependency & Program Coordination"
+    order: 11
+    task_count: 4
+    icon: "hub"
+    color: "#FFCA28"
+
+  - id: change-release-planning
+    file: 12-change-release-planning.yaml
+    name: "Change & Release Planning"
+    order: 12
+    task_count: 4
+    icon: "schedule"
+    color: "#FFA000"
+
+  - id: software-development
+    file: 13-software-development.yaml
+    name: "Software Development"
+    order: 13
+    task_count: 4
+    icon: "code"
+    color: "#EF5350"
+
+  - id: data-ml-development
+    file: 14-data-ml-development.yaml
+    name: "Data & ML Development"
+    order: 14
+    task_count: 5
+    icon: "model_training"
+    color: "#EC407A"
+
+  - id: content-documentation-production
+    file: 15-content-documentation.yaml
+    name: "Content & Documentation Production"
+    order: 15
+    task_count: 4
+    icon: "article"
+    color: "#AB47BC"
+
+  - id: testing-qa
+    file: 16-testing-qa.yaml
+    name: "Testing & Quality Assurance"
+    order: 16
+    task_count: 5
+    icon: "bug_report"
+    color: "#7E57C2"
+
+  - id: security-engineering
+    file: 17-security-engineering.yaml
+    name: "Security Engineering"
+    order: 17
+    task_count: 4
+    icon: "security"
+    color: "#F44336"
+
+  - id: privacy-risk-compliance
+    file: 18-privacy-risk-compliance.yaml
+    name: "Privacy, Risk & Compliance"
+    order: 18
+    task_count: 4
+    icon: "gavel"
+    color: "#5C6BC0"
+
+  - id: build-cicd-deployment
+    file: 19-build-cicd-deployment.yaml
+    name: "Build, CI/CD & Deployment"
+    order: 19
+    task_count: 4
+    icon: "rocket_launch"
+    color: "#29B6F6"
+
+  - id: operations-monitoring
+    file: 20-operations-monitoring.yaml
+    name: "Operations & Monitoring"
+    order: 20
+    task_count: 4
+    icon: "monitor_heart"
+    color: "#26A69A"
+
+  - id: incident-response-recovery
+    file: 21-incident-response.yaml
+    name: "Incident Response & Recovery"
+    order: 21
+    task_count: 5
+    icon: "warning"
+    color: "#FF7043"
+
+  - id: customer-internal-support
+    file: 22-customer-support.yaml
+    name: "Customer & Internal Support"
+    order: 22
+    task_count: 4
+    icon: "support_agent"
+    color: "#78909C"
+
+  - id: observability-analytics
+    file: 23-observability-analytics.yaml
+    name: "Observability & Analytics"
+    order: 23
+    task_count: 4
+    icon: "analytics"
+    color: "#42A5F5"
+
+  - id: performance-optimization
+    file: 24-performance-optimization.yaml
+    name: "Performance & Optimization"
+    order: 24
+    task_count: 4
+    icon: "speed"
+    color: "#66BB6A"
+
+  - id: knowledge-management
+    file: 25-knowledge-management.yaml
+    name: "Knowledge Management & Institutionalization"
+    order: 25
+    task_count: 4
+    icon: "library_books"
+    color: "#8D6E63"
+
+  - id: continuous-improvement
+    file: 26-continuous-improvement.yaml
+    name: "Continuous Improvement & Innovation"
+    order: 26
+    task_count: 4
+    icon: "upgrade"
+    color: "#AB47BC"

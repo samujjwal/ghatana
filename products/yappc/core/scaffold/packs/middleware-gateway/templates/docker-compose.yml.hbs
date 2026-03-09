@@ -1,0 +1,61 @@
+services:
+{{projectName}}:
+build:
+context: .
+dockerfile: Dockerfile
+ports:
+- "{{port}}:{{port}}"
+environment:
+- NODE_ENV=production
+- PORT={{port}}
+- LOG_LEVEL={{logLevel}}
+{{#if enableAuth}}
+- JWT_SECRET=${JWT_SECRET:-change-me-in-production}
+{{/if}}
+{{#if enableCors}}
+- CORS_ORIGIN={{corsOrigin}}
+{{/if}}
+volumes:
+- ./config:/app/config:ro
+healthcheck:
+test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost:{{port}}/health"]
+interval: 30s
+timeout: 3s
+retries: 3
+start_period: 10s
+restart: unless-stopped
+networks:
+- gateway-network
+{{#if enableMetrics}}
+labels:
+- "prometheus.scrape=true"
+- "prometheus.port={{port}}"
+- "prometheus.path=/metrics"
+{{/if}}
+
+# Example upstream services for development
+# user-service:
+# image: your-user-service:latest
+# networks:
+# - gateway-network
+#
+# product-service:
+# image: your-product-service:latest
+# networks:
+# - gateway-network
+
+networks:
+gateway-network:
+driver: bridge
+
+{{#if enableMetrics}}
+# Optional: Prometheus for metrics collection
+# prometheus:
+# image: prom/prometheus:latest
+# ports:
+# - "9090:9090"
+# volumes:
+# - ./prometheus.yml:/etc/prometheus/prometheus.yml:ro
+# networks:
+# - gateway-network
+{{/if}}

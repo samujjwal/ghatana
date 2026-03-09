@@ -1,0 +1,288 @@
+# Security Tasks
+# Domain 11 of 22 - Developer Task Universe
+# Reference: developer-tasks.md Part I, Section 11
+
+domain:
+  id: security
+  name: "Security"
+  description: "Tasks related to application security and compliance"
+  order: 11
+  icon: "security"
+  color: "#D32F2F"
+  lifecycle_stages:
+    - plan
+    - execute
+    - verify
+
+tasks:
+  - id: sec-001
+    name: "Implement Authentication"
+    description: "Design and implement user authentication mechanisms"
+    personas:
+      - Developer
+      - Security
+    lifecycle_stages:
+      - plan
+      - execute
+    automation_level: assisted
+    required_capabilities:
+      - security
+      - authentication
+    input_schema: sec-001-input
+    output_schema: sec-001-output
+    audit_artifacts:
+      - InputSnapshot
+      - OutputSnapshot
+      - ChangeSet
+      - SecurityReview
+    ui:
+      icon: "lock"
+      color: "#D32F2F"
+      tags:
+        - authentication
+        - identity
+        - security
+
+  - id: sec-002
+    name: "Implement Authorization"
+    description: "Design and implement access control and permissions"
+    personas:
+      - Developer
+      - Security
+    lifecycle_stages:
+      - plan
+      - execute
+    automation_level: assisted
+    required_capabilities:
+      - security
+      - authorization
+    input_schema: sec-002-input
+    output_schema: sec-002-output
+    audit_artifacts:
+      - InputSnapshot
+      - OutputSnapshot
+      - ChangeSet
+      - SecurityReview
+    ui:
+      icon: "verified_user"
+      color: "#D32F2F"
+      tags:
+        - authorization
+        - permissions
+        - rbac
+
+  - id: sec-003
+    name: "Manage Secrets"
+    description: "Handle API keys, credentials, and sensitive configuration"
+    personas:
+      - Developer
+      - DevOps
+      - Security
+    lifecycle_stages:
+      - execute
+    automation_level: assisted
+    required_capabilities:
+      - security
+      - secrets-management
+    input_schema: sec-003-input
+    output_schema: sec-003-output
+    audit_artifacts:
+      - InputSnapshot
+      - OutputSnapshot
+      - PolicyCheck
+    ui:
+      icon: "vpn_key"
+      color: "#D32F2F"
+      tags:
+        - secrets
+        - credentials
+        - vault
+
+  - id: sec-004
+    name: "Implement Input Validation"
+    description: "Create input sanitization and validation logic"
+    personas:
+      - Developer
+      - Security
+    lifecycle_stages:
+      - execute
+    automation_level: assisted
+    required_capabilities:
+      - security
+      - code-generation
+    input_schema: sec-004-input
+    output_schema: sec-004-output
+    audit_artifacts:
+      - InputSnapshot
+      - OutputSnapshot
+      - ChangeSet
+    ui:
+      icon: "input"
+      color: "#D32F2F"
+      tags:
+        - input-validation
+        - sanitization
+        - security
+
+  - id: sec-005
+    name: "Security Code Review"
+    description: "Review code for security vulnerabilities"
+    personas:
+      - Security
+      - Developer
+    lifecycle_stages:
+      - verify
+    automation_level: assisted
+    required_capabilities:
+      - security
+      - code-review
+    input_schema: sec-005-input
+    output_schema: sec-005-output
+    audit_artifacts:
+      - InputSnapshot
+      - OutputSnapshot
+      - VerificationResult
+      - SecurityReview
+    ui:
+      icon: "policy"
+      color: "#D32F2F"
+      tags:
+        - code-review
+        - security
+        - vulnerabilities
+
+  - id: sec-006
+    name: "Vulnerability Assessment"
+    description: "Identify and assess security vulnerabilities"
+    personas:
+      - Security
+      - DevOps
+    lifecycle_stages:
+      - verify
+    automation_level: automated
+    required_capabilities:
+      - security-scanning
+      - vulnerability-assessment
+    input_schema: sec-006-input
+    output_schema: sec-006-output
+    audit_artifacts:
+      - InputSnapshot
+      - OutputSnapshot
+      - VerificationResult
+      - VulnerabilityReport
+    ui:
+      icon: "find_in_page"
+      color: "#D32F2F"
+      tags:
+        - vulnerabilities
+        - scanning
+        - assessment
+
+  - id: sec-007
+    name: "Dependency Security Scan"
+    description: "Scan dependencies for known vulnerabilities"
+    personas:
+      - Developer
+      - Security
+    lifecycle_stages:
+      - verify
+    automation_level: automated
+    required_capabilities:
+      - security-scanning
+      - dependency-analysis
+    input_schema: sec-007-input
+    output_schema: sec-007-output
+    audit_artifacts:
+      - InputSnapshot
+      - OutputSnapshot
+      - VerificationResult
+      - DependencyReport
+    ui:
+      icon: "inventory_2"
+      color: "#D32F2F"
+      tags:
+        - dependencies
+        - vulnerabilities
+        - sca
+
+  - id: sec-008
+    name: "Implement Encryption"
+    description: "Design and implement data encryption at rest and in transit"
+    personas:
+      - Developer
+      - Security
+    lifecycle_stages:
+      - execute
+    automation_level: assisted
+    required_capabilities:
+      - security
+      - cryptography
+    input_schema: sec-008-input
+    output_schema: sec-008-output
+    audit_artifacts:
+      - InputSnapshot
+      - OutputSnapshot
+      - ChangeSet
+      - SecurityReview
+    ui:
+      icon: "enhanced_encryption"
+      color: "#D32F2F"
+      tags:
+        - encryption
+        - cryptography
+        - data-protection
+
+  - id: sec-009
+    name: "Compliance Check"
+    description: "Verify compliance with security standards and regulations"
+    personas:
+      - Security
+      - Tech Lead
+    lifecycle_stages:
+      - verify
+    automation_level: assisted
+    required_capabilities:
+      - compliance
+      - security
+    input_schema: sec-009-input
+    output_schema: sec-009-output
+    audit_artifacts:
+      - InputSnapshot
+      - OutputSnapshot
+      - VerificationResult
+      - ComplianceReport
+    ui:
+      icon: "fact_check"
+      color: "#D32F2F"
+      tags:
+        - compliance
+        - regulations
+        - standards
+
+  - id: sec-010
+    name: "Security Incident Response"
+    description: "Handle and respond to security incidents"
+    personas:
+      - Security
+      - DevOps
+    lifecycle_stages:
+      - observe
+      - execute
+    automation_level: manual
+    required_capabilities:
+      - incident-response
+      - security
+    input_schema: sec-010-input
+    output_schema: sec-010-output
+    audit_artifacts:
+      - InputSnapshot
+      - OutputSnapshot
+      - IncidentRecord
+      - DecisionRecord
+    ui:
+      icon: "emergency_home"
+      color: "#D32F2F"
+      tags:
+        - incident-response
+        - security
+        - emergency

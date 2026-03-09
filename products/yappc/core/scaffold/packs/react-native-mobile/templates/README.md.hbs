@@ -1,0 +1,133 @@
+# {{displayName}}
+
+{{description}}
+
+## Tech Stack
+
+- **Framework**: React Native with Expo SDK 52
+- **Language**: TypeScript 5
+- **Navigation**: Expo Router (file-based routing)
+- **Build**: EAS Build & Submit
+- **Testing**: Jest + React Native Testing Library
+
+## Prerequisites
+
+- [Node.js](https://nodejs.org/) 18+
+- [pnpm](https://pnpm.io/) 9+
+- [Expo Go](https://expo.dev/client) app (for development) or
+- Xcode (for iOS development)
+- Android Studio (for Android development)
+
+## Quick Start
+
+```bash
+# Install dependencies
+make install
+
+# Start development server
+make start
+
+# Scan QR code with Expo Go app or run on simulator
+make ios # iOS Simulator
+make android # Android Emulator
+```
+
+## Development
+
+### Commands
+
+| Command | Description |
+|---------|-------------|
+| `make start` | Start Expo development server |
+| `make ios` | Run on iOS Simulator |
+| `make android` | Run on Android Emulator |
+| `make web` | Run in web browser |
+| `make test` | Run tests |
+| `make lint` | Lint code |
+| `make typecheck` | TypeScript type check |
+
+### Project Structure
+
+```
+{{projectName}}/
+├── app/ # Expo Router pages
+│ ├── (tabs)/ # Tab navigation
+│ │ ├── _layout.tsx # Tab bar configuration
+│ │ ├── index.tsx # Home tab
+│ │ └── settings.tsx # Settings tab
+│ ├── _layout.tsx # Root layout
+│ └── index.tsx # Entry redirect
+├── components/ # Reusable components
+├── constants/ # App constants
+├── hooks/ # Custom React hooks
+├── lib/ # Utilities
+├── types/ # TypeScript types
+├── assets/ # Images, fonts, etc.
+├── __tests__/ # Tests
+├── app.json # Expo config
+├── eas.json # EAS Build config
+└── package.json
+```
+
+## Building
+
+### Development Build
+
+For testing on physical devices with development features:
+
+```bash
+make build-dev
+```
+
+### Preview Build
+
+For internal testing (installable APK/IPA):
+
+```bash
+make build-preview
+```
+
+### Production Build
+
+For store submission:
+
+```bash
+make build-prod
+```
+
+## App Store Submission
+
+1. Update `app.json` with your app details
+2. Configure `eas.json` with your Apple/Google credentials
+3. Run `make submit`
+
+## Configuration
+
+### Environment Variables
+
+The app uses Expo's environment variable system. Create `.env.local` for local overrides:
+
+```
+EXPO_PUBLIC_API_URL=http://localhost:3000
+```
+
+### Theming
+
+Colors are defined in `constants/Colors.ts`. The app supports both light and dark themes automatically.
+
+## Testing
+
+```bash
+# Run all tests
+make test
+
+# Watch mode
+make test-watch
+
+# With coverage
+make test-coverage
+```
+
+## License
+
+Apache-2.0

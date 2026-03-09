@@ -1,0 +1,135 @@
+name: Extension SBOM
+
+on:
+    workflow_dispatch:
+        inputs:
+            sbom_increase_threshold:
+                description: "Absolute increase threshold"
+                required: false
+                default: "20"
+            sbom_increase_percent_threshold:
+                description: "Percent increase threshold (e.g., 50)"
+                required: false
+                default: ""
+    push:
+        paths:
+            - "services/extension/**"
+    pull_request:
+        paths:
+            - "services/extension/**"
+
+jobs:
+    generate-sbom:
+        runs-on: ubuntu-latest
+        env:
+            SBOM_COMPONENT_THRESHOLD: 1000
+            SBOM_FAIL_IF_ABOVE: "false"
+            SBOM_INCREASE_THRESHOLD: 20
+            SBOM_INCREASE_PERCENT_THRESHOLD: ""
+        steps:
+            - name: Checkout
+              uses: actions/checkout@v4
+
+            - name: Set up Docker Buildx
+              uses: docker/setup-buildx-action@v2
+
+            - name: Run SBOM generator (Docker-first)
+              run: |
+                  chmod +x ./scripts/generate-extension-sbom-docker.sh
+                  ./scripts/generate-extension-sbom-docker.sh
+
+            - name: Try to download previous SBOM artifact
+              id: fetch_prev
+              uses: actions/github-script@v7
+              with:
+                  github-token: ${{ secrets.GITHUB_TOKEN }}
+                  script: |
+                      const artifacts = await github.rest.actions.listArtifactsForRepo({ owner: context.repo.owner, repo: context.repo.repo });
+                      const items = artifacts.data.artifacts || [];
+                      const candidate = items.find(a => a.name === 'services-extension-sbom' || a.name === 'extension-sbom-and-summary');
+                      if (!candidate) {
+                        return { found: 'false' };
+                      }
+                      return { found: 'true', artifact_id: candidate.id };
+
+            - name: Download and extract previous SBOM (if found)
+              run: |
+                  set -euo pipefail
+                  mkdir -p tmp/prev_artifact
+                  prev_result='${{ steps.fetch_prev.outputs.result }}'
+                  if [ -z "$prev_result" ] || echo "$prev_result" | grep -q '"found":"false"'; then
+                    echo "No previous artifact found; skipping download"
+                    echo "prev_sbom_path=" >> $GITHUB_OUTPUT
+                    exit 0
+                  fi
+                  artifact_id=$(echo "$prev_result" | node -e "const s=process.argv[1]; const o=JSON.parse(s); console.log(o.artifact_id)")
+                  echo "Downloading artifact id=$artifact_id"
+                  url="https://api.github.com/repos/${{ github.repository_owner }}/${{ github.event.repository.name }}/actions/artifacts/$artifact_id/zip"
+                  curl -sS -L -H "Authorization: token $GITHUB_TOKEN" -H "Accept: application/vnd.github+json" -o tmp/prev_artifact/artifact.zip "$url"
+                  unzip -q tmp/prev_artifact/artifact.zip -d tmp/prev_artifact
+                  prev_sbom=$(find tmp/prev_artifact -type f -name 'sbom.json' | head -n 1 || true)
+                  if [ -n "$prev_sbom" ]; then
+                    echo "prev_sbom_path=$prev_sbom" >> $GITHUB_OUTPUT
+                  else
+                    echo "prev_sbom_path=" >> $GITHUB_OUTPUT
+                  fi
+
+            - name: Run SBOM summarizer (Markdown + CSV) and compare to previous
+              run: |
+                  set -euo pipefail
+                  extra_flags=""
+                  if [ "${SBOM_FAIL_IF_ABOVE:-false}" = "true" ]; then
+                    extra_flags="--fail-if-above"
+                  fi
+                  prev_arg=""
+                  if [ -n "${{ steps.fetch_prev.outputs.artifact_id || '' }} ] && [ -n "${{ steps.fetch_prev.outputs.prev_sbom_path || '' }} ]; then
+                    prev_arg="--previous=${{ steps.fetch_prev.outputs.prev_sbom_path }} --increase-threshold=${SBOM_INCREASE_THRESHOLD}"
+                    if [ -n "${{ github.event.inputs.sbom_increase_percent_threshold || '' }}" ]; then
+                      prev_arg="$prev_arg --increase-percent-threshold=${{ github.event.inputs.sbom_increase_percent_threshold }}"
+                    elif [ -n "${SBOM_INCREASE_PERCENT_THRESHOLD:-''}" ]; then
+                      prev_arg="$prev_arg --increase-percent-threshold=${SBOM_INCREASE_PERCENT_THRESHOLD}"
+                    fi
+                    if [ "${SBOM_FAIL_IF_ABOVE:-false}" = "true" ]; then
+                      prev_arg="$prev_arg --fail-if-increase-above"
+                    fi
+                  fi
+                  node scripts/sbom-summary.js services/extension/sbom.json 12 --format=md --out=services/extension/sbom-summary.md --threshold=${SBOM_COMPONENT_THRESHOLD} $extra_flags $prev_arg
+                  node scripts/sbom-summary.js services/extension/sbom.json 12 --format=csv --out=services/extension/sbom-summary.csv --threshold=${SBOM_COMPONENT_THRESHOLD} $extra_flags $prev_arg
+                  node scripts/sbom-summary.js services/extension/sbom.json 8 --format=text --threshold=${SBOM_COMPONENT_THRESHOLD} $extra_flags $prev_arg
+
+            - name: Run SBOM summarizer (Markdown + CSV) and print to logs
+              run: |
+                  set -euo pipefail
+                  extra_flags=""
+                  if [ "${SBOM_FAIL_IF_ABOVE:-false}" = "true" ]; then
+                    extra_flags="--fail-if-above"
+                  fi
+                  node scripts/sbom-summary.js services/extension/sbom.json 12 --format=md --out=services/extension/sbom-summary.md --threshold=${SBOM_COMPONENT_THRESHOLD} $extra_flags
+                  node scripts/sbom-summary.js services/extension/sbom.json 12 --format=csv --out=services/extension/sbom-summary.csv --threshold=${SBOM_COMPONENT_THRESHOLD} $extra_flags
+                  # Also emit a plain text summary to job logs for quick visibility
+                  node scripts/sbom-summary.js services/extension/sbom.json 8 --format=text --threshold=${SBOM_COMPONENT_THRESHOLD} $extra_flags
+
+            - name: Upload SBOM and summaries
+              uses: actions/upload-artifact@v4
+              with:
+                  name: extension-sbom-and-summary
+                  path: |
+                      services/extension/sbom.json
+                      services/extension/sbom-summary.md
+                      services/extension/sbom-summary.csv
+
+            - name: Comment SBOM summary on PR
+              if: github.event_name == 'pull_request'
+              uses: actions/github-script@v7
+              with:
+                  github-token: ${{ secrets.GITHUB_TOKEN }}
+                  script: |
+                      const fs = require('fs');
+                      const md = fs.readFileSync('services/extension/sbom-summary.md', 'utf8');
+                      const body = `### Extension SBOM summary\n\n${md}`;
+                      await github.rest.issues.createComment({
+                        owner: context.repo.owner,
+                        repo: context.repo.repo,
+                        issue_number: context.payload.pull_request.number,
+                        body,
+                      });

@@ -1,0 +1,75 @@
+{
+"expo": {
+"name": "{{displayName}}",
+"slug": "{{expoSlug}}",
+"version": "{{version}}",
+"orientation": "portrait",
+"icon": "./assets/icon.png",
+"scheme": "{{scheme}}",
+"userInterfaceStyle": "automatic",
+"splash": {
+"image": "./assets/splash-icon.png",
+"resizeMode": "contain",
+"backgroundColor": "#ffffff"
+},
+"ios": {
+"supportsTablet": true,
+"bundleIdentifier": "{{bundleId}}"{{#if enableNotifications}},
+"infoPlist": {
+"UIBackgroundModes": ["remote-notification"]
+}{{/if}}
+},
+"android": {
+"adaptiveIcon": {
+"foregroundImage": "./assets/adaptive-icon.png",
+"backgroundColor": "#ffffff"
+},
+"package": "{{packageName}}"{{#if enableNotifications}},
+"googleServicesFile": "./google-services.json"{{/if}}
+},
+"web": {
+"bundler": "metro",
+"output": "static",
+"favicon": "./assets/favicon.png"
+},
+"plugins": [
+"expo-router",
+"expo-font",
+"expo-secure-store"{{#if enableNotifications}},
+[
+"expo-notifications",
+{
+"icon": "./assets/notification-icon.png",
+"color": "#ffffff"
+}
+]{{/if}}{{#if enableBiometrics}},
+[
+"expo-local-authentication",
+{
+"faceIDPermission": "Allow $(PRODUCT_NAME) to use Face ID."
+}
+]{{/if}}{{#if enableCamera}},
+[
+"expo-camera",
+{
+"cameraPermission": "Allow $(PRODUCT_NAME) to access your camera."
+}
+],
+[
+"expo-image-picker",
+{
+"photosPermission": "Allow $(PRODUCT_NAME) to access your photos."
+}
+]{{/if}}{{#if enableLocation}},
+[
+"expo-location",
+{
+"locationAlwaysAndWhenInUsePermission": "Allow $(PRODUCT_NAME) to use your location."
+}
+]{{/if}}
+],
+"experiments": {
+"typedRoutes": true
+}
+}
+}

@@ -1,0 +1,65 @@
+id: plan_progress_dashboard
+agent: ProgressDashboardAgent
+role: Plan Progress Dashboard Owner
+inputs_spec:
+- name: plan_kpi_report
+  description: KPI report for Plan stage.
+  format: Structured KPI report
+- name: plan_success_criteria_status
+  description: Status of Plan stage success criteria.
+  format: List of criteria status objects
+- name: plan_stage_milestone
+  description: Plan stage milestone plan.
+  format: List of milestone objects
+outputs_spec:
+- name: plan_progress_dashboard
+  description: Dashboard visualizing Plan KPIs, success criteria, milestones, highlighting gaps, bottlenecks, and critical paths.
+  format: 'Dashboard artifact (sections: KPIs, criteria, milestones, gaps, bottlenecks, critical_path)'
+  example: 'KPIs: ["milestone_completion", "requirements_clarity"]
+
+    criteria: ["Requirements signoff"]
+
+    milestones: ["M1"]
+
+    gaps: []
+
+    bottlenecks: []
+
+    critical_path: ["M1"]
+
+    '
+agent_tasks:
+- Visualize Plan KPIs, success criteria, and milestones in dashboard.
+- Update dashboard in real time and ensure accessibility.
+- Highlight gaps, issues, critical path, blocked dependencies, bottlenecks, and overdue milestones.
+acceptance_criteria:
+- Plan KPIs, success criteria, and milestones are visualized in a dashboard.
+- Dashboard is updated in real time and accessible to stakeholders.
+- Gaps or issues in progress are highlighted for action.
+- Critical path milestones are highlighted.
+- Blocked dependencies and downstream impacts are flagged.
+- Bottlenecks or overdue milestones are visually emphasized.
+dependencies:
+- plan_kpi_report
+- plan_success_criteria_status
+- plan_stage_milestone
+failure_escalation:
+- Escalate to dashboard owner or PM if dashboard is not current or actionable.
+references: []
+hitl: false
+
+internal_logic:
+  - perception:
+      description: "Extract required context, risks, dependencies, and gaps for agent 'plan_progress_dashboard'."
+  - model:
+      description: "Track fulfillment of acceptance criteria and unresolved escalations."
+  - planning:
+      description: "For all open issues or missing outputs, trigger validation/escalation or follow-up."
+  - action:
+      description: "Assemble output per spec; update agent's trace/audit log."
+validation:
+  - "SME or HITL review for output correctness and completeness."
+  - "Audit for field and format coverage."
+quality_enhancements:
+  - "Output templates and audit log integration."
+  - "Escalation if any acceptance criteria unmet."

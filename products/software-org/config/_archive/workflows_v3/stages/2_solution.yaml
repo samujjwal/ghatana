@@ -1,0 +1,149 @@
+# Solution Stage - v3 Operator-Based Definition
+# Uses consolidated operators from operations/domain/design/
+name: Solution
+description: Solution approach, architecture decisions, and solution packaging
+domain: design
+
+# Operators used in this stage
+operators:
+  - ref: design/architecture_operator
+    modes: [solution_approach, architecture, review]
+  - ref: design/security_design_operator
+    modes: [threat_modeling]
+  - ref: design/design_synthesis_operator
+    modes: [validate, package, handoff]
+
+# Cross-cutting operators for this stage
+cross_cutting:
+  - ref: cross-cutting/milestone_tracker
+    params:
+      stage: solution
+  - ref: cross-cutting/best_practice
+    params:
+      stage: solution
+  - ref: cross-cutting/kpi
+    params:
+      stage: solution
+  - ref: cross-cutting/audit_log
+    params:
+      stage: solution
+
+# Workflow sequence
+workflow:
+  # Solution Approach
+  - step: define_solution_approach
+    operator: design/architecture_operator
+    mode: solution_approach
+    inputs:
+      - name: ready_for_solution_package
+        description: Complete plan stage package
+    outputs:
+      - name: solution_approach
+    hitl: true
+    hitl_reason: Human validates solution direction
+
+  # Architecture Definition
+  - step: define_architecture
+    operator: design/architecture_operator
+    mode: architecture
+    inputs:
+      - name: solution_approach
+    outputs:
+      - name: architecture_document
+    depends_on: [define_solution_approach]
+
+  # Initial Threat Modeling
+  - step: initial_threat_model
+    operator: design/security_design_operator
+    mode: threat_modeling
+    inputs:
+      - name: solution_approach
+      - name: architecture_document
+    outputs:
+      - name: initial_threat_model
+    depends_on: [define_architecture]
+
+  # Best Practice Check
+  - step: best_practice_check
+    operator: cross-cutting/best_practice
+    params:
+      stage: solution
+    inputs:
+      - name: solution_approach
+      - name: architecture_document
+    outputs:
+      - name: best_practice_report
+    depends_on: [initial_threat_model]
+
+  # Milestone Tracking
+  - step: track_milestones
+    operator: cross-cutting/milestone_tracker
+    params:
+      stage: solution
+    inputs:
+      - name: best_practice_report
+    outputs:
+      - name: solution_stage_milestone
+    depends_on: [best_practice_check]
+
+  # Architecture Review
+  - step: architecture_review
+    operator: design/architecture_operator
+    mode: review
+    inputs:
+      - name: architecture_document
+      - name: initial_threat_model
+      - name: best_practice_report
+    outputs:
+      - name: architecture_review_report
+    depends_on: [track_milestones]
+    hitl: true
+    hitl_reason: Human reviews architecture decisions
+
+  # Validation
+  - step: validate_solution
+    operator: design/design_synthesis_operator
+    mode: validate
+    inputs:
+      - name: solution_approach
+      - name: architecture_document
+      - name: architecture_review_report
+    outputs:
+      - name: solution_validation_report
+    depends_on: [architecture_review]
+
+  # Package
+  - step: package_solution
+    operator: design/design_synthesis_operator
+    mode: package
+    inputs:
+      - name: solution_approach
+      - name: architecture_document
+      - name: initial_threat_model
+      - name: architecture_review_report
+      - name: solution_validation_report
+    outputs:
+      - name: solution_package
+    depends_on: [validate_solution]
+
+  # Handoff
+  - step: handoff_to_design
+    operator: design/design_synthesis_operator
+    mode: handoff
+    inputs:
+      - name: solution_package
+    outputs:
+      - name: ready_for_design_package
+    depends_on: [package_solution]
+
+# Stage entry/exit criteria
+entry_criteria:
+  - Plan stage complete
+  - Requirements documented
+  - Business goals defined
+
+exit_criteria:
+  - Solution approach documented
+  - Architecture defined
+  - Initial threat model created
+  - Ready for design package created

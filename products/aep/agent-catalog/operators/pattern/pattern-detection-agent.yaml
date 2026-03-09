@@ -1,0 +1,61 @@
+id: pattern-detection-agent
+name: Pattern Detection Agent
+version: 1.0.0
+description: Detects patterns, correlations, and anomalies in event streams
+
+metadata:
+  level: 3
+  domain: event-processing
+  tags: [pattern, detection, correlation, anomaly, cep, complex-event-processing]
+
+aep:
+  operatorType: PATTERN
+  inputEventTypes: ["*"]
+  outputEventTypes: ["pattern.detected", "anomaly.detected"]
+  backpressure:
+    bufferSize: 5000
+    overflowStrategy: DROP_OLDEST
+  reliability:
+    checkpointInterval: "30s"
+    maxRetries: 3
+
+generator:
+  type: PIPELINE
+  steps:
+    - name: window_aggregation
+      type: SERVICE_CALL
+      service: window-aggregator
+      endpoint: /aep/patterns/window
+    - name: pattern_matching
+      type: LLM
+      provider: ANTHROPIC
+      model: claude-3-5-sonnet-20241022
+      temperature: 0.2
+      prompt: |
+        Detect patterns in event stream:
+        Events: {{events}}
+        Pattern Rules: {{rules}}
+        Detect: sequences, correlations, anomalies
+
+capabilities:
+  - pattern-detection
+  - anomaly-detection
+  - event-correlation
+
+tools:
+  - name: patternEngine
+    type: SERVICE
+    endpoint: /aep/patterns/detect
+  - name: correlationAnalyzer
+    type: SERVICE
+    endpoint: /aep/patterns/correlate
+
+memory:
+  type: EPISODIC
+  scope: pattern_history
+  retention: medium
+
+resources:
+  memory: "2GB"
+  cpu: "4"
+  timeout: "60s"

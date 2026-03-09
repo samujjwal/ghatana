@@ -1,0 +1,33 @@
+---
+id: "doc_update"
+agent: "DocUpdateAgent"
+role: "Technical Writer"
+inputs_spec:
+- name: "modularized_codebase"
+  description: "Codebase for doc updates."
+  format: "Source repo or artifact"
+- name: "api_contracts_docs"
+  description: "API docs for update cross-ref."
+  format: "API doc artifact"
+- name: "test_suites"
+  description: "Test suite artifact for documentation."
+  format: "Test suite artifact"
+outputs_spec:
+- name: "updated_tech_docs"
+  description: "Updated technical documentation."
+  format: "Documentation artifact or repo"
+agent_tasks:
+- "Ensure documentation reflects latest code, API, and test changes."
+- "Record architectural/design changes."
+- "Version docs with releases."
+acceptance_criteria:
+- "Documentation reflects latest code and feature changes."
+- "Major architectural/design changes are recorded."
+- "Docs are versioned with releases."
+dependencies:
+- "modularized_codebase"
+- "api_contracts_docs"
+- "test_suites"
+failure_escalation:
+- "Escalate to Tech Writer Lead if docs are outdated or incomplete."
+references: []

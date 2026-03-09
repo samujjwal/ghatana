@@ -1,0 +1,588 @@
+[versions]
+# ActiveJ
+activej = "6.0-rc2"
+
+# Alert Management
+
+# Observability
+micrometer = "1.12.4"
+opentelemetry = "1.31.0"
+
+# Kafka
+kafka-clients = "3.7.1"
+
+# Resilience
+resilience4j = "2.1.0"
+
+# Vert.x
+vertx = "4.5.8"
+
+# JSON Schema Validator
+networknt-json-schema = "1.0.86"
+
+# Playwright
+playwright = "1.43.0"
+
+# Caching
+caffeine = "3.1.8"
+
+# Apache Commons
+commons-collections4 = "4.4"
+commons-io = "2.16.1"
+commons-lang3 = "3.14.0"
+commons-math3 = "3.6.1"
+rabbitmq-amqp-client = "5.20.0"
+commons-pool2 = "2.12.0"
+commons-text = "1.11.0"
+
+# Database
+flyway = "10.12.0"
+h2 = "2.2.224"
+hikari = "5.1.0"
+postgresql = "42.7.3"
+clickhouse = "0.6.0"
+jdbi = "3.45.1"
+jooq = "3.19.10"
+hibernate-core = "6.4.4.Final"
+hibernate-validator = "8.0.1.Final"
+hibernate-jpamodelgen = "6.4.4.Final"
+sqlite-jdbc = "3.47.2.0"
+
+# AWS SDK v2
+aws-sdk-bom = "2.28.11"
+
+# Google Cloud
+gax = "2.70.3"
+google-api-client = "2.8.1"
+google-auth-library-oauth2-http = "1.39.1"
+google-cloud-core = "2.60.3"
+google-http-client = "2.0.1"
+proto-google-common-protos = "2.29.0"
+grpc = "1.75.0"
+
+# Jakarta EE
+jakarta-annotation = "2.1.1"
+jakarta-inject-api = "2.0.1"
+jakarta-mail = "2.1.3"
+jakarta-persistence-api = "3.1.0"
+jakarta-validation = "3.0.2"
+glassfish-expressly = "5.0.0-M1"  # For Jakarta EL 5.0.0-M1 (latest available)
+jakarta-transaction = "2.0.1"
+# Java EE / Legacy
+javax-annotation = "1.3.2"
+javax-inject = "1"
+
+# JWT - Using Nimbus JOSE+JWT only (canonical choice)
+# Use versions available on Maven Central
+nimbus-jose-jwt = "9.37.3"
+nimbus-oauth2-sdk = "11.10.1"
+bouncycastle = "1.78"
+jjwt = "0.12.3"
+
+# Logging
+slf4j = "2.0.13"
+log4j = "2.23.1"  # Using Log4j2 with SLF4J bridge
+logback = "1.4.14"
+
+# Testing
+junit-platform = "1.10.2"
+junit-jupiter = "5.10.2"
+mockito = "5.11.0"
+testcontainers = "1.19.8"
+assertj = "3.25.3"
+awaitility = "4.3.0"
+
+# Codegen / Mapping
+mapstruct = "1.5.5.Final"
+
+# Test utilities
+jsonassert = "1.5.1"
+
+# Development Tools
+lombok = "1.18.34"
+
+# Build Tools
+protobuf-plugin = "0.9.4"
+spotbugs-plugin = "6.4.2"
+versions-plugin = "0.51.0"
+owasp-dependencycheck-plugin = "12.1.6"
+lombok-plugin = "8.14"
+flyway-plugin = "11.0.1"
+spring-dependency-management-plugin = "1.1.4"
+jmh-plugin = "0.7.2"
+spotless = "8.0.0"
+
+# Protocol Buffers
+protobuf = "3.25.3"
+protobuf-util = "3.25.3"
+grpc-version = "1.62.2"  # Used only by the protobuf Gradle plugin (com.google.protobuf). Runtime gRPC uses [versions.grpc]
+
+# LangChain4J (AI/LLM Integration)
+langchain4j = "0.34.0"
+
+# Git
+jgit = "6.7.0.202309050840-r"
+
+# Configuration
+typesafe-config = "1.4.3"
+
+# Other
+archunit = "1.4.1"
+bcrypt = "0.10.2"
+jbcrypt = "0.4"
+codemodel = "3.1.0"
+groovy = "4.0.20"
+guava = "33.2.1-jre"
+jackson = "2.17.0"
+jacoco = "0.8.11"
+datafaker = "2.0.2"
+diffutils = "1.3.0"
+handlebars = "4.3.1"
+joda-time = "2.12.7"
+
+# Test tools
+wiremock = "2.35.0"
+
+# Jackson addons
+jackson-datatype-protobuf = "0.9.15"
+
+# Additional commonly used libraries found across modules
+graphql-java = "21.3"
+graphql-java-extended-scalars = "21.0"
+graphql-java-tools = "13.1.0"
+picocli = "4.7.6"
+jline = "3.24.1"
+jna = "5.13.0"
+javaparser = "3.25.5"
+lmdbjava = "0.8.1"
+netty = "4.1.94.Final"
+jmh = "1.36"
+antlr = "4.13.2"
+openrewrite = "8.27.0"
+okhttp = "4.12.0"
+jedis = "5.1.3"
+spotbugs-annotations = "4.8.6"
+prometheus-simpleclient = "0.16.0"
+rocksdb = "8.6.7"
+
+# SQL Parsing
+jsqlparser = "4.9"
+
+# Apache Iceberg
+iceberg = "1.10.0"
+hadoop = "3.4.2"
+
+# Debezium CDC
+debezium = "2.7.4.Final"
+
+# Delta Lake
+delta-core = "3.3.2"
+delta-store= "4.0.0"
+
+# Trino SQL Federation
+trino = "439"
+
+# Graph & Knowledge
+gremlin = "3.7.0"
+jgrapht = "1.5.2"
+
+# High-Performance Patterns
+disruptor = "3.4.4"
+
+jsr305 = "3.0.2"
+lombok-mapstruct-binding = "0.2.0"
+openai = "4.7.1"
+
+# Audio-Video / ML
+onnxruntime = "1.16.3"
+gson = "2.10.1"
+native-lib-loader = "2.5.0"
+javacpp = "1.5.9"
+opencv-java = "4.9.0-0"
+twelvemonkeys-imageio = "3.10.1"
+
+# PMD
+pmd = "7.0.0"
+
+# Checkstyle
+checkstyle = "10.12.5"
+
+[plugins]
+# Development Tools
+lombok = { id = "io.freefair.lombok", version = "8.6" }
+
+# Build Tools
+protobuf = { id = "com.google.protobuf", version.ref = "protobuf-plugin" }
+spotless = { id = "com.diffplug.spotless", version.ref = "spotless" }
+spotbugs = { id = "com.github.spotbugs", version.ref = "spotbugs-plugin" }
+versions = { id = "com.github.ben-manes.versions", version.ref = "versions-plugin" }
+owasp = { id = "org.owasp.dependencycheck", version.ref = "owasp-dependencycheck-plugin" }
+flyway = { id = "org.flywaydb.flyway", version.ref = "flyway-plugin" }
+jmh = { id = "me.champeau.jmh", version.ref = "jmh-plugin" }
+
+[libraries]
+# Apache Commons
+commons-collections4 = { module = "org.apache.commons:commons-collections4", version.ref = "commons-collections4" }
+commons-io = { module = "commons-io:commons-io", version.ref = "commons-io" }
+commons-lang3 = { module = "org.apache.commons:commons-lang3", version.ref = "commons-lang3" }
+commons-math3 = { module = "org.apache.commons:commons-math3", version.ref = "commons-math3" }
+rabbitmq-amqp-client = { module = "com.rabbitmq:amqp-client", version.ref = "rabbitmq-amqp-client" }
+commons-pool2 = { module = "org.apache.commons:commons-pool2", version.ref = "commons-pool2" }
+commons-text = { module = "org.apache.commons:commons-text", version.ref = "commons-text" }
+
+# Database
+flyway-core = { module = "org.flywaydb:flyway-core", version.ref = "flyway" }
+flyway-database-postgresql = { module = "org.flywaydb:flyway-database-postgresql", version.ref = "flyway" }
+h2 = { module = "com.h2database:h2", version.ref = "h2" }
+postgresql = { module = "org.postgresql:postgresql", version.ref = "postgresql" }
+hikaricp = { module = "com.zaxxer:HikariCP", version.ref = "hikari" }
+clickhouse-client = { module = "com.clickhouse:clickhouse-client", version.ref = "clickhouse" }
+jooq = { module = "org.jooq:jooq", version.ref = "jooq" }
+sqlite-jdbc = { module = "org.xerial:sqlite-jdbc", version.ref = "sqlite-jdbc" }
+
+# Hibernate
+hibernate-core = { module = "org.hibernate.orm:hibernate-core", version.ref = "hibernate-core" }
+hibernate-validator = { module = "org.hibernate.validator:hibernate-validator", version.ref = "hibernate-validator" }
+hibernate-jpamodelgen = { module = "org.hibernate.orm:hibernate-jpamodelgen", version.ref = "hibernate-core" }
+hibernate-envers = { module = "org.hibernate.orm:hibernate-envers", version.ref = "hibernate-core" }
+
+caffeine = { module = "com.github.ben-manes.caffeine:caffeine", version.ref = "caffeine" }
+caffeine-guava = { module = "com.github.ben-manes.caffeine:caffeine-guava", version.ref = "caffeine" }
+hibernate-validator-annotation-processor = { module = "org.hibernate.validator:hibernate-validator-annotation-processor", version.ref = "hibernate-validator" }
+jdbi-core = { module = "org.jdbi:jdbi3-core", version.ref = "jdbi" }
+jdbi3-core = { module = "org.jdbi:jdbi3-core", version.ref = "jdbi" }
+jdbi3-sqlobject = { module = "org.jdbi:jdbi3-sqlobject", version.ref = "jdbi" }
+jdbi3-postgres = { module = "org.jdbi:jdbi3-postgres", version.ref = "jdbi" }
+
+# AWS SDK v2
+aws-sdk-bom = { module = "software.amazon.awssdk:bom", version.ref = "aws-sdk-bom" }
+aws-kms = { module = "software.amazon.awssdk:kms" }
+aws-core = { module = "software.amazon.awssdk:aws-core" }
+aws-s3 = { module = "software.amazon.awssdk:s3" }
+aws-s3-transfer-manager = { module = "software.amazon.awssdk:s3-transfer-manager" }
+aws-sqs = { module = "software.amazon.awssdk:sqs" }
+aws-glacier = { module = "software.amazon.awssdk:glacier" }
+aws-sts = { module = "software.amazon.awssdk:sts" }
+aws-netty-nio-client = { module = "software.amazon.awssdk:netty-nio-client" }
+
+# Google Cloud
+gax = { module = "com.google.api:gax", version.ref = "gax" }
+gax-grpc = { module = "com.google.api:gax-grpc", version.ref = "gax" }
+google-api-client = { module = "com.google.api-client:google-api-client", version.ref = "google-api-client" }
+google-auth-library-oauth2-http = { module = "com.google.auth:google-auth-library-oauth2-http", version.ref = "google-auth-library-oauth2-http" }
+google-cloud-core = { module = "com.google.cloud:google-cloud-core", version.ref = "google-cloud-core" }
+google-http-client = { module = "com.google.http-client:google-http-client", version.ref = "google-http-client" }
+google-common-protos = { module = "com.google.api.grpc:proto-google-common-protos", version.ref = "proto-google-common-protos" }
+
+# Jakarta EE
+jakarta-annotation-api = { module = "jakarta.annotation:jakarta.annotation-api", version.ref = "jakarta-annotation" }
+jakarta-inject = { module = "jakarta.inject:jakarta.inject-api", version.ref = "jakarta-inject-api" }
+jakarta-mail = { module = "org.eclipse.angus:angus-mail", version.ref = "jakarta-mail" }
+jakarta-persistence-api = { module = "jakarta.persistence:jakarta.persistence-api", version.ref = "jakarta-persistence-api" }
+jakarta-validation-api = { module = "jakarta.validation:jakarta.validation-api", version.ref = "jakarta-validation" }
+glassfish-expressly = { module = "org.glassfish:jakarta.el", version.ref = "glassfish-expressly" }
+jakarta-transaction-api = { module = "jakarta.transaction:jakarta.transaction-api", version.ref = "jakarta-transaction" }
+
+# Java EE / Legacy
+javax-annotation-api = { module = "javax.annotation:javax.annotation-api", version.ref = "javax-annotation" }
+javax-inject = { module = "javax.inject:javax.inject", version.ref = "javax-inject" }
+javax-mail = { module = "com.sun.mail:javax.mail", version = "1.6.2" }
+
+# JWT - Canonical choice: Nimbus JOSE+JWT. jjwt-* entries removed (zero callers, all migrated to JwtTokenProvider port)
+nimbus-jose-jwt = { module = "com.nimbusds:nimbus-jose-jwt", version.ref = "nimbus-jose-jwt" }
+nimbus-oauth2-sdk = { module = "com.nimbusds:oauth2-oidc-sdk", version.ref = "nimbus-oauth2-sdk" }
+bouncycastle-provider = { module = "org.bouncycastle:bcprov-jdk18on", version.ref = "bouncycastle" }
+
+# Logging - Using Log4j2 with SLF4J bridge
+slf4j-api = { module = "org.slf4j:slf4j-api", version.ref = "slf4j" }
+slf4j-slf4j17-bridge = { module = "org.slf4j:slf4j-reload4j", version = "1.7.36" }
+log4j-core = { module = "org.apache.logging.log4j:log4j-core", version.ref = "log4j" }
+log4j-api = { module = "org.apache.logging.log4j:log4j-api", version.ref = "log4j" }
+log4j-slf4j-impl = { module = "org.apache.logging.log4j:log4j-slf4j2-impl", version.ref = "log4j" }
+log4j-jul = { module = "org.apache.logging.log4j:log4j-jul", version.ref = "log4j" }  # For java.util.logging bridge
+log4j-jcl = { module = "org.apache.logging.log4j:log4j-jcl", version.ref = "log4j" }  # For Apache Commons Logging bridge
+log4j-api12 = { module = "org.apache.logging.log4j:log4j-1.2-api", version.ref = "log4j" }  # For Log4j 1.2 API compatibility
+# logback-classic: NOT the canonical backend (Log4j2+SLF4J bridge is canonical). Kept for legacy test dependencies only.
+logback-classic = { module = "ch.qos.logback:logback-classic", version.ref = "logback" }
+
+# Testing
+junit-bom = { module = "org.junit:junit-bom", version.ref = "junit-platform" }
+junit-jupiter = { module = "org.junit.jupiter:junit-jupiter", version.ref = "junit-jupiter" }
+junit-jupiter-api = { module = "org.junit.jupiter:junit-jupiter-api", version.ref = "junit-jupiter" }
+junit-jupiter-engine = { module = "org.junit.jupiter:junit-jupiter-engine", version.ref = "junit-jupiter" }
+junit-jupiter-params = { module = "org.junit.jupiter:junit-jupiter-params", version.ref = "junit-jupiter" }
+junit-platform-commons = { module = "org.junit.platform:junit-platform-commons", version.ref = "junit-platform" }
+junit-platform-engine = { module = "org.junit.platform:junit-platform-engine", version.ref = "junit-platform" }
+junit-platform-launcher = { module = "org.junit.platform:junit-platform-launcher", version.ref = "junit-platform" }
+
+# Assertions and Mocking
+assertj-core = { module = "org.assertj:assertj-core", version.ref = "assertj" }
+mockito-core = { module = "org.mockito:mockito-core", version.ref = "mockito" }
+mockito-junit-jupiter = { module = "org.mockito:mockito-junit-jupiter", version.ref = "mockito" }
+
+# Testcontainers
+testcontainers-bom = { module = "org.testcontainers:testcontainers-bom", version.ref = "testcontainers" }
+testcontainers-core = { module = "org.testcontainers:testcontainers", version.ref = "testcontainers" }
+testcontainers-kafka = { module = "org.testcontainers:kafka", version.ref = "testcontainers" }
+testcontainers-postgresql = { module = "org.testcontainers:postgresql", version.ref = "testcontainers" }
+testcontainers-mysql = { module = "org.testcontainers:mysql", version.ref = "testcontainers" }
+testcontainers-mongodb = { module = "org.testcontainers:mongodb", version.ref = "testcontainers" }
+testcontainers-clickhouse = { module = "org.testcontainers:clickhouse", version.ref = "testcontainers" }
+testcontainers-junit-jupiter = { module = "org.testcontainers:junit-jupiter", version.ref = "testcontainers" }
+
+# Test Data
+datafaker = { module = "net.datafaker:datafaker", version.ref = "datafaker" }
+awaitility = { module = "org.awaitility:awaitility", version.ref = "awaitility" }
+
+# Test utilities
+jsonassert = { module = "org.skyscreamer:jsonassert", version.ref = "jsonassert" }
+wiremock-jre8-standalone = { module = "com.github.tomakehurst:wiremock-jre8-standalone", version.ref = "wiremock" }
+
+# Jackson addons
+jackson-datatype-protobuf = { module = "com.hubspot.jackson:jackson-datatype-protobuf", version.ref = "jackson-datatype-protobuf" }
+
+# Development Tools
+lombok = { module = "org.projectlombok:lombok", version.ref = "lombok" }
+jetbrains-annotations = { module = "org.jetbrains:annotations", version = "24.0.1" }
+jsr305 = { module = "com.google.code.findbugs:jsr305", version.ref = "jsr305" }
+lombok-mapstruct-binding = { module = "org.projectlombok:lombok-mapstruct-binding", version.ref = "lombok-mapstruct-binding" }
+
+# Codegen / Mapping
+mapstruct = { module = "org.mapstruct:mapstruct", version.ref = "mapstruct" }
+mapstruct-processor = { module = "org.mapstruct:mapstruct-processor", version.ref = "mapstruct" }
+
+# Groovy
+groovy = { module = "org.apache.groovy:groovy", version.ref = "groovy" }
+
+# Architecture tests
+archunit = { module = "com.tngtech.archunit:archunit-junit5", version.ref = "archunit" }
+archunit-junit5 = { module = "com.tngtech.archunit:archunit-junit5", version.ref = "archunit" }
+
+# Protocol Buffers
+protobuf-java = { module = "com.google.protobuf:protobuf-java", version.ref = "protobuf" }
+protobuf-java-util = { module = "com.google.protobuf:protobuf-java-util", version.ref = "protobuf" }
+
+# jBCrypt for password hashing
+jbcrypt = { module = "org.mindrot:jbcrypt", version.ref = "jbcrypt" }
+
+# Google Core Libraries
+guava = { module = "com.google.guava:guava", version.ref = "guava" }
+
+# Redis
+jedis = { module = "redis.clients:jedis", version.ref = "jedis" }
+lettuce-core = { module = "io.lettuce:lettuce-core", version = "6.3.2.RELEASE" }
+
+# Kafka
+kafka-clients = { module = "org.apache.kafka:kafka-clients", version.ref = "kafka-clients" }
+kafka-streams = { module = "org.apache.kafka:kafka-streams", version.ref = "kafka-clients" }
+
+# SpotBugs
+spotbugs-annotations = { module = "com.github.spotbugs:spotbugs-annotations", version.ref = "spotbugs-annotations" }
+
+# Observability
+micrometer-bom = { module = "io.micrometer:micrometer-bom", version.ref = "micrometer" }
+micrometer-core = { module = "io.micrometer:micrometer-core", version.ref = "micrometer" }
+micrometer-registry-prometheus = { module = "io.micrometer:micrometer-registry-prometheus", version.ref = "micrometer" }
+micrometer-registry-otlp = { module = "io.micrometer:micrometer-registry-otlp", version.ref = "micrometer" }
+opentelemetry-bom = { module = "io.opentelemetry:opentelemetry-bom", version.ref = "opentelemetry" }
+opentelemetry-api = { module = "io.opentelemetry:opentelemetry-api", version.ref = "opentelemetry" }
+opentelemetry-sdk = { module = "io.opentelemetry:opentelemetry-sdk", version.ref = "opentelemetry" }
+opentelemetry-exporter-otlp = { module = "io.opentelemetry:opentelemetry-exporter-otlp", version.ref = "opentelemetry" }
+opentelemetry-exporter-prometheus = { module = "io.opentelemetry:opentelemetry-exporter-prometheus", version.ref = "opentelemetry" }
+opentelemetry-sdk-testing = { module = "io.opentelemetry:opentelemetry-sdk-testing", version.ref = "opentelemetry" }
+opentelemetry-semconv = { module = "io.opentelemetry.semconv:opentelemetry-semconv", version = "1.21.0-alpha" }
+
+# Prometheus simpleclient
+prometheus-simpleclient = { module = "io.prometheus:simpleclient", version.ref = "prometheus-simpleclient" }
+prometheus-simpleclient-httpserver = { module = "io.prometheus:simpleclient_httpserver", version.ref = "prometheus-simpleclient" }
+
+# RocksDB
+rocksdb = { module = "org.rocksdb:rocksdbjni", version.ref = "rocksdb" }
+
+# SQL Parsing
+jsqlparser = { module = "com.github.jsqlparser:jsqlparser", version.ref = "jsqlparser" }
+
+# Elasticsearch Java Client 8.x
+elasticsearch-java = { module = "co.elastic.clients:elasticsearch-java", version = "8.12.2" }
+elasticsearch-rest-client = { module = "org.elasticsearch.client:elasticsearch-rest-client", version = "8.12.2" }
+
+# Apache Iceberg
+iceberg-api = { module = "org.apache.iceberg:iceberg-api", version.ref = "iceberg" }
+iceberg-core = { module = "org.apache.iceberg:iceberg-core", version.ref = "iceberg" }
+iceberg-parquet = { module = "org.apache.iceberg:iceberg-parquet", version.ref = "iceberg" }
+iceberg-orc = { module = "org.apache.iceberg:iceberg-orc", version.ref = "iceberg" }
+iceberg-aws = { module = "org.apache.iceberg:iceberg-aws", version.ref = "iceberg" }
+iceberg-data = { module = "org.apache.iceberg:iceberg-data", version.ref = "iceberg" }
+iceberg-hive-metastore = { module = "org.apache.iceberg:iceberg-hive-metastore", version.ref = "iceberg" }
+hadoop-common = { module = "org.apache.hadoop:hadoop-common", version.ref = "hadoop" }
+hadoop-hdfs-client = { module = "org.apache.hadoop:hadoop-hdfs-client", version.ref = "hadoop" }
+hadoop-aws = { module = "org.apache.hadoop:hadoop-aws", version.ref = "hadoop" }
+parquet-avro = { module = "org.apache.parquet:parquet-avro", version = "1.13.1" }
+
+# Delta Lake
+delta-standalone = { module = "io.delta:delta-standalone_2.13", version.ref = "delta-core" }
+delta-storage = { module = "io.delta:delta-storage", version.ref = "delta-store" }
+
+# Debezium CDC
+debezium-api = { module = "io.debezium:debezium-api", version.ref = "debezium" }
+debezium-embedded = { module = "io.debezium:debezium-embedded", version.ref = "debezium" }
+debezium-connector-postgres = { module = "io.debezium:debezium-connector-postgres", version.ref = "debezium" }
+debezium-connector-mysql = { module = "io.debezium:debezium-connector-mysql", version.ref = "debezium" }
+debezium-connector-mongodb = { module = "io.debezium:debezium-connector-mongodb", version.ref = "debezium" }
+
+# Trino SQL Federation
+trino-spi = { module = "io.trino:trino-spi", version.ref = "trino" }
+trino-plugin-toolkit = { module = "io.trino:trino-plugin-toolkit", version.ref = "trino" }
+
+# Graph & Knowledge
+gremlin-core = { module = "org.apache.tinkerpop:gremlin-core", version.ref = "gremlin" }
+tinkergraph-gremlin = { module = "org.apache.tinkerpop:tinkergraph-gremlin", version.ref = "gremlin" }
+jgrapht-core = { module = "org.jgrapht:jgrapht-core", version.ref = "jgrapht" }
+
+# High-Performance Patterns
+disruptor = { module = "com.lmax:disruptor", version.ref = "disruptor" }
+
+# JSON Processing
+json-path = { module = "com.jayway.jsonpath:json-path", version = "2.9.0" }
+jackson-bom = { module = "com.fasterxml.jackson:jackson-bom", version.ref = "jackson" }
+jackson-core = { module = "com.fasterxml.jackson.core:jackson-core", version.ref = "jackson" }
+jackson-databind = { module = "com.fasterxml.jackson.core:jackson-databind", version.ref = "jackson" }
+jackson-annotations = { module = "com.fasterxml.jackson.core:jackson-annotations", version.ref = "jackson" }
+jackson-datatype-jsr310 = { module = "com.fasterxml.jackson.datatype:jackson-datatype-jsr310", version.ref = "jackson" }
+jackson-datatype-jdk8 = { module = "com.fasterxml.jackson.datatype:jackson-datatype-jdk8", version.ref = "jackson" }
+jackson-dataformat-yaml = { module = "com.fasterxml.jackson.dataformat:jackson-dataformat-yaml", version.ref = "jackson" }
+jackson-module-parameter-names = { module = "com.fasterxml.jackson.module:jackson-module-parameter-names", version.ref = "jackson" }
+diffutils = { module = "com.googlecode.java-diff-utils:diffutils", version.ref = "diffutils" }
+handlebars = { module = "com.github.jknack:handlebars", version.ref = "handlebars" }
+joda-time = { module = "joda-time:joda-time", version.ref = "joda-time" }
+
+# GraphQL
+graphql-java = { module = "com.graphql-java:graphql-java", version.ref = "graphql-java" }
+graphql-extended-scalars = { module = "com.graphql-java:graphql-java-extended-scalars", version.ref = "graphql-java-extended-scalars" }
+graphql-java-tools = { module = "com.graphql-java-kickstart:graphql-java-tools", version.ref = "graphql-java-tools" }
+
+# CLI / Terminal
+picocli = { module = "info.picocli:picocli", version.ref = "picocli" }
+jline = { module = "org.jline:jline", version.ref = "jline" }
+jline-terminal-jna = { module = "org.jline:jline-terminal-jna", version.ref = "jline" }
+jline-reader = { module = "org.jline:jline-reader", version.ref = "jline" }
+jline-style = { module = "org.jline:jline-style", version.ref = "jline" }
+jna = { module = "net.java.dev.jna:jna", version.ref = "jna" }
+
+# Parsing / AST
+javaparser-core = { module = "com.github.javaparser:javaparser-core", version.ref = "javaparser" }
+javaparser-symbol-solver = { module = "com.github.javaparser:javaparser-symbol-solver-core", version.ref = "javaparser" }
+antlr4 = { module = "org.antlr:antlr4", version.ref = "antlr" }
+
+# Storage / Low-level
+lmdbjava = { module = "org.lmdbjava:lmdbjava", version.ref = "lmdbjava" }
+
+# Networking / Netty
+netty-buffer = { module = "io.netty:netty-buffer", version.ref = "netty" }
+
+# Benchmarking / JMH
+jmh-core = { module = "org.openjdk.jmh:jmh-core", version.ref = "jmh" }
+jmh-generator-annprocess = { module = "org.openjdk.jmh:jmh-generator-annprocess", version.ref = "jmh" }
+
+# Tools / Code-mods
+openrewrite-java = { module = "org.openrewrite:rewrite-java", version.ref = "openrewrite" }
+openrewrite-yaml = { module = "org.openrewrite:rewrite-yaml", version.ref = "openrewrite" }
+openrewrite-json = { module = "org.openrewrite:rewrite-json", version.ref = "openrewrite" }
+openrewrite-xml = { module = "org.openrewrite:rewrite-xml", version.ref = "openrewrite" }
+openrewrite-core = { module = "org.openrewrite:rewrite-core", version.ref = "openrewrite" }
+openrewrite-gradle = { module = "org.openrewrite:rewrite-gradle", version.ref = "openrewrite" }
+
+# HTTP Client
+okhttp = { module = "com.squareup.okhttp3:okhttp", version.ref = "okhttp" }
+okhttp-mockwebserver = { module = "com.squareup.okhttp3:mockwebserver", version.ref = "okhttp" }
+
+# AI / LLM - Official OpenAI Java SDK
+openai-client = { module = "com.openai:openai-java", version.ref = "openai" }
+
+# LangChain4J - AI/LLM Integration Framework
+langchain4j-bom = { module = "dev.langchain4j:langchain4j-bom", version.ref = "langchain4j" }
+langchain4j-core = { module = "dev.langchain4j:langchain4j-core", version.ref = "langchain4j" }
+langchain4j = { module = "dev.langchain4j:langchain4j", version.ref = "langchain4j" }
+langchain4j-open-ai = { module = "dev.langchain4j:langchain4j-open-ai", version.ref = "langchain4j" }
+langchain4j-anthropic = { module = "dev.langchain4j:langchain4j-anthropic", version.ref = "langchain4j" }
+langchain4j-embeddings-all-minilm-l6-v2 = { module = "dev.langchain4j:langchain4j-embeddings-all-minilm-l6-v2", version.ref = "langchain4j" }
+langchain4j-embeddings = { module = "dev.langchain4j:langchain4j-embeddings", version.ref = "langchain4j" }
+langchain4j-pgvector = { module = "dev.langchain4j:langchain4j-pgvector", version.ref = "langchain4j" }
+
+# Git Operations
+jgit = { module = "org.eclipse.jgit:org.eclipse.jgit", version.ref = "jgit" }
+
+# Configuration
+typesafe-config = { module = "com.typesafe:config", version.ref = "typesafe-config" }
+
+# gRPC
+grpc-api = { module = "io.grpc:grpc-api", version.ref = "grpc" }
+grpc-protobuf = { module = "io.grpc:grpc-protobuf", version.ref = "grpc" }
+grpc-stub = { module = "io.grpc:grpc-stub", version.ref = "grpc" }
+grpc-netty-shaded = { module = "io.grpc:grpc-netty-shaded", version.ref = "grpc" }
+grpc-services = { module = "io.grpc:grpc-services", version.ref = "grpc" }
+grpc-netty = { module = "io.grpc:grpc-netty", version.ref = "grpc" }
+grpc-core = { module = "io.grpc:grpc-core", version.ref = "grpc" }
+grpc-testing = { module = "io.grpc:grpc-testing", version.ref = "grpc" }
+grpc-inprocess = { module = "io.grpc:grpc-inprocess", version.ref = "grpc" }
+grpc-auth = { module = "io.grpc:grpc-auth", version.ref = "grpc" }
+grpc-protobuf-lite = { module = "io.grpc:grpc-protobuf-lite", version.ref = "grpc" }
+
+# NetworkNT
+networknt-validator = { module = "com.networknt:json-schema-validator", version = "1.4.0" }
+
+# Resilience4j
+resilience4j-circuitbreaker = { module = "io.github.resilience4j:resilience4j-circuitbreaker", version.ref = "resilience4j" }
+resilience4j-retry = { module = "io.github.resilience4j:resilience4j-retry", version.ref = "resilience4j" }
+
+# ActiveJ Framework - hyphenated names generate dotted accessors (libs.activej.core, libs.activej.eventloop, ...)
+activej-core = { group = "io.activej", name = "activej", version.ref = "activej" }
+activej-eventloop = { group = "io.activej", name = "activej-eventloop", version.ref = "activej" }
+activej-http = { group = "io.activej", name = "activej-http", version.ref = "activej" }
+activej-inject = { group = "io.activej", name = "activej-inject", version.ref = "activej" }
+activej-promise = { group = "io.activej", name = "activej-promise", version.ref = "activej" }
+activej-common = { group = "io.activej", name = "activej-common", version.ref = "activej" }
+activej-launcher = { group = "io.activej", name = "activej-launchers-http", version.ref = "activej" }
+activej-servicegraph = { group = "io.activej", name = "activej-servicegraph", version.ref = "activej" }
+activej-boot = { group = "io.activej", name = "activej-boot", version.ref = "activej" }
+activej-config = { group = "io.activej", name = "activej-config", version.ref = "activej" }
+activej-bytebuf = { group = "io.activej", name = "activej-bytebuf", version.ref = "activej" }
+activej-serializer = { group = "io.activej", name = "activej-serializer", version.ref = "activej" }
+activej-net = { group = "io.activej", name = "activej-net", version.ref = "activej" }
+activej-csp = { group = "io.activej", name = "activej-csp", version.ref = "activej" }
+activej-datastream = { group = "io.activej", name = "activej-datastream", version.ref = "activej" }
+activej-rpc = { group = "io.activej", name = "activej-rpc", version.ref = "activej" }
+activej-test = { group = "io.activej", name = "activej-test", version.ref = "activej" }
+activej-codegen = { group = "io.activej", name = "activej-codegen", version.ref = "activej" }
+
+# Vert.x
+vertx-core = { group = "io.vertx", name = "vertx-core", version.ref = "vertx" }
+vertx-pg-client = { group = "io.vertx", name = "vertx-pg-client", version.ref = "vertx" }
+vertx-sql-client = { group = "io.vertx", name = "vertx-sql-client", version.ref = "vertx" }
+
+# Audio-Video / ML
+onnxruntime = { module = "com.microsoft.onnxruntime:onnxruntime", version.ref = "onnxruntime" }
+gson = { module = "com.google.code.gson:gson", version.ref = "gson" }
+native-lib-loader = { module = "org.scijava:native-lib-loader", version.ref = "native-lib-loader" }
+javacpp = { module = "org.bytedeco:javacpp", version.ref = "javacpp" }
+opencv-java = { module = "org.openpnp:opencv", version.ref = "opencv-java" }
+twelvemonkeys-imageio-core = { module = "com.twelvemonkeys.imageio:imageio-core", version.ref = "twelvemonkeys-imageio" }
+twelvemonkeys-imageio-jpeg = { module = "com.twelvemonkeys.imageio:imageio-jpeg", version.ref = "twelvemonkeys-imageio" }
+
+[bundles]
+test-essentials = [
+    "junit-jupiter-api",
+    "junit-jupiter-params",
+    "assertj-core",
+    "mockito-junit-jupiter",
+    "slf4j-api",
+    "log4j-slf4j-impl",
+    "jackson-databind"
+]
+
+test-containers = [
+    "testcontainers-core",
+    "testcontainers-junit-jupiter",
+    "testcontainers-postgresql",
+    "testcontainers-kafka"
+]

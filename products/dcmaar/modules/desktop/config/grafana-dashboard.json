@@ -1,0 +1,338 @@
+{
+  "dashboard": {
+    "title": "Bridge Desktop ↔ Extension Monitoring",
+    "tags": ["bridge", "desktop", "extension", "telemetry"],
+    "timezone": "browser",
+    "schemaVersion": 16,
+    "version": 1,
+    "refresh": "10s",
+    "panels": [
+      {
+        "id": 1,
+        "title": "Connection Status",
+        "type": "stat",
+        "gridPos": { "x": 0, "y": 0, "w": 6, "h": 4 },
+        "targets": [
+          {
+            "expr": "bridge_connections_total",
+            "legendFormat": "Active Connections"
+          }
+        ],
+        "options": {
+          "colorMode": "value",
+          "graphMode": "area",
+          "justifyMode": "auto",
+          "orientation": "auto",
+          "reduceOptions": {
+            "values": false,
+            "calcs": ["lastNotNull"],
+            "fields": ""
+          },
+          "textMode": "auto"
+        },
+        "fieldConfig": {
+          "defaults": {
+            "thresholds": {
+              "mode": "absolute",
+              "steps": [
+                { "value": 0, "color": "red" },
+                { "value": 1, "color": "green" }
+              ]
+            }
+          }
+        }
+      },
+      {
+        "id": 2,
+        "title": "Message Throughput",
+        "type": "graph",
+        "gridPos": { "x": 6, "y": 0, "w": 9, "h": 4 },
+        "targets": [
+          {
+            "expr": "rate(bridge_messages_sent_total[1m])",
+            "legendFormat": "Sent"
+          },
+          {
+            "expr": "rate(bridge_messages_received_total[1m])",
+            "legendFormat": "Received"
+          }
+        ],
+        "yaxes": [
+          { "format": "ops", "label": "Messages/sec" },
+          { "format": "short" }
+        ]
+      },
+      {
+        "id": 3,
+        "title": "Circuit Breaker State",
+        "type": "stat",
+        "gridPos": { "x": 15, "y": 0, "w": 6, "h": 4 },
+        "targets": [
+          {
+            "expr": "bridge_circuit_breaker_state",
+            "legendFormat": "State"
+          }
+        ],
+        "options": {
+          "colorMode": "value",
+          "graphMode": "none",
+          "justifyMode": "auto",
+          "textMode": "value_and_name"
+        },
+        "fieldConfig": {
+          "defaults": {
+            "mappings": [
+              { "value": 0, "text": "CLOSED", "color": "green" },
+              { "value": 1, "text": "OPEN", "color": "red" },
+              { "value": 2, "text": "HALF_OPEN", "color": "yellow" }
+            ],
+            "thresholds": {
+              "mode": "absolute",
+              "steps": [
+                { "value": 0, "color": "green" },
+                { "value": 1, "color": "red" },
+                { "value": 2, "color": "yellow" }
+              ]
+            }
+          }
+        }
+      },
+      {
+        "id": 4,
+        "title": "Message Latency (P95)",
+        "type": "graph",
+        "gridPos": { "x": 0, "y": 4, "w": 12, "h": 6 },
+        "targets": [
+          {
+            "expr": "bridge_message_latency_ms{quantile=\"0.95\"}",
+            "legendFormat": "P95 Latency"
+          },
+          {
+            "expr": "bridge_message_latency_ms{quantile=\"0.99\"}",
+            "legendFormat": "P99 Latency"
+          }
+        ],
+        "yaxes": [
+          { "format": "ms", "label": "Latency" },
+          { "format": "short" }
+        ],
+        "alert": {
+          "conditions": [
+            {
+              "evaluator": { "params": [100], "type": "gt" },
+              "operator": { "type": "and" },
+              "query": { "params": ["A", "5m", "now"] },
+              "reducer": { "params": [], "type": "avg" },
+              "type": "query"
+            }
+          ],
+          "executionErrorState": "alerting",
+          "frequency": "1m",
+          "handler": 1,
+          "name": "High Message Latency",
+          "noDataState": "no_data",
+          "notifications": []
+        }
+      },
+      {
+        "id": 5,
+        "title": "Command Latency",
+        "type": "graph",
+        "gridPos": { "x": 12, "y": 4, "w": 12, "h": 6 },
+        "targets": [
+          {
+            "expr": "bridge_command_latency_ms",
+            "legendFormat": "Command Latency"
+          }
+        ],
+        "yaxes": [
+          { "format": "ms", "label": "Latency" },
+          { "format": "short" }
+        ]
+      },
+      {
+        "id": 6,
+        "title": "Telemetry Batches",
+        "type": "graph",
+        "gridPos": { "x": 0, "y": 10, "w": 8, "h": 6 },
+        "targets": [
+          {
+            "expr": "rate(bridge_telemetry_batches_sent_total[1m])",
+            "legendFormat": "Batches/sec"
+          },
+          {
+            "expr": "bridge_telemetry_batch_size_avg",
+            "legendFormat": "Avg Batch Size"
+          }
+        ],
+        "yaxes": [
+          { "format": "short", "label": "Count" },
+          { "format": "short" }
+        ]
+      },
+      {
+        "id": 7,
+        "title": "Heartbeat Status",
+        "type": "graph",
+        "gridPos": { "x": 8, "y": 10, "w": 8, "h": 6 },
+        "targets": [
+          {
+            "expr": "rate(bridge_heartbeats_sent_total[1m])",
+            "legendFormat": "Sent"
+          },
+          {
+            "expr": "rate(bridge_heartbeats_received_total[1m])",
+            "legendFormat": "Received"
+          },
+          {
+            "expr": "rate(bridge_heartbeats_missed_total[1m])",
+            "legendFormat": "Missed"
+          }
+        ],
+        "yaxes": [
+          { "format": "ops", "label": "Heartbeats/sec" },
+          { "format": "short" }
+        ]
+      },
+      {
+        "id": 8,
+        "title": "Error Rates by Type",
+        "type": "graph",
+        "gridPos": { "x": 16, "y": 10, "w": 8, "h": 6 },
+        "targets": [
+          {
+            "expr": "rate(bridge_errors_total{type=\"validation\"}[1m])",
+            "legendFormat": "Validation"
+          },
+          {
+            "expr": "rate(bridge_errors_total{type=\"protocol\"}[1m])",
+            "legendFormat": "Protocol"
+          },
+          {
+            "expr": "rate(bridge_errors_total{type=\"network\"}[1m])",
+            "legendFormat": "Network"
+          },
+          {
+            "expr": "rate(bridge_errors_total{type=\"timeout\"}[1m])",
+            "legendFormat": "Timeout"
+          }
+        ],
+        "yaxes": [
+          { "format": "ops", "label": "Errors/sec" },
+          { "format": "short" }
+        ]
+      },
+      {
+        "id": 9,
+        "title": "Connection Events",
+        "type": "graph",
+        "gridPos": { "x": 0, "y": 16, "w": 12, "h": 6 },
+        "targets": [
+          {
+            "expr": "rate(bridge_connection_attempts_total[1m])",
+            "legendFormat": "Attempts"
+          },
+          {
+            "expr": "rate(bridge_connection_failures_total[1m])",
+            "legendFormat": "Failures"
+          },
+          {
+            "expr": "rate(bridge_handshake_successes_total[1m])",
+            "legendFormat": "Handshake Success"
+          },
+          {
+            "expr": "rate(bridge_handshake_failures_total[1m])",
+            "legendFormat": "Handshake Failure"
+          }
+        ],
+        "yaxes": [
+          { "format": "ops", "label": "Events/sec" },
+          { "format": "short" }
+        ]
+      },
+      {
+        "id": 10,
+        "title": "Command Success Rate",
+        "type": "gauge",
+        "gridPos": { "x": 12, "y": 16, "w": 6, "h": 6 },
+        "targets": [
+          {
+            "expr": "rate(bridge_command_successes_total[5m]) / (rate(bridge_command_successes_total[5m]) + rate(bridge_command_failures_total[5m]))",
+            "legendFormat": "Success Rate"
+          }
+        ],
+        "options": {
+          "showThresholdLabels": false,
+          "showThresholdMarkers": true
+        },
+        "fieldConfig": {
+          "defaults": {
+            "unit": "percentunit",
+            "min": 0,
+            "max": 1,
+            "thresholds": {
+              "mode": "absolute",
+              "steps": [
+                { "value": 0, "color": "red" },
+                { "value": 0.9, "color": "yellow" },
+                { "value": 0.95, "color": "green" }
+              ]
+            }
+          }
+        }
+      },
+      {
+        "id": 11,
+        "title": "Circuit Breaker Trips",
+        "type": "stat",
+        "gridPos": { "x": 18, "y": 16, "w": 6, "h": 6 },
+        "targets": [
+          {
+            "expr": "increase(bridge_circuit_breaker_trips_total[1h])",
+            "legendFormat": "Trips (1h)"
+          }
+        ],
+        "options": {
+          "colorMode": "value",
+          "graphMode": "area",
+          "justifyMode": "auto",
+          "textMode": "auto"
+        },
+        "fieldConfig": {
+          "defaults": {
+            "thresholds": {
+              "mode": "absolute",
+              "steps": [
+                { "value": 0, "color": "green" },
+                { "value": 1, "color": "yellow" },
+                { "value": 5, "color": "red" }
+              ]
+            }
+          }
+        }
+      }
+    ],
+    "templating": {
+      "list": []
+    },
+    "annotations": {
+      "list": [
+        {
+          "datasource": "Prometheus",
+          "enable": true,
+          "expr": "ALERTS{alertname=~\"Bridge.*\", severity=\"critical\"}",
+          "iconColor": "red",
+          "name": "Critical Alerts",
+          "step": "60s",
+          "tagKeys": "alertname",
+          "textFormat": "{{alertname}}",
+          "titleFormat": "Alert"
+        }
+      ]
+    },
+    "time": {
+      "from": "now-1h",
+      "to": "now"
+    }
+  }
+}

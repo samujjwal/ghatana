@@ -1,0 +1,27 @@
+---
+id: "deploy_success_criteria_tracker"
+agent: "SuccessCriteriaTrackerAgent"
+role: "Deploy Success Criteria Tracker"
+inputs_spec:
+- name: "deploy_stage_milestone"
+  description: "Deployment stage milestones for criteria tracking."
+  format: "List of milestone objects"
+outputs_spec:
+- name: "deploy_success_criteria_status"
+  description: "Status of all deploy stage entry/exit criteria."
+  format: "List of criteria status objects"
+agent_tasks:
+- "List/map all deploy stage entry/exit criteria."
+- "Mark criteria as Met/At Risk/Not Met."
+- "List blockers/failed criteria/owners."
+- "Tracker reviewed by HITL before prod cutover."
+acceptance_criteria:
+- "All criteria tracked and status marked."
+- "Blockers, failed criteria, owners listed."
+- "Tracker reviewed before production."
+dependencies:
+- "deploy_stage_milestone"
+failure_escalation:
+- "Escalate to Criteria Tracker if criteria not maintained or reviewed."
+references: []
+hitl: false

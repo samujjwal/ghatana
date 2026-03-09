@@ -1,0 +1,212 @@
+# Development Environment Setup Tasks
+# Domain 6 of 22 - Developer Task Universe
+# Reference: developer-tasks.md Part I, Section 6
+
+domain:
+  id: dev-environment
+  name: "Development Environment Setup"
+  description: "Tasks related to configuring and maintaining development environments"
+  order: 6
+  icon: "computer"
+  color: "#DDA0DD"
+  lifecycle_stages:
+    - execute
+
+tasks:
+  - id: env-001
+    name: "Configure Local Development Environment"
+    description: "Set up local machine for development including tools and configurations"
+    personas:
+      - Developer
+    lifecycle_stages:
+      - execute
+    automation_level: assisted
+    required_capabilities:
+      - environment-setup
+      - configuration
+    input_schema: env-001-input
+    output_schema: env-001-output
+    audit_artifacts:
+      - InputSnapshot
+      - OutputSnapshot
+    ui:
+      icon: "laptop"
+      color: "#DDA0DD"
+      tags:
+        - environment
+        - setup
+        - local
+
+  - id: env-002
+    name: "Install Dependencies"
+    description: "Install and manage project dependencies"
+    personas:
+      - Developer
+    lifecycle_stages:
+      - execute
+    automation_level: automated
+    required_capabilities:
+      - dependency-management
+      - package-management
+    input_schema: env-002-input
+    output_schema: env-002-output
+    audit_artifacts:
+      - InputSnapshot
+      - OutputSnapshot
+      - ChangeSet
+    ui:
+      icon: "download"
+      color: "#DDA0DD"
+      tags:
+        - dependencies
+        - packages
+        - installation
+
+  - id: env-003
+    name: "Configure IDE/Editor"
+    description: "Set up IDE with proper extensions, settings, and configurations"
+    personas:
+      - Developer
+    lifecycle_stages:
+      - execute
+    automation_level: assisted
+    required_capabilities:
+      - ide-configuration
+      - productivity-tools
+    input_schema: env-003-input
+    output_schema: env-003-output
+    audit_artifacts:
+      - InputSnapshot
+      - OutputSnapshot
+    ui:
+      icon: "code"
+      color: "#DDA0DD"
+      tags:
+        - ide
+        - editor
+        - configuration
+
+  - id: env-004
+    name: "Set Up Linters/Formatters"
+    description: "Configure code linting and formatting tools"
+    personas:
+      - Developer
+    lifecycle_stages:
+      - execute
+    automation_level: automated
+    required_capabilities:
+      - linting-configuration
+      - code-quality
+    input_schema: env-004-input
+    output_schema: env-004-output
+    audit_artifacts:
+      - InputSnapshot
+      - OutputSnapshot
+      - ChangeSet
+    ui:
+      icon: "format_paint"
+      color: "#DDA0DD"
+      tags:
+        - linting
+        - formatting
+        - quality
+
+  - id: env-005
+    name: "Configure Build Tools"
+    description: "Set up build systems, bundlers, and compilation tools"
+    personas:
+      - Developer
+      - DevOps
+    lifecycle_stages:
+      - execute
+    automation_level: assisted
+    required_capabilities:
+      - build-configuration
+      - toolchain-setup
+    input_schema: env-005-input
+    output_schema: env-005-output
+    audit_artifacts:
+      - InputSnapshot
+      - OutputSnapshot
+      - ChangeSet
+    ui:
+      icon: "build"
+      color: "#DDA0DD"
+      tags:
+        - build
+        - tools
+        - compilation
+
+  - id: env-006
+    name: "Configure Local Databases/Services"
+    description: "Set up local databases, caches, and other services"
+    personas:
+      - Developer
+    lifecycle_stages:
+      - execute
+    automation_level: assisted
+    required_capabilities:
+      - database-setup
+      - containerization
+    input_schema: env-006-input
+    output_schema: env-006-output
+    audit_artifacts:
+      - InputSnapshot
+      - OutputSnapshot
+    ui:
+      icon: "dns"
+      color: "#DDA0DD"
+      tags:
+        - database
+        - services
+        - local
+
+  - id: env-007
+    name: "Manage Environment Variables"
+    description: "Configure and manage environment variables securely"
+    personas:
+      - Developer
+      - DevOps
+    lifecycle_stages:
+      - execute
+    automation_level: assisted
+    required_capabilities:
+      - configuration-management
+      - security
+    input_schema: env-007-input
+    output_schema: env-007-output
+    audit_artifacts:
+      - InputSnapshot
+      - OutputSnapshot
+    ui:
+      icon: "settings"
+      color: "#DDA0DD"
+      tags:
+        - environment
+        - variables
+        - configuration
+
+  - id: env-008
+    name: "Troubleshoot Environment Issues"
+    description: "Debug and resolve development environment problems"
+    personas:
+      - Developer
+    lifecycle_stages:
+      - execute
+    automation_level: assisted
+    required_capabilities:
+      - troubleshooting
+      - debugging
+    input_schema: env-008-input
+    output_schema: env-008-output
+    audit_artifacts:
+      - InputSnapshot
+      - OutputSnapshot
+      - DecisionRecord
+    ui:
+      icon: "build_circle"
+      color: "#DDA0DD"
+      tags:
+        - troubleshooting
+        - debugging
+        - environment

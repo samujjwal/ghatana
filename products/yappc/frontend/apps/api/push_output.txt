@@ -1,0 +1,13 @@
+npm warn Unknown project config "shamefully-hoist". This will stop working in the next major version of npm.
+npm warn Unknown project config "strict-peer-dependencies". This will stop working in the next major version of npm.
+npm warn Unknown project config "auto-install-peers". This will stop working in the next major version of npm.
+npm warn Unknown project config "lockfile". This will stop working in the next major version of npm.
+npm warn Unknown project config "prefer-frozen-lockfile". This will stop working in the next major version of npm.
+[dotenv@17.2.3] injecting env (39) from .env -- tip: 📡 add observability to secrets: https://dotenvx.com/ops
+Loaded Prisma Config: {
+  "schema": "/home/samujjwal/Developments/ghatana/products/yappc/app-creator/apps/api/prisma/schema.prisma",
+  "datasource": {
+    "url": "postgresql://ghatana:ghatana123@localhost:5433/tutorputor"
+  }
+}
+Failed to parse syntax of config file at "/home/samujjwal/Developments/ghatana/products/yappc/app-creator/apps/api/prisma.config.ts"

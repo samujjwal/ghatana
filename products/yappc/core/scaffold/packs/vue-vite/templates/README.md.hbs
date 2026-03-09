@@ -1,0 +1,19 @@
+# {{projectName}}
+
+{{#if description}}{{description}}{{else}}Vue 3 + Vite + TypeScript starter.{{/if}}
+
+## Scripts
+- `npm install`
+- `npm run dev`
+- `npm run build`
+- `npm run preview`
+- `npm run test` (vitest)
+
+## Docker
+```bash
+docker build -t {{kebabCase projectName}} .
+docker run -p 5173:5173 {{kebabCase projectName}}
+```
+
+## Lint & Test
+- Vitest sample test in `tests/unit/example.spec.ts`.

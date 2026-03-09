@@ -1,0 +1,42 @@
+npm warn Unknown project config "shamefully-hoist". This will stop working in the next major version of npm.
+npm warn Unknown project config "strict-peer-dependencies". This will stop working in the next major version of npm.
+npm warn Unknown project config "auto-install-peers". This will stop working in the next major version of npm.
+npm warn Unknown project config "lockfile". This will stop working in the next major version of npm.
+npm warn Unknown project config "prefer-frozen-lockfile". This will stop working in the next major version of npm.
+[dotenv@17.2.3] injecting env (39) from .env -- tip: ⚙️  suppress all logs with { quiet: true }
+🌱 Starting database seed...
+🧹 Cleaning up existing data...
+❌ Error during seeding: PrismaClientKnownRequestError: 
+Invalid `prisma.aIInsight.deleteMany()` invocation in
+/home/samujjwal/Developments/ghatana/products/yappc/app-creator/apps/api/prisma/seed.ts:46:26
+
+  43 
+  44 // 1. Clean up existing data
+  45 console.log('🧹 Cleaning up existing data...');
+→ 46 await prisma.aIInsight.deleteMany(
+The table `public.AIInsight` does not exist in the current database.
+    at qr.handleRequestError (/home/samujjwal/Developments/ghatana/node_modules/.pnpm/@prisma+client@7.2.0_prisma@7.2.0_@types+react@19.2.7_react-dom@19.2.3_react@19.2.3__re_f75d495222e5a9a082c60aa675bb2498/node_modules/@prisma/client/src/runtime/RequestHandler.ts:228:13)
+    at qr.handleAndLogRequestError (/home/samujjwal/Developments/ghatana/node_modules/.pnpm/@prisma+client@7.2.0_prisma@7.2.0_@types+react@19.2.7_react-dom@19.2.3_react@19.2.3__re_f75d495222e5a9a082c60aa675bb2498/node_modules/@prisma/client/src/runtime/RequestHandler.ts:174:12)
+    at qr.request (/home/samujjwal/Developments/ghatana/node_modules/.pnpm/@prisma+client@7.2.0_prisma@7.2.0_@types+react@19.2.7_react-dom@19.2.3_react@19.2.3__re_f75d495222e5a9a082c60aa675bb2498/node_modules/@prisma/client/src/runtime/RequestHandler.ts:143:12)
+    at process.processTicksAndRejections (node:internal/process/task_queues:105:5)
+    at async a (/home/samujjwal/Developments/ghatana/node_modules/.pnpm/@prisma+client@7.2.0_prisma@7.2.0_@types+react@19.2.7_react-dom@19.2.3_react@19.2.3__re_f75d495222e5a9a082c60aa675bb2498/node_modules/@prisma/client/src/runtime/getPrismaClient.ts:805:24)
+    at async main (/home/samujjwal/Developments/ghatana/products/yappc/app-creator/apps/api/prisma/seed.ts:46:3) {
+  code: 'P2021',
+  meta: {
+    modelName: 'AIInsight',
+    driverAdapterError: DriverAdapterError: TableDoesNotExist
+        at PrismaPgAdapter.onError (file:///home/samujjwal/Developments/ghatana/node_modules/.pnpm/@prisma+adapter-pg@7.2.0/node_modules/@prisma/adapter-pg/dist/index.mjs:651:11)
+        at PrismaPgAdapter.performIO (file:///home/samujjwal/Developments/ghatana/node_modules/.pnpm/@prisma+adapter-pg@7.2.0/node_modules/@prisma/adapter-pg/dist/index.mjs:646:12)
+        at process.processTicksAndRejections (node:internal/process/task_queues:105:5)
+        at async PrismaPgAdapter.executeRaw (file:///home/samujjwal/Developments/ghatana/node_modules/.pnpm/@prisma+adapter-pg@7.2.0/node_modules/@prisma/adapter-pg/dist/index.mjs:605:13)
+        at async <anonymous> (/home/samujjwal/Developments/ghatana/node_modules/.pnpm/@prisma+client@7.2.0_prisma@7.2.0_@types+react@19.2.7_react-dom@19.2.3_react@19.2.3__re_f75d495222e5a9a082c60aa675bb2498/node_modules/@prisma/client-engine-runtime/src/tracing.ts:68:22)
+        at async fr (/home/samujjwal/Developments/ghatana/node_modules/.pnpm/@prisma+client@7.2.0_prisma@7.2.0_@types+react@19.2.7_react-dom@19.2.3_react@19.2.3__re_f75d495222e5a9a082c60aa675bb2498/node_modules/@prisma/client-engine-runtime/src/tracing.ts:56:10)
+        at async e.interpretNode (/home/samujjwal/Developments/ghatana/node_modules/.pnpm/@prisma+client@7.2.0_prisma@7.2.0_@types+react@19.2.7_react-dom@19.2.3_react@19.2.3__re_f75d495222e5a9a082c60aa675bb2498/node_modules/@prisma/client-engine-runtime/src/interpreter/query-interpreter.ts:172:18)
+        at async e.interpretNode (/home/samujjwal/Developments/ghatana/node_modules/.pnpm/@prisma+client@7.2.0_prisma@7.2.0_@types+react@19.2.7_react-dom@19.2.3_react@19.2.3__re_f75d495222e5a9a082c60aa675bb2498/node_modules/@prisma/client-engine-runtime/src/interpreter/query-interpreter.ts:276:41)
+        at async e.run (/home/samujjwal/Developments/ghatana/node_modules/.pnpm/@prisma+client@7.2.0_prisma@7.2.0_@types+react@19.2.7_react-dom@19.2.3_react@19.2.3__re_f75d495222e5a9a082c60aa675bb2498/node_modules/@prisma/client-engine-runtime/src/interpreter/query-interpreter.ts:96:23)
+        at async e.execute (/home/samujjwal/Developments/ghatana/node_modules/.pnpm/@prisma+client@7.2.0_prisma@7.2.0_@types+react@19.2.7_react-dom@19.2.3_react@19.2.3__re_f75d495222e5a9a082c60aa675bb2498/node_modules/@prisma/client/src/runtime/core/engines/client/LocalExecutor.ts:81:12) {
+      cause: [Object]
+    }
+  },
+  clientVersion: '7.2.0'
+}

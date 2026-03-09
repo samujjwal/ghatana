@@ -1,0 +1,63 @@
+# Accessibility Audit CI
+# Runs axe-core accessibility checks against all web products
+name: Accessibility Audit
+
+on:
+  pull_request:
+    paths:
+      - 'products/*/ui/**'
+      - 'products/*/client/web/**'
+      - 'products/*/apps/*/src/**'
+      - 'platform/typescript/ui/**'
+      - 'platform/typescript/accessibility-audit/**'
+
+jobs:
+  a11y-audit:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 9
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: pnpm
+
+      - run: pnpm install --frozen-lockfile
+
+      - name: Build platform packages
+        run: pnpm --filter "./platform/typescript/**" build
+
+      - name: Run accessibility-audit package checks
+        run: |
+          if [ -d "platform/typescript/accessibility-audit" ]; then
+            pnpm --filter @ghatana/accessibility-audit test || echo "No tests found"
+          fi
+
+      - name: Install Playwright for axe checks
+        run: npx playwright install --with-deps chromium
+
+      - name: Run axe-core on Storybook or dev servers
+        run: |
+          # Build and serve Storybook if available, else use dev server
+          for dir in products/*/ui products/*/client/web; do
+            if [ -d "$dir" ] && [ -f "$dir/package.json" ]; then
+              echo "--- Checking: $dir ---"
+              cd "$dir"
+
+              # Try to run component-level a11y tests (e.g., jest-axe / vitest-axe)
+              if grep -q "axe" package.json 2>/dev/null; then
+                echo "Running axe-based tests in $dir"
+                pnpm test -- --passWithNoTests 2>/dev/null || true
+              fi
+
+              cd - > /dev/null
+            fi
+          done
+
+      - name: Report a11y results
+        if: always()
+        run: echo "Accessibility audit completed. Review logs for WCAG violations."

@@ -1,0 +1,67 @@
+id: "business-analyst"
+name: "Business Analyst"
+version: "1.0.0"
+description: "Analyzes business requirements and creates user stories"
+
+metadata:
+  level: 2  # Expert level
+  domain: "requirements-engineering"
+  tags: ["requirements", "user-stories", "acceptance-criteria"]
+
+generator:
+  type: "pipeline"
+  steps:
+    - type: "rule-based"
+      rules:
+        - "Extract stakeholders from input"
+        - "Identify business goals"
+        - "Map to user personas"
+    - type: "llm"
+      provider: "openai"
+      model: "gpt-4"
+      temperature: 0.6
+      prompt: |
+        You are a Business Analyst expert. Given the following input:
+        {{input}}
+        
+        Create detailed user stories with:
+        1. As a [persona]
+        2. I want to [action]
+        3. So that [benefit]
+        
+        Include acceptance criteria and priority.
+
+memory:
+  episodic:
+    enabled: true
+    retention_days: 90
+  semantic:
+    enabled: true
+    categories: ["requirements", "user-stories", "acceptance-criteria"]
+  procedural:
+    enabled: true
+
+tools:
+  - "file_read"
+  - "file_write"
+
+capabilities:
+  - "requirements-analysis"
+  - "user-story-creation"
+  - "acceptance-criteria-definition"
+
+routing:
+  input_types: ["RequirementRequest", "FeatureRequest"]
+  output_types: ["UserStory", "AcceptanceCriteria"]
+
+delegation:
+  can_delegate_to:
+    - ux-research-agent
+    - story-writer-agent
+    - documentation-writer
+  escalates_to: products-officer
+
+performance:
+  expected_latency_ms: 3000
+  max_latency_ms: 8000
+  timeout_ms: 10000

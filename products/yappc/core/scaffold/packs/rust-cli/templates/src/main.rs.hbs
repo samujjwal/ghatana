@@ -1,0 +1,41 @@
+use anyhow::Result;
+use clap::{Parser, Subcommand};
+
+#[derive(Parser)]
+#[command(name = "{{projectName}}")]
+#[command(about = "{{#if description}}{{description}}{{else}}A Rust CLI application{{/if}}", long_about = None)]
+#[command(version)]
+struct Cli {
+#[command(subcommand)]
+command: Commands,
+}
+
+#[derive(Subcommand)]
+enum Commands {
+/// Say hello to someone
+Hello {
+/// Name to greet
+name: String,
+},
+/// Show application information
+Info,
+}
+
+fn main() -> Result<()> {
+    let cli = Cli::parse();
+
+    match cli.command {
+    Commands::Hello { name } => {
+    println!("Hello, {}!", name);
+    }
+    Commands::Info => {
+    println!("{{projectName}}");
+    println!("Version: {}", env!("CARGO_PKG_VERSION"));
+    {{#if description}}
+    println!("{{description}}");
+    {{/if}}
+    }
+    }
+
+    Ok(())
+    }

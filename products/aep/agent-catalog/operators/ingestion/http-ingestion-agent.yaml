@@ -1,0 +1,46 @@
+id: http-ingestion-agent
+name: HTTP Ingestion Agent
+version: 1.0.0
+description: Receives events via HTTP/REST endpoints with webhook support and payload validation
+
+metadata:
+  level: 3
+  domain: event-processing
+  tags: [http, ingestion, webhook, rest, api]
+
+aep:
+  operatorType: INGESTION
+  inputEventTypes: []
+  outputEventTypes: ["raw.http"]
+  backpressure:
+    bufferSize: 5000
+    overflowStrategy: DROP_LATEST
+  reliability:
+    checkpointInterval: "10s"
+    maxRetries: 2
+    deadLetterQueue: "http-ingestion-dlq"
+
+generator:
+  type: DETERMINISTIC
+
+capabilities:
+  - http-ingestion
+  - event-validation
+
+tools:
+  - name: httpServer
+    type: SERVICE
+    endpoint: /aep/http/ingest
+  - name: payloadValidator
+    type: SERVICE
+    endpoint: /aep/http/validate
+
+memory:
+  type: WORKING
+  scope: request_buffer
+  retention: short
+
+resources:
+  memory: "512MB"
+  cpu: "1"
+  timeout: "0"

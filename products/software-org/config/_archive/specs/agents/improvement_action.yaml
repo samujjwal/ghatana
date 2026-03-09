@@ -1,0 +1,22 @@
+---
+id: "improvement_action"
+agent: "ImprovementActionAgent"
+role: "Improvement Owner"
+inputs_spec:
+- name: "retro_findings"
+  description: "Retrospective findings for action planning."
+  format: "Retrospective findings artifact"
+outputs_spec:
+- name: "improvement_plan"
+  description: "Action items for process/tooling/automation improvements."
+  format: "Improvement plan artifact"
+agent_tasks:
+- "Define/prioritize/assign concrete action items for improvement."
+acceptance_criteria:
+- "Action items defined, prioritized, and assigned."
+dependencies:
+- "retro_findings"
+failure_escalation:
+- "Escalate to Improvement Owner if actions not defined/assigned."
+references: []
+hitl: false

@@ -1,0 +1,124 @@
+# Agent Catalog Schema
+#
+# Defines the standard schema for agent descriptor YAML files used across
+# all product catalogs. Every agent.yaml MUST conform to this schema.
+
+schema:
+  version: "1.0.0"
+
+  agent:
+    required:
+      - id            # Unique agent identifier (catalog-scoped)
+      - name          # Human-readable name
+      - version       # Semantic version (e.g. "1.0.0")
+      - type          # DETERMINISTIC | ADAPTIVE | COMPOSITE
+
+    optional:
+      description:    # Free-text description
+        type: string
+
+      aep:            # AEP integration (event-driven agents only)
+        operatorType:       # INGESTION | TRANSFORMATION | ROUTING | SINK
+          type: string
+          enum: [INGESTION, TRANSFORMATION, ROUTING, SINK, PATTERN_DETECTION]
+        inputEventTypes:
+          type: array
+          items: string
+        outputEventTypes:
+          type: array
+          items: string
+        backpressure:
+          bufferSize:
+            type: integer
+            default: 1000
+          overflowStrategy:
+            type: string
+            enum: [DROP_LATEST, DROP_OLDEST, BLOCK, UNBOUNDED, OVERFLOW_TO_DLQ]
+            default: DROP_LATEST
+        reliability:
+          checkpointInterval:
+            type: string
+            default: "30s"
+          maxRetries:
+            type: integer
+            default: 3
+          deadLetterQueue:
+            type: string
+
+      capabilities:   # Declared capability tags
+        type: array
+        items:
+          name:
+            type: string
+            required: true
+          version:
+            type: string
+            default: "1.0"
+          type:
+            type: string
+          parameters:
+            type: object
+
+      io:             # Input/output specifications
+        inputs:
+          type: array
+          items:
+            name: { type: string, required: true }
+            type: { type: string, required: true }
+            schema: { type: string }
+            required: { type: boolean, default: true }
+        outputs:
+          type: array
+          items:
+            name: { type: string, required: true }
+            type: { type: string, required: true }
+            schema: { type: string }
+
+      resources:      # Resource requirements
+        memory:
+          type: string
+          default: "512MB"
+        cpu:
+          type: string
+          default: "1"
+        timeout:
+          type: string
+          default: "30s"
+        maxConcurrency:
+          type: integer
+          default: 10
+
+      implementation: # Java class reference
+        class:
+          type: string
+          required: true
+        module:
+          type: string   # Gradle module path (e.g. "products:aep:platform")
+
+      metadata:       # Arbitrary metadata
+        author:
+          type: string
+        tags:
+          type: array
+          items: string
+        maturity:
+          type: string
+          enum: [experimental, beta, production, deprecated]
+          default: experimental
+
+      # YAPPC-style extended fields (optional)
+      generator:
+        type: object
+      memory:
+        type: object
+      tools:
+        type: array
+        items: string
+      routing:
+        type: object
+      delegation:
+        type: object
+      governance:
+        type: object
+      performance:
+        type: object

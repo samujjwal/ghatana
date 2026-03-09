@@ -1,0 +1,139 @@
+{{!--
+  Spring Boot REST Controller Template
+  
+  Variables:
+  - controllerName: Name of the controller
+  - entityName: Name of the entity
+  - basePath: Base API path
+  - serviceName: Name of the service
+  - operations: Array of CRUD operations to include
+--}}
+package {{packageName}}.controller;
+
+import {{packageName}}.dto.{{entityName}}DTO;
+import {{packageName}}.service.{{serviceName}};
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.*;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
+import jakarta.validation.Valid;
+import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
+
+import java.util.List;
+
+/**
+ * REST controller for {{entityName}} operations.
+ * 
+ * @doc.type controller
+ * @doc.purpose Handle HTTP requests for {{entityName}} resources
+ * @doc.layer presentation
+ * @doc.pattern REST Controller
+ */
+@Slf4j
+@RestController
+@RequestMapping("{{basePath}}")
+@RequiredArgsConstructor
+public class {{controllerName}} {
+
+    private final {{serviceName}} {{camelCase serviceName}};
+
+    {{#if operations.create}}
+    /**
+     * Create a new {{entityName}}.
+     *
+     * @param dto {{entityName}} data transfer object
+     * @return Created {{entityName}} with HTTP 201 status
+     */
+    @PostMapping
+    public ResponseEntity<{{entityName}}DTO> create(@Valid @RequestBody {{entityName}}DTO dto) {
+        log.info("Creating new {{entityName}}: {}", dto);
+        {{entityName}}DTO created = {{camelCase serviceName}}.create(dto);
+        return ResponseEntity.status(HttpStatus.CREATED).body(created);
+    }
+    {{/if}}
+
+    {{#if operations.read}}
+    /**
+     * Get {{entityName}} by ID.
+     *
+     * @param id {{entityName}} identifier
+     * @return {{entityName}} if found, 404 otherwise
+     */
+    @GetMapping("/{id}")
+    public ResponseEntity<{{entityName}}DTO> getById(@PathVariable Long id) {
+        log.info("Fetching {{entityName}} with id: {}", id);
+        return {{camelCase serviceName}}.findById(id)
+                .map(ResponseEntity::ok)
+                .orElse(ResponseEntity.notFound().build());
+    }
+
+    /**
+     * Get all {{entityName}}s with pagination.
+     *
+     * @param pageable Pagination parameters
+     * @return Page of {{entityName}}s
+     */
+    @GetMapping
+    public ResponseEntity<Page<{{entityName}}DTO>> getAll(Pageable pageable) {
+        log.info("Fetching all {{entityName}}s with pagination: {}", pageable);
+        Page<{{entityName}}DTO> page = {{camelCase serviceName}}.findAll(pageable);
+        return ResponseEntity.ok(page);
+    }
+    {{/if}}
+
+    {{#if operations.update}}
+    /**
+     * Update existing {{entityName}}.
+     *
+     * @param id {{entityName}} identifier
+     * @param dto Updated {{entityName}} data
+     * @return Updated {{entityName}} if found, 404 otherwise
+     */
+    @PutMapping("/{id}")
+    public ResponseEntity<{{entityName}}DTO> update(
+            @PathVariable Long id,
+            @Valid @RequestBody {{entityName}}DTO dto) {
+        log.info("Updating {{entityName}} with id: {}", id);
+        return {{camelCase serviceName}}.update(id, dto)
+                .map(ResponseEntity::ok)
+                .orElse(ResponseEntity.notFound().build());
+    }
+    {{/if}}
+
+    {{#if operations.delete}}
+    /**
+     * Delete {{entityName}} by ID.
+     *
+     * @param id {{entityName}} identifier
+     * @return 204 No Content if deleted, 404 if not found
+     */
+    @DeleteMapping("/{id}")
+    public ResponseEntity<Void> delete(@PathVariable Long id) {
+        log.info("Deleting {{entityName}} with id: {}", id);
+        boolean deleted = {{camelCase serviceName}}.delete(id);
+        return deleted 
+                ? ResponseEntity.noContent().build()
+                : ResponseEntity.notFound().build();
+    }
+    {{/if}}
+
+    {{#if operations.search}}
+    /**
+     * Search {{entityName}}s by criteria.
+     *
+     * @param query Search query
+     * @param pageable Pagination parameters
+     * @return Page of matching {{entityName}}s
+     */
+    @GetMapping("/search")
+    public ResponseEntity<Page<{{entityName}}DTO>> search(
+            @RequestParam String query,
+            Pageable pageable) {
+        log.info("Searching {{entityName}}s with query: {}", query);
+        Page<{{entityName}}DTO> results = {{camelCase serviceName}}.search(query, pageable);
+        return ResponseEntity.ok(results);
+    }
+    {{/if}}
+}

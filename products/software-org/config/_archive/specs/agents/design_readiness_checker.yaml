@@ -1,0 +1,48 @@
+id: design_readiness_checker
+agent: ReadinessCheckerAgent
+role: Gatekeeper Bot
+inputs_spec:
+- name: design_stage_milestone
+  description: Design stage milestone plan.
+  format: List of milestone objects
+- name: design_best_practice_report
+  description: Best practice review report for design.
+  format: Structured report
+- name: design_kpi_report
+  description: KPI report for Design stage.
+  format: Structured KPI report
+outputs_spec:
+- name: design_readiness_status
+  description: Readiness status for Design stage, including criteria, issues, approvals, and evidence.
+  format: Structured status object (criteria_met, issues, approvals, evidence, ready_for_next_stage)
+  example: 'criteria_met: true
+
+    issues: []
+
+    approvals: ["Lead Architect"]
+
+    evidence: ["Audit log"]
+
+    ready_for_next_stage: true
+
+    '
+agent_tasks:
+- Check all mandatory design criteria are met.
+- Ensure no open critical issues in milestones, best practice, or KPI.
+- Verify all required approvals and evidence are present.
+- Mark stage "Ready for next stage" only if above are true.
+acceptance_criteria:
+- All mandatory design criteria are met.
+- No open critical issues in milestones, best practice, or KPI.
+- All required approvals and evidence are present.
+- Stage is marked "Ready for next stage" only if above are true.
+dependencies:
+- design_stage_milestone
+- design_best_practice_report
+- design_kpi_report
+failure_escalation:
+- Escalate to gatekeeper or PM if readiness is not achieved.
+references: []
+hitl: false
+
+# [!!] No custom enhancement found.

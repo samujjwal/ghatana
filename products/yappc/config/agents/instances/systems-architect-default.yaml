@@ -1,0 +1,39 @@
+kind: AgentInstance
+apiVersion: ghatana.agent/v2
+metadata:
+  id: instance.yappc.systems-architect.default
+  definition_ref: agent.yappc.systems-architect
+  tenant_id: default
+  created: "2026-02-04T00:00:00Z"
+
+spec:
+  enabled: true
+  
+  generator_overrides:
+    config:
+      model: gpt-4
+      temperature: 0.4  # Lower for more consistent architecture decisions
+      max_tokens: 6000
+  
+  memory_overrides:
+    retention_days: 365  # Longer for architectural decisions
+  
+  cost_limits:
+    max_tokens_per_turn: 8000
+    max_cost_per_turn_usd: 0.60
+  
+  observability:
+    logging_level: info
+    trace_sampling: 0.2
+
+  custom_config:
+    preferred_patterns:
+      - clean-architecture
+      - cqrs
+      - event-sourcing
+    required_adr_sections:
+      - context
+      - decision
+      - consequences
+      - alternatives
+    enforce_security_review: true

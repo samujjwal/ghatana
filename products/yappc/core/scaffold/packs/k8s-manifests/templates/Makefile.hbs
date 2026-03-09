@@ -1,0 +1,16 @@
+.PHONY: apply delete helm-install helm-upgrade
+
+NAMESPACE ?= {{kebabCase projectName}}
+
+apply:
+kubectl apply -f k8s/namespace.yaml
+kubectl apply -f k8s
+
+delete:
+kubectl delete -f k8s || true
+
+helm-install:
+helm install {{kebabCase projectName}} ./helm -n $(NAMESPACE) --create-namespace
+
+helm-upgrade:
+helm upgrade {{kebabCase projectName}} ./helm -n $(NAMESPACE)

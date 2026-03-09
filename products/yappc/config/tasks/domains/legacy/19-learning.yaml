@@ -1,0 +1,256 @@
+# Learning & Growth Tasks
+# Domain 19 of 22 - Developer Task Universe
+# Reference: developer-tasks.md Part I, Section 19
+
+domain:
+  id: learning
+  name: "Learning & Growth"
+  description: "Tasks related to skill development and knowledge acquisition"
+  order: 19
+  icon: "school"
+  color: "#FFA726"
+  lifecycle_stages:
+    - learn
+    - institutionalize
+
+tasks:
+  - id: learn-001
+    name: "Learn New Technologies"
+    description: "Study and practice new technologies and tools"
+    personas:
+      - Developer
+    lifecycle_stages:
+      - learn
+    automation_level: manual
+    required_capabilities:
+      - learning
+      - self-study
+    input_schema: learn-001-input
+    output_schema: learn-001-output
+    audit_artifacts:
+      - OutputSnapshot
+      - LearningRecord
+    ui:
+      icon: "auto_stories"
+      color: "#FFA726"
+      tags:
+        - technology
+        - learning
+        - skills
+
+  - id: learn-002
+    name: "Gain Domain Knowledge"
+    description: "Understand business domain and context"
+    personas:
+      - Developer
+    lifecycle_stages:
+      - context
+      - learn
+    automation_level: manual
+    required_capabilities:
+      - learning
+      - domain-understanding
+    input_schema: learn-002-input
+    output_schema: learn-002-output
+    audit_artifacts:
+      - OutputSnapshot
+      - LearningRecord
+    ui:
+      icon: "domain"
+      color: "#FFA726"
+      tags:
+        - domain
+        - business
+        - knowledge
+
+  - id: learn-003
+    name: "Share Knowledge"
+    description: "Teach and share knowledge with others"
+    personas:
+      - Developer
+      - Tech Lead
+    lifecycle_stages:
+      - institutionalize
+    automation_level: manual
+    required_capabilities:
+      - communication
+      - mentoring
+    input_schema: learn-003-input
+    output_schema: learn-003-output
+    audit_artifacts:
+      - OutputSnapshot
+      - KnowledgeArticle
+    ui:
+      icon: "share"
+      color: "#FFA726"
+      tags:
+        - sharing
+        - teaching
+        - knowledge
+
+  - id: learn-004
+    name: "Attend Training"
+    description: "Participate in formal training programs"
+    personas:
+      - Developer
+    lifecycle_stages:
+      - learn
+    automation_level: manual
+    required_capabilities:
+      - learning
+    input_schema: learn-004-input
+    output_schema: learn-004-output
+    audit_artifacts:
+      - OutputSnapshot
+      - TrainingRecord
+    ui:
+      icon: "cast_for_education"
+      color: "#FFA726"
+      tags:
+        - training
+        - courses
+        - education
+
+  - id: learn-005
+    name: "Read Technical Content"
+    description: "Read articles, books, and documentation"
+    personas:
+      - Developer
+    lifecycle_stages:
+      - learn
+    automation_level: manual
+    required_capabilities:
+      - learning
+      - research
+    input_schema: learn-005-input
+    output_schema: learn-005-output
+    audit_artifacts:
+      - OutputSnapshot
+      - ReadingNotes
+    ui:
+      icon: "menu_book"
+      color: "#FFA726"
+      tags:
+        - reading
+        - articles
+        - books
+
+  - id: learn-006
+    name: "Practice with Side Projects"
+    description: "Build side projects to practice skills"
+    personas:
+      - Developer
+    lifecycle_stages:
+      - learn
+    automation_level: manual
+    required_capabilities:
+      - coding
+      - learning
+    input_schema: learn-006-input
+    output_schema: learn-006-output
+    audit_artifacts:
+      - OutputSnapshot
+    ui:
+      icon: "science"
+      color: "#FFA726"
+      tags:
+        - practice
+        - projects
+        - experimentation
+
+  - id: learn-007
+    name: "Participate in Communities"
+    description: "Engage in developer communities and forums"
+    personas:
+      - Developer
+    lifecycle_stages:
+      - learn
+      - institutionalize
+    automation_level: manual
+    required_capabilities:
+      - communication
+      - networking
+    input_schema: learn-007-input
+    output_schema: learn-007-output
+    audit_artifacts:
+      - OutputSnapshot
+    ui:
+      icon: "hub"
+      color: "#FFA726"
+      tags:
+        - community
+        - networking
+        - forums
+
+  - id: learn-008
+    name: "Write Technical Blog Posts"
+    description: "Share learnings through written content"
+    personas:
+      - Developer
+    lifecycle_stages:
+      - institutionalize
+    automation_level: manual
+    required_capabilities:
+      - writing
+      - communication
+    input_schema: learn-008-input
+    output_schema: learn-008-output
+    audit_artifacts:
+      - OutputSnapshot
+      - BlogPost
+    ui:
+      icon: "edit_note"
+      color: "#FFA726"
+      tags:
+        - blog
+        - writing
+        - sharing
+
+  - id: learn-009
+    name: "Review Career Growth"
+    description: "Assess progress and plan career development"
+    personas:
+      - Developer
+    lifecycle_stages:
+      - learn
+    automation_level: manual
+    required_capabilities:
+      - reflection
+      - planning
+    input_schema: learn-009-input
+    output_schema: learn-009-output
+    audit_artifacts:
+      - OutputSnapshot
+      - CareerPlan
+    ui:
+      icon: "trending_up"
+      color: "#FFA726"
+      tags:
+        - career
+        - growth
+        - planning
+
+  - id: learn-010
+    name: "Contribute to Open Source"
+    description: "Participate in open source projects"
+    personas:
+      - Developer
+    lifecycle_stages:
+      - learn
+      - institutionalize
+    automation_level: manual
+    required_capabilities:
+      - coding
+      - collaboration
+    input_schema: learn-010-input
+    output_schema: learn-010-output
+    audit_artifacts:
+      - OutputSnapshot
+      - ContributionRecord
+    ui:
+      icon: "volunteer_activism"
+      color: "#FFA726"
+      tags:
+        - open-source
+        - contribution
+        - community

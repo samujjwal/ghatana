@@ -1,0 +1,321 @@
+{
+    "$schema": "../simulation-template.schema.json",
+    "id": "physics_projectile_motion",
+    "version": "1.0.0",
+    "metadata": {
+        "title": "Projectile Motion Simulator",
+        "description": "Explore the physics of projectile motion by adjusting launch angle, initial velocity, and observing the resulting trajectory.",
+        "domain": "physics",
+        "subDomain": "mechanics",
+        "difficulty": "medium",
+        "estimatedDuration": 20,
+        "gradeLevel": [
+            "high_school",
+            "undergraduate"
+        ],
+        "tags": [
+            "kinematics",
+            "motion",
+            "gravity",
+            "vectors"
+        ],
+        "author": "Tutorputor Physics Team",
+        "license": "CC-BY-4.0"
+    },
+    "learningObjectives": [
+        "Understand how launch angle affects projectile range",
+        "Observe the relationship between initial velocity and maximum height",
+        "Analyze the independence of horizontal and vertical motion",
+        "Calculate time of flight using kinematic equations"
+    ],
+    "prerequisites": [
+        "Basic understanding of vectors",
+        "Knowledge of Newton's laws of motion",
+        "Familiarity with kinematic equations"
+    ],
+    "entities": [
+        {
+            "id": "projectile",
+            "type": "physics:particle",
+            "properties": {
+                "mass": {
+                    "value": 1,
+                    "unit": "kg",
+                    "editable": true,
+                    "min": 0.1,
+                    "max": 10
+                },
+                "radius": {
+                    "value": 0.1,
+                    "unit": "m",
+                    "editable": false
+                },
+                "position": {
+                    "value": [
+                        0,
+                        0,
+                        0
+                    ],
+                    "unit": "m"
+                },
+                "velocity": {
+                    "value": [
+                        0,
+                        0,
+                        0
+                    ],
+                    "unit": "m/s"
+                },
+                "color": "#FF5722"
+            }
+        },
+        {
+            "id": "launcher",
+            "type": "physics:launcher",
+            "properties": {
+                "position": {
+                    "value": [
+                        0,
+                        1,
+                        0
+                    ],
+                    "unit": "m"
+                },
+                "angle": {
+                    "value": 45,
+                    "unit": "degrees",
+                    "editable": true,
+                    "min": 0,
+                    "max": 90
+                },
+                "initialVelocity": {
+                    "value": 20,
+                    "unit": "m/s",
+                    "editable": true,
+                    "min": 1,
+                    "max": 50
+                }
+            }
+        },
+        {
+            "id": "ground",
+            "type": "physics:plane",
+            "properties": {
+                "position": {
+                    "value": [
+                        0,
+                        0,
+                        0
+                    ],
+                    "unit": "m"
+                },
+                "normal": {
+                    "value": [
+                        0,
+                        1,
+                        0
+                    ]
+                },
+                "friction": {
+                    "value": 0.5
+                },
+                "restitution": {
+                    "value": 0.3
+                }
+            }
+        },
+        {
+            "id": "trajectory",
+            "type": "visualization:path",
+            "properties": {
+                "visible": true,
+                "color": "#2196F3",
+                "width": 2,
+                "style": "dashed"
+            }
+        }
+    ],
+    "interactions": [
+        {
+            "id": "launch",
+            "type": "button",
+            "label": "Launch Projectile",
+            "action": {
+                "type": "launch_projectile",
+                "target": "projectile",
+                "params": {
+                    "fromEntity": "launcher"
+                }
+            }
+        },
+        {
+            "id": "reset",
+            "type": "button",
+            "label": "Reset",
+            "action": {
+                "type": "reset_simulation"
+            }
+        },
+        {
+            "id": "angle_slider",
+            "type": "slider",
+            "label": "Launch Angle",
+            "target": "launcher.angle",
+            "range": [
+                0,
+                90
+            ],
+            "step": 1,
+            "unit": "°"
+        },
+        {
+            "id": "velocity_slider",
+            "type": "slider",
+            "label": "Initial Velocity",
+            "target": "launcher.initialVelocity",
+            "range": [
+                1,
+                50
+            ],
+            "step": 1,
+            "unit": "m/s"
+        }
+    ],
+    "physics": {
+        "engine": "matter.js",
+        "gravity": {
+            "value": [
+                0,
+                -9.81,
+                0
+            ],
+            "unit": "m/s²",
+            "editable": true
+        },
+        "airResistance": {
+            "enabled": false,
+            "coefficient": 0.01
+        },
+        "timeScale": 1,
+        "stepSize": 0.016
+    },
+    "measurements": [
+        {
+            "id": "range",
+            "type": "distance",
+            "label": "Range",
+            "from": "launcher.position",
+            "to": "projectile.position.x",
+            "unit": "m"
+        },
+        {
+            "id": "max_height",
+            "type": "maximum",
+            "label": "Max Height",
+            "source": "projectile.position.y",
+            "unit": "m"
+        },
+        {
+            "id": "time_of_flight",
+            "type": "duration",
+            "label": "Time of Flight",
+            "startEvent": "launch",
+            "endEvent": "ground_collision",
+            "unit": "s"
+        },
+        {
+            "id": "final_velocity",
+            "type": "magnitude",
+            "label": "Final Velocity",
+            "source": "projectile.velocity",
+            "unit": "m/s"
+        }
+    ],
+    "assessment": {
+        "type": "guided_exploration",
+        "tasks": [
+            {
+                "id": "task_1",
+                "instruction": "Launch the projectile at 45° with 20 m/s. Record the range.",
+                "expectedOutcome": {
+                    "measurement": "range",
+                    "tolerance": 2,
+                    "targetValue": 40.77
+                },
+                "points": 10
+            },
+            {
+                "id": "task_2",
+                "instruction": "Find the angle that produces maximum range (keep velocity at 20 m/s).",
+                "expectedOutcome": {
+                    "parameter": "launcher.angle",
+                    "tolerance": 2,
+                    "targetValue": 45
+                },
+                "points": 15
+            },
+            {
+                "id": "task_3",
+                "instruction": "With 30° angle, adjust velocity to achieve a range of approximately 30m.",
+                "expectedOutcome": {
+                    "measurement": "range",
+                    "tolerance": 3,
+                    "targetValue": 30
+                },
+                "points": 20
+            }
+        ],
+        "passingScore": 70,
+        "hints": [
+            "For maximum range, the optimal angle is 45° in a vacuum",
+            "Range is proportional to v² sin(2θ) / g",
+            "Time of flight = 2v sin(θ) / g"
+        ]
+    },
+    "visualization": {
+        "type": "3d",
+        "renderer": "three.js",
+        "camera": {
+            "type": "perspective",
+            "position": [
+                10,
+                5,
+                20
+            ],
+            "lookAt": [
+                20,
+                5,
+                0
+            ],
+            "fov": 60
+        },
+        "lighting": {
+            "ambient": {
+                "color": "#ffffff",
+                "intensity": 0.4
+            },
+            "directional": {
+                "color": "#ffffff",
+                "intensity": 0.8,
+                "position": [
+                    10,
+                    20,
+                    10
+                ]
+            }
+        },
+        "background": {
+            "type": "gradient",
+            "colors": [
+                "#87CEEB",
+                "#E0F7FA"
+            ]
+        },
+        "grid": {
+            "visible": true,
+            "size": 100,
+            "divisions": 20,
+            "color": "#cccccc"
+        }
+    }
+}

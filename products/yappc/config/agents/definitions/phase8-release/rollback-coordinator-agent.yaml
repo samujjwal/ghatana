@@ -1,0 +1,71 @@
+id: rollback-coordinator-agent
+name: Rollback Coordinator Agent
+version: 1.0.0
+description: Coordinates deployment rollback when canary analysis fails, post-deploy smoke tests fail, or manual rollback is triggered. Manages traffic shifting, state cleanup, and incident notification.
+
+metadata:
+  level: 3
+  domain: release
+  tags: [release, rollback, deployment, reactive]
+
+generator:
+  type: PIPELINE
+  steps:
+    - name: rollback_assessment
+      type: RULE_BASED
+      description: >
+        Assess rollback type based on trigger:
+        - Canary failure: revert traffic routing, scale down canary pods
+        - Smoke test failure: full revert to last known good
+        - Manual trigger: honor human-specified rollback target version
+    - name: traffic_shift
+      type: SERVICE_CALL
+      service: traffic-router
+      endpoint: /routes/rollback
+    - name: deployment_revert
+      type: SERVICE_CALL
+      service: deployment-service
+      endpoint: /deployments/revert
+    - name: state_cleanup
+      type: RULE_BASED
+      description: >
+        Clean up partial state from failed deployment:
+        - Revert feature flags to pre-deployment state
+        - Invalidate caches if schema changed
+        - Roll back database migrations if reversible
+    - name: notification
+      type: SERVICE_CALL
+      service: notification-service
+      endpoint: /alerts/rollback
+
+memory:
+  episodic:
+    enabled: true
+    retention_days: 365
+    categories: [rollback-events, rollback-causes, recovery-timelines]
+  semantic:
+    enabled: true
+    categories: [rollback-procedures, service-dependencies]
+
+tools: [traffic_router, deployment_manager, feature_flag_manager, notification_sender]
+
+capabilities:
+  - deployment-automation
+
+routing:
+  input_types: [rollback-request, canary-failure-report, smoke-test-failure]
+  output_types: [rollback-report, rollback-confirmation]
+
+delegation:
+  can_delegate_to: []
+  escalates_to: deploy-orchestrator
+
+governance:
+  requires_approval: false
+  can_block: false
+  audit_trail: comprehensive
+
+performance:
+  expected_latency_ms: 5000
+  max_latency_ms: 30000
+  timeout_ms: 60000

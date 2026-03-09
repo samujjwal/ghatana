@@ -1,0 +1,28 @@
+---
+id: "operate_best_practice_enforcement"
+agent: "OperateBestPracticeAgent"
+role: "Ops QA Auditor"
+inputs_spec:
+- name: "monitoring_dashboards"
+  description: "Monitoring dashboards for best practice review."
+  format: "List of dashboard artifacts"
+outputs_spec:
+- name: "operate_best_practice_report"
+  description: "Best practice compliance report for Operate stage."
+  format: "Best practice report artifact"
+agent_tasks:
+- "Assess all operational practices for org and industry best practices."
+- "Ensure backups, patching, incident response plans are documented."
+- "Flag deviations and provide evidence of compliance."
+acceptance_criteria:
+- "Practices align with org and industry best practices."
+- "Backups, patching, and incident response are documented."
+- "Deviations are flagged and justified."
+- "Compliance evidence provided."
+dependencies:
+- "monitoring_dashboards"
+failure_escalation:
+- "Escalate to QA Auditor if best practices are not followed."
+references: []
+hitl: true
+hitl_reason: "Human ensures operational best practices are enforced"

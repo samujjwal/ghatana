@@ -1,0 +1,137 @@
+import type { FastifyInstance, FastifyRequest, FastifyReply } from "fastify";
+import httpProxy from "@fastify/http-proxy";
+import type { RouteConfig, GatewayConfig } from "../types.js";
+import { logger } from "../middleware/logging.js";
+{{#if enableCircuitBreaker}}
+import type { CircuitBreakerManager } from "../middleware/circuit-breaker.js";
+{{/if}}
+
+/**
+* Register all routes from configuration
+*/
+export async function registerRoutes(
+fastify: FastifyInstance,
+routes: RouteConfig[],
+_config: GatewayConfig
+) {
+for (const route of routes) {
+await registerProxyRoute(fastify, route);
+}
+
+logger.info(`Registered ${routes.length} proxy routes`);
+}
+
+/**
+* Register a single proxy route
+*/
+async function registerProxyRoute(
+fastify: FastifyInstance,
+route: RouteConfig
+) {
+const {
+prefix,
+upstream,
+timeout = 30000,
+stripPrefix = true,
+auth = false,
+headers = {},
+} = route;
+
+logger.info(`Registering route: ${prefix} -> ${upstream}`);
+
+// Build preHandler hooks
+const preHandler: Array<(request: FastifyRequest, reply: FastifyReply)=> Promise<void>> = [];
+
+        {{#if enableAuth}}
+        // Add auth middleware if required
+        if (auth) {
+        preHandler.push(async (request, reply) => {
+        await fastify.authenticate(request, reply);
+        });
+        }
+        {{/if}}
+
+        // Register the proxy
+        await fastify.register(httpProxy, {
+        upstream,
+        prefix,
+        rewritePrefix: stripPrefix ? "" : prefix,
+        http2: false,
+        httpMethods: route.methods as readonly string[] | undefined,
+        preHandler: preHandler.length > 0 ? preHandler : undefined,
+        replyOptions: {
+        rewriteRequestHeaders: (originalReq, headers) => {
+        // Add custom headers
+        const customHeaders = { ...headers };
+
+        for (const [key, value] of Object.entries(route.headers ?? {})) {
+        customHeaders[key] = value;
+        }
+
+        // Add request tracing
+        customHeaders["x-forwarded-host"] = originalReq.headers.host ?? "";
+        customHeaders["x-request-id"] =
+        originalReq.headers["x-request-id"]?.toString() ??
+        crypto.randomUUID();
+
+        {{#if enableAuth}}
+        // Forward user info if authenticated
+        if (originalReq.user) {
+        customHeaders["x-user-id"] = originalReq.user.id;
+        customHeaders["x-user-roles"] = originalReq.user.roles.join(",");
+        }
+        {{/if}}
+
+        return customHeaders;
+        },
+        },
+        httpTimeout: timeout,
+        websocket: false,
+        });
+        }
+
+        /**
+        * Manual proxy handler with circuit breaker support
+        */
+        {{#if enableCircuitBreaker}}
+        export async function proxyWithCircuitBreaker(
+        fastify: FastifyInstance,
+        request: FastifyRequest,
+        reply: FastifyReply,
+        route: RouteConfig
+        ) {
+        const circuitBreaker = fastify.circuitBreaker;
+        const circuitName = `upstream:${new URL(route.upstream).hostname}`;
+
+        try {
+        const result = await circuitBreaker.execute(circuitName, async () => {
+        const response = await fetch(`${route.upstream}${request.url}`, {
+        method: request.method,
+        headers: request.headers as Record<string, string>,
+            body: request.method !== "GET" && request.method !== "HEAD"
+            ? JSON.stringify(request.body)
+            : undefined,
+            });
+
+            if (!response.ok) {
+            throw new Error(`Upstream error: ${response.status}`);
+            }
+
+            return response;
+            });
+
+            const body = await result.json();
+            return reply.status(result.status).send(body);
+            } catch (err) {
+            if (circuitBreaker.isOpen(circuitName)) {
+            return reply.status(503).send({
+            error: "Service Unavailable",
+            message: "Upstream service is temporarily unavailable",
+            circuit: "open",
+            });
+            }
+
+            throw err;
+            }
+            }
+            {{/if}}

@@ -1,0 +1,40 @@
+<script setup lang="ts">
+    { { #if enableRouter } }
+    import { RouterView } from 'vue-router'
+    { {/if } }
+</script>
+
+<template>
+    <div id="app">
+        <header>
+            <h1>{{projectName}}</h1>
+        </header>
+        <main>
+            {{#if enableRouter}}
+            <RouterView />
+            {{else}}
+            <div class="container">
+                <h2>Welcome to {{projectName}}</h2>
+                <p>Start building your Vue 3 application!</p>
+            </div>
+            {{/if}}
+        </main>
+    </div>
+</template>
+
+<style scoped>
+    header {
+        padding: 1rem;
+        background-color: #42b983;
+        color: white;
+    }
+
+    main {
+        padding: 2rem;
+    }
+
+    .container {
+        max-width: 1200px;
+        margin: 0 auto;
+    }
+</style>

@@ -1,0 +1,114 @@
+id: requirements-orchestrator-agent
+name: Requirements Orchestrator Agent
+version: 1.0.0
+description: Orchestrates requirements gathering, analysis, and specification. Coordinates story writing, acceptance criteria, and design handoffs.
+
+metadata:
+  level: 1  # Strategic Orchestrator
+  domain: requirements
+  tags:
+    - phase-orchestration
+    - requirements-management
+    - design-coordination
+    - specification
+
+generator:
+  type: PIPELINE
+  steps:
+    - name: requirements_planning
+      type: LLM
+      provider: ANTHROPIC
+      model: claude-3-5-sonnet-20241022
+      temperature: 0.2
+      max_tokens: 2500
+      prompt: |
+        You are the Requirements Orchestrator Agent. Plan requirements activities:
+        
+        Feature/Initiative: {{input}}
+        Stakeholders: {{stakeholders}}
+        Timeline: {{timeline}}
+        
+        Orchestrate:
+        1. Requirements gathering approach
+        2. Stakeholder engagement plan
+        3. Story breakdown strategy
+        4. Acceptance criteria standards
+        5. Design handoff process
+        6. Agent delegation plan
+        
+        Output as JSON: {gathering_approach, stakeholder_plan, story_strategy, ac_standards, design_handoff, delegation_plan}
+    - name: agent_coordination
+      type: SERVICE_CALL
+      service: agent-registry
+      endpoint: /agents/delegate
+    - name: requirements_synthesis
+      type: RULE_BASED
+      description: Synthesize into requirements package
+
+memory:
+  episodic:
+    enabled: true
+    retention_days: 365
+    categories:
+      - requirements-sessions
+      - specifications
+      - design-handoffs
+  semantic:
+    enabled: true
+    categories:
+      - requirements-patterns
+      - stakeholder-needs
+      - design-standards
+  procedural:
+    enabled: true
+    categories:
+      - orchestration-rules
+      - gathering-methods
+      - handoff-protocols
+
+tools:
+  - requirements_tracker
+  - story_manager
+  - design_coordinator
+
+capabilities:
+  - requirements-orchestration
+  - stakeholder-coordination
+  - design-handoff
+  - requirements-synthesis
+
+routing:
+  input_types:
+    - feature-request
+    - requirements-request
+    - design-input-request
+  output_types:
+    - requirements-package
+    - story-set
+    - design-brief
+
+delegation:
+  can_delegate_to:
+    - story-writer-agent
+    - acceptance-criteria-agent
+    - ux-research-agent
+    - persona-builder-agent
+    - user-journey-mapper-agent
+    - non-functional-requirements-agent
+    - data-requirements-agent
+    - integration-requirements-agent
+    - accessibility-requirements-agent
+    - edge-case-finder-agent
+    - specification-reviewer-agent
+  escalates_to:
+    - master-orchestrator-agent
+
+governance:
+  requires_approval: false
+  can_block: false
+  audit_trail: comprehensive
+
+performance:
+  expected_latency_ms: 3000
+  max_latency_ms: 8000
+  timeout_ms: 15000

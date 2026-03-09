@@ -1,0 +1,217 @@
+# HR Department Configuration
+# Part of Software-Org plugin for Virtual-Org framework
+
+apiVersion: virtualorg.ghatana.com/v1
+kind: Department
+metadata:
+  name: hr
+  labels:
+    category: business-operations
+    cost-center: "HR-001"
+
+spec:
+  displayName: "Human Resources"
+  type: HR
+  description: |
+    Human Resources department responsible for talent acquisition, employee
+    development, performance management, and organizational culture. Ensures
+    the organization attracts, develops, and retains top talent.
+
+  hierarchy:
+    parent: null
+    reportingTo: ceo-agent
+    children: []
+
+  settings:
+    maxAgents: 8
+    autoScaleAgents: false
+    taskAssignment:
+      strategy: capability-match
+      loadBalancing: true
+      maxTasksPerAgent: 10
+
+  agents:
+    - ref: agents/hr-director-agent.yaml
+    - ref: agents/recruiter-agent.yaml
+    - ref: agents/hr-generalist-agent.yaml
+
+  workflows:
+    - name: hiring
+      displayName: "Hiring Process"
+      steps:
+        - name: job-posting
+          agent: recruiter
+          action: create_job_posting
+          timeout: PT24H
+        - name: sourcing
+          agent: recruiter
+          action: source_candidates
+          timeout: PT168H
+          waitFor: [job-posting]
+        - name: screening
+          agent: recruiter
+          action: screen_applications
+          timeout: PT48H
+          waitFor: [sourcing]
+        - name: interviews
+          agent: recruiter
+          action: schedule_interviews
+          timeout: PT72H
+          waitFor: [screening]
+        - name: evaluation
+          agent: hr-director
+          action: evaluate_candidates
+          timeout: PT48H
+          waitFor: [interviews]
+        - name: offer
+          agent: hr-director
+          action: extend_offer
+          timeout: PT24H
+          waitFor: [evaluation]
+          hitl:
+            required: true
+            approvers: [hr-director, hiring-manager]
+        - name: onboarding
+          agent: hr-generalist
+          action: prepare_onboarding
+          timeout: PT72H
+          waitFor: [offer]
+          conditions:
+            - field: offer_status
+              operator: equals
+              value: accepted
+
+    - name: performance-review
+      displayName: "Performance Review Cycle"
+      steps:
+        - name: self-assessment
+          agent: system
+          action: distribute_self_assessments
+          timeout: PT168H
+        - name: manager-review
+          agent: system
+          action: distribute_manager_reviews
+          timeout: PT168H
+          waitFor: [self-assessment]
+        - name: calibration
+          agent: hr-director
+          action: conduct_calibration
+          timeout: PT72H
+          waitFor: [manager-review]
+        - name: feedback-delivery
+          agent: hr-generalist
+          action: coordinate_feedback_delivery
+          timeout: PT120H
+          waitFor: [calibration]
+        - name: goal-setting
+          agent: hr-generalist
+          action: facilitate_goal_setting
+          timeout: PT168H
+          waitFor: [feedback-delivery]
+
+  kpis:
+    - name: retention_rate
+      displayName: "Employee Retention Rate"
+      type: percentage
+      target: 90
+      warningThreshold: 85
+      criticalThreshold: 80
+      aggregationPeriod: P1Y
+
+    - name: time_to_hire
+      displayName: "Time to Hire"
+      type: duration
+      unit: days
+      target: 30
+      warningThreshold: 45
+      criticalThreshold: 60
+
+    - name: offer_acceptance_rate
+      displayName: "Offer Acceptance Rate"
+      type: percentage
+      target: 85
+      warningThreshold: 75
+      criticalThreshold: 65
+
+    - name: employee_satisfaction
+      displayName: "Employee Satisfaction Score"
+      type: gauge
+      target: 4.2
+      warningThreshold: 3.8
+      criticalThreshold: 3.5
+
+    - name: diversity_ratio
+      displayName: "Diversity Ratio"
+      type: percentage
+      target: 40
+      warningThreshold: 30
+      criticalThreshold: 25
+
+    - name: training_completion
+      displayName: "Training Completion Rate"
+      type: percentage
+      target: 95
+      warningThreshold: 85
+      criticalThreshold: 75
+
+    - name: headcount_variance
+      displayName: "Headcount vs Plan Variance"
+      type: percentage
+      target: 5
+      warningThreshold: 10
+      criticalThreshold: 20
+
+  taskTypes:
+    - name: job_requisition
+      priority: normal
+      slaHours: 48
+      requiredCapabilities: [recruiting, job_analysis]
+
+    - name: candidate_screening
+      priority: normal
+      slaHours: 72
+      requiredCapabilities: [recruiting, assessment]
+
+    - name: onboarding
+      priority: high
+      slaHours: 24
+      requiredCapabilities: [onboarding, coordination]
+
+    - name: employee_inquiry
+      priority: normal
+      slaHours: 24
+      requiredCapabilities: [hr_knowledge, communication]
+
+    - name: policy_development
+      priority: low
+      slaHours: 168
+      requiredCapabilities: [policy, compliance, writing]
+
+    - name: offboarding
+      priority: high
+      slaHours: 8
+      requiredCapabilities: [offboarding, compliance]
+
+  subscriptions:
+    - event: headcount_request
+      source: all
+      action: initiate_hiring
+    - event: employee_resignation
+      source: all
+      action: initiate_offboarding
+    - event: performance_concern
+      source: all
+      action: initiate_pip
+    - event: compliance_training_required
+      source: compliance
+      action: assign_training
+
+  publications:
+    - event: new_hire_onboarded
+      targets: [engineering, it, finance]
+    - event: employee_offboarded
+      targets: [it, finance, compliance]
+    - event: headcount_updated
+      targets: [finance]
+    - event: training_completed
+      targets: [compliance]

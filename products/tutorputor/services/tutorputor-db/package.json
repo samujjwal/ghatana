@@ -1,0 +1,52 @@
+{
+  "name": "@ghatana/tutorputor-db",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "description": "Prisma-powered TutorPutor data access package",
+  "main": "./dist/src/index.js",
+  "types": "./dist/src/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/src/index.d.ts",
+      "import": "./dist/src/index.js"
+    },
+    "./testing": {
+      "types": "./dist/src/testing.d.ts",
+      "import": "./dist/src/testing.js"
+    }
+  },
+  "files": [
+    "dist",
+    "prisma",
+    "generated"
+  ],
+  "scripts": {
+    "prepare": "prisma generate",
+    "build": "prisma generate && tsc -p tsconfig.json && mkdir -p dist/generated && cp -r generated/prisma dist/generated/",
+    "type-check": "tsc --noEmit",
+    "test": "vitest run",
+    "prisma:generate": "prisma generate",
+    "prisma:migrate:dev": "prisma migrate dev",
+    "prisma:migrate:deploy": "prisma migrate deploy",
+    "prisma:db:push": "prisma db push --accept-data-loss",
+    "db:init": "node init-db.js",
+    "prisma:db:push": "prisma db push",
+    "prisma:seed": "prisma db seed",
+    "seed:admin": "TUTORPUTOR_SEED_PROFILE=demo prisma db seed"
+  },
+  "prisma": {
+    "seed": "tsx src/seed.ts"
+  },
+  "dependencies": {
+    "@prisma/client": "7.3.0",
+    "@prisma/adapter-libsql": "^7.3.0",
+    "@libsql/client": "^0.17.0"
+  },
+  "devDependencies": {
+    "prisma": "7.3.0",
+    "tsx": "^4.21.0",
+    "typescript": "^5.9.3",
+    "vitest": "^4.0.18"
+  }
+}

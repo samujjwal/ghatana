@@ -1,0 +1,1468 @@
+generator client {
+  provider = "prisma-client-js"
+  output   = "../generated/prisma-client"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+// User model (simplified - may integrate with existing auth)
+model User {
+  id                 String              @id @default(uuid())
+  email              String              @unique
+  name               String?
+  passwordHash       String?
+  createdAt          DateTime            @default(now())
+  updatedAt          DateTime            @updatedAt
+  personaPreferences PersonaPreference[]
+  workspaces         Workspace[]
+  ownedModels        MlModel[]
+  workflowExecutions WorkflowExecution[]
+  auditEvents        AuditEvent[]
+
+  // User Journey relations
+  requestedApprovals           Approval[]          @relation("RequestedApprovals")
+  approverSteps                ApprovalStep[]      @relation("ApproverSteps")
+  timeOffRequests              TimeOffRequest[]    @relation("TimeOffRequests")
+  performanceReviewsAsEmployee PerformanceReview[] @relation("ReviewedEmployee")
+  performanceReviewsAsReviewer PerformanceReview[] @relation("Reviewer")
+  notifications                Notification[]      @relation("UserNotifications")
+  comments                     Comment[]           @relation("CommentAuthor")
+  restructuresProposed         Restructure[]       @relation("RestructureProposer")
+  growthPlans                  GrowthPlan[]        @relation("EmployeeGrowthPlans")
+  incidentsReported            Incident[]          @relation("IncidentReporter")
+  incidentsAssigned            Incident[]          @relation("IncidentAssignee")
+
+  // Cross-Functional Features
+  articles         Article[]
+  ideas            Idea[]
+  userSkills       UserSkill[]
+  developmentPlans DevelopmentPlan[]
+
+  @@map("users")
+}
+
+// Workspace model - represents a software-org workspace
+model Workspace {
+  id          String              @id @default(uuid())
+  name        String
+  slug        String              @unique
+  ownerId     String
+  owner       User                @relation(fields: [ownerId], references: [id], onDelete: Cascade)
+  createdAt   DateTime            @default(now())
+  updatedAt   DateTime            @updatedAt
+  preferences PersonaPreference[]
+  overrides   WorkspaceOverride?
+
+  @@index([ownerId])
+  @@map("workspaces")
+}
+
+// PersonaPreference - stores user's persona configuration per workspace
+model PersonaPreference {
+  id          String    @id @default(uuid())
+  userId      String
+  workspaceId String
+  activeRoles Json // Array of active role IDs: ["admin", "tech-lead"]
+  preferences Json // Persona-specific preferences: { dashboardLayout: {...}, plugins: [...] }
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+  user        User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  workspace   Workspace @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, workspaceId])
+  @@index([userId])
+  @@index([workspaceId])
+  @@map("persona_preferences")
+}
+
+// WorkspaceOverride - admin-defined workspace-level persona config
+model WorkspaceOverride {
+  id          String    @id @default(uuid())
+  workspaceId String
+  overrides   Json // Workspace-level persona overrides: { disabledPlugins: [...], forcedFeatures: [...] }
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+  workspace   Workspace @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+
+  @@unique([workspaceId])
+  @@index([workspaceId])
+  @@map("workspace_overrides")
+}
+
+// Organization - represents the software organization configuration
+model Organization {
+  id          String       @id @default(uuid())
+  name        String
+  namespace   String       @unique
+  displayName String
+  description String?
+  structure   Json // { type: "hierarchical", maxDepth: 4 }
+  settings    Json // { defaultTimezone, events, hitl, ai }
+  metadata    Json         @default("{}")
+  createdAt   DateTime     @default(now())
+  updatedAt   DateTime     @updatedAt
+  departments Department[]
+  agents      Agent[]
+  hitlActions HitlAction[]
+
+  @@index([namespace])
+  @@map("organizations")
+}
+
+// Department - represents a department in the organization
+model Department {
+  id             String       @id @default(uuid())
+  organizationId String
+  name           String
+  type           String // ENGINEERING, QA, DEVOPS, etc.
+  description    String?
+  status         String       @default("ACTIVE") // ACTIVE, INACTIVE
+  configuration  Json         @default("{}") // Department-specific config
+  kpisJson       Json         @default("{}") // Current KPI values (legacy JSON)
+  metadata       Json         @default("{}")
+  createdAt      DateTime     @default(now())
+  updatedAt      DateTime     @updatedAt
+  organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  agents         Agent[]
+  workflows      Workflow[]
+  kpis           Kpi[]
+  teams          Team[]
+  workItems      WorkItem[]
+  budgets        Budget[]
+
+  @@unique([organizationId, name])
+  @@index([organizationId])
+  @@index([type])
+  @@index([status])
+  @@map("departments")
+}
+
+// Agent - represents an agent in the organization
+model Agent {
+  id             String       @id @default(uuid())
+  organizationId String
+  departmentId   String
+  name           String
+  role           String
+  status         String       @default("ONLINE") // ONLINE, OFFLINE, BUSY
+  capabilities   Json         @default("[]") // Array of capability strings
+  configuration  Json         @default("{}") // Agent-specific config
+  metadata       Json         @default("{}")
+  createdAt      DateTime     @default(now())
+  updatedAt      DateTime     @updatedAt
+  organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  department     Department   @relation(fields: [departmentId], references: [id], onDelete: Cascade)
+  hitlActions    HitlAction[]
+
+  @@unique([organizationId, name])
+  @@index([organizationId])
+  @@index([departmentId])
+  @@index([role])
+  @@index([status])
+  @@map("agents")
+}
+
+// Workflow - represents a workflow in a department
+model Workflow {
+  id            String              @id @default(uuid())
+  departmentId  String
+  name          String
+  type          String // FEATURE_DEVELOPMENT, CODE_REVIEW, DEPLOYMENT, etc.
+  status        String              @default("ACTIVE") // ACTIVE, INACTIVE, PAUSED
+  configuration Json                @default("{}") // Workflow-specific config
+  metadata      Json                @default("{}")
+  createdAt     DateTime            @default(now())
+  updatedAt     DateTime            @updatedAt
+  department    Department          @relation(fields: [departmentId], references: [id], onDelete: Cascade)
+  executions    WorkflowExecution[]
+  triggers      WorkflowTrigger[]
+  workItems     WorkItem[]
+
+  @@unique([departmentId, name])
+  @@index([departmentId])
+  @@index([type])
+  @@index([status])
+  @@map("workflows")
+}
+
+// WorkItem - represents a work item tracked in DevSecOps stages
+model WorkItem {
+  id           String      @id @default(uuid())
+  type         String // FEATURE, BUG, INCIDENT, DEPLOYMENT, etc.
+  title        String
+  description  String?
+  status       String      @default("TODO") // TODO, IN_PROGRESS, BLOCKED, DONE
+  priority     String      @default("MEDIUM") // LOW, MEDIUM, HIGH, CRITICAL
+  stageKey     String // Stage from stageMappings (plan, build, test, etc.)
+  assigneeId   String?
+  tenantId     String? // Multi-tenancy support
+  departmentId String?
+  workflowId   String?
+  metadata     Json        @default("{}") // Additional context
+  dueDate      DateTime?
+  createdAt    DateTime    @default(now())
+  updatedAt    DateTime    @updatedAt
+  department   Department? @relation(fields: [departmentId], references: [id], onDelete: SetNull)
+  workflow     Workflow?   @relation(fields: [workflowId], references: [id], onDelete: SetNull)
+
+  @@index([type])
+  @@index([status])
+  @@index([priority])
+  @@index([stageKey])
+  @@index([assigneeId])
+  @@index([tenantId])
+  @@index([departmentId])
+  @@index([workflowId])
+  @@map("work_items")
+}
+
+// HitlAction - represents a human-in-the-loop action
+model HitlAction {
+  id             String       @id @default(uuid())
+  organizationId String
+  agentId        String
+  actionType     String // deployment, code_review, approval, etc.
+  description    String
+  confidence     Float // 0.0 to 1.0
+  state          String       @default("PENDING") // PENDING, APPROVED, REJECTED
+  context        Json         @default("{}") // Action context data
+  submittedAt    DateTime     @default(now())
+  submittedBy    String // Agent ID
+  decidedAt      DateTime?
+  decidedBy      String? // User ID or Agent ID
+  decision       String? // APPROVED, REJECTED
+  comment        String?
+  metadata       Json         @default("{}")
+  createdAt      DateTime     @default(now())
+  updatedAt      DateTime     @updatedAt
+  organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  agent          Agent        @relation(fields: [agentId], references: [id], onDelete: Cascade)
+
+  @@index([organizationId])
+  @@index([agentId])
+  @@index([state])
+  @@index([actionType])
+  @@index([confidence])
+  @@index([submittedAt])
+  @@map("hitl_actions")
+}
+
+// =============================================================================
+// KPI & Metrics Models
+// =============================================================================
+
+// Kpi - KPI definition with current value snapshot
+model Kpi {
+  id           String         @id @default(uuid())
+  key          String         @unique // e.g. "deployments", "change-failure-rate"
+  name         String // Display name
+  description  String?
+  unit         String // e.g. "/week", "%", "h", "m", "USD/mo"
+  category     String? // e.g. "delivery", "quality", "security"
+  departmentId String?
+  target       Float? // Target value
+  direction    String         @default("higher_is_better") // higher_is_better, lower_is_better
+  value        Float          @default(0) // Current value
+  trend        Float          @default(0) // Percentage change
+  lastUpdated  DateTime       @default(now())
+  createdAt    DateTime       @default(now())
+  updatedAt    DateTime       @updatedAt
+  department   Department?    @relation(fields: [departmentId], references: [id], onDelete: SetNull)
+  dataPoints   KpiDataPoint[]
+  narratives   KpiNarrative[]
+
+  @@index([key])
+  @@index([departmentId])
+  @@index([category])
+  @@map("kpis")
+}
+
+// KpiDataPoint - time-series data for KPI trends
+model KpiDataPoint {
+  id        String   @id @default(uuid())
+  kpiId     String
+  timestamp DateTime
+  value     Float
+  createdAt DateTime @default(now())
+  kpi       Kpi      @relation(fields: [kpiId], references: [id], onDelete: Cascade)
+
+  @@index([kpiId])
+  @@index([timestamp])
+  @@index([kpiId, timestamp])
+  @@map("kpi_data_points")
+}
+
+// KpiNarrative - AI-generated insights for KPIs
+model KpiNarrative {
+  id         String   @id @default(uuid())
+  kpiId      String?
+  insight    String // The narrative text
+  confidence Float    @default(0.9) // Confidence score 0-1
+  timeRange  String? // e.g. "7d", "30d"
+  createdAt  DateTime @default(now())
+  kpi        Kpi?     @relation(fields: [kpiId], references: [id], onDelete: SetNull)
+
+  @@index([kpiId])
+  @@index([createdAt])
+  @@map("kpi_narratives")
+}
+
+// =============================================================================
+// ML Model Monitoring Models
+// =============================================================================
+
+// MlModel - ML model definition
+model MlModel {
+  id          String           @id @default(uuid())
+  key         String           @unique // e.g. "churn-predictor"
+  name        String
+  description String?
+  type        String           @default("classification") // classification, regression, etc.
+  status      String           @default("draft") // draft, training, deployed, archived
+  ownerUserId String?
+  team        String?
+  useCase     String?
+  createdAt   DateTime         @default(now())
+  updatedAt   DateTime         @updatedAt
+  owner       User?            @relation(fields: [ownerUserId], references: [id], onDelete: SetNull)
+  versions    MlModelVersion[]
+
+  @@index([key])
+  @@index([status])
+  @@index([ownerUserId])
+  @@map("ml_models")
+}
+
+// MlModelVersion - versioned model artifacts
+model MlModelVersion {
+  id                  String                   @id @default(uuid())
+  modelId             String
+  version             String // e.g. "2.3.1"
+  status              String                   @default("current") // current, previous, archived
+  artifactUri         String?
+  deployedEnvironment String? // e.g. "production", "staging"
+  accuracy            Float?
+  precision           Float?
+  recall              Float?
+  f1Score             Float?
+  latency             Float? // ms
+  throughput          Float? // requests/sec
+  deployedAt          DateTime?
+  createdAt           DateTime                 @default(now())
+  updatedAt           DateTime                 @updatedAt
+  model               MlModel                  @relation(fields: [modelId], references: [id], onDelete: Cascade)
+  metrics             MlModelMetric[]
+  featureImportances  ModelFeatureImportance[]
+
+  @@unique([modelId, version])
+  @@index([modelId])
+  @@index([status])
+  @@map("ml_model_versions")
+}
+
+// MlModelMetric - point-in-time metrics for model versions
+model MlModelMetric {
+  id             String         @id @default(uuid())
+  modelVersionId String
+  name           String // e.g. "accuracy", "latency"
+  value          Float
+  timestamp      DateTime       @default(now())
+  window         String? // e.g. "1h", "24h"
+  createdAt      DateTime       @default(now())
+  modelVersion   MlModelVersion @relation(fields: [modelVersionId], references: [id], onDelete: Cascade)
+
+  @@index([modelVersionId])
+  @@index([name])
+  @@index([timestamp])
+  @@map("ml_model_metrics")
+}
+
+// ModelFeatureImportance - feature importance for model versions
+model ModelFeatureImportance {
+  id             String         @id @default(uuid())
+  modelVersionId String
+  featureName    String
+  importance     Float // 0-1
+  direction      String? // positive, negative
+  createdAt      DateTime       @default(now())
+  modelVersion   MlModelVersion @relation(fields: [modelVersionId], references: [id], onDelete: Cascade)
+
+  @@unique([modelVersionId, featureName])
+  @@index([modelVersionId])
+  @@map("model_feature_importances")
+}
+
+// =============================================================================
+// Reports & Scheduling Models
+// =============================================================================
+
+// ReportDefinition - report template
+model ReportDefinition {
+  id          String           @id @default(uuid())
+  key         String           @unique
+  name        String
+  description String?
+  kpiKeys     Json             @default("[]") // Array of KPI keys included
+  audience    String? // e.g. "engineering", "leadership"
+  createdAt   DateTime         @default(now())
+  updatedAt   DateTime         @updatedAt
+  schedules   ReportSchedule[]
+  runs        ReportRun[]
+
+  @@index([key])
+  @@map("report_definitions")
+}
+
+// ReportSchedule - when and where reports are delivered
+model ReportSchedule {
+  id              String           @id @default(uuid())
+  reportId        String
+  cron            String? // Cron expression
+  frequency       String           @default("weekly") // daily, weekly, monthly
+  dayOfWeek       String? // e.g. "Monday"
+  time            String? // e.g. "09:00"
+  deliveryChannel String           @default("email") // email, slack, etc.
+  recipients      Json             @default("[]") // Array of email addresses
+  formats         Json             @default("[\"pdf\"]") // Array of formats
+  enabled         Boolean          @default(true)
+  nextRun         DateTime?
+  createdAt       DateTime         @default(now())
+  updatedAt       DateTime         @updatedAt
+  report          ReportDefinition @relation(fields: [reportId], references: [id], onDelete: Cascade)
+
+  @@index([reportId])
+  @@index([enabled])
+  @@map("report_schedules")
+}
+
+// ReportRun - execution record for reports
+model ReportRun {
+  id          String           @id @default(uuid())
+  reportId    String
+  status      String           @default("pending") // pending, running, completed, failed
+  runAt       DateTime         @default(now())
+  completedAt DateTime?
+  summary     String?
+  payloadJson Json             @default("{}") // Generated report content
+  createdAt   DateTime         @default(now())
+  report      ReportDefinition @relation(fields: [reportId], references: [id], onDelete: Cascade)
+
+  @@index([reportId])
+  @@index([status])
+  @@index([runAt])
+  @@map("report_runs")
+}
+
+// =============================================================================
+// Workflow Execution Models
+// =============================================================================
+
+// WorkflowExecution - top-level workflow run
+model WorkflowExecution {
+  id              String                  @id @default(uuid())
+  workflowId      String
+  workflowKey     String? // Reference to workflow key
+  triggeredByUser String?
+  status          String                  @default("pending") // pending, running, completed, failed, cancelled
+  startedAt       DateTime                @default(now())
+  finishedAt      DateTime?
+  inputJson       Json                    @default("{}")
+  outputJson      Json                    @default("{}")
+  logs            Json                    @default("[]") // Array of log strings
+  createdAt       DateTime                @default(now())
+  updatedAt       DateTime                @updatedAt
+  workflow        Workflow                @relation(fields: [workflowId], references: [id], onDelete: Cascade)
+  triggeredBy     User?                   @relation(fields: [triggeredByUser], references: [id], onDelete: SetNull)
+  steps           WorkflowExecutionStep[]
+
+  @@index([workflowId])
+  @@index([status])
+  @@index([startedAt])
+  @@map("workflow_executions")
+}
+
+// WorkflowExecutionStep - step-level execution records
+model WorkflowExecutionStep {
+  id          String            @id @default(uuid())
+  executionId String
+  stepKey     String
+  name        String
+  status      String            @default("pending") // pending, running, completed, failed, skipped
+  startedAt   DateTime?
+  finishedAt  DateTime?
+  log         String?
+  outputJson  Json              @default("{}")
+  createdAt   DateTime          @default(now())
+  execution   WorkflowExecution @relation(fields: [executionId], references: [id], onDelete: Cascade)
+
+  @@index([executionId])
+  @@index([status])
+  @@map("workflow_execution_steps")
+}
+
+// WorkflowTrigger - trigger configuration for workflows
+model WorkflowTrigger {
+  id         String   @id @default(uuid())
+  workflowId String
+  type       String   @default("schedule") // schedule, event, manual
+  config     Json     @default("{}") // Trigger-specific config (cron, event type, etc.)
+  enabled    Boolean  @default(true)
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+  workflow   Workflow @relation(fields: [workflowId], references: [id], onDelete: Cascade)
+
+  @@index([workflowId])
+  @@index([type])
+  @@index([enabled])
+  @@map("workflow_triggers")
+}
+
+// =============================================================================
+// Audit & Activity Models
+// =============================================================================
+
+// AuditEvent - cross-cutting audit trail
+model AuditEvent {
+  id          String   @id @default(uuid())
+  tenantId    String?
+  actorUserId String?
+  entityType  String // e.g. "workflow", "model", "report", "persona"
+  entityId    String
+  action      String // e.g. "create", "update", "delete", "approve", "reject"
+  decision    String? // For approval flows: approve, defer, reject
+  reason      String?
+  detailsJson Json     @default("{}")
+  timestamp   DateTime @default(now())
+  createdAt   DateTime @default(now())
+  tenant      Tenant?  @relation(fields: [tenantId], references: [id], onDelete: SetNull)
+  actor       User?    @relation(fields: [actorUserId], references: [id], onDelete: SetNull)
+
+  @@index([tenantId])
+  @@index([actorUserId])
+  @@index([entityType])
+  @@index([entityId])
+  @@index([action])
+  @@index([timestamp])
+  @@map("audit_events")
+}
+
+// =============================================================================
+// Tenant & Environment Models
+// =============================================================================
+
+// Tenant - logical tenant for multi-tenancy
+model Tenant {
+  id               String             @id @default(uuid())
+  key              String             @unique
+  name             String
+  displayName      String?
+  description      String?
+  status           String             @default("active") // active, suspended, archived
+  plan             String             @default("standard") // free, standard, enterprise
+  createdAt        DateTime           @default(now())
+  updatedAt        DateTime           @updatedAt
+  environments     Environment[]
+  alerts           Alert[]
+  anomalies        Anomaly[]
+  abTests          AbTest[]
+  auditEvents      AuditEvent[]
+  trainingJobs     TrainingJob[]
+  personas         Persona[]
+  roles            Role[]
+  teams            Team[]
+  services         Service[]
+  policies         Policy[]
+  platformSettings PlatformSettings[]
+  integrations     Integration[]
+  interactions     Interaction[]
+  buildWorkflows   BuildWorkflow[]    @relation("TenantBuildWorkflows")
+  buildAgents      BuildAgent[]       @relation("TenantBuildAgents")
+
+  @@index([key])
+  @@index([status])
+  @@map("tenants")
+}
+
+// Environment - environment under a tenant
+model Environment {
+  id        String   @id @default(uuid())
+  tenantId  String
+  key       String // dev, staging, production
+  name      String
+  region    String?
+  healthy   Boolean  @default(true)
+  lastCheck DateTime @default(now())
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  tenant    Tenant   @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+
+  @@unique([tenantId, key])
+  @@index([tenantId])
+  @@map("environments")
+}
+
+// Alert - alerts for tenants
+model Alert {
+  id               String    @id @default(uuid())
+  tenantId         String
+  severity         String    @default("info") // info, warning, error, critical, low, medium, high
+  status           String    @default("active") // active, acknowledged, resolved
+  title            String?
+  message          String
+  source           String? // e.g. "model-monitor", "infra", service name
+  relatedIncidents String[] // Array of incident IDs
+  acknowledgedAt   DateTime?
+  acknowledgedBy   String?
+  resolvedAt       DateTime?
+  resolvedBy       String?
+  snoozedUntil     DateTime?
+  metadata         Json? // Additional context data
+  resolved         Boolean   @default(false) // For backward compatibility
+  timestamp        DateTime  @default(now())
+  createdAt        DateTime  @default(now())
+  updatedAt        DateTime  @updatedAt
+  tenant           Tenant    @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+
+  @@index([tenantId, status])
+  @@index([tenantId, severity, createdAt])
+  @@index([source, createdAt])
+  @@index([severity])
+  @@index([resolved])
+  @@index([timestamp])
+  @@map("alerts")
+}
+
+// Anomaly - detected anomalies
+model Anomaly {
+  id            String   @id @default(uuid())
+  tenantId      String
+  metric        String // e.g. "cpu", "latency", "error_rate"
+  value         Float
+  baselineValue Float
+  severity      String   @default("medium") // low, medium, high, critical
+  detectedAt    DateTime @default(now())
+  resolved      Boolean  @default(false)
+  createdAt     DateTime @default(now())
+  tenant        Tenant   @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+
+  @@index([tenantId])
+  @@index([metric])
+  @@index([severity])
+  @@index([detectedAt])
+  @@map("anomalies")
+}
+
+// AbTest - A/B test definitions
+model AbTest {
+  id           String    @id @default(uuid())
+  tenantId     String
+  name         String
+  description  String?
+  status       String    @default("draft") // draft, running, stopped, completed
+  startedAt    DateTime?
+  stoppedAt    DateTime?
+  winner       String? // Variant name
+  significance Float?
+  configJson   Json      @default("{}") // Test configuration
+  resultsJson  Json      @default("{}") // Test results
+  createdAt    DateTime  @default(now())
+  updatedAt    DateTime  @updatedAt
+  tenant       Tenant    @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+
+  @@index([tenantId])
+  @@index([status])
+  @@map("ab_tests")
+}
+
+// TrainingJob - ML training jobs
+model TrainingJob {
+  id         String    @id @default(uuid())
+  tenantId   String
+  modelId    String // Reference to MlModel
+  status     String    @default("queued") // queued, running, completed, failed
+  progress   Int       @default(0) // 0-100
+  startedAt  DateTime?
+  finishedAt DateTime?
+  configJson Json      @default("{}")
+  logsJson   Json      @default("[]")
+  createdAt  DateTime  @default(now())
+  updatedAt  DateTime  @updatedAt
+  tenant     Tenant    @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+
+  @@index([tenantId])
+  @@index([modelId])
+  @@index([status])
+  @@map("training_jobs")
+}
+
+// =============================================================================
+// Admin: Personas & Roles Models (SOFTWARE_ORG_SEEDED_DATASET.md compliant)
+// =============================================================================
+
+// Persona - represents a human or AI persona in the organization
+model Persona {
+  id              String           @id @default(uuid())
+  tenantId        String
+  name            String
+  slug            String
+  type            String           @default("human") // human, ai-agent
+  description     String?
+  primaryTeamId   String?
+  active          Boolean          @default(true)
+  configuration   Json             @default("{}") // Persona-specific config
+  metadata        Json             @default("{}")
+  createdAt       DateTime         @default(now())
+  updatedAt       DateTime         @updatedAt
+  tenant          Tenant           @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  primaryTeam     Team?            @relation(fields: [primaryTeamId], references: [id], onDelete: SetNull)
+  roleAssignments RoleAssignment[]
+  members         PersonaMember[]
+  buildAgents     BuildAgent[]
+
+  @@unique([tenantId, slug])
+  @@index([tenantId])
+  @@index([type])
+  @@index([active])
+  @@map("personas")
+}
+
+// PersonaMember - associates users/agents with personas
+model PersonaMember {
+  id         String   @id @default(uuid())
+  personaId  String
+  memberId   String // User or Agent ID
+  memberType String   @default("user") // user, agent
+  createdAt  DateTime @default(now())
+  persona    Persona  @relation(fields: [personaId], references: [id], onDelete: Cascade)
+
+  @@unique([personaId, memberId, memberType])
+  @@index([personaId])
+  @@index([memberId])
+  @@map("persona_members")
+}
+
+// Role - RBAC role definition
+model Role {
+  id              String           @id @default(uuid())
+  tenantId        String? // null = global role
+  name            String
+  slug            String
+  description     String?
+  permissions     Json             @default("[]") // Array of permission strings
+  scopes          Json             @default("[]") // Array of scope strings
+  isSystem        Boolean          @default(false) // true for built-in roles
+  active          Boolean          @default(true)
+  createdAt       DateTime         @default(now())
+  updatedAt       DateTime         @updatedAt
+  tenant          Tenant?          @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  roleAssignments RoleAssignment[]
+
+  @@unique([tenantId, slug])
+  @@index([tenantId])
+  @@index([isSystem])
+  @@map("roles")
+}
+
+// RoleAssignment - assigns roles to personas or users
+model RoleAssignment {
+  id        String    @id @default(uuid())
+  roleId    String
+  personaId String?
+  userId    String?
+  scope     String? // optional scope: tenantId, environmentId, serviceId
+  grantedBy String?
+  grantedAt DateTime  @default(now())
+  expiresAt DateTime?
+  createdAt DateTime  @default(now())
+  role      Role      @relation(fields: [roleId], references: [id], onDelete: Cascade)
+  persona   Persona?  @relation(fields: [personaId], references: [id], onDelete: Cascade)
+
+  @@index([roleId])
+  @@index([personaId])
+  @@index([userId])
+  @@map("role_assignments")
+}
+
+// =============================================================================
+// Admin: Teams & Services Models
+// =============================================================================
+
+// Team - represents a team within a department
+model Team {
+  id             String          @id @default(uuid())
+  tenantId       String
+  departmentId   String
+  name           String
+  slug           String
+  description    String?
+  leadId         String? // User or Persona ID
+  status         String          @default("ACTIVE") // ACTIVE, INACTIVE
+  configuration  Json            @default("{}")
+  metadata       Json            @default("{}")
+  createdAt      DateTime        @default(now())
+  updatedAt      DateTime        @updatedAt
+  tenant         Tenant          @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  department     Department      @relation(fields: [departmentId], references: [id], onDelete: Cascade)
+  services       Service[]
+  personas       Persona[]
+  buildWorkflows BuildWorkflow[]
+
+  @@unique([tenantId, slug])
+  @@index([tenantId])
+  @@index([departmentId])
+  @@index([status])
+  @@map("teams")
+}
+
+// Service - represents a software service
+model Service {
+  id                    String                 @id @default(uuid())
+  tenantId              String
+  teamId                String? // owner team
+  name                  String
+  slug                  String
+  description           String?
+  repository            String? // git repository URL
+  status                String                 @default("healthy") // healthy, degraded, down, unknown
+  tier                  String                 @default("tier-3") // tier-1, tier-2, tier-3
+  configuration         Json                   @default("{}")
+  metadata              Json                   @default("{}")
+  createdAt             DateTime               @default(now())
+  updatedAt             DateTime               @updatedAt
+  tenant                Tenant                 @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  team                  Team?                  @relation(fields: [teamId], references: [id], onDelete: SetNull)
+  serviceLinks          ServiceLink[]
+  buildWorkflowServices BuildWorkflowService[]
+  buildAgentServices    BuildAgentService[]
+
+  @@unique([tenantId, slug])
+  @@index([tenantId])
+  @@index([teamId])
+  @@index([status])
+  @@map("services")
+}
+
+// ServiceLink - links services to workflows and agents
+model ServiceLink {
+  id         String   @id @default(uuid())
+  serviceId  String
+  targetType String // workflow, agent
+  targetId   String
+  linkType   String   @default("uses") // uses, owned_by, monitored_by
+  createdAt  DateTime @default(now())
+  service    Service  @relation(fields: [serviceId], references: [id], onDelete: Cascade)
+
+  @@unique([serviceId, targetType, targetId])
+  @@index([serviceId])
+  @@index([targetId])
+  @@map("service_links")
+}
+
+// =============================================================================
+// Admin: Interactions Models
+// =============================================================================
+
+// Interaction - defines interaction patterns between departments/teams/personas
+model Interaction {
+  id                 String   @id @default(uuid())
+  tenantId           String
+  name               String
+  slug               String
+  displayName        String?
+  description        String?
+  type               String   @default("handoff") // handoff, collaboration, delegation, escalation, consultation, notification
+  status             String   @default("active") // active, draft, disabled
+  sourceDepartmentId String? // Source department for handoff/escalation
+  targetDepartmentId String? // Target department for handoff/collaboration
+  sourceTeamId       String?
+  targetTeamId       String?
+  sourcePersonaId    String?
+  targetPersonaId    String?
+  trigger            Json     @default("{}") // Trigger events (eventType, conditions)
+  protocol           Json     @default("{}") // Protocol config (type, timeout, retry)
+  requirements       Json     @default("[]") // Array of handoff requirements
+  actions            Json     @default("[]") // Actions to take on interaction
+  configuration      Json     @default("{}") // Additional configuration
+  metadata           Json     @default("{}")
+  createdAt          DateTime @default(now())
+  updatedAt          DateTime @updatedAt
+  tenant             Tenant   @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+
+  @@unique([tenantId, slug])
+  @@index([tenantId])
+  @@index([type])
+  @@index([status])
+  @@index([sourceDepartmentId])
+  @@index([targetDepartmentId])
+  @@map("interactions")
+}
+
+// =============================================================================
+// Admin: Policies Models (references agentic-event-processor PatternSpecification)
+// =============================================================================
+
+// Policy - operational policy/guardrail definition
+model Policy {
+  id                     String                @id @default(uuid())
+  tenantId               String
+  name                   String
+  slug                   String
+  description            String?
+  type                   String                @default("guardrail") // guardrail, approval, auto-remediation
+  status                 String                @default("draft") // draft, active, disabled
+  patternSpecificationId String? // reference to agentic-event-processor PatternSpecification
+  scope                  Json                  @default("{}") // { environments: [], services: [], teams: [] }
+  configuration          Json                  @default("{}") // policy-specific config
+  triggers               Json                  @default("[]") // event types that trigger this policy
+  actions                Json                  @default("[]") // actions to take when policy matches
+  priority               Int                   @default(0)
+  createdBy              String?
+  activatedAt            DateTime?
+  metadata               Json                  @default("{}")
+  createdAt              DateTime              @default(now())
+  updatedAt              DateTime              @updatedAt
+  tenant                 Tenant                @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  buildWorkflowPolicies  BuildWorkflowPolicy[]
+
+  @@unique([tenantId, slug])
+  @@index([tenantId])
+  @@index([status])
+  @@index([type])
+  @@map("policies")
+}
+
+// =============================================================================
+// Admin: Platform Settings & Integrations Models
+// =============================================================================
+
+// PlatformSettings - tenant or global platform configuration
+model PlatformSettings {
+  id        String   @id @default(uuid())
+  tenantId  String? // null = global defaults
+  category  String // general, appearance, localization, ai-agents, notifications
+  settings  Json     @default("{}")
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  tenant    Tenant?  @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+
+  @@unique([tenantId, category])
+  @@index([tenantId])
+  @@index([category])
+  @@map("platform_settings")
+}
+
+// Integration - third-party integration configuration
+model Integration {
+  id              String    @id @default(uuid())
+  tenantId        String
+  type            String // git, ci, observability, ticketing, messaging
+  provider        String // github, gitlab, jenkins, prometheus, jira, slack
+  name            String
+  status          String    @default("disconnected") // connected, disconnected, degraded
+  configuration   Json      @default("{}") // provider-specific config (encrypted secrets)
+  healthDetails   Json      @default("{}") // last health check result
+  lastHealthCheck DateTime?
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt
+  tenant          Tenant    @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+
+  @@unique([tenantId, type, provider])
+  @@index([tenantId])
+  @@index([type])
+  @@index([status])
+  @@map("integrations")
+}
+
+// =============================================================================
+// Build: Workflows & Agents Models (NEW - for Build journeys B1-B3)
+// =============================================================================
+
+// BuildWorkflow - automation workflow for Build module
+// Reuses existing pattern/workflow models from agentic-event-processor
+model BuildWorkflow {
+  id               String                 @id @default(uuid())
+  tenantId         String
+  name             String
+  slug             String
+  description      String?
+  status           String                 @default("draft") // draft, active, disabled
+  ownerTeamId      String?
+  trigger          Json                   @default("{}") // event trigger configuration
+  steps            Json                   @default("[]") // workflow steps (actions, conditions, approvals)
+  configuration    Json                   @default("{}") // additional workflow config
+  createdBy        String?
+  activatedAt      DateTime?
+  metadata         Json                   @default("{}")
+  createdAt        DateTime               @default(now())
+  updatedAt        DateTime               @updatedAt
+  tenant           Tenant                 @relation("TenantBuildWorkflows", fields: [tenantId], references: [id], onDelete: Cascade)
+  ownerTeam        Team?                  @relation(fields: [ownerTeamId], references: [id], onDelete: SetNull)
+  workflowServices BuildWorkflowService[]
+  workflowPolicies BuildWorkflowPolicy[]
+
+  @@unique([tenantId, slug])
+  @@index([tenantId])
+  @@index([status])
+  @@index([ownerTeamId])
+  @@map("build_workflows")
+}
+
+// BuildWorkflowService - links workflows to services
+model BuildWorkflowService {
+  id         String        @id @default(uuid())
+  workflowId String
+  serviceId  String
+  createdAt  DateTime      @default(now())
+  workflow   BuildWorkflow @relation(fields: [workflowId], references: [id], onDelete: Cascade)
+  service    Service       @relation(fields: [serviceId], references: [id], onDelete: Cascade)
+
+  @@unique([workflowId, serviceId])
+  @@index([workflowId])
+  @@index([serviceId])
+  @@map("build_workflow_services")
+}
+
+// BuildWorkflowPolicy - links workflows to policies
+model BuildWorkflowPolicy {
+  id         String        @id @default(uuid())
+  workflowId String
+  policyId   String
+  createdAt  DateTime      @default(now())
+  workflow   BuildWorkflow @relation(fields: [workflowId], references: [id], onDelete: Cascade)
+  policy     Policy        @relation(fields: [policyId], references: [id], onDelete: Cascade)
+
+  @@unique([workflowId, policyId])
+  @@index([workflowId])
+  @@index([policyId])
+  @@map("build_workflow_policies")
+}
+
+// BuildAgent - AI agent configuration for Build module
+// Reuses existing agent models from agentic-event-processor
+model BuildAgent {
+  id            String              @id @default(uuid())
+  tenantId      String
+  name          String
+  slug          String
+  description   String?
+  type          String // incident-triage, deployment-advisor, code-review, etc.
+  status        String              @default("draft") // draft, active, disabled
+  personaId     String? // linked persona (from Admin)
+  tools         Json                @default("[]") // allowed tools: ["metrics", "incidents", "git", "ci"]
+  guardrails    Json                @default("{}") // guardrail configuration
+  configuration Json                @default("{}") // agent-specific config
+  createdBy     String?
+  activatedAt   DateTime?
+  metadata      Json                @default("{}")
+  createdAt     DateTime            @default(now())
+  updatedAt     DateTime            @updatedAt
+  tenant        Tenant              @relation("TenantBuildAgents", fields: [tenantId], references: [id], onDelete: Cascade)
+  persona       Persona?            @relation(fields: [personaId], references: [id], onDelete: SetNull)
+  agentServices BuildAgentService[]
+
+  @@unique([tenantId, slug])
+  @@index([tenantId])
+  @@index([status])
+  @@index([type])
+  @@index([personaId])
+  @@map("build_agents")
+}
+
+// BuildAgentService - links agents to services
+model BuildAgentService {
+  id        String     @id @default(uuid())
+  agentId   String
+  serviceId String
+  createdAt DateTime   @default(now())
+  agent     BuildAgent @relation(fields: [agentId], references: [id], onDelete: Cascade)
+  service   Service    @relation(fields: [serviceId], references: [id], onDelete: Cascade)
+
+  @@unique([agentId, serviceId])
+  @@index([agentId])
+  @@index([serviceId])
+  @@map("build_agent_services")
+}
+
+// LogEntry - application logs
+model LogEntry {
+  id        String   @id @default(cuid())
+  tenantId  String
+  timestamp DateTime @default(now())
+  level     String // error, warn, info, debug
+  source    String
+  message   String   @db.Text
+  metadata  Json? // Additional context: traceId, spanId, userId, etc.
+  createdAt DateTime @default(now())
+
+  @@index([tenantId, level, timestamp])
+  @@index([tenantId, source, timestamp])
+  @@index([timestamp(sort: Desc)])
+  @@map("log_entries")
+}
+
+// =============================================================================
+// User Journey Models - Approval Workflows, Time Off, Reviews, Budgets, etc.
+// =============================================================================
+
+// Approval - multi-level approval workflow
+model Approval {
+  id               String         @id @default(uuid())
+  type             String // restructure, budget, hire, time-off, policy-change, system-config
+  requesterId      String
+  requester        User           @relation("RequestedApprovals", fields: [requesterId], references: [id], onDelete: Cascade)
+  status           String         @default("pending") // pending, in-progress, approved, rejected, cancelled, expired
+  data             Json           @default("{}") // Type-specific data
+  metadata         Json           @default("{}") // Additional context
+  currentStepIndex Int            @default(0)
+  createdAt        DateTime       @default(now())
+  updatedAt        DateTime       @updatedAt
+  completedAt      DateTime?
+  approvalSteps    ApprovalStep[]
+
+  @@index([requesterId])
+  @@index([status])
+  @@index([type])
+  @@index([createdAt])
+  @@map("approvals")
+}
+
+// ApprovalStep - individual step in approval chain
+model ApprovalStep {
+  id             String    @id @default(uuid())
+  approvalId     String
+  approval       Approval  @relation(fields: [approvalId], references: [id], onDelete: Cascade)
+  level          Int // 0-indexed step in chain
+  approverId     String?
+  approver       User?     @relation("ApproverSteps", fields: [approverId], references: [id], onDelete: SetNull)
+  role           String // manager, executive, owner, admin
+  status         String    @default("pending") // pending, notified, approved, rejected, skipped
+  decision       String? // approve, reject
+  comment        String?
+  notifiedAt     DateTime?
+  decidedAt      DateTime?
+  reminderSentAt DateTime?
+  createdAt      DateTime  @default(now())
+  updatedAt      DateTime  @updatedAt
+
+  @@index([approvalId])
+  @@index([approverId])
+  @@index([status])
+  @@index([level])
+  @@map("approval_steps")
+}
+
+// TimeOffRequest - employee time-off requests
+model TimeOffRequest {
+  id         String   @id @default(uuid())
+  userId     String
+  user       User     @relation("TimeOffRequests", fields: [userId], references: [id], onDelete: Cascade)
+  type       String // vacation, sick, personal, bereavement, parental
+  startDate  DateTime
+  endDate    DateTime
+  days       Float // Number of days (can be fractional for half-days)
+  status     String   @default("pending") // pending, approved, rejected, cancelled
+  conflicts  Json     @default("[]") // Array of conflict objects
+  approvalId String?
+  reason     String?
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+
+  @@index([userId])
+  @@index([status])
+  @@index([startDate, endDate])
+  @@index([createdAt])
+  @@map("time_off_requests")
+}
+
+// PerformanceReview - employee performance reviews
+model PerformanceReview {
+  id           String    @id @default(uuid())
+  employeeId   String
+  employee     User      @relation("ReviewedEmployee", fields: [employeeId], references: [id], onDelete: Cascade)
+  reviewerId   String
+  reviewer     User      @relation("Reviewer", fields: [reviewerId], references: [id], onDelete: Cascade)
+  period       String // Q1-2025, H1-2025, 2025
+  status       String    @default("draft") // draft, submitted, completed, archived
+  ratings      Json      @default("{}") // Category ratings: { technical: 4.5, collaboration: 4.0 }
+  goals        Json      @default("{}") // Goals and achievements
+  feedback     String?   @db.Text
+  aiInsights   Json? // AI-generated insights
+  strengths    Json      @default("[]") // Array of strength strings
+  improvements Json      @default("[]") // Array of improvement areas
+  createdAt    DateTime  @default(now())
+  updatedAt    DateTime  @updatedAt
+  submittedAt  DateTime?
+  completedAt  DateTime?
+
+  @@index([employeeId])
+  @@index([reviewerId])
+  @@index([period])
+  @@index([status])
+  @@map("performance_reviews")
+}
+
+// Budget - department/team budgets
+model Budget {
+  id           String     @id @default(uuid())
+  departmentId String
+  department   Department @relation(fields: [departmentId], references: [id], onDelete: Cascade)
+  year         Int
+  quarter      String? // Q1, Q2, Q3, Q4
+  allocated    Float
+  spent        Float      @default(0)
+  forecasted   Float
+  categories   Json       @default("{}") // Category breakdown: { headcount: {...}, tools: {...} }
+  approvalId   String?
+  status       String     @default("draft") // draft, active, frozen, archived
+  notes        String?    @db.Text
+  createdBy    String?
+  createdAt    DateTime   @default(now())
+  updatedAt    DateTime   @updatedAt
+
+  @@unique([departmentId, year, quarter])
+  @@index([departmentId])
+  @@index([year])
+  @@index([status])
+  @@map("budgets")
+}
+
+// Notification - in-app notifications
+model Notification {
+  id        String    @id @default(uuid())
+  userId    String
+  user      User      @relation("UserNotifications", fields: [userId], references: [id], onDelete: Cascade)
+  type      String // approval_needed, approval_decision, review_ready, time_off_approved, budget_alert
+  title     String
+  message   String    @db.Text
+  link      String? // Deep link to related entity
+  priority  String    @default("normal") // low, normal, high, urgent
+  read      Boolean   @default(false)
+  readAt    DateTime?
+  metadata  Json      @default("{}") // Additional context
+  createdAt DateTime  @default(now())
+
+  @@index([userId, read])
+  @@index([userId, createdAt])
+  @@index([type])
+  @@index([priority])
+  @@map("notifications")
+}
+
+// Comment - collaborative comments on entities
+model Comment {
+  id         String   @id @default(uuid())
+  entityType String // approval, review, restructure, work-item, budget
+  entityId   String // Polymorphic reference - no FK constraint
+  authorId   String
+  author     User     @relation("CommentAuthor", fields: [authorId], references: [id], onDelete: Cascade)
+  content    String   @db.Text
+  mentions   Json     @default("[]") // Array of user IDs mentioned
+  metadata   Json     @default("{}") // Additional context
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+
+  @@index([entityType, entityId])
+  @@index([authorId])
+  @@index([createdAt])
+  @@map("comments")
+}
+
+// Restructure - organization restructuring proposals
+model Restructure {
+  id             String    @id @default(uuid())
+  proposerId     String
+  proposer       User      @relation("RestructureProposer", fields: [proposerId], references: [id], onDelete: Cascade)
+  title          String
+  description    String?   @db.Text
+  status         String    @default("draft") // draft, submitted, approved, rejected, implemented
+  type           String // merge-teams, split-team, move-members, create-department, dissolve-department
+  changeData     Json      @default("{}") // Specific changes: { fromTeam, toTeam, members: [...] }
+  impactAnalysis Json      @default("{}") // Affected teams, services, workflows
+  approvalId     String?
+  implementedAt  DateTime?
+  createdAt      DateTime  @default(now())
+  updatedAt      DateTime  @updatedAt
+
+  @@index([proposerId])
+  @@index([status])
+  @@index([type])
+  @@map("restructures")
+}
+
+// GrowthPlan - employee personal growth plans
+model GrowthPlan {
+  id          String    @id @default(uuid())
+  userId      String
+  user        User      @relation("EmployeeGrowthPlans", fields: [userId], references: [id], onDelete: Cascade)
+  title       String
+  description String?   @db.Text
+  period      String // Q1-2025, H1-2025, 2025
+  status      String    @default("active") // active, completed, archived
+  goals       Json      @default("[]") // Array of goal objects
+  skills      Json      @default("[]") // Skills to develop
+  resources   Json      @default("[]") // Learning resources
+  progress    Int       @default(0) // 0-100
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+  completedAt DateTime?
+
+  @@index([userId])
+  @@index([status])
+  @@index([period])
+  @@map("growth_plans")
+}
+
+// Incident - incident tracking (for cross-persona workflows)
+model Incident {
+  id            String    @id @default(uuid())
+  title         String
+  description   String?   @db.Text
+  severity      String // low, medium, high, critical
+  status        String    @default("open") // open, investigating, resolved, closed
+  reporterId    String
+  reporter      User      @relation("IncidentReporter", fields: [reporterId], references: [id], onDelete: Cascade)
+  assigneeId    String?
+  assignee      User?     @relation("IncidentAssignee", fields: [assigneeId], references: [id], onDelete: SetNull)
+  serviceId     String?
+  affectedUsers Int       @default(0)
+  resolvedAt    DateTime?
+  rootCause     String?   @db.Text
+  remediation   String?   @db.Text
+  timeline      Json      @default("[]") // Timeline of events
+  metadata      Json      @default("{}") // Additional context
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+
+  @@index([status])
+  @@index([severity])
+  @@index([reporterId])
+  @@index([assigneeId])
+  @@index([createdAt])
+  @@map("incidents")
+}
+
+// ============================================================================
+// Knowledge Base
+// ============================================================================
+
+model Article {
+  id          String   @id @default(uuid())
+  title       String
+  content     String   @db.Text
+  summary     String?
+  category    String // e.g., "engineering", "product"
+  tags        String[]
+  authorId    String
+  author      User     @relation(fields: [authorId], references: [id])
+  views       Int      @default(0)
+  likes       Int      @default(0)
+  isPublished Boolean  @default(false)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@map("articles")
+}
+
+// ============================================================================
+// Innovation Tracker
+// ============================================================================
+
+model Idea {
+  id          String       @id @default(uuid())
+  title       String
+  description String       @db.Text
+  authorId    String
+  author      User         @relation(fields: [authorId], references: [id])
+  votes       Int          @default(0)
+  status      String // "new", "review", "approved", "rejected"
+  createdAt   DateTime     @default(now())
+  updatedAt   DateTime     @updatedAt
+  experiments Experiment[]
+
+  @@map("ideas")
+}
+
+model Experiment {
+  id        String    @id @default(uuid())
+  ideaId    String
+  idea      Idea      @relation(fields: [ideaId], references: [id])
+  title     String
+  status    String // "planning", "in-progress", "completed", "cancelled"
+  progress  Int       @default(0) // 0-100
+  startDate DateTime?
+  endDate   DateTime?
+  results   Json? // { impact: "high", metrics: {...} }
+  learnings String?   @db.Text
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+
+  @@map("experiments")
+}
+
+// ============================================================================
+// Skills Matrix
+// ============================================================================
+
+model Skill {
+  id               String            @id @default(uuid())
+  name             String
+  category         String // "technical", "soft", "domain"
+  description      String?
+  importance       String // "critical", "high", "medium", "low"
+  createdAt        DateTime          @default(now())
+  updatedAt        DateTime          @updatedAt
+  userSkills       UserSkill[]
+  skillGaps        SkillGap[]
+  developmentPlans DevelopmentPlan[]
+
+  @@map("skills")
+}
+
+model UserSkill {
+  id           String   @id @default(uuid())
+  userId       String
+  user         User     @relation(fields: [userId], references: [id])
+  skillId      String
+  skill        Skill    @relation(fields: [skillId], references: [id])
+  proficiency  Int // 1-5
+  interest     String // "high", "medium", "low"
+  lastAssessed DateTime @default(now())
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  @@unique([userId, skillId])
+  @@map("user_skills")
+}
+
+model SkillGap {
+  id           String   @id @default(uuid())
+  skillId      String
+  skill        Skill    @relation(fields: [skillId], references: [id])
+  teamId       String? // Optional link to team/department
+  currentLevel Float
+  targetLevel  Float
+  impact       String // "critical", "high", "medium", "low"
+  status       String // "identified", "addressing", "resolved"
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  @@map("skill_gaps")
+}
+
+model DevelopmentPlan {
+  id        String    @id @default(uuid())
+  userId    String
+  user      User      @relation(fields: [userId], references: [id])
+  skillId   String
+  skill     Skill     @relation(fields: [skillId], references: [id])
+  type      String // "course", "mentorship", "project"
+  status    String // "planned", "in-progress", "completed"
+  progress  Int       @default(0)
+  dueDate   DateTime?
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+
+  @@map("development_plans")
+}

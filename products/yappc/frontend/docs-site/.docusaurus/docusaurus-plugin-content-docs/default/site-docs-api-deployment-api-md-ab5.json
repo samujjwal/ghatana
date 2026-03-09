@@ -1,0 +1,27 @@
+{
+  "id": "api/deployment-api",
+  "title": "Deployment Api",
+  "description": "Documentation coming soon.",
+  "source": "@site/docs/api/deployment-api.md",
+  "sourceDirName": "api",
+  "slug": "/api/deployment-api",
+  "permalink": "/docs/api/deployment-api",
+  "draft": false,
+  "unlisted": false,
+  "editUrl": "https://github.com/yappc/app-creator/tree/main/docs-site/docs/api/deployment-api.md",
+  "tags": [],
+  "version": "current",
+  "sidebarPosition": 1,
+  "frontMatter": {
+    "sidebar_position": 1
+  },
+  "sidebar": "guidesSidebar",
+  "previous": {
+    "title": "Canvas Api",
+    "permalink": "/docs/api/canvas-api"
+  },
+  "next": {
+    "title": "Feature Flags Api",
+    "permalink": "/docs/api/feature-flags-api"
+  }
+}

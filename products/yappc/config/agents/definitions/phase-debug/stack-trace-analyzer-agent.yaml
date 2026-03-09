@@ -1,0 +1,55 @@
+id: stack-trace-analyzer-agent
+name: Stack Trace Analyzer Agent
+version: 1.0.0
+description: Parses and analyzes stack traces to identify the failure point, relevant frames, and likely root cause location in the codebase.
+
+metadata:
+  level: 3
+  domain: debugging
+  tags: [debugging, stack-trace, exception-analysis, deterministic]
+
+generator:
+  type: PIPELINE
+  steps:
+    - name: stack_parse
+      type: RULE_BASED
+      description: >
+        Parse stack trace into structured frames (class, method, line, file).
+        Identify exception chain (caused-by). Flag project frames vs library frames.
+    - name: relevance_scoring
+      type: RULE_BASED
+      description: >
+        Score each frame by relevance: project code > test code > framework > library.
+        Identify the top-ranked project frame as the most likely failure point.
+
+memory:
+  episodic:
+    enabled: true
+    retention_days: 180
+    categories: [stack-trace-analyses, exception-types]
+  semantic:
+    enabled: true
+    categories: [known-exception-patterns, codebase-hotspots]
+
+tools: [stack_trace_parser, source_locator]
+
+capabilities:
+  - root-cause-analysis
+
+routing:
+  input_types: [stack-trace, exception-report]
+  output_types: [parsed-stack-trace, failure-location]
+
+delegation:
+  can_delegate_to: []
+  escalates_to: debug-orchestrator
+
+governance:
+  requires_approval: false
+  can_block: false
+  audit_trail: standard
+
+performance:
+  expected_latency_ms: 200
+  max_latency_ms: 1000
+  timeout_ms: 3000

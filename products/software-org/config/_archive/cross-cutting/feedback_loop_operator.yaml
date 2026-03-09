@@ -1,0 +1,122 @@
+---
+# Cross-Cutting Feedback Loop Operator Template
+# Replaces 15 stage-specific files: build_feedback_loop.yaml, test_feedback_loop.yaml, etc.
+#
+# Usage: Instantiate with stage parameter to create stage-specific feedback loop
+# Parameters:
+#   - stage: The stage name (plan, solution, design, develop, build, test, secure,
+#            compliance, uat, package, deploy, operate, monitor, dr, release)
+#
+# @doc.type operator-template
+# @doc.purpose Cross-cutting feedback loop for continuous improvement across all stages
+# @doc.layer operations
+# @doc.pattern Template
+
+template:
+  id: "${stage}_feedback_loop"
+  version: "1.0.0"
+
+operator:
+  type: "FeedbackLoopOperator"
+  role: "CI/CD Coach/Automation"
+  category: "cross-cutting"
+
+parameters:
+  stage:
+    type: "string"
+    required: true
+    description: "Stage name for which to create feedback loop"
+    allowed_values:
+      - "plan"
+      - "solution"
+      - "design"
+      - "develop"
+      - "build"
+      - "test"
+      - "secure"
+      - "compliance"
+      - "uat"
+      - "package"
+      - "deploy"
+      - "operate"
+      - "monitor"
+      - "dr"
+      - "release"
+
+inputs_spec:
+  - name: "${stage}_progress_dashboard"
+    description: "${stage} progress dashboard with issues/improvements."
+    format: "Dashboard artifact"
+    required: true
+
+  - name: "${stage}_incident_reports"
+    description: "Incident reports from ${stage} stage."
+    format: "List of incident objects"
+    required: false
+
+  - name: "${stage}_user_feedback"
+    description: "User feedback collected during ${stage} stage."
+    format: "List of feedback items"
+    required: false
+
+outputs_spec:
+  - name: "${stage}_feedback_items"
+    description: "Feedback/improvements for ${stage}, routed to Retrospective."
+    format: "List of feedback items"
+
+  - name: "${stage}_feedback_events"
+    description: "Stream of feedback events for tracking"
+    format: "Event stream"
+    event_type: "ghatana.operations.feedback.${stage}"
+
+agent_tasks:
+  - "Collect all ${stage} issues and improvement suggestions."
+  - "Categorize feedback by type (process, tooling, quality, performance)."
+  - "Route feedback to appropriate Retrospective backlog."
+  - "Track feedback for closure/action."
+  - "Emit feedback events to EventCloud for analytics."
+
+acceptance_criteria:
+  - "All issues/improvement suggestions are collected and categorized."
+  - "Feedback is routed to appropriate Retrospective backlog."
+  - "Feedback is tracked for closure/action."
+  - "Feedback closure rate is measurable."
+
+dependencies:
+  - "${stage}_progress_dashboard"
+
+failure_escalation:
+  - "Escalate to CI/CD coach if feedback is not acted on or routed."
+  - "Emit ${stage}.feedback.stale event if feedback items exceed age threshold."
+
+config:
+  # Feedback categories
+  feedback_categories:
+    - "process_improvement"
+    - "tooling_enhancement"
+    - "quality_issue"
+    - "performance_concern"
+    - "security_finding"
+    - "compliance_gap"
+    - "documentation_need"
+
+  # Routing rules
+  routing:
+    process_improvement: "retrospective_backlog"
+    tooling_enhancement: "platform_team_backlog"
+    quality_issue: "quality_team_backlog"
+    security_finding: "security_team_backlog"
+
+  # SLA settings
+  feedback_age_threshold_days: 14
+  auto_escalate_after_days: 7
+
+  # Observability
+  event_cloud_topic: "ghatana.operations.feedback"
+
+references:
+  - "Lean - Continuous Improvement"
+  - "Agile Retrospectives - Derby & Larsen"
+  - "DevOps Handbook - Feedback Loops"
+
+hitl: false

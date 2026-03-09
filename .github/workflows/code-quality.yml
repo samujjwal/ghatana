@@ -1,0 +1,137 @@
+name: Code Quality
+
+on:
+  pull_request:
+    branches: [ main, develop ]
+  push:
+    branches: [ main, develop ]
+  workflow_dispatch:
+
+jobs:
+  version-catalog-check:
+    name: Check Hardcoded Versions
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+      - name: Check for hardcoded dependency versions
+        run: |
+          chmod +x scripts/check-hardcoded-versions.sh
+          ./scripts/check-hardcoded-versions.sh
+      - name: Report violations
+        if: failure()
+        run: |
+          echo "::error::Hardcoded dependency versions detected. Use version catalog instead."
+          echo "See docs/ACTIVEJ_VERSION_STANDARDIZATION.md for guidance."
+
+  checkstyle:
+    name: Checkstyle
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+      - uses: actions/setup-java@v3
+        with:
+          distribution: 'temurin'
+          java-version: '21'
+          cache: 'gradle'
+      - name: Run Checkstyle
+        run: ./gradlew checkstyleMain checkstyleTest --no-daemon --stacktrace
+      - name: Upload reports
+        if: always()
+        uses: actions/upload-artifact@v3
+        with:
+          name: checkstyle-reports
+          path: |
+            **/build/reports/checkstyle/**/*
+          retention-days: 7
+
+  spotbugs:
+    name: SpotBugs
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+      - uses: actions/setup-java@v3
+        with:
+          distribution: 'temurin'
+          java-version: '21'
+          cache: 'gradle'
+      - name: Run SpotBugs
+        run: ./gradlew spotbugsMain spotbugsTest --no-daemon --stacktrace
+      - name: Upload reports
+        if: always()
+        uses: actions/upload-artifact@v3
+        with:
+          name: spotbugs-reports
+          path: |
+            **/build/reports/spotbugs/**/*
+          retention-days: 7
+
+  pmd:
+    name: PMD
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+      - uses: actions/setup-java@v3
+        with:
+          distribution: 'temurin'
+          java-version: '21'
+          cache: 'gradle'
+      - name: Run PMD
+        run: ./gradlew pmdMain pmdTest --no-daemon --stacktrace
+      - name: Upload reports
+        if: always()
+        uses: actions/upload-artifact@v3
+        with:
+          name: pmd-reports
+          path: |
+            **/build/reports/pmd/**/*
+          retention-days: 7
+
+  dependency-check:
+    name: OWASP Dependency-Check
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+      - uses: actions/setup-java@v3
+        with:
+          distribution: 'temurin'
+          java-version: '21'
+          cache: 'gradle'
+      - name: Run OWASP Dependency-Check
+        run: ./gradlew dependencyCheckAnalyze --no-daemon --stacktrace
+      - name: Upload reports
+        if: always()
+        uses: actions/upload-artifact@v3
+        with:
+          name: dependency-check-reports
+          path: |
+            **/build/reports/dependency-check-report.html
+          retention-days: 7
+
+  architecture-tests:
+    name: ArchUnit Architecture Tests
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+      - uses: actions/setup-java@v3
+        with:
+          distribution: 'temurin'
+          java-version: '21'
+          cache: 'gradle'
+      - name: Run Architecture Tests
+        run: ./gradlew :libs:platform-architecture-tests:test --no-daemon --stacktrace
+      - name: Upload reports
+        if: always()
+        uses: actions/upload-artifact@v3
+        with:
+          name: archunit-reports
+          path: |
+            libs/java/platform-architecture-tests/build/reports/tests/**/*
+          retention-days: 7
+
+  quality-gate:
+    name: Quality Gate
+    needs: [checkstyle, spotbugs, pmd, architecture-tests]
+    runs-on: ubuntu-latest
+    steps:
+      - name: All quality checks passed
+        run: echo "All quality gates passed!"

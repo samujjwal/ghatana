@@ -1,0 +1,65 @@
+global:
+  scrape_interval: 15s
+  evaluation_interval: 15s
+  scrape_timeout: 10s
+  external_labels:
+    monitor: 'query-service'
+
+# Rule files to load
+rule_files:
+  - 'rules/*.rules'
+
+# Alerting configuration
+# alerting:
+#   alertmanagers:
+#     - static_configs:
+#         - targets: ['alertmanager:9093']
+
+# Scrape configurations
+scrape_configs:
+  # Scrape the application metrics
+  - job_name: 'query-service'
+    scrape_interval: 5s
+    static_configs:
+      - targets: ['query-service:8081']
+    metrics_path: '/metrics'
+    
+  # Scrape the ClickHouse metrics
+  - job_name: 'clickhouse'
+    static_configs:
+      - targets: ['clickhouse:9363']
+    metrics_path: '/metrics'
+    
+  # Scrape the Redis metrics
+  - job_name: 'redis'
+    static_configs:
+      - targets: ['redis:9121']
+    metrics_path: '/metrics'
+    
+  # Scrape the Node Exporter metrics
+  - job_name: 'node'
+    static_configs:
+      - targets: ['node-exporter:9100']
+    
+  # Scrape cAdvisor metrics
+  - job_name: 'cadvisor'
+    static_configs:
+      - targets: ['cadvisor:8080']
+    metrics_path: '/metrics'
+    
+  # Scrape the Prometheus itself
+  - job_name: 'prometheus'
+    static_configs:
+      - targets: ['localhost:9090']
+
+# Remote write configuration (optional)
+# remote_write:
+#   - url: "http://remote-storage:9201/write"
+#     queue_config:
+#       max_samples_per_send: 1000
+#       max_shards: 200
+#       capacity: 5000
+#     write_relabel_configs:
+#       - source_labels: [__name__]
+#         regex: 'up|promhttp_metric_handler_requests_total|go_.*|process_.*|http_.*'
+#         action: keep

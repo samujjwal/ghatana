@@ -1,0 +1,62 @@
+{{#if enableRouter}}
+{{>../shared/partials/license-header}}
+
+const About = () => {
+  return (
+    <div className="about">
+      <h2>About {{projectName}}</h2>
+      <p>{{description}}</p>
+      
+      <div className="project-info">
+        <h3>Project Information</h3>
+        <dl>
+          <dt>Version:</dt>
+          <dd>{{version}}</dd>
+          <dt>Author:</dt>
+          <dd>{{author}}</dd>
+          <dt>License:</dt>
+          <dd>{{license}}</dd>
+          <dt>Framework:</dt>
+          <dd>React with TypeScript</dd>
+          <dt>Build Tool:</dt>
+          <dd>Vite</dd>
+          {{#if cssFramework}}
+          <dt>CSS Framework:</dt>
+          <dd>{{cssFramework}}</dd>
+          {{/if}}
+          {{#if stateManagement}}
+          <dt>State Management:</dt>
+          <dd>{{stateManagement}}</dd>
+          {{/if}}
+        </dl>
+      </div>
+
+      <div className="tech-stack">
+        <h3>Technology Stack</h3>
+        <ul>
+          <li>React 18</li>
+          <li>TypeScript</li>
+          <li>Vite</li>
+          <li>React Router</li>
+          <li>Vitest</li>
+          <li>ESLint</li>
+          <li>Prettier</li>
+          {{#eq cssFramework "tailwind"}}<li>Tailwind CSS</li>{{/eq}}
+          {{#eq cssFramework "styled-components"}}<li>Styled Components</li>{{/eq}}
+          {{#eq cssFramework "emotion"}}<li>Emotion</li>{{/eq}}
+          {{#eq cssFramework "chakra-ui"}}<li>Chakra UI</li>{{/eq}}
+          {{#eq stateManagement "zustand"}}<li>Zustand</li>{{/eq}}
+          {{#eq stateManagement "redux-toolkit"}}<li>Redux Toolkit</li>{{/eq}}
+          {{#eq stateManagement "jotai"}}<li>Jotai</li>{{/eq}}
+          {{#eq stateManagement "valtio"}}<li>Valtio</li>{{/eq}}
+          {{#if enablePWA}}<li>PWA Support</li>{{/if}}
+        </ul>
+      </div>
+    </div>
+  )
+}
+
+export default About
+{{else}}
+// About page component is only generated when enableRouter is true
+{{/if}}

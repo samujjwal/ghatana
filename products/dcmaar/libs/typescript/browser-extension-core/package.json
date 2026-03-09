@@ -1,0 +1,50 @@
+{
+  "name": "@ghatana/dcmaar-browser-extension-core",
+  "version": "1.0.0",
+  "description": "Core framework for building browser extensions with Source-Processor-Sink architecture",
+  "type": "module",
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "import": "./dist/index.js",
+      "types": "./dist/index.d.ts"
+    }
+  },
+  "scripts": {
+    "build": "tsc",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "type-check": "tsc --noEmit",
+    "clean": "rm -rf dist"
+  },
+  "keywords": [
+    "browser-extension",
+    "chrome-extension",
+    "firefox-addon",
+    "webextension",
+    "framework",
+    "pipeline"
+  ],
+  "author": "DCMAAR Team",
+  "license": "MIT",
+  "dependencies": {
+    "@ghatana/dcmaar-types": "workspace:*",
+    "@ghatana/dcmaar-plugin-abstractions": "workspace:*",
+    "@ghatana/dcmaar-connectors": "workspace:*",
+    "webextension-polyfill": "^0.12.0"
+  },
+  "devDependencies": {
+    "@types/jsdom": "^27.0.0",
+    "@types/node": "^25.2.0",
+    "@types/webextension-polyfill": "^0.12.4",
+    "jsdom": "^28.0.0",
+    "typescript": "^5.9.3",
+    "vitest": "^4.0.18"
+  },
+  "files": [
+    "dist",
+    "README.md",
+    "LICENSE"
+  ]
+}

@@ -1,0 +1,27 @@
+package {{packageName}}.dto;
+
+import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.Size;
+import java.time.Instant;
+
+/**
+* Data Transfer Objects for Item.
+*/
+public sealed interface ItemDto {
+
+record CreateRequest(
+@NotBlank @Size(max = 255) String title, String description, String status)
+implements ItemDto {}
+
+record UpdateRequest(@Size(max = 255) String title, String description, String status)
+implements ItemDto {}
+
+record Response(
+String id,
+String title,
+String description,
+String status,
+Instant createdAt,
+Instant updatedAt)
+implements ItemDto {}
+}

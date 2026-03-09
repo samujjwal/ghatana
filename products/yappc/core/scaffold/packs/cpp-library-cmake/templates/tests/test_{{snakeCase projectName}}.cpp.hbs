@@ -1,0 +1,7 @@
+#include "{{snakeCase projectName}}.hpp"
+#include <gtest /gtest.h>
+
+    TEST({{pascalCase projectName}}Test, GetVersion) {
+    {{snakeCase projectName}}::{{pascalCase projectName}} lib;
+    EXPECT_EQ(lib.get_version(), "0.1.0");
+    }

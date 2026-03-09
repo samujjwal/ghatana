@@ -1,0 +1,19 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: aep-service-manager
+  namespace: aep
+  labels:
+    app: aep-service-manager
+    app.kubernetes.io/name: aep-service-manager
+    app.kubernetes.io/component: service-manager
+    app.kubernetes.io/part-of: ghatana-aep
+spec:
+  selector:
+    app: aep-service-manager
+  ports:
+    - name: http-health
+      port: 8090
+      targetPort: http-health
+      protocol: TCP
+  type: ClusterIP

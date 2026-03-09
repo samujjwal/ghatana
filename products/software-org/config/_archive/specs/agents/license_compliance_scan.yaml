@@ -1,0 +1,24 @@
+---
+id: "license_compliance_scan"
+agent: "LicenseComplianceAgent"
+role: "Automation Tool"
+inputs_spec:
+- name: "release_candidate_validation_report"
+  description: "Validation report for license compliance check."
+  format: "Validation report artifact"
+outputs_spec:
+- name: "license_compliance_report"
+  description: "Report of license compliance for all dependencies before release."
+  format: "License compliance report artifact"
+agent_tasks:
+- "Check all dependencies for license compliance."
+- "Flag and remediate or sign off any non-compliant licenses."
+acceptance_criteria:
+- "All dependencies checked for compliance before release."
+- "Non-compliant licenses are remediated or signed off."
+dependencies:
+- "release_candidate_validation_report"
+failure_escalation:
+- "Escalate to Legal/Compliance if non-compliance is detected."
+references: []
+hitl: false

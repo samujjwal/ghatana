@@ -1,0 +1,13 @@
+# Authentication Configuration
+auth:
+jwt:
+secret: {{jwtSecret}}
+access-token-expiration: {{jwtExpiration}}
+refresh-token-expiration: {{refreshTokenExpiration}}
+enabled: true
+{{#if enableRoles}}
+roles:
+- USER
+- ADMIN
+- MODERATOR
+{{/if}}

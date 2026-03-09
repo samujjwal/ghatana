@@ -1,0 +1,45 @@
+id: artifact-store-integration-agent
+name: Artifact Store Integration Agent
+version: 1.0.0
+description: Bridges to artifact repositories (Nexus, Artifactory, Docker Registry, npm Registry). Provides artifact upload, download, version query, and retention management. No business logic.
+
+metadata:
+  level: 3
+  domain: integration
+  tags: [integration, artifact-store, nexus, docker-registry, npm, deterministic]
+
+generator:
+  type: SERVICE_CALL
+  service: artifact-store-service
+  endpoint: /api/v1
+
+memory:
+  episodic:
+    enabled: true
+    retention_days: 90
+    categories: [artifact-operations, version-queries]
+  semantic:
+    enabled: false
+
+tools: [artifact_upload, artifact_download, artifact_query, artifact_delete]
+
+capabilities:
+  - deployment-automation
+
+routing:
+  input_types: [artifact-command, version-query]
+  output_types: [artifact-response, version-list, upload-receipt]
+
+delegation:
+  can_delegate_to: []
+  escalates_to: master-orchestrator-agent
+
+governance:
+  requires_approval: false
+  can_block: false
+  audit_trail: standard
+
+performance:
+  expected_latency_ms: 1000
+  max_latency_ms: 10000
+  timeout_ms: 30000

@@ -1,0 +1,131 @@
+# {{projectName}}
+
+{{description}}
+
+Generated with [YAPPC](https://github.com/ghatana/yappc) using the `go-service-chi` pack.
+
+## Features
+
+- 🚀 [Chi](https://github.com/go-chi/chi) router with middleware
+- 📝 Structured logging with slog
+- 🐳 Docker and docker-compose ready
+- 🔄 Hot reload with [Air](https://github.com/cosmtrek/air)
+- ✅ Health check endpoints (`/health`, `/ready`, `/live`)
+- 🔒 CORS middleware configured
+- 📊 Request logging middleware
+
+## Prerequisites
+
+- Go {{goVersion}} or higher
+- Docker (optional)
+- [Air](https://github.com/cosmtrek/air) for hot reload (optional)
+
+## Getting Started
+
+### Install dependencies
+
+```bash
+go mod download
+```
+
+### Run in development mode
+
+```bash
+# With hot reload
+make dev
+
+# Or without hot reload
+make run
+```
+
+### Run tests
+
+```bash
+make test
+```
+
+### Build for production
+
+```bash
+make build
+# or for static binary
+make build-static
+```
+
+### Run with Docker
+
+```bash
+# Build image
+make docker-build
+
+# Run container
+make docker-run
+
+# Or use docker-compose
+docker-compose up -d
+```
+
+## Project Structure
+
+```
+.
+├── cmd/
+│ └── {{projectName}}/
+│ ├── main.go # Application entry point
+│ └── main_test.go # Integration tests
+├── internal/
+│ ├── config/
+│ │ └── config.go # Configuration management
+│ ├── handler/
+│ │ ├── api.go # API handlers
+│ │ └── health.go # Health check handlers
+│ ├── middleware/
+│ │ └── middleware.go # Custom middleware
+│ └── router/
+│ └── router.go # Router configuration
+├── Dockerfile
+├── docker-compose.yml
+├── go.mod
+├── go.sum
+├── Makefile
+└── README.md
+```
+
+## API Endpoints
+
+| Method | Path | Description |
+|--------|------|-------------|
+| GET | `/health` | Health check with version |
+| GET | `/ready` | Readiness check |
+| GET | `/live` | Liveness check |
+| GET | `/api/v1/` | Welcome message |
+| GET | `/api/v1/items` | List items |
+| POST | `/api/v1/items` | Create item |
+| GET | `/api/v1/items/{id}` | Get item |
+| PUT | `/api/v1/items/{id}` | Update item |
+| DELETE | `/api/v1/items/{id}` | Delete item |
+
+## Environment Variables
+
+| Variable | Default | Description |
+|----------|---------|-------------|
+| `PORT` | `{{port}}` | HTTP server port |
+| `LOG_LEVEL` | `info` | Logging level (debug, info, warn, error) |
+| `ENVIRONMENT` | `development` | Environment (development, staging, production) |
+| `SERVICE_NAME` | `{{projectName}}` | Service name for tracing |
+
+## Available Make Commands
+
+```bash
+make help # Show all available commands
+make build # Build the binary
+make test # Run tests
+make lint # Run linters
+make dev # Run with hot reload
+make run # Build and run
+make clean # Clean build artifacts
+```
+
+## License
+
+Apache-2.0

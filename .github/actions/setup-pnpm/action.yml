@@ -1,0 +1,49 @@
+name: Setup pnpm
+description: Checkout, setup Node.js with corepack pnpm, and cache store
+
+inputs:
+  node-version:
+    description: Node.js version
+    required: false
+    default: "20"
+  cache-pnpm-store:
+    description: Whether to cache the pnpm store
+    required: false
+    default: "true"
+
+runs:
+  using: composite
+  steps:
+    - name: Checkout repository
+      uses: actions/checkout@v4
+
+    - name: Enable corepack and prepare pnpm
+      shell: bash
+      run: |
+        corepack enable
+        corepack prepare pnpm@10.28.2 --activate
+
+    - name: Setup Node.js
+      uses: actions/setup-node@v4
+      with:
+        node-version: ${{ inputs.node-version }}
+        cache: pnpm
+
+    - name: Get pnpm store directory
+      if: inputs.cache-pnpm-store == 'true'
+      id: pnpm-cache
+      shell: bash
+      run: echo "STORE_PATH=$(pnpm store path)" >> $GITHUB_OUTPUT
+
+    - name: Cache pnpm store
+      if: inputs.cache-pnpm-store == 'true'
+      uses: actions/cache@v4
+      with:
+        path: ${{ steps.pnpm-cache.outputs.STORE_PATH }}
+        key: ${{ runner.os }}-pnpm-store-${{ hashFiles('**/pnpm-lock.yaml') }}
+        restore-keys: |
+          ${{ runner.os }}-pnpm-store-
+
+    - name: Install dependencies
+      shell: bash
+      run: pnpm install --frozen-lockfile --prefer-offline

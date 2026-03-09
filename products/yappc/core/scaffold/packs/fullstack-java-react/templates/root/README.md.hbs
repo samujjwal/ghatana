@@ -1,0 +1,117 @@
+# {{projectName}}
+
+Full-stack application with Java Spring Boot backend and React TypeScript frontend.
+
+## Architecture
+
+```
+{{projectName}}/
+├── backend/ # Java Spring Boot API
+│ ├── src/main/java/
+│ └── build.gradle.kts
+├── frontend/ # React TypeScript SPA
+│ ├── src/
+│ └── package.json
+├── docker-compose.yml # Docker orchestration
+└── Makefile # Unified commands
+```
+
+## Prerequisites
+
+- Java {{javaVersion}}+
+- Node.js {{nodeVersion}}+
+- pnpm 9+
+- Docker (optional)
+
+## Quick Start
+
+### Install Dependencies
+
+```bash
+pnpm install
+```
+
+### Development
+
+Run both backend and frontend:
+
+```bash
+make dev
+```
+
+Or run separately:
+
+```bash
+# Backend only (http://localhost:{{backendPort}})
+make dev-backend
+
+# Frontend only (http://localhost:{{frontendPort}})
+make dev-frontend
+```
+
+### Build
+
+```bash
+make build
+```
+
+### Test
+
+```bash
+make test
+```
+
+{{#if enableDocker}}
+## Docker
+
+### Build Images
+
+```bash
+make docker-build
+```
+
+### Run
+
+```bash
+make docker-up
+```
+
+### Stop
+
+```bash
+make docker-down
+```
+{{/if}}
+
+## API Endpoints
+
+| Method | Path | Description |
+|--------|------|-------------|
+| GET | `/api/health` | Health check |
+| GET | `/api/example` | Example endpoint |
+
+{{#if enableSwagger}}
+### API Documentation
+
+Swagger UI: http://localhost:{{backendPort}}/swagger-ui.html
+{{/if}}
+
+## Frontend
+
+- **Framework:** React 18 with TypeScript
+- **Build:** Vite
+- **Styling:** Tailwind CSS (optional)
+- **State:** TanStack Query for server state
+
+## Backend
+
+- **Framework:** Spring Boot 3
+- **Language:** Java {{javaVersion}}
+- **Build:** Gradle (Kotlin DSL)
+{{#if enableSwagger}}
+- **API Docs:** Swagger/OpenAPI
+{{/if}}
+
+## License
+
+MIT

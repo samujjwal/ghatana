@@ -1,0 +1,51 @@
+id: synthesis_consolidation
+agent: SynthesisConsolidationAgent
+role: Lead Analyst/PM
+inputs_spec:
+- name: requirements_documentation
+  description: Comprehensive documentation of all requirements and criteria.
+  format: Structured documentation
+outputs_spec:
+- name: requirements_package
+  description: Complete requirements package with all documents/artifacts, ready for handoff.
+  format: Package (list of documents, version info, approval status)
+  example: 'documents: ["requirements.md", "criteria.xlsx"]
+
+    version: "v1.0"
+
+    approvals: ["PO", "QA"]
+
+    '
+acceptance_criteria:
+- Requirements package is complete and consistent.
+- All key documents and artifacts are included.
+- Gaps, inconsistencies, or missing approvals are flagged.
+- Ensure all referenced artifacts are current and versioned.
+agent_tasks:
+- Consolidate and validate requirements package.
+- Ensure all key documents and artifacts are included.
+- Flag any gaps, inconsistencies, or missing approvals.
+- Ensure all references are current and versioned.
+dependencies:
+- requirements_documentation
+hitl: true
+hitl_reason: Human consolidates and validates requirements package
+failure_escalation:
+- Escalate to PM if requirements package is incomplete.
+references: []
+internal_logic:
+  - perception:
+      description: "Aggregate all solution docs, controls, risks, and criteria."
+  - model:
+      description: "{ overview, key_artifacts, traceability_matrix, open_issues, executive_summary }"
+  - planning:
+      description: |
+        "Link and summarize artifacts, highlight traceability and issues."
+  - action:
+      description: "Produce synthesized YAML package."
+validation:
+  - "Final QA and executive review."
+  - "Audit for traceability and open issue management."
+quality_enhancements:
+  - "Traceability and synthesis templates."
+  - "Automated summary/issue extraction."

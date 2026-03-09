@@ -1,0 +1,46 @@
+id: business_goals
+agent: EnhancedBusinessGoalsAgent
+role: Senior Product Owner
+inputs_spec:
+- name: plan_stage_milestone
+  description: Structured milestone plan with security/cloud milestones and dependencies.
+  format: List of milestone objects.
+outputs_spec:
+- name: business_goals
+  description: Clear, concise business goals, including security, compliance, and cloud-readiness goals, mapped to milestones.
+  format: List of goal objects (description, measurable indicator, mapped milestone, notes).
+  example: "- description: \"Achieve HIPAA compliance for all document storage\"\n  measurable: true\n  mapped_milestone: \"M2\"\n"
+acceptance_criteria:
+- Business goals are stated clearly and concisely, including security, compliance, and cloud-readiness goals where appropriate.
+- Each goal is measurable or has a success indicator.
+- Goals are aligned with the clarified product idea and mapped to milestones.
+- Potential conflicts, ambiguities, or gaps (especially in security/compliance) are flagged.
+agent_tasks:
+- Identify and document business goals, including security/compliance/cloud.
+- Ensure each goal has a measurable indicator or success metric.
+- Map each goal to relevant milestones.
+- Flag conflicts, ambiguities, or gaps.
+dependencies:
+- plan_stage_milestone
+failure_escalation:
+- Escalate to product owner or compliance lead if goals are ambiguous or conflict with compliance/security.
+references: []
+
+internal_logic:
+  - perception:
+      description: "Extract milestones and criteria for business relevance."
+  - model:
+      description: "Maintain mapping: {goal, metric, milestone_id, compliance, owner}"
+  - planning:
+      description: |
+        "For each milestone:
+         - If regulatory, create compliance goal.
+         - Add goal for risk reduction, value delivery."
+  - action:
+      description: "Generate business goals YAML."
+validation:
+  - "Benchmark against org KPIs/OKRs."
+  - "Review with business owner."
+quality_enhancements:
+  - "SMART template for all goals."
+  - "Change log for goal adjustments."

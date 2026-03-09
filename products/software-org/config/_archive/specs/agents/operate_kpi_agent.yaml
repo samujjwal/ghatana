@@ -1,0 +1,27 @@
+---
+id: "operate_kpi_agent"
+agent: "StageKPIAgent"
+role: "Operate KPI Analyst"
+inputs_spec:
+- name: "operate_stage_milestone"
+  description: "Operate stage milestones for KPI tracking."
+  format: "List of milestone objects"
+outputs_spec:
+- name: "operate_kpi_report"
+  description: "Operate KPI report, including all required metrics."
+  format: "KPI report artifact"
+agent_tasks:
+- "Track SLO/SLA attainment (%) for core services."
+- "Track MTTR and incident count by severity."
+- "Track uptime/availability per service."
+- "Track capacity and cost optimization status."
+- "Flag trends or outages for further analysis."
+acceptance_criteria:
+- "All KPIs tracked and reported for operate stage."
+- "Trends or outages flagged for further analysis."
+dependencies:
+- "operate_stage_milestone"
+failure_escalation:
+- "Escalate to Operate KPI Analyst if KPIs are not tracked or reported."
+references: []
+hitl: false

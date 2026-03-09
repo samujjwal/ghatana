@@ -1,0 +1,487 @@
+apiVersion: ghatana.yappc/v2
+kind: DomainAgentCatalog
+
+metadata:
+  name: cloud
+  version: 1.0.0
+  description: "Cloud infrastructure management and multi-cloud orchestration agents"
+  domain: cloud
+  agentCount: 32
+
+spec:
+  agents:
+    # Level 1: Cloud Orchestrators
+    - id: multi-cloud-orchestrator
+      name: Multi-Cloud Orchestrator
+      level: 1
+      type: orchestrator
+      description: "Coordinates resources and deployments across multiple cloud providers"
+      domain: cloud
+      capabilities:
+        - multi-cloud-orchestration
+        - cross-cloud-coordination
+        - provider-abstraction
+      routing:
+        input_types: [cloud_request, deployment_orchestration]
+        output_types: [deployment_plan, resource_allocation]
+      governance:
+        requires_approval: true
+        audit_trail: comprehensive
+      tags: [cloud, orchestration, multi-cloud]
+
+    - id: cloud-security-audit-orchestrator
+      name: Cloud Security Audit Orchestrator
+      level: 1
+      type: orchestrator
+      description: "Coordinates security audits across all cloud environments"
+      domain: cloud
+      capabilities:
+        - cloud-security-audit
+        - cross-account-scanning
+        - security-posture-assessment
+      routing:
+        input_types: [security_audit_request, posture_check]
+        output_types: [security_report, violation_list]
+      tags: [cloud, security, audit]
+
+    # Level 2: Cloud Specialists
+    - id: aws-specialist
+      name: AWS Specialist Agent
+      level: 2
+      type: domain-expert
+      description: "Expert in AWS services and best practices"
+      domain: cloud
+      capabilities:
+        - aws-management
+        - service-optimization
+        - cost-analysis
+      memory:
+        semantic:
+          enabled: true
+          categories: [aws-services, pricing-models]
+      tools:
+        - aws_cli
+        - cost_explorer
+      tags: [cloud, aws, specialist]
+
+    - id: azure-specialist
+      name: Azure Specialist Agent
+      level: 2
+      type: domain-expert
+      description: "Expert in Azure services and best practices"
+      domain: cloud
+      capabilities:
+        - azure-management
+        - resource-optimization
+        - hybrid-cloud
+      memory:
+        semantic:
+          enabled: true
+          categories: [azure-services, active-directory]
+      tools:
+        - azure_cli
+      tags: [cloud, azure, specialist]
+
+    - id: gcp-specialist
+      name: GCP Specialist Agent
+      level: 2
+      type: domain-expert
+      description: "Expert in Google Cloud Platform services"
+      domain: cloud
+      capabilities:
+        - gcp-management
+        - data-analytics
+        - ml-services
+      memory:
+        semantic:
+          enabled: true
+          categories: [gcp-services, big-data]
+      tools:
+        - gcloud_cli
+      tags: [cloud, gcp, specialist]
+
+    - id: kubernetes-specialist
+      name: Kubernetes Specialist Agent
+      level: 2
+      type: domain-expert
+      description: "Expert in Kubernetes orchestration and management"
+      domain: cloud
+      capabilities:
+        - kubernetes-management
+        - container-orchestration
+        - cluster-optimization
+      tools:
+        - kubectl
+        - helm
+      tags: [cloud, kubernetes, containers]
+
+    # Level 3: Cloud Workers
+    - id: cloud-resource-discovery-agent
+      name: Cloud Resource Discovery Agent
+      level: 3
+      type: worker
+      description: "Discovers and inventories all cloud resources"
+      domain: cloud
+      capabilities:
+        - resource-discovery
+        - asset-inventory
+        - dependency-mapping
+      tools:
+        - resource_scanner
+        - inventory_builder
+      tags: [cloud, discovery, inventory]
+
+    - id: cloud-resource-risk-agent
+      name: Cloud Resource Risk Agent
+      level: 3
+      type: worker
+      description: "Assesses risks in cloud resource configurations"
+      domain: cloud
+      capabilities:
+        - risk-assessment
+        - misconfiguration-detection
+        - security-analysis
+      tools:
+        - risk_analyzer
+        - config_checker
+      tags: [cloud, risk, security]
+
+    - id: cost-optimization-agent
+      name: Cost Optimization Agent
+      level: 3
+      type: worker
+      description: "Analyzes and optimizes cloud spending"
+      domain: cloud
+      capabilities:
+        - cost-optimization
+        - resource-rightsizing
+        - savings-analysis
+      memory:
+        episodic:
+          enabled: true
+          retention_days: 180
+      tools:
+        - cost_analyzer
+        - rightsizing_engine
+      tags: [cloud, cost, optimization]
+
+    - id: auto-scaling-configurator
+      name: Auto Scaling Configurator Agent
+      level: 3
+      type: worker
+      description: "Configures intelligent auto-scaling policies"
+      domain: cloud
+      capabilities:
+        - auto-scaling
+        - capacity-planning
+        - load-balancing
+      tools:
+        - scaling_configurator
+        - capacity_planner
+      tags: [cloud, scaling, automation]
+
+    - id: infrastructure-as-code-generator
+      name: IaC Generator Agent
+      level: 3
+      type: worker
+      description: "Generates Terraform, CloudFormation, and Pulumi code"
+      domain: cloud
+      capabilities:
+        - iac-generation
+        - terraform-coding
+        - cloudformation-generation
+      tools:
+        - terraform_generator
+        - cfn_generator
+        - pulumi_generator
+      tags: [cloud, iac, generation]
+
+    - id: cloud-migration-planner
+      name: Cloud Migration Planner Agent
+      level: 3
+      type: worker
+      description: "Plans and executes cloud migration strategies"
+      domain: cloud
+      capabilities:
+        - migration-planning
+        - workload-assessment
+        - cutover-coordination
+      tools:
+        - migration_planner
+        - assessment_engine
+      tags: [cloud, migration, planning]
+
+    - id: disaster-recovery-agent
+      name: Disaster Recovery Agent
+      level: 3
+      type: worker
+      description: "Manages disaster recovery configurations and testing"
+      domain: cloud
+      capabilities:
+        - dr-management
+        - backup-coordination
+        - failover-testing
+      tools:
+        - dr_manager
+        - backup_coordinator
+      tags: [cloud, disaster-recovery, backup]
+
+    - id: network-architecture-agent
+      name: Network Architecture Agent
+      level: 3
+      type: worker
+      description: "Designs and optimizes cloud network architectures"
+      domain: cloud
+      capabilities:
+        - network-design
+        - vpc-management
+        - connectivity-optimization
+      tools:
+        - network_designer
+        - vpc_planner
+      tags: [cloud, network, architecture]
+
+    - id: serverless-optimizer
+      name: Serverless Optimizer Agent
+      level: 3
+      type: worker
+      description: "Optimizes serverless function performance and cost"
+      domain: cloud
+      capabilities:
+        - serverless-optimization
+        - function-tuning
+        - cold-start-reduction
+      tools:
+        - lambda_optimizer
+        - function_analyzer
+      tags: [cloud, serverless, optimization]
+
+    - id: storage-optimizer
+      name: Storage Optimizer Agent
+      level: 3
+      type: worker
+      description: "Optimizes cloud storage tiers and lifecycle"
+      domain: cloud
+      capabilities:
+        - storage-optimization
+        - tier-management
+        - lifecycle-policies
+      tools:
+        - storage_analyzer
+        - tier_optimizer
+      tags: [cloud, storage, optimization]
+
+    - id: database-migration-agent
+      name: Database Migration Agent
+      level: 3
+      type: worker
+      description: "Plans and executes cloud database migrations"
+      domain: cloud
+      capabilities:
+        - database-migration
+        - schema-conversion
+        - data-sync
+      tools:
+        - db_migrator
+        - schema_converter
+      tags: [cloud, database, migration]
+
+    - id: cloud-monitoring-aggregator
+      name: Cloud Monitoring Aggregator Agent
+      level: 3
+      type: worker
+      description: "Aggregates metrics from multiple cloud providers"
+      domain: cloud
+      capabilities:
+        - metric-aggregation
+        - cross-cloud-monitoring
+        - unified-dashboards
+      tools:
+        - metric_aggregator
+        - dashboard_builder
+      tags: [cloud, monitoring, aggregation]
+
+    - id: iam-governance-agent
+      name: IAM Governance Agent
+      level: 3
+      type: worker
+      description: "Manages identity and access governance across clouds"
+      domain: cloud
+      capabilities:
+        - iam-governance
+        - permission-audit
+        - policy-management
+      tools:
+        - iam_auditor
+        - policy_manager
+      tags: [cloud, iam, governance]
+
+    - id: compliance-scanner
+      name: Cloud Compliance Scanner Agent
+      level: 3
+      type: worker
+      description: "Scans cloud configurations for compliance violations"
+      domain: cloud
+      capabilities:
+        - compliance-scanning
+        - violation-detection
+        - remediation-suggestions
+      tools:
+        - compliance_scanner
+        - violation_detector
+      tags: [cloud, compliance, scanning]
+
+    - id: spot-instance-manager
+      name: Spot Instance Manager Agent
+      level: 3
+      type: worker
+      description: "Manages spot/preemptible instances for cost savings"
+      domain: cloud
+      capabilities:
+        - spot-management
+        - interruption-handling
+        - savings-optimization
+      tools:
+        - spot_manager
+        - interruption_handler
+      tags: [cloud, spot, cost-optimization]
+
+    - id: container-registry-manager
+      name: Container Registry Manager Agent
+      level: 3
+      type: worker
+      description: "Manages container images across cloud registries"
+      domain: cloud
+      capabilities:
+        - registry-management
+        - image-scanning
+        - vulnerability-checking
+      tools:
+        - registry_manager
+        - image_scanner
+      tags: [cloud, containers, registry]
+
+    - id: edge-deployment-agent
+      name: Edge Deployment Agent
+      level: 3
+      type: worker
+      description: "Manages edge computing deployments and CDN configurations"
+      domain: cloud
+      capabilities:
+        - edge-deployment
+        - cdn-management
+        - edge-optimization
+      tools:
+        - edge_manager
+        - cdn_configurator
+      tags: [cloud, edge, cdn]
+
+    - id: secrets-manager
+      name: Cloud Secrets Manager Agent
+      level: 3
+      type: worker
+      description: "Manages secrets and credentials across cloud providers"
+      domain: cloud
+      capabilities:
+        - secret-management
+        - rotation-automation
+        - vault-integration
+      tools:
+        - secrets_manager
+        - rotation_automator
+      tags: [cloud, secrets, security]
+
+    - id: backup-automation-agent
+      name: Backup Automation Agent
+      level: 3
+      type: worker
+      description: "Automates backup processes across cloud resources"
+      domain: cloud
+      capabilities:
+        - backup-automation
+        - schedule-management
+        - restore-testing
+      tools:
+        - backup_automator
+        - restore_tester
+      tags: [cloud, backup, automation]
+
+    - id: tagging-governance-agent
+      name: Tagging Governance Agent
+      level: 3
+      type: worker
+      description: "Enforces tagging policies for cost allocation and governance"
+      domain: cloud
+      capabilities:
+        - tagging-enforcement
+        - cost-allocation
+        - governance-compliance
+      tools:
+        - tag_enforcer
+        - cost_allocator
+      tags: [cloud, tagging, governance]
+
+    - id: service-mesh-configurator
+      name: Service Mesh Configurator Agent
+      level: 3
+      type: worker
+      description: "Configures and optimizes service mesh deployments"
+      domain: cloud
+      capabilities:
+        - service-mesh
+        - istio-configuration
+        - traffic-management
+      tools:
+        - mesh_configurator
+        - istio_manager
+      tags: [cloud, service-mesh, networking]
+
+  hierarchy:
+    level1:
+      - multi-cloud-orchestrator
+      - cloud-security-audit-orchestrator
+    level2:
+      - aws-specialist
+      - azure-specialist
+      - gcp-specialist
+      - kubernetes-specialist
+    level3:
+      - cloud-resource-discovery-agent
+      - cloud-resource-risk-agent
+      - cost-optimization-agent
+      - auto-scaling-configurator
+      - infrastructure-as-code-generator
+      - cloud-migration-planner
+      - disaster-recovery-agent
+      - network-architecture-agent
+      - serverless-optimizer
+      - storage-optimizer
+      - database-migration-agent
+      - cloud-monitoring-aggregator
+      - iam-governance-agent
+      - compliance-scanner
+      - spot-instance-manager
+      - container-registry-manager
+      - edge-deployment-agent
+      - secrets-manager
+      - backup-automation-agent
+      - tagging-governance-agent
+      - service-mesh-configurator
+
+  capability_routing:
+    multi-cloud-orchestration:
+      primary: multi-cloud-orchestrator
+    cloud-security-audit:
+      primary: cloud-security-audit-orchestrator
+    aws-management:
+      primary: aws-specialist
+    azure-management:
+      primary: azure-specialist
+    gcp-management:
+      primary: gcp-specialist
+    kubernetes-management:
+      primary: kubernetes-specialist
+    resource-discovery:
+      primary: cloud-resource-discovery-agent
+    cost-optimization:
+      primary: cost-optimization-agent

@@ -1,0 +1,44 @@
+id: solution_goals_criteria_combiner
+agent: SolutionGoalsCriteriaCombiner
+role: QA Integrator
+inputs_spec:
+  - name: business_goals
+    description: Business goals array.
+    format: YAML array
+  - name: success_criteria
+    description: Success criteria array.
+    format: YAML array
+outputs_spec:
+  - name: goals_criteria_map
+    description: Mapping of business goals to success criteria.
+    format: YAML map
+acceptance_criteria:
+  - Every business goal mapped to at least one success criterion.
+  - Gaps/duplicates flagged.
+  - Mapping peer-reviewed.
+agent_tasks:
+  - Map every goal to success criteria.
+  - Flag and resolve mapping gaps.
+  - Peer review mapping.
+dependencies:
+  - business_goals
+  - success_criteria
+failure_escalation:
+  - Escalate unmapped goals/criteria to PM/QA.
+references: []
+internal_logic:
+  - perception:
+      description: "Merge business goals and their mapped success criteria into a single validation matrix."
+  - model:
+      description: "Track completeness of mappings; flag gaps or redundancies."
+  - planning:
+      description: |
+        "For any goal without criteria (or vice versa), escalate to responsible owner for resolution."
+  - action:
+      description: "Generate combined mapping file; flag for review as needed."
+validation:
+  - "Audit check for completeness—no unmapped goals or unowned criteria."
+  - "Peer/SME review for coherence."
+quality_enhancements:
+  - "Change log of mapping history."
+  - "Automated duplicate/gap detection."

@@ -1,0 +1,18 @@
+{
+  "id": "deployment/pagerduty-integration",
+  "title": "PagerDuty Integration",
+  "description": "Configure PagerDuty for incident management and on-call alerting with YAPPC Canvas deployment and monitoring systems.",
+  "source": "@site/docs/deployment/pagerduty-integration.md",
+  "sourceDirName": "deployment",
+  "slug": "/deployment/pagerduty-integration",
+  "permalink": "/docs/deployment/pagerduty-integration",
+  "draft": false,
+  "unlisted": false,
+  "editUrl": "https://github.com/yappc/app-creator/tree/main/docs-site/docs/deployment/pagerduty-integration.md",
+  "tags": [],
+  "version": "current",
+  "sidebarPosition": 5,
+  "frontMatter": {
+    "sidebar_position": 5
+  }
+}

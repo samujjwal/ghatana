@@ -1,0 +1,49 @@
+{
+  "app": {
+    "title": "Ghatana",
+    "loading": "Chargement...",
+    "error": {
+      "generic": "Une erreur s'est produite",
+      "notFound": "Page non trouvée",
+      "unauthorized": "Vous n'êtes pas autorisé à voir cette page",
+      "networkError": "Erreur réseau. Veuillez vérifier votre connexion.",
+      "retry": "Réessayer"
+    }
+  },
+  "auth": {
+    "login": "Se connecter",
+    "logout": "Se déconnecter",
+    "signUp": "S'inscrire",
+    "email": "E-mail",
+    "password": "Mot de passe",
+    "forgotPassword": "Mot de passe oublié ?"
+  },
+  "actions": {
+    "save": "Enregistrer",
+    "cancel": "Annuler",
+    "delete": "Supprimer",
+    "edit": "Modifier",
+    "create": "Créer",
+    "submit": "Soumettre",
+    "confirm": "Confirmer",
+    "close": "Fermer",
+    "search": "Rechercher",
+    "filter": "Filtrer",
+    "refresh": "Actualiser",
+    "export": "Exporter",
+    "import": "Importer"
+  },
+  "status": {
+    "active": "Actif",
+    "inactive": "Inactif",
+    "pending": "En attente",
+    "error": "Erreur",
+    "success": "Succès"
+  },
+  "pagination": {
+    "previous": "Précédent",
+    "next": "Suivant",
+    "page": "Page {{current}} sur {{total}}",
+    "showing": "Affichage de {{from}} à {{to}} sur {{total}} résultats"
+  }
+}

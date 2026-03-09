@@ -1,0 +1,46 @@
+{{!--
+  React Component with State Management Template
+  
+  Variables:
+  - componentName: Name of the component
+  - description: Component description
+  - stateType: Type of state (e.g., 'string', 'number', 'CustomType')
+  - initialState: Initial state value
+  - hasProps: Whether component accepts props
+  - propTypes: Array of prop definitions
+--}}
+import React, { useState, useCallback } from 'react';
+{{#if hasProps}}
+
+interface {{componentName}}Props {
+  {{#each propTypes}}
+  {{name}}{{#if optional}}?{{/if}}: {{type}};
+  {{/each}}
+}
+{{/if}}
+
+/**
+ * {{description}}
+ * 
+ * @doc.type component
+ * @doc.purpose {{description}}
+ * @doc.layer presentation
+ * @doc.pattern Stateful Component
+ */
+export function {{componentName}}({{#if hasProps}}props: {{componentName}}Props{{/if}}) {
+  const [state, setState] = useState<{{stateType}}>({{initialState}});
+
+  const handleStateChange = useCallback((newState: {{stateType}}) => {
+    setState(newState);
+  }, []);
+
+  return (
+    <div className="{{kebabCase componentName}}">
+      <h2>{{componentName}}</h2>
+      <div className="state-display">
+        Current State: {JSON.stringify(state)}
+      </div>
+      {/* Component content */}
+    </div>
+  );
+}

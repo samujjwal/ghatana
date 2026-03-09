@@ -1,0 +1,28 @@
+id: design_success_criteria_tracker
+agent: SuccessCriteriaTrackerAgent
+role: Design Success Criteria Tracker
+inputs_spec:
+- name: design_stage_milestone
+  description: Design stage milestone plan.
+  format: List of milestone objects
+outputs_spec:
+- name: design_success_criteria_status
+  description: Status of design stage success criteria, progress, blockers, and risks.
+  format: List of criteria status objects (criterion, status, blockers, risks)
+  example: "- criterion: \"API contract defined\"\n  status: \"complete\"\n  blockers: []\n  risks: []\n"
+agent_tasks:
+- Define and track design stage success criteria.
+- Report progress and blockers for each criterion.
+- Flag any risks or issues affecting design success criteria.
+acceptance_criteria:
+- Design stage success criteria are clearly defined and tracked.
+- Progress and blockers for each criterion are reported.
+- Any risks or issues affecting design success criteria are flagged.
+dependencies:
+- design_stage_milestone
+failure_escalation:
+- Escalate to criteria tracker or PM if criteria are unclear or not met.
+references: []
+hitl: false
+
+# [!!] No custom enhancement found.

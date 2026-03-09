@@ -1,0 +1,60 @@
+<!doctype html>
+<html lang="en">
+
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>MSW Debug</title>
+    <style>
+        body {
+            font-family: Arial, Helvetica, sans-serif;
+            padding: 24px
+        }
+
+        pre {
+            background: #f3f4f6;
+            padding: 12px;
+            border-radius: 6px
+        }
+
+        h1 {
+            font-size: 20px
+        }
+    </style>
+</head>
+
+<body>
+    <h1>MSW Debug</h1>
+    <div id="info">Loading debug info...</div>
+    <script>
+        function show(obj) {
+            document.getElementById('info').innerHTML = '<pre>' + JSON.stringify(obj, null, 2) + '</pre>';
+        }
+
+        const debug = window.__MSW_DEBUG__ || null;
+        const active = window.__MSW_ACTIVE__ || false;
+        const runtimeEnv = window.__MSW_RUNTIME_ENV__ || null;
+
+        const payload = {
+            active,
+            debug,
+            runtimeEnv,
+            location: window.location.href,
+        };
+
+        // Add service worker registration details if supported
+        if (navigator.serviceWorker) {
+            navigator.serviceWorker.getRegistrations().then(regs => {
+                payload.registrations = regs.map(r => ({ scope: r.scope, active: !!r.active, installing: !!r.installing, waiting: !!r.waiting }));
+                show(payload);
+            }).catch(e => {
+                payload.registrationsError = String(e);
+                show(payload);
+            });
+        } else {
+            show(payload);
+        }
+    </script>
+</body>
+
+</html>

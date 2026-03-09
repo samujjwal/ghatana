@@ -1,0 +1,63 @@
+# ═══════════════════════════════════════════════════════════════════════════════
+# Reactive Agent — Real-Time Alert Trigger
+# ═══════════════════════════════════════════════════════════════════════════════
+# Monitors transaction events and triggers alerts when thresholds are
+# breached. Supports counting windows with cooldown periods.
+
+agentId: fraud-alert-trigger
+type: REACTIVE
+version: "1.0.0"
+timeout: PT1S
+metricsEnabled: true
+tracingEnabled: true
+labels:
+  team: security
+  domain: alerting
+
+# ─── Reactive-specific ──────────────────────────────────────────────────────
+subtype: TRIGGER
+triggers:
+  - name: high-amount-alert
+    eventTypeField: type
+    eventTypeValue: TRANSACTION
+    conditionField: amount
+    conditionOperator: GT
+    conditionValue: 10000
+    threshold: 1
+    countingWindow: PT1M
+    cooldown: PT5M
+    priority: 10
+    actions:
+      notify: security-team
+      severity: HIGH
+      channel: pagerduty
+
+  - name: velocity-alert
+    eventTypeField: type
+    eventTypeValue: TRANSACTION
+    conditionField: accountId
+    conditionOperator: EQ
+    conditionValue: "*"
+    threshold: 10
+    countingWindow: PT5M
+    cooldown: PT10M
+    priority: 5
+    actions:
+      notify: fraud-ops
+      severity: MEDIUM
+      channel: slack
+
+  - name: geo-anomaly-alert
+    eventTypeField: type
+    eventTypeValue: AUTH_EVENT
+    conditionField: geoDistance
+    conditionOperator: GT
+    conditionValue: 1000
+    threshold: 1
+    countingWindow: PT1M
+    cooldown: PT30M
+    priority: 8
+    actions:
+      notify: security-team
+      severity: CRITICAL
+      channel: pagerduty

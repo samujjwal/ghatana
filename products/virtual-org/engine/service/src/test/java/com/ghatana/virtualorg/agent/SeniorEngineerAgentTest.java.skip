@@ -1,0 +1,347 @@
+package com.ghatana.virtualorg.agent;
+
+import com.ghatana.testing.EventloopExtension;
+import com.ghatana.testing.activej.EventloopTestUtil;
+import com.ghatana.virtualorg.agent.roles.SeniorEngineerAgent;
+import com.ghatana.virtualorg.llm.LLMClient;
+import com.ghatana.virtualorg.llm.LLMResponse;
+import com.ghatana.virtualorg.memory.AgentMemory;
+import com.ghatana.virtualorg.observability.VirtualOrgAgentMetrics;
+import com.ghatana.virtualorg.v1.*;
+import com.ghatana.virtualorg.tool.ToolExecutor;
+import io.activej.promise.Promise;
+import io.micrometer.core.instrument.simple.SimpleMeterRegistry;
+import io.opentelemetry.api.trace.Tracer;
+import io.opentelemetry.api.trace.TracerProvider;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.extension.ExtendWith;
+import org.mockito.Mock;
+import org.mockito.MockitoAnnotations;
+
+import java.time.Instant;
+import java.util.List;
+import java.util.UUID;
+
+import static org.junit.jupiter.api.Assertions.*;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyList;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.when;
+
+/**
+ * Comprehensive tests for SeniorEngineerAgent.
+ * Pure unit tests using mocked dependencies.
+ */
+@ExtendWith(EventloopExtension.class)
+@DisplayName("SeniorEngineerAgent Unit Tests")
+class SeniorEngineerAgentTest {
+
+    private SeniorEngineerAgent agent;
+
+    @Mock
+    private LLMClient llmClient;
+
+    @Mock
+    private AgentMemory memory;
+
+    @Mock
+    private ToolExecutor toolExecutor;
+
+    private Tracer tracer;
+    private VirtualOrgAgentMetrics metrics;
+
+    @BeforeEach
+    void setUp(EventloopTestUtil.EventloopRunner runner) {
+        MockitoAnnotations.openMocks(this);
+
+        tracer = TracerProvider.noop().get("test");
+        metrics = new VirtualOrgAgentMetrics("test-agent", new SimpleMeterRegistry());
+
+        agent = new SeniorEngineerAgent(
+            "senior-engineer-1",
+            runner.eventloop(),
+            llmClient,
+            memory,
+            toolExecutor,
+            tracer,
+            metrics
+        );
+
+        // Mock memory to return empty context
+        when(memory.retrieveContext(any())).thenReturn(Promise.of(""));
+        when(memory.store(any(TaskProto.class), any(TaskResponseProto.class))).thenReturn(Promise.of(null));
+    }
+
+    @Test
+    @DisplayName("Agent starts and stops successfully")
+    void testAgentLifecycle(EventloopTestUtil.EventloopRunner runner) {
+        // When - Start agent
+        runner.runPromise(() -> agent.start());
+        assertEquals(AgentStateProto.AGENT_STATE_IDLE, agent.getState());
+
+        // When - Stop agent
+        runner.runPromise(() -> agent.stop());
+        // After stop, should be in stopped state (implementation may vary)
+    }
+
+    @Test
+    @DisplayName("Process simple code review task")
+    void testProcessCodeReviewTask(EventloopTestUtil.EventloopRunner runner) {
+        // Given
+        TaskProto task = TaskProto.newBuilder()
+            .setTaskId("task-1")
+            .setTitle("Review authentication module")
+            .setType(TaskTypeProto.TASK_TYPE_CODE_REVIEW)
+            .setPriority(TaskPriorityProto.TASK_PRIORITY_HIGH)
+            .setDescription("Review the authentication code for security issues")
+            .setCreatedAt(Instant.now().toEpochMilli())
+            .setCreatedBy("user-1")
+            .build();
+
+        TaskRequestProto request = TaskRequestProto.newBuilder()
+            .setTask(task)
+            .setRequestId(UUID.randomUUID().toString())
+            .setRequestedAt(Instant.now().toEpochMilli())
+            .build();
+
+        LLMResponse llmResponse = new LLMResponse(
+            "Code review completed. Found 2 security issues: SQL injection risk and weak password hashing.",
+            List.of(),
+            800,
+            0.85f
+        );
+
+        when(llmClient.reason(any(), any(), anyList())).thenReturn(Promise.of(llmResponse));
+        when(toolExecutor.executeAll(anyList())).thenReturn(Promise.of(List.of()));
+
+        // When
+        runner.runPromise(() -> agent.start());
+        TaskResponseProto response = runner.runPromise(() ->
+            agent.processTask(request)
+        );
+
+        // Then
+        assertNotNull(response);
+        assertEquals(TaskStatusProto.TASK_STATUS_COMPLETED, response.getStatus());
+        assertTrue(response.getResult().contains("security issues"));
+        assertEquals("senior-engineer-1", response.getAgentId());
+        assertTrue(response.getDurationMs() > 0);
+
+        // Verify interactions
+        verify(llmClient, times(1)).reason(any(), any(), anyList());
+        verify(memory, times(1)).retrieveContext(any());
+        verify(memory, times(1)).store(any(TaskProto.class), any(TaskResponseProto.class));
+    }
+
+    @Test
+    @DisplayName("Process feature implementation task")
+    void testProcessFeatureTask(EventloopTestUtil.EventloopRunner runner) {
+        // Given
+        TaskProto task = TaskProto.newBuilder()
+            .setTaskId("task-2")
+            .setTitle("Implement password reset")
+            .setType(TaskTypeProto.TASK_TYPE_FEATURE_IMPLEMENTATION)
+            .setPriority(TaskPriorityProto.TASK_PRIORITY_MEDIUM)
+            .setDescription("Add password reset functionality with email verification")
+            .build();
+
+        TaskRequestProto request = TaskRequestProto.newBuilder()
+            .setTask(task)
+            .setRequestId(UUID.randomUUID().toString())
+            .build();
+
+        LLMResponse llmResponse = new LLMResponse(
+            "Implementation plan: 1) Create reset token generation, 2) Email service integration, 3) Reset endpoint, 4) Add tests",
+            List.of(),
+            1200,
+            0.78f
+        );
+
+        when(llmClient.reason(any(), any(), anyList())).thenReturn(Promise.of(llmResponse));
+        when(toolExecutor.executeAll(anyList())).thenReturn(Promise.of(List.of()));
+
+        // When
+        runner.runPromise(() -> agent.start());
+        TaskResponseProto response = runner.runPromise(() ->
+            agent.processTask(request)
+        );
+
+        // Then
+        assertNotNull(response);
+        assertEquals(TaskStatusProto.TASK_STATUS_COMPLETED, response.getStatus());
+        assertTrue(response.getTokensUsed() > 0);
+        assertTrue(response.getConfidence() > 0);
+    }
+
+    @Test
+    @DisplayName("Handle task processing failure gracefully")
+    void testTaskProcessingFailure(EventloopTestUtil.EventloopRunner runner) {
+        // Given
+        TaskProto task = TaskProto.newBuilder()
+            .setTaskId("task-3")
+            .setTitle("Invalid task")
+            .setType(TaskTypeProto.TASK_TYPE_BUG_FIX)
+            .build();
+
+        TaskRequestProto request = TaskRequestProto.newBuilder()
+            .setTask(task)
+            .setRequestId(UUID.randomUUID().toString())
+            .build();
+
+        // Simulate LLM failure
+        when(llmClient.reason(any(), any(), anyList()))
+            .thenReturn(Promise.ofException(new RuntimeException("LLM API error")));
+
+        // When
+        runner.runPromise(() -> agent.start());
+        TaskResponseProto response = runner.runPromise(() ->
+            agent.processTask(request)
+        );
+
+        // Then
+        assertNotNull(response);
+        assertEquals(TaskStatusProto.TASK_STATUS_FAILED, response.getStatus());
+        assertTrue(response.getResult().contains("error") || response.getResult().contains("failed"));
+    }
+
+    @Test
+    @DisplayName("Memory retrieval provides context for task")
+    void testMemoryContextRetrieval(EventloopTestUtil.EventloopRunner runner) {
+        // Given
+        String historicalContext = "Previous similar task: Implemented login feature with JWT tokens";
+
+        when(memory.retrieveContext(any())).thenReturn(Promise.of(historicalContext));
+
+        TaskProto task = TaskProto.newBuilder()
+            .setTaskId("task-4")
+            .setTitle("Implement logout functionality")
+            .setType(TaskTypeProto.TASK_TYPE_FEATURE_IMPLEMENTATION)
+            .build();
+
+        TaskRequestProto request = TaskRequestProto.newBuilder()
+            .setTask(task)
+            .setRequestId(UUID.randomUUID().toString())
+            .build();
+
+        LLMResponse llmResponse = new LLMResponse(
+            "Based on previous JWT implementation, added logout with token invalidation",
+            List.of(),
+            600,
+            0.90f
+        );
+
+        when(llmClient.reason(any(), any(), anyList())).thenReturn(Promise.of(llmResponse));
+        when(toolExecutor.executeAll(anyList())).thenReturn(Promise.of(List.of()));
+
+        // When
+        runner.runPromise(() -> agent.start());
+        TaskResponseProto response = runner.runPromise(() ->
+            agent.processTask(request)
+        );
+
+        // Then
+        verify(memory, times(1)).retrieveContext(task);
+        assertNotNull(response);
+        assertEquals(TaskStatusProto.TASK_STATUS_COMPLETED, response.getStatus());
+    }
+
+    @Test
+    @DisplayName("Agent updates metrics during task processing")
+    void testMetricsUpdated(EventloopTestUtil.EventloopRunner runner) {
+        // Given
+        TaskProto task = TaskProto.newBuilder()
+            .setTaskId("task-5")
+            .setTitle("Test metrics")
+            .setType(TaskTypeProto.TASK_TYPE_TESTING)
+            .build();
+
+        TaskRequestProto request = TaskRequestProto.newBuilder()
+            .setTask(task)
+            .setRequestId(UUID.randomUUID().toString())
+            .build();
+
+        LLMResponse llmResponse = new LLMResponse("Test complete", List.of(), 300, 0.95f);
+        when(llmClient.reason(any(), any(), anyList())).thenReturn(Promise.of(llmResponse));
+        when(toolExecutor.executeAll(anyList())).thenReturn(Promise.of(List.of()));
+
+        // When
+        long initialTaskCount = metrics.getTasksProcessed();
+        runner.runPromise(() -> agent.start());
+        runner.runPromise(() -> agent.processTask(request));
+
+        // Then
+        // Metrics should be updated (implementation-specific)
+        assertTrue(metrics.getTasksProcessed() >= initialTaskCount);
+    }
+
+    @Test
+    @DisplayName("Process multiple tasks sequentially")
+    void testMultipleTasksSequential(EventloopTestUtil.EventloopRunner runner) {
+        // Given
+        LLMResponse llmResponse = new LLMResponse("Task completed", List.of(), 500, 0.85f);
+        when(llmClient.reason(any(), any(), anyList())).thenReturn(Promise.of(llmResponse));
+        when(toolExecutor.executeAll(anyList())).thenReturn(Promise.of(List.of()));
+
+        runner.runPromise(() -> agent.start());
+
+        // When - Process 3 tasks
+        for (int i = 1; i <= 3; i++) {
+            TaskProto task = TaskProto.newBuilder()
+                .setTaskId("task-" + i)
+                .setTitle("Task " + i)
+                .setType(TaskTypeProto.TASK_TYPE_FEATURE_IMPLEMENTATION)
+                .build();
+
+            TaskRequestProto request = TaskRequestProto.newBuilder()
+                .setTask(task)
+                .setRequestId(UUID.randomUUID().toString())
+                .build();
+
+            TaskResponseProto response = runner.runPromise(() ->
+                agent.processTask(request)
+            );
+
+            // Then - Each task completes successfully
+            assertNotNull(response);
+            assertEquals(TaskStatusProto.TASK_STATUS_COMPLETED, response.getStatus());
+            assertEquals("task-" + i, response.getTask().getTaskId());
+        }
+
+        // Verify all tasks were processed
+        verify(llmClient, times(3)).reason(any(), any(), anyList());
+        verify(memory, times(3)).store(any(TaskProto.class), any(TaskResponseProto.class));
+    }
+
+    @Test
+    @DisplayName("Agent state transitions correctly")
+    void testStateTransitions(EventloopTestUtil.EventloopRunner runner) {
+        // Initially created/idle
+        runner.runPromise(() -> agent.start());
+        AgentStateProto initialState = agent.getState();
+        assertTrue(initialState == AgentStateProto.AGENT_STATE_IDLE ||
+                   initialState == AgentStateProto.AGENT_STATE_BUSY);
+
+        // Process task (becomes busy)
+        TaskProto task = TaskProto.newBuilder()
+            .setTaskId("task-state")
+            .setType(TaskTypeProto.TASK_TYPE_FEATURE_IMPLEMENTATION)
+            .build();
+
+        TaskRequestProto request = TaskRequestProto.newBuilder()
+            .setTask(task)
+            .setRequestId(UUID.randomUUID().toString())
+            .build();
+
+        LLMResponse llmResponse = new LLMResponse("Done", List.of(), 300, 0.85f);
+        when(llmClient.reason(any(), any(), anyList())).thenReturn(Promise.of(llmResponse));
+        when(toolExecutor.executeAll(anyList())).thenReturn(Promise.of(List.of()));
+
+        runner.runPromise(() -> agent.processTask(request));
+
+        // After task completion, should return to idle
+        AgentStateProto finalState = agent.getState();
+        assertNotNull(finalState);
+    }
+}

@@ -1,0 +1,27 @@
+---
+id: "security_test"
+agent: "SecurityTestAgent"
+role: "Security Tester"
+inputs_spec:
+- name: "test_environment_url"
+  description: "Test environment to run security tests against."
+  format: "Environment URL/credentials"
+outputs_spec:
+- name: "security_test_report"
+  description: "Vulnerability findings, test vectors, evidence, and signoff."
+  format: "Security test report artifact"
+agent_tasks:
+- "Perform security tests (SAST, DAST, fuzz, pen-test)."
+- "Document vulnerabilities, vectors, and supporting evidence."
+- "Obtain human signoff for test closure."
+acceptance_criteria:
+- "All required security test types are performed."
+- "Vulnerabilities and test vectors are documented."
+- "Human signoff for test closure."
+dependencies:
+- "test_environment_url"
+failure_escalation:
+- "Escalate to Security Lead if critical vulnerabilities are unaddressed."
+references: []
+hitl: true
+hitl_reason: "Human ensures security findings are reviewed and acted on"

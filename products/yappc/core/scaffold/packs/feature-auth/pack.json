@@ -1,0 +1,178 @@
+{
+    "name": "feature-auth",
+    "version": "1.0.0",
+    "description": "Cross-language authentication feature pack - adds JWT/OAuth2 authentication, session management, and authorization",
+    "category": "feature",
+    "language": "multi",
+    "runtime": "multi",
+    "buildTool": "multi",
+    "supportedPacks": [
+        "java-service-spring-gradle",
+        "java-service-activej-gradle",
+        "ts-node-fastify",
+        "rust-service-axum-cargo",
+        "go-service-chi",
+        "middleware-gateway"
+    ],
+    "templates": {
+        "java": [
+            {
+                "source": "java/SecurityConfig.java.hbs",
+                "target": "src/main/java/{{packagePath}}/config/SecurityConfig.java"
+            },
+            {
+                "source": "java/JwtService.java.hbs",
+                "target": "src/main/java/{{packagePath}}/security/JwtService.java"
+            },
+            {
+                "source": "java/JwtAuthFilter.java.hbs",
+                "target": "src/main/java/{{packagePath}}/security/JwtAuthFilter.java"
+            },
+            {
+                "source": "java/AuthController.java.hbs",
+                "target": "src/main/java/{{packagePath}}/controller/AuthController.java"
+            },
+            {
+                "source": "java/UserDetails.java.hbs",
+                "target": "src/main/java/{{packagePath}}/security/UserDetails.java"
+            },
+            {
+                "source": "java/application-auth.yaml.hbs",
+                "target": "src/main/resources/application-auth.yaml"
+            }
+        ],
+        "typescript": [
+            {
+                "source": "typescript/auth-plugin.ts.hbs",
+                "target": "src/plugins/auth.ts"
+            },
+            {
+                "source": "typescript/jwt-service.ts.hbs",
+                "target": "src/services/jwt.ts"
+            },
+            {
+                "source": "typescript/auth-routes.ts.hbs",
+                "target": "src/routes/auth.ts"
+            },
+            {
+                "source": "typescript/auth-middleware.ts.hbs",
+                "target": "src/middleware/auth.ts"
+            },
+            {
+                "source": "typescript/auth-types.ts.hbs",
+                "target": "src/types/auth.ts"
+            }
+        ],
+        "rust": [
+            {
+                "source": "rust/auth-mod.rs.hbs",
+                "target": "src/auth/mod.rs"
+            },
+            {
+                "source": "rust/jwt.rs.hbs",
+                "target": "src/auth/jwt.rs"
+            },
+            {
+                "source": "rust/middleware.rs.hbs",
+                "target": "src/auth/middleware.rs"
+            },
+            {
+                "source": "rust/handlers.rs.hbs",
+                "target": "src/auth/handlers.rs"
+            }
+        ],
+        "go": [
+            {
+                "source": "go/auth.go.hbs",
+                "target": "internal/auth/auth.go"
+            },
+            {
+                "source": "go/jwt.go.hbs",
+                "target": "internal/auth/jwt.go"
+            },
+            {
+                "source": "go/middleware.go.hbs",
+                "target": "internal/auth/middleware.go"
+            },
+            {
+                "source": "go/handlers.go.hbs",
+                "target": "internal/auth/handlers.go"
+            }
+        ]
+    },
+    "variables": {
+        "authType": {
+            "type": "string",
+            "description": "Authentication type",
+            "enum": [
+                "jwt",
+                "oauth2",
+                "session"
+            ],
+            "default": "jwt"
+        },
+        "jwtSecret": {
+            "type": "string",
+            "description": "JWT secret key (use env var in production)",
+            "default": "${JWT_SECRET:change-me-in-production}"
+        },
+        "jwtExpiration": {
+            "type": "string",
+            "description": "JWT token expiration",
+            "default": "24h"
+        },
+        "refreshTokenExpiration": {
+            "type": "string",
+            "description": "Refresh token expiration",
+            "default": "7d"
+        },
+        "enableRefreshTokens": {
+            "type": "boolean",
+            "description": "Enable refresh token support",
+            "default": true
+        },
+        "enableRoles": {
+            "type": "boolean",
+            "description": "Enable role-based access control",
+            "default": true
+        }
+    },
+    "dependencies": {
+        "java-gradle": {
+            "implementation": [
+                "org.springframework.boot:spring-boot-starter-security",
+                "io.jsonwebtoken:jjwt-api:0.12.6",
+                "io.jsonwebtoken:jjwt-impl:0.12.6",
+                "io.jsonwebtoken:jjwt-jackson:0.12.6"
+            ]
+        },
+        "typescript-pnpm": {
+            "dependencies": {
+                "@fastify/jwt": "^9.0.0",
+                "@fastify/cookie": "^10.0.0",
+                "bcrypt": "^5.1.1"
+            },
+            "devDependencies": {
+                "@types/bcrypt": "^5.0.2"
+            }
+        },
+        "rust-cargo": {
+            "dependencies": {
+                "jsonwebtoken": "9",
+                "argon2": "0.5",
+                "axum-extra": {
+                    "version": "0.9",
+                    "features": [
+                        "typed-header"
+                    ]
+                }
+            }
+        },
+        "go-modules": {
+            "require": [
+                "github.com/golang-jwt/jwt/v5 v5.2.1",
+                "golang.org/x/crypto v0.28.0"
+            ]
+        }
+    }
+}

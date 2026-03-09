@@ -1,0 +1,30 @@
+---
+id: "build_remediation_tracker"
+agent: "RemediationTrackerAgent"
+role: "Exception Bot"
+inputs_spec:
+- name: "build_success_criteria_status"
+  description: "Build success criteria status report."
+  format: "List of criteria status objects"
+- name: "build_escalation_report"
+  description: "Build escalation report."
+  format: "Escalation report artifact"
+outputs_spec:
+- name: "build_remediation_status"
+  description: "Tracker for remediation status of failed/at-risk items."
+  format: "Remediation status artifact"
+agent_tasks:
+- "Track all failed/at-risk items for remediation."
+- "Assign owners, deadlines, and actions."
+- "Update remediation status until resolution or escalation."
+acceptance_criteria:
+- "All failed or at-risk items are tracked for remediation."
+- "Owners, deadlines, and actions are recorded."
+- "Remediation status is updated until resolution or final escalation."
+dependencies:
+- "build_success_criteria_status"
+- "build_escalation_report"
+failure_escalation:
+- "Escalate to Exception Bot or PM if remediation stalls."
+references: []
+hitl: false

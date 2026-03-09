@@ -1,0 +1,118 @@
+# {{projectName}}
+
+{{description}}
+
+Generated with [YAPPC](https://github.com/ghatana/yappc) using the `ts-node-fastify` pack.
+
+## Features
+
+- 🚀 [Fastify](https://fastify.dev/) - Fast and low overhead web framework
+- 📝 [TypeScript](https://www.typescriptlang.org/) - Type safety and modern JS features
+- 🗃️ [Prisma](https://www.prisma.io/) - Next-generation ORM
+- 📋 [Zod](https://zod.dev/) - TypeScript-first schema validation
+- 📖 [Swagger/OpenAPI](https://swagger.io/) - API documentation
+- 🧪 [Vitest](https://vitest.dev/) - Fast unit testing
+- 🎨 [Biome](https://biomejs.dev/) - Fast linter and formatter
+- 🐳 Docker - Containerization support
+
+## Prerequisites
+
+- Node.js 20+
+- pnpm 9+
+- PostgreSQL (or use Docker)
+
+## Getting Started
+
+### 1. Install dependencies
+
+```bash
+pnpm install
+```
+
+### 2. Set up environment
+
+```bash
+cp .env.example .env
+# Edit .env with your configuration
+```
+
+### 3. Set up database
+
+```bash
+# Start PostgreSQL with Docker
+docker-compose up -d db
+
+# Run migrations
+pnpm prisma:migrate
+
+# Generate Prisma client
+pnpm prisma:generate
+```
+
+### 4. Start development server
+
+```bash
+pnpm dev
+```
+
+The server will start at http://localhost:{{port}}
+
+## Available Scripts
+
+| Script | Description |
+|--------|-------------|
+| `pnpm dev` | Start development server with hot reload |
+| `pnpm build` | Build for production |
+| `pnpm start` | Start production server |
+| `pnpm test` | Run tests |
+| `pnpm lint` | Run linter |
+| `pnpm format` | Format code |
+| `pnpm typecheck` | Type check |
+
+## API Documentation
+
+When `ENABLE_SWAGGER=true`, Swagger documentation is available at:
+- http://localhost:{{port}}/docs
+
+## Project Structure
+
+```
+.
+├── src/
+│ ├── index.ts # Entry point
+│ ├── app.ts # Fastify app configuration
+│ ├── config.ts # Configuration
+│ ├── types.ts # Type definitions
+│ ├── plugins/ # Fastify plugins
+│ │ └── prisma.ts # Prisma plugin
+│ ├── routes/ # Route handlers
+│ │ ├── index.ts # Route registration
+│ │ ├── health.ts # Health check routes
+│ │ └── api.ts # API routes
+│ └── schemas/ # Validation schemas
+│ └── common.ts # Common schemas
+├── prisma/
+│ └── schema.prisma # Database schema
+├── tests/ # Test files
+├── Dockerfile
+├── docker-compose.yml
+└── Makefile
+```
+
+## Docker
+
+### Build image
+
+```bash
+docker build -t {{projectName}} .
+```
+
+### Run with Docker Compose
+
+```bash
+docker-compose up -d
+```
+
+## License
+
+Apache-2.0

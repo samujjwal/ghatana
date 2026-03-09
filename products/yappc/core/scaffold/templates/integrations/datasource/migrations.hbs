@@ -1,0 +1,18 @@
+{{!
+  Database Migration Template
+  Generates initial database migration script
+}}
+-- Migration: Initial Schema -- Created:
+{{date format="yyyy-MM-dd HH:mm:ss"}}
+-- Database:
+{{to.name}}
+
+-- Enable UUID extension CREATE EXTENSION IF NOT EXISTS "uuid-ossp"; -- Create
+base tables CREATE TABLE IF NOT EXISTS migrations ( id SERIAL PRIMARY KEY,
+version VARCHAR(255) NOT NULL UNIQUE, applied_at TIMESTAMP DEFAULT
+CURRENT_TIMESTAMP ); -- Add your schema here -- Example: -- CREATE TABLE users (
+-- id UUID PRIMARY KEY DEFAULT uuid_generate_v4(), -- email VARCHAR(255) NOT
+NULL UNIQUE, -- name VARCHAR(255) NOT NULL, -- created_at TIMESTAMP DEFAULT
+CURRENT_TIMESTAMP, -- updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP -- ); --
+Create indexes -- CREATE INDEX idx_users_email ON users(email); -- Insert
+migration record INSERT INTO migrations (version) VALUES ('{{timestamp}}_init');

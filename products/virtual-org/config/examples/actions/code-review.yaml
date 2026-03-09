@@ -1,0 +1,188 @@
+apiVersion: virtualorg.ghatana.com/v1
+kind: Action
+metadata:
+  name: code-review
+  namespace: engineering
+  labels:
+    category: development
+    team: backend
+  annotations:
+    description: "AI-powered code review action with structured feedback"
+    version: "2.1.0"
+
+spec:
+  displayName: "Code Review Action"
+  type: ai
+  description: |
+    Performs comprehensive AI-powered code review analyzing:
+    - Code quality and best practices
+    - Security vulnerabilities
+    - Performance implications
+    - Test coverage gaps
+    - Documentation completeness
+  category: development
+  version: "2.1.0"
+  deprecated: false
+
+  # Input parameters
+  inputs:
+    - name: code
+      type: string
+      description: "Source code to review"
+      required: true
+      validation:
+        minLength: 10
+        maxLength: 50000
+    - name: language
+      type: string
+      description: "Programming language"
+      required: true
+      validation:
+        enum: [java, python, typescript, javascript, go, rust]
+    - name: context
+      type: object
+      description: "Additional context (PR description, related files)"
+      required: false
+    - name: reviewDepth
+      type: string
+      description: "Level of review detail"
+      required: false
+      default: "standard"
+      validation:
+        enum: [quick, standard, thorough]
+    - name: focusAreas
+      type: array
+      description: "Specific areas to focus on"
+      required: false
+      default: []
+
+  # Output parameters
+  outputs:
+    - name: reviewComments
+      type: array
+      description: "List of review comments with line numbers"
+      schema:
+        type: array
+        items:
+          type: object
+          properties:
+            line: { type: integer }
+            severity: { type: string, enum: [info, warning, error, critical] }
+            category: { type: string }
+            message: { type: string }
+            suggestion: { type: string }
+    - name: summary
+      type: object
+      description: "Overall review summary"
+      schema:
+        type: object
+        properties:
+          overallScore: { type: number, minimum: 0, maximum: 10 }
+          recommendation:
+            { type: string, enum: [approve, request-changes, needs-discussion] }
+          keyFindings: { type: array }
+    - name: metrics
+      type: object
+      description: "Code metrics extracted during review"
+
+  # Validation rules
+  validation:
+    preConditions:
+      - field: "inputs.code"
+        operator: "isNotEmpty"
+        value: true
+    postConditions:
+      - field: "outputs.reviewComments"
+        operator: "isArray"
+        value: true
+
+  # Execution settings
+  execution:
+    timeout: "15m"
+    retryPolicy:
+      maxRetries: 2
+      initialDelay: "5s"
+      maxDelay: "30s"
+      backoffMultiplier: 2.0
+      retryOn:
+        - "RATE_LIMIT_ERROR"
+        - "TIMEOUT_ERROR"
+        - "SERVICE_UNAVAILABLE"
+    circuitBreaker:
+      enabled: true
+      failureThreshold: 5
+      resetTimeout: "2m"
+    rateLimit:
+      enabled: true
+      requestsPerSecond: 10
+      burstSize: 20
+      scope: tenant
+    async: false
+    idempotent: true
+    caching:
+      enabled: true
+      ttl: "30m"
+      keyTemplate: "${inputs.language}-${hash(inputs.code)}"
+
+  # AI configuration
+  ai:
+    provider: openai
+    model: gpt-4
+    systemPrompt: |
+      You are an expert code reviewer with deep knowledge of software engineering 
+      best practices, security, and performance optimization. Review the provided 
+      code thoroughly and provide actionable feedback.
+    responseFormat: json_object
+    maxTokens: 4000
+    temperature: 0.3
+    topP: 0.9
+    structuredOutput:
+      enabled: true
+      schemaRef: code-review-output-schema
+      strict: true
+    reasoning:
+      enabled: true
+      strategy: chain-of-thought
+      maxSteps: 3
+      showThinking: false
+    tools:
+      - code-analyzer
+      - security-scanner
+      - style-checker
+
+  # Permission requirements
+  permissions:
+    requiredRoles:
+      - developer
+      - tech-lead
+    requiredCapabilities:
+      - code-review
+    requiredPermissions:
+      - code.read
+      - code.comment
+
+  # Audit settings
+  audit:
+    enabled: true
+    logLevel: INFO
+    includeInputs: true
+    includeOutputs: true
+    redactFields:
+      - "inputs.code" # Redact code in audit logs
+    retentionDays: 90
+
+  # Metrics collection
+  metrics:
+    enabled: true
+    customMetrics:
+      - name: review_comments_count
+        type: histogram
+        description: "Number of comments per review"
+        labels: [language, severity]
+      - name: review_score
+        type: histogram
+        description: "Distribution of review scores"
+    sla:
+      targetDuration: "10m"
+      successRateTarget: 0.99
+      alertOnBreach: true

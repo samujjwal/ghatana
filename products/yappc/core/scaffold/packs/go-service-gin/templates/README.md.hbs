@@ -1,0 +1,84 @@
+# {{projectName}}
+
+{{#if description}}
+{{description}}
+{{else}}
+A Go service built with Gin framework.
+{{/if}}
+
+## Features
+
+- RESTful API with Gin
+{{#if enableSwagger}}
+- Swagger/OpenAPI documentation
+{{/if}}
+{{#if enableCors}}
+- CORS middleware
+{{/if}}
+{{#if enableMetrics}}
+- Prometheus metrics
+{{/if}}
+- Structured logging
+- Health check endpoint
+
+## Prerequisites
+
+- Go {{goVersion}} or higher
+- Make (optional)
+
+## Getting Started
+
+### Install dependencies
+```bash
+go mod download
+```
+
+### Run the service
+```bash
+go run main.go
+```
+
+Or using Make:
+```bash
+make run
+```
+
+### Build
+```bash
+make build
+```
+
+### Test
+```bash
+make test
+```
+
+## API Endpoints
+
+- `GET /health` - Health check
+- `GET /api/v1/hello` - Example endpoint
+{{#if enableMetrics}}
+- `GET /metrics` - Prometheus metrics
+{{/if}}
+
+## Configuration
+
+Environment variables:
+- `PORT` - Server port (default: 8080)
+- `GIN_MODE` - Gin mode (debug, release, test)
+
+## Docker
+
+Build image:
+```bash
+docker build -t {{projectName}} .
+```
+
+Run container:
+```bash
+docker run -p 8080:8080 {{projectName}}
+```
+
+## License
+
+MIT

@@ -1,0 +1,44 @@
+plugins {
+    id 'java-library'
+}
+
+description = 'AI Platform - Model Serving (Online & Batch Inference)'
+
+dependencies {
+    // AI Platform modules
+    api project(':libs:ai-platform:registry')
+    api project(':libs:ai-platform:gateway')
+    api project(':libs:ai-platform:feature-store')
+
+    // Core
+    api project(':libs:http-server')
+    api project(':libs:observability')
+    api project(':libs:common-utils')
+    api project(':libs:state')
+
+    // ActiveJ
+    implementation libs.activej.promise
+    implementation libs.activej.eventloop
+    implementation libs.activej.http
+
+    // Jackson
+    implementation libs.jackson.databind
+    implementation libs.jackson.datatype.jsr310
+
+    // Logging
+    implementation libs.log4j.core
+    implementation libs.log4j.slf4j.impl
+
+    // Testing
+    testImplementation project(':libs:activej-test-utils')
+    testImplementation project(':libs:test-utils')
+    testImplementation libs.junit.jupiter.api
+    testImplementation libs.junit.jupiter.engine
+    testImplementation libs.assertj.core
+    testImplementation libs.mockito.core
+}
+
+test {
+    useJUnitPlatform()
+}
+

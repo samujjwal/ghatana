@@ -1,0 +1,24 @@
+---
+id: "develop_observability_export"
+agent: "ObservabilityExportAgent"
+role: "SRE/Analytics"
+inputs_spec:
+- name: "develop_progress_dashboard"
+  description: "Dashboard with KPIs and blockers."
+  format: "Dashboard artifact"
+outputs_spec:
+- name: "develop_observability_export"
+  description: "Metrics/KPIs export for analytics/monitoring."
+  format: "Export artifact"
+agent_tasks:
+- "Export metrics/KPIs to analytics/monitoring platform."
+- "Flag any gaps in observability."
+acceptance_criteria:
+- "Pipeline metrics/KPIs exported to external analytics/monitoring."
+- "Gaps in observability are flagged."
+dependencies:
+- "develop_progress_dashboard"
+failure_escalation:
+- "Escalate to SRE or Analytics if metrics are missing or gaps are not flagged."
+references: []
+hitl: false

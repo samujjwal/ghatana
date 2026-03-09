@@ -1,0 +1,52 @@
+id: "documentation-writer"
+name: "Documentation Writer"
+version: "1.0.0"
+description: "Technical documentation, API docs, architecture diagrams"
+
+metadata:
+  level: 3  # Worker level
+  domain: "documentation"
+  tags: ["documentation", "api-docs", "javadoc", "markdown"]
+
+generator:
+  type: "template"
+  engine: "liquid"
+  templates:
+    javadoc: "templates/docs/javadoc.liquid"
+    api_doc: "templates/docs/api-doc.md.liquid"
+    readme: "templates/docs/README.md.liquid"
+
+memory:
+  episodic:
+    enabled: true
+    retention_days: 30
+  semantic:
+    enabled: true
+    categories: ["documentation-patterns", "api-specifications"]
+  procedural:
+    enabled: false
+
+tools:
+  - "file_read"
+  - "file_write"
+  - "ast_parse"
+  - "ast_extract_imports"
+
+capabilities:
+  - "javadoc-generation"
+  - "api-documentation"
+  - "readme-generation"
+  - "architecture-documentation"
+
+routing:
+  input_types: ["DocumentationRequest", "JavadocRequest"]
+  output_types: ["Documentation", "APIDocumentation"]
+
+delegation:
+  can_delegate_to: []
+  escalates_to: "java-expert"
+
+performance:
+  expected_latency_ms: 1000
+  max_latency_ms: 3000
+  timeout_ms: 5000

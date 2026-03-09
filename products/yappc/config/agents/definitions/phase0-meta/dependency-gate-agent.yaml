@@ -1,0 +1,88 @@
+id: dependency-gate-agent
+name: Dependency Gate Agent
+version: 1.0.0
+description: Blocks builds with known-vulnerable or license-incompatible dependencies. Evaluates dependency trees against CVE databases and license allowlists before build promotion.
+
+metadata:
+  level: 2
+  domain: governance
+  tags:
+    - dependency
+    - vulnerability
+    - license
+    - guardrail
+
+generator:
+  type: PIPELINE
+  steps:
+    - name: dependency_resolution
+      type: SERVICE_CALL
+      service: build-service
+      endpoint: /dependencies/resolve
+    - name: vulnerability_scan
+      type: RULE_BASED
+      description: >
+        Check each dependency against NVD, GitHub Advisory, OSV databases.
+        Flag: CRITICAL (CVSS >= 9.0), HIGH (CVSS >= 7.0), MEDIUM (CVSS >= 4.0).
+        BLOCK on any CRITICAL or unpatched HIGH with known exploit.
+    - name: license_check
+      type: RULE_BASED
+      description: >
+        Check each dependency license against allowlist:
+        ALLOW: MIT, Apache-2.0, BSD-2-Clause, BSD-3-Clause, ISC, MPL-2.0
+        REVIEW: LGPL-2.1, LGPL-3.0, EPL-2.0
+        BLOCK: GPL-2.0, GPL-3.0, AGPL-3.0, SSPL, unlicensed
+    - name: gate_decision
+      type: RULE_BASED
+      description: >
+        Aggregate vulnerability and license results.
+        Any BLOCK-level finding: BLOCK build with remediation guidance.
+        Any REVIEW-level finding: WARN + flag for human review.
+
+memory:
+  episodic:
+    enabled: true
+    retention_days: 365
+    categories:
+      - dependency-gate-decisions
+      - vulnerability-findings
+      - license-exceptions
+  semantic:
+    enabled: true
+    categories:
+      - known-safe-versions
+      - license-exception-precedents
+
+tools:
+  - dependency_resolver
+  - vulnerability_db_client
+  - license_scanner
+
+capabilities:
+  - security-analysis
+  - dependency-analysis
+
+routing:
+  input_types:
+    - build-artifact
+    - dependency-lockfile
+  output_types:
+    - dependency-gate-decision
+    - vulnerability-report
+    - license-report
+
+delegation:
+  can_delegate_to: []
+  escalates_to:
+    - sentinel
+    - human-in-the-loop-coordinator
+
+governance:
+  requires_approval: false
+  can_block: true
+  audit_trail: comprehensive
+
+performance:
+  expected_latency_ms: 3000
+  max_latency_ms: 15000
+  timeout_ms: 30000

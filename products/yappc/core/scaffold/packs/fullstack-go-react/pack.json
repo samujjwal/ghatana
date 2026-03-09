@@ -1,0 +1,155 @@
+{
+    "name": "fullstack-go-react",
+    "version": "1.0.0",
+    "description": "Full-stack monorepo with Go Chi backend and React TypeScript frontend",
+    "category": "fullstack",
+    "language": "multi",
+    "runtime": "multi",
+    "buildTool": "go",
+    "templates": [
+        {
+            "source": "root/go.work.hbs",
+            "target": "go.work"
+        },
+        {
+            "source": "root/package.json.hbs",
+            "target": "package.json"
+        },
+        {
+            "source": "root/pnpm-workspace.yaml.hbs",
+            "target": "pnpm-workspace.yaml"
+        },
+        {
+            "source": "root/Makefile.hbs",
+            "target": "Makefile"
+        },
+        {
+            "source": "root/.gitignore.hbs",
+            "target": ".gitignore"
+        },
+        {
+            "source": "root/README.md.hbs",
+            "target": "README.md"
+        },
+        {
+            "source": "root/docker-compose.yml.hbs",
+            "target": "docker-compose.yml"
+        },
+        {
+            "source": "backend/go.mod.hbs",
+            "target": "backend/go.mod"
+        },
+        {
+            "source": "backend/main.go.hbs",
+            "target": "backend/main.go"
+        },
+        {
+            "source": "backend/router/router.go.hbs",
+            "target": "backend/router/router.go"
+        },
+        {
+            "source": "backend/handlers/handlers.go.hbs",
+            "target": "backend/handlers/handlers.go"
+        },
+        {
+            "source": "backend/config/config.go.hbs",
+            "target": "backend/config/config.go"
+        },
+        {
+            "source": "backend/Dockerfile.hbs",
+            "target": "backend/Dockerfile"
+        },
+        {
+            "source": "backend/.air.toml.hbs",
+            "target": "backend/.air.toml"
+        },
+        {
+            "source": "frontend/package.json.hbs",
+            "target": "frontend/package.json"
+        },
+        {
+            "source": "frontend/tsconfig.json.hbs",
+            "target": "frontend/tsconfig.json"
+        },
+        {
+            "source": "frontend/tsconfig.node.json.hbs",
+            "target": "frontend/tsconfig.node.json"
+        },
+        {
+            "source": "frontend/vite.config.ts.hbs",
+            "target": "frontend/vite.config.ts"
+        },
+        {
+            "source": "frontend/index.html.hbs",
+            "target": "frontend/index.html"
+        },
+        {
+            "source": "frontend/src/main.tsx.hbs",
+            "target": "frontend/src/main.tsx"
+        },
+        {
+            "source": "frontend/src/App.tsx.hbs",
+            "target": "frontend/src/App.tsx"
+        },
+        {
+            "source": "frontend/src/index.css.hbs",
+            "target": "frontend/src/index.css"
+        },
+        {
+            "source": "frontend/src/api/client.ts.hbs",
+            "target": "frontend/src/api/client.ts"
+        },
+        {
+            "source": "frontend/Dockerfile.hbs",
+            "target": "frontend/Dockerfile"
+        },
+        {
+            "source": "frontend/nginx.conf.hbs",
+            "target": "frontend/nginx.conf"
+        }
+    ],
+    "variables": {
+        "projectName": {
+            "type": "string",
+            "description": "Project name",
+            "required": true
+        },
+        "moduleName": {
+            "type": "string",
+            "description": "Go module name (e.g., github.com/user/project)",
+            "default": "github.com/example/project"
+        },
+        "backendPort": {
+            "type": "number",
+            "description": "Backend server port",
+            "default": 8080
+        },
+        "frontendPort": {
+            "type": "number",
+            "description": "Frontend dev server port",
+            "default": 5173
+        },
+        "goVersion": {
+            "type": "string",
+            "description": "Go version",
+            "default": "1.23"
+        },
+        "nodeVersion": {
+            "type": "string",
+            "description": "Node.js version",
+            "default": "22"
+        },
+        "enableDocker": {
+            "type": "boolean",
+            "description": "Include Docker configuration",
+            "default": true
+        }
+    },
+    "postCreate": [
+        "cd backend && go mod tidy",
+        "pnpm install"
+    ],
+    "devCommand": "make dev",
+    "buildCommand": "make build",
+    "testCommand": "make test"
+}

@@ -1,0 +1,29 @@
+---
+id: "compliance_progress_dashboard"
+agent: "ProgressDashboardAgent"
+role: "Compliance Dashboard Owner"
+inputs_spec:
+- name: "compliance_validation_report"
+  description: "Compliance validation report for dashboard visualization."
+  format: "Compliance validation report artifact"
+- name: "regulatory_evidence_package"
+  description: "Regulatory evidence package for dashboard visualization."
+  format: "Evidence package artifact"
+outputs_spec:
+- name: "compliance_progress_dashboard"
+  description: "Dashboard visualizing compliance validation progress, evidence, and\
+    \ status."
+  format: "Dashboard artifact"
+agent_tasks:
+- "Visualize compliance validation progress, evidence, and status."
+- "Highlight blockers and unresolved items."
+acceptance_criteria:
+- "Dashboard visualizes compliance validation progress, evidence, and status."
+- "Blockers and unresolved items are highlighted."
+dependencies:
+- "compliance_validation_report"
+- "regulatory_evidence_package"
+failure_escalation:
+- "Escalate to Compliance Dashboard Owner if dashboard is not updated."
+references: []
+hitl: false

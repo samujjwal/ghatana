@@ -1,0 +1,16 @@
+{
+  "forbidden": [
+    {
+      "name": "no-apps-to-libs-ui-imports",
+      "comment": "Apps should import from libs/ui, not from other apps or server internals",
+      "severity": "error",
+      "from": { "path": "^apps/" },
+      "to": { "path": "^apps/", "pathNot": "^apps/.*/src/(routes|components|pages)" }
+    }
+  ],
+  "options": {
+    "doNotFollow": {
+      "path": "node_modules"
+    }
+  }
+}

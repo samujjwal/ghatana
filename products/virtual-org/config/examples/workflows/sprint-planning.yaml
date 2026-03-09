@@ -1,0 +1,281 @@
+# Sprint Planning Workflow Configuration
+
+apiVersion: virtualorg.ghatana.com/v1
+kind: Workflow
+metadata:
+  name: sprint-planning
+  labels:
+    type: planning
+    frequency: bi-weekly
+    departments: product,engineering,qa
+
+spec:
+  displayName: "Sprint Planning Workflow"
+  description: |
+    Bi-weekly sprint planning workflow that coordinates Product, Engineering,
+    and QA departments to plan and commit to sprint deliverables.
+
+  # Trigger Configuration
+  trigger:
+    type: schedule
+    cron: "0 9 1,15 * *" # 1st and 15th of each month at 9 AM
+
+  # Global Context (available to all steps)
+  context:
+    sprintDuration: P2W
+    maxStoryPoints: 100
+    bufferPercentage: 20
+
+  # Workflow Steps
+  steps:
+    # Phase 1: OKR Setting
+    - id: set-okrs
+      name: "Set Sprint OKRs"
+      department: product
+      agent: cpo-agent
+      action: define_sprint_objectives
+      inputs:
+        quarterly_goals: ${context.quarterly_goals}
+        previous_sprint_retro: ${context.previous_sprint_retro}
+        capacity: ${context.team_capacity}
+      outputs:
+        - sprint_objectives
+        - key_results
+        - success_criteria
+      timeout: PT4H
+
+    # Phase 2: Backlog Prioritization
+    - id: prioritize-backlog
+      name: "Prioritize Backlog"
+      department: product
+      agent: product-manager
+      action: prioritize_stories
+      waitFor: [set-okrs]
+      inputs:
+        objectives: ${steps.set-okrs.outputs.sprint_objectives}
+        backlog: ${context.product_backlog}
+        customer_feedback: ${context.recent_feedback}
+      outputs:
+        - prioritized_backlog
+        - story_rankings
+      timeout: PT2H
+
+    # Phase 3: Technical Review (parallel with QA planning)
+    - id: technical-review
+      name: "Technical Feasibility Review"
+      department: engineering
+      agent: cto-agent
+      action: review_technical_feasibility
+      waitFor: [prioritize-backlog]
+      inputs:
+        stories: ${steps.prioritize-backlog.outputs.prioritized_backlog}
+        architecture_constraints: ${context.architecture_constraints}
+      outputs:
+        - feasibility_report
+        - effort_estimates
+        - technical_risks
+        - dependency_map
+      timeout: PT2H
+
+    # Phase 4a: Engineering Capacity Planning (parallel)
+    - id: capacity-planning
+      name: "Engineering Capacity Planning"
+      department: engineering
+      agent: lead-engineer
+      action: plan_capacity
+      waitFor: [technical-review]
+      parallel: true
+      inputs:
+        estimates: ${steps.technical-review.outputs.effort_estimates}
+        team_availability: ${context.team_availability}
+        holidays: ${context.upcoming_holidays}
+        buffer: ${context.bufferPercentage}
+      outputs:
+        - sprint_plan
+        - assignments
+        - capacity_utilization
+
+    # Phase 4b: QA Planning (parallel with capacity planning)
+    - id: qa-planning
+      name: "QA Resource Planning"
+      department: qa
+      agent: qa-lead
+      action: plan_qa_resources
+      waitFor: [technical-review]
+      parallel: true
+      inputs:
+        stories: ${steps.prioritize-backlog.outputs.prioritized_backlog}
+        estimates: ${steps.technical-review.outputs.effort_estimates}
+        test_infrastructure: ${context.test_infrastructure_status}
+      outputs:
+        - qa_plan
+        - test_estimates
+        - automation_candidates
+
+    # Phase 5: DevOps Readiness Check (parallel)
+    - id: devops-readiness
+      name: "DevOps Readiness Check"
+      department: devops
+      agent: devops-lead
+      action: check_deployment_readiness
+      waitFor: [technical-review]
+      parallel: true
+      inputs:
+        stories: ${steps.prioritize-backlog.outputs.prioritized_backlog}
+        infrastructure_status: ${context.infrastructure_status}
+      outputs:
+        - deployment_plan
+        - infrastructure_needs
+        - release_windows
+
+    # Phase 6: Consolidation
+    - id: consolidate-plans
+      name: "Consolidate Department Plans"
+      department: product
+      agent: product-manager
+      action: consolidate_plans
+      waitFor: [capacity-planning, qa-planning, devops-readiness]
+      inputs:
+        eng_plan: ${steps.capacity-planning.outputs.sprint_plan}
+        qa_plan: ${steps.qa-planning.outputs.qa_plan}
+        devops_plan: ${steps.devops-readiness.outputs.deployment_plan}
+        priorities: ${steps.prioritize-backlog.outputs.story_rankings}
+      outputs:
+        - consolidated_plan
+        - conflicts
+        - recommendations
+
+    # Phase 7: Conflict Resolution (if needed)
+    - id: resolve-conflicts
+      name: "Resolve Planning Conflicts"
+      department: product
+      agent: cpo-agent
+      action: resolve_conflicts
+      waitFor: [consolidate-plans]
+      condition: ${steps.consolidate-plans.outputs.conflicts}.length > 0
+      inputs:
+        conflicts: ${steps.consolidate-plans.outputs.conflicts}
+        constraints: ${context.business_constraints}
+      outputs:
+        - resolutions
+        - adjusted_priorities
+      hitl:
+        required: true
+        approvers: [cpo-agent, cto-agent]
+        timeout: PT2H
+
+    # Phase 8: Final Sprint Commitment
+    - id: finalize-sprint
+      name: "Finalize Sprint Commitment"
+      department: product
+      agent: product-manager
+      action: finalize_sprint
+      waitFor: [resolve-conflicts, consolidate-plans]
+      inputs:
+        plan: ${steps.consolidate-plans.outputs.consolidated_plan}
+        resolutions: ${steps.resolve-conflicts.outputs.resolutions}
+      outputs:
+        - final_sprint
+        - commitments
+        - sprint_goals
+
+    # Phase 9: Stakeholder Notification
+    - id: notify-stakeholders
+      name: "Notify Stakeholders"
+      department: product
+      agent: system
+      action: send_notifications
+      waitFor: [finalize-sprint]
+      inputs:
+        sprint: ${steps.finalize-sprint.outputs.final_sprint}
+        commitments: ${steps.finalize-sprint.outputs.commitments}
+      notifications:
+        - channel: slack
+          recipients: [engineering-team, qa-team, devops-team]
+          message: |
+            🚀 Sprint ${context.sprint_number} Planning Complete!
+
+            Goals: ${steps.finalize-sprint.outputs.sprint_goals}
+            Committed Stories: ${steps.finalize-sprint.outputs.commitments.length}
+
+            Sprint starts: ${context.sprint_start_date}
+            Sprint ends: ${context.sprint_end_date}
+
+        - channel: email
+          recipients: [all-department-heads, product-stakeholders]
+          template: sprint-summary
+          data:
+            sprint: ${steps.finalize-sprint.outputs.final_sprint}
+
+    # Phase 10: Create Sprint Artifacts
+    - id: create-artifacts
+      name: "Create Sprint Artifacts"
+      department: product
+      agent: system
+      action: create_artifacts
+      waitFor: [finalize-sprint]
+      inputs:
+        sprint: ${steps.finalize-sprint.outputs.final_sprint}
+      outputs:
+        - jira_sprint
+        - confluence_page
+        - calendar_events
+
+  # Error Handling
+  errorHandling:
+    strategy: compensate
+    maxRetries: 3
+    retryDelay: PT5M
+
+    compensationSteps:
+      - triggerOn: [capacity-planning]
+        action: notify_eng_planning_failure
+        agents: [lead-engineer, cto-agent]
+
+      - triggerOn: [qa-planning]
+        action: notify_qa_planning_failure
+        agents: [qa-lead, cto-agent]
+
+      - triggerOn: [finalize-sprint]
+        action: rollback_sprint_creation
+
+  # Human Approval Gates
+  approvals:
+    - before: finalize-sprint
+      approvers: [cto-agent, cpo-agent]
+      timeout: PT4H
+      onTimeout: notify-and-extend
+
+  # Escalation Timeline
+  escalation:
+    - after: PT8H
+      if: workflow_status == "in_progress"
+      action: notify
+      to: cpo-agent
+      message: "Sprint planning taking longer than expected"
+
+    - after: PT12H
+      if: workflow_status == "in_progress"
+      action: escalate
+      to: cto-agent
+
+    - after: PT24H
+      if: workflow_status == "in_progress"
+      action: escalate
+      to: ceo-agent
+
+  # Completion Criteria
+  completion:
+    successCondition: all_required_steps_completed
+    artifacts:
+      - name: sprint_plan
+        path: ${steps.finalize-sprint.outputs.final_sprint}
+        retention: P90D
+
+      - name: team_assignments
+        path: ${steps.capacity-planning.outputs.assignments}
+        retention: P90D
+
+      - name: qa_test_plan
+        path: ${steps.qa-planning.outputs.qa_plan}
+        retention: P90D

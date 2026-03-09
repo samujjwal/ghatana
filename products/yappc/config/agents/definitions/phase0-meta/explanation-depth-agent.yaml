@@ -1,0 +1,102 @@
+id: explanation-depth-agent
+name: Explanation Depth Agent
+version: 1.0.0
+description: Determines appropriate explanation depth for agent outputs based on audience, context, and stakes. Generates explanations at correct level of detail.
+
+metadata:
+  level: 3  # Worker
+  domain: human-boundary
+  tags:
+    - explainability
+    - transparency
+    - audience-adaptation
+    - communication
+
+generator:
+  type: PIPELINE
+  steps:
+    - name: audience_analysis
+      type: RULE_BASED
+      description: Classify audience (technical, business, executive, end-user)
+    - name: depth_determination
+      type: LLM
+      provider: ANTHROPIC
+      model: claude-3-5-sonnet-20241022
+      temperature: 0.2
+      max_tokens: 2000
+      prompt: |
+        You are the Explanation Depth Agent. Determine explanation requirements:
+        
+        Decision: {{decision}}
+        Audience: {{audience}}
+        Stakes: {{stakes}}
+        Complexity: {{complexity}}
+        
+        Determine:
+        1. Explanation depth (BRIEF/STANDARD/DETAILED/COMPREHENSIVE)
+        2. Technical level (NONE/LOW/MEDIUM/HIGH)
+        3. Required elements (what, why, how, alternatives, risks, etc.)
+        4. Format (bullet points, narrative, diagram, etc.)
+        5. Explanation text
+        
+        Output as JSON: {depth, technical_level, elements, format, explanation}
+    - name: explanation_generation
+      type: TEMPLATE
+      template_path: templates/explanation.ftl
+
+memory:
+  episodic:
+    enabled: true
+    retention_days: 180
+    categories:
+      - explanation-requests
+      - audience-preferences
+      - feedback
+  semantic:
+    enabled: true
+    categories:
+      - audience-profiles
+      - explanation-templates
+      - communication-patterns
+  procedural:
+    enabled: true
+    categories:
+      - depth-rules
+      - audience-adaptation-logic
+      - format-selection-rules
+
+tools:
+  - audience_profiler
+  - complexity_analyzer
+  - explanation_generator
+
+capabilities:
+  - audience-analysis
+  - depth-determination
+  - technical-level-adaptation
+  - explanation-generation
+  - format-selection
+
+routing:
+  input_types:
+    - explanation-request
+    - agent-output
+    - decision-communication
+  output_types:
+    - explanation
+    - communication-package
+
+delegation:
+  can_delegate_to: []
+  escalates_to:
+    - human-in-the-loop-coordinator
+
+governance:
+  requires_approval: false
+  can_block: false
+  audit_trail: standard
+
+performance:
+  expected_latency_ms: 2000
+  max_latency_ms: 5000
+  timeout_ms: 10000

@@ -1,0 +1,10 @@
+import { useColorScheme as useRNColorScheme } from "react-native";
+
+/**
+* Hook to get the current color scheme.
+* Returns 'light' | 'dark' based on system preference.
+*/
+export function useColorScheme(): "light" | "dark" {
+const colorScheme = useRNColorScheme();
+return colorScheme ?? "light";
+}

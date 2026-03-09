@@ -1,0 +1,41 @@
+id: solution_kpi_agent
+agent: StageKPIAgent
+role: Solution KPI Analyst
+inputs_spec:
+- name: solution_stage_milestone
+  description: Solution stage milestone plan.
+  format: List of milestone objects
+outputs_spec:
+- name: solution_kpi_report
+  description: KPI report for Solution stage (completeness, milestone velocity, risk closure, trends, anomalies).
+  format: 'Structured KPI report (sections: completeness, velocity, risk_closure, trends, anomalies, visualization)'
+  example: 'completeness: 90
+
+    velocity: "2 milestones/week"
+
+    risk_closure: "80%"
+
+    trends: ["Improving"]
+
+    anomalies: []
+
+    '
+agent_tasks:
+- Define and update key Solution stage KPIs.
+- Report KPI data for each solution milestone.
+- Flag trends, anomalies, or deviations in KPIs.
+- Visualize KPI trends over time and compare to baselines.
+acceptance_criteria:
+- Key Solution stage KPIs are defined (e.g., architectural completeness, milestone velocity, risk closure rate).
+- KPI data is updated and reported for each solution milestone.
+- Trends, anomalies, or deviations in solution KPIs are flagged for review.
+- KPI trends are visualized over time and compared to past project baselines.
+- Outliers and deviations are flagged for review.
+dependencies:
+- solution_stage_milestone
+failure_escalation:
+- Escalate to KPI analyst or PM if KPIs are not defined or up to date.
+references: []
+hitl: false
+
+# [!!] No custom enhancement found.

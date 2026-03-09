@@ -1,0 +1,53 @@
+{{!--
+  React Functional Component Template
+  
+  Variables:
+  - componentName: Name of the component (PascalCase)
+  - description: Component description
+  - hasProps: Whether component accepts props
+  - propTypes: Array of prop definitions
+  - useState: Whether to use useState hook
+  - useEffect: Whether to use useEffect hook
+  - exportType: 'default' or 'named'
+--}}
+import React{{#if useState}}, { useState }{{/if}}{{#if useEffect}}, { useEffect }{{/if}} from 'react';
+{{#if hasProps}}
+
+/**
+ * Props for {{componentName}} component.
+ */
+interface {{componentName}}Props {
+  {{#each propTypes}}
+  {{name}}{{#if optional}}?{{/if}}: {{type}};{{#if description}} // {{description}}{{/if}}
+  {{/each}}
+}
+{{/if}}
+
+/**
+ * {{description}}
+ * 
+ * @doc.type component
+ * @doc.purpose {{description}}
+ * @doc.layer presentation
+ */
+{{#if exportType}}{{#eq exportType "default"}}export default{{else}}export{{/eq}}{{else}}export{{/if}} function {{componentName}}({{#if hasProps}}{ {{#each propTypes}}{{name}}{{#unless @last}}, {{/unless}}{{/each}} }: {{componentName}}Props{{/if}}) {
+  {{#if useState}}
+  const [state, setState] = useState<any>(null);
+  {{/if}}
+
+  {{#if useEffect}}
+  useEffect(() => {
+    // Effect logic here
+    return () => {
+      // Cleanup logic here
+    };
+  }, []);
+  {{/if}}
+
+  return (
+    <div className="{{kebabCase componentName}}">
+      <h2>{{componentName}}</h2>
+      {/* Component content */}
+    </div>
+  );
+}

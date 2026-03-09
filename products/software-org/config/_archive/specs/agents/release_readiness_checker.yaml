@@ -1,0 +1,31 @@
+---
+id: "release_readiness_checker"
+agent: "ReadinessCheckerAgent"
+role: "Gatekeeper Bot"
+inputs_spec:
+- name: "release_candidate_validation_report"
+  description: "Validation report."
+  format: "Validation report artifact"
+- name: "release_notes"
+  description: "Release notes for readiness review."
+  format: "Release notes artifact"
+- name: "license_compliance_report"
+  description: "License compliance report."
+  format: "License compliance report artifact"
+outputs_spec:
+- name: "release_readiness_status"
+  description: "Readiness status for release, including signoffs and approvals."
+  format: "Readiness status artifact"
+agent_tasks:
+- "Ensure all release criteria, signoffs, and documentation are met and attached."
+- "Verify stakeholder approvals and completeness."
+acceptance_criteria:
+- "All criteria are met, with signoffs and approvals complete."
+dependencies:
+- "release_candidate_validation_report"
+- "release_notes"
+- "license_compliance_report"
+failure_escalation:
+- "Escalate to Gatekeeper or Release Manager if readiness criteria are not met."
+references: []
+hitl: false

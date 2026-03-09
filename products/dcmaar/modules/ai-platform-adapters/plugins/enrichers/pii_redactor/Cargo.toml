@@ -1,0 +1,32 @@
+[package]
+name = "pii_redactor"
+version = "0.1.0"
+edition = "2021"
+description = "PII redactor enricher plugin for DCMaar agent"
+publish = false
+
+[dependencies]
+# Internal crates
+agent-plugin = { path = "../../../crates/agent-plugin" }
+
+# Async traits
+async-trait = { workspace = true }
+
+# Serialization
+serde = { workspace = true, features = ["derive"] }
+serde_json = { workspace = true }
+
+# Pattern detection
+regex = { workspace = true }
+lazy_static = { workspace = true }
+sha2 = { workspace = true }
+
+# Logging and errors
+tracing = { workspace = true }
+thiserror = { workspace = true }
+
+[lib]
+crate-type = ["cdylib", "rlib"]
+
+[dev-dependencies]
+tokio = { workspace = true, features = ["macros", "rt"] }

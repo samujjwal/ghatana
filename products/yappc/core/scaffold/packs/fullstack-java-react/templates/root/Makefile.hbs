@@ -1,0 +1,93 @@
+.PHONY: dev build test clean docker-build docker-up docker-down
+
+# Default target
+all: build
+
+# Development (run both backend and frontend)
+dev:
+@echo "Starting development servers..."
+@concurrently \
+"cd backend && ../gradlew bootRun" \
+"cd frontend && pnpm dev"
+
+# Development - backend only
+dev-backend:
+cd backend && ../gradlew bootRun
+
+# Development - frontend only
+dev-frontend:
+cd frontend && pnpm dev
+
+# Build all
+build: build-backend build-frontend
+
+build-backend:
+./gradlew :backend:build
+
+build-frontend:
+cd frontend && pnpm build
+
+# Test all
+test: test-backend test-frontend
+
+test-backend:
+./gradlew :backend:test
+
+test-frontend:
+cd frontend && pnpm test
+
+{{#if enableE2E}}
+# E2E tests
+test-e2e:
+cd frontend && pnpm test:e2e
+{{/if}}
+
+# Clean
+clean:
+./gradlew clean
+cd frontend && rm -rf dist node_modules
+
+# Install dependencies
+install:
+pnpm install
+
+{{#if enableDocker}}
+# Docker
+docker-build:
+docker compose build
+
+docker-up:
+docker compose up -d
+
+docker-down:
+docker compose down
+
+docker-logs:
+docker compose logs -f
+{{/if}}
+
+# Format
+format:
+./gradlew spotlessApply
+cd frontend && pnpm format
+
+# Lint
+lint:
+./gradlew :backend:checkstyleMain
+cd frontend && pnpm lint
+
+# Help
+help:
+@echo "Available targets:"
+@echo " dev - Run both backend and frontend in dev mode"
+@echo " dev-backend - Run backend only"
+@echo " dev-frontend - Run frontend only"
+@echo " build - Build all projects"
+@echo " test - Run all tests"
+@echo " clean - Clean all build outputs"
+@echo " install - Install frontend dependencies"
+{{#if enableDocker}}
+@echo " docker-build - Build Docker images"
+@echo " docker-up - Start with Docker Compose"
+@echo " docker-down - Stop Docker Compose"
+{{/if}}

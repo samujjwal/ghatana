@@ -1,0 +1,70 @@
+/*
+ * Copyright (c) 2024 Ghatana Inc.
+ * All rights reserved.
+ *
+ * This source code and the accompanying materials are the confidential
+ * and proprietary information of Ghatana Inc. ("Confidential Information").
+ * You shall not disclose such Confidential Information and shall use it
+ * only in accordance with the terms of the license agreement you entered
+ * into with Ghatana Inc.
+ *
+ * Unauthorized copying of this file, via any medium, is strictly prohibited.
+ * Proprietary and confidential.
+ */
+syntax = "proto3";
+
+package ghatana.contracts.agent.v1;
+
+option go_package = "github.com/ghatana/contracts/gen/go/agent/v1;agentv1";
+option java_multiple_files = true;
+option java_package = "com.ghatana.contracts.agent.v1";
+option java_outer_classname = "AgentExecutionEventProto";
+option csharp_namespace = "Ghatana.Contracts.Agent.V1";
+
+// Day 40: Agent step execution event for observability and audit
+message AgentStepExecutionEventProto {
+  // Event identification
+  string event_id = 1;
+  string event_type = 2;  // e.g., "agent.step.result"
+  string version = 3;     // Event schema version
+  int64 timestamp = 4;    // Event emission timestamp (epoch millis)
+
+  // Agent step identification
+  string step_id = 5;
+  string agent_id = 6;
+
+  // Execution status
+  ExecutionStatus status = 7;
+
+  // Timing information
+  int64 start_time = 8;   // Step start time (epoch millis)
+  int64 end_time = 9;     // Step end time (epoch millis) 
+  int64 duration_ms = 10; // Execution duration in milliseconds
+
+  // Retry information
+  int32 attempt_number = 11;  // Current attempt (1-based)
+  int32 total_attempts = 12;  // Total configured attempts
+
+  // Result data (for successful executions)
+  string result_data = 13;    // JSON-serialized result
+
+  // Error information (for failed executions)
+  string error_message = 14;  // Error message
+  string error_type = 15;     // Error class name
+
+  // Execution metrics
+  map<string, string> metrics = 16;  // Custom metrics (duration, policy, etc.)
+
+  // Execution context
+  map<string, string> context = 17;  // Additional context data
+
+  // Execution status enum
+  enum ExecutionStatus {
+    UNKNOWN = 0;
+    SUCCESS = 1;
+    TIMEOUT = 2;
+    RETRY = 3;
+    FAILED = 4;
+    CANCELLED = 5;
+  }
+}

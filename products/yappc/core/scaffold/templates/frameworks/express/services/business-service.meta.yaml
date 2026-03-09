@@ -1,0 +1,54 @@
+description: "Express.js business service with caching and logging"
+author: "YAPPC Team"
+version: "1.0.0"
+tags:
+  - express
+  - service
+  - business-logic
+  - cache
+
+variables:
+  serviceName:
+    name: "serviceName"
+    type: "string"
+    description: "Name of the service class"
+    required: true
+
+  entityName:
+    name: "entityName"
+    type: "string"
+    description: "Name of the entity"
+    required: true
+
+  modelName:
+    name: "modelName"
+    type: "string"
+    description: "Name of the model/repository"
+    required: true
+
+  hasCache:
+    name: "hasCache"
+    type: "boolean"
+    description: "Whether to include caching"
+    required: false
+    defaultValue: false
+
+  hasLogging:
+    name: "hasLogging"
+    type: "boolean"
+    description: "Whether to include logging"
+    required: false
+    defaultValue: true
+
+dependencies:
+  - typescript
+
+examples:
+  - name: "User Service"
+    description: "Business service for User entity with caching"
+    variables:
+      serviceName: "UserService"
+      entityName: "User"
+      modelName: "UserModel"
+      hasCache: true
+      hasLogging: true

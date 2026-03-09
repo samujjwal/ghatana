@@ -1,0 +1,1427 @@
+name: Plan (with Security & Cloud Readiness)
+workflow:
+  - id: clarify_product_idea
+    agent: EnhancedProductIdeaClarifier
+    role: Senior Product Analyst
+    inputs_spec:
+      - name: user
+        description: Initial product idea input from user, including any details, context, or requirements provided.
+        format: Free-form text, possibly structured Q&A.
+        example: "A SaaS platform for secure document sharing in regulated industries."
+    outputs_spec:
+      - name: clarified_product_idea
+        description: Product idea, clarified and rephrased for security and cloud readiness, with ambiguities resolved and user needs identified.
+        format: Structured summary (1-2 sentences), bullet points for open questions.
+        example: |
+          Product Idea: "A SaaS platform for secure document sharing, targeting healthcare and finance, with HIPAA/GDPR compliance and cloud deployment."
+          Open Questions: ["What types of documents?", "What compliance standards?", "Preferred cloud provider?"]
+    acceptance_criteria:
+      - Product idea is clearly described in 1-2 sentences, with security and cloud context if relevant.
+      - Ambiguities, unclear terms, and missing security/cloud context are rephrased or clarified.
+      - Core value proposition and differentiators are identified.
+      - Intended user groups and personas (with security/privacy needs) are described.
+      - Open questions for further clarification are flagged, especially around sensitive data, compliance, or cloud deployment.
+    agent_tasks:
+      - Clarify and rephrase the product idea for security and cloud context.
+      - Identify and document ambiguities or unclear terms.
+      - Summarize value proposition and differentiators.
+      - List intended user groups and personas, noting security/privacy needs.
+      - Flag open questions, especially those on sensitive data, compliance, or cloud.
+    dependencies: []
+    failure_escalation:
+      - If product idea cannot be clarified due to lack of information, escalate to user or project sponsor for input.
+    references: []
+  - id: plan_best_practice_enforcement
+    agent: EnhancedPlanBestPracticeAgent
+    role: Senior Business Process & Security Auditor
+    inputs_spec:
+      - name: clarified_product_idea
+        description: Clarified and security-aware product idea from previous step.
+        format: Structured summary with bullet points for open questions.
+    outputs_spec:
+      - name: plan_best_practice_report
+        description: Report on alignment with business, security, and cloud best practices, including deviations and recommendations.
+        format: Structured report with sections for references, deviations, recommendations, and risk mitigations.
+        example: |
+          Best Practices Referenced: ["NIST SP 800-53", "CIS Controls", "Cloud Security Alliance"]
+          Deviations: ["No DLP controls planned"]
+          Recommendations: ["Add DLP module", "Review cloud encryption"]
+          Risks: ["Non-compliance with GDPR"]
+    acceptance_criteria:
+      - All relevant business process, security, and cloud best practices are referenced.
+      - Deviations from best practice (including security/compliance/cloud) are highlighted.
+      - Recommendations for alignment, remediation, and secure-by-design are provided.
+      - Risks of non-compliance or insecure practices are described, with suggested mitigations.
+    agent_tasks:
+      - Review clarified product idea against business, security, and cloud best practices.
+      - Identify and document any deviations.
+      - Provide actionable recommendations for alignment and remediation.
+      - Describe risks of non-compliance or insecure practices and suggest mitigations.
+    dependencies:
+      - clarified_product_idea
+    failure_escalation:
+      - Escalate to security/compliance lead if critical risks are found without feasible mitigations.
+    references:
+      - "NIST SP 800-53"
+      - "CIS Controls"
+      - "Cloud Security Alliance Best Practices"
+  - id: plan_milestone_tracker
+    agent: EnhancedPlanMilestoneTrackerAgent
+    role: Senior PMO Analyst
+    inputs_spec:
+      - name: plan_best_practice_report
+        description: Report on business, security, and cloud best practices, including deviations and recommendations.
+        format: Structured report.
+    outputs_spec:
+      - name: plan_stage_milestone
+        description: Structured list of project milestones, including security/cloud milestones, dependencies, owners, and acceptance criteria.
+        format: "List of milestones with fields: id, description, dependencies, target date, owner, status, acceptance criteria, risks."
+        example: |
+          - id: M1
+            description: "Define requirements"
+            dependencies: []
+            target_date: "2024-07-01"
+            owner: "PM"
+            status: "planned"
+            acceptance_criteria: ["Requirements signed off"]
+            risks: []
+    acceptance_criteria:
+      - Each planned milestone is clearly described, uniquely identified, and includes security/cloud milestones if applicable.
+      - Dependencies, prerequisites, and required approvals (including security and compliance) are explicitly mapped.
+      - Target dates, durations, responsible owners, and milestone acceptance criteria are included.
+      - Milestone status (planned, in-progress, completed, blocked) is updated.
+      - Any risks, blockers, or compliance/security issues are flagged for review.
+    agent_tasks:
+      - Define and document all major milestones, including security/cloud.
+      - Map all dependencies, prerequisites, and required approvals.
+      - Assign owners, target dates, and durations.
+      - Track and update milestone status.
+      - Flag risks, blockers, or compliance/security issues.
+    dependencies:
+      - plan_best_practice_report
+    failure_escalation:
+      - Escalate to PMO or security/compliance lead if critical milestone blockers are found.
+    references: []
+  - id: business_goals
+    agent: EnhancedBusinessGoalsAgent
+    role: Senior Product Owner
+    inputs_spec:
+      - name: plan_stage_milestone
+        description: Structured milestone plan with security/cloud milestones and dependencies.
+        format: List of milestone objects.
+    outputs_spec:
+      - name: business_goals
+        description: Clear, concise business goals, including security, compliance, and cloud-readiness goals, mapped to milestones.
+        format: List of goal objects (description, measurable indicator, mapped milestone, notes).
+        example: |
+          - description: "Achieve HIPAA compliance for all document storage"
+            measurable: true
+            mapped_milestone: "M2"
+    acceptance_criteria:
+      - Business goals are stated clearly and concisely, including security, compliance, and cloud-readiness goals where appropriate.
+      - Each goal is measurable or has a success indicator.
+      - Goals are aligned with the clarified product idea and mapped to milestones.
+      - Potential conflicts, ambiguities, or gaps (especially in security/compliance) are flagged.
+    agent_tasks:
+      - Identify and document business goals, including security/compliance/cloud.
+      - Ensure each goal has a measurable indicator or success metric.
+      - Map each goal to relevant milestones.
+      - Flag conflicts, ambiguities, or gaps.
+    dependencies:
+      - plan_stage_milestone
+    failure_escalation:
+      - Escalate to product owner or compliance lead if goals are ambiguous or conflict with compliance/security.
+    references: []
+  - id: success_criteria
+    agent: EnhancedSuccessCriteriaAgent
+    role: Senior Business Sponsor
+    inputs_spec:
+      - name: business_goals
+        description: List of business goals, including security, compliance, and cloud-readiness goals.
+        format: List of goal objects.
+    outputs_spec:
+      - name: success_criteria
+        description: Specific, measurable, time-bound criteria for success, mapped to business goals, including security/compliance/cloud.
+        format: List of criteria (description, goal mapping, owner, timebound, testability).
+        example: |
+          - description: "HIPAA audit passed by Q3"
+            goal: "Achieve HIPAA compliance"
+            owner: "Compliance Officer"
+            timebound: "Q3"
+            testable: true
+    acceptance_criteria:
+      - Success criteria are specific, measurable, time-bound, and include security/compliance/cloud-readiness where relevant.
+      - Each criterion maps to a business goal and has an owner.
+      - Criteria are realistic, achievable, and reviewed for testability.
+      - Any missing, ambiguous, or conflicting criteria (especially for security/compliance) are flagged.
+    agent_tasks:
+      - Define specific, measurable, time-bound success criteria for each goal.
+      - Map each criterion to a business goal and assign an owner.
+      - Review for achievability and testability.
+      - Flag missing, ambiguous, or conflicting criteria.
+    dependencies:
+      - business_goals
+    failure_escalation:
+      - Escalate to business sponsor or compliance lead if criteria are missing or untestable.
+    references: []
+  - id: goals_criteria_combiner
+    agent: EnhancedGoalsCriteriaCombiner
+    role: Senior Analyst/Combiner
+    inputs_spec:
+      - name: business_goals
+        description: List of business goals.
+        format: List of goal objects.
+      - name: success_criteria
+        description: List of mapped success criteria.
+        format: List of criteria objects.
+    outputs_spec:
+      - name: goals_and_criteria
+        description: Combined, logically structured mapping of business goals to corresponding success criteria, with security/compliance/cloud context.
+        format: List of mappings (goal, criteria, milestone reference, notes).
+        example: |
+          - goal: "Achieve HIPAA compliance"
+            criteria: ["HIPAA audit passed by Q3"]
+            milestone: "M2"
+    acceptance_criteria:
+      - All business goals are mapped to corresponding success criteria, including security, compliance, and cloud-readiness.
+      - Gaps, mismatches, or ambiguities between goals and criteria (especially in security/compliance) are identified and flagged.
+      - Combined output is logically structured, traceable to milestones, and free of contradictions.
+      - Ensure all referenced artifacts are current, versioned, and include security/compliance context where needed.
+    agent_tasks:
+      - Map each business goal to one or more success criteria.
+      - Identify and flag gaps, mismatches, or ambiguities.
+      - Structure output for traceability to milestones.
+      - Verify all referenced artifacts are current and versioned.
+    dependencies:
+      - business_goals
+      - success_criteria
+    failure_escalation:
+      - Escalate to analyst or compliance lead if mapping is incomplete or ambiguous.
+    references: []
+  - id: stakeholder_list
+    agent: StakeholderListAgent
+    role: Business Analyst
+    inputs_spec:
+      - name: goals_and_criteria
+        description: Combined business goals and mapped success criteria, providing the context for identifying relevant stakeholders.
+        format: List of mappings (goal, criteria, milestone reference, notes)
+        example: |
+          - goal: "Achieve HIPAA compliance"
+            criteria: ["HIPAA audit passed by Q3"]
+            milestone: "M2"
+    outputs_spec:
+      - name: stakeholder_list
+        description: List of stakeholders, their roles, and areas of interest.
+        format: List of stakeholder objects (name, role, interest/area, mapping to goal/criteria)
+        example: |
+          - name: "Jane Doe"
+            role: "Security Officer"
+            interest: "Data protection, compliance"
+            mapped_goal: "Achieve HIPAA compliance"
+    acceptance_criteria:
+      - All relevant stakeholders are identified, with roles and interests described.
+      - Stakeholder mapping is based on business goals and success criteria.
+      - Missing or ambiguous stakeholders are flagged for review.
+      - Stakeholder list is versioned and available for downstream agents.
+    agent_tasks:
+      - Review combined goals and criteria to identify stakeholder roles and interest areas.
+      - Consult organizational directory and previous project records as needed.
+      - Document stakeholders, their roles, areas of concern, and mapped goals.
+      - Flag missing, unclear, or high-risk stakeholders for review/escalation.
+    dependencies:
+      - goals_and_criteria
+    failure_escalation:
+      - If stakeholder mapping is incomplete or ambiguous, escalate to project sponsor or business owner.
+    references:
+      - RACI matrix template
+      - Previous project stakeholder lists
+  - id: stakeholder_engagement
+    agent: StakeholderEngagementAgent
+    role: Project Manager
+    inputs_spec:
+      - name: stakeholder_list
+        description: List of stakeholders, their roles, and mapped goals/criteria.
+        format: List of stakeholder objects (name, role, interest/area, mapped_goal)
+        example: |
+          - name: "Jane Doe"
+            role: "Security Officer"
+            interest: "Data protection, compliance"
+            mapped_goal: "Achieve HIPAA compliance"
+    outputs_spec:
+      - name: stakeholder_engagement_plan
+        description: Engagement plan for each stakeholder, including strategies, communication channels, frequencies, and risk mitigation.
+        format: List of engagement objects (stakeholder, strategy, channel, frequency, risks)
+        example: |
+          - stakeholder: "Jane Doe"
+            strategy: "Weekly sync on compliance progress"
+            channel: "Email, Slack"
+            frequency: "Weekly"
+            risks: ["Missed compliance updates"]
+    acceptance_criteria:
+      - Engagement strategies for each stakeholder are outlined.
+      - Communication channels and frequencies are specified.
+      - Risks from lack of engagement are identified.
+    agent_tasks:
+      - Develop engagement strategies for each stakeholder.
+      - Specify communication channels and contact frequency.
+      - Identify and flag risks arising from lack of engagement.
+    dependencies:
+      - stakeholder_list
+    failure_escalation:
+      - Escalate to project sponsor if engagement plan is incomplete or high-risk stakeholders are not addressed.
+    references: []
+  - id: stakeholder_mapping_combiner
+    agent: StakeholderMappingCombiner
+    role: Analyst/Combiner
+    inputs_spec:
+      - name: stakeholder_list
+        description: List of stakeholders, their roles, and mapped goals/criteria.
+        format: List of stakeholder objects
+      - name: stakeholder_engagement_plan
+        description: Engagement plan for each stakeholder.
+        format: List of engagement objects
+    outputs_spec:
+      - name: stakeholders_and_engagement
+        description: Combined mapping of stakeholders to engagement plans, highlighting completeness and any gaps/overlaps.
+        format: List of stakeholder-engagement mappings (stakeholder, engagement details, notes)
+        example: |
+          - stakeholder: "Jane Doe"
+            engagement: "Weekly sync on compliance progress"
+            channel: "Email"
+            frequency: "Weekly"
+            notes: []
+    acceptance_criteria:
+      - Stakeholder mapping is complete and accurate.
+      - Engagement plans are matched to each stakeholder.
+      - Gaps or overlaps in engagement are flagged.
+      - Ensure all referenced artifacts are current and versioned.
+    agent_tasks:
+      - Combine stakeholder list with engagement plans.
+      - Identify and flag gaps or overlaps in engagement.
+      - Ensure all references are current and versioned.
+    dependencies:
+      - stakeholder_list
+      - stakeholder_engagement_plan
+    hitl: true
+    hitl_reason: Human ensures stakeholder mapping is accurate and comprehensive
+    failure_escalation:
+      - Escalate to PMO if mapping is incomplete or engagement gaps are unresolved.
+    references: []
+  - id: functional_requirements
+    agent: FunctionalRequirementsAgent
+    role: Business Analyst
+    inputs_spec:
+      - name: stakeholders_and_engagement
+        description: Combined mapping of stakeholders and their engagement plans.
+        format: List of stakeholder-engagement mappings
+    outputs_spec:
+      - name: functional_requirements
+        description: List of clear, testable, and mapped functional requirements.
+        format: List of requirement objects (description, mapped stakeholder/goal, testability)
+        example: |
+          - description: "User can upload documents securely"
+            mapped_stakeholder: "Jane Doe"
+            testable: true
+    acceptance_criteria:
+      - All major functional requirements are listed.
+      - Each requirement is clear, testable, and unambiguous.
+      - Requirements are mapped to user needs or goals.
+    agent_tasks:
+      - Gather and document all major functional requirements.
+      - Ensure clarity, testability, and mapping to user needs/goals.
+    dependencies:
+      - stakeholders_and_engagement
+    failure_escalation:
+      - Escalate to product owner if requirements are unclear or not testable.
+    references: []
+  - id: functional_requirements_reviewer
+    agent: FunctionalRequirementsReviewerAgent
+    role: Product Owner
+    inputs_spec:
+      - name: functional_requirements
+        description: List of documented functional requirements.
+        format: List of requirement objects
+    outputs_spec:
+      - name: reviewed_functional_requirements
+        description: Reviewed, prioritized, and clarified functional requirements.
+        format: List of reviewed requirement objects (description, priority, notes)
+        example: |
+          - description: "User can upload documents securely"
+            priority: "High"
+            notes: []
+    acceptance_criteria:
+      - All functional requirements are reviewed for completeness.
+      - Ambiguities or gaps are identified and flagged.
+      - Requirements are prioritized or ordered if needed.
+    agent_tasks:
+      - Review all functional requirements for completeness and correctness.
+      - Identify and flag ambiguities or gaps.
+      - Prioritize or order requirements as needed.
+    dependencies:
+      - functional_requirements
+    hitl: true
+    hitl_reason: Human reviews functional requirements for completeness and correctness
+    failure_escalation:
+      - Escalate to business analyst if requirements are incomplete or ambiguous.
+    references: []
+  - id: functional_requirements_combiner
+    agent: FunctionalRequirementsCombiner
+    role: Analyst/Combiner
+    inputs_spec:
+      - name: reviewed_functional_requirements
+        description: Reviewed and prioritized functional requirements.
+        format: List of reviewed requirement objects
+    outputs_spec:
+      - name: final_functional_requirements
+        description: Final consolidated list of functional requirements, ready for NFR analysis.
+        format: List of consolidated requirement objects
+        example: |
+          - description: "User can upload documents securely"
+            priority: "High"
+    acceptance_criteria:
+      - All reviewed requirements are consolidated without duplication.
+      - Conflicting requirements are resolved or flagged.
+      - The final list is ready for non-functional requirements analysis.
+      - Ensure all referenced artifacts are current and versioned.
+    agent_tasks:
+      - Consolidate reviewed requirements, removing duplicates.
+      - Resolve or flag conflicting requirements.
+      - Prepare final list for NFR analysis.
+      - Ensure all references are current and versioned.
+    dependencies:
+      - reviewed_functional_requirements
+    failure_escalation:
+      - Escalate to product owner if conflicts remain unresolved.
+    references: []
+  - id: non_functional_requirements
+    agent: NonFunctionalRequirementsAgent
+    role: Solution Architect
+    inputs_spec:
+      - name: final_functional_requirements
+        description: Final list of consolidated functional requirements.
+        format: List of requirement objects
+    outputs_spec:
+      - name: non_functional_requirements
+        description: List of non-functional requirements (NFRs) covering key quality attributes.
+        format: List of NFR objects (category, description, measurable)
+        example: |
+          - category: "Performance"
+            description: "System handles 1000 concurrent users"
+            measurable: true
+    acceptance_criteria:
+      - All relevant non-functional requirements (NFRs) are identified.
+      - NFRs cover performance, security, scalability, reliability, etc.
+      - NFRs are clear and measurable where possible.
+    agent_tasks:
+      - Identify and document all relevant NFRs.
+      - Ensure NFRs are clear and measurable where possible.
+    dependencies:
+      - final_functional_requirements
+    failure_escalation:
+      - Escalate to solution architect if NFRs are missing or unclear.
+    references: []
+  - id: non_functional_requirements_reviewer
+    agent: NonFunctionalRequirementsReviewerAgent
+    role: Systems Analyst
+    inputs_spec:
+      - name: non_functional_requirements
+        description: List of non-functional requirements (NFRs).
+        format: List of NFR objects
+    outputs_spec:
+      - name: reviewed_nfr
+        description: Reviewed and validated NFRs, with risks and gaps flagged.
+        format: List of reviewed NFR objects (description, issues, risks)
+        example: |
+          - category: "Performance"
+            description: "System handles 1000 concurrent users"
+            risks: []
+    acceptance_criteria:
+      - All NFRs are reviewed for completeness and correctness.
+      - Missing or conflicting NFRs are flagged.
+      - Risks related to NFRs are identified.
+    agent_tasks:
+      - Review NFRs for completeness and correctness.
+      - Identify and flag missing or conflicting NFRs.
+      - Identify risks related to NFRs.
+    dependencies:
+      - non_functional_requirements
+    hitl: true
+    hitl_reason: Human reviews non-functional requirements for risks and omissions
+    failure_escalation:
+      - Escalate to solution architect if NFR risks are not addressed.
+    references: []
+  - id: non_functional_requirements_combiner
+    agent: NonFunctionalRequirementsCombiner
+    role: Analyst/Combiner
+    inputs_spec:
+      - name: reviewed_nfr
+        description: Reviewed and validated NFRs.
+        format: List of reviewed NFR objects
+    outputs_spec:
+      - name: final_non_functional_requirements
+        description: Final consolidated list of NFRs, with overlaps/contradictions resolved.
+        format: List of consolidated NFR objects
+        example: |
+          - category: "Performance"
+            description: "System handles 1000 concurrent users"
+    acceptance_criteria:
+      - All reviewed NFRs are consolidated into a single list.
+      - Overlaps or contradictions are resolved or flagged.
+      - Ensure all referenced artifacts are current and versioned.
+    agent_tasks:
+      - Consolidate reviewed NFRs.
+      - Resolve or flag overlaps and contradictions.
+      - Ensure all references are current and versioned.
+    dependencies:
+      - reviewed_nfr
+    failure_escalation:
+      - Escalate to systems analyst if contradictions remain unresolved.
+    references: []
+  - id: constraints
+    agent: ConstraintsAgent
+    role: Project Manager
+    inputs_spec:
+      - name: final_non_functional_requirements
+        description: Final list of non-functional requirements.
+        format: List of NFR objects
+    outputs_spec:
+      - name: project_constraints
+        description: All identified project constraints, with impact on requirements noted.
+        format: List of constraint objects (description, impacted_requirements)
+        example: |
+          - description: "Must use AWS GovCloud"
+            impacted_requirements: ["Data residency"]
+    acceptance_criteria:
+      - All project constraints are identified and listed.
+      - Each constraint is described clearly.
+      - Impact of constraints on requirements is noted.
+    agent_tasks:
+      - Identify and document all project constraints.
+      - Describe each constraint clearly.
+      - Note impact of constraints on requirements.
+    dependencies:
+      - final_non_functional_requirements
+    failure_escalation:
+      - Escalate to PMO if constraints are unclear or missing.
+    references: []
+  - id: assumptions
+    agent: AssumptionsAgent
+    role: Technical Lead
+    inputs_spec:
+      - name: project_constraints
+        description: List of project constraints, with impacted requirements.
+        format: List of constraint objects
+    outputs_spec:
+      - name: project_assumptions
+        description: Explicitly listed project assumptions, with mapping to requirements or constraints.
+        format: List of assumption objects (description, mapped_requirement_or_constraint, risk_level)
+        example: |
+          - description: "Users will have SSO available"
+            mapped_constraint: "Must use company IdP"
+            risk_level: "Medium"
+    acceptance_criteria:
+      - All project assumptions are explicitly listed.
+      - Unverified or risky assumptions are flagged.
+      - Assumptions are mapped to requirements or constraints.
+    agent_tasks:
+      - List all project assumptions.
+      - Flag unverified or risky assumptions.
+      - Map assumptions to requirements or constraints.
+    dependencies:
+      - project_constraints
+    failure_escalation:
+      - Escalate to technical lead if assumptions are not validated.
+    references: []
+  - id: constraints_assumptions_combiner
+    agent: ConstraintsAssumptionsCombiner
+    role: Analyst/Combiner
+    inputs_spec:
+      - name: project_constraints
+        description: List of project constraints.
+        format: List of constraint objects
+      - name: project_assumptions
+        description: List of project assumptions.
+        format: List of assumption objects
+    outputs_spec:
+      - name: constraints_and_assumptions
+        description: Synthesized view of all constraints and assumptions, with conflicts/gaps flagged.
+        format: List of combined objects (constraint/assumption, mapping, issues)
+        example: |
+          - constraint: "Must use AWS GovCloud"
+            assumption: "Cloud services available in region"
+            issues: []
+    acceptance_criteria:
+      - Constraints and assumptions are synthesized into a coherent list.
+      - Conflicts or gaps are identified and flagged.
+      - Ensure all referenced artifacts are current and versioned.
+    agent_tasks:
+      - Synthesize constraints and assumptions into a coherent list.
+      - Identify and flag conflicts or gaps.
+      - Ensure all references are current and versioned.
+    dependencies:
+      - project_constraints
+      - project_assumptions
+    hitl: true
+    hitl_reason: Human ensures constraints and assumptions are correctly synthesized
+    failure_escalation:
+      - Escalate to PMO if synthesis is incomplete or conflicts are unresolved.
+    references: []
+  - id: clarification_questions
+    agent: ClarificationQuestionsAgent
+    role: Business Analyst
+    inputs_spec:
+      - name: constraints_and_assumptions
+        description: Synthesized list of constraints and assumptions.
+        format: List of combined objects
+    outputs_spec:
+      - name: clarification_questions
+        description: List of clear and actionable clarification questions, prioritized by importance or risk.
+        format: List of question objects (question, related_constraint_or_assumption, priority)
+        example: |
+          - question: "Is SSO required for all user roles?"
+            related_constraint: "Must use company IdP"
+            priority: "High"
+    acceptance_criteria:
+      - All unclear points are turned into clarification questions.
+      - Each question is clear and actionable.
+      - Questions are prioritized by importance or risk.
+    agent_tasks:
+      - Identify unclear points and turn them into questions.
+      - Ensure questions are clear and actionable.
+      - Prioritize questions by importance or risk.
+    dependencies:
+      - constraints_and_assumptions
+    hitl: true
+    hitl_reason: Human generates and reviews clarification questions for accuracy
+    failure_escalation:
+      - Escalate to project sponsor if critical clarifications are not obtained.
+    references: []
+  - id: risk
+    agent: RiskAgent
+    role: Risk Manager
+    inputs_spec:
+      - name: constraints_and_assumptions
+        description: Synthesized list of constraints and assumptions.
+        format: List of combined objects
+    outputs_spec:
+      - name: project_risks
+        description: List of major project risks, categorized and with impact/likelihood estimates.
+        format: List of risk objects (description, category, impact, likelihood)
+        example: |
+          - description: "Cloud service unavailable in region"
+            category: "Technical"
+            impact: "High"
+            likelihood: "Medium"
+    acceptance_criteria:
+      - All major project risks are identified and described.
+      - Risks are categorized (e.g., technical, business, security).
+      - Potential impact and likelihood are estimated for each risk.
+    agent_tasks:
+      - Identify and describe all major project risks.
+      - Categorize risks.
+      - Estimate impact and likelihood for each risk.
+    dependencies:
+      - constraints_and_assumptions
+    failure_escalation:
+      - Escalate to risk manager if high-impact risks are not addressed.
+    references: []
+  - id: dependency
+    agent: DependencyAgent
+    role: Solution Architect
+    inputs_spec:
+      - name: project_risks
+        description: List of major project risks.
+        format: List of risk objects
+    outputs_spec:
+      - name: project_dependencies
+        description: List of key project dependencies, with impact and associated risks.
+        format: List of dependency objects (description, impact, related_risks)
+        example: |
+          - description: "External authentication service"
+            impact: "Critical for login"
+            related_risks: ["Service downtime"]
+    acceptance_criteria:
+      - All key dependencies are listed (internal/external).
+      - Each dependency is described with its impact.
+      - Risks from dependencies are identified.
+    agent_tasks:
+      - List all key dependencies.
+      - Describe each dependency's impact.
+      - Identify risks from dependencies.
+    dependencies:
+      - project_risks
+    failure_escalation:
+      - Escalate to solution architect if critical dependencies are not addressed.
+    references: []
+  - id: risk_dependency_combiner
+    agent: RiskDependencyCombiner
+    role: Analyst/Combiner
+    inputs_spec:
+      - name: project_risks
+        description: List of major project risks.
+        format: List of risk objects
+      - name: project_dependencies
+        description: List of key project dependencies.
+        format: List of dependency objects
+    outputs_spec:
+      - name: risks_and_dependencies
+        description: Combined view of risks and dependencies, with interactions and gaps flagged.
+        format: List of combined objects (risk, dependency, interaction, notes)
+        example: |
+          - risk: "Service downtime"
+            dependency: "External authentication service"
+            interaction: "Critical path"
+            notes: []
+    acceptance_criteria:
+      - Risks and dependencies are combined into a single coherent view.
+      - Interactions or compounding effects are identified.
+      - Gaps or missing items are flagged.
+      - Ensure all referenced artifacts are current and versioned.
+    agent_tasks:
+      - Combine risks and dependencies into a coherent view.
+      - Identify interactions or compounding effects.
+      - Flag gaps or missing items.
+      - Ensure all references are current and versioned.
+    dependencies:
+      - project_risks
+      - project_dependencies
+    hitl: true
+    hitl_reason: Human validates combined risks and dependencies
+    failure_escalation:
+      - Escalate to risk manager if major interactions or gaps are not addressed.
+    references: []
+  - id: solution_approach
+    agent: SolutionApproachAgent
+    role: Solution Architect
+    inputs_spec:
+      - name: risks_and_dependencies
+        description: Combined view of risks and dependencies.
+        format: List of combined objects
+    outputs_spec:
+      - name: solution_approach
+        description: Proposed solution approach addressing requirements, risks, and dependencies, with feasibility and tradeoffs.
+        format: "Structured document (sections: approach, requirements mapping, risk/dependency mitigation, tradeoffs, open questions)"
+        example: |
+          approach: "Microservices on AWS"
+          requirements_mapping: ["Meets scalability, reliability"]
+          risk_mitigation: ["Multi-region deploy"]
+          tradeoffs: ["Increased ops complexity"]
+          open_questions: []
+    acceptance_criteria:
+      - Solution approach addresses all key requirements, risks, and dependencies.
+      - Feasibility and major tradeoffs are described.
+      - Open questions or unresolved risks are flagged.
+    agent_tasks:
+      - Propose solution approach addressing all requirements, risks, and dependencies.
+      - Describe feasibility and major tradeoffs.
+      - Flag open questions or unresolved risks.
+    dependencies:
+      - risks_and_dependencies
+    hitl: true
+    hitl_reason: Human oversight of solution approach for feasibility and risk
+    failure_escalation:
+      - Escalate to solution architect or PM if risks are not adequately addressed.
+    references: []
+  - id: security_needs
+    agent: SecurityNeedsAgent
+    role: Security Officer
+    inputs_spec:
+      - name: solution_approach
+        description: Proposed solution approach, including risk/dependency mitigation.
+        format: Structured document
+    outputs_spec:
+      - name: security_needs
+        description: All security needs for the planned solution, covering data, infra, and compliance.
+        format: List of security need objects (area, need, gap_flag)
+        example: |
+          - area: "Data"
+            need: "Encryption at rest"
+            gap_flag: false
+    acceptance_criteria:
+      - All security needs are identified for the planned solution.
+      - Needs cover data, infrastructure, and compliance aspects.
+      - Gaps or concerns are flagged for further action.
+    agent_tasks:
+      - Identify all security needs for the solution.
+      - Ensure needs cover data, infra, and compliance.
+      - Flag any gaps or concerns for further action.
+    dependencies:
+      - solution_approach
+    failure_escalation:
+      - Escalate to security lead if security needs are incomplete.
+    references: []
+  - id: devops_planning
+    agent: DevOpsPlanningAgent
+    role: DevOps/Cloud Architect
+    inputs_spec:
+      - name: security_needs
+        description: List of security needs for the planned solution.
+        format: List of security need objects
+    outputs_spec:
+      - name: devops_plan
+        description: DevOps plan covering CI/CD, automation, cloud readiness, and security/compliance.
+        format: "Structured plan (sections: CI/CD, automation, cloud, security, compliance, risks/gaps)"
+        example: |
+          ci_cd: "GitHub Actions"
+          automation: "Terraform for infra"
+          cloud: "AWS"
+          security: ["SAST", "Container scanning"]
+          compliance: ["HIPAA"]
+          risks: ["Pipeline lacks DAST"]
+    acceptance_criteria:
+      - DevOps plan covers CI/CD, automation, and cloud readiness.
+      - Security and compliance considerations are included.
+      - Gaps or risks in the plan are identified.
+    agent_tasks:
+      - Develop DevOps plan covering all required areas.
+      - Include security and compliance considerations.
+      - Identify and flag gaps or risks.
+    dependencies:
+      - security_needs
+    failure_escalation:
+      - Escalate to DevOps lead if critical gaps are not addressed.
+    references: []
+  - id: acceptance_criteria
+    agent: AcceptanceCriteriaAgent
+    role: QA Lead
+    inputs_spec:
+      - name: devops_plan
+        description: DevOps plan with security, compliance, and cloud readiness.
+        format: Structured plan
+    outputs_spec:
+      - name: acceptance_criteria
+        description: Clear, measurable, and testable acceptance criteria covering functional and non-functional aspects.
+        format: List of criteria objects (description, measurable, testable, aspect)
+        example: |
+          - description: "All code passes SAST"
+            measurable: true
+            testable: true
+            aspect: "Security"
+    acceptance_criteria:
+      - Acceptance criteria are clear, measurable, and testable.
+      - Criteria cover both functional and non-functional aspects.
+      - Missing or ambiguous criteria are flagged.
+    agent_tasks:
+      - Define acceptance criteria covering all relevant aspects.
+      - Ensure criteria are measurable and testable.
+      - Flag missing or ambiguous criteria.
+    dependencies:
+      - devops_plan
+    failure_escalation:
+      - Escalate to QA lead if criteria are incomplete or unclear.
+    references: []
+  - id: documentation
+    agent: DocumentationAgent
+    role: Technical Writer
+    inputs_spec:
+      - name: acceptance_criteria
+        description: List of acceptance criteria covering all aspects.
+        format: List of criteria objects
+    outputs_spec:
+      - name: requirements_documentation
+        description: Comprehensive documentation of all requirements and criteria, clearly structured.
+        format: "Structured documentation (sections: requirements, acceptance criteria, structure, notes)"
+        example: |
+          requirements: ["User upload", "Secure storage"]
+          acceptance_criteria: ["All code passes SAST"]
+    acceptance_criteria:
+      - Documentation covers all requirements and criteria.
+      - Structure is clear and easy to follow.
+      - Missing information or inconsistencies are flagged.
+    agent_tasks:
+      - Document all requirements and acceptance criteria.
+      - Ensure documentation structure is clear and comprehensive.
+      - Flag missing information or inconsistencies.
+    dependencies:
+      - acceptance_criteria
+    failure_escalation:
+      - Escalate to technical writer lead if documentation is incomplete.
+    references: []
+  - id: synthesis_consolidation
+    agent: SynthesisConsolidationAgent
+    role: Lead Analyst/PM
+    inputs_spec:
+      - name: requirements_documentation
+        description: Comprehensive documentation of all requirements and criteria.
+        format: Structured documentation
+    outputs_spec:
+      - name: requirements_package
+        description: Complete requirements package with all documents/artifacts, ready for handoff.
+        format: Package (list of documents, version info, approval status)
+        example: |
+          documents: ["requirements.md", "criteria.xlsx"]
+          version: "v1.0"
+          approvals: ["PO", "QA"]
+    acceptance_criteria:
+      - Requirements package is complete and consistent.
+      - All key documents and artifacts are included.
+      - Gaps, inconsistencies, or missing approvals are flagged.
+      - Ensure all referenced artifacts are current and versioned.
+    agent_tasks:
+      - Consolidate and validate requirements package.
+      - Ensure all key documents and artifacts are included.
+      - Flag any gaps, inconsistencies, or missing approvals.
+      - Ensure all references are current and versioned.
+    dependencies:
+      - requirements_documentation
+    hitl: true
+    hitl_reason: Human consolidates and validates requirements package
+    failure_escalation:
+      - Escalate to PM if requirements package is incomplete.
+    references: []
+  - id: requirements_traceability
+    agent: RequirementsTraceabilityAgent
+    role: QA Analyst/Automation
+    inputs_spec:
+      - name: requirements_package
+        description: Complete requirements package including all requirements, criteria, and artifacts from the Plan stage.
+        format: Package (list of documents, version info, approval status)
+        example: |
+          documents: ["requirements.md", "criteria.xlsx"]
+          version: "v1.0"
+          approvals: ["PO", "QA"]
+    outputs_spec:
+      - name: requirements_traceability_report
+        description: Traceability matrix linking requirements to tests and deliverables, with gaps and ambiguities flagged.
+        format: Traceability matrix artifact (requirements, mapped_tests, mapped_deliverables, gaps)
+        example: |
+          - requirement: "User can upload documents securely"
+            mapped_tests: ["TC-001", "TC-002"]
+            mapped_deliverables: ["secure_upload_module"]
+            gaps: []
+    agent_tasks:
+      - Generate a traceability matrix linking each requirement to corresponding tests and deliverables.
+      - Identify and flag missing or ambiguous links between requirements and downstream artifacts.
+      - Structure the traceability report for easy consumption by QA and project stakeholders.
+    acceptance_criteria:
+      - Traceability matrix links all requirements to corresponding tests and deliverables.
+      - Missing or ambiguous links are identified and flagged for review.
+      - Traceability report is organized and accessible for QA and stakeholders.
+    dependencies:
+      - requirements_package
+    failure_escalation:
+      - Escalate to QA analyst or requirements owner if traceability gaps are found and not resolved.
+    references: []
+    hitl: false
+  - id: plan_kpi_agent
+    agent: StageKPIAgent
+    role: Plan KPI Analyst
+    inputs_spec:
+      - name: plan_stage_milestone
+        description: Structured milestone plan for the Plan stage, including security/cloud milestones and dependencies.
+        format: List of milestone objects
+        example: |
+          - id: M1
+            description: "Define requirements"
+            dependencies: []
+            target_date: "2024-07-01"
+            owner: "PM"
+            status: "planned"
+            acceptance_criteria: ["Requirements signed off"]
+            risks: []
+    outputs_spec:
+      - name: plan_kpi_report
+        description: KPI report for Plan stage, including milestone completion, requirements clarity, risk identification, trends, and anomalies.
+        format: "Structured KPI report (sections: milestone_completion, requirements_clarity, risk_identification_rate, trends, anomalies, visualization)"
+        example: |
+          milestone_completion: 80
+          requirements_clarity: "High"
+          risk_identification_rate: "5 new risks/week"
+          trends: ["Improving clarity"]
+          anomalies: []
+    agent_tasks:
+      - Define and update key Plan stage KPIs (milestone completion, requirements clarity, risk identification rate).
+      - Report KPI data for each milestone.
+      - Flag trends, anomalies, or deviations in KPIs.
+      - Visualize KPI trends over time and compare to past project baselines.
+    acceptance_criteria:
+      - Key Plan stage KPIs are defined and tracked (e.g., milestone completion rate, requirements clarity, risk identification rate).
+      - KPI data is updated and reported for each milestone.
+      - Trends, anomalies, or deviations in KPIs are flagged for review.
+      - KPI trends are visualized over time and compared to past project baselines.
+      - Outliers and deviations are flagged for review.
+    dependencies:
+      - plan_stage_milestone
+    failure_escalation:
+      - Escalate to KPI analyst or PM if KPIs are missing, unclear, or not up to date.
+    references: []
+    hitl: false
+  - id: plan_success_criteria_tracker
+    agent: SuccessCriteriaTrackerAgent
+    role: Plan Success Criteria Tracker
+    inputs_spec:
+      - name: plan_stage_milestone
+        description: Structured milestone plan for the Plan stage.
+        format: List of milestone objects
+    outputs_spec:
+      - name: plan_success_criteria_status
+        description: Status of Plan stage success criteria, including progress, blockers, and risks.
+        format: List of criteria status objects (criterion, status, blockers, risks)
+        example: |
+          - criterion: "Requirements signoff"
+            status: "complete"
+            blockers: []
+            risks: []
+    agent_tasks:
+      - Define and track Plan stage success criteria.
+      - Report progress and blockers for each criterion.
+      - Flag risks or issues affecting Plan stage success criteria.
+    acceptance_criteria:
+      - Plan stage success criteria are clearly defined and tracked.
+      - Progress and blockers for each criterion are reported.
+      - Any risks or issues affecting Plan stage success criteria are flagged.
+    dependencies:
+      - plan_stage_milestone
+    failure_escalation:
+      - Escalate to criteria tracker or PM if criteria are unclear or not met.
+    references: []
+    hitl: false
+  - id: plan_escalation_handler
+    agent: EscalationHandlerAgent
+    role: Project Escalation Manager
+    inputs_spec:
+      - name: plan_success_criteria_status
+        description: Status of Plan stage success criteria.
+        format: List of criteria status objects
+    outputs_spec:
+      - name: plan_escalation_report
+        description: Escalation report for unresolved blockers, owners, deadlines, and dashboard visibility.
+        format: "Structured escalation report (sections: at_risk_criteria, owners, deadlines, status)"
+        example: |
+          at_risk_criteria: ["Requirements signoff"]
+          owners: ["PM"]
+          deadlines: ["2024-07-10"]
+          status: "escalated"
+    agent_tasks:
+      - Review all "At Risk" or "Not Met" criteria for escalation.
+      - Assign owners and deadlines for resolution.
+      - Make escalation status visible in dashboard and audit log.
+    acceptance_criteria:
+      - All "At Risk" or "Not Met" criteria are reviewed for escalation.
+      - Owners and deadlines for resolution are assigned.
+      - Escalation status is visible in the dashboard and audit log.
+    dependencies:
+      - plan_success_criteria_status
+    failure_escalation:
+      - Escalate to escalation manager or PM if blockers are not resolved.
+    references: []
+    hitl: true
+    hitl_reason: Human ensures appropriate escalation/action for unresolved blockers
+  - id: plan_readiness_checker
+    agent: ReadinessCheckerAgent
+    role: Gatekeeper Bot
+    inputs_spec:
+      - name: plan_stage_milestone
+        description: Plan stage milestone plan.
+        format: List of milestone objects
+      - name: plan_best_practice_report
+        description: Best practice review report for Plan stage.
+        format: Structured report
+      - name: plan_kpi_report
+        description: KPI report for Plan stage.
+        format: Structured KPI report
+    outputs_spec:
+      - name: plan_readiness_status
+        description: Readiness status for Plan stage, including criteria, issues, approvals, and evidence.
+        format: Structured status object (criteria_met, issues, approvals, evidence, ready_for_next_stage)
+        example: |
+          criteria_met: true
+          issues: []
+          approvals: ["PM"]
+          evidence: ["Audit log"]
+          ready_for_next_stage: true
+    agent_tasks:
+      - Check all mandatory Plan stage criteria are met.
+      - Ensure no open critical issues in milestones, best practice, or KPI.
+      - Verify all required approvals and evidence are present.
+      - Mark stage "Ready for next stage" only if above are true.
+    acceptance_criteria:
+      - All mandatory plan criteria are met.
+      - No open critical issues in milestones, best practice, or KPI.
+      - All required approvals and evidence are present.
+      - Stage is marked "Ready for next stage" only if above are true.
+    dependencies:
+      - plan_stage_milestone
+      - plan_best_practice_report
+      - plan_kpi_report
+    failure_escalation:
+      - Escalate to gatekeeper or PM if readiness is not achieved.
+    references: []
+    hitl: false
+  - id: plan_go_nogo
+    agent: GoNoGoDecisionAgent
+    role: Stage Owner/Stakeholders
+    inputs_spec:
+      - name: plan_readiness_status
+        description: Readiness status for Plan stage.
+        format: Structured status object
+    outputs_spec:
+      - name: plan_go_nogo_decision
+        description: Go/No-Go decision with rationale and review of blockers, risks, and criteria.
+        format: Structured decision object (decision, rationale, reviewed_items)
+        example: |
+          decision: "Go"
+          rationale: "All criteria met"
+          reviewed_items: ["Blockers", "Risks"]
+    agent_tasks:
+      - Review all blockers, risks, and criteria.
+      - Record Go/No-Go decision and rationale.
+    acceptance_criteria:
+      - All blockers, risks, and criteria reviewed.
+      - Go/No-Go decision and rationale recorded.
+    dependencies:
+      - plan_readiness_status
+    failure_escalation:
+      - Escalate to stage owner if decision cannot be made.
+    references: []
+    hitl: true
+    hitl_reason: Human review required for Go/No-Go decision
+  - id: plan_progress_dashboard
+    agent: ProgressDashboardAgent
+    role: Plan Progress Dashboard Owner
+    inputs_spec:
+      - name: plan_kpi_report
+        description: KPI report for Plan stage.
+        format: Structured KPI report
+      - name: plan_success_criteria_status
+        description: Status of Plan stage success criteria.
+        format: List of criteria status objects
+      - name: plan_stage_milestone
+        description: Plan stage milestone plan.
+        format: List of milestone objects
+    outputs_spec:
+      - name: plan_progress_dashboard
+        description: Dashboard visualizing Plan KPIs, success criteria, milestones, highlighting gaps, bottlenecks, and critical paths.
+        format: "Dashboard artifact (sections: KPIs, criteria, milestones, gaps, bottlenecks, critical_path)"
+        example: |
+          KPIs: ["milestone_completion", "requirements_clarity"]
+          criteria: ["Requirements signoff"]
+          milestones: ["M1"]
+          gaps: []
+          bottlenecks: []
+          critical_path: ["M1"]
+    agent_tasks:
+      - Visualize Plan KPIs, success criteria, and milestones in dashboard.
+      - Update dashboard in real time and ensure accessibility.
+      - Highlight gaps, issues, critical path, blocked dependencies, bottlenecks, and overdue milestones.
+    acceptance_criteria:
+      - Plan KPIs, success criteria, and milestones are visualized in a dashboard.
+      - Dashboard is updated in real time and accessible to stakeholders.
+      - Gaps or issues in progress are highlighted for action.
+      - Critical path milestones are highlighted.
+      - Blocked dependencies and downstream impacts are flagged.
+      - Bottlenecks or overdue milestones are visually emphasized.
+    dependencies:
+      - plan_kpi_report
+      - plan_success_criteria_status
+      - plan_stage_milestone
+    failure_escalation:
+      - Escalate to dashboard owner or PM if dashboard is not current or actionable.
+    references: []
+    hitl: false
+  - id: plan_observability_export
+    agent: ObservabilityExportAgent
+    role: SRE/Analytics
+    inputs_spec:
+      - name: plan_progress_dashboard
+        description: Plan progress dashboard artifact.
+        format: Dashboard artifact
+    outputs_spec:
+      - name: plan_observability_export
+        description: Exported pipeline metrics/KPIs for external analytics/monitoring, with flagged observability gaps.
+        format: Export artifact (metrics, flagged_gaps)
+        example: |
+          metrics: ["milestone_completion"]
+          flagged_gaps: []
+    agent_tasks:
+      - Export pipeline metrics/KPIs to external analytics or monitoring.
+      - Flag any gaps in observability.
+    acceptance_criteria:
+      - Pipeline metrics/KPIs exported to external analytics/monitoring.
+      - Gaps in observability are flagged.
+    dependencies:
+      - plan_progress_dashboard
+    failure_escalation:
+      - Escalate to SRE or analytics lead if observability is incomplete.
+    references: []
+    hitl: false
+  - id: plan_feedback_loop
+    agent: FeedbackLoopAgent
+    role: CI/CD Coach/Automation
+    inputs_spec:
+      - name: plan_progress_dashboard
+        description: Plan progress dashboard artifact.
+        format: Dashboard artifact
+    outputs_spec:
+      - name: plan_feedback_items
+        description: List of issues and improvement suggestions routed to Retrospective, tracked for resolution.
+        format: List of feedback objects (issue, suggestion, status, resolution)
+        example: |
+          - issue: "Milestone delay"
+            suggestion: "Increase code reviews"
+            status: "open"
+            resolution: ""
+    agent_tasks:
+      - Route all issues and improvement suggestions to Retrospective.
+      - Track feedback for action and resolution.
+    acceptance_criteria:
+      - All issues and improvement suggestions are routed to Retrospective.
+      - Feedback is tracked for action and resolution.
+    dependencies:
+      - plan_progress_dashboard
+    failure_escalation:
+      - Escalate to CI/CD coach if feedback is not acted on.
+    references: []
+    hitl: false
+  - id: plan_notification_agent
+    agent: NotificationAgent
+    role: PMO Communications
+    inputs_spec:
+      - name: plan_progress_dashboard
+        description: Plan progress dashboard artifact.
+        format: Dashboard artifact
+      - name: plan_escalation_report
+        description: Plan escalation report artifact.
+        format: Structured escalation report
+    outputs_spec:
+      - name: plan_notifications
+        description: Notifications to stakeholders on key stage events, blockers, escalations, risks, with audit log.
+        format: List of notification objects (recipient, event, detail, timestamp)
+        example: |
+          - recipient: "Stakeholders"
+            event: "Milestone completed"
+            detail: "Requirements signoff"
+            timestamp: "2024-07-01T10:00:00Z"
+    agent_tasks:
+      - Notify all stakeholders on key stage events.
+      - Communicate blockers, escalations, and major risks in real time.
+      - Log notification delivery for audit.
+    acceptance_criteria:
+      - All stakeholders receive updates on key stage events.
+      - Blockers, escalations, and major risks are communicated in real time.
+      - Notification delivery is logged for audit.
+    dependencies:
+      - plan_progress_dashboard
+      - plan_escalation_report
+    failure_escalation:
+      - Escalate to PMO if notifications are not delivered or logged.
+    references: []
+    hitl: false
+  - id: plan_audit_log_agent
+    agent: AuditLogAgent
+    role: Compliance Bot
+    inputs_spec:
+      - name: plan_progress_dashboard
+        description: Plan progress dashboard artifact.
+        format: Dashboard artifact
+      - name: plan_notification_agent
+        description: Plan notification delivery log.
+        format: List of notification objects
+    outputs_spec:
+      - name: plan_audit_log
+        description: Complete audit log of agent actions, transitions, signoffs, escalations, notifications, cryptographically signed and archived.
+        format: Audit log artifact (entries, signature, archive_location, access)
+        example: |
+          entries: ["Milestone completed", "Escalation raised"]
+          signature: "abc123"
+          archive_location: "s3://audit-logs/"
+          access: "compliance"
+    agent_tasks:
+      - Record every agent action and transition with timestamp, user/agent, and artifact link.
+      - Log major events (signoffs, escalations, notifications, exceptions).
+      - Cryptographically sign and archive logs in secure, tamper-evident location.
+      - Ensure audit log is accessible for compliance review.
+    acceptance_criteria:
+      - Every agent action and transition is recorded with timestamp, user/agent, and artifact link.
+      - Major events (signoffs, escalations, notifications, exceptions) are explicitly logged.
+      - Logs are cryptographically signed and archived in a secure, tamper-evident location.
+      - Audit log is accessible for compliance review.
+    dependencies:
+      - plan_progress_dashboard
+      - plan_notification_agent
+    failure_escalation:
+      - Escalate to compliance or audit lead if logs are incomplete or inaccessible.
+    references: []
+    hitl: false
+  - id: plan_evidence_collector
+    agent: EvidenceCollectorAgent
+    role: Compliance Evidence Bot
+    inputs_spec:
+      - name: plan_audit_log
+        description: Plan stage audit log artifact.
+        format: Audit log artifact
+      - name: plan_success_criteria_status
+        description: Status of Plan stage success criteria.
+        format: List of criteria status objects
+      - name: plan_stage_milestone
+        description: Plan stage milestone plan.
+        format: List of milestone objects
+    outputs_spec:
+      - name: plan_evidence_package
+        description: Evidence package for Plan stage, including all artifacts, audit logs, signoffs, and KPIs, linked to compliance requirements.
+        format: Evidence package artifact (artifacts, hashes, compliance_links, archive_location, access_logs)
+        example: |
+          artifacts: ["requirements.md", "audit_log.json"]
+          hashes: ["abc123", "def456"]
+          compliance_links: ["GDPR", "HIPAA"]
+          archive_location: "s3://evidence/"
+          access_logs: ["2024-07-01T10:00:00Z - user1"]
+    agent_tasks:
+      - Collect and hash all artifacts, audit logs, signoffs, and KPIs for the Plan stage.
+      - Link evidence to compliance and regulatory requirements.
+      - Archive evidence package in tamper-evident storage.
+      - Maintain access logs for evidence package.
+    acceptance_criteria:
+      - Collects and hashes all artifacts, audit logs, signoffs, and KPIs for the stage.
+      - Evidence is linked to compliance and regulatory requirements.
+      - Evidence package is archived in tamper-evident storage.
+      - Access logs for evidence package are maintained.
+    dependencies:
+      - plan_audit_log
+      - plan_success_criteria_status
+      - plan_stage_milestone
+    failure_escalation:
+      - Escalate to compliance lead if evidence package is incomplete or not archived securely.
+    references: []
+    hitl: false
+  - id: plan_risk_trend_analyzer
+    agent: RiskTrendAnalyzerAgent
+    role: Risk Intelligence Bot
+    inputs_spec:
+      - name: plan_escalation_report
+        description: Plan stage escalation report.
+        format: Structured escalation report
+      - name: plan_progress_dashboard
+        description: Plan progress dashboard artifact.
+        format: Dashboard artifact
+      - name: plan_stage_milestone
+        description: Plan stage milestone plan.
+        format: List of milestone objects
+    outputs_spec:
+      - name: plan_risk_trend_report
+        description: Trend report of all risks, escalations, and blockers, with recurring/systemic risks flagged and mitigation recommendations.
+        format: Risk trend report artifact (risks, escalations, blockers, trends, flagged_systemic, recommendations)
+        example: |
+          risks: ["Requirement ambiguity"]
+          escalations: ["Requirements signoff delay"]
+          blockers: []
+          trends: ["Improving"]
+          flagged_systemic: ["Recurring ambiguity"]
+          recommendations: ["Improve requirements template"]
+    agent_tasks:
+      - Trend all risks, escalations, and blockers over time.
+      - Automatically flag and classify recurring or systemic risks.
+      - Share risk trend report with PMO and leadership.
+      - Include recommendations for mitigation or process changes.
+    acceptance_criteria:
+      - All risks, escalations, and blockers are trended over time.
+      - Recurring or systemic risks are automatically flagged and classified.
+      - Risk trend report is shared with PMO and leadership.
+      - Recommendations for mitigation or process changes are included.
+    dependencies:
+      - plan_escalation_report
+      - plan_progress_dashboard
+      - plan_stage_milestone
+    failure_escalation:
+      - Escalate to risk intelligence lead if trends or recommendations are missing.
+    references: []
+    hitl: false
+  - id: requirements_gathering
+    agent: RequirementsGatheringAgent
+    role: Requirements Analyst
+    inputs_spec:
+      - name: plan_stage_milestone
+        description: Plan stage milestone plan.
+        format: List of milestone objects
+    outputs_spec:
+      - name: requirements_package
+        description: Organized and approved collection of all key product and technical requirements.
+        format: Package (requirements, organization, approval_status, documentation_links)
+        example: |
+          requirements: ["User upload", "Secure storage"]
+          organization: "By feature"
+          approval_status: "Approved"
+          documentation_links: ["requirements.md"]
+    agent_tasks:
+      - Collect all key product and technical requirements from milestones and stakeholders.
+      - Organize requirements for clarity and traceability.
+      - Ensure requirements are approved and documented.
+      - Make requirements accessible to all stakeholders.
+    acceptance_criteria:
+      - All key product and technical requirements are collected, organized, and approved.
+      - Requirements are documented and accessible to all stakeholders.
+    dependencies:
+      - plan_stage_milestone
+    failure_escalation:
+      - Escalate to requirements analyst lead if requirements are missing or not approved.
+    references: []
+    hitl: false
+  - id: stakeholder_review_simulation
+    agent: StakeholderReviewSimulationAgent
+    role: Simulated Stakeholder
+    inputs_spec:
+      - name: requirements_package
+        description: Organized and approved collection of all key product and technical requirements.
+        format: Package (requirements, organization, approval_status, documentation_links)
+    outputs_spec:
+      - name: stakeholder_signoff
+        description: Stakeholder review and signoff covering all major requirements and deliverables, with documented concerns/objections.
+        format: Signoff artifact (reviewed_requirements, concerns, approval_status, reviewer, timestamp)
+        example: |
+          reviewed_requirements: ["User upload", "Secure storage"]
+          concerns: []
+          approval_status: "Approved"
+          reviewer: "Stakeholder A"
+          timestamp: "2024-07-02T12:00:00Z"
+    agent_tasks:
+      - Review all major requirements and deliverables from the requirements package.
+      - Document any concerns or objections from the stakeholder perspective.
+      - Clearly indicate approval or rejection of requirements.
+    acceptance_criteria:
+      - Stakeholder review covers all major requirements and deliverables.
+      - Concerns or objections are documented.
+      - Approval or rejection is clearly indicated.
+    dependencies:
+      - requirements_package
+    failure_escalation:
+      - Escalate to project sponsor if stakeholder signoff is not obtained or concerns are unresolved.
+    references: []
+    hitl: true
+    hitl_reason: Human-in-the-loop required for realistic stakeholder review
+  - id: plan_combiner
+    agent: SynthesisCombinerAgent
+    role: PM/Stage Lead
+    inputs_spec:
+      - name: plan_evidence_package
+        description: Evidence package for Plan stage.
+        format: Evidence package artifact
+      - name: plan_risk_trend_report
+        description: Risk trend report for Plan stage.
+        format: Risk trend report artifact
+      - name: stakeholder_signoff
+        description: Stakeholder review and signoff artifact.
+        format: Signoff artifact
+    outputs_spec:
+      - name: ready_for_solution_package
+        description: Complete, versioned package of all required Plan stage outputs, with handoff checklist for next stage.
+        format: Package (documents, version, approvals, handoff_checklist)
+        example: |
+          documents: ["requirements.md", "criteria.xlsx", "evidence.zip"]
+          version: "v1.0"
+          approvals: ["PO", "QA", "Stakeholder"]
+          handoff_checklist: ["All signoffs complete", "Evidence archived"]
+    agent_tasks:
+      - Package all required outputs from the Plan stage, ensuring completeness and versioning.
+      - Include a handoff checklist for entry into the next stage.
+      - Validate that all approvals and signoffs are present.
+    acceptance_criteria:
+      - All required outputs from the stage are packaged and versioned for handoff.
+      - Handoff checklist for next stage entry is included.
+    dependencies:
+      - plan_evidence_package
+      - plan_risk_trend_report
+      - stakeholder_signoff
+    failure_escalation:
+      - Escalate to PM if requirements package is incomplete or handoff checklist is missing.
+    references: []
+    hitl: false

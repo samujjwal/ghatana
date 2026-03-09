@@ -1,0 +1,585 @@
+/*
+ * Copyright (c) ${year} Ghatana Inc.
+ * All rights reserved.
+ *
+ * This source code and the accompanying materials are the confidential
+ * and proprietary information of Ghatana Inc. (“Confidential Information”).
+ * You shall not disclose such Confidential Information and shall use it
+ * only in accordance with the terms of the license agreement you entered
+ * into with Ghatana Inc.
+ *
+ * Unauthorized copying of this file, via any medium, is strictly prohibited.
+ * Proprietary and confidential.
+ */
+syntax = "proto3";
+package ghatana.contracts.iam.v1;
+
+import "google/protobuf/timestamp.proto";
+import "google/protobuf/field_mask.proto";
+import "google/protobuf/empty.proto";
+
+option go_package = "github.com/ghatana/contracts/gen/go/iam/v1;iamv1";
+option java_package = "com.ghatana.contracts.iam.v1";
+option java_multiple_files = true;
+option java_outer_classname = "IamProto";
+option csharp_namespace = "Ghatana.Contracts.Iam.V1";
+
+// Principal represents an authenticated entity (user or service account)
+// that can be identified and authorized.
+message PrincipalProto {
+  // Reserved for future use
+  reserved 20 to 1000;
+  reserved "reserved_20_to_1000";
+  string id = 1;
+
+  // Type of principal (USER, SERVICE_ACCOUNT, etc.)
+  string type = 2;
+
+  // Display name of the principal
+  string display_name = 3;
+
+  // Email or unique identifier of the principal
+  string email = 4;
+
+  // Assigned roles
+  repeated RoleAssignmentProto role_assignments = 5;
+
+  // Custom attributes
+  map<string, string> attributes = 6;
+
+  // Creation and update timestamps
+  google.protobuf.Timestamp create_time = 7;
+  google.protobuf.Timestamp update_time = 10 ;
+
+  // Status of the principal
+  PrincipalStatus status = 9 ;
+
+  // Metadata for audit and tracking
+  map<string, string> metadata = 1001;
+
+  // Next ID: 11
+}
+
+// Role represents a collection of permissions
+message RoleProto {
+  // Reserved for future use
+  reserved 8 to 1000;
+  reserved "reserved_8_to_1000";
+  // Unique identifier for the role
+  string id = 1;
+
+  // Human-readable name for the role
+  string name = 2;
+
+  // Description of the role
+  string description = 3;
+
+  // List of permission names this role grants
+  repeated string permissions = 4;
+
+  // Whether this is a system-managed role (cannot be modified)
+  bool system_managed = 5;
+
+  // Creation and update timestamps
+  google.protobuf.Timestamp create_time = 6;
+  google.protobuf.Timestamp update_time = 7;
+
+  // Next ID: 8
+}
+
+// RoleAssignment represents the assignment of a role to a principal
+message RoleAssignmentProto {
+  // Reserved for future use
+  reserved 6 to 1000;
+  reserved "reserved_6_to_1000";
+  // The role being assigned
+  string role_id = 1;
+
+  // The scope of the assignment (e.g., organization, project, or resource)
+  string scope = 2;
+
+  // When the role was assigned
+  google.protobuf.Timestamp assigned_at = 3;
+
+  // Who assigned this role
+  string assigned_by = 4;
+
+  // When this role assignment expires (optional)
+  google.protobuf.Timestamp expires_at = 5;
+
+  // Next ID: 6
+}
+
+// Permission represents a specific action that can be performed
+message PermissionProto {
+  // Reserved for future use
+  reserved 7 to 1000;
+  reserved "reserved_7_to_1000";
+  // Unique identifier for the permission
+  string id = 1;
+
+  // Human-readable name for the permission
+  string name = 2;
+
+  // Description of what this permission allows
+  string description = 3;
+
+  // The type of resource this permission applies to
+  string resource_type = 4;
+
+  // The action this permission represents (e.g., create, read, update, delete)
+  string action = 5;
+
+  // Whether this is a system-managed permission (cannot be modified)
+  bool system_managed = 6;
+
+  // Next ID: 7
+}
+
+// Policy represents an access control policy
+message PolicyProto {
+  // Reserved for future use
+  reserved 20 to 1000;
+  reserved "reserved_20_to_1000";
+  // Unique identifier for the policy
+  string id = 1;
+
+  // Human-readable name for the policy
+  string name = 2;
+
+  // Description of what this policy is for
+  string description = 3;
+
+  // The statements that make up this policy
+  repeated PolicyStatementProto statements = 4;
+
+  // Whether this is a system-managed policy (cannot be modified)
+  bool system_managed = 5;
+
+  // Creation and update timestamps
+  google.protobuf.Timestamp create_time = 6;
+  google.protobuf.Timestamp update_time = 7;
+
+  // Next ID: 8
+}
+
+// PolicyStatement defines a single statement in a policy
+message PolicyStatementProto {
+  // Reserved for future use
+  reserved 6 to 1000;
+  reserved "reserved_6_to_1000";
+  // Unique identifier for this statement within the policy
+  string sid = 1;
+
+  // Whether this statement allows or denies the specified actions
+  EffectProto effect = 2;
+
+  // The actions this statement applies to
+  repeated string actions = 3;
+
+  // The resources this statement applies to
+  repeated string resources = 4;
+
+  // Conditions for when this statement is in effect
+  map<string, ConditionProto> conditions = 5;
+
+  // Next ID: 6
+}
+
+// Condition represents a condition that must be met for a policy to apply
+message ConditionProto {
+  // Reserved for future use
+  reserved 3 to 1000;
+  reserved "reserved_3_to_1000";
+  // The operator to use for comparison
+  string operator = 1;
+
+  // The values to compare against
+  repeated string values = 2;
+}
+
+// EffectProto specifies whether a policy statement allows or denies access
+enum EffectProto {
+  EFFECT_UNSPECIFIED = 0;
+  EFFECT_ALLOW = 1;
+  EFFECT_DENY = 2;
+  EFFECT_DENY_OVERRIDE = 3;
+}
+
+// PrincipalStatus represents the status of a principal
+enum PrincipalStatus {
+  PRINCIPAL_STATUS_UNSPECIFIED = 0;
+  PRINCIPAL_STATUS_ACTIVE = 1;
+  PRINCIPAL_STATUS_DISABLED = 2;
+  PRINCIPAL_STATUS_LOCKED = 3;
+  PRINCIPAL_STATUS_EXPIRED = 4;
+  PRINCIPAL_STATUS_PENDING_VERIFICATION = 5;
+  PRINCIPAL_STATUS_SUSPENDED = 6;
+}
+
+// AuthToken represents an authentication token
+message AuthTokenProto {
+  // Reserved for future use
+  reserved 6 to 1000;
+  reserved "reserved_6_to_1000";
+  // The actual token value (JWT or opaque token)
+  string token = 1;
+
+  // When the token expires (Unix timestamp in seconds)
+  int64 expires_at_epoch_seconds = 2;
+
+  // The type of token (e.g., "Bearer", "API_KEY")
+  string token_type = 3;
+
+  // The subject (user ID) this token is for
+  string subject = 4;
+
+  // The scopes this token is valid for
+  repeated string scopes = 5;
+
+  // Additional metadata about the token
+  map<string, string> metadata = 1001;
+
+  // Next ID: 7
+}
+
+// IAMService provides identity and access management functionality
+service IAMService {
+  // Principal management
+  rpc CreatePrincipal(CreatePrincipalRequestProto) returns (PrincipalProto);
+  rpc GetPrincipal(GetPrincipalRequestProto) returns (PrincipalProto);
+  rpc UpdatePrincipal(UpdatePrincipalRequestProto) returns (PrincipalProto);
+  rpc DeletePrincipal(DeletePrincipalRequestProto) returns (google.protobuf.Empty);
+  rpc ListPrincipals(ListPrincipalsRequestProto) returns (ListPrincipalsResponseProto);
+
+  // Role management
+  rpc CreateRole(CreateRoleRequestProto) returns (RoleProto);
+  rpc GetRole(GetRoleRequestProto) returns (RoleProto);
+  rpc UpdateRole(UpdateRoleRequestProto) returns (RoleProto);
+  rpc DeleteRole(DeleteRoleRequestProto) returns (google.protobuf.Empty);
+  rpc ListRoles(ListRolesRequestProto) returns (ListRolesResponseProto);
+
+  // Permission management
+  rpc CreatePermission(CreatePermissionRequestProto) returns (PermissionProto);
+  rpc GetPermission(GetPermissionRequestProto) returns (PermissionProto);
+  rpc ListPermissions(ListPermissionsRequestProto) returns (ListPermissionsResponseProto);
+
+  // Policy management
+  rpc CreatePolicy(CreatePolicyRequestProto) returns (PolicyProto);
+  rpc GetPolicy(GetPolicyRequestProto) returns (PolicyProto);
+  rpc UpdatePolicy(UpdatePolicyRequestProto) returns (PolicyProto);
+  rpc DeletePolicy(DeletePolicyRequestProto) returns (google.protobuf.Empty);
+  rpc ListPolicies(ListPoliciesRequestProto) returns (ListPoliciesResponseProto);
+
+  // Authorization
+  rpc CheckPermission(CheckPermissionRequestProto) returns (CheckPermissionResponseProto);
+  rpc ListEffectivePermissions(ListEffectivePermissionsRequestProto) returns (ListEffectivePermissionsResponseProto);
+
+  // Authentication
+  rpc IssueToken(IssueTokenRequestProto) returns (AuthTokenProto);
+  rpc ValidateToken(ValidateTokenRequestProto) returns (ValidateTokenResponseProto);
+  rpc RevokeToken(RevokeTokenRequestProto) returns (google.protobuf.Empty);
+}
+
+// Request/response messages for Principal operations
+message CreatePrincipalRequestProto {
+  // Reserved for future use
+  reserved 3 to 1000;
+  reserved "reserved_3_to_1000";
+  PrincipalProto principal = 1;
+  string request_id = 2; // Optional idempotency key
+}
+
+message GetPrincipalRequestProto {
+  // Reserved for future use
+  reserved 3 to 1000;
+  reserved "reserved_3_to_1000";
+  string id = 1;
+  google.protobuf.FieldMask read_mask = 2;
+}
+
+message UpdatePrincipalRequestProto {
+  // Reserved for future use
+  reserved 3 to 1000;
+  reserved "reserved_3_to_1000";
+  PrincipalProto principal = 1;
+  google.protobuf.FieldMask update_mask = 2;
+}
+
+message DeletePrincipalRequestProto {
+  // Reserved for future use
+  reserved 3 to 1000;
+  reserved "reserved_3_to_1000";
+  string id = 1;
+  bool force = 2; // If true, delete even if there are dependent resources
+}
+
+message ListPrincipalsRequestProto {
+  // Reserved for future use
+  reserved 5 to 1000;
+  reserved "reserved_5_to_1000";
+  int32 page_size = 1;
+  string page_token = 2;
+  string filter = 3;
+  string order_by = 4;
+}
+
+message ListPrincipalsResponseProto {
+  // Reserved for future use
+  reserved 4 to 1000;
+  reserved "reserved_4_to_1000";
+  repeated PrincipalProto principals = 1;
+  string next_page_token = 2;
+  int32 total_size = 3;
+}
+
+// Request/response messages for Role operations
+message CreateRoleRequestProto {
+  // Reserved for future use
+  reserved 2 to 1000;
+  reserved "reserved_2_to_1000";
+  RoleProto role = 1;
+}
+
+message GetRoleRequestProto {
+  // Reserved for future use
+  reserved 2 to 1000;
+  reserved "reserved_2_to_1000";
+  string id = 1;
+}
+
+message UpdateRoleRequestProto {
+  // Reserved for future use
+  reserved 3 to 1000;
+  reserved "reserved_3_to_1000";
+  RoleProto role = 1;
+  google.protobuf.FieldMask update_mask = 2;
+}
+
+message DeleteRoleRequestProto {
+  // Reserved for future use
+  reserved 3 to 1000;
+  reserved "reserved_3_to_1000";
+  string id = 1;
+  bool force = 2;
+}
+
+message ListRolesRequestProto {
+  // Reserved for future use
+  reserved 4 to 1000;
+  reserved "reserved_4_to_1000";
+  int32 page_size = 1;
+  string page_token = 2;
+  string filter = 3;
+}
+
+message ListRolesResponseProto {
+  // Reserved for future use
+  reserved 4 to 1000;
+  reserved "reserved_4_to_1000";
+  repeated RoleProto roles = 1;
+  string next_page_token = 2;
+  int32 total_size = 3;
+}
+
+// Request/response messages for Permission operations
+message CreatePermissionRequestProto {
+  // Reserved for future use
+  reserved 2 to 1000;
+  reserved "reserved_2_to_1000";
+  PermissionProto permission = 1;
+}
+
+message GetPermissionRequestProto {
+  // Reserved for future use
+  reserved 2 to 1000;
+  reserved "reserved_2_to_1000";
+  string id = 1;
+}
+
+message ListPermissionsRequestProto {
+  // Reserved for future use
+  reserved 4 to 1000;
+  reserved "reserved_4_to_1000";
+  int32 page_size = 1;
+  string page_token = 2;
+  string filter = 3;
+}
+
+message ListPermissionsResponseProto {
+  // Reserved for future use
+  reserved 4 to 1000;
+  reserved "reserved_4_to_1000";
+  repeated PermissionProto permissions = 1;
+  string next_page_token = 2;
+  int32 total_size = 3;
+}
+
+// Request/response messages for Policy operations
+message CreatePolicyRequestProto {
+  // Reserved for future use
+  reserved 2 to 1000;
+  reserved "reserved_2_to_1000";
+  PolicyProto policy = 1;
+}
+
+message GetPolicyRequestProto {
+  // Reserved for future use
+  reserved 2 to 1000;
+  reserved "reserved_2_to_1000";
+  string id = 1;
+}
+
+message UpdatePolicyRequestProto {
+  // Reserved for future use
+  reserved 3 to 1000;
+  reserved "reserved_3_to_1000";
+  PolicyProto policy = 1;
+  google.protobuf.FieldMask update_mask = 2;
+}
+
+message DeletePolicyRequestProto {
+  // Reserved for future use
+  reserved 3 to 1000;
+  reserved "reserved_3_to_1000";
+  string id = 1;
+  bool force = 2;
+}
+
+message ListPoliciesRequestProto {
+  // Reserved for future use
+  reserved 4 to 1000;
+  reserved "reserved_4_to_1000";
+  int32 page_size = 1;
+  string page_token = 2;
+  string filter = 3;
+}
+
+message ListPoliciesResponseProto {
+  // Reserved for future use
+  reserved 4 to 1000;
+  reserved "reserved_4_to_1000";
+  repeated PolicyProto policies = 1;
+  string next_page_token = 2;
+  int32 total_size = 3;
+}
+
+// Request/response messages for authorization
+message CheckPermissionRequestProto {
+  // Reserved for future use
+  reserved 4 to 1000;
+  reserved "reserved_4_to_1000";
+  string principal_id = 1;
+  string permission = 2;
+  string resource = 3;
+  map<string, string> context = 1001;
+}
+
+message CheckPermissionResponseProto {
+  // Reserved for future use
+  reserved 4 to 1000;
+  reserved "reserved_4_to_1000";
+  bool allowed = 1;
+  string reason = 2;
+  repeated string allowed_actions = 3;
+}
+
+message ListEffectivePermissionsRequestProto {
+  // Reserved for future use
+  reserved 6 to 1000;
+  reserved "reserved_6_to_1000";
+  string principal_id = 1;
+  string resource = 2;
+  string filter = 3;
+  int32 page_size = 4;
+  string page_token = 5;
+}
+
+message ListEffectivePermissionsResponseProto {
+  // Reserved for future use
+  reserved 4 to 1000;
+  reserved "reserved_4_to_1000";
+  message EffectivePermissionProto {
+    string permission = 1;
+    string resource = 2;
+    repeated string roles = 3;
+  }
+  repeated EffectivePermissionProto permissions = 1;
+  string next_page_token = 2;
+  int32 total_size = 3;
+}
+
+// Request/response messages for authentication
+message IssueTokenRequestProto {
+  // Reserved for future use
+  reserved 11 to 1000;
+  reserved "reserved_11_to_1000";
+  string grant_type = 1;
+
+  // For password grant
+  string username = 2;
+
+  string password = 3;
+
+  // For client_credentials grant
+  string client_id = 4;
+
+  string client_secret = 5;
+
+  // For refresh_token grant
+  string refresh_token = 6;
+
+  // For JWT bearer grant
+  string assertion = 7;
+
+  // Requested scopes (space-separated)
+  string scope = 8;
+
+  // Audience for the token
+  string audience = 9;
+
+  // Token expiration in seconds
+  int64 expires_in = 10;
+}
+
+message ValidateTokenRequestProto {
+  // Reserved for future use
+  reserved 4 to 1000;
+  reserved "reserved_4_to_1000";
+  string token = 1;
+  repeated string required_scopes = 2;
+  bool check_revoked = 3;
+}
+
+message ValidateTokenResponseProto {
+  // Reserved for future use
+  reserved 7 to 1000;
+  reserved "reserved_7_to_1000";
+  bool valid = 1;
+  string principal_id = 2;
+  string error = 3;
+  map<string, string> claims = 4;
+  int64 expires_at = 5;
+  repeated string scopes = 6;
+}
+
+message RevokeTokenRequestProto {
+  // Reserved for future use
+  reserved 3 to 1000;
+  reserved "reserved_3_to_1000";
+  string token = 1;
+
+  string principal_id = 2;
+}
+
+// Common error codes for IAM operations
+enum IamErrorCode {
+  IAM_ERROR_UNSPECIFIED = 0;
+  IAM_ERROR_INVALID_CREDENTIALS = 1000;
+  IAM_ERROR_PERMISSION_DENIED = 1001;
+  IAM_ERROR_ROLE_NOT_FOUND = 1002;
+  IAM_ERROR_PRINCIPAL_NOT_FOUND = 1003;
+  IAM_ERROR_INVALID_TOKEN = 1004;
+  IAM_ERROR_TOKEN_EXPIRED = 1005;
+  IAM_ERROR_INSUFFICIENT_SCOPE = 1006;
+}

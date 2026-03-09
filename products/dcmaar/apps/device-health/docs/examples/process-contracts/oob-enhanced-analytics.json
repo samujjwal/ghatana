@@ -1,0 +1,581 @@
+{
+  "id": "oob-enhanced-analytics",
+  "metadata": {
+    "name": "Enhanced OOB Web Analytics with Advanced Features",
+    "description": "Comprehensive analytics with continuous collection, time-series analysis, pattern detection, and advanced reporting",
+    "version": "2.0.0",
+    "author": "DCMAAR Team",
+    "tags": ["oob", "analytics", "enhanced", "ml", "time-series", "continuous"],
+    "createdAt": 1706832000000,
+    "updatedAt": 1706832000000
+  },
+  "dependencies": {
+    "requires": [],
+    "conflicts": ["oob-complete-analytics"],
+    "triggers": [],
+    "data": []
+  },
+  "stateManagement": {
+    "persist": true,
+    "storageKey": "oob-enhanced-analytics-state",
+    "snapshotFrequencyMs": 300000,
+    "maxHistory": 20,
+    "recoveryStrategy": "latest"
+  },
+  "monitoring": {
+    "enabled": true,
+    "metrics": ["duration", "throughput", "errors", "memory", "data-quality"],
+    "alerts": [
+      {
+        "name": "high-error-rate",
+        "metric": "errors",
+        "condition": {
+          "field": "errorRate",
+          "operator": "gt",
+          "value": 0.05
+        },
+        "severity": "high",
+        "channels": ["console", "notification"]
+      },
+      {
+        "name": "slow-collection",
+        "metric": "duration",
+        "condition": {
+          "field": "stages.collect.duration",
+          "operator": "gt",
+          "value": 30000
+        },
+        "severity": "medium",
+        "channels": ["console"]
+      }
+    ],
+    "baselines": {
+      "duration": {
+        "expected": 15000,
+        "variance": 0.3
+      },
+      "throughput": {
+        "expected": 100,
+        "variance": 0.2
+      }
+    }
+  },
+  "collect": {
+    "id": "collect",
+    "sources": [
+      {
+        "id": "continuous-page-visits",
+        "type": "page-visits",
+        "strategy": "streaming",
+        "config": {
+          "trackActiveTime": true,
+          "updateInterval": 5000,
+          "trackLifecycleStates": true
+        },
+        "continuous": {
+          "enabled": true,
+          "intervalMs": 5000,
+          "bufferSize": 100,
+          "autoFlushMs": 30000,
+          "pauseOnIdle": true,
+          "idleThresholdMs": 300000
+        },
+        "preprocessing": {
+          "enabled": true,
+          "steps": [
+            {
+              "type": "filter",
+              "config": {
+                "condition": {
+                  "field": "payload.url",
+                  "operator": "regex",
+                  "value": "^https?://"
+                }
+              },
+              "order": 10
+            },
+            {
+              "type": "deduplicate",
+              "config": {
+                "keyFields": ["payload.url", "payload.tabId"],
+                "windowMs": 1000
+              },
+              "order": 20
+            },
+            {
+              "type": "enrich",
+              "config": {
+                "addTimestamp": true,
+                "addSessionId": true,
+                "addDeviceInfo": false
+              },
+              "order": 30
+            }
+          ]
+        },
+        "quality": {
+          "minCompleteness": 0.95,
+          "maxStalenessMs": 10000,
+          "requireValidation": true
+        },
+        "cache": {
+          "enabled": true,
+          "ttlMs": 60000,
+          "keyStrategy": "url"
+        },
+        "samplingRate": 1.0,
+        "batchSize": 100
+      },
+      {
+        "id": "web-vitals-realtime",
+        "type": "web-vitals",
+        "strategy": "event-driven",
+        "config": {
+          "metrics": ["LCP", "INP", "CLS", "TTFB", "FCP", "TTI", "TBT"],
+          "collectOnPageLoad": true,
+          "collectOnVisibilityChange": false
+        },
+        "continuous": {
+          "enabled": false
+        },
+        "preprocessing": {
+          "enabled": true,
+          "steps": [
+            {
+              "type": "validate",
+              "config": {
+                "schema": "webVitalsSchema",
+                "rejectInvalid": false
+              },
+              "order": 10
+            },
+            {
+              "type": "transform",
+              "config": {
+                "normalizeRatings": true,
+                "calculateHealthScore": true
+              },
+              "order": 20
+            }
+          ]
+        },
+        "samplingRate": 1.0,
+        "batchSize": 50
+      },
+      {
+        "id": "engagement-tracking",
+        "type": "engagement",
+        "strategy": "event-driven",
+        "config": {
+          "trackClicks": true,
+          "trackScrolls": true,
+          "trackInputs": true,
+          "trackHovers": true,
+          "detectRageClicks": true,
+          "detectDeadClicks": true,
+          "sessionTimeout": 1800000
+        },
+        "continuous": {
+          "enabled": true,
+          "intervalMs": 1000,
+          "bufferSize": 500,
+          "autoFlushMs": 10000,
+          "pauseOnIdle": false
+        },
+        "preprocessing": {
+          "enabled": true,
+          "steps": [
+            {
+              "type": "deduplicate",
+              "config": {
+                "keyFields": ["type", "target", "timestamp"],
+                "windowMs": 100
+              },
+              "order": 10
+            }
+          ]
+        },
+        "samplingRate": 1.0,
+        "batchSize": 500
+      },
+      {
+        "id": "network-monitoring-sampled",
+        "type": "network",
+        "strategy": "streaming",
+        "config": {
+          "includeStats": true,
+          "trackTiming": true,
+          "trackSizes": true,
+          "captureHeaders": false
+        },
+        "preprocessing": {
+          "enabled": true,
+          "steps": [
+            {
+              "type": "filter",
+              "config": {
+                "excludeTypes": ["ping", "csp_report"]
+              },
+              "order": 10
+            }
+          ]
+        },
+        "samplingRate": 0.1,
+        "batchSize": 200
+      }
+    ],
+    "mergeStrategy": "union",
+    "timeoutMs": 20000,
+    "continuous": {
+      "enabled": true,
+      "intervalMs": 5000,
+      "bufferSize": 1000,
+      "autoFlushMs": 60000,
+      "pauseOnIdle": false
+    }
+  },
+  "analyze": {
+    "id": "analyze",
+    "operations": [
+      {
+        "id": "visit-time-series",
+        "strategy": "custom",
+        "config": {
+          "analysisType": "visit-stats",
+          "groupBy": "domain"
+        },
+        "timeSeries": {
+          "windowDurationMs": 3600000,
+          "slideIntervalMs": 300000,
+          "aggregations": ["count", "sum", "avg", "percentile"],
+          "groupBy": ["domain", "category"],
+          "percentiles": [50, 90, 95, 99]
+        },
+        "order": 100,
+        "continueOnError": false,
+        "cache": {
+          "enabled": true,
+          "ttlMs": 300000,
+          "invalidateOn": ["new-visit"]
+        }
+      },
+      {
+        "id": "engagement-statistical-analysis",
+        "strategy": "custom",
+        "config": {
+          "analysisType": "engagement-stats"
+        },
+        "statistical": {
+          "tests": ["mean", "median", "stddev", "correlation", "outliers"],
+          "confidenceLevel": 0.95,
+          "fields": ["activeTime", "clickCount", "scrollDepth"]
+        },
+        "order": 200,
+        "continueOnError": true
+      },
+      {
+        "id": "performance-pattern-detection",
+        "strategy": "anomaly",
+        "config": {
+          "thresholds": {
+            "lcp": 4000,
+            "inp": 500,
+            "cls": 0.25
+          }
+        },
+        "patterns": {
+          "patterns": ["trend", "spike", "anomaly", "correlation"],
+          "sensitivity": 0.7,
+          "minLength": 5,
+          "fields": ["payload.lcp.value", "payload.inp.value", "payload.cls.value"]
+        },
+        "order": 300,
+        "continueOnError": true
+      },
+      {
+        "id": "user-behavior-clustering",
+        "strategy": "custom",
+        "config": {
+          "analysisType": "session-analysis"
+        },
+        "ml": {
+          "algorithm": "clustering",
+          "model": {
+            "type": "kmeans",
+            "parameters": {
+              "k": 5,
+              "maxIterations": 100
+            },
+            "training": {
+              "dataSize": 1000,
+              "validationSplit": 0.2
+            }
+          },
+          "features": [
+            "sessionDuration",
+            "pageViews",
+            "totalInteractions",
+            "bounceRate"
+          ]
+        },
+        "order": 400,
+        "continueOnError": true
+      },
+      {
+        "id": "performance-forecasting",
+        "strategy": "custom",
+        "config": {
+          "type": "forecast"
+        },
+        "ml": {
+          "algorithm": "forecasting",
+          "model": {
+            "type": "arima",
+            "parameters": {
+              "p": 2,
+              "d": 1,
+              "q": 2
+            },
+            "training": {
+              "dataSize": 500,
+              "epochs": 50
+            }
+          },
+          "features": ["loadTime", "resourceCount", "networkLatency"],
+          "target": "loadTime"
+        },
+        "order": 500,
+        "continueOnError": true
+      }
+    ],
+    "parallel": false,
+    "timeoutMs": 30000,
+    "cache": {
+      "enabled": true,
+      "strategy": "hybrid",
+      "ttlMs": 600000
+    }
+  },
+  "report": {
+    "id": "report",
+    "destinations": [
+      {
+        "id": "analytics-dashboard-storage",
+        "type": "store",
+        "delivery": "store",
+        "config": {
+          "storageType": "indexeddb",
+          "key": "oob-enhanced-analytics-data",
+          "maxReports": 2000,
+          "compress": true
+        },
+        "format": "json",
+        "scheduling": {
+          "enabled": true,
+          "schedule": "0 0 * * *",
+          "type": "summary",
+          "timeWindow": {
+            "type": "last-day"
+          }
+        },
+        "visualization": {
+          "enabled": true,
+          "charts": [
+            {
+              "type": "line",
+              "data": {
+                "x": "timestamp",
+                "y": ["visits", "activeTime"],
+                "series": "domain"
+              },
+              "options": {
+                "title": "Visit Trends",
+                "smooth": true
+              }
+            },
+            {
+              "type": "heatmap",
+              "data": {
+                "x": "hour",
+                "y": "dayOfWeek",
+                "series": "clickCount"
+              },
+              "options": {
+                "title": "Engagement Heatmap"
+              }
+            },
+            {
+              "type": "bar",
+              "data": {
+                "x": "domain",
+                "y": "totalTime"
+              },
+              "options": {
+                "title": "Top Sites by Time",
+                "limit": 20
+              }
+            }
+          ],
+          "layout": "grid"
+        },
+        "export": {
+          "enabled": true,
+          "formats": ["json", "csv", "xlsx"],
+          "includeRaw": true,
+          "includeVisualizations": true,
+          "compress": true,
+          "destination": "download"
+        },
+        "incremental": {
+          "enabled": true,
+          "frequencyMs": 300000,
+          "deltaStrategy": "merge"
+        }
+      },
+      {
+        "id": "real-time-metrics",
+        "type": "store",
+        "delivery": "store",
+        "config": {
+          "storageType": "local",
+          "key": "realtime-metrics",
+          "maxReports": 100
+        },
+        "format": "json",
+        "incremental": {
+          "enabled": true,
+          "frequencyMs": 60000,
+          "deltaStrategy": "replace"
+        }
+      },
+      {
+        "id": "performance-alerts",
+        "type": "notification",
+        "delivery": "notification",
+        "config": {
+          "title": "Performance Alert",
+          "icon": "warning",
+          "priority": "high",
+          "requireAction": true
+        },
+        "format": "markdown",
+        "when": {
+          "operator": "or",
+          "conditions": [
+            {
+              "field": "data.poorPerformance",
+              "operator": "exists"
+            },
+            {
+              "field": "data.anomaliesDetected",
+              "operator": "gt",
+              "value": 3
+            }
+          ]
+        }
+      },
+      {
+        "id": "weekly-report-email",
+        "type": "custom",
+        "delivery": "custom",
+        "config": {
+          "handler": "email-reporter",
+          "recipients": ["analytics@example.com"]
+        },
+        "format": "html",
+        "scheduling": {
+          "enabled": true,
+          "schedule": "0 9 * * 1",
+          "type": "detailed",
+          "timeWindow": {
+            "type": "last-week"
+          }
+        },
+        "visualization": {
+          "enabled": true,
+          "charts": [
+            {
+              "type": "table",
+              "data": {
+                "fields": ["domain", "visits", "totalTime", "engagementRate"]
+              }
+            }
+          ],
+          "layout": "stack"
+        }
+      }
+    ],
+    "aggregate": true,
+    "includeMetadata": true,
+    "includeSummary": true,
+    "timeoutMs": 15000,
+    "deduplicate": {
+      "enabled": true,
+      "strategy": "hash",
+      "windowMs": 3600000
+    }
+  },
+  "security": {
+    "maxExecutionTimeMs": 90000,
+    "maxMemoryBytes": 209715200,
+    "maxEventsPerBatch": 5000,
+    "allowedNetworkPatterns": ["https://analytics-api.example.com/*"],
+    "deniedNetworkPatterns": ["file://*", "chrome://*", "chrome-extension://*"],
+    "allowedBrowserAPIs": [
+      "storage",
+      "tabs",
+      "webNavigation",
+      "webRequest",
+      "runtime",
+      "history",
+      "notifications",
+      "alarms"
+    ],
+    "sandboxed": true
+  },
+  "privacy": {
+    "redactionRules": [
+      {
+        "pattern": "\\b[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\\.[A-Z|a-z]{2,}\\b",
+        "replacement": "[EMAIL]",
+        "fields": ["payload.url", "payload.title", "payload.referrer"]
+      },
+      {
+        "pattern": "password|token|secret|api[_-]?key|auth|session",
+        "replacement": "[REDACTED]",
+        "fields": ["payload.url", "payload.referrer", "payload.target"]
+      },
+      {
+        "pattern": "\\b\\d{3}-\\d{2}-\\d{4}\\b",
+        "replacement": "[SSN]"
+      },
+      {
+        "pattern": "\\b\\d{4}[\\s-]?\\d{4}[\\s-]?\\d{4}[\\s-]?\\d{4}\\b",
+        "replacement": "[CARD]"
+      },
+      {
+        "pattern": "\\b(?:\\d{1,3}\\.){3}\\d{1,3}\\b",
+        "replacement": "[IP]",
+        "fields": ["metadata"]
+      }
+    ],
+    "encryptFields": ["payload.cookies", "payload.authHeaders"],
+    "retentionPeriodMs": 7776000000,
+    "anonymize": true,
+    "requireConsent": false
+  },
+  "enabled": true,
+  "schedule": "*/10 * * * *",
+  "priority": 300,
+  "maxConcurrentExecutions": 1,
+  "timeoutMs": 180000,
+  "onError": "retry",
+  "variables": {
+    "collectionInterval": "10m",
+    "minEventsForReport": 20,
+    "enableDetailedLogging": true,
+    "enableMLAnalysis": true,
+    "enableContinuousCollection": true,
+    "retentionDays": 90
+  }
+}

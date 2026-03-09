@@ -1,0 +1,109 @@
+id: test-data-agent
+name: Test Data Agent
+version: 1.0.0
+description: Generates and manages test data. Creates realistic data sets while respecting privacy.
+
+metadata:
+  level: 3  # Worker
+  domain: testing
+  tags:
+    - test-data
+    - data-generation
+    - synthetic-data
+    - privacy
+
+generator:
+  type: PIPELINE
+  steps:
+    - name: data_requirements
+      type: RULE_BASED
+      description: Analyze data requirements
+    - name: data_generation
+      type: LLM
+      provider: ANTHROPIC
+      model: claude-3-5-sonnet-20241022
+      temperature: 0.4
+      max_tokens: 2500
+      prompt: |
+        You are the Test Data Agent. Generate test data:
+        
+        Schema: {{schema}}
+        Requirements: {{requirements}}
+        Edge Cases: {{edges}}
+        Volume: {{volume}}
+        Privacy Rules: {{privacy}}
+        
+        Generate:
+        1. Happy path data
+        2. Boundary values
+        3. Edge case data
+        4. Error condition data
+        5. Performance test volumes
+        6. Ensure no PII leakage
+        
+        Output as JSON: {
+          datasets: [{name, purpose, records: [...], generation_rules}],
+          edge_cases,
+          privacy_compliance
+        }
+    - name: data_storage
+      type: SERVICE_CALL
+      service: test-data-service
+      endpoint: /data/store
+
+memory:
+  episodic:
+    enabled: true
+    retention_days: 180
+    categories:
+      - datasets
+      - usage
+      - issues
+  semantic:
+    enabled: true
+    categories:
+      - data-patterns
+      - edge-cases
+      - privacy-rules
+  procedural:
+    enabled: true
+    categories:
+      - generation-rules
+      - anonymization-rules
+      - compliance-checks
+
+tools:
+  - data_generator
+  - faker
+  - anonymizer
+
+capabilities:
+  - data-generation
+  - edge-case-creation
+  - privacy-compliance
+  - volume-generation
+
+routing:
+  input_types:
+    - data-request
+    - schema
+    - requirements
+  output_types:
+    - dataset
+    - generation-script
+    - fixtures
+
+delegation:
+  can_delegate_to: []
+  escalates_to:
+    - testing-orchestrator-agent
+
+governance:
+  requires_approval: false
+  can_block: false
+  audit_trail: standard
+
+performance:
+  expected_latency_ms: 3000
+  max_latency_ms: 10000
+  timeout_ms: 30000

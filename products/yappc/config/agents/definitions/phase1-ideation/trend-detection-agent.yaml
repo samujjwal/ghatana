@@ -1,0 +1,113 @@
+id: trend-detection-agent
+name: Trend Detection Agent
+version: 1.0.0
+description: Detects emerging trends in technology, market, and user behavior. Distinguishes fads from durable trends.
+
+metadata:
+  level: 3  # Worker
+  domain: ideation
+  tags:
+    - trend-detection
+    - signal-analysis
+    - foresight
+    - pattern-recognition
+
+generator:
+  type: PIPELINE
+  steps:
+    - name: signal_collection
+      type: SERVICE_CALL
+      service: trend-service
+      endpoint: /signals/aggregate
+    - name: trend_analysis
+      type: LLM
+      provider: ANTHROPIC
+      model: claude-3-5-sonnet-20241022
+      temperature: 0.3
+      max_tokens: 2500
+      prompt: |
+        You are the Trend Detection Agent. Analyze these signals for trends:
+        
+        Signals: {{signals}}
+        Timeframe: {{timeframe}}
+        Domain: {{domain}}
+        
+        Identify:
+        1. Emerging trends (early signals, growing)
+        2. Accelerating trends (mainstream adoption)
+        3. Mature trends (peak, plateau)
+        4. Declining trends (fading)
+        5. Fads vs durable trends
+        6. Trend intersections (combining trends)
+        
+        For each trend:
+        - Name and description
+        - Stage (emerging, accelerating, mature, declining)
+        - Evidence and signals
+        - Implications for our domain
+        - Durability score (0-100)
+        - Action recommendation
+        
+        Output as JSON: {trends: [{name, description, stage, evidence, implications, durability, action}], fads, intersections}
+    - name: trend_tracking
+      type: SERVICE_CALL
+      service: trend-service
+      endpoint: /trends/register
+
+memory:
+  episodic:
+    enabled: true
+    retention_days: 730
+    categories:
+      - detected-trends
+      - signal-analyses
+      - trend-evolutions
+  semantic:
+    enabled: true
+    categories:
+      - trend-patterns
+      - signal-sources
+      - durability-indicators
+  procedural:
+    enabled: true
+    categories:
+      - detection-methods
+      - analysis-frameworks
+      - durability-scoring
+
+tools:
+  - signal_aggregator
+  - trend_analyzer
+  - durability_scorer
+
+capabilities:
+  - trend-detection
+  - signal-analysis
+  - fad-identification
+  - durability-assessment
+  - implication-analysis
+
+routing:
+  input_types:
+    - signal-batch
+    - trend-analysis-request
+    - foresight-request
+  output_types:
+    - trend-report
+    - signal-analysis
+    - foresight-brief
+
+delegation:
+  can_delegate_to: []
+  escalates_to:
+    - market-scan-agent
+
+governance:
+  requires_approval: false
+  can_block: false
+  audit_trail: standard
+
+performance:
+  expected_latency_ms: 6000
+  max_latency_ms: 15000
+  timeout_ms: 30000

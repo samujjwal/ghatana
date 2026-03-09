@@ -1,0 +1,391 @@
+/*
+ * Copyright (c) 2026 Ghatana Inc.
+ * All rights reserved.
+ *
+ * Canvas AI Service Contract
+ * 
+ * Defines gRPC services for canvas validation and code generation.
+ * Part of the Hybrid Backend system - Java/ActiveJ backend with Node.js thin client.
+ * 
+ * @doc.type contract
+ * @doc.purpose Canvas AI validation and code generation services
+ * @doc.layer platform
+ * @doc.pattern gRPC Service Contract
+ */
+syntax = "proto3";
+
+package ghatana.contracts.canvas.v1;
+
+option go_package = "github.com/ghatana/contracts/gen/go/canvas/v1;canvasv1";
+option java_multiple_files = true;
+option java_package = "com.ghatana.contracts.canvas.v1";
+option java_outer_classname = "CanvasAIServiceProto";
+option csharp_namespace = "Ghatana.Contracts.Canvas.V1";
+
+import "google/api/annotations.proto";
+import "google/protobuf/timestamp.proto";
+import "google/protobuf/struct.proto";
+
+// ============================================================================
+// Canvas AI Service
+// ============================================================================
+
+/**
+ * Canvas AI Service
+ * 
+ * Provides AI-powered validation and code generation for canvas designs.
+ * Implements ValidationAgent and GenerationAgent contracts.
+ */
+service CanvasAIService {
+  // Validate canvas design
+  rpc ValidateCanvas(ValidateCanvasRequest) returns (ValidationReport) {
+    option (google.api.http) = {
+      post: "/v1/canvas/validate"
+      body: "*"
+    };
+  }
+
+  // Generate code from canvas design
+  rpc GenerateCode(GenerateCodeRequest) returns (CodeGenerationResult) {
+    option (google.api.http) = {
+      post: "/v1/canvas/generate"
+      body: "*"
+    };
+  }
+
+  // Generate code with streaming progress
+  rpc GenerateCodeStream(GenerateCodeRequest) returns (stream GenerationProgress) {
+    option (google.api.http) = {
+      post: "/v1/canvas/generate-stream"
+      body: "*"
+    };
+  }
+
+  // Get validation history
+  rpc GetValidationHistory(GetValidationHistoryRequest) returns (GetValidationHistoryResponse) {
+    option (google.api.http) = {
+      get: "/v1/canvas/{canvas_id}/validation-history"
+    };
+  }
+
+  // Get generation history
+  rpc GetGenerationHistory(GetGenerationHistoryRequest) returns (GetGenerationHistoryResponse) {
+    option (google.api.http) = {
+      get: "/v1/canvas/{canvas_id}/generation-history"
+    };
+  }
+}
+
+// ============================================================================
+// Validation Types
+// ============================================================================
+
+/**
+ * Lifecycle Phase
+ */
+enum LifecyclePhase {
+  LIFECYCLE_PHASE_UNSPECIFIED = 0;
+  LIFECYCLE_PHASE_SHAPE = 1;       // Architecture design
+  LIFECYCLE_PHASE_LAYOUT = 2;      // Positioning
+  LIFECYCLE_PHASE_COMPONENT = 3;   // Configuration
+  LIFECYCLE_PHASE_VALIDATE = 4;    // Validation
+  LIFECYCLE_PHASE_DEPLOY = 5;      // Deployment
+  LIFECYCLE_PHASE_GENERATE = 6;    // Code generation
+}
+
+/**
+ * Canvas Element Kind
+ */
+enum ElementKind {
+  ELEMENT_KIND_UNSPECIFIED = 0;
+  ELEMENT_KIND_NODE = 1;
+  ELEMENT_KIND_EDGE = 2;
+}
+
+/**
+ * Element Type
+ */
+enum ElementType {
+  ELEMENT_TYPE_UNSPECIFIED = 0;
+  ELEMENT_TYPE_API = 1;
+  ELEMENT_TYPE_DATA = 2;
+  ELEMENT_TYPE_COMPONENT = 3;
+  ELEMENT_TYPE_PAGE = 4;
+  ELEMENT_TYPE_INFRASTRUCTURE = 5;
+  ELEMENT_TYPE_FLOW = 6;
+}
+
+/**
+ * Canvas Element
+ */
+message CanvasElement {
+  string id = 1;
+  ElementKind kind = 2;
+  ElementType type = 3;
+  Position position = 4;
+  google.protobuf.Struct data = 5;  // Flexible element data
+  repeated string connections = 6;   // Connected element IDs
+}
+
+/**
+ * Position
+ */
+message Position {
+  double x = 1;
+  double y = 2;
+}
+
+/**
+ * Canvas State
+ */
+message CanvasState {
+  repeated CanvasElement elements = 1;
+  LifecyclePhase current_phase = 2;
+  string canvas_id = 3;
+  string project_id = 4;
+  google.protobuf.Timestamp last_modified = 5;
+}
+
+/**
+ * Validate Canvas Request
+ */
+message ValidateCanvasRequest {
+  CanvasState canvas_state = 1;
+  LifecyclePhase lifecycle_phase = 2;
+  ValidationOptions options = 3;
+}
+
+/**
+ * Validation Options
+ */
+message ValidationOptions {
+  bool include_risks = 1;
+  bool include_gaps = 2;
+  bool include_suggestions = 3;
+  repeated string skip_categories = 4;
+}
+
+/**
+ * Issue Severity
+ */
+enum IssueSeverity {
+  ISSUE_SEVERITY_UNSPECIFIED = 0;
+  ISSUE_SEVERITY_ERROR = 1;
+  ISSUE_SEVERITY_WARNING = 2;
+  ISSUE_SEVERITY_INFO = 3;
+}
+
+/**
+ * Validation Issue
+ */
+message ValidationIssue {
+  string id = 1;
+  IssueSeverity severity = 2;
+  string category = 3;
+  string title = 4;
+  string description = 5;
+  repeated string element_ids = 6;
+  string suggestion = 7;
+  bool auto_fixable = 8;
+  LifecyclePhase phase = 9;
+}
+
+/**
+ * Risk Severity
+ */
+enum RiskSeverity {
+  RISK_SEVERITY_UNSPECIFIED = 0;
+  RISK_SEVERITY_LOW = 1;
+  RISK_SEVERITY_MEDIUM = 2;
+  RISK_SEVERITY_HIGH = 3;
+  RISK_SEVERITY_CRITICAL = 4;
+}
+
+/**
+ * Risk Type
+ */
+enum RiskType {
+  RISK_TYPE_UNSPECIFIED = 0;
+  RISK_TYPE_SECURITY = 1;
+  RISK_TYPE_PERFORMANCE = 2;
+  RISK_TYPE_MAINTAINABILITY = 3;
+  RISK_TYPE_SCALABILITY = 4;
+}
+
+/**
+ * Risk Assessment
+ */
+message RiskAssessment {
+  string id = 1;
+  RiskType type = 2;
+  RiskSeverity severity = 3;
+  string title = 4;
+  string description = 5;
+  string impact = 6;
+  string mitigation = 7;
+}
+
+/**
+ * Validation Summary
+ */
+message ValidationSummary {
+  int32 errors = 1;
+  int32 warnings = 2;
+  int32 info = 3;
+  int32 gaps = 4;
+  int32 risks = 5;
+}
+
+/**
+ * Validation Report
+ */
+message ValidationReport {
+  LifecyclePhase phase = 1;
+  google.protobuf.Timestamp timestamp = 2;
+  int32 score = 3;  // 0-100
+  repeated ValidationIssue issues = 4;
+  repeated string gaps = 5;
+  repeated RiskAssessment risks = 6;
+  ValidationSummary summary = 7;
+  string canvas_id = 8;
+  string validation_id = 9;
+}
+
+// ============================================================================
+// Code Generation Types
+// ============================================================================
+
+/**
+ * Programming Language
+ */
+enum ProgrammingLanguage {
+  PROGRAMMING_LANGUAGE_UNSPECIFIED = 0;
+  PROGRAMMING_LANGUAGE_TYPESCRIPT = 1;
+  PROGRAMMING_LANGUAGE_JAVA = 2;
+  PROGRAMMING_LANGUAGE_PYTHON = 3;
+  PROGRAMMING_LANGUAGE_GO = 4;
+}
+
+/**
+ * Artifact Type
+ */
+enum ArtifactType {
+  ARTIFACT_TYPE_UNSPECIFIED = 0;
+  ARTIFACT_TYPE_SOURCE = 1;
+  ARTIFACT_TYPE_TEST = 2;
+  ARTIFACT_TYPE_CONFIG = 3;
+  ARTIFACT_TYPE_DOCUMENTATION = 4;
+  ARTIFACT_TYPE_SCHEMA = 5;
+  ARTIFACT_TYPE_API = 6;
+  ARTIFACT_TYPE_INFRASTRUCTURE = 7;
+}
+
+/**
+ * Generation Options
+ */
+message GenerationOptions {
+  ProgrammingLanguage language = 1;
+  string framework = 2;
+  bool include_tests = 3;
+  bool include_documentation = 4;
+  bool include_configuration = 5;
+  bool use_ai = 6;
+  string ai_model = 7;
+  float temperature = 8;
+}
+
+/**
+ * Generate Code Request
+ */
+message GenerateCodeRequest {
+  CanvasState canvas_state = 1;
+  LifecyclePhase lifecycle_phase = 2;
+  GenerationOptions options = 3;
+  ValidationReport validation_report = 4;  // Optional but recommended
+}
+
+/**
+ * Generated Artifact
+ */
+message GeneratedArtifact {
+  string id = 1;
+  ArtifactType type = 2;
+  string path = 3;
+  string content = 4;
+  string language = 5;
+  string framework = 6;
+  google.protobuf.Struct metadata = 7;
+}
+
+/**
+ * Generation Statistics
+ */
+message GenerationStatistics {
+  int32 total_files = 1;
+  int32 total_lines = 2;
+  map<string, int32> by_type = 3;      // ArtifactType name -> count
+  map<string, int32> by_language = 4;  // Language -> count
+}
+
+/**
+ * Code Generation Result
+ */
+message CodeGenerationResult {
+  bool success = 1;
+  repeated GeneratedArtifact artifacts = 2;
+  string summary = 3;
+  GenerationStatistics statistics = 4;
+  repeated string errors = 5;
+  repeated string warnings = 6;
+  string generation_id = 7;
+  google.protobuf.Timestamp timestamp = 8;
+}
+
+/**
+ * Generation Progress (for streaming)
+ */
+message GenerationProgress {
+  string stage = 1;  // analyzing, generating, validating, finalizing
+  int32 percent = 2;
+  string message = 3;
+  google.protobuf.Timestamp timestamp = 4;
+}
+
+// ============================================================================
+// History Types
+// ============================================================================
+
+/**
+ * Get Validation History Request
+ */
+message GetValidationHistoryRequest {
+  string canvas_id = 1;
+  int32 limit = 2;
+  int32 offset = 3;
+  LifecyclePhase phase_filter = 4;
+}
+
+/**
+ * Get Validation History Response
+ */
+message GetValidationHistoryResponse {
+  repeated ValidationReport reports = 1;
+  int32 total_count = 2;
+}
+
+/**
+ * Get Generation History Request
+ */
+message GetGenerationHistoryRequest {
+  string canvas_id = 1;
+  int32 limit = 2;
+  int32 offset = 3;
+}
+
+/**
+ * Get Generation History Response
+ */
+message GetGenerationHistoryResponse {
+  repeated CodeGenerationResult results = 1;
+  int32 total_count = 2;
+}

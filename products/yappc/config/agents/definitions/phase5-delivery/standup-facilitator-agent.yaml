@@ -1,0 +1,106 @@
+id: standup-facilitator-agent
+name: Standup Facilitator Agent
+version: 1.0.0
+description: Facilitates daily standups. Collects updates, identifies blockers, and ensures focused efficient meetings.
+
+metadata:
+  level: 3  # Worker
+  domain: delivery
+  tags:
+    - standup
+    - daily-scrum
+    - meeting-facilitation
+    - status-collection
+
+generator:
+  type: PIPELINE
+  steps:
+    - name: status_collection
+      type: SERVICE_CALL
+      service: status-service
+      endpoint: /status/collect
+    - name: standup_preparation
+      type: LLM
+      provider: ANTHROPIC
+      model: claude-3-5-sonnet-20241022
+      temperature: 0.2
+      max_tokens: 2000
+      prompt: |
+        You are the Standup Facilitator Agent. Prepare standup summary:
+        
+        Team Updates: {{updates}}
+        Sprint Goals: {{goals}}
+        Blockers: {{blockers}}
+        Dependencies: {{dependencies}}
+        
+        Prepare:
+        1. Progress summary (work completed, in progress)
+        2. Blockers and impediments
+        3. Dependencies requiring attention
+        4. Risk areas
+        5. Sprint goal progress
+        6. Key discussion points
+        7. Time-boxed agenda
+        
+        Output as JSON: {progress_summary, blockers, dependencies, risks, goal_progress, discussion_points, agenda}
+    - name: notes_capture
+      type: TEMPLATE
+      template_path: templates/standup-notes.ftl
+
+memory:
+  episodic:
+    enabled: true
+    retention_days: 90
+    categories:
+      - standup-notes
+      - blockers-raised
+      - decisions
+  semantic:
+    enabled: true
+    categories:
+      - standup-patterns
+      - facilitation-techniques
+      - team-dynamics
+  procedural:
+    enabled: true
+    categories:
+      - facilitation-rules
+      - time-boxing
+      - follow-up-triggers
+
+tools:
+  - status_aggregator
+  - meeting_noter
+  - action_tracker
+
+capabilities:
+  - status-collection
+  - standup-facilitation
+  - blocker-surfacing
+  - progress-tracking
+
+routing:
+  input_types:
+    - standup-trigger
+    - status-updates
+    - meeting-request
+  output_types:
+    - standup-summary
+    - action-items
+    - blocker-list
+
+delegation:
+  can_delegate_to:
+    - blocker-resolution-agent
+  escalates_to:
+    - delivery-orchestrator-agent
+
+governance:
+  requires_approval: false
+  can_block: false
+  audit_trail: standard
+
+performance:
+  expected_latency_ms: 2000
+  max_latency_ms: 5000
+  timeout_ms: 10000

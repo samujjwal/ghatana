@@ -1,0 +1,417 @@
+# Sprint Planning Workflow Configuration
+# Autonomous sprint planning with minimal human involvement
+apiVersion: virtualorg.ghatana.com/v1
+kind: Workflow
+metadata:
+  name: sprint-planning
+  namespace: software-org
+  labels:
+    domain: development
+    cadence: bi-weekly
+    autonomy-level: high
+  annotations:
+    description: "Autonomous sprint planning workflow that analyzes backlog, prioritizes work, and assigns tasks"
+    owner: product-department
+    hitl-checkpoints: "2"
+
+spec:
+  # Workflow trigger conditions
+  trigger:
+    schedule:
+      # Run every other Monday at 9 AM
+      cron: "0 9 * * 1/2"
+      timezone: "America/Los_Angeles"
+    events:
+      - type: sprint.completed
+      - type: sprint.planning.requested
+    manual:
+      enabled: true
+      authorizedRoles:
+        - cto
+        - cpo
+        - product-manager
+
+  # Workflow execution configuration
+  execution:
+    mode: sequential # sequential | parallel | conditional
+    timeout: 4h
+    retryPolicy:
+      maxRetries: 2
+      backoffMultiplier: 2
+      initialDelay: 5m
+
+  # Workflow context - shared data across all stages
+  context:
+    inputs:
+      - name: sprint_number
+        type: integer
+        source: auto # Auto-increment from last sprint
+      - name: sprint_duration_days
+        type: integer
+        default: 14
+      - name: team_capacity_hours
+        type: integer
+        source: calculated # From team availability
+
+    outputs:
+      - name: sprint_backlog
+        type: task_list
+      - name: sprint_goals
+        type: string_list
+      - name: capacity_allocation
+        type: map
+
+  # Workflow stages
+  stages:
+    - id: analyze-backlog
+      name: "Analyze Product Backlog"
+      description: "AI analyzes and prioritizes the product backlog based on business value, dependencies, and team capacity"
+
+      agent: product-manager-agent
+
+      action:
+        type: ai-decision
+        operation: backlog-analysis
+        tools:
+          - fetch-backlog-items
+          - analyze-business-value
+          - map-dependencies
+          - estimate-complexity
+
+        prompt: |
+          Analyze the current product backlog and prepare recommendations for sprint planning.
+
+          Consider:
+          1. Business value and strategic alignment
+          2. Technical dependencies and blockers
+          3. Customer feedback and urgency
+          4. Technical debt priorities
+          5. Team skill availability
+
+          Produce:
+          - Ranked list of backlog items
+          - Risk assessment for each item
+          - Recommended sprint goals (2-3 themes)
+
+      outputs:
+        - name: prioritized_backlog
+          type: task_list
+        - name: recommended_goals
+          type: string_list
+        - name: risk_assessment
+          type: map
+
+      transitions:
+        - on: success
+          goto: assess-capacity
+        - on: failure
+          goto: escalate-planning-failure
+
+    - id: assess-capacity
+      name: "Assess Team Capacity"
+      description: "Calculate available team capacity considering PTO, meetings, and other commitments"
+
+      agent: devops-lead-agent
+
+      action:
+        type: ai-decision
+        operation: capacity-calculation
+        tools:
+          - fetch-team-calendar
+          - get-historical-velocity
+          - calculate-availability
+
+        prompt: |
+          Calculate team capacity for the upcoming sprint.
+
+          Consider:
+          1. Team member PTO and holidays
+          2. Standing meetings and ceremonies
+          3. Historical velocity and accuracy
+          4. Buffer for unplanned work (typically 20%)
+          5. Learning/growth time allocation
+
+          Produce:
+          - Total available hours by role
+          - Recommended sprint velocity
+          - Capacity constraints and risks
+
+      outputs:
+        - name: team_capacity
+          type: map
+        - name: recommended_velocity
+          type: integer
+        - name: capacity_risks
+          type: string_list
+
+      transitions:
+        - on: success
+          goto: create-sprint-plan
+        - on: failure
+          goto: escalate-planning-failure
+
+    - id: create-sprint-plan
+      name: "Create Sprint Plan"
+      description: "AI creates optimal sprint plan balancing priorities, capacity, and team skills"
+
+      agent: architect-lead-agent
+
+      action:
+        type: ai-decision
+        operation: sprint-planning
+        tools:
+          - match-tasks-to-engineers
+          - validate-dependencies
+          - calculate-load-balance
+          - check-skill-coverage
+
+        prompt: |
+          Create the sprint plan by selecting and assigning backlog items.
+
+          Inputs:
+          - Prioritized backlog: {{prioritized_backlog}}
+          - Team capacity: {{team_capacity}}
+          - Sprint goals: {{recommended_goals}}
+
+          Constraints:
+          1. Total estimated hours <= available capacity
+          2. High-priority items must have coverage
+          3. Dependencies must be resolved within sprint
+          4. No engineer over 80% allocated
+          5. Junior engineers paired with seniors
+
+          Produce:
+          - Selected sprint backlog items
+          - Task assignments with justification
+          - Sprint goals confirmation
+          - Risk mitigation plan
+
+      outputs:
+        - name: sprint_backlog
+          type: task_list
+        - name: task_assignments
+          type: map
+        - name: sprint_goals
+          type: string_list
+        - name: risk_mitigation
+          type: map
+
+      # HITL checkpoint - human approval required
+      hitl:
+        required: true
+        checkpoint: "sprint-plan-review"
+        approvers:
+          - role: cto
+          - role: product-manager
+        timeout: 24h
+        escalationPath:
+          - level: 1
+            after: 8h
+            notify: engineering-manager
+          - level: 2
+            after: 16h
+            notify: cto
+        presentation:
+          format: dashboard
+          highlights:
+            - sprint_goals
+            - task_assignments
+            - capacity_allocation
+            - risk_mitigation
+
+      transitions:
+        - on: approved
+          goto: notify-team
+        - on: rejected
+          goto: revise-plan
+        - on: timeout
+          goto: escalate-planning-failure
+
+    - id: revise-plan
+      name: "Revise Sprint Plan"
+      description: "Incorporate human feedback and create revised sprint plan"
+
+      agent: product-manager-agent
+
+      action:
+        type: ai-decision
+        operation: plan-revision
+        tools:
+          - parse-feedback
+          - adjust-assignments
+          - recalculate-capacity
+
+        prompt: |
+          Revise the sprint plan based on reviewer feedback.
+
+          Feedback: {{hitl_feedback}}
+          Original plan: {{sprint_backlog}}
+
+          Make adjustments while maintaining:
+          1. Overall sprint goals alignment
+          2. Capacity constraints
+          3. Dependency requirements
+
+          Document all changes and rationale.
+
+      maxIterations: 3
+
+      outputs:
+        - name: revised_sprint_backlog
+          type: task_list
+        - name: revision_summary
+          type: string
+
+      transitions:
+        - on: success
+          goto: create-sprint-plan # Loop back for re-approval
+        - on: max_iterations_exceeded
+          goto: escalate-planning-failure
+
+    - id: notify-team
+      name: "Notify Team & Create Tasks"
+      description: "Create tasks in project management system and notify team members"
+
+      agent: devops-engineer-agent
+
+      action:
+        type: automated
+        operation: sprint-setup
+        tools:
+          - create-jira-sprint
+          - create-tasks
+          - assign-tasks
+          - send-notifications
+
+        steps:
+          - name: create-sprint
+            tool: create-jira-sprint
+            params:
+              name: "Sprint {{sprint_number}}"
+              goals: "{{sprint_goals}}"
+              duration: "{{sprint_duration_days}}"
+
+          - name: create-tasks
+            tool: create-tasks
+            params:
+              sprint_id: "{{steps.create-sprint.output.sprint_id}}"
+              tasks: "{{sprint_backlog}}"
+
+          - name: assign-tasks
+            tool: assign-tasks
+            params:
+              assignments: "{{task_assignments}}"
+
+          - name: notify-team
+            tool: send-notifications
+            params:
+              channel: "#engineering"
+              type: sprint-kickoff
+              data:
+                sprint: "{{sprint_number}}"
+                goals: "{{sprint_goals}}"
+                assignments: "{{task_assignments}}"
+
+      outputs:
+        - name: sprint_id
+          type: string
+        - name: created_tasks
+          type: task_list
+        - name: notification_status
+          type: string
+
+      transitions:
+        - on: success
+          goto: complete
+        - on: failure
+          goto: escalate-planning-failure
+
+    - id: escalate-planning-failure
+      name: "Escalate Planning Failure"
+      description: "Escalate to human when autonomous planning fails"
+
+      agent: cto-agent
+
+      action:
+        type: escalation
+        operation: planning-escalation
+
+        notification:
+          channels:
+            - slack: "#leadership"
+            - email: engineering-leads@company.com
+          urgency: high
+
+        context:
+          include:
+            - failure_reason
+            - attempted_actions
+            - partial_results
+            - recommended_intervention
+
+      hitl:
+        required: true
+        checkpoint: "manual-intervention"
+        approvers:
+          - role: cto
+          - role: cpo
+        timeout: 48h
+
+      transitions:
+        - on: resolved
+          goto: analyze-backlog # Restart workflow
+        - on: cancelled
+          goto: complete
+
+    - id: complete
+      name: "Sprint Planning Complete"
+      description: "Finalize sprint planning and record metrics"
+
+      action:
+        type: automated
+        operation: finalize
+
+        steps:
+          - name: record-metrics
+            tool: record-workflow-metrics
+            params:
+              workflow: sprint-planning
+              duration: "{{workflow.duration}}"
+              human_touchpoints: "{{workflow.hitl_count}}"
+              success: true
+
+          - name: update-dashboard
+            tool: update-dashboard
+            params:
+              type: sprint-status
+              data:
+                sprint: "{{sprint_number}}"
+                status: planned
+                goals: "{{sprint_goals}}"
+
+  # Post-workflow actions
+  postActions:
+    - type: audit-log
+      data:
+        workflow: sprint-planning
+        outcome: "{{workflow.status}}"
+        participants: "{{workflow.agents}}"
+        hitl_interactions: "{{workflow.hitl_log}}"
+
+    - type: learning-feedback
+      enabled: true
+      metrics:
+        - sprint_completion_rate
+        - velocity_accuracy
+        - assignment_satisfaction
+
+  # Workflow-level error handling
+  errorHandling:
+    defaultAction: escalate
+    retryableErrors:
+      - network_timeout
+      - service_unavailable
+      - rate_limited
+    nonRetryableErrors:
+      - invalid_configuration
+      - permission_denied

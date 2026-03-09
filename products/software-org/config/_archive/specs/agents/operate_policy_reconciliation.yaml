@@ -1,0 +1,26 @@
+---
+id: "operate_policy_reconciliation"
+agent: "PolicyReconciliationAgent"
+role: "Compliance Automation"
+inputs_spec:
+- name: "operate_progress_dashboard"
+  description: "Operate progress dashboard for reconciliation triggers."
+  format: "Dashboard artifact"
+outputs_spec:
+- name: "operate_policy_recon_report"
+  description: "Report on policy reconciliation actions/status."
+  format: "Policy reconciliation report artifact"
+agent_tasks:
+- "Compare live env policies/configs to source-of-truth."
+- "Flag/report any drift to compliance."
+- "Assign remediation if mismatches found."
+acceptance_criteria:
+- "All live env policies/configs match source-of-truth."
+- "Drift is flagged/reported to compliance."
+- "Remediation assigned if mismatches found."
+dependencies:
+- "operate_progress_dashboard"
+failure_escalation:
+- "Escalate to compliance automation if drift/mismatches not remediated."
+references: []
+hitl: false

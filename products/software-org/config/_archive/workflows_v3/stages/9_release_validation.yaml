@@ -1,0 +1,109 @@
+# Release Validation Stage - v3 Operator-Based Definition
+# Uses consolidated operators from operations/domain/release/
+name: Release Validation
+description: Validate release readiness and prepare for UAT
+domain: release
+
+# Operators used in this stage
+operators:
+  - ref: release/release_management_operator
+    modes: [plan, go_nogo]
+  - ref: release/deploy_operator
+    modes: [validate]
+
+# Cross-cutting operators
+cross_cutting:
+  - ref: cross-cutting/milestone_tracker
+    params:
+      stage: release_validation
+  - ref: cross-cutting/best_practice
+    params:
+      stage: release_validation
+  - ref: cross-cutting/readiness
+    params:
+      stage: release_validation
+  - ref: cross-cutting/go_nogo
+    params:
+      stage: release_validation
+  - ref: cross-cutting/audit_log
+    params:
+      stage: release_validation
+
+# Workflow sequence
+workflow:
+  # Release Planning
+  - step: release_planning
+    operator: release/release_management_operator
+    mode: plan
+    inputs:
+      - name: compliance_stage_milestone
+    outputs:
+      - name: release_plan
+
+  # Deployment Validation
+  - step: validate_deployment
+    operator: release/deploy_operator
+    mode: validate
+    inputs:
+      - name: release_plan
+      - name: build_artifacts
+    outputs:
+      - name: deployment_validation_report
+    depends_on: [release_planning]
+
+  # Readiness Check
+  - step: readiness_check
+    operator: cross-cutting/readiness
+    params:
+      stage: release_validation
+    inputs:
+      - name: release_plan
+      - name: deployment_validation_report
+    outputs:
+      - name: readiness_report
+    depends_on: [validate_deployment]
+
+  # Go/No-Go Decision
+  - step: release_go_nogo
+    operator: cross-cutting/go_nogo
+    params:
+      stage: release_validation
+    inputs:
+      - name: readiness_report
+    outputs:
+      - name: release_go_nogo_decision
+    depends_on: [readiness_check]
+    hitl: true
+    hitl_reason: Human makes release go/no-go decision
+
+  # Cross-cutting
+  - step: best_practice_check
+    operator: cross-cutting/best_practice
+    params:
+      stage: release_validation
+    inputs:
+      - name: release_plan
+    outputs:
+      - name: best_practice_report
+    depends_on: [release_go_nogo]
+
+  - step: track_milestones
+    operator: cross-cutting/milestone_tracker
+    params:
+      stage: release_validation
+    inputs:
+      - name: best_practice_report
+    outputs:
+      - name: release_validation_milestone
+    depends_on: [best_practice_check]
+
+# Stage entry/exit criteria
+entry_criteria:
+  - Compliance validation complete
+  - All compliance requirements met
+
+exit_criteria:
+  - Release plan defined
+  - Deployment validated
+  - Go/no-go decision made
+  - Ready for UAT

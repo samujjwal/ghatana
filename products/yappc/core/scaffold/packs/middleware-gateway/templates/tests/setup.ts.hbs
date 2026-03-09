@@ -1,0 +1,42 @@
+import { beforeAll, afterAll, afterEach } from "vitest";
+
+// Global test setup
+beforeAll(() => {
+// Set test environment
+process.env.NODE_ENV = "test";
+process.env.LOG_LEVEL = "error";
+{{#if enableAuth}}
+process.env.JWT_SECRET = "test-secret-key-for-testing-only";
+{{/if}}
+});
+
+afterAll(() => {
+// Cleanup
+});
+
+afterEach(() => {
+// Reset mocks if any
+});
+
+// Test utilities
+export function generateTestJwt(payload: Record<string, unknown>): string {
+    // Simple mock JWT for testing (not cryptographically secure)
+    const header = Buffer.from(JSON.stringify({ alg: "HS256", typ: "JWT" })).toString("base64url");
+    const body = Buffer.from(JSON.stringify({
+    sub: "test-user",
+    iat: Math.floor(Date.now() / 1000),
+    exp: Math.floor(Date.now() / 1000) + 3600,
+    ...payload,
+    })).toString("base64url");
+    const signature = "test-signature";
+
+    return `${header}.${body}.${signature}`;
+    }
+
+    export function delay(ms: number): Promise<void> {
+        return new Promise((resolve) => setTimeout(resolve, ms));
+        }
+
+        export function randomPort(): number {
+        return Math.floor(Math.random() * 10000) + 40000;
+        }

@@ -1,0 +1,95 @@
+{
+  "version": 1,
+  "languages": {
+    "java": {
+      "frameRegex": "^\\s*at\\s+([.\\w$<>]+)\\s*\\(([\\w/\\\\.]+):(\\d+)\\)\\s*$",
+      "errorPatterns": [
+        {
+          "name": "npe",
+          "pattern": "NullPointerException",
+          "category": "java:npe",
+          "severity": "HIGH",
+          "suggestion": "Check for null references before accessing object members"
+        }
+      ]
+    },
+    "python": {
+      "frameRegex": "^\\s*File \"([^\"]+)\", line (\\d+)",
+      "errorPatterns": [
+        {
+          "name": "import_error",
+          "pattern": "ImportError",
+          "category": "python:import_error",
+          "severity": "HIGH",
+          "suggestion": "Install the missing package using pip or check the module name"
+        },
+        {
+          "name": "attribute_error",
+          "pattern": "AttributeError",
+          "category": "python:attribute_error",
+          "severity": "MEDIUM",
+          "suggestion": "Check that the object has the expected attribute and is not None"
+        }
+      ]
+    },
+    "node": {
+      "frameRegex": "^\\s*at\\s+(.+?)\\s*\\((.+?):(\\d+):(\\d+)\\)",
+      "errorPatterns": [
+        {
+          "name": "type_error",
+          "pattern": "TypeError",
+          "category": "node:type_error",
+          "severity": "HIGH",
+          "suggestion": "Check the types of variables and ensure they are defined before use"
+        }
+      ]
+    },
+    "go": {
+      "frameRegex": "^\\s*([^\\n(]+)\\([^)]*\\)\\n\\s+(\\S+):(\\d+)",
+      "errorPatterns": [
+        {
+          "name": "index_out_of_range",
+          "pattern": "index out of range",
+          "category": "go:index_out_of_range",
+          "severity": "HIGH",
+          "suggestion": "Check slice/array bounds before accessing elements"
+        },
+        {
+          "name": "panic",
+          "pattern": "panic:",
+          "category": "go:panic",
+          "severity": "HIGH",
+          "suggestion": "Handle the error case with recover or proper error handling"
+        }
+      ]
+    },
+    "rust": {
+      "frameRegex": "^\\s+at (.+?):(\\d+)",
+      "errorPatterns": [
+        {
+          "name": "panic",
+          "pattern": "panicked at",
+          "category": "rust:panic",
+          "severity": "HIGH",
+          "suggestion": "Handle the error case with Result/Option types instead of panicking"
+        }
+      ]
+    }
+  },
+  "commonPatterns": [
+    {
+      "name": "out_of_memory",
+      "pattern": "OutOfMemoryError",
+      "category": "system:out_of_memory",
+      "severity": "CRITICAL",
+      "suggestion": "Increase JVM heap size with -Xmx or optimize memory usage to reduce allocations"
+    },
+    {
+      "name": "unknown_error",
+      "pattern": "\\w+Error:\\s+.+",
+      "category": "system:unknown_error",
+      "severity": "LOW",
+      "suggestion": "Review the error message and stack trace for clues about the root cause"
+    }
+  ]
+}

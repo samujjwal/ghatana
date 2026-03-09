@@ -1,0 +1,27 @@
+{
+  "id": "examples/collaborative-editing",
+  "title": "Collaborative Editing",
+  "description": "Documentation coming soon.",
+  "source": "@site/docs/examples/collaborative-editing.md",
+  "sourceDirName": "examples",
+  "slug": "/examples/collaborative-editing",
+  "permalink": "/docs/examples/collaborative-editing",
+  "draft": false,
+  "unlisted": false,
+  "editUrl": "https://github.com/yappc/app-creator/tree/main/docs-site/docs/examples/collaborative-editing.md",
+  "tags": [],
+  "version": "current",
+  "sidebarPosition": 1,
+  "frontMatter": {
+    "sidebar_position": 1
+  },
+  "sidebar": "guidesSidebar",
+  "previous": {
+    "title": "Basic Canvas",
+    "permalink": "/docs/examples/basic-canvas"
+  },
+  "next": {
+    "title": "Performance Optimization",
+    "permalink": "/docs/examples/performance-optimization"
+  }
+}

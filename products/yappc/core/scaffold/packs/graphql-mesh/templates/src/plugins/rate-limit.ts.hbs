@@ -1,0 +1,93 @@
+{{#if enableRateLimiting}}
+import { useRateLimiter } from "@graphql-yoga/plugin-rate-limiter";
+import type { Plugin } from "graphql-yoga";
+import type { MeshConfig } from "../types.js";
+import { logger } from "./logging.js";
+
+interface RateLimitState {
+count: number;
+resetAt: number;
+}
+
+const rateLimits = new Map<string, RateLimitState>();
+
+    /**
+    * Create rate limiting plugin
+    */
+    export function createRateLimitPlugin(config: MeshConfig): Plugin {
+    const max = config.rateLimitMax;
+    const windowMs = 60000; // 1 minute window
+
+    return useRateLimiter({
+    // Identifier function
+    identifyFn: (context) => {
+    // Use user ID if authenticated
+    const auth = (context as { auth?: { userId: string } }).auth;
+    if (auth?.userId) {
+    return auth.userId;
+    }
+
+    // Fallback to IP
+    const request = context.request;
+    const forwarded = request.headers.get("x-forwarded-for");
+    return forwarded?.split(",")[0] ?? "anonymous";
+    },
+
+    // Rate limit per identifier
+    max,
+
+    // Window in milliseconds
+    window: `${windowMs}ms`,
+
+    // Message when limited
+    message: "Too many requests, please try again later",
+
+    // Optional: Use field-level rate limiting
+    // fieldConfig: {
+    // "Query.expensiveOperation": {
+    // max: 10,
+    // window: "1m",
+    // },
+    // },
+    });
+    }
+
+    /**
+    * Custom rate limiter for specific operations
+    */
+    export function checkRateLimit(
+    identifier: string,
+    max: number,
+    windowMs: number
+    ): { allowed: boolean; remaining: number; resetAt: Date } {
+    const now = Date.now();
+    const key = identifier;
+
+    let state = rateLimits.get(key);
+
+    // Reset if window expired
+    if (!state || now >= state.resetAt) {
+    state = {
+    count: 0,
+    resetAt: now + windowMs,
+    };
+    }
+
+    state.count++;
+    rateLimits.set(key, state);
+
+    const remaining = Math.max(0, max - state.count);
+    const allowed = state.count <= max; if (!allowed) { logger.warn({ identifier, count: state.count, max
+        }, "Rate limit exceeded" ); } return { allowed, remaining, resetAt: new Date(state.resetAt), }; } // Cleanup
+        expired entries periodically setInterval(()=> {
+        const now = Date.now();
+        for (const [key, state] of rateLimits) {
+        if (now >= state.resetAt) {
+        rateLimits.delete(key);
+        }
+        }
+        }, 60000);
+        {{else}}
+        // Rate limiting is disabled. Enable it in pack.json to use rate limit plugin.
+        export {};
+        {{/if}}

@@ -1,0 +1,14 @@
+/* Base styles for browser extension UI components. */
+
+:root {
+  --primary-color: #1e40af;
+  --accent-color: #f97316;
+  --background-color: #0f172a;
+}
+
+body {
+  margin: 0;
+  font-family: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+  background-color: var(--background-color);
+  color: white;
+}

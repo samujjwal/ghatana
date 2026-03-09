@@ -1,0 +1,111 @@
+id: code-reviewer-agent
+name: Code Reviewer Agent
+version: 1.0.0
+description: Reviews code for quality, security, performance, and maintainability. Provides actionable feedback.
+
+metadata:
+  level: 2  # Domain Expert
+  domain: build
+  tags:
+    - code-review
+    - quality
+    - security
+    - best-practices
+
+generator:
+  type: PIPELINE
+  steps:
+    - name: static_analysis
+      type: SERVICE_CALL
+      service: analysis-service
+      endpoint: /analyze/static
+    - name: code_review
+      type: LLM
+      provider: ANTHROPIC
+      model: claude-3-5-sonnet-20241022
+      temperature: 0.2
+      max_tokens: 3000
+      prompt: |
+        You are the Code Reviewer Agent. Review this code:
+        
+        Code: {{code}}
+        PR Context: {{context}}
+        Static Analysis: {{static_analysis}}
+        Coding Standards: {{standards}}
+        
+        Review for:
+        1. Correctness (logic, edge cases)
+        2. Security (vulnerabilities, injection, auth)
+        3. Performance (complexity, efficiency, resources)
+        4. Maintainability (readability, naming, structure)
+        5. Testing (coverage, test quality)
+        6. Documentation (comments, API docs)
+        7. Compliance (standards, patterns)
+        
+        Output as JSON: {
+          summary, 
+          severity: [critical|major|minor], 
+          findings: [{file, line, severity, category, issue, suggestion, code_sample}],
+          approval_recommendation: [approve|request_changes|comment]
+        }
+    - name: feedback_formatting
+      type: TEMPLATE
+      template_path: templates/code-review.ftl
+
+memory:
+  episodic:
+    enabled: true
+    retention_days: 365
+    categories:
+      - reviews
+      - findings
+      - resolutions
+  semantic:
+    enabled: true
+    categories:
+      - code-patterns
+      - anti-patterns
+      - security-issues
+  procedural:
+    enabled: true
+    categories:
+      - review-checklist
+      - severity-rules
+      - approval-criteria
+
+tools:
+  - static_analyzer
+  - security_scanner
+  - complexity_analyzer
+
+capabilities:
+  - code-review
+  - security-analysis
+  - performance-analysis
+  - quality-assessment
+
+routing:
+  input_types:
+    - pull-request
+    - code-review-request
+    - commit
+  output_types:
+    - review-report
+    - findings
+    - approval
+
+delegation:
+  can_delegate_to:
+    - security-scanner-agent
+  escalates_to:
+    - build-orchestrator-agent
+
+governance:
+  requires_approval: false
+  can_block: true  # Can block PR merge
+  audit_trail: comprehensive
+
+performance:
+  expected_latency_ms: 5000
+  max_latency_ms: 15000
+  timeout_ms: 30000

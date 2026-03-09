@@ -1,0 +1,115 @@
+id: operations-orchestrator-agent
+name: Operations Orchestrator Agent
+version: 1.0.0
+description: Orchestrates operational activities. Coordinates monitoring, incident response, and maintenance.
+
+metadata:
+  level: 2  # Domain Expert — Phase Orchestrator (registered as level_2_experts in registry)
+  domain: operations
+  tags:
+    - phase-orchestration
+    - operations-management
+    - sre
+    - reliability
+
+generator:
+  type: PIPELINE
+  steps:
+    - name: operations_planning
+      type: LLM
+      provider: ANTHROPIC
+      model: claude-3-5-sonnet-20241022
+      temperature: 0.2
+      max_tokens: 2500
+      prompt: |
+        You are the Operations Orchestrator Agent. Plan operations:
+        
+        System State: {{state}}
+        SLOs: {{slos}}
+        Alerts: {{alerts}}
+        Maintenance Window: {{maintenance}}
+        
+        Orchestrate:
+        1. Current system health
+        2. SLO status and error budget
+        3. Active incidents
+        4. Planned maintenance
+        5. Capacity concerns
+        6. Agent delegation plan
+        
+        Output as JSON: {health_summary, slo_status, incidents, maintenance, capacity, delegation_plan}
+    - name: agent_coordination
+      type: SERVICE_CALL
+      service: agent-registry
+      endpoint: /agents/delegate
+    - name: ops_tracking
+      type: RULE_BASED
+      description: Track operational metrics
+
+memory:
+  episodic:
+    enabled: true
+    retention_days: 730
+    categories:
+      - incidents
+      - maintenance
+      - slo-breaches
+  semantic:
+    enabled: true
+    categories:
+      - operational-patterns
+      - incident-types
+      - capacity-models
+  procedural:
+    enabled: true
+    categories:
+      - orchestration-rules
+      - escalation-paths
+      - runbooks
+
+tools:
+  - ops_coordinator
+  - monitoring_hub
+  - incident_manager
+
+capabilities:
+  - operations-orchestration
+  - health-monitoring
+  - incident-coordination
+  - capacity-management
+
+routing:
+  input_types:
+    - ops-trigger
+    - incident-alert
+    - maintenance-request
+  output_types:
+    - ops-status
+    - incident-report
+    - maintenance-plan
+
+delegation:
+  can_delegate_to:
+    - monitoring-agent
+    - incident-response-agent
+    - on-call-agent
+    - capacity-monitor-agent
+    - cost-optimization-agent
+    - backup-recovery-agent
+    - security-operations-agent
+    - slo-manager-agent
+    # Agent infrastructure
+    - agent-health-monitor
+    - memory-decay-agent
+  escalates_to:
+    - master-orchestrator-agent
+
+governance:
+  requires_approval: false
+  can_block: true  # Can block for safety
+  audit_trail: comprehensive
+
+performance:
+  expected_latency_ms: 2000
+  max_latency_ms: 5000
+  timeout_ms: 10000

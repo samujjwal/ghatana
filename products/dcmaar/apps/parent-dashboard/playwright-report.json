@@ -1,0 +1,1276 @@
+{
+  "config": {
+    "configFile": "/Users/samujjwal/Development/ghatana/products/dcmaar/apps/guardian/apps/parent-dashboard/playwright.config.ts",
+    "rootDir": "/Users/samujjwal/Development/ghatana/products/dcmaar/apps/guardian/apps/parent-dashboard/e2e",
+    "forbidOnly": false,
+    "fullyParallel": true,
+    "globalSetup": null,
+    "globalTeardown": null,
+    "globalTimeout": 0,
+    "grep": {},
+    "grepInvert": null,
+    "maxFailures": 0,
+    "metadata": {
+      "actualWorkers": 4
+    },
+    "preserveOutput": "always",
+    "reporter": [
+      [
+        "list",
+        null
+      ],
+      [
+        "html",
+        {
+          "open": "never"
+        }
+      ],
+      [
+        "json",
+        {
+          "outputFile": "playwright-report.json"
+        }
+      ]
+    ],
+    "reportSlowTests": {
+      "max": 5,
+      "threshold": 300000
+    },
+    "quiet": false,
+    "projects": [
+      {
+        "outputDir": "/Users/samujjwal/Development/ghatana/products/dcmaar/apps/guardian/apps/parent-dashboard/test-results",
+        "repeatEach": 1,
+        "retries": 0,
+        "metadata": {
+          "actualWorkers": 4
+        },
+        "id": "chromium-desktop",
+        "name": "chromium-desktop",
+        "testDir": "/Users/samujjwal/Development/ghatana/products/dcmaar/apps/guardian/apps/parent-dashboard/e2e",
+        "testIgnore": [
+          "**/src/test/**"
+        ],
+        "testMatch": [
+          "**/*.@(spec|test).?(c|m)[jt]s?(x)"
+        ],
+        "timeout": 30000
+      },
+      {
+        "outputDir": "/Users/samujjwal/Development/ghatana/products/dcmaar/apps/guardian/apps/parent-dashboard/test-results",
+        "repeatEach": 1,
+        "retries": 0,
+        "metadata": {
+          "actualWorkers": 4
+        },
+        "id": "firefox-desktop",
+        "name": "firefox-desktop",
+        "testDir": "/Users/samujjwal/Development/ghatana/products/dcmaar/apps/guardian/apps/parent-dashboard/e2e",
+        "testIgnore": [
+          "**/src/test/**"
+        ],
+        "testMatch": [
+          "**/*.@(spec|test).?(c|m)[jt]s?(x)"
+        ],
+        "timeout": 30000
+      },
+      {
+        "outputDir": "/Users/samujjwal/Development/ghatana/products/dcmaar/apps/guardian/apps/parent-dashboard/test-results",
+        "repeatEach": 1,
+        "retries": 0,
+        "metadata": {
+          "actualWorkers": 4
+        },
+        "id": "webkit-desktop",
+        "name": "webkit-desktop",
+        "testDir": "/Users/samujjwal/Development/ghatana/products/dcmaar/apps/guardian/apps/parent-dashboard/e2e",
+        "testIgnore": [
+          "**/src/test/**"
+        ],
+        "testMatch": [
+          "**/*.@(spec|test).?(c|m)[jt]s?(x)"
+        ],
+        "timeout": 30000
+      },
+      {
+        "outputDir": "/Users/samujjwal/Development/ghatana/products/dcmaar/apps/guardian/apps/parent-dashboard/test-results",
+        "repeatEach": 1,
+        "retries": 0,
+        "metadata": {
+          "actualWorkers": 4
+        },
+        "id": "chromium-tablet",
+        "name": "chromium-tablet",
+        "testDir": "/Users/samujjwal/Development/ghatana/products/dcmaar/apps/guardian/apps/parent-dashboard/e2e",
+        "testIgnore": [
+          "**/src/test/**"
+        ],
+        "testMatch": [
+          "**/*.@(spec|test).?(c|m)[jt]s?(x)"
+        ],
+        "timeout": 30000
+      },
+      {
+        "outputDir": "/Users/samujjwal/Development/ghatana/products/dcmaar/apps/guardian/apps/parent-dashboard/test-results",
+        "repeatEach": 1,
+        "retries": 0,
+        "metadata": {
+          "actualWorkers": 4
+        },
+        "id": "chromium-mobile",
+        "name": "chromium-mobile",
+        "testDir": "/Users/samujjwal/Development/ghatana/products/dcmaar/apps/guardian/apps/parent-dashboard/e2e",
+        "testIgnore": [
+          "**/src/test/**"
+        ],
+        "testMatch": [
+          "**/*.@(spec|test).?(c|m)[jt]s?(x)"
+        ],
+        "timeout": 30000
+      },
+      {
+        "outputDir": "/Users/samujjwal/Development/ghatana/products/dcmaar/apps/guardian/apps/parent-dashboard/test-results",
+        "repeatEach": 1,
+        "retries": 0,
+        "metadata": {
+          "actualWorkers": 4
+        },
+        "id": "webkit-mobile",
+        "name": "webkit-mobile",
+        "testDir": "/Users/samujjwal/Development/ghatana/products/dcmaar/apps/guardian/apps/parent-dashboard/e2e",
+        "testIgnore": [
+          "**/src/test/**"
+        ],
+        "testMatch": [
+          "**/*.@(spec|test).?(c|m)[jt]s?(x)"
+        ],
+        "timeout": 30000
+      }
+    ],
+    "shard": null,
+    "tags": [],
+    "updateSnapshots": "missing",
+    "updateSourceMethod": "patch",
+    "version": "1.57.0",
+    "workers": 4,
+    "webServer": null
+  },
+  "suites": [
+    {
+      "title": "child-requests.spec.ts",
+      "file": "child-requests.spec.ts",
+      "column": 0,
+      "line": 0,
+      "specs": [],
+      "suites": [
+        {
+          "title": "Child Requests on Dashboard",
+          "file": "child-requests.spec.ts",
+          "line": 20,
+          "column": 6,
+          "specs": [
+            {
+              "title": "should display pending child requests section",
+              "ok": false,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 30000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "chromium-desktop",
+                  "projectName": "chromium-desktop",
+                  "results": [
+                    {
+                      "workerIndex": 0,
+                      "parallelIndex": 0,
+                      "status": "failed",
+                      "duration": 4939,
+                      "error": {
+                        "message": "Error: page.goto: net::ERR_CONNECTION_REFUSED at http://localhost:4173/\nCall log:\n\u001b[2m  - navigating to \"http://localhost:4173/\", waiting until \"load\"\u001b[22m\n",
+                        "stack": "Error: page.goto: net::ERR_CONNECTION_REFUSED at http://localhost:4173/\nCall log:\n\u001b[2m  - navigating to \"http://localhost:4173/\", waiting until \"load\"\u001b[22m\n\n    at /Users/samujjwal/Development/ghatana/products/dcmaar/apps/guardian/apps/parent-dashboard/e2e/child-requests.spec.ts:23:20",
+                        "location": {
+                          "file": "/Users/samujjwal/Development/ghatana/products/dcmaar/apps/guardian/apps/parent-dashboard/e2e/child-requests.spec.ts",
+                          "column": 20,
+                          "line": 23
+                        },
+                        "snippet": "  21 |     test.beforeEach(async ({ page, context }) => {\n  22 |         await context.clearCookies();\n> 23 |         await page.goto('/');\n     |                    ^\n  24 |         await page.evaluate(() => {\n  25 |             try { localStorage.clear(); } catch (e) { }\n  26 |         });"
+                      },
+                      "errors": [
+                        {
+                          "location": {
+                            "file": "/Users/samujjwal/Development/ghatana/products/dcmaar/apps/guardian/apps/parent-dashboard/e2e/child-requests.spec.ts",
+                            "column": 20,
+                            "line": 23
+                          },
+                          "message": "Error: page.goto: net::ERR_CONNECTION_REFUSED at http://localhost:4173/\nCall log:\n\u001b[2m  - navigating to \"http://localhost:4173/\", waiting until \"load\"\u001b[22m\n\n\n  21 |     test.beforeEach(async ({ page, context }) => {\n  22 |         await context.clearCookies();\n> 23 |         await page.goto('/');\n     |                    ^\n  24 |         await page.evaluate(() => {\n  25 |             try { localStorage.clear(); } catch (e) { }\n  26 |         });\n    at /Users/samujjwal/Development/ghatana/products/dcmaar/apps/guardian/apps/parent-dashboard/e2e/child-requests.spec.ts:23:20"
+                        }
+                      ],
+                      "stdout": [],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2025-11-29T20:18:31.347Z",
+                      "annotations": [],
+                      "attachments": [
+                        {
+                          "name": "screenshot",
+                          "contentType": "image/png",
+                          "path": "/Users/samujjwal/Development/ghatana/products/dcmaar/apps/guardian/apps/parent-dashboard/test-results/child-requests-Child-Reque-cd19e-ding-child-requests-section-chromium-desktop/test-failed-1.png"
+                        },
+                        {
+                          "name": "video",
+                          "contentType": "video/webm",
+                          "path": "/Users/samujjwal/Development/ghatana/products/dcmaar/apps/guardian/apps/parent-dashboard/test-results/child-requests-Child-Reque-cd19e-ding-child-requests-section-chromium-desktop/video.webm"
+                        }
+                      ],
+                      "errorLocation": {
+                        "file": "/Users/samujjwal/Development/ghatana/products/dcmaar/apps/guardian/apps/parent-dashboard/e2e/child-requests.spec.ts",
+                        "column": 20,
+                        "line": 23
+                      }
+                    }
+                  ],
+                  "status": "unexpected"
+                }
+              ],
+              "id": "55f6075dfd3692858dde-845da787552d112725a8",
+              "file": "child-requests.spec.ts",
+              "line": 31,
+              "column": 5
+            },
+            {
+              "title": "should approve a pending child request from dashboard",
+              "ok": false,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 30000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "chromium-desktop",
+                  "projectName": "chromium-desktop",
+                  "results": [
+                    {
+                      "workerIndex": 1,
+                      "parallelIndex": 1,
+                      "status": "failed",
+                      "duration": 4926,
+                      "error": {
+                        "message": "Error: page.goto: net::ERR_CONNECTION_REFUSED at http://localhost:4173/\nCall log:\n\u001b[2m  - navigating to \"http://localhost:4173/\", waiting until \"load\"\u001b[22m\n",
+                        "stack": "Error: page.goto: net::ERR_CONNECTION_REFUSED at http://localhost:4173/\nCall log:\n\u001b[2m  - navigating to \"http://localhost:4173/\", waiting until \"load\"\u001b[22m\n\n    at /Users/samujjwal/Development/ghatana/products/dcmaar/apps/guardian/apps/parent-dashboard/e2e/child-requests.spec.ts:23:20",
+                        "location": {
+                          "file": "/Users/samujjwal/Development/ghatana/products/dcmaar/apps/guardian/apps/parent-dashboard/e2e/child-requests.spec.ts",
+                          "column": 20,
+                          "line": 23
+                        },
+                        "snippet": "  21 |     test.beforeEach(async ({ page, context }) => {\n  22 |         await context.clearCookies();\n> 23 |         await page.goto('/');\n     |                    ^\n  24 |         await page.evaluate(() => {\n  25 |             try { localStorage.clear(); } catch (e) { }\n  26 |         });"
+                      },
+                      "errors": [
+                        {
+                          "location": {
+                            "file": "/Users/samujjwal/Development/ghatana/products/dcmaar/apps/guardian/apps/parent-dashboard/e2e/child-requests.spec.ts",
+                            "column": 20,
+                            "line": 23
+                          },
+                          "message": "Error: page.goto: net::ERR_CONNECTION_REFUSED at http://localhost:4173/\nCall log:\n\u001b[2m  - navigating to \"http://localhost:4173/\", waiting until \"load\"\u001b[22m\n\n\n  21 |     test.beforeEach(async ({ page, context }) => {\n  22 |         await context.clearCookies();\n> 23 |         await page.goto('/');\n     |                    ^\n  24 |         await page.evaluate(() => {\n  25 |             try { localStorage.clear(); } catch (e) { }\n  26 |         });\n    at /Users/samujjwal/Development/ghatana/products/dcmaar/apps/guardian/apps/parent-dashboard/e2e/child-requests.spec.ts:23:20"
+                        }
+                      ],
+                      "stdout": [],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2025-11-29T20:18:31.341Z",
+                      "annotations": [],
+                      "attachments": [
+                        {
+                          "name": "screenshot",
+                          "contentType": "image/png",
+                          "path": "/Users/samujjwal/Development/ghatana/products/dcmaar/apps/guardian/apps/parent-dashboard/test-results/child-requests-Child-Reque-de9d4-hild-request-from-dashboard-chromium-desktop/test-failed-1.png"
+                        },
+                        {
+                          "name": "video",
+                          "contentType": "video/webm",
+                          "path": "/Users/samujjwal/Development/ghatana/products/dcmaar/apps/guardian/apps/parent-dashboard/test-results/child-requests-Child-Reque-de9d4-hild-request-from-dashboard-chromium-desktop/video.webm"
+                        }
+                      ],
+                      "errorLocation": {
+                        "file": "/Users/samujjwal/Development/ghatana/products/dcmaar/apps/guardian/apps/parent-dashboard/e2e/child-requests.spec.ts",
+                        "column": 20,
+                        "line": 23
+                      }
+                    }
+                  ],
+                  "status": "unexpected"
+                }
+              ],
+              "id": "55f6075dfd3692858dde-dab483b6991337b5704d",
+              "file": "child-requests.spec.ts",
+              "line": 40,
+              "column": 5
+            },
+            {
+              "title": "should deny a pending child request from dashboard",
+              "ok": false,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 30000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "chromium-desktop",
+                  "projectName": "chromium-desktop",
+                  "results": [
+                    {
+                      "workerIndex": 2,
+                      "parallelIndex": 2,
+                      "status": "failed",
+                      "duration": 4997,
+                      "error": {
+                        "message": "Error: page.goto: net::ERR_CONNECTION_REFUSED at http://localhost:4173/\nCall log:\n\u001b[2m  - navigating to \"http://localhost:4173/\", waiting until \"load\"\u001b[22m\n",
+                        "stack": "Error: page.goto: net::ERR_CONNECTION_REFUSED at http://localhost:4173/\nCall log:\n\u001b[2m  - navigating to \"http://localhost:4173/\", waiting until \"load\"\u001b[22m\n\n    at /Users/samujjwal/Development/ghatana/products/dcmaar/apps/guardian/apps/parent-dashboard/e2e/child-requests.spec.ts:23:20",
+                        "location": {
+                          "file": "/Users/samujjwal/Development/ghatana/products/dcmaar/apps/guardian/apps/parent-dashboard/e2e/child-requests.spec.ts",
+                          "column": 20,
+                          "line": 23
+                        },
+                        "snippet": "  21 |     test.beforeEach(async ({ page, context }) => {\n  22 |         await context.clearCookies();\n> 23 |         await page.goto('/');\n     |                    ^\n  24 |         await page.evaluate(() => {\n  25 |             try { localStorage.clear(); } catch (e) { }\n  26 |         });"
+                      },
+                      "errors": [
+                        {
+                          "location": {
+                            "file": "/Users/samujjwal/Development/ghatana/products/dcmaar/apps/guardian/apps/parent-dashboard/e2e/child-requests.spec.ts",
+                            "column": 20,
+                            "line": 23
+                          },
+                          "message": "Error: page.goto: net::ERR_CONNECTION_REFUSED at http://localhost:4173/\nCall log:\n\u001b[2m  - navigating to \"http://localhost:4173/\", waiting until \"load\"\u001b[22m\n\n\n  21 |     test.beforeEach(async ({ page, context }) => {\n  22 |         await context.clearCookies();\n> 23 |         await page.goto('/');\n     |                    ^\n  24 |         await page.evaluate(() => {\n  25 |             try { localStorage.clear(); } catch (e) { }\n  26 |         });\n    at /Users/samujjwal/Development/ghatana/products/dcmaar/apps/guardian/apps/parent-dashboard/e2e/child-requests.spec.ts:23:20"
+                        }
+                      ],
+                      "stdout": [],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2025-11-29T20:18:31.376Z",
+                      "annotations": [],
+                      "attachments": [
+                        {
+                          "name": "screenshot",
+                          "contentType": "image/png",
+                          "path": "/Users/samujjwal/Development/ghatana/products/dcmaar/apps/guardian/apps/parent-dashboard/test-results/child-requests-Child-Reque-e963f-hild-request-from-dashboard-chromium-desktop/test-failed-1.png"
+                        },
+                        {
+                          "name": "video",
+                          "contentType": "video/webm",
+                          "path": "/Users/samujjwal/Development/ghatana/products/dcmaar/apps/guardian/apps/parent-dashboard/test-results/child-requests-Child-Reque-e963f-hild-request-from-dashboard-chromium-desktop/video.webm"
+                        }
+                      ],
+                      "errorLocation": {
+                        "file": "/Users/samujjwal/Development/ghatana/products/dcmaar/apps/guardian/apps/parent-dashboard/e2e/child-requests.spec.ts",
+                        "column": 20,
+                        "line": 23
+                      }
+                    }
+                  ],
+                  "status": "unexpected"
+                }
+              ],
+              "id": "55f6075dfd3692858dde-3e0bc06a53276159ce5f",
+              "file": "child-requests.spec.ts",
+              "line": 53,
+              "column": 5
+            },
+            {
+              "title": "should display pending child requests section",
+              "ok": false,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 30000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "firefox-desktop",
+                  "projectName": "firefox-desktop",
+                  "results": [
+                    {
+                      "workerIndex": 3,
+                      "parallelIndex": 3,
+                      "status": "failed",
+                      "duration": 21296,
+                      "error": {
+                        "message": "Error: page.goto: NS_ERROR_CONNECTION_REFUSED\nCall log:\n\u001b[2m  - navigating to \"http://localhost:4173/\", waiting until \"load\"\u001b[22m\n",
+                        "stack": "Error: page.goto: NS_ERROR_CONNECTION_REFUSED\nCall log:\n\u001b[2m  - navigating to \"http://localhost:4173/\", waiting until \"load\"\u001b[22m\n\n    at /Users/samujjwal/Development/ghatana/products/dcmaar/apps/guardian/apps/parent-dashboard/e2e/child-requests.spec.ts:23:20",
+                        "location": {
+                          "file": "/Users/samujjwal/Development/ghatana/products/dcmaar/apps/guardian/apps/parent-dashboard/e2e/child-requests.spec.ts",
+                          "column": 20,
+                          "line": 23
+                        },
+                        "snippet": "  21 |     test.beforeEach(async ({ page, context }) => {\n  22 |         await context.clearCookies();\n> 23 |         await page.goto('/');\n     |                    ^\n  24 |         await page.evaluate(() => {\n  25 |             try { localStorage.clear(); } catch (e) { }\n  26 |         });"
+                      },
+                      "errors": [
+                        {
+                          "location": {
+                            "file": "/Users/samujjwal/Development/ghatana/products/dcmaar/apps/guardian/apps/parent-dashboard/e2e/child-requests.spec.ts",
+                            "column": 20,
+                            "line": 23
+                          },
+                          "message": "Error: page.goto: NS_ERROR_CONNECTION_REFUSED\nCall log:\n\u001b[2m  - navigating to \"http://localhost:4173/\", waiting until \"load\"\u001b[22m\n\n\n  21 |     test.beforeEach(async ({ page, context }) => {\n  22 |         await context.clearCookies();\n> 23 |         await page.goto('/');\n     |                    ^\n  24 |         await page.evaluate(() => {\n  25 |             try { localStorage.clear(); } catch (e) { }\n  26 |         });\n    at /Users/samujjwal/Development/ghatana/products/dcmaar/apps/guardian/apps/parent-dashboard/e2e/child-requests.spec.ts:23:20"
+                        }
+                      ],
+                      "stdout": [],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2025-11-29T20:18:31.444Z",
+                      "annotations": [],
+                      "attachments": [
+                        {
+                          "name": "screenshot",
+                          "contentType": "image/png",
+                          "path": "/Users/samujjwal/Development/ghatana/products/dcmaar/apps/guardian/apps/parent-dashboard/test-results/child-requests-Child-Reque-cd19e-ding-child-requests-section-firefox-desktop/test-failed-1.png"
+                        },
+                        {
+                          "name": "video",
+                          "contentType": "video/webm",
+                          "path": "/Users/samujjwal/Development/ghatana/products/dcmaar/apps/guardian/apps/parent-dashboard/test-results/child-requests-Child-Reque-cd19e-ding-child-requests-section-firefox-desktop/video.webm"
+                        },
+                        {
+                          "name": "error-context",
+                          "contentType": "text/markdown",
+                          "path": "/Users/samujjwal/Development/ghatana/products/dcmaar/apps/guardian/apps/parent-dashboard/test-results/child-requests-Child-Reque-cd19e-ding-child-requests-section-firefox-desktop/error-context.md"
+                        }
+                      ],
+                      "errorLocation": {
+                        "file": "/Users/samujjwal/Development/ghatana/products/dcmaar/apps/guardian/apps/parent-dashboard/e2e/child-requests.spec.ts",
+                        "column": 20,
+                        "line": 23
+                      }
+                    }
+                  ],
+                  "status": "unexpected"
+                }
+              ],
+              "id": "55f6075dfd3692858dde-8848664072bc31b86e3b",
+              "file": "child-requests.spec.ts",
+              "line": 31,
+              "column": 5
+            },
+            {
+              "title": "should approve a pending child request from dashboard",
+              "ok": false,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 30000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "firefox-desktop",
+                  "projectName": "firefox-desktop",
+                  "results": [
+                    {
+                      "workerIndex": 6,
+                      "parallelIndex": 2,
+                      "status": "failed",
+                      "duration": 17484,
+                      "error": {
+                        "message": "Error: page.goto: NS_ERROR_CONNECTION_REFUSED\nCall log:\n\u001b[2m  - navigating to \"http://localhost:4173/\", waiting until \"load\"\u001b[22m\n",
+                        "stack": "Error: page.goto: NS_ERROR_CONNECTION_REFUSED\nCall log:\n\u001b[2m  - navigating to \"http://localhost:4173/\", waiting until \"load\"\u001b[22m\n\n    at /Users/samujjwal/Development/ghatana/products/dcmaar/apps/guardian/apps/parent-dashboard/e2e/child-requests.spec.ts:23:20",
+                        "location": {
+                          "file": "/Users/samujjwal/Development/ghatana/products/dcmaar/apps/guardian/apps/parent-dashboard/e2e/child-requests.spec.ts",
+                          "column": 20,
+                          "line": 23
+                        },
+                        "snippet": "  21 |     test.beforeEach(async ({ page, context }) => {\n  22 |         await context.clearCookies();\n> 23 |         await page.goto('/');\n     |                    ^\n  24 |         await page.evaluate(() => {\n  25 |             try { localStorage.clear(); } catch (e) { }\n  26 |         });"
+                      },
+                      "errors": [
+                        {
+                          "location": {
+                            "file": "/Users/samujjwal/Development/ghatana/products/dcmaar/apps/guardian/apps/parent-dashboard/e2e/child-requests.spec.ts",
+                            "column": 20,
+                            "line": 23
+                          },
+                          "message": "Error: page.goto: NS_ERROR_CONNECTION_REFUSED\nCall log:\n\u001b[2m  - navigating to \"http://localhost:4173/\", waiting until \"load\"\u001b[22m\n\n\n  21 |     test.beforeEach(async ({ page, context }) => {\n  22 |         await context.clearCookies();\n> 23 |         await page.goto('/');\n     |                    ^\n  24 |         await page.evaluate(() => {\n  25 |             try { localStorage.clear(); } catch (e) { }\n  26 |         });\n    at /Users/samujjwal/Development/ghatana/products/dcmaar/apps/guardian/apps/parent-dashboard/e2e/child-requests.spec.ts:23:20"
+                        }
+                      ],
+                      "stdout": [],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2025-11-29T20:18:45.011Z",
+                      "annotations": [],
+                      "attachments": [
+                        {
+                          "name": "screenshot",
+                          "contentType": "image/png",
+                          "path": "/Users/samujjwal/Development/ghatana/products/dcmaar/apps/guardian/apps/parent-dashboard/test-results/child-requests-Child-Reque-de9d4-hild-request-from-dashboard-firefox-desktop/test-failed-1.png"
+                        },
+                        {
+                          "name": "video",
+                          "contentType": "video/webm",
+                          "path": "/Users/samujjwal/Development/ghatana/products/dcmaar/apps/guardian/apps/parent-dashboard/test-results/child-requests-Child-Reque-de9d4-hild-request-from-dashboard-firefox-desktop/video.webm"
+                        },
+                        {
+                          "name": "error-context",
+                          "contentType": "text/markdown",
+                          "path": "/Users/samujjwal/Development/ghatana/products/dcmaar/apps/guardian/apps/parent-dashboard/test-results/child-requests-Child-Reque-de9d4-hild-request-from-dashboard-firefox-desktop/error-context.md"
+                        }
+                      ],
+                      "errorLocation": {
+                        "file": "/Users/samujjwal/Development/ghatana/products/dcmaar/apps/guardian/apps/parent-dashboard/e2e/child-requests.spec.ts",
+                        "column": 20,
+                        "line": 23
+                      }
+                    }
+                  ],
+                  "status": "unexpected"
+                }
+              ],
+              "id": "55f6075dfd3692858dde-7a5e118bedf115c43404",
+              "file": "child-requests.spec.ts",
+              "line": 40,
+              "column": 5
+            },
+            {
+              "title": "should deny a pending child request from dashboard",
+              "ok": false,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 30000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "firefox-desktop",
+                  "projectName": "firefox-desktop",
+                  "results": [
+                    {
+                      "workerIndex": 5,
+                      "parallelIndex": 1,
+                      "status": "failed",
+                      "duration": 17392,
+                      "error": {
+                        "message": "Error: page.goto: NS_ERROR_CONNECTION_REFUSED\nCall log:\n\u001b[2m  - navigating to \"http://localhost:4173/\", waiting until \"load\"\u001b[22m\n",
+                        "stack": "Error: page.goto: NS_ERROR_CONNECTION_REFUSED\nCall log:\n\u001b[2m  - navigating to \"http://localhost:4173/\", waiting until \"load\"\u001b[22m\n\n    at /Users/samujjwal/Development/ghatana/products/dcmaar/apps/guardian/apps/parent-dashboard/e2e/child-requests.spec.ts:23:20",
+                        "location": {
+                          "file": "/Users/samujjwal/Development/ghatana/products/dcmaar/apps/guardian/apps/parent-dashboard/e2e/child-requests.spec.ts",
+                          "column": 20,
+                          "line": 23
+                        },
+                        "snippet": "  21 |     test.beforeEach(async ({ page, context }) => {\n  22 |         await context.clearCookies();\n> 23 |         await page.goto('/');\n     |                    ^\n  24 |         await page.evaluate(() => {\n  25 |             try { localStorage.clear(); } catch (e) { }\n  26 |         });"
+                      },
+                      "errors": [
+                        {
+                          "location": {
+                            "file": "/Users/samujjwal/Development/ghatana/products/dcmaar/apps/guardian/apps/parent-dashboard/e2e/child-requests.spec.ts",
+                            "column": 20,
+                            "line": 23
+                          },
+                          "message": "Error: page.goto: NS_ERROR_CONNECTION_REFUSED\nCall log:\n\u001b[2m  - navigating to \"http://localhost:4173/\", waiting until \"load\"\u001b[22m\n\n\n  21 |     test.beforeEach(async ({ page, context }) => {\n  22 |         await context.clearCookies();\n> 23 |         await page.goto('/');\n     |                    ^\n  24 |         await page.evaluate(() => {\n  25 |             try { localStorage.clear(); } catch (e) { }\n  26 |         });\n    at /Users/samujjwal/Development/ghatana/products/dcmaar/apps/guardian/apps/parent-dashboard/e2e/child-requests.spec.ts:23:20"
+                        }
+                      ],
+                      "stdout": [],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2025-11-29T20:18:45.011Z",
+                      "annotations": [],
+                      "attachments": [
+                        {
+                          "name": "video",
+                          "contentType": "video/webm",
+                          "path": "/Users/samujjwal/Development/ghatana/products/dcmaar/apps/guardian/apps/parent-dashboard/test-results/child-requests-Child-Reque-e963f-hild-request-from-dashboard-firefox-desktop/video.webm"
+                        },
+                        {
+                          "name": "error-context",
+                          "contentType": "text/markdown",
+                          "path": "/Users/samujjwal/Development/ghatana/products/dcmaar/apps/guardian/apps/parent-dashboard/test-results/child-requests-Child-Reque-e963f-hild-request-from-dashboard-firefox-desktop/error-context.md"
+                        }
+                      ],
+                      "errorLocation": {
+                        "file": "/Users/samujjwal/Development/ghatana/products/dcmaar/apps/guardian/apps/parent-dashboard/e2e/child-requests.spec.ts",
+                        "column": 20,
+                        "line": 23
+                      }
+                    }
+                  ],
+                  "status": "unexpected"
+                }
+              ],
+              "id": "55f6075dfd3692858dde-f0f5371b050a691d1c4f",
+              "file": "child-requests.spec.ts",
+              "line": 53,
+              "column": 5
+            },
+            {
+              "title": "should display pending child requests section",
+              "ok": false,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 30000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "webkit-desktop",
+                  "projectName": "webkit-desktop",
+                  "results": [
+                    {
+                      "workerIndex": 4,
+                      "parallelIndex": 0,
+                      "status": "failed",
+                      "duration": 6,
+                      "error": {
+                        "message": "Error: browserType.launch: Executable doesn't exist at /Users/samujjwal/Library/Caches/ms-playwright/webkit-2227/pw_run.sh\n╔═════════════════════════════════════════════════════════════════════════╗\n║ Looks like Playwright Test or Playwright was just installed or updated. ║\n║ Please run the following command to download new browsers:              ║\n║                                                                         ║\n║     npx playwright install                                              ║\n║                                                                         ║\n║ <3 Playwright Team                                                      ║\n╚═════════════════════════════════════════════════════════════════════════╝",
+                        "stack": "Error: browserType.launch: Executable doesn't exist at /Users/samujjwal/Library/Caches/ms-playwright/webkit-2227/pw_run.sh\n╔═════════════════════════════════════════════════════════════════════════╗\n║ Looks like Playwright Test or Playwright was just installed or updated. ║\n║ Please run the following command to download new browsers:              ║\n║                                                                         ║\n║     npx playwright install                                              ║\n║                                                                         ║\n║ <3 Playwright Team                                                      ║\n╚═════════════════════════════════════════════════════════════════════════╝"
+                      },
+                      "errors": [
+                        {
+                          "message": "Error: browserType.launch: Executable doesn't exist at /Users/samujjwal/Library/Caches/ms-playwright/webkit-2227/pw_run.sh\n╔═════════════════════════════════════════════════════════════════════════╗\n║ Looks like Playwright Test or Playwright was just installed or updated. ║\n║ Please run the following command to download new browsers:              ║\n║                                                                         ║\n║     npx playwright install                                              ║\n║                                                                         ║\n║ <3 Playwright Team                                                      ║\n╚═════════════════════════════════════════════════════════════════════════╝"
+                        }
+                      ],
+                      "stdout": [],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2025-11-29T20:18:45.011Z",
+                      "annotations": [],
+                      "attachments": []
+                    }
+                  ],
+                  "status": "unexpected"
+                }
+              ],
+              "id": "55f6075dfd3692858dde-119039514216f40fd8bb",
+              "file": "child-requests.spec.ts",
+              "line": 31,
+              "column": 5
+            },
+            {
+              "title": "should approve a pending child request from dashboard",
+              "ok": false,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 30000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "webkit-desktop",
+                  "projectName": "webkit-desktop",
+                  "results": [
+                    {
+                      "workerIndex": 7,
+                      "parallelIndex": 0,
+                      "status": "failed",
+                      "duration": 2,
+                      "error": {
+                        "message": "Error: browserType.launch: Executable doesn't exist at /Users/samujjwal/Library/Caches/ms-playwright/webkit-2227/pw_run.sh\n╔═════════════════════════════════════════════════════════════════════════╗\n║ Looks like Playwright Test or Playwright was just installed or updated. ║\n║ Please run the following command to download new browsers:              ║\n║                                                                         ║\n║     npx playwright install                                              ║\n║                                                                         ║\n║ <3 Playwright Team                                                      ║\n╚═════════════════════════════════════════════════════════════════════════╝",
+                        "stack": "Error: browserType.launch: Executable doesn't exist at /Users/samujjwal/Library/Caches/ms-playwright/webkit-2227/pw_run.sh\n╔═════════════════════════════════════════════════════════════════════════╗\n║ Looks like Playwright Test or Playwright was just installed or updated. ║\n║ Please run the following command to download new browsers:              ║\n║                                                                         ║\n║     npx playwright install                                              ║\n║                                                                         ║\n║ <3 Playwright Team                                                      ║\n╚═════════════════════════════════════════════════════════════════════════╝"
+                      },
+                      "errors": [
+                        {
+                          "message": "Error: browserType.launch: Executable doesn't exist at /Users/samujjwal/Library/Caches/ms-playwright/webkit-2227/pw_run.sh\n╔═════════════════════════════════════════════════════════════════════════╗\n║ Looks like Playwright Test or Playwright was just installed or updated. ║\n║ Please run the following command to download new browsers:              ║\n║                                                                         ║\n║     npx playwright install                                              ║\n║                                                                         ║\n║ <3 Playwright Team                                                      ║\n╚═════════════════════════════════════════════════════════════════════════╝"
+                        }
+                      ],
+                      "stdout": [],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2025-11-29T20:18:45.395Z",
+                      "annotations": [],
+                      "attachments": []
+                    }
+                  ],
+                  "status": "unexpected"
+                }
+              ],
+              "id": "55f6075dfd3692858dde-7dae9b8ac819b5a74aab",
+              "file": "child-requests.spec.ts",
+              "line": 40,
+              "column": 5
+            },
+            {
+              "title": "should deny a pending child request from dashboard",
+              "ok": false,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 30000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "webkit-desktop",
+                  "projectName": "webkit-desktop",
+                  "results": [
+                    {
+                      "workerIndex": 8,
+                      "parallelIndex": 0,
+                      "status": "failed",
+                      "duration": 4,
+                      "error": {
+                        "message": "Error: browserType.launch: Executable doesn't exist at /Users/samujjwal/Library/Caches/ms-playwright/webkit-2227/pw_run.sh\n╔═════════════════════════════════════════════════════════════════════════╗\n║ Looks like Playwright Test or Playwright was just installed or updated. ║\n║ Please run the following command to download new browsers:              ║\n║                                                                         ║\n║     npx playwright install                                              ║\n║                                                                         ║\n║ <3 Playwright Team                                                      ║\n╚═════════════════════════════════════════════════════════════════════════╝",
+                        "stack": "Error: browserType.launch: Executable doesn't exist at /Users/samujjwal/Library/Caches/ms-playwright/webkit-2227/pw_run.sh\n╔═════════════════════════════════════════════════════════════════════════╗\n║ Looks like Playwright Test or Playwright was just installed or updated. ║\n║ Please run the following command to download new browsers:              ║\n║                                                                         ║\n║     npx playwright install                                              ║\n║                                                                         ║\n║ <3 Playwright Team                                                      ║\n╚═════════════════════════════════════════════════════════════════════════╝"
+                      },
+                      "errors": [
+                        {
+                          "message": "Error: browserType.launch: Executable doesn't exist at /Users/samujjwal/Library/Caches/ms-playwright/webkit-2227/pw_run.sh\n╔═════════════════════════════════════════════════════════════════════════╗\n║ Looks like Playwright Test or Playwright was just installed or updated. ║\n║ Please run the following command to download new browsers:              ║\n║                                                                         ║\n║     npx playwright install                                              ║\n║                                                                         ║\n║ <3 Playwright Team                                                      ║\n╚═════════════════════════════════════════════════════════════════════════╝"
+                        }
+                      ],
+                      "stdout": [],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2025-11-29T20:18:46.045Z",
+                      "annotations": [],
+                      "attachments": []
+                    }
+                  ],
+                  "status": "unexpected"
+                }
+              ],
+              "id": "55f6075dfd3692858dde-1c847729a5e02d37422e",
+              "file": "child-requests.spec.ts",
+              "line": 53,
+              "column": 5
+            },
+            {
+              "title": "should display pending child requests section",
+              "ok": false,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 30000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "chromium-tablet",
+                  "projectName": "chromium-tablet",
+                  "results": [
+                    {
+                      "workerIndex": 9,
+                      "parallelIndex": 0,
+                      "status": "failed",
+                      "duration": 913,
+                      "error": {
+                        "message": "Error: page.goto: net::ERR_CONNECTION_REFUSED at http://localhost:4173/\nCall log:\n\u001b[2m  - navigating to \"http://localhost:4173/\", waiting until \"load\"\u001b[22m\n",
+                        "stack": "Error: page.goto: net::ERR_CONNECTION_REFUSED at http://localhost:4173/\nCall log:\n\u001b[2m  - navigating to \"http://localhost:4173/\", waiting until \"load\"\u001b[22m\n\n    at /Users/samujjwal/Development/ghatana/products/dcmaar/apps/guardian/apps/parent-dashboard/e2e/child-requests.spec.ts:23:20",
+                        "location": {
+                          "file": "/Users/samujjwal/Development/ghatana/products/dcmaar/apps/guardian/apps/parent-dashboard/e2e/child-requests.spec.ts",
+                          "column": 20,
+                          "line": 23
+                        },
+                        "snippet": "  21 |     test.beforeEach(async ({ page, context }) => {\n  22 |         await context.clearCookies();\n> 23 |         await page.goto('/');\n     |                    ^\n  24 |         await page.evaluate(() => {\n  25 |             try { localStorage.clear(); } catch (e) { }\n  26 |         });"
+                      },
+                      "errors": [
+                        {
+                          "location": {
+                            "file": "/Users/samujjwal/Development/ghatana/products/dcmaar/apps/guardian/apps/parent-dashboard/e2e/child-requests.spec.ts",
+                            "column": 20,
+                            "line": 23
+                          },
+                          "message": "Error: page.goto: net::ERR_CONNECTION_REFUSED at http://localhost:4173/\nCall log:\n\u001b[2m  - navigating to \"http://localhost:4173/\", waiting until \"load\"\u001b[22m\n\n\n  21 |     test.beforeEach(async ({ page, context }) => {\n  22 |         await context.clearCookies();\n> 23 |         await page.goto('/');\n     |                    ^\n  24 |         await page.evaluate(() => {\n  25 |             try { localStorage.clear(); } catch (e) { }\n  26 |         });\n    at /Users/samujjwal/Development/ghatana/products/dcmaar/apps/guardian/apps/parent-dashboard/e2e/child-requests.spec.ts:23:20"
+                        }
+                      ],
+                      "stdout": [],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2025-11-29T20:18:46.812Z",
+                      "annotations": [],
+                      "attachments": [
+                        {
+                          "name": "screenshot",
+                          "contentType": "image/png",
+                          "path": "/Users/samujjwal/Development/ghatana/products/dcmaar/apps/guardian/apps/parent-dashboard/test-results/child-requests-Child-Reque-cd19e-ding-child-requests-section-chromium-tablet/test-failed-1.png"
+                        },
+                        {
+                          "name": "video",
+                          "contentType": "video/webm",
+                          "path": "/Users/samujjwal/Development/ghatana/products/dcmaar/apps/guardian/apps/parent-dashboard/test-results/child-requests-Child-Reque-cd19e-ding-child-requests-section-chromium-tablet/video.webm"
+                        }
+                      ],
+                      "errorLocation": {
+                        "file": "/Users/samujjwal/Development/ghatana/products/dcmaar/apps/guardian/apps/parent-dashboard/e2e/child-requests.spec.ts",
+                        "column": 20,
+                        "line": 23
+                      }
+                    }
+                  ],
+                  "status": "unexpected"
+                }
+              ],
+              "id": "55f6075dfd3692858dde-c54102858d8ff8ac5e10",
+              "file": "child-requests.spec.ts",
+              "line": 31,
+              "column": 5
+            },
+            {
+              "title": "should approve a pending child request from dashboard",
+              "ok": false,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 30000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "chromium-tablet",
+                  "projectName": "chromium-tablet",
+                  "results": [
+                    {
+                      "workerIndex": 10,
+                      "parallelIndex": 0,
+                      "status": "failed",
+                      "duration": 1848,
+                      "error": {
+                        "message": "Error: page.goto: net::ERR_CONNECTION_REFUSED at http://localhost:4173/\nCall log:\n\u001b[2m  - navigating to \"http://localhost:4173/\", waiting until \"load\"\u001b[22m\n",
+                        "stack": "Error: page.goto: net::ERR_CONNECTION_REFUSED at http://localhost:4173/\nCall log:\n\u001b[2m  - navigating to \"http://localhost:4173/\", waiting until \"load\"\u001b[22m\n\n    at /Users/samujjwal/Development/ghatana/products/dcmaar/apps/guardian/apps/parent-dashboard/e2e/child-requests.spec.ts:23:20",
+                        "location": {
+                          "file": "/Users/samujjwal/Development/ghatana/products/dcmaar/apps/guardian/apps/parent-dashboard/e2e/child-requests.spec.ts",
+                          "column": 20,
+                          "line": 23
+                        },
+                        "snippet": "  21 |     test.beforeEach(async ({ page, context }) => {\n  22 |         await context.clearCookies();\n> 23 |         await page.goto('/');\n     |                    ^\n  24 |         await page.evaluate(() => {\n  25 |             try { localStorage.clear(); } catch (e) { }\n  26 |         });"
+                      },
+                      "errors": [
+                        {
+                          "location": {
+                            "file": "/Users/samujjwal/Development/ghatana/products/dcmaar/apps/guardian/apps/parent-dashboard/e2e/child-requests.spec.ts",
+                            "column": 20,
+                            "line": 23
+                          },
+                          "message": "Error: page.goto: net::ERR_CONNECTION_REFUSED at http://localhost:4173/\nCall log:\n\u001b[2m  - navigating to \"http://localhost:4173/\", waiting until \"load\"\u001b[22m\n\n\n  21 |     test.beforeEach(async ({ page, context }) => {\n  22 |         await context.clearCookies();\n> 23 |         await page.goto('/');\n     |                    ^\n  24 |         await page.evaluate(() => {\n  25 |             try { localStorage.clear(); } catch (e) { }\n  26 |         });\n    at /Users/samujjwal/Development/ghatana/products/dcmaar/apps/guardian/apps/parent-dashboard/e2e/child-requests.spec.ts:23:20"
+                        }
+                      ],
+                      "stdout": [],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2025-11-29T20:18:52.544Z",
+                      "annotations": [],
+                      "attachments": [
+                        {
+                          "name": "screenshot",
+                          "contentType": "image/png",
+                          "path": "/Users/samujjwal/Development/ghatana/products/dcmaar/apps/guardian/apps/parent-dashboard/test-results/child-requests-Child-Reque-de9d4-hild-request-from-dashboard-chromium-tablet/test-failed-1.png"
+                        },
+                        {
+                          "name": "video",
+                          "contentType": "video/webm",
+                          "path": "/Users/samujjwal/Development/ghatana/products/dcmaar/apps/guardian/apps/parent-dashboard/test-results/child-requests-Child-Reque-de9d4-hild-request-from-dashboard-chromium-tablet/video.webm"
+                        }
+                      ],
+                      "errorLocation": {
+                        "file": "/Users/samujjwal/Development/ghatana/products/dcmaar/apps/guardian/apps/parent-dashboard/e2e/child-requests.spec.ts",
+                        "column": 20,
+                        "line": 23
+                      }
+                    }
+                  ],
+                  "status": "unexpected"
+                }
+              ],
+              "id": "55f6075dfd3692858dde-1b1f3b7aaa682989e487",
+              "file": "child-requests.spec.ts",
+              "line": 40,
+              "column": 5
+            },
+            {
+              "title": "should deny a pending child request from dashboard",
+              "ok": false,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 30000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "chromium-tablet",
+                  "projectName": "chromium-tablet",
+                  "results": [
+                    {
+                      "workerIndex": 11,
+                      "parallelIndex": 0,
+                      "status": "failed",
+                      "duration": 1152,
+                      "error": {
+                        "message": "Error: page.goto: net::ERR_CONNECTION_REFUSED at http://localhost:4173/\nCall log:\n\u001b[2m  - navigating to \"http://localhost:4173/\", waiting until \"load\"\u001b[22m\n",
+                        "stack": "Error: page.goto: net::ERR_CONNECTION_REFUSED at http://localhost:4173/\nCall log:\n\u001b[2m  - navigating to \"http://localhost:4173/\", waiting until \"load\"\u001b[22m\n\n    at /Users/samujjwal/Development/ghatana/products/dcmaar/apps/guardian/apps/parent-dashboard/e2e/child-requests.spec.ts:23:20",
+                        "location": {
+                          "file": "/Users/samujjwal/Development/ghatana/products/dcmaar/apps/guardian/apps/parent-dashboard/e2e/child-requests.spec.ts",
+                          "column": 20,
+                          "line": 23
+                        },
+                        "snippet": "  21 |     test.beforeEach(async ({ page, context }) => {\n  22 |         await context.clearCookies();\n> 23 |         await page.goto('/');\n     |                    ^\n  24 |         await page.evaluate(() => {\n  25 |             try { localStorage.clear(); } catch (e) { }\n  26 |         });"
+                      },
+                      "errors": [
+                        {
+                          "location": {
+                            "file": "/Users/samujjwal/Development/ghatana/products/dcmaar/apps/guardian/apps/parent-dashboard/e2e/child-requests.spec.ts",
+                            "column": 20,
+                            "line": 23
+                          },
+                          "message": "Error: page.goto: net::ERR_CONNECTION_REFUSED at http://localhost:4173/\nCall log:\n\u001b[2m  - navigating to \"http://localhost:4173/\", waiting until \"load\"\u001b[22m\n\n\n  21 |     test.beforeEach(async ({ page, context }) => {\n  22 |         await context.clearCookies();\n> 23 |         await page.goto('/');\n     |                    ^\n  24 |         await page.evaluate(() => {\n  25 |             try { localStorage.clear(); } catch (e) { }\n  26 |         });\n    at /Users/samujjwal/Development/ghatana/products/dcmaar/apps/guardian/apps/parent-dashboard/e2e/child-requests.spec.ts:23:20"
+                        }
+                      ],
+                      "stdout": [],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2025-11-29T20:19:10.724Z",
+                      "annotations": [],
+                      "attachments": [
+                        {
+                          "name": "screenshot",
+                          "contentType": "image/png",
+                          "path": "/Users/samujjwal/Development/ghatana/products/dcmaar/apps/guardian/apps/parent-dashboard/test-results/child-requests-Child-Reque-e963f-hild-request-from-dashboard-chromium-tablet/test-failed-1.png"
+                        },
+                        {
+                          "name": "video",
+                          "contentType": "video/webm",
+                          "path": "/Users/samujjwal/Development/ghatana/products/dcmaar/apps/guardian/apps/parent-dashboard/test-results/child-requests-Child-Reque-e963f-hild-request-from-dashboard-chromium-tablet/video.webm"
+                        }
+                      ],
+                      "errorLocation": {
+                        "file": "/Users/samujjwal/Development/ghatana/products/dcmaar/apps/guardian/apps/parent-dashboard/e2e/child-requests.spec.ts",
+                        "column": 20,
+                        "line": 23
+                      }
+                    }
+                  ],
+                  "status": "unexpected"
+                }
+              ],
+              "id": "55f6075dfd3692858dde-88d50418fd4e14a94103",
+              "file": "child-requests.spec.ts",
+              "line": 53,
+              "column": 5
+            },
+            {
+              "title": "should display pending child requests section",
+              "ok": false,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 30000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "chromium-mobile",
+                  "projectName": "chromium-mobile",
+                  "results": [
+                    {
+                      "workerIndex": 12,
+                      "parallelIndex": 0,
+                      "status": "failed",
+                      "duration": 1382,
+                      "error": {
+                        "message": "Error: page.goto: net::ERR_CONNECTION_REFUSED at http://localhost:4173/\nCall log:\n\u001b[2m  - navigating to \"http://localhost:4173/\", waiting until \"load\"\u001b[22m\n",
+                        "stack": "Error: page.goto: net::ERR_CONNECTION_REFUSED at http://localhost:4173/\nCall log:\n\u001b[2m  - navigating to \"http://localhost:4173/\", waiting until \"load\"\u001b[22m\n\n    at /Users/samujjwal/Development/ghatana/products/dcmaar/apps/guardian/apps/parent-dashboard/e2e/child-requests.spec.ts:23:20",
+                        "location": {
+                          "file": "/Users/samujjwal/Development/ghatana/products/dcmaar/apps/guardian/apps/parent-dashboard/e2e/child-requests.spec.ts",
+                          "column": 20,
+                          "line": 23
+                        },
+                        "snippet": "  21 |     test.beforeEach(async ({ page, context }) => {\n  22 |         await context.clearCookies();\n> 23 |         await page.goto('/');\n     |                    ^\n  24 |         await page.evaluate(() => {\n  25 |             try { localStorage.clear(); } catch (e) { }\n  26 |         });"
+                      },
+                      "errors": [
+                        {
+                          "location": {
+                            "file": "/Users/samujjwal/Development/ghatana/products/dcmaar/apps/guardian/apps/parent-dashboard/e2e/child-requests.spec.ts",
+                            "column": 20,
+                            "line": 23
+                          },
+                          "message": "Error: page.goto: net::ERR_CONNECTION_REFUSED at http://localhost:4173/\nCall log:\n\u001b[2m  - navigating to \"http://localhost:4173/\", waiting until \"load\"\u001b[22m\n\n\n  21 |     test.beforeEach(async ({ page, context }) => {\n  22 |         await context.clearCookies();\n> 23 |         await page.goto('/');\n     |                    ^\n  24 |         await page.evaluate(() => {\n  25 |             try { localStorage.clear(); } catch (e) { }\n  26 |         });\n    at /Users/samujjwal/Development/ghatana/products/dcmaar/apps/guardian/apps/parent-dashboard/e2e/child-requests.spec.ts:23:20"
+                        }
+                      ],
+                      "stdout": [],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2025-11-29T20:19:14.752Z",
+                      "annotations": [],
+                      "attachments": [
+                        {
+                          "name": "screenshot",
+                          "contentType": "image/png",
+                          "path": "/Users/samujjwal/Development/ghatana/products/dcmaar/apps/guardian/apps/parent-dashboard/test-results/child-requests-Child-Reque-cd19e-ding-child-requests-section-chromium-mobile/test-failed-1.png"
+                        },
+                        {
+                          "name": "video",
+                          "contentType": "video/webm",
+                          "path": "/Users/samujjwal/Development/ghatana/products/dcmaar/apps/guardian/apps/parent-dashboard/test-results/child-requests-Child-Reque-cd19e-ding-child-requests-section-chromium-mobile/video.webm"
+                        }
+                      ],
+                      "errorLocation": {
+                        "file": "/Users/samujjwal/Development/ghatana/products/dcmaar/apps/guardian/apps/parent-dashboard/e2e/child-requests.spec.ts",
+                        "column": 20,
+                        "line": 23
+                      }
+                    }
+                  ],
+                  "status": "unexpected"
+                }
+              ],
+              "id": "55f6075dfd3692858dde-97a10d170dd086229be9",
+              "file": "child-requests.spec.ts",
+              "line": 31,
+              "column": 5
+            },
+            {
+              "title": "should approve a pending child request from dashboard",
+              "ok": false,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 30000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "chromium-mobile",
+                  "projectName": "chromium-mobile",
+                  "results": [
+                    {
+                      "workerIndex": 13,
+                      "parallelIndex": 1,
+                      "status": "failed",
+                      "duration": 1023,
+                      "error": {
+                        "message": "Error: page.goto: net::ERR_CONNECTION_REFUSED at http://localhost:4173/\nCall log:\n\u001b[2m  - navigating to \"http://localhost:4173/\", waiting until \"load\"\u001b[22m\n",
+                        "stack": "Error: page.goto: net::ERR_CONNECTION_REFUSED at http://localhost:4173/\nCall log:\n\u001b[2m  - navigating to \"http://localhost:4173/\", waiting until \"load\"\u001b[22m\n\n    at /Users/samujjwal/Development/ghatana/products/dcmaar/apps/guardian/apps/parent-dashboard/e2e/child-requests.spec.ts:23:20",
+                        "location": {
+                          "file": "/Users/samujjwal/Development/ghatana/products/dcmaar/apps/guardian/apps/parent-dashboard/e2e/child-requests.spec.ts",
+                          "column": 20,
+                          "line": 23
+                        },
+                        "snippet": "  21 |     test.beforeEach(async ({ page, context }) => {\n  22 |         await context.clearCookies();\n> 23 |         await page.goto('/');\n     |                    ^\n  24 |         await page.evaluate(() => {\n  25 |             try { localStorage.clear(); } catch (e) { }\n  26 |         });"
+                      },
+                      "errors": [
+                        {
+                          "location": {
+                            "file": "/Users/samujjwal/Development/ghatana/products/dcmaar/apps/guardian/apps/parent-dashboard/e2e/child-requests.spec.ts",
+                            "column": 20,
+                            "line": 23
+                          },
+                          "message": "Error: page.goto: net::ERR_CONNECTION_REFUSED at http://localhost:4173/\nCall log:\n\u001b[2m  - navigating to \"http://localhost:4173/\", waiting until \"load\"\u001b[22m\n\n\n  21 |     test.beforeEach(async ({ page, context }) => {\n  22 |         await context.clearCookies();\n> 23 |         await page.goto('/');\n     |                    ^\n  24 |         await page.evaluate(() => {\n  25 |             try { localStorage.clear(); } catch (e) { }\n  26 |         });\n    at /Users/samujjwal/Development/ghatana/products/dcmaar/apps/guardian/apps/parent-dashboard/e2e/child-requests.spec.ts:23:20"
+                        }
+                      ],
+                      "stdout": [],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2025-11-29T20:19:16.030Z",
+                      "annotations": [],
+                      "attachments": [
+                        {
+                          "name": "screenshot",
+                          "contentType": "image/png",
+                          "path": "/Users/samujjwal/Development/ghatana/products/dcmaar/apps/guardian/apps/parent-dashboard/test-results/child-requests-Child-Reque-de9d4-hild-request-from-dashboard-chromium-mobile/test-failed-1.png"
+                        },
+                        {
+                          "name": "video",
+                          "contentType": "video/webm",
+                          "path": "/Users/samujjwal/Development/ghatana/products/dcmaar/apps/guardian/apps/parent-dashboard/test-results/child-requests-Child-Reque-de9d4-hild-request-from-dashboard-chromium-mobile/video.webm"
+                        }
+                      ],
+                      "errorLocation": {
+                        "file": "/Users/samujjwal/Development/ghatana/products/dcmaar/apps/guardian/apps/parent-dashboard/e2e/child-requests.spec.ts",
+                        "column": 20,
+                        "line": 23
+                      }
+                    }
+                  ],
+                  "status": "unexpected"
+                }
+              ],
+              "id": "55f6075dfd3692858dde-087da898310b3c9595d8",
+              "file": "child-requests.spec.ts",
+              "line": 40,
+              "column": 5
+            },
+            {
+              "title": "should deny a pending child request from dashboard",
+              "ok": false,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 30000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "chromium-mobile",
+                  "projectName": "chromium-mobile",
+                  "results": [
+                    {
+                      "workerIndex": 14,
+                      "parallelIndex": 3,
+                      "status": "failed",
+                      "duration": 971,
+                      "error": {
+                        "message": "Error: page.goto: net::ERR_CONNECTION_REFUSED at http://localhost:4173/\nCall log:\n\u001b[2m  - navigating to \"http://localhost:4173/\", waiting until \"load\"\u001b[22m\n",
+                        "stack": "Error: page.goto: net::ERR_CONNECTION_REFUSED at http://localhost:4173/\nCall log:\n\u001b[2m  - navigating to \"http://localhost:4173/\", waiting until \"load\"\u001b[22m\n\n    at /Users/samujjwal/Development/ghatana/products/dcmaar/apps/guardian/apps/parent-dashboard/e2e/child-requests.spec.ts:23:20",
+                        "location": {
+                          "file": "/Users/samujjwal/Development/ghatana/products/dcmaar/apps/guardian/apps/parent-dashboard/e2e/child-requests.spec.ts",
+                          "column": 20,
+                          "line": 23
+                        },
+                        "snippet": "  21 |     test.beforeEach(async ({ page, context }) => {\n  22 |         await context.clearCookies();\n> 23 |         await page.goto('/');\n     |                    ^\n  24 |         await page.evaluate(() => {\n  25 |             try { localStorage.clear(); } catch (e) { }\n  26 |         });"
+                      },
+                      "errors": [
+                        {
+                          "location": {
+                            "file": "/Users/samujjwal/Development/ghatana/products/dcmaar/apps/guardian/apps/parent-dashboard/e2e/child-requests.spec.ts",
+                            "column": 20,
+                            "line": 23
+                          },
+                          "message": "Error: page.goto: net::ERR_CONNECTION_REFUSED at http://localhost:4173/\nCall log:\n\u001b[2m  - navigating to \"http://localhost:4173/\", waiting until \"load\"\u001b[22m\n\n\n  21 |     test.beforeEach(async ({ page, context }) => {\n  22 |         await context.clearCookies();\n> 23 |         await page.goto('/');\n     |                    ^\n  24 |         await page.evaluate(() => {\n  25 |             try { localStorage.clear(); } catch (e) { }\n  26 |         });\n    at /Users/samujjwal/Development/ghatana/products/dcmaar/apps/guardian/apps/parent-dashboard/e2e/child-requests.spec.ts:23:20"
+                        }
+                      ],
+                      "stdout": [],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2025-11-29T20:19:15.905Z",
+                      "annotations": [],
+                      "attachments": [
+                        {
+                          "name": "screenshot",
+                          "contentType": "image/png",
+                          "path": "/Users/samujjwal/Development/ghatana/products/dcmaar/apps/guardian/apps/parent-dashboard/test-results/child-requests-Child-Reque-e963f-hild-request-from-dashboard-chromium-mobile/test-failed-1.png"
+                        },
+                        {
+                          "name": "video",
+                          "contentType": "video/webm",
+                          "path": "/Users/samujjwal/Development/ghatana/products/dcmaar/apps/guardian/apps/parent-dashboard/test-results/child-requests-Child-Reque-e963f-hild-request-from-dashboard-chromium-mobile/video.webm"
+                        }
+                      ],
+                      "errorLocation": {
+                        "file": "/Users/samujjwal/Development/ghatana/products/dcmaar/apps/guardian/apps/parent-dashboard/e2e/child-requests.spec.ts",
+                        "column": 20,
+                        "line": 23
+                      }
+                    }
+                  ],
+                  "status": "unexpected"
+                }
+              ],
+              "id": "55f6075dfd3692858dde-697b80e1772bf6e1d055",
+              "file": "child-requests.spec.ts",
+              "line": 53,
+              "column": 5
+            },
+            {
+              "title": "should display pending child requests section",
+              "ok": false,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 30000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "webkit-mobile",
+                  "projectName": "webkit-mobile",
+                  "results": [
+                    {
+                      "workerIndex": 15,
+                      "parallelIndex": 2,
+                      "status": "failed",
+                      "duration": 9,
+                      "error": {
+                        "message": "Error: browserType.launch: Executable doesn't exist at /Users/samujjwal/Library/Caches/ms-playwright/webkit-2227/pw_run.sh\n╔═════════════════════════════════════════════════════════════════════════╗\n║ Looks like Playwright Test or Playwright was just installed or updated. ║\n║ Please run the following command to download new browsers:              ║\n║                                                                         ║\n║     npx playwright install                                              ║\n║                                                                         ║\n║ <3 Playwright Team                                                      ║\n╚═════════════════════════════════════════════════════════════════════════╝",
+                        "stack": "Error: browserType.launch: Executable doesn't exist at /Users/samujjwal/Library/Caches/ms-playwright/webkit-2227/pw_run.sh\n╔═════════════════════════════════════════════════════════════════════════╗\n║ Looks like Playwright Test or Playwright was just installed or updated. ║\n║ Please run the following command to download new browsers:              ║\n║                                                                         ║\n║     npx playwright install                                              ║\n║                                                                         ║\n║ <3 Playwright Team                                                      ║\n╚═════════════════════════════════════════════════════════════════════════╝"
+                      },
+                      "errors": [
+                        {
+                          "message": "Error: browserType.launch: Executable doesn't exist at /Users/samujjwal/Library/Caches/ms-playwright/webkit-2227/pw_run.sh\n╔═════════════════════════════════════════════════════════════════════════╗\n║ Looks like Playwright Test or Playwright was just installed or updated. ║\n║ Please run the following command to download new browsers:              ║\n║                                                                         ║\n║     npx playwright install                                              ║\n║                                                                         ║\n║ <3 Playwright Team                                                      ║\n╚═════════════════════════════════════════════════════════════════════════╝"
+                        }
+                      ],
+                      "stdout": [],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2025-11-29T20:19:15.775Z",
+                      "annotations": [],
+                      "attachments": []
+                    }
+                  ],
+                  "status": "unexpected"
+                }
+              ],
+              "id": "55f6075dfd3692858dde-587b1bac3bfec89fb015",
+              "file": "child-requests.spec.ts",
+              "line": 31,
+              "column": 5
+            },
+            {
+              "title": "should approve a pending child request from dashboard",
+              "ok": false,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 30000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "webkit-mobile",
+                  "projectName": "webkit-mobile",
+                  "results": [
+                    {
+                      "workerIndex": 16,
+                      "parallelIndex": 2,
+                      "status": "failed",
+                      "duration": 39,
+                      "error": {
+                        "message": "Error: browserType.launch: Executable doesn't exist at /Users/samujjwal/Library/Caches/ms-playwright/webkit-2227/pw_run.sh\n╔═════════════════════════════════════════════════════════════════════════╗\n║ Looks like Playwright Test or Playwright was just installed or updated. ║\n║ Please run the following command to download new browsers:              ║\n║                                                                         ║\n║     npx playwright install                                              ║\n║                                                                         ║\n║ <3 Playwright Team                                                      ║\n╚═════════════════════════════════════════════════════════════════════════╝",
+                        "stack": "Error: browserType.launch: Executable doesn't exist at /Users/samujjwal/Library/Caches/ms-playwright/webkit-2227/pw_run.sh\n╔═════════════════════════════════════════════════════════════════════════╗\n║ Looks like Playwright Test or Playwright was just installed or updated. ║\n║ Please run the following command to download new browsers:              ║\n║                                                                         ║\n║     npx playwright install                                              ║\n║                                                                         ║\n║ <3 Playwright Team                                                      ║\n╚═════════════════════════════════════════════════════════════════════════╝"
+                      },
+                      "errors": [
+                        {
+                          "message": "Error: browserType.launch: Executable doesn't exist at /Users/samujjwal/Library/Caches/ms-playwright/webkit-2227/pw_run.sh\n╔═════════════════════════════════════════════════════════════════════════╗\n║ Looks like Playwright Test or Playwright was just installed or updated. ║\n║ Please run the following command to download new browsers:              ║\n║                                                                         ║\n║     npx playwright install                                              ║\n║                                                                         ║\n║ <3 Playwright Team                                                      ║\n╚═════════════════════════════════════════════════════════════════════════╝"
+                        }
+                      ],
+                      "stdout": [],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2025-11-29T20:19:18.074Z",
+                      "annotations": [],
+                      "attachments": []
+                    }
+                  ],
+                  "status": "unexpected"
+                }
+              ],
+              "id": "55f6075dfd3692858dde-bf3c90526eb2c8724906",
+              "file": "child-requests.spec.ts",
+              "line": 40,
+              "column": 5
+            },
+            {
+              "title": "should deny a pending child request from dashboard",
+              "ok": false,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 30000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "webkit-mobile",
+                  "projectName": "webkit-mobile",
+                  "results": [
+                    {
+                      "workerIndex": 17,
+                      "parallelIndex": 0,
+                      "status": "failed",
+                      "duration": 4,
+                      "error": {
+                        "message": "Error: browserType.launch: Executable doesn't exist at /Users/samujjwal/Library/Caches/ms-playwright/webkit-2227/pw_run.sh\n╔═════════════════════════════════════════════════════════════════════════╗\n║ Looks like Playwright Test or Playwright was just installed or updated. ║\n║ Please run the following command to download new browsers:              ║\n║                                                                         ║\n║     npx playwright install                                              ║\n║                                                                         ║\n║ <3 Playwright Team                                                      ║\n╚═════════════════════════════════════════════════════════════════════════╝",
+                        "stack": "Error: browserType.launch: Executable doesn't exist at /Users/samujjwal/Library/Caches/ms-playwright/webkit-2227/pw_run.sh\n╔═════════════════════════════════════════════════════════════════════════╗\n║ Looks like Playwright Test or Playwright was just installed or updated. ║\n║ Please run the following command to download new browsers:              ║\n║                                                                         ║\n║     npx playwright install                                              ║\n║                                                                         ║\n║ <3 Playwright Team                                                      ║\n╚═════════════════════════════════════════════════════════════════════════╝"
+                      },
+                      "errors": [
+                        {
+                          "message": "Error: browserType.launch: Executable doesn't exist at /Users/samujjwal/Library/Caches/ms-playwright/webkit-2227/pw_run.sh\n╔═════════════════════════════════════════════════════════════════════════╗\n║ Looks like Playwright Test or Playwright was just installed or updated. ║\n║ Please run the following command to download new browsers:              ║\n║                                                                         ║\n║     npx playwright install                                              ║\n║                                                                         ║\n║ <3 Playwright Team                                                      ║\n╚═════════════════════════════════════════════════════════════════════════╝"
+                        }
+                      ],
+                      "stdout": [],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2025-11-29T20:19:18.640Z",
+                      "annotations": [],
+                      "attachments": []
+                    }
+                  ],
+                  "status": "unexpected"
+                }
+              ],
+              "id": "55f6075dfd3692858dde-0b71afd1da493afed8ac",
+              "file": "child-requests.spec.ts",
+              "line": 53,
+              "column": 5
+            }
+          ]
+        }
+      ]
+    }
+  ],
+  "errors": [],
+  "stats": {
+    "startTime": "2025-11-29T20:18:30.064Z",
+    "duration": 48721.437,
+    "expected": 0,
+    "skipped": 0,
+    "unexpected": 18,
+    "flaky": 0
+  }
+}

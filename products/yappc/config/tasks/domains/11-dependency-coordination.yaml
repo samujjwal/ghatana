@@ -1,0 +1,112 @@
+domain:
+  id: dependency-program-coordination
+  name: "Dependency & Program Coordination"
+  description: "Manage dependencies and coordinate across teams."
+  order: 11
+  icon: "hub"
+  color: "#FFCA28"
+  agent_personas:
+    - "ProgramCoordinator"
+    - "DependencyManager"
+    - "StakeholderLiaison"
+  audit_artifacts:
+    - "CoordinationLog"
+    - "RiskUpdate"
+    - "CommunicationRecord"
+  inputs:
+    - "Plans"
+    - "Dependency data"
+    - "Stakeholder info"
+  outputs:
+    - "Program plan"
+    - "Dependency status"
+    - "Communication logs"
+
+tasks:
+  # Core ICS coordination tasks
+  - id: d11-t1
+    name: "Identify cross-team dependencies"
+    description: "Find dependencies on other teams."
+    personas: ["Developer", "Tech Lead", "PM"]
+    lifecycle_stages: ["plan"]
+    automation_level: "assisted"
+  - id: d11-t2
+    name: "Coordinate timelines"
+    description: "Align schedules."
+    personas: ["Tech Lead", "PM"]
+    lifecycle_stages: ["plan"]
+    automation_level: "manual"
+  - id: d11-t3
+    name: "Manage risks"
+    description: "Mitigate program risks."
+    personas: ["Tech Lead", "PM"]
+    lifecycle_stages: ["plan", "observe"]
+    automation_level: "assisted"
+  - id: d11-t4
+    name: "Track progress"
+    description: "Monitor execution status."
+    personas: ["Developer", "Tech Lead", "PM"]
+    lifecycle_stages: ["execute", "observe"]
+    automation_level: "automated"
+
+  # Migrated from legacy collaboration domain
+  - id: collab-001
+    name: "Communicate with Stakeholders"
+    description: "Regular status updates and communication."
+    personas: ["Developer", "Tech Lead", "PM"]
+    lifecycle_stages: ["execute"]
+    automation_level: "manual"
+  - id: collab-002
+    name: "Participate in Standups"
+    description: "Daily team synchronization."
+    personas: ["Developer"]
+    lifecycle_stages: ["execute"]
+    automation_level: "manual"
+  - id: collab-003
+    name: "Sprint Planning Participation"
+    description: "Contribute to sprint planning sessions."
+    personas: ["Developer", "Tech Lead"]
+    lifecycle_stages: ["plan"]
+    automation_level: "manual"
+  - id: collab-004
+    name: "Retrospective Participation"
+    description: "Participate in team retrospectives."
+    personas: ["Developer"]
+    lifecycle_stages: ["learn"]
+    automation_level: "manual"
+  - id: collab-005
+    name: "Knowledge Sharing"
+    description: "Share knowledge with team members."
+    personas: ["Developer", "Tech Lead"]
+    lifecycle_stages: ["learn", "institutionalize"]
+    automation_level: "manual"
+  - id: collab-006
+    name: "Mentoring"
+    description: "Guide and mentor junior developers."
+    personas: ["Tech Lead", "Developer"]
+    lifecycle_stages: ["execute"]
+    automation_level: "manual"
+  - id: collab-007
+    name: "Cross-Team Coordination"
+    description: "Coordinate work with other teams."
+    personas: ["Tech Lead", "PM"]
+    lifecycle_stages: ["plan", "execute"]
+    automation_level: "manual"
+  - id: collab-008
+    name: "Conflict Resolution"
+    description: "Resolve technical or process conflicts."
+    personas: ["Tech Lead"]
+    lifecycle_stages: ["execute"]
+    automation_level: "manual"
+  - id: collab-009
+    name: "Document Decisions"
+    description: "Record team decisions and rationale."
+    personas: ["Developer", "Tech Lead"]
+    lifecycle_stages: ["execute"]
+    automation_level: "assisted"
+  - id: collab-010
+    name: "Stakeholder Management"
+    description: "Manage stakeholder expectations."
+    personas: ["Tech Lead", "PM"]
+    lifecycle_stages: ["execute"]
+    automation_level: "manual"

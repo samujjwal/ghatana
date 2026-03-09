@@ -1,0 +1,135 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: ollama
+  namespace: yappc
+  labels:
+    app: ollama
+    component: llm-service
+spec:
+  replicas: 1  # Single replica for GPU (stateful model loading)
+  strategy:
+    type: Recreate  # Avoid two pods competing for GPU
+  selector:
+    matchLabels:
+      app: ollama
+  template:
+    metadata:
+      labels:
+        app: ollama
+        component: llm-service
+      annotations:
+        prometheus.io/scrape: "true"
+        prometheus.io/port: "11434"
+    spec:
+      # GPU Node Selection
+      nodeSelector:
+        nvidia.com/gpu: "true"  # Only schedule on GPU nodes
+      
+      # Tolerations for GPU taints
+      tolerations:
+        - key: nvidia.com/gpu
+          operator: Exists
+          effect: NoSchedule
+      
+      # Init Container: Pull model before starting service
+      initContainers:
+        - name: model-loader
+          image: ollama/ollama:latest
+          command: ["/bin/sh", "-c"]
+          args:
+            - |
+              echo "🚀 Pulling llama3.2 model..."
+              ollama pull llama3.2
+              echo "✅ Model ready for inference"
+          volumeMounts:
+            - name: ollama-models
+              mountPath: /root/.ollama
+          envFrom:
+            - configMapRef:
+                name: ollama-config
+      
+      # Main Container: Ollama LLM Service
+      containers:
+        - name: ollama
+          image: ollama/ollama:latest
+          imagePullPolicy: Always
+          ports:
+            - name: http
+              containerPort: 11434
+              protocol: TCP
+          
+          # Environment from ConfigMap
+          envFrom:
+            - configMapRef:
+                name: ollama-config
+          
+          # Resource Limits (GPU)
+          resources:
+            requests:
+              cpu: "4"
+              memory: "8Gi"
+              nvidia.com/gpu: "1"  # Request 1 GPU
+            limits:
+              cpu: "8"
+              memory: "16Gi"
+              nvidia.com/gpu: "1"  # Limit to 1 GPU
+          
+          # Persistent Storage
+          volumeMounts:
+            - name: ollama-models
+              mountPath: /root/.ollama
+          
+          # Health Checks
+          livenessProbe:
+            httpGet:
+              path: /api/tags
+              port: 11434
+            initialDelaySeconds: 60
+            periodSeconds: 30
+            timeoutSeconds: 10
+            failureThreshold: 3
+          
+          readinessProbe:
+            httpGet:
+              path: /api/tags
+              port: 11434
+            initialDelaySeconds: 30
+            periodSeconds: 10
+            timeoutSeconds: 5
+            successThreshold: 1
+            failureThreshold: 3
+          
+          # Startup Probe (for slow model loading)
+          startupProbe:
+            httpGet:
+              path: /api/tags
+              port: 11434
+            initialDelaySeconds: 10
+            periodSeconds: 10
+            timeoutSeconds: 5
+            failureThreshold: 30  # 5 minutes for model loading
+      
+      # Volumes
+      volumes:
+        - name: ollama-models
+          persistentVolumeClaim:
+            claimName: ollama-models-pvc
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: ollama-service
+  namespace: yappc
+  labels:
+    app: ollama
+spec:
+  type: ClusterIP
+  ports:
+    - name: http
+      port: 11434
+      targetPort: 11434
+      protocol: TCP
+  selector:
+    app: ollama
+  sessionAffinity: None  # Round-robin (though we only have 1 replica)

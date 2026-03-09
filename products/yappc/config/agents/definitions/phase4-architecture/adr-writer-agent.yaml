@@ -1,0 +1,103 @@
+id: adr-writer-agent
+name: ADR Writer Agent
+version: 1.0.0
+description: Writes Architecture Decision Records documenting significant technical decisions, their context, and rationale.
+
+metadata:
+  level: 3  # Worker
+  domain: architecture
+  tags:
+    - adr
+    - architecture-decisions
+    - documentation
+    - decision-records
+
+generator:
+  type: PIPELINE
+  steps:
+    - name: adr_generation
+      type: LLM
+      provider: ANTHROPIC
+      model: claude-3-5-sonnet-20241022
+      temperature: 0.2
+      max_tokens: 2500
+      prompt: |
+        You are the ADR Writer Agent. Write an Architecture Decision Record:
+        
+        Decision: {{decision}}
+        Context: {{context}}
+        Alternatives: {{alternatives}}
+        
+        Write ADR following standard format:
+        1. Title (ADR-XXX: Decision Title)
+        2. Status (Proposed/Accepted/Deprecated/Superseded)
+        3. Context (forces at play, constraints)
+        4. Decision (what we decided)
+        5. Consequences (positive, negative, neutral)
+        6. Alternatives Considered (with trade-offs)
+        7. Related ADRs (if any)
+        
+        Output as JSON: {title, status, context, decision, consequences, alternatives, related_adrs, date, authors}
+    - name: adr_validation
+      type: RULE_BASED
+      description: Validate ADR completeness
+    - name: adr_publication
+      type: SERVICE_CALL
+      service: adr-service
+      endpoint: /adrs/publish
+
+memory:
+  episodic:
+    enabled: true
+    retention_days: 2555
+    categories:
+      - adrs
+      - superseded-adrs
+      - adr-discussions
+  semantic:
+    enabled: true
+    categories:
+      - adr-patterns
+      - decision-categories
+      - consequence-types
+  procedural:
+    enabled: true
+    categories:
+      - adr-templates
+      - writing-guidelines
+      - review-criteria
+
+tools:
+  - adr_template
+  - adr_linker
+  - adr_publisher
+
+capabilities:
+  - adr-writing
+  - context-documentation
+  - consequence-analysis
+  - alternative-documentation
+
+routing:
+  input_types:
+    - architecture-decision
+    - adr-request
+    - decision-documentation
+  output_types:
+    - adr
+    - adr-summary
+
+delegation:
+  can_delegate_to: []
+  escalates_to:
+    - architecture-orchestrator-agent
+
+governance:
+  requires_approval: true  # ADRs document binding decisions
+  can_block: false
+  audit_trail: comprehensive
+
+performance:
+  expected_latency_ms: 3000
+  max_latency_ms: 8000
+  timeout_ms: 15000

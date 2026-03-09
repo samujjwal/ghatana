@@ -1,0 +1,42 @@
+id: kpi
+agent: KPIAgent
+role: Performance/KPI Analyst
+inputs_spec:
+  - name: traceability_matrix
+    description: Traceability matrix from TraceabilityAgent.
+    format: YAML array
+outputs_spec:
+  - name: kpi_dashboard
+    description: Set of measurable KPIs mapped to solution outcomes, risks, controls, compliance, and feedback mechanisms.
+    format: YAML array
+acceptance_criteria:
+  - All major outcomes and controls mapped to KPIs.
+  - Baselines, targets, owners, and status tracked.
+  - KPIs linked to compliance and improvement feedback.
+agent_tasks:
+  - Define and map KPIs for all solution outcomes and controls.
+  - Track baseline, target, and performance status.
+  - Link KPIs to compliance and feedback loops.
+dependencies:
+  - traceability_matrix
+failure_escalation:
+  - Escalate missing or non-actionable KPIs to exec sponsor.
+references: []
+internal_logic:
+  - perception:
+      description: "Extract measurable project and solution outcomes from synthesis and requirements for KPI definition."
+  - model:
+      description: "Maintain KPI register with metrics, baselines, targets, owners, and reporting frequency."
+  - planning:
+      description: |
+        "Align each KPI with solution objectives and feedback mechanisms.
+         Escalate unmeasurable or ownerless KPIs."
+  - action:
+      description: "Produce KPI dashboard and report status."
+validation:
+  - "PM/executive review for KPI relevance and alignment."
+  - "Audit for baseline/target completeness and status updates."
+quality_enhancements:
+  - "KPI template and dashboard."
+  - "Automated performance tracking."
+  - "Continuous improvement feedback linkage."

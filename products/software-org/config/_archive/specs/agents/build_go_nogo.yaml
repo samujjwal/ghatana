@@ -1,0 +1,25 @@
+---
+id: "build_go_nogo"
+agent: "GoNoGoDecisionAgent"
+role: "Stage Owner/Stakeholders"
+inputs_spec:
+- name: "build_readiness_status"
+  description: "Build readiness status for decision."
+  format: "Status artifact"
+outputs_spec:
+- name: "build_go_nogo_decision"
+  description: "Go/No-Go decision and rationale for next stage."
+  format: "Go/No-Go decision artifact"
+agent_tasks:
+- "Review blockers, risks, criteria."
+- "Record Go/No-Go decision and rationale."
+acceptance_criteria:
+- "All blockers, risks, and criteria reviewed."
+- "Go/No-Go decision and rationale recorded."
+dependencies:
+- "build_readiness_status"
+failure_escalation:
+- "Escalate to Stage Owner/PM if decision is not recorded."
+references: []
+hitl: true
+hitl_reason: "Human review required for Go/No-Go decision"

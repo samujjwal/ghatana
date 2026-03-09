@@ -1,0 +1,351 @@
+package com.ghatana.polyfix.rewriters;
+
+import com.fasterxml.jackson.core.JsonFactory;
+import com.fasterxml.jackson.core.JsonParser;
+import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.ghatana.polyfix.shared.UnifiedDiagnostic;
+import com.ghatana.polyfix.shared.util.ProcessExec;
+
+import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.StandardCopyOption;
+import java.time.Duration;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Map;
+import java.util.Objects;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
+
+/**
+ * Integration with Go tooling including go vet, staticcheck, and goimports.
+ * Provides functionality to analyze and fix Go code using standard Go tools.
+ */
+public final class GoToolsRunner {
+    private static final ObjectMapper MAPPER = new ObjectMapper();
+    
+    // Patterns for parsing Go tool outputs
+    private static final Pattern GO_VET_PATTERN = 
+        Pattern.compile("^(.+?):(\\d+):(\\d+):\\s+(.+)$");
+    private static final Pattern GO_IMPORTS_PATTERN =
+        Pattern.compile("^(.+?):(\\d+):(\\d+):\\s+(.+)$");
+    private static final Pattern GO_FMT_PATTERN =
+        Pattern.compile("^(.+?):(\\d+):(\\d+):\\s+(.+)$");
+    
+    // Default timeout for Go tool operations (30 seconds)
+    private static final long DEFAULT_TIMEOUT_MS = 30_000;
+
+    /**
+     * Runs go vet on the specified directory and returns any diagnostics found.
+     * 
+     * @param cwd The working directory containing Go code
+     * @param timeoutMillis Maximum time to wait for the command to complete
+     * @return List of diagnostics found by go vet
+     */
+    public List<UnifiedDiagnostic> vet(Path cwd, long timeoutMillis) {
+        Objects.requireNonNull(cwd, "cwd");
+        ProcessExec.Result result = ProcessExec.run(
+            cwd,
+            Duration.ofMillis(timeoutMillis),
+            List.of("go", "vet", "./..."),
+            Map.of()
+        );
+
+        return parseGoToolOutput("go-vet", result.err());
+    }
+
+    /**
+     * Runs staticcheck on the specified directory and returns any diagnostics found.
+     * 
+     * @param cwd The working directory containing Go code
+     * @param timeoutMillis Maximum time to wait for the command to complete
+     * @return List of diagnostics found by staticcheck
+     */
+    public List<UnifiedDiagnostic> staticcheck(Path cwd, long timeoutMillis) {
+        Objects.requireNonNull(cwd, "cwd");
+        ProcessExec.Result result = ProcessExec.run(
+            cwd,
+            Duration.ofMillis(timeoutMillis),
+            List.of("staticcheck", "-f", "json", "./..."),
+            Map.of()
+        );
+        
+        if (result.exitCode() != 0 && (result.out() == null || result.out().isBlank())) {
+            return List.of(UnifiedDiagnostic.error(
+                "staticcheck",
+                result.err().isBlank() ? "staticcheck failed" : result.err(),
+                null,
+                -1,
+                -1,
+                null
+            ));
+        }
+        
+        return parseStaticcheckOutput(result.out());
+    }
+
+    /**
+     * Runs goimports to fix import statements in Go files.
+     * 
+     * @param cwd The working directory containing Go code
+     * @param write If true, write changes to files; if false, only report issues
+     * @param timeoutMillis Maximum time to wait for the command to complete
+     * @return List of diagnostics found by goimports
+     */
+    public List<UnifiedDiagnostic> goimports(Path cwd, boolean write, long timeoutMillis) {
+        Objects.requireNonNull(cwd, "cwd");
+        
+        List<String> command = new ArrayList<>();
+        command.add("goimports");
+        if (write) {
+            command.add("-w");
+        } else {
+            command.add("-l");
+        }
+        command.add("./...");
+        
+        ProcessExec.Result result = ProcessExec.run(
+            cwd,
+            Duration.ofMillis(timeoutMillis),
+            command,
+            Map.of()
+        );
+        
+        if (write) {
+            // When writing changes, only report errors
+            if (result.exitCode() != 0) {
+                return List.of(UnifiedDiagnostic.error(
+                    "goimports",
+                    result.err().isBlank() ? "goimports failed" : result.err(),
+                    null,
+                    -1,
+                    -1,
+                    null
+                ));
+            }
+            return List.of();
+        } else {
+            // When listing changes, parse the output
+            return parseGoImportsOutput(result.out());
+        }
+    }
+
+    /**
+     * Runs gofmt to format Go code.
+     * 
+     * @param cwd The working directory containing Go code
+     * @param write If true, write changes to files; if false, only report issues
+     * @param simplify If true, apply simplifications
+     * @param timeoutMillis Maximum time to wait for the command to complete
+     * @return List of formatting issues found by gofmt
+     */
+    public List<UnifiedDiagnostic> gofmt(Path cwd, boolean write, boolean simplify, long timeoutMillis) {
+        Objects.requireNonNull(cwd, "cwd");
+        
+        List<String> command = new ArrayList<>();
+        command.add("gofmt");
+        if (write) {
+            command.add("-w");
+        } else {
+            command.add("-l");
+        }
+        if (simplify) {
+            command.add("-s");
+        }
+        command.add("./...");
+        
+        ProcessExec.Result result = ProcessExec.run(
+            cwd,
+            Duration.ofMillis(timeoutMillis),
+            command,
+            Map.of()
+        );
+        
+        if (write) {
+            // When writing changes, only report errors
+            if (result.exitCode() != 0) {
+                return List.of(UnifiedDiagnostic.error(
+                    "gofmt",
+                    result.err().isBlank() ? "gofmt failed" : result.err(),
+                    null,
+                    -1,
+                    -1,
+                    null
+                ));
+            }
+            return List.of();
+        } else {
+            // When listing changes, parse the output
+            return parseGofmtOutput(result.out());
+        }
+    }
+
+    // Helper methods for parsing tool outputs
+    
+    private List<UnifiedDiagnostic> parseGoToolOutput(String toolName, String output) {
+        List<UnifiedDiagnostic> diagnostics = new ArrayList<>();
+        if (output == null || output.isBlank()) {
+            return diagnostics;
+        }
+        
+        for (String line : output.split("\\r?\\n")) {
+            if (line.trim().isEmpty()) continue;
+            
+            Matcher matcher = GO_VET_PATTERN.matcher(line);
+            if (matcher.find()) {
+                String filePath = matcher.group(1);
+                int lineNum = Integer.parseInt(matcher.group(2));
+                int colNum = Integer.parseInt(matcher.group(3));
+                String message = matcher.group(4);
+                
+                diagnostics.add(UnifiedDiagnostic.error(
+                    toolName,
+                    message,
+                    filePath,
+                    lineNum,
+                    colNum,
+                    null
+                ));
+            } else {
+                // If the line doesn't match the expected format, add it as a general error
+                diagnostics.add(UnifiedDiagnostic.error(
+                    toolName,
+                    line,
+                    null,
+                    -1,
+                    -1,
+                    null
+                ));
+            }
+        }
+        
+        return diagnostics;
+    }
+    
+    private List<UnifiedDiagnostic> parseStaticcheckOutput(String jsonOutput) {
+        List<UnifiedDiagnostic> diagnostics = new ArrayList<>();
+        if (jsonOutput == null || jsonOutput.isBlank()) {
+            return diagnostics;
+        }
+        
+        try {
+            JsonFactory factory = MAPPER.getFactory();
+            try (JsonParser parser = factory.createParser(jsonOutput)) {
+                while (parser.nextToken() != null) {
+                    JsonNode node = MAPPER.readTree(parser);
+                    if (node == null || !node.isObject()) continue;
+                    
+                    String file = node.path("location").path("file").asText();
+                    int line = node.path("location").path("line").asInt(-1);
+                    int column = node.path("location").path("column").asInt(-1);
+                    String message = node.path("message").asText();
+                    String code = node.path("code").asText("staticcheck");
+                    
+                    diagnostics.add(UnifiedDiagnostic.warning(
+                        code,
+                        message,
+                        file,
+                        line,
+                        column,
+                        null
+                    ));
+                }
+            }
+        } catch (IOException e) {
+            diagnostics.add(UnifiedDiagnostic.error(
+                "staticcheck",
+                "Failed to parse staticcheck output: " + e.getMessage(),
+                null,
+                -1,
+                -1,
+                null
+            ));
+        }
+        
+        return diagnostics;
+    }
+    
+    private List<UnifiedDiagnostic> parseGoImportsOutput(String output) {
+        List<UnifiedDiagnostic> diagnostics = new ArrayList<>();
+        if (output == null || output.isBlank()) {
+            return diagnostics;
+        }
+        
+        for (String fileName : output.split("\\r?\\n")) {
+            if (fileName.trim().isEmpty()) continue;
+            
+            diagnostics.add(UnifiedDiagnostic.warning(
+                "goimports",
+                "File needs import fixes",
+                fileName,
+                -1,
+                -1,
+                null
+            ));
+        }
+        
+        return diagnostics;
+    }
+    
+    private List<UnifiedDiagnostic> parseGofmtOutput(String output) {
+        List<UnifiedDiagnostic> diagnostics = new ArrayList<>();
+        if (output == null || output.isBlank()) {
+            return diagnostics;
+        }
+        
+        for (String line : output.split("\\r?\\n")) {
+            if (line.trim().isEmpty()) continue;
+            
+            // gofmt -l output is just a list of file names
+            diagnostics.add(UnifiedDiagnostic.warning(
+                "gofmt",
+                "File is not formatted according to gofmt",
+                line.trim(),
+                -1,
+                -1,
+                null
+            ));
+        }
+        
+        return diagnostics;
+    }
+    
+    /**
+     * Runs all Go tools (vet, staticcheck, goimports, gofmt) and returns combined diagnostics.
+     * 
+     * @param cwd The working directory containing Go code
+     * @param fix If true, automatically fix issues where possible
+     * @param timeoutMillis Maximum time to wait for all commands to complete
+     * @return Combined list of diagnostics from all tools
+     */
+    public List<UnifiedDiagnostic> runAll(Path cwd, boolean fix, long timeoutMillis) {
+        List<UnifiedDiagnostic> allDiagnostics = new ArrayList<>();
+        
+        // Run go vet
+        allDiagnostics.addAll(vet(cwd, timeoutMillis / 4));
+        
+        // Run staticcheck
+        allDiagnostics.addAll(staticcheck(cwd, timeoutMillis / 4));
+        
+        // Run goimports (with or without fixing)
+        allDiagnostics.addAll(goimports(cwd, fix, timeoutMillis / 4));
+        
+        // Run gofmt (with or without fixing)
+        allDiagnostics.addAll(gofmt(cwd, fix, true, timeoutMillis / 4));
+        
+        return allDiagnostics;
+    }
+    
+    /**
+     * Runs all Go tools with default settings and timeout.
+     * 
+     * @param cwd The working directory containing Go code
+     * @param fix If true, automatically fix issues where possible
+     * @return Combined list of diagnostics from all tools
+     */
+    public List<UnifiedDiagnostic> runAll(Path cwd, boolean fix) {
+        return runAll(cwd, fix, DEFAULT_TIMEOUT_MS);
+    }
+}

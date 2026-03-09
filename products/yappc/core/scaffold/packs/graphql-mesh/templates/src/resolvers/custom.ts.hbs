@@ -1,0 +1,71 @@
+import type { Resolvers } from "@graphql-mesh/runtime";
+import { logger } from "./plugins/logging.js";
+
+/**
+* Custom resolvers for type stitching and cross-source relationships
+*/
+export const customResolvers: Resolvers = {
+// Extend Products_Product to include the creator user
+Products_Product: {
+createdBy: {
+// Resolve the user who created the product
+selectionSet: /* GraphQL */ `{ createdById }`,
+resolve: async (product, _args, context, info) => {
+// Fetch user from Users source
+const userId = product.createdById;
+
+if (!userId) {
+return null;
+}
+
+try {
+const result = await context.Users.Query.user({
+root: product,
+args: { id: userId },
+context,
+info,
+});
+return result;
+} catch (err) {
+logger.warn({ userId, productId: product.id }, "Failed to resolve product creator");
+return null;
+}
+},
+},
+},
+
+// Example: Custom query resolvers
+Query: {
+// Health check query
+_health: () => ({
+status: "healthy",
+timestamp: new Date().toISOString(),
+}),
+
+// Service version
+_version: () => ({
+version: process.env.npm_package_version ?? "0.0.0",
+node: process.version,
+}),
+},
+
+// Example: Custom mutation resolvers
+Mutation: {
+// Ping mutation for testing
+_ping: (_parent, args: { message?: string }) => ({
+message: args.message ?? "pong",
+timestamp: new Date().toISOString(),
+}),
+},
+
+// Example: Custom subscription (if needed)
+// Subscription: {
+// onProductUpdate: {
+// subscribe: async function* () {
+// // Subscription logic
+// },
+// },
+// },
+};
+
+export default customResolvers;

@@ -1,0 +1,115 @@
+# {{projectName}}
+
+{{description}}
+
+Generated with [YAPPC](https://github.com/ghatana/yappc) using the `java-service-spring-gradle` pack.
+
+## Features
+
+- 🚀 [Spring Boot 3](https://spring.io/projects/spring-boot) - Production-ready framework
+- ☕ Java {{javaVersion}} - Latest LTS
+- 🗃️ [Spring Data JPA](https://spring.io/projects/spring-data-jpa) - Database access
+- 📋 Bean Validation - Request validation
+- 📖 [Spring Actuator](https://docs.spring.io/spring-boot/docs/current/reference/html/actuator.html) - Production
+monitoring
+- 📊 [Micrometer + Prometheus](https://micrometer.io/) - Metrics
+- 🧪 [JUnit 5](https://junit.org/junit5/) + [Testcontainers](https://testcontainers.com/) - Testing
+- 🎨 [Spotless](https://github.com/diffplug/spotless) - Code formatting
+- 🐳 Docker - Containerization support
+
+## Prerequisites
+
+- Java {{javaVersion}}+
+- Gradle 8.11+
+- PostgreSQL (or use Docker)
+
+## Getting Started
+
+### 1. Start PostgreSQL
+
+```bash
+docker-compose up -d db
+```
+
+### 2. Run the application
+
+```bash
+./gradlew bootRun
+```
+
+The server will start at http://localhost:{{port}}
+
+## Available Scripts
+
+| Script | Description |
+|--------|-------------|
+| `./gradlew bootRun` | Start development server |
+| `./gradlew build` | Build the application |
+| `./gradlew test` | Run tests |
+| `./gradlew spotlessApply` | Format code |
+| `./gradlew bootJar` | Build executable JAR |
+
+## API Endpoints
+
+| Method | Path | Description |
+|--------|------|-------------|
+| GET | `/health` | Health check |
+| GET | `/api/v1/items` | List items |
+| GET | `/api/v1/items/{id}` | Get item by ID |
+| POST | `/api/v1/items` | Create item |
+| PATCH | `/api/v1/items/{id}` | Update item |
+| DELETE | `/api/v1/items/{id}` | Delete item |
+
+## Actuator Endpoints
+
+| Endpoint | Description |
+|----------|-------------|
+| `/actuator/health` | Health status |
+| `/actuator/info` | Application info |
+| `/actuator/prometheus` | Prometheus metrics |
+| `/actuator/metrics` | Micrometer metrics |
+
+## Project Structure
+
+```
+.
+├── src/
+│ ├── main/
+│ │ ├── java/{{packagePath}}/
+│ │ │ ├── Application.java
+│ │ │ ├── config/
+│ │ │ ├── controller/
+│ │ │ ├── dto/
+│ │ │ ├── entity/
+│ │ │ ├── exception/
+│ │ │ ├── repository/
+│ │ │ └── service/
+│ │ └── resources/
+│ │ ├── application.yml
+│ │ ├── application-dev.yml
+│ │ └── application-prod.yml
+│ └── test/
+├── build.gradle.kts
+├── settings.gradle.kts
+├── Dockerfile
+├── docker-compose.yml
+└── Makefile
+```
+
+## Docker
+
+### Build image
+
+```bash
+docker build -t {{projectName}} .
+```
+
+### Run with Docker Compose
+
+```bash
+docker-compose up -d
+```
+
+## License
+
+Apache-2.0

@@ -1,0 +1,117 @@
+id: hotfix-agent
+name: Hotfix Agent
+version: 1.0.0
+description: Handles emergency hotfixes. Fast-tracks critical fixes through expedited process.
+
+metadata:
+  level: 2  # Domain Expert
+  domain: release
+  tags:
+    - hotfix
+    - emergency
+    - critical
+    - fast-track
+
+generator:
+  type: PIPELINE
+  steps:
+    - name: hotfix_assessment
+      type: LLM
+      provider: ANTHROPIC
+      model: claude-3-5-sonnet-20241022
+      temperature: 0.1
+      max_tokens: 2000
+      prompt: |
+        You are the Hotfix Agent. Assess hotfix need:
+        
+        Issue: {{issue}}
+        Severity: {{severity}}
+        Impact: {{impact}}
+        Proposed Fix: {{fix}}
+        
+        Assess:
+        1. Is hotfix warranted? (severity + impact)
+        2. Risk of fix vs risk of issue
+        3. Scope of fix (minimal change)
+        4. Testing requirements (expedited)
+        5. Deployment strategy
+        6. Monitoring needs
+        7. Follow-up work needed
+        
+        Output as JSON: {
+          hotfix_warranted,
+          risk_assessment,
+          scope,
+          testing_plan,
+          deployment_strategy,
+          monitoring,
+          follow_up_items
+        }
+    - name: hotfix_coordination
+      type: SERVICE_CALL
+      service: hotfix-service
+      endpoint: /coordinate
+    - name: expedited_release
+      type: SERVICE_CALL
+      service: release-service
+      endpoint: /expedite
+
+memory:
+  episodic:
+    enabled: true
+    retention_days: 730
+    categories:
+      - hotfixes
+      - root-causes
+      - outcomes
+  semantic:
+    enabled: true
+    categories:
+      - hotfix-patterns
+      - risk-models
+      - expedited-processes
+  procedural:
+    enabled: true
+    categories:
+      - hotfix-playbook
+      - testing-shortcuts
+      - approval-shortcuts
+
+tools:
+  - hotfix_coordinator
+  - expedited_pipeline
+  - communication_hub
+
+capabilities:
+  - severity-assessment
+  - expedited-process
+  - risk-management
+  - fast-deployment
+
+routing:
+  input_types:
+    - hotfix-request
+    - critical-bug
+    - emergency-fix
+  output_types:
+    - hotfix-plan
+    - deployment-status
+    - follow-up-items
+
+delegation:
+  can_delegate_to:
+    - deployment-agent
+    - post-deployment-validation-agent
+  escalates_to:
+    - release-orchestrator-agent
+    - human-in-the-loop-coordinator
+
+governance:
+  requires_approval: true  # Expedited but still approved
+  can_block: false
+  audit_trail: comprehensive
+
+performance:
+  expected_latency_ms: 2000
+  max_latency_ms: 5000
+  timeout_ms: 10000

@@ -1,0 +1,118 @@
+# Support Specialist Agent Configuration
+apiVersion: virtualorg.ghatana.com/v1
+kind: Agent
+metadata:
+  name: support-specialist-agent
+  labels:
+    level: individual-contributor
+    department: support
+    ai-enabled: "true"
+
+spec:
+  displayName: "Support Specialist"
+  description: |
+    Support Specialist responsible for handling customer inquiries, resolving
+    common issues, and providing excellent customer service.
+
+  role:
+    name: SupportSpecialist
+    level: individual
+    title: "Support Specialist"
+
+  department: support
+  reportingTo: support-manager-agent
+  directReports: []
+
+  authority:
+    decisionScope: individual
+    budgetLimit: 0
+    canApprove:
+      - ticket_resolution
+      - small_credits
+    canEscalateTo:
+      - support-engineer-agent
+      - support-manager-agent
+
+  capabilities:
+    primary:
+      - customer_service
+      - ticket_management
+      - issue_triage
+      - product_knowledge
+      - communication
+    secondary:
+      - basic_troubleshooting
+      - documentation
+
+  ai:
+    enabled: true
+    provider: openai
+    model: gpt-4-turbo
+
+    systemPrompt: |
+      You are a Support Specialist in a software organization.
+
+      ## Your Role
+      You handle customer inquiries, resolve common issues, and provide
+      excellent customer service as the first point of contact.
+
+      ## Your Responsibilities
+      1. Respond to customer inquiries promptly
+      2. Resolve common issues using knowledge base
+      3. Triage and route complex issues
+      4. Maintain high customer satisfaction
+      5. Document customer interactions
+      6. Identify patterns in customer issues
+
+      ## When to Escalate
+      Escalate to Support Engineer when:
+      - Technical issue beyond your expertise
+      - Issue requires debugging or code analysis
+
+      Escalate to Support Manager when:
+      - Customer requests refund or compensation
+      - Customer is upset or threatening
+
+    responseConfig:
+      maxTokens: 1200
+      temperature: 0.6
+      topP: 0.9
+
+    tools:
+      - name: search_knowledge_base
+        enabled: true
+      - name: update_ticket
+        enabled: true
+      - name: send_customer_response
+        enabled: true
+
+    memory:
+      type: short-term
+      contextWindow: 20
+
+  workload:
+    maxConcurrentTasks: 8
+    taskPrioritization: fifo
+
+  availability:
+    schedule:
+      type: business-hours
+    responseTime:
+      target: PT15M
+      maximum: PT1H
+
+  hitl:
+    requireApprovalFor:
+      - refund_request
+    approvalChain:
+      - support-manager-agent
+
+  subscriptions:
+    - event: ticket_created
+      action: triage_ticket
+    - event: customer_response
+      action: handle_response
+
+  publications:
+    - event: ticket_resolved
+    - event: escalation_requested

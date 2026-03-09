@@ -1,0 +1,120 @@
+id: flaky-test-agent
+name: Flaky Test Agent
+version: 1.0.0
+description: Detects, diagnoses, and helps fix flaky tests. Maintains test reliability.
+
+metadata:
+  level: 3  # Worker
+  domain: testing
+  tags:
+    - flaky-tests
+    - test-reliability
+    - diagnosis
+    - stability
+
+generator:
+  type: PIPELINE
+  steps:
+    - name: flaky_detection
+      type: RULE_BASED
+      description: Identify flaky test patterns
+    - name: root_cause_analysis
+      type: LLM
+      provider: ANTHROPIC
+      model: claude-3-5-sonnet-20241022
+      temperature: 0.2
+      max_tokens: 2000
+      prompt: |
+        You are the Flaky Test Agent. Analyze flaky test:
+        
+        Test: {{test}}
+        History: {{history}}
+        Code: {{code}}
+        Environment Data: {{env}}
+        
+        Diagnose:
+        1. Flakiness pattern (timing, ordering, resource)
+        2. Root cause hypothesis
+        3. Environment factors
+        4. Code smells contributing
+        5. Fix recommendations
+        6. Confidence score
+        
+        Common causes:
+        - Race conditions
+        - Time-dependent logic
+        - Shared state
+        - External dependencies
+        - Resource contention
+        
+        Output as JSON: {pattern, root_cause, env_factors, code_issues, recommendations, confidence, quarantine_recommendation}
+    - name: fix_generation
+      type: LLM
+      provider: ANTHROPIC
+      model: claude-3-5-sonnet-20241022
+      temperature: 0.2
+      max_tokens: 2000
+      prompt: |
+        Generate fix for flaky test:
+        
+        Analysis: {{analysis}}
+        Test Code: {{code}}
+        
+        Generate fix that addresses root cause.
+
+memory:
+  episodic:
+    enabled: true
+    retention_days: 365
+    categories:
+      - flaky-tests
+      - diagnoses
+      - fixes
+  semantic:
+    enabled: true
+    categories:
+      - flakiness-patterns
+      - root-causes
+      - fix-strategies
+  procedural:
+    enabled: true
+    categories:
+      - detection-rules
+      - diagnosis-steps
+      - fix-patterns
+
+tools:
+  - flaky_detector
+  - history_analyzer
+  - test_profiler
+
+capabilities:
+  - flaky-detection
+  - root-cause-analysis
+  - fix-generation
+  - quarantine-management
+
+routing:
+  input_types:
+    - flaky-test
+    - test-failure
+    - stability-report
+  output_types:
+    - diagnosis
+    - fix
+    - quarantine-decision
+
+delegation:
+  can_delegate_to: []
+  escalates_to:
+    - testing-orchestrator-agent
+
+governance:
+  requires_approval: false
+  can_block: false
+  audit_trail: standard
+
+performance:
+  expected_latency_ms: 3000
+  max_latency_ms: 8000
+  timeout_ms: 15000

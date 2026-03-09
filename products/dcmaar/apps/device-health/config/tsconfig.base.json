@@ -1,0 +1,84 @@
+{
+  "$schema": "https://json.schemastore.org/tsconfig",
+  "display": "DCMAAR Extension - Base TypeScript Configuration",
+  "compilerOptions": {
+    // Target and module system
+    "target": "ES2022",
+    "module": "ESNext",
+    "moduleResolution": "bundler",
+    "lib": ["ES2022", "DOM", "DOM.Iterable", "WebWorker"],
+
+    // Strict type checking
+    "strict": true,
+    "noImplicitReturns": false,
+    "noImplicitThis": true,
+    "noUnusedLocals": false,
+    "noUnusedParameters": false,
+    "exactOptionalPropertyTypes": false,
+    "noImplicitOverride": false,
+    "noPropertyAccessFromIndexSignature": false,
+    "noUncheckedIndexedAccess": false,
+
+    // Module resolution
+    "allowSyntheticDefaultImports": true,
+    "esModuleInterop": true,
+    "forceConsistentCasingInFileNames": true,
+    "resolveJsonModule": true,
+    "verbatimModuleSyntax": false,
+
+    // Output
+    "outDir": "./dist",
+    "declaration": true,
+    "declarationMap": true,
+    "sourceMap": true,
+    "removeComments": false,
+    "importHelpers": false,
+
+    // Advanced
+    "skipLibCheck": true,
+    "allowJs": false,
+    "checkJs": false,
+    "incremental": true,
+    "composite": false,
+
+    // Path mapping
+    "baseUrl": ".",
+    "paths": {
+      "@/*": ["./src/*"],
+      "@/types": ["./src/types"],
+      "@/utils": ["./src/shared/utils"],
+      "@/config": ["./src/shared/config"],
+      "@/platform": ["./src/platform"],
+      "@/adapters": ["./src/adapters"],
+      "@/collectors": ["./src/collectors"],
+      "@/transport": ["./src/transport"],
+      "@/storage": ["./src/pipeline/storage"],
+      "@/app": ["./src/app/*"],
+      "@/interactions": ["./src/interactions/*"],
+      "@/pipeline": ["./src/pipeline/*"],
+      "@/pipeline/sources": ["./src/pipeline/sources/*"],
+      "@/pipeline/sinks": ["./src/pipeline/sinks/*"],
+      "@/shared": ["./src/shared/*"],
+      "@/components": ["./src/components/*"]
+    },
+
+    // Browser extension specific
+    "types": ["chrome", "node", "webextension-polyfill"],
+    "jsx": "preserve"
+  },
+  "include": [
+    "src/**/*",
+    "types/**/*",
+    "*.ts"
+  ],
+  "exclude": [
+    "node_modules",
+    "dist",
+    "build",
+    "coverage",
+    "playwright-report",
+    "test-results",
+    "**/*.test.ts",
+    "**/*.spec.ts"
+  ]
+}

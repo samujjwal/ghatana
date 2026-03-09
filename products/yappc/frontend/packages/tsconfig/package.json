@@ -1,0 +1,13 @@
+{
+  "name": "@ghatana/yappc-tsconfig",
+  "private": true,
+  "version": "1.0.0",
+  "files": [
+    "base.json",
+    "react-library.json"
+  ],
+  "exports": {
+    "./base.json": "./base.json",
+    "./react-library.json": "./react-library.json"
+  }
+}

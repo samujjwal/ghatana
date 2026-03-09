@@ -1,0 +1,331 @@
+syntax = "proto3";
+
+package dcmaar.v1;
+option java_multiple_files = true;
+option java_outer_classname = "EVENTSProto";
+option java_package = "com.dcmaar.v1";
+option csharp_namespace = "Dcmaar.V1";
+option objc_class_prefix = "DCX";
+option php_namespace = "Dcmaar\\V1";
+option ruby_package = "Dcmaar::V1";
+option go_package = "github.com/samujjwal/dcmaar/proto/gen/go/pb/dcmaar/v1;dcmaarv1";
+
+import "dcmaar/v1/common.proto";
+import "validate/validate.proto";
+
+// ActivityType categorizes different types of user and system activities
+enum ActivityType {
+  ACTIVITY_UNSPECIFIED = 0;
+  ACTIVITY_USER_INTERACTION = 1;  // Mouse, keyboard, touch inputs
+  ACTIVITY_APPLICATION_USAGE = 2;  // App focus, window changes
+  ACTIVITY_FILE_OPERATION = 3;     // File open/save/delete
+  ACTIVITY_NETWORK = 4;   // Network requests
+  ACTIVITY_SYSTEM_EVENT = 5;       // System-level events
+  ACTIVITY_SECURITY_EVENT = 6;     // Security-related activities
+  ACTIVITY_BROWSER = 7;   // Web browser interactions
+  ACTIVITY_SAAS = 8;      // SaaS application specific events
+  ACTIVITY_METRIC_UPDATE = 9;      // Metric value updates
+  ACTIVITY_AUDIT_EVENT = 10;       // Security audit events
+  ACTIVITY_PERFORMANCE = 11; // Performance-related events
+}
+
+// EventSeverity indicates the importance of an event
+enum EventSeverity {
+  SEVERITY_UNKNOWN = 0;
+  SEVERITY_DEBUG = 1;
+  SEVERITY_INFO = 2;
+  SEVERITY_NOTICE = 3;
+  SEVERITY_WARNING = 4;
+  SEVERITY_ERROR = 5;
+  SEVERITY_CRITICAL = 6;
+  SEVERITY_ALERT = 7;
+  SEVERITY_EMERGENCY = 8;
+}
+
+// Classification metadata for activities
+message ActivityClassification {
+  // Whether the activity was automated (required)
+  bool is_automated = 1;
+  
+  // Confidence score (0.0 to 1.0)
+  float confidence = 2 [
+    (validate.rules).float = {gte: 0, lte: 1}
+  ];
+  
+  // Classifier model version (required if classification is present)
+  string model_version = 3 [
+    (validate.rules).string = {min_len: 1, max_len: 100}
+  ];
+  
+  // Additional classification metadata (optional)
+  map<string, string> metadata = 4 [
+    (validate.rules).map = {
+      max_pairs: 20,
+      keys: {
+        string: {pattern: "^[a-zA-Z_][a-zA-Z0-9_]*$", max_len: 50}
+      },
+      values: {
+        string: {max_len: 1024}
+      }
+    }
+  ];
+  
+  // Timestamp when classification was performed (milliseconds since epoch)
+  int64 classified_at = 5 [
+    (validate.rules).int64 = {gt: 0}
+  ];
+  
+  // Classification source (e.g., "ml-model", "rule-engine", "user")
+  string source = 6 [
+    (validate.rules).string = {max_len: 50}
+  ];
+}
+
+// EventWithMetadata extends the base Event type with additional metadata
+message EventWithMetadata {
+  // The base event
+  Event event = 1 [
+    (validate.rules).message.required = true
+  ];
+  
+  // Activity type (categorization)
+  ActivityType activity_type = 10 [
+    (validate.rules).enum = {defined_only: true}
+  ];
+  
+  // Classification metadata
+  ActivityClassification classification = 11;
+  
+  // Application context
+  string application = 20 [
+    (validate.rules).string = {max_len: 255}
+  ];
+  
+  // Window title or context
+  string window_title = 21 [
+    (validate.rules).string = {max_len: 1000}
+  ];
+  
+  // Duration in milliseconds
+  int64 duration_ms = 30 [
+    (validate.rules).int64 = {gte: 0}
+  ];
+  
+  // Memory usage in bytes
+  int64 memory_used = 31 [
+    (validate.rules).int64 = {gte: 0}
+  ];
+  
+  // Browser-specific structured fields (optional)
+  BrowserEvent browser = 40;
+  
+  // PII redaction metadata for fields that were processed
+  map<string, RedactionMetaProto> redaction_meta = 25;
+  
+  // Adaptive sampling metadata for sampling decisions
+  SamplingMetaProto sampling_meta = 26;
+}
+
+// Browser-specific event details
+message BrowserEvent {
+  // Tab identifier within the browser
+  string tab_id = 1;
+  // Full URL of the page associated with the event
+  string url = 2;
+  // Extracted domain portion of the URL
+  string domain = 3;
+  // Event subtype (e.g., "click", "keypress", "network_request")
+  string event_type = 4;
+  // HTTP method for network events (GET/POST/...) if applicable
+  string method = 5;
+  // HTTP status code for network responses if applicable
+  int32 status_code = 6;
+  // Latency in milliseconds (network/timing events)
+  double latency = 7;
+  // Arbitrary metadata (selectors, flags); do not include PII
+  map<string, string> metadata = 8;
+  // Capability 2: Latency root cause prediction
+  LatencyRootCause root_cause = 9;
+}
+
+// ---------------------------------------------------------------------------
+// Capability 2: Extension Latency Root-Cause Predictor
+// Enum for classifying the root cause of web page latency issues
+enum LatencyRootCause {
+  ROOT_CAUSE_UNKNOWN = 0;
+  ROOT_CAUSE_SITE = 1;     // Server-side issues (slow TTFB, server processing)
+  ROOT_CAUSE_CLIENT = 2;   // Client-side issues (DOM processing, memory pressure)
+  ROOT_CAUSE_NETWORK = 3;  // Network issues (DNS, connection, bandwidth)
+}
+
+// ---------------------------------------------------------------------------
+// Capability 1: Agent Anomaly Detection
+// Represents an anomaly detected locally on an agent host for a specific metric.
+// This horizontal-slice placeholder will be iterated to include richer context
+// (windowing metadata, threshold source, suppression flags) in later phases.
+message AnomalyEventProto {
+  // Unique host / agent identifier (could be hostname or assigned id)
+  string host_id = 1;
+  // Metric key (e.g. "cpu_usage", "mem_usage", "net_io")
+  string metric = 2;
+  // Raw observed metric value at detection time
+  double value = 3;
+  // Anomaly score (e.g. z-score or EWMA deviation)
+  double score = 4;
+  // RFC3339 timestamp string for easier cross-language handling initially
+  string timestamp = 5;
+}
+
+// EventBatch groups multiple events into a single request.
+// Deprecated: Use EventEnvelopeBatch instead
+message EventBatch {
+  // List of events in the batch
+  repeated EventWithMetadata events = 1 [
+    (validate.rules).repeated = {min_items: 1, max_items: 1000}
+  ];
+  
+  // Unique identifier for the batch (UUID v4)
+  string batch_id = 2 [
+    (validate.rules).string.uuid = true
+  ];
+  
+  // Timestamp when the batch was created (milliseconds since epoch)
+  int64 batch_timestamp = 3 [
+    (validate.rules).int64 = {gt: 0}
+  ];
+  
+  // Optional source identifier
+  string source = 4 [
+    (validate.rules).string = {max_len: 255}
+  ];
+  
+  // Optional tags for the entire batch
+  map<string, string> tags = 5 [
+    (validate.rules).map = {
+      max_pairs: 20,
+      keys: {
+        string: {pattern: "^[a-zA-Z_][a-zA-Z0-9_]*$", max_len: 50}
+      },
+      values: {
+        string: {max_len: 1024}
+      }
+    }
+  ];
+  
+  // Optional compression information
+  bool is_compressed = 6;
+  int32 original_size = 7;
+  int32 compressed_size = 8;
+}
+
+// EventEnvelope wraps events with required identity and schema metadata
+message EventEnvelope {
+  // Required metadata
+  EnvelopeMeta meta = 1 [
+    (validate.rules).message.required = true
+  ];
+  
+  // List of events in this envelope
+  repeated EventWithMetadata events = 2 [
+    (validate.rules).repeated = {min_items: 1, max_items: 1000}
+  ];
+  
+  // Any validation errors that occurred during processing
+  repeated ValidationError validation_errors = 3;
+  
+  // Schema version (semver, e.g., "1.0.0")
+  string schema_version = 4 [
+    (validate.rules).string = {min_len: 1, max_len: 20}
+  ];
+  
+  // Idempotency key to prevent duplicate processing
+  string idempotency_key = 5 [
+    (validate.rules).string = {min_len: 1, max_len: 100}
+  ];
+  
+  // Operating system where the event originated
+  string source_os = 6 [
+    (validate.rules).string = {max_len: 50}
+  ];
+  
+  // CPU architecture where the event originated
+  string source_arch = 7 [
+    (validate.rules).string = {max_len: 20}
+  ];
+  
+  // Optional client metadata
+  map<string, string> metadata = 100 [
+    (validate.rules).map = {
+      max_pairs: 20,
+      keys: {
+        string: {pattern: "^[a-zA-Z_][a-zA-Z0-9_]*$", max_len: 50}
+      },
+      values: {
+        string: {max_len: 1024}
+      }
+    }
+  ];
+}
+
+// EventEnvelopeBatch groups multiple envelopes for batch processing
+message EventEnvelopeBatch {
+  // List of event envelopes
+  repeated EventEnvelope envelopes = 1 [
+    (validate.rules).repeated = {min_items: 1, max_items: 100}
+  ];
+  
+  // Optional batch-level metadata
+  string batch_id = 2 [
+    (validate.rules).string.uuid = true
+  ];
+  
+  // Timestamp when the batch was created (milliseconds since epoch)
+  int64 batch_timestamp = 3 [
+    (validate.rules).int64 = {gt: 0}
+  ];
+  
+  // Compression type used for the batch (if any)
+  CompressionType compression = 4 [
+    (validate.rules).enum = {defined_only: true}
+  ];
+  
+  // Optional source identifier
+  string source = 5 [
+    (validate.rules).string = {max_len: 255}
+  ];
+  
+  // Optional tags for the entire batch
+  map<string, string> tags = 6 [
+    (validate.rules).map = {
+      max_pairs: 20,
+      keys: {
+        string: {pattern: "^[a-zA-Z_][a-zA-Z0-9_]*$", max_len: 50}
+      },
+      values: {
+        string: {max_len: 1024}
+      }
+    }
+  ];
+}
+
+// Event service for streaming and querying events
+service EventService {
+  // StreamEvents streams events from the agent to the server
+  rpc StreamEvents(stream EventWithMetadata) returns (EventAck) {}
+  
+  // IngestEvents receives a batch of events
+  rpc IngestEvents(EventBatch) returns (EventAck) {}
+}
+
+// Acknowledgment for event ingestion
+message EventAck {
+  string batch_id = 1;
+  bool success = 2;
+  string message = 3;
+  int64 received_at = 4;
+}
+
+// List of events for sync operations
+message EventList {
+  repeated EventWithMetadata events = 1;
+}

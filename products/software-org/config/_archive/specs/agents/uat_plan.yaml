@@ -1,0 +1,27 @@
+---
+id: "uat_plan"
+agent: "UATPlanAgent"
+role: "QA Lead"
+inputs_spec:
+- name: "ready_for_uat_package"
+  description: "Input package indicating readiness for UAT, including scenarios and\
+    \ test data."
+  format: "Package artifact"
+outputs_spec:
+- name: "uat_plan"
+  description: "Defined UAT scenarios and acceptance tests with user stories, test\
+    \ users, and prepared test data."
+  format: "UAT plan artifact"
+agent_tasks:
+- "Define UAT scenarios and acceptance tests based on user stories."
+- "Prepare and verify test users and test data."
+acceptance_criteria:
+- "UAT scenarios and acceptance tests are defined with user stories."
+- "Test users and test data are prepared and verified."
+dependencies:
+- "ready_for_uat_package"
+failure_escalation:
+- "Escalate to QA Lead if UAT plan is incomplete or test data/users not ready."
+references: []
+hitl: true
+hitl_reason: "Human ensures UAT plan covers all acceptance scenarios and test data"

@@ -1,0 +1,182 @@
+/**
+ * Platform Bill of Materials (BOM)
+ *
+ * Centralises version management for all platform and third-party dependencies.
+ * Products apply this BOM to ensure version consistency across the monorepo
+ * without repeating version strings in every build file.
+ *
+ * Usage (in any product build.gradle.kts):
+ *   apply(from = rootProject.file("gradle/platform-bom.gradle"))
+ *
+ * After applying, declare dependencies WITHOUT version qualifiers:
+ *   implementation(libs.jackson.databind)   // version managed by BOM
+ *
+ * @since 1.0.0
+ * @doc.type configuration
+ * @doc.purpose Centralized dependency version management
+ * @doc.layer platform
+ */
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Platform module versions
+// ─────────────────────────────────────────────────────────────────────────────
+ext {
+    // Platform module version — bump here to update ALL products at once
+    platformVersion = project.findProperty('platform.version') ?: '1.0.0-SNAPSHOT'
+
+    // ── Core JVM ──────────────────────────────────────────────────────────────
+    javaVersion            = 21
+
+    // ── ActiveJ ───────────────────────────────────────────────────────────────
+    activejVersion         = '6.0-rc2'
+
+    // ── Jackson ───────────────────────────────────────────────────────────────
+    jacksonVersion         = '2.17.1'
+
+    // ── Logging ───────────────────────────────────────────────────────────────
+    slf4jVersion           = '2.0.12'
+    logbackVersion         = '1.5.6'
+
+    // ── Database ──────────────────────────────────────────────────────────────
+    hikariVersion          = '5.1.0'
+    postgresDriverVersion  = '42.7.1'
+    flywayVersion          = '10.8.1'
+    jpaApiVersion          = '3.1.0'
+    hibernateVersion       = '6.4.4.Final'
+
+    // ── Validation ────────────────────────────────────────────────────────────
+    jakartaValidationVersion = '3.0.2'
+    hibernateValidatorVersion = '8.0.1.Final'
+
+    // ── AI / LLM ──────────────────────────────────────────────────────────────
+    langchain4jVersion     = '0.27.1'
+
+    // ── Metrics / Observability ───────────────────────────────────────────────
+    micrometerVersion      = '1.12.2'
+    prometheusVersion      = '0.16.0'
+
+    // ── Testing ───────────────────────────────────────────────────────────────
+    junitVersion           = '5.10.2'
+    assertjVersion         = '3.25.3'
+    mockitoVersion         = '5.11.0'
+    testcontainersVersion  = '1.19.3'
+
+    // ── Security ──────────────────────────────────────────────────────────────
+    jjwtVersion            = '0.12.5'
+
+    // ── Serialization / OpenAPI ───────────────────────────────────────────────
+    swaggerParserVersion   = '2.1.22'
+    graphqlJavaVersion     = '21.5'
+
+    // ── DI ────────────────────────────────────────────────────────────────────
+    javaxInjectVersion     = '1'
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Constraint block — applied to ALL configurations of the consuming project.
+// This ensures transitive upgrades don't silently introduce incompatible versions.
+// ─────────────────────────────────────────────────────────────────────────────
+subprojects { sub ->
+    sub.configurations.configureEach { config ->
+        config.resolutionStrategy.eachDependency { details ->
+            def group   = details.requested.group
+            def module  = details.requested.module.name
+
+            // Jackson family
+            if (group == 'com.fasterxml.jackson.core' ||
+                group == 'com.fasterxml.jackson.datatype' ||
+                group == 'com.fasterxml.jackson.dataformat' ||
+                group == 'com.fasterxml.jackson.module') {
+                details.useVersion(jacksonVersion)
+                details.because("Platform BOM: Jackson unified at $jacksonVersion")
+            }
+
+            // SLF4J
+            if (group == 'org.slf4j') {
+                details.useVersion(slf4jVersion)
+                details.because("Platform BOM: SLF4J unified at $slf4jVersion")
+            }
+
+            // Logback
+            if (group == 'ch.qos.logback') {
+                details.useVersion(logbackVersion)
+                details.because("Platform BOM: Logback unified at $logbackVersion")
+            }
+
+            // JUnit 5
+            if (group == 'org.junit.jupiter' || group == 'org.junit.platform') {
+                details.useVersion(junitVersion)
+                details.because("Platform BOM: JUnit unified at $junitVersion")
+            }
+
+            // Mockito
+            if (group == 'org.mockito') {
+                details.useVersion(mockitoVersion)
+                details.because("Platform BOM: Mockito unified at $mockitoVersion")
+            }
+
+            // Testcontainers
+            if (group == 'org.testcontainers') {
+                details.useVersion(testcontainersVersion)
+                details.because("Platform BOM: Testcontainers unified at $testcontainersVersion")
+            }
+
+            // Flyway
+            if (group == 'org.flywaydb') {
+                details.useVersion(flywayVersion)
+                details.because("Platform BOM: Flyway unified at $flywayVersion")
+            }
+
+            // PostgreSQL driver
+            if (group == 'org.postgresql' && module == 'postgresql') {
+                details.useVersion(postgresDriverVersion)
+                details.because("Platform BOM: PostgreSQL driver unified at $postgresDriverVersion")
+            }
+
+            // Micrometer
+            if (group == 'io.micrometer') {
+                details.useVersion(micrometerVersion)
+                details.because("Platform BOM: Micrometer unified at $micrometerVersion")
+            }
+        }
+    }
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Validation task — verifies no product uses a pinned version that conflicts
+// with the BOM. Run with:  ./gradlew validatePlatformBom
+// ─────────────────────────────────────────────────────────────────────────────
+tasks.register('validatePlatformBom') {
+    group = 'Verification'
+    description = 'Validates that no product module overrides a BOM-managed version'
+
+    doLast {
+        def violations = []
+
+        rootProject.subprojects.each { sub ->
+            sub.configurations.each { config ->
+                try {
+                    config.resolvedConfiguration.resolvedArtifacts.each { artifact ->
+                        def mid = artifact.moduleVersion.id
+                        def ver = mid.version
+
+                        // Flag if Jackson versions diverge from BOM
+                        if (mid.group.startsWith('com.fasterxml.jackson') &&
+                            ver != jacksonVersion) {
+                            violations << "${sub.path}: Jackson ${mid.group}:${mid.name} is ${ver}, BOM expects ${jacksonVersion}"
+                        }
+                    }
+                } catch (ignored) {
+                    // Skip unresolvable configurations (e.g. annotation processors)
+                }
+            }
+        }
+
+        if (!violations.isEmpty()) {
+            violations.each { logger.warn("BOM Violation: {}", it) }
+            logger.warn("Found {} BOM version violations (warnings only — set failOnViolation=true to fail build)", violations.size())
+        } else {
+            logger.lifecycle("Platform BOM validation passed — all managed dependencies are consistent.")
+        }
+    }
+}

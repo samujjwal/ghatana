@@ -1,0 +1,161 @@
+# Configuration for the Idea Agent
+id: idea_agent
+name: "Idea Agent"
+description: "Transforms vague product ideas into structured concepts"
+goal: >
+  Transform a raw, vague, or ambiguous product idea into a clear, structured, and implementation-ready concept with defined statements, scope, market, features, and differentiators. This output serves as the foundation for all downstream planning and analysis agents.
+input:
+  user_product_idea: Raw, unstructured product concept provided by a user or stakeholder.
+  evaluation_feedback: (Optional) Output from the idea evaluation/refinement loop, if present.
+output:
+  product_statement: Concise summary of the product.
+  problem_statement: Clear, actionable problem/opportunity addressed.
+  strategy_alignment: Array outlining business alignment, user audience, key features, and differentiation.
+  market_segment: Description of the target market.
+  product_scope: Clear product boundaries and exclusions.
+  target_audience: Intended user group(s).
+  product_features: List of actionable features/capabilities.
+  product_market: Market potential and initial feasibility.
+  competitive_advantage: Key differentiators versus alternatives.
+  product_value_proposition: Main value provided to users/customers.
+  existing_solution: Brief summary of existing solutions or competitors.
+type: sequential
+afterToolCallbacks:
+  - logMilestone
+components:
+  - type: llm_agent
+    name: "Idea Clarifier"
+    description: "Clarifies and expands raw product ideas"
+    model: "llama3.2"
+    instruction: |
+      You are an expert product manager and requirements analyst.
+      
+      You will receive a raw, vague, or ambiguous product idea from a user.
+      
+      Your task:
+      Clarify and expand the product idea into a structured, implementation-ready JSON object with the following keys (all content must be clear, concise, and actionable):
+      
+      - "product_statement": A one-sentence summary describing what the product is.
+      - "problem_statement": A clear, specific, and actionable explanation of the core problem or opportunity the product addresses.
+      - "strategy_alignment": An array or bulleted list showing how the product aligns with business goals, intended user audience, key features, and how it stands out from competitors.
+      - "market_segment": Clearly define the target market segment(s) for this product, including relevant demographics or business characteristics.
+      - "product_scope": Outline the boundaries and main focus of the product, specifying what is in-scope and out-of-scope.
+      - "target_audience": Specify the intended users or buyers in a way that is specific and actionable.
+      - "product_features": List concrete features or capabilities the product must have to succeed.
+      - "product_market": Briefly assess the market potential, referencing trends, unmet needs, or size where possible.
+      - "competitive_advantage": Explain how this product will win against or differentiate from leading competitors or alternatives.
+      - "product_value_proposition": State the core unique value offered to users or customers.
+      - "existing_solution": Identify current solutions, substitutes, or workarounds used by the target audience, and note their limitations.
+      - "initial_feasibility": Briefly assess whether building and scaling this product appears practical (based on technology, market timing, cost, or operational considerations). Be realistic.
+      
+      Guidelines:
+      - If information is missing or unclear in the original idea, make realistic and reasonable assumptions, and state them explicitly in the JSON.
+      - Do not include any commentary, explanations, or markdown—output only a valid JSON object as described above.
+      - Your goal is to produce a version that would receive top marks from an evaluator for clarity, specificity, and actionability, and that would allow a product planning team to proceed immediately.
+    outputKey: "plan_product_idea"
+    includeContents: "default"
+
+  - type: loop
+    name: "Refinement Loop"
+    description: "Iteratively refines the product idea based on evaluation"
+    maxIterations: 1
+    components:
+      - type: llm_agent
+        name: "Idea Evaluator"
+        description: "Evaluates the quality and completeness of the product idea"
+        model: "llama3.2"
+        instruction: |
+          You are a senior product evaluator.
+
+                  You will receive a clarified product idea as a JSON object with these keys: product_statement, problem_statement, strategy_alignment, market_segment, product_scope, target_audience, product_features, product_market, competitive_advantage, product_value_proposition, existing_solution, initial_feasibility.
+
+                  For each section:
+                  - Assess and set:
+                    - clear: true/false (Is the information unambiguous, specific, and easy to understand?)
+                    - ambiguous: true/false (Is there vagueness or room for multiple interpretations?)
+                    - actionable: true/false (Can a product or engineering team proceed based on this?)
+                    - issues: [] (List any blocking concerns or missing info)
+                    - strengths: [] (Short, specific positive bullets)
+                    - improvement: Short, direct suggestion to make this section clearer, more actionable, or more competitive
+
+                  - For these specific fields, also extract:
+                    - product_statement: extracted_keywords []
+                    - problem_statement: extracted_entities []
+                    - strategy_alignment: target_audience [], proposed_features []
+                    - market_segment: extracted_segments []
+                    - existing_solution: known_competitors [], main_limitations []
+
+                  After all sections:
+                  - evaluation_summary: 
+                    - overall: { clear, ambiguous, actionable }
+                    - ready_for_planning: true/false (true if no blockers or major gaps)
+                    - blocking_issues: [] (aggregate from all sections)
+                    - improvement_priority: "low" | "medium" | "high"
+                    - notes: (Concise narrative about overall readiness, risks, or areas needing attention)
+
+                  - improvement_suggestions: [] (At least two direct, practical ways to make this idea more ready for planning—focus on clarity, market readiness, feasibility, or competitive advantage.)
+
+                  - structured_artifacts: 
+                    - key_audience: [] (From target_audience, market_segment, or elsewhere)
+                    - primary_value_prop: (Most compelling unique value or user benefit)
+                    - preliminary_feature_list: [] (Concrete features needed for MVP or differentiation)
+
+                  **Guidelines:**
+                  - Reference market trends, competitor gaps, feasibility, or value prop wherever possible.
+                  - If information is missing or weak, note it in issues and improvement.
+                  - Respond ONLY with a valid JSON as described. No commentary or formatting outside the JSON.
+
+                  **Product idea to evaluate**
+                  {plan_product_idea}
+        outputKey: "plan_idea_review_evaluation"
+        includeContents: "none"
+
+      - type: llm_agent
+        name: "Idea Refiner"
+        description: "Refines the product idea based on evaluation feedback"
+        model: "llama3.2"
+        instruction: |
+          You are an expert product manager and requirements analyst with deep expertise in product requirements, market analysis, and user needs.
+
+                  You will receive:
+                  - A product idea (as a structured JSON object)
+                  - A product review evaluation (structured, containing strengths, issues, and improvement suggestions)
+
+                  **Product idea to refine:**
+                  {plan_product_idea}
+
+                  **Product review evaluation:**
+                  {plan_idea_review_evaluation}
+
+                  Your task:
+                  - Carefully analyze the product review evaluation.
+                  - If the evaluation indicates the idea is NOT ready for planning (ready_for_planning is false, or there are any blocking issues or requests for additional information), do ALL of the following:
+                      - Review all improvement suggestions, issues, and any section not marked as clear, unambiguous, and actionable.
+                      - Revise and strengthen the product idea accordingly, applying specific feedback and suggestions.
+                      - Address every blocking issue and request for additional information, using realistic and reasonable assumptions if required.
+                      - Integrate any extracted keywords, entities, features, or target audience fields provided in the evaluation as appropriate.
+                      - Ensure EVERY field in the JSON is clear, specific, and actionable, including:
+                          - product_statement
+                          - problem_statement
+                          - strategy_alignment
+                          - market_segment
+                          - product_scope
+                          - target_audience
+                          - product_features
+                          - product_market
+                          - competitive_advantage
+                          - product_value_proposition
+                          - existing_solution
+                          - initial_feasibility
+                      - Output ONLY the revised/refined JSON object, with no commentary or markdown.
+
+                  - If the evaluation indicates the idea is READY for planning (ready_for_planning is true, and there are NO blocking issues or missing information):
+                      - You MUST call the 'exitLoop' function. Do NOT output any text or JSON.
+
+                  Guidelines:
+                  - Your goal is to produce a version that would receive top marks from the evaluator on clarity, specificity, and actionability, enabling immediate progression to the planning phase.
+                  - Do not add any explanations. Only output the refined product idea as valid JSON, or call the exitLoop function as instructed.
+                  - Remove any metadata, token, delimiter, header, or tags that marks the response from the result, as they are not part of the JSON.
+        outputKey: "plan_product_idea"
+        includeContents: "none"
+        tools: ["exitLoop"]

@@ -1,0 +1,66 @@
+id: "design-agent"
+name: "Product & UX Design Agent"
+version: "1.0.0"
+description: "Product design, user experience, visual design, and brand consistency expert. Handles wireframing, prototyping, design system governance, and accessibility reviews."
+
+metadata:
+  level: 2  # Expert level
+  domain: "product-design"
+  tags: ["ux", "ui", "product-design", "brand", "accessibility", "wireframing"]
+
+generator:
+  type: "pipeline"
+  steps:
+    - type: "rule-based"
+      rules:
+        - "Validate design system compliance (spacing, typography, color tokens)"
+        - "Check accessibility (WCAG 2.1 AA compliance)"
+        - "Verify responsive breakpoint coverage"
+        - "Assess component reuse vs. new component creation"
+        - "Review visual hierarchy and information architecture"
+    - type: "llm"
+      provider: "openai"
+      model: "gpt-4"
+      temperature: 0.6
+      prompt: |
+        You are a senior product designer and UX expert. Analyze the following design request:
+
+        {{requirements}}
+
+        Consider:
+        1. User flows and interaction patterns
+        2. Visual hierarchy and information architecture
+        3. Accessibility requirements (WCAG 2.1 AA)
+        4. Design system token usage (colors, spacing, typography)
+        5. Responsive design breakpoints
+        6. Brand consistency guidelines
+
+        Provide a structured design recommendation.
+
+output:
+  format: "structured"
+  schema:
+    type: "object"
+    properties:
+      wireframes:
+        type: "array"
+        description: "Recommended wireframe layouts"
+      component_specs:
+        type: "array"
+        description: "Component specifications using design tokens"
+      accessibility_notes:
+        type: "string"
+        description: "Accessibility considerations and requirements"
+      design_decisions:
+        type: "array"
+        description: "Key design decisions and rationale"
+
+capabilities:
+  - "wireframing"
+  - "prototyping"
+  - "design-system-governance"
+  - "accessibility-review"
+  - "visual-design"
+  - "brand-consistency"
+  - "responsive-design"
+  - "user-research-synthesis"

@@ -1,0 +1,91 @@
+syntax = "proto3";
+
+package dcmaar.v1;
+option java_multiple_files = true;
+option java_outer_classname = "SYNCProto";
+option java_package = "com.dcmaar.v1";
+option csharp_namespace = "Dcmaar.V1";
+option objc_class_prefix = "DCX";
+option php_namespace = "Dcmaar\\V1";
+option ruby_package = "Dcmaar::V1";
+option go_package = "github.com/samujjwal/dcmaar/proto/gen/go/pb/dcmaar/v1;dcmaarv1";
+
+import "dcmaar/v1/common.proto";
+import "dcmaar/v1/events.proto";
+import "dcmaar/v1/metrics.proto";
+import "dcmaar/v1/storage.proto";
+
+// SyncService provides incremental synchronization capabilities
+service SyncService {
+  // Sync data between client and server
+  rpc Sync(SyncRequest) returns (SyncResponse);
+  
+  // Get the current sync state for a device
+  rpc GetSyncState(GetSyncStateRequest) returns (SyncStateResponse);
+}
+
+// Request for syncing data
+message SyncRequest {
+  // Unique device identifier
+  string device_id = 1;
+  
+  // Last sync timestamp from the client (unix timestamp in milliseconds)
+  optional int64 last_sync_timestamp = 2;
+  
+  // The data to sync
+  oneof sync_data {
+    // Events to sync
+    EventList events = 3;
+    
+    // Metrics to sync
+    MetricList metrics = 4;
+    
+    // Commands to sync
+    CommandList commands = 6;
+  }
+  
+  // Optional client metadata
+  map<string, string> client_metadata = 5;
+}
+
+// Response for sync operations
+message SyncResponse {
+  // Unique sync ID for this operation
+  string sync_id = 1;
+  
+  // Current server timestamp (unix timestamp in milliseconds)
+  int64 timestamp = 2;
+  
+  // Status of the sync operation
+  optional Status status = 3;
+  
+  // Events that the client doesn't have
+  repeated EventWithMetadata events = 4;
+  
+  // Metrics that the client doesn't have
+  repeated MetricWithLabels metrics = 5;
+  
+  // Commands that the client doesn't have
+  repeated Command commands = 7;
+  
+  // Optional server metadata
+  map<string, string> server_metadata = 8;
+}
+
+// Request for getting sync state
+message GetSyncStateRequest {
+  // Device identifier
+  string device_id = 1;
+}
+
+// Response containing sync state
+message SyncStateResponse {
+  // Last sync timestamp (unix timestamp in milliseconds)
+  optional int64 last_sync_timestamp = 1;
+  
+  // Last sync ID
+  optional string last_sync_id = 2;
+  
+  // Sync state metadata
+  map<string, string> metadata = 3;
+}

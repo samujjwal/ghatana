@@ -1,0 +1,58 @@
+{{>../shared/partials/license-header}}
+
+import { describe, it, expect } from 'vitest'
+import { render, screen } from '@testing-library/react'{{#if enableRouter}}
+import { BrowserRouter } from 'react-router-dom'{{/if}}
+import App from '../App'
+
+{{#if enableRouter}}
+const renderWithRouter = (component: React.ReactElement) => {
+  return render(<BrowserRouter>{component}</BrowserRouter>)
+}
+{{/if}}
+
+describe('App Component', () => {
+  it('renders the app title', () => {
+    {{#if enableRouter}}renderWithRouter(<App />){{else}}render(<App />){{/if}}
+    
+    expect(screen.getByText('{{projectName}}')).toBeInTheDocument()
+  })
+
+  it('renders the app description', () => {
+    {{#if enableRouter}}renderWithRouter(<App />){{else}}render(<App />){{/if}}
+    
+    expect(screen.getByText('{{description}}')).toBeInTheDocument()
+  })
+
+  {{#unless enableRouter}}
+  it('renders the count button', () => {
+    render(<App />)
+    
+    expect(screen.getByRole('button', { name: /count is 0/i })).toBeInTheDocument()
+  })
+
+  it('displays features list', () => {
+    render(<App />)
+    
+    expect(screen.getByText(/features included/i)).toBeInTheDocument()
+    expect(screen.getByText(/vite for lightning-fast builds/i)).toBeInTheDocument()
+    expect(screen.getByText(/react 18 with typescript/i)).toBeInTheDocument()
+  })
+  {{/unless}}
+
+  it('renders the footer', () => {
+    {{#if enableRouter}}renderWithRouter(<App />){{else}}render(<App />){{/if}}
+    
+    expect(screen.getByText(/© 2024 {{author}}/)).toBeInTheDocument()
+    expect(screen.getByText(/licensed under {{license}}/i)).toBeInTheDocument()
+  })
+
+  {{#if enableRouter}}
+  it('renders navigation when router is enabled', () => {
+    renderWithRouter(<App />)
+    
+    expect(screen.getByRole('link', { name: /home/i })).toBeInTheDocument()
+    expect(screen.getByRole('link', { name: /about/i })).toBeInTheDocument()
+  })
+  {{/if}}
+})

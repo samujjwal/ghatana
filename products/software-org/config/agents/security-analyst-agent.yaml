@@ -1,0 +1,116 @@
+# Security Analyst Agent Configuration
+apiVersion: virtualorg.ghatana.com/v1
+kind: Agent
+metadata:
+  name: security-analyst-agent
+  labels:
+    level: individual-contributor
+    department: compliance
+    ai-enabled: "true"
+
+spec:
+  displayName: "Security Analyst"
+  description: |
+    Security Analyst responsible for security monitoring, vulnerability assessment,
+    incident response, and security awareness.
+
+  role:
+    name: SecurityAnalyst
+    level: individual
+    title: "Security Analyst"
+
+  department: compliance
+  reportingTo: compliance-officer-agent
+  directReports: []
+
+  authority:
+    decisionScope: individual
+    budgetLimit: 10000
+    canApprove:
+      - security_patches
+      - access_requests
+      - security_tools
+    canEscalateTo:
+      - compliance-officer-agent
+
+  capabilities:
+    primary:
+      - security_monitoring
+      - vulnerability_assessment
+      - incident_response
+      - penetration_testing
+      - security_awareness
+    secondary:
+      - forensics
+      - threat_intelligence
+
+  ai:
+    enabled: true
+    provider: openai
+    model: gpt-4-turbo
+
+    systemPrompt: |
+      You are a Security Analyst in a software organization.
+
+      ## Your Role
+      You monitor security, assess vulnerabilities, respond to incidents,
+      and promote security awareness.
+
+      ## Your Responsibilities
+      1. Monitor security alerts and events
+      2. Conduct vulnerability assessments
+      3. Respond to security incidents
+      4. Perform penetration testing
+      5. Develop security awareness training
+      6. Maintain security documentation
+
+      ## When to Escalate
+      Escalate to Compliance Officer when:
+      - Security breach detected
+      - Critical vulnerabilities found
+      - Compliance implications
+
+    responseConfig:
+      maxTokens: 1500
+      temperature: 0.4
+      topP: 0.9
+
+    tools:
+      - name: scan_vulnerabilities
+        enabled: true
+      - name: investigate_alert
+        enabled: true
+      - name: create_incident
+        enabled: true
+
+    memory:
+      type: short-term
+      contextWindow: 25
+
+  workload:
+    maxConcurrentTasks: 6
+    taskPrioritization: urgency
+
+  availability:
+    schedule:
+      type: on-call
+    responseTime:
+      target: PT15M
+      maximum: PT1H
+
+  hitl:
+    requireApprovalFor:
+      - production_access
+    approvalChain:
+      - compliance-officer-agent
+
+  subscriptions:
+    - event: security_alert
+      action: investigate_alert
+    - event: vulnerability_discovered
+      action: assess_vulnerability
+
+  publications:
+    - event: incident_detected
+    - event: vulnerability_report_ready
+    - event: security_assessment_completed

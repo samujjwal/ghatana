@@ -1,0 +1,35 @@
+---
+id: "synthesis_monitor_combiner"
+agent: "SynthesisMonitorCombinerAgent"
+role: "Security Lead/PM"
+inputs_spec:
+- name: "monitor_dashboard"
+  description: "Monitor dashboard for synthesis/combine."
+  format: "Dashboard artifact"
+- name: "improvement_actions"
+  description: "Improvement actions for combine."
+  format: "Improvement actions artifact"
+- name: "postmortem_report"
+  description: "Postmortem report for combine."
+  format: "Postmortem report artifact"
+outputs_spec:
+- name: "monitor_respond_final_status"
+  description: "Final readiness/status for Monitor & Respond stage."
+  format: "Readiness status artifact"
+agent_tasks:
+- "Combine all outputs (monitoring, response, postmortem, improvement)."
+- "Flag gaps/missed incidents."
+- "Human review/signoff final status."
+acceptance_criteria:
+- "All outputs combined."
+- "Gaps/missed incidents flagged."
+- "Final status reviewed/signed off."
+dependencies:
+- "monitor_dashboard"
+- "improvement_actions"
+- "postmortem_report"
+failure_escalation:
+- "Escalate to Security Lead/PM if final status not reviewed/signed off."
+references: []
+hitl: true
+hitl_reason: "Human reviews overall status and readiness for next phase"

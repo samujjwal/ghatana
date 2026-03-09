@@ -1,0 +1,50 @@
+/*
+ * Copyright (c) ${year} Ghatana Inc.
+ * All rights reserved.
+ *
+ * This source code and the accompanying materials are the confidential
+ * and proprietary information of Ghatana Inc. (“Confidential Information”).
+ * You shall not disclose such Confidential Information and shall use it
+ * only in accordance with the terms of the license agreement you entered
+ * into with Ghatana Inc.
+ *
+ * Unauthorized copying of this file, via any medium, is strictly prohibited.
+ * Proprietary and confidential.
+ */
+syntax = "proto3";
+
+package test;
+
+option java_package = "com.ghatana.contracts.test";
+option java_outer_classname = "SimpleMessageProto";
+
+// A simple message for testing basic field types
+message SimpleMessage {
+  string string_field = 1;
+  int32 int32_field = 2;
+  int64 int64_field = 3;
+  bool bool_field = 4;
+  double double_field = 5;
+  float float_field = 6;
+
+  // Optional field in proto3
+  string optional_string_field = 7 [json_name = "customName"];
+
+  // Repeated field
+  repeated string repeated_string_field = 8;
+
+  // Nested message
+  NestedMessage nested_field = 9;
+
+  // Oneof field
+  oneof test_oneof {
+    string oneof_string = 10;
+    int32 oneof_int = 11;
+  }
+}
+
+// A nested message for testing nested structures
+message NestedMessage {
+  string nested_field = 1;
+  repeated int32 repeated_int_field = 2;
+}

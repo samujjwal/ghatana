@@ -1,0 +1,29 @@
+---
+id: "postmortem_agent"
+agent: "PostmortemAgent"
+role: "Incident/Postmortem Lead"
+inputs_spec:
+- name: "forensics_report"
+  description: "Forensics report for postmortem."
+  format: "Forensics report artifact"
+outputs_spec:
+- name: "postmortem_report"
+  description: "Postmortem analysis and action item report."
+  format: "Postmortem report artifact"
+agent_tasks:
+- "Complete postmortem reports for all major incidents."
+- "Analyze root causes/contributing factors."
+- "Document/assign/track action items."
+- "Human review/signoff of report."
+acceptance_criteria:
+- "Postmortem reports completed."
+- "Root causes/contributing factors analyzed."
+- "Action items documented/assigned/tracked."
+- "Report reviewed/signed off."
+dependencies:
+- "forensics_report"
+failure_escalation:
+- "Escalate to Incident Lead if postmortem incomplete/not reviewed."
+references: []
+hitl: true
+hitl_reason: "Human signs off postmortem analysis"

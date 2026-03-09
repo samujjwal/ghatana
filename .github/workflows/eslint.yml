@@ -1,0 +1,51 @@
+name: ESLint Check
+
+on:
+  pull_request:
+    paths:
+      - '**/*.{ts,tsx,js,jsx}'
+      - '.eslintrc*'
+      - 'eslint.config.*'
+      - '.github/workflows/eslint.yml'
+  push:
+    branches:
+      - main
+    paths:
+      - '**/*.{ts,tsx,js,jsx}'
+      - '.eslintrc*'
+      - 'eslint.config.*'
+
+jobs:
+  eslint:
+    name: ESLint Validation
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: 10
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'pnpm'
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Run ESLint validation
+        run: pnpm lint
+        env:
+          NODE_OPTIONS: '--max-old-space-size=4096'
+
+      - name: Report ESLint results
+        if: always()
+        run: |
+          echo "ESLint validation completed"
+          echo "Workflow run: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}"

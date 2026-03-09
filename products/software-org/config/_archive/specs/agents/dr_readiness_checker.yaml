@@ -1,0 +1,27 @@
+---
+id: "dr_readiness_checker"
+agent: "ReadinessCheckerAgent"
+role: "Gatekeeper Bot"
+inputs_spec:
+- name: "backup_validation_report"
+  description: "Backup validation report for DR readiness."
+  format: "Backup validation report artifact"
+- name: "dr_test_report"
+  description: "DR test report for DR readiness."
+  format: "DR test report artifact"
+outputs_spec:
+- name: "dr_readiness_status"
+  description: "DR readiness status report."
+  format: "Readiness status artifact"
+agent_tasks:
+- "Verify all DR exit criteria met."
+- "Ensure critical findings are resolved."
+acceptance_criteria:
+- "All DR exit criteria are met and critical findings resolved."
+dependencies:
+- "backup_validation_report"
+- "dr_test_report"
+failure_escalation:
+- "Escalate to Gatekeeper if DR exit criteria not met or findings unresolved."
+references: []
+hitl: false

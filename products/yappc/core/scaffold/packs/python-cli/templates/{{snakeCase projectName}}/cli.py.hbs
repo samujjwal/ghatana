@@ -1,0 +1,28 @@
+import click
+from rich.console import Console
+
+console = Console()
+
+@click.group()
+@click.version_option(version="0.1.0")
+def main() -> None:
+"""{{projectName}} - {{#if description}}{{description}}{{else}}A Python CLI application{{/if}}"""
+pass
+
+@main.command()
+@click.argument("name")
+def hello(name: str) -> None:
+"""Say hello to NAME"""
+console.print(f"[bold green]Hello, {name}![/bold green]")
+
+@main.command()
+def info() -> None:
+"""Show application information"""
+console.print("[bold]{{projectName}}[/bold]")
+console.print("Version: 0.1.0")
+{{#if description}}
+console.print("{{description}}")
+{{/if}}
+
+if __name__ == "__main__":
+main()

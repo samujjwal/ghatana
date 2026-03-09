@@ -1,0 +1,74 @@
+# Engineering to QA Handoff Interaction
+apiVersion: virtualorg.ghatana.com/v1
+kind: Interaction
+metadata:
+  name: eng-qa-handoff
+  namespace: software-org
+  labels:
+    type: handoff
+    departments: [engineering, qa]
+
+spec:
+  displayName: "Engineering to QA Handoff"
+  description: |
+    Defines the interaction pattern when engineering completes development
+    and hands off to QA for testing.
+
+  participants:
+    source:
+      department: engineering
+      agents:
+        - engineer-agent
+        - senior-engineer-agent
+    target:
+      department: qa
+      agents:
+        - qa-engineer-agent
+        - qa-lead-agent
+
+  trigger:
+    events:
+      - type: feature.development.completed
+      - type: bug.fix.completed
+      - type: pull_request.merged
+
+  protocol:
+    type: async
+    timeout: PT4H
+
+  handoff:
+    requirements:
+      - name: code_complete
+        description: "All code changes merged to main branch"
+        mandatory: true
+      - name: unit_tests_passing
+        description: "All unit tests passing"
+        mandatory: true
+      - name: documentation_updated
+        description: "Technical documentation updated"
+        mandatory: false
+      - name: deployment_notes
+        description: "Deployment notes provided"
+        mandatory: true
+
+    artifacts:
+      - type: pull_request
+        required: true
+      - type: test_results
+        required: true
+      - type: release_notes
+        required: false
+
+  notifications:
+    onTrigger:
+      - channel: slack
+        target: "#qa-team"
+        template: "New feature ready for testing: {{feature_name}}"
+    onComplete:
+      - channel: slack
+        target: "#engineering"
+        template: "QA testing completed for: {{feature_name}}"
+
+  sla:
+    acknowledgment: PT1H
+    completion: PT24H

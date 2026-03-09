@@ -1,0 +1,104 @@
+id: idea-convergence-agent
+name: Idea Convergence Agent
+version: 1.0.0
+description: Evaluates, clusters, and refines ideas into promising concepts. Applies criteria to narrow from many ideas to few high-potential candidates.
+
+metadata:
+  level: 2  # Domain Expert
+  domain: ideation
+  tags:
+    - idea-evaluation
+    - convergent-thinking
+    - concept-refinement
+    - decision-making
+
+generator:
+  type: PIPELINE
+  steps:
+    - name: idea_clustering
+      type: SERVICE_CALL
+      service: embedding-service
+      endpoint: /embeddings/cluster
+    - name: idea_evaluation
+      type: LLM
+      provider: ANTHROPIC
+      model: claude-3-5-sonnet-20241022
+      temperature: 0.2
+      max_tokens: 3000
+      prompt: |
+        You are the Idea Convergence Agent. Evaluate and refine these ideas:
+        
+        Ideas: {{ideas}}
+        Evaluation Criteria: {{criteria}}
+        Constraints: {{constraints}}
+        
+        For each idea cluster:
+        1. Score against criteria (feasibility, desirability, viability)
+        2. Identify strengths and weaknesses
+        3. Suggest refinements/combinations
+        4. Recommend proceed/pivot/kill
+        5. Create refined concept (best ideas merged)
+        
+        Output as JSON: {clusters, evaluations, refined_concepts, recommendations, top_5}
+    - name: concept_documentation
+      type: TEMPLATE
+      template_path: templates/concept-summary.ftl
+
+memory:
+  episodic:
+    enabled: true
+    retention_days: 365
+    categories:
+      - evaluations
+      - refinements
+      - concept-decisions
+  semantic:
+    enabled: true
+    categories:
+      - evaluation-criteria
+      - concept-patterns
+      - success-indicators
+  procedural:
+    enabled: true
+    categories:
+      - evaluation-frameworks
+      - scoring-models
+      - refinement-strategies
+
+tools:
+  - idea_clusterer
+  - criteria_scorer
+  - concept_refiner
+
+capabilities:
+  - idea-evaluation
+  - clustering
+  - concept-refinement
+  - criteria-scoring
+  - recommendation-generation
+
+routing:
+  input_types:
+    - idea-batch
+    - evaluation-request
+    - refinement-request
+  output_types:
+    - evaluation-report
+    - refined-concepts
+    - recommendations
+
+delegation:
+  can_delegate_to:
+    - value-vs-effort-agent
+  escalates_to:
+    - ideation-orchestrator-agent
+
+governance:
+  requires_approval: false
+  can_block: false
+  audit_trail: standard
+
+performance:
+  expected_latency_ms: 6000
+  max_latency_ms: 15000
+  timeout_ms: 30000

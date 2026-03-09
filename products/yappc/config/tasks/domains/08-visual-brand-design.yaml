@@ -1,0 +1,116 @@
+domain:
+  id: visual-brand-design
+  name: "Visual & Brand Design"
+  description: "Apply visual styling, brand guidelines, and maintain design system consistency."
+  order: 8
+  icon: "palette"
+  color: "#9CCC65"
+  agent_personas:
+    - "VisualDesignerAgent"
+    - "DesignSystemMaintainer"
+    - "BrandGuardian"
+    - "AssetManager"
+  audit_artifacts:
+    - "AssetVersion"
+    - "BrandComplianceCheck"
+    - "DesignSystemChangelog"
+    - "StyleGuideVersion"
+  inputs:
+    - "UX specs"
+    - "Brand guidelines"
+    - "Design tokens"
+    - "Component requirements"
+  outputs:
+    - "Visual assets"
+    - "UI tokens"
+    - "Design system components"
+    - "Brand assets"
+
+tasks:
+  # Core visual design tasks
+  - id: d8-t1
+    name: "UI styling"
+    description: "Apply visual styles to UI components following design system."
+    personas: ["Designer", "Developer"]
+    lifecycle_stages: ["execute"]
+    automation_level: "assisted"
+  - id: d8-t2
+    name: "Visual system design"
+    description: "Create a cohesive visual language and design system."
+    personas: ["Designer"]
+    lifecycle_stages: ["execute"]
+    automation_level: "manual"
+  - id: d8-t3
+    name: "Brand alignment"
+    description: "Ensure designs match brand identity and guidelines."
+    personas: ["Designer"]
+    lifecycle_stages: ["verify"]
+    automation_level: "assisted"
+  - id: d8-t4
+    name: "Asset creation"
+    description: "Produce icons, images, illustrations, and other assets."
+    personas: ["Designer"]
+    lifecycle_stages: ["execute"]
+    automation_level: "manual"
+  - id: d8-t5
+    name: "Design system maintenance"
+    description: "Update and maintain the design system components."
+    personas: ["Designer", "Developer"]
+    lifecycle_stages: ["execute", "learn"]
+    automation_level: "assisted"
+
+  # Extended visual design tasks
+  - id: vis-001
+    name: "Define Design Tokens"
+    description: "Create and manage design tokens (colors, typography, spacing)."
+    personas: ["Designer", "Developer"]
+    lifecycle_stages: ["execute"]
+    automation_level: "assisted"
+  - id: vis-002
+    name: "Create Icon Library"
+    description: "Design and maintain consistent iconography."
+    personas: ["Designer"]
+    lifecycle_stages: ["execute"]
+    automation_level: "manual"
+  - id: vis-003
+    name: "Typography System"
+    description: "Define typography hierarchy and text styles."
+    personas: ["Designer"]
+    lifecycle_stages: ["execute"]
+    automation_level: "assisted"
+  - id: vis-004
+    name: "Color Palette Management"
+    description: "Maintain color system including dark mode and themes."
+    personas: ["Designer", "Developer"]
+    lifecycle_stages: ["execute"]
+    automation_level: "assisted"
+  - id: vis-005
+    name: "Component Library Design"
+    description: "Design reusable UI components for the design system."
+    personas: ["Designer", "Developer"]
+    lifecycle_stages: ["execute"]
+    automation_level: "assisted"
+  - id: vis-006
+    name: "Motion Design Guidelines"
+    description: "Define animation and motion principles."
+    personas: ["Designer"]
+    lifecycle_stages: ["execute"]
+    automation_level: "manual"
+  - id: vis-007
+    name: "Illustration Style Guide"
+    description: "Create consistent illustration style and guidelines."
+    personas: ["Designer"]
+    lifecycle_stages: ["execute"]
+    automation_level: "manual"
+  - id: vis-008
+    name: "Design Token Export"
+    description: "Export design tokens for development consumption."
+    personas: ["Designer", "Developer"]
+    lifecycle_stages: ["execute"]
+    automation_level: "automated"
+  - id: vis-009
+    name: "Visual Accessibility Audit"
+    description: "Ensure visual designs meet contrast and accessibility standards."
+    personas: ["Designer"]
+    lifecycle_stages: ["verify"]
+    automation_level: "assisted"

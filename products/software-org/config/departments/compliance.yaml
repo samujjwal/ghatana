@@ -1,0 +1,251 @@
+# Compliance Department Configuration
+# Part of Software-Org plugin for Virtual-Org framework
+
+apiVersion: virtualorg.ghatana.com/v1
+kind: Department
+metadata:
+  name: compliance
+  labels:
+    category: business-operations
+    cost-center: "CMP-001"
+
+spec:
+  displayName: "Compliance & Security"
+  type: COMPLIANCE
+  description: |
+    Compliance and Security department responsible for regulatory compliance,
+    security governance, risk management, and audit coordination. Ensures the
+    organization meets all legal, regulatory, and security requirements.
+
+  hierarchy:
+    parent: null
+    reportingTo: ceo-agent
+    children: []
+
+  settings:
+    maxAgents: 6
+    autoScaleAgents: false
+    taskAssignment:
+      strategy: capability-match
+      loadBalancing: true
+      maxTasksPerAgent: 5
+
+  agents:
+    - ref: agents/compliance-officer-agent.yaml
+    - ref: agents/security-analyst-agent.yaml
+    - ref: agents/risk-manager-agent.yaml
+
+  workflows:
+    - name: security-audit
+      displayName: "Security Audit"
+      steps:
+        - name: scope-definition
+          agent: compliance-officer
+          action: define_audit_scope
+          timeout: PT24H
+        - name: evidence-collection
+          agent: security-analyst
+          action: collect_evidence
+          timeout: PT168H
+          waitFor: [scope-definition]
+        - name: control-testing
+          agent: security-analyst
+          action: test_controls
+          timeout: PT120H
+          waitFor: [evidence-collection]
+        - name: gap-analysis
+          agent: compliance-officer
+          action: analyze_gaps
+          timeout: PT48H
+          waitFor: [control-testing]
+        - name: remediation-planning
+          agent: risk-manager
+          action: create_remediation_plan
+          timeout: PT72H
+          waitFor: [gap-analysis]
+        - name: audit-report
+          agent: compliance-officer
+          action: generate_audit_report
+          timeout: PT48H
+          waitFor: [remediation-planning]
+          hitl:
+            required: true
+            approvers: [compliance-officer, ceo-agent]
+
+    - name: incident-response-security
+      displayName: "Security Incident Response"
+      steps:
+        - name: incident-triage
+          agent: security-analyst
+          action: triage_security_incident
+          timeout: PT1H
+        - name: containment
+          agent: security-analyst
+          action: contain_incident
+          timeout: PT4H
+          waitFor: [incident-triage]
+        - name: investigation
+          agent: security-analyst
+          action: investigate_incident
+          timeout: PT48H
+          waitFor: [containment]
+        - name: impact-assessment
+          agent: risk-manager
+          action: assess_impact
+          timeout: PT24H
+          waitFor: [investigation]
+        - name: notification
+          agent: compliance-officer
+          action: handle_notifications
+          timeout: PT24H
+          waitFor: [impact-assessment]
+          conditions:
+            - field: requires_notification
+              operator: equals
+              value: true
+        - name: lessons-learned
+          agent: compliance-officer
+          action: document_lessons_learned
+          timeout: PT72H
+          waitFor: [notification]
+
+    - name: vendor-assessment
+      displayName: "Vendor Security Assessment"
+      steps:
+        - name: questionnaire
+          agent: security-analyst
+          action: send_security_questionnaire
+          timeout: PT24H
+        - name: review-responses
+          agent: security-analyst
+          action: review_questionnaire_responses
+          timeout: PT72H
+          waitFor: [questionnaire]
+        - name: risk-scoring
+          agent: risk-manager
+          action: calculate_vendor_risk_score
+          timeout: PT24H
+          waitFor: [review-responses]
+        - name: approval-decision
+          agent: compliance-officer
+          action: make_vendor_decision
+          timeout: PT24H
+          waitFor: [risk-scoring]
+          hitl:
+            required: true
+            approvers: [compliance-officer]
+
+  kpis:
+    - name: audit_compliance_rate
+      displayName: "Audit Compliance Rate"
+      type: percentage
+      target: 98
+      warningThreshold: 95
+      criticalThreshold: 90
+
+    - name: security_incidents
+      displayName: "Security Incidents"
+      type: counter
+      unit: incidents
+      target: 0
+      warningThreshold: 2
+      criticalThreshold: 5
+      aggregationPeriod: P1M
+
+    - name: vulnerability_remediation_time
+      displayName: "Vulnerability Remediation Time"
+      type: duration
+      unit: days
+      target: 7
+      warningThreshold: 14
+      criticalThreshold: 30
+
+    - name: policy_acknowledgment_rate
+      displayName: "Policy Acknowledgment Rate"
+      type: percentage
+      target: 100
+      warningThreshold: 95
+      criticalThreshold: 90
+
+    - name: risk_score
+      displayName: "Organization Risk Score"
+      type: gauge
+      target: 20
+      warningThreshold: 40
+      criticalThreshold: 60
+
+    - name: training_compliance
+      displayName: "Security Training Compliance"
+      type: percentage
+      target: 100
+      warningThreshold: 95
+      criticalThreshold: 85
+
+    - name: vendor_compliance_rate
+      displayName: "Vendor Compliance Rate"
+      type: percentage
+      target: 100
+      warningThreshold: 95
+      criticalThreshold: 90
+
+  taskTypes:
+    - name: security_review
+      priority: high
+      slaHours: 48
+      requiredCapabilities: [security_review, risk_assessment]
+
+    - name: compliance_audit
+      priority: normal
+      slaHours: 336
+      requiredCapabilities: [auditing, documentation, compliance]
+
+    - name: incident_investigation
+      priority: critical
+      slaHours: 24
+      requiredCapabilities: [incident_response, forensics]
+
+    - name: policy_review
+      priority: normal
+      slaHours: 168
+      requiredCapabilities: [policy, legal_understanding]
+
+    - name: vendor_assessment
+      priority: normal
+      slaHours: 120
+      requiredCapabilities: [vendor_management, risk_assessment]
+
+    - name: vulnerability_scan
+      priority: high
+      slaHours: 24
+      requiredCapabilities: [security_scanning, vulnerability_management]
+
+  subscriptions:
+    - event: code_merged
+      source: engineering
+      action: trigger_security_scan
+    - event: deployment_completed
+      source: devops
+      action: verify_security_controls
+    - event: vendor_requested
+      source: procurement
+      action: initiate_vendor_assessment
+    - event: new_hire_onboarded
+      source: hr
+      action: assign_security_training
+    - event: architecture_decision_made
+      source: engineering
+      action: review_security_implications
+
+  publications:
+    - event: security_scan_completed
+      targets: [devops, engineering]
+    - event: security_vulnerability_found
+      targets: [engineering, devops]
+    - event: compliance_training_required
+      targets: [hr]
+    - event: vendor_approved
+      targets: [procurement, requesting_department]
+    - event: audit_completed
+      targets: [finance, executive_team]
+    - event: security_incident_declared
+      targets: [executive_team, legal]

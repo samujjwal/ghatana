@@ -1,0 +1,78 @@
+using Microsoft.AspNetCore.Builder;
+using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Hosting;
+{{#if enableSwagger}}
+using Microsoft.OpenApi.Models;
+{{/if}}
+
+var builder = WebApplication.CreateBuilder(args);
+
+// Add services
+builder.Services.AddEndpointsApiExplorer();
+{{#if enableSwagger}}
+builder.Services.AddSwaggerGen(c =>
+{
+c.SwaggerDoc("v1", new OpenApiInfo
+{
+Title = "{{projectName}}",
+Version = "v1",
+Description = "{{description}}"
+});
+});
+{{/if}}
+
+{{#if enableCors}}
+builder.Services.AddCors(options =>
+{
+options.AddDefaultPolicy(policy =>
+{
+policy.AllowAnyOrigin()
+.AllowAnyMethod()
+.AllowAnyHeader();
+});
+});
+{{/if}}
+
+{{#if enableMetrics}}
+builder.Services.AddHealthChecks();
+{{/if}}
+
+// Build app
+var app = builder.Build();
+
+// Configure middleware
+if (app.Environment.IsDevelopment())
+{
+{{#if enableSwagger}}
+app.UseSwagger();
+app.UseSwaggerUI();
+{{/if}}
+}
+
+app.UseHttpsRedirection();
+{{#if enableCors}}
+app.UseCors();
+{{/if}}
+
+{{#if enableMetrics}}
+app.MapHealthChecks("/health");
+{{/if}}
+
+// Map endpoints
+app.MapGet("/", () => new
+{
+Name = "{{projectName}}",
+Version = "1.0.0",
+Status = "running"
+})
+.WithName("Root")
+.WithOpenApi();
+
+app.MapGet("/api/v1/hello", () => new
+{
+Message = "Hello from {{projectName}}!"
+})
+.WithName("Hello")
+.WithOpenApi();
+
+app.Run();

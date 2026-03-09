@@ -1,0 +1,197 @@
+/*
+ * Copyright (c) ${year} Ghatana Inc.
+ * All rights reserved.
+ *
+ * This source code and the accompanying materials are the confidential
+ * and proprietary information of Ghatana Inc. ("Confidential Information").
+ * You shall not disclose such Confidential Information and shall use it
+ * only in accordance with the terms of the license agreement you entered
+ * into with Ghatana Inc.
+ *
+ * Unauthorized copying of this file, via any medium, is strictly prohibited.
+ * Proprietary and confidential.
+ */
+syntax = "proto3";
+
+package ghatana.contracts.event.v1;
+
+import "ghatana/contracts/event/v1/ingestion.proto";
+import "ghatana/contracts/event/v1/event_cloud.proto";
+import "ghatana/contracts/common/v1/common.proto";
+import "ghatana/contracts/common/v1/error.proto";
+
+option java_package = "com.ghatana.contracts.event.v1";
+option java_multiple_files = true;
+option java_outer_classname = "ConnectorsProto";
+option go_package = "github.com/ghatana/contracts/gen/go/event/v1;eventv1";
+option csharp_namespace = "Ghatana.Contracts.Event.V1";
+
+// =============================================================================
+// Connector Contracts - Source, Sink, Operator
+// =============================================================================
+
+// SourceConfigProto - Configuration for Source connector
+message SourceConfigProto {
+  // Tenant ID
+  string tenant_id = 1;
+
+  // Event types this source produces
+  repeated EventTypeRefProto produces = 2;
+
+  // Connector-specific properties (endpoint, topic, credentials ref, etc.)
+  map<string, string> properties = 3;
+
+  reserved 1000 to max;
+  reserved "reserved_field";
+}
+
+// SinkConfigProto - Configuration for Sink connector
+message SinkConfigProto {
+  // Tenant ID
+  string tenant_id = 1;
+
+  // Event type names to subscribe to
+  repeated string event_type_names = 2;
+
+  // Starting positions for reading
+  StartingPositionsProto starting_positions = 3;
+
+  // Connector-specific properties
+  map<string, string> properties = 4;
+
+  reserved 1000 to max;
+  reserved "reserved_field";
+}
+
+// OperatorConfigProto - Configuration for Operator connector
+message OperatorConfigProto {
+  // Tenant ID
+  string tenant_id = 1;
+
+  // Input event type names to consume
+  repeated string input_event_type_names = 2;
+
+  // Starting positions for reading
+  StartingPositionsProto starting_positions = 3;
+
+  // Output event types this operator produces
+  repeated EventTypeRefProto output_types = 4;
+
+  // Connector-specific properties
+  map<string, string> properties = 5;
+
+  reserved 1000 to max;
+  reserved "reserved_field";
+}
+
+// =============================================================================
+// Connector Lifecycle
+// =============================================================================
+
+// StartSourceRequestProto - Request to start a Source connector
+message StartSourceRequestProto {
+  // Source configuration
+  SourceConfigProto config = 1;
+
+  // Call context
+  CallContextProto context = 2;
+
+  reserved 1000 to max;
+  reserved "reserved_field";
+}
+
+// StartSourceResponseProto - Response from starting a Source
+message StartSourceResponseProto {
+  // Connector ID assigned by the system
+  string connector_id = 1;
+
+  // Status message
+  string status = 2;
+
+  reserved 1000 to max;
+  reserved "reserved_field";
+}
+
+// StopConnectorRequestProto - Request to stop a connector
+message StopConnectorRequestProto {
+  // Connector ID
+  string connector_id = 1;
+
+  reserved 1000 to max;
+  reserved "reserved_field";
+}
+
+// StopConnectorResponseProto - Response from stopping a connector
+message StopConnectorResponseProto {
+  // Status message
+  string status = 1;
+
+  reserved 1000 to max;
+  reserved "reserved_field";
+}
+
+// StartSinkRequestProto - Request to start a Sink connector
+message StartSinkRequestProto {
+  // Sink configuration
+  SinkConfigProto config = 1;
+
+  // Call context
+  CallContextProto context = 2;
+
+  reserved 1000 to max;
+  reserved "reserved_field";
+}
+
+// StartSinkResponseProto - Response from starting a Sink
+message StartSinkResponseProto {
+  // Connector ID assigned by the system
+  string connector_id = 1;
+
+  // Status message
+  string status = 2;
+
+  reserved 1000 to max;
+  reserved "reserved_field";
+}
+
+// StartOperatorRequestProto - Request to start an Operator connector
+message StartOperatorRequestProto {
+  // Operator configuration
+  OperatorConfigProto config = 1;
+
+  // Call context
+  CallContextProto context = 2;
+
+  reserved 1000 to max;
+  reserved "reserved_field";
+}
+
+// StartOperatorResponseProto - Response from starting an Operator
+message StartOperatorResponseProto {
+  // Connector ID assigned by the system
+  string connector_id = 1;
+
+  // Status message
+  string status = 2;
+
+  reserved 1000 to max;
+  reserved "reserved_field";
+}
+
+// =============================================================================
+// Connector Management Service
+// =============================================================================
+
+service ConnectorService {
+  // Start a Source connector
+  rpc StartSource(StartSourceRequestProto) returns (StartSourceResponseProto);
+
+  // Start a Sink connector
+  rpc StartSink(StartSinkRequestProto) returns (StartSinkResponseProto);
+
+  // Start an Operator connector
+  rpc StartOperator(StartOperatorRequestProto) returns (StartOperatorResponseProto);
+
+  // Stop any connector
+  rpc StopConnector(StopConnectorRequestProto) returns (StopConnectorResponseProto);
+}

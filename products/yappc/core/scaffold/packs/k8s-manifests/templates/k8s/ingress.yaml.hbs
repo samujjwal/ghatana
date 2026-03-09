@@ -1,0 +1,22 @@
+{{#if enableIngress}}
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+name: {{projectName}}
+namespace: {{namespace}}
+annotations:
+nginx.ingress.kubernetes.io/rewrite-target: /
+spec:
+ingressClassName: nginx
+rules:
+- host: {{projectName}}.example.com
+http:
+paths:
+- path: /
+pathType: Prefix
+backend:
+service:
+name: {{projectName}}
+port:
+number: 80
+{{/if}}

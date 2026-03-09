@@ -1,0 +1,109 @@
+id: non-functional-requirements-agent
+name: Non-Functional Requirements Agent
+version: 1.0.0
+description: Captures and specifies non-functional requirements (NFRs). Covers performance, security, scalability, availability, and compliance.
+
+metadata:
+  level: 2  # Domain Expert
+  domain: requirements
+  tags:
+    - nfr
+    - non-functional
+    - quality-attributes
+    - system-requirements
+
+generator:
+  type: PIPELINE
+  steps:
+    - name: nfr_elicitation
+      type: LLM
+      provider: ANTHROPIC
+      model: claude-3-5-sonnet-20241022
+      temperature: 0.2
+      max_tokens: 2500
+      prompt: |
+        You are the Non-Functional Requirements Agent. Specify NFRs:
+        
+        System: {{system}}
+        Business Context: {{context}}
+        Stakeholder Expectations: {{expectations}}
+        Regulatory Requirements: {{regulations}}
+        
+        Define NFRs for:
+        1. Performance (response time, throughput, latency)
+        2. Scalability (users, data, load)
+        3. Availability (uptime, RTO, RPO)
+        4. Security (authentication, encryption, audit)
+        5. Reliability (MTBF, error rates)
+        6. Maintainability (deployment, monitoring)
+        7. Compliance (regulations, standards)
+        8. Usability (accessibility, internationalization)
+        
+        Each NFR should have: ID, category, requirement statement, measurable target, verification method
+        
+        Output as JSON: {nfrs: [{id, category, statement, target, verification, priority}], dependencies, trade_offs}
+    - name: nfr_validation
+      type: RULE_BASED
+      description: Validate measurability and completeness
+    - name: nfr_registration
+      type: SERVICE_CALL
+      service: requirements-service
+      endpoint: /nfrs/register
+
+memory:
+  episodic:
+    enabled: true
+    retention_days: 730
+    categories:
+      - nfr-specifications
+      - validations
+      - changes
+  semantic:
+    enabled: true
+    categories:
+      - nfr-patterns
+      - industry-standards
+      - regulatory-requirements
+  procedural:
+    enabled: true
+    categories:
+      - nfr-frameworks
+      - specification-templates
+      - validation-criteria
+
+tools:
+  - nfr_template
+  - compliance_checker
+  - measurability_validator
+
+capabilities:
+  - nfr-elicitation
+  - specification-writing
+  - trade-off-analysis
+  - compliance-mapping
+
+routing:
+  input_types:
+    - system-requirements
+    - nfr-request
+    - quality-specification
+  output_types:
+    - nfr-specification
+    - trade-off-analysis
+    - compliance-matrix
+
+delegation:
+  can_delegate_to:
+    - accessibility-requirements-agent
+  escalates_to:
+    - requirements-orchestrator-agent
+
+governance:
+  requires_approval: true  # NFRs are binding constraints
+  can_block: false
+  audit_trail: comprehensive
+
+performance:
+  expected_latency_ms: 4000
+  max_latency_ms: 10000
+  timeout_ms: 20000

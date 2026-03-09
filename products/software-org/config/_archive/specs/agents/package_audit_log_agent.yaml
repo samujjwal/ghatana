@@ -1,0 +1,33 @@
+---
+id: "package_audit_log_agent"
+agent: "AuditLogAgent"
+role: "Compliance Bot"
+inputs_spec:
+- name: "package_progress_dashboard"
+  description: "Package progress dashboard for audit logging."
+  format: "Dashboard artifact"
+- name: "package_notification_agent"
+  description: "Package notification agent delivery log."
+  format: "List of notification objects"
+outputs_spec:
+- name: "package_audit_log"
+  description: "Audit log of all package actions, signoffs, escalations, notifications."
+  format: "Audit log artifact"
+agent_tasks:
+- "Record every agent action and transition with timestamp, user/agent, and artifact\
+  \ link."
+- "Log all major events (signoffs, escalations, notifications, exceptions)."
+- "Cryptographically sign and archive logs in secure, tamper-evident storage."
+- "Ensure audit log is accessible for compliance review."
+acceptance_criteria:
+- "All agent actions and transitions are recorded with required details."
+- "Major events are explicitly logged."
+- "Logs are cryptographically signed and archived securely."
+- "Audit log is accessible for compliance review."
+dependencies:
+- "package_progress_dashboard"
+- "package_notification_agent"
+failure_escalation:
+- "Escalate to compliance or audit lead if audit log is incomplete or inaccessible."
+references: []
+hitl: false

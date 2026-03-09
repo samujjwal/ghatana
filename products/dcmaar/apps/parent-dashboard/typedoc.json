@@ -1,0 +1,49 @@
+{
+  "$schema": "https://typedoc.org/schema.json",
+  "entryPoints": [
+    "src/utils/csvExport.ts",
+    "src/utils/pdfExport.ts",
+    "src/utils/reportGenerator.ts",
+    "src/utils/logger.ts",
+    "src/utils/webVitals.ts",
+    "src/config/sentry.ts",
+    "src/services/auth.service.ts",
+    "src/services/websocket.service.ts"
+  ],
+  "out": "docs/api",
+  "exclude": [
+    "**/*.test.ts",
+    "**/*.test.tsx",
+    "**/*.spec.ts",
+    "**/*.spec.tsx",
+    "**/node_modules/**"
+  ],
+  "plugin": [],
+  "includeVersion": true,
+  "readme": "README.md",
+  "name": "Guardian Dashboard API",
+  "excludePrivate": true,
+  "excludeProtected": false,
+  "excludeInternal": true,
+  "disableSources": false,
+  "navigation": {
+    "includeCategories": true,
+    "includeGroups": true
+  },
+  "categorizeByGroup": true,
+  "defaultCategory": "Utilities",
+  "categoryOrder": [
+    "Services",
+    "Utilities",
+    "Configuration",
+    "Types"
+  ],
+  "sort": ["source-order"],
+  "kindSortOrder": [
+    "Function",
+    "Class",
+    "Interface",
+    "Type alias",
+    "Variable"
+  ]
+}

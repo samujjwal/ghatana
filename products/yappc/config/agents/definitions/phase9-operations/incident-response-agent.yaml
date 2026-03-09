@@ -1,0 +1,117 @@
+id: incident-response-agent
+name: Incident Response Agent
+version: 1.0.0
+description: Responds to incidents. Coordinates triage, investigation, resolution, and communication.
+
+metadata:
+  level: 2  # Domain Expert
+  domain: operations
+  tags:
+    - incident-response
+    - triage
+    - investigation
+    - resolution
+
+generator:
+  type: PIPELINE
+  steps:
+    - name: incident_triage
+      type: LLM
+      provider: ANTHROPIC
+      model: claude-3-5-sonnet-20241022
+      temperature: 0.1
+      max_tokens: 2000
+      prompt: |
+        You are the Incident Response Agent. Triage incident:
+        
+        Alert: {{alert}}
+        System State: {{state}}
+        Recent Changes: {{changes}}
+        Runbooks: {{runbooks}}
+        
+        Triage:
+        1. Severity assessment (P1-P4)
+        2. Scope and impact
+        3. Affected services
+        4. Similar past incidents
+        5. Likely root cause
+        6. Immediate actions
+        7. Escalation needs
+        
+        Output as JSON: {
+          severity,
+          scope,
+          affected_services,
+          similar_incidents,
+          likely_cause,
+          immediate_actions,
+          escalation,
+          runbook_recommendation
+        }
+    - name: response_coordination
+      type: SERVICE_CALL
+      service: incident-service
+      endpoint: /incident/coordinate
+    - name: communication
+      type: TEMPLATE
+      template_path: templates/incident-update.ftl
+
+memory:
+  episodic:
+    enabled: true
+    retention_days: 730
+    categories:
+      - incidents
+      - resolutions
+      - postmortems
+  semantic:
+    enabled: true
+    categories:
+      - incident-patterns
+      - resolution-strategies
+      - root-cause-db
+  procedural:
+    enabled: true
+    categories:
+      - triage-rules
+      - runbooks
+      - escalation-paths
+
+tools:
+  - incident_coordinator
+  - runbook_executor
+  - communication_hub
+
+capabilities:
+  - incident-triage
+  - response-coordination
+  - root-cause-analysis
+  - communication
+
+routing:
+  input_types:
+    - incident-alert
+    - escalation
+    - status-request
+  output_types:
+    - incident-status
+    - action-items
+    - communication
+
+delegation:
+  can_delegate_to:
+    - on-call-agent
+    - rollback-agent
+  escalates_to:
+    - operations-orchestrator-agent
+    - human-in-the-loop-coordinator
+
+governance:
+  requires_approval: false  # Emergency response
+  can_block: false
+  audit_trail: comprehensive
+
+performance:
+  expected_latency_ms: 2000
+  max_latency_ms: 5000
+  timeout_ms: 10000

@@ -1,0 +1,56 @@
+id: plan_audit_log_agent
+agent: AuditLogAgent
+role: Compliance Bot
+inputs_spec:
+- name: plan_progress_dashboard
+  description: Plan progress dashboard artifact.
+  format: Dashboard artifact
+- name: plan_notification_agent
+  description: Plan notification delivery log.
+  format: List of notification objects
+outputs_spec:
+- name: plan_audit_log
+  description: Complete audit log of agent actions, transitions, signoffs, escalations, notifications, cryptographically signed and archived.
+  format: Audit log artifact (entries, signature, archive_location, access)
+  example: 'entries: ["Milestone completed", "Escalation raised"]
+
+    signature: "abc123"
+
+    archive_location: "s3://audit-logs/"
+
+    access: "compliance"
+
+    '
+agent_tasks:
+- Record every agent action and transition with timestamp, user/agent, and artifact link.
+- Log major events (signoffs, escalations, notifications, exceptions).
+- Cryptographically sign and archive logs in secure, tamper-evident location.
+- Ensure audit log is accessible for compliance review.
+acceptance_criteria:
+- Every agent action and transition is recorded with timestamp, user/agent, and artifact link.
+- Major events (signoffs, escalations, notifications, exceptions) are explicitly logged.
+- Logs are cryptographically signed and archived in a secure, tamper-evident location.
+- Audit log is accessible for compliance review.
+dependencies:
+- plan_progress_dashboard
+- plan_notification_agent
+failure_escalation:
+- Escalate to compliance or audit lead if logs are incomplete or inaccessible.
+references: []
+hitl: false
+internal_logic:
+  - perception:
+      description: "Extract loggable actions from notification and control events."
+  - model:
+      description: "Logs: { id, event, actor, timestamp, action, evidence, signature, status }"
+  - planning:
+      description: |
+        "Ensure every critical action is logged and signed."
+  - action:
+      description: "Produce YAML audit log."
+validation:
+  - "Compliance/infosec SME review."
+  - "Cryptographic audit check."
+quality_enhancements:
+  - "Immutability and signature templates."
+  - "Automated evidence cross-linking."

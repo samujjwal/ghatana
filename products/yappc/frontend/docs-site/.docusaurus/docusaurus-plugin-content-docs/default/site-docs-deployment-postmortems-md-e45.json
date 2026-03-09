@@ -1,0 +1,18 @@
+{
+  "id": "deployment/postmortems",
+  "title": "Postmortem Template",
+  "description": "A structured template for conducting effective postmortems after incidents, outages, or deployment failures in YAPPC Canvas systems.",
+  "source": "@site/docs/deployment/postmortems.md",
+  "sourceDirName": "deployment",
+  "slug": "/deployment/postmortems",
+  "permalink": "/docs/deployment/postmortems",
+  "draft": false,
+  "unlisted": false,
+  "editUrl": "https://github.com/yappc/app-creator/tree/main/docs-site/docs/deployment/postmortems.md",
+  "tags": [],
+  "version": "current",
+  "sidebarPosition": 6,
+  "frontMatter": {
+    "sidebar_position": 6
+  }
+}

@@ -1,0 +1,49 @@
+use metrics::{counter, gauge, histogram};
+use metrics_exporter_prometheus::{PrometheusBuilder, PrometheusHandle};
+use std::net::SocketAddr;
+
+/// Initialize Prometheus metrics exporter
+pub fn init_metrics() -> PrometheusHandle {
+let builder = PrometheusBuilder::new();
+
+let handle = builder
+.with_http_listener(SocketAddr::from(([0, 0, 0, 0], {{metricsPort}})))
+.install_recorder()
+.expect("Failed to install Prometheus recorder");
+
+tracing::info!(port = {{metricsPort}}, "Metrics server started");
+
+handle
+}
+
+/// Record HTTP request metrics
+pub fn record_http_request(method: &str, path: &str, status: u16, duration_ms: f64) {
+let labels = [
+("method", method.to_string()),
+("path", path.to_string()),
+("status", status.to_string()),
+];
+
+counter!("http_requests_total", &labels).increment(1);
+histogram!("http_request_duration_seconds", &labels).record(duration_ms / 1000.0);
+}
+
+/// Record active connections
+pub fn set_active_connections(count: i64) {
+gauge!("active_connections").set(count as f64);
+}
+
+/// Record custom counter
+pub fn increment_counter(name: &str, labels: &[(&str, String)]) {
+counter!(name.to_string(), labels).increment(1);
+}
+
+/// Record custom histogram
+pub fn record_histogram(name: &str, value: f64, labels: &[(&str, String)]) {
+histogram!(name.to_string(), labels).record(value);
+}
+
+/// Record custom gauge
+pub fn set_gauge(name: &str, value: f64) {
+gauge!(name.to_string()).set(value);
+}

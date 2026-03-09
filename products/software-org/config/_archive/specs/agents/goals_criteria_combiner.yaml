@@ -1,0 +1,49 @@
+id: goals_criteria_combiner
+agent: GoalsCriteriaCombiner
+role: Senior Analyst/Combiner
+inputs_spec:
+- name: business_goals
+  description: List of business goals.
+  format: List of goal objects.
+- name: success_criteria
+  description: List of mapped success criteria.
+  format: List of criteria objects.
+outputs_spec:
+- name: goals_and_criteria
+  description: Combined, logically structured mapping of business goals to corresponding success criteria, with security/compliance/cloud context.
+  format: List of mappings (goal, criteria, milestone reference, notes).
+  example: "- goal: \"Achieve HIPAA compliance\"\n  criteria: [\"HIPAA audit passed by Q3\"]\n  milestone: \"M2\"\n"
+acceptance_criteria:
+- All business goals are mapped to corresponding success criteria, including security, compliance, and cloud-readiness.
+- Gaps, mismatches, or ambiguities between goals and criteria (especially in security/compliance) are identified and flagged.
+- Combined output is logically structured, traceable to milestones, and free of contradictions.
+- Ensure all referenced artifacts are current, versioned, and include security/compliance context where needed.
+agent_tasks:
+- Map each business goal to one or more success criteria.
+- Identify and flag gaps, mismatches, or ambiguities.
+- Structure output for traceability to milestones.
+- Verify all referenced artifacts are current and versioned.
+dependencies:
+- business_goals
+- success_criteria
+failure_escalation:
+- Escalate to analyst or compliance lead if mapping is incomplete or ambiguous.
+references: []
+
+internal_logic:
+  - perception:
+      description: "Extract links, mismatches, or missing mappings between goals and criteria."
+  - model:
+      description: "Build map: {goal_id, criteria[], gaps[], issues[]}"
+  - planning:
+      description: |
+        "If a goal lacks a criterion → flag as gap.
+         If duplicate criteria for a goal → flag as issue."
+  - action:
+      description: "Produce goals-criteria mapping YAML."
+validation:
+  - "Peer/lead review for completeness."
+  - "Audit for mapping and gap coverage."
+quality_enhancements:
+  - "Automated duplicate detection."
+  - "Change log for mapping adjustments."

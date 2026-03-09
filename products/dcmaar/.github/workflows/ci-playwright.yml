@@ -1,0 +1,153 @@
+name: CI - Playwright tests
+
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
+  schedule:
+    - cron: '0 2 * * *' # daily at 02:00 UTC (nightly)
+  workflow_dispatch: {}
+
+jobs:
+  unit-tests:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'pnpm'
+
+      - name: Install pnpm
+        run: npm i -g pnpm
+
+      - name: Cache pnpm store
+        uses: actions/cache@v4
+        with:
+          path: ~/.pnpm-store
+          key: ${{ runner.os }}-pnpm-store-${{ hashFiles('**/pnpm-lock.yaml') }}
+
+      - name: Install dependencies
+        run: pnpm install
+
+      - name: Run unit tests
+        run: pnpm run test:unit
+
+  lint-and-type:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'pnpm'
+
+      - name: Install pnpm
+        run: npm i -g pnpm
+
+      - name: Cache pnpm store
+        uses: actions/cache@v4
+        with:
+          path: ~/.pnpm-store
+          key: ${{ runner.os }}-pnpm-store-${{ hashFiles('**/pnpm-lock.yaml') }}
+
+      - name: Install dependencies
+        run: pnpm install
+
+      - name: Run type-check
+        run: pnpm run type-check
+
+      - name: Run lint
+        run: pnpm run lint
+
+  test-playwright:
+    needs: unit-tests
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'pnpm'
+
+      - name: Install pnpm
+        run: npm i -g pnpm
+
+      - name: Install dependencies
+        run: pnpm install
+
+      - name: Install Playwright browsers
+        run: pnpm exec playwright install --with-deps chromium firefox msedge
+
+      - name: Validate VITE_ADDON_PUBLIC_KEYS secret
+        if: ${{ secrets.VITE_ADDON_PUBLIC_KEYS != '' }}
+        run: |
+          echo "$VITE_ADDON_PUBLIC_KEYS" | jq -e 'if type=="array" then all(.[]; .id and .spkiPem) else false end' >/dev/null
+        env:
+          VITE_ADDON_PUBLIC_KEYS: ${{ secrets.VITE_ADDON_PUBLIC_KEYS }}
+
+      - name: Build extension (with test hooks)
+        env:
+          VITE_ENABLE_TEST_HOOKS: 'true'
+          VITE_ADMIN_SECRET: ${{ secrets.VITE_ADMIN_SECRET }}
+          # VITE_ADDON_PUBLIC_KEYS should be a JSON string of [{"id":"...","spkiPem":"..."}, ...]
+          VITE_ADDON_PUBLIC_KEYS: ${{ secrets.VITE_ADDON_PUBLIC_KEYS }}
+        run: pnpm run build:chrome
+
+      - name: Run Playwright tests (Chromium)
+        env:
+          VITE_ENABLE_TEST_HOOKS: 'true'
+          VITE_ADMIN_SECRET: ${{ secrets.VITE_ADMIN_SECRET }}
+          VITE_ADDON_PUBLIC_KEYS: ${{ secrets.VITE_ADDON_PUBLIC_KEYS }}
+        run: pnpm exec playwright test --project=chromium --reporter=html
+
+      - name: Archive Playwright report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: playwright-report
+          path: playwright-report
+
+      - name: Show short report link
+        if: success()
+        run: echo "Playwright report available in the workflow artifacts (playwright-report.zip)"
+
+  nightly-fuzz:
+    runs-on: ubuntu-latest
+    if: always()
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'pnpm'
+
+      - name: Install pnpm
+        run: npm i -g pnpm
+
+      - name: Cache pnpm store
+        uses: actions/cache@v4
+        with:
+          path: ~/.pnpm-store
+          key: ${{ runner.os }}-pnpm-store-${{ hashFiles('**/pnpm-lock.yaml') }}
+
+      - name: Install dependencies
+        run: pnpm install
+
+      - name: Run nightly DER fuzz harness
+        env:
+          FUZZ_ITERATIONS: '1000'
+        run: node services/extension/scripts/run-fuzz.cjs

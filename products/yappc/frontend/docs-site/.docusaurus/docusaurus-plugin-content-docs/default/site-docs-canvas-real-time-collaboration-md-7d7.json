@@ -1,0 +1,27 @@
+{
+  "id": "canvas/real-time-collaboration",
+  "title": "Real-Time Collaboration",
+  "description": "Multi-user editing with presence awareness and conflict-free collaboration.",
+  "source": "@site/docs/canvas/real-time-collaboration.md",
+  "sourceDirName": "canvas",
+  "slug": "/canvas/real-time-collaboration",
+  "permalink": "/docs/canvas/real-time-collaboration",
+  "draft": false,
+  "unlisted": false,
+  "editUrl": "https://github.com/yappc/app-creator/tree/main/docs-site/docs/canvas/real-time-collaboration.md",
+  "tags": [],
+  "version": "current",
+  "sidebarPosition": 1,
+  "frontMatter": {
+    "sidebar_position": 1
+  },
+  "sidebar": "canvasSidebar",
+  "previous": {
+    "title": "Quick Start Guide",
+    "permalink": "/docs/canvas/quick-start"
+  },
+  "next": {
+    "title": "export sharing",
+    "permalink": "/docs/canvas/export-sharing"
+  }
+}

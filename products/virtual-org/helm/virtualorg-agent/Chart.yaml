@@ -1,0 +1,26 @@
+apiVersion: v2
+name: virtualorg-agent
+description: A Helm chart for Virtual Organization Agent - AI-powered autonomous agent system
+type: application
+version: 1.0.0
+appVersion: "1.0.0"
+
+keywords:
+  - ai
+  - agents
+  - llm
+  - virtual-organization
+  - multi-agent
+
+maintainers:
+  - name: Ghatana Team
+    email: team@ghatana.com
+
+sources:
+  - https://github.com/ghatana/multi-agent-system
+
+dependencies: []
+
+annotations:
+  category: AI/ML
+  licenses: Apache-2.0

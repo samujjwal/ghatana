@@ -1,0 +1,26 @@
+---
+id: "dr_test"
+agent: "DRSelfTestAgent"
+role: "SRE/Resilience Engineer"
+inputs_spec:
+- name: "backup_validation_report"
+  description: "Backup validation report for DR test."
+  format: "Backup validation report artifact"
+outputs_spec:
+- name: "dr_test_report"
+  description: "DR plan test results and issues."
+  format: "DR test report artifact"
+agent_tasks:
+- "Test disaster recovery plan via simulation/failover."
+- "Include all critical systems/processes in DR scenarios."
+- "Document and remediate issues/gaps/failures."
+acceptance_criteria:
+- "DR plan tested via simulation or controlled failover."
+- "All critical systems/processes included."
+- "Issues/gaps/failures documented and remediated."
+dependencies:
+- "backup_validation_report"
+failure_escalation:
+- "Escalate to SRE/Resilience if DR plan not tested/completed."
+references: []
+hitl: false

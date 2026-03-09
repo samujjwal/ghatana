@@ -1,0 +1,51 @@
+import { render, screen } from "@testing-library/react-native";
+import HomeScreen from "../app/(tabs)/index";
+
+// Mock the hooks and components
+jest.mock("@/hooks/useColorScheme", () => ({
+useColorScheme: () => "light",
+}));
+
+jest.mock("@/constants/config", () => ({
+config: {
+version: "1.0.0",
+buildNumber: "1",
+environment: "development",
+apiBaseUrl: "http://localhost:3000",
+enableAnalytics: false,
+enableCrashReporting: false,
+},
+}));
+
+describe("HomeScreen", () => {
+it("renders welcome message", () => {
+render(
+<HomeScreen />);
+
+expect(screen.getByText("Welcome to")).toBeTruthy();
+});
+
+it("renders app name", () => {
+render(
+<HomeScreen />);
+
+expect(screen.getByText("{{displayName}}")).toBeTruthy();
+});
+
+it("renders get started card", () => {
+render(
+<HomeScreen />);
+
+expect(screen.getByText("Get Started")).toBeTruthy();
+});
+
+it("renders features section", () => {
+render(
+<HomeScreen />);
+
+expect(screen.getByText("Features")).toBeTruthy();
+expect(screen.getByText("File-based Routing")).toBeTruthy();
+expect(screen.getByText("TypeScript")).toBeTruthy();
+expect(screen.getByText("Themed Components")).toBeTruthy();
+});
+});

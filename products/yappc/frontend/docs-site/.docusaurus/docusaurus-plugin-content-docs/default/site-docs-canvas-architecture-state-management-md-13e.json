@@ -1,0 +1,27 @@
+{
+  "id": "canvas/architecture/state-management",
+  "title": "State Management",
+  "description": "Documentation coming soon.",
+  "source": "@site/docs/canvas/architecture/state-management.md",
+  "sourceDirName": "canvas/architecture",
+  "slug": "/canvas/architecture/state-management",
+  "permalink": "/docs/canvas/architecture/state-management",
+  "draft": false,
+  "unlisted": false,
+  "editUrl": "https://github.com/yappc/app-creator/tree/main/docs-site/docs/canvas/architecture/state-management.md",
+  "tags": [],
+  "version": "current",
+  "sidebarPosition": 1,
+  "frontMatter": {
+    "sidebar_position": 1
+  },
+  "sidebar": "canvasSidebar",
+  "previous": {
+    "title": "Component Hierarchy",
+    "permalink": "/docs/canvas/architecture/component-hierarchy"
+  },
+  "next": {
+    "title": "Rendering Pipeline",
+    "permalink": "/docs/canvas/architecture/rendering-pipeline"
+  }
+}

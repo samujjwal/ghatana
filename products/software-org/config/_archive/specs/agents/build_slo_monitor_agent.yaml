@@ -1,0 +1,26 @@
+---
+id: "build_slo_monitor_agent"
+agent: "SLOMonitorAgent"
+role: "SRE/Automation"
+inputs_spec:
+- name: "build_otel_telemetry_report"
+  description: "Telemetry report containing traces and SLO data."
+  format: "Telemetry report artifact"
+outputs_spec:
+- name: "build_slo_status_report"
+  description: "SLO compliance status, breaches, and near-misses for Build stage."
+  format: "SLO status report artifact"
+agent_tasks:
+- "Track and report on Build stage service-level objectives (SLOs)."
+- "Escalate any breach or near-miss to operations and product owners."
+- "Visualize SLO compliance status in dashboards and summary reports."
+acceptance_criteria:
+- "SLOs are tracked and reported."
+- "Any breach or near-miss is escalated."
+- "SLO compliance status visualized in dashboards and reports."
+dependencies:
+- "build_otel_telemetry_report"
+failure_escalation:
+- "Escalate to SRE/Product Owner if SLOs are missed or not visualized."
+references: []
+hitl: false

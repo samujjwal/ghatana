@@ -1,0 +1,244 @@
+/**
+ * Reusable Proto to POJO generation configuration
+ * 
+ * Apply this script to any proto contract module to enable POJO generation:
+ *   apply from: rootProject.file('gradle/proto-pojo-generation.gradle')
+ * 
+ * This script:
+ * 1. Configures dependencies for JSON Schema and POJO generation
+ * 2. Sets up Proto → JSON Schema → POJO generation pipeline
+ * 3. Adds generated POJOs to source sets
+ */
+
+// Create configurations if they don't exist
+if (!project.configurations.findByName('jsonSchemaGen')) {
+    configurations {
+        jsonSchemaGen
+        schemaGen
+    }
+}
+
+// Add dependencies for POJO generation
+dependencies {
+    // JSON Schema to POJO and related dependencies
+    implementation "org.jsonschema2pojo:jsonschema2pojo-core:1.2.2"
+    implementation "com.google.code.findbugs:jsr305:3.0.2"
+    
+    // Schema generation dependencies
+    schemaGen "org.jsonschema2pojo:jsonschema2pojo-core:1.2.2"
+    schemaGen "com.sun.codemodel:codemodel:2.6"
+    schemaGen libs.guava
+    schemaGen libs.jackson.databind
+    schemaGen libs.jackson.datatype.jdk8
+    schemaGen libs.jackson.datatype.jsr310
+    schemaGen "org.apache.commons:commons-lang3:3.12.0"
+    schemaGen "org.slf4j:slf4j-api:2.0.7"
+
+    // Separate classpath for generators to avoid circular dependencies
+    jsonSchemaGen libs.protobuf.java
+    jsonSchemaGen libs.protobuf.java.util
+    jsonSchemaGen platform(libs.jackson.bom)
+    jsonSchemaGen libs.jackson.databind
+    jsonSchemaGen libs.jackson.datatype.jdk8
+    jsonSchemaGen libs.jackson.datatype.jsr310
+    jsonSchemaGen libs.google.common.protos
+}
+
+// NOTE: For modules that generate protos, the POJOs are generated but NOT compiled
+// to avoid circular dependencies. POJOs depend on proto-generated classes.
+// POJOs are meant for downstream consumers of the JSON schemas, not for internal use.
+// Update sourceSets to include generated POJOs (ADD to existing, not replace)
+afterEvaluate {
+    sourceSets {
+        main {
+            java {
+                srcDir "${buildDir}/generated/sources/pojo"
+            }
+        }
+    }
+}
+
+// Create a source set for the generator
+if (!project.sourceSets.findByName('schemaGen')) {
+    sourceSets {
+        schemaGen {
+            java {
+                srcDirs = ["${rootProject.projectDir}/contracts/proto/src/main/java"]
+                include 'com/ghatana/contracts/schema/JsonSchemaBundleToPojoGenerator.java'
+            }
+            compileClasspath += sourceSets.main.compileClasspath + configurations.schemaGen
+        }
+    }
+}
+
+// Task: Create descriptors directory
+tasks.register('createDescriptorsDir') {
+    description = 'Create descriptors directory'
+    doLast {
+        file("${buildDir}/descriptors").mkdirs()
+    }
+}
+
+// Task: Compile JSON Schema generator
+task compileJsonSchemaGen(type: JavaCompile) {
+    description = 'Compile the Proto→JSON Schema generator separately to avoid cycles'
+    source = fileTree(dir: "${rootProject.projectDir}/contracts/proto/src/main/java", 
+                     include: 'com/ghatana/contracts/schema/ProtoToJsonSchemaGenerator.java')
+    classpath = configurations.jsonSchemaGen
+    destinationDirectory = file("$buildDir/jsonSchemaGen-classes")
+
+    javaCompiler = javaToolchains.compilerFor {
+        languageVersion = JavaLanguageVersion.of(21)
+    }
+
+    sourceCompatibility = '21'
+    targetCompatibility = '21'
+    options.release = 21
+    options.compilerArgs.removeAll { arg -> arg == '--enable-preview' || arg.startsWith('--enable-preview') }
+}
+
+// Task: Generate descriptor set file
+tasks.register('generateDescriptorSetFile') {
+    group = 'codegen'
+    description = 'Generate protobuf descriptor set file for JSON schema generation'
+    dependsOn 'generateProto', 'createDescriptorsDir'
+
+    def commonDescriptorFile = file("${buildDir}/descriptors/descriptor_set.desc")
+    outputs.file commonDescriptorFile
+
+    doLast {
+        // Find all generated descriptor files
+        def descriptorDir = file("${buildDir}/descriptors")
+        def descriptorFiles = descriptorDir.listFiles()?.findAll { it.name.endsWith('.desc') && it.name != 'descriptor_set.desc' }
+        
+        if (descriptorFiles == null || descriptorFiles.isEmpty()) {
+            logger.warn("No descriptor files were generated. Skipping descriptor set creation.")
+            return
+        }
+
+        // Use the first descriptor file found
+        def descriptorFile = descriptorFiles[0]
+        
+        if (commonDescriptorFile.exists()) {
+            commonDescriptorFile.delete()
+        }
+        java.nio.file.Files.createSymbolicLink(
+            commonDescriptorFile.toPath(),
+            descriptorFile.toPath().fileName
+        )
+    }
+}
+
+// Task: Generate JSON Schemas from Proto
+tasks.register('generateJsonSchemas', JavaExec) {
+    group = 'codegen'
+    description = 'Generate JSON Schemas from Protocol Buffer messages using Jackson'
+
+    dependsOn 'generateDescriptorSetFile', 'compileJsonSchemaGen'
+
+    doFirst {
+        file("${buildDir}/generated/schemas").mkdirs()
+    }
+
+    classpath = files("$buildDir/jsonSchemaGen-classes") + configurations.jsonSchemaGen
+    mainClass = 'com.ghatana.contracts.schema.ProtoToJsonSchemaGenerator'
+
+    def descriptorFile = file("${buildDir}/descriptors/descriptor_set.desc")
+    inputs.file descriptorFile
+    outputs.dir "${buildDir}/generated/schemas"
+
+    args = [
+        "--descriptorSet=${descriptorFile.absolutePath}",
+        "--outDir=${buildDir}/generated/schemas"
+    ]
+}
+
+// Task: Compile schema generator
+task compileSchemaGenerator(type: JavaCompile) {
+    group = 'codegen'
+    description = 'Compile the JSON Schema to POJO generator'
+
+    source = sourceSets.schemaGen.java
+    classpath = sourceSets.schemaGen.compileClasspath
+    destinationDirectory = file("${buildDir}/classes/schemaGen")
+
+    javaCompiler = javaToolchains.compilerFor {
+        languageVersion = JavaLanguageVersion.of(21)
+    }
+
+    sourceCompatibility = '21'
+    targetCompatibility = '21'
+    options.compilerArgs << '-proc:none'
+}
+
+// Task: Generate POJOs from JSON Schema
+task generateJsonSchema2Pojo(type: JavaExec) {
+    group = 'codegen'
+    description = 'Generate POJOs from JSON Schema bundle'
+
+    dependsOn 'generateJsonSchemas', 'compileSchemaGenerator'
+
+    doFirst {
+        file("${buildDir}/generated/sources/pojo").mkdirs()
+    }
+
+    classpath = files("${buildDir}/classes/schemaGen") + configurations.schemaGen
+    mainClass.set('com.ghatana.contracts.schema.JsonSchemaBundleToPojoGenerator')
+
+    def bundleFile = "${buildDir}/generated/schemas/bundle.schema.json"
+    args = [
+        bundleFile,
+        "${buildDir}/generated/sources/pojo",
+        '--root=com',
+        '--include-prefix=ghatana.contracts',
+        '--long-integers',
+        '--use-double-numbers',
+        '--use-primitives',
+        '--use-optional-for-getters',
+        '--include-accessors',
+        '--include-constructors',
+        '--include-dynamic-accessors',
+        '--generate-builders',
+        '--initialize-collections',
+        '--include-jackson-annotations',
+        '--date-time-type=java.time.Instant',
+        '--date-type=java.time.LocalDate',
+        '--time-type=java.time.LocalTime'
+    ]
+
+    inputs.file bundleFile
+    outputs.dir "${buildDir}/generated/sources/pojo"
+}
+
+// Ensure POJO generation happens before Java compilation
+tasks.named('compileJava').configure {
+    dependsOn 'generateJsonSchema2Pojo'
+    
+    // Exclude pojo sources from compilation if they depend on proto-generated classes
+    // (to avoid circular dependency). Consumers of the schemas can include them separately.
+    exclude 'com/ghatana/contracts/**/*Pojo.java'
+}
+
+// Exclude pojo from javadoc as well
+tasks.named('javadoc').configure {
+    exclude 'com/ghatana/contracts/**/*Pojo.java'
+}
+
+// Ensure sourcesJar doesn't try to include uncommitted pojo sources
+afterEvaluate {
+    tasks.named('sourcesJar', Jar).configure {
+        dependsOn 'generateJsonSchema2Pojo'
+    }
+}
+
+// Configure protobuf plugin to generate descriptor sets
+protobuf {
+    generateProtoTasks {
+        all().each { task ->
+            task.generateDescriptorSet = true
+            task.descriptorSetOptions.includeImports = true
+            task.descriptorSetOptions.includeSourceInfo = true
+            task.descriptorSetOptions.path = "${buildDir}/descriptors/${task.name}.desc"
+        }
+    }
+}

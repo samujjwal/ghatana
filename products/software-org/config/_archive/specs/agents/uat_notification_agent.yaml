@@ -1,0 +1,24 @@
+---
+id: "uat_notification_agent"
+agent: "NotificationAgent"
+role: "QA/PMO Communications"
+inputs_spec:
+- name: "uat_progress_dashboard"
+  description: "UAT dashboard for notification triggers."
+  format: "Dashboard artifact"
+outputs_spec:
+- name: "uat_notifications"
+  description: "Notifications to UAT stakeholders on key events and results."
+  format: "List of notification objects"
+agent_tasks:
+- "Notify UAT stakeholders of key events and results."
+- "Track notification delivery for audit."
+acceptance_criteria:
+- "Stakeholders are notified on key UAT events and results."
+- "Notification delivery is logged for audit."
+dependencies:
+- "uat_progress_dashboard"
+failure_escalation:
+- "Escalate to QA/PMO if notifications not delivered or logged."
+references: []
+hitl: false

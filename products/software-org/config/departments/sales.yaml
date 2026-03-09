@@ -1,0 +1,196 @@
+# Sales Department Configuration
+# Part of Software-Org plugin for Virtual-Org framework
+
+apiVersion: virtualorg.ghatana.com/v1
+kind: Department
+metadata:
+  name: sales
+  labels:
+    category: customer-facing
+    cost-center: "SAL-001"
+
+spec:
+  displayName: "Sales"
+  type: SALES
+  description: |
+    Sales department responsible for revenue generation, customer acquisition,
+    and account management. Handles the full sales cycle from lead qualification
+    to deal closure and renewal.
+
+  hierarchy:
+    parent: null
+    reportingTo: cpo-agent
+    children: []
+
+  settings:
+    maxAgents: 25
+    autoScaleAgents: false
+    taskAssignment:
+      strategy: capability-match
+      loadBalancing: true
+      maxTasksPerAgent: 15
+
+  agents:
+    - ref: agents/sales-director-agent.yaml
+    - ref: agents/account-executive-agent.yaml
+    - ref: agents/sdr-agent.yaml
+
+  workflows:
+    - name: lead-qualification
+      displayName: "Lead Qualification"
+      steps:
+        - name: lead-research
+          agent: sdr
+          action: research_lead
+          timeout: PT2H
+        - name: outreach
+          agent: sdr
+          action: initial_outreach
+          timeout: PT4H
+          waitFor: [lead-research]
+        - name: qualification-call
+          agent: sdr
+          action: conduct_qualification_call
+          timeout: PT24H
+          waitFor: [outreach]
+        - name: handoff-to-ae
+          agent: sdr
+          action: handoff_qualified_lead
+          timeout: PT4H
+          waitFor: [qualification-call]
+          conditions:
+            - field: qualification_status
+              operator: equals
+              value: qualified
+
+    - name: deal-closure
+      displayName: "Deal Closure"
+      steps:
+        - name: discovery-call
+          agent: account-executive
+          action: conduct_discovery
+          timeout: PT48H
+        - name: demo
+          agent: account-executive
+          action: deliver_demo
+          timeout: PT72H
+          waitFor: [discovery-call]
+        - name: proposal
+          agent: account-executive
+          action: create_proposal
+          timeout: PT24H
+          waitFor: [demo]
+        - name: negotiation
+          agent: account-executive
+          action: negotiate_terms
+          timeout: PT168H
+          waitFor: [proposal]
+        - name: contract-review
+          agent: sales-director
+          action: review_contract
+          timeout: PT24H
+          waitFor: [negotiation]
+          hitl:
+            required: true
+            approvers: [sales-director]
+        - name: closure
+          agent: account-executive
+          action: close_deal
+          timeout: PT48H
+          waitFor: [contract-review]
+
+  kpis:
+    - name: conversion_rate
+      displayName: "Lead Conversion Rate"
+      type: percentage
+      target: 25
+      warningThreshold: 20
+      criticalThreshold: 15
+
+    - name: quota_attainment
+      displayName: "Quota Attainment"
+      type: percentage
+      target: 100
+      warningThreshold: 80
+      criticalThreshold: 60
+
+    - name: average_deal_size
+      displayName: "Average Deal Size"
+      type: gauge
+      unit: usd
+      target: 50000
+      warningThreshold: 40000
+      criticalThreshold: 30000
+
+    - name: sales_cycle_length
+      displayName: "Sales Cycle Length"
+      type: duration
+      unit: days
+      target: 45
+      warningThreshold: 60
+      criticalThreshold: 90
+
+    - name: pipeline_coverage
+      displayName: "Pipeline Coverage"
+      type: gauge
+      unit: ratio
+      target: 3.0
+      warningThreshold: 2.5
+      criticalThreshold: 2.0
+
+    - name: nps_score
+      displayName: "Net Promoter Score"
+      type: gauge
+      target: 50
+      warningThreshold: 30
+      criticalThreshold: 10
+
+  taskTypes:
+    - name: lead_qualification
+      priority: normal
+      slaHours: 24
+      requiredCapabilities: [research, outreach, qualification]
+
+    - name: demo_delivery
+      priority: high
+      slaHours: 48
+      requiredCapabilities: [product_demo, presentation]
+
+    - name: proposal_creation
+      priority: high
+      slaHours: 24
+      requiredCapabilities: [proposal_writing, pricing]
+
+    - name: contract_negotiation
+      priority: high
+      slaHours: 72
+      requiredCapabilities: [negotiation, legal_understanding]
+
+    - name: renewal_management
+      priority: normal
+      slaHours: 168
+      requiredCapabilities: [account_management, renewal]
+
+  subscriptions:
+    - event: feature_released
+      source: product
+      action: update_sales_collateral
+    - event: pricing_changed
+      source: finance
+      action: update_proposals
+    - event: customer_feedback
+      source: support
+      action: inform_account_team
+    - event: marketing_qualified_lead
+      source: marketing
+      action: accept_lead
+
+  publications:
+    - event: deal_closed
+      targets: [finance, support, product]
+    - event: customer_churn_risk
+      targets: [support, product]
+    - event: feature_request_from_prospect
+      targets: [product]
+    - event: competitive_intelligence
+      targets: [product, marketing]

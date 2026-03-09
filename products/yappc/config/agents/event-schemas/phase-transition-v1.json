@@ -1,0 +1,74 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://ghatana.ai/schemas/yappc/events/phase-transition-v1.json",
+  "title": "Phase Transition Event",
+  "description": "Event published when a project transitions between lifecycle phases",
+  "version": "1.0.0",
+  "type": "object",
+  "required": ["eventId", "eventType", "timestamp", "projectId", "fromStage", "toStage", "triggerEvent"],
+  "properties": {
+    "eventId": {
+      "type": "string",
+      "format": "uuid"
+    },
+    "eventType": {
+      "type": "string",
+      "const": "phase.transition"
+    },
+    "timestamp": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "correlationId": {
+      "type": "string"
+    },
+    "projectId": {
+      "type": "string",
+      "format": "uuid"
+    },
+    "fromStage": {
+      "type": "string",
+      "enum": ["intent", "context", "plan", "execute", "verify", "observe", "learn", "institutionalize"],
+      "description": "Previous lifecycle stage"
+    },
+    "toStage": {
+      "type": "string",
+      "enum": ["intent", "context", "plan", "execute", "verify", "observe", "learn", "institutionalize"],
+      "description": "New lifecycle stage"
+    },
+    "triggerEvent": {
+      "type": "string",
+      "description": "Event that triggered this transition (e.g., 'test.suite.passed')"
+    },
+    "gateDecisions": {
+      "type": "array",
+      "description": "Gate agent approval decisions",
+      "items": {
+        "type": "object",
+        "required": ["agentId", "approved"],
+        "properties": {
+          "agentId": { "type": "string" },
+          "condition": { "type": "string" },
+          "approved": { "type": "boolean" },
+          "reason": { "type": "string" },
+          "timestamp": { "type": "string", "format": "date-time" }
+        }
+      }
+    },
+    "requiredArtifacts": {
+      "type": "array",
+      "items": { "type": "string" },
+      "description": "Artifacts required for this transition"
+    },
+    "producedArtifacts": {
+      "type": "array",
+      "items": { "type": "string" },
+      "description": "Artifacts produced during previous phase"
+    },
+    "phaseStateId": {
+      "type": "string",
+      "format": "uuid",
+      "description": "Reference to PhaseStateEntity in Data-Cloud"
+    }
+  }
+}

@@ -1,0 +1,107 @@
+id: integration-requirements-agent
+name: Integration Requirements Agent
+version: 1.0.0
+description: Captures integration requirements with external systems. Specifies APIs, contracts, protocols, and SLAs.
+
+metadata:
+  level: 3  # Worker
+  domain: requirements
+  tags:
+    - integration
+    - api-requirements
+    - system-interfaces
+    - contracts
+
+generator:
+  type: PIPELINE
+  steps:
+    - name: integration_analysis
+      type: LLM
+      provider: ANTHROPIC
+      model: claude-3-5-sonnet-20241022
+      temperature: 0.2
+      max_tokens: 2500
+      prompt: |
+        You are the Integration Requirements Agent. Specify integration requirements:
+        
+        Feature: {{feature}}
+        External Systems: {{systems}}
+        Data Needs: {{data_needs}}
+        
+        Specify for each integration:
+        1. Integration point (system, service)
+        2. Direction (inbound, outbound, bidirectional)
+        3. Protocol (REST, GraphQL, gRPC, event)
+        4. Authentication method
+        5. Data format and schema
+        6. Rate limits and quotas
+        7. SLAs (latency, availability)
+        8. Error handling
+        9. Retry/circuit breaker needs
+        10. Monitoring requirements
+        
+        Output as JSON: {integrations: [{system, direction, protocol, auth, schema, rate_limits, sla, error_handling, resilience, monitoring}], dependencies, risks}
+    - name: contract_validation
+      type: RULE_BASED
+      description: Validate against existing contracts
+    - name: integration_registration
+      type: SERVICE_CALL
+      service: integration-service
+      endpoint: /requirements/register
+
+memory:
+  episodic:
+    enabled: true
+    retention_days: 730
+    categories:
+      - integration-specs
+      - contract-negotiations
+      - integration-incidents
+  semantic:
+    enabled: true
+    categories:
+      - integration-patterns
+      - api-standards
+      - protocol-specs
+  procedural:
+    enabled: true
+    categories:
+      - specification-templates
+      - validation-rules
+      - sla-criteria
+
+tools:
+  - api_analyzer
+  - contract_validator
+  - sla_calculator
+
+capabilities:
+  - integration-specification
+  - contract-definition
+  - sla-setting
+  - risk-identification
+
+routing:
+  input_types:
+    - feature-specification
+    - integration-request
+    - api-design
+  output_types:
+    - integration-requirements
+    - api-contract
+    - sla-specification
+
+delegation:
+  can_delegate_to: []
+  escalates_to:
+    - requirements-orchestrator-agent
+
+governance:
+  requires_approval: true  # External integrations need approval
+  can_block: false
+  audit_trail: comprehensive
+
+performance:
+  expected_latency_ms: 3000
+  max_latency_ms: 8000
+  timeout_ms: 15000

@@ -1,0 +1,24 @@
+---
+id: "disaster_observability_export"
+agent: "ObservabilityExportAgent"
+role: "SRE/Analytics"
+inputs_spec:
+- name: "dr_progress_dashboard"
+  description: "DR progress dashboard for observability export."
+  format: "Dashboard artifact"
+outputs_spec:
+- name: "disaster_observability_export"
+  description: "Exported metrics/KPIs for disaster recovery and backup validation."
+  format: "Export artifact"
+agent_tasks:
+- "Export metrics/KPIs to external analytics/monitoring."
+- "Flag any gaps in observability."
+acceptance_criteria:
+- "Metrics/KPIs exported to external analytics/monitoring."
+- "Gaps in observability flagged."
+dependencies:
+- "dr_progress_dashboard"
+failure_escalation:
+- "Escalate to SRE/Analytics if metrics not exported or gaps missed."
+references: []
+hitl: false

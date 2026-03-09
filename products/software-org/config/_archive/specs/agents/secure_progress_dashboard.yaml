@@ -1,0 +1,39 @@
+---
+id: "secure_progress_dashboard"
+agent: "ProgressDashboardAgent"
+role: "Secure Progress Dashboard Owner"
+inputs_spec:
+- name: "secure_kpi_report"
+  description: "Secure KPIs for dashboard visualization."
+  format: "KPI report artifact"
+- name: "secure_success_criteria_status"
+  description: "Secure success criteria status for dashboard."
+  format: "List of criteria status objects"
+- name: "secure_stage_milestone"
+  description: "Secure milestone plan for dashboard."
+  format: "List of milestone objects"
+outputs_spec:
+- name: "secure_progress_dashboard"
+  description: "Dashboard visualizing security coverage, compliance, vulnerabilities,\
+    \ exceptions, blockers, and KPIs."
+  format: "Dashboard artifact"
+agent_tasks:
+- "Visualize security coverage, compliance, vulnerability closure, exceptions, and\
+  \ KPIs in dashboard."
+- "Show open compliance, security, or risk blockers."
+- "Link to audit logs, compliance matrix, and milestone status."
+- "Update dashboard in real time and review before handoff."
+- "Highlight critical path milestones and blocked dependencies."
+- "Flag bottlenecks or overdue milestones."
+acceptance_criteria:
+- "Dashboard visualizes all key Secure metrics and blockers."
+- "Dashboard is updated in real time and reviewed before handoff."
+- "Critical paths, bottlenecks, and blockers are highlighted."
+dependencies:
+- "secure_kpi_report"
+- "secure_success_criteria_status"
+- "secure_stage_milestone"
+failure_escalation:
+- "Escalate to dashboard owner if dashboard is not current or actionable."
+references: []
+hitl: false

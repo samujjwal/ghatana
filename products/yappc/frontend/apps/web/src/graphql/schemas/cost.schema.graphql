@@ -1,0 +1,730 @@
+"""
+Cost Optimization GraphQL Schema
+
+Defines types and operations for cloud cost analysis, forecasting, and optimization recommendations.
+Integrates with CostAnalysisService, CostForecastingService, and CostOptimizationService.
+
+@see CostAnalysisService for implementation details
+@see CostForecastingService for forecast calculations
+@see CostOptimizationService for optimization algorithms
+"""
+
+"""
+Cloud cost entity representing accumulated costs from a cloud provider.
+"""
+type CloudCost {
+  """Unique identifier for this cost record"""
+  id: ID!
+
+  """Associated tenant ID for multi-tenancy"""
+  tenantId: String!
+
+  """Cloud provider name (AWS, Azure, GCP)"""
+  provider: String!
+
+  """Total cost in USD"""
+  totalCost: Float!
+
+  """Cost breakdown by service"""
+  costByService: [ServiceCost!]!
+
+  """Cost breakdown by region"""
+  costByRegion: [RegionCost!]!
+
+  """Cost breakdown by environment"""
+  costByEnvironment: [EnvironmentCost!]!
+
+  """Date range start"""
+  startDate: DateTime!
+
+  """Date range end"""
+  endDate: DateTime!
+
+  """When this record was created"""
+  createdAt: DateTime!
+
+  """When this record was last updated"""
+  updatedAt: DateTime!
+}
+
+"""
+Cost analysis combining historical data with trends and insights.
+"""
+type CostAnalysis {
+  """Unique identifier"""
+  id: ID!
+
+  """Associated tenant ID"""
+  tenantId: String!
+
+  """Reference to cloud cost data"""
+  cloudCost: CloudCost!
+
+  """Month-over-month change percentage"""
+  monthOverMonthChange: Float!
+
+  """Trend direction (UP, DOWN, STABLE)"""
+  trend: TrendDirection!
+
+  """Top cost drivers identified"""
+  topCostDrivers: [CostDriver!]!
+
+  """Anomalies detected in cost pattern"""
+  anomalies: [CostAnomaly!]!
+
+  """Cost savings opportunities"""
+  savingsOpportunities: [SavingsOpportunity!]!
+
+  """Analysis timestamp"""
+  analyzedAt: DateTime!
+}
+
+"""
+Cost forecast projection for future periods.
+"""
+type CostForecast {
+  """Unique identifier"""
+  id: ID!
+
+  """Associated tenant ID"""
+  tenantId: String!
+
+  """Reference to current cloud cost"""
+  baseCost: CloudCost!
+
+  """Forecast period: WEEKLY, MONTHLY, QUARTERLY"""
+  period: ForecastPeriod!
+
+  """Predicted cost"""
+  predictedCost: Float!
+
+  """Confidence level (0-100)"""
+  confidence: Float!
+
+  """Forecast method used: LINEAR, EXPONENTIAL, ML"""
+  method: ForecastMethod!
+
+  """Projected cost breakdown by service"""
+  projectedByService: [ServiceCost!]!
+
+  """Cost growth rate (%)"""
+  growthRate: Float!
+
+  """Start date of forecast"""
+  startDate: DateTime!
+
+  """End date of forecast"""
+  endDate: DateTime!
+
+  """When forecast was generated"""
+  generatedAt: DateTime!
+}
+
+"""
+Cost optimization recommendation.
+"""
+type CostRecommendation {
+  """Unique identifier"""
+  id: ID!
+
+  """Associated tenant ID"""
+  tenantId: String!
+
+  """Title of recommendation"""
+  title: String!
+
+  """Detailed description"""
+  description: String!
+
+  """Type of recommendation"""
+  type: RecommendationType!
+
+  """Category (COMPUTE, STORAGE, NETWORK, DATABASE)"""
+  category: CostCategory!
+
+  """Potential monthly savings in USD"""
+  potentialSavings: Float!
+
+  """Implementation difficulty (EASY, MEDIUM, HARD)"""
+  difficulty: DifficultyLevel!
+
+  """Estimated implementation time in hours"""
+  estimatedImplementationTime: Int!
+
+  """Priority level"""
+  priority: RecommendationPriority!
+
+  """Implementation status"""
+  status: RecommendationStatus!
+
+  """Affected resources"""
+  affectedResources: [String!]!
+
+  """Implementation steps"""
+  implementationSteps: [String!]!
+
+  """Risk level"""
+  riskLevel: RiskLevel!
+
+  """When this recommendation was created"""
+  createdAt: DateTime!
+
+  """When this recommendation was last updated"""
+  updatedAt: DateTime!
+}
+
+"""
+Service cost breakdown entry.
+"""
+type ServiceCost {
+  """Service name (EC2, S3, Lambda, etc.)"""
+  service: String!
+
+  """Cost amount in USD"""
+  cost: Float!
+
+  """Percentage of total cost"""
+  percentage: Float!
+
+  """Usage metrics"""
+  metrics: [UsageMetric!]!
+}
+
+"""
+Region cost breakdown entry.
+"""
+type RegionCost {
+  """Cloud region identifier"""
+  region: String!
+
+  """Cost amount in USD"""
+  cost: Float!
+
+  """Percentage of total cost"""
+  percentage: Float!
+
+  """Number of resources in this region"""
+  resourceCount: Int!
+}
+
+"""
+Environment cost breakdown entry.
+"""
+type EnvironmentCost {
+  """Environment name (production, staging, development)"""
+  environment: String!
+
+  """Cost amount in USD"""
+  cost: Float!
+
+  """Percentage of total cost"""
+  percentage: Float!
+
+  """Resource count in environment"""
+  resourceCount: Int!
+}
+
+"""
+Cost driver identifying services/resources contributing most to costs.
+"""
+type CostDriver {
+  """Name of the cost driver"""
+  name: String!
+
+  """Cost contribution in USD"""
+  cost: Float!
+
+  """Percentage of total cost"""
+  percentage: Float!
+
+  """Trend of this cost driver"""
+  trend: TrendDirection!
+
+  """Month-over-month change"""
+  monthOverMonthChange: Float!
+}
+
+"""
+Cost anomaly detection result.
+"""
+type CostAnomaly {
+  """Anomaly identifier"""
+  id: ID!
+
+  """Service or component with anomaly"""
+  component: String!
+
+  """Anomaly severity (LOW, MEDIUM, HIGH, CRITICAL)"""
+  severity: AnomalySeverity!
+
+  """Detected cost variance (% from expected)"""
+  variance: Float!
+
+  """Expected cost"""
+  expectedCost: Float!
+
+  """Actual cost"""
+  actualCost: Float!
+
+  """When anomaly was detected"""
+  detectedAt: DateTime!
+
+  """Suggested mitigation"""
+  suggestion: String
+}
+
+"""
+Savings opportunity identified in cost analysis.
+"""
+type SavingsOpportunity {
+  """Opportunity identifier"""
+  id: ID!
+
+  """Title of opportunity"""
+  title: String!
+
+  """Description of the opportunity"""
+  description: String!
+
+  """Potential savings in USD"""
+  potentialSavings: Float!
+
+  """Implementation complexity"""
+  complexity: DifficultyLevel!
+
+  """Associated recommendation"""
+  recommendation: CostRecommendation
+}
+
+"""
+Usage metric for a service.
+"""
+type UsageMetric {
+  """Metric name"""
+  name: String!
+
+  """Metric value"""
+  value: Float!
+
+  """Unit of measurement"""
+  unit: String!
+}
+
+"""
+Budget allocation for an environment or department.
+"""
+type BudgetAllocation {
+  """Allocation identifier"""
+  id: ID!
+
+  """Tenant ID"""
+  tenantId: String!
+
+  """Name of allocation"""
+  name: String!
+
+  """Environment or department"""
+  scope: String!
+
+  """Monthly budget in USD"""
+  monthlyBudget: Float!
+
+  """Current month spending"""
+  currentSpending: Float!
+
+  """Budget utilization percentage"""
+  utilization: Float!
+
+  """Alerts enabled"""
+  alertsEnabled: Boolean!
+
+  """Alert threshold percentage"""
+  alertThreshold: Float!
+
+  """Created timestamp"""
+  createdAt: DateTime!
+
+  """Updated timestamp"""
+  updatedAt: DateTime!
+}
+
+# ===== ENUMS =====
+
+"""Trend direction enumeration"""
+enum TrendDirection {
+  """Cost is increasing"""
+  UP
+
+  """Cost is decreasing"""
+  DOWN
+
+  """Cost is stable"""
+  STABLE
+}
+
+"""Forecast period enumeration"""
+enum ForecastPeriod {
+  WEEKLY
+  MONTHLY
+  QUARTERLY
+  ANNUALLY
+}
+
+"""Forecast method enumeration"""
+enum ForecastMethod {
+  """Linear regression forecast"""
+  LINEAR
+
+  """Exponential smoothing forecast"""
+  EXPONENTIAL
+
+  """Machine learning forecast"""
+  ML
+}
+
+"""Recommendation type enumeration"""
+enum RecommendationType {
+  """Right-sizing instance types"""
+  RIGHT_SIZE
+
+  """Reserved instances purchase"""
+  RESERVED_INSTANCES
+
+  """Spot instances usage"""
+  SPOT_INSTANCES
+
+  """Unattached resources cleanup"""
+  CLEANUP
+
+  """Architecture optimization"""
+  ARCHITECTURE
+
+  """Data transfer optimization"""
+  DATA_TRANSFER
+
+  """Database optimization"""
+  DATABASE
+
+  """Network optimization"""
+  NETWORK
+
+  """Storage optimization"""
+  STORAGE
+}
+
+"""Cost category enumeration"""
+enum CostCategory {
+  COMPUTE
+  STORAGE
+  NETWORK
+  DATABASE
+  ANALYTICS
+  MACHINE_LEARNING
+  MANAGEMENT
+  SECURITY
+  OTHER
+}
+
+"""Difficulty level enumeration"""
+enum DifficultyLevel {
+  EASY
+  MEDIUM
+  HARD
+}
+
+"""Recommendation priority enumeration"""
+enum RecommendationPriority {
+  LOW
+  MEDIUM
+  HIGH
+  CRITICAL
+}
+
+"""Recommendation status enumeration"""
+enum RecommendationStatus {
+  """Recommendation is open"""
+  OPEN
+
+  """Recommendation is in progress"""
+  IN_PROGRESS
+
+  """Recommendation has been implemented"""
+  IMPLEMENTED
+
+  """Recommendation was dismissed"""
+  DISMISSED
+
+  """Recommendation has expired"""
+  EXPIRED
+}
+
+"""Risk level enumeration"""
+enum RiskLevel {
+  LOW
+  MEDIUM
+  HIGH
+  CRITICAL
+}
+
+"""Anomaly severity enumeration"""
+enum AnomalySeverity {
+  LOW
+  MEDIUM
+  HIGH
+  CRITICAL
+}
+
+# ===== QUERIES =====
+
+type Query {
+  """
+  Get cost data for a specific date range.
+  
+  Args:
+    tenantId: The tenant to retrieve costs for
+    startDate: Start of date range
+    endDate: End of date range
+    provider: Optional - filter by cloud provider
+  """
+  getCosts(
+    tenantId: String!
+    startDate: DateTime!
+    endDate: DateTime!
+    provider: String
+  ): [CloudCost!]!
+
+  """Get single cost record by ID"""
+  getCostById(id: ID!): CloudCost
+
+  """
+  Get cost analysis with trends and insights.
+  
+  Args:
+    tenantId: The tenant to analyze
+    startDate: Analysis period start
+    endDate: Analysis period end
+  """
+  getCostAnalysis(
+    tenantId: String!
+    startDate: DateTime!
+    endDate: DateTime!
+  ): CostAnalysis
+
+  """
+  Get cost forecast for specified period.
+  
+  Args:
+    tenantId: The tenant to forecast for
+    period: Forecast period (WEEKLY, MONTHLY, QUARTERLY)
+    months: Number of periods to forecast
+  """
+  getCostForecast(
+    tenantId: String!
+    period: ForecastPeriod!
+    months: Int!
+  ): [CostForecast!]!
+
+  """
+  Get cost recommendations.
+  
+  Args:
+    tenantId: The tenant to get recommendations for
+    category: Optional - filter by category
+    limit: Max results to return
+  """
+  getRecommendations(
+    tenantId: String!
+    category: CostCategory
+    limit: Int
+  ): [CostRecommendation!]!
+
+  """Get recommendation by ID"""
+  getRecommendationById(id: ID!): CostRecommendation
+
+  """
+  Get cost anomalies detected.
+  
+  Args:
+    tenantId: The tenant
+    startDate: Analysis start date
+    endDate: Analysis end date
+    severity: Optional - filter by severity
+  """
+  getCostAnomalies(
+    tenantId: String!
+    startDate: DateTime!
+    endDate: DateTime!
+    severity: AnomalySeverity
+  ): [CostAnomaly!]!
+
+  """
+  Get budget allocations for tenant.
+  
+  Args:
+    tenantId: The tenant
+    scope: Optional - filter by scope
+  """
+  getBudgetAllocations(
+    tenantId: String!
+    scope: String
+  ): [BudgetAllocation!]!
+
+  """Get budget allocation by ID"""
+  getBudgetAllocationById(id: ID!): BudgetAllocation
+
+  """
+  Get cost trend chart data.
+  
+  Args:
+    tenantId: The tenant
+    period: Time period (WEEKLY, MONTHLY)
+    months: Number of periods to return
+  """
+  getCostTrendData(
+    tenantId: String!
+    period: ForecastPeriod!
+    months: Int!
+  ): [CostDataPoint!]!
+}
+
+"""Data point for trend charts"""
+type CostDataPoint {
+  date: DateTime!
+  cost: Float!
+  forecast: Float
+  trend: TrendDirection!
+}
+
+# ===== MUTATIONS =====
+
+type Mutation {
+  """
+  Create or update cost record.
+  
+  Args:
+    tenantId: The tenant
+    provider: Cloud provider name
+    data: Cost data
+  """
+  upsertCostData(
+    tenantId: String!
+    provider: String!
+    data: CostDataInput!
+  ): CloudCost!
+
+  """
+  Update recommendation status.
+  
+  Args:
+    id: Recommendation ID
+    status: New status
+  """
+  updateRecommendationStatus(
+    id: ID!
+    status: RecommendationStatus!
+  ): CostRecommendation!
+
+  """
+  Create budget allocation.
+  
+  Args:
+    tenantId: The tenant
+    input: Budget allocation data
+  """
+  createBudgetAllocation(
+    tenantId: String!
+    input: BudgetAllocationInput!
+  ): BudgetAllocation!
+
+  """Update budget allocation"""
+  updateBudgetAllocation(
+    id: ID!
+    input: BudgetAllocationInput!
+  ): BudgetAllocation!
+
+  """Delete budget allocation"""
+  deleteBudgetAllocation(id: ID!): Boolean!
+
+  """Trigger cost analysis refresh"""
+  refreshCostAnalysis(tenantId: String!): CostAnalysis!
+
+  """Trigger forecast generation"""
+  generateForecast(
+    tenantId: String!
+    period: ForecastPeriod!
+  ): CostForecast!
+}
+
+# ===== INPUT TYPES =====
+
+"""Input for cost data"""
+input CostDataInput {
+  totalCost: Float!
+  costByService: [ServiceCostInput!]!
+  costByRegion: [RegionCostInput!]!
+  costByEnvironment: [EnvironmentCostInput!]!
+  startDate: DateTime!
+  endDate: DateTime!
+}
+
+"""Input for service cost"""
+input ServiceCostInput {
+  service: String!
+  cost: Float!
+  metrics: [UsageMetricInput!]
+}
+
+"""Input for region cost"""
+input RegionCostInput {
+  region: String!
+  cost: Float!
+  resourceCount: Int
+}
+
+"""Input for environment cost"""
+input EnvironmentCostInput {
+  environment: String!
+  cost: Float!
+  resourceCount: Int
+}
+
+"""Input for usage metric"""
+input UsageMetricInput {
+  name: String!
+  value: Float!
+  unit: String!
+}
+
+"""Input for budget allocation"""
+input BudgetAllocationInput {
+  name: String!
+  scope: String!
+  monthlyBudget: Float!
+  alertsEnabled: Boolean
+  alertThreshold: Float
+}
+
+# ===== SUBSCRIPTIONS =====
+
+type Subscription {
+  """Subscribe to cost updates"""
+  onCostUpdated(tenantId: String!): CloudCost!
+
+  """Subscribe to cost anomaly detection"""
+  onCostAnomaly(tenantId: String!): CostAnomaly!
+
+  """Subscribe to budget alerts"""
+  onBudgetAlert(allocationId: ID!): BudgetAlert!
+
+  """Subscribe to recommendation updates"""
+  onRecommendationUpdated(tenantId: String!): CostRecommendation!
+}
+
+"""Budget alert notification"""
+type BudgetAlert {
+  allocationId: ID!
+  message: String!
+  utilization: Float!
+  severity: AnomalySeverity!
+  timestamp: DateTime!
+}

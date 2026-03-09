@@ -1,0 +1,26 @@
+---
+id: "build_supply_chain_risk"
+agent: "BuildSupplyChainRiskAgent"
+role: "Supply Chain Automation"
+inputs_spec:
+- name: "sbom_files"
+  description: "SBOM files for scanning supply chain risk."
+  format: "SBOM file artifact"
+outputs_spec:
+- name: "supply_chain_risk_report"
+  description: "Scan report for supply chain risks, especially vulnerable dependencies."
+  format: "Supply chain risk report artifact"
+agent_tasks:
+- "Scan SBOM for supply chain risks."
+- "Flag all critical supply chain issues."
+- "Report findings to security and release teams."
+acceptance_criteria:
+- "SBOM is scanned for supply chain risks."
+- "All critical supply chain issues are flagged."
+- "Risk findings are reported to security and release teams."
+dependencies:
+- "sbom_files"
+failure_escalation:
+- "Escalate to Supply Chain Lead or Security if risk report is incomplete."
+references: []
+hitl: false

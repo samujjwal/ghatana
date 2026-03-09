@@ -1,0 +1,442 @@
+name: Golden Evaluations - AI Model Safety Gate
+# Implements Capability 5: Guardrails & Golden Evals from Horizontal Slice AI Plan #4
+# DISABLED: Needs update after services/agent-rs migration to libs/agent-common
+# TODO: Update paths to reflect new structure
+
+on: []  # Disabled
+# on:
+  push:
+    branches: [main, develop]
+    paths:
+      - "services/agent-rs/src/redact/**"
+      - "services/agent-rs/src/sampling/**"
+      - "services/agent-rs/src/plugins/**"
+      - "services/server/internal/safety/**"
+      - "services/server/internal/explainer/**"
+      - "services/server/internal/forecast/**"
+      - "ml/**"
+      - ".github/workflows/golden-evals.yml"
+  pull_request:
+    branches: [main, develop]
+    paths:
+      - "services/agent-rs/src/redact/**"
+      - "services/agent-rs/src/sampling/**"
+      - "services/agent-rs/src/plugins/**"
+      - "services/server/internal/safety/**"
+      - "services/server/internal/explainer/**"
+      - "services/server/internal/forecast/**"
+      - "ml/**"
+      - ".github/workflows/golden-evals.yml"
+  workflow_dispatch:
+    inputs:
+      fail_threshold:
+        description: "Minimum pass rate to succeed (0.0-1.0)"
+        required: false
+        default: "0.95"
+        type: string
+
+env:
+  FAIL_THRESHOLD: ${{ github.event.inputs.fail_threshold || '0.95' }}
+
+jobs:
+  golden-evaluations:
+    name: AI Model Safety & Compliance Evaluation
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+
+    strategy:
+      fail-fast: false
+      matrix:
+        eval-category:
+          - pii_leakage_tests
+          - anomaly_false_positive_tests
+          - safe_action_tests
+          - model_fairness_tests
+          - performance_regression_tests
+          - compliance_tests
+          - adversarial_tests
+
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: "3.11"
+          cache: "pip"
+
+      - name: Install Python Dependencies
+        run: |
+          pip install --upgrade pip
+          pip install -r ml/requirements.txt
+          pip install pyyaml pytest pytest-asyncio
+
+      - name: Set up Rust
+        uses: dtolnay/rust-toolchain@stable
+        with:
+          toolchain: stable
+          components: clippy, rustfmt
+
+      - name: Set up Go
+        uses: actions/setup-go@v4
+        with:
+          go-version: "1.21"
+          cache: true
+          cache-dependency-path: |
+            go.sum
+            go.work.sum
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "18"
+          cache: "pnpm"
+          cache-dependency-path: pnpm-lock.yaml
+
+      - name: Install pnpm
+        run: npm install -g pnpm
+
+      - name: Cache pnpm store
+        uses: actions/cache@v4
+        with:
+          path: ~/.pnpm-store
+          key: ${{ runner.os }}-pnpm-${{ hashFiles('**/pnpm-lock.yaml') }}
+          restore-keys: |
+            ${{ runner.os }}-pnpm-
+
+      - name: Build Agent (Rust) Components
+        run: |
+          cd services/agent-rs
+          cargo build --release --features golden-eval
+          # Create test binaries for PII detection, sampling, plugins
+          cargo build --bin agent-test --features test-harness
+
+      - name: Build Server (Go) Components
+        run: |
+          cd services/server
+          go build -tags golden-eval -o bin/server-test ./cmd/server
+          go build -tags test-harness -o bin/eval-server ./cmd/eval-server
+
+      - name: Build Desktop (Node.js) Components
+        run: |
+          pnpm install --frozen-lockfile
+          cd services/desktop
+          pnpm build
+          pnpm test:unit
+
+      - name: Prepare Test Environment
+        run: |
+          # Create test data directories
+          mkdir -p test-data/golden-eval
+          mkdir -p test-results
+
+          # Set up test configuration
+          export DCMAAR_ENV=test
+          export DCMAAR_LOG_LEVEL=debug
+          export GOLDEN_EVAL_MODE=true
+
+          # Initialize test databases and storage
+          cd services/server
+          ./bin/server-test --init-test-db
+
+      - name: Run Golden Evaluations - ${{ matrix.eval-category }}
+        id: golden-eval
+        run: |
+          echo "Running golden evaluations for category: ${{ matrix.eval-category }}"
+
+          # Set category-specific environment
+          export EVAL_CATEGORY="${{ matrix.eval-category }}"
+          export RESULTS_DIR="test-results/${EVAL_CATEGORY}"
+          mkdir -p "$RESULTS_DIR"
+
+          # Run evaluations with timeout
+          timeout 600 python ml/evals/golden_eval.py \
+            --test-cases ml/evals/golden_sets/test_cases.yaml \
+            --output "$RESULTS_DIR/results.json" \
+            --fail-threshold "$FAIL_THRESHOLD" \
+            --category "$EVAL_CATEGORY" \
+            --verbose
+
+      - name: Validate Performance Benchmarks
+        if: matrix.eval-category == 'performance_regression_tests'
+        run: |
+          echo "Validating performance benchmarks..."
+
+          # PII Detection Latency Test
+          cd services/agent-rs
+          time ./target/release/agent-test pii-benchmark \
+            --input-size-kb 10 \
+            --max-latency-ms 2 \
+            --iterations 1000
+
+          # Anomaly Detection Memory Test
+          cd ../server
+          ./bin/eval-server anomaly-benchmark \
+            --datapoints 10000 \
+            --max-memory-mb 100 \
+            --accuracy-threshold 0.95
+
+          # Action Planning Response Time Test
+          ./bin/eval-server action-benchmark \
+            --complexity high \
+            --max-time-ms 500 \
+            --success-rate-threshold 0.90
+
+      - name: Run Compliance Checks
+        if: matrix.eval-category == 'compliance_tests'
+        run: |
+          echo "Running compliance checks..."
+
+          # GDPR compliance check
+          python ml/evals/compliance_checker.py \
+            --regulation gdpr \
+            --test-user test_user_123 \
+            --check-deletion \
+            --check-audit-trail
+
+          # Data retention compliance
+          python ml/evals/compliance_checker.py \
+            --regulation data-retention \
+            --check-retention-policies \
+            --max-retention-days 2555  # 7 years
+
+      - name: Security Scan - Adversarial Resistance
+        if: matrix.eval-category == 'adversarial_tests'
+        run: |
+          echo "Testing adversarial resistance..."
+
+          # PII evasion attempts
+          python ml/evals/adversarial_tester.py \
+            --target pii-detector \
+            --attack-type evasion \
+            --iterations 100
+
+          # Anomaly detector poisoning attempts
+          python ml/evals/adversarial_tester.py \
+            --target anomaly-detector \
+            --attack-type poisoning \
+            --iterations 50
+
+      - name: Generate Detailed Report
+        if: always()
+        run: |
+          echo "Generating detailed evaluation report..."
+
+          python ml/evals/report_generator.py \
+            --results-dir test-results \
+            --category "${{ matrix.eval-category }}" \
+            --output "eval-report-${{ matrix.eval-category }}.html" \
+            --include-charts \
+            --include-recommendations
+
+      - name: Upload Evaluation Results
+        if: always()
+        uses: actions/upload-artifact@v3
+        with:
+          name: golden-eval-results-${{ matrix.eval-category }}
+          path: |
+            test-results/
+            eval-report-*.html
+          retention-days: 30
+
+      - name: Export Metrics to Prometheus
+        if: always()
+        run: |
+          # Export evaluation metrics for monitoring
+          echo "Exporting metrics to Prometheus..."
+
+          python ml/evals/metrics_exporter.py \
+            --results-file "test-results/${{ matrix.eval-category }}/results.json" \
+            --prometheus-gateway "${PROMETHEUS_PUSHGATEWAY_URL:-http://localhost:9091}" \
+            --job-name "golden-evaluations" \
+            --instance "${{ matrix.eval-category }}"
+
+      - name: Check Evaluation Results
+        run: |
+          RESULTS_FILE="test-results/${{ matrix.eval-category }}/results.json"
+
+          if [[ ! -f "$RESULTS_FILE" ]]; then
+            echo "❌ Results file not found: $RESULTS_FILE"
+            exit 1
+          fi
+
+          PASS_RATE=$(python -c "
+          import json
+          with open('$RESULTS_FILE') as f:
+              data = json.load(f)
+          print(data.get('pass_rate', 0.0))
+          ")
+
+          echo "Pass rate for ${{ matrix.eval-category }}: $PASS_RATE"
+
+          if (( $(echo "$PASS_RATE >= $FAIL_THRESHOLD" | bc -l) )); then
+            echo "✅ Evaluation passed for ${{ matrix.eval-category }}"
+          else
+            echo "❌ Evaluation failed for ${{ matrix.eval-category }}"
+            echo "Pass rate $PASS_RATE below threshold $FAIL_THRESHOLD"
+            exit 1
+          fi
+
+  aggregate-results:
+    name: Aggregate Golden Evaluation Results
+    needs: golden-evaluations
+    runs-on: ubuntu-latest
+    if: always()
+
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: "3.11"
+
+      - name: Download All Evaluation Results
+        uses: actions/download-artifact@v3
+        with:
+          path: all-results/
+
+      - name: Aggregate Results
+        run: |
+          echo "Aggregating evaluation results..."
+
+          python ml/evals/aggregate_results.py \
+            --input-dir all-results/ \
+            --output overall-results.json \
+            --generate-summary
+
+      - name: Generate Overall Report
+        run: |
+          python ml/evals/report_generator.py \
+            --results-file overall-results.json \
+            --output overall-evaluation-report.html \
+            --include-all-categories \
+            --include-recommendations \
+            --include-trends
+
+      - name: Check Overall Pass Rate
+        id: overall-check
+        run: |
+          OVERALL_PASS_RATE=$(python -c "
+          import json
+          with open('overall-results.json') as f:
+              data = json.load(f)
+          print(data.get('overall_pass_rate', 0.0))
+          ")
+
+          echo "Overall pass rate: $OVERALL_PASS_RATE"
+          echo "pass_rate=$OVERALL_PASS_RATE" >> $GITHUB_OUTPUT
+
+          if (( $(echo "$OVERALL_PASS_RATE >= $FAIL_THRESHOLD" | bc -l) )); then
+            echo "✅ Overall evaluation PASSED"
+            echo "status=passed" >> $GITHUB_OUTPUT
+          else
+            echo "❌ Overall evaluation FAILED"
+            echo "status=failed" >> $GITHUB_OUTPUT
+          fi
+
+      - name: Comment on PR
+        if: github.event_name == 'pull_request' && always()
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const fs = require('fs');
+            const passRate = '${{ steps.overall-check.outputs.pass_rate }}';
+            const status = '${{ steps.overall-check.outputs.status }}';
+            const threshold = '${{ env.FAIL_THRESHOLD }}';
+
+            let reportContent = '';
+            try {
+              const results = JSON.parse(fs.readFileSync('overall-results.json', 'utf8'));
+              reportContent = `
+            ## 🛡️ Golden Evaluation Results
+
+            **Overall Status**: ${status === 'passed' ? '✅ PASSED' : '❌ FAILED'}
+
+            | Metric | Value |
+            |--------|-------|
+            | **Pass Rate** | ${(parseFloat(passRate) * 100).toFixed(1)}% |
+            | **Threshold** | ${(parseFloat(threshold) * 100).toFixed(1)}% |
+            | **Total Tests** | ${results.total_tests || 0} |
+            | **Passed** | ${results.passed_tests || 0} |
+            | **Failed** | ${results.failed_tests || 0} |
+
+            ### Category Breakdown
+            ${Object.entries(results.categories || {}).map(([cat, stats]) => 
+              `- **${cat}**: ${stats.passed}/${stats.total} (${((stats.passed/stats.total)*100).toFixed(1)}%)`
+            ).join('\n')}
+
+            ${status === 'failed' ? '⚠️ **Action Required**: This PR contains AI model changes that failed safety evaluations. Please review and address the failed test cases before merging.' : ''}
+
+            📊 [View Detailed Report](https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }})
+            `;
+            } catch (error) {
+              reportContent = `## 🛡️ Golden Evaluation Results\n\n❌ Failed to parse results: ${error.message}`;
+            }
+
+            github.rest.issues.createComment({
+              issue_number: context.issue.number,
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              body: reportContent
+            });
+
+      - name: Upload Overall Results
+        if: always()
+        uses: actions/upload-artifact@v3
+        with:
+          name: overall-golden-eval-results
+          path: |
+            overall-results.json
+            overall-evaluation-report.html
+          retention-days: 90
+
+      - name: Fail Workflow if Evaluations Failed
+        if: steps.overall-check.outputs.status == 'failed'
+        run: |
+          echo "❌ Golden evaluations failed with pass rate ${{ steps.overall-check.outputs.pass_rate }}"
+          echo "🛡️ AI model changes must pass safety evaluations before deployment"
+          echo "📋 Review the detailed report and address failing test cases"
+          exit 1
+
+  update-baseline:
+    name: Update Performance Baselines
+    needs: [golden-evaluations, aggregate-results]
+    runs-on: ubuntu-latest
+    if: github.ref == 'refs/heads/main' && success()
+
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+
+      - name: Download Results
+        uses: actions/download-artifact@v3
+        with:
+          name: overall-golden-eval-results
+
+      - name: Update Baselines
+        run: |
+          echo "Updating performance baselines..."
+
+          # Update baseline metrics for future comparisons
+          python ml/evals/update_baselines.py \
+            --results-file overall-results.json \
+            --baseline-file ml/evals/baselines.json \
+            --update-if-better
+
+      - name: Commit Updated Baselines
+        run: |
+          git config --local user.email "action@github.com"
+          git config --local user.name "GitHub Action"
+
+          if git diff --quiet ml/evals/baselines.json; then
+            echo "No baseline updates needed"
+          else
+            git add ml/evals/baselines.json
+            git commit -m "Update AI model performance baselines [skip ci]"
+            git push
+          fi

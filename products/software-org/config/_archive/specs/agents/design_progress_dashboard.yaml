@@ -1,0 +1,51 @@
+id: design_progress_dashboard
+agent: ProgressDashboardAgent
+role: Design Progress Dashboard Owner
+inputs_spec:
+- name: design_kpi_report
+  description: KPI report for Design stage.
+  format: Structured KPI report
+- name: design_success_criteria_status
+  description: Status of design stage success criteria.
+  format: List of criteria status objects
+- name: design_stage_milestone
+  description: Design stage milestone plan.
+  format: List of milestone objects
+outputs_spec:
+- name: design_progress_dashboard
+  description: Dashboard visualizing Design KPIs, success criteria, milestones, highlighting gaps, bottlenecks, and critical paths.
+  format: 'Dashboard artifact (sections: KPIs, criteria, milestones, gaps, bottlenecks, critical_path)'
+  example: 'KPIs: ["completeness", "review_cycle_time"]
+
+    criteria: ["API contract defined"]
+
+    milestones: ["D1"]
+
+    gaps: []
+
+    bottlenecks: []
+
+    critical_path: ["D1"]
+
+    '
+agent_tasks:
+- Visualize Design KPIs, success criteria, and milestones in dashboard.
+- Update dashboard in real time and ensure accessibility.
+- Highlight gaps, issues, critical path, blocked dependencies, bottlenecks, and overdue milestones.
+acceptance_criteria:
+- Design KPIs, success criteria, and milestones are visualized in a dashboard.
+- Dashboard is updated in real time and accessible to stakeholders.
+- Gaps or issues in design progress are highlighted for action.
+- Critical path milestones are highlighted.
+- Blocked dependencies and downstream impacts are flagged.
+- Bottlenecks or overdue milestones are visually emphasized.
+dependencies:
+- design_kpi_report
+- design_success_criteria_status
+- design_stage_milestone
+failure_escalation:
+- Escalate to dashboard owner or PM if dashboard is not current or actionable.
+references: []
+hitl: false
+
+# [!!] No custom enhancement found.

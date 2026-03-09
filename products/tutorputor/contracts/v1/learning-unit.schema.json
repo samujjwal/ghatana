@@ -1,0 +1,546 @@
+{
+    "$schema": "http://json-schema.org/draft-07/schema#",
+    "$id": "https://tutorputor.ghatana.com/schemas/learning-unit/v1",
+    "title": "Learning Unit",
+    "description": "Canonical Learning Unit schema for evidence-based learning content",
+    "type": "object",
+    "required": [
+        "id",
+        "version",
+        "domain",
+        "level",
+        "status",
+        "intent",
+        "claims",
+        "evidence",
+        "tasks",
+        "artifacts",
+        "telemetry",
+        "assessment"
+    ],
+    "properties": {
+        "id": {
+            "type": "string",
+            "pattern": "^LU_[a-z0-9_]+_v[0-9]+$",
+            "description": "Unique identifier (format: LU_topic_name_v1)"
+        },
+        "version": {
+            "type": "integer",
+            "minimum": 1
+        },
+        "domain": {
+            "type": "string",
+            "enum": [
+                "physics",
+                "math",
+                "chemistry",
+                "biology",
+                "computer_science",
+                "engineering"
+            ]
+        },
+        "level": {
+            "type": "string",
+            "enum": [
+                "elementary",
+                "secondary",
+                "high_school",
+                "university",
+                "professional"
+            ]
+        },
+        "status": {
+            "type": "string",
+            "enum": [
+                "draft",
+                "review",
+                "published",
+                "archived"
+            ]
+        },
+        "intent": {
+            "$ref": "#/definitions/Intent"
+        },
+        "claims": {
+            "type": "array",
+            "minItems": 1,
+            "items": {
+                "$ref": "#/definitions/Claim"
+            }
+        },
+        "evidence": {
+            "type": "array",
+            "minItems": 1,
+            "items": {
+                "$ref": "#/definitions/Evidence"
+            }
+        },
+        "tasks": {
+            "type": "array",
+            "minItems": 1,
+            "items": {
+                "$ref": "#/definitions/Task"
+            }
+        },
+        "artifacts": {
+            "type": "array",
+            "minItems": 1,
+            "items": {
+                "$ref": "#/definitions/Artifact"
+            }
+        },
+        "telemetry": {
+            "$ref": "#/definitions/TelemetryConfig"
+        },
+        "assessment": {
+            "$ref": "#/definitions/AssessmentConfig"
+        },
+        "credential": {
+            "$ref": "#/definitions/CredentialConfig"
+        },
+        "createdAt": {
+            "type": "string",
+            "format": "date-time"
+        },
+        "updatedAt": {
+            "type": "string",
+            "format": "date-time"
+        },
+        "createdBy": {
+            "type": "string"
+        },
+        "tenantId": {
+            "type": "string"
+        }
+    },
+    "definitions": {
+        "Intent": {
+            "type": "object",
+            "required": [
+                "problem",
+                "motivation"
+            ],
+            "properties": {
+                "problem": {
+                    "type": "string",
+                    "minLength": 20,
+                    "description": "The misconception or gap being addressed"
+                },
+                "motivation": {
+                    "type": "string",
+                    "minLength": 10,
+                    "description": "Real-world motivation for learning this"
+                },
+                "targetMisconceptions": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
+                }
+            }
+        },
+        "Claim": {
+            "type": "object",
+            "required": [
+                "id",
+                "text",
+                "bloom"
+            ],
+            "properties": {
+                "id": {
+                    "type": "string",
+                    "pattern": "^C[0-9]+$"
+                },
+                "text": {
+                    "type": "string",
+                    "minLength": 10
+                },
+                "bloom": {
+                    "type": "string",
+                    "enum": [
+                        "remember",
+                        "understand",
+                        "apply",
+                        "analyze",
+                        "evaluate",
+                        "create"
+                    ]
+                },
+                "prerequisites": {
+                    "type": "array",
+                    "items": {
+                        "type": "string",
+                        "pattern": "^LU_[a-z0-9_]+_v[0-9]+\\.C[0-9]+$"
+                    }
+                }
+            }
+        },
+        "Observable": {
+            "type": "object",
+            "required": [
+                "name",
+                "type"
+            ],
+            "properties": {
+                "name": {
+                    "type": "string"
+                },
+                "type": {
+                    "type": "string",
+                    "enum": [
+                        "string",
+                        "number",
+                        "boolean",
+                        "enum"
+                    ]
+                },
+                "enumValues": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
+                },
+                "unit": {
+                    "type": "string"
+                }
+            }
+        },
+        "Evidence": {
+            "type": "object",
+            "required": [
+                "id",
+                "claimRef",
+                "type",
+                "description",
+                "observables"
+            ],
+            "properties": {
+                "id": {
+                    "type": "string",
+                    "pattern": "^E[0-9]+$"
+                },
+                "claimRef": {
+                    "type": "string",
+                    "pattern": "^C[0-9]+$"
+                },
+                "type": {
+                    "type": "string",
+                    "enum": [
+                        "prediction_vs_outcome",
+                        "parameter_targeting",
+                        "explanation_quality",
+                        "construction_artifact"
+                    ]
+                },
+                "description": {
+                    "type": "string"
+                },
+                "observables": {
+                    "type": "array",
+                    "minItems": 1,
+                    "items": {
+                        "$ref": "#/definitions/Observable"
+                    }
+                }
+            }
+        },
+        "Task": {
+            "type": "object",
+            "required": [
+                "id",
+                "type",
+                "claimRef",
+                "evidenceRef",
+                "prompt"
+            ],
+            "properties": {
+                "id": {
+                    "type": "string",
+                    "pattern": "^T[0-9]+$"
+                },
+                "type": {
+                    "type": "string",
+                    "enum": [
+                        "prediction",
+                        "simulation",
+                        "explanation",
+                        "construction"
+                    ]
+                },
+                "claimRef": {
+                    "type": "string",
+                    "pattern": "^C[0-9]+$"
+                },
+                "evidenceRef": {
+                    "type": "string",
+                    "pattern": "^E[0-9]+$"
+                },
+                "prompt": {
+                    "type": "string",
+                    "minLength": 10
+                },
+                "confidenceRequired": {
+                    "type": "boolean"
+                },
+                "options": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
+                },
+                "simulationRef": {
+                    "type": "string"
+                },
+                "goal": {
+                    "type": "string"
+                },
+                "successCriteria": {
+                    "type": "object",
+                    "properties": {
+                        "rmse": {
+                            "type": "string"
+                        },
+                        "maxAttempts": {
+                            "type": "integer"
+                        },
+                        "timeLimit": {
+                            "type": "integer"
+                        }
+                    }
+                },
+                "minWords": {
+                    "type": "integer"
+                },
+                "rubricRef": {
+                    "type": "string"
+                },
+                "artifactType": {
+                    "type": "string"
+                },
+                "validationRules": {
+                    "type": "object"
+                }
+            },
+            "allOf": [
+                {
+                    "if": {
+                        "properties": {
+                            "type": {
+                                "const": "prediction"
+                            }
+                        }
+                    },
+                    "then": {
+                        "required": [
+                            "confidenceRequired",
+                            "options"
+                        ],
+                        "properties": {
+                            "confidenceRequired": {
+                                "const": true
+                            }
+                        }
+                    }
+                },
+                {
+                    "if": {
+                        "properties": {
+                            "type": {
+                                "const": "simulation"
+                            }
+                        }
+                    },
+                    "then": {
+                        "required": [
+                            "simulationRef",
+                            "goal",
+                            "successCriteria"
+                        ]
+                    }
+                }
+            ]
+        },
+        "Artifact": {
+            "type": "object",
+            "required": [
+                "type",
+                "ref",
+                "claims"
+            ],
+            "properties": {
+                "type": {
+                    "type": "string",
+                    "enum": [
+                        "simulation",
+                        "explainer_video",
+                        "visual_article",
+                        "infographic"
+                    ]
+                },
+                "ref": {
+                    "type": "string"
+                },
+                "claims": {
+                    "type": "array",
+                    "minItems": 1,
+                    "items": {
+                        "type": "string",
+                        "pattern": "^C[0-9]+$"
+                    }
+                },
+                "scaffolds": {
+                    "type": "array",
+                    "items": {
+                        "type": "string",
+                        "pattern": "^T[0-9]+$"
+                    }
+                }
+            }
+        },
+        "TelemetryConfig": {
+            "type": "object",
+            "required": [
+                "events",
+                "processFeatures"
+            ],
+            "properties": {
+                "events": {
+                    "type": "array",
+                    "minItems": 3,
+                    "items": {
+                        "type": "string"
+                    }
+                },
+                "processFeatures": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
+                }
+            }
+        },
+        "VivaCondition": {
+            "type": "object",
+            "required": [
+                "type"
+            ],
+            "properties": {
+                "type": {
+                    "type": "string",
+                    "enum": [
+                        "overconfident_wrong",
+                        "speed_anomaly",
+                        "pattern_mismatch",
+                        "explanation_avoidance"
+                    ]
+                },
+                "threshold": {
+                    "type": "integer"
+                },
+                "completionTimePercentile": {
+                    "type": "string"
+                },
+                "description": {
+                    "type": "string"
+                }
+            }
+        },
+        "AssessmentConfig": {
+            "type": "object",
+            "required": [
+                "model",
+                "confidenceLevels",
+                "scoring"
+            ],
+            "properties": {
+                "model": {
+                    "type": "string",
+                    "enum": [
+                        "cbm",
+                        "cbm_plus_process",
+                        "mastery_grid"
+                    ]
+                },
+                "confidenceLevels": {
+                    "type": "array",
+                    "items": {
+                        "type": "string",
+                        "enum": [
+                            "low",
+                            "medium",
+                            "high"
+                        ]
+                    }
+                },
+                "scoring": {
+                    "type": "object",
+                    "required": [
+                        "correctHighConfidence",
+                        "correctMediumConfidence",
+                        "correctLowConfidence",
+                        "incorrectHighConfidence",
+                        "incorrectMediumConfidence",
+                        "incorrectLowConfidence"
+                    ],
+                    "properties": {
+                        "correctHighConfidence": {
+                            "type": "integer"
+                        },
+                        "correctMediumConfidence": {
+                            "type": "integer"
+                        },
+                        "correctLowConfidence": {
+                            "type": "integer"
+                        },
+                        "incorrectHighConfidence": {
+                            "type": "integer"
+                        },
+                        "incorrectMediumConfidence": {
+                            "type": "integer"
+                        },
+                        "incorrectLowConfidence": {
+                            "type": "integer"
+                        }
+                    }
+                },
+                "vivaTrigger": {
+                    "type": "object",
+                    "properties": {
+                        "conditions": {
+                            "type": "array",
+                            "items": {
+                                "$ref": "#/definitions/VivaCondition"
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "CredentialConfig": {
+            "type": "object",
+            "required": [
+                "skillTags",
+                "issueOn"
+            ],
+            "properties": {
+                "skillTags": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
+                },
+                "issueOn": {
+                    "type": "string",
+                    "enum": [
+                        "all_claims_mastered",
+                        "primary_claim_mastered",
+                        "completion"
+                    ]
+                },
+                "badgeRef": {
+                    "type": "string"
+                }
+            }
+        }
+    }
+}

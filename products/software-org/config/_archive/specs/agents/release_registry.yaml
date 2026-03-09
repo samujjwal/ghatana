@@ -1,0 +1,30 @@
+---
+id: "release_registry"
+agent: "ReleaseRegistryAgent"
+role: "Release Manager"
+inputs_spec:
+- name: "deployment_manifests"
+  description: "Deployment manifests for registry entry."
+  format: "List of deployment manifest artifacts"
+- name: "changelog_release_notes"
+  description: "Release notes for registry entry."
+  format: "Release notes artifact"
+outputs_spec:
+- name: "release_registry_entry"
+  description: "Registry entry for the release."
+  format: "Registry entry artifact"
+agent_tasks:
+- "Register release in release management system."
+- "Link registry entry to artifact, changelog, and manifest."
+- "Apply access controls and retention policy."
+acceptance_criteria:
+- "Release registered in management system."
+- "Entry links artifact, changelog, manifest."
+- "Access controls and retention policy applied."
+dependencies:
+- "deployment_manifests"
+- "changelog_release_notes"
+failure_escalation:
+- "Escalate to Release Manager if registry entry is incomplete or incorrect."
+references: []
+hitl: false

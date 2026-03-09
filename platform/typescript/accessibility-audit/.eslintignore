@@ -1,0 +1,14 @@
+# Package-local ESLint ignore to exclude archived snapshots and examples
+# These files are intentionally kept as snapshots or examples and are not part
+# of the TypeScript project used for type-aware linting. We keep a package
+# local ignore file so running `pnpm --filter @yappc/accessibility-audit run lint`
+# from inside the package directory won't attempt to parse them with the
+# type-aware parser (which would otherwise error when tsconfigs don't include
+# the files).
+
+archive/**
+examples/**
+vitest.config.ts
+vitest.config.*
+src/AccessibilityAuditor.old.ts
+src/AccessibilityReportViewer.old.tsx

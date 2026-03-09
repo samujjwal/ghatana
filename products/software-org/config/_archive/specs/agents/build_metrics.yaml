@@ -1,0 +1,26 @@
+---
+id: "build_metrics"
+agent: "BuildMetricsAgent"
+role: "CI Metrics Bot"
+inputs_spec:
+- name: "build_artifacts"
+  description: "Build artifacts for generating pipeline metrics."
+  format: "Artifact repo/package"
+outputs_spec:
+- name: "build_metrics_report"
+  description: "Report with build duration, pass/fail rates, and frequency."
+  format: "Metrics report artifact"
+agent_tasks:
+- "Track build duration, pass/fail rates, and build frequency."
+- "Make metrics accessible to stakeholders."
+- "Flag anomalies in build trends."
+acceptance_criteria:
+- "Build duration, pass/fail rates, and frequency are tracked."
+- "Metrics are accessible to project stakeholders."
+- "Anomalies in build trends are flagged."
+dependencies:
+- "build_artifacts"
+failure_escalation:
+- "Escalate to Metrics Owner if metrics are missing or inaccurate."
+references: []
+hitl: false

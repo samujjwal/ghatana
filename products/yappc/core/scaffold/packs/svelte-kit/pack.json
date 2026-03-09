@@ -1,0 +1,58 @@
+{
+    "name": "svelte-kit",
+    "version": "1.0.0",
+    "description": "SvelteKit full-stack application",
+    "language": "typescript",
+    "category": "fullstack",
+    "platform": "web",
+    "buildSystem": "pnpm",
+    "author": "YAPPC Team",
+    "tags": [
+        "svelte",
+        "sveltekit",
+        "typescript",
+        "fullstack",
+        "ssr"
+    ],
+    "requiredVariables": [
+        "projectName"
+    ],
+    "optionalVariables": [
+        "description",
+        "author",
+        "enableTailwind",
+        "enableVitest",
+        "enablePlaywright"
+    ],
+    "defaults": {
+        "description": "SvelteKit full-stack application",
+        "enableTailwind": "true",
+        "enableVitest": "true",
+        "enablePlaywright": "true"
+    },
+    "templates": [
+        "package.json.hbs",
+        "tsconfig.json.hbs",
+        "svelte.config.js.hbs",
+        "vite.config.ts.hbs",
+        "src/app.html.hbs",
+        "src/routes/+page.svelte.hbs",
+        "src/routes/+layout.svelte.hbs",
+        "src/routes/api/health/+server.ts.hbs",
+        "src/lib/index.ts.hbs",
+        "src/lib/components/Counter.svelte.hbs",
+        "src/app.css.hbs",
+        "tailwind.config.js.hbs",
+        "postcss.config.js.hbs",
+        "vitest.config.ts.hbs",
+        "playwright.config.ts.hbs",
+        "tests/test.ts.hbs",
+        ".gitignore.hbs",
+        "README.md.hbs"
+    ],
+    "supportedFeatures": [
+        "database",
+        "auth",
+        "observability"
+    ]
+}

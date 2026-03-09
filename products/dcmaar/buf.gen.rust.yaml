@@ -1,0 +1,12 @@
+version: v1
+managed:
+  enabled: true
+
+plugins:
+  # Generate Rust code using prost
+  - plugin: buf.build/community/neoeinstein-prost:v0.3.0
+    out: core/proto/gen/rust/src
+  
+  # Generate gRPC service code using Tonic
+  - plugin: buf.build/community/neoeinstein-tonic:v0.3.0
+    out: core/proto/gen/rust/src

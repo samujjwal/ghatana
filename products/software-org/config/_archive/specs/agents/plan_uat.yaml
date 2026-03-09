@@ -1,0 +1,43 @@
+---
+id: "plan_uat"
+agent: "UATAgent"
+role: "User Acceptance Testing Coordinator"
+inputs_spec:
+  - name: "go_no_go_decision"
+    description: "Go/No-Go decision artifact from GoNoGoAgent."
+    format: "YAML object"
+outputs_spec:
+  - name: "uat_report"
+    description: >
+      UAT plan and test results (test cases, user feedback, defects, acceptance status, and remediation plan).
+    format: "YAML: { test_cases[], user_feedback[], defects[], acceptance_status, remediation_plan }"
+agent_tasks:
+  - "Define and run UAT test cases aligned with acceptance criteria and business needs."
+  - "Collect user feedback, record defects, and assign acceptance status."
+  - "Log required remediations."
+acceptance_criteria:
+  - "All critical use cases tested."
+  - "Defects, feedback, and acceptance decisions documented."
+  - "Remediation plan and status clear."
+internal_logic:
+  - perception:
+      description: "Extract test cases and acceptance from decision and requirements."
+  - model:
+      description: "{ test_cases, user_feedback, defects, acceptance_status, remediation_plan }"
+  - planning:
+      description: |
+        "Define remediation for defects or failed criteria."
+  - action:
+      description: "Produce UAT report YAML."
+validation:
+  - "User and QA signoff."
+  - "Audit for test coverage and defect management."
+quality_enhancements:
+  - "UAT and feedback templates."
+  - "Automated defect/feedback linkage."
+dependencies: []
+failure_escalation:
+  - "Escalate failed UAT to release manager."
+references:
+  - "UAT and acceptance standards."
+  - "See: hatchworks.com/blog/ai-agents-explained/, datacamp.com/blog/ai-agents"

@@ -1,0 +1,85 @@
+id: budget-gate-agent
+name: Budget Gate Agent
+version: 1.0.0
+description: Pre-flight cost estimate for any LLM-heavy orchestration run. Blocks execution if estimated token/compute cost exceeds project budget. Recommends cost-saving routing alternatives.
+
+metadata:
+  level: 2
+  domain: governance
+  tags:
+    - budget
+    - cost-control
+    - pre-flight
+    - guardrail
+
+generator:
+  type: PIPELINE
+  steps:
+    - name: cost_estimation
+      type: RULE_BASED
+      description: >
+        Estimate total cost for the requested orchestration:
+        - Count agents in delegation chain
+        - Estimate tokens per agent (from historical averages)
+        - Calculate compute cost for deterministic agents
+        - Sum total projected cost
+    - name: budget_check
+      type: RULE_BASED
+      description: >
+        Compare estimated cost against remaining project budget.
+        If estimated > remaining: BLOCK with explanation.
+        If estimated > 80% of remaining: WARN.
+        If estimated <= 80% of remaining: ALLOW.
+    - name: alternative_routing
+      type: RULE_BASED
+      description: >
+        If BLOCK or WARN, suggest cost-saving alternatives:
+        - Smaller LLM model for non-critical agents
+        - Cached results for recently-executed similar tasks
+        - Reduced scope (fewer parallel agents)
+
+memory:
+  episodic:
+    enabled: true
+    retention_days: 365
+    categories:
+      - cost-estimates
+      - budget-decisions
+      - cost-overruns
+  semantic:
+    enabled: true
+    categories:
+      - agent-cost-profiles
+      - cost-saving-patterns
+
+tools:
+  - cost_estimator
+  - budget_tracker
+  - usage_history_reader
+
+capabilities:
+  - cost-optimization
+
+routing:
+  input_types:
+    - orchestration-request
+    - agent-invocation-plan
+  output_types:
+    - budget-gate-decision
+    - cost-estimate-report
+
+delegation:
+  can_delegate_to: []
+  escalates_to:
+    - cost-governor-agent
+    - human-in-the-loop-coordinator
+
+governance:
+  requires_approval: false
+  can_block: true
+  audit_trail: comprehensive
+
+performance:
+  expected_latency_ms: 100
+  max_latency_ms: 500
+  timeout_ms: 1000

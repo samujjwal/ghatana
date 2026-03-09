@@ -1,0 +1,112 @@
+id: delivery-orchestrator-agent
+name: Delivery Orchestrator Agent
+version: 1.0.0
+description: Orchestrates delivery management activities. Coordinates task assignment, progress tracking, blocker resolution, and team coordination.
+
+metadata:
+  level: 1  # Strategic Orchestrator
+  domain: delivery
+  tags:
+    - phase-orchestration
+    - delivery-management
+    - team-coordination
+    - progress-tracking
+
+generator:
+  type: PIPELINE
+  steps:
+    - name: delivery_planning
+      type: LLM
+      provider: ANTHROPIC
+      model: claude-3-5-sonnet-20241022
+      temperature: 0.2
+      max_tokens: 2500
+      prompt: |
+        You are the Delivery Orchestrator Agent. Plan delivery activities:
+        
+        Sprint/Iteration: {{sprint}}
+        Team: {{team}}
+        Work Items: {{items}}
+        Blockers: {{blockers}}
+        
+        Orchestrate:
+        1. Task assignment strategy
+        2. Progress monitoring approach
+        3. Blocker resolution process
+        4. Standup facilitation
+        5. Communication cadence
+        6. Agent delegation plan
+        
+        Output as JSON: {assignment_strategy, monitoring, blocker_process, standups, communication, delegation_plan}
+    - name: agent_coordination
+      type: SERVICE_CALL
+      service: agent-registry
+      endpoint: /agents/delegate
+    - name: delivery_tracking
+      type: RULE_BASED
+      description: Track delivery progress
+
+memory:
+  episodic:
+    enabled: true
+    retention_days: 365
+    categories:
+      - delivery-sprints
+      - blockers
+      - resolutions
+  semantic:
+    enabled: true
+    categories:
+      - delivery-patterns
+      - team-dynamics
+      - blocker-categories
+  procedural:
+    enabled: true
+    categories:
+      - orchestration-rules
+      - escalation-paths
+      - resolution-strategies
+
+tools:
+  - task_tracker
+  - blocker_manager
+  - communication_hub
+
+capabilities:
+  - delivery-orchestration
+  - task-coordination
+  - blocker-resolution
+  - team-management
+
+routing:
+  input_types:
+    - sprint-start
+    - delivery-status
+    - blocker-report
+  output_types:
+    - delivery-plan
+    - status-report
+    - action-items
+
+delegation:
+  can_delegate_to:
+    - task-assignment-agent
+    - progress-tracker-agent
+    - blocker-resolution-agent
+    - standup-facilitator-agent
+    - retrospective-facilitator-agent
+    - knowledge-sharing-agent
+    - onboarding-agent
+    - team-health-agent
+  escalates_to:
+    - master-orchestrator-agent
+
+governance:
+  requires_approval: false
+  can_block: false
+  audit_trail: standard
+
+performance:
+  expected_latency_ms: 2000
+  max_latency_ms: 5000
+  timeout_ms: 10000

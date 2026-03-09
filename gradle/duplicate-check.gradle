@@ -1,0 +1,172 @@
+/**
+ * Gradle task to detect duplicate public class/interface/enum names across modules.
+ * Reports collisions that may indicate code duplication or inconsistent implementations.
+ * 
+ * This task will FAIL the build if duplicates are found, ensuring quality standards.
+ */
+
+tasks.register('duplicateCheck') {
+    group = 'verification'
+    description = 'Check for duplicate public class/interface/enum names across modules (fails build on duplicates)'
+    
+    doLast {
+        println 'Scanning for duplicate public types...'
+        
+        // Allowlist for intentional fully-qualified duplicates
+        // Format: "fully.qualified.ClassName"
+        def allowedDuplicates = [
+            'com.ghatana.core.event.history.EventHistory',  // Intentional stub in core:event-runtime, impl in eventlog
+            'com.ghatana.virtualorg.workflows.CodeReviewWorkflow',  // FALSE POSITIVE: JavaDoc example in BaseWorkflow, actual class in CodeReviewWorkflow.java
+            'com.ghatana.virtualorg.framework.agent.EngineerAgent',  // FALSE POSITIVE: JavaDoc example in framework agent interfaces
+        ] as Set
+        
+    def typeDeclarations = [:].withDefault { [] }
+    // Map of fqName -> list of files (to detect true duplicates)
+    def fqDeclarations = [:].withDefault { [] }
+        def projectDir = project.rootDir
+        def reportsDir = new File(project.buildDir, 'reports')
+        reportsDir.mkdirs()
+        def reportFile = new File(reportsDir, 'duplicates.txt')
+        
+        // Collect Java files from canonical source roots only (src/main/java, src/test/java)
+        def javaFiles = [] as List
+        projectDir.eachFileRecurse(groovy.io.FileType.DIRECTORIES) { dir ->
+            try {
+                if ((dir.path.endsWith('/src/main/java') || dir.path.endsWith('/src/test/java')) ||
+                    dir.path.contains('/src/main/java/') || dir.path.contains('/src/test/java/')) {
+                    dir.eachFileRecurse(groovy.io.FileType.FILES) { f ->
+                        if (f.name.endsWith('.java')) {
+                            javaFiles << f
+                        }
+                    }
+                }
+            } catch (Exception e) {
+                // ignore permission or symlink issues
+            }
+        }
+
+        javaFiles.unique().each { file ->
+            def relativePath = file.path.replace(projectDir.path + '/', '')
+
+            def pkg = ''
+            file.eachLine { line ->
+                if (!pkg) {
+                    def pm = (line =~ /\bpackage\s+([A-Za-z0-9_.]+)\s*;/)
+                    if (pm.find()) {
+                        pkg = pm.group(1)
+                    }
+                }
+
+                def matcher = line =~ /public\s+(class|interface|enum)\s+([A-Za-z0-9_]+)\b/
+
+                if (matcher.find()) {
+                    def typeName = matcher.group(2)
+                    def fqName = pkg ? "${pkg}.${typeName}" : typeName
+
+                    // Skip common test class names
+                    if (typeName in ['Test', 'TestImpl', 'Parent', 'Child', 'Example',
+                                     'TestInterface', 'TestClass', 'TestJava', 'PythonUser']) {
+                        return
+                    }
+
+                    // Skip test inner classes
+                    if (relativePath.contains('/test/') && line.contains('    public class')) {
+                        return
+                    }
+                    typeDeclarations[typeName] << [pkg: pkg, path: relativePath]
+                    fqDeclarations[fqName] << relativePath
+                }
+            }
+        }
+        
+        // Find and report duplicates
+        // True duplicate detection: identical fully-qualified name
+        def fqDuplicates = fqDeclarations.findAll { k, v -> v.size() > 1 }
+
+        // Simple-name duplicates (same simple name across different packages)
+        def simpleNameDuplicates = typeDeclarations.findAll { k, v -> v.size() > 1 }
+
+        def reportText = new StringBuilder()
+
+        if (fqDuplicates.isEmpty() && simpleNameDuplicates.isEmpty()) {
+            println '✓ No duplicate type names found'
+            reportFile.text = "No duplicate type names found.\n"
+        } else {
+            def totalIssues = fqDuplicates.size() + simpleNameDuplicates.size()
+            reportText.append("⚠ Found ${totalIssues} duplicate type name(s) (detailed below).\n\n")
+            println "\n⚠ Found ${totalIssues} duplicate type name(s) (detailed below):\n"
+
+            if (!fqDuplicates.isEmpty()) {
+                reportText.append("-- Fully-qualified name duplicates (FAIL):\n")
+                println "-- Fully-qualified name duplicates (these are real duplicates and will fail the build):"
+                fqDuplicates.sort().each { fqName, files ->
+                    def message = "  ${fqName} (${files.size()} occurrences):\n"
+                    println message
+                    reportText.append(message)
+
+                    files.sort().each { file ->
+                        def fileMessage = "    - ${file}\n"
+                        println fileMessage.trim()
+                        reportText.append(fileMessage)
+                    }
+                    println ""
+                    reportText.append("\n")
+                }
+            }
+
+            if (!simpleNameDuplicates.isEmpty()) {
+                reportText.append("-- Simple-name duplicates (WARNING):\n")
+                println "-- Simple-name duplicates (same type name across different packages):"
+                simpleNameDuplicates.sort().each { typeName, entries ->
+                    def message = "  ${typeName} (${entries.size()} occurrences):\n"
+                    println message
+                    reportText.append(message)
+
+                    entries.sort { a, b -> a.path <=> b.path }.each { entry ->
+                        def fileMessage = "    - ${entry.path} (package: ${entry.pkg ?: '<default>'})\n"
+                        println fileMessage.trim()
+                        reportText.append(fileMessage)
+                    }
+                    println ""
+                    reportText.append("\n")
+                }
+            }
+
+            reportFile.text = reportText.toString()
+            println "Duplicate check report written to: ${reportFile.absolutePath}"
+
+            // Fail if any non-allowlisted fully-qualified duplicates exist
+            def nonAllowlistedDuplicates = fqDuplicates.keySet().findAll { fqName ->
+                !allowedDuplicates.contains(fqName)
+            }
+            
+            if (!nonAllowlistedDuplicates.isEmpty()) {
+                println "\n❌ BUILD FAILED: Fully-qualified duplicate type names found."
+                println "Please consolidate or rename duplicate classes to maintain code quality."
+                println "See: ${reportFile.absolutePath}\n"
+                throw new GradleException("Duplicate fully-qualified type names found. See report: ${reportFile.absolutePath}")
+            }
+            
+            if (!fqDuplicates.isEmpty() && nonAllowlistedDuplicates.isEmpty()) {
+                println "\n✅ All fully-qualified duplicates are allowlisted (intentional architectural compromises)"
+            }
+
+            // For simple-name duplicates, fail only if configured
+            def failOnSimple = project.hasProperty('duplicateCheck.failOnSimpleNameDuplicates') && project.property('duplicateCheck.failOnSimpleNameDuplicates').toString().toBoolean()
+            if (failOnSimple) {
+                println "\n❌ BUILD FAILED: Simple-name duplicate type names found and strict mode enabled."
+                println "Please consolidate or rename duplicate classes to maintain code quality."
+                println "See: ${reportFile.absolutePath}\n"
+                throw new GradleException("Duplicate simple type names found. See report: ${reportFile.absolutePath}")
+            } else {
+                println "\n⚠ WARNING: Simple-name duplicate type names found. This does NOT fail the build by default."
+                println "To enforce failure on these, run Gradle with -PduplicateCheck.failOnSimpleNameDuplicates=true"
+            }
+        }
+    }
+}
+
+// Add duplicate check to the standard check task
+tasks.named('check') {
+    dependsOn('duplicateCheck')
+}

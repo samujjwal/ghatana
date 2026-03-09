@@ -1,0 +1,99 @@
+id: mission-alignment-agent
+name: Mission Alignment Agent
+version: 1.0.0
+description: Validates all agent outputs and decisions against organizational mission, values, and strategic objectives. Ensures system-wide coherence.
+
+metadata:
+  level: 1  # Strategic Orchestrator
+  domain: governance
+  tags:
+    - meta-governance
+    - strategic-alignment
+    - decision-validation
+    - always-on
+
+generator:
+  type: PIPELINE
+  steps:
+    - name: extract_context
+      type: RULE_BASED
+      description: Extract decision context and organizational goals
+    - name: alignment_check
+      type: LLM
+      provider: ANTHROPIC
+      model: claude-3-5-sonnet-20241022
+      temperature: 0.1
+      max_tokens: 2000
+      prompt: |
+        You are the Mission Alignment Agent. Evaluate this decision/output:
+        
+        Context: {{context}}
+        Decision: {{input}}
+        Organizational Goals: {{goals}}
+        
+        Provide:
+        1. Alignment score (0-100)
+        2. Specific alignment with each goal
+        3. Conflicts or misalignments
+        4. Recommended adjustments
+        
+        Output as JSON: {alignment_score, goal_matches, conflicts, recommendations}
+    - name: verdict_generation
+      type: TEMPLATE
+      template_path: templates/mission-alignment-verdict.ftl
+
+memory:
+  episodic:
+    enabled: true
+    retention_days: 365
+    categories:
+      - decision-validations
+      - alignment-checks
+      - mission-drift-detection
+  semantic:
+    enabled: true
+    categories:
+      - organizational-goals
+      - mission-statements
+      - strategic-priorities
+      - value-frameworks
+  procedural:
+    enabled: true
+    categories:
+      - alignment-policies
+      - validation-rules
+      - escalation-criteria
+
+tools: []  # Reads from semantic memory, no external tools needed
+
+capabilities:
+  - strategic-alignment-validation
+  - mission-drift-detection
+  - goal-coherence-checking
+  - value-conflict-detection
+
+routing:
+  input_types:
+    - agent-decision
+    - policy-proposal
+    - strategic-plan
+    - resource-allocation
+  output_types:
+    - alignment-verdict
+    - mission-analysis
+    - adjustment-recommendations
+
+delegation:
+  can_delegate_to: []  # Top-level governance agent
+  escalates_to:
+    - human-override-arbitration-agent
+
+governance:
+  requires_approval: false  # Always-on governance
+  can_block: true  # Can block misaligned decisions
+  audit_trail: comprehensive
+
+performance:
+  expected_latency_ms: 2000
+  max_latency_ms: 5000
+  timeout_ms: 8000

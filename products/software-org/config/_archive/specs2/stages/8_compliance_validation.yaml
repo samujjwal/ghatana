@@ -1,0 +1,247 @@
+name: Compliance & Regulatory Validation
+workflow:
+  - id: compliance_validation
+    agent: ComplianceValidationAgent
+    role: Compliance Officer
+    inputs_spec:
+      - name: secure_policy_drift_report
+        description: Secure policy drift report for compliance validation.
+        format: Drift report artifact
+    outputs_spec:
+      - name: compliance_validation_report
+        description: Validation report confirming all required controls, standards, and regulatory requirements.
+        format: Compliance validation report artifact
+    agent_tasks:
+      - Validate all required controls, standards, and regulatory requirements.
+      - Document and track gaps or exceptions to resolution.
+    acceptance_criteria:
+      - All required controls, standards, and regulatory requirements are validated.
+      - Gaps or exceptions are documented and tracked to resolution.
+    dependencies:
+      - secure_policy_drift_report
+    failure_escalation:
+      - Escalate to Compliance Officer if controls or requirements are not fully validated.
+    references: []
+    hitl: false
+  - id: regulatory_evidence_collector
+    agent: RegulatoryEvidenceCollector
+    role: Audit Clerk
+    inputs_spec:
+      - name: compliance_validation_report
+        description: Compliance validation report for evidence packaging.
+        format: Compliance validation report artifact
+    outputs_spec:
+      - name: regulatory_evidence_package
+        description: Evidence package for audit or regulator, with traceability to requirements and controls.
+        format: Evidence package artifact
+    agent_tasks:
+      - Bundle and archive all evidence needed for audit or regulatory submission.
+      - Ensure traceability to requirements and controls.
+    acceptance_criteria:
+      - All evidence needed for audit or regulator is bundled and archived.
+      - Evidence includes traceability to requirements and controls.
+    dependencies:
+      - compliance_validation_report
+    failure_escalation:
+      - Escalate to Audit Clerk or Compliance Lead if evidence is missing or not archived.
+    references: []
+    hitl: false
+  - id: compliance_readiness_checker
+    agent: ReadinessCheckerAgent
+    role: Gatekeeper Bot
+    inputs_spec:
+      - name: compliance_validation_report
+        description: Compliance validation report for readiness assessment.
+        format: Compliance validation report artifact
+      - name: regulatory_evidence_package
+        description: Regulatory evidence package for readiness check.
+        format: Evidence package artifact
+    outputs_spec:
+      - name: compliance_readiness_status
+        description: Status showing if all mandatory compliance criteria are met and all audit findings are closed.
+        format: Readiness status artifact
+    agent_tasks:
+      - Assess whether all mandatory compliance criteria are met.
+      - Verify that no open audit findings remain.
+    acceptance_criteria:
+      - All mandatory compliance criteria are met.
+      - No open audit findings remain.
+    dependencies:
+      - compliance_validation_report
+      - regulatory_evidence_package
+    failure_escalation:
+      - Escalate to Compliance or Audit Lead if criteria are not met or audit findings remain.
+    references: []
+    hitl: false
+  - id: compliance_go_nogo
+    agent: GoNoGoDecisionAgent
+    role: Stage Owner/Stakeholders
+    inputs_spec:
+      - name: compliance_readiness_status
+        description: Compliance readiness status for Go/No-Go decision.
+        format: Readiness status artifact
+    outputs_spec:
+      - name: compliance_go_nogo_decision
+        description: Go/No-Go decision and rationale for compliance validation stage.
+        format: Go/No-Go decision artifact
+    agent_tasks:
+      - Review all blockers, risks, and criteria.
+      - Record Go/No-Go decision and rationale.
+    acceptance_criteria:
+      - All blockers, risks, and criteria reviewed.
+      - Go/No-Go decision and rationale recorded.
+    dependencies:
+      - compliance_readiness_status
+    failure_escalation:
+      - Escalate to Stage Owner/Stakeholders if decision is not recorded.
+    references: []
+    hitl: true
+    hitl_reason: Human review required for Go/No-Go decision
+  - id: compliance_progress_dashboard
+    agent: ProgressDashboardAgent
+    role: Compliance Dashboard Owner
+    inputs_spec:
+      - name: compliance_validation_report
+        description: Compliance validation report for dashboard visualization.
+        format: Compliance validation report artifact
+      - name: regulatory_evidence_package
+        description: Regulatory evidence package for dashboard visualization.
+        format: Evidence package artifact
+    outputs_spec:
+      - name: compliance_progress_dashboard
+        description: Dashboard visualizing compliance validation progress, evidence, and status.
+        format: Dashboard artifact
+    agent_tasks:
+      - Visualize compliance validation progress, evidence, and status.
+      - Highlight blockers and unresolved items.
+    acceptance_criteria:
+      - Dashboard visualizes compliance validation progress, evidence, and status.
+      - Blockers and unresolved items are highlighted.
+    dependencies:
+      - compliance_validation_report
+      - regulatory_evidence_package
+    failure_escalation:
+      - Escalate to Compliance Dashboard Owner if dashboard is not updated.
+    references: []
+    hitl: false
+  - id: compliance_observability_export
+    agent: ObservabilityExportAgent
+    role: SRE/Analytics
+    inputs_spec:
+      - name: compliance_progress_dashboard
+        description: Compliance progress dashboard for observability export.
+        format: Dashboard artifact
+    outputs_spec:
+      - name: compliance_observability_export
+        description: Exported pipeline metrics/KPIs for compliance validation to analytics/monitoring.
+        format: Export artifact
+    agent_tasks:
+      - Export pipeline metrics/KPIs to external analytics/monitoring.
+      - Flag any gaps in observability.
+    acceptance_criteria:
+      - Pipeline metrics/KPIs exported to analytics/monitoring.
+      - Gaps in observability are flagged.
+    dependencies:
+      - compliance_progress_dashboard
+    failure_escalation:
+      - Escalate to SRE/Analytics if metrics not exported or gaps missed.
+    references: []
+    hitl: false
+  - id: compliance_feedback_loop
+    agent: FeedbackLoopAgent
+    role: CI/CD Coach/Automation
+    inputs_spec:
+      - name: compliance_progress_dashboard
+        description: Compliance progress dashboard for collecting feedback.
+        format: Dashboard artifact
+    outputs_spec:
+      - name: compliance_feedback_items
+        description: Issues and improvement suggestions from compliance routed to Retrospective.
+        format: List of feedback items
+    agent_tasks:
+      - Route all issues and improvement suggestions to Retrospective.
+      - Track feedback for action and resolution.
+    acceptance_criteria:
+      - All issues and improvement suggestions are routed to Retrospective.
+      - Feedback is tracked for action and resolution.
+    dependencies:
+      - compliance_progress_dashboard
+    failure_escalation:
+      - Escalate to CI/CD coach if feedback is not acted on.
+    references: []
+    hitl: false
+  - id: compliance_notification_agent
+    agent: NotificationAgent
+    role: PMO Communications
+    inputs_spec:
+      - name: compliance_progress_dashboard
+        description: Compliance progress dashboard for notification triggers.
+        format: Dashboard artifact
+    outputs_spec:
+      - name: compliance_notifications
+        description: Notifications to compliance stakeholders on events and results.
+        format: List of notification objects
+    agent_tasks:
+      - Notify compliance stakeholders on key events and results.
+      - Log notification delivery for audit.
+    acceptance_criteria:
+      - Compliance stakeholders are notified on key events and results.
+      - Notification delivery is logged for audit.
+    dependencies:
+      - compliance_progress_dashboard
+    failure_escalation:
+      - Escalate to PMO if notifications not delivered or logged.
+    references: []
+    hitl: false
+  - id: compliance_audit_log_agent
+    agent: AuditLogAgent
+    role: Compliance Bot
+    inputs_spec:
+      - name: compliance_progress_dashboard
+        description: Compliance progress dashboard for audit logging.
+        format: Dashboard artifact
+      - name: compliance_notification_agent
+        description: Notification agent delivery log.
+        format: List of notification objects
+    outputs_spec:
+      - name: compliance_audit_log
+        description: Audit log of compliance actions, results, notifications.
+        format: Audit log artifact
+    agent_tasks:
+      - Log all compliance actions, results, notifications.
+      - Track approval/rejection and signoff.
+    acceptance_criteria:
+      - All compliance and regulatory actions, results, and notifications are logged.
+      - Approval/rejection and signoff are tracked.
+    dependencies:
+      - compliance_progress_dashboard
+      - compliance_notification_agent
+    failure_escalation:
+      - Escalate to compliance or audit lead if audit log is incomplete or inaccessible.
+    references: []
+    hitl: false
+  - id: compliance_policy_reconciliation
+    agent: PolicyReconciliationAgent
+    role: Compliance Automation
+    inputs_spec:
+      - name: compliance_progress_dashboard
+        description: Compliance progress dashboard for reconciliation triggers.
+        format: Dashboard artifact
+    outputs_spec:
+      - name: compliance_policy_recon_report
+        description: Report on compliance policy reconciliation actions and status.
+        format: Policy reconciliation report artifact
+    agent_tasks:
+      - Compare all live environment policies/configs to source of truth.
+      - Flag and report any drift to compliance.
+      - Assign remediation plans if mismatches found.
+    acceptance_criteria:
+      - All live environment policies/configs match source of truth.
+      - Drift is flagged and reported to compliance.
+      - Remediation plans assigned if mismatches found.
+    dependencies:
+      - compliance_progress_dashboard
+    failure_escalation:
+      - Escalate to compliance automation if drift/mismatches are not remediated.
+    references: []
+    hitl: false

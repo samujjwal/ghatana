@@ -1,0 +1,22 @@
+.PHONY: install dev build preview test docker-build docker-run
+
+install:
+npm install
+
+dev:
+npm run dev
+
+build:
+npm run build
+
+preview:
+npm run preview
+
+test:
+npm run test
+
+docker-build:
+docker build -t {{kebabCase projectName}} .
+
+docker-run:
+docker run -p 5173:5173 {{kebabCase projectName}}

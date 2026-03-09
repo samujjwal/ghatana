@@ -1,0 +1,242 @@
+/*
+ * Copyright (c) 2026 Ghatana Inc.
+ * All rights reserved.
+ *
+ * Generic Adaptive Agent (GAA) - Task State Contracts
+ * Version: 1.0.0
+ *
+ * Defines the task-state memory contracts for multi-session workflows.
+ * Supports phases, checkpoints, blockers, invariants, and resume reconciliation.
+ */
+syntax = "proto3";
+
+package ghatana.contracts.agent.v1;
+
+import "google/protobuf/timestamp.proto";
+import "google/protobuf/struct.proto";
+
+option go_package = "github.com/ghatana/contracts/gen/go/agent/v1;agentv1";
+option java_multiple_files = true;
+option java_package = "com.ghatana.contracts.agent.v1";
+option java_outer_classname = "TaskStateProtos";
+option csharp_namespace = "Ghatana.Contracts.Agent.V1";
+
+// ============================================================================
+// TASK STATE
+// ============================================================================
+
+message TaskStateProto {
+  string task_id = 1;
+  string tenant_id = 2;
+  string agent_id = 3;
+  string name = 4;
+  string description = 5;
+  TaskPhase current_phase = 6;
+  repeated TaskPhaseEntry phases = 7;
+  repeated CheckpointEntry checkpoints = 8;
+  repeated BlockerEntry blockers = 9;
+  repeated InvariantEntry invariants = 10;
+  DoneCriteriaEntry done_criteria = 11;
+  repeated TaskDependencyEntry dependencies = 12;
+  EnvironmentSnapshotEntry environment_snapshot = 13;
+  TaskLifecycleStatus status = 14;
+  google.protobuf.Timestamp created_at = 15;
+  google.protobuf.Timestamp updated_at = 16;
+  google.protobuf.Timestamp last_active_at = 17;
+  map<string, string> metadata = 18;
+}
+
+// ============================================================================
+// ENUMS
+// ============================================================================
+
+enum TaskPhase {
+  TASK_PHASE_UNSPECIFIED = 0;
+  TASK_PHASE_PLANNING = 1;
+  TASK_PHASE_EXECUTING = 2;
+  TASK_PHASE_REVIEWING = 3;
+  TASK_PHASE_COMPLETING = 4;
+}
+
+enum TaskLifecycleStatus {
+  TASK_LIFECYCLE_STATUS_UNSPECIFIED = 0;
+  TASK_LIFECYCLE_STATUS_CREATED = 1;
+  TASK_LIFECYCLE_STATUS_PLANNING = 2;
+  TASK_LIFECYCLE_STATUS_IN_PROGRESS = 3;
+  TASK_LIFECYCLE_STATUS_BLOCKED = 4;
+  TASK_LIFECYCLE_STATUS_PAUSED = 5;
+  TASK_LIFECYCLE_STATUS_COMPLETED = 6;
+  TASK_LIFECYCLE_STATUS_FAILED = 7;
+  TASK_LIFECYCLE_STATUS_ARCHIVED = 8;
+}
+
+enum DependencyType {
+  DEPENDENCY_TYPE_UNSPECIFIED = 0;
+  DEPENDENCY_TYPE_BLOCKS = 1;
+  DEPENDENCY_TYPE_INFORMS = 2;
+}
+
+enum DependencyStatus {
+  DEPENDENCY_STATUS_UNSPECIFIED = 0;
+  DEPENDENCY_STATUS_PENDING = 1;
+  DEPENDENCY_STATUS_SATISFIED = 2;
+  DEPENDENCY_STATUS_FAILED = 3;
+}
+
+// ============================================================================
+// NESTED MESSAGES
+// ============================================================================
+
+message TaskPhaseEntry {
+  string id = 1;
+  string name = 2;
+  string description = 3;
+  string status = 4;
+  int32 ordinal = 5;
+  string estimated_effort = 6;
+  string actual_effort = 7;
+  google.protobuf.Timestamp started_at = 8;
+  google.protobuf.Timestamp completed_at = 9;
+}
+
+message CheckpointEntry {
+  string id = 1;
+  string phase_id = 2;
+  google.protobuf.Struct snapshot = 3;
+  google.protobuf.Timestamp created_at = 4;
+  string description = 5;
+  bool is_restorable = 6;
+}
+
+message BlockerEntry {
+  string id = 1;
+  string description = 2;
+  string severity = 3;
+  google.protobuf.Timestamp reported_at = 4;
+  google.protobuf.Timestamp resolved_at = 5;
+  string resolution = 6;
+}
+
+message InvariantEntry {
+  string id = 1;
+  string description = 2;
+  string check_expression = 3;
+  google.protobuf.Timestamp last_checked_at = 4;
+  bool satisfied = 5;
+}
+
+message DoneCriteriaEntry {
+  repeated CriterionEntry criteria = 1;
+  bool all_required = 2;
+}
+
+message CriterionEntry {
+  string id = 1;
+  string description = 2;
+  bool satisfied = 3;
+  google.protobuf.Timestamp satisfied_at = 4;
+}
+
+message TaskDependencyEntry {
+  string depends_on_task_id = 1;
+  DependencyType type = 2;
+  DependencyStatus status = 3;
+}
+
+message EnvironmentSnapshotEntry {
+  google.protobuf.Timestamp captured_at = 1;
+  map<string, string> properties = 2;
+  map<string, string> checksums = 3;
+}
+
+// ============================================================================
+// TASK STATE SERVICE
+// ============================================================================
+
+service TaskStateService {
+  rpc CreateTask(CreateTaskRequest) returns (TaskStateProto);
+  rpc GetTask(GetTaskRequest) returns (TaskStateProto);
+  rpc UpdatePhase(UpdatePhaseRequest) returns (TaskStateProto);
+  rpc AddCheckpoint(AddCheckpointRequest) returns (CheckpointEntry);
+  rpc ReportBlocker(ReportBlockerRequest) returns (BlockerEntry);
+  rpc ResolveBlocker(ResolveBlockerRequest) returns (BlockerEntry);
+  rpc ReconcileOnResume(ReconcileRequest) returns (ReconcileResponse);
+  rpc ArchiveTask(ArchiveTaskRequest) returns (ArchiveTaskResponse);
+}
+
+// ============================================================================
+// SERVICE MESSAGES
+// ============================================================================
+
+message CreateTaskRequest {
+  string tenant_id = 1;
+  string agent_id = 2;
+  string name = 3;
+  string description = 4;
+  repeated TaskPhaseEntry phases = 5;
+  DoneCriteriaEntry done_criteria = 6;
+}
+
+message GetTaskRequest {
+  string tenant_id = 1;
+  string task_id = 2;
+}
+
+message UpdatePhaseRequest {
+  string tenant_id = 1;
+  string task_id = 2;
+  string phase_id = 3;
+  string status = 4;
+}
+
+message AddCheckpointRequest {
+  string tenant_id = 1;
+  string task_id = 2;
+  string description = 3;
+  google.protobuf.Struct snapshot = 4;
+}
+
+message ReportBlockerRequest {
+  string tenant_id = 1;
+  string task_id = 2;
+  string description = 3;
+  string severity = 4;
+}
+
+message ResolveBlockerRequest {
+  string tenant_id = 1;
+  string task_id = 2;
+  string blocker_id = 3;
+  string resolution = 4;
+}
+
+message ReconcileRequest {
+  string tenant_id = 1;
+  string task_id = 2;
+  EnvironmentSnapshotEntry current_environment = 3;
+}
+
+message ReconcileResponse {
+  repeated ConflictEntry conflicts = 1;
+  int32 auto_resolved = 2;
+  bool requires_human_review = 3;
+  repeated string recommendations = 4;
+}
+
+message ConflictEntry {
+  string field = 1;
+  string stored_value = 2;
+  string current_value = 3;
+  string severity = 4;
+  bool auto_resolvable = 5;
+}
+
+message ArchiveTaskRequest {
+  string tenant_id = 1;
+  string task_id = 2;
+}
+
+message ArchiveTaskResponse {
+  bool archived = 1;
+  google.protobuf.Timestamp archived_at = 2;
+}

@@ -1,0 +1,29 @@
+---
+id: "code_quality_gate"
+agent: "CodeQualityGateAgent"
+role: "Static Analysis/CI Tool"
+inputs_spec:
+- name: "modularized_codebase"
+  description: "Codebase to check for code quality."
+  format: "Source repo or artifact reference"
+outputs_spec:
+- name: "code_quality_passed"
+  description: "Code quality status after static analysis and QA signoff."
+  format: "Boolean flag or code quality report"
+agent_tasks:
+- "Run static analysis and code quality checks."
+- "Confirm code coverage meets/exceeds threshold."
+- "Confirm no critical/blocker-level issues remain."
+- "Ensure QA signoff is recorded."
+acceptance_criteria:
+- "Static analysis and code quality checks pass."
+- "Code coverage meets or exceeds the threshold."
+- "No critical or blocker-level issues remain."
+- "QA signoff is recorded."
+dependencies:
+- "modularized_codebase"
+failure_escalation:
+- "Escalate to QA Lead if critical issues remain after static analysis."
+references: []
+hitl: true
+hitl_reason: "Human reviews code quality gate output for false negatives/positives"

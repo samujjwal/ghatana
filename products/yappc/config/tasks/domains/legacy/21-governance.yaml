@@ -1,0 +1,276 @@
+# Governance Tasks
+# Domain 21 of 22 - Developer Task Universe
+# Reference: developer-tasks.md Part I, Section 21
+
+domain:
+  id: governance
+  name: "Governance"
+  description: "Tasks related to decision tracking, approvals, and compliance"
+  order: 21
+  icon: "gavel"
+  color: "#5D4037"
+  lifecycle_stages:
+    - institutionalize
+
+tasks:
+  - id: gov-001
+    name: "Track Technical Decisions"
+    description: "Record and track important technical decisions"
+    personas:
+      - Tech Lead
+      - Developer
+    lifecycle_stages:
+      - institutionalize
+    automation_level: assisted
+    required_capabilities:
+      - documentation
+      - decision-tracking
+    input_schema: gov-001-input
+    output_schema: gov-001-output
+    audit_artifacts:
+      - InputSnapshot
+      - OutputSnapshot
+      - DecisionRecord
+    ui:
+      icon: "fact_check"
+      color: "#5D4037"
+      tags:
+        - decisions
+        - tracking
+        - governance
+
+  - id: gov-002
+    name: "Manage Change Requests"
+    description: "Handle and track change requests"
+    personas:
+      - Tech Lead
+      - PM
+    lifecycle_stages:
+      - plan
+      - execute
+    automation_level: assisted
+    required_capabilities:
+      - change-management
+      - tracking
+    input_schema: gov-002-input
+    output_schema: gov-002-output
+    audit_artifacts:
+      - InputSnapshot
+      - OutputSnapshot
+      - ChangeRequest
+    ui:
+      icon: "swap_horiz"
+      color: "#5D4037"
+      tags:
+        - changes
+        - requests
+        - management
+
+  - id: gov-003
+    name: "Approval Workflows"
+    description: "Manage approval processes for changes"
+    personas:
+      - Tech Lead
+      - PM
+    lifecycle_stages:
+      - verify
+    automation_level: assisted
+    required_capabilities:
+      - workflow-management
+      - approvals
+    input_schema: gov-003-input
+    output_schema: gov-003-output
+    audit_artifacts:
+      - InputSnapshot
+      - OutputSnapshot
+      - ApprovalRecord
+    ui:
+      icon: "approval"
+      color: "#5D4037"
+      tags:
+        - approvals
+        - workflows
+        - governance
+
+  - id: gov-004
+    name: "Compliance Auditing"
+    description: "Ensure compliance with standards and regulations"
+    personas:
+      - Security
+      - Tech Lead
+    lifecycle_stages:
+      - verify
+    automation_level: assisted
+    required_capabilities:
+      - compliance
+      - auditing
+    input_schema: gov-004-input
+    output_schema: gov-004-output
+    audit_artifacts:
+      - InputSnapshot
+      - OutputSnapshot
+      - ComplianceReport
+      - AuditRecord
+    ui:
+      icon: "policy"
+      color: "#5D4037"
+      tags:
+        - compliance
+        - auditing
+        - regulations
+
+  - id: gov-005
+    name: "Risk Management"
+    description: "Identify, assess, and mitigate risks"
+    personas:
+      - Tech Lead
+      - PM
+    lifecycle_stages:
+      - plan
+      - observe
+    automation_level: assisted
+    required_capabilities:
+      - risk-assessment
+      - mitigation
+    input_schema: gov-005-input
+    output_schema: gov-005-output
+    audit_artifacts:
+      - InputSnapshot
+      - OutputSnapshot
+      - RiskRegister
+    ui:
+      icon: "warning"
+      color: "#5D4037"
+      tags:
+        - risks
+        - assessment
+        - mitigation
+
+  - id: gov-006
+    name: "Access Control Management"
+    description: "Manage access permissions and controls"
+    personas:
+      - Security
+      - DevOps
+    lifecycle_stages:
+      - execute
+    automation_level: assisted
+    required_capabilities:
+      - access-control
+      - security
+    input_schema: gov-006-input
+    output_schema: gov-006-output
+    audit_artifacts:
+      - InputSnapshot
+      - OutputSnapshot
+      - AccessRecord
+    ui:
+      icon: "admin_panel_settings"
+      color: "#5D4037"
+      tags:
+        - access
+        - permissions
+        - security
+
+  - id: gov-007
+    name: "Policy Enforcement"
+    description: "Enforce organizational policies"
+    personas:
+      - Security
+      - Tech Lead
+    lifecycle_stages:
+      - verify
+    automation_level: automated
+    required_capabilities:
+      - policy-enforcement
+      - automation
+    input_schema: gov-007-input
+    output_schema: gov-007-output
+    audit_artifacts:
+      - InputSnapshot
+      - OutputSnapshot
+      - PolicyCheck
+    ui:
+      icon: "verified"
+      color: "#5D4037"
+      tags:
+        - policies
+        - enforcement
+        - automation
+
+  - id: gov-008
+    name: "License Compliance"
+    description: "Ensure compliance with software licenses"
+    personas:
+      - Developer
+      - Tech Lead
+    lifecycle_stages:
+      - verify
+    automation_level: automated
+    required_capabilities:
+      - license-analysis
+      - compliance
+    input_schema: gov-008-input
+    output_schema: gov-008-output
+    audit_artifacts:
+      - InputSnapshot
+      - OutputSnapshot
+      - LicenseReport
+    ui:
+      icon: "copyright"
+      color: "#5D4037"
+      tags:
+        - licenses
+        - compliance
+        - legal
+
+  - id: gov-009
+    name: "Audit Trail Maintenance"
+    description: "Maintain audit trails for compliance"
+    personas:
+      - DevOps
+      - Security
+    lifecycle_stages:
+      - observe
+      - institutionalize
+    automation_level: automated
+    required_capabilities:
+      - logging
+      - auditing
+    input_schema: gov-009-input
+    output_schema: gov-009-output
+    audit_artifacts:
+      - AuditTrail
+    ui:
+      icon: "history"
+      color: "#5D4037"
+      tags:
+        - audit-trail
+        - compliance
+        - tracking
+
+  - id: gov-010
+    name: "Standards Compliance"
+    description: "Ensure adherence to coding and industry standards"
+    personas:
+      - Developer
+      - Tech Lead
+    lifecycle_stages:
+      - verify
+    automation_level: assisted
+    required_capabilities:
+      - standards
+      - code-analysis
+    input_schema: gov-010-input
+    output_schema: gov-010-output
+    audit_artifacts:
+      - InputSnapshot
+      - OutputSnapshot
+      - StandardsReport
+    ui:
+      icon: "assignment_turned_in"
+      color: "#5D4037"
+      tags:
+        - standards
+        - compliance
+        - quality

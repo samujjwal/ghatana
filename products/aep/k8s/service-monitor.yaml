@@ -1,0 +1,19 @@
+apiVersion: monitoring.coreos.com/v1
+kind: ServiceMonitor
+metadata:
+  name: aep-service-manager
+  namespace: aep
+  labels:
+    app: aep-service-manager
+    app.kubernetes.io/name: aep-service-manager
+    app.kubernetes.io/part-of: ghatana-aep
+    release: prometheus
+spec:
+  selector:
+    matchLabels:
+      app: aep-service-manager
+  endpoints:
+    - port: http-health
+      path: /metrics
+      interval: 30s
+      scrapeTimeout: 10s

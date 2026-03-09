@@ -1,0 +1,135 @@
+id: master-orchestrator-agent
+name: Master Orchestrator Agent
+version: 1.0.0
+description: Top-level orchestrator coordinating all SDLC phases. Routes requests to phase orchestrators, manages phase transitions, ensures end-to-end flow.
+
+metadata:
+  level: 1  # Strategic Orchestrator
+  domain: orchestration
+  tags:
+    - master-orchestration
+    - phase-coordination
+    - workflow-management
+    - always-on
+
+generator:
+  type: PIPELINE
+  steps:
+    - name: request_classification
+      type: RULE_BASED
+      description: Classify request type and determine target phase(s)
+    - name: orchestration_planning
+      type: LLM
+      provider: ANTHROPIC
+      model: claude-3-5-sonnet-20241022
+      temperature: 0.2
+      max_tokens: 2000
+      prompt: |
+        You are the Master Orchestrator Agent. Plan execution for this request:
+        
+        Request: {{input}}
+        Current Phase: {{current_phase}}
+        Project Context: {{context}}
+        
+        Determine:
+        1. Target phase(s) (Ideation, Planning, Requirements, Architecture, Delivery, Build, Test, Release, Operations, Learning, Enhancement, Scaling)
+        2. Phase sequence (parallel, sequential, conditional)
+        3. Phase orchestrator(s) to delegate to
+        4. Success criteria
+        5. Risk factors
+        
+        Output as JSON: {target_phases, sequence, orchestrators, criteria, risks, execution_plan}
+    - name: delegation
+      type: SERVICE_CALL
+      service: agent-registry
+      endpoint: /agents/delegate
+    - name: progress_monitoring
+      type: RULE_BASED
+      description: Track execution and handle phase transitions
+
+memory:
+  episodic:
+    enabled: true
+    retention_days: 365
+    categories:
+      - orchestration-runs
+      - phase-transitions
+      - execution-outcomes
+  semantic:
+    enabled: true
+    categories:
+      - phase-dependencies
+      - workflow-patterns
+      - orchestration-strategies
+  procedural:
+    enabled: true
+    categories:
+      - routing-rules
+      - delegation-policies
+      - transition-protocols
+
+tools:
+  - phase_router
+  - agent_delegator
+  - progress_tracker
+
+capabilities:
+  - request-classification
+  - multi-phase-orchestration
+  - phase-transition-management
+  - delegation-coordination
+  - progress-monitoring
+
+routing:
+  input_types:
+    - user-request
+    - product-initiative
+    - system-task
+    - escalated-task
+  output_types:
+    - orchestration-plan
+    - execution-result
+    - phase-transition-event
+
+delegation:
+  can_delegate_to:
+    # Phase Orchestrators
+    - ideation-orchestrator-agent
+    - planning-orchestrator-agent
+    - requirements-orchestrator-agent
+    - architecture-orchestrator-agent
+    - delivery-orchestrator-agent
+    - build-orchestrator-agent
+    - testing-orchestrator-agent
+    - release-orchestrator-agent
+    - operations-orchestrator-agent
+    - debug-orchestrator
+    - learning-orchestrator-agent
+    - enhancement-orchestrator-agent
+    - scaling-orchestrator-agent
+    - improve-orchestrator
+    - deploy-orchestrator
+    # Cross-cutting Experts
+    - documentation-orchestrator
+    - code-review-orchestrator
+    - incident-management-orchestrator
+    - migration-planner
+    - test-strategist
+    # Meta/Governance Agents
+    - phase-router-agent
+    - human-in-the-loop-coordinator
+    - cost-governor-agent
+    - cross-phase-knowledge-bridge-agent
+    - policy-guard-agent
+  escalates_to:
+    - mission-alignment-agent
+
+governance:
+  requires_approval: false
+  can_block: false
+  audit_trail: comprehensive
+
+performance:
+  expected_latency_ms: 2000
+  max_latency_ms: 6000
+  timeout_ms: 10000

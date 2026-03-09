@@ -1,0 +1,149 @@
+# QA Department Configuration
+# Part of Software-Org plugin for Virtual-Org framework
+
+apiVersion: virtualorg.ghatana.com/v1
+kind: Department
+metadata:
+  name: qa
+  labels:
+    category: technical
+    cost-center: "QA-001"
+
+spec:
+  displayName: "Quality Assurance"
+  type: QA
+  description: |
+    Quality assurance and testing department responsible for ensuring software
+    quality through manual and automated testing, test planning, and defect
+    management. Works closely with Engineering for quality gates.
+
+  hierarchy:
+    parent: null
+    reportingTo: cto-agent
+    children: []
+
+  settings:
+    maxAgents: 20
+    autoScaleAgents: false
+    taskAssignment:
+      strategy: capability-match
+      loadBalancing: true
+      maxTasksPerAgent: 8
+
+  agents:
+    - ref: agents/qa-lead-agent.yaml
+    - ref: agents/qa-engineer-agent.yaml
+    - ref: agents/automation-engineer-agent.yaml
+
+  workflows:
+    - name: test-execution
+      displayName: "Test Execution Workflow"
+      steps:
+        - name: test-planning
+          agent: qa-lead
+          action: create_test_plan
+          timeout: PT4H
+        - name: test-case-creation
+          agent: qa-engineer
+          action: create_test_cases
+          timeout: PT8H
+          waitFor: [test-planning]
+        - name: test-execution
+          agent: qa-engineer
+          action: execute_tests
+          timeout: PT16H
+          waitFor: [test-case-creation]
+        - name: defect-logging
+          agent: qa-engineer
+          action: log_defects
+          timeout: PT4H
+          waitFor: [test-execution]
+        - name: test-report
+          agent: qa-lead
+          action: generate_test_report
+          timeout: PT2H
+          waitFor: [defect-logging]
+
+  kpis:
+    - name: defect_detection_rate
+      displayName: "Defect Detection Rate"
+      type: percentage
+      target: 95
+      warningThreshold: 90
+      criticalThreshold: 85
+
+    - name: defect_escape_rate
+      displayName: "Defect Escape Rate"
+      type: percentage
+      target: 2
+      warningThreshold: 5
+      criticalThreshold: 10
+
+    - name: test_coverage
+      displayName: "Test Coverage"
+      type: percentage
+      target: 90
+      warningThreshold: 80
+      criticalThreshold: 70
+
+    - name: automation_coverage
+      displayName: "Test Automation Coverage"
+      type: percentage
+      target: 80
+      warningThreshold: 60
+      criticalThreshold: 40
+
+    - name: test_cycle_time
+      displayName: "Test Cycle Time"
+      type: duration
+      unit: hours
+      target: 24
+      warningThreshold: 48
+      criticalThreshold: 72
+
+  taskTypes:
+    - name: feature_testing
+      priority: normal
+      slaHours: 24
+      requiredCapabilities: [manual_testing, test_planning]
+
+    - name: regression_testing
+      priority: high
+      slaHours: 16
+      requiredCapabilities: [automated_testing, manual_testing]
+
+    - name: bug_verification
+      priority: high
+      slaHours: 4
+      requiredCapabilities: [manual_testing]
+
+    - name: performance_testing
+      priority: normal
+      slaHours: 40
+      requiredCapabilities: [performance_testing, load_testing]
+
+    - name: security_testing
+      priority: high
+      slaHours: 24
+      requiredCapabilities: [security_testing, penetration_testing]
+
+  subscriptions:
+    - event: feature_completed
+      source: engineering
+      action: initiate_testing
+    - event: deployment_ready
+      source: devops
+      action: smoke_testing
+    - event: hotfix_deployed
+      source: devops
+      action: quick_verification
+
+  publications:
+    - event: testing_completed
+      targets: [devops, product]
+    - event: bug_reported
+      targets: [engineering]
+    - event: quality_gate_passed
+      targets: [devops]
+    - event: quality_gate_failed
+      targets: [engineering, product]

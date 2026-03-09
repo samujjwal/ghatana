@@ -1,0 +1,14 @@
+.PHONY: build test pack clean
+
+build:
+dotnet build
+
+test:
+dotnet test
+
+pack:
+dotnet pack
+
+clean:
+dotnet clean
+rm -rf bin/ obj/

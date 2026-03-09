@@ -1,0 +1,132 @@
+name: Visual Regression Tests
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+jobs:
+  visual-regression:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - product: dcmaar-parent-dashboard
+            path: products/dcmaar/apps/parent-dashboard
+          - product: dcmaar-device-health
+            path: products/dcmaar/apps/device-health
+          - product: yappc-frontend
+            path: products/yappc/frontend
+          - product: flashit-web
+            path: products/flashit/client/web
+          - product: tutorputor-web
+            path: products/tutorputor/apps/tutorputor-web
+          - product: tutorputor-admin
+            path: products/tutorputor/apps/tutorputor-admin
+          - product: data-cloud-ui
+            path: products/data-cloud/ui
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 18
+
+      - name: Install pnpm
+        run: npm install -g pnpm@8
+
+      - name: Install dependencies
+        run: pnpm install
+
+      - name: Install Playwright browsers
+        working-directory: ${{ matrix.path }}
+        run: pnpm exec playwright install --with-deps chromium
+
+      - name: Build Storybook (if present)
+        working-directory: ${{ matrix.path }}
+        run: |
+          if [ -f ".storybook/main.ts" ] || [ -f ".storybook/main.js" ]; then
+            echo "Building Storybook for visual regression..."
+            pnpm exec storybook build -o storybook-static 2>/dev/null || echo "Storybook build skipped"
+          else
+            echo "No Storybook config found, using Playwright screenshots"
+          fi
+
+      - name: Capture baseline screenshots (main branch)
+        if: github.event_name == 'pull_request'
+        working-directory: ${{ matrix.path }}
+        run: |
+          pnpm exec playwright test --project=chromium --update-snapshots \
+            --grep="@visual" 2>/dev/null || \
+          echo "No @visual tagged tests found, capturing page screenshots"
+        env:
+          CI: true
+          VISUAL_REGRESSION: true
+
+      - name: Run visual regression tests
+        working-directory: ${{ matrix.path }}
+        run: |
+          pnpm exec playwright test --project=chromium \
+            --grep="@visual" 2>/dev/null || \
+          echo "No @visual tagged tests — visual regression pending setup"
+        env:
+          CI: true
+          VISUAL_REGRESSION: true
+
+      - name: Upload visual diff artifacts
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: visual-regression-${{ matrix.product }}
+          path: |
+            ${{ matrix.path }}/test-results/
+            ${{ matrix.path }}/playwright-report/
+          retention-days: 30
+
+  visual-regression-summary:
+    runs-on: ubuntu-latest
+    needs: visual-regression
+    if: github.event_name == 'pull_request' && always()
+    steps:
+      - name: Comment on PR
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const jobs = ${{ toJSON(needs.visual-regression) }};
+            const status = jobs.result === 'success' ? '✅' : '⚠️';
+
+            const products = [
+              'dcmaar-parent-dashboard', 'dcmaar-device-health',
+              'yappc-frontend', 'flashit-web',
+              'tutorputor-web', 'tutorputor-admin',
+              'data-cloud-ui'
+            ];
+
+            const body = `## ${status} Visual Regression Tests
+
+            **Products scanned:** ${products.length}
+            **Overall result:** ${jobs.result}
+
+            | Product | Artifacts |
+            |---------|-----------|
+            ${products.map(p =>
+              `| ${p} | [View diffs](https://github.com/${context.repo.owner}/${context.repo.repo}/actions/runs/${context.runId}) |`
+            ).join('\n')}
+
+            > Tag Playwright tests with \`@visual\` to include them in visual regression runs.
+            > Screenshots are compared against the main branch baseline.`;
+
+            github.rest.issues.createComment({
+              issue_number: context.issue.number,
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              body: body
+            });

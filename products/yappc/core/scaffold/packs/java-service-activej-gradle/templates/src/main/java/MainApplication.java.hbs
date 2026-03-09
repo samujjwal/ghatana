@@ -1,0 +1,114 @@
+package {{packageName}};
+
+import io.activej.boot.Launcher;
+import io.activej.http.AsyncServlet;
+import io.activej.http.HttpRequest;
+import io.activej.http.HttpResponse;
+import io.activej.http.RoutingServlet;
+import io.activej.http.loader.StaticLoader;
+import io.activej.inject.annotation.Provides;
+import io.activej.launchers.http.HttpServerLauncher;
+import io.activej.promise.Promises;
+{{#if enableOtel}}
+import io.opentelemetry.instrumentation.annotations.WithSpan;
+{{/if}}
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
+import java.util.Map;
+import java.util.concurrent.Executor;
+
+import static io.activej.http.HttpMethod.GET;
+import static io.activej.http.HttpMethod.POST;
+
+/**
+ * {{serviceName}} - ActiveJ-based microservice
+ * 
+ * This is the main application class that bootstraps the ActiveJ HTTP server
+ * with dependency injection and routing configuration.
+ */
+public final class {{className}} extends HttpServerLauncher {
+    private static final Logger logger = LoggerFactory.getLogger({{className}}.class);
+
+    @Provides
+    AsyncServlet servlet(Executor executor) {
+        return RoutingServlet.create()
+            .map(GET, "/", this::handleRoot)
+            .map(GET, "/health", this::handleHealth)
+            .map(GET, "/metrics", this::handleMetrics)
+            .map(POST, "/api/echo", this::handleEcho)
+            .map("/*", StaticLoader.ofClassPath(executor, "static/")
+                .withIndexHtml()
+                .toServlet());
+    }
+
+{{#if enableOtel}}
+    @WithSpan("handle-root")
+{{/if}}
+    private HttpResponse handleRoot() {
+        logger.info("Handling root request");
+        return HttpResponse.ok200()
+            .withPlainText("Welcome to {{serviceName}}!\n\n" +
+                          "Available endpoints:\n" +
+                          "  GET  /         - This welcome message\n" +
+                          "  GET  /health   - Health check\n" +
+                          "  GET  /metrics  - Application metrics\n" +
+                          "  POST /api/echo - Echo service\n");
+    }
+
+{{#if enableOtel}}
+    @WithSpan("handle-health")
+{{/if}}
+    private HttpResponse handleHealth() {
+        logger.debug("Health check requested");
+        Map<String, Object> health = Map.of(
+            "status", "UP",
+            "service", "{{serviceName}}",
+            "version", "1.0.0",
+            "timestamp", System.currentTimeMillis()
+        );
+        return HttpResponse.ok200().withJson(health);
+    }
+
+{{#if enableOtel}}
+    @WithSpan("handle-metrics")
+{{/if}}
+    private HttpResponse handleMetrics() {
+        logger.debug("Metrics requested");
+        Map<String, Object> metrics = Map.of(
+            "requests_total", 100, // Mock metric
+            "response_time_ms", 50, // Mock metric
+            "memory_used_mb", Runtime.getRuntime().totalMemory() / 1024 / 1024,
+            "memory_free_mb", Runtime.getRuntime().freeMemory() / 1024 / 1024
+        );
+        return HttpResponse.ok200().withJson(metrics);
+    }
+
+{{#if enableOtel}}
+    @WithSpan("handle-echo")
+{{/if}}
+    private HttpResponse handleEcho(HttpRequest request) {
+        logger.info("Echo request received");
+        return request.loadBody()
+            .map(body -> {
+                Map<String, Object> echo = Map.of(
+                    "method", request.getMethod().toString(),
+                    "path", request.getPath(),
+                    "headers", request.getHeaders().asMap(),
+                    "body", body.asString(),
+                    "timestamp", System.currentTimeMillis()
+                );
+                return HttpResponse.ok200().withJson(echo);
+            })
+            .whenException(e -> {
+                logger.error("Error processing echo request", e);
+                return HttpResponse.ofCode(500).withPlainText("Internal Server Error");
+            });
+    }
+
+    public static void main(String[] args) throws Exception {
+        logger.info("Starting {{serviceName}}...");
+        {{className}} launcher = new {{className}}();
+        launcher.launch(args);
+    }
+}

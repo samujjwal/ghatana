@@ -1,0 +1,78 @@
+syntax = "proto3";
+
+package ghatana.contracts.learning.v1;
+
+import "google/protobuf/timestamp.proto";
+import "ghatana/contracts/common/v1/common.proto";
+import "ghatana/contracts/common/v1/policy.proto";
+
+option java_package = "com.ghatana.contracts.learning.v1";
+option java_outer_classname = "RedactionProtos";
+option java_multiple_files = true;
+
+// RedactionRuleProto defines how to redact sensitive data for LLM processing
+message RedactionRuleProto {
+  reserved 1000 to max;
+  reserved "reserved_field";
+
+  // Rule identification
+  string rule_id = 1;
+  string name = 2;
+  string description = 3;
+
+  // Classification and scope
+  ghatana.contracts.common.v1.DataClassificationProto data_classification = 4;
+  repeated string field_patterns = 5;  // JSONPath-style patterns to match fields
+
+  // Redaction behavior
+  RedactionTypeProto redaction_type = 6;
+  string replacement_value = 7;  // Value to use for REPLACE type
+  bool preserve_length = 8;      // Maintain original field length
+  bool preserve_format = 9;      // Maintain format patterns (e.g., phone numbers)
+
+  // Context preservation for LLM
+  string semantic_label = 10;    // Label to preserve semantic meaning (e.g., "EMAIL_ADDRESS")
+  bool preserve_structure = 11;  // Keep JSON structure but redact values
+  
+  // Metadata
+  google.protobuf.Timestamp created_at = 12;
+  string created_by = 13;
+  bool enabled = 14;
+}
+
+// RedactionTypeProto defines how to redact matched data
+enum RedactionTypeProto {
+  REDACTION_TYPE_UNSPECIFIED = 0;
+  REMOVE = 1;       // Remove field completely
+  MASK = 2;         // Replace with asterisks/X's
+  REPLACE = 3;      // Replace with specified value
+  HASH = 4;         // Replace with hash of original value
+  TOKENIZE = 5;     // Replace with semantic token
+  SUMMARIZE = 6;    // Replace with summary/category
+}
+
+// RedactionConfigProto contains redaction configuration for pattern types
+message RedactionConfigProto {
+  reserved 1000 to max;
+  reserved "reserved_field";
+
+  string config_id = 1;
+  string pattern_type = 2;  // Pattern type this config applies to
+  
+  repeated RedactionRuleProto rules = 3;
+  repeated string allowed_fields = 4;     // Whitelist of allowed fields
+  repeated string required_fields = 5;    // Fields required for LLM analysis
+  
+  // Size limits for LLM processing
+  int32 max_payload_size = 6;     // Maximum payload size in bytes
+  int32 max_field_count = 7;      // Maximum number of fields
+  int32 max_array_elements = 8;   // Maximum elements in arrays
+  
+  // Feature extraction settings
+  bool include_schema_info = 9;     // Include schema metadata
+  bool include_statistics = 10;    // Include field statistics
+  string summary_template = 11;    // Template for generating summaries
+  
+  google.protobuf.Timestamp updated_at = 12;
+  string updated_by = 13;
+}

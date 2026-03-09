@@ -1,0 +1,41 @@
+id: schema-validation-agent
+name: Schema Validation Agent
+version: 1.0.0
+description: Validates JSON, XML, and Protobuf data against schemas with detailed error reporting
+
+metadata:
+  level: 3
+  domain: data-processing
+  tags: [validation, schema, json, xml, protobuf, data-quality]
+
+generator:
+  type: DETERMINISTIC
+
+capabilities:
+  - json-schema-validation
+  - data-validation
+
+tools:
+  - name: jsonSchemaValidator
+    type: SERVICE
+    endpoint: /platform/validation/json
+  - name: xmlSchemaValidator
+    type: SERVICE
+    endpoint: /platform/validation/xml
+  - name: protobufValidator
+    type: SERVICE
+    endpoint: /platform/validation/protobuf
+
+memory:
+  type: WORKING
+  scope: schema_cache
+  retention: short
+
+routing:
+  input: ValidationRequest
+  output: ValidationResult
+
+resources:
+  memory: "512MB"
+  cpu: "1"
+  timeout: "30s"

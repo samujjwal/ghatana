@@ -1,0 +1,26 @@
+---
+id: "deploy_kpi_agent"
+agent: "StageKPIAgent"
+role: "Deploy KPI Analyst"
+inputs_spec:
+- name: "deploy_stage_milestone"
+  description: "Deployment stage milestone for KPI tracking."
+  format: "List of milestone objects"
+outputs_spec:
+- name: "deploy_kpi_report"
+  description: "Deploy KPI report."
+  format: "KPI report artifact"
+agent_tasks:
+- "Track deployment frequency, lead time, success/failure, MTTR, rollback events."
+- "Flag anomalies/trends."
+- "Ensure KPI data traceable to logs/artifacts."
+acceptance_criteria:
+- "All KPIs tracked and flagged."
+- "KPI data traceable to logs/artifacts."
+- "Trends/anomalies flagged for review."
+dependencies:
+- "deploy_stage_milestone"
+failure_escalation:
+- "Escalate to KPI Analyst if KPIs missing or not updated."
+references: []
+hitl: false

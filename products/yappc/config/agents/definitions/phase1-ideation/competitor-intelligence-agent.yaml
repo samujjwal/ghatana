@@ -1,0 +1,106 @@
+id: competitor-intelligence-agent
+name: Competitor Intelligence Agent
+version: 1.0.0
+description: Gathers and analyzes competitive intelligence. Monitors competitor products, pricing, positioning, and strategies.
+
+metadata:
+  level: 3  # Worker
+  domain: ideation
+  tags:
+    - competitive-intelligence
+    - competitor-analysis
+    - market-positioning
+    - strategic-intelligence
+
+generator:
+  type: PIPELINE
+  steps:
+    - name: competitor_data_collection
+      type: SERVICE_CALL
+      service: competitive-intel-service
+      endpoint: /competitors/data
+    - name: competitive_analysis
+      type: LLM
+      provider: ANTHROPIC
+      model: claude-3-5-sonnet-20241022
+      temperature: 0.2
+      max_tokens: 3000
+      prompt: |
+        You are the Competitor Intelligence Agent. Analyze competitors:
+        
+        Competitors: {{competitors}}
+        Data: {{data}}
+        Focus: {{focus}}
+        
+        For each competitor analyze:
+        1. Product/service offering
+        2. Pricing and packaging
+        3. Target segments
+        4. Positioning and messaging
+        5. Strengths and weaknesses
+        6. Recent moves and launches
+        7. Strategic direction
+        8. Differentiation opportunities
+        
+        Output as JSON: {competitors: [{name, offering, pricing, segments, positioning, strengths, weaknesses, recent_moves, direction}], differentiation_opportunities, strategic_implications}
+    - name: battle_card_generation
+      type: TEMPLATE
+      template_path: templates/competitor-battle-card.ftl
+
+memory:
+  episodic:
+    enabled: true
+    retention_days: 365
+    categories:
+      - competitor-analyses
+      - intel-reports
+      - competitive-moves
+  semantic:
+    enabled: true
+    categories:
+      - competitor-profiles
+      - positioning-maps
+      - differentiation-strategies
+  procedural:
+    enabled: true
+    categories:
+      - intel-gathering-methods
+      - analysis-frameworks
+      - battle-card-templates
+
+tools:
+  - web_scraper
+  - product_analyzer
+  - pricing_tracker
+
+capabilities:
+  - competitive-monitoring
+  - product-analysis
+  - pricing-intelligence
+  - positioning-analysis
+  - battle-card-generation
+
+routing:
+  input_types:
+    - competitor-analysis-request
+    - competitive-monitoring
+    - positioning-research
+  output_types:
+    - competitor-report
+    - battle-card
+    - positioning-analysis
+
+delegation:
+  can_delegate_to: []
+  escalates_to:
+    - market-scan-agent
+
+governance:
+  requires_approval: false
+  can_block: false
+  audit_trail: standard
+
+performance:
+  expected_latency_ms: 8000
+  max_latency_ms: 20000
+  timeout_ms: 40000

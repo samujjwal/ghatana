@@ -1,0 +1,27 @@
+{
+  "id": "guides/custom-components",
+  "title": "Custom Components",
+  "description": "Documentation coming soon.",
+  "source": "@site/docs/guides/custom-components.md",
+  "sourceDirName": "guides",
+  "slug": "/guides/custom-components",
+  "permalink": "/docs/guides/custom-components",
+  "draft": false,
+  "unlisted": false,
+  "editUrl": "https://github.com/yappc/app-creator/tree/main/docs-site/docs/guides/custom-components.md",
+  "tags": [],
+  "version": "current",
+  "sidebarPosition": 1,
+  "frontMatter": {
+    "sidebar_position": 1
+  },
+  "sidebar": "guidesSidebar",
+  "previous": {
+    "title": "Building Plugins",
+    "permalink": "/docs/guides/building-plugins"
+  },
+  "next": {
+    "title": "Theming",
+    "permalink": "/docs/guides/theming"
+  }
+}

@@ -1,0 +1,36 @@
+{{#if enableDocker}}
+services:
+backend:
+build:
+context: ./backend
+dockerfile: Dockerfile
+ports:
+- "{{backendPort}}:{{backendPort}}"
+environment:
+- RUST_LOG=info
+- PORT={{backendPort}}
+healthcheck:
+test: ["CMD", "curl", "-f", "http://localhost:{{backendPort}}/api/health"]
+interval: 30s
+timeout: 10s
+retries: 3
+networks:
+- app-network
+
+frontend:
+build:
+context: ./frontend
+dockerfile: Dockerfile
+args:
+- VITE_API_URL=http://localhost:{{backendPort}}
+ports:
+- "{{frontendPort}}:80"
+depends_on:
+- backend
+networks:
+- app-network
+
+networks:
+app-network:
+driver: bridge
+{{/if}}

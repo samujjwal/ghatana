@@ -1,0 +1,76 @@
+id: "incident-management-orchestrator"
+name: "Incident Management Orchestrator"
+version: "1.0.0"
+description: "Coordinates end-to-end incident response from detection to post-mortem"
+
+metadata:
+  level: 2  # Expert level
+  domain: "operations"
+  tags: ["incident-management", "sre", "orchestration"]
+
+generator:
+  type: "pipeline"
+  steps:
+    - type: "rule-based"
+      rules:
+        - "Classify incident severity (P0/P1/P2/P3)"
+        - "Trigger appropriate response team"
+        - "Execute incident runbook"
+        - "Track resolution progress"
+    - type: "llm"
+      provider: "openai"
+      model: "gpt-4"
+      temperature: 0.4
+      prompt: |
+        Incident detected:
+        
+        Severity: {{severity}}
+        Symptoms: {{symptoms}}
+        Affected Systems: {{systems}}
+        Root Cause Analysis: {{rca}}
+        
+        Provide:
+        1. Immediate mitigation steps
+        2. Communication plan (stakeholders to notify)
+        3. Estimated time to resolution
+        4. Long-term prevention recommendations
+
+memory:
+  episodic:
+    enabled: true
+    retention_days: 180  # Keep incident history for learning
+  semantic:
+    enabled: true
+    categories: ["incident-patterns", "resolution-strategies", "root-causes"]
+  procedural:
+    enabled: true
+
+tools:
+  - "file_read"
+  - "file_write"
+
+capabilities:
+  - "incident-triage"
+  - "response-coordination"
+  - "post-mortem-generation"
+
+routing:
+  input_types: ["IncidentAlert", "ServiceDegradation", "OutageReport"]
+  output_types: ["IncidentReport", "MitigationPlan", "PostMortem"]
+
+delegation:
+  can_delegate_to:
+    - incident-response-agent
+    - postmortem-agent
+    - monitoring-agent
+    - stakeholder-communication-agent
+  escalates_to: operations-orchestrator-agent
+
+governance:
+  requires_approval: false
+  can_block: false
+
+performance:
+  expected_latency_ms: 2000
+  max_latency_ms: 5000
+  timeout_ms: 10000

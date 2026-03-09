@@ -1,0 +1,76 @@
+// Inline configuration bundle (wrap inside SignedConfig for production use)
+{
+  "source": {
+    "type": "inline",
+    "options": {}
+  },
+  "sink": {
+    "type": "file",
+    "options": {
+      "storageKey": "dcmaar:metrics",
+      "ackStorageKey": "dcmaar:acks",
+      "encryptAtRest": true
+    }
+  },
+  "privacy": {
+    "enableRedaction": true,
+    "samplingRate": 0.5,
+    "sanitizeUrls": true,
+    "sanitizeQueries": true,
+    "piiTokens": [],
+    "sensitiveParams": ["token", "auth"],
+    "allowedDomains": []
+  },
+  "transport": {
+    "wsUrl": "wss://collector.example.com/metrics",
+    "maxRetries": 5,
+    "baseDelay": 1000,
+    "maxDelay": 30000,
+    "timeout": 10000,
+    "enableSpooling": true,
+    "maxSpoolSize": 1000,
+    "compressionEnabled": true,
+    "batchSize": 20,
+    "batchInterval": 5000
+  },
+  "monitoring": {
+    "enabled": true,
+    "captureCoreWebVitals": true,
+    "captureResourceTimings": true,
+    "captureLongTasks": true,
+    "captureInteractions": true,
+    "captureSaasContext": true,
+    "capturePaintTimings": true,
+    "captureScreenshots": false,
+    "maxSessionDuration": 60
+  },
+  "identity": {
+    "tenantId": "sample",
+    "environment": "dev"
+  },
+  "ui": {
+    "theme": "auto",
+    "showNotifications": true,
+    "compactMode": false
+  },
+  "batch": {
+    "size": 20,
+    "flushMs": 5000,
+    "maxInFlight": 3
+  },
+  "storage": {
+    "encryptAtRest": true,
+    "keyAlias": "sample-alias",
+    "maxSpoolMB": 200,
+    "retentionHours": 72
+  },
+  "security": {
+    "cspLevel": "strict",
+    "allowlistHosts": ["collector.example.com"]
+  },
+  "telemetry": {
+    "enableHealthProbe": true,
+    "logLevel": "info"
+  },
+  "version": "1.0.0"
+}

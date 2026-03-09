@@ -1,0 +1,140 @@
+import { useState } from "react";
+import { StyleSheet, ScrollView, RefreshControl, Image } from "react-native";
+import { Text, View } from "@/components/Themed";
+import { Button } from "@/components/Button";
+import { useColorScheme } from "@/hooks/useColorScheme";
+import { Colors } from "@/constants/Colors";
+import { config } from "@/constants/config";
+
+export default function HomeScreen() {
+const colorScheme = useColorScheme();
+const theme = Colors[colorScheme ?? "light"];
+const [refreshing, setRefreshing] = useState(false);
+
+const onRefresh = async () => {
+setRefreshing(true);
+// Simulate data refresh
+await new Promise((resolve) => setTimeout(resolve, 1000));
+setRefreshing(false);
+};
+
+return (
+<ScrollView style={[styles.container, { backgroundColor: theme.background }]} contentContainerStyle={styles.content}
+    refreshControl={ <RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={theme.tint} />
+}
+>
+<View style={styles.header}>
+    <Text style={styles.title}>Welcome to</Text>
+    <Text style={[styles.appName, { color: theme.tint }]}>
+        {{displayName}}
+    </Text>
+    <Text style={styles.version}>Version {config.version}</Text>
+</View>
+
+<View style={styles.card}>
+    <Text style={styles.cardTitle}>Get Started</Text>
+    <Text style={styles.cardText}>
+        This is your new React Native app built with Expo Router and
+        TypeScript. Start building by editing the files in the app/ directory.
+    </Text>
+    <Button title="Learn More" onPress={()=> {
+        // Navigate or open link
+        }}
+        style=\{{ marginTop: 16 }}
+        />
+</View>
+
+<View style={styles.featuresContainer}>
+    <Text style={styles.sectionTitle}>Features</Text>
+    <FeatureItem title="File-based Routing" description="Expo Router provides file-based routing for React Native" />
+    <FeatureItem title="TypeScript" description="Full TypeScript support with strict type checking" />
+    <FeatureItem title="Themed Components" description="Light and dark mode support out of the box" />
+</View>
+</ScrollView>
+);
+}
+
+function FeatureItem({
+title,
+description,
+}: {
+title: string;
+description: string;
+}) {
+const colorScheme = useColorScheme();
+const theme = Colors[colorScheme ?? "light"];
+
+return (
+<View style={[ styles.featureItem, { backgroundColor: theme.card, borderColor: theme.border }, ]}>
+    <Text style={[styles.featureTitle, { color: theme.text }]}>{title}</Text>
+    <Text style={[styles.featureDescription, { color: theme.textSecondary }]}>
+        {description}
+    </Text>
+</View>
+);
+}
+
+const styles = StyleSheet.create({
+container: {
+flex: 1,
+},
+content: {
+padding: 20,
+},
+header: {
+alignItems: "center",
+marginBottom: 32,
+paddingTop: 20,
+},
+title: {
+fontSize: 18,
+opacity: 0.7,
+},
+appName: {
+fontSize: 32,
+fontWeight: "bold",
+marginVertical: 8,
+},
+version: {
+fontSize: 14,
+opacity: 0.5,
+},
+card: {
+padding: 20,
+borderRadius: 16,
+marginBottom: 24,
+},
+cardTitle: {
+fontSize: 20,
+fontWeight: "600",
+marginBottom: 8,
+},
+cardText: {
+fontSize: 16,
+lineHeight: 24,
+opacity: 0.8,
+},
+featuresContainer: {
+marginBottom: 24,
+},
+sectionTitle: {
+fontSize: 18,
+fontWeight: "600",
+marginBottom: 16,
+},
+featureItem: {
+padding: 16,
+borderRadius: 12,
+marginBottom: 12,
+borderWidth: 1,
+},
+featureTitle: {
+fontSize: 16,
+fontWeight: "600",
+marginBottom: 4,
+},
+featureDescription: {
+fontSize: 14,
+lineHeight: 20,
+},
+});

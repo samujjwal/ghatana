@@ -1,0 +1,239 @@
+# Default values for YAPPC Helm chart
+# This is a YAML-formatted file.
+# Declare variables to be passed into your templates.
+
+# Global settings
+global:
+  namespace: yappc
+  domain: yappc.ghatana.ai
+  
+# Image settings
+image:
+  yappc:
+    repository: yappc-agents
+    tag: latest
+    pullPolicy: Always
+  ollama:
+    repository: ollama/ollama
+    tag: latest
+    pullPolicy: Always
+
+# Replica counts
+replicaCount:
+  yappc: 3
+  ollama: 1
+
+# Resource limits
+resources:
+  yappc:
+    requests:
+      cpu: "1"
+      memory: "2Gi"
+    limits:
+      cpu: "2"
+      memory: "3Gi"
+  ollama:
+    requests:
+      cpu: "4"
+      memory: "8Gi"
+      nvidia.com/gpu: "1"
+    limits:
+      cpu: "8"
+      memory: "16Gi"
+      nvidia.com/gpu: "1"
+
+# Autoscaling
+autoscaling:
+  enabled: true
+  minReplicas: 3
+  maxReplicas: 10
+  targetCPUUtilizationPercentage: 70
+  targetMemoryUtilizationPercentage: 80
+
+# Persistence
+persistence:
+  enabled: true
+  storageClass: fast-ssd
+  ollamaModels:
+    size: 50Gi
+  yappcLogs:
+    size: 20Gi
+    storageClass: standard
+  yappcCache:
+    size: 10Gi
+    storageClass: standard
+
+# Ingress
+ingress:
+  enabled: true
+  className: nginx
+  tls:
+    enabled: true
+    secretName: yappc-tls-cert
+    issuer: letsencrypt-prod
+  annotations:
+    nginx.ingress.kubernetes.io/ssl-redirect: "true"
+    nginx.ingress.kubernetes.io/limit-rps: "100"
+    cert-manager.io/cluster-issuer: "letsencrypt-prod"
+
+# Service
+service:
+  type: ClusterIP
+  yappc:
+    http: 8080
+    metrics: 9090
+  ollama:
+    http: 11434
+
+# Configuration
+config:
+  # Ollama settings
+  ollama:
+    model: "llama3.2"
+    temperature: "0.7"
+    maxTokens: "4000"
+    numGPU: "1"
+    gpuLayers: "33"
+    numThreads: "8"
+    numParallel: "4"
+    flashAttention: "1"
+    maxLoadedModels: "2"
+  
+  # YAPPC settings
+  yappc:
+    agentCount: "27"
+    phaseCount: "4"
+    mode: "production"
+    batchSize: "4"
+    requestTimeout: "30000"
+  
+  # Java/JVM
+  jvm:
+    xmx: "2G"
+    xms: "1G"
+    gcType: "G1GC"
+  
+  # Observability
+  metrics:
+    enabled: true
+    port: 9090
+  
+  # Logging
+  logging:
+    level: "INFO"
+    format: "json"
+
+# Secrets (use external secret management in production!)
+# For dev environments, these are injected as plaintext secrets.
+# For production, set sealedSecrets.enabled=true and provide encrypted values.
+secrets:
+  # JWT Authentication
+  jwt:
+    secret: "CHANGE_ME_TO_RANDOM_256_BIT_STRING"
+    issuer: "yappc-production"
+    expiryHours: "24"
+  
+  # Database
+  database:
+    password: "CHANGE_ME_TO_STRONG_PASSWORD"
+    encryptionKey: "CHANGE_ME_TO_RANDOM_256_BIT_KEY"
+  
+  # TLS
+  tls:
+    keystorePassword: "CHANGE_ME_TO_KEYSTORE_PASSWORD"
+
+# Bitnami SealedSecrets — encrypted secrets safe for git
+# Enable in production to replace plaintext secrets above.
+# See templates/sealedsecret.yaml for kubeseal workflow.
+sealedSecrets:
+  enabled: false
+  encryptedData: {}
+  # Example (populate with kubeseal --raw output):
+  #   JWT_SECRET: "AgA..."
+  #   DATABASE_PASSWORD: "AgB..."
+  #   DATABASE_ENCRYPTION_KEY: "AgC..."
+  #   TLS_KEYSTORE_PASSWORD: "AgD..."
+
+# GPU settings
+gpu:
+  enabled: true
+  nodeSelector:
+    nvidia.com/gpu: "true"
+  tolerations:
+    - key: nvidia.com/gpu
+      operator: Exists
+      effect: NoSchedule
+
+# Monitoring
+monitoring:
+  prometheus:
+    enabled: true
+    scrapeInterval: 30s
+  grafana:
+    enabled: true
+    dashboards: true
+  alerts:
+    enabled: true
+
+# Logging
+logging:
+  fluentBit:
+    enabled: true
+    outputFormat: stdout
+    # For production, configure forwarding:
+    # forwarding:
+    #   enabled: true
+    #   type: elasticsearch
+    #   host: elasticsearch.logging.svc
+    #   port: 9200
+
+# Security
+securityContext:
+  runAsUser: 1000
+  runAsGroup: 1000
+  fsGroup: 1000
+  runAsNonRoot: true
+
+# Health checks
+healthCheck:
+  yappc:
+    liveness:
+      initialDelaySeconds: 120
+      periodSeconds: 30
+      timeoutSeconds: 10
+      failureThreshold: 3
+    readiness:
+      initialDelaySeconds: 60
+      periodSeconds: 10
+      timeoutSeconds: 5
+      failureThreshold: 3
+    startup:
+      initialDelaySeconds: 30
+      periodSeconds: 10
+      timeoutSeconds: 5
+      failureThreshold: 20
+  ollama:
+    liveness:
+      initialDelaySeconds: 60
+      periodSeconds: 30
+      timeoutSeconds: 10
+      failureThreshold: 3
+    readiness:
+      initialDelaySeconds: 30
+      periodSeconds: 10
+      timeoutSeconds: 5
+      failureThreshold: 3
+    startup:
+      initialDelaySeconds: 10
+      periodSeconds: 10
+      timeoutSeconds: 5
+      failureThreshold: 30
+
+# Pod Disruption Budget
+podDisruptionBudget:
+  enabled: true
+  minAvailable: 1
+
+# Network Policy
+networkPolicy:
+  enabled: false  # Enable for stricter network isolation

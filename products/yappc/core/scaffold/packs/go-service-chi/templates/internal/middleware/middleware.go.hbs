@@ -1,0 +1,54 @@
+// Package middleware provides HTTP middleware functions.
+package middleware
+
+import (
+"log/slog"
+"net/http"
+"time"
+
+"github.com/go-chi/chi/v5/middleware"
+)
+
+// Logger returns a middleware that logs request details.
+func Logger(logger *slog.Logger) func(next http.Handler) http.Handler {
+return func(next http.Handler) http.Handler {
+return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+start := time.Now()
+ww := middleware.NewWrapResponseWriter(w, r.ProtoMajor)
+
+defer func() {
+logger.Info("Request completed",
+slog.String("method", r.Method),
+slog.String("path", r.URL.Path),
+slog.Int("status", ww.Status()),
+slog.Int("bytes", ww.BytesWritten()),
+slog.Duration("duration", time.Since(start)),
+slog.String("request_id", middleware.GetReqID(r.Context())),
+slog.String("remote_addr", r.RemoteAddr),
+slog.String("user_agent", r.UserAgent()),
+)
+}()
+
+next.ServeHTTP(ww, r)
+})
+}
+}
+
+// Auth is a placeholder authentication middleware.
+// Replace with your actual authentication logic.
+func Auth(next http.Handler) http.Handler {
+return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+// Get token from Authorization header
+token := r.Header.Get("Authorization")
+if token == "" {
+http.Error(w, "Unauthorized", http.StatusUnauthorized)
+return
+}
+
+// TODO: Validate token and set user context
+// ctx := context.WithValue(r.Context(), userContextKey, user)
+// r = r.WithContext(ctx)
+
+next.ServeHTTP(w, r)
+})
+}

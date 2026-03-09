@@ -1,0 +1,34 @@
+---
+id: "deployment_logging"
+agent: "DeploymentLoggingAgent"
+role: "DevOps/Compliance"
+inputs_spec:
+- name: "deployment_rollout_status"
+  description: "Rollout status artifact for logging."
+  format: "Rollout status artifact"
+- name: "health_check_report"
+  description: "Health check report for logging."
+  format: "Health check report artifact"
+- name: "rollback_status"
+  description: "Rollback status artifact for logging."
+  format: "Rollback status artifact"
+outputs_spec:
+- name: "deployment_event_log"
+  description: "Log of all deployment events (start, stop, errors)."
+  format: "Deployment event log artifact"
+agent_tasks:
+- "Log all deployment events (start, stop, errors)."
+- "Aggregate logs centrally."
+- "Enforce retention policy."
+acceptance_criteria:
+- "All deployment events logged and accessible."
+- "Logs aggregated centrally."
+- "Retention policy enforced."
+dependencies:
+- "deployment_rollout_status"
+- "health_check_report"
+- "rollback_status"
+failure_escalation:
+- "Escalate to DevOps/Compliance if logs missing or retention not enforced."
+references: []
+hitl: false

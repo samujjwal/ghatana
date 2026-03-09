@@ -1,0 +1,178 @@
+apiVersion: ghatana.yappc/v2
+kind: DomainAgentCatalog
+
+metadata:
+  name: platform
+  version: 1.0.0
+  description: "Platform-level orchestration and management agents"
+  domain: platform
+  agentCount: 14
+
+spec:
+  agents:
+    # Level 1: Strategic Orchestrators
+    - id: full-lifecycle-orchestrator
+      name: Full Lifecycle Orchestrator
+      level: 1
+      type: orchestrator
+      description: "Coordinates the entire 8-phase SDLC lifecycle"
+      domain: platform
+      capabilities:
+        - lifecycle-orchestration
+        - stage-coordination
+        - workflow-management
+      routing:
+        input_types: [lifecycle_request, stage_transition]
+        output_types: [lifecycle_plan, stage_assignment]
+      delegation:
+        can_delegate_to:
+          - security-posture-orchestrator
+          - compliance-audit-orchestrator
+          - cloud-security-audit-orchestrator
+        escalates_to: null
+      governance:
+        requires_approval: true
+        audit_trail: comprehensive
+      tags: [orchestrator, lifecycle, strategic]
+
+    - id: security-posture-orchestrator
+      name: Security Posture Orchestrator
+      level: 1
+      type: orchestrator
+      description: "Coordinates security assessment across all phases"
+      domain: security
+      capabilities:
+        - security-assessment
+        - posture-analysis
+        - risk-coordination
+      routing:
+        input_types: [security_scan_request, posture_check]
+        output_types: [security_report, risk_assessment]
+      delegation:
+        can_delegate_to:
+          - cloud-resource-discovery-agent
+          - vulnerability-scoring-agent
+        escalates_to: full-lifecycle-orchestrator
+      tags: [orchestrator, security, devsecops]
+
+    # Level 2: Domain Experts
+    - id: agent-dispatcher
+      name: Agent Dispatcher
+      level: 2
+      type: domain-expert
+      description: "Routes tasks to appropriate agents based on capabilities"
+      domain: platform
+      capabilities:
+        - task-routing
+        - agent-selection
+        - load-balancing
+      routing:
+        input_types: [task_request, capability_query]
+        output_types: [agent_assignment, routing_decision]
+      delegation:
+        can_delegate_to:
+          - lifecycle-agents
+          - devsecops-agents
+        escalates_to: full-lifecycle-orchestrator
+      tags: [dispatcher, routing, coordination]
+
+    - id: event-coordinator
+      name: Event Coordinator
+      level: 2
+      type: domain-expert
+      description: "Coordinates event-driven agent workflows"
+      domain: platform
+      capabilities:
+        - event-processing
+        - workflow-coordination
+        - state-management
+      routing:
+        input_types: [domain_event, state_change]
+        output_types: [workflow_trigger, state_update]
+      tags: [events, coordination, workflow]
+
+    - id: platform-health-monitor
+      name: Platform Health Monitor
+      level: 2
+      type: domain-expert
+      description: "Monitors platform health and agent performance"
+      domain: platform
+      capabilities:
+        - health-monitoring
+        - performance-tracking
+        - alerting
+      routing:
+        input_types: [health_check, metrics_report]
+        output_types: [health_status, alert]
+      tags: [monitoring, health, observability]
+
+    # Level 3: Workers
+    - id: context-gathering-agent
+      name: Context Gathering Agent
+      level: 3
+      type: worker
+      description: "Gathers context from codebase and requirements"
+      domain: platform
+      capabilities:
+        - context-gathering
+        - code-analysis
+        - requirement-parsing
+      memory:
+        episodic:
+          enabled: true
+          retention_days: 30
+      tools:
+        - codebase_explorer
+        - requirement_parser
+      tags: [context, research, analysis]
+
+    - id: institutionalize-agent
+      name: Institutionalize Agent
+      level: 3
+      type: worker
+      description: "Captures and institutionalizes knowledge"
+      domain: platform
+      capabilities:
+        - knowledge-capture
+        - template-generation
+        - standard-enforcement
+      memory:
+        semantic:
+          enabled: true
+          categories: [patterns, standards, lessons]
+      tools:
+        - template_generator
+        - knowledge_base
+      tags: [knowledge, templates, standards]
+
+  # Hierarchical relationships
+  hierarchy:
+    level1:
+      - full-lifecycle-orchestrator
+      - security-posture-orchestrator
+    level2:
+      - agent-dispatcher
+      - event-coordinator
+      - platform-health-monitor
+    level3:
+      - context-gathering-agent
+      - institutionalize-agent
+
+  # Capability routing for this domain
+  capability_routing:
+    lifecycle-orchestration:
+      primary: full-lifecycle-orchestrator
+      fallback:
+        - agent-dispatcher
+    security-assessment:
+      primary: security-posture-orchestrator
+    task-routing:
+      primary: agent-dispatcher
+    event-processing:
+      primary: event-coordinator
+    health-monitoring:
+      primary: platform-health-monitor
+    context-gathering:
+      primary: context-gathering-agent
+    knowledge-capture:
+      primary: institutionalize-agent

@@ -1,0 +1,27 @@
+---
+id: "test_kpi_agent"
+agent: "StageKPIAgent"
+role: "Test KPI Analyst"
+inputs_spec:
+- name: "test_stage_milestone"
+  description: "Test stage milestones for KPI tracking."
+  format: "List of milestone objects"
+outputs_spec:
+- name: "test_kpi_report"
+  description: "Test KPI report."
+  format: "KPI report artifact"
+agent_tasks:
+- "Track and report KPIs (coverage %, escape rate, pass rate, time to resolve failures,\
+  \ flaky test rate, bottlenecks)."
+- "Visualize trends, flag anomalies, compare to baselines."
+acceptance_criteria:
+- "All key KPIs are defined, tracked, and flagged for review if negative movement."
+- "KPI data is traceable to test_stage_milestone and consolidated_test_results."
+- "KPI trends are visualized and compared to baselines."
+- "Outliers and deviations are flagged for review."
+dependencies:
+- "test_stage_milestone"
+failure_escalation:
+- "Escalate to KPI Analyst or PM if KPIs are missing or not updated."
+references: []
+hitl: false

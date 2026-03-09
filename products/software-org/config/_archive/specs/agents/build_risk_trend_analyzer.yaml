@@ -1,0 +1,36 @@
+---
+id: "build_risk_trend_analyzer"
+agent: "RiskTrendAnalyzerAgent"
+role: "Risk Intelligence Bot"
+inputs_spec:
+- name: "build_escalation_report"
+  description: "Escalation report from Build stage."
+  format: "Escalation report artifact"
+- name: "build_progress_dashboard"
+  description: "Build stage progress dashboard."
+  format: "Dashboard artifact"
+- name: "build_stage_milestone"
+  description: "Build stage milestone plan."
+  format: "Milestone artifact"
+outputs_spec:
+- name: "build_risk_trend_report"
+  description: "Risk trend analysis for Build stage."
+  format: "Risk trend report artifact"
+agent_tasks:
+- "Trend all risks, escalations, blockers over time."
+- "Automatically flag/classify recurring/systemic risks."
+- "Share trend report with PMO/leadership."
+- "Recommend mitigation/process changes."
+acceptance_criteria:
+- "Risks, escalations, blockers trended over time."
+- "Recurring/systemic risks flagged/classified."
+- "Trend report shared with PMO/leadership."
+- "Recommendations included."
+dependencies:
+- "build_escalation_report"
+- "build_progress_dashboard"
+- "build_stage_milestone"
+failure_escalation:
+- "Escalate to Risk Intelligence if trends/recommendations missing."
+references: []
+hitl: false

@@ -1,0 +1,143 @@
+# {{displayName}}
+
+{{description}}
+
+## Tech Stack
+
+- **Frontend**: React 18, TypeScript 5, Vite 5
+- **Backend**: Rust, Tauri 2.x
+- **Build**: pnpm, Cargo
+- **Testing**: Vitest (frontend), Rust tests (backend)
+
+## Prerequisites
+
+- [Node.js](https://nodejs.org/) 18+
+- [pnpm](https://pnpm.io/) 9+
+- [Rust](https://rustup.rs/) 1.75+
+- Platform-specific dependencies:
+- **macOS**: Xcode Command Line Tools
+- **Windows**: Microsoft Visual C++ Build Tools, WebView2
+- **Linux**: See [Tauri prerequisites](https://tauri.app/start/prerequisites/#linux)
+
+## Quick Start
+
+```bash
+# Install dependencies
+make install
+
+# Run in development mode
+make dev
+
+# Build for production
+make build-release
+```
+
+## Development
+
+### Commands
+
+| Command | Description |
+|---------|-------------|
+| `make dev` | Start development server with hot reload |
+| `make build` | Build debug version |
+| `make build-release` | Build production release |
+| `make test` | Run frontend tests |
+| `make lint` | Lint all code |
+| `make format` | Format all code |
+| `make typecheck` | Check TypeScript types |
+| `make clean` | Clean build artifacts |
+
+### Project Structure
+
+```
+{{projectName}}/
+├── src/ # React frontend source
+│ ├── components/ # React components
+│ ├── hooks/ # Custom React hooks
+│ ├── lib/ # Utilities and Tauri bridge
+│ ├── App.tsx # Main application component
+│ └── main.tsx # Entry point
+├── src-tauri/ # Rust backend source
+│ ├── src/
+│ │ ├── commands.rs # IPC command handlers
+│ │ ├── state.rs # Application state
+│ │ ├── error.rs # Error types
+│ │ ├── lib.rs # Library entry point
+│ │ └── main.rs # Application entry point
+│ ├── capabilities/ # Tauri security capabilities
+│ ├── icons/ # App icons
+│ ├── Cargo.toml # Rust dependencies
+│ └── tauri.conf.json # Tauri configuration
+├── package.json
+├── vite.config.ts
+└── Makefile
+```
+
+### Adding Tauri Commands
+
+1. Add the command handler in `src-tauri/src/commands.rs`:
+
+```rust
+#[tauri::command]
+pub async fn my_command(arg: String) -> Result<String, AppError> {
+    Ok(format!("Received: {}", arg))
+    }
+    ```
+
+    2. Register the command in `src-tauri/src/lib.rs`:
+
+    ```rust
+    .invoke_handler(tauri::generate_handler![
+    commands::greet,
+    commands::my_command, // Add here
+    ])
+    ```
+
+    3. Call from frontend in `src/lib/tauri-bridge.ts`:
+
+    ```typescript
+    export async function myCommand(arg: string): Promise<string> {
+        return invoke<string>("my_command", { arg });
+            }
+            ```
+
+            ### Building
+
+            #### Development
+
+            ```bash
+            make dev
+            ```
+
+            This starts the Vite dev server and Tauri in development mode with hot reload.
+
+            #### Production
+
+            ```bash
+            make build-release
+            ```
+
+            Builds are placed in `src-tauri/target/release/bundle/`.
+
+            ### Generating Icons
+
+            1. Create a 1024x1024 PNG icon
+            2. Run: `pnpm tauri icon <path-to-icon.png>`
+
+                ## Configuration
+
+                ### Tauri Configuration
+
+                See `src-tauri/tauri.conf.json` for Tauri settings including:
+                - Window dimensions
+                - App identifier
+                - Bundle settings
+                - Security permissions
+
+                ### Capabilities
+
+                Tauri 2.x uses capabilities for security permissions. See `src-tauri/capabilities/default.json`.
+
+                ## License
+
+                Apache-2.0

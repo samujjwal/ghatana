@@ -1,0 +1,228 @@
+/**
+ * Safe Area CSS Variables for Mobile Notch/Dynamic Island Support
+ * 
+ * @doc.type css-variables
+ * @doc.purpose Handle safe areas on modern mobile devices (iPhone notch, dynamic island, home indicator)
+ * @doc.layer platform
+ * @doc.pattern Utility
+ * 
+ * Phase 1 Implementation: Universal Safe Area Support (P0 Critical)
+ * 
+ * Usage:
+ * - Import this CSS file in your app's root layout
+ * - Use the CSS custom properties in your components
+ * - Use the Tailwind utility classes for quick application
+ * 
+ * @example
+ * ```tsx
+ * // In root layout
+ * import '@ghatana/tokens/safe-area.css';
+ * 
+ * // In component
+ * <header className="pt-safe-top">Logo</header>
+ * <footer className="pb-safe-bottom">Navigation</footer>
+ * ```
+ */
+
+:root {
+    /**
+   * Safe area insets from CSS environment variables
+   * These are provided by the browser/WebView on devices with notches
+   * Fallback to 0 for devices without safe areas
+   */
+    --safe-area-inset-top: env(safe-area-inset-top, 0px);
+    --safe-area-inset-right: env(safe-area-inset-right, 0px);
+    --safe-area-inset-bottom: env(safe-area-inset-bottom, 0px);
+    --safe-area-inset-left: env(safe-area-inset-left, 0px);
+
+    /**
+   * Semantic aliases for better readability
+   */
+    --safe-top: var(--safe-area-inset-top);
+    --safe-right: var(--safe-area-inset-right);
+    --safe-bottom: var(--safe-area-inset-bottom);
+    --safe-left: var(--safe-area-inset-left);
+}
+
+/**
+ * Utility classes for safe area padding
+ * These can be used directly in className attributes
+ */
+
+/* Padding with safe areas */
+.p-safe {
+    padding-top: var(--safe-area-inset-top);
+    padding-right: var(--safe-area-inset-right);
+    padding-bottom: var(--safe-area-inset-bottom);
+    padding-left: var(--safe-area-inset-left);
+}
+
+.pt-safe {
+    padding-top: var(--safe-area-inset-top);
+}
+
+.pt-safe-top {
+    padding-top: var(--safe-area-inset-top);
+}
+
+.pr-safe {
+    padding-right: var(--safe-area-inset-right);
+}
+
+.pr-safe-right {
+    padding-right: var(--safe-area-inset-right);
+}
+
+.pb-safe {
+    padding-bottom: var(--safe-area-inset-bottom);
+}
+
+.pb-safe-bottom {
+    padding-bottom: var(--safe-area-inset-bottom);
+}
+
+.pl-safe {
+    padding-left: var(--safe-area-inset-left);
+}
+
+.pl-safe-left {
+    padding-left: var(--safe-area-inset-left);
+}
+
+.px-safe {
+    padding-left: var(--safe-area-inset-left);
+    padding-right: var(--safe-area-inset-right);
+}
+
+.py-safe {
+    padding-top: var(--safe-area-inset-top);
+    padding-bottom: var(--safe-area-inset-bottom);
+}
+
+/* Margin with safe areas */
+.m-safe {
+    margin-top: var(--safe-area-inset-top);
+    margin-right: var(--safe-area-inset-right);
+    margin-bottom: var(--safe-area-inset-bottom);
+    margin-left: var(--safe-area-inset-left);
+}
+
+.mt-safe {
+    margin-top: var(--safe-area-inset-top);
+}
+
+.mr-safe {
+    margin-right: var(--safe-area-inset-right);
+}
+
+.mb-safe {
+    margin-bottom: var(--safe-area-inset-bottom);
+}
+
+.ml-safe {
+    margin-left: var(--safe-area-inset-left);
+}
+
+.mx-safe {
+    margin-left: var(--safe-area-inset-left);
+    margin-right: var(--safe-area-inset-right);
+}
+
+.my-safe {
+    margin-top: var(--safe-area-inset-top);
+    margin-bottom: var(--safe-area-inset-bottom);
+}
+
+/* Inset (positioning) with safe areas */
+.inset-safe {
+    top: var(--safe-area-inset-top);
+    right: var(--safe-area-inset-right);
+    bottom: var(--safe-area-inset-bottom);
+    left: var(--safe-area-inset-left);
+}
+
+.top-safe {
+    top: var(--safe-area-inset-top);
+}
+
+.right-safe {
+    right: var(--safe-area-inset-right);
+}
+
+.bottom-safe {
+    bottom: var(--safe-area-inset-bottom);
+}
+
+.left-safe {
+    left: var(--safe-area-inset-left);
+}
+
+/**
+ * Combined classes for common layouts
+ */
+
+/* Header (status bar area) */
+.header-safe {
+    padding-top: var(--safe-area-inset-top);
+}
+
+/* Footer (home indicator area) */
+.footer-safe {
+    padding-bottom: var(--safe-area-inset-bottom);
+}
+
+/* Sidebar (notch sides) */
+.sidebar-safe-left {
+    padding-left: var(--safe-area-inset-left);
+}
+
+.sidebar-safe-right {
+    padding-right: var(--safe-area-inset-right);
+}
+
+/* Full viewport container (respects all safe areas) */
+.viewport-safe {
+    padding-top: var(--safe-area-inset-top);
+    padding-right: var(--safe-area-inset-right);
+    padding-bottom: var(--safe-area-inset-bottom);
+    padding-left: var(--safe-area-inset-left);
+}
+
+/**
+ * Height calculations with safe areas
+ * Useful for full-height containers
+ */
+.h-screen-safe {
+    height: calc(100vh - var(--safe-area-inset-top) - var(--safe-area-inset-bottom));
+}
+
+.min-h-screen-safe {
+    min-height: calc(100vh - var(--safe-area-inset-top) - var(--safe-area-inset-bottom));
+}
+
+.max-h-screen-safe {
+    max-height: calc(100vh - var(--safe-area-inset-top) - var(--safe-area-inset-bottom));
+}
+
+/**
+ * Migration Guide:
+ * 
+ * 1. Add to root layout:
+ *    import '@ghatana/tokens/safe-area.css';
+ * 
+ * 2. Update viewport meta tag:
+ *    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+ *    Note: viewport-fit=cover is REQUIRED for safe-area-inset-* to work
+ * 
+ * 3. Apply classes to layout components:
+ *    <header className="header-safe">...</header>
+ *    <main className="px-safe">...</main>
+ *    <footer className="footer-safe">...</footer>
+ * 
+ * 4. For Capacitor apps, ensure config has:
+ *    {
+ *      "ios": {
+ *        "contentInset": "automatic"
+ *      }
+ *    }
+ */

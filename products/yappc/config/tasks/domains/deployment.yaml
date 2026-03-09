@@ -1,0 +1,173 @@
+# Deployment Domain Tasks
+# These tasks support deployment and infrastructure setup
+
+tasks:
+  - id: deploy-app
+    name: Deploy Application
+    description: Deploy application to target environment with proper configuration
+    domain: deployment
+    phase: DEPLOYMENT
+    complexity: COMPLEX
+    requiredCapabilities:
+      - deployment
+      - infrastructure
+      - ci-cd
+    parameters:
+      environment:
+        type: string
+        required: true
+        description: Target environment (dev/staging/production)
+      deploymentMethod:
+        type: string
+        required: false
+        default: "kubernetes"
+        description: Deployment method (kubernetes/docker/vm/serverless)
+      version:
+        type: string
+        required: true
+        description: Application version to deploy
+      rollbackEnabled:
+        type: boolean
+        required: false
+        default: true
+        description: Enable automatic rollback on failure
+    metadata:
+      version: "1.0"
+      tags: ["deployment", "infrastructure", "release"]
+
+  - id: setup-monitoring
+    name: Setup Monitoring
+    description: Configure monitoring, alerting, and observability for the application
+    domain: deployment
+    phase: OPERATIONS
+    complexity: MEDIUM
+    requiredCapabilities:
+      - monitoring
+      - observability
+      - devops
+    parameters:
+      monitoringStack:
+        type: string
+        required: false
+        default: "prometheus"
+        description: Monitoring stack to use
+      metrics:
+        type: array
+        required: true
+        description: Metrics to monitor
+      alertRules:
+        type: array
+        required: false
+        description: Alert rules and thresholds
+    metadata:
+      version: "1.0"
+      tags: ["monitoring", "observability", "prometheus"]
+
+  - id: setup-cicd
+    name: Setup CI/CD Pipeline
+    description: Create and configure CI/CD pipeline for automated builds and deployments
+    domain: deployment
+    phase: DEPLOYMENT
+    complexity: COMPLEX
+    requiredCapabilities:
+      - ci-cd
+      - automation
+      - devops
+    parameters:
+      cicdPlatform:
+        type: string
+        required: false
+        default: "github-actions"
+        description: CI/CD platform (github-actions/jenkins/gitlab-ci)
+      stages:
+        type: array
+        required: true
+        description: Pipeline stages (build/test/deploy)
+      environments:
+        type: array
+        required: true
+        description: Target environments
+    metadata:
+      version: "1.0"
+      tags: ["ci-cd", "automation", "pipeline"]
+
+  - id: configure-infrastructure
+    name: Configure Infrastructure
+    description: Configure infrastructure as code using Terraform or similar tools
+    domain: deployment
+    phase: DEPLOYMENT
+    complexity: VERY_COMPLEX
+    requiredCapabilities:
+      - infrastructure-as-code
+      - terraform
+      - cloud-platforms
+    parameters:
+      cloudProvider:
+        type: string
+        required: true
+        description: Cloud provider (aws/azure/gcp)
+      resources:
+        type: array
+        required: true
+        description: Resources to provision
+      iacTool:
+        type: string
+        required: false
+        default: "terraform"
+        description: IaC tool to use
+    metadata:
+      version: "1.0"
+      tags: ["infrastructure", "terraform", "iac"]
+
+  - id: setup-secrets
+    name: Setup Secrets Management
+    description: Configure secure secrets management for the application
+    domain: deployment
+    phase: DEPLOYMENT
+    complexity: MEDIUM
+    requiredCapabilities:
+      - secrets-management
+      - security
+      - devops
+    parameters:
+      secretsProvider:
+        type: string
+        required: false
+        default: "vault"
+        description: Secrets provider (vault/aws-secrets/azure-keyvault)
+      secrets:
+        type: array
+        required: true
+        description: Secrets to manage
+    metadata:
+      version: "1.0"
+      tags: ["secrets", "security", "vault"]
+
+  - id: database-migration
+    name: Run Database Migration
+    description: Execute database migrations safely with rollback support
+    domain: deployment
+    phase: DEPLOYMENT
+    complexity: COMPLEX
+    requiredCapabilities:
+      - database-migration
+      - liquibase
+      - database-admin
+    parameters:
+      migrationTool:
+        type: string
+        required: false
+        default: "liquibase"
+        description: Migration tool (liquibase/flyway)
+      targetVersion:
+        type: string
+        required: false
+        description: Target schema version
+      dryRun:
+        type: boolean
+        required: false
+        default: false
+        description: Run in dry-run mode first
+    metadata:
+      version: "1.0"
+      tags: ["database", "migration", "liquibase"]

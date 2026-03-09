@@ -1,0 +1,15 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: software-org-config
+  namespace: ghatana
+  labels:
+    app: software-org
+data:
+  SOFTORG_ENV: "production"
+  SOFTORG_LOG_LEVEL: "INFO"
+  SOFTORG_DB_HOST: "postgres.ghatana.svc.cluster.local"
+  SOFTORG_DB_PORT: "5432"
+  SOFTORG_DB_NAME: "software_org"
+  SOFTORG_AUTH_GATEWAY_URL: "http://auth-gateway.ghatana.svc.cluster.local:80"
+  SOFTORG_DATACLOUD_URL: "http://datacloud.ghatana.svc.cluster.local:80"

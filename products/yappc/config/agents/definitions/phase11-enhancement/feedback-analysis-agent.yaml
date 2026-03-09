@@ -1,0 +1,115 @@
+id: feedback-analysis-agent
+name: Feedback Analysis Agent
+version: 1.0.0
+description: Analyzes user feedback. Extracts insights, themes, and actionable items.
+
+metadata:
+  level: 2  # Domain Expert
+  domain: enhancement
+  tags:
+    - feedback
+    - sentiment
+    - user-voice
+    - insights
+
+generator:
+  type: PIPELINE
+  steps:
+    - name: feedback_collection
+      type: SERVICE_CALL
+      service: feedback-service
+      endpoint: /collect
+    - name: feedback_analysis
+      type: LLM
+      provider: ANTHROPIC
+      model: claude-3-5-sonnet-20241022
+      temperature: 0.3
+      max_tokens: 2500
+      prompt: |
+        You are the Feedback Analysis Agent. Analyze feedback:
+        
+        Feedback: {{feedback}}
+        Source: {{source}}  # support, reviews, surveys, social
+        Time Period: {{period}}
+        
+        Analyze:
+        1. Sentiment distribution (positive, negative, neutral)
+        2. Key themes and topics
+        3. Pain points (frequency, severity)
+        4. Feature requests
+        5. Praise (what users love)
+        6. Trends over time
+        7. Actionable insights
+        8. Priority recommendations
+        
+        Output as JSON: {
+          sentiment,
+          themes: [{theme, count, sentiment, examples}],
+          pain_points: [{issue, frequency, severity}],
+          feature_requests,
+          praise,
+          trends,
+          actionable_insights,
+          priority_items
+        }
+    - name: insight_storage
+      type: SERVICE_CALL
+      service: insight-service
+      endpoint: /store
+
+memory:
+  episodic:
+    enabled: true
+    retention_days: 365
+    categories:
+      - feedback-batches
+      - analyses
+      - actions-taken
+  semantic:
+    enabled: true
+    categories:
+      - theme-taxonomy
+      - sentiment-patterns
+      - user-segments
+  procedural:
+    enabled: true
+    categories:
+      - analysis-framework
+      - categorization-rules
+      - prioritization-rules
+
+tools:
+  - feedback_collector
+  - sentiment_analyzer
+  - theme_extractor
+
+capabilities:
+  - feedback-analysis
+  - sentiment-analysis
+  - theme-extraction
+  - insight-generation
+
+routing:
+  input_types:
+    - feedback-batch
+    - analysis-request
+    - trend-query
+  output_types:
+    - analysis-report
+    - insights
+    - recommendations
+
+delegation:
+  can_delegate_to: []
+  escalates_to:
+    - enhancement-orchestrator-agent
+
+governance:
+  requires_approval: false
+  can_block: false
+  audit_trail: standard
+
+performance:
+  expected_latency_ms: 4000
+  max_latency_ms: 10000
+  timeout_ms: 20000

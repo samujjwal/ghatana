@@ -1,0 +1,128 @@
+domain:
+  id: intent-problem-framing
+  name: "Intent & Problem Framing"
+  description: "Identify problem or opportunity, define intent and goals."
+  order: 1
+  icon: "lightbulb"
+  color: "#FFA726"
+  agent_personas:
+    - "IntentClarifier"
+    - "GoalSynthesizer"
+  audit_artifacts:
+    - "IntentRecord"
+    - "AssumptionLog"
+    - "RiskRegister"
+  inputs:
+    - "Strategic goals"
+    - "User signals"
+    - "Business requests"
+  outputs:
+    - "Problem statement"
+    - "Intent record"
+    - "Success criteria"
+
+tasks:
+  # Core intent tasks
+  - id: d1-t1
+    name: "Identify problem or opportunity"
+    description: "Identify the core problem or opportunity to address."
+    personas: ["Developer", "Tech Lead", "PM"]
+    lifecycle_stages: ["intent"]
+    automation_level: "assisted"
+  - id: d1-t2
+    name: "Define intent and goals"
+    description: "Clearly define the intent and goals of the initiative."
+    personas: ["Developer", "Tech Lead", "PM"]
+    lifecycle_stages: ["intent"]
+    automation_level: "assisted"
+  - id: d1-t3
+    name: "Define success metrics"
+    description: "Establish measurable success criteria."
+    personas: ["Developer", "Tech Lead", "PM"]
+    lifecycle_stages: ["intent"]
+    automation_level: "assisted"
+  - id: d1-t4
+    name: "Identify non-goals"
+    description: "Explicitly state what is out of scope."
+    personas: ["Developer", "Tech Lead", "PM"]
+    lifecycle_stages: ["intent"]
+    automation_level: "manual"
+  - id: d1-t5
+    name: "Align problem to strategy"
+    description: "Ensure the problem aligns with organizational strategy."
+    personas: ["Tech Lead", "PM"]
+    lifecycle_stages: ["intent"]
+    automation_level: "manual"
+  - id: d1-t6
+    name: "Capture assumptions"
+    description: "Document all initial assumptions."
+    personas: ["Developer", "Tech Lead"]
+    lifecycle_stages: ["intent", "context"]
+    automation_level: "assisted"
+  - id: d1-t7
+    name: "Identify high-level risks"
+    description: "Identify potential risks early on."
+    personas: ["Developer", "Tech Lead", "PM", "Security"]
+    lifecycle_stages: ["intent", "context"]
+    automation_level: "assisted"
+  # Migrated from legacy problem-understanding
+  - id: prob-001
+    name: "Understand Business/User Problem"
+    description: "Analyze and comprehend the core business or user problem that needs solving."
+    personas: ["Developer", "Tech Lead", "PM"]
+    lifecycle_stages: ["intent"]
+    automation_level: "assisted"
+  - id: prob-002
+    name: "Clarify Ambiguous Goals"
+    description: "Identify and resolve ambiguous or unclear goals through stakeholder engagement."
+    personas: ["Developer", "Tech Lead", "PM"]
+    lifecycle_stages: ["intent"]
+    automation_level: "manual"
+  - id: prob-003
+    name: "Ask Clarifying Questions"
+    description: "Formulate and ask targeted questions to gather missing information."
+    personas: ["Developer", "Tech Lead"]
+    lifecycle_stages: ["intent", "context"]
+    automation_level: "assisted"
+  - id: prob-004
+    name: "Identify Constraints"
+    description: "Document time, cost, technology, and legal constraints affecting the solution."
+    personas: ["Developer", "Tech Lead", "PM", "Security"]
+    lifecycle_stages: ["intent", "context"]
+    automation_level: "assisted"
+  - id: prob-005
+    name: "Validate Problem Statement"
+    description: "Confirm the problem statement with stakeholders before proceeding."
+    personas: ["Developer", "Tech Lead", "PM"]
+    lifecycle_stages: ["intent"]
+    automation_level: "manual"
+  - id: prob-006
+    name: "Identify Non-Goals and Exclusions"
+    description: "Document what is explicitly out of scope."
+    personas: ["Developer", "Tech Lead", "PM"]
+    lifecycle_stages: ["intent"]
+    automation_level: "manual"
+  - id: prob-007
+    name: "Capture Assumptions"
+    description: "Record all assumptions made during problem analysis."
+    personas: ["Developer", "Tech Lead"]
+    lifecycle_stages: ["intent", "context"]
+    automation_level: "assisted"
+  - id: prob-008
+    name: "Identify Risks and Unknowns"
+    description: "Document known risks and areas of uncertainty."
+    personas: ["Developer", "Tech Lead", "PM"]
+    lifecycle_stages: ["intent", "context"]
+    automation_level: "assisted"
+  - id: prob-009
+    name: "Review Historical Context"
+    description: "Analyze prior solutions and historical decisions."
+    personas: ["Developer", "Tech Lead"]
+    lifecycle_stages: ["context"]
+    automation_level: "assisted"
+  - id: prob-010
+    name: "Define Success Criteria"
+    description: "Establish clear, measurable success criteria."
+    personas: ["Developer", "Tech Lead", "PM"]
+    lifecycle_stages: ["intent"]
+    automation_level: "assisted"

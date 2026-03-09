@@ -1,0 +1,49 @@
+plugins {
+    id 'java-library'
+    id 'jacoco'
+}
+
+group = 'com.ghatana.libs.aiplatform'
+version = '1.0-SNAPSHOT'
+
+description = 'AI Platform Feature Store - Feature engineering, storage, and serving for ML pipelines'
+
+dependencies {
+    // Core infrastructure
+    api project(':libs:database')
+    api project(':libs:event-cloud')
+    api project(':libs:observability')
+    api project(':libs:types')
+    api project(':libs:redis-cache')
+    
+    // Database
+    implementation libs.postgresql
+    implementation libs.hikaricp
+    
+    // Redis for feature caching
+    implementation libs.jedis
+    
+    // Jackson for JSON
+    implementation platform(libs.jackson.bom)
+    implementation libs.jackson.databind
+    
+    // Logging
+    implementation libs.slf4j.api
+    
+    // Testing
+    testImplementation libs.junit.jupiter.api
+    testRuntimeOnly libs.junit.jupiter.engine
+    testImplementation libs.assertj.core
+    testImplementation project(':libs:test-utils')
+}
+
+test {
+    useJUnitPlatform()
+}
+
+jacocoTestReport {
+    reports {
+        xml.required = true
+        html.required = true
+    }
+}

@@ -1,0 +1,26 @@
+---
+id: "threat_intel_enrichment"
+agent: "ThreatIntelEnrichmentAgent"
+role: "Threat Intelligence Analyst"
+inputs_spec:
+- name: "siem_alerts"
+  description: "SIEM alerts for enrichment."
+  format: "Alert artifact"
+outputs_spec:
+- name: "enriched_alerts"
+  description: "Alerts enriched with threat intel."
+  format: "Enriched alert artifact"
+agent_tasks:
+- "Integrate/update threat intel feeds."
+- "Enrich alerts/incidents with latest threat context."
+- "Log enrichment actions."
+acceptance_criteria:
+- "Threat intel feeds integrated/updated."
+- "Alerts enriched with latest context."
+- "Enrichment actions logged."
+dependencies:
+- "siem_alerts"
+failure_escalation:
+- "Escalate to Threat Intelligence Analyst if enrichment not performed."
+references: []
+hitl: false

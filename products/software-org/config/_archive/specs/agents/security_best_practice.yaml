@@ -1,0 +1,29 @@
+---
+id: "security_best_practice"
+agent: "SecurityBestPracticeAgent"
+role: "Security Champion"
+inputs_spec:
+- name: "modularized_codebase"
+  description: "Codebase to check for security best practices."
+  format: "Source repo or artifact reference"
+outputs_spec:
+- name: "security_practices_report"
+  description: "Report on application of security standards and secure data handling."
+  format: "Security compliance report"
+agent_tasks:
+- "Review code for all security standards (OWASP, company, etc.)."
+- "Review sensitive data handling."
+- "Document and escalate potential security issues."
+- "Ensure security review signoff."
+acceptance_criteria:
+- "All security standards (OWASP, company, etc.) are applied."
+- "Sensitive data handling is reviewed."
+- "Potential security issues are documented and escalated."
+- "Security review is signed off by responsible team member."
+dependencies:
+- "modularized_codebase"
+failure_escalation:
+- "Escalate to Security Champion or Sec Lead if risks are not addressed."
+references: []
+hitl: true
+hitl_reason: "Human ensures security best practices are enforced in code"

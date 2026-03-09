@@ -1,0 +1,42 @@
+id: devops_plan
+agent: DevOpsPlanningAgent
+role: DevOps Architect
+inputs_spec:
+  - name: security_needs
+    description: Security needs and controls.
+    format: YAML array
+outputs_spec:
+  - name: devops_plan
+    description: Integrated DevOps plan: CI/CD, infrastructure as code, controls, compliance gates, mapped to risks.
+    format: YAML array
+acceptance_criteria:
+  - Critical security needs mapped to DevOps steps.
+  - CI/CD, IaC, secrets, and monitoring included.
+  - Ownership and status fields filled.
+agent_tasks:
+  - Translate security needs into DevOps controls and automation.
+  - Design CI/CD, IaC, monitoring, secrets, and compliance automation.
+  - Assign control points, owners, and compliance checks.
+dependencies:
+  - security_needs
+failure_escalation:
+  - Escalate missing or unautomated controls.
+references: []
+internal_logic:
+  - perception:
+      description: "Map security, compliance, and operational needs to DevOps pipeline steps (CI/CD, IaC, monitoring, secrets, etc)."
+  - model:
+      description: "Maintain DevOps plan with mapped controls, automation steps, owners, and compliance checks."
+  - planning:
+      description: |
+        "Sequence DevOps steps for security/quality gates.
+         Flag any unautomated or manual steps for improvement."
+  - action:
+      description: "Generate and update DevOps plan, control points, and status."
+validation:
+  - "DevOps/QA review for coverage and automation."
+  - "Audit for missing or failed pipeline controls."
+quality_enhancements:
+  - "DevOps plan template."
+  - "Pipeline step metrics and auto-remediation tracking."
+  - "Continuous improvement feedback loop."

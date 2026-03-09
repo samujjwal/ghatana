@@ -1,0 +1,688 @@
+# YAPPC Task-to-Agent Mappings
+#
+# Maps tasks to agents based on required capabilities.
+# Used by the TaskExecutionCoordinator to dispatch tasks to appropriate agents.
+#
+# Mapping Rules:
+# - primary_agent: The preferred agent for this task
+# - fallback_agents: Alternative agents if primary is unavailable
+# - capability_requirements: Required agent capabilities
+# - execution_mode: How the task should be executed (sync, async, batch)
+
+# ============================================================================
+# Agent Registry
+# ============================================================================
+
+agents:
+  - id: code-generator
+    name: Code Generator Agent
+    capabilities:
+      - code-generation
+      - component-generation
+      - api-generation
+    status: active
+    max_concurrent: 5
+
+  - id: test-generator
+    name: Test Generator Agent
+    capabilities:
+      - test-generation
+      - test-execution
+    status: active
+    max_concurrent: 3
+
+  - id: security-analyzer
+    name: Security Analysis Agent
+    capabilities:
+      - security-analysis
+      - dependency-analysis
+    status: active
+    max_concurrent: 2
+
+  - id: code-analyzer
+    name: Code Analysis Agent
+    capabilities:
+      - code-analysis
+      - performance-analysis
+      - dependency-analysis
+    status: active
+    max_concurrent: 3
+
+  - id: documentation-agent
+    name: Documentation Agent
+    capabilities:
+      - documentation-generation
+      - diagram-generation
+    status: active
+    max_concurrent: 3
+
+  - id: debugger-agent
+    name: Debugger Agent
+    capabilities:
+      - root-cause-analysis
+      - log-analysis
+    status: active
+    max_concurrent: 2
+
+  - id: deployment-agent
+    name: Deployment Agent
+    capabilities:
+      - deployment-automation
+      - infrastructure-provisioning
+    status: active
+    max_concurrent: 2
+
+  - id: data-agent
+    name: Data & Database Agent
+    capabilities:
+      - schema-design
+      - data-pipeline
+      - query-optimization
+    status: active
+    max_concurrent: 2
+
+  - id: research-agent
+    name: Research Agent
+    capabilities:
+      - research
+      - technology-evaluation
+    status: active
+    max_concurrent: 3
+
+  - id: ai-assistant
+    name: AI Coding Assistant
+    capabilities:
+      - ai-code-assist
+      - prompt-engineering
+    status: active
+    max_concurrent: 10
+
+  # Phase Debug — Debug Orchestrator + Micro-Agents
+  - id: debug-orchestrator
+    name: Debug Orchestrator
+    capabilities:
+      - debug-orchestration
+      - root-cause-analysis
+      - log-analysis
+    status: active
+    max_concurrent: 3
+
+  - id: log-analysis-agent
+    name: Log Analysis Agent
+    capabilities:
+      - log-analysis
+    status: active
+    max_concurrent: 5
+
+  - id: stack-trace-analyzer-agent
+    name: Stack Trace Analyzer Agent
+    capabilities:
+      - stack-trace-analysis
+      - root-cause-analysis
+    status: active
+    max_concurrent: 5
+
+  - id: root-cause-analysis-agent
+    name: Root Cause Analysis Agent
+    capabilities:
+      - root-cause-analysis
+    status: active
+    max_concurrent: 3
+
+  - id: fix-generator-agent
+    name: Fix Generator Agent
+    capabilities:
+      - fix-generation
+      - code-generation
+    status: active
+    max_concurrent: 3
+
+  - id: regression-test-writer-agent
+    name: Regression Test Writer Agent
+    capabilities:
+      - regression-test-generation
+      - test-generation
+    status: active
+    max_concurrent: 3
+
+  - id: heap-dump-analyzer-agent
+    name: Heap Dump Analyzer Agent
+    capabilities:
+      - heap-dump-analysis
+    status: active
+    max_concurrent: 2
+
+  - id: thread-dump-analyzer-agent
+    name: Thread Dump Analyzer Agent
+    capabilities:
+      - thread-dump-analysis
+    status: active
+    max_concurrent: 2
+
+  - id: query-explain-agent
+    name: Query Explain Agent
+    capabilities:
+      - query-optimization
+      - root-cause-analysis
+    status: active
+    max_concurrent: 3
+
+  - id: network-trace-agent
+    name: Network Trace Agent
+    capabilities:
+      - network-trace-analysis
+    status: active
+    max_concurrent: 3
+
+  - id: replay-debugger-agent
+    name: Replay Debugger Agent
+    capabilities:
+      - reproduction
+      - root-cause-analysis
+    status: active
+    max_concurrent: 2
+
+  - id: diff-analyzer-agent
+    name: Diff Analyzer Agent
+    capabilities:
+      - diff-analysis
+      - code-analysis
+    status: active
+    max_concurrent: 3
+
+  - id: reproduction-agent
+    name: Reproduction Agent
+    capabilities:
+      - reproduction
+      - test-generation
+    status: active
+    max_concurrent: 2
+
+  # Phase 13 — DevSecOps Workers
+  - id: cloud-resource-discovery-agent
+    name: Cloud Resource Discovery Agent
+    capabilities:
+      - cloud-resource-discovery
+    status: active
+    max_concurrent: 3
+
+  - id: cloud-resource-risk-agent
+    name: Cloud Resource Risk Agent
+    capabilities:
+      - cloud-resource-risk-assessment
+    status: active
+    max_concurrent: 3
+
+  - id: vulnerability-scoring-agent
+    name: Vulnerability Scoring Agent
+    capabilities:
+      - vulnerability-scoring
+    status: active
+    max_concurrent: 3
+
+  - id: compliance-control-evaluation-agent
+    name: Compliance Control Evaluation Agent
+    capabilities:
+      - compliance-control-evaluation
+    status: active
+    max_concurrent: 3
+
+  - id: compliance-gap-analysis-agent
+    name: Compliance Gap Analysis Agent
+    capabilities:
+      - compliance-gap-analysis
+    status: active
+    max_concurrent: 3
+
+  - id: project-onboarding-agent
+    name: Project Onboarding Agent
+    capabilities:
+      - project-onboarding
+    status: active
+    max_concurrent: 2
+
+  - id: context-gathering-agent
+    name: Context Gathering Agent
+    capabilities:
+      - context-gathering
+    status: active
+    max_concurrent: 5
+
+  - id: institutionalize-agent
+    name: Institutionalize Agent
+    capabilities:
+      - institutionalize
+    status: active
+    max_concurrent: 2
+
+  # Phase 13 — DevSecOps Orchestrators
+  - id: security-posture-orchestrator
+    name: Security Posture Orchestrator
+    capabilities:
+      - security-posture-orchestration
+      - cloud-resource-discovery
+      - vulnerability-scoring
+    status: active
+    max_concurrent: 2
+
+  - id: cloud-security-audit-orchestrator
+    name: Cloud Security Audit Orchestrator
+    capabilities:
+      - security-posture-orchestration
+      - cloud-resource-risk-assessment
+    status: active
+    max_concurrent: 2
+
+  - id: compliance-audit-orchestrator
+    name: Compliance Audit Orchestrator
+    capabilities:
+      - compliance-audit-orchestration
+      - compliance-control-evaluation
+      - compliance-gap-analysis
+    status: active
+    max_concurrent: 2
+
+  - id: full-lifecycle-orchestrator
+    name: Full Lifecycle Orchestrator
+    capabilities:
+      - full-lifecycle-orchestration
+      - context-gathering
+      - institutionalize
+    status: active
+    max_concurrent: 1
+
+# ============================================================================
+# Domain-Level Mappings (26 Canonical Domains)
+# ============================================================================
+
+domain_mappings:
+  # D1. Intent & Problem Framing
+  intent-problem-framing:
+    primary_agent: research-agent
+    fallback_agents:
+      - ai-assistant
+    execution_mode: async
+
+  # D2. Stakeholder & User Understanding
+  stakeholder-user-understanding:
+    primary_agent: research-agent
+    fallback_agents:
+      - documentation-agent
+    execution_mode: async
+
+  # D3. Context Gathering & Synthesis
+  context-gathering-synthesis:
+    primary_agent: research-agent
+    fallback_agents:
+      - ai-assistant
+    execution_mode: async
+
+  # D4. Requirements Engineering
+  requirements-engineering:
+    primary_agent: research-agent
+    fallback_agents:
+      - documentation-agent
+    execution_mode: async
+
+  # D5. Research & Discovery
+  research-discovery:
+    primary_agent: research-agent
+    fallback_agents:
+      - ai-assistant
+    execution_mode: async
+
+  # D6. Experimentation & Prototyping
+  experimentation-prototyping:
+    primary_agent: code-generator
+    fallback_agents:
+      - ai-assistant
+    execution_mode: async
+
+  # D7. Product & Experience Design
+  product-experience-design:
+    primary_agent: design-agent
+    fallback_agents:
+      - ai-assistant
+    execution_mode: async
+
+  # D8. Visual & Brand Design
+  visual-brand-design:
+    primary_agent: design-agent
+    fallback_agents:
+      - ai-assistant
+    execution_mode: async
+
+  # D9. System & Architecture Design
+  system-architecture-design:
+    primary_agent: code-analyzer
+    fallback_agents:
+      - documentation-agent
+      - ai-assistant
+    execution_mode: async
+
+  # D10. Task Decomposition & Estimation
+  task-decomposition-estimation:
+    primary_agent: ai-assistant
+    fallback_agents:
+      - research-agent
+    execution_mode: async
+
+  # D11. Dependency & Program Coordination
+  dependency-program-coordination:
+    primary_agent: ai-assistant
+    fallback_agents:
+      - documentation-agent
+    execution_mode: async
+
+  # D12. Change & Release Planning
+  change-release-planning:
+    primary_agent: deployment-agent
+    fallback_agents:
+      - ai-assistant
+    execution_mode: async
+
+  # D13. Software Development
+  software-development:
+    primary_agent: code-generator
+    fallback_agents:
+      - ai-assistant
+    execution_mode: async
+
+  # D14. Data & ML Development
+  data-ml-development:
+    primary_agent: data-agent
+    fallback_agents:
+      - code-generator
+    execution_mode: async
+
+  # D15. Content & Documentation Production
+  content-documentation-production:
+    primary_agent: documentation-agent
+    fallback_agents:
+      - ai-assistant
+    execution_mode: async
+
+  # D16. Testing & Quality Assurance
+  testing-qa:
+    primary_agent: test-generator
+    fallback_agents:
+      - code-analyzer
+    execution_mode: async
+
+  # D17. Security Engineering
+  security-engineering:
+    primary_agent: security-analyzer
+    fallback_agents:
+      - code-analyzer
+    execution_mode: async
+
+  # D18. Privacy, Risk & Compliance
+  privacy-risk-compliance:
+    primary_agent: security-analyzer
+    fallback_agents:
+      - code-analyzer
+    execution_mode: async
+
+  # D19. Build, CI/CD & Deployment
+  build-cicd-deployment:
+    primary_agent: deployment-agent
+    fallback_agents:
+      - code-generator
+    execution_mode: async
+
+  # D20. Operations & Monitoring
+  operations-monitoring:
+    primary_agent: debugger-agent
+    fallback_agents:
+      - code-analyzer
+    execution_mode: async
+
+  # D21. Incident Response & Recovery
+  incident-response-recovery:
+    primary_agent: debugger-agent
+    fallback_agents:
+      - code-analyzer
+      - ai-assistant
+    execution_mode: sync
+
+  # D22. Customer & Internal Support
+  customer-internal-support:
+    primary_agent: ai-assistant
+    fallback_agents:
+      - documentation-agent
+    execution_mode: async
+
+  # D23. Observability & Analytics
+  observability-analytics:
+    primary_agent: code-analyzer
+    fallback_agents:
+      - debugger-agent
+    execution_mode: async
+
+  # D24. Performance & Optimization
+  performance-optimization:
+    primary_agent: code-analyzer
+    fallback_agents:
+      - debugger-agent
+    execution_mode: async
+
+  # D25. Knowledge Management & Institutionalization
+  knowledge-management:
+    primary_agent: documentation-agent
+    fallback_agents:
+      - research-agent
+    execution_mode: async
+
+  # D26. Debugging & Troubleshooting
+  debugging-troubleshooting:
+    primary_agent: debug-orchestrator
+    fallback_agents:
+      - debugger-agent
+      - log-analysis-agent
+    execution_mode: async
+    capability_requirements:
+      - debug-orchestration
+      - root-cause-analysis
+      - log-analysis
+
+  # D27. Continuous Improvement & Innovation
+  continuous-improvement:
+    primary_agent: improve-orchestrator
+    fallback_agents:
+      - quality-guard-agent
+      - research-agent
+    execution_mode: async
+    capability_requirements:
+      - code-quality-orchestration
+      - performance-improvement
+      - tech-debt-management
+
+  # D27. Cloud Security
+  cloud-security:
+    primary_agent: security-posture-orchestrator
+    fallback_agents:
+      - cloud-resource-risk-agent
+      - vulnerability-scoring-agent
+    execution_mode: async
+    capability_requirements:
+      - cloud-resource-discovery
+      - cloud-resource-risk-assessment
+      - vulnerability-scoring
+
+  # D28. Compliance Management
+  compliance-management:
+    primary_agent: compliance-audit-orchestrator
+    fallback_agents:
+      - compliance-control-evaluation-agent
+      - compliance-gap-analysis-agent
+    execution_mode: async
+    capability_requirements:
+      - compliance-control-evaluation
+      - compliance-gap-analysis
+
+  # D29a. Deployment Pipeline
+  deployment-pipeline:
+    primary_agent: deploy-orchestrator
+    fallback_agents:
+      - cloud-pilot
+      - release-gate-agent
+    execution_mode: async
+    capability_requirements:
+      - deployment-orchestration
+      - rollout-management
+      - rollback-management
+
+  # D29. Project Lifecycle
+  project-lifecycle:
+    primary_agent: full-lifecycle-orchestrator
+    fallback_agents:
+      - project-onboarding-agent
+      - context-gathering-agent
+    execution_mode: async
+    capability_requirements:
+      - full-lifecycle-orchestration
+      - context-gathering
+      - institutionalize
+
+  # D30. Supply Chain Security
+  supply-chain-security:
+    primary_agent: supply-chain-verifier-agent
+    fallback_agents:
+      - sbom-signer-agent
+      - artifact-signer-agent
+    execution_mode: sync
+    capability_requirements:
+      - supply-chain-security
+      - security-analysis
+
+  # D31. Cost Governance
+  cost-governance:
+    primary_agent: budget-gate-agent
+    fallback_agents:
+      - cost-governor-agent
+    execution_mode: sync
+    capability_requirements:
+      - cost-governance
+      - cost-optimization
+
+  # D32. Dependency Governance
+  dependency-governance:
+    primary_agent: dependency-gate-agent
+    fallback_agents:
+      - dependency-auditor
+    execution_mode: sync
+    capability_requirements:
+      - dependency-governance
+      - security-analysis
+
+  # D33. Release Governance
+  release-governance:
+    primary_agent: release-governance-agent
+    fallback_agents:
+      - release-gate-agent
+      - sentinel
+    execution_mode: sync
+    capability_requirements:
+      - release-governance
+      - security-analysis
+
+  # D34. Notification Routing
+  notification-routing:
+    primary_agent: notification-agent
+    fallback_agents: []
+    execution_mode: async
+    capability_requirements:
+      - notification
+
+  # D35. Feature Flag Management
+  feature-flag-management:
+    primary_agent: feature-flag-integration-agent
+    fallback_agents:
+      - feature-flag-agent
+    execution_mode: sync
+    capability_requirements:
+      - feature-flag-management
+      - deployment-automation
+
+# ============================================================================
+# Task-Specific Overrides
+# ============================================================================
+
+task_overrides:
+  # Override specific tasks that need different agent assignments
+
+  # Security-specific tasks that need security agent
+  implementation/implement-auth-flow:
+    primary_agent: security-analyzer
+    capability_requirements:
+      - security-analysis
+      - code-generation
+
+  # Performance-critical tasks
+  implementation/optimize-critical-path:
+    primary_agent: code-analyzer
+    capability_requirements:
+      - performance-analysis
+      - code-generation
+
+  # Database schema tasks
+  implementation/design-database-schema:
+    primary_agent: data-agent
+    capability_requirements:
+      - schema-design
+
+  # Emergency debugging
+  debugging/investigate-production-issue:
+    primary_agent: debugger-agent
+    execution_mode: sync
+    priority: critical
+
+  # Security vulnerabilities
+  security/fix-vulnerability:
+    primary_agent: security-analyzer
+    execution_mode: sync
+    priority: critical
+
+# ============================================================================
+# Execution Modes
+# ============================================================================
+
+execution_modes:
+  sync:
+    description: Synchronous execution, wait for result
+    timeout_ms: 30000
+    retry_count: 1
+
+  async:
+    description: Asynchronous execution with callback
+    timeout_ms: 300000
+    retry_count: 3
+
+  batch:
+    description: Batch processing for multiple items
+    timeout_ms: 600000
+    retry_count: 2
+    batch_size: 10
+
+# ============================================================================
+# Fallback Rules
+# ============================================================================
+
+fallback_rules:
+  # What to do when primary agent is unavailable
+
+  on_agent_unavailable:
+    action: use_fallback
+    max_fallback_attempts: 2
+
+  on_capability_missing:
+    action: partial_execution
+    notify_user: true
+
+  on_all_agents_busy:
+    action: queue
+    max_queue_time_ms: 60000
+
+  on_timeout:
+    action: retry
+    backoff_multiplier: 2

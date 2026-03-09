@@ -1,0 +1,29 @@
+{
+  "name": "@ghatana/yappc-types",
+  "private": true,
+  "version": "0.0.0",
+  "type": "module",
+  "main": "./src/index.ts",
+  "types": "./dist/types/index.d.ts",
+  "exports": {
+    ".": {
+      "import": "./src/index.ts",
+      "types": "./dist/types/index.d.ts"
+    },
+    "./devsecops": {
+      "import": "./src/devsecops/index.ts",
+      "types": "./dist/types/devsecops/index.d.ts"
+    },
+    "./devsecops/fixtures": {
+      "import": "./src/devsecops/fixtures.ts",
+      "types": "./dist/types/devsecops/fixtures.d.ts"
+    }
+  },
+  "scripts": {
+    "build:types": "tsc -p tsconfig.json",
+    "type-check": "tsc --noEmit"
+  },
+  "devDependencies": {
+    "typescript": "^5.9.3"
+  }
+}

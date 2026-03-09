@@ -1,0 +1,15 @@
+export function Header() {
+return (
+<header className="flex items-center justify-between py-4">
+    <h1 className="text-xl font-semibold">{{projectName}}</h1>
+    <nav className="flex gap-4 text-sm text-gray-600">
+        <a href="/" className="hover:underline">
+            Home
+        </a>
+        <a href="/api/health" className="hover:underline">
+            Health
+        </a>
+    </nav>
+</header>
+)
+}

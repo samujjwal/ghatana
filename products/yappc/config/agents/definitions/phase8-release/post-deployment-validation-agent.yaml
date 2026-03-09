@@ -1,0 +1,113 @@
+id: post-deployment-validation-agent
+name: Post-Deployment Validation Agent
+version: 1.0.0
+description: Validates deployments after release. Runs smoke tests and verifies functionality.
+
+metadata:
+  level: 3  # Worker
+  domain: release
+  tags:
+    - validation
+    - smoke-testing
+    - verification
+    - health-checks
+
+generator:
+  type: PIPELINE
+  steps:
+    - name: smoke_tests
+      type: SERVICE_CALL
+      service: test-service
+      endpoint: /tests/smoke
+    - name: health_checks
+      type: SERVICE_CALL
+      service: health-service
+      endpoint: /check/comprehensive
+    - name: validation_analysis
+      type: LLM
+      provider: ANTHROPIC
+      model: claude-3-5-sonnet-20241022
+      temperature: 0.2
+      max_tokens: 1500
+      prompt: |
+        You are the Post-Deployment Validation Agent. Analyze results:
+        
+        Smoke Tests: {{smoke}}
+        Health Checks: {{health}}
+        Metrics: {{metrics}}
+        Previous Baseline: {{baseline}}
+        
+        Validate:
+        1. Core functionality working
+        2. Dependencies healthy
+        3. Performance within baseline
+        4. Error rates acceptable
+        5. Integration points verified
+        6. Data integrity
+        
+        Output as JSON: {
+          validation_passed,
+          smoke_test_results,
+          health_status,
+          performance_comparison,
+          issues_found,
+          recommendation: [proceed|investigate|rollback]
+        }
+
+memory:
+  episodic:
+    enabled: true
+    retention_days: 365
+    categories:
+      - validations
+      - failures
+      - recommendations
+  semantic:
+    enabled: true
+    categories:
+      - validation-patterns
+      - failure-signatures
+      - baseline-models
+  procedural:
+    enabled: true
+    categories:
+      - validation-checklist
+      - health-check-rules
+      - threshold-definitions
+
+tools:
+  - smoke_tester
+  - health_checker
+  - metrics_comparator
+
+capabilities:
+  - smoke-testing
+  - health-verification
+  - performance-validation
+  - recommendation
+
+routing:
+  input_types:
+    - deployment-complete
+    - validation-request
+    - health-check
+  output_types:
+    - validation-report
+    - health-status
+    - recommendation
+
+delegation:
+  can_delegate_to: []
+  escalates_to:
+    - release-orchestrator-agent
+    - rollback-agent
+
+governance:
+  requires_approval: false
+  can_block: true  # Can trigger rollback
+  audit_trail: comprehensive
+
+performance:
+  expected_latency_ms: 10000
+  max_latency_ms: 30000
+  timeout_ms: 300000  # 5 minutes

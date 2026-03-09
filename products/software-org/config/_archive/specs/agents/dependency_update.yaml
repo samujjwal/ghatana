@@ -1,0 +1,25 @@
+---
+id: "dependency_update"
+agent: "DependencyUpdateAgent"
+role: "Tooling Engineer"
+inputs_spec:
+- name: "modularized_codebase"
+  description: "Codebase with dependencies to update."
+  format: "Source repo or manifest"
+outputs_spec:
+- name: "updated_dependencies"
+  description: "Log/report of updated dependencies."
+  format: "Update log"
+agent_tasks:
+- "Identify outdated or vulnerable dependencies."
+- "Apply/test updates."
+- "Maintain update logs."
+acceptance_criteria:
+- "Outdated/vulnerable dependencies are updated."
+- "Updates are tested before merging."
+- "Update logs are maintained."
+dependencies:
+- "modularized_codebase"
+failure_escalation:
+- "Escalate to Dev Lead if updates are not applied or tested."
+references: []

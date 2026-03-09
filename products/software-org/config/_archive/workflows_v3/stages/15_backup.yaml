@@ -1,0 +1,125 @@
+# Backup Stage - v3 Operator-Based Definition
+# Uses consolidated operators from operations/domain/operate/
+name: Backup
+description: Data backup, recovery testing, and disaster recovery planning
+domain: operate
+
+# Operators used in this stage
+operators:
+  - ref: operate/incident_operator
+    modes: [dr]
+
+# Cross-cutting operators
+cross_cutting:
+  - ref: cross-cutting/milestone_tracker
+    params:
+      stage: backup
+  - ref: cross-cutting/best_practice
+    params:
+      stage: backup
+  - ref: cross-cutting/evidence_collector
+    params:
+      stage: backup
+  - ref: cross-cutting/audit_log
+    params:
+      stage: backup
+
+# Workflow sequence
+workflow:
+  # Backup Configuration
+  - step: configure_backup
+    type: manual
+    description: Configure backup policies and schedules
+    inputs:
+      - name: monitor_stage_milestone
+    outputs:
+      - name: backup_configuration
+    hitl: true
+    hitl_reason: Human configures backup policies
+
+  # Execute Backup
+  - step: execute_backup
+    type: automated
+    description: Execute scheduled backups
+    inputs:
+      - name: backup_configuration
+    outputs:
+      - name: backup_results
+    depends_on: [configure_backup]
+
+  # Verify Backup
+  - step: verify_backup
+    type: automated
+    description: Verify backup integrity
+    inputs:
+      - name: backup_results
+    outputs:
+      - name: backup_verification
+    depends_on: [execute_backup]
+
+  # DR Planning
+  - step: dr_planning
+    operator: operate/incident_operator
+    mode: dr
+    inputs:
+      - name: backup_verification
+    outputs:
+      - name: dr_plan
+    depends_on: [verify_backup]
+
+  # Recovery Testing
+  - step: recovery_testing
+    type: manual
+    description: Test recovery procedures
+    inputs:
+      - name: dr_plan
+      - name: backup_results
+    outputs:
+      - name: recovery_test_results
+    depends_on: [dr_planning]
+    hitl: true
+    hitl_reason: Human performs recovery testing
+
+  # Evidence Collection
+  - step: collect_backup_evidence
+    operator: cross-cutting/evidence_collector
+    params:
+      stage: backup
+    inputs:
+      - name: backup_verification
+      - name: recovery_test_results
+    outputs:
+      - name: backup_evidence_package
+    depends_on: [recovery_testing]
+
+  # Cross-cutting
+  - step: best_practice_check
+    operator: cross-cutting/best_practice
+    params:
+      stage: backup
+    inputs:
+      - name: backup_verification
+      - name: recovery_test_results
+    outputs:
+      - name: best_practice_report
+    depends_on: [collect_backup_evidence]
+
+  - step: track_milestones
+    operator: cross-cutting/milestone_tracker
+    params:
+      stage: backup
+    inputs:
+      - name: best_practice_report
+    outputs:
+      - name: backup_stage_milestone
+    depends_on: [best_practice_check]
+
+# Stage entry/exit criteria
+entry_criteria:
+  - System operational
+  - Data to backup identified
+
+exit_criteria:
+  - Backups verified
+  - DR plan documented
+  - Recovery tested

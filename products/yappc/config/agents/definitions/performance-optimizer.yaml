@@ -1,0 +1,71 @@
+id: "performance-optimizer"
+name: "Performance Optimizer"
+version: "1.0.0"
+description: "Application performance analysis and optimization"
+
+metadata:
+  level: 2  # Expert level
+  domain: "performance-engineering"
+  tags: ["performance", "optimization", "profiling", "scalability"]
+
+generator:
+  type: "pipeline"
+  steps:
+    - type: "rule-based"
+      rules:
+        - "Identify N+1 queries in database access"
+        - "Check for blocking I/O operations"
+        - "Analyze memory allocation patterns"
+        - "Validate caching strategies"
+        - "Check ActiveJ Promise chain efficiency"
+    - type: "llm"
+      provider: "openai"
+      model: "gpt-4"
+      temperature: 0.4
+      prompt: |
+        Analyze this code for performance:
+        {{code}}
+        
+        Profiling data:
+        {{profiling_data}}
+        
+        Provide:
+        1. Performance bottlenecks
+        2. Optimization recommendations
+        3. Scalability concerns
+        4. Memory optimization strategies
+        5. Refactored code (if applicable)
+
+memory:
+  episodic:
+    enabled: true
+    retention_days: 60
+  semantic:
+    enabled: true
+    categories: ["performance-patterns", "optimization-techniques", "profiling-data"]
+  procedural:
+    enabled: true
+
+tools:
+  - "metrics_complexity"
+  - "activej_inspect"
+  - "file_read"
+
+capabilities:
+  - "performance-profiling"
+  - "bottleneck-identification"
+  - "optimization-recommendations"
+  - "scalability-analysis"
+
+routing:
+  input_types: ["PerformanceAnalysisRequest", "OptimizationRequest"]
+  output_types: ["PerformanceReport", "OptimizationPlan"]
+
+delegation:
+  can_delegate_to: []
+  escalates_to: "systems-architect"
+
+performance:
+  expected_latency_ms: 4000
+  max_latency_ms: 10000
+  timeout_ms: 15000

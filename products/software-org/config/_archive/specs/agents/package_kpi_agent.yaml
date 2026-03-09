@@ -1,0 +1,27 @@
+---
+id: "package_kpi_agent"
+agent: "StageKPIAgent"
+role: "Package KPI Analyst"
+inputs_spec:
+- name: "package_stage_milestone"
+  description: "Package stage milestone for KPI tracking."
+  format: "List of milestone objects"
+outputs_spec:
+- name: "package_kpi_report"
+  description: "Package KPI report."
+  format: "KPI report artifact"
+agent_tasks:
+- "Track/report KPIs (on-schedule releases, integrity rate, rejections, audit pass,\
+  \ promotion, mean time, trends)."
+- "Flag trends, anomalies, negative movements for review."
+- "Ensure KPI data is traceable to milestones and release audit logs."
+acceptance_criteria:
+- "All KPIs tracked, flagged for review as needed."
+- "KPI data traceable to milestone/audit."
+- "Trends compared to baselines."
+dependencies:
+- "package_stage_milestone"
+failure_escalation:
+- "Escalate to KPI Analyst if KPIs are missing or not updated."
+references: []
+hitl: false

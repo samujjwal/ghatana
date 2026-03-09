@@ -1,0 +1,30 @@
+---
+id: "retro_audit_log_agent"
+agent: "AuditLogAgent"
+role: "Compliance Bot"
+inputs_spec:
+- name: "retro_findings"
+  description: "Retrospective findings for audit logging."
+  format: "Retrospective findings artifact"
+- name: "improvement_plan"
+  description: "Improvement plan for audit logging."
+  format: "Improvement plan artifact"
+- name: "retro_notification_agent"
+  description: "Retro notification agent log."
+  format: "List of notification objects"
+outputs_spec:
+- name: "retro_audit_log"
+  description: "Retrospective agent actions/decisions for audit/traceability."
+  format: "Audit log artifact"
+agent_tasks:
+- "Log all retrospective agent actions and decisions for audit/traceability."
+acceptance_criteria:
+- "All retrospective agent actions and decisions logged for audit/traceability."
+dependencies:
+- "retro_findings"
+- "improvement_plan"
+- "retro_notification_agent"
+failure_escalation:
+- "Escalate to Compliance Bot if actions/decisions not logged."
+references: []
+hitl: false

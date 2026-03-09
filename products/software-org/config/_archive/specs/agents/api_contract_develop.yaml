@@ -1,0 +1,26 @@
+---
+id: "api_contract_develop"
+agent: "APIContractAgent"
+role: "API Architect"
+inputs_spec:
+- name: "modularized_codebase"
+  description: "Codebase for API contracts/doc generation."
+  format: "Source repo or artifact"
+outputs_spec:
+- name: "api_contracts_docs"
+  description: "API documentation and contracts."
+  format: "API doc artifact or spec file"
+agent_tasks:
+- "Publish and version API documentation."
+- "Ensure docs are in sync with implementation."
+acceptance_criteria:
+- "API documentation is published and accessible."
+- "All changes are versioned."
+- "Docs are in sync with implementation."
+dependencies:
+- "modularized_codebase"
+failure_escalation:
+- "Escalate to API Architect/QA if docs are outdated or missing."
+references: []
+hitl: true
+hitl_reason: "Human reviews API contracts documentation for completeness"

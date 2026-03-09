@@ -1,0 +1,28 @@
+{
+  "source": {
+    "type": "http",
+    "options": {
+      "url": "https://config.example.com/extension-config.json",
+      "commandUrl": "https://config.example.com/commands.log",
+      "trustedKeys": [
+        {
+          "kid": "example-kid",
+          "jwk": {
+            "kty": "EC",
+            "crv": "P-256",
+            "x": "...",
+            "y": "...",
+            "d": "..."
+          }
+        }
+      ]
+    }
+  },
+  "sink": {
+    "type": "wss",
+    "options": {
+      "url": "wss://ws-ingest.example.com/",
+      "heartbeatMs": 30000
+    }
+  }
+}

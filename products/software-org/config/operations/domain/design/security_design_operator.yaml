@@ -1,0 +1,336 @@
+# Security Design Operator - Consolidated Design Domain
+# Consolidates: security_design, compliance_design, threat modeling, security controls
+# Purpose: Complete security architecture from threat modeling through control specification
+
+id: security_design_operator
+version: "1.0.0"
+domain: design
+category: security
+
+description: |
+  Unified security design operator handling complete security architecture:
+  - Threat modeling and risk assessment
+  - Security control specification
+  - Compliance mapping
+  - Security architecture patterns
+  - Security review and validation
+
+# Operator Modes
+modes:
+  threat_modeling:
+    description: "Conduct threat modeling"
+    role: Security Architect
+    inputs:
+      - name: solution_architecture
+        description: System architecture
+        required: true
+      - name: data_model
+        description: Data model with sensitivity classification
+        required: true
+    outputs:
+      - name: threat_model
+        description: Threat model document
+        format: yaml_document
+        schema:
+          - model_id: string
+          - methodology: "STRIDE|PASTA|LINDDUN|DREAD"
+          - scope: string
+          - assets: list
+          - threat_actors: list
+          - attack_surfaces: list
+          - threats: list
+          - risk_assessment: list
+    threat_schema:
+      - threat_id: string
+      - category: "spoofing|tampering|repudiation|information_disclosure|dos|elevation_of_privilege"
+      - description: string
+      - attack_vector: string
+      - affected_assets: list
+      - likelihood: "high|medium|low"
+      - impact: "critical|high|medium|low"
+      - risk_score: number
+      - existing_controls: list
+      - mitigation_status: "mitigated|partial|unmitigated"
+    tasks:
+      - Identify assets and trust boundaries
+      - Enumerate threat actors
+      - Map attack surfaces
+      - Apply threat methodology (STRIDE)
+      - Assess likelihood and impact
+      - Calculate risk scores
+
+  control_design:
+    description: "Design security controls"
+    role: Security Architect
+    inputs:
+      - name: threat_model
+        description: Threat model
+        required: true
+      - name: compliance_requirements
+        description: Regulatory requirements
+        required: false
+    outputs:
+      - name: security_controls
+        description: Security control specifications
+        format: yaml_list
+        schema:
+          - control_id: string
+          - name: string
+          - category: "preventive|detective|corrective|compensating"
+          - type: "technical|administrative|physical"
+          - description: string
+          - mitigates_threats: list
+          - implementation: object
+          - testing_requirements: list
+          - compliance_mapping: list
+    control_categories:
+      authentication:
+        - multi_factor_authentication
+        - certificate_based_auth
+        - sso_integration
+        - session_management
+      authorization:
+        - rbac
+        - abac
+        - policy_enforcement
+        - least_privilege
+      data_protection:
+        - encryption_at_rest
+        - encryption_in_transit
+        - key_management
+        - data_masking
+        - tokenization
+      network:
+        - network_segmentation
+        - firewall_rules
+        - waf
+        - ddos_protection
+      monitoring:
+        - security_logging
+        - intrusion_detection
+        - siem_integration
+        - anomaly_detection
+    tasks:
+      - Map controls to threats
+      - Specify control implementation
+      - Define testing requirements
+      - Map to compliance frameworks
+      - Identify control gaps
+
+  compliance_mapping:
+    description: "Map controls to compliance frameworks"
+    role: Compliance Analyst
+    inputs:
+      - name: security_controls
+        description: Defined security controls
+        required: true
+      - name: compliance_requirements
+        description: Applicable regulations
+        required: true
+    outputs:
+      - name: compliance_mapping
+        description: Control to compliance mapping
+        format: yaml_document
+        schema:
+          - frameworks: list
+          - control_mappings: list
+          - gaps: list
+          - evidence_requirements: list
+    framework_schema:
+      - framework_name: string
+      - version: string
+      - applicable_controls: list
+      - scope: string
+    mapping_schema:
+      - control_id: string
+      - framework: string
+      - requirement_id: string
+      - requirement_text: string
+      - coverage_status: "full|partial|gap"
+      - evidence_type: string
+    compliance_frameworks:
+      - SOC2: "Service Organization Controls"
+      - ISO27001: "Information Security Management"
+      - HIPAA: "Healthcare data protection"
+      - GDPR: "EU data protection"
+      - PCI_DSS: "Payment card security"
+      - NIST: "Cybersecurity framework"
+      - FedRAMP: "Federal cloud security"
+    tasks:
+      - Identify applicable frameworks
+      - Map controls to requirements
+      - Identify coverage gaps
+      - Define evidence requirements
+      - Plan remediation for gaps
+
+  security_architecture:
+    description: "Design security architecture patterns"
+    role: Security Architect
+    inputs:
+      - name: solution_architecture
+        description: System architecture
+        required: true
+      - name: security_controls
+        description: Required controls
+        required: true
+    outputs:
+      - name: security_architecture
+        description: Security architecture document
+        format: yaml_document
+        schema:
+          - security_zones: list
+          - trust_boundaries: list
+          - identity_architecture: object
+          - data_protection_architecture: object
+          - network_security_architecture: object
+          - security_services: list
+          - integration_patterns: list
+    security_patterns:
+      - defense_in_depth
+      - zero_trust
+      - security_by_design
+      - fail_secure
+      - least_privilege
+      - separation_of_duties
+    tasks:
+      - Define security zones
+      - Establish trust boundaries
+      - Design identity architecture
+      - Specify data protection patterns
+      - Plan network security
+      - Select security services
+
+  security_review:
+    description: "Conduct security design review"
+    role: Security Review Board
+    inputs:
+      - name: all_security_artifacts
+        description: All security design documents
+        required: true
+    outputs:
+      - name: security_review_report
+        description: Security review findings
+        format: yaml_report
+        schema:
+          - review_id: string
+          - review_date: datetime
+          - reviewers: list
+          - scope: string
+          - findings: list
+          - risk_rating: "critical|high|medium|low"
+          - recommendations: list
+          - approval_status: "approved|conditional|rejected"
+          - conditions: list
+    tasks:
+      - Review threat model completeness
+      - Validate control adequacy
+      - Assess architecture security
+      - Check compliance coverage
+      - Document findings
+      - Provide recommendations
+
+# Internal Logic
+internal_logic:
+  perception:
+    description: "Analyze architecture for security implications"
+    sources:
+      - solution_architecture
+      - data_model
+      - compliance_requirements
+      - threat_intelligence
+  model:
+    description: "Security design knowledge graph"
+    entities:
+      - threat: "{id, category, vector, risk}"
+      - control: "{id, type, implementation}"
+      - compliance: "{framework, requirement, evidence}"
+    relationships:
+      - control_mitigates_threat
+      - control_satisfies_requirement
+      - asset_subject_to_threat
+  planning:
+    strategy: |
+      1. Threat model first (know your risks)
+      2. Defense in depth (layered controls)
+      3. Security by design (not bolt-on)
+      4. Compliance as outcome (not goal)
+      5. Continuous validation
+  action:
+    description: "Output security design artifacts"
+    validation: "Security review board approval"
+
+# Quality Assurance
+quality:
+  templates:
+    - threat_model_template
+    - control_specification_template
+    - compliance_mapping_template
+  checklists:
+    - owasp_top10_checklist
+    - stride_checklist
+    - compliance_checklist
+  automated_checks:
+    - control_coverage_analysis
+    - compliance_gap_detection
+    - threat_risk_calculation
+
+# HITL Configuration
+hitl:
+  enabled: true
+  touchpoints:
+    - threat_model_review
+    - control_approval
+    - security_architecture_sign_off
+  reason: "Security decisions require expert judgment"
+
+# Validation Rules
+validation:
+  rules:
+    - "All threats must have mitigation plan"
+    - "All controls must map to threats"
+    - "Compliance gaps must have remediation plan"
+    - "Critical risks must have controls"
+  review_gates:
+    - security_architect_review
+    - security_review_board
+    - compliance_sign_off
+
+# Escalation
+escalation:
+  triggers:
+    - "Critical unmitigated threat"
+    - "Compliance gap with no remediation"
+    - "Security architecture deviation"
+  paths:
+    - role: CISO
+      for: "Critical security decisions"
+    - role: Compliance Officer
+      for: "Regulatory concerns"
+    - role: Chief Architect
+      for: "Architecture security conflicts"
+
+# Dependencies
+dependencies:
+  upstream:
+    - architecture_operator
+    - data_model_operator
+    - api_operator
+  downstream:
+    - build_operator
+    - test_strategy_operator
+    - deploy_operator
+
+# Metrics
+metrics:
+  - name: threat_coverage
+    description: "Threats with mitigation controls"
+    target: "100%"
+  - name: control_effectiveness
+    description: "Controls validated as effective"
+    target: ">= 95%"
+  - name: compliance_coverage
+    description: "Requirements with mapped controls"
+    target: "100%"
+  - name: security_review_pass_rate
+    description: "Designs passing security review"
+    target: ">= 90%"

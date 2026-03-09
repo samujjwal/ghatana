@@ -1,0 +1,670 @@
+name: Solution
+workflow:
+  - id: solution_architecture
+    agent: SolutionApproachAgent
+    role: Solution Architect
+    inputs_spec:
+      - name: ready_for_solution_package
+        description: Complete requirements and artifacts package from the Plan stage, including all constraints, risks, and approvals.
+        format: Package (list of documents, version info, approval status)
+    outputs_spec:
+      - name: solution_architecture
+        description: Solution architecture addressing all requirements and constraints, with key design decisions, components, tradeoffs, and risks documented.
+        format: "Structured architecture document (sections: overview, components, decisions, tradeoffs, risks, alignment)"
+        example: |
+          overview: "Microservices architecture on AWS"
+          components: ["API Gateway", "Lambda", "S3"]
+          decisions: ["Use serverless for scalability"]
+          tradeoffs: ["Higher cold start latency"]
+          risks: ["Vendor lock-in"]
+          alignment: ["Meets business goals"]
+    agent_tasks:
+      - Analyze requirements, constraints, and risks from Plan stage.
+      - Develop high-level architecture covering all major components.
+      - Document key design decisions, tradeoffs, and alternatives.
+      - Identify and list architectural risks and mitigations.
+      - Ensure architecture aligns with business goals and success criteria.
+    acceptance_criteria:
+      - Solution architecture addresses all requirements and constraints from the Plan stage.
+      - Key design decisions are clearly explained.
+      - All architectural components are described (at least at a high level).
+      - Tradeoffs and alternatives are considered where appropriate.
+      - Major risks and mitigations in the architecture are listed.
+      - Solution aligns with business goals and success criteria.
+    dependencies:
+      - ready_for_solution_package
+    failure_escalation:
+      - Escalate to solution architect or PM if requirements or risks are not addressed.
+    references: []
+    hitl: true
+    hitl_reason: Human validates architectural decisions and tradeoffs
+  - id: solution_best_practice_enforcement
+    agent: SolutionBestPracticeAgent
+    role: Solution QA Reviewer
+    inputs_spec:
+      - name: solution_architecture
+        description: Proposed solution architecture with documented design decisions and risks.
+        format: Structured architecture document
+    outputs_spec:
+      - name: solution_best_practice_report
+        description: Report on alignment of architecture with best practices, deviations, scalability, reliability, maintainability, and security.
+        format: "Structured report (sections: best practices, deviations, scalability, reliability, maintainability, security, checklist)"
+        example: |
+          best_practices: ["Microservices pattern", "Zero trust"]
+          deviations: ["No caching layer"]
+          scalability: "Meets requirements"
+          reliability: "Multi-AZ"
+          maintainability: "CI/CD ready"
+          security: ["Encryption at rest"]
+          checklist: ["Attached"]
+    agent_tasks:
+      - Review solution architecture against approved best practices.
+      - Identify and document any deviations and their justifications.
+      - Assess solution for scalability, reliability, maintainability, and security.
+      - Complete and attach best practice checklist.
+    acceptance_criteria:
+      - All architectural patterns align with approved best practices.
+      - Any deviation from best practices is justified and documented.
+      - Solution is reviewed for scalability, reliability, and maintainability.
+      - Security considerations are reviewed in the solution.
+      - Solution best practice checklist is completed and attached.
+    dependencies:
+      - solution_architecture
+    failure_escalation:
+      - Escalate to QA reviewer or architect if critical best practices are not met or deviations are unjustified.
+    references: []
+    hitl: true
+    hitl_reason: Human ensures solution best practices are enforced
+  - id: solution_milestone_tracker
+    agent: SolutionMilestoneTrackerAgent
+    role: Solution PM
+    inputs_spec:
+      - name: solution_best_practice_report
+        description: Best practice review report for the solution architecture.
+        format: Structured report
+    outputs_spec:
+      - name: solution_stage_milestone
+        description: List of all solution stage milestones, with targets, owners, dependencies, and status.
+        format: List of milestone objects (id, description, target_date, owner, dependencies, entry_criteria, exit_criteria, status)
+        example: |
+          - id: S1
+            description: "Architecture signoff"
+            target_date: "2024-08-01"
+            owner: "Lead Architect"
+            dependencies: []
+            entry_criteria: ["Best practice report complete"]
+            exit_criteria: ["Signoff obtained"]
+            status: "planned"
+    agent_tasks:
+      - Define and document all solution-related milestones.
+      - Map dependencies on prior or subsequent stages.
+      - Document entry and exit criteria for the solution stage.
+      - Assign owners and target dates.
+      - Track and log all milestone completions.
+    acceptance_criteria:
+      - All solution-related milestones are documented with target dates and owners.
+      - Solution stage entry and exit criteria are clear.
+      - Dependencies on prior or subsequent stages are documented.
+      - All milestone completions are logged.
+    dependencies:
+      - solution_best_practice_report
+    failure_escalation:
+      - Escalate to Solution PM or stage lead if milestones are missing or unclear.
+    references: []
+    hitl: true
+    hitl_reason: Human oversight for tracking solution milestones
+  - id: architecture_review
+    agent: ArchitectureReviewAgent
+    role: Lead Architect
+    inputs_spec:
+      - name: solution_stage_milestone
+        description: Solution stage milestone plan with architecture milestone and status.
+        format: List of milestone objects
+    outputs_spec:
+      - name: architecture_signoff
+        description: Final review and signoff on solution architecture, with reviewer comments and risk discussion.
+        format: "Structured signoff document (sections: review, comments, risks, signoff_status)"
+        example: |
+          review: "All components align with requirements"
+          comments: ["Consider caching"]
+          risks: ["Latency"]
+          signoff_status: "approved"
+    agent_tasks:
+      - Conduct full architecture review by a qualified human.
+      - Discuss all identified architectural risks and issues.
+      - Document reviewer comments.
+      - Record final signoff or rejection.
+    acceptance_criteria:
+      - Full architecture is reviewed by a qualified human.
+      - All identified architectural risks and issues are discussed.
+      - Reviewer comments are documented.
+      - Final signoff/rejection is clearly recorded.
+    dependencies:
+      - solution_stage_milestone
+    failure_escalation:
+      - Escalate to lead architect or PM if signoff is withheld or issues unresolved.
+    references: []
+    hitl: true
+    hitl_reason: Human provides final review and signoff on architecture
+  - id: threat_model
+    agent: ThreatModelAgent
+    role: Security Architect
+    inputs_spec:
+      - name: architecture_signoff
+        description: Signed-off architecture document.
+        format: Structured signoff document
+    outputs_spec:
+      - name: threat_model_report
+        description: Comprehensive threat model covering all relevant threats, classifications, mitigations, and residual risks.
+        format: "Structured threat model document (sections: threats, classification, mitigations, residual_risks, distribution)"
+        example: |
+          threats: ["Privilege escalation"]
+          classification: ["STRIDE: Elevation of Privilege"]
+          mitigations: ["RBAC"]
+          residual_risks: ["Insider threat"]
+          distribution: ["Shared with stakeholders"]
+    agent_tasks:
+      - Identify all relevant threats to the solution architecture.
+      - Classify threats (e.g., STRIDE).
+      - Document mitigation strategies for each threat.
+      - Highlight residual risks.
+      - Distribute threat model to relevant stakeholders.
+    acceptance_criteria:
+      - All relevant threats to the solution architecture are identified.
+      - Threats are classified (e.g., STRIDE categories).
+      - Mitigation strategies are documented for each threat.
+      - Residual risks are highlighted.
+      - Threat model is shared with all relevant stakeholders.
+    dependencies:
+      - architecture_signoff
+    failure_escalation:
+      - Escalate to security architect or lead if threats or mitigations are incomplete.
+    references: []
+    hitl: true
+    hitl_reason: Human reviews threat model for comprehensive security coverage
+  - id: solution_pattern_enforcer
+    agent: SolutionPatternEnforcerAgent
+    role: Solution Automation Bot
+    inputs_spec:
+      - name: solution_stage_milestone
+        description: Solution stage milestone plan.
+        format: List of milestone objects
+    outputs_spec:
+      - name: pattern_compliance_report
+        description: Automated report on compliance with approved solution patterns, flagged non-compliances, and diagram notation checks.
+        format: "Structured report (sections: compliance, non_compliant_patterns, diagram_notations, distribution)"
+        example: |
+          compliance: true
+          non_compliant_patterns: []
+          diagram_notations: "UML"
+          distribution: ["Solution team"]
+    agent_tasks:
+      - Check if architecture matches org-approved solution patterns.
+      - Automatically flag non-compliant patterns.
+      - Check all architecture diagrams use approved notations.
+      - Generate and distribute pattern compliance report.
+    acceptance_criteria:
+      - Architecture matches organization-approved solution patterns.
+      - Non-compliant patterns are automatically flagged.
+      - All architecture diagrams use approved notations.
+      - Pattern compliance report is generated and distributed.
+    dependencies:
+      - solution_stage_milestone
+    failure_escalation:
+      - Escalate to solution automation lead if non-compliance is found.
+    references: []
+    hitl: false
+  - id: solution_kpi_agent
+    agent: StageKPIAgent
+    role: Solution KPI Analyst
+    inputs_spec:
+      - name: solution_stage_milestone
+        description: Solution stage milestone plan.
+        format: List of milestone objects
+    outputs_spec:
+      - name: solution_kpi_report
+        description: KPI report for Solution stage (completeness, milestone velocity, risk closure, trends, anomalies).
+        format: "Structured KPI report (sections: completeness, velocity, risk_closure, trends, anomalies, visualization)"
+        example: |
+          completeness: 90
+          velocity: "2 milestones/week"
+          risk_closure: "80%"
+          trends: ["Improving"]
+          anomalies: []
+    agent_tasks:
+      - Define and update key Solution stage KPIs.
+      - Report KPI data for each solution milestone.
+      - Flag trends, anomalies, or deviations in KPIs.
+      - Visualize KPI trends over time and compare to baselines.
+    acceptance_criteria:
+      - Key Solution stage KPIs are defined (e.g., architectural completeness, milestone velocity, risk closure rate).
+      - KPI data is updated and reported for each solution milestone.
+      - Trends, anomalies, or deviations in solution KPIs are flagged for review.
+      - KPI trends are visualized over time and compared to past project baselines.
+      - Outliers and deviations are flagged for review.
+    dependencies:
+      - solution_stage_milestone
+    failure_escalation:
+      - Escalate to KPI analyst or PM if KPIs are not defined or up to date.
+    references: []
+    hitl: false
+  - id: solution_success_criteria_tracker
+    agent: SuccessCriteriaTrackerAgent
+    role: Solution Success Criteria Tracker
+    inputs_spec:
+      - name: solution_stage_milestone
+        description: Solution stage milestone plan.
+        format: List of milestone objects
+    outputs_spec:
+      - name: solution_success_criteria_status
+        description: Status of solution stage success criteria, progress, blockers, and risks.
+        format: List of criteria status objects (criterion, status, blockers, risks)
+        example: |
+          - criterion: "Architecture signoff"
+            status: "complete"
+            blockers: []
+            risks: []
+    agent_tasks:
+      - Define and track solution stage success criteria.
+      - Report progress and blockers for each criterion.
+      - Flag risks or issues affecting solution success criteria.
+    acceptance_criteria:
+      - Solution stage success criteria are clearly defined and tracked.
+      - Progress and blockers for each criterion are reported.
+      - Any risks or issues affecting solution success criteria are flagged.
+    dependencies:
+      - solution_stage_milestone
+    failure_escalation:
+      - Escalate to criteria tracker or PM if criteria are unclear or not met.
+    references: []
+    hitl: false
+  - id: solution_escalation_handler
+    agent: EscalationHandlerAgent
+    role: Project Escalation Manager
+    inputs_spec:
+      - name: solution_success_criteria_status
+        description: Status of solution stage success criteria.
+        format: List of criteria status objects
+    outputs_spec:
+      - name: solution_escalation_report
+        description: Escalation report for unresolved blockers, owners, deadlines, and dashboard visibility.
+        format: "Structured escalation report (sections: at_risk_criteria, owners, deadlines, status)"
+        example: |
+          at_risk_criteria: ["Architecture signoff"]
+          owners: ["Lead Architect"]
+          deadlines: ["2024-08-05"]
+          status: "escalated"
+    agent_tasks:
+      - Review all "At Risk" or "Not Met" criteria for escalation.
+      - Assign owners and deadlines for resolution.
+      - Make escalation status visible in dashboard and audit log.
+    acceptance_criteria:
+      - All "At Risk" or "Not Met" criteria are reviewed for escalation.
+      - Owners and deadlines for resolution are assigned.
+      - Escalation status is visible in the dashboard and audit log.
+    dependencies:
+      - solution_success_criteria_status
+    failure_escalation:
+      - Escalate to escalation manager or PM if blockers are not resolved.
+    references: []
+    hitl: true
+    hitl_reason: Human ensures appropriate escalation/action for unresolved blockers
+  - id: solution_readiness_checker
+    agent: ReadinessCheckerAgent
+    role: Gatekeeper Bot
+    inputs_spec:
+      - name: solution_stage_milestone
+        description: Solution stage milestone plan.
+        format: List of milestone objects
+      - name: solution_best_practice_report
+        description: Best practice review report.
+        format: Structured report
+      - name: solution_kpi_report
+        description: KPI report for Solution stage.
+        format: Structured KPI report
+    outputs_spec:
+      - name: solution_readiness_status
+        description: Readiness status for Solution stage, including criteria, issues, approvals, and evidence.
+        format: Structured status object (criteria_met, issues, approvals, evidence, ready_for_next_stage)
+        example: |
+          criteria_met: true
+          issues: []
+          approvals: ["Lead Architect"]
+          evidence: ["Audit log"]
+          ready_for_next_stage: true
+    agent_tasks:
+      - Check all mandatory solution criteria are met.
+      - Ensure no open critical issues in milestones, best practice, or KPI.
+      - Verify all required approvals and evidence are present.
+      - Mark stage "Ready for next stage" only if above are true.
+    acceptance_criteria:
+      - All mandatory solution criteria are met.
+      - No open critical issues in milestones, best practice, or KPI.
+      - All required approvals and evidence are present.
+      - Stage is marked "Ready for next stage" only if above are true.
+    dependencies:
+      - solution_stage_milestone
+      - solution_best_practice_report
+      - solution_kpi_report
+    failure_escalation:
+      - Escalate to gatekeeper or PM if readiness is not achieved.
+    references: []
+    hitl: false
+  - id: solution_go_nogo
+    agent: GoNoGoDecisionAgent
+    role: Stage Owner/Stakeholders
+    inputs_spec:
+      - name: solution_readiness_status
+        description: Readiness status for Solution stage.
+        format: Structured status object
+    outputs_spec:
+      - name: solution_go_nogo_decision
+        description: Go/No-Go decision with rationale and review of blockers, risks, and criteria.
+        format: Structured decision object (decision, rationale, reviewed_items)
+        example: |
+          decision: "Go"
+          rationale: "All criteria met"
+          reviewed_items: ["Blockers", "Risks"]
+    agent_tasks:
+      - Review all blockers, risks, and criteria.
+      - Record Go/No-Go decision and rationale.
+    acceptance_criteria:
+      - All blockers, risks, and criteria reviewed.
+      - Go/No-Go decision and rationale recorded.
+    dependencies:
+      - solution_readiness_status
+    failure_escalation:
+      - Escalate to stage owner if decision cannot be made.
+    references: []
+    hitl: true
+    hitl_reason: Human review required for Go/No-Go decision
+  - id: solution_progress_dashboard
+    agent: ProgressDashboardAgent
+    role: Solution Progress Dashboard Owner
+    inputs_spec:
+      - name: solution_kpi_report
+        description: KPI report for Solution stage.
+        format: Structured KPI report
+      - name: solution_success_criteria_status
+        description: Status of solution stage success criteria.
+        format: List of criteria status objects
+      - name: solution_stage_milestone
+        description: Solution stage milestone plan.
+        format: List of milestone objects
+    outputs_spec:
+      - name: solution_progress_dashboard
+        description: Dashboard visualizing KPIs, success criteria, milestones, highlighting gaps, bottlenecks, and critical paths.
+        format: "Dashboard artifact (sections: KPIs, criteria, milestones, gaps, bottlenecks, critical_path)"
+        example: |
+          KPIs: ["completeness", "velocity"]
+          criteria: ["Architecture signoff"]
+          milestones: ["S1"]
+          gaps: []
+          bottlenecks: []
+          critical_path: ["S1"]
+    agent_tasks:
+      - Visualize solution KPIs, success criteria, and milestones in dashboard.
+      - Update dashboard in real time and ensure accessibility.
+      - Highlight gaps, issues, critical path, blocked dependencies, bottlenecks, and overdue milestones.
+    acceptance_criteria:
+      - Solution KPIs, success criteria, and milestones are visualized in a dashboard.
+      - Dashboard is updated in real time and accessible to stakeholders.
+      - Gaps or issues in solution progress are highlighted for action.
+      - Critical path milestones are highlighted.
+      - Blocked dependencies and downstream impacts are flagged.
+      - Bottlenecks or overdue milestones are visually emphasized.
+    dependencies:
+      - solution_kpi_report
+      - solution_success_criteria_status
+      - solution_stage_milestone
+    failure_escalation:
+      - Escalate to dashboard owner or PM if dashboard is not current or actionable.
+    references: []
+    hitl: false
+  - id: solution_observability_export
+    agent: ObservabilityExportAgent
+    role: SRE/Analytics
+    inputs_spec:
+      - name: solution_progress_dashboard
+        description: Solution progress dashboard artifact.
+        format: Dashboard artifact
+    outputs_spec:
+      - name: solution_observability_export
+        description: Exported pipeline metrics/KPIs for external analytics/monitoring, with flagged observability gaps.
+        format: Export artifact (metrics, flagged_gaps)
+        example: |
+          metrics: ["completeness", "velocity"]
+          flagged_gaps: []
+    agent_tasks:
+      - Export pipeline metrics/KPIs to external analytics or monitoring.
+      - Flag any gaps in observability.
+    acceptance_criteria:
+      - Pipeline metrics/KPIs exported to external analytics/monitoring.
+      - Gaps in observability are flagged.
+    dependencies:
+      - solution_progress_dashboard
+    failure_escalation:
+      - Escalate to SRE or analytics lead if observability is incomplete.
+    references: []
+    hitl: false
+  - id: solution_feedback_loop
+    agent: FeedbackLoopAgent
+    role: CI/CD Coach/Automation
+    inputs_spec:
+      - name: solution_progress_dashboard
+        description: Solution progress dashboard artifact.
+        format: Dashboard artifact
+    outputs_spec:
+      - name: solution_feedback_items
+        description: List of issues and improvement suggestions routed to Retrospective, tracked for resolution.
+        format: List of feedback objects (issue, suggestion, status, resolution)
+        example: |
+          - issue: "Milestone delay"
+            suggestion: "Increase code reviews"
+            status: "open"
+            resolution: ""
+    agent_tasks:
+      - Route all issues and improvement suggestions to Retrospective.
+      - Track feedback for action and resolution.
+    acceptance_criteria:
+      - All issues and improvement suggestions are routed to Retrospective.
+      - Feedback is tracked for action and resolution.
+    dependencies:
+      - solution_progress_dashboard
+    failure_escalation:
+      - Escalate to CI/CD coach if feedback is not acted on.
+    references: []
+    hitl: false
+  - id: solution_notification_agent
+    agent: NotificationAgent
+    role: PMO Communications
+    inputs_spec:
+      - name: solution_progress_dashboard
+        description: Solution progress dashboard artifact.
+        format: Dashboard artifact
+      - name: solution_escalation_report
+        description: Solution escalation report artifact.
+        format: Structured escalation report
+    outputs_spec:
+      - name: solution_notifications
+        description: Notifications to stakeholders on key stage events, blockers, escalations, risks, with audit log.
+        format: List of notification objects (recipient, event, detail, timestamp)
+        example: |
+          - recipient: "Stakeholders"
+            event: "Milestone completed"
+            detail: "Architecture signoff"
+            timestamp: "2024-08-01T10:00:00Z"
+    agent_tasks:
+      - Notify all stakeholders on key stage events.
+      - Communicate blockers, escalations, and major risks in real time.
+      - Log notification delivery for audit.
+    acceptance_criteria:
+      - All stakeholders receive updates on key stage events.
+      - Blockers, escalations, and major risks are communicated in real time.
+      - Notification delivery is logged for audit.
+    dependencies:
+      - solution_progress_dashboard
+      - solution_escalation_report
+    failure_escalation:
+      - Escalate to PMO if notifications are not delivered or logged.
+    references: []
+    hitl: false
+  - id: solution_audit_log_agent
+    agent: AuditLogAgent
+    role: Compliance Bot
+    inputs_spec:
+      - name: solution_progress_dashboard
+        description: Solution progress dashboard artifact.
+        format: Dashboard artifact
+      - name: solution_notification_agent
+        description: Solution notification delivery log.
+        format: List of notification objects
+    outputs_spec:
+      - name: solution_audit_log
+        description: Complete audit log of agent actions, transitions, signoffs, escalations, notifications, cryptographically signed and archived.
+        format: Audit log artifact (entries, signature, archive_location, access)
+        example: |
+          entries: ["Milestone completed", "Escalation raised"]
+          signature: "abc123"
+          archive_location: "s3://audit-logs/"
+          access: "compliance"
+    agent_tasks:
+      - Record every agent action and transition with timestamp, user/agent, and artifact link.
+      - Log major events (signoffs, escalations, notifications, exceptions).
+      - Cryptographically sign and archive logs in secure, tamper-evident location.
+      - Ensure audit log is accessible for compliance review.
+    acceptance_criteria:
+      - Every agent action and transition is recorded with timestamp, user/agent, and artifact link.
+      - Major events (signoffs, escalations, notifications, exceptions) are explicitly logged.
+      - Logs are cryptographically signed and archived in a secure, tamper-evident location.
+      - Audit log is accessible for compliance review.
+    dependencies:
+      - solution_progress_dashboard
+      - solution_notification_agent
+    failure_escalation:
+      - Escalate to compliance or audit lead if logs are incomplete or inaccessible.
+    references: []
+    hitl: false
+  - id: solution_evidence_collector
+    agent: EvidenceCollectorAgent
+    role: Compliance Evidence Bot
+    inputs_spec:
+      - name: solution_audit_log
+        description: Solution audit log artifact.
+        format: Audit log artifact
+      - name: solution_success_criteria_status
+        description: Status of solution stage success criteria.
+        format: List of criteria status objects
+      - name: solution_stage_milestone
+        description: Solution stage milestone plan.
+        format: List of milestone objects
+    outputs_spec:
+      - name: solution_evidence_package
+        description: Evidence package for Solution stage, including artifacts, audit logs, signoffs, KPIs, compliance links, and access logs.
+        format: Evidence package artifact (artifacts, hashes, compliance_links, archive_location, access_logs)
+        example: |
+          artifacts: ["architecture.pdf", "audit.log"]
+          hashes: ["sha256:abc123"]
+          compliance_links: ["GDPR", "HIPAA"]
+          archive_location: "s3://evidence/"
+          access_logs: ["accessed by compliance"]
+    agent_tasks:
+      - Collect and hash all artifacts, audit logs, signoffs, and KPIs for the stage.
+      - Link evidence to compliance and regulatory requirements.
+      - Archive evidence package in tamper-evident storage.
+      - Maintain access logs for evidence package.
+    acceptance_criteria:
+      - Collects and hashes all artifacts, audit logs, signoffs, and KPIs for the stage.
+      - Evidence is linked to compliance and regulatory requirements.
+      - Evidence package is archived in tamper-evident storage.
+      - Access logs for evidence package are maintained.
+    dependencies:
+      - solution_audit_log
+      - solution_success_criteria_status
+      - solution_stage_milestone
+    failure_escalation:
+      - Escalate to compliance or evidence lead if evidence is incomplete or not archived.
+    references: []
+    hitl: false
+  - id: solution_risk_trend_analyzer
+    agent: RiskTrendAnalyzerAgent
+    role: Risk Intelligence Bot
+    inputs_spec:
+      - name: solution_escalation_report
+        description: Solution escalation report artifact.
+        format: Structured escalation report
+      - name: solution_progress_dashboard
+        description: Solution progress dashboard artifact.
+        format: Dashboard artifact
+      - name: solution_stage_milestone
+        description: Solution stage milestone plan.
+        format: List of milestone objects
+    outputs_spec:
+      - name: solution_risk_trend_report
+        description: Trend report on risks, escalations, and blockers over time, with recommendations.
+        format: Structured risk trend report (trends, recurring_risks, classification, recommendations)
+        example: |
+          trends: ["Escalations decreasing"]
+          recurring_risks: ["Latency"]
+          classification: ["Technical"]
+          recommendations: ["Add caching"]
+    agent_tasks:
+      - Trend all risks, escalations, and blockers over time.
+      - Automatically flag and classify recurring or systemic risks.
+      - Share risk trend report with PMO and leadership.
+      - Include recommendations for mitigation or process changes.
+    acceptance_criteria:
+      - All risks, escalations, and blockers are trended over time.
+      - Recurring or systemic risks are automatically flagged and classified.
+      - Risk trend report is shared with PMO and leadership.
+      - Recommendations for mitigation or process changes are included.
+    dependencies:
+      - solution_escalation_report
+      - solution_progress_dashboard
+      - solution_stage_milestone
+    failure_escalation:
+      - Escalate to risk intelligence lead if trends are not actionable.
+    references: []
+    hitl: false
+  - id: solution_combiner
+    agent: SynthesisCombinerAgent
+    role: PM/Stage Lead
+    inputs_spec:
+      - name: solution_evidence_package
+        description: Evidence package for Solution stage.
+        format: Evidence package artifact
+      - name: solution_risk_trend_report
+        description: Solution risk trend report.
+        format: Structured risk trend report
+      - name: pattern_compliance_report
+        description: Pattern compliance report.
+        format: Structured report
+      - name: architecture_signoff
+        description: Final architecture signoff.
+        format: Structured signoff document
+      - name: threat_model_report
+        description: Threat model report.
+        format: Structured threat model document
+    outputs_spec:
+      - name: ready_for_design_package
+        description: Complete Solution stage package, versioned and ready for Design handoff, with checklist.
+        format: Package artifact (documents, version_info, handoff_checklist)
+        example: |
+          documents: ["architecture.pdf", "threat_model.pdf"]
+          version_info: "v2.0"
+          handoff_checklist: ["All signoffs complete"]
+    agent_tasks:
+      - Package and version all required outputs from Solution stage.
+      - Include handoff checklist for next stage entry.
+    acceptance_criteria:
+      - All required outputs from the stage are packaged and versioned for handoff.
+      - Handoff checklist for next stage entry is included.
+    dependencies:
+      - solution_evidence_package
+      - solution_risk_trend_report
+      - pattern_compliance_report
+      - architecture_signoff
+      - threat_model_report
+    failure_escalation:
+      - Escalate to PM or stage lead if package is incomplete.
+    references: []

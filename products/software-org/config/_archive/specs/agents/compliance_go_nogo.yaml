@@ -1,0 +1,25 @@
+---
+id: "compliance_go_nogo"
+agent: "GoNoGoDecisionAgent"
+role: "Stage Owner/Stakeholders"
+inputs_spec:
+- name: "compliance_readiness_status"
+  description: "Compliance readiness status for Go/No-Go decision."
+  format: "Readiness status artifact"
+outputs_spec:
+- name: "compliance_go_nogo_decision"
+  description: "Go/No-Go decision and rationale for compliance validation stage."
+  format: "Go/No-Go decision artifact"
+agent_tasks:
+- "Review all blockers, risks, and criteria."
+- "Record Go/No-Go decision and rationale."
+acceptance_criteria:
+- "All blockers, risks, and criteria reviewed."
+- "Go/No-Go decision and rationale recorded."
+dependencies:
+- "compliance_readiness_status"
+failure_escalation:
+- "Escalate to Stage Owner/Stakeholders if decision is not recorded."
+references: []
+hitl: true
+hitl_reason: "Human review required for Go/No-Go decision"

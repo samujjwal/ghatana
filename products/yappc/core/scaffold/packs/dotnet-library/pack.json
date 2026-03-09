@@ -1,0 +1,21 @@
+{
+    "id": "dotnet-library",
+    "name": ".NET Class Library",
+    "description": ".NET class library project",
+    "version": "1.0.0",
+    "type": "library",
+    "language": "csharp",
+    "buildSystem": "dotnet",
+    "requiredVariables": [
+        "projectName",
+        "targetFramework"
+    ],
+    "optionalVariables": [
+        "description",
+        "author"
+    ],
+    "defaults": {
+        "targetFramework": "net8.0"
+    },
+    "features": []
+}

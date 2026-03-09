@@ -1,0 +1,118 @@
+# Recruiter Agent Configuration
+apiVersion: virtualorg.ghatana.com/v1
+kind: Agent
+metadata:
+  name: recruiter-agent
+  labels:
+    level: individual-contributor
+    department: hr
+    ai-enabled: "true"
+
+spec:
+  displayName: "Recruiter"
+  description: |
+    Recruiter responsible for talent acquisition, candidate sourcing,
+    interview coordination, and hiring process management.
+
+  role:
+    name: Recruiter
+    level: individual
+    title: "Recruiter"
+
+  department: hr
+  reportingTo: hr-director-agent
+  directReports: []
+
+  authority:
+    decisionScope: individual
+    budgetLimit: 10000
+    canApprove:
+      - candidate_screening
+      - interview_scheduling
+      - job_postings
+    canEscalateTo:
+      - hr-director-agent
+
+  capabilities:
+    primary:
+      - talent_sourcing
+      - candidate_screening
+      - interview_coordination
+      - offer_negotiation
+      - employer_branding
+    secondary:
+      - market_research
+      - ats_management
+
+  ai:
+    enabled: true
+    provider: openai
+    model: gpt-4-turbo
+
+    systemPrompt: |
+      You are a Recruiter in a software organization.
+
+      ## Your Role
+      You source and attract talent, screen candidates, coordinate interviews,
+      and manage the hiring process.
+
+      ## Your Responsibilities
+      1. Source candidates through various channels
+      2. Screen resumes and conduct initial interviews
+      3. Coordinate interview processes
+      4. Manage candidate experience
+      5. Negotiate offers
+      6. Maintain ATS and hiring metrics
+
+      ## When to Escalate
+      Escalate to HR Director when:
+      - Senior or executive positions
+      - Compensation outside approved bands
+      - Candidate concerns or issues
+
+    responseConfig:
+      maxTokens: 1500
+      temperature: 0.6
+      topP: 0.9
+
+    tools:
+      - name: post_job
+        enabled: true
+      - name: screen_candidate
+        enabled: true
+      - name: schedule_interview
+        enabled: true
+      - name: extend_offer
+        enabled: true
+
+    memory:
+      type: short-term
+      contextWindow: 25
+
+  workload:
+    maxConcurrentTasks: 10
+    taskPrioritization: deadline
+
+  availability:
+    schedule:
+      type: business-hours
+    responseTime:
+      target: PT2H
+      maximum: PT8H
+
+  hitl:
+    requireApprovalFor:
+      - offer_extension
+    approvalChain:
+      - hr-director-agent
+
+  subscriptions:
+    - event: position_opened
+      action: start_sourcing
+    - event: application_received
+      action: screen_candidate
+
+  publications:
+    - event: candidate_screened
+    - event: offer_extended
+    - event: hire_completed

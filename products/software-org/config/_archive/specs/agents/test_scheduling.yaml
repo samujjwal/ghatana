@@ -1,0 +1,23 @@
+---
+id: "test_scheduling"
+agent: "TestSchedulingAgent"
+role: "QA/Automation"
+inputs_spec:
+- name: "test_execution_plan"
+  description: "Test execution plan with scheduling info."
+  format: "Test execution plan artifact"
+outputs_spec:
+- name: "test_schedule"
+  description: "Test schedule with order, timing, resources, constraints."
+  format: "Test schedule artifact"
+agent_tasks:
+- "Define order/timing for all test runs."
+- "Allocate test resources and address constraints."
+acceptance_criteria:
+- "Test scheduling/order/timing/resources/constraints are clearly defined."
+dependencies:
+- "test_execution_plan"
+failure_escalation:
+- "Escalate to QA Lead if scheduling not clear or actionable."
+references: []
+hitl: false

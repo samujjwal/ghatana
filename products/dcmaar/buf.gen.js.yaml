@@ -1,0 +1,9 @@
+version: v1
+plugins:
+  # Use Buf remote plugins for modern ES codegen (no local binaries required)
+  - plugin: buf.build/bufbuild/es
+    out: core/proto/gen/js
+    opt: target=ts
+  - plugin: buf.build/connectrpc/es
+    out: core/proto/gen/js
+    opt: target=ts

@@ -1,0 +1,29 @@
+---
+id: "deploy_milestone_tracker"
+agent: "DeployMilestoneTrackerAgent"
+role: "Deploy PM"
+inputs_spec:
+- name: "deploy_best_practice_report"
+  description: "Best practice report for milestone tracking."
+  format: "Best practice report artifact"
+outputs_spec:
+- name: "deploy_stage_milestone"
+  description: "Deployment stage milestones and progress."
+  format: "List of milestone objects"
+agent_tasks:
+- "Track all deployment milestones (QA, staging, prod)."
+- "Assign owners and target dates."
+- "Escalate and resolve blockers and risks."
+- "Document milestone completion."
+acceptance_criteria:
+- "All milestones are tracked."
+- "Owners and target dates assigned."
+- "Blockers/risks are escalated and resolved."
+- "Completion is documented."
+dependencies:
+- "deploy_best_practice_report"
+failure_escalation:
+- "Escalate to Deploy PM if milestones unclear or blockers unresolved."
+references: []
+hitl: true
+hitl_reason: "Human oversight for deployment milestone tracking"

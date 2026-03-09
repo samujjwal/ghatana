@@ -1,0 +1,27 @@
+{
+  "id": "guides/building-plugins",
+  "title": "Building Plugins",
+  "description": "Documentation coming soon.",
+  "source": "@site/docs/guides/building-plugins.md",
+  "sourceDirName": "guides",
+  "slug": "/guides/building-plugins",
+  "permalink": "/docs/guides/building-plugins",
+  "draft": false,
+  "unlisted": false,
+  "editUrl": "https://github.com/yappc/app-creator/tree/main/docs-site/docs/guides/building-plugins.md",
+  "tags": [],
+  "version": "current",
+  "sidebarPosition": 1,
+  "frontMatter": {
+    "sidebar_position": 1
+  },
+  "sidebar": "guidesSidebar",
+  "previous": {
+    "title": "Tutorials Overview",
+    "permalink": "/docs/guides/tutorials-overview"
+  },
+  "next": {
+    "title": "Custom Components",
+    "permalink": "/docs/guides/custom-components"
+  }
+}

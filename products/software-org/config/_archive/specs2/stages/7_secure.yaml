@@ -1,0 +1,775 @@
+name: Secure (Security as Code)
+workflow:
+    - id: security_policy
+      agent: SecurityPolicyAgent
+      role: Security Engineer/Architect
+      inputs_spec:
+        - name: ready_for_release_package
+          description: Release package including all artifacts for policy creation.
+          format: Package artifact
+      outputs_spec:
+        - name: policy_as_code_files
+          description: Version-controlled security policies as code.
+          format: Policy-as-code files/artifacts
+      agent_tasks:
+        - Define security policies as code and version control them.
+        - Review policies for completeness, accuracy, and coverage.
+        - Validate compliance with relevant standards (e.g., NIST, CIS, ISO).
+        - Document policy exceptions/overrides.
+      acceptance_criteria:
+        - Security policies are defined as code and version controlled.
+        - Policies are reviewed for completeness, accuracy, and coverage.
+        - Compliance with relevant standards is validated.
+        - Policy exceptions/overrides are documented.
+      dependencies:
+        - ready_for_release_package
+      failure_escalation:
+        - Escalate to Security Lead if policy is incomplete or not compliant.
+      references: []
+      hitl: true
+      hitl_reason: Human reviews security policy as code for compliance
+
+    - id: secure_best_practice_enforcement
+      agent: SecureBestPracticeAgent
+      role: SecOps QA Reviewer
+      inputs_spec:
+        - name: policy_as_code_files
+          description: Security as code artifacts for review.
+          format: Policy-as-code files/artifacts
+      outputs_spec:
+        - name: secure_best_practice_report
+          description: Review of security best practices and recommendations.
+          format: Best practice compliance report
+      agent_tasks:
+        - Review security as code artifacts against best practices.
+        - Document and justify security controls.
+        - Flag and track deviations from best practices.
+        - Ensure remediation or exception process is in place.
+      acceptance_criteria:
+        - Artifacts reviewed against best practices.
+        - Controls documented and justified.
+        - Deviations flagged/tracked; remediation in place.
+      dependencies:
+        - policy_as_code_files
+      failure_escalation:
+        - Escalate to SecOps QA Lead if critical deviations are not remediated.
+      references: []
+      hitl: true
+      hitl_reason: Human ensures security best practices are enforced
+
+    - id: secure_milestone_tracker
+      agent: SecureMilestoneTrackerAgent
+      role: Security PM
+      inputs_spec:
+        - name: secure_best_practice_report
+          description: Security best practice report.
+          format: Best practice compliance report
+      outputs_spec:
+        - name: secure_stage_milestone
+          description: Tracked security milestones, owners, risks.
+          format: List of milestone objects
+      agent_tasks:
+        - Track all security milestones with descriptions and target dates.
+        - Assign owners to each milestone.
+        - Flag risks, blockers, dependencies.
+        - List and track stage exit criteria.
+      acceptance_criteria:
+        - All security milestones tracked with descriptions and dates.
+        - Owners assigned; risks/blockers flagged.
+        - Stage exit criteria listed/tracked.
+      dependencies:
+        - secure_best_practice_report
+      failure_escalation:
+        - Escalate to Security PM if milestones are unclear or risks not managed.
+      references: []
+      hitl: true
+      hitl_reason: Human oversight for security milestone tracking
+
+    - id: iac_scan
+      agent: IaCScanAgent
+      role: DevOps/Security Engineer
+      inputs_spec:
+        - name: secure_stage_milestone
+          description: Security milestone tracker for scan triggers.
+          format: List of milestone objects
+      outputs_spec:
+        - name: iac_scan_report
+          description: IaC scan results and findings.
+          format: IaC scan report artifact
+      agent_tasks:
+        - Scan all IaC templates/scripts for security issues.
+        - Report critical/high findings and assign for remediation.
+        - Version and trace results to IaC changes.
+        - Provide mitigations/justifications for accepted risks.
+      acceptance_criteria:
+        - All IaC templates/scripts scanned for security issues.
+        - Critical/high findings reported and assigned.
+        - Scan results versioned/traced; mitigations for accepted risk.
+      dependencies:
+        - secure_stage_milestone
+      failure_escalation:
+        - Escalate to Security Engineer if critical findings not resolved.
+      references: []
+      hitl: true
+      hitl_reason: Human reviews IaC scan results for critical issues
+
+    - id: secret_scan
+      agent: SecretScanAgent
+      role: Security/Tooling Engineer
+      inputs_spec:
+        - name: iac_scan_report
+          description: IaC scan report for secret detection triggers.
+          format: IaC scan report artifact
+      outputs_spec:
+        - name: secret_scan_report
+          description: Secret scan results for all code/config.
+          format: Secret scan report artifact
+      agent_tasks:
+        - Scan code and configuration for secrets/credentials.
+        - Flag exposed secrets for remediation.
+        - Store full scan report for audit.
+        - Check history for previously exposed secrets.
+      acceptance_criteria:
+        - Code/config scanned for secrets/credentials.
+        - Exposed secrets flagged for remediation.
+        - Full report stored; history checked for exposures.
+      dependencies:
+        - iac_scan_report
+      failure_escalation:
+        - Escalate to Security Lead if exposed secrets not remediated.
+      references: []
+      hitl: true
+      hitl_reason: Human reviews secret scan results for exposed secrets
+
+    - id: secrets_manager
+      agent: SecretsManagerAgent
+      role: Security/DevOps Engineer
+      inputs_spec:
+        - name: secret_scan_report
+          description: Secret scan report for secrets manager integration.
+          format: Secret scan report artifact
+      outputs_spec:
+        - name: secrets_manager_integration
+          description: Integrated secrets manager setup and audit results.
+          format: Secrets manager artifact
+      agent_tasks:
+        - Manage all secrets via approved manager platforms.
+        - Review/enforce access controls.
+        - Replace secrets usage in code/config with references/integrations.
+        - Enable/check audit logs for secret access.
+      acceptance_criteria:
+        - All secrets managed by approved platforms.
+        - Access controls reviewed/enforced; audit logs checked.
+        - Usage in code/config replaced by integration.
+      dependencies:
+        - secret_scan_report
+      failure_escalation:
+        - Escalate to Security/DevOps Lead if secret management not enforced.
+      references: []
+      hitl: true
+      hitl_reason: Human validates secrets manager integration
+
+    - id: rbac_policy
+      agent: RBACPolicyAgent
+      role: Cloud/Security Engineer
+      inputs_spec:
+        - name: secrets_manager_integration
+          description: Secrets manager integration artifact.
+          format: Secrets manager artifact
+      outputs_spec:
+        - name: rbac_policies
+          description: RBAC policies, versioned as code.
+          format: RBAC policy files
+      agent_tasks:
+        - Define/version RBAC policies as code.
+        - Enforce least privilege for services/users.
+        - Document access reviews; track policy changes.
+      acceptance_criteria:
+        - RBAC policies are defined and versioned as code.
+        - Least privilege enforced; access reviews documented.
+        - Policy changes tracked/auditable.
+      dependencies:
+        - secrets_manager_integration
+      failure_escalation:
+        - Escalate to Cloud/Security Lead if RBAC is not least privilege or not auditable.
+      references: []
+      hitl: true
+      hitl_reason: Human reviews RBAC policies for least privilege
+
+    - id: policy_gate
+      agent: PolicyGateAgent
+      role: CI/CD Gatekeeper/Tool
+      inputs_spec:
+        - name: rbac_policies
+          description: RBAC policy files for CI/CD policy gate.
+          format: RBAC policy files
+      outputs_spec:
+        - name: policy_gate_status
+          description: Status of policy gates in CI/CD pipeline.
+          format: Policy gate status report
+      agent_tasks:
+        - Implement security policy gates in CI/CD pipeline.
+        - Block/alert on failing policies.
+        - Log all policy gate status changes.
+      acceptance_criteria:
+        - Policy gates implemented in CI/CD.
+        - Failing policies block/alert deployments.
+        - Status changes logged.
+      dependencies:
+        - rbac_policies
+      failure_escalation:
+        - Escalate to Gatekeeper if policy gates are not blocking insecure deployments.
+      references: []
+      hitl: true
+      hitl_reason: Human validates policy gate status for deployments
+
+    - id: security_audit
+      agent: SecurityAuditAgent
+      role: Compliance Analyst
+      inputs_spec:
+        - name: policy_gate_status
+          description: Policy gate status for audit log triggers.
+          format: Policy gate status report
+      outputs_spec:
+        - name: security_audit_logs
+          description: Immutable security audit logs.
+          format: Audit log artifact
+      agent_tasks:
+        - Collect/store security audit logs immutably.
+        - Log compliance checks with timestamps and responsible parties.
+        - Flag audit gaps.
+      acceptance_criteria:
+        - Audit logs collected/immutable.
+        - Compliance checks logged with timestamps and owners.
+        - Audit gaps flagged.
+      dependencies:
+        - policy_gate_status
+      failure_escalation:
+        - Escalate to Compliance Lead if audit logs are incomplete or gaps found.
+      references: []
+      hitl: true
+      hitl_reason: Human reviews security audit logs for compliance
+
+    - id: exception_manager
+      agent: ExceptionManagerAgent
+      role: Security/Compliance Lead
+      inputs_spec:
+        - name: security_audit_logs
+          description: Security audit logs for exception review.
+          format: Audit log artifact
+      outputs_spec:
+        - name: exception_approvals
+          description: Documented, signed-off security exceptions.
+          format: Exception approval artifact
+      agent_tasks:
+        - Formally document all security exceptions.
+        - Require signoff from responsible authority.
+        - Review/store justifications.
+        - Track expiry/review dates for exceptions.
+      acceptance_criteria:
+        - Security exceptions documented, justified, and signed-off.
+        - Expiry/review dates tracked.
+      dependencies:
+        - security_audit_logs
+      failure_escalation:
+        - Escalate to Security/Compliance Lead if exceptions are not signed-off or tracked.
+      references: []
+      hitl: true
+      hitl_reason: Human approves/rejects security exceptions
+
+    - id: secure_incident_feedback_handler
+      agent: IncidentFeedbackHandlerAgent
+      role: Postmortem Owner/Automation
+      inputs_spec:
+        - name: secure_incident_report
+          description: Incident report(s) for feedback collection.
+          format: Incident report artifact
+      outputs_spec:
+        - name: secure_incident_feedback_items
+          description: Incidents/exceptions feedback routed to Retrospective.
+          format: List of feedback items
+      agent_tasks:
+        - Log all incidents/exceptions for learning.
+        - Feed systemic issues to Retrospective for improvement.
+      acceptance_criteria:
+        - Incidents/exceptions logged for learning.
+        - Systemic issues routed to Retrospective.
+      dependencies:
+        - secure_incident_report
+      failure_escalation:
+        - Escalate to Postmortem Owner if feedback is not tracked.
+      references: []
+      hitl: false
+
+    - id: threat_model
+      agent: ThreatModelAgent
+      role: Security Architect
+      inputs_spec:
+        - name: exception_approvals
+          description: Security exceptions for threat model update.
+          format: Exception approval artifact
+      outputs_spec:
+        - name: threat_model_report
+          description: Updated threat model and signoffs.
+          format: Threat model report artifact
+      agent_tasks:
+        - Review/update threat model for new/changed assets/policies.
+        - Map threats to controls/mitigations.
+        - Document residual/accepted risks.
+        - Obtain stakeholder review/signoff.
+      acceptance_criteria:
+        - Threat model reviewed/updated for new/changed assets/policies.
+        - Threats mapped to controls/mitigations.
+        - Residual/accepted risks documented.
+        - Stakeholders review/sign off.
+      dependencies:
+        - exception_approvals
+      failure_escalation:
+        - Escalate to Security Architect if threat model is not updated after exceptions.
+      references: []
+      hitl: true
+      hitl_reason: Human reviews updated threat model after exceptions
+
+    - id: compliance_traceability
+      agent: ComplianceTraceabilityAgent
+      role: Compliance Analyst
+      inputs_spec:
+        - name: threat_model_report
+          description: Threat model report for compliance mapping.
+          format: Threat model report artifact
+      outputs_spec:
+        - name: compliance_evidence_matrix
+          description: Compliance traceability matrix with controls, evidence, gaps.
+          format: Compliance evidence matrix
+      agent_tasks:
+        - Map compliance requirements to implemented controls.
+        - Flag/assign all compliance gaps.
+        - Provide evidence for each compliance item.
+        - Version traceability matrix for audit/handoff.
+      acceptance_criteria:
+        - Compliance requirements mapped to controls.
+        - Gaps flagged/assigned; evidence provided.
+        - Matrix versioned/accessible for audit.
+      dependencies:
+        - threat_model_report
+      failure_escalation:
+        - Escalate to Compliance Analyst if traceability is incomplete or matrix not updated.
+      references: []
+      hitl: true
+      hitl_reason: Human ensures compliance traceability is complete
+
+    - id: vulnerability_watch
+      agent: VulnerabilityWatchAgent
+      role: Security Automation
+      inputs_spec:
+        - name: compliance_evidence_matrix
+          description: Compliance evidence matrix for vulnerability watch.
+          format: Compliance evidence matrix
+      outputs_spec:
+        - name: vulnerability_alert_report
+          description: Vulnerability alert report and documented process.
+          format: Vulnerability alert report artifact
+      agent_tasks:
+        - Monitor relevant sources for vulnerabilities.
+        - Trigger/assign alerts for critical vulnerabilities.
+        - Document vulnerability watch process.
+      acceptance_criteria:
+        - All sources for vulnerabilities monitored.
+        - Critical vulnerabilities trigger alerts/assignment.
+        - Watch process is documented.
+      dependencies:
+        - compliance_evidence_matrix
+      failure_escalation:
+        - Escalate to Security Automation if vulnerabilities are unmonitored.
+      references: []
+      hitl: false
+
+    - id: synthesis_security_combiner
+      agent: SynthesisSecurityCombinerAgent
+      role: Security Lead/PM
+      inputs_spec:
+        - name: policy_as_code_files
+          description: Policy as code files for security package.
+          format: Policy-as-code files/artifacts
+        - name: iac_scan_report
+          description: IaC scan report.
+          format: IaC scan report artifact
+        - name: secret_scan_report
+          description: Secret scan report.
+          format: Secret scan report artifact
+        - name: rbac_policies
+          description: RBAC policies.
+          format: RBAC policy files
+        - name: security_audit_logs
+          description: Security audit logs.
+          format: Audit log artifact
+        - name: compliance_evidence_matrix
+          description: Compliance evidence matrix.
+          format: Compliance evidence matrix
+      outputs_spec:
+        - name: secure_for_release_package
+          description: Combined security package, reviewed and signed off.
+          format: Secure-for-release package artifact
+      agent_tasks:
+        - Combine all outputs/artifacts from Secure-stage agents.
+        - Review package for completeness.
+        - Flag outstanding issues/exceptions.
+        - Sign off package for next stage.
+        - Ensure referenced artifacts are current and versioned.
+      acceptance_criteria:
+        - All outputs/artifacts combined and reviewed for completeness.
+        - Outstanding issues/exceptions flagged.
+        - Package signed off for next stage.
+        - All referenced artifacts current/versioned.
+      dependencies:
+        - policy_as_code_files
+        - iac_scan_report
+        - secret_scan_report
+        - rbac_policies
+        - security_audit_logs
+        - compliance_evidence_matrix
+      failure_escalation:
+        - Escalate to Security Lead/PM if package incomplete or not reviewed.
+      references: []
+      hitl: true
+      hitl_reason: Human validates security package readiness
+
+    - id: secure_kpi_agent
+      agent: StageKPIAgent
+      role: Secure KPI Analyst
+      inputs_spec:
+        - name: secure_stage_milestone
+          description: Secure stage milestones for KPI tracking.
+          format: List of milestone objects
+      outputs_spec:
+        - name: secure_kpi_report
+          description: Secure stage KPIs report.
+          format: KPI report artifact
+      agent_tasks:
+        - Track and report Secure KPIs (policy as code coverage, compliance rate, vulnerability closure, etc.).
+        - Visualize trends and flag anomalies.
+      acceptance_criteria:
+        - KPIs defined/tracked; trends flagged for review.
+        - KPI data traceable to milestones/audit logs.
+        - KPI trends visualized/compared to baselines.
+      dependencies:
+        - secure_stage_milestone
+      failure_escalation:
+        - Escalate to KPI Analyst if Secure KPIs are missing or not updated.
+      references: []
+      hitl: false
+
+    - id: secure_success_criteria_tracker
+      agent: SuccessCriteriaTrackerAgent
+      role: Secure Success Criteria Tracker
+      inputs_spec:
+        - name: secure_stage_milestone
+          description: Secure stage milestones for criteria tracking.
+          format: List of milestone objects
+      outputs_spec:
+        - name: secure_success_criteria_status
+          description: Secure stage criteria status, mapped and tracked.
+          format: List of criteria status objects
+      agent_tasks:
+        - List/map all Secure stage entry/exit criteria.
+        - Track status/owner/remediation; escalate at-risk/failed.
+        - Version tracker for audit/handoff.
+      acceptance_criteria:
+        - Criteria listed/mapped to artifacts; status/owner tracked.
+        - At-risk/failed escalated; tracker versioned.
+      dependencies:
+        - secure_stage_milestone
+      failure_escalation:
+        - Escalate to Secure Criteria Tracker/PM if criteria not maintained.
+      references: []
+      hitl: false
+
+    - id: secure_escalation_handler
+      agent: EscalationHandlerAgent
+      role: Project Escalation Manager
+      inputs_spec:
+        - name: secure_success_criteria_status
+          description: Secure stage criteria status for escalation review.
+          format: List of criteria status objects
+      outputs_spec:
+        - name: secure_escalation_report
+          description: Escalation report for Secure stage blockers.
+          format: Escalation report artifact
+      agent_tasks:
+        - Review all "At Risk"/"Not Met" criteria for escalation.
+        - Assign owners/deadlines.
+        - Make escalation status visible in dashboard/audit log.
+      acceptance_criteria:
+        - All "At Risk" or "Not Met" criteria are reviewed for escalation.
+        - Escalation status visible in dashboard/log and audit log.
+        - Owners and deadlines for resolution are assigned.
+  
+    - id: secure_progress_dashboard
+      agent: ProgressDashboardAgent
+      role: Secure Progress Dashboard Owner
+      inputs_spec:
+        - name: secure_kpi_report
+          description: Secure KPIs for dashboard visualization.
+          format: KPI report artifact
+        - name: secure_success_criteria_status
+          description: Secure success criteria status for dashboard.
+          format: List of criteria status objects
+        - name: secure_stage_milestone
+          description: Secure milestone plan for dashboard.
+          format: List of milestone objects
+      outputs_spec:
+        - name: secure_progress_dashboard
+          description: Dashboard visualizing security coverage, compliance, vulnerabilities, exceptions, blockers, and KPIs.
+          format: Dashboard artifact
+      agent_tasks:
+        - Visualize security coverage, compliance, vulnerability closure, exceptions, and KPIs in dashboard.
+        - Show open compliance, security, or risk blockers.
+        - Link to audit logs, compliance matrix, and milestone status.
+        - Update dashboard in real time and review before handoff.
+        - Highlight critical path milestones and blocked dependencies.
+        - Flag bottlenecks or overdue milestones.
+      acceptance_criteria:
+        - Dashboard visualizes all key Secure metrics and blockers.
+        - Dashboard is updated in real time and reviewed before handoff.
+        - Critical paths, bottlenecks, and blockers are highlighted.
+      dependencies:
+        - secure_kpi_report
+        - secure_success_criteria_status
+        - secure_stage_milestone
+      failure_escalation:
+        - Escalate to dashboard owner if dashboard is not current or actionable.
+      references: []
+      hitl: false
+
+    - id: secure_observability_export
+      agent: ObservabilityExportAgent
+      role: SRE/Analytics
+      inputs_spec:
+        - name: secure_progress_dashboard
+          description: Secure progress dashboard for observability export.
+          format: Dashboard artifact
+      outputs_spec:
+        - name: secure_observability_export
+          description: Pipeline metrics/KPIs exported to external analytics/monitoring.
+          format: Export artifact
+      agent_tasks:
+        - Export pipeline metrics/KPIs to external analytics/monitoring.
+        - Flag any gaps in observability.
+      acceptance_criteria:
+        - Pipeline metrics/KPIs exported to analytics/monitoring.
+        - Gaps in observability are flagged.
+      dependencies:
+        - secure_progress_dashboard
+      failure_escalation:
+        - Escalate to SRE/Analytics if metrics not exported or gaps missed.
+      references: []
+      hitl: false
+
+    - id: secure_feedback_loop
+      agent: FeedbackLoopAgent
+      role: CI/CD Coach/Automation
+      inputs_spec:
+        - name: secure_progress_dashboard
+          description: Secure progress dashboard for feedback loop.
+          format: Dashboard artifact
+      outputs_spec:
+        - name: secure_feedback_items
+          description: Issues and improvement suggestions routed to Retrospective.
+          format: List of feedback items
+      agent_tasks:
+        - Route all issues/improvement suggestions to Retrospective.
+        - Track feedback for action and resolution.
+      acceptance_criteria:
+        - All issues and improvement suggestions are routed to Retrospective.
+        - Feedback is tracked for action and resolution.
+      dependencies:
+        - secure_progress_dashboard
+      failure_escalation:
+        - Escalate to CI/CD coach if feedback is not acted on.
+      references: []
+      hitl: false
+
+    - id: secure_notification_agent
+      agent: NotificationAgent
+      role: PMO Communications
+      inputs_spec:
+        - name: secure_progress_dashboard
+          description: Secure progress dashboard for notification triggers.
+          format: Dashboard artifact
+        - name: secure_escalation_report
+          description: Secure escalation report for notification triggers.
+          format: Escalation report artifact
+      outputs_spec:
+        - name: secure_notifications
+          description: Notifications sent to stakeholders on events, blockers, and risks.
+          format: List of notification objects
+      agent_tasks:
+        - Notify stakeholders of key Secure events, blockers, and escalations.
+        - Log notification delivery for audit.
+      acceptance_criteria:
+        - Stakeholders receive updates on Secure events and risks.
+        - Notification delivery is logged for audit.
+      dependencies:
+        - secure_progress_dashboard
+        - secure_escalation_report
+      failure_escalation:
+        - Escalate to PMO if notifications not delivered or logged.
+      references: []
+      hitl: false
+
+    - id: secure_audit_log_agent
+      agent: AuditLogAgent
+      role: Compliance Bot
+      inputs_spec:
+        - name: secure_progress_dashboard
+          description: Secure progress dashboard for audit logging.
+          format: Dashboard artifact
+        - name: secure_notification_agent
+          description: Notification agent delivery log.
+          format: List of notification objects
+      outputs_spec:
+        - name: secure_audit_log
+          description: Audit log of Secure agent actions, results, notifications, and signoffs.
+          format: Audit log artifact
+      agent_tasks:
+        - Log all Secure agent actions, results, notifications, and signoffs.
+        - Track approval/rejection and defect signoff.
+        - Ensure cryptographic integrity and secure archive.
+      acceptance_criteria:
+        - All Secure agent actions, results, and notifications are logged.
+        - Approval/rejection and defect signoff are tracked.
+        - Audit log is archived and cryptographically signed.
+      dependencies:
+        - secure_progress_dashboard
+        - secure_notification_agent
+      failure_escalation:
+        - Escalate to compliance or audit lead if audit log is incomplete or inaccessible.
+      references: []
+      hitl: false
+
+    - id: secure_evidence_collector
+      agent: EvidenceCollectorAgent
+      role: Compliance Evidence Bot
+      inputs_spec:
+        - name: secure_audit_log
+          description: Secure audit log for evidence collection.
+          format: Audit log artifact
+        - name: secure_success_criteria_status
+          description: Secure success criteria status for evidence linkage.
+          format: List of criteria status objects
+        - name: secure_stage_milestone
+          description: Secure milestone plan for evidence linkage.
+          format: List of milestone objects
+      outputs_spec:
+        - name: secure_evidence_package
+          description: Evidence package with all Secure signoffs, feedback, and results.
+          format: Evidence package artifact
+      agent_tasks:
+        - Collect all signoffs, feedback, and Secure test results as evidence.
+        - Archive Secure results and link for traceability.
+        - Maintain access logs and evidence hash.
+      acceptance_criteria:
+        - Evidence package includes all Secure signoffs, feedback, and results.
+        - Results are archived and traceable.
+        - Access logs and hashes are maintained.
+      dependencies:
+        - secure_audit_log
+        - secure_success_criteria_status
+        - secure_stage_milestone
+      failure_escalation:
+        - Escalate to compliance evidence lead if evidence package is incomplete or not archived.
+      references: []
+      hitl: false
+
+    - id: secure_risk_trend_analyzer
+      agent: RiskTrendAnalyzerAgent
+      role: Risk Intelligence Bot
+      inputs_spec:
+        - name: secure_escalation_report
+          description: Secure escalation report for risk trend analysis.
+          format: Escalation report artifact
+        - name: secure_progress_dashboard
+          description: Secure progress dashboard for risk data.
+          format: Dashboard artifact
+        - name: secure_stage_milestone
+          description: Secure milestone plan for risk context.
+          format: List of milestone objects
+      outputs_spec:
+        - name: secure_risk_trend_report
+          description: Risk trend report on Secure stage risks, escalations, and blockers.
+          format: Risk trend report artifact
+      agent_tasks:
+        - Trend all Secure risks, escalations, and blockers over time.
+        - Flag recurring/systemic risks and classify.
+        - Share trend report with PMO and leadership.
+        - Recommend mitigation or process improvements.
+      acceptance_criteria:
+        - All Secure risks, escalations, and blockers are trended over time.
+        - Recurring/systemic risks are flagged and classified.
+        - Trend report shared with PMO/leadership with recommendations.
+      dependencies:
+        - secure_escalation_report
+        - secure_progress_dashboard
+        - secure_stage_milestone
+      failure_escalation:
+        - Escalate to Risk Intelligence Lead if trends/recommendations missing.
+      references: []
+      hitl: false
+
+    - id: secure_policy_drift_detector
+      agent: PolicyDriftDetectorAgent
+      role: Compliance Automation
+      inputs_spec:
+        - name: secure_milestone_tracker
+          description: Secure milestone tracker for drift detection.
+          format: Milestone tracker artifact
+        - name: secure_progress_dashboard
+          description: Secure progress dashboard for drift status.
+          format: Dashboard artifact
+      outputs_spec:
+        - name: secure_policy_drift_report
+          description: Report on policy/config drift and status.
+          format: Drift report artifact
+      agent_tasks:
+        - Compare actual deployed configs/policies to approved definitions.
+        - Flag, categorize, and timestamp all drift or changes.
+        - Escalate critical drift for review.
+        - Maintain drift detection history for trend analysis.
+      acceptance_criteria:
+        - Deployed configs/policies compared to approved definitions.
+        - Drift/changes flagged, categorized, and timestamped.
+        - Critical drift escalated for review.
+        - Drift detection history maintained.
+      dependencies:
+        - secure_milestone_tracker
+        - secure_progress_dashboard
+      failure_escalation:
+        - Escalate to compliance lead if drift not flagged or reported.
+      references: []
+      hitl: false
+
+    - id: secure_policy_reconciliation
+      agent: PolicyReconciliationAgent
+      role: Compliance Automation
+      inputs_spec:
+        - name: secure_progress_dashboard
+          description: Secure progress dashboard for reconciliation triggers.
+          format: Dashboard artifact
+      outputs_spec:
+        - name: secure_policy_recon_report
+          description: Report on policy reconciliation actions and status.
+          format: Policy reconciliation report artifact
+      agent_tasks:
+        - Compare live environment policies/configs to source of truth.
+        - Flag/report any drift to compliance.
+        - Assign remediation plans if mismatches found.
+      acceptance_criteria:
+        - All live environment policies/configs match source of truth.
+        - Any drift is flagged and reported to compliance.
+        - Remediation plans assigned if mismatches found.
+      dependencies:
+        - secure_progress_dashboard
+      failure_escalation:
+        - Escalate to compliance automation if drift/mismatches are not remediated.
+      references: []
+      hitl: false

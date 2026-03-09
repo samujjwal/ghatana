@@ -1,0 +1,249 @@
+# Bridge Alerting Rules
+# Compatible with Prometheus Alertmanager
+
+groups:
+  - name: bridge_availability
+    interval: 30s
+    rules:
+      - alert: BridgeConnectionDown
+        expr: bridge_connections_total == 0
+        for: 2m
+        labels:
+          severity: critical
+          component: bridge
+          category: availability
+        annotations:
+          summary: "Bridge connection is down"
+          description: "No active bridge connections for more than 2 minutes. Extension may be disconnected."
+          runbook: "https://docs.dcmaar.io/runbooks/bridge-connection-down"
+
+      - alert: BridgeHighConnectionFailureRate
+        expr: rate(bridge_connection_failures_total[5m]) > 0.5
+        for: 5m
+        labels:
+          severity: warning
+          component: bridge
+          category: availability
+        annotations:
+          summary: "High bridge connection failure rate"
+          description: "Connection failure rate is {{ $value | humanize }} failures/sec over the last 5 minutes."
+          runbook: "https://docs.dcmaar.io/runbooks/high-connection-failures"
+
+      - alert: BridgeHandshakeFailures
+        expr: rate(bridge_handshake_failures_total[5m]) > 0.1
+        for: 3m
+        labels:
+          severity: warning
+          component: bridge
+          category: protocol
+        annotations:
+          summary: "Bridge handshake failures detected"
+          description: "Handshake failure rate is {{ $value | humanize }} failures/sec. Version mismatch or protocol issue."
+          runbook: "https://docs.dcmaar.io/runbooks/handshake-failures"
+
+  - name: bridge_performance
+    interval: 30s
+    rules:
+      - alert: BridgeHighLatency
+        expr: bridge_message_latency_ms{quantile="0.95"} > 100
+        for: 5m
+        labels:
+          severity: warning
+          component: bridge
+          category: performance
+        annotations:
+          summary: "Bridge message latency is high"
+          description: "P95 message latency is {{ $value }}ms, exceeding SLO of 100ms."
+          runbook: "https://docs.dcmaar.io/runbooks/high-latency"
+
+      - alert: BridgeCriticalLatency
+        expr: bridge_message_latency_ms{quantile="0.95"} > 200
+        for: 2m
+        labels:
+          severity: critical
+          component: bridge
+          category: performance
+        annotations:
+          summary: "Bridge message latency is critically high"
+          description: "P95 message latency is {{ $value }}ms, severely degraded performance."
+          runbook: "https://docs.dcmaar.io/runbooks/critical-latency"
+
+      - alert: BridgeLowThroughput
+        expr: bridge_throughput_mps < 10
+        for: 5m
+        labels:
+          severity: warning
+          component: bridge
+          category: performance
+        annotations:
+          summary: "Bridge throughput is low"
+          description: "Message throughput is {{ $value }} msg/s, below expected baseline of 10 msg/s."
+          runbook: "https://docs.dcmaar.io/runbooks/low-throughput"
+
+      - alert: BridgeCommandLatencyHigh
+        expr: bridge_command_latency_ms > 150
+        for: 3m
+        labels:
+          severity: warning
+          component: bridge
+          category: performance
+        annotations:
+          summary: "Bridge command latency is high"
+          description: "Command latency is {{ $value }}ms, exceeding SLO of 150ms."
+          runbook: "https://docs.dcmaar.io/runbooks/command-latency"
+
+  - name: bridge_reliability
+    interval: 30s
+    rules:
+      - alert: BridgeCircuitBreakerOpen
+        expr: bridge_circuit_breaker_state == 1
+        for: 1m
+        labels:
+          severity: critical
+          component: bridge
+          category: reliability
+        annotations:
+          summary: "Bridge circuit breaker is OPEN"
+          description: "Circuit breaker has tripped due to repeated failures. Bridge is not processing requests."
+          runbook: "https://docs.dcmaar.io/runbooks/circuit-breaker-open"
+
+      - alert: BridgeFrequentCircuitBreakerTrips
+        expr: rate(bridge_circuit_breaker_trips_total[10m]) > 0.1
+        for: 5m
+        labels:
+          severity: warning
+          component: bridge
+          category: reliability
+        annotations:
+          summary: "Frequent circuit breaker trips"
+          description: "Circuit breaker is tripping {{ $value | humanize }} times/sec. Indicates instability."
+          runbook: "https://docs.dcmaar.io/runbooks/frequent-trips"
+
+      - alert: BridgeHeartbeatMissed
+        expr: rate(bridge_heartbeats_missed_total[5m]) > 0.2
+        for: 3m
+        labels:
+          severity: warning
+          component: bridge
+          category: reliability
+        annotations:
+          summary: "Bridge heartbeats are being missed"
+          description: "Heartbeat miss rate is {{ $value | humanize }} misses/sec. Connection may be unstable."
+          runbook: "https://docs.dcmaar.io/runbooks/heartbeat-missed"
+
+      - alert: BridgeHighMessageDropRate
+        expr: rate(bridge_messages_dropped_total[5m]) > 1
+        for: 3m
+        labels:
+          severity: warning
+          component: bridge
+          category: reliability
+        annotations:
+          summary: "High message drop rate"
+          description: "Messages are being dropped at {{ $value | humanize }} msg/sec. Backpressure or queue overflow."
+          runbook: "https://docs.dcmaar.io/runbooks/message-drops"
+
+  - name: bridge_errors
+    interval: 30s
+    rules:
+      - alert: BridgeHighErrorRate
+        expr: rate(bridge_errors_total[5m]) > 1
+        for: 3m
+        labels:
+          severity: warning
+          component: bridge
+          category: errors
+        annotations:
+          summary: "High bridge error rate"
+          description: "Error rate is {{ $value | humanize }} errors/sec across all types."
+          runbook: "https://docs.dcmaar.io/runbooks/high-error-rate"
+
+      - alert: BridgeValidationErrors
+        expr: rate(bridge_errors_total{type="validation"}[5m]) > 0.5
+        for: 3m
+        labels:
+          severity: warning
+          component: bridge
+          category: errors
+        annotations:
+          summary: "High validation error rate"
+          description: "Validation errors at {{ $value | humanize }} errors/sec. Schema mismatch or malformed messages."
+          runbook: "https://docs.dcmaar.io/runbooks/validation-errors"
+
+      - alert: BridgeProtocolErrors
+        expr: rate(bridge_errors_total{type="protocol"}[5m]) > 0.3
+        for: 3m
+        labels:
+          severity: warning
+          component: bridge
+          category: errors
+        annotations:
+          summary: "Protocol errors detected"
+          description: "Protocol errors at {{ $value | humanize }} errors/sec. Version incompatibility or protocol violation."
+          runbook: "https://docs.dcmaar.io/runbooks/protocol-errors"
+
+      - alert: BridgeNetworkErrors
+        expr: rate(bridge_errors_total{type="network"}[5m]) > 0.5
+        for: 3m
+        labels:
+          severity: warning
+          component: bridge
+          category: errors
+        annotations:
+          summary: "Network errors detected"
+          description: "Network errors at {{ $value | humanize }} errors/sec. Connection instability or network issues."
+          runbook: "https://docs.dcmaar.io/runbooks/network-errors"
+
+  - name: bridge_telemetry
+    interval: 30s
+    rules:
+      - alert: BridgeTelemetryBacklog
+        expr: bridge_telemetry_items_total - bridge_telemetry_batches_sent_total * 50 > 1000
+        for: 5m
+        labels:
+          severity: warning
+          component: bridge
+          category: telemetry
+        annotations:
+          summary: "Telemetry backlog building up"
+          description: "Estimated {{ $value }} telemetry items in backlog. Batching may be slow or blocked."
+          runbook: "https://docs.dcmaar.io/runbooks/telemetry-backlog"
+
+      - alert: BridgeTelemetryFlushSlow
+        expr: bridge_telemetry_flush_latency_ms > 500
+        for: 3m
+        labels:
+          severity: warning
+          component: bridge
+          category: telemetry
+        annotations:
+          summary: "Telemetry flush latency is high"
+          description: "Flush latency is {{ $value }}ms. Batches may be too large or network is slow."
+          runbook: "https://docs.dcmaar.io/runbooks/slow-flush"
+
+  - name: bridge_commands
+    interval: 30s
+    rules:
+      - alert: BridgeHighCommandFailureRate
+        expr: rate(bridge_command_failures_total[5m]) / rate(bridge_commands_received_total[5m]) > 0.1
+        for: 3m
+        labels:
+          severity: warning
+          component: bridge
+          category: commands
+        annotations:
+          summary: "High command failure rate"
+          description: "{{ $value | humanizePercentage }} of commands are failing. Check command executors."
+          runbook: "https://docs.dcmaar.io/runbooks/command-failures"
+
+      - alert: BridgeNoCommandsProcessed
+        expr: rate(bridge_commands_received_total[10m]) == 0 and bridge_connections_total > 0
+        for: 10m
+        labels:
+          severity: info
+          component: bridge
+          category: commands
+        annotations:
+          summary: "No commands being processed"
+          description: "Bridge is connected but no commands received in 10 minutes. May be expected during idle periods."
+          runbook: "https://docs.dcmaar.io/runbooks/no-commands"

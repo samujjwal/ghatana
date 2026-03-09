@@ -1,0 +1,235 @@
+# ============================================================================
+# WORKFLOW MANAGEMENT - GraphQL Schema
+# ============================================================================
+
+# Enums
+enum WorkflowType {
+  BUG_FIX
+  FEATURE
+  INCIDENT
+  REFACTOR
+  MIGRATION
+  SECURITY_UPDATE
+  AI_ASSIST
+  DOCUMENTATION
+  TESTING
+  INFRASTRUCTURE
+}
+
+enum WorkflowStatus {
+  DRAFT
+  IN_PROGRESS
+  BLOCKED
+  COMPLETED
+  CANCELLED
+}
+
+enum WorkflowStep {
+  INTENT
+  CONTEXT
+  PLAN
+  EXECUTE
+  VERIFY
+  OBSERVE
+  LEARN
+  INSTITUTIONALIZE
+}
+
+enum StepStatus {
+  NOT_STARTED
+  IN_PROGRESS
+  COMPLETED
+  REVISITED
+  BLOCKED
+}
+
+enum AIMode {
+  ASSIST
+  RESTRICTED
+  SIMULATE
+  AGENT_READY
+}
+
+enum AuditAction {
+  CREATED
+  STEP_STARTED
+  STEP_COMPLETED
+  STEP_REVISITED
+  DATA_UPDATED
+  AI_SUGGESTION_ACCEPTED
+  AI_SUGGESTION_REJECTED
+  STATUS_CHANGED
+  OWNER_CHANGED
+}
+
+# Types
+type Workflow {
+  id: ID!
+  name: String!
+  description: String
+  workflowType: WorkflowType!
+  currentStep: WorkflowStep!
+  status: WorkflowStatus!
+  aiMode: AIMode!
+  ownerId: ID!
+  ownerName: String!
+  projectId: ID
+  templateId: ID
+  steps: JSON!
+  metrics: JSON!
+  contributors: [WorkflowContributor!]!
+  auditEntries: [WorkflowAuditEntry!]!
+  template: WorkflowTemplate
+  createdAt: String!
+  updatedAt: String!
+}
+
+type WorkflowContributor {
+  id: ID!
+  userId: ID!
+  userName: String!
+  role: String!
+  joinedAt: String!
+}
+
+type WorkflowAuditEntry {
+  id: ID!
+  action: AuditAction!
+  step: WorkflowStep
+  userId: ID!
+  userName: String!
+  details: JSON
+  previousValue: JSON
+  newValue: JSON
+  timestamp: String!
+}
+
+type WorkflowTemplate {
+  id: ID!
+  name: String!
+  description: String!
+  workflowType: WorkflowType!
+  defaultIntent: JSON!
+  requiredFields: JSON!
+  defaultRisks: JSON!
+  defaultMetrics: JSON!
+  isSystem: Boolean!
+  createdAt: String!
+  updatedAt: String!
+}
+
+type WorkflowListResult {
+  workflows: [Workflow!]!
+  total: Int!
+  hasMore: Boolean!
+}
+
+# Input Types
+input CreateWorkflowInput {
+  name: String!
+  description: String
+  workflowType: WorkflowType!
+  templateId: ID
+  projectId: ID
+  aiMode: AIMode
+}
+
+input UpdateWorkflowInput {
+  name: String
+  description: String
+  aiMode: AIMode
+  status: WorkflowStatus
+}
+
+input UpdateStepDataInput {
+  step: WorkflowStep!
+  data: JSON!
+}
+
+input AdvanceStepInput {
+  fromStep: WorkflowStep!
+  toStep: WorkflowStep!
+}
+
+input AddContributorInput {
+  userId: ID!
+  userName: String!
+  role: String
+}
+
+input WorkflowFilterInput {
+  status: WorkflowStatus
+  workflowType: WorkflowType
+  ownerId: ID
+  projectId: ID
+}
+
+input WorkflowPaginationInput {
+  limit: Int
+  offset: Int
+}
+
+# Queries
+extend type Query {
+  # Get a single workflow by ID
+  workflow(id: ID!): Workflow
+
+  # List workflows with optional filtering and pagination
+  workflows(
+    filter: WorkflowFilterInput
+    pagination: WorkflowPaginationInput
+  ): WorkflowListResult!
+
+  # Get workflows for the current user
+  myWorkflows(
+    filter: WorkflowFilterInput
+    pagination: WorkflowPaginationInput
+  ): WorkflowListResult!
+
+  # Get all workflow templates
+  workflowTemplates(workflowType: WorkflowType): [WorkflowTemplate!]!
+
+  # Get a single template by ID
+  workflowTemplate(id: ID!): WorkflowTemplate
+}
+
+# Mutations
+extend type Mutation {
+  # Create a new workflow
+  createWorkflow(input: CreateWorkflowInput!): Workflow!
+
+  # Update workflow metadata
+  updateWorkflow(id: ID!, input: UpdateWorkflowInput!): Workflow!
+
+  # Update step data within a workflow
+  updateStepData(workflowId: ID!, input: UpdateStepDataInput!): Workflow!
+
+  # Advance to the next step
+  advanceStep(workflowId: ID!, input: AdvanceStepInput!): Workflow!
+
+  # Go back to a previous step (creates revision)
+  revisitStep(workflowId: ID!, step: WorkflowStep!): Workflow!
+
+  # Add a contributor to the workflow
+  addContributor(workflowId: ID!, input: AddContributorInput!): Workflow!
+
+  # Remove a contributor from the workflow
+  removeContributor(workflowId: ID!, userId: ID!): Workflow!
+
+  # Delete a workflow
+  deleteWorkflow(id: ID!): Boolean!
+
+  # Create a workflow template
+  createWorkflowTemplate(
+    name: String!
+    description: String!
+    workflowType: WorkflowType!
+    defaultIntent: JSON
+    requiredFields: JSON
+    defaultRisks: JSON
+    defaultMetrics: JSON
+  ): WorkflowTemplate!
+}
+
+# Custom scalar for JSON data
+scalar JSON

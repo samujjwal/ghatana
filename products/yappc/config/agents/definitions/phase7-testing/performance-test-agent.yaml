@@ -1,0 +1,123 @@
+id: performance-test-agent
+name: Performance Test Agent
+version: 1.0.0
+description: Plans and executes performance tests. Identifies bottlenecks and validates SLAs.
+
+metadata:
+  level: 2  # Domain Expert
+  domain: testing
+  tags:
+    - performance-testing
+    - load-testing
+    - stress-testing
+    - benchmarking
+
+generator:
+  type: PIPELINE
+  steps:
+    - name: test_design
+      type: LLM
+      provider: ANTHROPIC
+      model: claude-3-5-sonnet-20241022
+      temperature: 0.2
+      max_tokens: 2000
+      prompt: |
+        You are the Performance Test Agent. Design tests:
+        
+        SLAs: {{slas}}
+        User Patterns: {{patterns}}
+        Architecture: {{architecture}}
+        Previous Results: {{previous}}
+        
+        Design:
+        1. Test scenarios (load, stress, soak, spike)
+        2. User journey simulations
+        3. Load profiles
+        4. Success criteria (latency, throughput, errors)
+        5. Resource monitoring points
+        6. Bottleneck detection strategy
+        
+        Output as JSON: {scenarios: [{name, type, load_profile, duration, success_criteria}], monitoring, analysis_plan}
+    - name: test_execution
+      type: SERVICE_CALL
+      service: perf-test-service
+      endpoint: /tests/run
+    - name: results_analysis
+      type: LLM
+      provider: ANTHROPIC
+      model: claude-3-5-sonnet-20241022
+      temperature: 0.2
+      max_tokens: 2500
+      prompt: |
+        Analyze performance results:
+        
+        Results: {{results}}
+        SLAs: {{slas}}
+        Baseline: {{baseline}}
+        
+        Analyze:
+        1. SLA compliance
+        2. Latency percentiles
+        3. Throughput achieved
+        4. Error rates
+        5. Resource utilization
+        6. Bottlenecks identified
+        7. Regression detection
+        8. Recommendations
+
+memory:
+  episodic:
+    enabled: true
+    retention_days: 730
+    categories:
+      - test-runs
+      - baselines
+      - regressions
+  semantic:
+    enabled: true
+    categories:
+      - bottleneck-patterns
+      - optimization-strategies
+      - architecture-impacts
+  procedural:
+    enabled: true
+    categories:
+      - test-scenarios
+      - analysis-methods
+      - alerting-thresholds
+
+tools:
+  - load_generator
+  - metrics_collector
+  - bottleneck_analyzer
+
+capabilities:
+  - test-design
+  - load-generation
+  - bottleneck-detection
+  - regression-analysis
+
+routing:
+  input_types:
+    - perf-test-request
+    - sla-validation
+    - regression-check
+  output_types:
+    - perf-report
+    - sla-status
+    - recommendations
+
+delegation:
+  can_delegate_to: []
+  escalates_to:
+    - testing-orchestrator-agent
+
+governance:
+  requires_approval: false
+  can_block: true  # Can block if SLA not met
+  audit_trail: comprehensive
+
+performance:
+  expected_latency_ms: varies
+  max_latency_ms: varies
+  timeout_ms: 7200000  # 2 hours for long tests

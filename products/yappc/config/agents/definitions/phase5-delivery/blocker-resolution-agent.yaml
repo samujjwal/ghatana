@@ -1,0 +1,106 @@
+id: blocker-resolution-agent
+name: Blocker Resolution Agent
+version: 1.0.0
+description: Identifies, tracks, and helps resolve blockers. Escalates appropriately and ensures blockers don't stall delivery.
+
+metadata:
+  level: 2  # Domain Expert
+  domain: delivery
+  tags:
+    - blocker-management
+    - impediment-resolution
+    - escalation
+    - dependency-management
+
+generator:
+  type: PIPELINE
+  steps:
+    - name: blocker_analysis
+      type: LLM
+      provider: ANTHROPIC
+      model: claude-3-5-sonnet-20241022
+      temperature: 0.2
+      max_tokens: 2000
+      prompt: |
+        You are the Blocker Resolution Agent. Analyze and resolve blockers:
+        
+        Blocker: {{blocker}}
+        Context: {{context}}
+        Impacted Work: {{impacted}}
+        Team Resources: {{resources}}
+        
+        Analyze:
+        1. Root cause
+        2. Impact assessment (scope, timeline)
+        3. Resolution options
+        4. Required actions and owners
+        5. Escalation needs
+        6. Workarounds if applicable
+        7. Prevention for future
+        
+        Output as JSON: {root_cause, impact, resolution_options, actions, escalation_level, workarounds, prevention, timeline}
+    - name: action_coordination
+      type: SERVICE_CALL
+      service: action-service
+      endpoint: /actions/create
+    - name: status_tracking
+      type: RULE_BASED
+      description: Track resolution progress
+
+memory:
+  episodic:
+    enabled: true
+    retention_days: 365
+    categories:
+      - blockers
+      - resolutions
+      - escalations
+  semantic:
+    enabled: true
+    categories:
+      - blocker-patterns
+      - resolution-strategies
+      - escalation-paths
+  procedural:
+    enabled: true
+    categories:
+      - analysis-framework
+      - resolution-playbooks
+      - escalation-rules
+
+tools:
+  - blocker_tracker
+  - dependency_resolver
+  - escalation_manager
+
+capabilities:
+  - blocker-analysis
+  - resolution-planning
+  - escalation-management
+  - prevention-identification
+
+routing:
+  input_types:
+    - blocker-report
+    - impediment
+    - dependency-issue
+  output_types:
+    - resolution-plan
+    - action-items
+    - escalation
+
+delegation:
+  can_delegate_to: []
+  escalates_to:
+    - delivery-orchestrator-agent
+    - human-in-the-loop-coordinator
+
+governance:
+  requires_approval: false
+  can_block: false
+  audit_trail: comprehensive
+
+performance:
+  expected_latency_ms: 2000
+  max_latency_ms: 5000
+  timeout_ms: 10000

@@ -1,0 +1,64 @@
+id: compliance-audit-orchestrator
+name: Compliance Audit Orchestrator
+version: 1.0.0
+description: Orchestrates end-to-end compliance audit for a framework — delegates to compliance-control-evaluation-agent and compliance-gap-analysis-agent, produces final report.
+
+metadata:
+  level: 2
+  domain: compliance
+  tags: [orchestrator, compliance, soc2, gdpr, iso27001]
+
+generator:
+  type: PIPELINE
+  steps:
+    - name: audit_coordination
+      type: RULE_BASED
+      rules:
+        - Load all controls for the framework
+        - Trigger compliance-control-evaluation-agent per control (parallel, batch 20)
+        - Aggregate pass/fail results
+        - Trigger compliance-gap-analysis-agent
+    - name: audit_report
+      type: TEMPLATE
+      engine: liquid
+      template_path: templates/compliance/audit-report.liquid
+
+memory:
+  episodic:
+    enabled: true
+    retention_days: 1095
+    categories: [compliance-audits, audit-history]
+  semantic:
+    enabled: true
+    categories: [framework-requirements, audit-patterns]
+  procedural:
+    enabled: true
+    categories: [audit-workflow, reporting-rules]
+
+tools: [framework_loader, audit_coordinator, report_generator]
+
+capabilities:
+  - compliance-audit-orchestration
+  - multi-agent-orchestration
+  - compliance-reporting
+
+routing:
+  input_types: [framework-id, workspace-id, audit-request]
+  output_types: [compliance-audit-report, gap-analysis, compliance-score]
+
+delegation:
+  can_delegate_to:
+    - compliance-control-evaluation-agent
+    - compliance-gap-analysis-agent
+    - sentinel
+  escalates_to: systems-architect
+
+governance:
+  requires_approval: true
+  can_block: false
+  audit_trail: comprehensive
+
+performance:
+  expected_latency_ms: 60000
+  max_latency_ms: 300000
+  timeout_ms: 600000

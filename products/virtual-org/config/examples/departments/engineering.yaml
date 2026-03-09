@@ -1,0 +1,176 @@
+# Engineering Department Configuration
+
+apiVersion: virtualorg.ghatana.com/v1
+kind: Department
+metadata:
+  name: engineering
+  labels:
+    category: technical
+    cost-center: "CC-ENG-001"
+
+spec:
+  displayName: "Engineering"
+  type: ENGINEERING
+  description: |
+    Software development and architecture department responsible for
+    building, maintaining, and evolving the product codebase.
+
+  # Organizational Position
+  hierarchy:
+    parent: null
+    children: []
+    reportingTo: cto-agent
+
+  # Department Settings
+  settings:
+    maxAgents: 50
+    autoScaleAgents: false
+    taskAssignment:
+      strategy: capability-match
+      customStrategyClass: null
+
+  # Agent Definitions
+  agents:
+    # Executive Leadership
+    - ref: ../agents/cto-agent.yaml
+
+    # Technical Leadership
+    - ref: ../agents/lead-engineer.yaml
+    - ref: ../agents/architect.yaml
+
+    # Individual Contributors
+    - ref: ../agents/senior-engineer.yaml
+    - ref: ../agents/engineer.yaml
+    - ref: ../agents/junior-engineer.yaml
+
+  # Department-Specific Workflows
+  workflows:
+    - name: code-review
+      steps:
+        - id: submit-pr
+          name: "Submit Pull Request"
+          agent: engineer
+          action: create_pull_request
+          outputs: [pull_request_id]
+
+        - id: automated-checks
+          name: "Run Automated Checks"
+          agent: system
+          action: run_ci_pipeline
+          waitFor: [submit-pr]
+          outputs: [ci_status, coverage_report]
+
+        - id: code-review
+          name: "Code Review"
+          agent: lead-engineer
+          action: review_code
+          waitFor: [automated-checks]
+          inputs:
+            pr_id: ${steps.submit-pr.outputs.pull_request_id}
+            ci_status: ${steps.automated-checks.outputs.ci_status}
+          outputs: [review_decision, comments]
+
+        - id: approve-merge
+          name: "Approve and Merge"
+          agent: senior-engineer
+          action: approve_and_merge
+          waitFor: [code-review]
+          condition: ${steps.code-review.outputs.review_decision} == "approved"
+          hitl:
+            required: false
+
+    - name: architecture-review
+      steps:
+        - id: submit-proposal
+          name: "Submit Architecture Proposal"
+          agent: senior-engineer
+          action: create_architecture_proposal
+          outputs: [proposal_id, proposal_document]
+
+        - id: technical-review
+          name: "Technical Review"
+          agent: architect
+          action: review_architecture
+          waitFor: [submit-proposal]
+          outputs: [technical_assessment, risks, recommendations]
+
+        - id: executive-approval
+          name: "Executive Approval"
+          agent: cto-agent
+          action: approve_architecture
+          waitFor: [technical-review]
+          hitl:
+            required: true
+            approvers: [cto-agent]
+
+  # KPI Definitions
+  kpis:
+    - name: velocity_story_points
+      displayName: "Sprint Velocity"
+      type: gauge
+      unit: points
+      target: 50
+      warningThreshold: 40
+      criticalThreshold: 30
+
+    - name: code_coverage
+      displayName: "Code Coverage"
+      type: percentage
+      target: 80
+      warningThreshold: 70
+      criticalThreshold: 60
+
+    - name: pr_cycle_time
+      displayName: "PR Cycle Time"
+      type: duration
+      unit: hours
+      target: 24
+      warningThreshold: 48
+      criticalThreshold: 72
+
+    - name: defect_density
+      displayName: "Defect Density"
+      type: rate
+      unit: defects_per_kloc
+      target: 0.5
+      warningThreshold: 1.0
+      criticalThreshold: 2.0
+
+    - name: technical_debt_ratio
+      displayName: "Technical Debt Ratio"
+      type: percentage
+      target: 5
+      warningThreshold: 10
+      criticalThreshold: 20
+
+  # Task Types This Department Handles
+  taskTypes:
+    - name: feature_development
+      priority: normal
+      slaHours: 40
+      requiredCapabilities: [java, react, database]
+
+    - name: bug_fix
+      priority: high
+      slaHours: 8
+      requiredCapabilities: [debugging, java]
+
+    - name: code_review
+      priority: normal
+      slaHours: 4
+      requiredCapabilities: [code_review]
+
+    - name: architecture_design
+      priority: normal
+      slaHours: 80
+      requiredCapabilities: [architecture, system_design]
+
+    - name: tech_debt_reduction
+      priority: low
+      slaHours: 24
+      requiredCapabilities: [refactoring, testing]
+
+    - name: hotfix
+      priority: critical
+      slaHours: 2
+      requiredCapabilities: [debugging, java, deployment]

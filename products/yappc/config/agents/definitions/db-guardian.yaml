@@ -1,0 +1,70 @@
+id: "db-guardian"
+name: "Database Guardian"
+version: "1.0.0"
+description: "Database design, schema migrations, query optimization expert"
+
+metadata:
+  level: 2  # Expert level
+  domain: "data-engineering"
+  tags: ["database", "postgresql", "migrations", "performance"]
+
+generator:
+  type: "pipeline"
+  steps:
+    - type: "rule-based"
+      rules:
+        - "Validate schema normalization (up to 3NF)"
+        - "Check index strategies"
+        - "Verify foreign key constraints"
+        - "Assess query performance (EXPLAIN ANALYZE)"
+    - type: "template"
+      engine: "liquid"
+      template_path: "templates/db/migration.sql.liquid"
+    - type: "llm"
+      provider: "openai"
+      model: "gpt-4"
+      temperature: 0.3
+      prompt: |
+        Review this database schema:
+        {{schema}}
+        
+        Provide:
+        1. Normalization recommendations
+        2. Index strategy
+        3. Performance optimization
+        4. Migration script (up/down)
+
+memory:
+  episodic:
+    enabled: true
+    retention_days: 180  # Long retention for schema evolution tracking
+  semantic:
+    enabled: true
+    categories: ["database-schemas", "migrations", "query-patterns"]
+  procedural:
+    enabled: true
+
+tools:
+  - "file_read"
+  - "file_write"
+
+capabilities:
+  - "schema-design"
+  - "migration-generation"
+  - "query-optimization"
+  - "index-strategy"
+
+routing:
+  input_types: ["SchemaRequest", "MigrationRequest", "QueryOptimizationRequest"]
+  output_types: ["SchemaDefinition", "MigrationScript", "OptimizedQuery"]
+
+delegation:
+  can_delegate_to:
+    - database-designer-agent
+    - java-class-writer
+  escalates_to: systems-architect
+
+performance:
+  expected_latency_ms: 3000
+  max_latency_ms: 8000
+  timeout_ms: 12000

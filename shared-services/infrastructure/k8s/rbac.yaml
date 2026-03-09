@@ -1,0 +1,353 @@
+---
+# RBAC Configuration for AEP and Data-Cloud
+# Implements least-privilege access control
+
+# ClusterRole for AEP - Read-only access to cluster resources
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: aep-cluster-reader
+  labels:
+    app.kubernetes.io/name: aep
+    app.kubernetes.io/component: rbac
+rules:
+  - apiGroups: [""]
+    resources: ["nodes", "namespaces"]
+    verbs: ["get", "list", "watch"]
+  - apiGroups: [""]
+    resources: ["pods", "services", "endpoints"]
+    verbs: ["get", "list", "watch"]
+  - apiGroups: ["apps"]
+    resources: ["deployments", "replicasets", "statefulsets"]
+    verbs: ["get", "list", "watch"]
+
+---
+# ClusterRoleBinding for AEP
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  name: aep-cluster-reader-binding
+  labels:
+    app.kubernetes.io/name: aep
+    app.kubernetes.io/component: rbac
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: aep-cluster-reader
+subjects:
+  - kind: ServiceAccount
+    name: aep-service-account
+    namespace: ghatana
+
+---
+# Role for AEP within namespace - Full access to own resources
+apiVersion: rbac.authorization.k8s.io/v1
+kind: Role
+metadata:
+  name: aep-namespace-admin
+  namespace: ghatana
+  labels:
+    app.kubernetes.io/name: aep
+    app.kubernetes.io/component: rbac
+rules:
+  # ConfigMaps and Secrets
+  - apiGroups: [""]
+    resources: ["configmaps", "secrets"]
+    verbs: ["get", "list", "watch", "create", "update", "patch"]
+  # Pods and logs
+  - apiGroups: [""]
+    resources: ["pods", "pods/log", "pods/status"]
+    verbs: ["get", "list", "watch"]
+  # Services and endpoints
+  - apiGroups: [""]
+    resources: ["services", "endpoints"]
+    verbs: ["get", "list", "watch"]
+  # Events for debugging
+  - apiGroups: [""]
+    resources: ["events"]
+    verbs: ["get", "list", "watch", "create"]
+  # PersistentVolumeClaims
+  - apiGroups: [""]
+    resources: ["persistentvolumeclaims"]
+    verbs: ["get", "list", "watch"]
+
+---
+# RoleBinding for AEP namespace admin
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  name: aep-namespace-admin-binding
+  namespace: ghatana
+  labels:
+    app.kubernetes.io/name: aep
+    app.kubernetes.io/component: rbac
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: Role
+  name: aep-namespace-admin
+subjects:
+  - kind: ServiceAccount
+    name: aep-service-account
+    namespace: ghatana
+
+---
+# ClusterRole for Data-Cloud - Read-only access to cluster resources
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: datacloud-cluster-reader
+  labels:
+    app.kubernetes.io/name: datacloud
+    app.kubernetes.io/component: rbac
+rules:
+  - apiGroups: [""]
+    resources: ["nodes", "namespaces"]
+    verbs: ["get", "list", "watch"]
+  - apiGroups: [""]
+    resources: ["pods", "services", "endpoints"]
+    verbs: ["get", "list", "watch"]
+  - apiGroups: ["apps"]
+    resources: ["deployments", "replicasets", "statefulsets"]
+    verbs: ["get", "list", "watch"]
+
+---
+# ClusterRoleBinding for Data-Cloud
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  name: datacloud-cluster-reader-binding
+  labels:
+    app.kubernetes.io/name: datacloud
+    app.kubernetes.io/component: rbac
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: datacloud-cluster-reader
+subjects:
+  - kind: ServiceAccount
+    name: datacloud-service-account
+    namespace: ghatana
+
+---
+# Role for Data-Cloud within namespace
+apiVersion: rbac.authorization.k8s.io/v1
+kind: Role
+metadata:
+  name: datacloud-namespace-admin
+  namespace: ghatana
+  labels:
+    app.kubernetes.io/name: datacloud
+    app.kubernetes.io/component: rbac
+rules:
+  # ConfigMaps and Secrets
+  - apiGroups: [""]
+    resources: ["configmaps", "secrets"]
+    verbs: ["get", "list", "watch", "create", "update", "patch"]
+  # Pods and logs
+  - apiGroups: [""]
+    resources: ["pods", "pods/log", "pods/status"]
+    verbs: ["get", "list", "watch"]
+  # Services and endpoints
+  - apiGroups: [""]
+    resources: ["services", "endpoints"]
+    verbs: ["get", "list", "watch"]
+  # Events for debugging
+  - apiGroups: [""]
+    resources: ["events"]
+    verbs: ["get", "list", "watch", "create"]
+  # PersistentVolumeClaims
+  - apiGroups: [""]
+    resources: ["persistentvolumeclaims"]
+    verbs: ["get", "list", "watch"]
+
+---
+# RoleBinding for Data-Cloud namespace admin
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  name: datacloud-namespace-admin-binding
+  namespace: ghatana
+  labels:
+    app.kubernetes.io/name: datacloud
+    app.kubernetes.io/component: rbac
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: Role
+  name: datacloud-namespace-admin
+subjects:
+  - kind: ServiceAccount
+    name: datacloud-service-account
+    namespace: ghatana
+
+---
+# NetworkPolicy for AEP - Restrict ingress/egress
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: aep-network-policy
+  namespace: ghatana
+  labels:
+    app.kubernetes.io/name: aep
+    app.kubernetes.io/component: network
+spec:
+  podSelector:
+    matchLabels:
+      app: aep
+  policyTypes:
+    - Ingress
+    - Egress
+  ingress:
+    # Allow from same namespace
+    - from:
+        - namespaceSelector:
+            matchLabels:
+              name: ghatana
+      ports:
+        - protocol: TCP
+          port: 8080
+    # Allow from ingress controller
+    - from:
+        - namespaceSelector:
+            matchLabels:
+              name: ingress-nginx
+      ports:
+        - protocol: TCP
+          port: 8080
+  egress:
+    # Allow to Data-Cloud
+    - to:
+        - podSelector:
+            matchLabels:
+              app: datacloud
+      ports:
+        - protocol: TCP
+          port: 8090
+    # Allow DNS
+    - to:
+        - namespaceSelector: {}
+          podSelector:
+            matchLabels:
+              k8s-app: kube-dns
+      ports:
+        - protocol: UDP
+          port: 53
+    # Allow to external services (databases, etc.)
+    - to:
+        - ipBlock:
+            cidr: 0.0.0.0/0
+            except:
+              - 10.0.0.0/8
+              - 172.16.0.0/12
+              - 192.168.0.0/16
+      ports:
+        - protocol: TCP
+          port: 443
+        - protocol: TCP
+          port: 5432  # PostgreSQL
+
+---
+# NetworkPolicy for Data-Cloud
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: datacloud-network-policy
+  namespace: ghatana
+  labels:
+    app.kubernetes.io/name: datacloud
+    app.kubernetes.io/component: network
+spec:
+  podSelector:
+    matchLabels:
+      app: datacloud
+  policyTypes:
+    - Ingress
+    - Egress
+  ingress:
+    # Allow from AEP
+    - from:
+        - podSelector:
+            matchLabels:
+              app: aep
+      ports:
+        - protocol: TCP
+          port: 8090
+    # Allow from same namespace
+    - from:
+        - namespaceSelector:
+            matchLabels:
+              name: ghatana
+      ports:
+        - protocol: TCP
+          port: 8090
+    # Allow from ingress controller
+    - from:
+        - namespaceSelector:
+            matchLabels:
+              name: ingress-nginx
+      ports:
+        - protocol: TCP
+          port: 8090
+  egress:
+    # Allow DNS
+    - to:
+        - namespaceSelector: {}
+          podSelector:
+            matchLabels:
+              k8s-app: kube-dns
+      ports:
+        - protocol: UDP
+          port: 53
+    # Allow to databases
+    - to:
+        - ipBlock:
+            cidr: 0.0.0.0/0
+            except:
+              - 10.0.0.0/8
+              - 172.16.0.0/12
+              - 192.168.0.0/16
+      ports:
+        - protocol: TCP
+          port: 5432  # PostgreSQL
+        - protocol: TCP
+          port: 9200  # Elasticsearch
+        - protocol: TCP
+          port: 6379  # Redis
+
+---
+# PodSecurityPolicy (for clusters that support it)
+apiVersion: policy/v1beta1
+kind: PodSecurityPolicy
+metadata:
+  name: ghatana-restricted
+  labels:
+    app.kubernetes.io/component: security
+spec:
+  privileged: false
+  allowPrivilegeEscalation: false
+  requiredDropCapabilities:
+    - ALL
+  volumes:
+    - 'configMap'
+    - 'emptyDir'
+    - 'projected'
+    - 'secret'
+    - 'downwardAPI'
+    - 'persistentVolumeClaim'
+  hostNetwork: false
+  hostIPC: false
+  hostPID: false
+  runAsUser:
+    rule: 'MustRunAsNonRoot'
+  seLinux:
+    rule: 'RunAsAny'
+  supplementalGroups:
+    rule: 'MustRunAs'
+    ranges:
+      - min: 1
+        max: 65535
+  fsGroup:
+    rule: 'MustRunAs'
+    ranges:
+      - min: 1
+        max: 65535
+  readOnlyRootFilesystem: true

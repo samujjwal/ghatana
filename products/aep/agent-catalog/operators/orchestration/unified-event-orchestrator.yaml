@@ -1,0 +1,61 @@
+id: unified-event-orchestrator
+name: Unified Event Orchestrator
+version: 1.0.0
+description: High-level orchestrator that coordinates all event processing across ingestion, transformation, routing, and pattern detection
+
+metadata:
+  level: 1
+  domain: orchestration
+  tags: [event, orchestration, unified, streaming, coordination]
+
+generator:
+  type: PIPELINE
+  steps:
+    - name: analyze_stream
+      type: RULE_BASED
+      rules:
+        - Identify event sources
+        - Determine processing pipeline
+        - Configure backpressure strategies
+    - name: coordinate_pipeline
+      type: LLM
+      provider: OPENAI
+      model: gpt-4
+      temperature: 0.2
+      prompt: |
+        Orchestrate event processing:
+        Sources: {{sources}}
+        Processing Requirements: {{requirements}}
+        Coordinate ingestion, transformation, routing, and patterns
+
+capabilities:
+  - event-processing
+  - stream-processing
+  - pattern-detection
+
+tools:
+  - name: streamOrchestrator
+    type: SERVICE
+    endpoint: /aep/orchestrate/stream
+
+delegation:
+  can_delegate_to:
+    - kafka-ingestion-agent
+    - http-ingestion-agent
+    - event-transformation-agent
+    - event-router-agent
+    - pattern-detection-agent
+
+memory:
+  type: SEMANTIC
+  scope: stream_history
+  retention: long
+
+routing:
+  input: EventOrchestrationRequest
+  output: EventOrchestrationResult
+
+resources:
+  memory: "2GB"
+  cpu: "4"
+  timeout: "0"  # Long-running

@@ -1,0 +1,46 @@
+/**
+* {{projectName}} - Type Definitions
+*
+* Custom type definitions and module augmentations.
+*
+* @module types
+*/
+
+import type { PrismaClient } from '@prisma/client';
+
+declare module 'fastify' {
+interface FastifyInstance {
+prisma: PrismaClient;
+}
+}
+
+/**
+* Generic API response wrapper.
+*/
+export interface ApiResponse<T> {
+    data: T;
+    meta?: Record<string, unknown>;
+        }
+
+        /**
+        * Paginated list response.
+        */
+        export interface PaginatedResponse<T> {
+            data: T[];
+            pagination: {
+            page: number;
+            limit: number;
+            total: number;
+            totalPages: number;
+            };
+            }
+
+            /**
+            * Error response structure.
+            */
+            export interface ErrorResponse {
+            error: string;
+            message: string;
+            statusCode?: number;
+            details?: Record<string, unknown>;
+                }

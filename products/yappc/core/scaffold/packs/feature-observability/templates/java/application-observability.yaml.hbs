@@ -1,0 +1,44 @@
+# Observability Configuration
+spring:
+application:
+name: {{serviceName}}
+
+management:
+endpoints:
+web:
+exposure:
+include: health,info,metrics,prometheus
+endpoint:
+health:
+show-details: always
+probes:
+enabled: true
+metrics:
+tags:
+application: {{serviceName}}
+export:
+prometheus:
+enabled: {{enableMetrics}}
+tracing:
+enabled: {{enableTracing}}
+sampling:
+probability: 1.0
+
+logging:
+level:
+root: {{logLevel}}
+{{packageName}}: {{logLevel}}
+pattern:
+{{#if (eq logFormat "json")}}
+console:
+'{"timestamp":"%d{ISO8601}","level":"%p","thread":"%t","logger":"%c","message":"%m","trace_id":"%X{traceId:-}","span_id":"%X{spanId:-}"}%n'
+{{else}}
+console: '%d{ISO8601} %highlight(%-5p) [%t] %c{1.} - %m %X{traceId:-}%n'
+{{/if}}
+
+otel:
+exporter:
+otlp:
+endpoint: {{otlpEndpoint}}
+service:
+name: {{serviceName}}

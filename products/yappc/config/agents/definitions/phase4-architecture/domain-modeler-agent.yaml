@@ -1,0 +1,104 @@
+id: domain-modeler-agent
+name: Domain Modeler Agent
+version: 1.0.0
+description: Models business domains using DDD patterns. Creates bounded contexts, aggregates, entities, and domain events.
+
+metadata:
+  level: 2  # Domain Expert
+  domain: architecture
+  tags:
+    - domain-driven-design
+    - domain-modeling
+    - bounded-contexts
+    - ddd
+
+generator:
+  type: PIPELINE
+  steps:
+    - name: domain_analysis
+      type: LLM
+      provider: ANTHROPIC
+      model: claude-3-5-sonnet-20241022
+      temperature: 0.2
+      max_tokens: 3000
+      prompt: |
+        You are the Domain Modeler Agent. Model this business domain:
+        
+        Domain Description: {{domain}}
+        Business Rules: {{rules}}
+        User Stories: {{stories}}
+        
+        Apply DDD to identify:
+        1. Bounded Contexts (distinct areas with clear boundaries)
+        2. Ubiquitous Language (domain terms glossary)
+        3. Aggregates (consistency boundaries)
+        4. Entities (identifiable objects)
+        5. Value Objects (immutable descriptors)
+        6. Domain Events (significant occurrences)
+        7. Domain Services (stateless operations)
+        8. Context Map (relationships between contexts)
+        
+        Output as JSON: {bounded_contexts, ubiquitous_language, aggregates, entities, value_objects, events, services, context_map}
+    - name: model_validation
+      type: RULE_BASED
+      description: Validate DDD model consistency
+    - name: model_documentation
+      type: TEMPLATE
+      template_path: templates/domain-model.ftl
+
+memory:
+  episodic:
+    enabled: true
+    retention_days: 1095
+    categories:
+      - domain-models
+      - model-evolutions
+      - context-maps
+  semantic:
+    enabled: true
+    categories:
+      - ddd-patterns
+      - domain-language
+      - aggregate-patterns
+  procedural:
+    enabled: true
+    categories:
+      - modeling-techniques
+      - validation-rules
+      - refactoring-patterns
+
+tools:
+  - domain_modeler
+  - event_storming_tool
+  - context_mapper
+
+capabilities:
+  - domain-modeling
+  - ddd-application
+  - bounded-context-design
+  - event-identification
+
+routing:
+  input_types:
+    - domain-description
+    - business-rules
+    - modeling-request
+  output_types:
+    - domain-model
+    - context-map
+    - ubiquitous-language
+
+delegation:
+  can_delegate_to: []
+  escalates_to:
+    - solution-architect-agent
+
+governance:
+  requires_approval: true  # Domain models are foundational
+  can_block: false
+  audit_trail: comprehensive
+
+performance:
+  expected_latency_ms: 6000
+  max_latency_ms: 15000
+  timeout_ms: 30000

@@ -1,0 +1,27 @@
+---
+id: "artifact_registry"
+agent: "ArtifactRegistryAgent"
+role: "DevOps/Registry Admin"
+inputs_spec:
+- name: "signed_artifacts"
+  description: "Signed release artifacts for registry storage."
+  format: "Signed artifact or manifest"
+outputs_spec:
+- name: "stored_artifacts"
+  description: "Artifacts stored in secured, access-controlled registry."
+  format: "Artifact registry reference"
+agent_tasks:
+- "Store all artifacts in secured, access-controlled registry."
+- "Ensure artifact metadata (version, commit, build ID) is complete."
+- "Log all registry access."
+acceptance_criteria:
+- "All artifacts are stored in a secured, access-controlled registry."
+- "Artifact metadata (version, commit, build ID) is complete."
+- "Registry access is logged."
+dependencies:
+- "signed_artifacts"
+failure_escalation:
+- "Escalate to Registry Admin or Security if registry is misconfigured or logs are\
+  \ missing."
+references: []
+hitl: false

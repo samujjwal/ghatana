@@ -1,0 +1,34 @@
+# Ghatana Platform Core Agent Catalog
+#
+# Base catalog providing core agents, templates, and the standard capability
+# taxonomy. All product catalogs (AEP, Data-Cloud, YAPPC, etc.) extend this.
+#
+# Discovery: CatalogLoader scans for agent-catalog.yaml files and creates
+# FileBasedCatalog instances from each.
+
+catalog:
+  id: "platform"
+  name: "Ghatana Platform Core Catalog"
+  version: "1.0.0"
+
+  # This is the root catalog — no parent
+  extends: []
+
+  # Agent definition files (glob patterns relative to this file)
+  agents:
+    - "core-agents/**/*-agent.yaml"
+
+  # Templates for agent generation
+  templates:
+    - "templates/**/"
+
+  # Capability taxonomy and definitions
+  capabilities:
+    taxonomy: "capabilities/taxonomy.yaml"
+    definitions: "capabilities/standard-capabilities.yaml"
+
+  metadata:
+    maintainer: "platform-team@ghatana.ai"
+    scope: "platform-wide"
+    stability: "stable"
+    priority: 100

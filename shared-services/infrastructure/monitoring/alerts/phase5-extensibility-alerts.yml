@@ -1,0 +1,170 @@
+groups:
+  - name: phase5-extensibility-alerts
+    rules:
+      # ─── Agent Framework ───────────────────────────────────
+      - alert: AgentHighErrorRate
+        expr: >
+          sum(rate(agent_results_total{status="ERROR"}[5m]))
+          /
+          sum(rate(agent_invocations_total[5m]))
+          > 0.05
+        for: 5m
+        labels:
+          severity: warning
+          product: agent-framework
+        annotations:
+          summary: "Agent error rate exceeds 5%"
+          description: "Agent framework error rate is {{ $value | humanizePercentage }} over the last 5 minutes."
+
+      - alert: AgentHighLatency
+        expr: >
+          histogram_quantile(0.95,
+            sum(rate(agent_processing_duration_seconds_bucket[5m])) by (le, agent_id)
+          ) > 10
+        for: 5m
+        labels:
+          severity: warning
+          product: agent-framework
+        annotations:
+          summary: "Agent {{ $labels.agent_id }} p95 latency > 10s"
+          description: "Agent {{ $labels.agent_id }} p95 processing latency is {{ $value }}s."
+
+      - alert: AgentLowConfidence
+        expr: >
+          histogram_quantile(0.50,
+            sum(rate(agent_confidence_score_bucket[5m])) by (le, agent_id)
+          ) < 0.3
+        for: 10m
+        labels:
+          severity: info
+          product: agent-framework
+        annotations:
+          summary: "Agent {{ $labels.agent_id }} median confidence below 30%"
+          description: "Agent {{ $labels.agent_id }} has median confidence of {{ $value }}."
+
+      # ─── LLM Agent ─────────────────────────────────────────
+      - alert: LLMInferenceHighLatency
+        expr: >
+          histogram_quantile(0.95,
+            sum(rate(llm_inference_duration_seconds_bucket[5m])) by (le, model)
+          ) > 30
+        for: 5m
+        labels:
+          severity: warning
+          product: agent-framework
+        annotations:
+          summary: "LLM model {{ $labels.model }} p95 latency > 30s"
+          description: "LLM inference p95 latency is {{ $value }}s for model {{ $labels.model }}."
+
+      - alert: LLMHighTokenUsage
+        expr: >
+          sum(rate(llm_tokens_total{direction="input"}[1h])) > 100000
+        for: 15m
+        labels:
+          severity: info
+          product: agent-framework
+        annotations:
+          summary: "LLM input token rate exceeds 100K/hour"
+          description: "LLM input token consumption rate is {{ $value }}/hour."
+
+      # ─── Data-Cloud Storage ─────────────────────────────────
+      - alert: StorageBackendErrors
+        expr: >
+          sum(rate(datacloud_store_errors_total[5m])) by (backend) > 0
+        for: 3m
+        labels:
+          severity: warning
+          product: data-cloud
+        annotations:
+          summary: "Data-Cloud {{ $labels.backend }} storage errors"
+          description: "{{ $labels.backend }} backend has {{ $value }} errors/sec."
+
+      - alert: StorageHighLatency
+        expr: >
+          histogram_quantile(0.99,
+            sum(rate(datacloud_store_duration_seconds_bucket[5m])) by (le, backend)
+          ) > 0.1
+        for: 5m
+        labels:
+          severity: warning
+          product: data-cloud
+        annotations:
+          summary: "Data-Cloud {{ $labels.backend }} p99 > 100ms"
+          description: "{{ $labels.backend }} p99 latency is {{ $value }}s."
+
+      - alert: StorageHighRecordCount
+        expr: >
+          sum(datacloud_store_record_count) by (backend) > 1000000
+        for: 5m
+        labels:
+          severity: info
+          product: data-cloud
+        annotations:
+          summary: "Data-Cloud {{ $labels.backend }} exceeds 1M records"
+          description: "{{ $labels.backend }} contains {{ $value }} records."
+
+      # ─── Cluster Coordination ───────────────────────────────
+      - alert: ClusterNodeCountLow
+        expr: >
+          sum(cluster_nodes_active) < 2
+        for: 5m
+        labels:
+          severity: critical
+          product: cluster
+        annotations:
+          summary: "Cluster has fewer than 2 active nodes"
+          description: "Only {{ $value }} node(s) active. Replication and failover at risk."
+
+      - alert: ClusterLeaderFlapping
+        expr: >
+          sum(increase(cluster_leader_elections_total[10m])) by (resource) > 5
+        for: 5m
+        labels:
+          severity: warning
+          product: cluster
+        annotations:
+          summary: "Leader flapping detected for {{ $labels.resource }}"
+          description: "{{ $value }} leader elections in 10m for {{ $labels.resource }}."
+
+      - alert: ClusterLockContention
+        expr: >
+          histogram_quantile(0.95,
+            sum(rate(cluster_lock_wait_duration_seconds_bucket[5m])) by (le)
+          ) > 5
+        for: 5m
+        labels:
+          severity: warning
+          product: cluster
+        annotations:
+          summary: "Distributed lock contention high"
+          description: "p95 lock wait time is {{ $value }}s."
+
+      # ─── Schema Registry ────────────────────────────────────
+      - alert: SchemaValidationFailures
+        expr: >
+          sum(rate(schema_validation_total{result="FAILED"}[5m]))
+          /
+          sum(rate(schema_validation_total[5m]))
+          > 0.1
+        for: 5m
+        labels:
+          severity: warning
+          product: schema-registry
+        annotations:
+          summary: "Schema validation failure rate > 10%"
+          description: "{{ $value | humanizePercentage }} of schema validations are failing."
+
+      # ─── Operator SPI ───────────────────────────────────────
+      - alert: OperatorHighErrorRate
+        expr: >
+          sum(rate(operator_process_errors_total[5m])) by (operator_type)
+          /
+          sum(rate(operator_process_count_total[5m])) by (operator_type)
+          > 0.05
+        for: 5m
+        labels:
+          severity: warning
+          product: operator-spi
+        annotations:
+          summary: "Operator {{ $labels.operator_type }} error rate > 5%"
+          description: "{{ $labels.operator_type }} has {{ $value | humanizePercentage }} error rate."

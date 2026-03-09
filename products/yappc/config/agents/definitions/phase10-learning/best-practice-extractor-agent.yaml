@@ -1,0 +1,113 @@
+id: best-practice-extractor-agent
+name: Best Practice Extractor Agent
+version: 1.0.0
+description: Extracts and codifies best practices. Turns successful approaches into reusable guidance.
+
+metadata:
+  level: 3  # Worker
+  domain: learning
+  tags:
+    - best-practices
+    - codification
+    - standards
+    - guidance
+
+generator:
+  type: PIPELINE
+  steps:
+    - name: practice_identification
+      type: LLM
+      provider: ANTHROPIC
+      model: claude-3-5-sonnet-20241022
+      temperature: 0.3
+      max_tokens: 2000
+      prompt: |
+        You are the Best Practice Extractor Agent. Extract practices:
+        
+        Success Case: {{case}}
+        Context: {{context}}
+        Outcomes: {{outcomes}}
+        Team Feedback: {{feedback}}
+        
+        Extract:
+        1. What practice led to success
+        2. When to apply (context, conditions)
+        3. How to implement (steps)
+        4. Expected benefits
+        5. Potential pitfalls
+        6. Variations for different contexts
+        7. Validation criteria
+        
+        Output as JSON: {
+          practice: {name, description, category},
+          applicability: {contexts, conditions},
+          implementation: {steps, examples},
+          benefits,
+          pitfalls,
+          variations,
+          validation_criteria
+        }
+    - name: practice_codification
+      type: TEMPLATE
+      template_path: templates/best-practice.ftl
+    - name: practice_storage
+      type: SERVICE_CALL
+      service: knowledge-service
+      endpoint: /practices/store
+
+memory:
+  episodic:
+    enabled: true
+    retention_days: unlimited
+    categories:
+      - practices-extracted
+      - adoptions
+      - feedback
+  semantic:
+    enabled: true
+    categories:
+      - practice-library
+      - context-mapping
+      - variation-patterns
+  procedural:
+    enabled: true
+    categories:
+      - extraction-rules
+      - codification-templates
+      - validation-criteria
+
+tools:
+  - practice_extractor
+  - template_engine
+  - knowledge_indexer
+
+capabilities:
+  - practice-extraction
+  - codification
+  - documentation
+  - validation
+
+routing:
+  input_types:
+    - success-case
+    - retrospective
+    - practice-nomination
+  output_types:
+    - best-practice
+    - guidance-document
+    - template
+
+delegation:
+  can_delegate_to: []
+  escalates_to:
+    - learning-orchestrator-agent
+
+governance:
+  requires_approval: true  # Practices reviewed
+  can_block: false
+  audit_trail: standard
+
+performance:
+  expected_latency_ms: 4000
+  max_latency_ms: 10000
+  timeout_ms: 20000

@@ -1,0 +1,335 @@
+.animation-studio {
+    display: flex;
+    flex-direction: column;
+    height: 100vh;
+    background: #1a1a1a;
+    color: #e0e0e0;
+}
+
+/* Header */
+.studio-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 16px 24px;
+    background: #2d2d2d;
+    border-bottom: 1px solid #3d3d3d;
+}
+
+.studio-title {
+    flex: 1;
+}
+
+.title-input {
+    width: 100%;
+    max-width: 400px;
+    padding: 8px 12px;
+    background: #1e1e1e;
+    border: 1px solid #3d3d3d;
+    border-radius: 4px;
+    color: #e0e0e0;
+    font-size: 18px;
+    font-weight: 600;
+}
+
+.title-input:focus {
+    outline: none;
+    border-color: #4a9eff;
+}
+
+.studio-actions {
+    display: flex;
+    gap: 12px;
+}
+
+.btn-save,
+.btn-export {
+    padding: 8px 16px;
+    border: none;
+    border-radius: 4px;
+    font-size: 14px;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.2s;
+}
+
+.btn-save {
+    background: #4a9eff;
+    color: white;
+}
+
+.btn-save:hover {
+    background: #3a8eef;
+}
+
+.btn-export {
+    background: #3d3d3d;
+    color: #e0e0e0;
+}
+
+.btn-export:hover {
+    background: #4d4d4d;
+}
+
+/* Main Content */
+.studio-content {
+    display: flex;
+    flex: 1;
+    overflow: hidden;
+}
+
+/* Preview Panel */
+.preview-panel {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    background: #252525;
+    border-right: 1px solid #3d3d3d;
+}
+
+.preview-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 12px 16px;
+    background: #2d2d2d;
+    border-bottom: 1px solid #3d3d3d;
+}
+
+.preview-header h3 {
+    margin: 0;
+    font-size: 14px;
+    font-weight: 600;
+}
+
+.preview-info {
+    display: flex;
+    gap: 8px;
+    font-size: 12px;
+    color: #999;
+}
+
+.preview-canvas-container {
+    flex: 1;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 24px;
+    overflow: auto;
+}
+
+.preview-canvas {
+    background: #1a1a1a;
+    border: 1px solid #3d3d3d;
+    border-radius: 4px;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+}
+
+.preview-description {
+    padding: 16px;
+    border-top: 1px solid #3d3d3d;
+}
+
+.preview-description textarea {
+    width: 100%;
+    padding: 8px 12px;
+    background: #1e1e1e;
+    border: 1px solid #3d3d3d;
+    border-radius: 4px;
+    color: #e0e0e0;
+    font-size: 13px;
+    font-family: inherit;
+    resize: vertical;
+}
+
+.preview-description textarea:focus {
+    outline: none;
+    border-color: #4a9eff;
+}
+
+/* Properties Panel */
+.properties-panel {
+    width: 300px;
+    background: #2d2d2d;
+    padding: 16px;
+    overflow-y: auto;
+}
+
+.properties-panel h3 {
+    margin: 0 0 16px 0;
+    font-size: 14px;
+    font-weight: 600;
+}
+
+.setting-group {
+    margin-bottom: 16px;
+}
+
+.setting-group label {
+    display: block;
+    margin-bottom: 6px;
+    font-size: 12px;
+    color: #999;
+}
+
+.setting-group input[type="number"],
+.setting-group select {
+    width: 100%;
+    padding: 8px 12px;
+    background: #1e1e1e;
+    border: 1px solid #3d3d3d;
+    border-radius: 4px;
+    color: #e0e0e0;
+    font-size: 13px;
+}
+
+.setting-group input:focus,
+.setting-group select:focus {
+    outline: none;
+    border-color: #4a9eff;
+}
+
+.checkbox-label {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    cursor: pointer;
+    color: #e0e0e0;
+}
+
+.checkbox-label input[type="checkbox"] {
+    width: 16px;
+    height: 16px;
+    cursor: pointer;
+}
+
+.keyframes-summary {
+    margin-top: 24px;
+    padding-top: 16px;
+    border-top: 1px solid #3d3d3d;
+}
+
+.keyframes-summary h4 {
+    margin: 0 0 8px 0;
+    font-size: 13px;
+    font-weight: 600;
+}
+
+.keyframe-count {
+    padding: 8px 12px;
+    background: #1e1e1e;
+    border-radius: 4px;
+    font-size: 12px;
+    color: #4a9eff;
+    text-align: center;
+}
+
+/* Timeline */
+.studio-timeline {
+    height: 300px;
+    border-top: 1px solid #3d3d3d;
+}
+
+/* Export Dialog */
+.export-dialog-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(0, 0, 0, 0.7);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 1000;
+}
+
+.export-dialog {
+    background: #2d2d2d;
+    border-radius: 8px;
+    padding: 24px;
+    width: 90%;
+    max-width: 600px;
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.5);
+}
+
+.export-dialog h3 {
+    margin: 0 0 20px 0;
+    font-size: 18px;
+    font-weight: 600;
+}
+
+.export-options {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 16px;
+    margin-bottom: 20px;
+}
+
+.export-option {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 8px;
+    padding: 20px;
+    background: #1e1e1e;
+    border: 2px solid #3d3d3d;
+    border-radius: 8px;
+    cursor: pointer;
+    transition: all 0.2s;
+}
+
+.export-option:hover {
+    border-color: #4a9eff;
+    background: #252525;
+}
+
+.export-icon {
+    font-size: 32px;
+}
+
+.export-label {
+    font-size: 14px;
+    font-weight: 600;
+    color: #e0e0e0;
+}
+
+.export-description {
+    font-size: 11px;
+    color: #999;
+    text-align: center;
+}
+
+.btn-cancel {
+    width: 100%;
+    padding: 10px;
+    background: #3d3d3d;
+    color: #e0e0e0;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+    font-size: 14px;
+    transition: background 0.2s;
+}
+
+.btn-cancel:hover {
+    background: #4d4d4d;
+}
+
+/* Scrollbar */
+.properties-panel::-webkit-scrollbar {
+    width: 8px;
+}
+
+.properties-panel::-webkit-scrollbar-track {
+    background: #1e1e1e;
+}
+
+.properties-panel::-webkit-scrollbar-thumb {
+    background: #3d3d3d;
+    border-radius: 4px;
+}
+
+.properties-panel::-webkit-scrollbar-thumb:hover {
+    background: #4d4d4d;
+}

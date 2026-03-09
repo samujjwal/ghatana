@@ -1,0 +1,137 @@
+# YAPPC Agent Event Routing
+# Maps AEP event topics to agent IDs for reactive (event-driven) dispatch.
+# Used by AgentEventOperator to route incoming events to the correct agent.
+
+apiVersion: ghatana.yappc/v1
+kind: AgentEventRouting
+
+event_routing:
+  # Debug triggers
+  - topic: "test.failed"
+    agent_id: "debug-orchestrator"
+    description: "Route test failures to debug orchestrator for root cause analysis"
+
+  - topic: "build.error"
+    agent_id: "debug-orchestrator"
+    description: "Route build errors to debug orchestrator"
+
+  # Operations triggers
+  - topic: "monitoring.alert.fired"
+    agent_id: "operations-orchestrator-agent"
+    description: "Route monitoring alerts to operations orchestrator"
+
+  - topic: "incident.created"
+    agent_id: "incident-management-orchestrator"
+    description: "Route new incidents to incident management"
+
+  - topic: "slo.budget.exhausted"
+    agent_id: "operations-orchestrator-agent"
+    description: "Route SLO budget exhaustion to operations"
+
+  # Release & Deploy triggers
+  - topic: "release.ready"
+    agent_id: "deploy-orchestrator"
+    description: "Route release-ready events to deploy orchestrator"
+
+  - topic: "deployment.complete"
+    agent_id: "operations-orchestrator-agent"
+    description: "Route deployment completion to operations for health monitoring"
+
+  - topic: "deployment.failed"
+    agent_id: "debug-orchestrator"
+    description: "Route deployment failures to debug orchestrator"
+
+  # Improvement triggers
+  - topic: "incident.resolved"
+    agent_id: "improve-orchestrator"
+    description: "Route resolved incidents to improve orchestrator for postmortem"
+
+  - topic: "sprint.completed"
+    agent_id: "improve-orchestrator"
+    description: "Route sprint completion for retrospective analysis"
+
+  - topic: "feedback.received"
+    agent_id: "improve-orchestrator"
+    description: "Route user feedback to improve orchestrator"
+
+  # Security triggers
+  - topic: "security.vulnerability.detected"
+    agent_id: "security-posture-orchestrator"
+    description: "Route new vulnerability detections to security posture"
+
+  - topic: "compliance.audit.requested"
+    agent_id: "compliance-audit-orchestrator"
+    description: "Route compliance audit requests"
+
+  # Knowledge triggers
+  - topic: "knowledge.updated"
+    agent_id: "knowledge-canonicalization-agent"
+    description: "Route knowledge updates for canonicalization"
+
+  - topic: "context.changed"
+    agent_id: "decision-reevaluation-agent"
+    description: "Route context changes for decision re-evaluation"
+
+  # Guardrail triggers (always-on)
+  - topic: "agent.output.produced"
+    agent_id: "audit-trail-agent"
+    description: "All agent outputs are audited"
+
+  - topic: "agent.cost.recorded"
+    agent_id: "cost-governor-agent"
+    description: "All agent costs are tracked"
+
+  # Canary & Rollback triggers
+  - topic: "deployment.canary.metrics.ready"
+    agent_id: "canary-analysis-agent"
+    description: "Route canary metrics to canary analysis agent for rollout decision"
+
+  - topic: "deployment.canary.failed"
+    agent_id: "rollback-coordinator-agent"
+    description: "Route canary failure to rollback coordinator"
+
+  - topic: "deployment.smoke.failed"
+    agent_id: "rollback-coordinator-agent"
+    description: "Route post-deploy smoke test failure to rollback coordinator"
+
+  - topic: "deployment.rollback.requested"
+    agent_id: "rollback-coordinator-agent"
+    description: "Route manual rollback requests to rollback coordinator"
+
+  # Supply chain & SBOM triggers
+  - topic: "sbom.generated"
+    agent_id: "sbom-signer-agent"
+    description: "Route generated SBOMs to signer for Sigstore signing"
+
+  - topic: "release.artifact.signed"
+    agent_id: "supply-chain-verifier-agent"
+    description: "Route signed artifacts to supply chain verifier for provenance check"
+
+  # Release governance triggers
+  - topic: "release.candidate.ready"
+    agent_id: "release-governance-agent"
+    description: "Route release candidates to release governance for multi-dimensional gate check"
+
+  # Budget gate triggers
+  - topic: "orchestration.requested"
+    agent_id: "budget-gate-agent"
+    description: "Pre-flight cost check before any LLM-heavy orchestration"
+
+  # Dependency gate triggers
+  - topic: "build.dependencies.resolved"
+    agent_id: "dependency-gate-agent"
+    description: "Route resolved dependency trees to dependency gate for vulnerability and license check"
+
+  # Notification triggers
+  - topic: "notification.requested"
+    agent_id: "notification-agent"
+    description: "Route notification requests to notification agent for channel dispatch"
+
+  - topic: "hitl.approval.needed"
+    agent_id: "notification-agent"
+    description: "Route HITL approval requests to notification agent for engineer notification"
+
+  # Feature flag triggers
+  - topic: "deployment.feature-flags.sync"
+    agent_id: "feature-flag-integration-agent"
+    description: "Route feature flag sync requests to flag integration agent"

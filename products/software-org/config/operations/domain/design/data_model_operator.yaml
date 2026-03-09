@@ -1,0 +1,296 @@
+# Data Model Operator - Consolidated Design Domain
+# Consolidates: data_model, data_model_design, schema design, entity modeling
+# Purpose: Complete data modeling from entities through schemas to access patterns
+
+id: data_model_operator
+version: "1.0.0"
+domain: design
+category: data_modeling
+
+description: |
+  Unified data model operator handling complete data design:
+  - Entity identification and modeling
+  - Relationship mapping
+  - Schema design (physical and logical)
+  - Data dictionary management
+  - Privacy and compliance mapping
+
+# Operator Modes
+modes:
+  entity_modeling:
+    description: "Identify and model data entities"
+    role: Data Modeling Analyst
+    inputs:
+      - name: requirements
+        description: Business and functional requirements
+        required: true
+      - name: component_designs
+        description: Component designs for context
+        required: false
+    outputs:
+      - name: entity_model
+        description: Logical entity model
+        format: yaml_document
+        schema:
+          - model_id: string
+          - version: string
+          - entities: list
+          - relationships: list
+          - enumerations: list
+          - value_objects: list
+    entity_schema:
+      - entity_id: string
+      - name: string
+      - description: string
+      - attributes: list
+      - primary_key: list
+      - business_keys: list
+      - constraints: list
+      - mapped_requirements: list
+    tasks:
+      - Identify all data entities
+      - Define entity attributes
+      - Establish primary and business keys
+      - Document constraints
+      - Map to requirements
+
+  relationship_mapping:
+    description: "Define entity relationships"
+    role: Data Modeling Analyst
+    inputs:
+      - name: entity_model
+        description: Entity definitions
+        required: true
+    outputs:
+      - name: relationship_model
+        description: Entity relationship definitions
+        format: yaml_document
+        schema:
+          - relationships: list
+    relationship_schema:
+      - relationship_id: string
+      - name: string
+      - from_entity: string
+      - to_entity: string
+      - cardinality: "one-to-one|one-to-many|many-to-many"
+      - optionality: "required|optional"
+      - cascade_behavior: "none|delete|archive"
+      - referential_integrity: boolean
+    tasks:
+      - Identify all relationships
+      - Define cardinality and optionality
+      - Specify cascade behaviors
+      - Document referential integrity rules
+      - Generate ER diagram
+
+  schema_design:
+    description: "Design physical database schemas"
+    role: Database Designer
+    inputs:
+      - name: entity_model
+        description: Logical entity model
+        required: true
+      - name: relationship_model
+        description: Relationship definitions
+        required: true
+      - name: nfr_requirements
+        description: Performance and scalability NFRs
+        required: false
+    outputs:
+      - name: schema_design
+        description: Physical schema design
+        format: yaml_document
+        schema:
+          - database_type: "relational|document|graph|key-value|time-series"
+          - schemas: list
+          - tables: list
+          - indexes: list
+          - partitioning: object
+          - denormalization_decisions: list
+    table_schema:
+      - table_name: string
+      - entity_mapping: string
+      - columns: list
+      - primary_key: list
+      - foreign_keys: list
+      - indexes: list
+      - constraints: list
+      - partitioning_key: string
+    tasks:
+      - Map entities to tables/collections
+      - Define column types and constraints
+      - Design indexes for query patterns
+      - Plan partitioning strategy
+      - Document denormalization decisions
+    normalization_levels:
+      - 1NF: "Atomic values, no repeating groups"
+      - 2NF: "Full functional dependency"
+      - 3NF: "No transitive dependencies"
+      - BCNF: "Every determinant is a candidate key"
+
+  data_dictionary:
+    description: "Create and maintain data dictionary"
+    role: Data Steward
+    inputs:
+      - name: entity_model
+        description: Entity model
+        required: true
+      - name: schema_design
+        description: Physical schema
+        required: true
+    outputs:
+      - name: data_dictionary
+        description: Complete data dictionary
+        format: yaml_document
+        schema:
+          - entities: list
+          - attributes: list
+          - glossary: list
+          - lineage: list
+    attribute_definition:
+      - attribute_name: string
+      - entity: string
+      - data_type: string
+      - length: number
+      - precision: number
+      - nullable: boolean
+      - default_value: string
+      - business_definition: string
+      - source_system: string
+      - sensitivity: "public|internal|confidential|restricted"
+      - pii: boolean
+      - retention_policy: string
+    tasks:
+      - Document all attributes
+      - Define business meanings
+      - Classify data sensitivity
+      - Map data lineage
+      - Maintain glossary
+
+  privacy_compliance:
+    description: "Map privacy and compliance requirements"
+    role: Data Governance Analyst
+    inputs:
+      - name: data_dictionary
+        description: Data dictionary
+        required: true
+      - name: compliance_requirements
+        description: Regulatory requirements
+        required: true
+    outputs:
+      - name: privacy_mapping
+        description: Privacy and compliance mapping
+        format: yaml_document
+        schema:
+          - pii_inventory: list
+          - retention_policies: list
+          - access_controls: list
+          - encryption_requirements: list
+          - audit_requirements: list
+          - compliance_evidence: list
+    pii_categories:
+      - direct_identifiers: "Name, SSN, email, phone"
+      - indirect_identifiers: "DOB, zip code, gender"
+      - sensitive_data: "Health, financial, biometric"
+      - behavioral_data: "Location, browsing, preferences"
+    tasks:
+      - Identify all PII attributes
+      - Define retention policies
+      - Map access control requirements
+      - Specify encryption needs
+      - Document compliance evidence
+
+# Internal Logic
+internal_logic:
+  perception:
+    description: "Extract data requirements from business context"
+    sources:
+      - requirements
+      - existing_systems
+      - compliance_standards
+  model:
+    description: "Data model knowledge graph"
+    entities:
+      - entity: "{id, attributes, keys, constraints}"
+      - relationship: "{from, to, cardinality}"
+      - attribute: "{name, type, sensitivity, owner}"
+    relationships:
+      - entity_has_attribute
+      - entity_relates_to_entity
+      - attribute_subject_to_policy
+  planning:
+    strategy: |
+      1. Start with business entities
+      2. Normalize to appropriate level
+      3. Consider performance for denormalization
+      4. Apply privacy by design
+      5. Validate against access patterns
+  action:
+    description: "Output data model artifacts"
+    validation: "Data architect and compliance review"
+
+# Quality Assurance
+quality:
+  templates:
+    - entity_template
+    - data_dictionary_template
+    - schema_design_template
+  checklists:
+    - normalization_checklist
+    - pii_identification_checklist
+    - index_strategy_checklist
+  automated_checks:
+    - schema_consistency
+    - pii_classification
+    - orphan_entity_detection
+
+# Validation Rules
+validation:
+  rules:
+    - "All entities must have primary key"
+    - "All relationships must have cardinality"
+    - "All PII must have retention policy"
+    - "All sensitive data must have encryption requirement"
+  review_gates:
+    - data_architect_review
+    - compliance_review
+    - dba_review
+
+# Escalation
+escalation:
+  triggers:
+    - "Unclassified PII detected"
+    - "Missing retention policy"
+    - "Schema performance concern"
+  paths:
+    - role: Data Architect
+      for: "Schema design decisions"
+    - role: DPO
+      for: "Privacy and compliance issues"
+    - role: DBA
+      for: "Performance optimization"
+
+# Dependencies
+dependencies:
+  upstream:
+    - architecture_operator
+    - component_operator
+  downstream:
+    - api_operator
+    - security_design_operator
+    - build_operator
+
+# Metrics
+metrics:
+  - name: entity_coverage
+    description: "Requirements mapped to entities"
+    target: "100%"
+  - name: pii_classification
+    description: "Attributes with sensitivity classification"
+    target: "100%"
+  - name: dictionary_completeness
+    description: "Attributes with business definitions"
+    target: ">= 95%"
+  - name: index_coverage
+    description: "Query patterns with supporting indexes"
+    target: "100%"

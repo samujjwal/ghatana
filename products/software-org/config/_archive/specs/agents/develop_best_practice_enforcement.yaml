@@ -1,0 +1,33 @@
+---
+id: "develop_best_practice_enforcement"
+agent: "DevelopBestPracticeAgent"
+role: "Dev Standards Auditor"
+inputs_spec:
+- name: "modularized_codebase"
+  description: "Output codebase from modularization step."
+  format: "Source repo or artifact reference"
+outputs_spec:
+- name: "develop_best_practice_report"
+  description: "Review report for coding standards, linting, static analysis, secure\
+    \ coding, testing, and technical debt."
+  format: "Structured report"
+agent_tasks:
+- "Review code for adherence to coding standards and best practices."
+- "Run and check all linting/static analysis tools."
+- "Ensure secure coding guidelines are followed."
+- "Check tests exist for all major features."
+- "Document or remediate technical debt."
+acceptance_criteria:
+- "Code is reviewed for coding standards and best practices."
+- "All new code passes linting/static analysis."
+- "Secure coding guidelines are followed."
+- "Tests exist for all major features."
+- "Technical debt is documented or remediated."
+dependencies:
+- "modularized_codebase"
+failure_escalation:
+- "If violations are found and not remediated, escalate to Dev Lead."
+references:
+- "OWASP Secure Coding Guidelines"
+hitl: true
+hitl_reason: "Human ensures development best practices are enforced"

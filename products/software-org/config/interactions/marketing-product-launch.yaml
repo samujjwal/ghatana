@@ -1,0 +1,95 @@
+# Marketing to Product Launch Interaction
+apiVersion: virtualorg.ghatana.com/v1
+kind: Interaction
+metadata:
+  name: marketing-product-launch
+  namespace: software-org
+  labels:
+    type: coordination
+    departments: [marketing, product]
+
+spec:
+  displayName: "Marketing Product Launch Coordination"
+  description: |
+    Defines the interaction pattern for coordinating
+    product launches between marketing and product teams.
+
+  participants:
+    source:
+      department: product
+      agents:
+        - product-manager-agent
+        - cpo-agent
+    target:
+      department: marketing
+      agents:
+        - marketing-director-agent
+        - content-manager-agent
+        - demand-gen-agent
+
+  trigger:
+    events:
+      - type: product.launch.scheduled
+      - type: feature.release.planned
+      - type: major.update.announced
+
+  protocol:
+    type: async
+    timeout: PT2W
+
+  coordination:
+    phases:
+      - name: planning
+        duration: PT1W
+        activities:
+          - Define messaging and positioning
+          - Create content calendar
+          - Plan launch campaigns
+      - name: preparation
+        duration: PT1W
+        activities:
+          - Create marketing assets
+          - Prepare press materials
+          - Set up campaigns
+      - name: execution
+        duration: PT3D
+        activities:
+          - Execute launch campaigns
+          - Publish content
+          - Monitor engagement
+
+    requirements:
+      - name: product_brief
+        description: "Product brief with key features and benefits"
+        mandatory: true
+      - name: target_audience
+        description: "Target audience definition"
+        mandatory: true
+      - name: launch_date
+        description: "Confirmed launch date"
+        mandatory: true
+      - name: key_messages
+        description: "Key messaging points"
+        mandatory: true
+
+    artifacts:
+      - type: product_brief
+        required: true
+      - type: press_release
+        required: false
+      - type: marketing_plan
+        required: true
+
+  notifications:
+    onTrigger:
+      - channel: slack
+        target: "#marketing"
+        template: "New product launch coordination: {{product_name}}"
+    onComplete:
+      - channel: slack
+        target: "#product"
+        template: "Marketing launch completed: {{product_name}}"
+
+  sla:
+    acknowledgment: PT24H
+    completion: PT2W

@@ -1,0 +1,4 @@
+# YAPPC Plugin Service Provider Interface
+# Add plugin implementations here, one per line
+# Example:
+# com.example.MyCustomPlugin

@@ -1,0 +1,110 @@
+id: alternative-exploration-agent
+name: Alternative Exploration Agent
+version: 1.0.0
+description: Generates alternative approaches for decisions. Ensures comprehensive option exploration before committing to a path.
+
+metadata:
+  level: 2  # Domain Expert
+  domain: decision-intelligence
+  tags:
+    - alternative-generation
+    - option-exploration
+    - creative-thinking
+    - decision-quality
+
+generator:
+  type: PIPELINE
+  steps:
+    - name: context_analysis
+      type: LLM
+      provider: ANTHROPIC
+      model: claude-3-5-sonnet-20241022
+      temperature: 0.5  # Higher for creativity
+      max_tokens: 3000
+      prompt: |
+        You are the Alternative Exploration Agent. Generate alternatives for this decision:
+        
+        Decision Problem: {{problem}}
+        Constraints: {{constraints}}
+        Objectives: {{objectives}}
+        Current Leading Option: {{leading_option}}
+        
+        Generate 5-7 diverse alternatives including:
+        1. Obvious/conventional approaches
+        2. Creative/unconventional ideas
+        3. Minimal viable options
+        4. Ambitious/maximal options
+        5. Hybrid combinations
+        
+        For each alternative provide:
+        - Description
+        - Pros/Cons
+        - Resource requirements
+        - Risk level
+        - Novelty score
+        
+        Output as JSON array: [{name, description, pros, cons, resources, risk, novelty}]
+    - name: alternative_evaluation
+      type: RULE_BASED
+      description: Score alternatives against criteria
+    - name: recommendation_synthesis
+      type: TEMPLATE
+      template_path: templates/alternatives-report.ftl
+
+memory:
+  episodic:
+    enabled: true
+    retention_days: 365
+    categories:
+      - alternative-sets
+      - evaluation-results
+      - selection-outcomes
+  semantic:
+    enabled: true
+    categories:
+      - solution-patterns
+      - trade-off-models
+      - evaluation-criteria
+  procedural:
+    enabled: true
+    categories:
+      - generation-strategies
+      - evaluation-frameworks
+      - scoring-rubrics
+
+tools:
+  - similar_decision_search
+  - constraint_analyzer
+  - trade_off_calculator
+
+capabilities:
+  - alternative-generation
+  - creative-exploration
+  - option-evaluation
+  - trade-off-analysis
+  - recommendation-synthesis
+
+routing:
+  input_types:
+    - decision-request
+    - problem-statement
+    - option-evaluation-request
+  output_types:
+    - alternative-set
+    - evaluation-matrix
+    - recommendation
+
+delegation:
+  can_delegate_to: []
+  escalates_to:
+    - decision-capture-agent
+
+governance:
+  requires_approval: false
+  can_block: false
+  audit_trail: standard
+
+performance:
+  expected_latency_ms: 5000
+  max_latency_ms: 12000
+  timeout_ms: 20000

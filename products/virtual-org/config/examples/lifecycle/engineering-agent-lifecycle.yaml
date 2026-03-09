@@ -1,0 +1,432 @@
+apiVersion: virtualorg.ghatana.com/v1
+kind: AgentLifecycle
+metadata:
+  name: engineering-agent-lifecycle
+  namespace: engineering
+  labels:
+    department: engineering
+    tier: standard
+  annotations:
+    description: "Lifecycle configuration for engineering department agents"
+
+spec:
+  displayName: "Engineering Agent Lifecycle"
+  description: |
+    Manages the complete lifecycle of engineering department agents including
+    spawning, health monitoring, scaling, state management, and termination.
+
+  # Agent selector - which agents this applies to
+  agentSelector:
+    matchLabels:
+      department: engineering
+    matchExpressions:
+      - key: tier
+        operator: In
+        values: [standard, premium]
+    agentTypes:
+      - engineer
+      - tech-lead
+      - architect
+    departments:
+      - engineering
+    roles:
+      - developer
+      - senior-engineer
+      - tech-lead
+
+  # Spawning configuration
+  spawning:
+    strategy: on-demand
+    onDemand:
+      triggers:
+        - type: event
+          event: TaskCreated
+          condition: "task.department == 'engineering' && task.unassigned"
+          priority: high
+        - type: event
+          event: QueueDepthThreshold
+          condition: "queueDepth > 10"
+        - type: api
+          condition: "request.source == 'scheduler'"
+      timeout: "3m"
+      retryPolicy:
+        maxRetries: 3
+        initialDelay: "10s"
+        maxDelay: "1m"
+        backoffMultiplier: 2.0
+
+    scheduled:
+      enabled: true
+      schedule: "0 8 * * MON-FRI" # 8 AM weekdays
+      timezone: "America/New_York"
+      count: 5 # Spawn 5 agents at schedule time
+
+    warmPool:
+      enabled: true
+      size: 10
+      minReady: 3
+      maxIdle: "15m"
+      refreshInterval: "5m"
+      preloadState: true
+
+    placement:
+      strategy: spread
+      affinity:
+        type: preferred
+        labels:
+          zone: "us-east"
+        weight: 80
+      antiAffinity:
+        type: required
+        labels:
+          role: tech-lead # Don't co-locate multiple tech leads
+        required: false
+      constraints:
+        - type: resource
+          key: memory
+          operator: ">="
+          values: ["2Gi"]
+
+    quotas:
+      maxPerDepartment: 100
+      maxPerTenant: 500
+      maxPerOrganization: 2000
+      burstLimit: 20
+      burstWindow: "5m"
+
+  # Initialization configuration
+  initialization:
+    steps:
+      - name: load-persona
+        type: action
+        action: load-agent-persona
+        timeout: "30s"
+        required: true
+        order: 1
+
+      - name: initialize-memory
+        type: action
+        action: initialize-agent-memory
+        timeout: "1m"
+        required: true
+        order: 2
+        params:
+          memoryType: hybrid
+          contextWindow: 50
+
+      - name: load-tools
+        type: action
+        action: load-agent-tools
+        timeout: "45s"
+        required: true
+        order: 3
+
+      - name: verify-connectivity
+        type: health-check
+        action: verify-external-connectivity
+        timeout: "30s"
+        required: false
+        order: 4
+
+      - name: announce-ready
+        type: event
+        action: emit-agent-ready-event
+        timeout: "10s"
+        required: true
+        order: 5
+
+    timeout: "5m"
+    retryOnFailure: true
+    maxRetries: 3
+    parallelSteps: false
+
+  # Health monitoring
+  health:
+    enabled: true
+    checks:
+      - name: heartbeat
+        type: heartbeat
+        interval: "30s"
+        timeout: "10s"
+        failureThreshold: 3
+        successThreshold: 1
+        severity: critical
+
+      - name: task-completion-rate
+        type: metric
+        interval: "5m"
+        timeout: "30s"
+        threshold: 0.8 # 80% completion rate
+        failureThreshold: 3
+        severity: warning
+
+      - name: response-latency
+        type: metric
+        interval: "1m"
+        timeout: "15s"
+        threshold: 5000 # 5 seconds
+        failureThreshold: 5
+        severity: warning
+
+      - name: memory-usage
+        type: resource
+        interval: "1m"
+        timeout: "10s"
+        threshold: 0.9 # 90% memory
+        failureThreshold: 3
+        severity: critical
+
+      - name: error-rate
+        type: metric
+        interval: "5m"
+        timeout: "30s"
+        threshold: 0.05 # 5% error rate
+        failureThreshold: 3
+        severity: critical
+
+    aggregation:
+      strategy: weighted
+      weights:
+        heartbeat: 0.4
+        task-completion-rate: 0.2
+        response-latency: 0.15
+        memory-usage: 0.15
+        error-rate: 0.1
+      unhealthyThreshold: 0.5
+      degradedThreshold: 0.75
+
+    reporting:
+      interval: "1m"
+      destination: agent-health-metrics
+      includeMetrics: true
+      alertOnUnhealthy: true
+
+  # Scaling configuration
+  scaling:
+    enabled: true
+    minInstances: 5
+    maxInstances: 50
+    desiredInstances: 10
+
+    horizontal:
+      enabled: true
+      metrics:
+        - name: queue-depth
+          type: external
+          targetValue: 5
+          source: task-queue
+          query: "avg(queue_depth{department='engineering'})"
+
+        - name: avg-response-time
+          type: average
+          targetAverageValue: 2000 # 2 seconds
+          source: prometheus
+          query: "avg(agent_response_time_ms{department='engineering'})"
+
+        - name: task-throughput
+          type: throughput
+          targetValue: 100 # tasks per minute
+
+      scaleUpPolicy:
+        type: percent
+        value: 50 # Scale up by 50%
+        periodSeconds: 60
+        stabilizationWindowSeconds: 120
+
+      scaleDownPolicy:
+        type: pods
+        value: 2 # Scale down by 2 agents
+        periodSeconds: 300
+        stabilizationWindowSeconds: 600
+
+    vertical:
+      enabled: false
+      updateMode: auto
+      resources:
+        - name: memory
+          min: "1Gi"
+          max: "4Gi"
+          target: "2Gi"
+        - name: tokens
+          min: "10000"
+          max: "100000"
+
+    cooldown:
+      scaleUpCooldown: "3m"
+      scaleDownCooldown: "10m"
+
+    predictive:
+      enabled: true
+      model: prophet
+      lookAheadMinutes: 30
+      historyDays: 14
+
+  # State management
+  state:
+    persistence:
+      enabled: true
+      type: hybrid # local + remote
+      destination: redis://state-store:6379
+      syncInterval: "30s"
+      compression: true
+
+    checkpointing:
+      enabled: true
+      interval: "10m"
+      maxCheckpoints: 5
+      onEvents:
+        - TaskCompleted
+        - ContextSwitch
+        - ConfigurationChange
+      retention: "7d"
+
+    memory:
+      shortTerm:
+        enabled: true
+        maxItems: 100
+        ttl: "2h"
+        contextWindow: 50
+      longTerm:
+        enabled: true
+        type: vector
+        maxSize: "100MB"
+        retention: "90d"
+        indexing: true
+      working:
+        enabled: true
+        maxSize: "10MB"
+        clearOnTaskComplete: false
+      evictionPolicy: lru
+
+    context:
+      maxContextLength: 16000
+      truncationStrategy: sliding-window
+      preserveSystemPrompt: true
+      preserveRecentMessages: 10
+
+  # Maintenance configuration
+  maintenance:
+    windows:
+      - name: weekly-maintenance
+        schedule: "0 3 * * SUN" # 3 AM Sunday
+        timezone: "UTC"
+        duration: "2h"
+        allowedOperations:
+          - update
+          - restart
+          - cleanup
+
+      - name: daily-cleanup
+        schedule: "0 4 * * *" # 4 AM daily
+        timezone: "UTC"
+        duration: "30m"
+        allowedOperations:
+          - cleanup
+          - memory-optimization
+
+    updates:
+      strategy: rolling
+      maxUnavailable: 2
+      maxSurge: 3
+      rollbackOnFailure: true
+      progressDeadlineSeconds: 600
+
+    draining:
+      enabled: true
+      gracePeriod: "5m"
+      completeActiveTasks: true
+      redistributeTasks: true
+
+  # Termination configuration
+  termination:
+    gracePeriod: "2m"
+
+    preStopHooks:
+      - name: save-state
+        type: action
+        action: persist-agent-state
+        timeout: "30s"
+        failurePolicy: continue
+
+      - name: complete-tasks
+        type: action
+        action: complete-or-reassign-tasks
+        timeout: "1m"
+        failurePolicy: continue
+
+      - name: notify-departure
+        type: event
+        action: emit-agent-stopping-event
+        timeout: "10s"
+        failurePolicy: ignore
+
+    postStopHooks:
+      - name: cleanup-resources
+        type: action
+        action: cleanup-agent-resources
+        timeout: "30s"
+        failurePolicy: ignore
+
+    cleanup:
+      deleteState: false
+      deleteCheckpoints: false
+      deleteMemory: false
+      archiveFirst: true
+      archiveDestination: s3://ghatana-archive/agents
+
+    finalizers:
+      - agent.ghatana.com/state-cleanup
+      - agent.ghatana.com/task-reassignment
+
+  # Recovery configuration
+  recovery:
+    enabled: true
+    strategy: restart-with-state
+    maxAttempts: 5
+    backoffPolicy:
+      type: exponential
+      initialDelay: "10s"
+      maxDelay: "5m"
+      multiplier: 2.0
+      jitter: 0.1
+    restoreFromCheckpoint: true
+    notifyOnRecovery: true
+
+  # Observability
+  observability:
+    metrics:
+      enabled: true
+      prefix: "virtualorg_agent"
+      labels:
+        - agent_type
+        - department
+        - persona
+      histograms:
+        - spawn_duration_seconds
+        - initialization_duration_seconds
+        - task_processing_duration_seconds
+
+    tracing:
+      enabled: true
+      sampleRate: 0.1
+      propagation: w3c
+
+    logging:
+      level: INFO
+      structured: true
+      includeState: false
+      redactFields:
+        - memory.longTerm.content
+        - state.credentials
+
+    events:
+      enabled: true
+      destination: agent-lifecycle-events
+      events:
+        - AgentSpawned
+        - AgentInitialized
+        - AgentHealthChanged
+        - AgentScaled
+        - AgentTerminating
+        - AgentTerminated
+        - AgentRecovered

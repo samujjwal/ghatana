@@ -1,0 +1,79 @@
+[package]
+name = "agent-api"
+version.workspace = true
+edition.workspace = true
+authors.workspace = true
+license.workspace = true
+description = "API definitions and server for the DCMaar agent"
+publish = false
+
+[features]
+default = ["json", "metrics", "admin"]
+json = ["serde_json"]
+# Enable admin HTTP API endpoints
+admin = ["dep:axum", "dep:tower-http"]
+# Enable metrics collection and export
+metrics = ["dep:metrics", "dep:metrics-exporter-prometheus"]
+# Enable OpenAPI documentation
+docs = ["dep:utoipa"]
+
+[dependencies]
+# Internal crates
+agent-types = { workspace = true, features = ["serde"] }
+agent-metrics = { workspace = true }
+agent-storage = { workspace = true, features = ["queue"] }
+
+# Database
+sqlx = { version = "0.8.6", features = ["runtime-tokio-rustls", "sqlite", "time", "chrono", "json", "uuid", "macros"] }
+
+# Web framework
+axum = { version = "0.7", features = ["json"], optional = true }
+tower = { version = "0.4", features = ["util", "timeout", "load-shed", "limit"] }
+tower-http = { version = "0.5", features = ["cors", "trace", "compression-br", "compression-gzip", "decompression-br", "decompression-gzip"], optional = true }
+
+# gRPC and HTTP
+prost = { workspace = true }
+prost-types = { workspace = true }
+tonic = { workspace = true }
+http = { workspace = true }
+http-body = { workspace = true }
+hyper = { workspace = true }
+
+# Error handling
+anyhow = { workspace = true }
+thiserror = { workspace = true }
+
+# Logging and observability
+tracing = { workspace = true }
+tracing-subscriber = { workspace = true, features = ["env-filter"] }
+metrics = { workspace = true, optional = true }
+metrics-exporter-prometheus = { workspace = true, optional = true }
+
+# Serialization
+serde = { workspace = true, features = ["derive"] }
+serde_json = { workspace = true, optional = true }
+
+# Validation
+validator = { version = "0.16", features = ["derive"] }
+
+# UUID support
+uuid = { workspace = true, features = ["v4", "serde"] }
+
+# Time handling
+chrono = { workspace = true, features = ["serde"] }
+
+# Documentation
+document-features = "0.2"
+utoipa = { version = "4.2", features = ["yaml"], optional = true }
+
+[dev-dependencies]
+# Testing
+tempfile = "3.10"
+pretty_assertions = "1.4"
+tokio = { workspace = true, features = ["rt-multi-thread", "macros", "test-util"] }
+
+# Mocking
+mockall = "0.12"
+
+# Test HTTP client
+reqwest = { version = "0.11", features = ["json"] }

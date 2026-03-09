@@ -1,0 +1,40 @@
+import { useEffect } from "react";
+import { Stack } from "expo-router";
+import { StatusBar } from "expo-status-bar";
+import * as SplashScreen from "expo-splash-screen";
+import { useFonts } from "expo-font";
+import { useColorScheme } from "@/hooks/useColorScheme";
+import { Colors } from "@/constants/Colors";
+
+// Prevent the splash screen from auto-hiding
+SplashScreen.preventAutoHideAsync();
+
+export default function RootLayout() {
+const colorScheme = useColorScheme();
+const [fontsLoaded] = useFonts({
+// Add custom fonts here if needed
+});
+
+useEffect(() => {
+if (fontsLoaded) {
+SplashScreen.hideAsync();
+}
+}, [fontsLoaded]);
+
+if (!fontsLoaded) {
+return null;
+}
+
+const theme = Colors[colorScheme ?? "light"];
+
+return (
+<>
+    <Stack screenOptions=\{{ headerStyle: { backgroundColor: theme.background, }, headerTintColor: theme.text,
+        headerTitleStyle: { fontWeight: "600" , }, contentStyle: { backgroundColor: theme.background, }, }}>
+        <Stack.Screen name="(tabs)" options=\{{ headerShown: false }} />
+        <Stack.Screen name="index" options=\{{ headerShown: false }} />
+    </Stack>
+    <StatusBar style="auto" />
+</>
+);
+}

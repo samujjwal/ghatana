@@ -1,0 +1,5 @@
+<resources>
+  <string name="app_name">Guardian Agent</string>
+  <string name="accessibility_service_description">Guardian monitors app usage to help parents manage screen time and enforce parental controls</string>
+  <string name="accessibility_service_summary">Guardian App Usage Monitor</string>
+</resources>

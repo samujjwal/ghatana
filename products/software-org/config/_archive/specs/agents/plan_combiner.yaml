@@ -1,0 +1,57 @@
+id: plan_combiner
+agent: SynthesisCombinerAgent
+role: PM/Stage Lead
+inputs_spec:
+- name: plan_evidence_package
+  description: Evidence package for Plan stage.
+  format: Evidence package artifact
+- name: plan_risk_trend_report
+  description: Risk trend report for Plan stage.
+  format: Risk trend report artifact
+- name: stakeholder_signoff
+  description: Stakeholder review and signoff artifact.
+  format: Signoff artifact
+outputs_spec:
+- name: ready_for_solution_package
+  description: Complete, versioned package of all required Plan stage outputs, with handoff checklist for next stage.
+  format: Package (documents, version, approvals, handoff_checklist)
+  example: 'documents: ["requirements.md", "criteria.xlsx", "evidence.zip"]
+
+    version: "v1.0"
+
+    approvals: ["PO", "QA", "Stakeholder"]
+
+    handoff_checklist: ["All signoffs complete", "Evidence archived"]
+
+    '
+agent_tasks:
+- Package all required outputs from the Plan stage, ensuring completeness and versioning.
+- Include a handoff checklist for entry into the next stage.
+- Validate that all approvals and signoffs are present.
+acceptance_criteria:
+- All required outputs from the stage are packaged and versioned for handoff.
+- Handoff checklist for next stage entry is included.
+dependencies:
+- plan_evidence_package
+- plan_risk_trend_report
+- stakeholder_signoff
+failure_escalation:
+- Escalate to PM if requirements package is incomplete or handoff checklist is missing.
+references: []
+hitl: false
+
+internal_logic:
+  - perception:
+      description: "Extract required context, risks, dependencies, and gaps for agent 'plan_combiner'."
+  - model:
+      description: "Track fulfillment of acceptance criteria and unresolved escalations."
+  - planning:
+      description: "For all open issues or missing outputs, trigger validation/escalation or follow-up."
+  - action:
+      description: "Assemble output per spec; update agent's trace/audit log."
+validation:
+  - "SME or HITL review for output correctness and completeness."
+  - "Audit for field and format coverage."
+quality_enhancements:
+  - "Output templates and audit log integration."
+  - "Escalation if any acceptance criteria unmet."

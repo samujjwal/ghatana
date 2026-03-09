@@ -1,0 +1,25 @@
+---
+id: "changelog_generator"
+agent: "ChangelogGeneratorAgent"
+role: "Tooling Engineer"
+inputs_spec:
+- name: "deployment_manifests"
+  description: "Deployment manifests for generating changelog and release notes."
+  format: "List of deployment manifest artifacts"
+outputs_spec:
+- name: "changelog_release_notes"
+  description: "Changelog including user-facing and backend changes."
+  format: "Release notes artifact"
+agent_tasks:
+- "Generate changelog from source control and manifests."
+- "Include all user-facing and backend changes."
+- "Ensure notes are clear, complete, and versioned."
+acceptance_criteria:
+- "Changelog includes all changes, generated from source history."
+- "Release notes are clear, complete, and versioned."
+dependencies:
+- "deployment_manifests"
+failure_escalation:
+- "Escalate to Tooling Engineer if changelog/release notes are missing or incomplete."
+references: []
+hitl: false

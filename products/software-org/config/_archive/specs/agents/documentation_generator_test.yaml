@@ -1,0 +1,25 @@
+---
+id: "documentation_generator_test"
+agent: "DocumentationGeneratorAgent"
+role: "Tech Writer/Automation"
+inputs_spec:
+- name: "test_execution_plan"
+  description: "Test execution plan for doc generation."
+  format: "Test execution plan artifact"
+outputs_spec:
+- name: "generated_documentation"
+  description: "Generated or updated documentation for all test scenarios, cases,\
+    \ and results."
+  format: "Documentation artifact"
+agent_tasks:
+- "Generate/update documentation for all test scenarios, cases, and results."
+- "Ensure docs are accessible, versioned, up-to-date."
+acceptance_criteria:
+- "Documentation is generated/updated for all test scenarios, cases, results."
+- "Docs are accessible, versioned, up-to-date."
+dependencies:
+- "test_execution_plan"
+failure_escalation:
+- "Escalate to Tech Writer/QA if docs are incomplete or outdated."
+references: []
+hitl: false

@@ -1,0 +1,29 @@
+---
+id: "operate_milestone_tracker"
+agent: "OperateMilestoneTrackerAgent"
+role: "Ops PM"
+inputs_spec:
+- name: "operate_best_practice_report"
+  description: "Operate best practice report for milestone tracking."
+  format: "Best practice report artifact"
+outputs_spec:
+- name: "operate_stage_milestone"
+  description: "Milestones for Operate stage, with owner and due dates."
+  format: "List of milestone objects"
+agent_tasks:
+- "List all Operate stage milestones."
+- "Assign owners and due dates."
+- "Update blockers and risks regularly."
+- "Log milestone completion."
+acceptance_criteria:
+- "All milestones listed and tracked."
+- "Owners and due dates assigned."
+- "Blockers and risks updated."
+- "Completion logged."
+dependencies:
+- "operate_best_practice_report"
+failure_escalation:
+- "Escalate to Ops PM if milestones unclear or not updated."
+references: []
+hitl: true
+hitl_reason: "Human oversight for operate milestone tracking"

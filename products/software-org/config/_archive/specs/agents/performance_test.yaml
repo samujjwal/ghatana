@@ -1,0 +1,26 @@
+---
+id: "performance_test"
+agent: "PerformanceTestAgent"
+role: "QA/Performance Engineer"
+inputs_spec:
+- name: "test_environment_url"
+  description: "Test environment URL/credentials for load and performance tests."
+  format: "Environment URL/credentials"
+outputs_spec:
+- name: "performance_test_report"
+  description: "Performance test results, metrics, bottlenecks, recommendations."
+  format: "Performance test report artifact"
+agent_tasks:
+- "Run load and performance tests (throughput, latency, stress)."
+- "Collect metrics and identify bottlenecks."
+- "Recommend improvements as needed."
+acceptance_criteria:
+- "Performance/load/stress tests executed."
+- "Metrics and bottlenecks are documented."
+- "Recommendations are provided where needed."
+dependencies:
+- "test_environment_url"
+failure_escalation:
+- "Escalate to Engineering Lead if performance goals not met."
+references: []
+hitl: false

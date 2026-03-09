@@ -1,0 +1,80 @@
+---
+# Cross-Cutting KPI Operator Template
+# Replaces 12 stage-specific files: build_kpi_agent.yaml, test_kpi_agent.yaml, etc.
+#
+# @doc.type operator-template
+# @doc.purpose Cross-cutting KPI tracking for all DevSecOps stages
+# @doc.layer operations
+# @doc.pattern Template
+
+template:
+  id: "${stage}_kpi_agent"
+  version: "1.0.0"
+
+operator:
+  type: "KPIOperator"
+  role: "${stage} KPI Analyst"
+  category: "cross-cutting"
+
+parameters:
+  stage:
+    type: "string"
+    required: true
+    description: "Stage name for KPI tracking"
+
+inputs_spec:
+  - name: "${stage}_stage_milestone"
+    description: "${stage} stage milestones for KPI tracking."
+    format: "List of milestone objects"
+    required: true
+
+outputs_spec:
+  - name: "${stage}_kpi_report"
+    description: "${stage} KPIs report (frequency, duration, pass/fail, coverage, findings)."
+    format: "KPI report artifact"
+
+  - name: "${stage}_kpi_events"
+    description: "Stream of KPI change events"
+    format: "Event stream"
+    event_type: "ghatana.operations.kpi.${stage}"
+
+agent_tasks:
+  - "Track and report on ${stage} frequency, duration, pass/fail rates."
+  - "Visualize trends, flag anomalies, and compare to baselines."
+  - "Calculate DORA metrics where applicable."
+  - "Emit KPI events to EventCloud."
+
+acceptance_criteria:
+  - "All key KPIs are defined, tracked, and flagged for review if negative movement."
+  - "KPI data is traceable to milestones and logs."
+  - "Outliers and deviations are flagged."
+
+dependencies:
+  - "${stage}_stage_milestone"
+
+failure_escalation:
+  - "Escalate to KPI Analyst or PM if KPIs missing or not updated."
+
+config:
+  # Standard KPIs per stage
+  kpi_definitions:
+    common:
+      - name: "cycle_time"
+        unit: "hours"
+        target: 24
+      - name: "lead_time"
+        unit: "hours"
+        target: 48
+      - name: "throughput"
+        unit: "items/day"
+      - name: "quality_score"
+        unit: "percentage"
+        target: 95
+
+  # Anomaly detection
+  anomaly_threshold_stddev: 2.0
+  trend_window_days: 30
+
+  event_cloud_topic: "ghatana.operations.kpi"
+
+hitl: false

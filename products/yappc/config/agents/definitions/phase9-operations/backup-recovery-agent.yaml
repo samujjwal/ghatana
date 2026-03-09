@@ -1,0 +1,112 @@
+id: backup-recovery-agent
+name: Backup Recovery Agent
+version: 1.0.0
+description: Manages backups and recovery. Ensures data protection and disaster recovery readiness.
+
+metadata:
+  level: 3  # Worker
+  domain: operations
+  tags:
+    - backup
+    - recovery
+    - disaster-recovery
+    - data-protection
+
+generator:
+  type: PIPELINE
+  steps:
+    - name: backup_status
+      type: SERVICE_CALL
+      service: backup-service
+      endpoint: /status
+    - name: backup_analysis
+      type: LLM
+      provider: ANTHROPIC
+      model: claude-3-5-sonnet-20241022
+      temperature: 0.2
+      max_tokens: 1500
+      prompt: |
+        You are the Backup Recovery Agent. Analyze backup status:
+        
+        Backup Jobs: {{jobs}}
+        Last Backups: {{last}}
+        Recovery Tests: {{tests}}
+        RPO/RTO Requirements: {{requirements}}
+        
+        Analyze:
+        1. Backup coverage (all critical data?)
+        2. Backup health (success rate)
+        3. RPO compliance
+        4. Last recovery test status
+        5. Gaps and risks
+        6. Recommendations
+        
+        Output as JSON: {
+          coverage_status,
+          health,
+          rpo_compliance,
+          rto_readiness,
+          gaps,
+          recommendations
+        }
+    - name: recovery_execution
+      type: SERVICE_CALL
+      service: backup-service
+      endpoint: /recover
+
+memory:
+  episodic:
+    enabled: true
+    retention_days: 730
+    categories:
+      - backups
+      - recoveries
+      - tests
+  semantic:
+    enabled: true
+    categories:
+      - backup-strategies
+      - recovery-procedures
+      - compliance-requirements
+  procedural:
+    enabled: true
+    categories:
+      - backup-schedules
+      - recovery-playbooks
+      - test-procedures
+
+tools:
+  - backup_manager
+  - recovery_executor
+  - test_runner
+
+capabilities:
+  - backup-management
+  - recovery-execution
+  - compliance-monitoring
+  - testing
+
+routing:
+  input_types:
+    - backup-request
+    - recovery-request
+    - status-query
+  output_types:
+    - backup-status
+    - recovery-status
+    - compliance-report
+
+delegation:
+  can_delegate_to: []
+  escalates_to:
+    - operations-orchestrator-agent
+
+governance:
+  requires_approval: true  # Recovery requires approval
+  can_block: false
+  audit_trail: comprehensive
+
+performance:
+  expected_latency_ms: 3000
+  max_latency_ms: 10000
+  timeout_ms: 3600000  # 1 hour for recovery

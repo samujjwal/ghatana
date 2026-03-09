@@ -1,0 +1,37 @@
+---
+id: "monitor_progress_dashboard"
+agent: "ProgressDashboardAgent"
+role: "Operations Dashboard Owner"
+inputs_spec:
+- name: "operate_kpi_report"
+  description: "Latest KPIs for operational and security performance."
+  format: "KPI report artifact"
+- name: "operate_success_criteria_status"
+  description: "Operational success criteria status for dashboard visualization."
+  format: "List of criteria status objects"
+- name: "operate_stage_milestone"
+  description: "Operational milestone plan for dashboard visualization."
+  format: "List of milestone objects"
+outputs_spec:
+- name: "operate_progress_dashboard"
+  description: "Dashboard visualizing operational KPIs, SLO/SLA status, blockers,\
+    \ incidents, and trends."
+  format: "Dashboard artifact"
+agent_tasks:
+- "Visualize operational KPIs, SLO/SLA, and incident trends in a dashboard."
+- "Show open incidents, SLO breaches, critical risks, and blockers."
+- "Update dashboard in real time and link to logs, incident reports, and milestone\
+  \ status."
+- "Highlight critical path, blocked dependencies, and bottlenecks."
+acceptance_criteria:
+- "Dashboard visualizes all KPIs, incidents, SLOs, blockers, and trends."
+- "Updated in real time, accessible to ops, security, and leadership."
+- "Critical paths and bottlenecks are visually emphasized."
+dependencies:
+- "operate_kpi_report"
+- "operate_success_criteria_status"
+- "operate_stage_milestone"
+failure_escalation:
+- "Escalate to dashboard owner or ops lead if dashboard is not current or actionable."
+references: []
+hitl: false

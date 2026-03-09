@@ -1,0 +1,42 @@
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: aep-service-manager
+  namespace: aep
+  labels:
+    app: aep-service-manager
+    app.kubernetes.io/name: aep-service-manager
+    app.kubernetes.io/part-of: ghatana-aep
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: Role
+metadata:
+  name: aep-service-manager
+  namespace: aep
+  labels:
+    app: aep-service-manager
+    app.kubernetes.io/part-of: ghatana-aep
+rules:
+  - apiGroups: [""]
+    resources: ["configmaps", "secrets"]
+    verbs: ["get", "list", "watch"]
+  - apiGroups: [""]
+    resources: ["pods"]
+    verbs: ["get", "list"]
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  name: aep-service-manager
+  namespace: aep
+  labels:
+    app: aep-service-manager
+    app.kubernetes.io/part-of: ghatana-aep
+subjects:
+  - kind: ServiceAccount
+    name: aep-service-manager
+    namespace: aep
+roleRef:
+  kind: Role
+  name: aep-service-manager
+  apiGroup: rbac.authorization.k8s.io

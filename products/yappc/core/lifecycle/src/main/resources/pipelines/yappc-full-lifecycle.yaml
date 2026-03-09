@@ -1,0 +1,158 @@
+# YAPPC Full Lifecycle Pipeline
+# Complete lifecycle from Intent to Evolve with continuous improvement loop
+
+name: yappc-full-lifecycle
+version: 1.0.0
+description: Complete YAPPC lifecycle from Intent to Evolve
+
+metadata:
+  author: YAPPC Platform
+  created: 2025-01-07
+  tags:
+    - lifecycle
+    - ai-assisted
+    - continuous-improvement
+
+operators:
+  - id: intent
+    type: PhaseOperator
+    config:
+      phase: INTENT
+      service: com.ghatana.yappc.services.intent.IntentServiceImpl
+    metadata:
+      description: Capture product intent with AI assistance
+      timeout: 30s
+      retry:
+        max_attempts: 3
+        backoff: exponential
+      
+  - id: shape
+    type: PhaseOperator
+    config:
+      phase: SHAPE
+      service: com.ghatana.yappc.services.shape.ShapeServiceImpl
+    dependencies:
+      - intent
+    metadata:
+      description: Transform intent into system design
+      timeout: 45s
+      retry:
+        max_attempts: 3
+        backoff: exponential
+      
+  - id: validate
+    type: PhaseOperator
+    config:
+      phase: VALIDATE
+      service: com.ghatana.yappc.services.validate.ValidationServiceImpl
+    dependencies:
+      - shape
+    metadata:
+      description: Validate design before generation
+      timeout: 20s
+      retry:
+        max_attempts: 2
+        backoff: linear
+      
+  - id: generate
+    type: PhaseOperator
+    config:
+      phase: GENERATE
+      service: com.ghatana.yappc.services.generate.GenerationServiceImpl
+    dependencies:
+      - validate
+    metadata:
+      description: Generate artifacts from validated design
+      timeout: 60s
+      retry:
+        max_attempts: 3
+        backoff: exponential
+      
+  - id: run
+    type: PhaseOperator
+    config:
+      phase: RUN
+      service: com.ghatana.yappc.services.run.RunServiceImpl
+    dependencies:
+      - generate
+    metadata:
+      description: Execute build/deploy/test
+      timeout: 300s
+      retry:
+        max_attempts: 2
+        backoff: exponential
+      
+  - id: observe
+    type: PhaseOperator
+    config:
+      phase: OBSERVE
+      service: com.ghatana.yappc.services.observe.ObserveServiceImpl
+    dependencies:
+      - run
+    metadata:
+      description: Collect runtime telemetry
+      timeout: 30s
+      retry:
+        max_attempts: 3
+        backoff: linear
+      
+  - id: learn
+    type: PhaseOperator
+    config:
+      phase: LEARN
+      service: com.ghatana.yappc.services.learn.LearningServiceImpl
+    dependencies:
+      - observe
+    metadata:
+      description: Extract insights from observations
+      timeout: 45s
+      retry:
+        max_attempts: 3
+        backoff: exponential
+      
+  - id: evolve
+    type: PhaseOperator
+    config:
+      phase: EVOLVE
+      service: com.ghatana.yappc.services.evolve.EvolutionServiceImpl
+    dependencies:
+      - learn
+    metadata:
+      description: Propose improvements and loop back
+      timeout: 30s
+      retry:
+        max_attempts: 3
+        backoff: exponential
+
+# Pipeline execution configuration
+execution:
+  mode: production  # dry-run | simulated | production
+  parallelism: 4
+  retry:
+    max_attempts: 3
+    backoff: exponential
+  timeout: 3600s
+  
+# Observability configuration
+observability:
+  metrics:
+    enabled: true
+    export_interval: 10s
+  traces:
+    enabled: true
+    sampling_rate: 1.0
+  logs:
+    enabled: true
+    level: INFO
+
+# Security configuration
+security:
+  authentication:
+    required: true
+    type: jwt
+  authorization:
+    enabled: true
+    policy: rbac
+  audit:
+    enabled: true
+    retention_days: 90

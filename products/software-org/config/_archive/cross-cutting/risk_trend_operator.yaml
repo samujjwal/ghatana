@@ -1,0 +1,75 @@
+---
+# Cross-Cutting Risk Trend Analyzer Operator Template
+# Replaces ~12 stage-specific files: build_risk_trend_analyzer.yaml, etc.
+#
+# @doc.type operator-template
+# @doc.purpose Cross-cutting risk trend analysis for all stages
+# @doc.layer operations
+# @doc.pattern Template
+
+template:
+  id: "${stage}_risk_trend_analyzer"
+  version: "1.0.0"
+
+operator:
+  type: "RiskTrendOperator"
+  role: "${stage} Risk Analyst"
+  category: "cross-cutting"
+
+parameters:
+  stage:
+    type: "string"
+    required: true
+    description: "Stage name for risk trend analysis"
+
+inputs_spec:
+  - name: "${stage}_risk_assessment"
+    description: "${stage} risk assessments and findings."
+    format: "Risk assessment artifact"
+    required: true
+
+  - name: "${stage}_kpi_report"
+    description: "KPIs for risk correlation."
+    format: "KPI report artifact"
+    required: false
+
+outputs_spec:
+  - name: "${stage}_risk_trends"
+    description: "Risk trend analysis for ${stage} with projections."
+    format: "Risk trend artifact"
+
+  - name: "${stage}_risk_events"
+    description: "Stream of risk change events"
+    format: "Event stream"
+    event_type: "ghatana.operations.risk.${stage}"
+
+agent_tasks:
+  - "Analyze ${stage} risk trends over time."
+  - "Identify emerging risks and patterns."
+  - "Project risk trajectory based on historical data."
+  - "Emit risk events to EventCloud."
+
+acceptance_criteria:
+  - "Risk trends are analyzed and visualized."
+  - "Emerging risks are identified early."
+  - "Risk projections inform mitigation planning."
+
+dependencies:
+  - "${stage}_risk_assessment"
+
+failure_escalation:
+  - "Escalate to Risk Manager if trend analysis fails."
+
+config:
+  trend_window_days: 90
+  projection_horizon_days: 30
+  risk_categories:
+    - "technical"
+    - "security"
+    - "compliance"
+    - "operational"
+    - "schedule"
+
+  event_cloud_topic: "ghatana.operations.risk"
+
+hitl: false

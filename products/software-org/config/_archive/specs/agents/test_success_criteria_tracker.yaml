@@ -1,0 +1,28 @@
+---
+id: "test_success_criteria_tracker"
+agent: "SuccessCriteriaTrackerAgent"
+role: "Test Success Criteria Tracker"
+inputs_spec:
+- name: "test_aggregation_report"
+  description: "Aggregated test results for criteria tracking."
+  format: "Aggregation report artifact"
+outputs_spec:
+- name: "test_success_criteria_status"
+  description: "Status for all test stage entry/exit criteria."
+  format: "List of criteria status objects"
+agent_tasks:
+- "List all test stage entry/exit criteria."
+- "Track status, owner, remediation."
+- "Escalate at-risk/failed criteria."
+- "Version tracker for audit/handoff."
+acceptance_criteria:
+- "All test stage entry/exit criteria are listed/mapped."
+- "Status, owner, remediation are tracked."
+- "At-risk/failed criteria escalated."
+- "Tracker versioned for audit/handoff."
+dependencies:
+- "test_aggregation_report"
+failure_escalation:
+- "Escalate to QA/Test Success Tracker if status not maintained."
+references: []
+hitl: false

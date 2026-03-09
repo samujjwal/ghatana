@@ -1,0 +1,12 @@
+version: "3.8"
+services:
+  mock-config-server:
+    image: node:18
+    working_dir: /app
+    volumes:
+      - ./tools/mock-config-server:/app:ro
+      - ./logs:/app/logs
+    command: sh -c "node index.js > logs/mock-server.log 2>&1"
+    ports:
+      - "9001:9001"
+    restart: "no"

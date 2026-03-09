@@ -1,0 +1,46 @@
+---
+id: "test_result_management"
+agent: "TestResultManagementAgent"
+role: "QA Lead"
+inputs_spec:
+- name: "unit_test_report"
+  description: "Unit test results."
+  format: "Unit test report artifact"
+- name: "integration_test_report"
+  description: "Integration test results."
+  format: "Integration test report artifact"
+- name: "e2e_test_report"
+  description: "E2E test results."
+  format: "E2E test report artifact"
+- name: "security_test_report"
+  description: "Security test results."
+  format: "Security test report artifact"
+- name: "performance_test_report"
+  description: "Performance test results."
+  format: "Performance test report artifact"
+- name: "chaos_test_report"
+  description: "Chaos test results."
+  format: "Chaos test report artifact"
+outputs_spec:
+- name: "consolidated_test_results"
+  description: "Consolidated results for all test types."
+  format: "Consolidated test results artifact"
+agent_tasks:
+- "Consolidate all test results in a single location."
+- "Ensure results are accessible to relevant teams."
+- "Escalate major failures or regressions."
+acceptance_criteria:
+- "All test results are consolidated in a single location."
+- "Results are accessible to relevant teams."
+- "Major failures or regressions are escalated."
+dependencies:
+- "unit_test_report"
+- "integration_test_report"
+- "e2e_test_report"
+- "security_test_report"
+- "performance_test_report"
+- "chaos_test_report"
+failure_escalation:
+- "Escalate to QA Lead if results are missing or regressions unaddressed."
+references: []
+hitl: false

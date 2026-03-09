@@ -1,0 +1,65 @@
+{{>../shared/partials/license-header}}
+
+import { useState } from 'react'{{#if enableRouter}}
+import { BrowserRouter as Router } from 'react-router-dom'
+import AppRouter from './components/Router'{{/if}}
+import './App.css'
+
+function App() {
+  const [count, setCount] = useState(0)
+
+  return (
+    {{#if enableRouter}}
+    <Router>
+      <div className="App">
+        <header className="App-header">
+          <h1>{{projectName}}</h1>
+          <p>{{description}}</p>
+        </header>
+        <main>
+          <AppRouter />
+        </main>
+        <footer>
+          <p>&copy; 2024 {{author}}. Licensed under {{license}}.</p>
+        </footer>
+      </div>
+    </Router>
+    {{else}}
+    <div className="App">
+      <header className="App-header">
+        <h1>{{projectName}}</h1>
+        <p>{{description}}</p>
+      </header>
+      <main className="App-main">
+        <div className="card">
+          <button onClick={() => setCount((count) => count + 1)}>
+            count is {count}
+          </button>
+          <p>
+            Edit <code>src/App.tsx</code> and save to test HMR
+          </p>
+        </div>
+        <div className="features">
+          <h2>Features included:</h2>
+          <ul>
+            <li>⚡️ Vite for lightning-fast builds</li>
+            <li>⚛️ React 18 with TypeScript</li>
+            <li>🧪 Vitest for testing</li>
+            <li>📏 ESLint + Prettier for code quality</li>
+            {{#if enableRouter}}<li>🗺️ React Router for navigation</li>{{/if}}
+            {{#if enablePWA}}<li>📱 PWA support with offline capabilities</li>{{/if}}
+            {{#if enableDocker}}<li>🐳 Docker configuration included</li>{{/if}}
+            <li>🎯 TypeScript path mapping configured</li>
+            <li>🔧 Modern development tooling</li>
+          </ul>
+        </div>
+      </main>
+      <footer>
+        <p>&copy; 2024 {{author}}. Licensed under {{license}}.</p>
+      </footer>
+    </div>
+    {{/if}}
+  )
+}
+
+export default App

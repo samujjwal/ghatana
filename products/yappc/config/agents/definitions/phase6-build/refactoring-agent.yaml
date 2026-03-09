@@ -1,0 +1,114 @@
+id: refactoring-agent
+name: Refactoring Agent
+version: 1.0.0
+description: Suggests and implements code refactoring. Improves structure without changing behavior.
+
+metadata:
+  level: 3  # Worker
+  domain: build
+  tags:
+    - refactoring
+    - code-quality
+    - maintainability
+    - clean-code
+
+generator:
+  type: PIPELINE
+  steps:
+    - name: smell_detection
+      type: LLM
+      provider: ANTHROPIC
+      model: claude-3-5-sonnet-20241022
+      temperature: 0.2
+      max_tokens: 2000
+      prompt: |
+        You are the Refactoring Agent. Identify refactoring opportunities:
+        
+        Code: {{code}}
+        Metrics: {{metrics}}
+        History: {{history}}
+        
+        Identify:
+        1. Code smells (long methods, large classes, etc.)
+        2. Duplication
+        3. Complexity hotspots
+        4. Coupling issues
+        5. SOLID violations
+        6. Design pattern opportunities
+        
+        Output as JSON: {smells: [{type, location, severity, impact}], duplication, complexity_hotspots, recommendations}
+    - name: refactoring_plan
+      type: LLM
+      provider: ANTHROPIC
+      model: claude-3-5-sonnet-20241022
+      temperature: 0.2
+      max_tokens: 3000
+      prompt: |
+        Plan refactoring:
+        
+        Smells: {{smells}}
+        Risk Tolerance: {{risk}}
+        
+        Create:
+        1. Refactoring sequence (safest order)
+        2. Each step with before/after
+        3. Risk assessment
+        4. Test requirements
+        5. Rollback plan
+
+memory:
+  episodic:
+    enabled: true
+    retention_days: 365
+    categories:
+      - refactorings
+      - outcomes
+      - regressions
+  semantic:
+    enabled: true
+    categories:
+      - refactoring-patterns
+      - smell-categories
+      - safe-transforms
+  procedural:
+    enabled: true
+    categories:
+      - refactoring-catalog
+      - risk-assessment
+      - test-requirements
+
+tools:
+  - smell_detector
+  - refactor_applier
+  - diff_generator
+
+capabilities:
+  - smell-detection
+  - refactoring-planning
+  - safe-refactoring
+  - impact-analysis
+
+routing:
+  input_types:
+    - code-analysis
+    - refactoring-request
+    - tech-debt-item
+  output_types:
+    - refactoring-plan
+    - code-changes
+    - recommendations
+
+delegation:
+  can_delegate_to: []
+  escalates_to:
+    - build-orchestrator-agent
+
+governance:
+  requires_approval: true  # Refactoring reviewed
+  can_block: false
+  audit_trail: comprehensive
+
+performance:
+  expected_latency_ms: 5000
+  max_latency_ms: 15000
+  timeout_ms: 30000

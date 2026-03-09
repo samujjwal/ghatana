@@ -1,0 +1,366 @@
+{
+    "$schema": "http://json-schema.org/draft-07/schema#",
+    "$id": "simulation-template.schema.json",
+    "title": "Simulation Template Schema",
+    "description": "Schema for defining interactive simulation templates in Tutorputor",
+    "type": "object",
+    "required": [
+        "id",
+        "version",
+        "metadata",
+        "entities",
+        "interactions",
+        "assessment",
+        "visualization"
+    ],
+    "properties": {
+        "$schema": {
+            "type": "string",
+            "description": "Reference to this schema"
+        },
+        "id": {
+            "type": "string",
+            "pattern": "^[a-z_]+$",
+            "description": "Unique identifier for the simulation template"
+        },
+        "version": {
+            "type": "string",
+            "pattern": "^\\d+\\.\\d+\\.\\d+$",
+            "description": "Semantic version of the template"
+        },
+        "metadata": {
+            "type": "object",
+            "required": [
+                "title",
+                "description",
+                "domain",
+                "difficulty"
+            ],
+            "properties": {
+                "title": {
+                    "type": "string",
+                    "maxLength": 200
+                },
+                "description": {
+                    "type": "string",
+                    "maxLength": 2000
+                },
+                "domain": {
+                    "type": "string",
+                    "enum": [
+                        "physics",
+                        "chemistry",
+                        "biology",
+                        "mathematics",
+                        "engineering",
+                        "computer_science"
+                    ]
+                },
+                "subDomain": {
+                    "type": "string"
+                },
+                "difficulty": {
+                    "type": "string",
+                    "enum": [
+                        "easy",
+                        "medium",
+                        "hard",
+                        "expert"
+                    ]
+                },
+                "estimatedDuration": {
+                    "type": "integer",
+                    "minimum": 5,
+                    "maximum": 120,
+                    "description": "Estimated completion time in minutes"
+                },
+                "gradeLevel": {
+                    "type": "array",
+                    "items": {
+                        "type": "string",
+                        "enum": [
+                            "elementary",
+                            "middle_school",
+                            "high_school",
+                            "undergraduate",
+                            "graduate",
+                            "professional"
+                        ]
+                    }
+                },
+                "tags": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    },
+                    "maxItems": 20
+                },
+                "author": {
+                    "type": "string"
+                },
+                "license": {
+                    "type": "string"
+                }
+            }
+        },
+        "learningObjectives": {
+            "type": "array",
+            "items": {
+                "type": "string"
+            },
+            "minItems": 1,
+            "maxItems": 10
+        },
+        "prerequisites": {
+            "type": "array",
+            "items": {
+                "type": "string"
+            }
+        },
+        "entities": {
+            "type": "array",
+            "items": {
+                "type": "object",
+                "required": [
+                    "id",
+                    "type",
+                    "properties"
+                ],
+                "properties": {
+                    "id": {
+                        "type": "string"
+                    },
+                    "type": {
+                        "type": "string",
+                        "pattern": "^[a-z]+:[a-z_]+$"
+                    },
+                    "properties": {
+                        "type": "object"
+                    }
+                }
+            },
+            "minItems": 1
+        },
+        "interactions": {
+            "type": "array",
+            "items": {
+                "type": "object",
+                "required": [
+                    "id",
+                    "type",
+                    "label"
+                ],
+                "properties": {
+                    "id": {
+                        "type": "string"
+                    },
+                    "type": {
+                        "type": "string",
+                        "enum": [
+                            "button",
+                            "slider",
+                            "toggle",
+                            "dropdown",
+                            "drag",
+                            "rotate",
+                            "palette",
+                            "input"
+                        ]
+                    },
+                    "label": {
+                        "type": "string"
+                    },
+                    "target": {
+                        "type": "string"
+                    },
+                    "action": {
+                        "type": "object"
+                    },
+                    "range": {
+                        "type": "array",
+                        "items": {
+                            "type": "number"
+                        },
+                        "minItems": 2,
+                        "maxItems": 2
+                    },
+                    "step": {
+                        "type": "number"
+                    },
+                    "unit": {
+                        "type": "string"
+                    }
+                }
+            }
+        },
+        "physics": {
+            "type": "object",
+            "properties": {
+                "engine": {
+                    "type": "string",
+                    "enum": [
+                        "matter.js",
+                        "cannon.js",
+                        "custom",
+                        "chemistry:molecular",
+                        "chemistry:reaction"
+                    ]
+                },
+                "gravity": {
+                    "type": "object"
+                },
+                "timeScale": {
+                    "type": "number",
+                    "minimum": 0.1,
+                    "maximum": 10
+                },
+                "stepSize": {
+                    "type": "number"
+                }
+            }
+        },
+        "measurements": {
+            "type": "array",
+            "items": {
+                "type": "object",
+                "required": [
+                    "id",
+                    "type",
+                    "label"
+                ],
+                "properties": {
+                    "id": {
+                        "type": "string"
+                    },
+                    "type": {
+                        "type": "string",
+                        "enum": [
+                            "distance",
+                            "angle",
+                            "magnitude",
+                            "duration",
+                            "maximum",
+                            "minimum",
+                            "average",
+                            "period",
+                            "frequency",
+                            "sensor",
+                            "counter",
+                            "classification",
+                            "formula",
+                            "detection"
+                        ]
+                    },
+                    "label": {
+                        "type": "string"
+                    },
+                    "source": {
+                        "type": "string"
+                    },
+                    "unit": {
+                        "type": "string"
+                    }
+                }
+            }
+        },
+        "assessment": {
+            "type": "object",
+            "required": [
+                "type",
+                "tasks",
+                "passingScore"
+            ],
+            "properties": {
+                "type": {
+                    "type": "string",
+                    "enum": [
+                        "guided_exploration",
+                        "inquiry_based",
+                        "construction",
+                        "laboratory",
+                        "problem_solving",
+                        "free_exploration"
+                    ]
+                },
+                "tasks": {
+                    "type": "array",
+                    "items": {
+                        "type": "object",
+                        "required": [
+                            "id",
+                            "instruction"
+                        ],
+                        "properties": {
+                            "id": {
+                                "type": "string"
+                            },
+                            "instruction": {
+                                "type": "string"
+                            },
+                            "expectedOutcome": {
+                                "type": "object"
+                            },
+                            "points": {
+                                "type": "integer",
+                                "minimum": 0,
+                                "maximum": 100
+                            }
+                        }
+                    }
+                },
+                "passingScore": {
+                    "type": "integer",
+                    "minimum": 0,
+                    "maximum": 100
+                },
+                "hints": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
+                }
+            }
+        },
+        "visualization": {
+            "type": "object",
+            "required": [
+                "type",
+                "renderer"
+            ],
+            "properties": {
+                "type": {
+                    "type": "string",
+                    "enum": [
+                        "2d",
+                        "3d",
+                        "hybrid"
+                    ]
+                },
+                "renderer": {
+                    "type": "string",
+                    "enum": [
+                        "canvas",
+                        "three.js",
+                        "webgl",
+                        "svg"
+                    ]
+                },
+                "camera": {
+                    "type": "object"
+                },
+                "lighting": {
+                    "type": "object"
+                },
+                "background": {
+                    "type": "object"
+                },
+                "annotations": {
+                    "type": "array",
+                    "items": {
+                        "type": "object"
+                    }
+                }
+            }
+        }
+    }
+}

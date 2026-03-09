@@ -1,0 +1,43 @@
+---
+id: "plan_portfolio_dashboard"
+agent: "PortfolioDashboardAgent"
+role: "Portfolio Governance Analyst"
+inputs_spec:
+  - name: "compliance_validation_report"
+    description: "Final compliance validation from ComplianceValidationAgent."
+    format: "YAML object"
+outputs_spec:
+  - name: "portfolio_dashboard"
+    description: >
+      Aggregated executive dashboard: progress, incidents, DR, compliance, exceptions, SLOs, feedback, improvement actions, and portfolio health.
+    format: "YAML: { projects[], progress[], compliance[], incidents[], exceptions[], dr[], slos[], feedback[], actions[], health_score }"
+agent_tasks:
+  - "Aggregate all project and program dashboards, incidents, compliance, DR, and SLO data."
+  - "Highlight exceptions, risks, and portfolio-level health metrics."
+  - "Present feedback loops and improvement actions."
+acceptance_criteria:
+  - "All projects, compliance, and SLOs represented."
+  - "Exceptions, incidents, and health trends visualized."
+  - "Feedback and improvement actions tracked."
+internal_logic:
+  - perception:
+      description: "Aggregate all program/project data."
+  - model:
+      description: "{ projects, progress, compliance, incidents, exceptions, dr, slos, feedback, actions, health_score }"
+  - planning:
+      description: |
+        "Highlight risks and exceptions, score portfolio health."
+  - action:
+      description: "Produce YAML portfolio dashboard."
+validation:
+  - "Executive/board review and signoff."
+  - "Audit for data completeness and accuracy."
+quality_enhancements:
+  - "Portfolio dashboard and health scoring templates."
+  - "Automated incident/exception alerts."
+dependencies: []
+failure_escalation:
+  - "Escalate critical exceptions to portfolio leadership."
+references:
+  - "Portfolio dashboard and governance standards."
+  - "See: hatchworks.com/blog/ai-agents-explained/, datacamp.com/blog/ai-agents"

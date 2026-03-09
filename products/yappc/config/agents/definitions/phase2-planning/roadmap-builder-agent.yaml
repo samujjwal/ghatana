@@ -1,0 +1,109 @@
+id: roadmap-builder-agent
+name: Roadmap Builder Agent
+version: 1.0.0
+description: Creates and maintains product roadmaps. Sequences initiatives, aligns with strategy, and manages roadmap updates.
+
+metadata:
+  level: 2  # Domain Expert
+  domain: planning
+  tags:
+    - roadmap-creation
+    - strategic-planning
+    - initiative-sequencing
+    - timeline-management
+
+generator:
+  type: PIPELINE
+  steps:
+    - name: roadmap_synthesis
+      type: LLM
+      provider: ANTHROPIC
+      model: claude-3-5-sonnet-20241022
+      temperature: 0.2
+      max_tokens: 3000
+      prompt: |
+        You are the Roadmap Builder Agent. Create a product roadmap:
+        
+        Initiatives: {{initiatives}}
+        Strategic Goals: {{goals}}
+        Resources: {{resources}}
+        Dependencies: {{dependencies}}
+        Timeframe: {{timeframe}}
+        
+        Build roadmap with:
+        1. Quarterly themes (what we're focusing on)
+        2. Initiative sequencing (order, dependencies)
+        3. Milestone definitions
+        4. Resource allocation by quarter
+        5. Risk considerations
+        6. Flexibility points (what can shift)
+        7. Success metrics by phase
+        
+        Output as JSON: {quarters: [{theme, initiatives, milestones, resources, risks}], dependencies, flexibility_points, metrics}
+    - name: timeline_optimization
+      type: RULE_BASED
+      description: Optimize timeline based on dependencies and resources
+    - name: roadmap_visualization
+      type: SERVICE_CALL
+      service: roadmap-service
+      endpoint: /roadmap/create
+
+memory:
+  episodic:
+    enabled: true
+    retention_days: 730
+    categories:
+      - roadmap-versions
+      - updates
+      - decisions
+  semantic:
+    enabled: true
+    categories:
+      - roadmap-patterns
+      - sequencing-strategies
+      - resource-models
+  procedural:
+    enabled: true
+    categories:
+      - roadmap-frameworks
+      - sequencing-algorithms
+      - optimization-rules
+
+tools:
+  - roadmap_generator
+  - timeline_optimizer
+  - dependency_resolver
+
+capabilities:
+  - roadmap-creation
+  - initiative-sequencing
+  - resource-allocation
+  - timeline-optimization
+  - roadmap-visualization
+
+routing:
+  input_types:
+    - initiative-list
+    - roadmap-request
+    - roadmap-update
+  output_types:
+    - roadmap
+    - timeline
+    - resource-plan
+
+delegation:
+  can_delegate_to:
+    - dependency-mapper-agent
+    - milestone-tracker-agent
+  escalates_to:
+    - planning-orchestrator-agent
+
+governance:
+  requires_approval: true  # Roadmaps need stakeholder approval
+  can_block: false
+  audit_trail: comprehensive
+
+performance:
+  expected_latency_ms: 5000
+  max_latency_ms: 15000
+  timeout_ms: 30000

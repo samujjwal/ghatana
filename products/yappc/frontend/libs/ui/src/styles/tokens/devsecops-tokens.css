@@ -1,0 +1,118 @@
+:root {
+  /* Primary Colors */
+  --ds-primary-900: #0a2540;
+  --ds-primary-700: #1e4976;
+  --ds-primary-500: #3b82f6;
+  --ds-primary-300: #93c5fd;
+  --ds-primary-100: #dbeafe;
+
+  /* Semantic Colors */
+  --ds-success-700: #15803d;
+  --ds-success-500: #22c55e;
+  --ds-success-100: #dcfce7;
+
+  --ds-warning-700: #b45309;
+  --ds-warning-500: #f59e0b;
+  --ds-warning-100: #fef3c7;
+
+  --ds-error-700: #b91c1c;
+  --ds-error-500: #ef4444;
+  --ds-error-100: #fee2e2;
+
+  --ds-info-700: #0e7490;
+  --ds-info-500: #06b6d4;
+  --ds-info-100: #cffafe;
+
+  /* Phase Colors */
+  --ds-phase-ideation: #8b5cf6;
+  --ds-phase-planning: #3b82f6;
+  --ds-phase-development: #10b981;
+  --ds-phase-security: #ef4444;
+  --ds-phase-testing: #f59e0b;
+  --ds-phase-deployment: #06b6d4;
+  --ds-phase-operations: #6366f1;
+
+  /* Neutral Palette */
+  --ds-neutral-950: #0a0a0a;
+  --ds-neutral-800: #1f2937;
+  --ds-neutral-600: #4b5563;
+  --ds-neutral-400: #9ca3af;
+  --ds-neutral-200: #e5e7eb;
+  --ds-neutral-100: #f3f4f6;
+  --ds-neutral-50: #f9fafb;
+  --ds-neutral-0: #ffffff;
+
+  /* Typography */
+  --ds-font-display: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI',
+    sans-serif;
+  --ds-font-body: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI',
+    sans-serif;
+  --ds-font-mono: 'JetBrains Mono', 'Fira Code', 'Consolas', monospace;
+
+  /* Type Scale */
+  --ds-text-4xl: 2.25rem;
+  --ds-text-3xl: 1.875rem;
+  --ds-text-2xl: 1.5rem;
+  --ds-text-xl: 1.25rem;
+  --ds-text-lg: 1.125rem;
+  --ds-text-base: 1rem;
+  --ds-text-sm: 0.875rem;
+  --ds-text-xs: 0.75rem;
+  --ds-text-2xs: 0.625rem;
+
+  /* Spacing */
+  --ds-space-1: 0.25rem;
+  --ds-space-2: 0.5rem;
+  --ds-space-3: 0.75rem;
+  --ds-space-4: 1rem;
+  --ds-space-5: 1.25rem;
+  --ds-space-6: 1.5rem;
+  --ds-space-8: 2rem;
+  --ds-space-10: 2.5rem;
+  --ds-space-12: 3rem;
+  --ds-space-16: 4rem;
+
+  /* Shadows */
+  --ds-shadow-xs: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
+  --ds-shadow-sm: 0 1px 3px 0 rgba(0, 0, 0, 0.1),
+    0 1px 2px -1px rgba(0, 0, 0, 0.1);
+  --ds-shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.1),
+    0 2px 4px -2px rgba(0, 0, 0, 0.1);
+  --ds-shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.1),
+    0 4px 6px -4px rgba(0, 0, 0, 0.1);
+  --ds-shadow-xl: 0 20px 25px -5px rgba(0, 0, 0, 0.1),
+    0 8px 10px -6px rgba(0, 0, 0, 0.1);
+
+  /* Border Radius */
+  --ds-radius-sm: 0.25rem;
+  --ds-radius-md: 0.5rem;
+  --ds-radius-lg: 0.75rem;
+  --ds-radius-xl: 1rem;
+  --ds-radius-2xl: 1.5rem;
+  --ds-radius-full: 9999px;
+
+  /* Transitions */
+  --ds-duration-fast: 150ms;
+  --ds-duration-base: 250ms;
+  --ds-duration-slow: 350ms;
+
+  --ds-ease-in: cubic-bezier(0.4, 0, 1, 1);
+  --ds-ease-out: cubic-bezier(0, 0, 0.2, 1);
+  --ds-ease-in-out: cubic-bezier(0.4, 0, 0.2, 1);
+  --ds-ease-spring: cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+/* Dark mode */
+@media (prefers-color-scheme: dark) {
+  :root {
+    --ds-neutral-950: #fafafa;
+    --ds-neutral-800: #e5e7eb;
+    --ds-neutral-600: #9ca3af;
+    --ds-neutral-400: #6b7280;
+    --ds-neutral-200: #374151;
+    --ds-neutral-100: #1f2937;
+    --ds-neutral-50: #111827;
+    --ds-neutral-0: #0a0a0a;
+    --ds-primary-500: #60a5fa;
+  }
+}

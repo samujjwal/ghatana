@@ -1,0 +1,42 @@
+id: go_no_go
+agent: GoNoGoAgent
+role: Release Readiness Analyst
+inputs_spec:
+  - name: observability_dashboard
+    description: Observability and SLO dashboard from ObservabilityAgent.
+    format: YAML object
+outputs_spec:
+  - name: go_no_go_decision
+    description: Release decision, with justification based on SLOs, incidents, risks, compliance, rollback readiness.
+    format: YAML object
+acceptance_criteria:
+  - Decision fully justified, criteria traceable.
+  - Exceptions, rollback, signoffs explicitly listed.
+  - Go/No-Go template followed.
+agent_tasks:
+  - Assess readiness against SLOs, incidents, risk, compliance, rollback.
+  - Document justification, required signoffs.
+  - Log exceptions and conditions.
+dependencies:
+  - observability_dashboard
+failure_escalation:
+  - Escalate No-Go or unmitigated exceptions to leadership.
+references: []
+internal_logic:
+  - perception:
+      description: "Review SLO/SLI status, incident logs, compliance, and open risks to determine readiness for release."
+  - model:
+      description: "Maintain go/no-go criteria list, exceptions, rollback plans, and signoff status."
+  - planning:
+      description: |
+        "If SLOs not met, critical incidents open, or compliance not confirmed, recommend No-Go with rationale.
+         Require explicit signoff from all key stakeholders."
+  - action:
+      description: "Generate go/no-go decision report and communicate result."
+validation:
+  - "Lead/PM/executive signoff on all criteria."
+  - "Audit for traceability and rationale."
+quality_enhancements:
+  - "Go/No-Go report template."
+  - "Metrics for decision rationale and post-release outcome."
+  - "Automated reminder for signoffs and rollback readiness."

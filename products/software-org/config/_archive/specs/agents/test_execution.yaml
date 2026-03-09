@@ -1,0 +1,28 @@
+---
+id: "test_execution"
+agent: "TestExecutionAgent"
+role: "QA/Automation"
+inputs_spec:
+- name: "test_schedule"
+  description: "Test schedule artifact for execution."
+  format: "Test schedule artifact"
+- name: "test_environment_url"
+  description: "Ephemeral environment for running tests."
+  format: "Environment URL/credentials"
+outputs_spec:
+- name: "test_results"
+  description: "Full test execution results (pass/fail, logs, artifacts)."
+  format: "Test results artifact"
+agent_tasks:
+- "Execute all tests per schedule in the provided environment."
+- "Collect and store results, logs, artifacts."
+acceptance_criteria:
+- "All scheduled tests executed."
+- "Results, logs, and artifacts are stored."
+dependencies:
+- "test_schedule"
+- "test_environment_url"
+failure_escalation:
+- "Escalate to QA/Automation if tests fail or results missing."
+references: []
+hitl: false

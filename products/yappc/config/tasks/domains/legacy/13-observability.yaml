@@ -1,0 +1,272 @@
+# Observability Tasks
+# Domain 13 of 22 - Developer Task Universe
+# Reference: developer-tasks.md Part I, Section 13
+
+domain:
+  id: observability
+  name: "Observability"
+  description: "Tasks related to logging, metrics, tracing, and monitoring"
+  order: 13
+  icon: "visibility"
+  color: "#7B1FA2"
+  lifecycle_stages:
+    - execute
+    - observe
+
+tasks:
+  - id: obs-001
+    name: "Implement Logging"
+    description: "Add structured logging to applications"
+    personas:
+      - Developer
+    lifecycle_stages:
+      - execute
+    automation_level: assisted
+    required_capabilities:
+      - logging
+      - code-generation
+    input_schema: obs-001-input
+    output_schema: obs-001-output
+    audit_artifacts:
+      - InputSnapshot
+      - OutputSnapshot
+      - ChangeSet
+    ui:
+      icon: "article"
+      color: "#7B1FA2"
+      tags:
+        - logging
+        - structured
+        - observability
+
+  - id: obs-002
+    name: "Implement Metrics"
+    description: "Add application and business metrics"
+    personas:
+      - Developer
+    lifecycle_stages:
+      - execute
+    automation_level: assisted
+    required_capabilities:
+      - metrics
+      - code-generation
+    input_schema: obs-002-input
+    output_schema: obs-002-output
+    audit_artifacts:
+      - InputSnapshot
+      - OutputSnapshot
+      - ChangeSet
+    ui:
+      icon: "analytics"
+      color: "#7B1FA2"
+      tags:
+        - metrics
+        - monitoring
+        - observability
+
+  - id: obs-003
+    name: "Implement Tracing"
+    description: "Add distributed tracing to applications"
+    personas:
+      - Developer
+    lifecycle_stages:
+      - execute
+    automation_level: assisted
+    required_capabilities:
+      - tracing
+      - code-generation
+    input_schema: obs-003-input
+    output_schema: obs-003-output
+    audit_artifacts:
+      - InputSnapshot
+      - OutputSnapshot
+      - ChangeSet
+    ui:
+      icon: "lan"
+      color: "#7B1FA2"
+      tags:
+        - tracing
+        - distributed
+        - observability
+
+  - id: obs-004
+    name: "Create Dashboards"
+    description: "Design and build monitoring dashboards"
+    personas:
+      - DevOps
+      - Developer
+    lifecycle_stages:
+      - execute
+    automation_level: assisted
+    required_capabilities:
+      - dashboard-design
+      - visualization
+    input_schema: obs-004-input
+    output_schema: obs-004-output
+    audit_artifacts:
+      - InputSnapshot
+      - OutputSnapshot
+      - ChangeSet
+    ui:
+      icon: "dashboard"
+      color: "#7B1FA2"
+      tags:
+        - dashboards
+        - visualization
+        - monitoring
+
+  - id: obs-005
+    name: "Configure Alerts"
+    description: "Set up alerting rules and notifications"
+    personas:
+      - DevOps
+      - Developer
+    lifecycle_stages:
+      - execute
+    automation_level: assisted
+    required_capabilities:
+      - alerting
+      - configuration
+    input_schema: obs-005-input
+    output_schema: obs-005-output
+    audit_artifacts:
+      - InputSnapshot
+      - OutputSnapshot
+      - ChangeSet
+    ui:
+      icon: "notifications_active"
+      color: "#7B1FA2"
+      tags:
+        - alerts
+        - notifications
+        - monitoring
+
+  - id: obs-006
+    name: "Monitor System Health"
+    description: "Check and verify system health status"
+    personas:
+      - DevOps
+    lifecycle_stages:
+      - observe
+    automation_level: automated
+    required_capabilities:
+      - health-monitoring
+      - observability
+    input_schema: obs-006-input
+    output_schema: obs-006-output
+    audit_artifacts:
+      - InputSnapshot
+      - OutputSnapshot
+      - VerificationResult
+    ui:
+      icon: "monitor_heart"
+      color: "#7B1FA2"
+      tags:
+        - health
+        - status
+        - monitoring
+
+  - id: obs-007
+    name: "Analyze Production Metrics"
+    description: "Review and analyze production system metrics"
+    personas:
+      - DevOps
+      - Developer
+    lifecycle_stages:
+      - observe
+    automation_level: assisted
+    required_capabilities:
+      - metrics-analysis
+      - pattern-recognition
+    input_schema: obs-007-input
+    output_schema: obs-007-output
+    audit_artifacts:
+      - InputSnapshot
+      - OutputSnapshot
+      - AnalysisReport
+    ui:
+      icon: "insights"
+      color: "#7B1FA2"
+      tags:
+        - metrics
+        - analysis
+        - production
+
+  - id: obs-008
+    name: "Trace Request Flows"
+    description: "Follow request paths through distributed systems"
+    personas:
+      - Developer
+      - DevOps
+    lifecycle_stages:
+      - observe
+    automation_level: assisted
+    required_capabilities:
+      - tracing
+      - debugging
+    input_schema: obs-008-input
+    output_schema: obs-008-output
+    audit_artifacts:
+      - InputSnapshot
+      - OutputSnapshot
+      - TraceReport
+    ui:
+      icon: "route"
+      color: "#7B1FA2"
+      tags:
+        - tracing
+        - request-flow
+        - debugging
+
+  - id: obs-009
+    name: "Configure Log Aggregation"
+    description: "Set up centralized log collection and aggregation"
+    personas:
+      - DevOps
+    lifecycle_stages:
+      - execute
+    automation_level: assisted
+    required_capabilities:
+      - logging
+      - infrastructure
+    input_schema: obs-009-input
+    output_schema: obs-009-output
+    audit_artifacts:
+      - InputSnapshot
+      - OutputSnapshot
+      - ChangeSet
+    ui:
+      icon: "merge"
+      color: "#7B1FA2"
+      tags:
+        - logs
+        - aggregation
+        - centralized
+
+  - id: obs-010
+    name: "Define SLIs and SLOs"
+    description: "Create service level indicators and objectives"
+    personas:
+      - DevOps
+      - Tech Lead
+    lifecycle_stages:
+      - plan
+      - observe
+    automation_level: manual
+    required_capabilities:
+      - sre
+      - metrics
+    input_schema: obs-010-input
+    output_schema: obs-010-output
+    audit_artifacts:
+      - InputSnapshot
+      - OutputSnapshot
+      - DecisionRecord
+      - SLODocument
+    ui:
+      icon: "track_changes"
+      color: "#7B1FA2"
+      tags:
+        - sli
+        - slo
+        - reliability

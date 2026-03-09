@@ -1,0 +1,117 @@
+domain:
+  id: change-release-planning
+  name: "Change & Release Planning"
+  description: "Plan releases, manage change, and coordinate deployment activities."
+  order: 12
+  icon: "schedule"
+  color: "#FFA000"
+  agent_personas:
+    - "ReleasePlanner"
+    - "ChangeManager"
+    - "RolloutCoordinator"
+    - "RiskAssessor"
+  audit_artifacts:
+    - "ReleasePlan"
+    - "ChangeApproval"
+    - "RollbackPlan"
+    - "StakeholderSignoff"
+  inputs:
+    - "Build artifacts"
+    - "Risk assessments"
+    - "Test results"
+    - "Dependency maps"
+  outputs:
+    - "Release plan"
+    - "Change calendar"
+    - "Communication plan"
+    - "Rollback procedures"
+
+tasks:
+  # Core release planning tasks
+  - id: d12-t1
+    name: "Define release strategy"
+    description: "Determine release approach (blue-green, canary, rolling)."
+    personas: ["Tech Lead", "PM"]
+    lifecycle_stages: ["plan"]
+    automation_level: "manual"
+  - id: d12-t2
+    name: "Plan rollout/rollback"
+    description: "Prepare detailed rollout and rollback procedures."
+    personas: ["Tech Lead", "Developer", "SRE"]
+    lifecycle_stages: ["plan"]
+    automation_level: "assisted"
+  - id: d12-t3
+    name: "Schedule change windows"
+    description: "Set timing for changes based on business and technical factors."
+    personas: ["PM", "Tech Lead"]
+    lifecycle_stages: ["plan"]
+    automation_level: "assisted"
+  - id: d12-t4
+    name: "Communicate changes"
+    description: "Inform stakeholders of upcoming changes and their impact."
+    personas: ["PM", "Tech Lead"]
+    lifecycle_stages: ["plan", "execute"]
+    automation_level: "assisted"
+
+  # Extended release management tasks
+  - id: rel-001
+    name: "Create Release Notes"
+    description: "Document changes, new features, and known issues for release."
+    personas: ["PM", "Developer"]
+    lifecycle_stages: ["execute"]
+    automation_level: "assisted"
+  - id: rel-002
+    name: "Release Readiness Review"
+    description: "Verify all release criteria are met before deployment."
+    personas: ["Tech Lead", "PM", "QA"]
+    lifecycle_stages: ["verify"]
+    automation_level: "assisted"
+  - id: rel-003
+    name: "Feature Flag Planning"
+    description: "Plan feature flag strategy for controlled rollouts."
+    personas: ["Tech Lead", "Developer"]
+    lifecycle_stages: ["plan"]
+    automation_level: "assisted"
+  - id: rel-004
+    name: "Dependency Coordination"
+    description: "Coordinate with dependent teams and services."
+    personas: ["Tech Lead", "PM"]
+    lifecycle_stages: ["plan"]
+    automation_level: "manual"
+  - id: rel-005
+    name: "Risk Assessment"
+    description: "Identify and assess release risks with mitigation plans."
+    personas: ["Tech Lead", "PM"]
+    lifecycle_stages: ["plan", "verify"]
+    automation_level: "assisted"
+  - id: rel-006
+    name: "Go/No-Go Decision"
+    description: "Make final release decision based on all criteria."
+    personas: ["Tech Lead", "PM"]
+    lifecycle_stages: ["verify"]
+    automation_level: "manual"
+  - id: rel-007
+    name: "Post-Release Verification"
+    description: "Verify release success and monitor for issues."
+    personas: ["Developer", "SRE"]
+    lifecycle_stages: ["observe"]
+    automation_level: "assisted"
+  - id: rel-008
+    name: "Canary Analysis"
+    description: "Analyze canary deployment metrics before full rollout."
+    personas: ["Developer", "SRE"]
+    lifecycle_stages: ["verify", "observe"]
+    automation_level: "automated"
+  - id: rel-009
+    name: "Stakeholder Sign-off"
+    description: "Obtain necessary approvals before major releases."
+    personas: ["PM", "Tech Lead"]
+    lifecycle_stages: ["verify"]
+    automation_level: "manual"
+  - id: rel-010
+    name: "Release Retrospective"
+    description: "Review release process and identify improvements."
+    personas: ["Tech Lead", "PM", "Developer"]
+    lifecycle_stages: ["learn"]
+    automation_level: "manual"
+

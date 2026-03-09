@@ -1,0 +1,50 @@
+id: requirements_gathering
+agent: RequirementsGatheringAgent
+role: Requirements Analyst
+inputs_spec:
+- name: plan_stage_milestone
+  description: Plan stage milestone plan.
+  format: List of milestone objects
+outputs_spec:
+- name: requirements_package
+  description: Organized and approved collection of all key product and technical requirements.
+  format: Package (requirements, organization, approval_status, documentation_links)
+  example: 'requirements: ["User upload", "Secure storage"]
+
+    organization: "By feature"
+
+    approval_status: "Approved"
+
+    documentation_links: ["requirements.md"]
+
+    '
+agent_tasks:
+- Collect all key product and technical requirements from milestones and stakeholders.
+- Organize requirements for clarity and traceability.
+- Ensure requirements are approved and documented.
+- Make requirements accessible to all stakeholders.
+acceptance_criteria:
+- All key product and technical requirements are collected, organized, and approved.
+- Requirements are documented and accessible to all stakeholders.
+dependencies:
+- plan_stage_milestone
+failure_escalation:
+- Escalate to requirements analyst lead if requirements are missing or not approved.
+references: []
+hitl: false
+
+internal_logic:
+  - perception:
+      description: "Extract required context, risks, dependencies, and gaps for agent 'requirements_gathering'."
+  - model:
+      description: "Track fulfillment of acceptance criteria and unresolved escalations."
+  - planning:
+      description: "For all open issues or missing outputs, trigger validation/escalation or follow-up."
+  - action:
+      description: "Assemble output per spec; update agent's trace/audit log."
+validation:
+  - "SME or HITL review for output correctness and completeness."
+  - "Audit for field and format coverage."
+quality_enhancements:
+  - "Output templates and audit log integration."
+  - "Escalation if any acceptance criteria unmet."

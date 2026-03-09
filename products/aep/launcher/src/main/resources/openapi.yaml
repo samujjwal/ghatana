@@ -1,0 +1,1413 @@
+openapi: 3.0.3
+info:
+  title: Ghatana AEP (Agentic Event Processor) API
+  description: |
+    REST API for the Agentic Event Processor (AEP).
+
+    AEP provides real-time event processing with pattern detection,
+    anomaly analysis, time-series forecasting, and pipeline management.
+    All multi-tenant endpoints accept an `X-Tenant-Id` header or
+    a `tenantId` query parameter for tenant isolation.
+  version: 1.0.0
+  contact:
+    name: Ghatana Platform Team
+    url: https://github.com/samujjwal/ghatana
+  license:
+    name: Apache 2.0
+    url: https://www.apache.org/licenses/LICENSE-2.0.html
+
+servers:
+  - url: http://localhost:8081
+    description: Local development (AEP standalone)
+  - url: https://aep.ghatana.local
+    description: Production AEP
+
+tags:
+  - name: Health
+    description: Health, readiness, and liveness probes
+  - name: Events
+    description: Event ingestion and processing
+  - name: Patterns
+    description: Pattern registration and management
+  - name: Analytics
+    description: Anomaly detection and forecasting
+  - name: Capabilities
+    description: Platform schema/encoding/connector introspection
+  - name: Sessions
+    description: Session management
+  - name: Event Design
+    description: Event type schemas and connector bindings
+
+paths:
+  # ========== Health Endpoints ==========
+  /health:
+    get:
+      summary: Health check
+      operationId: getHealth
+      tags: [Health]
+      responses:
+        '200':
+          description: Service is healthy
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HealthResponse'
+              example:
+                status: UP
+                timestamp: "2026-02-03T12:00:00Z"
+                service: aep
+
+  /ready:
+    get:
+      summary: Readiness probe
+      operationId: getReady
+      tags: [Health]
+      responses:
+        '200':
+          description: Service is ready to accept traffic
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/StatusResponse'
+              example:
+                status: READY
+                timestamp: "2026-02-03T12:00:00Z"
+
+  /live:
+    get:
+      summary: Liveness probe
+      operationId: getLive
+      tags: [Health]
+      responses:
+        '200':
+          description: Service is alive
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/StatusResponse'
+              example:
+                status: LIVE
+                timestamp: "2026-02-03T12:00:00Z"
+
+  /info:
+    get:
+      summary: Service information
+      operationId: getInfo
+      tags: [Health]
+      responses:
+        '200':
+          description: Service metadata
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/InfoResponse'
+              example:
+                service: AEP
+                version: 1.0.0-SNAPSHOT
+                description: Agentic Event Processor
+                timestamp: "2026-02-03T12:00:00Z"
+
+  /metrics:
+    get:
+      summary: Runtime metrics
+      operationId: getMetrics
+      tags: [Health]
+      responses:
+        '200':
+          description: JVM and service metrics
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MetricsResponse'
+
+  # ========== Event Processing ==========
+  /api/v1/events:
+    post:
+      summary: Process a single event
+      description: |
+        Submits an event to the AEP engine for real-time processing.
+        The engine evaluates all registered patterns against the event
+        and returns detection results.
+      operationId: processEvent
+      tags: [Events]
+      parameters:
+        - $ref: '#/components/parameters/TenantIdHeader'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/EventRequest'
+            example:
+              tenantId: acme-corp
+              type: user.login
+              payload:
+                userId: user-123
+                ip: "10.0.0.1"
+                browser: Chrome
+      responses:
+        '200':
+          description: Event processed successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/EventResult'
+              example:
+                eventId: evt-abc-123
+                success: true
+                detections: 2
+                timestamp: "2026-02-03T12:00:00Z"
+        '400':
+          $ref: '#/components/responses/BadRequest'
+
+  /api/v1/events/batch:
+    post:
+      summary: Process a batch of events
+      description: |
+        Submits multiple events for batch processing and returns per-event results
+        with aggregate success/failure counts.
+      operationId: processEventBatch
+      tags: [Events]
+      parameters:
+        - $ref: '#/components/parameters/TenantIdHeader'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [events]
+              properties:
+                tenantId:
+                  type: string
+                events:
+                  type: array
+                  items:
+                    $ref: '#/components/schemas/EventRequest'
+      responses:
+        '200':
+          description: Batch processed
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  tenantId:
+                    type: string
+                  total:
+                    type: integer
+                  successCount:
+                    type: integer
+                  failureCount:
+                    type: integer
+                  totalDetections:
+                    type: integer
+                  events:
+                    type: array
+                    items:
+                      type: object
+                      properties:
+                        eventId:
+                          type: string
+                        success:
+                          type: boolean
+                        detections:
+                          type: integer
+                  timestamp:
+                    type: string
+                    format: date-time
+
+  # ========== Pattern Management ==========
+  /api/v1/patterns:
+    get:
+      summary: List all patterns
+      description: Returns all registered detection patterns for the given tenant.
+      operationId: listPatterns
+      tags: [Patterns]
+      parameters:
+        - $ref: '#/components/parameters/TenantIdQuery'
+        - name: status
+          in: query
+          description: Filter by pattern status
+          schema:
+            type: string
+            enum: [ACTIVE, INACTIVE, DRAFT]
+      responses:
+        '200':
+          description: List of patterns
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  patterns:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/Pattern'
+                  count:
+                    type: integer
+                  timestamp:
+                    type: string
+                    format: date-time
+
+    post:
+      summary: Register a new pattern
+      description: |
+        Creates and registers a new detection pattern.
+        Returns the created pattern including its generated ID.
+      operationId: registerPattern
+      tags: [Patterns]
+      parameters:
+        - $ref: '#/components/parameters/TenantIdHeader'
+        - $ref: '#/components/parameters/UserIdHeader'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PatternCreateRequest'
+            example:
+              tenantId: acme-corp
+              name: Brute Force Login
+              description: Detects rapid successive failed login attempts
+              type: ANOMALY
+              specification: "count(event.type == 'login.failed') > 5 within 60s"
+              config:
+                threshold: 5
+                windowSeconds: 60
+      responses:
+        '201':
+          description: Pattern registered
+          headers:
+            Location:
+              description: URL of the created pattern
+              schema:
+                type: string
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  pattern:
+                    $ref: '#/components/schemas/Pattern'
+                  timestamp:
+                    type: string
+                    format: date-time
+        '400':
+          $ref: '#/components/responses/BadRequest'
+
+  /api/v1/patterns/{patternId}:
+    get:
+      summary: Get pattern by ID
+      operationId: getPattern
+      tags: [Patterns]
+      parameters:
+        - $ref: '#/components/parameters/PatternId'
+        - $ref: '#/components/parameters/TenantIdQuery'
+      responses:
+        '200':
+          description: Pattern found
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  pattern:
+                    $ref: '#/components/schemas/Pattern'
+        '404':
+          $ref: '#/components/responses/NotFound'
+
+    put:
+      summary: Update a pattern
+      operationId: updatePattern
+      tags: [Patterns]
+      parameters:
+        - $ref: '#/components/parameters/PatternId'
+        - $ref: '#/components/parameters/TenantIdHeader'
+        - $ref: '#/components/parameters/UserIdHeader'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PatternUpdateRequest'
+      responses:
+        '200':
+          description: Pattern updated
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Pattern'
+        '404':
+          $ref: '#/components/responses/NotFound'
+
+    delete:
+      summary: Delete a pattern
+      operationId: deletePattern
+      tags: [Patterns]
+      parameters:
+        - $ref: '#/components/parameters/PatternId'
+        - $ref: '#/components/parameters/TenantIdQuery'
+      responses:
+        '200':
+          description: Pattern deleted
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  deleted:
+                    type: boolean
+                  patternId:
+                    type: string
+                  timestamp:
+                    type: string
+                    format: date-time
+        '204':
+          description: Pattern deleted (no content)
+        '404':
+          $ref: '#/components/responses/NotFound'
+
+  /api/v1/patterns/{patternId}/activate:
+    post:
+      summary: Activate a pattern
+      operationId: activatePattern
+      tags: [Patterns]
+      parameters:
+        - $ref: '#/components/parameters/PatternId'
+        - $ref: '#/components/parameters/TenantIdHeader'
+      responses:
+        '200':
+          description: Pattern activated
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                  patternId:
+                    type: string
+        '404':
+          $ref: '#/components/responses/NotFound'
+
+  /api/v1/patterns/{patternId}/deactivate:
+    post:
+      summary: Deactivate a pattern
+      operationId: deactivatePattern
+      tags: [Patterns]
+      parameters:
+        - $ref: '#/components/parameters/PatternId'
+        - $ref: '#/components/parameters/TenantIdHeader'
+      responses:
+        '200':
+          description: Pattern deactivated
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                  patternId:
+                    type: string
+        '404':
+          $ref: '#/components/responses/NotFound'
+
+  # ========== Analytics ==========
+  /api/v1/analytics/anomalies:
+    post:
+      summary: Detect anomalies in events
+      description: |
+        Analyses a set of events and returns detected anomalies.
+        Uses registered patterns and statistical models.
+      operationId: detectAnomalies
+      tags: [Analytics]
+      parameters:
+        - $ref: '#/components/parameters/TenantIdHeader'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/AnomalyDetectionRequest'
+            example:
+              tenantId: acme-corp
+              events:
+                - type: login.failed
+                  payload: { userId: user-123, ip: "10.0.0.1" }
+                - type: login.failed
+                  payload: { userId: user-123, ip: "10.0.0.2" }
+      responses:
+        '200':
+          description: Anomaly detection results
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AnomalyDetectionResult'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+
+  /api/v1/analytics/forecast:
+    post:
+      summary: Forecast time series data
+      description: |
+        Produces predictions for a named metric based on historical data points.
+        Returns predicted values with a confidence interval.
+      operationId: forecast
+      tags: [Analytics]
+      parameters:
+        - $ref: '#/components/parameters/TenantIdHeader'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ForecastRequest'
+            example:
+              tenantId: acme-corp
+              metric: cpu.utilization
+              points:
+                - timestamp: "2026-02-03T11:00:00Z"
+                  value: 42.5
+                - timestamp: "2026-02-03T11:05:00Z"
+                  value: 45.2
+                - timestamp: "2026-02-03T11:10:00Z"
+                  value: 48.1
+      responses:
+        '200':
+          description: Forecast results
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ForecastResult'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+
+  # ========== Capabilities ==========
+  /admin/capabilities/schemas:
+    get:
+      summary: List supported schema formats
+      operationId: listSchemaFormats
+      tags: [Capabilities]
+      responses:
+        '200':
+          description: Available schema formats
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  schemaFormats:
+                    type: array
+                    items:
+                      type: object
+                      properties:
+                        id:
+                          type: string
+                        display:
+                          type: string
+                        enabled:
+                          type: boolean
+
+  /admin/capabilities/encodings:
+    get:
+      summary: List supported encodings
+      operationId: listEncodings
+      tags: [Capabilities]
+      responses:
+        '200':
+          description: Available wire encodings
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  encodings:
+                    type: array
+                    items:
+                      type: string
+
+  /admin/capabilities/connectors:
+    get:
+      summary: List supported connectors
+      operationId: listConnectors
+      tags: [Capabilities]
+      responses:
+        '200':
+          description: Available connectors
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  connectors:
+                    type: array
+                    items:
+                      type: object
+                      properties:
+                        type:
+                          type: string
+                        direction:
+                          type: string
+                          enum: [INGRESS, EGRESS, BIDIRECTIONAL]
+                        enabled:
+                          type: boolean
+
+  /admin/capabilities/transforms:
+    get:
+      summary: List supported transforms
+      operationId: listTransforms
+      tags: [Capabilities]
+      responses:
+        '200':
+          description: Available transform functions
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  transforms:
+                    type: array
+                    items:
+                      type: object
+                      properties:
+                        id:
+                          type: string
+                        description:
+                          type: string
+
+  # ========== Event Design — Schemas ==========
+  /api/v1/event-types/{eventTypeId}/schemas:
+    post:
+      summary: Create a schema for an event type
+      operationId: createEventSchema
+      tags: [Event Design]
+      parameters:
+        - name: eventTypeId
+          in: path
+          required: true
+          schema:
+            type: string
+        - $ref: '#/components/parameters/TenantIdHeader'
+        - $ref: '#/components/parameters/UserIdHeader'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/SchemaCreateRequest'
+      responses:
+        '201':
+          description: Schema created
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SchemaDefinition'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+
+  /api/v1/event-types/{eventTypeId}/schemas/{schemaId}:
+    put:
+      summary: Update an event schema
+      operationId: updateEventSchema
+      tags: [Event Design]
+      parameters:
+        - name: eventTypeId
+          in: path
+          required: true
+          schema:
+            type: string
+        - name: schemaId
+          in: path
+          required: true
+          schema:
+            type: string
+        - $ref: '#/components/parameters/TenantIdHeader'
+        - $ref: '#/components/parameters/UserIdHeader'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/SchemaUpdateRequest'
+      responses:
+        '200':
+          description: Schema updated
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SchemaDefinition'
+        '404':
+          $ref: '#/components/responses/NotFound'
+
+    delete:
+      summary: Delete an event schema
+      operationId: deleteEventSchema
+      tags: [Event Design]
+      parameters:
+        - name: eventTypeId
+          in: path
+          required: true
+          schema:
+            type: string
+        - name: schemaId
+          in: path
+          required: true
+          schema:
+            type: string
+        - $ref: '#/components/parameters/TenantIdHeader'
+      responses:
+        '204':
+          description: Schema deleted
+
+  # ========== Event Design — Bindings ==========
+  /api/v1/event-types/{eventTypeId}/schemas/{schemaId}/bindings:
+    post:
+      summary: Create a connector binding for a schema
+      operationId: createConnectorBinding
+      tags: [Event Design]
+      parameters:
+        - name: eventTypeId
+          in: path
+          required: true
+          schema:
+            type: string
+        - name: schemaId
+          in: path
+          required: true
+          schema:
+            type: string
+        - $ref: '#/components/parameters/TenantIdHeader'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/BindingCreateRequest'
+      responses:
+        '201':
+          description: Binding created
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ConnectorBinding'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+
+  /api/v1/bindings:
+    get:
+      summary: List connector bindings
+      operationId: listBindings
+      tags: [Event Design]
+      parameters:
+        - name: schemaId
+          in: query
+          schema:
+            type: string
+        - name: connectorId
+          in: query
+          schema:
+            type: string
+        - name: direction
+          in: query
+          schema:
+            type: string
+            enum: [INGRESS, EGRESS]
+      responses:
+        '200':
+          description: Matching bindings
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  bindings:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/ConnectorBinding'
+
+  /api/v1/bindings/{bindingId}:
+    get:
+      summary: Get a binding by ID
+      operationId: getBinding
+      tags: [Event Design]
+      parameters:
+        - name: bindingId
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Binding found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ConnectorBinding'
+        '404':
+          $ref: '#/components/responses/NotFound'
+
+    put:
+      summary: Update a binding
+      operationId: updateBinding
+      tags: [Event Design]
+      parameters:
+        - name: bindingId
+          in: path
+          required: true
+          schema:
+            type: string
+        - $ref: '#/components/parameters/TenantIdHeader'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/BindingUpdateRequest'
+      responses:
+        '200':
+          description: Binding updated
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ConnectorBinding'
+        '404':
+          $ref: '#/components/responses/NotFound'
+
+    delete:
+      summary: Delete a binding
+      operationId: deleteBinding
+      tags: [Event Design]
+      parameters:
+        - name: bindingId
+          in: path
+          required: true
+          schema:
+            type: string
+        - $ref: '#/components/parameters/TenantIdHeader'
+      responses:
+        '204':
+          description: Binding deleted
+
+  /api/v1/bindings/{bindingId}/simulate:
+    post:
+      summary: Simulate a binding transformation
+      description: |
+        Dry-runs a binding against sample data to preview the mapping result.
+        For INGRESS bindings supply messageHeaders + messageBody;
+        for EGRESS bindings supply event payload.
+      operationId: simulateBinding
+      tags: [Event Design]
+      parameters:
+        - name: bindingId
+          in: path
+          required: true
+          schema:
+            type: string
+        - $ref: '#/components/parameters/TenantIdHeader'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/BindingSimulationRequest'
+      responses:
+        '200':
+          description: Simulation result
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BindingSimulationResult'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+
+  # ========== Sessions ==========
+  /api/v1/sessions/current:
+    get:
+      summary: Get the current session
+      operationId: getCurrentSession
+      tags: [Sessions]
+      responses:
+        '200':
+          description: Current session details
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Session'
+
+    delete:
+      summary: Invalidate the current session
+      operationId: invalidateSession
+      tags: [Sessions]
+      responses:
+        '200':
+          description: Session invalidated
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                  message:
+                    type: string
+
+  /api/v1/sessions:
+    get:
+      summary: List sessions by user or tenant
+      operationId: listSessions
+      tags: [Sessions]
+      parameters:
+        - name: userId
+          in: query
+          schema:
+            type: string
+        - name: tenantId
+          in: query
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Matching sessions
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  sessions:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/Session'
+
+  /api/v1/sessions/cleanup:
+    post:
+      summary: Clean up expired sessions
+      operationId: cleanupSessions
+      tags: [Sessions]
+      responses:
+        '200':
+          description: Cleanup complete
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  deletedCount:
+                    type: integer
+
+# ========================================================================
+# Components
+# ========================================================================
+components:
+  parameters:
+    TenantIdHeader:
+      name: X-Tenant-Id
+      in: header
+      description: Tenant identifier for multi-tenant isolation
+      schema:
+        type: string
+        default: default
+
+    TenantIdQuery:
+      name: tenantId
+      in: query
+      description: Tenant identifier
+      schema:
+        type: string
+        default: default
+
+    UserIdHeader:
+      name: X-User-Id
+      in: header
+      description: User performing the operation
+      schema:
+        type: string
+        default: system
+
+    PatternId:
+      name: patternId
+      in: path
+      required: true
+      description: Unique pattern identifier
+      schema:
+        type: string
+
+  responses:
+    BadRequest:
+      description: Invalid request
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponse'
+
+    NotFound:
+      description: Resource not found
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponse'
+
+  schemas:
+    # ---------- Health ----------
+    HealthResponse:
+      type: object
+      properties:
+        status:
+          type: string
+          enum: [UP, DOWN]
+        timestamp:
+          type: string
+          format: date-time
+        service:
+          type: string
+
+    StatusResponse:
+      type: object
+      properties:
+        status:
+          type: string
+        timestamp:
+          type: string
+          format: date-time
+
+    InfoResponse:
+      type: object
+      properties:
+        service:
+          type: string
+        version:
+          type: string
+        description:
+          type: string
+        timestamp:
+          type: string
+          format: date-time
+
+    MetricsResponse:
+      type: object
+      properties:
+        service:
+          type: string
+        uptime_seconds:
+          type: integer
+          format: int64
+        memory_used_mb:
+          type: integer
+          format: int64
+        memory_free_mb:
+          type: integer
+          format: int64
+        processors:
+          type: integer
+        timestamp:
+          type: string
+          format: date-time
+
+    # ---------- Events ----------
+    EventRequest:
+      type: object
+      required: [type]
+      properties:
+        tenantId:
+          type: string
+          default: default
+        type:
+          type: string
+          description: Event type identifier
+        payload:
+          type: object
+          additionalProperties: true
+          description: Arbitrary event payload
+
+    EventResult:
+      type: object
+      properties:
+        eventId:
+          type: string
+        success:
+          type: boolean
+        detections:
+          type: integer
+          description: Number of patterns that matched
+        timestamp:
+          type: string
+          format: date-time
+
+    # ---------- Patterns ----------
+    Pattern:
+      type: object
+      properties:
+        id:
+          type: string
+        tenantId:
+          type: string
+        name:
+          type: string
+        specification:
+          type: string
+          description: Pattern expression or rule definition
+        description:
+          type: string
+        type:
+          type: string
+          enum: [CUSTOM, ANOMALY, THRESHOLD, SEQUENCE, CORRELATION]
+        status:
+          type: string
+          enum: [ACTIVE, INACTIVE, DRAFT]
+        version:
+          type: integer
+        confidence:
+          type: number
+          format: double
+        agentHints:
+          type: string
+        config:
+          type: object
+          additionalProperties: true
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
+        createdBy:
+          type: string
+        updatedBy:
+          type: string
+
+    PatternCreateRequest:
+      type: object
+      required: [name]
+      properties:
+        tenantId:
+          type: string
+        name:
+          type: string
+        specification:
+          type: string
+        description:
+          type: string
+        type:
+          type: string
+          enum: [CUSTOM, ANOMALY, THRESHOLD, SEQUENCE, CORRELATION]
+          default: CUSTOM
+        confidence:
+          type: number
+          format: double
+        agentHints:
+          type: string
+        config:
+          type: object
+          additionalProperties: true
+
+    PatternUpdateRequest:
+      type: object
+      properties:
+        name:
+          type: string
+        specification:
+          type: string
+        description:
+          type: string
+        agentHints:
+          type: string
+        confidence:
+          type: number
+          format: double
+
+    # ---------- Analytics ----------
+    AnomalyDetectionRequest:
+      type: object
+      required: [events]
+      properties:
+        tenantId:
+          type: string
+          default: default
+        events:
+          type: array
+          items:
+            $ref: '#/components/schemas/EventRequest'
+
+    AnomalyDetectionResult:
+      type: object
+      properties:
+        anomalies:
+          type: array
+          items:
+            type: object
+            properties:
+              type:
+                type: string
+              severity:
+                type: string
+                enum: [LOW, MEDIUM, HIGH, CRITICAL]
+              score:
+                type: number
+                format: double
+              description:
+                type: string
+              relatedEvents:
+                type: array
+                items:
+                  type: string
+        count:
+          type: integer
+        timestamp:
+          type: string
+          format: date-time
+
+    ForecastRequest:
+      type: object
+      required: [metric, points]
+      properties:
+        tenantId:
+          type: string
+          default: default
+        metric:
+          type: string
+          description: Name of the metric to forecast
+        points:
+          type: array
+          items:
+            $ref: '#/components/schemas/DataPoint'
+
+    DataPoint:
+      type: object
+      required: [timestamp, value]
+      properties:
+        timestamp:
+          type: string
+          format: date-time
+        value:
+          type: number
+          format: double
+
+    ForecastResult:
+      type: object
+      properties:
+        metric:
+          type: string
+        predictions:
+          type: array
+          items:
+            $ref: '#/components/schemas/DataPoint'
+        confidence:
+          type: number
+          format: double
+          description: Confidence interval (0.0 – 1.0)
+        timestamp:
+          type: string
+          format: date-time
+
+    # ---------- Event Design ----------
+    SchemaCreateRequest:
+      type: object
+      required: [format]
+      properties:
+        format:
+          type: string
+          enum: [JSON_SCHEMA, AVRO, PROTOBUF]
+        document:
+          type: string
+          description: Schema document (if inline)
+        definition:
+          type: object
+          description: Schema definition (if structured)
+        direction:
+          type: string
+          enum: [INGRESS, EGRESS, BIDIRECTIONAL]
+        description:
+          type: string
+
+    SchemaUpdateRequest:
+      type: object
+      properties:
+        description:
+          type: string
+        document:
+          type: string
+        definition:
+          type: object
+
+    SchemaDefinition:
+      type: object
+      properties:
+        id:
+          type: string
+        eventTypeId:
+          type: string
+        format:
+          type: string
+        document:
+          type: string
+        direction:
+          type: string
+        description:
+          type: string
+        version:
+          type: integer
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
+
+    BindingCreateRequest:
+      type: object
+      required: [connectorId, encoding]
+      properties:
+        connectorId:
+          type: string
+        encoding:
+          type: string
+        direction:
+          type: string
+          enum: [INGRESS, EGRESS]
+        headerMappings:
+          type: array
+          items:
+            $ref: '#/components/schemas/HeaderMapping'
+        payloadMapping:
+          $ref: '#/components/schemas/PayloadMapping'
+
+    BindingUpdateRequest:
+      type: object
+      properties:
+        encoding:
+          type: string
+        direction:
+          type: string
+          enum: [INGRESS, EGRESS]
+        headerMappings:
+          type: array
+          items:
+            $ref: '#/components/schemas/HeaderMapping'
+        payloadMapping:
+          $ref: '#/components/schemas/PayloadMapping'
+        enabled:
+          type: boolean
+
+    HeaderMapping:
+      type: object
+      required: [source, target]
+      properties:
+        source:
+          type: string
+        target:
+          type: string
+        transform:
+          type: string
+          description: Optional transform expression
+
+    PayloadMapping:
+      type: object
+      properties:
+        rootPath:
+          type: string
+        excludeFields:
+          type: array
+          items:
+            type: string
+        fieldTransforms:
+          type: object
+          additionalProperties:
+            type: string
+
+    ConnectorBinding:
+      type: object
+      properties:
+        id:
+          type: string
+        schemaId:
+          type: string
+        connectorId:
+          type: string
+        encoding:
+          type: string
+        direction:
+          type: string
+        enabled:
+          type: boolean
+        headerMappings:
+          type: array
+          items:
+            $ref: '#/components/schemas/HeaderMapping'
+        payloadMapping:
+          $ref: '#/components/schemas/PayloadMapping'
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
+
+    BindingSimulationRequest:
+      type: object
+      properties:
+        messageHeaders:
+          type: object
+          additionalProperties:
+            type: string
+        messageBody:
+          type: string
+          description: Raw message body for INGRESS simulation
+        event:
+          type: object
+          additionalProperties: true
+          description: Event payload for EGRESS simulation
+
+    BindingSimulationResult:
+      type: object
+      properties:
+        success:
+          type: boolean
+        result:
+          type: object
+          properties:
+            headers:
+              type: object
+              additionalProperties:
+                type: string
+            payload:
+              type: object
+              additionalProperties: true
+        processingTimeMs:
+          type: integer
+          format: int64
+
+    # ---------- Sessions ----------
+    Session:
+      type: object
+      properties:
+        id:
+          type: string
+        userId:
+          type: string
+        tenantId:
+          type: string
+        createdAt:
+          type: string
+          format: date-time
+        lastAccessedAt:
+          type: string
+          format: date-time
+        maxInactiveInterval:
+          type: integer
+          description: Max idle time in seconds
+        attributes:
+          type: object
+          additionalProperties: true
+
+    # ---------- Errors ----------
+    ErrorResponse:
+      type: object
+      properties:
+        error:
+          type: string
+        code:
+          type: integer
+        timestamp:
+          type: string
+          format: date-time

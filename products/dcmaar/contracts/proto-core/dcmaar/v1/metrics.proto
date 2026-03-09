@@ -1,0 +1,214 @@
+syntax = "proto3";
+
+package dcmaar.v1;
+option java_multiple_files = true;
+option java_outer_classname = "METRICSProto";
+option java_package = "com.dcmaar.v1";
+option csharp_namespace = "Dcmaar.V1";
+option objc_class_prefix = "DCX";
+option php_namespace = "Dcmaar\\V1";
+option ruby_package = "Dcmaar::V1";
+option go_package = "github.com/samujjwal/dcmaar/proto/gen/go/pb/dcmaar/v1;dcmaarv1";
+
+import "dcmaar/v1/common.proto";
+import "validate/validate.proto";
+import "google/protobuf/timestamp.proto";
+
+// MetricType defines the type of the metric
+enum MetricType {
+  UNSPECIFIED = 0;
+  GAUGE = 1;
+  COUNTER = 2;
+  HISTOGRAM = 3;
+  SUMMARY = 4;
+}
+
+// MetricWithLabels extends the base Metric type with additional validation and labels
+message MetricWithLabels {
+  // The base metric
+  Metric metric = 1 [
+    (validate.rules).message.required = true
+  ];
+  
+  // Type of the metric (default: GAUGE)
+  MetricType type = 2 [
+    (validate.rules).enum = {defined_only: true}
+  ];
+  
+  // Labels for the metric (optional)
+  map<string, string> labels = 3 [
+    (validate.rules).map = {
+      max_pairs: 20,
+      keys: {
+        string: {pattern: "^[a-zA-Z_][a-zA-Z0-9_]*$", max_len: 50}
+      },
+      values: {
+        string: {max_len: 1024}
+      }
+    }
+  ];
+  
+  // Unit of the metric (e.g., "bytes", "seconds", "count")
+  string unit = 6 [
+    (validate.rules).string = {max_len: 20}
+  ];
+  
+  // Optional description of the metric
+  string description = 7 [
+    (validate.rules).string = {max_len: 1000}
+  ];
+  
+  // Optional sample rate (for sampled metrics)
+  double sample_rate = 8 [
+    (validate.rules).double = {gte: 0, lte: 1}
+  ];
+  
+  // Optional interval in milliseconds between samples
+  int64 interval_ms = 9 [
+    (validate.rules).int64 = {gt: 0}
+  ];
+}
+
+// MetricBatch groups multiple metrics into a single request.
+// Deprecated: Use MetricEnvelopeBatch instead
+message MetricBatch {
+  repeated MetricWithLabels metrics = 1 [
+    (validate.rules).repeated = {min_items: 1, max_items: 1000}
+  ];
+  
+  string batch_id = 2 [
+    (validate.rules).string = {uuid: true}
+  ];
+  
+  int64 batch_timestamp = 3 [
+    (validate.rules).int64 = {gt: 0}
+  ];
+  
+  string source = 4 [
+    (validate.rules).string = {max_len: 255}
+  ];
+  
+  // Optional client metadata
+  map<string, string> metadata = 5 [
+    (validate.rules).map = {
+      max_pairs: 20,
+      keys: {
+        string: {pattern: "^[a-zA-Z_][a-zA-Z0-9_]*$", max_len: 50}
+      },
+      values: {
+        string: {max_len: 1024}
+      }
+    }
+  ];
+}
+
+// MetricEnvelope wraps metrics with required identity and schema metadata
+message MetricEnvelope {
+  // Required metadata
+  EnvelopeMeta meta = 1 [
+    (validate.rules).message.required = true
+  ];
+  
+  // List of metrics in this envelope
+  repeated MetricWithLabels metrics = 2 [
+    (validate.rules).repeated = {min_items: 1, max_items: 1000}
+  ];
+  
+  // Any validation errors that occurred during processing
+  repeated ValidationError validation_errors = 3;
+  
+  // Optional client metadata
+  map<string, string> metadata = 4 [
+    (validate.rules).map = {
+      max_pairs: 20,
+      keys: {
+        string: {pattern: "^[a-zA-Z_][a-zA-Z0-9_]*$", max_len: 50}
+      },
+      values: {
+        string: {max_len: 1024}
+      }
+    }
+  ];
+}
+
+// MetricEnvelopeBatch groups multiple envelopes for batch processing
+message MetricEnvelopeBatch {
+  // List of metric envelopes
+  repeated MetricEnvelope envelopes = 1 [
+    (validate.rules).repeated = {min_items: 1, max_items: 100}
+  ];
+  
+  // Optional batch-level metadata
+  string batch_id = 2 [
+    (validate.rules).string = {uuid: true}
+  ];
+  
+  // Timestamp when the batch was created (milliseconds since epoch)
+  int64 batch_timestamp = 3 [
+    (validate.rules).int64 = {gt: 0}
+  ];
+  
+  // Compression type used for the batch (if any)
+  CompressionType compression = 4 [
+    (validate.rules).enum = {defined_only: true}
+  ];
+}
+
+// List of metrics for sync operations
+message MetricList {
+  repeated MetricWithLabels metrics = 1;
+}
+
+// MetricsService handles collection and querying of metrics
+service MetricsService {
+  // StreamMetrics accepts a stream of metrics and returns an acknowledgment
+  rpc StreamMetrics(stream MetricEnvelopeBatch) returns (Status) {}
+  
+  // GetMetrics retrieves metrics based on the provided query
+  rpc GetMetrics(MetricQuery) returns (stream MetricEnvelope) {}
+  
+  // GetMetricsSummary returns aggregated metrics
+  rpc GetMetricsSummary(MetricQuery) returns (MetricSummary) {}
+}
+
+// Query for metrics
+message MetricQuery {
+  // Time range for the query
+  TimeRange time_range = 1;
+  
+  // Filter criteria
+  repeated Filter filters = 2;
+  
+  // Group by fields (e.g., "metric_type", "hostname")
+  repeated string group_by = 3;
+  
+  // Aggregation function (e.g., "sum", "avg", "count")
+  string aggregation = 4;
+  
+  // Step size for downsampling (in seconds)
+  uint32 step_seconds = 5;
+  
+  // Maximum number of results to return
+  uint32 limit = 6;
+  
+  // Pagination token
+  string page_token = 7;
+}
+
+// Summary of metrics
+message MetricSummary {
+  // Total number of metrics
+  uint64 count = 1;
+  
+  // Earliest timestamp
+  google.protobuf.Timestamp start_time = 2;
+  
+  // Latest timestamp
+  google.protobuf.Timestamp end_time = 3;
+  
+  // Aggregated values
+  map<string, double> aggregations = 4;
+  
+  // Next page token if there are more results
+  string next_page_token = 5;
+}

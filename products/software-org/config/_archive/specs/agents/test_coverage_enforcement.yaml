@@ -1,0 +1,27 @@
+---
+id: "test_coverage_enforcement"
+agent: "TestCoverageEnforcementAgent"
+role: "QA Lead"
+inputs_spec:
+- name: "test_suites"
+  description: "Test suites to measure code coverage."
+  format: "Test suite artifact"
+outputs_spec:
+- name: "test_coverage_report"
+  description: "Coverage report for all major modules."
+  format: "Test coverage report"
+agent_tasks:
+- "Measure coverage for all major modules."
+- "Enforce thresholds for acceptable coverage."
+- "Flag areas with low coverage for remediation."
+acceptance_criteria:
+- "Coverage is measured for all major modules."
+- "Thresholds for acceptable coverage are enforced."
+- "Areas with low coverage are flagged for remediation."
+dependencies:
+- "test_suites"
+failure_escalation:
+- "Escalate to QA Lead/Dev Lead if thresholds are not met."
+references: []
+hitl: true
+hitl_reason: "Human reviews test coverage report for adequacy"

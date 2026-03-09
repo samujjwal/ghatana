@@ -1,0 +1,101 @@
+use axum::{
+extract::Request,
+http::{header, StatusCode},
+middleware::Next,
+response::Response,
+Json,
+};
+use serde::Serialize;
+use std::sync::Arc;
+
+use super::jwt::{Claims, JwtService, TokenType};
+
+#[derive(Clone)]
+pub struct AuthState {
+pub jwt_service: Arc<JwtService>,
+    }
+
+    #[derive(Debug, Clone)]
+    pub struct AuthUser {
+    pub id: String,
+    pub email: String,
+    pub roles: Vec<String>,
+        }
+
+        #[derive(Serialize)]
+        pub struct ErrorResponse {
+        pub error: String,
+        }
+
+        pub async fn require_auth(
+        axum::extract::State(state): axum::extract::State<AuthState>,
+            mut request: Request,
+            next: Next,
+            ) -> Result<Response, (StatusCode, Json<ErrorResponse>)> {
+                let auth_header = request
+                .headers()
+                .get(header::AUTHORIZATION)
+                .and_then(|h| h.to_str().ok())
+                .and_then(|h| h.strip_prefix("Bearer "));
+
+                let token = match auth_header {
+                Some(t) => t,
+                None => {
+                return Err((
+                StatusCode::UNAUTHORIZED,
+                Json(ErrorResponse {
+                error: "No token provided".to_string(),
+                }),
+                ))
+                }
+                };
+
+                let claims = match state.jwt_service.verify_token(token) {
+                Ok(c) => c,
+                Err(_) => {
+                return Err((
+                StatusCode::UNAUTHORIZED,
+                Json(ErrorResponse {
+                error: "Invalid token".to_string(),
+                }),
+                ))
+                }
+                };
+
+                if claims.token_type != TokenType::Access {
+                return Err((
+                StatusCode::UNAUTHORIZED,
+                Json(ErrorResponse {
+                error: "Invalid token type".to_string(),
+                }),
+                ));
+                }
+
+                let user = AuthUser {
+                id: claims.sub,
+                email: claims.email,
+                roles: claims.roles,
+                };
+
+                request.extensions_mut().insert(user);
+
+                Ok(next.run(request).await)
+                }
+
+                pub fn require_role(required_roles: Vec<String>) -> impl Fn(AuthUser) -> Result<(), (StatusCode,
+                        Json<ErrorResponse>)> + Clone {
+                        move |user: AuthUser| {
+                        let has_role = required_roles.iter().any(|r| user.roles.contains(r));
+
+                        if !has_role {
+                        return Err((
+                        StatusCode::FORBIDDEN,
+                        Json(ErrorResponse {
+                        error: "Insufficient permissions".to_string(),
+                        }),
+                        ));
+                        }
+
+                        Ok(())
+                        }
+                        }

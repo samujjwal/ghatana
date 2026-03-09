@@ -1,0 +1,43 @@
+id: threat_model
+agent: ThreatModelAgent
+role: Security Architect
+inputs_spec:
+- name: architecture_signoff
+  description: Signed-off architecture document.
+  format: Structured signoff document
+outputs_spec:
+- name: threat_model_report
+  description: Comprehensive threat model covering all relevant threats, classifications, mitigations, and residual risks.
+  format: 'Structured threat model document (sections: threats, classification, mitigations, residual_risks, distribution)'
+  example: 'threats: ["Privilege escalation"]
+
+    classification: ["STRIDE: Elevation of Privilege"]
+
+    mitigations: ["RBAC"]
+
+    residual_risks: ["Insider threat"]
+
+    distribution: ["Shared with stakeholders"]
+
+    '
+agent_tasks:
+- Identify all relevant threats to the solution architecture.
+- Classify threats (e.g., STRIDE).
+- Document mitigation strategies for each threat.
+- Highlight residual risks.
+- Distribute threat model to relevant stakeholders.
+acceptance_criteria:
+- All relevant threats to the solution architecture are identified.
+- Threats are classified (e.g., STRIDE categories).
+- Mitigation strategies are documented for each threat.
+- Residual risks are highlighted.
+- Threat model is shared with all relevant stakeholders.
+dependencies:
+- architecture_signoff
+failure_escalation:
+- Escalate to security architect or lead if threats or mitigations are incomplete.
+references: []
+hitl: true
+hitl_reason: Human reviews threat model for comprehensive security coverage
+
+# [!!] No custom enhancement found.

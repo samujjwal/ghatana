@@ -1,0 +1,22 @@
+{
+    "id": "terraform-infra",
+    "name": "Terraform Infrastructure",
+    "description": "Infrastructure as Code with Terraform",
+    "version": "1.0.0",
+    "type": "infrastructure",
+    "language": "hcl",
+    "buildSystem": "terraform",
+    "requiredVariables": [
+        "projectName",
+        "cloudProvider"
+    ],
+    "optionalVariables": [
+        "description",
+        "region"
+    ],
+    "defaults": {
+        "cloudProvider": "aws",
+        "region": "us-east-1"
+    },
+    "features": []
+}

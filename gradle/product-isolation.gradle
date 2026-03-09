@@ -1,0 +1,78 @@
+/**
+ * Gradle Architectural Guardrail: Product Isolation
+ *
+ * Enforces that product modules cannot depend on other product modules.
+ * Products may only depend on:
+ *   - platform/* modules
+ *   - shared-services/*
+ *   - Their own sub-modules (e.g., products:aep:core → products:aep:domain)
+ *
+ * Usage:
+ *   apply(from = rootProject.file("gradle/product-isolation.gradle"))
+ *
+ * @since 2.4.0
+ * @see docs/CODEBASE_AUDIT_AND_REMEDIATION_PLAN_V2.md Task 4.8
+ */
+
+allprojects { project ->
+    // Only apply to projects under products/
+    if (!project.path.startsWith(':products:')) return
+
+    // Determine which product this project belongs to
+    // e.g. :products:aep:core → product = "aep"
+    def pathSegments = project.path.split(':').findAll { it }
+    if (pathSegments.size() < 2) return
+    def ownProduct = pathSegments[1]
+
+    // Known cross-product dependencies that are pre-approved.
+    // These should eventually be extracted to platform/ modules.
+    // Format: [consumer-product: [allowed-dependency-products]]
+    def allowedCrossProductPairs = [
+        'aep'          : ['data-cloud'] as Set,       // AEP depends on data-cloud SPI
+        'yappc'        : ['data-cloud', 'aep'] as Set, // YAPPC integrates with data-cloud + AEP
+        'software-org' : ['virtual-org', 'aep'] as Set, // software-org composes virtual-org agents + AEP
+        'virtual-org'  : ['aep'] as Set,               // virtual-org uses core operator/pipeline types from AEP (TODO: extract to platform)
+    ]
+
+    project.afterEvaluate {
+        // Check all dependency configurations
+        project.configurations.each { config ->
+            config.dependencies.each { dep ->
+                if (dep instanceof ProjectDependency) {
+                    // Gradle 9.x: use dep.path instead of deprecated dep.dependencyProject.path
+                    def depPath = dep.path
+                    if (depPath.startsWith(':products:')) {
+                        def depSegments = depPath.split(':').findAll { it }
+                        if (depSegments.size() >= 2) {
+                            def otherProduct = depSegments[1]
+                            if (otherProduct != ownProduct) {
+                                def allowedDeps = allowedCrossProductPairs.get(ownProduct)
+                                if (allowedDeps != null && allowedDeps.contains(otherProduct)) {
+                                    project.logger.warn("ALLOWED cross-product dep: ${project.path} -> ${depPath} (pre-approved)")
+                                    return
+                                }
+                                throw new GradleException(
+                                    """
+                                    ┌──────────────────────────────────────────────────────────────
+                                    │ ARCHITECTURAL VIOLATION: Cross-Product Dependency
+                                    │
+                                    │ Project:    ${project.path}
+                                    │ Depends on: ${depPath}
+                                    │
+                                    │ Products must NOT depend on other products.
+                                    │ If shared functionality is needed, extract it to:
+                                    │   - platform/java/* (for core capabilities)
+                                    │   - shared-services/* (for shared services)
+                                    │
+                                    │ See: copilot-instructions.md § Dependency Flow
+                                    └──────────────────────────────────────────────────────────────
+                                    """.stripIndent().trim()
+                                )
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
+}

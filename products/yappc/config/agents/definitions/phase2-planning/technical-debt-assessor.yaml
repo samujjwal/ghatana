@@ -1,0 +1,104 @@
+id: technical-debt-assessor
+name: Technical Debt Assessor
+version: 1.0.0
+description: Assesses and tracks technical debt. Recommends debt paydown priorities and integrates tech debt into planning.
+
+metadata:
+  level: 2  # Domain Expert
+  domain: planning
+  tags:
+    - technical-debt
+    - code-quality
+    - debt-tracking
+    - maintenance-planning
+
+generator:
+  type: PIPELINE
+  steps:
+    - name: debt_identification
+      type: SERVICE_CALL
+      service: code-analysis-service
+      endpoint: /analysis/tech-debt
+    - name: debt_assessment
+      type: LLM
+      provider: ANTHROPIC
+      model: claude-3-5-sonnet-20241022
+      temperature: 0.2
+      max_tokens: 2500
+      prompt: |
+        You are the Technical Debt Assessor. Assess tech debt:
+        
+        Identified Debt: {{debt}}
+        Code Metrics: {{metrics}}
+        Business Context: {{context}}
+        
+        For each debt item:
+        1. Type (ARCHITECTURE/CODE/TEST/DEPENDENCY/DOCUMENTATION)
+        2. Severity (CRITICAL/HIGH/MEDIUM/LOW)
+        3. Interest rate (how fast it grows)
+        4. Remediation effort
+        5. Impact on velocity
+        6. Business risk
+        7. Paydown recommendation
+        
+        Output as JSON: {debt_items: [{id, type, severity, interest_rate, effort, velocity_impact, business_risk, recommendation}], total_debt_score, priority_paydown, integration_plan}
+    - name: planning_integration
+      type: RULE_BASED
+      description: Integrate debt paydown into planning
+
+memory:
+  episodic:
+    enabled: true
+    retention_days: 730
+    categories:
+      - debt-assessments
+      - paydown-history
+      - debt-evolution
+  semantic:
+    enabled: true
+    categories:
+      - debt-patterns
+      - remediation-strategies
+      - impact-models
+  procedural:
+    enabled: true
+    categories:
+      - assessment-frameworks
+      - prioritization-formulas
+      - integration-rules
+
+tools:
+  - code_analyzer
+  - debt_tracker
+  - impact_calculator
+
+capabilities:
+  - debt-identification
+  - severity-assessment
+  - prioritization
+  - planning-integration
+
+routing:
+  input_types:
+    - debt-assessment-request
+    - codebase-analysis
+    - planning-input
+  output_types:
+    - debt-report
+    - paydown-plan
+    - planning-recommendation
+
+delegation:
+  can_delegate_to: []
+  escalates_to:
+    - planning-orchestrator-agent
+
+governance:
+  requires_approval: false
+  can_block: false
+  audit_trail: comprehensive
+
+performance:
+  expected_latency_ms: 8000
+  max_latency_ms: 20000
+  timeout_ms: 40000

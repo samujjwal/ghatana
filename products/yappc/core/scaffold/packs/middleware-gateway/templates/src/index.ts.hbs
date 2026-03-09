@@ -1,0 +1,33 @@
+import { createGateway } from "./gateway.js";
+import { loadConfig } from "./config.js";
+import { logger } from "./middleware/logging.js";
+
+async function main() {
+try {
+const config = loadConfig();
+const gateway = await createGateway(config);
+
+await gateway.listen({ port: config.port, host: "0.0.0.0" });
+
+logger.info(`🚀 API Gateway running on http://localhost:${config.port}`);
+logger.info(`📊 Health check: http://localhost:${config.port}/health`);
+{{#if enableMetrics}}
+logger.info(`📈 Metrics: http://localhost:${config.port}/metrics`);
+{{/if}}
+
+// Graceful shutdown
+const shutdown = async (signal: string) => {
+logger.info(`Received ${signal}, shutting down gracefully...`);
+await gateway.close();
+process.exit(0);
+};
+
+process.on("SIGTERM", () => shutdown("SIGTERM"));
+process.on("SIGINT", () => shutdown("SIGINT"));
+} catch (err) {
+logger.error(err, "Failed to start gateway");
+process.exit(1);
+}
+}
+
+main();

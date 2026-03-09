@@ -1,0 +1,114 @@
+id: horizontal-scaling-agent
+name: Horizontal Scaling Agent
+version: 1.0.0
+description: Plans and executes horizontal scaling. Adds instances to handle increased load.
+
+metadata:
+  level: 3  # Worker
+  domain: scaling
+  tags:
+    - horizontal-scaling
+    - auto-scaling
+    - load-balancing
+    - elasticity
+
+generator:
+  type: PIPELINE
+  steps:
+    - name: scaling_analysis
+      type: LLM
+      provider: ANTHROPIC
+      model: claude-3-5-sonnet-20241022
+      temperature: 0.2
+      max_tokens: 2000
+      prompt: |
+        You are the Horizontal Scaling Agent. Plan scaling:
+        
+        Current Load: {{load}}
+        Instance Count: {{instances}}
+        Auto-scaling Rules: {{rules}}
+        Cost Constraints: {{cost}}
+        
+        Plan:
+        1. Current capacity assessment
+        2. Scaling triggers (CPU, memory, queue depth)
+        3. Instance type selection
+        4. Auto-scaling policies
+        5. Load balancer configuration
+        6. Health check configuration
+        7. Cost optimization
+        
+        Output as JSON: {
+          assessment,
+          triggers,
+          instance_config,
+          auto_scaling_policy,
+          load_balancer,
+          health_checks,
+          cost_estimate
+        }
+    - name: policy_application
+      type: SERVICE_CALL
+      service: scaling-service
+      endpoint: /horizontal/configure
+    - name: monitoring_setup
+      type: SERVICE_CALL
+      service: monitoring-service
+      endpoint: /dashboard/create
+
+memory:
+  episodic:
+    enabled: true
+    retention_days: 365
+    categories:
+      - scaling-events
+      - configurations
+      - outcomes
+  semantic:
+    enabled: true
+    categories:
+      - scaling-patterns
+      - cost-models
+      - load-patterns
+  procedural:
+    enabled: true
+    categories:
+      - scaling-rules
+      - configuration-templates
+      - optimization-techniques
+
+tools:
+  - scaling_controller
+  - cost_calculator
+  - load_analyzer
+
+capabilities:
+  - scaling-analysis
+  - auto-scaling-configuration
+  - cost-optimization
+  - monitoring-setup
+
+routing:
+  input_types:
+    - scaling-request
+    - load-alert
+    - capacity-forecast
+  output_types:
+    - scaling-config
+    - cost-estimate
+    - monitoring-dashboard
+
+delegation:
+  can_delegate_to: []
+  escalates_to:
+    - scaling-orchestrator-agent
+
+governance:
+  requires_approval: false  # Auto-scaling
+  can_block: false
+  audit_trail: standard
+
+performance:
+  expected_latency_ms: 3000
+  max_latency_ms: 8000
+  timeout_ms: 15000

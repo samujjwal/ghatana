@@ -1,0 +1,85 @@
+# Software Organization Configuration
+# This is a complete example of a configuration-driven software organization
+
+apiVersion: virtualorg.ghatana.com/v1
+kind: Organization
+metadata:
+  name: acme-software-org
+  namespace: ${TENANT_ID:default-tenant}
+  labels:
+    environment: ${ENVIRONMENT:development}
+    version: "1.0.0"
+    industry: software
+  annotations:
+    description: "Complete software organization with 10 departments"
+    created-by: "config-migration-tool"
+
+spec:
+  # Basic Information
+  displayName: "Acme Software Inc."
+  description: |
+    Full-stack software development organization with comprehensive
+    department structure covering engineering, operations, and business functions.
+
+  # Organization Structure
+  structure:
+    type: hierarchical
+    maxDepth: 3
+
+  # Global Settings
+  settings:
+    defaultTimezone: "America/New_York"
+    workingHours:
+      start: "09:00"
+      end: "17:00"
+      days: [MONDAY, TUESDAY, WEDNESDAY, THURSDAY, FRIDAY]
+
+    # Event Configuration
+    events:
+      enabled: true
+      publishTo: aep
+
+    # KPI Tracking
+    kpis:
+      enabled: true
+      aggregationInterval: PT1H
+
+    # Human-in-the-Loop
+    hitl:
+      enabled: true
+      defaultApprovalTimeout: PT24H
+      escalationPolicy: manager-chain
+
+  # Department References (load from separate files)
+  departments:
+    # Technical Departments
+    - ref: departments/engineering.yaml
+    - ref: departments/qa.yaml
+    - ref: departments/devops.yaml
+
+    # Customer-Facing Departments
+    - ref: departments/support.yaml
+    - ref: departments/sales.yaml
+    - ref: departments/marketing.yaml
+
+    # Business Operations Departments
+    - ref: departments/product.yaml
+    - ref: departments/finance.yaml
+    - ref: departments/hr.yaml
+    - ref: departments/compliance.yaml
+
+  # Cross-Department Workflow References
+  workflows:
+    - ref: workflows/sprint-planning.yaml
+    - ref: workflows/incident-response.yaml
+    - ref: workflows/release-management.yaml
+    - ref: workflows/feature-delivery.yaml
+    - ref: workflows/customer-escalation.yaml
+
+  # Department Interaction Definitions
+  interactions:
+    - ref: interactions/eng-qa-handoff.yaml
+    - ref: interactions/qa-devops-deployment.yaml
+    - ref: interactions/support-engineering-escalation.yaml
+    - ref: interactions/sales-product-feedback.yaml
+    - ref: interactions/marketing-product-launch.yaml

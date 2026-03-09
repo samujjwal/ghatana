@@ -1,0 +1,27 @@
+---
+id: "develop_escalation_handler"
+agent: "EscalationHandlerAgent"
+role: "Project Escalation Manager"
+inputs_spec:
+- name: "develop_success_criteria_status"
+  description: "Success criteria status report."
+  format: "List of criteria status objects"
+outputs_spec:
+- name: "develop_escalation_report"
+  description: "Escalation report for unresolved blockers."
+  format: "Escalation report artifact"
+agent_tasks:
+- "Review all \"At Risk\" or \"Not Met\" criteria."
+- "Assign owners and deadlines for resolution."
+- "Make escalation status visible in dashboard and audit log."
+acceptance_criteria:
+- "All \"At Risk\" or \"Not Met\" criteria are reviewed for escalation."
+- "Owners and deadlines for resolution are assigned."
+- "Escalation status is visible in the dashboard and audit log."
+dependencies:
+- "develop_success_criteria_status"
+failure_escalation:
+- "Escalate to escalation manager or PM if blockers remain unresolved."
+references: []
+hitl: true
+hitl_reason: "Human ensures appropriate escalation/action for unresolved blockers"

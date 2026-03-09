@@ -1,0 +1,5 @@
+# Ignore Node dependencies and generated code
+node_modules/
+**/node_modules/
+proto/gen/
+**/proto/gen/

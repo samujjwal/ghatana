@@ -1,0 +1,54 @@
+{
+"name": "{{projectName}}",
+"version": "0.1.0",
+"description": "{{description}}",
+"author": "{{author}}",
+"license": "Apache-2.0",
+"type": "module",
+"main": "dist/index.js",
+"scripts": {
+"dev": "tsx watch src/index.ts",
+"build": "tsc",
+"start": "node dist/index.js",
+"test": "vitest run",
+"test:watch": "vitest",
+"test:coverage": "vitest run --coverage",
+"lint": "biome check .",
+"lint:fix": "biome check --write .",
+"format": "biome format --write .",
+"typecheck": "tsc --noEmit",
+"prisma:generate": "prisma generate",
+"prisma:migrate": "prisma migrate dev",
+"prisma:push": "prisma db push",
+"prisma:studio": "prisma studio",
+"clean": "rm -rf dist node_modules .turbo coverage"
+},
+"dependencies": {
+"@fastify/cors": "^9.0.1",
+"@fastify/helmet": "^11.1.1",
+"@fastify/sensible": "^5.6.0",
+"@fastify/swagger": "^8.15.0",
+"@fastify/swagger-ui": "^4.1.0",
+"@prisma/client": "^5.22.0",
+"dotenv": "^16.4.5",
+"fastify": "^4.28.1",
+"pino": "^9.5.0",
+"pino-pretty": "^11.3.0",
+"zod": "^3.23.8"
+},
+"devDependencies": {
+"@biomejs/biome": "^1.9.4",
+"@types/node": "^22.9.1",
+"@types/supertest": "^6.0.2",
+"@vitest/coverage-v8": "^2.1.5",
+"prisma": "^5.22.0",
+"supertest": "^7.0.0",
+"tsx": "^4.19.2",
+"typescript": "^5.6.3",
+"vitest": "^2.1.5"
+},
+"engines": {
+"node": ">=20.0.0"
+},
+"packageManager": "pnpm@9.14.2"
+}
