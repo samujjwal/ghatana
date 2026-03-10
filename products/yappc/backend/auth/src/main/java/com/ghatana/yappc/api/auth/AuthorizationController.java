@@ -7,7 +7,7 @@ package com.ghatana.yappc.api.auth;
 import com.ghatana.platform.security.model.User;
 import com.ghatana.platform.security.rbac.SyncAuthorizationService;
 import com.ghatana.yappc.api.auth.PersonaMapping.PersonaType;
-import com.ghatana.yappc.api.common.ApiResponse;
+import com.ghatana.yappc.api.common.BaseApiResponse;
 import com.ghatana.yappc.api.common.JsonUtils;
 import com.ghatana.yappc.api.common.TenantContextExtractor;
 import io.activej.http.HttpRequest;
@@ -81,14 +81,14 @@ public class AuthorizationController {
                     .then(
                         payload -> {
                           if (payload.permission() == null || payload.permission().isBlank()) {
-                            return Promise.of(ApiResponse.badRequest("permission is required"));
+                            return Promise.of(BaseApiResponse.badRequest("permission is required"));
                           }
 
                           String effectiveTenantId =
                               payload.tenantId() != null ? payload.tenantId() : ctx.tenantId();
                           if (!ctx.tenantId().equals(effectiveTenantId)) {
                             return Promise.of(
-                                ApiResponse.forbidden("User does not have access to tenant"));
+                                BaseApiResponse.forbidden("User does not have access to tenant"));
                           }
 
                           Set<String> roles =
@@ -117,13 +117,13 @@ public class AuthorizationController {
                               effectiveTenantId,
                               payload.permission(),
                               hasPermission);
-                          return Promise.of(ApiResponse.ok(permissionCheckResult));
+                          return Promise.of(BaseApiResponse.ok(permissionCheckResult));
                         }))
         .then(
             response -> Promise.of(response),
             e -> {
               logger.error("Permission check failed", e);
-              return Promise.of(ApiResponse.fromException(e));
+              return Promise.of(BaseApiResponse.fromException(e));
             });
   }
 
@@ -143,7 +143,7 @@ public class AuthorizationController {
               String effectiveTenantId =
                   requestedTenantId != null ? requestedTenantId : ctx.tenantId();
               if (!ctx.tenantId().equals(effectiveTenantId)) {
-                return Promise.of(ApiResponse.forbidden("User does not have access to tenant"));
+                return Promise.of(BaseApiResponse.forbidden("User does not have access to tenant"));
               }
 
               String resourceId = request.getQueryParameter("resourceId");
@@ -171,9 +171,9 @@ public class AuthorizationController {
                   permissions.size(),
                   ctx.userId(),
                   effectiveTenantId);
-              return Promise.of(ApiResponse.ok(userPermissions));
+              return Promise.of(BaseApiResponse.ok(userPermissions));
             })
-        .then(response -> Promise.of(response), e -> Promise.of(ApiResponse.fromException(e)));
+        .then(response -> Promise.of(response), e -> Promise.of(BaseApiResponse.fromException(e)));
   }
 
   /**
@@ -206,11 +206,11 @@ public class AuthorizationController {
               "permissionCount",
               permissions.size());
 
-      return Promise.of(ApiResponse.ok(response));
+      return Promise.of(BaseApiResponse.ok(response));
 
     } catch (IllegalArgumentException e) {
       logger.warn("Invalid persona name: {}", personaName);
-      return Promise.of(ApiResponse.badRequest("Persona '" + personaName + "' does not exist"));
+      return Promise.of(BaseApiResponse.badRequest("Persona '" + personaName + "' does not exist"));
     }
   }
 
@@ -244,10 +244,10 @@ public class AuthorizationController {
               "permission", permissionName,
               "hasPermission", hasPermission);
 
-      return Promise.of(ApiResponse.ok(response));
+      return Promise.of(BaseApiResponse.ok(response));
 
     } catch (IllegalArgumentException e) {
-      return Promise.of(ApiResponse.badRequest("Invalid persona or permission"));
+      return Promise.of(BaseApiResponse.badRequest("Invalid persona or permission"));
     }
   }
 

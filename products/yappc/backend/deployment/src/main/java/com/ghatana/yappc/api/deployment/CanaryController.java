@@ -7,8 +7,6 @@ package com.ghatana.yappc.api.deployment;
 import static io.activej.http.HttpMethod.GET;
 import static io.activej.http.HttpMethod.POST;
 
-import com.ghatana.yappc.api.common.ApiResponse;
-import com.ghatana.yappc.api.common.JsonUtils;
 import com.ghatana.yappc.api.deployment.dto.CanaryAbortRequest;
 import com.ghatana.yappc.api.deployment.dto.CanaryDeploymentRequest;
 import com.ghatana.yappc.api.deployment.dto.CanaryPromotionRequest;
@@ -76,7 +74,7 @@ public class CanaryController extends AbstractModule {
   }
 
   private Promise<HttpResponse> deployCanary(HttpRequest httpRequest) {
-    return JsonUtils.parseBody(httpRequest, CanaryDeploymentRequest.class)
+    return DeploymentHttpUtils.parseBody(httpRequest, CanaryDeploymentRequest.class)
         .then(
             request -> {
               int stageCount = request.stages() != null ? request.stages().size() : 0;
@@ -86,30 +84,30 @@ public class CanaryController extends AbstractModule {
                   request.version(),
                   stageCount);
 
-              return canaryService.deployCanary(request).map(ApiResponse::ok);
+              return canaryService.deployCanary(request).map(DeploymentHttpUtils::ok);
             });
   }
 
   private Promise<HttpResponse> promoteCanary(HttpRequest httpRequest) {
-    return JsonUtils.parseBody(httpRequest, CanaryPromotionRequest.class)
+    return DeploymentHttpUtils.parseBody(httpRequest, CanaryPromotionRequest.class)
         .then(
             request -> {
               log.info("Promoting canary: {}", request.canaryId());
-              return canaryService.promoteCanary(request).map(ApiResponse::ok);
+              return canaryService.promoteCanary(request).map(DeploymentHttpUtils::ok);
             });
   }
 
   private Promise<HttpResponse> abortCanary(HttpRequest httpRequest) {
-    return JsonUtils.parseBody(httpRequest, CanaryAbortRequest.class)
+    return DeploymentHttpUtils.parseBody(httpRequest, CanaryAbortRequest.class)
         .then(
             request -> {
               log.info("Aborting canary: {}, reason={}", request.canaryId(), request.reason());
-              return canaryService.abortCanary(request).map(ApiResponse::ok);
+              return canaryService.abortCanary(request).map(DeploymentHttpUtils::ok);
             });
   }
 
   private Promise<HttpResponse> getCanaryMetrics(String canaryId) {
     log.info("Getting canary metrics: {}", canaryId);
-    return canaryService.getCanaryMetrics(canaryId).map(ApiResponse::ok);
+    return canaryService.getCanaryMetrics(canaryId).map(DeploymentHttpUtils::ok);
   }
 }

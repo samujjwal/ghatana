@@ -469,12 +469,11 @@ public class DepsCheckCommand implements Callable<Integer> {
                     log.info("     • {}", issue));
             }
             if (detailed && !rec.recommendations().isEmpty()) {
-                    log.info("   💡 Recommendations:");
-                rec.recommendations()
-                        rec.recommendations().forEach(recommendation ->
-                            log.info("     • {}", recommendation));
-                    }
-                            log.info("");
+                log.info("   \ud83d\udca1 Recommendations:");
+                rec.recommendations().forEach(recommendation ->
+                    log.info("     \u2022 {}", recommendation));
+            }
+            log.info("");
         }
 
         private void displayEcosystemBreakdown(DependencyCheckResult result) {

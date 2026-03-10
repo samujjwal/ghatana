@@ -150,7 +150,7 @@ public class UpdateCommand implements Callable<Integer> {
                         log.info("   🔄 OUTDATED: {}", change.filePath);
                         outdatedFiles++;
                     }
-                    log.info("   ❌ DELETED: {}", change.filePath);
+                    default -> log.info("   ❌ DELETED: {}", change.filePath);
                 }
             }
 

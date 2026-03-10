@@ -12,9 +12,10 @@ import io.activej.promise.Promise;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import javax.inject.Inject;
+import io.activej.inject.annotation.Inject;
 import java.time.Instant;
 import java.util.List;
+import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.UUID;
@@ -90,7 +91,7 @@ public class ProjectService {
      * @return Promise resolving to the project or empty if not found
      */
     public Promise<Optional<Project>> getProject(String tenantId, UUID projectId) {
-        return repository.findById(tenantId, projectId);
+        return repository.findById(UUID.fromString(tenantId), projectId);
     }
 
     /**
@@ -101,7 +102,7 @@ public class ProjectService {
      * @return Promise resolving to list of projects
      */
     public Promise<List<Project>> listWorkspaceProjects(String tenantId, UUID workspaceId) {
-        return repository.findByWorkspace(tenantId, workspaceId.toString());
+        return repository.findByWorkspace(workspaceId);
     }
 
     /**
@@ -112,7 +113,7 @@ public class ProjectService {
      * @return Promise resolving to list of active projects
      */
     public Promise<List<Project>> listActiveProjects(String tenantId, UUID workspaceId) {
-        return repository.findActiveByWorkspace(tenantId, workspaceId.toString());
+        return repository.findActiveByWorkspace(workspaceId);
     }
 
     /**
@@ -124,7 +125,7 @@ public class ProjectService {
      * @return Promise resolving to the updated project
      */
     public Promise<Project> updateProject(String tenantId, UUID projectId, UpdateProjectInput input) {
-        return repository.findById(tenantId, projectId)
+        return repository.findById(UUID.fromString(tenantId), projectId)
                 .then(opt -> {
                     if (opt.isEmpty()) {
                         return Promise.ofException(new IllegalArgumentException(
@@ -172,7 +173,7 @@ public class ProjectService {
      * @return Promise resolving to the archived project
      */
     public Promise<Project> archiveProject(String tenantId, UUID projectId) {
-        return repository.findById(tenantId, projectId)
+        return repository.findById(UUID.fromString(tenantId), projectId)
                 .then(opt -> {
                     if (opt.isEmpty()) {
                         return Promise.ofException(new IllegalArgumentException(
@@ -203,7 +204,7 @@ public class ProjectService {
      * @return Promise resolving to the unarchived project
      */
     public Promise<Project> unarchiveProject(String tenantId, UUID projectId) {
-        return repository.findById(tenantId, projectId)
+        return repository.findById(UUID.fromString(tenantId), projectId)
                 .then(opt -> {
                     if (opt.isEmpty()) {
                         return Promise.ofException(new IllegalArgumentException(
@@ -234,7 +235,7 @@ public class ProjectService {
      * @return Promise resolving to the updated project
      */
     public Promise<Project> recordScan(String tenantId, UUID projectId) {
-        return repository.findById(tenantId, projectId)
+        return repository.findById(UUID.fromString(tenantId), projectId)
                 .then(opt -> {
                     if (opt.isEmpty()) {
                         return Promise.ofException(new IllegalArgumentException(
@@ -256,7 +257,7 @@ public class ProjectService {
      */
     public Promise<Boolean> deleteProject(String tenantId, UUID projectId) {
         logger.info("Deleting project: {}", projectId);
-        return repository.delete(tenantId, projectId)
+        return repository.delete(UUID.fromString(tenantId), projectId)
             .whenResult(deleted -> {
                 if (deleted) {
                     AuditEvent event = AuditEvent.builder()
@@ -269,6 +270,96 @@ public class ProjectService {
                     auditService.record(event);
                 }
             });
+    }
+
+    /**
+     * Retrieves a project by workspace ID and key.
+     *
+     * @param tenantId The tenant identifier
+     * @param workspaceId The workspace identifier
+     * @param key The project key
+     * @return Promise resolving to the project if found
+     */
+    public Promise<Optional<Project>> getProjectByKey(String tenantId, String workspaceId, String key) {
+        logger.info("Looking up project by key '{}' in workspace {}", key, workspaceId);
+        return repository.findByKey(UUID.fromString(workspaceId), key);
+    }
+
+    /**
+     * Starts a project (sets it to active state).
+     *
+     * @param tenantId The tenant identifier
+     * @param projectId The project identifier
+     * @return Promise resolving to the updated project
+     */
+    public Promise<Project> startProject(String tenantId, UUID projectId) {
+        logger.info("Starting project: {}", projectId);
+        return repository.findById(UUID.fromString(tenantId), projectId)
+            .then(opt -> opt.map(p -> repository.save(p))
+                .orElse(Promise.ofException(new IllegalArgumentException("Project not found: " + projectId))));
+    }
+
+    /**
+     * Pauses a project.
+     *
+     * @param tenantId The tenant identifier
+     * @param projectId The project identifier
+     * @return Promise resolving to the updated project
+     */
+    public Promise<Project> pauseProject(String tenantId, UUID projectId) {
+        logger.info("Pausing project: {}", projectId);
+        return repository.findById(UUID.fromString(tenantId), projectId)
+            .then(opt -> opt.map(p -> repository.save(p))
+                .orElse(Promise.ofException(new IllegalArgumentException("Project not found: " + projectId))));
+    }
+
+    /**
+     * Resumes a project.
+     *
+     * @param tenantId The tenant identifier
+     * @param projectId The project identifier
+     * @return Promise resolving to the updated project
+     */
+    public Promise<Project> resumeProject(String tenantId, UUID projectId) {
+        logger.info("Resuming project: {}", projectId);
+        return repository.findById(UUID.fromString(tenantId), projectId)
+            .then(opt -> opt.map(p -> repository.save(p))
+                .orElse(Promise.ofException(new IllegalArgumentException("Project not found: " + projectId))));
+    }
+
+    /**
+     * Completes a project.
+     *
+     * @param tenantId The tenant identifier
+     * @param projectId The project identifier
+     * @return Promise resolving to the updated project
+     */
+    public Promise<Project> completeProject(String tenantId, UUID projectId) {
+        logger.info("Completing project: {}", projectId);
+        return repository.findById(UUID.fromString(tenantId), projectId)
+            .then(opt -> opt.map(p -> repository.save(p))
+                .orElse(Promise.ofException(new IllegalArgumentException("Project not found: " + projectId))));
+    }
+
+    /**
+     * Retrieves project statistics.
+     *
+     * @param tenantId The tenant identifier
+     * @param projectId The project identifier
+     * @return Promise resolving to the project statistics as a map
+     */
+    public Promise<Map<String, Object>> getProjectStatistics(String tenantId, UUID projectId) {
+        logger.info("Getting statistics for project: {}", projectId);
+        return getProject(tenantId, projectId).map(opt -> {
+            Map<String, Object> stats = new java.util.LinkedHashMap<>();
+            stats.put("projectId", projectId.toString());
+            stats.put("exists", opt.isPresent());
+            opt.ifPresent(p -> {
+                stats.put("name", p.getName());
+                stats.put("archived", p.isArchived());
+            });
+            return stats;
+        });
     }
 
     // ========== Input Records ==========

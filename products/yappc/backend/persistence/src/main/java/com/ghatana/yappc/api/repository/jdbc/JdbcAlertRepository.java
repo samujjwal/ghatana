@@ -10,8 +10,10 @@ import io.activej.promise.Promise;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import javax.inject.Inject;
+import io.activej.inject.annotation.Inject;
 import javax.sql.DataSource;
+import java.util.concurrent.Executor;
+import java.util.concurrent.Executors;
 import java.sql.*;
 import java.time.Instant;
 import java.util.*;
@@ -27,6 +29,12 @@ import java.util.*;
 public class JdbcAlertRepository implements AlertRepository {
 
     private static final Logger logger = LoggerFactory.getLogger(JdbcAlertRepository.class);
+    private static final Executor JDBC_EXECUTOR = Executors.newFixedThreadPool(4, r -> {
+        Thread t = new Thread(r, "jdbc-repo");
+        t.setDaemon(true);
+        return t;
+    });
+
 
     private static final String INSERT_SQL = """
         INSERT INTO security_alerts (id, workspace_id, alert_type, severity, title,
@@ -56,7 +64,7 @@ public class JdbcAlertRepository implements AlertRepository {
 
     @Override
     public Promise<SecurityAlert> save(SecurityAlert alert) {
-        return Promise.ofBlocking(() -> {
+        return Promise.ofBlocking(JDBC_EXECUTOR, () -> {
             if (alert.getId() == null) alert.setId(UUID.randomUUID());
             alert.setUpdatedAt(Instant.now());
             if (alert.getCreatedAt() == null) alert.setCreatedAt(Instant.now());
@@ -96,7 +104,7 @@ public class JdbcAlertRepository implements AlertRepository {
 
     @Override
     public Promise<SecurityAlert> findById(UUID workspaceId, UUID id) {
-        return Promise.ofBlocking(() -> {
+        return Promise.ofBlocking(JDBC_EXECUTOR, () -> {
             try (Connection conn = dataSource.getConnection();
                  PreparedStatement ps = conn.prepareStatement(
                      "SELECT * FROM security_alerts WHERE workspace_id = ? AND id = ?")) {
@@ -114,7 +122,7 @@ public class JdbcAlertRepository implements AlertRepository {
 
     @Override
     public Promise<List<SecurityAlert>> findByStatus(UUID workspaceId, String status) {
-        return Promise.ofBlocking(() -> {
+        return Promise.ofBlocking(JDBC_EXECUTOR, () -> {
             try (Connection conn = dataSource.getConnection();
                  PreparedStatement ps = conn.prepareStatement(
                      "SELECT * FROM security_alerts WHERE workspace_id = ? AND status = ? ORDER BY created_at DESC")) {
@@ -126,7 +134,7 @@ public class JdbcAlertRepository implements AlertRepository {
 
     @Override
     public Promise<List<SecurityAlert>> findBySeverity(UUID workspaceId, String severity) {
-        return Promise.ofBlocking(() -> {
+        return Promise.ofBlocking(JDBC_EXECUTOR, () -> {
             try (Connection conn = dataSource.getConnection();
                  PreparedStatement ps = conn.prepareStatement(
                      "SELECT * FROM security_alerts WHERE workspace_id = ? AND severity = ? ORDER BY created_at DESC")) {
@@ -138,7 +146,7 @@ public class JdbcAlertRepository implements AlertRepository {
 
     @Override
     public Promise<List<SecurityAlert>> findOpen(UUID workspaceId) {
-        return Promise.ofBlocking(() -> {
+        return Promise.ofBlocking(JDBC_EXECUTOR, () -> {
             try (Connection conn = dataSource.getConnection();
                  PreparedStatement ps = conn.prepareStatement(
                      "SELECT * FROM security_alerts WHERE workspace_id = ? AND status = 'OPEN' ORDER BY created_at DESC")) {
@@ -150,7 +158,7 @@ public class JdbcAlertRepository implements AlertRepository {
 
     @Override
     public Promise<List<SecurityAlert>> findOpenByProject(UUID workspaceId, UUID projectId) {
-        return Promise.ofBlocking(() -> {
+        return Promise.ofBlocking(JDBC_EXECUTOR, () -> {
             try (Connection conn = dataSource.getConnection();
                  PreparedStatement ps = conn.prepareStatement(
                      "SELECT * FROM security_alerts WHERE workspace_id = ? AND project_id = ? AND status = 'OPEN' ORDER BY created_at DESC")) {
@@ -168,7 +176,7 @@ public class JdbcAlertRepository implements AlertRepository {
 
     @Override
     public Promise<Long> countOpenBySeverity(UUID workspaceId, String severity) {
-        return Promise.ofBlocking(() -> {
+        return Promise.ofBlocking(JDBC_EXECUTOR, () -> {
             try (Connection conn = dataSource.getConnection();
                  PreparedStatement ps = conn.prepareStatement(
                      "SELECT COUNT(*) FROM security_alerts WHERE workspace_id = ? AND status = 'OPEN' AND severity = ?")) {
@@ -180,7 +188,7 @@ public class JdbcAlertRepository implements AlertRepository {
 
     @Override
     public Promise<Void> delete(UUID workspaceId, UUID id) {
-        return Promise.ofBlocking(() -> {
+        return Promise.ofBlocking(JDBC_EXECUTOR, () -> {
             try (Connection conn = dataSource.getConnection();
                  PreparedStatement ps = conn.prepareStatement("DELETE FROM security_alerts WHERE workspace_id = ? AND id = ?")) {
                 ps.setObject(1, workspaceId); ps.setObject(2, id); ps.executeUpdate();
@@ -191,7 +199,7 @@ public class JdbcAlertRepository implements AlertRepository {
 
     @Override
     public Promise<Boolean> exists(UUID workspaceId, UUID id) {
-        return Promise.ofBlocking(() -> {
+        return Promise.ofBlocking(JDBC_EXECUTOR, () -> {
             try (Connection conn = dataSource.getConnection();
                  PreparedStatement ps = conn.prepareStatement("SELECT 1 FROM security_alerts WHERE workspace_id = ? AND id = ?")) {
                 ps.setObject(1, workspaceId); ps.setObject(2, id);
@@ -203,7 +211,7 @@ public class JdbcAlertRepository implements AlertRepository {
     // ========== Helpers ==========
 
     private Promise<List<SecurityAlert>> queryUuids(String sql, UUID a, UUID b) {
-        return Promise.ofBlocking(() -> {
+        return Promise.ofBlocking(JDBC_EXECUTOR, () -> {
             try (Connection conn = dataSource.getConnection();
                  PreparedStatement ps = conn.prepareStatement(sql)) {
                 ps.setObject(1, a); ps.setObject(2, b);

@@ -64,6 +64,7 @@
     "@types/pg": "^8.16.0",
     "@types/qrcode": "^1.5.5",
     "@types/ua-parser-js": "^0.7.39",
+    "@testing-library/react": "^16.2.0",
     "prisma": "^7.4.2",
     "tsx": "^4.21.0",
     "typescript": "^5.9.3",

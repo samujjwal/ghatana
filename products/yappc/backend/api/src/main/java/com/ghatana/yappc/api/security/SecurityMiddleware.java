@@ -249,9 +249,14 @@ public class SecurityMiddleware implements AsyncServlet {
      * @return the same response with security headers applied
      */
     private HttpResponse addSecurityHeaders(@NotNull HttpResponse response) {
+        HttpResponse.Builder builder = HttpResponse.ofCode(response.getCode());
+        for (var entry : response.getHeaders()) {
+            builder.withHeader(entry.getKey(), entry.getValue());
+        }
         SECURITY_HEADERS.forEach((key, value) ->
-                response.addHeader(HttpHeader.of(key), value));
-        return response;
+                builder.withHeader(HttpHeaders.of(key), value));
+        builder.withBody(response.getBody().slice());
+        return builder.build();
     }
 
     /**

@@ -12,10 +12,16 @@
 
 import React, { useState, useCallback, useEffect, useMemo } from "react";
 import { Card, Button } from "@ghatana/ui";
+import type {
+  SimulationManifest,
+  SimKeyframe,
+} from "@ghatana/tutorputor-contracts/v1/simulation/types";
 
 // =============================================================================
-// Local Types (avoiding external contract dependencies)
+// Assessment-Specific Types
 // =============================================================================
+
+export type { SimulationManifest, SimKeyframe };
 
 export type SimulationItemMode =
   | "prediction"
@@ -92,18 +98,6 @@ export interface SimulationAssessmentItem {
   hints?: SimulationHint[];
 }
 
-export interface SimulationManifest {
-  id: string;
-  title: string;
-  description?: string;
-  domain: string;
-}
-
-export interface SimKeyframe {
-  stepIndex: number;
-  time: number;
-}
-
 // =============================================================================
 // Component Types
 // =============================================================================
@@ -174,10 +168,9 @@ const ConfidenceSelector: React.FC<ConfidenceSelectorProps> = ({
             disabled={disabled}
             className={`
               flex-1 py-2 px-3 rounded-lg border-2 transition-all
-              ${
-                value === l.level
-                  ? `${l.color} border-blue-500`
-                  : "border-gray-200 dark:border-gray-700 hover:border-gray-300"
+              ${value === l.level
+                ? `${l.color} border-blue-500`
+                : "border-gray-200 dark:border-gray-700 hover:border-gray-300"
               }
               ${disabled ? "opacity-50 cursor-not-allowed" : "cursor-pointer"}
             `}
@@ -347,10 +340,9 @@ const ExplanationInput: React.FC<ExplanationInputProps> = ({
                 key={concept}
                 className={`
                   px-2 py-1 rounded text-xs
-                  ${
-                    explanation.toLowerCase().includes(concept.toLowerCase())
-                      ? "bg-green-100 dark:bg-green-900/30 text-green-800 dark:text-green-200"
-                      : "bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300"
+                  ${explanation.toLowerCase().includes(concept.toLowerCase())
+                    ? "bg-green-100 dark:bg-green-900/30 text-green-800 dark:text-green-200"
+                    : "bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300"
                   }
                 `}
               >
@@ -375,10 +367,9 @@ const ExplanationInput: React.FC<ExplanationInputProps> = ({
             w-full px-3 py-2 border rounded-lg
             bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100
             focus:outline-none focus:ring-2 focus:ring-blue-500
-            ${
-              isWithinLimits
-                ? "border-gray-300 dark:border-gray-600"
-                : "border-yellow-500 dark:border-yellow-600"
+            ${isWithinLimits
+              ? "border-gray-300 dark:border-gray-600"
+              : "border-yellow-500 dark:border-yellow-600"
             }
           `}
           placeholder="Write your explanation here..."
@@ -437,13 +428,12 @@ const FeedbackDisplay: React.FC<FeedbackDisplayProps> = ({ feedback }) => {
       {/* Progress bar */}
       <div className="h-2 bg-gray-200 dark:bg-gray-700 rounded-full overflow-hidden">
         <div
-          className={`h-full transition-all ${
-            scorePercent >= 80
-              ? "bg-green-500"
-              : scorePercent >= 60
-                ? "bg-yellow-500"
-                : "bg-red-500"
-          }`}
+          className={`h-full transition-all ${scorePercent >= 80
+            ? "bg-green-500"
+            : scorePercent >= 60
+              ? "bg-yellow-500"
+              : "bg-red-500"
+            }`}
           style={{ width: `${scorePercent}%` }}
         />
       </div>

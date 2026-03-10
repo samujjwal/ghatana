@@ -10,9 +10,7 @@
  * @doc.pattern Barrel
  */
 
-// Chat and copilot
-export { AICopilotPanel } from './AICopilotPanel';
-export type { AICopilotPanelProps, CopilotMessage, CopilotPosition } from './AICopilotPanel';
+// REMOVED: AICopilotPanel (0 consumers, superseded by @ghatana/yappc-ui AIChatInterface)
 
 // Predictions display
 export { PredictionCard } from './PredictionCard';
@@ -22,9 +20,9 @@ export type { PredictionCardProps } from './PredictionCard';
 export { AnomalyBanner } from './AnomalyBanner';
 export type { AnomalyBannerProps } from './AnomalyBanner';
 
-// Smart suggestions
-export { SmartSuggestions } from './SmartSuggestions';
-export type { SmartSuggestionsProps } from './SmartSuggestions';
+// Recommendation list (renamed from SmartSuggestions to avoid collision with @ghatana/yappc-ui SmartSuggestions)
+export { RecommendationList } from './RecommendationList';
+export type { RecommendationListProps } from './RecommendationList';
 
 // AI Persona Briefing
 export { AIPersonaBriefing } from './AIPersonaBriefing';

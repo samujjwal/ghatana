@@ -63,9 +63,8 @@ public class AuthController {
     public Promise<HttpResponse> login(@NotNull HttpRequest request) {
         try {
             return JsonUtils.parseBody(request, LoginRequest.class)
-                .then(loginRequest -> {
-                    try {
-                        UserContext user = userService.authenticate(loginRequest.getEmail(), loginRequest.getPassword()).get();
+                .then(loginRequest -> userService.authenticate(loginRequest.getEmail(), loginRequest.getPassword())
+                    .then(user -> {
                         if (user == null) {
                             return Promise.of(of401("Invalid credentials"));
                         }
@@ -90,13 +89,9 @@ public class AuthController {
                             ),
                             "timestamp", System.currentTimeMillis()
                         )));
-                    } catch (Exception e) {
-                        LOG.error("Login error", e);
-                        return Promise.of(of500("Internal server error"));
-                    }
-                })
+                    }))
                 .then(Promise::of, e -> {
-                    LOG.error("Invalid login request", e);
+                    LOG.error("Login error", e);
                     return Promise.of(of400("Invalid request format"));
                 });
         } catch (Exception e) {
@@ -120,36 +115,33 @@ public class AuthController {
                     }
                     
                     // Validate refresh token
-                    try {
-                        boolean valid = jwtTokenProvider.validateToken(refreshToken).get();
-                        if (!valid || !jwtTokenProvider.isRefreshToken(refreshToken)) {
-                            return Promise.of(of401("Invalid refresh token"));
-                        }
-                        
-                        // Get user from token and generate new access token
-                        UserContext user = jwtTokenProvider.getUserFromToken(refreshToken);
-                        if (user == null) {
-                            return Promise.of(of401("Cannot extract user from token"));
-                        }
-                        
-                        // Generate new access token
-                        String newAccessToken = jwtTokenProvider.generateToken(user);
-                        
-                        LOG.info("Access token refreshed for user {}", user.getUserId());
-                        
-                        return Promise.of(ok200(Map.of(
-                            "accessToken", newAccessToken,
-                            "tokenType", "Bearer",
-                            "expiresIn", jwtTokenProvider.getRemainingValiditySeconds(newAccessToken),
-                            "timestamp", System.currentTimeMillis()
-                        )));
-                    } catch (Exception e) {
-                        LOG.error("Token refresh error", e);
-                        return Promise.of(of500("Internal server error"));
-                    }
+                    return jwtTokenProvider.validateToken(refreshToken)
+                        .then(valid -> {
+                            if (!valid || !jwtTokenProvider.isRefreshToken(refreshToken)) {
+                                return Promise.of(of401("Invalid refresh token"));
+                            }
+                            
+                            // Get user from token and generate new access token
+                            UserContext user = jwtTokenProvider.getUserFromToken(refreshToken);
+                            if (user == null) {
+                                return Promise.of(of401("Cannot extract user from token"));
+                            }
+                            
+                            // Generate new access token
+                            String newAccessToken = jwtTokenProvider.generateToken(user);
+                            
+                            LOG.info("Access token refreshed for user {}", user.getUserId());
+                            
+                            return Promise.of(ok200(Map.of(
+                                "accessToken", newAccessToken,
+                                "tokenType", "Bearer",
+                                "expiresIn", jwtTokenProvider.getRemainingValiditySeconds(newAccessToken),
+                                "timestamp", System.currentTimeMillis()
+                            )));
+                        });
                 })
                 .then(Promise::of, e -> {
-                    LOG.error("Invalid refresh request", e);
+                    LOG.error("Token refresh error", e);
                     return Promise.of(of400("Invalid request format"));
                 });
         } catch (Exception e) {
@@ -233,38 +225,34 @@ public class AuthController {
                     }
                     
                     // Create user
-                    try {
-                        UserContext user = userService.createUser(
-                                registerRequest.getEmail(),
-                                registerRequest.getPassword(),
-                                registerRequest.getUserName(),
-                                registerRequest.getTenantId(),
-                                registerRequest.getRoles()
-                            ).get();
-                        if (user == null) {
-                            return Promise.of(of409("User already exists"));
-                        }
-                        
-                        LOG.info("User {} registered successfully", user.getUserId());
-                        
-                        return Promise.of(of201(Map.of(
-                            "message", "User registered successfully",
-                            "user", Map.of(
-                                "id", user.getUserId(),
-                                "email", user.getEmail(),
-                                "name", user.getUserName(),
-                                "roles", user.getRoles(),
-                                "tenantId", user.getTenantId()
-                            ),
-                            "timestamp", System.currentTimeMillis()
-                        )));
-                    } catch (Exception e) {
-                        LOG.error("Registration error", e);
-                        return Promise.of(of500("Internal server error"));
-                    }
+                    return userService.createUser(
+                            registerRequest.getEmail(),
+                            registerRequest.getPassword(),
+                            registerRequest.getUserName(),
+                            registerRequest.getTenantId(),
+                            registerRequest.getRoles()
+                        ).then(user -> {
+                            if (user == null) {
+                                return Promise.of(of409("User already exists"));
+                            }
+                            
+                            LOG.info("User {} registered successfully", user.getUserId());
+                            
+                            return Promise.of(of201(Map.of(
+                                "message", "User registered successfully",
+                                "user", Map.of(
+                                    "id", user.getUserId(),
+                                    "email", user.getEmail(),
+                                    "name", user.getUserName(),
+                                    "roles", user.getRoles(),
+                                    "tenantId", user.getTenantId()
+                                ),
+                                "timestamp", System.currentTimeMillis()
+                            )));
+                        });
                 })
                 .then(Promise::of, e -> {
-                    LOG.error("Invalid registration request", e);
+                    LOG.error("Registration error", e);
                     return Promise.of(of400("Invalid request format"));
                 });
         } catch (Exception e) {

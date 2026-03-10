@@ -12,8 +12,10 @@ import io.activej.promise.Promise;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import javax.inject.Inject;
+import io.activej.inject.annotation.Inject;
 import javax.sql.DataSource;
+import java.util.concurrent.Executor;
+import java.util.concurrent.Executors;
 import java.sql.*;
 import java.time.Instant;
 import java.util.*;
@@ -29,6 +31,12 @@ import java.util.*;
 public class JdbcSecurityScanRepository implements SecurityScanRepository {
 
     private static final Logger logger = LoggerFactory.getLogger(JdbcSecurityScanRepository.class);
+    private static final Executor JDBC_EXECUTOR = Executors.newFixedThreadPool(4, r -> {
+        Thread t = new Thread(r, "jdbc-repo");
+        t.setDaemon(true);
+        return t;
+    });
+
 
     private static final String INSERT_SQL = """
         INSERT INTO scan_jobs (id, workspace_id, project_id, scan_type, status,
@@ -54,7 +62,7 @@ public class JdbcSecurityScanRepository implements SecurityScanRepository {
 
     @Override
     public Promise<ScanJob> save(ScanJob scan) {
-        return Promise.ofBlocking(() -> {
+        return Promise.ofBlocking(JDBC_EXECUTOR, () -> {
             if (scan.getId() == null) scan.setId(UUID.randomUUID());
             scan.setUpdatedAt(Instant.now());
             if (scan.getCreatedAt() == null) scan.setCreatedAt(Instant.now());
@@ -92,7 +100,7 @@ public class JdbcSecurityScanRepository implements SecurityScanRepository {
 
     @Override
     public Promise<ScanJob> findById(UUID workspaceId, UUID id) {
-        return Promise.ofBlocking(() -> {
+        return Promise.ofBlocking(JDBC_EXECUTOR, () -> {
             try (Connection conn = dataSource.getConnection();
                  PreparedStatement ps = conn.prepareStatement(
                      "SELECT * FROM scan_jobs WHERE workspace_id = ? AND id = ?")) {
@@ -110,7 +118,7 @@ public class JdbcSecurityScanRepository implements SecurityScanRepository {
 
     @Override
     public Promise<List<ScanJob>> findByType(UUID workspaceId, ScanType type) {
-        return Promise.ofBlocking(() -> {
+        return Promise.ofBlocking(JDBC_EXECUTOR, () -> {
             try (Connection conn = dataSource.getConnection();
                  PreparedStatement ps = conn.prepareStatement(
                      "SELECT * FROM scan_jobs WHERE workspace_id = ? AND scan_type = ? ORDER BY created_at DESC")) {
@@ -122,7 +130,7 @@ public class JdbcSecurityScanRepository implements SecurityScanRepository {
 
     @Override
     public Promise<List<ScanJob>> findByStatus(UUID workspaceId, ScanStatus status) {
-        return Promise.ofBlocking(() -> {
+        return Promise.ofBlocking(JDBC_EXECUTOR, () -> {
             try (Connection conn = dataSource.getConnection();
                  PreparedStatement ps = conn.prepareStatement(
                      "SELECT * FROM scan_jobs WHERE workspace_id = ? AND status = ? ORDER BY created_at DESC")) {
@@ -139,7 +147,7 @@ public class JdbcSecurityScanRepository implements SecurityScanRepository {
 
     @Override
     public Promise<List<ScanJob>> findByProjectAndType(UUID workspaceId, UUID projectId, ScanType type) {
-        return Promise.ofBlocking(() -> {
+        return Promise.ofBlocking(JDBC_EXECUTOR, () -> {
             try (Connection conn = dataSource.getConnection();
                  PreparedStatement ps = conn.prepareStatement(
                      "SELECT * FROM scan_jobs WHERE workspace_id = ? AND project_id = ? AND scan_type = ? ORDER BY created_at DESC")) {
@@ -151,7 +159,7 @@ public class JdbcSecurityScanRepository implements SecurityScanRepository {
 
     @Override
     public Promise<List<ScanJob>> findByTimeRange(UUID workspaceId, Instant start, Instant end) {
-        return Promise.ofBlocking(() -> {
+        return Promise.ofBlocking(JDBC_EXECUTOR, () -> {
             try (Connection conn = dataSource.getConnection();
                  PreparedStatement ps = conn.prepareStatement(
                      "SELECT * FROM scan_jobs WHERE workspace_id = ? AND created_at BETWEEN ? AND ? ORDER BY created_at DESC")) {
@@ -165,7 +173,7 @@ public class JdbcSecurityScanRepository implements SecurityScanRepository {
 
     @Override
     public Promise<ScanJob> findLatestByProjectAndType(UUID workspaceId, UUID projectId, ScanType type) {
-        return Promise.ofBlocking(() -> {
+        return Promise.ofBlocking(JDBC_EXECUTOR, () -> {
             try (Connection conn = dataSource.getConnection();
                  PreparedStatement ps = conn.prepareStatement(
                      "SELECT * FROM scan_jobs WHERE workspace_id = ? AND project_id = ? AND scan_type = ? ORDER BY created_at DESC LIMIT 1")) {
@@ -177,7 +185,7 @@ public class JdbcSecurityScanRepository implements SecurityScanRepository {
 
     @Override
     public Promise<Long> countByStatus(UUID workspaceId, ScanStatus status) {
-        return Promise.ofBlocking(() -> {
+        return Promise.ofBlocking(JDBC_EXECUTOR, () -> {
             try (Connection conn = dataSource.getConnection();
                  PreparedStatement ps = conn.prepareStatement(
                      "SELECT COUNT(*) FROM scan_jobs WHERE workspace_id = ? AND status = ?")) {
@@ -189,7 +197,7 @@ public class JdbcSecurityScanRepository implements SecurityScanRepository {
 
     @Override
     public Promise<Void> delete(UUID workspaceId, UUID id) {
-        return Promise.ofBlocking(() -> {
+        return Promise.ofBlocking(JDBC_EXECUTOR, () -> {
             try (Connection conn = dataSource.getConnection();
                  PreparedStatement ps = conn.prepareStatement("DELETE FROM scan_jobs WHERE workspace_id = ? AND id = ?")) {
                 ps.setObject(1, workspaceId); ps.setObject(2, id); ps.executeUpdate();
@@ -200,7 +208,7 @@ public class JdbcSecurityScanRepository implements SecurityScanRepository {
 
     @Override
     public Promise<Boolean> exists(UUID workspaceId, UUID id) {
-        return Promise.ofBlocking(() -> {
+        return Promise.ofBlocking(JDBC_EXECUTOR, () -> {
             try (Connection conn = dataSource.getConnection();
                  PreparedStatement ps = conn.prepareStatement("SELECT 1 FROM scan_jobs WHERE workspace_id = ? AND id = ?")) {
                 ps.setObject(1, workspaceId); ps.setObject(2, id);
@@ -212,7 +220,7 @@ public class JdbcSecurityScanRepository implements SecurityScanRepository {
     // ========== Helpers ==========
 
     private Promise<List<ScanJob>> queryUuids(String sql, UUID a, UUID b) {
-        return Promise.ofBlocking(() -> {
+        return Promise.ofBlocking(JDBC_EXECUTOR, () -> {
             try (Connection conn = dataSource.getConnection();
                  PreparedStatement ps = conn.prepareStatement(sql)) {
                 ps.setObject(1, a); ps.setObject(2, b);

@@ -59,7 +59,7 @@ class WidgetDataCloudAdapterTest extends EventloopTestBase {
         when(entityRepository.findAll(anyString(), anyString(), any(), any(), anyInt(), anyInt()))
             .thenReturn(Promise.of(List.of()));
 
-        List<Widget> result = widgetAdapter.findByDashboardId(dashboardId);
+        List<Widget> result = runPromise(() -> widgetAdapter.findByDashboardId(dashboardId));
 
         assertThat(result).isNotNull();
         verify(entityRepository).findAll(anyString(), anyString(), any(), any(), anyInt(), anyInt());
@@ -73,7 +73,7 @@ class WidgetDataCloudAdapterTest extends EventloopTestBase {
         when(entityRepository.findAll(anyString(), anyString(), any(), any(), anyInt(), anyInt()))
             .thenReturn(Promise.of(List.of()));
 
-        List<Widget> result = widgetAdapter.findByWorkspaceId(workspaceId);
+        List<Widget> result = runPromise(() -> widgetAdapter.findByWorkspaceId(workspaceId));
 
         assertThat(result).isNotNull();
     }

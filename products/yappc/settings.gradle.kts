@@ -92,6 +92,9 @@ include(":infrastructure:datacloud")
 // --- YAPPC Shared Libraries ---
 include(":libs:java:yappc-domain")
 
+// --- Examples (plugin SDK reference implementations) ---
+include(":examples:sample-build-generator-plugin")
+
 // ============================================================================
 // Monorepo Shared Libraries (Standalone build only)
 // ============================================================================

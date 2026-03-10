@@ -1617,13 +1617,7 @@ export {
   type KeyboardShortcutsManagerProps,
 } from './components/IDEUtils';
 
-export {
-  // Code Features
-  CodeGeneration,
-  CodeCompletion,
-  type CodeGenerationProps,
-  type CodeCompletionProps,
-} from './ai/IDECodeFeatures';
+// REMOVED: deprecated IDECodeFeatures (deleted — use @ghatana/yappc-ui AITextCompletion instead)
 
 // REMOVED: deprecated @ghatana/yappc-charts
 // REMOVED: deprecated @ghatana/yappc-charts

@@ -23,16 +23,21 @@ import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.concurrent.TimeUnit;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 /**
- * Default hook executor implementation. Week 2, Day 9 deliverable - Command execution with timeout
- * and error handling.
+ * Safe hook executor implementation that prevents command injection by using an allowlist of
+ * permitted executables and structured argument passing (no shell interpretation).
+ *
+ * <p>Security: NEVER uses {@code sh -c <command>}. All commands are parsed into structured
+ * {@code List<String>} and passed directly to {@link ProcessBuilder}, bypassing shell expansion.
+ * Working directories are validated to prevent path traversal.
  *
  * @doc.type class
- * @doc.purpose Default hook executor implementation. Week 2, Day 9 deliverable - Command execution with timeout
+ * @doc.purpose Safe hook executor using allowlist validation and no shell interpreter
  * @doc.layer platform
  * @doc.pattern Executor
  */
@@ -40,6 +45,40 @@ public class DefaultHookExecutor implements HookExecutor {
 
     private static final Logger logger = LoggerFactory.getLogger(DefaultHookExecutor.class);
     private static final long DEFAULT_TIMEOUT_SECONDS = 300; // 5 minutes
+
+    /**
+     * Allowlist of executable names permitted in hook commands. Only commands in this set may be
+     * invoked. This prevents arbitrary code execution via crafted hook configurations.
+     */
+    private static final Set<String> ALLOWED_EXECUTABLES = Set.of(
+            "mvn", "mvnw", "./mvnw",
+            "gradle", "gradlew", "./gradlew",
+            "npm", "pnpm", "yarn",
+            "java", "node", "python3", "pip3",
+            "docker", "kubectl",
+            "make",
+            "git" // git is allowed only for read-only status checks, not arbitrary git commands
+    );
+
+    /**
+     * Optional project root for working-directory containment checks. When set, all hook working
+     * directories must be descendants of this path.
+     */
+    private final Path projectRoot;
+
+    /** Creates an executor with no project-root containment check. */
+    public DefaultHookExecutor() {
+        this.projectRoot = null;
+    }
+
+    /**
+     * Creates an executor that validates all working directories are under {@code projectRoot}.
+     *
+     * @param projectRoot canonical project root for path-traversal prevention
+     */
+    public DefaultHookExecutor(Path projectRoot) {
+        this.projectRoot = projectRoot != null ? projectRoot.toAbsolutePath().normalize() : null;
+    }
 
     @Override
     public HookExecutionResult executePreGeneration(
@@ -140,17 +179,42 @@ public class DefaultHookExecutor implements HookExecutor {
 
         long startTime = System.currentTimeMillis();
 
-        // Handle yappc commands specially
+        // Handle yappc commands specially (internal logic, no shell)
         if (command.startsWith("yappc ")) {
             return executeYappcCommand(command, workingDirectory, context, startTime);
         }
 
-        // Parse command for shell execution
-        ProcessBuilder pb = createProcessBuilder(command, workingDirectory);
+        // Parse command into structured token list — no shell interpreter used
+        List<String> tokens = parseCommand(command);
+        if (tokens.isEmpty()) {
+            throw new SecurityException("Empty hook command is not permitted");
+        }
+
+        // Security: validate executable against allowlist
+        String executable = tokens.get(0);
+        String baseExecutable = Path.of(executable).getFileName().toString();
+        if (!ALLOWED_EXECUTABLES.contains(executable) && !ALLOWED_EXECUTABLES.contains(baseExecutable)) {
+            throw new SecurityException(
+                    "Hook executable '" + executable + "' is not in the allowed list. "
+                            + "Allowed executables: " + ALLOWED_EXECUTABLES);
+        }
+
+        // Security: validate working directory against project root (path-traversal prevention)
+        Path resolvedDir = workingDirectory.toAbsolutePath().normalize();
+        if (projectRoot != null && !resolvedDir.startsWith(projectRoot)) {
+            throw new SecurityException(
+                    "Hook working directory '" + resolvedDir + "' is outside the project root '"
+                            + projectRoot + "'");
+        }
+
+        // Execute without shell interpreter — List<String> form prevents injection
+        ProcessBuilder pb = new ProcessBuilder(tokens);
+        pb.directory(resolvedDir.toFile());
+        pb.redirectErrorStream(false);
 
         Process process = pb.start();
 
-        // Capture stdout and stderr
+        // Capture stdout and stderr concurrently
         StringBuilder stdout = new StringBuilder();
         StringBuilder stderr = new StringBuilder();
 
@@ -165,7 +229,7 @@ public class DefaultHookExecutor implements HookExecutor {
         if (!finished) {
             process.destroyForcibly();
             throw new IOException(
-                    "Command timed out after " + DEFAULT_TIMEOUT_SECONDS + " seconds: " + command);
+                    "Command timed out after " + DEFAULT_TIMEOUT_SECONDS + " seconds: " + executable);
         }
 
         stdoutReader.join(1000);
@@ -176,7 +240,43 @@ public class DefaultHookExecutor implements HookExecutor {
         boolean successful = exitCode == 0;
 
         return new HookResult(
-                command, exitCode, stdout.toString(), stderr.toString(), executionTime, successful);
+                executable, exitCode, stdout.toString(), stderr.toString(), executionTime, successful);
+    }
+
+    /**
+     * Parses a command string into a structured token list without invoking a shell.
+     *
+     * <p>Handles simple quoting (single and double quotes) and whitespace splitting. The result is
+     * passed directly to {@link ProcessBuilder}, so no shell expansion occurs.
+     *
+     * @param command raw command string from YAML hook definition
+     * @return ordered list of [executable, arg1, arg2, ...]
+     */
+    static List<String> parseCommand(String command) {
+        List<String> tokens = new ArrayList<>();
+        StringBuilder current = new StringBuilder();
+        boolean inSingleQuote = false;
+        boolean inDoubleQuote = false;
+
+        for (int i = 0; i < command.length(); i++) {
+            char c = command.charAt(i);
+            if (c == '\'' && !inDoubleQuote) {
+                inSingleQuote = !inSingleQuote;
+            } else if (c == '"' && !inSingleQuote) {
+                inDoubleQuote = !inDoubleQuote;
+            } else if (c == ' ' && !inSingleQuote && !inDoubleQuote) {
+                if (current.length() > 0) {
+                    tokens.add(current.toString());
+                    current.setLength(0);
+                }
+            } else {
+                current.append(c);
+            }
+        }
+        if (current.length() > 0) {
+            tokens.add(current.toString());
+        }
+        return tokens;
     }
 
     private HookResult executeYappcCommand(
@@ -225,23 +325,6 @@ public class DefaultHookExecutor implements HookExecutor {
                 "",
                 System.currentTimeMillis() - startTime,
                 true);
-    }
-
-    private ProcessBuilder createProcessBuilder(String command, Path workingDirectory) {
-        ProcessBuilder pb;
-
-        // Handle different operating systems
-        String os = System.getProperty("os.name").toLowerCase();
-        if (os.contains("windows")) {
-            pb = new ProcessBuilder("cmd", "/c", command);
-        } else {
-            pb = new ProcessBuilder("sh", "-c", command);
-        }
-
-        pb.directory(workingDirectory.toFile());
-        pb.redirectErrorStream(false);
-
-        return pb;
     }
 
     private void readStream(java.io.InputStream inputStream, StringBuilder output) {

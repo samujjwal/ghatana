@@ -1,43 +1,45 @@
 {
-    "name": "@ghatana/dcmaar-dashboard-core",
-    "version": "1.0.0",
-    "private": true,
-    "main": "./dist/index.js",
-    "types": "./dist/index.d.ts",
-    "exports": {
-        ".": {
-            "import": "./src/index.ts",
-            "default": "./dist/index.js"
-        },
-        "./roles": {
-            "import": "./src/roles/index.ts",
-            "default": "./dist/roles/index.js"
-        },
-        "./hooks": {
-            "import": "./src/hooks/index.ts",
-            "default": "./dist/hooks/index.js"
-        },
-        "./utils": {
-            "import": "./src/utils/index.ts",
-            "default": "./dist/utils/index.js"
-        },
-        "./package.json": "./package.json"
+  "name": "@ghatana/dcmaar-dashboard-core",
+  "version": "1.0.0",
+  "private": true,
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "import": "./src/index.ts",
+      "default": "./dist/index.js"
     },
-    "scripts": {
-        "build": "rm -rf dist && tsc",
-        "type-check": "tsc --noEmit",
-        "prepare": "npm run build",
-        "prepublishOnly": "npm run build"
+    "./roles": {
+      "import": "./src/roles/index.ts",
+      "default": "./dist/roles/index.js"
     },
-    "peerDependencies": {
-        "@tanstack/react-query": "^5.0.0",
-        "react": "^19.1.0"
+    "./hooks": {
+      "import": "./src/hooks/index.ts",
+      "default": "./dist/hooks/index.js"
     },
-    "devDependencies": {
-        "@tanstack/react-query": "^5.90.20",
-        "@types/node": "^25.2.0",
-        "@types/react": "^19.2.10",
-        "react": "^19.2.4",
-        "typescript": "^5.9.3"
-    }
+    "./utils": {
+      "import": "./src/utils/index.ts",
+      "default": "./dist/utils/index.js"
+    },
+    "./package.json": "./package.json"
+  },
+  "scripts": {
+    "build": "rm -rf dist && tsc",
+    "type-check": "tsc --noEmit",
+    "prepare": "npm run build",
+    "prepublishOnly": "npm run build"
+  },
+  "peerDependencies": {
+    "@tanstack/react-query": "^5.0.0",
+    "react": "^19.1.0"
+  },
+  "devDependencies": {
+    "@tanstack/react-query": "^5.90.20",
+    "@testing-library/react": "^16.2.0",
+    "@types/node": "^25.2.0",
+    "@types/react": "^19.2.10",
+    "react": "^19.2.4",
+    "typescript": "^5.9.3",
+    "vitest": "^4.0.16"
+  }
 }

@@ -59,6 +59,14 @@ public class DiagnosticPerformanceBenchmark extends EventloopTestBase {
         // Initialize services
         this.javaService = new JavaLanguageService(reactor);
         this.pythonService = new PythonLanguageService(reactor);
+        
+        // Start the eventloop runner so runPromise() works when used as a helper class
+        setUpEventloop();
+    }
+    
+    /** Stop the eventloop runner when this benchmark is no longer needed. */
+    public void close() {
+        tearDownEventloop();
     }
     
     /**
@@ -150,29 +158,6 @@ public class DiagnosticPerformanceBenchmark extends EventloopTestBase {
             return pythonService.diagnose(context, List.of(file));
         } else {
             return Promise.of(List.of());
-        }
-    }
-    
-    /**
-     * Helper to run Promise in test context
-     */
-    private <T> T runPromise(java.util.function.Supplier<Promise<T>> promiseSupplier) {
-        try {
-            CompletableFuture<T> future = new CompletableFuture<>();
-            reactor.submit(() -> {
-                promiseSupplier.get()
-                    .whenComplete((result, error) -> {
-                        if (error != null) {
-                            future.completeExceptionally(error);
-                        } else {
-                            future.complete(result);
-                        }
-                    });
-            });
-            ((Eventloop) reactor).run();
-            return future.get();
-        } catch (ExecutionException | InterruptedException e) {
-            throw new RuntimeException("Promise execution failed", e);
         }
     }
     

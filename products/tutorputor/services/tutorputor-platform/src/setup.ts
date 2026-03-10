@@ -25,14 +25,18 @@ import { authModule } from "./modules/auth/index.js";
 import { aiModule } from "./modules/ai/index.js";
 import { autoRevisionModule } from "./modules/auto-revision/module.js";
 import { contentNeedsModule } from "./modules/content-needs/module.js";
+import { simulationModule } from "./modules/simulation/index.js";
 
 const REDIS_URL = process.env.REDIS_URL || "redis://localhost:6379";
 
 function requireEnv(name: string, fallbackForTest?: string): string {
   const value = process.env[name];
   if (value) return value;
-  if (process.env.NODE_ENV === "test" && fallbackForTest !== undefined) return fallbackForTest;
-  throw new Error(`[startup] Required environment variable ${name} is not set.`);
+  if (process.env.NODE_ENV === "test" && fallbackForTest !== undefined)
+    return fallbackForTest;
+  throw new Error(
+    `[startup] Required environment variable ${name} is not set.`,
+  );
 }
 
 export interface PlatformOptions {
@@ -122,6 +126,7 @@ export async function setupPlatform(
   await app.register(aiModule, { prefix: "/api/v1/ai" });
   await app.register(autoRevisionModule, { prefix: "/api/auto-revision" });
   await app.register(contentNeedsModule, { prefix: "/api/content-needs" });
+  await app.register(simulationModule);
 
   const shouldStartContentWorker =
     options.startContentWorker ??
@@ -146,8 +151,7 @@ export async function setupPlatform(
           options.grpcServerAddress ||
           process.env.GRPC_SERVER_ADDRESS ||
           "localhost:50051",
-        useTls:
-          options.grpcUseTls ?? process.env.GRPC_USE_TLS === "true",
+        useTls: options.grpcUseTls ?? process.env.GRPC_USE_TLS === "true",
       },
       logger: app.log as any,
       prisma,

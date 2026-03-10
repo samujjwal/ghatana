@@ -164,7 +164,7 @@ public class ScaffoldService {
                 jobs.put(jobId, JobStatus.failed(jobId, e.getMessage()));
                 throw e;
             }
-        }).whenException(e -> log.error("Async scaffold execution failed: jobId={}", jobId, e);
+        }).whenException(e -> log.error("Async scaffold execution failed: jobId={}", jobId, e));
 
         return Promise.of(ScaffoldResult.started(jobId));
     }
@@ -275,7 +275,7 @@ public class ScaffoldService {
                 jobs.put(jobId, JobStatus.failed(jobId, e.getMessage()));
                 throw e;
             }
-        }).whenException(e -> log.error("Async feature pack execution failed", e);
+        }).whenException(e -> log.error("Async feature pack execution failed", e));
         
         return Promise.of(ScaffoldResult.started(jobId));
     }

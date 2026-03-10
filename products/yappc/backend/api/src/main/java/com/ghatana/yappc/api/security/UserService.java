@@ -294,7 +294,7 @@ public class UserService {
      */
     // NOTE: Dev-only hash — production deployments MUST replace with platform PasswordHasher (BCrypt/Argon2).
     private String hashPassword(@NotNull String password) {
-        logger.warn("Using dev-only password hashing — NOT for production use");
+        LOG.warn("Using dev-only password hashing — NOT for production use");
         return "hashed_" + password.hashCode();
     }
 

@@ -11,8 +11,7 @@ import com.ghatana.yappc.api.websocket.WebSocketMessageHandler;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import javax.inject.Inject;
-import javax.inject.Singleton;
+import io.activej.inject.annotation.Inject;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -24,7 +23,6 @@ import java.util.Map;
  * @doc.layer application
  * @doc.pattern Handler
  */
-@Singleton
 public class CanvasCollaborationHandler implements WebSocketMessageHandler {
     private static final Logger logger = LoggerFactory.getLogger(CanvasCollaborationHandler.class);
     

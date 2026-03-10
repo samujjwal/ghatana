@@ -2,6 +2,7 @@ package com.ghatana.yappc.infrastructure.datacloud.adapter;
 
 import com.ghatana.datacloud.entity.Entity;
 import com.ghatana.datacloud.entity.EntityRepository;
+import com.ghatana.platform.governance.security.TenantContext;
 import com.ghatana.yappc.infrastructure.datacloud.mapper.YappcEntityMapper;
 import io.activej.promise.Promise;
 import org.jetbrains.annotations.NotNull;
@@ -17,83 +18,103 @@ import java.util.stream.Collectors;
 
 /**
  * Generic repository adapter for YAPPC entities using data-cloud.
- * 
- * <p>Provides CRUD operations for YAPPC domain objects backed by
- * data-cloud entity storage.
- * 
+ *
+ * <p>Provides CRUD operations for YAPPC domain objects backed by data-cloud entity storage.
+ * All operations resolve the tenant ID from {@link TenantContext} at call-time to ensure proper
+ * multi-tenant data isolation. No hardcoded tenant identifier is used.
+ *
  * @param <T> Entity type
  * @doc.type class
- * @doc.purpose Generic data-cloud repository adapter
+ * @doc.purpose Generic data-cloud repository adapter with proper tenant isolation
  * @doc.layer infrastructure
  * @doc.pattern Repository/Adapter
  */
 public class YappcDataCloudRepository<T> {
-    
+
     private static final Logger LOG = LoggerFactory.getLogger(YappcDataCloudRepository.class);
-    private static final String DEFAULT_TENANT = "default";
-    
+
     private final EntityRepository entityRepository;
     private final YappcEntityMapper mapper;
     private final String collectionName;
     private final Class<T> entityClass;
-    
+
     public YappcDataCloudRepository(
-        @NotNull EntityRepository entityRepository,
-        @NotNull YappcEntityMapper mapper,
-        @NotNull String collectionName,
-        @NotNull Class<T> entityClass
-    ) {
+            @NotNull EntityRepository entityRepository,
+            @NotNull YappcEntityMapper mapper,
+            @NotNull String collectionName,
+            @NotNull Class<T> entityClass) {
         this.entityRepository = entityRepository;
         this.mapper = mapper;
         this.collectionName = collectionName;
         this.entityClass = entityClass;
     }
-    
+
     /**
-     * Saves an entity to data-cloud.
+     * Resolves the current tenant ID from {@link TenantContext}. Throws {@link
+     * SecurityException} if no tenant context is active, preventing cross-tenant data access.
+     *
+     * @return current tenant ID, never null or blank
+     * @throws SecurityException if no tenant context is set
+     */
+    private String resolveTenantId() {
+        String tenantId = TenantContext.getCurrentTenantId();
+        if (tenantId == null || tenantId.isBlank()) {
+            throw new SecurityException(
+                    "YappcDataCloudRepository requires an active tenant context. "
+                            + "Ensure ApiKeyAuthFilter or TenantExtractionFilter is applied.");
+        }
+        return tenantId;
+    }
+
+    /**
+     * Saves an entity to data-cloud under the current tenant.
      */
     @NotNull
     public Promise<T> save(@NotNull T domainEntity) {
-        Entity entity = mapper.toEntity(domainEntity, collectionName, DEFAULT_TENANT);
-        
-        return entityRepository.save(DEFAULT_TENANT, entity)
-            .map(saved -> mapper.fromEntity(saved, entityClass));
+        String tenantId = resolveTenantId();
+        Entity entity = mapper.toEntity(domainEntity, collectionName, tenantId);
+
+        return entityRepository.save(tenantId, entity)
+                .map(saved -> mapper.fromEntity(saved, entityClass));
     }
-    
+
     /**
-     * Finds an entity by ID.
+     * Finds an entity by ID, scoped to the current tenant.
      */
     @NotNull
     public Promise<Optional<T>> findById(@NotNull UUID id) {
-        return entityRepository.findById(DEFAULT_TENANT, collectionName, id)
-            .map(opt -> opt.map(entity -> mapper.fromEntity(entity, entityClass)));
+        String tenantId = resolveTenantId();
+        return entityRepository.findById(tenantId, collectionName, id)
+                .map(opt -> opt.map(entity -> mapper.fromEntity(entity, entityClass)));
     }
-    
+
     /**
-     * Finds all entities in the collection.
+     * Finds all entities in the collection, scoped to the current tenant.
      */
     @NotNull
     public Promise<List<T>> findAll() {
-        return entityRepository.findAll(DEFAULT_TENANT, collectionName, Map.of(), null, 0, 1000)
-            .map(entities -> entities.stream()
-                .map(entity -> mapper.fromEntity(entity, entityClass))
-                .collect(Collectors.toList()));
+        String tenantId = resolveTenantId();
+        return entityRepository.findAll(tenantId, collectionName, Map.of(), null, 0, 1000)
+                .map(entities -> entities.stream()
+                        .map(entity -> mapper.fromEntity(entity, entityClass))
+                        .collect(Collectors.toList()));
     }
-    
+
     /**
-     * Deletes an entity by ID.
+     * Deletes an entity by ID, scoped to the current tenant.
      */
     @NotNull
     public Promise<Void> deleteById(@NotNull UUID id) {
-        return entityRepository.delete(DEFAULT_TENANT, collectionName, id);
+        String tenantId = resolveTenantId();
+        return entityRepository.delete(tenantId, collectionName, id);
     }
-    
+
     /**
-     * Finds entities by filter criteria.
-     * 
-     * @param filter the filter criteria (field name -> value)
-     * @param sort the sort expression (optional, can be null)
-     * @param limit maximum results to return
+     * Finds entities by filter criteria, scoped to the current tenant.
+     *
+     * @param filter the filter criteria (field name -&gt; value)
+     * @param sort   the sort expression (optional, can be null)
+     * @param limit  maximum results to return
      * @param offset offset for pagination
      * @return Promise of list of matching entities
      */
@@ -103,16 +124,17 @@ public class YappcDataCloudRepository<T> {
             String sort,
             int limit,
             int offset) {
-        return entityRepository.findAll(DEFAULT_TENANT, collectionName, filter, sort, offset, limit)
-            .map(entities -> entities.stream()
-                .map(entity -> mapper.fromEntity(entity, entityClass))
-                .collect(Collectors.toList()));
+        String tenantId = resolveTenantId();
+        return entityRepository.findAll(tenantId, collectionName, filter, sort, offset, limit)
+                .map(entities -> entities.stream()
+                        .map(entity -> mapper.fromEntity(entity, entityClass))
+                        .collect(Collectors.toList()));
     }
-    
+
     /**
-     * Finds entities by a single field value.
-     * 
-     * @param fieldName the field name to filter by
+     * Finds entities by a single field value, scoped to the current tenant.
+     *
+     * @param fieldName  the field name to filter by
      * @param fieldValue the field value to match
      * @return Promise of list of matching entities
      */

@@ -230,21 +230,26 @@ public final class ReportGenerator implements AutoCloseable {
             return; // Server already running
         }
 
+        boolean isTest = System.getProperty("test.environment") != null;
+        if (isTest) {
+            log.debug("Skipping report server startup in test environment");
+            return;
+        }
+
         try {
-            boolean isTest = System.getProperty("test.environment") != null;
             Path staticFilesDir = findStaticFilesDir();
 
             ReportServer.ReportServerConfig config =
                     ReportServer.ReportServerConfig.builder()
                             .reportDataPath(reportDataPath)
                             .staticFilesDir(staticFilesDir)
-                            .port(isTest ? 0 : 8080)
+                            .port(8080)
                             .build();
 
             try {
                 reportServer = new ReportServer(config);
             } catch (IOException ioe) {
-                if (!isTest && isAddressAlreadyInUse(ioe)) {
+                if (isAddressAlreadyInUse(ioe)) {
                     log.warn(
                             "Report server port {} unavailable; retrying with random port",
                             config.getPort());

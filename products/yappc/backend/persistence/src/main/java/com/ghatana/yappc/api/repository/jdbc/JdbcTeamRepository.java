@@ -14,7 +14,7 @@ import java.time.Instant;
 import java.util.*;
 import java.util.concurrent.Executor;
 import java.util.concurrent.Executors;
-import javax.inject.Inject;
+import io.activej.inject.annotation.Inject;
 import javax.sql.DataSource;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -29,6 +29,12 @@ import org.slf4j.LoggerFactory;
  */
 public class JdbcTeamRepository implements TeamRepository {
     private static final Logger logger = LoggerFactory.getLogger(JdbcTeamRepository.class);
+    private static final Executor JDBC_EXECUTOR = Executors.newFixedThreadPool(4, r -> {
+        Thread t = new Thread(r, "jdbc-repo");
+        t.setDaemon(true);
+        return t;
+    });
+
     private static final String TABLE = "yappc.teams";
     private static final String MEMBERS_TABLE = "yappc.team_members";
 

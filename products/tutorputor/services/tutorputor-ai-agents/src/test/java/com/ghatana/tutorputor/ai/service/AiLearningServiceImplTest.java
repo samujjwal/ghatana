@@ -1,6 +1,6 @@
 package com.ghatana.tutorputor.ai.service;
 
-import com.ghatana.ai.gateway.AIGateway;
+import com.ghatana.ai.service.LLMService;
 import com.ghatana.tutorputor.contracts.ai.AiLearningProto;
 import com.ghatana.tutorputor.contracts.ai.AiLearningServiceGrpc;
 import io.activej.promise.Promise;
@@ -25,21 +25,21 @@ import static org.mockito.Mockito.when;
 class AiLearningServiceImplTest {
 
     @Mock
-    private AIGateway aiGateway;
+    private LLMService llmService;
 
     private AiLearningServiceImpl service;
 
     @BeforeEach
     void setUp() {
         MockitoAnnotations.openMocks(this);
-        service = new AiLearningServiceImpl(aiGateway);
+        service = new AiLearningServiceImpl(llmService);
     }
 
     @Test
     @DisplayName("Should generate learning path successfully")
     void shouldGenerateLearningPath() {
         // GIVEN
-        when(aiGateway.generatePattern(anyString())).thenReturn(Promise.of("Mocked AI Pattern"));
+        when(llmService.generate(anyString())).thenReturn(Promise.of("{\"title\":\"Math Mastery\",\"nodes\":[{\"id\":\"1\",\"title\":\"Basics\"},{\"id\":\"2\",\"title\":\"Advanced\"}]}"));
 
         AiLearningProto.GeneratePathRequest request = AiLearningProto.GeneratePathRequest.newBuilder()
                 .setSubject("Math")
@@ -79,7 +79,7 @@ class AiLearningServiceImplTest {
     @DisplayName("Should handle AI failures gracefully")
     void shouldHandleAiFailures() {
         // GIVEN
-        when(aiGateway.generatePattern(anyString())).thenReturn(Promise.ofException(new RuntimeException("AI Down")));
+        when(llmService.generate(anyString())).thenReturn(Promise.ofException(new RuntimeException("AI Down")));
 
         AiLearningProto.GeneratePathRequest request = AiLearningProto.GeneratePathRequest.newBuilder()
                 .setSubject("Math")

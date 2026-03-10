@@ -69,7 +69,7 @@ public class CodeGenerationController extends AbstractModule {
    *
    * <p>Generate REST controllers and DTOs from OpenAPI specification.
    */
-  private Promise<HttpResponse> generateFromOpenAPI(HttpRequest request) {
+  public Promise<HttpResponse> generateFromOpenAPI(HttpRequest request) {
     log.info("Generating code from OpenAPI specification");
 
     Promise<HttpResponse> promise =
@@ -99,7 +99,7 @@ public class CodeGenerationController extends AbstractModule {
    *
    * <p>Generate GraphQL resolvers and types from GraphQL schema.
    */
-  private Promise<HttpResponse> generateFromGraphQL(HttpRequest request) {
+  public Promise<HttpResponse> generateFromGraphQL(HttpRequest request) {
     log.info("Generating code from GraphQL schema");
 
     Promise<HttpResponse> promise =
@@ -129,7 +129,7 @@ public class CodeGenerationController extends AbstractModule {
    *
    * <p>Generate JPA entities from database schema or JSON Schema.
    */
-  private Promise<HttpResponse> generateFromSchema(HttpRequest request) {
+  public Promise<HttpResponse> generateFromSchema(HttpRequest request) {
     log.info("Generating code from database/JSON schema");
 
     Promise<HttpResponse> promise =
@@ -159,7 +159,7 @@ public class CodeGenerationController extends AbstractModule {
    *
    * <p>Preview generated code without writing to disk.
    */
-  private Promise<HttpResponse> previewCode(HttpRequest request) {
+  public Promise<HttpResponse> previewCode(HttpRequest request) {
     log.info("Previewing code generation");
 
     Promise<HttpResponse> promise =

@@ -465,7 +465,7 @@ public class CreateCommand implements Callable<Integer> {
                     log.info("   make install");
                     log.info("   make dev");
                 }
-                log.info("   # Check README.md for build instructions");
+                default -> log.info("   # Check README.md for build instructions");
             }
         }
     }

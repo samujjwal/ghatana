@@ -4,7 +4,7 @@ version: 1.0.0
 description: Orchestrates end-to-end compliance audit for a framework — delegates to compliance-control-evaluation-agent and compliance-gap-analysis-agent, produces final report.
 
 metadata:
-  level: 2
+  level: 1
   domain: compliance
   tags: [orchestrator, compliance, soc2, gdpr, iso27001]
 

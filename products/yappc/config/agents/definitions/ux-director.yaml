@@ -27,5 +27,7 @@ parameters:
     description: UX expertise level
 
 metadata:
+  level: 2  # Domain Expert — UX strategy and design direction
+  domain: design
   author: "YAPPC Team"
   tags: [ux, design, ui, frontend]

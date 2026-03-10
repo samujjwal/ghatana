@@ -58,6 +58,6 @@ public class InfrastructureServiceModule extends AbstractModule {
     @Provides
     SecurityServiceAdapter securityServiceAdapter() {
         logger.info("Creating SecurityServiceAdapter");
-        return new SecurityServiceAdapter();
+        return new SecurityServiceAdapter(new com.ghatana.yappc.infrastructure.datacloud.adapter.StaticAnalysisScanner(java.util.concurrent.Executors.newCachedThreadPool()));
     }
 }

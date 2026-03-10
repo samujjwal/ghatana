@@ -306,9 +306,10 @@ public class PacksCommand implements Callable<Integer> {
                     log.info("\nTemplates ({}):", metadata.templates().size());
                     metadata.templates().forEach((name, template) -> 
                             log.info("  - {} → {}", name, template.target()));
-                    }
-                    // Show variables if (metadata.variables() != null && !metadata.variables().isEmpty()) {
-                            log.info("\nVariables:");
+                }
+                // Show variables
+                if (metadata.variables() != null && !metadata.variables().isEmpty()) {
+                    log.info("\nVariables:");
                     metadata.variables().forEach((name, spec) -> {
                         String required = (spec.required() != null && spec.required()) ? " *required*" : "";
                         String defaultVal = spec.defaultValue() != null ? " (default: " + spec.defaultValue() + ")" : "";
@@ -321,15 +322,16 @@ public class PacksCommand implements Callable<Integer> {
                     var deps = metadata.dependencies();
                     if (deps.runtime() != null && !deps.runtime().isEmpty()) {
                         log.info("\nRuntime Dependencies:");
-                            log.info("  - {}", d);
+                        deps.runtime().forEach(d ->
+                            log.info("  - {}", d));
                     }
                     if (deps.devDependencies() != null && !deps.devDependencies().isEmpty()) {
-                            log.info("\nDev Dependencies:");
-                        deps.devDependencies.forEach(d ->
+                        log.info("\nDev Dependencies:");
+                        deps.devDependencies().forEach(d ->
                             log.info("  - {}", d));
                     }
                 }
-                            log.info("\n" + "─".repeat(60));
+                log.info("\n" + "─".repeat(60));
                 log.info("Usage: yappc create my-project --pack {}", metadata.name());
 
                 return 0;
@@ -400,14 +402,15 @@ public class PacksCommand implements Callable<Integer> {
                 log.info("✅ Pack validation passed!");
             } else {
                 log.info("❌ Pack validation failed:");
-                    log.info("   ERROR: {}", e);
+                result.errors().forEach(e ->
+                    log.info("   ERROR: {}", e));
             }
             if (!result.warnings().isEmpty()) {
-                    log.info("\nWarnings:");
+                log.info("\nWarnings:");
                 result.warnings().forEach(w ->
                     log.info("   ⚠️  {}", w));
             }
-                    log.info("\n{}", result.summary());
+            log.info("\n{}", result.summary());
             return result.valid() ? 0 : 1;
         }
     }

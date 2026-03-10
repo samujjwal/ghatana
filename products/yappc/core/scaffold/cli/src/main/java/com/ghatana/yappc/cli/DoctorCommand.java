@@ -73,7 +73,8 @@ public class DoctorCommand implements Callable<Integer> {
         if (jsonOutput) {
             doctor.outputJson(results);
         } else {
-            // Keep a human-readable header so tests (and users) see a stable label
+            // Print header to System.out so it can be captured in tests and redirected output
+            System.out.println("System Requirements Check");
             log.info("System Requirements Check");
             doctor.outputConsole(results);
         }

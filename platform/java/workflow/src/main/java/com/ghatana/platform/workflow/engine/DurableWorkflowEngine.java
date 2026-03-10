@@ -248,6 +248,30 @@ public final class DurableWorkflowEngine {
             Arrays.fill(stepStatuses, StepStatus.PENDING);
         }
 
+        /**
+         * Reconstructs a {@link WorkflowRun} from persisted state.
+         *
+         * <p>Used by durable state stores (e.g. JDBC) when loading a run after a restart.
+         * The returned instance is fully mutable and can continue to be updated normally.
+         *
+         * @param workflowId   the workflow identifier
+         * @param stepStatuses step statuses in execution order (length = step count)
+         * @param status       overall run status
+         * @param failureReason optional failure description, may be {@code null}
+         * @return a restored {@link WorkflowRun}
+         */
+        public static WorkflowRun restore(
+                @NotNull String workflowId,
+                @NotNull StepStatus[] stepStatuses,
+                @NotNull RunStatus status,
+                @Nullable String failureReason) {
+            WorkflowRun run = new WorkflowRun(workflowId, stepStatuses.length);
+            System.arraycopy(stepStatuses, 0, run.stepStatuses, 0, stepStatuses.length);
+            run.status = status;
+            run.failureReason = failureReason;
+            return run;
+        }
+
         public String workflowId() { return workflowId; }
         public RunStatus status() { return status; }
         public StepStatus[] stepStatuses() { return stepStatuses.clone(); }

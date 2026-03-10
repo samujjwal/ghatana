@@ -1,0 +1,84 @@
+# YAPPC Lifecycle Policy Definitions
+# Evaluated by YappcPolicyEngine on phase transitions and governance gates.
+# Format: policies → rules → condition (type, parameters) + applies_to + action
+
+policies:
+
+  - id: phase_advance_policy
+    version: "1.0"
+    description: "Governs valid lifecycle phase transitions with quality gates"
+    rules:
+
+      - id: require_test_coverage_design_to_planning
+        description: "Test coverage must be >= 80% before DESIGN → PLANNING transition"
+        condition:
+          type: METRIC_THRESHOLD
+          metric: test_coverage
+          operator: GTE
+          value: 80
+        applies_to:
+          from_phase: DESIGN
+          to_phase: PLANNING
+        action: BLOCK
+
+      - id: require_security_scan_before_deploy
+        description: "Security scan report artifact required before any DEPLOY transition"
+        condition:
+          type: ARTIFACT_PRESENT
+          artifact_id: security_scan_report
+        applies_to:
+          to_phase: DEPLOY
+        action: BLOCK
+
+      - id: require_shape_spec_before_generate
+        description: "Shape specification artifact required before GENERATE phase"
+        condition:
+          type: ARTIFACT_PRESENT
+          artifact_id: shape_spec
+        applies_to:
+          to_phase: GENERATE
+        action: BLOCK
+
+      - id: require_intent_spec_before_shape
+        description: "Intent specification must be captured before SHAPE phase"
+        condition:
+          type: ARTIFACT_PRESENT
+          artifact_id: intent_spec
+        applies_to:
+          to_phase: SHAPE
+        action: BLOCK
+
+      - id: require_validation_before_run
+        description: "Validation report required before RUN phase to ensure code quality"
+        condition:
+          type: ARTIFACT_PRESENT
+          artifact_id: validation_report
+        applies_to:
+          to_phase: RUN
+        action: BLOCK
+
+  - id: agent_autonomy_policy
+    version: "1.0"
+    description: "Controls agent autonomy based on confidence scores"
+    rules:
+
+      - id: require_high_confidence_for_autonomous
+        description: "Agents must have >= 0.85 confidence to act autonomously without review"
+        condition:
+          type: CONFIDENCE_SCORE
+          value: 0.85
+        action: BLOCK
+
+  - id: code_generation_safety_policy
+    version: "1.0"
+    description: "Safety guardrails around AI-generated code deployment"
+    rules:
+
+      - id: require_coverage_threshold_for_generated_code
+        description: "Generated code must achieve >= 75% test coverage before acceptance"
+        condition:
+          type: METRIC_THRESHOLD
+          metric: generated_code_coverage
+          operator: GTE
+          value: 75
+        action: BLOCK

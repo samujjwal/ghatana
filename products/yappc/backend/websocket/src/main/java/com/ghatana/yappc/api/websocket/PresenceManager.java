@@ -7,8 +7,7 @@ package com.ghatana.yappc.api.websocket;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import javax.inject.Inject;
-import javax.inject.Singleton;
+import io.activej.inject.annotation.Inject;
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.stream.Collectors;
@@ -21,7 +20,6 @@ import java.util.stream.Collectors;
  * @doc.layer infrastructure
  * @doc.pattern Manager
  */
-@Singleton
 public class PresenceManager {
     private static final Logger logger = LoggerFactory.getLogger(PresenceManager.class);
     

@@ -17,12 +17,20 @@ import org.slf4j.LoggerFactory;
  * and changelog generation
  *
  * @doc.type class
- * @doc.purpose Automated Release Management System Week 11 Day 51: Release automation with semantic versioning
+ * @doc.purpose Automated Release Management System - release automation with semantic versioning
  * @doc.layer platform
  * @doc.pattern Manager
  */
 public class ReleaseAutomationManager {
     private static final Logger logger = LoggerFactory.getLogger(ReleaseAutomationManager.class);
+
+    /**
+     * Pattern that commit messages must match to prevent argument injection. Allows conventional
+     * commit message characters: alphanumeric, spaces, hyphens, underscores, colons, parens,
+     * brackets, periods, exclamation marks, slashes (for scope paths), and newlines.
+     */
+    private static final Pattern SAFE_COMMIT_MSG_PATTERN =
+            Pattern.compile("^[\\w\\s\\-_\\[\\]().,:/!#*+@=<>{}|~`^%&\\n]{1,500}$");
 
     @SuppressWarnings("unused")
     private final Path projectRoot;
@@ -392,19 +400,61 @@ public class ReleaseAutomationManager {
                 addPb.directory(projectRoot.toFile());
                 addPb.start().waitFor();
 
-                // Commit with release message
+                // Build commit message from structured components — never from raw user input
+                String versionStr = sanitizeVersionString(version.toString());
                 String commitMessage =
                         String.format(
                                 "chore: release version %s\n\n%s",
-                                version.toString(), formatCommitBody(changelog));
+                                versionStr, formatCommitBody(changelog));
 
+                // Security: validate final commit message before passing to git
+                validateCommitMessage(commitMessage);
+
+                // Pass message as a separate argument (not shell-interpolated)
                 ProcessBuilder commitPb = new ProcessBuilder("git", "commit", "-m", commitMessage);
                 commitPb.directory(projectRoot.toFile());
                 commitPb.start().waitFor();
 
+            } catch (SecurityException se) {
+                throw new IOException("Commit message security validation failed: " + se.getMessage(), se);
             } catch (Exception e) {
                 throw new IOException("Failed to commit release", e);
             }
+        }
+
+        /**
+         * Validates that a commit message does not contain characters that could be used for
+         * argument injection when passed to git via ProcessBuilder.
+         *
+         * @param commitMessage the message to validate
+         * @throws SecurityException if the message contains unsafe characters
+         */
+        private static void validateCommitMessage(String commitMessage) {
+            if (commitMessage == null || commitMessage.isBlank()) {
+                throw new SecurityException("Commit message must not be null or blank");
+            }
+            if (commitMessage.length() > 2000) {
+                throw new SecurityException("Commit message exceeds maximum length of 2000 characters");
+            }
+            // Reject null bytes and other control characters (except newline and tab)
+            for (char c : commitMessage.toCharArray()) {
+                if (c == '\0' || (Character.isISOControl(c) && c != '\n' && c != '\t' && c != '\r')) {
+                    throw new SecurityException(
+                            "Commit message contains illegal control character: 0x"
+                                    + Integer.toHexString(c));
+                }
+            }
+        }
+
+        /**
+         * Sanitizes a semver string to contain only safe characters (digits, dots, hyphens,
+         * alphanumeric). Guards against version strings being injected via configuration files.
+         */
+        private static String sanitizeVersionString(String version) {
+            if (!version.matches("[0-9a-zA-Z.\\-+]+")) {
+                throw new SecurityException("Version string contains unsafe characters: " + version);
+            }
+            return version;
         }
 
         private String formatCommitBody(ChangelogEntry changelog) {

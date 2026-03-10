@@ -354,7 +354,7 @@ public class SbomCommand implements Callable<Integer> {
 
         private void printVulnerabilityTable(
                 java.util.List<java.util.Map<String, Object>> vulnerabilities) {
-            log.info(String.format("%-15s %-10s %-50s", "ID", "SEVERITY", "DESCRIPTION"));
+            logger.info(String.format("%-15s %-10s %-50s", "ID", "SEVERITY", "DESCRIPTION"));
             logger.info("-".repeat(75));
 
             for (java.util.Map<String, Object> vuln : vulnerabilities) {
@@ -367,7 +367,7 @@ public class SbomCommand implements Callable<Integer> {
                 }
 
                 String icon = getSeverityIcon(severity);
-                log.info(String.format("%-15s %s %-8s %-50s", id, icon, severity, description));
+                logger.info(String.format("%-15s %s %-8s %-50s", id, icon, severity, description));
             }
         }
 

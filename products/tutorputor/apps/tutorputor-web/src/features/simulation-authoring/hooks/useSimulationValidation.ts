@@ -1,9 +1,9 @@
 /**
  * useSimulationValidation Hook
- * 
+ *
  * Hook for validating simulation manifests with real-time feedback.
  * Integrates with backend validation and provides local quick validation.
- * 
+ *
  * @doc.type hook
  * @doc.purpose Simulation manifest validation
  * @doc.layer product
@@ -12,85 +12,16 @@
 
 import { useState, useCallback, useMemo, useRef } from "react";
 import { useMutation } from "@tanstack/react-query";
+import type {
+  SimulationManifest,
+  SimulationDomain,
+  SimulationStep,
+  SimEntity,
+  SimAction,
+  ManifestValidationResult,
+} from "@ghatana/tutorputor-contracts/v1/simulation/types";
 
-// =============================================================================
-// Local Type Definitions (matching expected shapes)
-// =============================================================================
-
-export type SimulationDomain = 
-  | "CS_DISCRETE" 
-  | "PHYSICS" 
-  | "CHEMISTRY" 
-  | "BIOLOGY" 
-  | "MATH" 
-  | "ENGINEERING"
-  | "ECONOMICS";
-
-export interface SimAction {
-  action: string;
-  type?: string;
-  entityId?: string;
-  target?: string;
-  duration?: number;
-  delay?: number;
-  easing?: string;
-  payload?: Record<string, unknown>;
-}
-
-export interface SimEntity {
-  id: string | number;
-  type: string;
-  label?: string;
-  x?: number;
-  y?: number;
-  z?: number;
-  position?: { x: number; y: number; z?: number };
-  data?: Record<string, unknown>;
-  properties?: Record<string, unknown>;
-}
-
-export interface SimulationStep {
-  id: string | number;
-  orderIndex?: number;
-  title?: string;
-  duration: number;
-  actions: SimAction[];
-  narration?: string;
-  checkpoint?: boolean;
-  breakpoint?: boolean;
-  assessmentHook?: string;
-}
-
-export interface SimulationManifest {
-  id: string;
-  title: string;
-  description: string;
-  domain: SimulationDomain;
-  version: string;
-  initialEntities: SimEntity[];
-  steps: SimulationStep[];
-  canvas?: {
-    width: number;
-    height: number;
-    backgroundColor?: string;
-  };
-  playback?: {
-    defaultSpeed: number;
-    allowPause: boolean;
-    allowRewind: boolean;
-  };
-  accessibility?: {
-    screenReaderDescriptions?: boolean;
-    highContrast?: boolean;
-    reducedMotion?: boolean;
-  };
-}
-
-export interface ManifestValidationResult {
-  isValid: boolean;
-  errors?: Array<{ code: string; message: string; path?: string }>;
-  warnings?: Array<{ code: string; message: string; path?: string }>;
-}
+export type { SimulationManifest, SimulationDomain, ManifestValidationResult };
 
 // =============================================================================
 // Types
@@ -213,7 +144,7 @@ const createError = (
   type: ValidationError["type"],
   severity: number,
   location?: ValidationLocation,
-  suggestion?: string
+  suggestion?: string,
 ): ValidationError => ({
   id: `${code}_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
   code,
@@ -240,7 +171,7 @@ const BUILTIN_RULES: ValidationRule[] = [
             "error",
             1,
             { path: "id" },
-            "Generate a unique ID for this manifest"
+            "Generate a unique ID for this manifest",
           ),
         ];
       }
@@ -261,7 +192,7 @@ const BUILTIN_RULES: ValidationRule[] = [
             "error",
             1,
             { path: "title" },
-            "Add a descriptive title for this simulation"
+            "Add a descriptive title for this simulation",
           ),
         ];
       }
@@ -282,7 +213,7 @@ const BUILTIN_RULES: ValidationRule[] = [
             "error",
             1,
             { path: "domain" },
-            "Specify the simulation domain (CS_DISCRETE, PHYSICS, etc.)"
+            "Specify the simulation domain (CS_DISCRETE, PHYSICS, etc.)",
           ),
         ];
       }
@@ -305,7 +236,7 @@ const BUILTIN_RULES: ValidationRule[] = [
             "warning",
             2,
             { path: "steps" },
-            "Add at least one step to the simulation"
+            "Add at least one step to the simulation",
           ),
         ];
       }
@@ -330,8 +261,8 @@ const BUILTIN_RULES: ValidationRule[] = [
               "error",
               1,
               { path: `steps[${index}].id`, stepIndex: index },
-              "Generate a unique ID for this step"
-            )
+              "Generate a unique ID for this step",
+            ),
           );
         } else if (seenIds.has(step.id as string)) {
           errors.push(
@@ -341,8 +272,8 @@ const BUILTIN_RULES: ValidationRule[] = [
               "error",
               1,
               { path: `steps[${index}].id`, stepIndex: index },
-              "Use a unique ID for each step"
-            )
+              "Use a unique ID for each step",
+            ),
           );
         } else {
           seenIds.add(step.id as string);
@@ -369,8 +300,8 @@ const BUILTIN_RULES: ValidationRule[] = [
               "info",
               3,
               { path: `steps[${index}].narration`, stepIndex: index },
-              "Add narration to improve accessibility"
-            )
+              "Add narration to improve accessibility",
+            ),
           );
         }
       });
@@ -398,8 +329,8 @@ const BUILTIN_RULES: ValidationRule[] = [
               "error",
               1,
               { path: `initialEntities[${index}].id` },
-              "Generate a unique ID for this entity"
-            )
+              "Generate a unique ID for this entity",
+            ),
           );
         } else if (seenIds.has(entity.id as string)) {
           errors.push(
@@ -408,9 +339,12 @@ const BUILTIN_RULES: ValidationRule[] = [
               `Duplicate entity ID: ${entity.id}`,
               "error",
               1,
-              { path: `initialEntities[${index}].id`, entityId: entity.id as string },
-              "Use a unique ID for each entity"
-            )
+              {
+                path: `initialEntities[${index}].id`,
+                entityId: entity.id as string,
+              },
+              "Use a unique ID for each entity",
+            ),
           );
         } else {
           seenIds.add(entity.id as string);
@@ -430,7 +364,7 @@ const BUILTIN_RULES: ValidationRule[] = [
     validate: (manifest) => {
       const errors: ValidationError[] = [];
       const entityIds = new Set(
-        manifest.initialEntities?.map((e) => e.id as string) || []
+        manifest.initialEntities?.map((e) => e.id as string) || [],
       );
 
       // Track entities created during simulation
@@ -448,15 +382,16 @@ const BUILTIN_RULES: ValidationRule[] = [
           if (action.entityId && action.type !== "CREATE_ENTITY") {
             // Check if entity exists before this step
             const existsBeforeStep = manifest.initialEntities?.some(
-              (e) => e.id === action.entityId
+              (e) => e.id === action.entityId,
             );
             const createdBefore = manifest.steps
               ?.slice(0, stepIndex)
               .some((s) =>
                 s.actions?.some(
                   (a) =>
-                    a.type === "CREATE_ENTITY" && a.entityId === action.entityId
-                )
+                    a.type === "CREATE_ENTITY" &&
+                    a.entityId === action.entityId,
+                ),
               );
 
             if (!existsBeforeStep && !createdBefore) {
@@ -472,8 +407,8 @@ const BUILTIN_RULES: ValidationRule[] = [
                     actionIndex,
                     entityId: action.entityId as string,
                   },
-                  "Create the entity before referencing it"
-                )
+                  "Create the entity before referencing it",
+                ),
               );
             }
           }
@@ -496,7 +431,7 @@ const BUILTIN_RULES: ValidationRule[] = [
 
       // Find array entities and check index references
       const arrayEntities = manifest.initialEntities?.filter(
-        (e) => e.type === "array" || e.type === "array-element"
+        (e) => e.type === "array" || e.type === "array-element",
       );
 
       if (arrayEntities && arrayEntities.length > 0) {
@@ -515,8 +450,8 @@ const BUILTIN_RULES: ValidationRule[] = [
                     stepIndex,
                     actionIndex,
                   },
-                  "Use non-negative array indices"
-                )
+                  "Use non-negative array indices",
+                ),
               );
             }
           });
@@ -550,8 +485,8 @@ const BUILTIN_RULES: ValidationRule[] = [
                 path: `initialEntities[${index}].properties.mass`,
                 entityId: entity.id as string,
               },
-              "Use a positive mass value"
-            )
+              "Use a positive mass value",
+            ),
           );
         }
       });
@@ -566,7 +501,7 @@ const BUILTIN_RULES: ValidationRule[] = [
 // =============================================================================
 
 export function useSimulationValidation(
-  options: UseSimulationValidationOptions = {}
+  options: UseSimulationValidationOptions = {},
 ): UseSimulationValidationReturn {
   const {
     apiBaseUrl = "/api",
@@ -597,7 +532,7 @@ export function useSimulationValidation(
   // Combined rules
   const allRules = useMemo(
     () => [...BUILTIN_RULES, ...customRules],
-    [customRules]
+    [customRules],
   );
 
   // Local validation
@@ -617,13 +552,13 @@ export function useSimulationValidation(
 
       return allErrors;
     },
-    [allRules]
+    [allRules],
   );
 
   // Backend validation mutation
   const backendValidation = useMutation({
     mutationFn: async (
-      manifest: SimulationManifest
+      manifest: SimulationManifest,
     ): Promise<ManifestValidationResult> => {
       const response = await fetch(`${apiBaseUrl}/api/sim-author/validate`, {
         method: "POST",
@@ -653,31 +588,35 @@ export function useSimulationValidation(
         if (useBackendValidation) {
           try {
             const backendResult = await backendValidation.mutateAsync(manifest);
-            
-            // Convert backend errors to our format
-            backendResult.errors?.forEach((e: { code: string; message: string; path?: string }) => {
-              allErrors.push(
-                createError(
-                  e.code || "BACKEND_ERROR",
-                  e.message,
-                  "error",
-                  1,
-                  { path: e.path || "" }
-                )
-              );
-            });
 
-            backendResult.warnings?.forEach((w: { code: string; message: string; path?: string }) => {
-              allErrors.push(
-                createError(
-                  w.code || "BACKEND_WARNING",
-                  w.message,
-                  "warning",
-                  2,
-                  { path: w.path || "" }
-                )
-              );
-            });
+            // Convert backend errors to our format
+            backendResult.errors?.forEach(
+              (e: { code: string; message: string; path?: string }) => {
+                allErrors.push(
+                  createError(
+                    e.code || "BACKEND_ERROR",
+                    e.message,
+                    "error",
+                    1,
+                    { path: e.path || "" },
+                  ),
+                );
+              },
+            );
+
+            backendResult.warnings?.forEach(
+              (w: { code: string; message: string; path?: string }) => {
+                allErrors.push(
+                  createError(
+                    w.code || "BACKEND_WARNING",
+                    w.message,
+                    "warning",
+                    2,
+                    { path: w.path || "" },
+                  ),
+                );
+              },
+            );
           } catch (err) {
             console.warn("Backend validation failed:", err);
           }
@@ -685,13 +624,15 @@ export function useSimulationValidation(
 
         // Calculate summary
         const errorCount = allErrors.filter((e) => e.type === "error").length;
-        const warningCount = allErrors.filter((e) => e.type === "warning").length;
+        const warningCount = allErrors.filter(
+          (e) => e.type === "warning",
+        ).length;
         const infoCount = allErrors.filter((e) => e.type === "info").length;
 
         // Calculate score (deduct points for issues)
         const score = Math.max(
           0,
-          100 - errorCount * 20 - warningCount * 5 - infoCount * 1
+          100 - errorCount * 20 - warningCount * 5 - infoCount * 1,
         );
 
         setErrors(allErrors);
@@ -710,7 +651,7 @@ export function useSimulationValidation(
         setIsValidating(false);
       }
     },
-    [validateLocally, useBackendValidation, backendValidation]
+    [validateLocally, useBackendValidation, backendValidation],
   );
 
   // Clear validation
@@ -732,21 +673,21 @@ export function useSimulationValidation(
     (stepIndex: number): ValidationError[] => {
       return errors.filter((e) => e.location?.stepIndex === stepIndex);
     },
-    [errors]
+    [errors],
   );
 
   const getErrorsForEntity = useCallback(
     (entityId: string): ValidationError[] => {
       return errors.filter((e) => e.location?.entityId === entityId);
     },
-    [errors]
+    [errors],
   );
 
   const getErrorsForPath = useCallback(
     (path: string): ValidationError[] => {
       return errors.filter((e) => e.location?.path?.startsWith(path));
     },
-    [errors]
+    [errors],
   );
 
   // Apply auto-fix
@@ -758,7 +699,7 @@ export function useSimulationValidation(
       }
       return null;
     },
-    [errors]
+    [errors],
   );
 
   return {

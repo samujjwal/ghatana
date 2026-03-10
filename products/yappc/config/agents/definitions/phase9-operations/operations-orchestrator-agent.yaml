@@ -4,7 +4,7 @@ version: 1.0.0
 description: Orchestrates operational activities. Coordinates monitoring, incident response, and maintenance.
 
 metadata:
-  level: 2  # Domain Expert — Phase Orchestrator (registered as level_2_experts in registry)
+  level: 1  # Strategic — Phase Orchestrator (consistent with all other phase orchestrators)
   domain: operations
   tags:
     - phase-orchestration

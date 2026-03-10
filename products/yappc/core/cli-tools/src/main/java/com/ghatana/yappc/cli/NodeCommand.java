@@ -11,14 +11,11 @@ import picocli.CommandLine.Option;
 import picocli.CommandLine.Parameters;
 import picocli.CommandLine.ParentCommand;
 
-import io.activej.eventloop.Eventloop;
-import io.activej.promise.Promise;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.Callable;
-import java.util.concurrent.atomic.AtomicReference;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -73,13 +70,7 @@ public class NodeCommand implements Runnable {
         @Override
         public Integer call() throws Exception {
             KnowledgeGraphServiceImpl service = new KnowledgeGraphServiceImpl();
-            AtomicReference<List<GraphNode>> nodesRef = new AtomicReference<>();
-            Eventloop eventloop = Eventloop.getCurrentEventloop();
-            service.listNodes()
-                .whenResult(nodesRef::set)
-                .whenException(e -> { throw new RuntimeException(e); });
-            eventloop.run();
-            List<GraphNode> nodes = nodesRef.get();
+            List<GraphNode> nodes = service.listNodes().getResult();
 
             if (nodeType != null) {
                 nodes = nodes.stream()
@@ -130,13 +121,7 @@ public class NodeCommand implements Runnable {
         @Override
         public Integer call() throws Exception {
             KnowledgeGraphServiceImpl service = new KnowledgeGraphServiceImpl();
-            AtomicReference<Optional<GraphNode>> nodeRef = new AtomicReference<>();
-            Eventloop eventloop = Eventloop.getCurrentEventloop();
-            service.findNode(nodeId)
-                .whenResult(nodeRef::set)
-                .whenException(e -> { throw new RuntimeException(e); });
-            eventloop.run();
-            Optional<GraphNode> node = nodeRef.get();
+            Optional<GraphNode> node = service.findNode(nodeId).getResult();
 
             if (node.isEmpty()) {
                 log.error("Node not found: {}", nodeId);
@@ -216,13 +201,7 @@ public class NodeCommand implements Runnable {
             }
 
             KnowledgeGraphNode node = builder.build();
-            AtomicReference<GraphNode> createdRef = new AtomicReference<>();
-            Eventloop eventloop = Eventloop.getCurrentEventloop();
-            service.createNode("default", node)
-                .whenResult(createdRef::set)
-                .whenException(e -> { throw new RuntimeException(e); });
-            eventloop.run();
-            GraphNode created = createdRef.get();
+            GraphNode created = service.createNode("default", node).getResult();
 
             if (json) {
                 log.info("{}", mapper.writeValueAsString(created));
@@ -256,13 +235,7 @@ public class NodeCommand implements Runnable {
             }
 
             KnowledgeGraphServiceImpl service = new KnowledgeGraphServiceImpl();
-            AtomicReference<Boolean> deletedRef = new AtomicReference<>();
-            Eventloop eventloop = Eventloop.getCurrentEventloop();
-            service.deleteNode("default", nodeId)
-                .whenResult(deletedRef::set)
-                .whenException(e -> { throw new RuntimeException(e); });
-            eventloop.run();
-            boolean deleted = deletedRef.get();
+            boolean deleted = service.deleteNode("default", nodeId).getResult();
 
             if (deleted) {
                 log.info("Node deleted successfully: {}", nodeId);

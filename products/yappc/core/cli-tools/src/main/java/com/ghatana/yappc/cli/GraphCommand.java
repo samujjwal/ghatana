@@ -11,12 +11,9 @@ import picocli.CommandLine.Option;
 import picocli.CommandLine.Parameters;
 import picocli.CommandLine.ParentCommand;
 
-import io.activej.eventloop.Eventloop;
-import io.activej.promise.Promise;
 import java.util.List;
 import java.util.Optional;
 import java.util.concurrent.Callable;
-import java.util.concurrent.atomic.AtomicReference;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -80,13 +77,7 @@ public class GraphCommand implements Runnable {
             KnowledgeGraphServiceImpl service = new KnowledgeGraphServiceImpl();
 
             try {
-                AtomicReference<KnowledgeGraph> graphRef = new AtomicReference<>();
-                Eventloop eventloop = Eventloop.getCurrentEventloop();
-                service.createGraph(graphId, name, description, projectId)
-                    .whenResult(graphRef::set)
-                    .whenException(e -> { throw new RuntimeException(e); });
-                eventloop.run();
-                KnowledgeGraph graph = graphRef.get();
+                KnowledgeGraph graph = service.createGraph(graphId, name, description, projectId).getResult();
 
                 if (json) {
                     log.info(mapper.writeValueAsString(new GraphInfo( graph.getId(), graph.getName(), graph.getDescription(), graph.getNodeCount(), graph.getEdgeCount() )));
@@ -122,13 +113,7 @@ public class GraphCommand implements Runnable {
         @Override
         public Integer call() throws Exception {
             KnowledgeGraphServiceImpl service = new KnowledgeGraphServiceImpl();
-            AtomicReference<Optional<KnowledgeGraph>> graphRef = new AtomicReference<>();
-            Eventloop eventloop = Eventloop.getCurrentEventloop();
-            service.getGraph(graphId)
-                .whenResult(graphRef::set)
-                .whenException(e -> { throw new RuntimeException(e); });
-            eventloop.run();
-            Optional<KnowledgeGraph> graphOpt = graphRef.get();
+            Optional<KnowledgeGraph> graphOpt = service.getGraph(graphId).getResult();
 
             if (graphOpt.isEmpty()) {
                 log.error("Graph not found: {}", graphId);
@@ -179,13 +164,7 @@ public class GraphCommand implements Runnable {
             KnowledgeGraphServiceImpl service = new KnowledgeGraphServiceImpl();
 
             try {
-                AtomicReference<Boolean> deletedRef = new AtomicReference<>();
-                Eventloop eventloop = Eventloop.getCurrentEventloop();
-                service.deleteGraph(graphId)
-                    .whenResult(deletedRef::set)
-                    .whenException(e -> { throw new RuntimeException(e); });
-                eventloop.run();
-                boolean deleted = deletedRef.get();
+                boolean deleted = service.deleteGraph(graphId).getResult();
 
                 if (deleted) {
                     log.info("Graph deleted successfully: {}", graphId);
@@ -216,13 +195,7 @@ public class GraphCommand implements Runnable {
         @Override
         public Integer call() throws Exception {
             KnowledgeGraphServiceImpl service = new KnowledgeGraphServiceImpl();
-            AtomicReference<Optional<KnowledgeGraph>> graphRef = new AtomicReference<>();
-            Eventloop eventloop = Eventloop.getCurrentEventloop();
-            service.getGraph("default")
-                .whenResult(graphRef::set)
-                .whenException(e -> { throw new RuntimeException(e); });
-            eventloop.run();
-            Optional<KnowledgeGraph> graphOpt = graphRef.get();
+            Optional<KnowledgeGraph> graphOpt = service.getGraph("default").getResult();
 
             if (graphOpt.isEmpty()) {
                 log.error("Default graph not found");
@@ -257,13 +230,7 @@ public class GraphCommand implements Runnable {
         @Override
         public Integer call() throws Exception {
             KnowledgeGraphServiceImpl service = new KnowledgeGraphServiceImpl();
-            AtomicReference<List<GraphNode>> relatedRef = new AtomicReference<>();
-            Eventloop eventloop = Eventloop.getCurrentEventloop();
-            service.getRelatedNodes("default", nodeId)
-                .whenResult(relatedRef::set)
-                .whenException(e -> { throw new RuntimeException(e); });
-            eventloop.run();
-            List<GraphNode> related = relatedRef.get();
+            List<GraphNode> related = service.getRelatedNodes("default", nodeId).getResult();
 
             if (json) {
                 log.info("{}", mapper.writeValueAsString(related));

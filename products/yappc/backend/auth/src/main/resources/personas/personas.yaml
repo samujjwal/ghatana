@@ -1,0 +1,220 @@
+# YAPPC Authoritative Persona Definitions
+# This file is the SINGLE SOURCE OF TRUTH for all persona-to-role/permission mappings.
+# PersonaMapping.java delegates all lookups here via PersonaLoader.
+# Permission values MUST match the String constants in com.ghatana.platform.security.rbac.Permission.
+# To add or modify personas, update this file only.
+
+personas:
+
+  # ── Administrative ───────────────────────────────────────────────────────────
+  - id: WORKSPACE_ADMIN
+    display_name: "Workspace Admin"
+    category: administrative
+    role: ADMIN
+    permissions:
+      - workspace.create
+      - workspace.read
+      - workspace.update
+      - workspace.manage_members
+      - project.create
+      - project.read
+      - project.update
+      - requirement.create
+      - requirement.read
+      - requirement.update
+      - requirement.approve
+      - role.assign
+      - user.manage
+
+  - id: STAKEHOLDER
+    display_name: "Stakeholder"
+    category: administrative
+    role: VIEWER
+    permissions:
+      - project.read
+      - requirement.read
+
+  # ── Strategic ─────────────────────────────────────────────────────────────
+  - id: EXECUTIVE
+    display_name: "Executive"
+    category: strategic
+    role: ADMIN
+    permissions:
+      - workspace.read
+      - project.read
+      - requirement.read
+      - requirement.approve
+
+  - id: PRODUCT_MANAGER
+    display_name: "Product Manager"
+    category: strategic
+    role: EDITOR
+    permissions:
+      - project.read
+      - project.update
+      - requirement.create
+      - requirement.read
+      - requirement.update
+      - requirement.delete
+      - requirement.approve
+      - ai.suggestion.request
+      - ai.suggestion.feedback
+
+  - id: PRODUCT_OWNER
+    display_name: "Product Owner"
+    category: strategic
+    role: EDITOR
+    permissions:
+      - project.read
+      - project.update
+      - requirement.create
+      - requirement.read
+      - requirement.update
+      - requirement.delete
+      - requirement.approve
+      - ai.suggestion.request
+      - ai.suggestion.feedback
+
+  - id: PROGRAM_MANAGER
+    display_name: "Program Manager"
+    category: strategic
+    role: EDITOR
+    permissions:
+      - project.read
+      - requirement.read
+      - requirement.approve
+
+  - id: BUSINESS_ANALYST
+    display_name: "Business Analyst"
+    category: strategic
+    role: EDITOR
+    permissions:
+      - project.read
+      - requirement.create
+      - requirement.read
+      - requirement.update
+      - ai.suggestion.request
+      - ai.suggestion.feedback
+
+  # ── Execution ─────────────────────────────────────────────────────────────
+  - id: DEVELOPER
+    display_name: "Developer"
+    category: execution
+    role: EDITOR
+    permissions:
+      - project.read
+      - requirement.read
+      - ai.suggestion.request
+
+  - id: TECH_LEAD
+    display_name: "Tech Lead"
+    category: execution
+    role: EDITOR
+    permissions:
+      - project.read
+      - project.update
+      - requirement.read
+      - requirement.update
+      - requirement.approve
+      - ai.suggestion.request
+
+  - id: QA_ENGINEER
+    display_name: "QA Engineer"
+    category: execution
+    role: EDITOR
+    permissions:
+      - project.read
+      - requirement.read
+      - ai.suggestion.request
+
+  - id: DEVOPS_ENGINEER
+    display_name: "DevOps Engineer"
+    category: execution
+    role: EDITOR
+    permissions:
+      - project.read
+      - requirement.read
+
+  - id: SRE
+    display_name: "Site Reliability Engineer"
+    category: execution
+    role: EDITOR
+    permissions:
+      - project.read
+      - requirement.read
+
+  # ── Governance ───────────────────────────────────────────────────────────
+  - id: SECURITY_ENGINEER
+    display_name: "Security Engineer"
+    category: governance
+    role: EDITOR
+    permissions:
+      - project.read
+      - requirement.read
+      - requirement.approve
+      - ai.suggestion.request
+
+  - id: COMPLIANCE_OFFICER
+    display_name: "Compliance Officer"
+    category: governance
+    role: EDITOR
+    permissions:
+      - project.read
+      - requirement.read
+      - requirement.approve
+      - ai.suggestion.request
+
+  - id: ARCHITECT
+    display_name: "Architect"
+    category: governance
+    role: EDITOR
+    permissions:
+      - project.read
+      - project.update
+      - requirement.read
+      - requirement.update
+      - requirement.approve
+      - ai.suggestion.request
+
+  # ── Operations ────────────────────────────────────────────────────────────
+  - id: RELEASE_MANAGER
+    display_name: "Release Manager"
+    category: operations
+    role: EDITOR
+    permissions:
+      - project.read
+      - requirement.read
+      - requirement.approve
+
+  - id: INFRASTRUCTURE_ARCHITECT
+    display_name: "Infrastructure Architect"
+    category: operations
+    role: EDITOR
+    permissions:
+      - project.read
+      - requirement.read
+
+  - id: CUSTOMER_SUCCESS
+    display_name: "Customer Success"
+    category: operations
+    role: EDITOR
+    permissions:
+      - project.read
+      - requirement.read
+
+  - id: SUPPORT_LEAD
+    display_name: "Support Lead"
+    category: operations
+    role: EDITOR
+    permissions:
+      - project.read
+      - requirement.read
+
+  - id: ENGINEERING_MANAGER
+    display_name: "Engineering Manager"
+    category: operations
+    role: EDITOR
+    permissions:
+      - project.read
+      - requirement.read
+      - requirement.approve

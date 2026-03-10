@@ -1,0 +1,2792 @@
+generator client {
+  provider      = "prisma-client-js"
+  output        = "../generated/prisma"
+  binaryTargets = ["native"]
+}
+
+datasource db {
+  provider = "sqlite"
+}
+
+enum ModuleDomain {
+  MATH
+  SCIENCE
+  TECH
+}
+
+enum ModuleDifficulty {
+  INTRO
+  INTERMEDIATE
+  ADVANCED
+}
+
+enum ModuleStatus {
+  DRAFT
+  PUBLISHED
+  ARCHIVED
+}
+
+enum EnrollmentStatus {
+  NOT_STARTED
+  IN_PROGRESS
+  COMPLETED
+}
+
+enum AssessmentType {
+  QUIZ
+  PROJECT
+  SIMULATION
+}
+
+enum AssessmentStatus {
+  DRAFT
+  PUBLISHED
+  ARCHIVED
+}
+
+enum AssessmentAttemptStatus {
+  IN_PROGRESS
+  SUBMITTED
+  GRADED
+  EXPIRED
+}
+
+enum ListingStatus {
+  DRAFT
+  ACTIVE
+  ARCHIVED
+}
+
+enum ListingVisibility {
+  PUBLIC
+  PRIVATE
+}
+
+model Module {
+  id                   String           @id @default(cuid())
+  tenantId             String
+  slug                 String
+  title                String
+  domain               ModuleDomain
+  difficulty           ModuleDifficulty
+  estimatedTimeMinutes Int
+  status               ModuleStatus     @default(PUBLISHED)
+  description          String
+  version              Int              @default(1)
+  authorId             String?
+  updatedBy            String?
+  publishedAt          DateTime?
+  createdAt            DateTime         @default(now())
+  updatedAt            DateTime         @updatedAt
+
+  tags                ModuleTag[]
+  learningObjectives  ModuleLearningObjective[]
+  contentBlocks       ModuleContentBlock[]
+  prerequisites       ModulePrerequisite[]      @relation("ModulePrerequisites")
+  requiredBy          ModulePrerequisite[]      @relation("ModuleDependents")
+  enrollments         Enrollment[]
+  revisions           ModuleRevision[]
+  marketplaceListings MarketplaceListing[]
+  assessments         Assessment[]
+  simulationTemplates SimulationTemplate[]
+  simulationManifests SimulationManifest[]
+  learningExperience  LearningExperience?
+
+  @@unique([tenantId, slug])
+  @@index([tenantId, domain])
+  @@index([tenantId, status])
+}
+
+model ModuleTag {
+  id       Int    @id @default(autoincrement())
+  module   Module @relation(fields: [moduleId], references: [id], onDelete: Cascade)
+  moduleId String
+  label    String
+
+  @@unique([moduleId, label])
+}
+
+model ModuleLearningObjective {
+  id            Int    @id @default(autoincrement())
+  module        Module @relation(fields: [moduleId], references: [id], onDelete: Cascade)
+  moduleId      String
+  label         String
+  taxonomyLevel String
+}
+
+model ModuleContentBlock {
+  id         String @id @default(cuid())
+  module     Module @relation(fields: [moduleId], references: [id], onDelete: Cascade)
+  moduleId   String
+  orderIndex Int
+  blockType  String
+  payload    Json
+}
+
+model ModulePrerequisite {
+  module               Module @relation("ModulePrerequisites", fields: [moduleId], references: [id], onDelete: Cascade)
+  moduleId             String
+  prerequisite         Module @relation("ModuleDependents", fields: [prerequisiteModuleId], references: [id], onDelete: Cascade)
+  prerequisiteModuleId String
+
+  @@id([moduleId, prerequisiteModuleId])
+}
+
+model ModuleRevision {
+  id        String   @id @default(cuid())
+  module    Module   @relation(fields: [moduleId], references: [id], onDelete: Cascade)
+  moduleId  String
+  version   Int
+  snapshot  Json
+  createdBy String
+  createdAt DateTime @default(now())
+
+  @@index([moduleId, version])
+}
+
+model Enrollment {
+  id               String           @id @default(cuid())
+  tenantId         String
+  userId           String
+  module           Module           @relation(fields: [moduleId], references: [id], onDelete: Cascade)
+  moduleId         String
+  status           EnrollmentStatus @default(NOT_STARTED)
+  progressPercent  Int              @default(0)
+  startedAt        DateTime?
+  completedAt      DateTime?
+  timeSpentSeconds Int              @default(0)
+  createdAt        DateTime         @default(now())
+  updatedAt        DateTime         @updatedAt
+
+  @@unique([tenantId, userId, moduleId])
+  @@index([tenantId, userId])
+}
+
+model Assessment {
+  id               String           @id @default(cuid())
+  tenantId         String
+  module           Module           @relation(fields: [moduleId], references: [id], onDelete: Cascade)
+  moduleId         String
+  title            String
+  type             AssessmentType   @default(QUIZ)
+  status           AssessmentStatus @default(DRAFT)
+  version          Int              @default(1)
+  passingScore     Int              @default(80)
+  attemptsAllowed  Int?
+  timeLimitMinutes Int?
+  createdBy        String
+  updatedBy        String
+  createdAt        DateTime         @default(now())
+  updatedAt        DateTime         @updatedAt
+
+  objectives AssessmentObjective[]
+  items      AssessmentItem[]
+  attempts   AssessmentAttempt[]
+
+  @@index([tenantId, moduleId])
+  @@index([tenantId, status])
+}
+
+model AssessmentObjective {
+  id            String     @id @default(cuid())
+  assessment    Assessment @relation(fields: [assessmentId], references: [id], onDelete: Cascade)
+  assessmentId  String
+  label         String
+  taxonomyLevel String
+}
+
+model AssessmentItem {
+  id           String     @id @default(cuid())
+  assessment   Assessment @relation(fields: [assessmentId], references: [id], onDelete: Cascade)
+  assessmentId String
+  orderIndex   Int
+  itemType     String
+  prompt       String
+  stimulus     String?
+  choices      Json?
+  modelAnswer  String?
+  rubric       String?
+  points       Int        @default(10)
+  metadata     Json?
+}
+
+model AssessmentAttempt {
+  id               String                  @id @default(cuid())
+  tenantId         String
+  assessment       Assessment              @relation(fields: [assessmentId], references: [id], onDelete: Cascade)
+  assessmentId     String
+  userId           String
+  status           AssessmentAttemptStatus @default(IN_PROGRESS)
+  responses        Json?
+  scorePercent     Int?
+  feedback         Json?
+  startedAt        DateTime                @default(now())
+  submittedAt      DateTime?
+  gradedAt         DateTime?
+  timeSpentSeconds Int?
+
+  @@index([tenantId, userId])
+  @@index([tenantId, assessmentId])
+}
+
+model AssessmentDraft {
+  id        String   @id @default(cuid())
+  tenantId  String
+  moduleId  String
+  createdBy String
+  payload   Json
+  createdAt DateTime @default(now())
+
+  @@index([tenantId, moduleId])
+  @@index([tenantId, createdBy])
+}
+
+model LearningEvent {
+  id        String   @id @default(cuid())
+  tenantId  String
+  userId    String
+  moduleId  String?
+  eventType String
+  payload   Json?
+  timestamp DateTime @default(now())
+
+  @@index([tenantId, eventType])
+  @@index([tenantId, userId])
+}
+
+model MarketplaceListing {
+  id          String            @id @default(cuid())
+  tenantId    String
+  module      Module            @relation(fields: [moduleId], references: [id], onDelete: Cascade)
+  moduleId    String
+  creatorId   String
+  priceCents  Int               @default(0)
+  status      ListingStatus     @default(DRAFT)
+  visibility  ListingVisibility @default(PUBLIC)
+  publishedAt DateTime?
+  createdAt   DateTime          @default(now())
+  updatedAt   DateTime          @updatedAt
+
+  @@index([tenantId, status])
+  @@index([tenantId, moduleId])
+  @@index([tenantId, creatorId])
+}
+
+// =============================================================================
+// Learning Pathways
+// =============================================================================
+
+enum PathwayStatus {
+  ACTIVE
+  COMPLETED
+  PAUSED
+}
+
+model LearningPath {
+  id        String        @id @default(cuid())
+  tenantId  String
+  userId    String
+  title     String
+  goal      String
+  status    PathwayStatus @default(ACTIVE)
+  createdAt DateTime      @default(now())
+  updatedAt DateTime      @updatedAt
+
+  nodes LearningPathNode[]
+
+  @@unique([tenantId, userId, status])
+  @@index([tenantId, userId])
+}
+
+model LearningPathNode {
+  id          String       @id @default(cuid())
+  pathId      String
+  path        LearningPath @relation(fields: [pathId], references: [id], onDelete: Cascade)
+  moduleId    String
+  orderIndex  Int
+  isOptional  Boolean      @default(false)
+  completedAt DateTime?
+
+  @@unique([pathId, moduleId])
+  @@index([pathId])
+}
+
+// =============================================================================
+// Teacher/Classroom
+// =============================================================================
+
+model Classroom {
+  id          String   @id @default(cuid())
+  tenantId    String
+  teacherId   String
+  name        String
+  description String?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  roster      ClassroomStudent[]
+  assignments ClassroomAssignment[]
+
+  @@index([tenantId, teacherId])
+}
+
+model ClassroomStudent {
+  id          String    @id @default(cuid())
+  classroomId String
+  classroom   Classroom @relation(fields: [classroomId], references: [id], onDelete: Cascade)
+  userId      String
+  displayName String
+  email       String?
+  enrolledAt  DateTime  @default(now())
+
+  @@unique([classroomId, userId])
+  @@index([classroomId])
+}
+
+model ClassroomAssignment {
+  id          String    @id @default(cuid())
+  classroomId String
+  classroom   Classroom @relation(fields: [classroomId], references: [id], onDelete: Cascade)
+  moduleId    String
+  assignedAt  DateTime  @default(now())
+  dueAt       DateTime?
+
+  @@unique([classroomId, moduleId])
+  @@index([classroomId])
+}
+
+// =============================================================================
+// Collaboration (Q&A, Discussions)
+// =============================================================================
+
+enum ThreadStatus {
+  OPEN
+  RESOLVED
+  CLOSED
+}
+
+model Thread {
+  id         String       @id @default(cuid())
+  tenantId   String
+  moduleId   String?
+  title      String
+  status     ThreadStatus @default(OPEN)
+  authorId   String
+  authorName String
+  createdAt  DateTime     @default(now())
+  resolvedAt DateTime?
+
+  posts Post[]
+
+  @@index([tenantId, moduleId])
+  @@index([tenantId, status])
+  @@index([tenantId, authorId])
+}
+
+model Post {
+  id         String   @id @default(cuid())
+  threadId   String
+  thread     Thread   @relation(fields: [threadId], references: [id], onDelete: Cascade)
+  authorId   String
+  authorName String
+  content    String
+  isAnswer   Boolean  @default(false)
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+
+  @@index([threadId])
+}
+
+enum HelpRequestStatus {
+  PENDING
+  ANSWERED
+  ESCALATED
+}
+
+model HelpRequest {
+  id         String            @id @default(cuid())
+  tenantId   String
+  userId     String
+  moduleId   String
+  question   String
+  status     HelpRequestStatus @default(PENDING)
+  createdAt  DateTime          @default(now())
+  answeredAt DateTime?
+
+  @@index([tenantId, status])
+  @@index([tenantId, userId])
+}
+
+// =============================================================================
+// Billing/Payments
+// =============================================================================
+
+enum CheckoutStatus {
+  PENDING
+  COMPLETED
+  FAILED
+  CANCELLED
+}
+
+model CheckoutSession {
+  id          String         @id @default(cuid())
+  tenantId    String
+  userId      String
+  listingId   String
+  amountCents Int
+  status      CheckoutStatus @default(PENDING)
+  paymentUrl  String?
+  successUrl  String?
+  cancelUrl   String?
+  createdAt   DateTime       @default(now())
+  completedAt DateTime?
+
+  @@index([tenantId, userId])
+  @@index([tenantId, status])
+}
+
+model Purchase {
+  id          String   @id @default(cuid())
+  tenantId    String
+  userId      String
+  listingId   String
+  moduleId    String
+  amountCents Int
+  purchasedAt DateTime @default(now())
+
+  @@unique([tenantId, userId, moduleId])
+  @@index([tenantId, userId])
+  @@index([tenantId, moduleId])
+}
+
+// =============================================================================
+// LTI Integration
+// =============================================================================
+
+model LTIPlatform {
+  id           String   @id @default(cuid())
+  tenantId     String
+  platformName String
+  issuer       String
+  clientId     String
+  jwksUrl      String
+  authUrl      String
+  tokenUrl     String
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  @@unique([tenantId, issuer])
+  @@index([tenantId])
+}
+
+// =============================================================================
+// Social Learning - Study Groups (Block 4 - Days 41-45)
+// =============================================================================
+
+enum StudyGroupVisibility {
+  PUBLIC
+  PRIVATE
+  CLASSROOM_ONLY
+}
+
+enum StudyGroupStatus {
+  ACTIVE
+  ARCHIVED
+  SUSPENDED
+}
+
+enum StudyGroupRole {
+  OWNER
+  ADMIN
+  MODERATOR
+  MEMBER
+}
+
+model StudyGroup {
+  id              String               @id @default(cuid())
+  tenantId        String
+  name            String
+  description     String
+  coverImageUrl   String?
+  createdBy       String
+  visibility      StudyGroupVisibility @default(PUBLIC)
+  maxMembers      Int                  @default(50)
+  requireApproval Boolean              @default(false)
+  allowGuestView  Boolean              @default(false)
+  subjects        String // JSON array
+  modules         String? // JSON array of module IDs
+  memberCount     Int                  @default(1)
+  status          StudyGroupStatus     @default(ACTIVE)
+  lastActivityAt  DateTime             @default(now())
+  archivedAt      DateTime?
+  createdAt       DateTime             @default(now())
+  updatedAt       DateTime             @updatedAt
+
+  members      StudyGroupMember[]
+  joinRequests StudyGroupJoinRequest[]
+  invites      StudyGroupInvite[]
+  sessions     StudySession[]
+  chatRoom     ChatRoom?
+  forum        Forum?
+  sharedNotes  SharedNote[]
+
+  @@index([tenantId, status])
+  @@index([tenantId, visibility])
+  @@index([tenantId, createdBy])
+}
+
+model StudyGroupMember {
+  id                   String         @id @default(cuid())
+  group                StudyGroup     @relation(fields: [groupId], references: [id], onDelete: Cascade)
+  groupId              String
+  userId               String
+  role                 StudyGroupRole @default(MEMBER)
+  invitedBy            String?
+  messagesCount        Int            @default(0)
+  notificationsEnabled Boolean        @default(true)
+  mutedUntil           DateTime?
+  lastActiveAt         DateTime       @default(now())
+  joinedAt             DateTime       @default(now())
+
+  @@unique([groupId, userId])
+  @@index([userId])
+}
+
+enum JoinRequestStatus {
+  PENDING
+  APPROVED
+  REJECTED
+}
+
+model StudyGroupJoinRequest {
+  id              String            @id @default(cuid())
+  group           StudyGroup        @relation(fields: [groupId], references: [id], onDelete: Cascade)
+  groupId         String
+  userId          String
+  message         String?
+  status          JoinRequestStatus @default(PENDING)
+  reviewedBy      String?
+  rejectionReason String?
+  reviewedAt      DateTime?
+  createdAt       DateTime          @default(now())
+
+  @@unique([groupId, userId, status])
+  @@index([groupId, status])
+}
+
+enum InviteStatus {
+  PENDING
+  ACCEPTED
+  DECLINED
+  EXPIRED
+}
+
+model StudyGroupInvite {
+  id           String       @id @default(cuid())
+  group        StudyGroup   @relation(fields: [groupId], references: [id], onDelete: Cascade)
+  groupId      String
+  invitedEmail String
+  invitedBy    String
+  status       InviteStatus @default(PENDING)
+  acceptedAt   DateTime?
+  expiresAt    DateTime
+  createdAt    DateTime     @default(now())
+
+  @@unique([groupId, invitedEmail])
+  @@index([invitedEmail, status])
+}
+
+// =============================================================================
+// Social Learning - Study Sessions
+// =============================================================================
+
+enum StudySessionType {
+  DISCUSSION
+  REVIEW
+  QUIZ_PRACTICE
+  VIDEO_CALL
+  COLLABORATIVE
+}
+
+enum StudySessionStatus {
+  SCHEDULED
+  IN_PROGRESS
+  COMPLETED
+  CANCELLED
+}
+
+model StudySession {
+  id              String             @id @default(cuid())
+  group           StudyGroup         @relation(fields: [groupId], references: [id], onDelete: Cascade)
+  groupId         String
+  title           String
+  description     String?
+  createdBy       String
+  scheduledAt     DateTime
+  duration        Int // minutes
+  timezone        String             @default("UTC")
+  type            StudySessionType   @default(DISCUSSION)
+  meetingUrl      String?
+  maxParticipants Int?
+  rsvpDeadline    DateTime?
+  moduleId        String?
+  lessonIds       String? // JSON array
+  agenda          String?
+  attachments     String? // JSON array
+  status          StudySessionStatus @default(SCHEDULED)
+  startedAt       DateTime?
+  endedAt         DateTime?
+  notes           String?
+  recordingUrl    String?
+  createdAt       DateTime           @default(now())
+  updatedAt       DateTime           @updatedAt
+
+  rsvps SessionRsvp[]
+
+  @@index([groupId, scheduledAt])
+  @@index([groupId, status])
+}
+
+enum RsvpStatus {
+  ATTENDING
+  MAYBE
+  NOT_ATTENDING
+}
+
+model SessionRsvp {
+  id        String       @id @default(cuid())
+  session   StudySession @relation(fields: [sessionId], references: [id], onDelete: Cascade)
+  sessionId String
+  userId    String
+  status    RsvpStatus
+  note      String?
+  createdAt DateTime     @default(now())
+
+  @@unique([sessionId, userId])
+}
+
+// =============================================================================
+// Social Learning - Discussion Forums
+// =============================================================================
+
+enum ForumScope {
+  GLOBAL
+  STUDY_GROUP
+  CLASSROOM
+  MODULE
+}
+
+enum ForumStatus {
+  ACTIVE
+  ARCHIVED
+  LOCKED
+}
+
+model Forum {
+  id                  String      @id @default(cuid())
+  tenantId            String
+  name                String
+  description         String
+  iconUrl             String?
+  scope               ForumScope  @default(GLOBAL)
+  scopeId             String? // groupId, classroomId, or moduleId
+  allowAnonymousPosts Boolean     @default(false)
+  requireModeration   Boolean     @default(false)
+  allowAttachments    Boolean     @default(true)
+  allowPolls          Boolean     @default(true)
+  categories          String? // JSON array of ForumCategory
+  topicCount          Int         @default(0)
+  postCount           Int         @default(0)
+  lastPostAt          DateTime?
+  status              ForumStatus @default(ACTIVE)
+  studyGroup          StudyGroup? @relation(fields: [studyGroupId], references: [id])
+  studyGroupId        String?     @unique
+  createdAt           DateTime    @default(now())
+  updatedAt           DateTime    @updatedAt
+
+  topics ForumTopic[]
+
+  @@index([tenantId, scope])
+  @@index([tenantId, scopeId])
+}
+
+enum TopicStatus {
+  DRAFT
+  PENDING
+  PUBLISHED
+  HIDDEN
+  DELETED
+}
+
+model ForumTopic {
+  id             String      @id @default(cuid())
+  forum          Forum       @relation(fields: [forumId], references: [id], onDelete: Cascade)
+  forumId        String
+  categoryId     String?
+  title          String
+  slug           String
+  authorId       String
+  authorName     String
+  content        String
+  contentFormat  String      @default("markdown")
+  attachments    String? // JSON array
+  viewCount      Int         @default(0)
+  replyCount     Int         @default(0)
+  likeCount      Int         @default(0)
+  isPinned       Boolean     @default(false)
+  isLocked       Boolean     @default(false)
+  isAnswered     Boolean     @default(false)
+  answerId       String?
+  status         TopicStatus @default(PUBLISHED)
+  moderatedBy    String?
+  moderatedAt    DateTime?
+  moderationNote String?
+  lastReplyAt    DateTime?
+  lastReplyBy    String?
+  createdAt      DateTime    @default(now())
+  updatedAt      DateTime    @updatedAt
+
+  posts ForumPost[]
+
+  @@unique([forumId, slug])
+  @@index([forumId, isPinned])
+  @@index([forumId, status])
+  @@index([authorId])
+}
+
+model ForumPost {
+  id               String      @id @default(cuid())
+  topic            ForumTopic  @relation(fields: [topicId], references: [id], onDelete: Cascade)
+  topicId          String
+  authorId         String
+  authorName       String
+  isAnonymous      Boolean     @default(false)
+  content          String
+  contentFormat    String      @default("markdown")
+  attachments      String? // JSON array
+  parentId         String?
+  depth            Int         @default(0)
+  likeCount        Int         @default(0)
+  isAcceptedAnswer Boolean     @default(false)
+  status           TopicStatus @default(PUBLISHED)
+  moderatedBy      String?
+  moderatedAt      DateTime?
+  isEdited         Boolean     @default(false)
+  editedAt         DateTime?
+  editHistory      String? // JSON array of PostEdit
+  createdAt        DateTime    @default(now())
+  updatedAt        DateTime    @updatedAt
+
+  reactions PostReaction[]
+
+  @@index([topicId, createdAt])
+  @@index([topicId, parentId])
+  @@index([authorId])
+}
+
+enum ReactionType {
+  LIKE
+  HELPFUL
+  INSIGHTFUL
+  QUESTION
+  CELEBRATE
+}
+
+model PostReaction {
+  id        String       @id @default(cuid())
+  post      ForumPost    @relation(fields: [postId], references: [id], onDelete: Cascade)
+  postId    String
+  userId    String
+  type      ReactionType
+  createdAt DateTime     @default(now())
+
+  @@unique([postId, userId, type])
+  @@index([postId])
+}
+
+// =============================================================================
+// Social Learning - Peer Tutoring
+// =============================================================================
+
+enum TutorStatus {
+  ACTIVE
+  PAUSED
+  INACTIVE
+}
+
+model TutorProfile {
+  id                   String      @id @default(cuid())
+  tenantId             String
+  userId               String
+  displayName          String
+  bio                  String
+  avatarUrl            String?
+  subjects             String // JSON array
+  modules              String? // JSON array of module IDs
+  qualifications       String? // JSON array
+  isAvailable          Boolean     @default(true)
+  availabilitySchedule String? // JSON array of AvailabilitySlot
+  timezone             String      @default("UTC")
+  responseTime         String      @default("Usually within 2 hours")
+  sessionTypes         String // JSON array of TutoringSessionType
+  maxSessionsPerWeek   Int         @default(5)
+  pricePerHour         Int? // In cents, if paid tutoring
+  rating               Float       @default(0)
+  reviewCount          Int         @default(0)
+  sessionsCompleted    Int         @default(0)
+  totalHelpedStudents  Int         @default(0)
+  status               TutorStatus @default(ACTIVE)
+  verifiedAt           DateTime?
+  verifiedBy           String?
+  createdAt            DateTime    @default(now())
+  updatedAt            DateTime    @updatedAt
+
+  requests TutoringRequest[] @relation("TutorRequests")
+  sessions TutoringSession[] @relation("TutorSessions")
+  reviews  TutoringReview[]  @relation("TutorReviews")
+
+  @@unique([tenantId, userId])
+  @@index([tenantId, status])
+  @@index([tenantId, isAvailable])
+}
+
+enum TutoringRequestStatus {
+  OPEN
+  MATCHED
+  IN_PROGRESS
+  COMPLETED
+  CANCELLED
+  EXPIRED
+}
+
+model TutoringRequest {
+  id                 String                @id @default(cuid())
+  tenantId           String
+  studentId          String
+  tutor              TutorProfile?         @relation("TutorRequests", fields: [tutorId], references: [id])
+  tutorId            String?
+  subject            String
+  moduleId           String?
+  lessonId           String?
+  title              String
+  description        String
+  attachments        String? // JSON array
+  preferredTypes     String // JSON array of TutoringSessionType
+  preferredTime      DateTime?
+  estimatedDuration  Int                   @default(60)
+  urgency            String                @default("medium")
+  status             TutoringRequestStatus @default(OPEN)
+  acceptedAt         DateTime?
+  completedAt        DateTime?
+  cancelledAt        DateTime?
+  cancellationReason String?
+  createdAt          DateTime              @default(now())
+  updatedAt          DateTime              @updatedAt
+
+  sessions TutoringSession[]
+
+  @@index([tenantId, status])
+  @@index([tenantId, studentId])
+  @@index([tenantId, tutorId])
+}
+
+enum TutoringSessionStatus {
+  SCHEDULED
+  IN_PROGRESS
+  COMPLETED
+  NO_SHOW
+  CANCELLED
+}
+
+model TutoringSession {
+  id              String                @id @default(cuid())
+  tenantId        String
+  request         TutoringRequest       @relation(fields: [requestId], references: [id])
+  requestId       String
+  studentId       String
+  tutor           TutorProfile          @relation("TutorSessions", fields: [tutorId], references: [id])
+  tutorId         String
+  type            String // TutoringSessionType
+  scheduledAt     DateTime
+  duration        Int // minutes
+  meetingUrl      String?
+  moduleId        String?
+  lessonId        String?
+  notes           String?
+  sharedResources String? // JSON array
+  status          TutoringSessionStatus @default(SCHEDULED)
+  startedAt       DateTime?
+  endedAt         DateTime?
+  actualDuration  Int?
+  recordingUrl    String?
+  transcriptUrl   String?
+  createdAt       DateTime              @default(now())
+  updatedAt       DateTime              @updatedAt
+
+  reviews  TutoringReview[]
+  chatRoom ChatRoom?
+
+  @@index([tenantId, status])
+  @@index([tenantId, studentId])
+  @@index([tenantId, tutorId])
+  @@index([scheduledAt])
+}
+
+model TutoringReview {
+  id            String          @id @default(cuid())
+  session       TutoringSession @relation(fields: [sessionId], references: [id])
+  sessionId     String
+  tutor         TutorProfile    @relation("TutorReviews", fields: [tutorId], references: [id])
+  tutorId       String
+  reviewerId    String
+  rating        Int // 1-5
+  helpfulness   Int // 1-5
+  communication Int // 1-5
+  knowledge     Int // 1-5
+  comment       String?
+  privateNote   String?
+  response      String?
+  respondedAt   DateTime?
+  isVisible     Boolean         @default(true)
+  moderatedBy   String?
+  moderatedAt   DateTime?
+  createdAt     DateTime        @default(now())
+  updatedAt     DateTime        @updatedAt
+
+  @@unique([sessionId, reviewerId])
+  @@index([tutorId, isVisible])
+}
+
+// =============================================================================
+// Social Learning - Real-time Chat
+// =============================================================================
+
+enum ChatRoomType {
+  DIRECT
+  STUDY_GROUP
+  CLASSROOM
+  TUTORING
+  SUPPORT
+}
+
+model ChatRoom {
+  id                String           @id @default(cuid())
+  tenantId          String
+  type              ChatRoomType
+  name              String?
+  studyGroup        StudyGroup?      @relation(fields: [studyGroupId], references: [id])
+  studyGroupId      String?          @unique
+  tutoringSession   TutoringSession? @relation(fields: [tutoringSessionId], references: [id])
+  tutoringSessionId String?          @unique
+  participants      String // JSON array of user IDs
+  maxParticipants   Int?
+  isEncrypted       Boolean          @default(false)
+  retentionDays     Int              @default(90)
+  messageCount      Int              @default(0)
+  lastMessageAt     DateTime?
+  createdAt         DateTime         @default(now())
+  updatedAt         DateTime         @updatedAt
+
+  messages     ChatMessage[]
+  readReceipts ChatReadReceipt[]
+
+  @@index([tenantId, type])
+  @@index([tenantId, studyGroupId])
+}
+
+enum ChatMessageType {
+  TEXT
+  IMAGE
+  FILE
+  CODE
+  MATH
+  QUIZ_SHARE
+  SYSTEM
+}
+
+model ChatMessage {
+  id          String          @id @default(cuid())
+  room        ChatRoom        @relation(fields: [roomId], references: [id], onDelete: Cascade)
+  roomId      String
+  senderId    String
+  senderName  String
+  type        ChatMessageType @default(TEXT)
+  content     String
+  metadata    String? // JSON object
+  attachments String? // JSON array
+  replyToId   String?
+  reactions   String? // JSON object: emoji -> userIds[]
+  status      String          @default("sent")
+  editedAt    DateTime?
+  deletedAt   DateTime?
+  createdAt   DateTime        @default(now())
+
+  @@index([roomId, createdAt])
+  @@index([roomId, senderId])
+}
+
+model ChatReadReceipt {
+  id                String   @id @default(cuid())
+  room              ChatRoom @relation(fields: [roomId], references: [id], onDelete: Cascade)
+  roomId            String
+  userId            String
+  lastReadMessageId String
+  lastReadAt        DateTime @default(now())
+
+  @@unique([roomId, userId])
+}
+
+// =============================================================================
+// Social Learning - Collaborative Features
+// =============================================================================
+
+model SharedNote {
+  id            String      @id @default(cuid())
+  tenantId      String
+  createdBy     String
+  studyGroup    StudyGroup? @relation(fields: [studyGroupId], references: [id])
+  studyGroupId  String?
+  title         String
+  content       String // JSON for rich text
+  version       Int         @default(1)
+  allowEditing  Boolean     @default(false)
+  allowComments Boolean     @default(true)
+  moduleId      String?
+  lessonId      String?
+  sharedWith    String? // JSON array of SharedNoteAccess
+  lastEditedBy  String?
+  createdAt     DateTime    @default(now())
+  updatedAt     DateTime    @updatedAt
+
+  comments NoteComment[]
+
+  @@index([tenantId, createdBy])
+  @@index([tenantId, studyGroupId])
+}
+
+model NoteComment {
+  id          String     @id @default(cuid())
+  note        SharedNote @relation(fields: [noteId], references: [id], onDelete: Cascade)
+  noteId      String
+  authorId    String
+  anchorStart Int?
+  anchorEnd   Int?
+  content     String
+  parentId    String?
+  isResolved  Boolean    @default(false)
+  resolvedBy  String?
+  resolvedAt  DateTime?
+  createdAt   DateTime   @default(now())
+  updatedAt   DateTime   @updatedAt
+
+  @@index([noteId, isResolved])
+}
+
+model CollaborativeWhiteboard {
+  id             String   @id @default(cuid())
+  tenantId       String
+  studyGroupId   String?
+  sessionId      String? // TutoringSession ID
+  name           String
+  canvasState    String // JSON canvas data
+  activeUsers    String? // JSON array of user IDs
+  allowAnonymous Boolean  @default(false)
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+
+  @@index([tenantId, studyGroupId])
+}
+
+// =============================================================================
+// Social Learning - Activity & Notifications
+// =============================================================================
+
+enum SocialActivityType {
+  JOINED_GROUP
+  CREATED_TOPIC
+  REPLIED_TOPIC
+  LIKED_POST
+  SCHEDULED_SESSION
+  COMPLETED_SESSION
+  SHARED_NOTE
+  EARNED_BADGE
+  HELPED_PEER
+}
+
+model SocialActivity {
+  id             String             @id @default(cuid())
+  tenantId       String
+  actorId        String
+  actorName      String
+  actorAvatarUrl String?
+  type           SocialActivityType
+  targetType     String // study_group, forum_topic, etc.
+  targetId       String
+  targetTitle    String
+  studyGroupId   String?
+  classroomId    String?
+  metadata       String? // JSON object
+  createdAt      DateTime           @default(now())
+
+  @@index([tenantId, createdAt])
+  @@index([tenantId, actorId])
+  @@index([tenantId, studyGroupId])
+}
+
+enum SocialNotificationType {
+  GROUP_INVITE
+  GROUP_JOIN_REQUEST
+  GROUP_MESSAGE
+  TOPIC_REPLY
+  POST_MENTION
+  POST_REACTION
+  TUTORING_REQUEST
+  SESSION_REMINDER
+  REVIEW_RECEIVED
+}
+
+model SocialNotification {
+  id         String                 @id @default(cuid())
+  tenantId   String
+  userId     String
+  type       SocialNotificationType
+  title      String
+  body       String
+  iconUrl    String?
+  actionUrl  String?
+  actorId    String?
+  actorName  String?
+  targetType String?
+  targetId   String?
+  isRead     Boolean                @default(false)
+  readAt     DateTime?
+  emailSent  Boolean                @default(false)
+  pushSent   Boolean                @default(false)
+  createdAt  DateTime               @default(now())
+
+  @@index([tenantId, userId, isRead])
+  @@index([tenantId, userId, createdAt])
+}
+
+model NotificationPreference {
+  id           String   @id @default(cuid())
+  tenantId     String
+  userId       String
+  emailEnabled Boolean  @default(true)
+  pushEnabled  Boolean  @default(true)
+  preferences  String? // JSON object: notificationType -> enabled
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  @@unique([tenantId, userId])
+}
+
+// ============================================
+// VR Labs Models
+// ============================================
+
+enum VRLabCategory {
+  CHEMISTRY
+  PHYSICS
+  BIOLOGY
+  ASTRONOMY
+  ENGINEERING
+  ANATOMY
+  GEOLOGY
+  HISTORY
+  ART
+  MATHEMATICS
+}
+
+enum VRLabDifficulty {
+  BEGINNER
+  INTERMEDIATE
+  ADVANCED
+  EXPERT
+}
+
+enum VRSessionStatus {
+  INITIALIZING
+  LOADING
+  ACTIVE
+  PAUSED
+  COMPLETED
+  FAILED
+}
+
+enum VRMultiplayerStatus {
+  LOBBY
+  ACTIVE
+  ENDED
+}
+
+model VRLab {
+  id                String          @id @default(cuid())
+  tenantId          String
+  slug              String
+  title             String
+  description       String
+  category          VRLabCategory
+  difficulty        VRLabDifficulty
+  thumbnailUrl      String
+  previewVideoUrl   String?
+  estimatedDuration Int // minutes
+  requiredDevices   String // JSON array
+  minRequirements   String // JSON object
+  completionRate    Float           @default(0)
+  averageRating     Float           @default(0)
+  totalSessions     Int             @default(0)
+  memberCount       Int             @default(0)
+  isPublished       Boolean         @default(false)
+  tags              String // JSON array
+  prerequisites     String? // JSON array of VRLabIds
+  createdBy         String
+  createdAt         DateTime        @default(now())
+  updatedAt         DateTime        @updatedAt
+
+  scenes      VRScene[]
+  objectives  VRLabObjective[]
+  sessions    VRSession[]
+  multiplayer VRMultiplayerSession[]
+
+  @@unique([tenantId, slug])
+  @@index([tenantId, category])
+  @@index([tenantId, isPublished])
+  @@index([tenantId, difficulty])
+}
+
+model VRScene {
+  id                String  @id @default(cuid())
+  labId             String
+  name              String
+  description       String
+  order             Int
+  environmentUrl    String
+  skyboxUrl         String?
+  lightingPreset    String
+  spawnPoints       String // JSON array of positions
+  ambientSoundUrl   String?
+  narrationUrl      String?
+  estimatedDuration Int
+
+  lab           VRLab            @relation(fields: [labId], references: [id], onDelete: Cascade)
+  interactables VRInteractable[]
+
+  @@index([labId, order])
+}
+
+model VRInteractable {
+  id                  String  @id @default(cuid())
+  sceneId             String
+  name                String
+  type                String // equipment, chemical, specimen, tool, etc.
+  position            String // JSON {x, y, z}
+  rotation            String // JSON {x, y, z, w}
+  scale               String // JSON {x, y, z}
+  modelUrl            String
+  materialOverrides   String? // JSON array
+  allowedInteractions String // JSON array of interaction types
+  interactionRange    Float
+  behavior            String // JSON object
+  tooltip             String?
+  audioFeedbackUrl    String?
+
+  scene VRScene @relation(fields: [sceneId], references: [id], onDelete: Cascade)
+
+  @@index([sceneId])
+}
+
+model VRLabObjective {
+  id          String  @id @default(cuid())
+  labId       String
+  title       String
+  description String?
+  order       Int
+  type        String // interaction, observation, quiz, experiment
+  criteria    String // JSON object
+  hints       String // JSON array
+  points      Int
+  isOptional  Boolean @default(false)
+
+  lab VRLab @relation(fields: [labId], references: [id], onDelete: Cascade)
+
+  @@index([labId, order])
+}
+
+model VRSession {
+  id                 String          @id @default(cuid())
+  tenantId           String
+  userId             String
+  labId              String
+  status             VRSessionStatus
+  currentSceneId     String
+  deviceType         String
+  deviceInfo         String // JSON object
+  progress           String // JSON object with completedObjectives, points, etc.
+  startedAt          DateTime
+  lastActiveAt       DateTime
+  endedAt            DateTime?
+  totalDuration      Int             @default(0) // seconds
+  performanceMetrics String // JSON object
+
+  lab VRLab @relation(fields: [labId], references: [id])
+
+  @@index([tenantId, userId])
+  @@index([tenantId, labId])
+  @@index([userId, status])
+}
+
+model VRMultiplayerSession {
+  id                  String              @id @default(cuid())
+  tenantId            String
+  labId               String
+  hostUserId          String
+  maxParticipants     Int
+  voiceChatEnabled    Boolean             @default(true)
+  spatialAudioEnabled Boolean             @default(true)
+  participants        String // JSON array of VRParticipant
+  status              VRMultiplayerStatus @default(LOBBY)
+  createdAt           DateTime            @default(now())
+
+  lab VRLab @relation(fields: [labId], references: [id])
+
+  @@index([tenantId, status])
+  @@index([labId, status])
+}
+
+model VRAsset {
+  id           String   @id @default(cuid())
+  tenantId     String
+  name         String
+  type         String // model, texture, audio, video, skybox, animation, script
+  url          String
+  size         Int // bytes
+  format       String
+  s3Key        String
+  thumbnailUrl String?
+  tags         String // JSON array
+  isPublic     Boolean  @default(false)
+  status       String   @default("ready") // pending, ready, error
+  createdBy    String
+  createdAt    DateTime @default(now())
+
+  @@index([tenantId, type])
+  @@index([tenantId, isPublic])
+}
+
+model VRAnalyticsEvent {
+  id        String   @id @default(cuid())
+  tenantId  String
+  userId    String
+  eventType String
+  labId     String?
+  sessionId String?
+  metadata  String // JSON object
+  timestamp DateTime @default(now())
+
+  @@index([tenantId, eventType])
+  @@index([tenantId, labId])
+  @@index([tenantId, timestamp])
+}
+
+// =============================================================================
+// Curriculum & Domain Content Models
+// =============================================================================
+
+enum CurriculumLevel {
+  FOUNDATIONAL
+  INTERMEDIATE
+  ADVANCED
+  RESEARCH
+}
+
+enum SimulationDomain {
+  CS_DISCRETE
+  PHYSICS
+  CHEMISTRY
+  BIOLOGY
+  MEDICINE
+  ECONOMICS
+  ENGINEERING
+  MATHEMATICS
+}
+
+enum ContentStatus {
+  PUBLISHED
+  DRAFT
+}
+
+model DomainConcept {
+  id                     String           @id @default(cuid())
+  tenantId               String
+  externalId             String // Original ID from JSON (e.g., "phy_F_1")
+  name                   String
+  description            String
+  domain                 SimulationDomain
+  level                  CurriculumLevel
+  keywords               String // JSON array
+  audienceTags           String // JSON array
+  simulationMetadata     Json
+  learningObjectMetadata Json
+  pedagogicalMetadata    Json
+  crossDomainLinks       Json // Array of cross-domain references
+  status                 ContentStatus    @default(DRAFT)
+  createdAt              DateTime         @default(now())
+  updatedAt              DateTime         @updatedAt
+
+  // Relations
+  prerequisites       ConceptPrerequisite[] @relation("ConceptDependents")
+  requiredBy          ConceptPrerequisite[] @relation("ConceptPrerequisites")
+  moduleMapping       ConceptModuleMapping?
+  simulationTemplates SimulationTemplate[]
+
+  @@unique([tenantId, externalId])
+  @@index([tenantId, domain])
+  @@index([tenantId, level])
+  @@index([tenantId, status])
+}
+
+model ConceptPrerequisite {
+  concept        DomainConcept @relation("ConceptDependents", fields: [conceptId], references: [id], onDelete: Cascade)
+  conceptId      String
+  prerequisite   DomainConcept @relation("ConceptPrerequisites", fields: [prerequisiteId], references: [id], onDelete: Cascade)
+  prerequisiteId String
+
+  @@id([conceptId, prerequisiteId])
+}
+
+model ConceptModuleMapping {
+  id                    String        @id @default(cuid())
+  concept               DomainConcept @relation(fields: [conceptId], references: [id], onDelete: Cascade)
+  conceptId             String        @unique
+  moduleId              String
+  simulationManifestIds String // JSON array of manifest IDs
+  createdAt             DateTime      @default(now())
+
+  @@index([moduleId])
+}
+
+enum SimulationTemplateDifficulty {
+  BEGINNER
+  INTERMEDIATE
+  ADVANCED
+  EXPERT
+}
+
+enum SimulationTemplateLicense {
+  FREE
+  CC_BY
+  CC_BY_SA
+  CC_BY_NC
+  PROPRIETARY
+}
+
+enum SimulationTemplateStatus {
+  DRAFT
+  PUBLISHED
+  ARCHIVED
+}
+
+model SimulationManifest {
+  id          String           @id // Stable manifest ID generated from concept
+  tenantId    String
+  domain      SimulationDomain
+  version     String
+  title       String
+  description String?
+  module      Module?          @relation(fields: [moduleId], references: [id], onDelete: SetNull)
+  moduleId    String?
+  manifest    Json // Full SimulationManifest payload
+  createdAt   DateTime         @default(now())
+  updatedAt   DateTime         @updatedAt
+
+  templates        SimulationTemplate[]
+  experiences      LearningExperience[]         @relation("ExperienceSimulation")
+  versions         SimulationManifestVersion[]  @relation("SimulationManifestVersions")
+  extension        SimulationManifestExtension? @relation("SimulationManifestExtensions")
+  linkAudits       SimulationLinkAudit[]        @relation("SimulationLinkAudits")
+  claimSimulations ClaimSimulation[]
+
+  @@index([tenantId, domain])
+  @@index([tenantId, moduleId])
+}
+
+model SimulationTemplate {
+  id                  String                       @id @default(cuid())
+  tenantId            String
+  slug                String
+  title               String
+  description         String
+  domain              SimulationDomain
+  difficulty          SimulationTemplateDifficulty
+  tags                String // JSON array of tags
+  thumbnailUrl        String?
+  license             SimulationTemplateLicense    @default(FREE)
+  isPremium           Boolean                      @default(false)
+  isVerified          Boolean                      @default(false)
+  version             String // Semantic version, e.g. "1.0.0"
+  authorId            String
+  authorName          String?
+  authorAvatarUrl     String?
+  organization        String?
+  statsViews          Int                          @default(0)
+  statsUses           Int                          @default(0)
+  statsFavorites      Int                          @default(0)
+  statsRating         Float                        @default(0)
+  statsRatingCount    Int                          @default(0)
+  statsCompletionRate Float                        @default(0)
+  statsAvgTimeMinutes Int                          @default(0)
+  status              SimulationTemplateStatus     @default(DRAFT)
+  publishedAt         DateTime?
+  createdAt           DateTime                     @default(now())
+  updatedAt           DateTime                     @updatedAt
+
+  // Relations
+  concept    DomainConcept?      @relation(fields: [conceptId], references: [id], onDelete: SetNull)
+  conceptId  String?
+  module     Module?             @relation(fields: [moduleId], references: [id], onDelete: SetNull)
+  moduleId   String?
+  manifest   SimulationManifest? @relation(fields: [manifestId], references: [id], onDelete: SetNull)
+  manifestId String?
+
+  @@unique([tenantId, slug])
+  @@index([tenantId, domain])
+  @@index([tenantId, difficulty])
+  @@index([tenantId, isPremium])
+  @@index([tenantId, isVerified])
+  @@index([tenantId, status])
+}
+
+model Curriculum {
+  id          String           @id @default(cuid())
+  tenantId    String
+  domain      SimulationDomain
+  title       String
+  description String?
+  version     String           @default("1.0.0")
+  isPublished Boolean          @default(false)
+  createdAt   DateTime         @default(now())
+  updatedAt   DateTime         @updatedAt
+
+  @@unique([tenantId, domain])
+  @@index([tenantId, isPublished])
+}
+
+// =============================================================================
+// Admin & Tenant Management (Block 4 - Day 38)
+// =============================================================================
+
+enum SubscriptionTier {
+  FREE
+  BASIC
+  ENTERPRISE
+}
+
+model Tenant {
+  id               String           @id @default(cuid())
+  name             String
+  subdomain        String           @unique
+  subscriptionTier SubscriptionTier @default(FREE)
+  createdAt        DateTime         @default(now())
+  updatedAt        DateTime         @updatedAt
+
+  settings          TenantSettings?
+  users             User[]
+  identityProviders IdentityProvider[]
+
+  @@index([subdomain])
+}
+
+model TenantSettings {
+  id                       String   @id @default(cuid())
+  tenant                   Tenant   @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  tenantId                 String   @unique
+  allowPublicRegistration  Boolean  @default(false)
+  requireEmailVerification Boolean  @default(true)
+  defaultUserRole          String   @default("student")
+  maxUsersPerClassroom     Int      @default(50)
+  enabledFeatures          String   @default("[]") // JSON array
+  enabledDomainPacks       String   @default("[]") // JSON array
+  simulationQuotas         String   @default("{}") // JSON object
+  createdAt                DateTime @default(now())
+  updatedAt                DateTime @updatedAt
+}
+
+model User {
+  id          String   @id @default(cuid())
+  tenant      Tenant   @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  tenantId    String
+  email       String
+  displayName String
+  role        String   @default("student")
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  ssoLinks SsoUserLink[]
+
+  @@unique([tenantId, email])
+  @@index([tenantId, role])
+}
+
+// =============================================================================
+// SSO & Identity Federation (Block 4 - Day 36)
+// =============================================================================
+
+enum IdentityProviderType {
+  OIDC
+  SAML
+}
+
+enum SsoProviderStatus {
+  ACTIVE
+  INACTIVE
+  ERROR
+  PENDING_VERIFICATION
+}
+
+model IdentityProvider {
+  id                   String    @id @default(cuid())
+  tenant               Tenant    @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  tenantId             String
+  type                 String    @default("oidc")
+  displayName          String
+  discoveryEndpoint    String
+  clientId             String
+  clientSecret         String?
+  allowedDomains       String    @default("[]") // JSON array
+  enabled              Boolean   @default(false)
+  status               String    @default("pending_verification")
+  roleMapping          String? // JSON object
+  lastSuccessfulAuthAt DateTime?
+  createdAt            DateTime  @default(now())
+  updatedAt            DateTime  @updatedAt
+
+  userLinks SsoUserLink[]
+
+  @@index([tenantId, enabled])
+}
+
+model SsoUserLink {
+  id          String           @id @default(cuid())
+  user        User             @relation(fields: [userId], references: [id], onDelete: Cascade)
+  userId      String
+  provider    IdentityProvider @relation(fields: [providerId], references: [id], onDelete: Cascade)
+  providerId  String
+  externalId  String
+  email       String
+  displayName String?
+  avatarUrl   String?
+  lastClaims  String? // JSON object
+  linkedAt    DateTime         @default(now())
+  lastLoginAt DateTime?
+
+  @@unique([providerId, externalId])
+  @@index([userId])
+}
+
+// =============================================================================
+// Compliance & Audit (Block 4 - Day 39-40)
+// =============================================================================
+
+model DataExportRequest {
+  id                    String    @id @default(cuid())
+  tenantId              String
+  userId                String
+  status                String    @default("pending")
+  requestedAt           DateTime  @default(now())
+  estimatedCompletionAt DateTime?
+  completedAt           DateTime?
+  downloadUrl           String?
+  expiresAt             DateTime?
+
+  @@index([tenantId, status])
+  @@index([tenantId, userId])
+}
+
+model DataDeletionRequest {
+  id                  String    @id @default(cuid())
+  tenantId            String
+  userId              String
+  status              String    @default("scheduled")
+  requestedAt         DateTime  @default(now())
+  scheduledDeletionAt DateTime
+  completedAt         DateTime?
+  retentionDays       Int       @default(30)
+
+  @@index([tenantId, status])
+  @@index([tenantId, userId])
+}
+
+model DeletionVerification {
+  id        String   @id @default(cuid())
+  userId    String
+  token     String   @unique
+  expiresAt DateTime
+  createdAt DateTime @default(now())
+
+  @@index([userId])
+}
+
+model AuditLog {
+  id           String   @id @default(cuid())
+  tenantId     String
+  actorId      String
+  action       String
+  resourceType String
+  resourceId   String
+  outcome      String   @default("success")
+  timestamp    DateTime @default(now())
+  ipAddress    String?
+  userAgent    String?
+  metadata     String   @default("{}") // JSON object
+
+  @@index([tenantId, action])
+  @@index([tenantId, resourceType])
+  @@index([tenantId, actorId])
+  @@index([tenantId, timestamp])
+}
+
+// =============================================================================
+// Classroom Members (for admin user management)
+// =============================================================================
+
+model ClassroomMember {
+  id          String   @id @default(cuid())
+  classroomId String
+  userId      String
+  role        String   @default("student")
+  joinedAt    DateTime @default(now())
+
+  @@unique([classroomId, userId])
+  @@index([classroomId])
+  @@index([userId])
+}
+
+// =============================================================================
+// Learning Path Enrollment (for admin pathway assignment)
+// =============================================================================
+
+model LearningPathEnrollment {
+  id               String    @id @default(cuid())
+  pathId           String
+  userId           String
+  tenantId         String
+  currentNodeIndex Int       @default(0)
+  startedAt        DateTime  @default(now())
+  completedAt      DateTime?
+
+  @@unique([pathId, userId])
+  @@index([tenantId, userId])
+}
+
+// =============================================================================
+// Content Authoring Models (Admin: Create domains, concepts, examples)
+// =============================================================================
+
+model DomainAuthor {
+  id          String           @id @default(cuid())
+  tenantId    String
+  domain      SimulationDomain
+  title       String // Display title (e.g., "Physics 101")
+  description String
+  author      String // Name of domain author
+  status      ContentStatus    @default(DRAFT)
+  publishedAt DateTime?
+  version     Int              @default(1)
+  createdAt   DateTime         @default(now())
+  updatedAt   DateTime         @updatedAt
+
+  // Relations
+  concepts DomainAuthorConcept[]
+
+  @@unique([tenantId, domain])
+  @@index([tenantId, status])
+}
+
+model DomainAuthorConcept {
+  id                 String          @id @default(cuid())
+  domainId           String
+  domain             DomainAuthor    @relation(fields: [domainId], references: [id], onDelete: Cascade)
+  name               String
+  description        String
+  level              CurriculumLevel
+  orderIndex         Int             @default(0)
+  learningObjectives String // JSON array of strings
+  prerequisites      String // JSON array of concept IDs
+  competencies       String // JSON array of competency tags
+  keywords           String // JSON array of keywords
+  status             ContentStatus   @default(DRAFT)
+  version            Int             @default(1)
+  createdAt          DateTime        @default(now())
+  updatedAt          DateTime        @updatedAt
+
+  // Relations
+  simulation    SimulationDefinition?
+  visualization VisualizationDefinition?
+  examples      ContentExample[]
+
+  @@unique([domainId, name])
+  @@index([domainId, level])
+}
+
+model SimulationDefinition {
+  id                   String              @id @default(cuid())
+  conceptId            String              @unique
+  concept              DomainAuthorConcept @relation(fields: [conceptId], references: [id], onDelete: Cascade)
+  type                 String // e.g., "physics-2D", "interactive_visualization"
+  manifest             Json // Full simulation manifest
+  estimatedTimeMinutes Int                 @default(15)
+  interactivityLevel   String              @default("medium") // low, medium, high
+  purpose              String // Pedagogical purpose
+  previewConfig        Json? // Configuration for preview
+  status               ContentStatus       @default(DRAFT)
+  version              Int                 @default(1)
+  createdAt            DateTime            @default(now())
+  updatedAt            DateTime            @updatedAt
+
+  @@index([conceptId])
+}
+
+model VisualizationDefinition {
+  id         String              @id @default(cuid())
+  conceptId  String              @unique
+  concept    DomainAuthorConcept @relation(fields: [conceptId], references: [id], onDelete: Cascade)
+  type       String // e.g., "graph-2d", "graph-3d", "chart", "diagram", "molecule"
+  config     Json // Visualization-specific configuration
+  dataSource String              @default("simulation") // simulation, static, dynamic
+  status     ContentStatus       @default(DRAFT)
+  version    Int                 @default(1)
+  createdAt  DateTime            @default(now())
+  updatedAt  DateTime            @updatedAt
+
+  @@index([conceptId])
+}
+
+model ContentExample {
+  id                   String              @id @default(cuid())
+  conceptId            String
+  concept              DomainAuthorConcept @relation(fields: [conceptId], references: [id], onDelete: Cascade)
+  title                String
+  description          String
+  problemStatement     String // Markdown format
+  solutionContent      String // Markdown format with steps
+  keyLearningPoints    String // JSON array of key points
+  difficulty           CurriculumLevel
+  estimatedTimeMinutes Int                 @default(20)
+  orderIndex           Int                 @default(0)
+  status               ContentStatus       @default(DRAFT)
+  version              Int                 @default(1)
+  createdAt            DateTime            @default(now())
+  updatedAt            DateTime            @updatedAt
+
+  // Relations
+  visualizationSnapshots VisualizationSnapshot[]
+
+  @@unique([conceptId, title])
+  @@index([conceptId, difficulty])
+}
+
+model VisualizationSnapshot {
+  id              String         @id @default(cuid())
+  exampleId       String
+  example         ContentExample @relation(fields: [exampleId], references: [id], onDelete: Cascade)
+  stepNumber      Int // 1, 2, 3, etc.
+  stepDescription String // Description of what's shown at this step
+  config          Json // Visualization config at this step
+  data            Json? // Data/values rendered at this step
+  createdAt       DateTime       @default(now())
+
+  @@unique([exampleId, stepNumber])
+  @@index([exampleId])
+}
+
+enum AssetType {
+  MODEL_3D // .glb, .gltf, .obj, .fbx
+  TEXTURE // .png, .jpg, .jpeg, .webp
+  AUDIO // .mp3, .wav, .ogg
+  VIDEO // .mp4, .webm
+  DOCUMENT // .pdf, .doc, .docx
+  IMAGE // General images
+  OTHER // Misc files
+}
+
+enum AssetStatus {
+  UPLOADING
+  PROCESSING
+  READY
+  FAILED
+  ARCHIVED
+}
+
+model Asset {
+  id           String      @id @default(cuid())
+  tenantId     String
+  filename     String // Original filename
+  displayName  String? // Optional user-friendly name
+  fileType     AssetType
+  mimeType     String // e.g., "model/gltf+json", "image/png"
+  fileSize     Int // Size in bytes
+  url          String // CDN or S3 URL
+  thumbnailUrl String? // Generated thumbnail URL
+  metadata     Json? // File-specific metadata (dimensions, duration, etc.)
+  tags         String? // Comma-separated tags for searching
+  uploadedBy   String // User ID who uploaded
+  status       AssetStatus @default(UPLOADING)
+  createdAt    DateTime    @default(now())
+  updatedAt    DateTime    @updatedAt
+
+  @@index([tenantId, fileType])
+  @@index([tenantId, status])
+  @@index([uploadedBy])
+}
+
+model LearningUnit {
+  id       String @id
+  tenantId String
+  domain   String
+  level    String
+  status   String
+  version  Int    @default(1)
+
+  intent     Json
+  claims     Json
+  evidence   Json
+  tasks      Json
+  artifacts  Json
+  assessment Json
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  createdBy String
+
+  @@index([tenantId, domain])
+  @@index([tenantId, status])
+}
+
+// =============================================================================
+// Content Studio - Unified Authoring (v2.0)
+// =============================================================================
+
+enum ExperienceStatus {
+  DRAFT
+  REVIEW
+  PUBLISHED
+  ARCHIVED
+}
+
+enum ContentStudioBloomLevel {
+  REMEMBER
+  UNDERSTAND
+  APPLY
+  ANALYZE
+  EVALUATE
+  CREATE
+}
+
+enum ValidationStatus {
+  PASS
+  WARN
+  FAIL
+}
+
+enum AIOperation {
+  GENERATE_EXPERIENCE
+  VALIDATE
+  IMPROVE
+  EXPAND_GRADE
+  GENERATE_SIMULATION
+  GENERATE_ASSET
+}
+
+enum GradeRange {
+  K_2
+  GRADE_3_5
+  GRADE_6_8
+  GRADE_9_12
+  UNDERGRADUATE
+  GRADUATE
+}
+
+enum RigorLevel {
+  OBSERVATION
+  QUALITATIVE
+  QUANTITATIVE
+}
+
+enum MathLevel {
+  NONE
+  ARITHMETIC
+  ALGEBRA
+  CALCULUS
+}
+
+enum ScaffoldingLevel {
+  HIGH
+  MEDIUM
+  LOW
+}
+
+enum RiskLevel {
+  LOW
+  MEDIUM
+  HIGH
+}
+
+model LearningExperience {
+  id       String @id @default(cuid())
+  tenantId String
+
+  // Links to existing Module (optional, for backward compatibility)
+  moduleId String? @unique
+  module   Module? @relation(fields: [moduleId], references: [id], onDelete: SetNull)
+
+  // Core content
+  title     String
+  domain    ModuleDomain
+  conceptId String?
+
+  // Intent (embedded JSON for simplicity)
+  intentProblem        String
+  intentMotivation     String
+  intentMisconceptions Json // string[]
+  targetGrades         Json // GradeRange[]
+
+  // Curriculum alignment
+  curriculumAlignment Json? // CurriculumAlignment[]
+
+  // Grade adaptations (JSON array of GradeAdaptation)
+  gradeAdaptations Json // GradeAdaptation[]
+
+  // Simulation reference with versioning
+  simulationManifestId String?
+  simulationManifest   SimulationManifest? @relation("ExperienceSimulation", fields: [simulationManifestId], references: [id], onDelete: SetNull)
+  simulationVersion    String? // Track simulation version for compatibility
+
+  // Assessment configuration (embedded)
+  assessmentConfig Json // CBMAssessmentConfig
+
+  // Metadata
+  status               ExperienceStatus @default(DRAFT)
+  version              Int              @default(1)
+  estimatedTimeMinutes Int              @default(30)
+  createdBy            String
+  lastEditedBy         String?
+  publishedAt          DateTime?
+  createdAt            DateTime         @default(now())
+  updatedAt            DateTime         @updatedAt
+
+  // AI & Guardrails metadata
+  promptHash      String? // Hash of refined prompt used for generation
+  riskLevel       RiskLevel @default(LOW)
+  confidenceScore Float? // AI confidence score (0-1)
+
+  // Relations
+  claims                    LearningClaim[]
+  evidences                 LearningEvidence[]
+  experienceTasks           ExperienceTask[]
+  validations               ValidationRecord[]
+  revisions                 ExperienceRevision[]
+  events                    ExperienceEvent[]
+  validationRecordExtendeds ValidationRecordExtended[]
+  reviewQueues              ReviewQueue[]
+  reviewDecisions           ReviewDecision[]
+  experienceAnalytics       ExperienceAnalytics?
+  experienceAutoRefinements ExperienceAutoRefinement[]
+  claimExamples             ClaimExample[]
+  claimSimulations          ClaimSimulation[]
+  claimAnimations           ClaimAnimation[]
+
+  // Auto-Revision relationships
+  abExperiments        ABExperiment[]
+  driftSignals         DriftSignal[]
+  regenerationInsights RegenerationInsight[]
+
+  @@index([tenantId, status])
+  @@index([tenantId, domain])
+  @@index([createdBy])
+  @@index([tenantId, riskLevel])
+  @@index([promptHash])
+}
+
+model LearningClaim {
+  id           String             @id @default(cuid())
+  experienceId String
+  experience   LearningExperience @relation(fields: [experienceId], references: [id], onDelete: Cascade)
+
+  claimRef   String // e.g., "C1", "C2"
+  text       String
+  bloomLevel ContentStudioBloomLevel
+  orderIndex Int
+
+  // Prerequisites (JSON array of claim refs from other experiences)
+  prerequisites Json? // string[]
+
+  // Grade-specific overrides (JSON)
+  gradeOverrides Json? // ClaimOverride[]
+
+  // Content needs analysis (JSON) - NEW
+  contentNeeds Json? // { examples: {...}, simulation: {...}, animation: {...} }
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  // Relations - NEW
+  examples    ClaimExample[]
+  simulations ClaimSimulation[]
+  animations  ClaimAnimation[]
+
+  @@unique([experienceId, claimRef])
+  @@index([experienceId])
+}
+
+model LearningEvidence {
+  id           String             @id @default(cuid())
+  experienceId String
+  experience   LearningExperience @relation(fields: [experienceId], references: [id], onDelete: Cascade)
+
+  evidenceRef String // e.g., "E1", "E2"
+  claimRef    String // Links to which claim
+  type        String // prediction_vs_outcome, parameter_targeting, etc.
+  description String
+  observables Json // Observable[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@unique([experienceId, evidenceRef])
+  @@index([experienceId])
+}
+
+model ExperienceTask {
+  id           String             @id @default(cuid())
+  experienceId String
+  experience   LearningExperience @relation(fields: [experienceId], references: [id], onDelete: Cascade)
+
+  taskRef     String // e.g., "T1", "T2"
+  type        String // prediction, simulation, explanation, construction
+  claimRef    String
+  evidenceRef String
+  prompt      String
+  orderIndex  Int
+
+  // Type-specific config (JSON)
+  config Json // PredictionConfig | SimulationConfig | etc.
+
+  // Grade-specific overrides
+  gradeOverrides Json? // TaskOverride[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@unique([experienceId, taskRef])
+  @@index([experienceId])
+}
+
+model ValidationRecord {
+  id           String             @id @default(cuid())
+  experienceId String
+  experience   LearningExperience @relation(fields: [experienceId], references: [id], onDelete: Cascade)
+
+  // Five Pillars scores (0-100)
+  authorityScore     Int
+  accuracyScore      Int
+  usefulnessScore    Int
+  harmlessnessScore  Int
+  accessibilityScore Int
+  gradefitScore      Int
+
+  overallStatus ValidationStatus
+
+  // Detailed issues (JSON)
+  issues      Json // ValidationIssue[]
+  suggestions Json? // string[]
+
+  validatedAt DateTime @default(now())
+
+  @@index([experienceId])
+}
+
+model AIGenerationLog {
+  id           String  @id @default(cuid())
+  tenantId     String
+  userId       String
+  experienceId String?
+
+  operation    AIOperation
+  provider     String // "openai", "anthropic", "local"
+  model        String // "gpt-4", "claude-3.5-sonnet"
+  modelVersion String? // Model version for auditability
+
+  // Token usage
+  inputTokens  Int
+  outputTokens Int
+  costUsd      Float
+  latencyMs    Int
+
+  // Result
+  success      Boolean
+  errorMessage String?
+
+  // Request/response (for debugging, optional)
+  promptHash  String? // Hash of refined prompt
+  requestHash String? // Hash of input for dedup
+
+  // Guardrails metadata
+  guardrailsVersion String? // Version of guardrails applied
+  riskLevel         RiskLevel @default(LOW)
+  confidenceScore   Float? // AI confidence (0-1)
+
+  createdAt DateTime @default(now())
+
+  @@index([tenantId, createdAt])
+  @@index([userId, createdAt])
+  @@index([experienceId])
+  @@index([promptHash])
+}
+
+// =============================================================================
+// Experience Revisions & Events (for audit trail)
+// =============================================================================
+
+enum AuthorType {
+  HUMAN
+  AI_ASSISTED
+  AI_GENERATED
+}
+
+model ExperienceRevision {
+  id           String             @id @default(cuid())
+  experienceId String
+  experience   LearningExperience @relation(fields: [experienceId], references: [id], onDelete: Cascade)
+
+  version    Int
+  diff       Json // JSON patch or full snapshot
+  authorType AuthorType
+  authorId   String
+  promptHash String? // If AI-assisted
+
+  createdAt DateTime @default(now())
+
+  @@index([experienceId, version])
+  @@index([experienceId, createdAt])
+}
+
+enum ExperienceEventType {
+  CREATED
+  UPDATED
+  VALIDATED
+  PUBLISHED
+  UNPUBLISHED
+  CONTENT_CHANGED
+  SIMULATION_LINKED
+  SIMULATION_UNLINKED
+  ANALYTICS_VIEWED
+  ANALYTICS_UPDATED
+}
+
+model ExperienceEvent {
+  id           String             @id @default(cuid())
+  experienceId String
+  experience   LearningExperience @relation(fields: [experienceId], references: [id], onDelete: Cascade)
+
+  eventType ExperienceEventType
+  actorId   String
+  metadata  Json? // Event-specific data
+
+  createdAt DateTime @default(now())
+
+  @@index([experienceId, eventType])
+  @@index([experienceId, createdAt])
+}
+
+// =============================================================================
+// Simulation Manifest Extensions (for versioning & safety)
+// =============================================================================
+
+enum SimulationManifestStatus {
+  DRAFT
+  REVIEW
+  ACTIVE
+  DEPRECATED
+}
+
+model SimulationManifestVersion {
+  id                 String             @id @default(cuid())
+  manifestId         String
+  simulationManifest SimulationManifest @relation("SimulationManifestVersions", fields: [manifestId], references: [id], onDelete: Cascade)
+
+  version             String
+  manifestJson        Json // Full manifest at this version
+  safetyConstraints   Json // Safety rules
+  pedagogicalTags     Json // Pedagogy metadata
+  instrumentationPlan Json // Telemetry plan
+
+  status          SimulationManifestStatus @default(DRAFT)
+  riskLevel       RiskLevel                @default(LOW)
+  confidenceScore Float?
+
+  createdBy String
+  createdAt DateTime @default(now())
+
+  @@unique([manifestId, version])
+  @@index([manifestId, status])
+}
+
+// Add relation to SimulationManifest
+model SimulationManifestExtension {
+  id                 String             @id
+  simulationManifest SimulationManifest @relation("SimulationManifestExtensions", fields: [id], references: [id], onDelete: Cascade)
+
+  metadata Json? // Additional extension metadata
+}
+
+model SimulationLinkAudit {
+  id                   String             @id @default(cuid())
+  experienceId         String
+  simulationManifestId String
+  simulationManifest   SimulationManifest @relation("SimulationLinkAudits", fields: [simulationManifestId], references: [id], onDelete: Cascade)
+
+  action        String // "linked", "unlinked", "version_changed"
+  beforeVersion String?
+  afterVersion  String?
+  actorId       String
+
+  createdAt DateTime @default(now())
+
+  @@index([experienceId, createdAt])
+  @@index([simulationManifestId, createdAt])
+}
+
+// =============================================================================
+// AI Prompt Cache (for reuse & cost optimization)
+// =============================================================================
+
+model AIPromptCache {
+  id       String @id @default(cuid())
+  tenantId String
+
+  rawIntentHash     String @unique // Hash of raw user input
+  flowType          String // "concept_generation", "simulation_generation", "refinement"
+  refinedPrompt     String // Cleaned & enriched prompt
+  guardrailsVersion String // Version of guardrails applied
+
+  // Metadata
+  domain     String?
+  gradeRange String?
+  riskLevel  RiskLevel @default(LOW)
+
+  // Linked outputs
+  aiOutputIds Json // Array of AIGenerationLog IDs
+
+  // TTL
+  expiresAt DateTime
+  createdAt DateTime @default(now())
+
+  @@index([tenantId, rawIntentHash])
+  @@index([tenantId, flowType])
+  @@index([expiresAt])
+}
+
+// =============================================================================
+// Validation Extensions (for caching & determinism)
+// =============================================================================
+
+model ValidationRecordExtended {
+  id           String             @id @default(cuid())
+  experienceId String
+  experience   LearningExperience @relation(fields: [experienceId], references: [id], onDelete: Cascade)
+
+  // Input hash for cache key
+  inputHash         String // Hash of experience content + simulation version
+  validatorsVersion String // Version of validators used
+
+  // Five Pillars scores (0-100)
+  authorityScore     Int
+  accuracyScore      Int
+  usefulnessScore    Int
+  harmlessnessScore  Int
+  accessibilityScore Int
+  gradefitScore      Int
+
+  overallStatus ValidationStatus
+
+  // Detailed checks with metadata
+  checks      Json // ValidationCheck[] with per-check metadata
+  issues      Json // ValidationIssue[]
+  suggestions Json? // string[]
+
+  // Simulation health
+  simulationHealthReport Json?
+
+  validatedAt DateTime @default(now())
+
+  @@index([experienceId, inputHash])
+  @@index([experienceId, validatedAt])
+}
+
+// =============================================================================
+// Human-in-the-Loop (HITL) Review System
+// =============================================================================
+
+enum ReviewerRole {
+  SME // Subject Matter Expert
+  PEDAGOGY // Pedagogy Reviewer
+  SAFETY // Safety Reviewer
+  ADMIN // Admin Override
+}
+
+enum ReviewDecisionType {
+  APPROVE
+  REJECT
+  REQUEST_CHANGES
+  ESCALATE
+}
+
+model ReviewQueue {
+  id           String             @id @default(cuid())
+  tenantId     String
+  experienceId String
+  experience   LearningExperience @relation(fields: [experienceId], references: [id], onDelete: Cascade)
+
+  queuedAt   DateTime  @default(now())
+  priority   Int       @default(0) // Higher = more urgent
+  assignedTo String? // Reviewer user ID
+  assignedAt DateTime?
+
+  // Context
+  riskLevel     RiskLevel
+  triggerReason String // "high_risk", "low_confidence", "policy_violation"
+  metadata      Json?
+
+  @@index([tenantId, assignedTo])
+  @@index([tenantId, queuedAt])
+  @@index([experienceId])
+}
+
+model ReviewDecision {
+  id           String             @id @default(cuid())
+  experienceId String
+  experience   LearningExperience @relation(fields: [experienceId], references: [id], onDelete: Cascade)
+
+  reviewerId   String
+  reviewerRole ReviewerRole
+  decision     ReviewDecisionType
+  rationale    String // Mandatory explanation
+  changes      Json? // Suggested or applied changes
+
+  createdAt DateTime @default(now())
+
+  @@index([experienceId, createdAt])
+  @@index([reviewerId, createdAt])
+}
+
+// =============================================================================
+// Analytics & Regeneration
+// =============================================================================
+
+model ExperienceAnalytics {
+  id           String             @id @default(cuid())
+  experienceId String             @unique
+  experience   LearningExperience @relation(fields: [experienceId], references: [id], onDelete: Cascade)
+
+  // Engagement metrics
+  viewCount       Int   @default(0)
+  completionCount Int   @default(0)
+  completionRate  Float @default(0)
+  avgTimeMinutes  Float @default(0)
+  dropOffRate     Float @default(0)
+
+  // Simulation metrics
+  simulationStarts Int @default(0)
+  simulationAborts Int @default(0)
+  simulationErrors Int @default(0)
+
+  // Trend windows (JSON arrays)
+  trends7d  Json? // 7-day trend data
+  trends28d Json? // 28-day trend data
+
+  // Anomaly flags
+  hasEngagementDrift Boolean @default(false)
+  hasQualityIssues   Boolean @default(false)
+
+  updatedAt DateTime @updatedAt
+  createdAt DateTime @default(now())
+
+  @@index([experienceId])
+}
+
+model ExperienceAutoRefinement {
+  id           String             @id @default(cuid())
+  experienceId String
+  experience   LearningExperience @relation(fields: [experienceId], references: [id], onDelete: Cascade)
+
+  // Source analytics snapshot
+  analyticsSnapshot Json
+  triggerReason     String // "low_engagement", "high_abort_rate", "aging_simulation"
+
+  // Regenerated candidate
+  candidateExperienceId String?
+  appliedGuardrails     Json
+  aiCompletionId        String?
+
+  // Status
+  status     String    @default("pending") // pending, reviewed, accepted, rejected
+  reviewedBy String?
+  reviewedAt DateTime?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  driftSignal         DriftSignal?         @relation(name: "DriftSignal_AutoRefinement")
+  regenerationInsight RegenerationInsight? @relation(name: "RegenerationInsight_AutoRefinement")
+
+  @@index([experienceId])
+  @@index([status])
+}
+
+// =============================================================================
+// Evidence-Based Content Models (Claim-Linked Content)
+// =============================================================================
+
+model ClaimExample {
+  id           String             @id @default(cuid())
+  experienceId String
+  experience   LearningExperience @relation(fields: [experienceId], references: [id], onDelete: Cascade)
+  claimRef     String
+  claim        LearningClaim      @relation(fields: [experienceId, claimRef], references: [experienceId, claimRef], onDelete: Cascade)
+
+  type        String // "REAL_WORLD" | "PROBLEM_SOLVING" | "ANALOGY" | "CASE_STUDY"
+  title       String
+  description String
+  content     Json // { problemStatement?, solution, keyPoints: string[], realWorldConnection? }
+
+  difficulty String @default("INTERMEDIATE") // BEGINNER | INTERMEDIATE | ADVANCED
+  orderIndex Int
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([experienceId, claimRef])
+  @@index([type])
+}
+
+model ClaimSimulation {
+  id           String             @id @default(cuid())
+  experienceId String
+  experience   LearningExperience @relation(fields: [experienceId], references: [id], onDelete: Cascade)
+  claimRef     String
+  claim        LearningClaim      @relation(fields: [experienceId, claimRef], references: [experienceId, claimRef], onDelete: Cascade)
+
+  simulationManifestId String
+  simulationManifest   SimulationManifest @relation(fields: [simulationManifestId], references: [id])
+
+  interactionType  String // "parameter_exploration" | "prediction" | "construction"
+  goal             String
+  successCriteria  Json // { rmse?: string, maxAttempts?: number, timeLimit?: number }
+  estimatedMinutes Int    @default(10)
+
+  createdAt DateTime @default(now())
+
+  @@unique([experienceId, claimRef])
+  @@index([experienceId])
+  @@index([simulationManifestId])
+}
+
+model ClaimAnimation {
+  id           String             @id @default(cuid())
+  experienceId String
+  experience   LearningExperience @relation(fields: [experienceId], references: [id], onDelete: Cascade)
+  claimRef     String
+  claim        LearningClaim      @relation(fields: [experienceId, claimRef], references: [experienceId, claimRef], onDelete: Cascade)
+
+  title       String
+  description String
+  type        String // "2d" | "3d" | "timeline"
+  duration    Int // seconds
+  config      Json // { keyframes, timeline, controls }
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@unique([experienceId, claimRef])
+  @@index([experienceId])
+}
+
+// =============================================================================
+// Auto-Revision and A/B Testing Enhancements
+// ============================================================================
+
+model ABExperiment {
+  id           String             @id @default(cuid())
+  tenantId     String
+  experienceId String
+  experience   LearningExperience @relation(fields: [experienceId], references: [id], onDelete: Cascade)
+
+  // Version information
+  controlVersion   Int
+  treatmentVersion Int
+
+  // Experiment status
+  status String @default("draft") // "draft", "running", "completed", "winner_promoted", "failed"
+
+  // Sample sizes
+  controlSampleSize   Int @default(0)
+  treatmentSampleSize Int @default(0)
+
+  // Metrics (JSON storage for flexibility)
+  controlMetrics   Json @default("{}")
+  treatmentMetrics Json @default("{}")
+
+  // Statistical results
+  pValue           Float?
+  confidenceLower  Float?
+  confidenceUpper  Float?
+  effectSize       Float?
+  winner           String? // "control", "treatment", "inconclusive"
+  statisticalPower Float?
+
+  // Timestamps
+  createdAt   DateTime  @default(now())
+  startedAt   DateTime?
+  completedAt DateTime?
+
+  // Metadata
+  notes    String?
+  priority Int     @default(0)
+
+  @@index([tenantId, status])
+  @@index([experienceId])
+  @@index([status, createdAt])
+}
+
+model DriftSignal {
+  id           String             @id @default(cuid())
+  tenantId     String
+  experienceId String
+  experience   LearningExperience @relation(fields: [experienceId], references: [id], onDelete: Cascade)
+
+  // Signal information
+  signalType String // "engagement_drop", "high_abort_rate", "low_completion", "low_mastery", "negative_feedback"
+  severity   String // "low", "medium", "high"
+  metric     String
+  value      Float
+  threshold  Float
+
+  // AI analysis
+  recommendation String
+  confidence     Float?
+  context        Json? // Additional context for the signal
+
+  // Status
+  status String @default("detected") // "detected", "acknowledged", "addressed", "false_positive"
+
+  // Timestamps
+  detectedAt     DateTime  @default(now())
+  acknowledgedAt DateTime?
+  addressedAt    DateTime?
+
+  // Relationships
+  autoRefinementId String?                   @unique
+  autoRefinement   ExperienceAutoRefinement? @relation(name: "DriftSignal_AutoRefinement", fields: [autoRefinementId], references: [id])
+
+  @@index([tenantId, experienceId, status])
+  @@index([signalType, severity])
+  @@index([detectedAt])
+}
+
+model RegenerationInsight {
+  id           String             @id @default(cuid())
+  tenantId     String
+  experienceId String
+  experience   LearningExperience @relation(fields: [experienceId], references: [id], onDelete: Cascade)
+
+  // Insight classification
+  category        String // "content_difficulty", "content_clarity", "simulation_complexity", "task_alignment", "grade_level"
+  issue           String
+  suggestedAction String
+  priority        Int // 1-10, higher = more urgent
+
+  // Evidence and analysis
+  evidence   Json // Supporting data for the insight
+  confidence Float? // AI confidence in the insight
+
+  // Status tracking
+  status String @default("identified") // "identified", "analyzed", "addressed", "rejected"
+
+  // Timestamps
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  // Relationships
+  autoRefinementId String?                   @unique
+  autoRefinement   ExperienceAutoRefinement? @relation(name: "RegenerationInsight_AutoRefinement", fields: [autoRefinementId], references: [id])
+
+  @@index([tenantId, experienceId, category])
+  @@index([priority, status])
+  @@index([createdAt])
+}
+
+model AutoRevisionConfig {
+  id       String @id @default(cuid())
+  tenantId String @unique
+
+  // Configuration settings
+  enabled                    Boolean @default(true)
+  driftCheckIntervalHours    Int     @default(6)
+  maxConcurrentRegenerations Int     @default(3)
+  minSampleSize              Int     @default(100)
+  significanceThreshold      Float   @default(0.05)
+
+  // Thresholds
+  completionRateThreshold   Float @default(0.6)
+  abortRateThreshold        Float @default(0.3)
+  averageTimeSpentThreshold Float @default(5.0) // minutes
+  masteryRateThreshold      Float @default(0.7)
+  feedbackScoreThreshold    Float @default(3.0) // out of 5
+
+  // Timestamps
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  // Metadata
+  updatedBy String?
+  notes     String?
+}
+
+model AutoRevisionMetrics {
+  id       String @id @default(cuid())
+  tenantId String
+
+  // Metrics snapshot
+  date DateTime @default(now())
+
+  // Drift detection metrics
+  driftSignalsDetected Int @default(0)
+  experiencesMonitored Int @default(0)
+  highSeveritySignals  Int @default(0)
+
+  // Regeneration metrics
+  regenerationsQueued          Int   @default(0)
+  regenerationsCompleted       Int   @default(0)
+  regenerationsFailed          Int   @default(0)
+  averageProcessingTimeMinutes Float @default(0)
+
+  // A/B testing metrics
+  abExperimentsCreated     Int   @default(0)
+  abExperimentsCompleted   Int   @default(0)
+  averageTestDurationHours Float @default(0)
+  improvementRate          Float @default(0) // Percentage of improvements
+
+  // Performance metrics
+  averageEngagementImprovement Float @default(0)
+  averageCompletionImprovement Float @default(0)
+  averageMasteryImprovement    Float @default(0)
+
+  // System health
+  queueLength    Int @default(0)
+  processingJobs Int @default(0)
+  failedJobs24h  Int @default(0)
+
+  @@unique([tenantId, date])
+  @@index([date])
+}

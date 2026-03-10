@@ -8,8 +8,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import javax.inject.Inject;
-import javax.inject.Singleton;
+import io.activej.inject.annotation.Inject;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
@@ -21,7 +20,6 @@ import java.util.concurrent.ConcurrentHashMap;
  * @doc.layer infrastructure
  * @doc.pattern Router
  */
-@Singleton
 public class MessageRouter {
     private static final Logger logger = LoggerFactory.getLogger(MessageRouter.class);
     

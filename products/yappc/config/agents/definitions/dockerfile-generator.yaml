@@ -28,5 +28,7 @@ parameters:
     description: Build optimization level
 
 metadata:
+  level: 3  # Worker — generates Dockerfile artifacts
+  domain: deployment
   author: "YAPPC Team"
   tags: [docker, containerization, deployment, devops]

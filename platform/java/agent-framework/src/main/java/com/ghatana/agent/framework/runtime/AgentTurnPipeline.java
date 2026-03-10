@@ -1,8 +1,12 @@
 package com.ghatana.agent.framework.runtime;
 
 import com.ghatana.agent.framework.api.AgentContext;
+import com.ghatana.agent.framework.resilience.ResiliencePolicy;
 import io.activej.promise.Promise;
+import io.activej.promise.Promises;
 import org.jetbrains.annotations.NotNull;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.util.Objects;
 
@@ -30,6 +34,8 @@ import java.util.Objects;
  * @doc.gaa.lifecycle perceive|reason|act|capture|reflect
  */
 public class AgentTurnPipeline<TInput, TOutput> {
+
+    private static final Logger log = LoggerFactory.getLogger(AgentTurnPipeline.class);
 
     /**
      * Functional interface for each lifecycle phase.
@@ -159,6 +165,54 @@ public class AgentTurnPipeline<TInput, TOutput> {
                     context.getLogger().error("{} phase failed", phase.toUpperCase(), e);
                 }
             });
+    }
+
+    // ── Resilience-wrapped execution ─────────────────────────────────────
+
+    /**
+     * Executes the pipeline with the given {@link ResiliencePolicy} applied.
+     *
+     * <p>Policy semantics:
+     * <ul>
+     *   <li><b>Timeout</b>: Each attempt is bounded by {@link ResiliencePolicy#timeout()}.</li>
+     *   <li><b>Retry</b>: On failure or timeout, the pipeline is re-executed up to
+     *       {@link ResiliencePolicy#maxAttempts()} times (sequentially, no delay).</li>
+     * </ul>
+     *
+     * <p>If all attempts are exhausted the last exception is propagated.
+     *
+     * @param input   Turn input
+     * @param context Execution context
+     * @param policy  Resilience policy to enforce
+     * @return Promise of the output, resilience-wrapped
+     */
+    @NotNull
+    public Promise<TOutput> executeWithPolicy(
+            @NotNull TInput input,
+            @NotNull AgentContext context,
+            @NotNull ResiliencePolicy policy) {
+        Objects.requireNonNull(policy, "policy cannot be null");
+
+        Promise<TOutput> first = Promises.timeout(policy.timeout(), execute(input, context));
+
+        if (!policy.isRetrying()) {
+            return first;
+        }
+
+        // Chain sequential retries (k = 1..maxAttempts-1)
+        Promise<TOutput> chain = first;
+        for (int k = 1; k < policy.maxAttempts(); k++) {
+            final int attempt = k + 1;
+            chain = chain.then(
+                result -> Promise.of(result),
+                ex -> {
+                    log.warn("Pipeline for agent {} attempt {}/{} failed: {}; retrying",
+                            agentId, attempt, policy.maxAttempts(), ex.getMessage());
+                    return Promises.timeout(policy.timeout(), execute(input, context));
+                }
+            );
+        }
+        return chain;
     }
 
     // ── Builder ─────────────────────────────────────────────────────────

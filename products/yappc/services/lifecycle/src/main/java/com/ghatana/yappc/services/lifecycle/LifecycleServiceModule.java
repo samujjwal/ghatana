@@ -6,7 +6,12 @@ package com.ghatana.yappc.services.lifecycle;
 
 import com.ghatana.ai.llm.CompletionService;
 import com.ghatana.audit.AuditLogger;
+import com.ghatana.governance.PolicyEngine;
 import com.ghatana.platform.observability.MetricsCollector;
+import com.ghatana.yappc.api.GenerationApiController;
+import com.ghatana.yappc.api.IntentApiController;
+import com.ghatana.yappc.api.ShapeApiController;
+import com.ghatana.yappc.api.ValidationApiController;
 import com.ghatana.yappc.services.evolve.EvolutionService;
 import com.ghatana.yappc.services.evolve.EvolutionServiceImpl;
 import com.ghatana.yappc.services.generate.GenerationService;
@@ -23,6 +28,12 @@ import com.ghatana.yappc.services.shape.ShapeService;
 import com.ghatana.yappc.services.shape.ShapeServiceImpl;
 import com.ghatana.yappc.services.validate.ValidationService;
 import com.ghatana.yappc.services.validate.ValidationServiceImpl;
+import com.ghatana.yappc.storage.YappcArtifactRepository;
+import com.ghatana.yappc.services.lifecycle.operators.AgentDispatchOperator;
+import com.ghatana.yappc.services.lifecycle.operators.GateOrchestratorOperator;
+import com.ghatana.yappc.services.lifecycle.operators.LifecycleStatePublisherOperator;
+import com.ghatana.yappc.services.lifecycle.operators.PhaseTransitionValidatorOperator;
+import com.ghatana.yappc.services.lifecycle.dlq.DlqPublisher;
 import io.activej.inject.annotation.Provides;
 import io.activej.inject.module.AbstractModule;
 import org.slf4j.Logger;
@@ -160,5 +171,195 @@ public class LifecycleServiceModule extends AbstractModule {
             MetricsCollector metrics) {
         logger.info("Creating ValidationService");
         return new ValidationServiceImpl(policyEngine, auditLogger, metrics);
+    }
+
+    // ========== HTTP API Controllers ==========
+
+    /**
+     * Provides the shared artifact repository used by all API controllers.
+     * Using the no-arg constructor creates an in-memory store; callers should
+     * replace this binding with DataCloudArtifactStore for production.
+     */
+    @Provides
+    YappcArtifactRepository artifactRepository() {
+        logger.info("Creating YappcArtifactRepository");
+        return new YappcArtifactRepository();
+    }
+
+    /** Provides IntentApiController for Phase 1 (Intent) HTTP routes. */
+    @Provides
+    IntentApiController intentApiController(IntentService intentService, YappcArtifactRepository repo) {
+        logger.info("Creating IntentApiController");
+        return new IntentApiController(intentService, repo);
+    }
+
+    /** Provides ShapeApiController for Phase 2 (Shape) HTTP routes. */
+    @Provides
+    ShapeApiController shapeApiController(ShapeService shapeService, YappcArtifactRepository repo) {
+        logger.info("Creating ShapeApiController");
+        return new ShapeApiController(shapeService, repo);
+    }
+
+    /** Provides GenerationApiController for Phase 3 (Generate) HTTP routes. */
+    @Provides
+    GenerationApiController generationApiController(GenerationService generationService, YappcArtifactRepository repo) {
+        logger.info("Creating GenerationApiController");
+        return new GenerationApiController(generationService, repo);
+    }
+
+    /** Provides ValidationApiController for Phase 8 (Validate) HTTP routes. */
+    @Provides
+    ValidationApiController validationApiController(ValidationService validationService) {
+        logger.info("Creating ValidationApiController");
+        return new ValidationApiController(validationService);
+    }
+
+    // ========== Lifecycle Transitions ==========
+
+    /**
+     * Provides TransitionConfigLoader — lazy YAML loader for {@code lifecycle/transitions.yaml}.
+     * Resolves external path ({@code yappc.config.dir}) first, then classpath.
+     */
+    @Provides
+    TransitionConfigLoader transitionConfigLoader() {
+        logger.info("Creating TransitionConfigLoader");
+        return new TransitionConfigLoader();
+    }
+
+    /**
+     * Provides AdvancePhaseUseCase — core use case for lifecycle phase transitions.
+     * Validates transition rules, checks required artifacts, and evaluates policy gates.
+     */
+    @Provides
+    AdvancePhaseUseCase advancePhaseUseCase(
+            TransitionConfigLoader transitionConfigLoader,
+            com.ghatana.governance.PolicyEngine policyEngine,
+            YappcArtifactRepository artifactRepository) {
+        logger.info("Creating AdvancePhaseUseCase");
+        return new AdvancePhaseUseCase(transitionConfigLoader, policyEngine, artifactRepository);
+    }
+
+    // ========== Stage Config (3.3) ==========
+
+    /**
+     * Provides StageConfigLoader — lazy YAML loader for {@code lifecycle/stages.yaml}.
+     * Resolves external path ({@code yappc.config.dir}) first, then classpath fallback.
+     */
+    @Provides
+    StageConfigLoader stageConfigLoader() {
+        logger.info("Creating StageConfigLoader");
+        return new StageConfigLoader();
+    }
+
+    /**
+     * Provides GateEvaluator — evaluates entry/exit criteria and artifact presence
+     * for lifecycle stage gates.
+     */
+    @Provides
+    GateEvaluator gateEvaluator() {
+        logger.info("Creating GateEvaluator");
+        return new GateEvaluator();
+    }
+
+    // ========== AEP Event Bridge (3.4) ==========
+
+    /**
+     * Provides AepEventBridge — publishes lifecycle transition events to the AEP event bus.
+     * Uses {@link com.ghatana.yappc.agent.HttpAepEventPublisher} configured from environment.
+     */
+    @Provides
+    AepEventBridge aepEventBridge() {
+        logger.info("Creating AepEventBridge (HTTP publisher from environment)");
+        return new AepEventBridge(com.ghatana.yappc.agent.HttpAepEventPublisher.fromEnvironment());
+    }
+
+    // ========== Human Approval Gate (3.5) ==========
+
+    /**
+     * Provides HumanApprovalService — manages phase-advance human-approval gates.
+     * Uses in-memory storage; a future JdbcHumanApprovalService will extend this
+     * class to persist to the {@code yappc.approval_requests} table (V18 migration).
+     */
+    @Provides
+    HumanApprovalService humanApprovalService(AepEventBridge aepEventBridge) {
+        logger.info("Creating HumanApprovalService");
+        return new HumanApprovalService(aepEventBridge);
+    }
+
+    // ========== Lifecycle Pipeline Operators (7.1) ==========
+
+    /**
+     * Provides PhaseTransitionValidatorOperator — validates that a requested lifecycle
+     * phase transition is permitted per {@code lifecycle/transitions.yaml} and the
+     * entry-criteria gate for the target stage.
+     */
+    @Provides
+    PhaseTransitionValidatorOperator phaseTransitionValidatorOperator(
+            TransitionConfigLoader transitionConfigLoader,
+            StageConfigLoader stageConfigLoader,
+            GateEvaluator gateEvaluator) {
+        logger.info("Creating PhaseTransitionValidatorOperator");
+        return new PhaseTransitionValidatorOperator(transitionConfigLoader, stageConfigLoader, gateEvaluator);
+    }
+
+    /**
+     * Provides GateOrchestratorOperator — runs policy checks and routes to
+     * human-approval when entry criteria are not automatically satisfied.
+     */
+    @Provides
+    GateOrchestratorOperator gateOrchestratorOperator(
+            com.ghatana.governance.PolicyEngine policyEngine,
+            HumanApprovalService humanApprovalService) {
+        logger.info("Creating GateOrchestratorOperator");
+        return new GateOrchestratorOperator(policyEngine, humanApprovalService);
+    }
+
+    /**
+     * Provides AgentDispatchOperator — reads agent assignments from the target
+     * {@link StageSpec} and emits {@code lifecycle.agent.dispatched} events.
+     */
+    @Provides
+    AgentDispatchOperator agentDispatchOperator(StageConfigLoader stageConfigLoader) {
+        logger.info("Creating AgentDispatchOperator");
+        return new AgentDispatchOperator(stageConfigLoader);
+    }
+
+    /**
+     * Provides LifecycleStatePublisherOperator — emits {@code lifecycle.phase.advanced}
+     * events via {@link AepEventBridge} to signal successful phase transitions.
+     */
+    @Provides
+    LifecycleStatePublisherOperator lifecycleStatePublisherOperator(AepEventBridge aepEventBridge) {
+        logger.info("Creating LifecycleStatePublisherOperator");
+        return new LifecycleStatePublisherOperator(aepEventBridge);
+    }
+
+    /**
+     * Provides the {@link YappcAepPipelineBootstrapper} that wires the 4 lifecycle operators
+     * into a sequential AEP pipeline and starts it at service boot.
+     */
+    @Provides
+    YappcAepPipelineBootstrapper yappcAepPipelineBootstrapper(
+            PhaseTransitionValidatorOperator validatorOperator,
+            GateOrchestratorOperator gateOperator,
+            AgentDispatchOperator dispatchOperator,
+            LifecycleStatePublisherOperator publisherOperator,
+            DlqPublisher dlqPublisher) {
+        logger.info("Creating YappcAepPipelineBootstrapper");
+        return new YappcAepPipelineBootstrapper(validatorOperator, gateOperator, dispatchOperator, publisherOperator, dlqPublisher);
+    }
+
+    /**
+     * Provides a no-op {@link DlqPublisher} for standalone lifecycle service deployments.
+     * Overridden by {@code ProductionModule} in {@code backend/api} with the JDBC implementation.
+     *
+     * @doc.type method
+     * @doc.purpose Default (no-op) DLQ publisher for lifecycle-only deployments
+     * @doc.layer product
+     * @doc.pattern Factory
+     */
+    @Provides
+    DlqPublisher dlqPublisher() {
+        return DlqPublisher.noop();
     }
 }

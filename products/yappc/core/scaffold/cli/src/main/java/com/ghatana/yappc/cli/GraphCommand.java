@@ -70,6 +70,8 @@ public class GraphCommand implements Callable<Integer> {
             log.info("Writing graph to {}", outputPath);
             java.nio.file.Files.writeString(java.nio.file.Path.of(outputPath), output);
         } else {
+            // Print to System.out so it can be captured in tests and redirected output
+            System.out.println(output);
             log.info("{}", output);
         }
 

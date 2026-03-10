@@ -17,10 +17,12 @@
 package com.ghatana.yappc.cli.commands;
 
 import com.ghatana.yappc.core.rca.*;
+import io.activej.eventloop.Eventloop;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.concurrent.Callable;
+import java.util.concurrent.atomic.AtomicReference;
 import picocli.CommandLine.Command;
 import picocli.CommandLine.Option;
 import picocli.CommandLine.Parameters;
@@ -117,7 +119,11 @@ public class ExplainFailureCommand implements Callable<Integer> {
                 return 1;
             }
 
-            RCAResult rcaResult = rcaService.analyzeFailure(normalizedLog, context).get();
+            AtomicReference<RCAResult> ref = new AtomicReference<>();
+            Eventloop eventloop = Eventloop.create();
+            eventloop.post(() -> rcaService.analyzeFailure(normalizedLog, context).whenResult(ref::set));
+            eventloop.run();
+            RCAResult rcaResult = ref.get();
 
             // Output results
             outputResults(rcaResult);
@@ -207,16 +213,16 @@ public class ExplainFailureCommand implements Callable<Integer> {
         }
 
         if (verbose && result.getMetadata() != null && !result.getMetadata().isEmpty()) {
-            log.info("");;
-            log.info("📈 Analysis Metadata:");
-            result.getMetadata()
-                    result.getMetadata().forEach((key, value) ->
-                        log.info("  • {}: {}", key, value));
-                }
-            }
-            private void outputJson(RCAResult result) {
-                // For now, output a simplified JSON representation
-                        log.info("{");
+            log.info("");
+            log.info("\ud83d\udcc8 Analysis Metadata:");
+            result.getMetadata().forEach((key, value) ->
+                log.info("  \u2022 {}: {}", key, value));
+        }
+    }
+
+    private void outputJson(RCAResult result) {
+        // For now, output a simplified JSON representation
+        log.info("{");
         log.info("  \"analysisId\": \"{}\",", result.getAnalysisId());
         log.info("  \"timestamp\": \"{}\",", result.getTimestamp());
         log.info("  \"rootCause\": \"{}\",", result.getRootCause());

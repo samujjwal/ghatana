@@ -65,7 +65,7 @@ public class ShapeApiController {
                         return Promise.of(badRequest400("Invalid JSON format"));
                     }
                 })
-                .whenException(e -> log.error("Error deriving shape", e);
+                .whenException(e -> log.error("Error deriving shape", e));
     }
     
     /**
@@ -98,7 +98,7 @@ public class ShapeApiController {
                         return Promise.of(badRequest400("Invalid JSON format"));
                     }
                 })
-                .whenException(e -> log.error("Error generating system model", e);
+                .whenException(e -> log.error("Error generating system model", e));
     }
     
     /**
@@ -131,6 +131,6 @@ public class ShapeApiController {
                         return error500("Internal server error");
                     }
                 })
-                .whenException(e -> log.error("Error retrieving shape: {}", shapeId, e);
+                .whenException(e -> log.error("Error retrieving shape: {}", shapeId, e));
     }
 }

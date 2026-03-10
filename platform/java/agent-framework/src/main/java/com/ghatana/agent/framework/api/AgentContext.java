@@ -233,6 +233,21 @@ public interface AgentContext {
     static Builder builder() {
         return new DefaultAgentContext.BuilderImpl();
     }
+
+    /**
+     * Creates a minimal no-op AgentContext suitable for testing or single-step evaluation.
+     *
+     * @return An empty context with no-op memory and default identifiers
+     */
+    @NotNull
+    static AgentContext empty() {
+        return builder()
+                .agentId("test-agent")
+                .turnId("test-turn")
+                .tenantId("test-tenant")
+                .memoryStore(MemoryStore.noOp())
+                .build();
+    }
     
     /**
      * Builder for AgentContext.

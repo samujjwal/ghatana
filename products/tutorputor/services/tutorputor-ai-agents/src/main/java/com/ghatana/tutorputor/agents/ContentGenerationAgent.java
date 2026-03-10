@@ -4,6 +4,8 @@ import com.ghatana.patternlearning.llm.LlmProvider;
 import com.ghatana.tutorputor.agents.prompts.PromptTemplateEngine;
 import com.ghatana.tutorputor.agents.validation.ContentValidator;
 import com.ghatana.tutorputor.contracts.v1.*;
+import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import io.activej.promise.Promise;
 import io.micrometer.core.instrument.MeterRegistry;
 import io.micrometer.core.instrument.Timer;
@@ -30,6 +32,7 @@ import java.util.concurrent.Executors;
  */
 public class ContentGenerationAgent {
     private static final Logger log = LoggerFactory.getLogger(ContentGenerationAgent.class);
+    private static final ObjectMapper MAPPER = new ObjectMapper();
 
     private final LlmProvider llmProvider;
     private final PromptTemplateEngine promptEngine;
@@ -234,26 +237,79 @@ public class ContentGenerationAgent {
         GenerateClaimsResponse.Builder builder = GenerateClaimsResponse.newBuilder()
             .setRequestId(requestId);
 
-        String[] lines = raw.split("\n");
-        int index = 0;
-        for (String line : lines) {
-            String trimmed = line.trim();
-            if (trimmed.isEmpty() || trimmed.startsWith("#")) continue;
-            // Each non-empty line is treated as a claim
-            Claim.Builder claim = Claim.newBuilder()
-                .setClaimRef(requestId + "-C" + index)
-                .setText(trimmed)
-                .setBloomLevel(BloomLevel.UNDERSTAND) // default level
-                .setOrderIndex(index);
-            builder.addClaims(claim);
-            index++;
+        try {
+            JsonNode root = MAPPER.readTree(raw);
+            JsonNode claimsNode = root.get("claims");
+            if (claimsNode != null && claimsNode.isArray()) {
+                int index = 0;
+                for (JsonNode claimNode : claimsNode) {
+                    String claimRef = claimNode.path("claim_ref").asText(requestId + "-C" + index);
+                    String text = claimNode.path("text").asText("");
+                    String bloomStr = claimNode.path("bloom_level").asText("understand").toUpperCase();
+                    BloomLevel bloomLevel;
+                    try {
+                        bloomLevel = BloomLevel.valueOf(bloomStr);
+                    } catch (IllegalArgumentException e) {
+                        bloomLevel = BloomLevel.UNDERSTAND;
+                    }
+
+                    Claim.Builder claim = Claim.newBuilder()
+                        .setClaimRef(claimRef)
+                        .setText(text)
+                        .setBloomLevel(bloomLevel)
+                        .setOrderIndex(index);
+
+                    // Parse content needs if present
+                    JsonNode needsNode = claimNode.path("content_needs");
+                    if (!needsNode.isMissingNode()) {
+                        ContentNeeds.Builder needsBuilder = ContentNeeds.newBuilder();
+
+                        JsonNode exNode = needsNode.path("examples");
+                        if (!exNode.isMissingNode()) {
+                            ExampleNeeds.Builder ex = ExampleNeeds.newBuilder()
+                                .setRequired(exNode.path("required").asBoolean(false))
+                                .setCount(exNode.path("count").asInt(0))
+                                .setNecessity((float) exNode.path("necessity").asDouble(0.0));
+                            for (JsonNode t : exNode.path("types")) {
+                                try { ex.addTypes(ExampleType.valueOf(t.asText("").toUpperCase())); } catch (IllegalArgumentException ignored) {}
+                            }
+                            needsBuilder.setExamples(ex);
+                        }
+
+                        JsonNode simNode = needsNode.path("simulation");
+                        if (!simNode.isMissingNode()) {
+                            SimulationNeeds.Builder sim = SimulationNeeds.newBuilder()
+                                .setRequired(simNode.path("required").asBoolean(false))
+                                .setNecessity((float) simNode.path("necessity").asDouble(0.0));
+                            String complexityStr = simNode.path("complexity").asText("low").toUpperCase();
+                            try { sim.setComplexity(Complexity.valueOf(complexityStr)); } catch (IllegalArgumentException ignored) {}
+                            needsBuilder.setSimulation(sim);
+                        }
+
+                        JsonNode animNode = needsNode.path("animation");
+                        if (!animNode.isMissingNode()) {
+                            AnimationNeeds.Builder anim = AnimationNeeds.newBuilder()
+                                .setRequired(animNode.path("required").asBoolean(false))
+                                .setNecessity((float) animNode.path("necessity").asDouble(0.0));
+                            needsBuilder.setAnimation(anim);
+                        }
+
+                        claim.setContentNeeds(needsBuilder);
+                    }
+
+                    builder.addClaims(claim);
+                    index++;
+                }
+            }
+        } catch (Exception e) {
+            log.warn("Failed to parse claims JSON, falling back: {}", e.getMessage());
         }
 
         ValidationResult validation = validator.validate(builder.build());
         builder.setValidation(validation);
         builder.setMetadata(GenerationMetadata.newBuilder()
             .setModelName(llmProvider.getModelName())
-            .setTokensUsed(raw.length() / 4) // approximate
+            .setTokensUsed(raw.length() / 4)
             .setTemperature((float) temperature)
             .build());
 
@@ -264,21 +320,36 @@ public class ContentGenerationAgent {
         GenerateExamplesResponse.Builder builder = GenerateExamplesResponse.newBuilder()
             .setRequestId(requestId);
 
-        // Parse structured text: sections separated by "---" or "###"
-        String[] sections = raw.split("(?m)^(---|###)");
-        int index = 0;
-        for (String section : sections) {
-            String trimmed = section.trim();
-            if (trimmed.isEmpty()) continue;
-            String[] parts = trimmed.split("\n", 2);
-            Example.Builder example = Example.newBuilder()
-                .setExampleId(requestId + "-E" + index)
-                .setType(index % 2 == 0 ? ExampleType.REAL_WORLD : ExampleType.PROBLEM_SOLVING)
-                .setTitle(parts[0].trim())
-                .setDescription(parts.length > 1 ? parts[1].trim() : "")
-                .setOrderIndex(index);
-            builder.addExamples(example);
-            index++;
+        try {
+            JsonNode root = MAPPER.readTree(raw);
+            JsonNode examplesNode = root.get("examples");
+            if (examplesNode != null && examplesNode.isArray()) {
+                int index = 0;
+                for (JsonNode exNode : examplesNode) {
+                    String typeStr = exNode.path("type").asText("real_world").toUpperCase();
+                    ExampleType exType;
+                    try {
+                        exType = ExampleType.valueOf(typeStr);
+                    } catch (IllegalArgumentException e) {
+                        exType = ExampleType.REAL_WORLD;
+                    }
+                    Example.Builder example = Example.newBuilder()
+                        .setExampleId(requestId + "-E" + index)
+                        .setType(exType)
+                        .setTitle(exNode.path("title").asText(""))
+                        .setDescription(exNode.path("description").asText(""))
+                        .setSolutionContent(exNode.path("solution").asText(""))
+                        .setRealWorldConnection(exNode.path("real_world_connection").asText(""))
+                        .setOrderIndex(index);
+                    for (JsonNode kp : exNode.path("key_learning_points")) {
+                        example.addKeyLearningPoints(kp.asText());
+                    }
+                    builder.addExamples(example);
+                    index++;
+                }
+            }
+        } catch (Exception e) {
+            log.warn("Failed to parse examples JSON: {}", e.getMessage());
         }
 
         ValidationResult validation = validator.validate(builder.build());
@@ -291,28 +362,78 @@ public class ContentGenerationAgent {
             .setRequestId(requestId)
             .setRationale(raw.trim());
 
-        // Parse content needs from LLM response
-        boolean needsExamples = raw.toLowerCase().contains("example");
-        boolean needsSimulation = raw.toLowerCase().contains("simulat");
-        boolean needsAnimation = raw.toLowerCase().contains("animat");
+        try {
+            JsonNode root = MAPPER.readTree(raw);
 
-        ContentNeeds.Builder needs = ContentNeeds.newBuilder()
-            .setExamples(ExampleNeeds.newBuilder()
-                .setRequired(needsExamples)
-                .setCount(needsExamples ? 3 : 0)
-                .setNecessity(needsExamples ? 0.8f : 0.2f)
-                .build())
-            .setSimulation(SimulationNeeds.newBuilder()
-                .setRequired(needsSimulation)
-                .setComplexity(Complexity.MEDIUM)
-                .setNecessity(needsSimulation ? 0.7f : 0.1f)
-                .build())
-            .setAnimation(AnimationNeeds.newBuilder()
-                .setRequired(needsAnimation)
-                .setNecessity(needsAnimation ? 0.6f : 0.1f)
-                .build());
+            ContentNeeds.Builder needs = ContentNeeds.newBuilder();
 
-        builder.setContentNeeds(needs);
+            JsonNode exNode = root.path("content_needs").path("examples");
+            if (exNode.isMissingNode()) exNode = root.path("examples");
+            if (!exNode.isMissingNode()) {
+                ExampleNeeds.Builder ex = ExampleNeeds.newBuilder()
+                    .setRequired(exNode.path("required").asBoolean(false))
+                    .setCount(exNode.path("count").asInt(0))
+                    .setNecessity((float) exNode.path("necessity").asDouble(0.0));
+                for (JsonNode t : exNode.path("types")) {
+                    try {
+                        ex.addTypes(ExampleType.valueOf(t.asText("").toUpperCase()));
+                    } catch (IllegalArgumentException ignored) {}
+                }
+                needs.setExamples(ex);
+            }
+
+            JsonNode simNode = root.path("content_needs").path("simulation");
+            if (simNode.isMissingNode()) simNode = root.path("simulation");
+            if (!simNode.isMissingNode()) {
+                SimulationNeeds.Builder sim = SimulationNeeds.newBuilder()
+                    .setRequired(simNode.path("required").asBoolean(false))
+                    .setNecessity((float) simNode.path("necessity").asDouble(0.0));
+                String complexityStr = simNode.path("complexity").asText("low").toUpperCase();
+                try { sim.setComplexity(Complexity.valueOf(complexityStr)); } catch (IllegalArgumentException ignored) {}
+                String interactionStr = simNode.path("interaction_type").asText("").toUpperCase();
+                try { sim.setInteractionType(InteractionType.valueOf(interactionStr)); } catch (IllegalArgumentException ignored) {}
+                needs.setSimulation(sim);
+            }
+
+            JsonNode animNode = root.path("content_needs").path("animation");
+            if (animNode.isMissingNode()) animNode = root.path("animation");
+            if (!animNode.isMissingNode()) {
+                AnimationNeeds.Builder anim = AnimationNeeds.newBuilder()
+                    .setRequired(animNode.path("required").asBoolean(false))
+                    .setNecessity((float) animNode.path("necessity").asDouble(0.0));
+                needs.setAnimation(anim);
+            }
+
+            builder.setContentNeeds(needs);
+
+            String rationale = root.path("rationale").asText("");
+            if (!rationale.isEmpty()) builder.setRationale(rationale);
+
+        } catch (Exception e) {
+            log.warn("Failed to parse content needs JSON, using heuristics: {}", e.getMessage());
+            // Fallback: keyword heuristics
+            boolean needsExamples = raw.toLowerCase().contains("example");
+            boolean needsSimulation = raw.toLowerCase().contains("simulat");
+            boolean needsAnimation = raw.toLowerCase().contains("animat");
+
+            ContentNeeds.Builder needs = ContentNeeds.newBuilder()
+                .setExamples(ExampleNeeds.newBuilder()
+                    .setRequired(needsExamples)
+                    .setCount(needsExamples ? 3 : 0)
+                    .setNecessity(needsExamples ? 0.8f : 0.2f)
+                    .build())
+                .setSimulation(SimulationNeeds.newBuilder()
+                    .setRequired(needsSimulation)
+                    .setComplexity(Complexity.MEDIUM)
+                    .setNecessity(needsSimulation ? 0.7f : 0.1f)
+                    .build())
+                .setAnimation(AnimationNeeds.newBuilder()
+                    .setRequired(needsAnimation)
+                    .setNecessity(needsAnimation ? 0.6f : 0.1f)
+                    .build());
+            builder.setContentNeeds(needs);
+        }
+
         return builder.build();
     }
 
@@ -320,14 +441,41 @@ public class ContentGenerationAgent {
         GenerateSimulationResponse.Builder builder = GenerateSimulationResponse.newBuilder()
             .setRequestId(requestId);
 
-        String[] lines = raw.split("\n");
-        String name = lines.length > 0 ? lines[0].trim() : "Simulation";
-        String description = lines.length > 1 ? lines[1].trim() : "";
-
         SimulationManifest.Builder manifest = SimulationManifest.newBuilder()
-            .setManifestId(requestId + "-SIM")
-            .setName(name)
-            .setDescription(description);
+            .setManifestId(requestId + "-SIM");
+
+        try {
+            JsonNode root = MAPPER.readTree(raw);
+            JsonNode simNode = root.path("simulation");
+            JsonNode target = simNode.isMissingNode() ? root : simNode;
+
+            manifest.setName(target.path("name").asText("Simulation"));
+            manifest.setDescription(target.path("description").asText(""));
+
+            // Parse entities
+            for (JsonNode entityNode : target.path("entities")) {
+                Entity.Builder entity = Entity.newBuilder()
+                    .setEntityId(entityNode.path("id").asText("entity-" + manifest.getEntitiesCount()))
+                    .setType(entityNode.path("type").asText("UNKNOWN"));
+                JsonNode propsNode = entityNode.path("properties");
+                if (!propsNode.isMissingNode()) {
+                    propsNode.fields().forEachRemaining(e -> entity.putProperties(e.getKey(), e.getValue().asText()));
+                }
+                manifest.addEntities(entity);
+            }
+
+            // Parse goals
+            for (JsonNode goalNode : target.path("goals")) {
+                Goal.Builder goal = Goal.newBuilder()
+                    .setGoalId("goal-" + manifest.getGoalsCount())
+                    .setDescription(goalNode.path("description").asText(""));
+                manifest.addGoals(goal);
+            }
+
+        } catch (Exception e) {
+            log.warn("Failed to parse simulation JSON: {}", e.getMessage());
+            manifest.setName("Simulation").setDescription("");
+        }
 
         builder.setManifest(manifest);
 

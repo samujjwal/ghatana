@@ -11,6 +11,9 @@ dependencies {
     // Framework API for legacy plugin support
     compileOnly(project(":products:yappc:core:framework"))
 
+    // Platform plugin SPI
+    api(project(":platform:java:plugin"))
+
     // ActiveJ dependencies
     api(libs.activej.eventloop)
     api(libs.activej.promise)

@@ -1,12 +1,20 @@
 /**
  * Unified Canvas State Management
- * 
+ *
+ * **DEPRECATED**: Shared atoms (lifecycle, tasks, AI, collaboration, project
+ * metadata) are now canonical in `@ghatana/yappc-canvas/state`.
+ * Import from there for new code.
+ *
+ * HierarchicalNode-specific state remains here until the HierarchicalNode
+ * model is migrated to the platform library.
+ *
  * Complete Jotai atom-based state for unified canvas
- * 
+ *
  * @doc.type module
  * @doc.purpose Central state management for all canvas features
  * @doc.layer state
  * @doc.pattern Atom
+ * @deprecated Import shared atoms from `@ghatana/yappc-canvas/state` instead.
  */
 
 import { atom } from 'jotai';

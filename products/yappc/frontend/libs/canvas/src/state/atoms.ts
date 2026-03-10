@@ -508,8 +508,7 @@ export const boundingBoxAtom = atom((get) => {
 
   selectedElements.forEach((element) => {
     if (element.type === 'node') {
-      // Type narrowing for CanvasNode
-      const node = element as unknown; // TODO: Better type narrowing
+      const node = element as CanvasElement & { bounds: { x: number; y: number; width: number; height: number } };
       minX = Math.min(minX, node.bounds.x);
       minY = Math.min(minY, node.bounds.y);
       maxX = Math.max(maxX, node.bounds.x + node.bounds.width);
@@ -524,3 +523,213 @@ export const boundingBoxAtom = atom((get) => {
     height: maxY - minY,
   };
 });
+
+// ============================================================================
+// Extended atoms — merged from workspace/canvasAtoms.ts & unifiedCanvasAtom.ts
+// These provide a single source of truth for ALL canvas state concerns.
+// ============================================================================
+
+// --- Interaction Mode & Sketch/Diagram (from legacy canvasAtoms) ---
+
+export type CanvasInteractionMode = 'navigate' | 'sketch' | 'code' | 'diagram';
+export const canvasInteractionModeAtom = atom<CanvasInteractionMode>('navigate');
+
+export type SketchTool = 'pen' | 'rect' | 'ellipse' | 'eraser';
+export const sketchToolAtom = atom<SketchTool>('pen');
+export const sketchColorAtom = atom<string>('#000000');
+export const sketchStrokeWidthAtom = atom<number>(2);
+
+export type DiagramType = 'mermaid' | 'excalidraw' | 'flowchart' | 'sequence' | 'class';
+export const diagramTypeAtom = atom<DiagramType>('mermaid');
+export const diagramContentAtom = atom<string>('graph TD\n  A[Start] --> B[End]');
+export const diagramZoomAtom = atom<number>(1);
+export const showDiagramEditorAtom = atom<boolean>(false);
+
+// --- Command Registry (from legacy canvasAtoms) ---
+
+export interface CanvasCommandAction {
+  id: string;
+  label: string;
+  shortcut?: string;
+  group?: string;
+  icon?: unknown;
+  onExecute: () => void;
+}
+
+export const commandRegistryAtom = atom<Map<string, CanvasCommandAction>>(new Map());
+
+export const sortedCommandsAtom = atom<CanvasCommandAction[]>((get) =>
+  [...get(commandRegistryAtom).values()].sort((a, b) => {
+    const ga = a.group ?? '';
+    const gb = b.group ?? '';
+    return ga !== gb ? ga.localeCompare(gb) : a.label.localeCompare(b.label);
+  }),
+);
+
+export const registerCommandsAtom = atom(
+  null,
+  (get, set, commands: CanvasCommandAction[]) => {
+    const prev = get(commandRegistryAtom);
+    const next = new Map(prev);
+    for (const cmd of commands) next.set(cmd.id, cmd);
+    set(commandRegistryAtom, next);
+  }
+);
+
+export const unregisterCommandsAtom = atom(
+  null,
+  (get, set, ids: string[]) => {
+    const prev = get(commandRegistryAtom);
+    const next = new Map(prev);
+    for (const id of ids) next.delete(id);
+    set(commandRegistryAtom, next);
+  }
+);
+
+// --- Workspace UI atoms (from legacy canvasAtoms) ---
+
+export const activePersonaAtom = atom<string | null>(null);
+export const isAIModalOpenAtom = atom(false);
+export const isProjectSwitcherOpenAtom = atom(false);
+export const isInspectorOpenAtom = atom(false);
+export const isCommandPaletteOpenAtom = atom(false);
+export const isSearchOpenAtom = atom(false);
+
+// --- Accessibility atoms (from legacy canvasAtoms) ---
+
+export const prefersReducedMotionAtom = atom<boolean>(
+  typeof globalThis.window !== 'undefined'
+    ? globalThis.window.matchMedia('(prefers-reduced-motion: reduce)').matches
+    : false
+);
+
+export const prefersDarkModeAtom = atom<boolean>(
+  typeof globalThis.window !== 'undefined'
+    ? globalThis.document.documentElement.classList.contains('dark') ||
+      globalThis.window.matchMedia('(prefers-color-scheme: dark)').matches
+    : false
+);
+
+export const canvasAnnouncementAtom = atom<string>('');
+
+// --- Alignment guides (from legacy canvasAtoms) ---
+
+export const alignmentGuidesAtom = atom<{ vertical: number | null; horizontal: number | null }>(
+  { vertical: null, horizontal: null }
+);
+
+// --- Phase zone centers (from legacy canvasAtoms) ---
+
+export const PHASE_ZONE_CENTERS: Record<string, { x: number; y: number }> = {
+  INTENT: { x: 400, y: 300 },
+  SHAPE: { x: 1250, y: 300 },
+  VALIDATE: { x: 2200, y: 300 },
+  GENERATE: { x: 3100, y: 300 },
+  RUN: { x: 3900, y: 300 },
+  OBSERVE: { x: 4550, y: 300 },
+  IMPROVE: { x: 5300, y: 300 },
+};
+
+export const MAX_HISTORY_SIZE = 100;
+
+// --- Lifecycle & Task atoms (from unifiedCanvasAtom) ---
+
+export type LifecyclePhase = 'design' | 'backlog' | 'build' | 'test' | 'deploy' | 'monitor';
+
+export interface PhaseProgress {
+  phase: LifecyclePhase;
+  percentage: number;
+  status: 'not-started' | 'in-progress' | 'completed' | 'blocked';
+}
+
+export const lifecyclePhaseAtom = atom<LifecyclePhase>('design');
+export const phaseProgressAtom = atom<PhaseProgress[]>([]);
+
+export type TaskStatus = 'todo' | 'in-progress' | 'done' | 'blocked';
+export type TaskPriority = 'low' | 'medium' | 'high' | 'critical';
+
+export interface CanvasTask {
+  id: string;
+  title: string;
+  status: TaskStatus;
+  priority: TaskPriority;
+  phase: LifecyclePhase;
+  assignee?: string;
+}
+
+export const canvasTasksAtom = atom<CanvasTask[]>([]);
+
+export const tasksByPhaseAtom = atom((get) => {
+  const tasks = get(canvasTasksAtom);
+  const phase = get(lifecyclePhaseAtom);
+  return tasks.filter((t) => t.phase === phase);
+});
+
+export const blockedTasksAtom = atom((get) => {
+  return get(canvasTasksAtom).filter((t) => t.status === 'blocked');
+});
+
+export const nextBestTaskAtom = atom((get) => {
+  const tasks = get(tasksByPhaseAtom);
+  const priorityOrder: TaskPriority[] = ['critical', 'high', 'medium', 'low'];
+  const todoTasks = tasks.filter((t) => t.status === 'todo');
+  for (const priority of priorityOrder) {
+    const match = todoTasks.find((t) => t.priority === priority);
+    if (match) return match;
+  }
+  return null;
+});
+
+// --- AI suggestion atoms (from unifiedCanvasAtom) ---
+
+export interface AISuggestion {
+  id: string;
+  type: 'node' | 'connection' | 'layout' | 'content';
+  confidence: number;
+  description: string;
+  data: Record<string, unknown>;
+}
+
+export interface ValidationIssue {
+  id: string;
+  severity: 'error' | 'warning' | 'info';
+  message: string;
+  elementId?: string;
+}
+
+export const aiSuggestionsAtom = atom<AISuggestion[]>([]);
+export const validationIssuesAtom = atom<ValidationIssue[]>([]);
+export const validationScoreAtom = atom<number>((get) => {
+  const issues = get(validationIssuesAtom);
+  const errorCount = issues.filter((i) => i.severity === 'error').length;
+  const warningCount = issues.filter((i) => i.severity === 'warning').length;
+  return Math.max(0, 100 - errorCount * 10 - warningCount * 3);
+});
+
+// --- Collaboration extended state (from unifiedCanvasAtom) ---
+
+export interface Collaborator {
+  id: string;
+  name: string;
+  avatar?: string;
+  color: string;
+  cursor?: { x: number; y: number };
+  isOnline: boolean;
+}
+
+export const collaboratorsAtom = atom<Collaborator[]>([]);
+export const onlineCollaboratorsAtom = atom((get) =>
+  get(collaboratorsAtom).filter((c) => c.isOnline)
+);
+
+// --- Project metadata atom (from unifiedCanvasAtom) ---
+
+export interface CanvasProjectMetadata {
+  id: string;
+  name: string;
+  description?: string;
+  framework?: string;
+  buildTool?: string;
+}
+
+export const canvasProjectMetadataAtom = atom<CanvasProjectMetadata | null>(null);

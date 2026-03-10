@@ -10,29 +10,8 @@ metadata:
 
 spec:
   agents:
-    # Phase 0: Meta/Intent (3 agents)
-    - id: context-gathering-agent
-      name: Context Gathering Agent
-      level: 3
-      type: worker
-      description: "Gathers context from codebase, requirements, and stakeholder input"
-      domain: lifecycle
-      capabilities:
-        - context-gathering
-        - requirement-parsing
-        - stakeholder-analysis
-      memory:
-        episodic:
-          enabled: true
-          retention_days: 30
-        semantic:
-          enabled: true
-          categories: [business-context, user-needs]
-      tools:
-        - codebase_explorer
-        - requirement_parser
-        - stakeholder_interview
-      tags: [phase0, context, research]
+    # Phase 0: Meta/Intent
+    # context-gathering-agent: canonical entry in platform-catalog.yaml
 
     - id: requirements-analyzer
       name: Requirements Analyzer
@@ -343,8 +322,8 @@ spec:
     # Phase 5: Observe (5 agents)
     - id: monitoring-agent
       name: Monitoring Agent
-      level: 3
-      type: worker
+      level: 2
+      type: domain-expert
       description: "Monitors application metrics and health"
       domain: lifecycle
       capabilities:
@@ -584,8 +563,7 @@ spec:
       - all-other-lifecycle-agents
 
   capability_routing:
-    context-gathering:
-      primary: context-gathering-agent
+    # context-gathering: moved to platform-catalog.yaml
     requirements-analysis:
       primary: requirements-analyzer
     architecture-design:

@@ -10,6 +10,7 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.List;
 import java.util.function.Supplier;
+import io.activej.promise.Promise;
 import org.apache.logging.log4j.Logger;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -100,7 +101,7 @@ class CodemodOrchestratorTest {
 
         // Mock JSON/YAML codemods response
         when(mockJsonYamlCodemods.normalizeAndValidate(anyList(), eq(schemaDir)))
-                .thenReturn(List.of(createMockDiagnostic("json")));
+                .thenReturn(Promise.of(List.of(createMockDiagnostic("json"))));
 
         // Execute
         List<UnifiedDiagnostic> results = orchestrator.applyCodemods(List.of(jsonFile));
@@ -133,7 +134,7 @@ class CodemodOrchestratorTest {
         when(mockOpenRewriteRunner.run(eq(mockRecipe), anyList()))
                 .thenReturn(List.of(createMockDiagnostic("java")));
         when(mockJsonYamlCodemods.normalizeAndValidate(anyList(), eq(schemaDir)))
-                .thenReturn(List.of(createMockDiagnostic("json")));
+                .thenReturn(Promise.of(List.of(createMockDiagnostic("json"))));
 
         // Execute
         List<UnifiedDiagnostic> results = orchestrator.applyCodemods(List.of(javaFile, jsonFile));

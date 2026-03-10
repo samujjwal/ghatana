@@ -57,8 +57,8 @@ public class JwtTokenProvider {
                            long tokenValidityInMinutes,
                            long refreshTokenValidityInDays) {
         this.signingKey = Keys.hmacShaKeyFor(secretKey.getBytes());
-        this.jwtParser = Jwts.parserBuilder()
-            .setSigningKey(this.signingKey)
+        this.jwtParser = Jwts.parser()
+            .verifyWith(this.signingKey)
             .build();
         this.tokenValidityInMinutes = tokenValidityInMinutes;
         this.refreshTokenValidityInDays = refreshTokenValidityInDays;

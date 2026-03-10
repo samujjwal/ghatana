@@ -139,8 +139,7 @@ public class LocalTelemetryCollector
                     } catch (Exception e) {
                         log.error("Error recording telemetry event: {}", e.getMessage());
                     }
-                },
-                executorService);
+                });
     }
 
     @Override

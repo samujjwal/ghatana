@@ -13,7 +13,7 @@ import io.activej.promise.Promise;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import javax.inject.Inject;
+import io.activej.inject.annotation.Inject;
 import javax.sql.DataSource;
 import java.io.IOException;
 import java.sql.*;
@@ -33,6 +33,12 @@ import java.util.concurrent.Executors;
 public class JdbcLogEntryRepository implements LogEntryRepository {
 
     private static final Logger logger = LoggerFactory.getLogger(JdbcLogEntryRepository.class);
+    private static final Executor JDBC_EXECUTOR = Executors.newFixedThreadPool(4, r -> {
+        Thread t = new Thread(r, "jdbc-repo");
+        t.setDaemon(true);
+        return t;
+    });
+
     private static final String TABLE = "yappc.log_entries";
 
     private final DataSource dataSource;

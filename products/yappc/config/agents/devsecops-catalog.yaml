@@ -73,37 +73,9 @@ spec:
         output_types: [rollback_command, status_update]
       tags: [deployment, rollback, incident-response]
 
-    # Security Agents (20)
-    - id: cloud-resource-discovery-agent
-      name: Cloud Resource Discovery Agent
-      level: 3
-      type: worker
-      description: "Discovers and catalogs cloud resources across all providers"
-      domain: devsecops
-      capabilities:
-        - cloud-security
-        - resource-discovery
-        - asset-inventory
-      tools:
-        - cloud_scanner
-        - resource_mapper
-      tags: [security, cloud, discovery]
-
-    - id: cloud-resource-risk-agent
-      name: Cloud Resource Risk Agent
-      level: 3
-      type: worker
-      description: "Evaluates security risks in cloud resource configurations"
-      domain: devsecops
-      capabilities:
-        - cloud-security
-        - risk-assessment
-        - configuration-analysis
-      memory:
-        semantic:
-          enabled: true
-          categories: [risk-patterns, security-configs]
-      tags: [security, cloud, risk]
+    # Security Agents
+    # cloud-resource-discovery-agent: canonical entry in cloud-catalog.yaml
+    # cloud-resource-risk-agent: canonical entry in cloud-catalog.yaml
 
     - id: vulnerability-scoring-agent
       name: Vulnerability Scoring Agent
@@ -120,63 +92,12 @@ spec:
         - risk_scorer
       tags: [security, vulnerability, scoring]
 
-    # Guardrail Agents (3)
-    - id: release-governance-agent
-      name: Release Governance Agent
-      level: 1
-      type: orchestrator
-      description: "Orchestrates release governance with approval workflows and compliance gates"
-      domain: devsecops
-      capabilities:
-        - release-governance
-        - approval-workflows
-        - compliance-gates
-      governance:
-        requires_approval: true
-        veto_power: true
-        audit_trail: comprehensive
-      routing:
-        input_types: [release_request, deployment_approval]
-        output_types: [approval_decision, gate_status]
-      tags: [governance, release, compliance]
+    # Guardrail Agents
+    # release-governance-agent: canonical entry in governance-catalog.yaml
+    # budget-gate-agent: canonical entry in governance-catalog.yaml
+    # dependency-gate-agent: canonical entry in governance-catalog.yaml
 
-    - id: budget-gate-agent
-      name: Budget Gate Agent
-      level: 2
-      type: domain-expert
-      description: "Evaluates budget constraints and cost implications before deployments"
-      domain: devsecops
-      capabilities:
-        - cost-governance
-        - budget-validation
-        - resource-optimization
-      governance:
-        requires_approval: true
-        veto_power: true
-      routing:
-        input_types: [deployment_request, cost_analysis]
-        output_types: [budget_approval, cost_warning]
-      tags: [governance, cost, budget]
-
-    - id: dependency-gate-agent
-      name: Dependency Gate Agent
-      level: 2
-      type: domain-expert
-      description: "Validates dependency changes for security and compatibility risks"
-      domain: devsecops
-      capabilities:
-        - dependency-governance
-        - security-gates
-        - compatibility-validation
-      governance:
-        requires_approval: true
-        veto_power: true
-      tools:
-        - dependency_checker
-        - compatibility_analyzer
-      tags: [governance, dependencies, security]
-
-    # Additional DevSecOps Workers (12)
+    # Additional DevSecOps Workers
     - id: security-scan-coordinator
       name: Security Scan Coordinator
       level: 2
@@ -307,11 +228,8 @@ spec:
       tags: [security, threat-modeling, design]
 
   hierarchy:
-    level1:
-      - release-governance-agent
+    level1: []
     level2:
-      - budget-gate-agent
-      - dependency-gate-agent
       - security-scan-coordinator
       - incident-response-agent
     level3:
@@ -319,8 +237,6 @@ spec:
       - supply-chain-verifier-agent
       - canary-analysis-agent
       - rollback-coordinator-agent
-      - cloud-resource-discovery-agent
-      - cloud-resource-risk-agent
       - vulnerability-scoring-agent
       - penetration-testing-agent
       - infrastructure-as-code-scanner
@@ -341,16 +257,8 @@ spec:
       primary: canary-analysis-agent
       fallback:
         - rollback-coordinator-agent
-    release-governance:
-      primary: release-governance-agent
-    cost-governance:
-      primary: budget-gate-agent
-    dependency-governance:
-      primary: dependency-gate-agent
-    cloud-security:
-      primary: cloud-resource-discovery-agent
-      fallback:
-        - cloud-resource-risk-agent
+    # release-governance, cost-governance, dependency-governance, cloud-security:
+    # Moved to governance-catalog and cloud-catalog respectively
     security-assessment:
       primary: vulnerability-scoring-agent
     incident-response:

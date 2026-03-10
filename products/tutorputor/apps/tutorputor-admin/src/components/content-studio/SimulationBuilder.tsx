@@ -9,7 +9,7 @@ import { useState } from 'react';
 import { clsx } from 'clsx';
 import { RiskBadge, ConfidenceIndicator, type RiskLevel } from './RiskBadge';
 
-interface SimulationManifest {
+interface SimulationDraft {
     id: string;
     version: string;
     title: string;
@@ -42,8 +42,8 @@ interface SimulationBuilderProps {
     experienceId: string;
     experienceTitle: string;
     domain: string;
-    currentSimulation?: SimulationManifest;
-    onSimulationGenerated: (simulation: SimulationManifest) => void;
+    currentSimulation?: SimulationDraft;
+    onSimulationGenerated: (simulation: SimulationDraft) => void;
     onSimulationLinked: (simulationId: string, version: string) => void;
     className?: string;
 }
@@ -58,7 +58,7 @@ export function SimulationBuilder({
 }: SimulationBuilderProps) {
     const [isGenerating, setIsGenerating] = useState(false);
     const [description, setDescription] = useState('');
-    const [generatedSimulation, setGeneratedSimulation] = useState<SimulationManifest | null>(
+    const [generatedSimulation, setGeneratedSimulation] = useState<SimulationDraft | null>(
         currentSimulation || null
     );
     const [error, setError] = useState<string | null>(null);
@@ -93,7 +93,7 @@ export function SimulationBuilder({
             const simulation = await response.json();
 
             // Add metadata
-            const manifest: SimulationManifest = {
+            const manifest: SimulationDraft = {
                 id: simulation.id || `sim_${Date.now()}`,
                 version: '1.0.0',
                 title: simulation.title || `${experienceTitle} Simulation`,

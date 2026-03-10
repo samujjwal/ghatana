@@ -321,4 +321,73 @@ public class AuditController {
     }
     return eventType.substring(separatorIndex + 1);
   }
+
+  /**
+   * Query audit events using lifecycle-oriented filter parameters (v1 API).
+   *
+   * <p>GET /api/v1/audit/events?projectId=&amp;agentId=&amp;from=&amp;to=&amp;type=&amp;limit=
+   *
+   * @param request HTTP request with query parameters
+   * @return Promise of HTTP response with filtered event list
+   */
+  public Promise<HttpResponse> queryAuditEventsV1(HttpRequest request) {
+    return TenantContextExtractor.requireAuthenticated(request)
+        .then(ctx -> {
+          AuditQueryService queryService = asQueryService();
+          if (queryService == null) {
+            return Promise.of(ApiResponse.ok(Map.of("events", List.of(), "total", 0)));
+          }
+
+          String projectId = request.getQueryParameter("projectId");
+          String agentId   = request.getQueryParameter("agentId");
+          String fromParam = request.getQueryParameter("from");
+          String toParam   = request.getQueryParameter("to");
+          String type      = request.getQueryParameter("type");
+          int limit = parsePositiveInt(request.getQueryParameter("limit"), 50);
+
+          Instant from = fromParam != null ? Instant.parse(fromParam) : null;
+          Instant to   = toParam   != null ? Instant.parse(toParam)   : null;
+
+          logger.info("v1 audit query: tenant={} projectId={} agentId={} type={} from={} to={}",
+              ctx.tenantId(), projectId, agentId, type, from, to);
+
+          return queryService.findByTenantId(ctx.tenantId())
+              .map(events -> {
+                List<AuditEventResponse> filtered = events.stream()
+                    .filter(e -> matchesProject(e, projectId))
+                    .filter(e -> matchesAgent(e, agentId))
+                    .filter(e -> matchesEventType(e, type))
+                    .filter(e -> from == null || (e.getTimestamp() != null && !e.getTimestamp().isBefore(from)))
+                    .filter(e -> to   == null || (e.getTimestamp() != null && !e.getTimestamp().isAfter(to)))
+                    .sorted(Comparator.comparing(
+                        com.ghatana.platform.audit.AuditEvent::getTimestamp,
+                        Comparator.nullsLast(Comparator.naturalOrder())).reversed())
+                    .limit(limit)
+                    .map(this::toResponse)
+                    .toList();
+
+                return ApiResponse.ok(Map.of(
+                    "events", filtered,
+                    "total",  filtered.size()));
+              });
+        })
+        .then(response -> Promise.of(response), e -> Promise.of(ApiResponse.fromException(e)));
+  }
+
+  private boolean matchesProject(com.ghatana.platform.audit.AuditEvent event, String projectId) {
+    if (projectId == null || projectId.isBlank()) return true;
+    Object v = event.getDetail("projectId");
+    return projectId.equals(v != null ? v.toString() : null);
+  }
+
+  private boolean matchesAgent(com.ghatana.platform.audit.AuditEvent event, String agentId) {
+    if (agentId == null || agentId.isBlank()) return true;
+    Object v = event.getDetail("agentId");
+    return agentId.equals(v != null ? v.toString() : event.getPrincipal());
+  }
+
+  private boolean matchesEventType(com.ghatana.platform.audit.AuditEvent event, String type) {
+    if (type == null || type.isBlank()) return true;
+    return type.equalsIgnoreCase(event.getEventType());
+  }
 }

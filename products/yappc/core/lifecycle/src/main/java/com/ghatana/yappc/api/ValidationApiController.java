@@ -63,7 +63,7 @@ public class ValidationApiController {
                         return Promise.of(badRequest400("Invalid JSON format"));
                     }
                 })
-                .whenException(e -> log.error("Error validating shape", e);
+                .whenException(e -> log.error("Error validating shape", e));
     }
     
     /**
@@ -97,7 +97,7 @@ public class ValidationApiController {
                         return Promise.of(badRequest400("Invalid JSON format"));
                     }
                 })
-                .whenException(e -> log.error("Error validating shape with config", e);
+                .whenException(e -> log.error("Error validating shape with config", e));
     }
     
     /**
@@ -131,6 +131,6 @@ public class ValidationApiController {
                         return Promise.of(badRequest400("Invalid JSON format"));
                     }
                 })
-                .whenException(e -> log.error("Error validating shape with policy", e);
+                .whenException(e -> log.error("Error validating shape with policy", e));
     }
 }

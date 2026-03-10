@@ -130,8 +130,12 @@ public final class CodemodOrchestrator {
                 Path schemaDir = context.root().resolve("config/schemas");
                 if (Files.exists(schemaDir)) {
                     logger.debug("Using schema directory: {}", schemaDir);
-                    List<UnifiedDiagnostic> results =
-                            jsonYamlCodemods.normalizeAndValidate(jsonYamlFiles, schemaDir);
+                    List<UnifiedDiagnostic> results = new ArrayList<>();
+                    io.activej.eventloop.Eventloop eventloop = io.activej.eventloop.Eventloop.create();
+                    eventloop.post(() ->
+                        jsonYamlCodemods.normalizeAndValidate(jsonYamlFiles, schemaDir)
+                            .whenResult(results::addAll));
+                    eventloop.run();
                     allDiagnostics.addAll(results);
                     logger.debug("JSON/YAML processing generated {} diagnostics", results.size());
                 } else {

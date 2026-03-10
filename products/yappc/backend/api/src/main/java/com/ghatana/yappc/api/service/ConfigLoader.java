@@ -25,11 +25,21 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 /**
+ * Loads and parses YAPPC YAML configuration files from the config directory.
+ *
+ * <p>This class manages its own thread pool and ObjectMapper for YAML deserialization.
+ * Configuration is loaded once at startup and cached in-memory.
+ *
+ * @deprecated Migrate to platform config module ({@code platform:java:config}) for
+ *     centralized configuration management with schema validation, hot-reload, and
+ *     multi-tenant support. The custom thread pool and cache should be replaced by
+ *     platform config infrastructure.
  * @doc.type class
  * @doc.purpose Load and parse configuration files from /config directory
- * @doc.layer platform
+ * @doc.layer product
  * @doc.pattern Loader
  */
+@Deprecated(since = "2.4.0", forRemoval = true)
 public class ConfigLoader {
   private static final Logger logger = LoggerFactory.getLogger(ConfigLoader.class);
   private final Path configBasePath;

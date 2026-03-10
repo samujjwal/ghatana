@@ -24,6 +24,7 @@ dependencies {
 
     // YAPPC lifecycle module (full monorepo path)
     implementation(project(":products:yappc:core:lifecycle"))
+    implementation(project(":products:yappc:core:framework"))
 
     // ActiveJ for async + HTTP
     implementation(libs.activej.promise)
@@ -32,9 +33,13 @@ dependencies {
     implementation(libs.activej.boot)
     implementation(libs.activej.launcher)
 
-    // JSON Processing
+    // JSON + YAML Processing
     implementation(libs.jackson.databind)
     implementation(libs.jackson.datatype.jsr310)
+    implementation(libs.jackson.dataformat.yaml)
+
+    // Observability — Prometheus metrics scrape endpoint
+    implementation(libs.micrometer.registry.prometheus)
 
     // Logging
     implementation(libs.slf4j.api)
@@ -44,5 +49,6 @@ dependencies {
     testImplementation(libs.junit.jupiter)
     testImplementation(libs.assertj.core)
     testImplementation(libs.mockito.core)
+    testImplementation(libs.mockito.junit.jupiter)
     testRuntimeOnly("org.junit.platform:junit-platform-launcher")
 }

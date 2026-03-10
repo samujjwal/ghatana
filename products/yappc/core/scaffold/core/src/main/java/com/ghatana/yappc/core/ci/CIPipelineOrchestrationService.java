@@ -206,7 +206,11 @@ public class CIPipelineOrchestrationService {
                         CIPipelineSpec.CIPlatform.GITLAB_CI);
 
         // Generate pipelines for all platforms
-        var pipelines = generateMultiPlatformPipelines(baseSpec, platforms);
+        Map<CIPipelineSpec.CIPlatform, GeneratedCIPipeline> pipelines = new HashMap<>();
+        for (var platform : platforms) {
+            var platformSpec = baseSpec.toBuilder().platform(platform).build();
+            pipelines.put(platform, generatePipeline(platformSpec));
+        }
 
         // Validate all platforms
         var validations = validateMultiPlatformPipelines(baseSpec, platforms);

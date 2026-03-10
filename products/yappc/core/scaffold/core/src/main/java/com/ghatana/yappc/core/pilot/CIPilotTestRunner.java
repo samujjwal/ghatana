@@ -25,6 +25,8 @@ import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.*;
 import io.activej.promise.Promise;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import java.util.concurrent.Executor;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ExecutorService;
@@ -118,8 +120,7 @@ public class CIPilotTestRunner {
                     generatePilotReport(suite);
 
                     return suite;
-                },
-                executorService);
+                });
     }
 
     /**

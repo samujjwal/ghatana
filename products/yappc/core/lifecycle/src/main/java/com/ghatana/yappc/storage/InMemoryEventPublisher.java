@@ -1,6 +1,6 @@
 package com.ghatana.yappc.storage;
 
-import com.ghatana.yappc.sdlc.agent.AepEventPublisher;
+import com.ghatana.yappc.agent.AepEventPublisher;
 import io.activej.promise.Promise;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;

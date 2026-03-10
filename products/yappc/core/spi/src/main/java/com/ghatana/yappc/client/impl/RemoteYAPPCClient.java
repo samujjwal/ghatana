@@ -286,7 +286,7 @@ public final class RemoteYAPPCClient implements YAPPCClient {
                                 1, java.util.concurrent.TimeUnit.SECONDS))
                         .thenCompose(v -> executeWithRetry(request, attemptNumber + 1));
                 }
-                return java.util.concurrent.Promise.of(response);
+                return java.util.concurrent.CompletableFuture.completedFuture(response);
             });
     }
     

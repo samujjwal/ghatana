@@ -99,11 +99,11 @@ spec:
         - evidence_collector
       tags: [governance, audit, coordination]
 
-    # Level 3: Governance Workers
+    # Level 2: Governance Domain Agents
     - id: budget-gate-agent
       name: Budget Gate Agent
-      level: 3
-      type: worker
+      level: 2
+      type: domain-expert
       description: "Evaluates budget constraints and cost implications before deployments"
       domain: governance
       capabilities:
@@ -120,8 +120,8 @@ spec:
 
     - id: dependency-gate-agent
       name: Dependency Gate Agent
-      level: 3
-      type: worker
+      level: 2
+      type: domain-expert
       description: "Validates dependency changes for security and compatibility"
       domain: governance
       capabilities:
@@ -166,20 +166,7 @@ spec:
         - geo_validator
       tags: [governance, data, sovereignty]
 
-    - id: retention-policy-enforcer
-      name: Retention Policy Enforcer Agent
-      level: 3
-      type: worker
-      description: "Enforces data retention and deletion policies"
-      domain: governance
-      capabilities:
-        - retention-enforcement
-        - deletion-management
-        - policy-compliance
-      tools:
-        - retention_manager
-        - deletion_coordinator
-      tags: [governance, retention, data]
+    # retention-policy-enforcer: canonical entry in compliance-catalog.yaml
 
     - id: access-review-agent
       name: Access Review Agent
@@ -346,7 +333,6 @@ spec:
       - dependency-gate-agent
       - license-compliance-agent
       - data-sovereignty-agent
-      - retention-policy-enforcer
       - access-review-agent
       - change-management-agent
       - vendor-risk-assessor

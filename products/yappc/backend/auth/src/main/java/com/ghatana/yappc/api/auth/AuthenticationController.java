@@ -4,7 +4,7 @@
 
 package com.ghatana.yappc.api.auth;
 
-import com.ghatana.yappc.api.common.ApiResponse;
+import com.ghatana.yappc.api.common.BaseApiResponse;
 import com.ghatana.yappc.api.auth.dto.*;
 import com.ghatana.yappc.api.common.JsonUtils;
 import io.activej.http.HttpHeaders;
@@ -92,7 +92,7 @@ public class AuthenticationController {
                                                                     "Login failed for user: {} - {}",
                                                                     loginRequest.username(),
                                                                     authResult.error());
-                                                            return ApiResponse.unauthorized(authResult.error());
+                                                            return BaseApiResponse.unauthorized(authResult.error());
                                                         }
 
                                                         LoginResponse response =
@@ -102,11 +102,11 @@ public class AuthenticationController {
                                                                         authResult.tokenType(),
                                                                         authResult.expiresIn(),
                                                                         authResult.user());
-                                                        return ApiResponse.ok(response);
+                                                        return BaseApiResponse.ok(response);
                                                     });
                                 });
 
-        return ApiResponse.wrap(promise);
+        return BaseApiResponse.wrap(promise);
     }
 
     /**
@@ -135,16 +135,16 @@ public class AuthenticationController {
                                                                     "Registration failed for user: {} - {}",
                                                                     registerRequest.username(),
                                                                     authResult.error());
-                                                            return ApiResponse.conflict(authResult.error());
+                                                            return BaseApiResponse.conflict(authResult.error());
                                                         }
                                                         log.info("Registration successful for user: {}",
                                                                 registerRequest.username());
-                                                        return ApiResponse.created(
+                                                        return BaseApiResponse.created(
                                                                 Map.of("message", "Registration successful",
                                                                        "userId", authResult.user().id()));
                                                     });
                                 });
-        return ApiResponse.wrap(promise);
+        return BaseApiResponse.wrap(promise);
     }
 
     /**
@@ -158,7 +158,7 @@ public class AuthenticationController {
         Optional<String> token = extractBearerToken(request);
         
         if (token.isEmpty()) {
-            return Promise.of(ApiResponse.unauthorized("Missing authorization token"));
+            return Promise.of(BaseApiResponse.unauthorized("Missing authorization token"));
         }
 
         Promise<HttpResponse> promise =
@@ -167,13 +167,13 @@ public class AuthenticationController {
                                 success -> {
                                     if (!success) {
                                         log.warn("Logout failed - invalid token");
-                                        return ApiResponse.unauthorized("Invalid token");
+                                        return BaseApiResponse.unauthorized("Invalid token");
                                     }
                                     log.info("User logged out successfully");
-                                    return ApiResponse.ok(Map.of("message", "Logged out successfully"));
+                                    return BaseApiResponse.ok(Map.of("message", "Logged out successfully"));
                                 });
 
-        return ApiResponse.wrap(promise);
+        return BaseApiResponse.wrap(promise);
     }
 
     /**
@@ -193,7 +193,7 @@ public class AuthenticationController {
                                                         authResult -> {
                                                             if (!authResult.success()) {
                                                                 log.warn("Token refresh failed: {}", authResult.error());
-                                                                return ApiResponse.unauthorized(authResult.error());
+                                                                return BaseApiResponse.unauthorized(authResult.error());
                                                             }
 
                                                             RefreshTokenResponse response =
@@ -202,9 +202,9 @@ public class AuthenticationController {
                                                                             authResult.refreshToken(),
                                                                             authResult.tokenType(),
                                                                             authResult.expiresIn());
-                                                            return ApiResponse.ok(response);
+                                                            return BaseApiResponse.ok(response);
                                                         }));
-        return ApiResponse.wrap(promise);
+        return BaseApiResponse.wrap(promise);
     }
 
     /**
@@ -218,7 +218,7 @@ public class AuthenticationController {
         Optional<String> token = extractBearerToken(request);
         
         if (token.isEmpty()) {
-            return Promise.of(ApiResponse.unauthorized("Missing authorization token"));
+            return Promise.of(BaseApiResponse.unauthorized("Missing authorization token"));
         }
 
         Promise<HttpResponse> promise =
@@ -226,10 +226,10 @@ public class AuthenticationController {
                         .map(
                                 userOptional ->
                                         userOptional
-                                                .<HttpResponse>map(ApiResponse::ok)
-                                                .orElseGet(() -> ApiResponse.notFound("User not found")));
+                                                .<HttpResponse>map(BaseApiResponse::ok)
+                                                .orElseGet(() -> BaseApiResponse.notFound("User not found")));
 
-        return ApiResponse.wrap(promise);
+        return BaseApiResponse.wrap(promise);
     }
 
     /**
@@ -250,11 +250,11 @@ public class AuthenticationController {
                                                             log.info(
                                                                     "Password reset requested for: {}",
                                                                     resetRequest.email());
-                                                            return ApiResponse.ok(
+                                                            return BaseApiResponse.ok(
                                                                     Map.of("message", "Password reset email sent"));
                                                         }));
 
-        return ApiResponse.wrap(promise);
+        return BaseApiResponse.wrap(promise);
     }
 
     /**
@@ -276,17 +276,17 @@ public class AuthenticationController {
                                                         success -> {
                                                             if (!success) {
                                                                 log.warn("Password reset confirmation failed");
-                                                                return ApiResponse.badRequest(
+                                                                return BaseApiResponse.badRequest(
                                                                         "Invalid or expired reset token");
                                                             }
                                                             log.info("Password reset confirmed successfully");
-                                                            return ApiResponse.ok(
+                                                            return BaseApiResponse.ok(
                                                                     Map.of(
                                                                             "message",
                                                                             "Password reset successful"));
                                                         }));
 
-        return ApiResponse.wrap(promise);
+        return BaseApiResponse.wrap(promise);
     }
 
     // ============================================================================

@@ -19,7 +19,7 @@ import java.util.stream.Collectors;
  * 
  * Production deployment should replace this with actual data-cloud integration.
  */
-public class InMemoryArtifactStore {
+public class InMemoryArtifactStore implements ArtifactStore {
     
     private static final Logger log = LoggerFactory.getLogger(InMemoryArtifactStore.class);
     

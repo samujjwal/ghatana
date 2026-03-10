@@ -18,10 +18,12 @@
 package com.ghatana.yappc.cli.commands;
 
 import com.ghatana.yappc.core.security.SecurityReviewFramework;
+import io.activej.eventloop.Eventloop;
 import java.io.IOException;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.concurrent.Callable;
+import java.util.concurrent.atomic.AtomicReference;
 import picocli.CommandLine.Command;
 import picocli.CommandLine.Option;
 import picocli.CommandLine.Parameters;
@@ -172,7 +174,11 @@ public class SecurityCommand implements Callable<Integer> {
             throws IOException {
         log.info("🔍 Performing comprehensive security review...\n");
 
-        SecurityReviewFramework.SecurityAssessment assessment = framework.performSecurityReview();
+        AtomicReference<SecurityReviewFramework.SecurityAssessment> assessRef = new AtomicReference<>();
+        Eventloop eventloop = Eventloop.create();
+        eventloop.post(() -> framework.performSecurityReview().whenResult(assessRef::set));
+        eventloop.run();
+        SecurityReviewFramework.SecurityAssessment assessment = assessRef.get();
 
         // Display summary
         displayAssessmentSummary(assessment);
@@ -288,7 +294,7 @@ public class SecurityCommand implements Callable<Integer> {
             log.info("🔧 Top Security Recommendations:");
             assessment.recommendations.stream()
                     .limit(3)
-                    .forEach(rec -> log.info("   • {} ({})", rec.title, rec.priority)%n", rec.title, rec.priority));;
+                    .forEach(rec -> log.info("   • {} ({})", rec.title, rec.priority));
         }
     }
 

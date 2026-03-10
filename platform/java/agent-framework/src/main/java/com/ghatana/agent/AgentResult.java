@@ -185,4 +185,19 @@ public class AgentResult<O> {
                 .metrics(Map.of("delegateAgentId", delegateAgentId))
                 .build();
     }
+
+    /**
+     * Nested Status alias enum for convenience — mirrors {@link AgentResultStatus}.
+     *
+     * <p>Allows tests and callers to reference {@code AgentResult.Status.SUCCESS}
+     * without a separate import of {@link AgentResultStatus}.
+     */
+    public enum Status {
+        SUCCESS, FAILED, LOW_CONFIDENCE, TIMEOUT, SKIPPED, DELEGATED;
+
+        /** Converts this Status to the equivalent {@link AgentResultStatus}. */
+        public AgentResultStatus toResultStatus() {
+            return AgentResultStatus.valueOf(this.name());
+        }
+    }
 }

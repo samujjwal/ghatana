@@ -16,6 +16,7 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
+import com.ghatana.platform.testing.activej.EventloopTestBase;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.junit.jupiter.api.BeforeEach;
@@ -34,7 +35,7 @@ import org.junit.jupiter.api.io.TempDir;
  * @doc.layer core
  * @doc.pattern Test
  */
-public class EslintAutoFixTest {
+public class EslintAutoFixTest extends EventloopTestBase {
     private static final Logger logger = LogManager.getLogger(EslintAutoFixTest.class);
     private static final String ESLINT_VERSION = "^8.0.0";
 
@@ -284,9 +285,7 @@ public class EslintAutoFixTest {
         List<UnifiedDiagnostic> diagnostics;
         try {
             // Try with a longer timeout to account for npm package installation
-            diagnostics = eslintRunner.run(tempDir).get(60, TimeUnit.SECONDS);
-        } catch (TimeoutException e) {
-            throw new AssertionError("ESLint execution timed out after 60 seconds", e);
+            diagnostics = runPromise(() -> eslintRunner.run(tempDir));
         } catch (Exception e) {
             System.err.println("Error running ESLint: " + e.getMessage());
             e.printStackTrace();

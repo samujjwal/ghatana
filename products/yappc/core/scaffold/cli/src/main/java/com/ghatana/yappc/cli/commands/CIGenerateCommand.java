@@ -170,7 +170,8 @@ public class CIGenerateCommand implements Callable<Integer> {
             CIPipelineValidationResult validation = generator.validatePipeline(spec);
             if (!validation.isValid()) {
                 log.error("❌ Pipeline validation failed:");
-                    log.error("  • {}", error);
+                validation.errors().forEach(error ->
+                    log.error("  • {}", error));
                 return 1;
             }
             if (validateOnly) {
@@ -484,34 +485,28 @@ public class CIGenerateCommand implements Callable<Integer> {
         }
     }
     private void printImprovementSuggestions(CIPipelineImprovementSuggestions suggestions) {
-                log.info("");
+        log.info("");
         log.info("💡 Improvement Suggestions:");
 
         if (!suggestions.securityEnhancements().isEmpty()) {
-            log.info("");;
+            log.info("");
             log.info("🔒 Security Enhancements:");
-            suggestions
-                    .securityEnhancements()
-                    .securityEnhancements().forEach(enhancement ->
-                        log.info("  • {}", enhancement));
-                }
-                if (!suggestions.performanceOptimizations().isEmpty()) {
-                        log.info("");
+            suggestions.securityEnhancements().forEach(enhancement ->
+                log.info("  • {}", enhancement));
+        }
+        if (!suggestions.performanceOptimizations().isEmpty()) {
+            log.info("");
             log.info("⚡ Performance Optimizations:");
-            suggestions
-                    .performanceOptimizations()
-                    .performanceOptimizations().forEach(optimization ->
-                        log.info("  • {}", optimization));
-                }
-                if (!suggestions.reliabilityImprovements().isEmpty()) {
-                        log.info("");
+            suggestions.performanceOptimizations().forEach(optimization ->
+                log.info("  • {}", optimization));
+        }
+        if (!suggestions.reliabilityImprovements().isEmpty()) {
+            log.info("");
             log.info("🛡️  Reliability Improvements:");
-            suggestions
-                    .reliabilityImprovements()
-                    .reliabilityImprovements().forEach(improvement ->
-                        log.info("  • {}", improvement));
-                }
-                log.info(String.format("%n💯 Overall Improvement Score: %.1f/1.0", suggestions.improvementScore()));
+            suggestions.reliabilityImprovements().forEach(improvement ->
+                log.info("  • {}", improvement));
+        }
+        log.info(String.format("%n💯 Overall Improvement Score: %.1f/1.0", suggestions.improvementScore()));
     }
 
     private void printGenerationSummary(GeneratedCIPipeline pipeline, Path outputPath) {
@@ -541,5 +536,9 @@ public class CIGenerateCommand implements Callable<Integer> {
         log.info("  3. Commit and push to trigger your first CI run");
 
         if (!pipeline.generatedSecrets().isEmpty()) {
-            log.info("");;
+            log.info("");
             log.info("🔐 Configure these secrets in your repository:");
+            pipeline.generatedSecrets().forEach(secret -> log.info("  • {}", secret));
+        }
+    }
+}

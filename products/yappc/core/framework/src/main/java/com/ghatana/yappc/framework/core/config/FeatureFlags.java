@@ -6,6 +6,9 @@ import io.activej.inject.annotation.Inject;
 import io.activej.inject.annotation.Provides;
 import org.jetbrains.annotations.NotNull;
 
+import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
+
 /**
  * Feature flags configuration for YAPPC platform.
  *
@@ -22,6 +25,9 @@ public final class FeatureFlags {
     // Singleton instance for static access (set by DI or explicitly)
     private static volatile FeatureFlags INSTANCE;
 
+    // Test overrides — applied over config values when set
+    private static final Map<String, Boolean> OVERRIDES = new ConcurrentHashMap<>();
+
     /**
      * Set the global FeatureFlags instance.
      * Called during application initialization.
@@ -31,13 +37,36 @@ public final class FeatureFlags {
     }
 
     /**
+     * Override a feature flag value — intended for test use only.
+     *
+     * @param flag    the feature flag to override
+     * @param enabled the overridden value
+     */
+    public static void override(@NotNull FeatureFlag flag, boolean enabled) {
+        OVERRIDES.put(flag.key(), enabled);
+    }
+
+    /**
+     * Clear all test overrides set via {@link #override}.
+     */
+    public static void clearOverrides() {
+        OVERRIDES.clear();
+    }
+
+    /**
      * Static convenience method to check if a feature flag is enabled.
-     * Returns false if no global instance has been set.
+     * Test overrides take precedence over the global instance config.
+     * Returns false if no global instance has been set and no override exists.
      *
      * @param flag the feature flag to check
      * @return true if enabled, false otherwise
      */
     public static boolean isEnabled(@NotNull FeatureFlag flag) {
+        // Test overrides take highest precedence
+        Boolean override = OVERRIDES.get(flag.key());
+        if (override != null) {
+            return override;
+        }
         FeatureFlags instance = INSTANCE;
         if (instance == null) {
             return false; // Safe default when not yet initialized

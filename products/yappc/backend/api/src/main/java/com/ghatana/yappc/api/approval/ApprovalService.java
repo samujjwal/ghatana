@@ -40,7 +40,7 @@ public class ApprovalService {
     private static final Logger logger = LoggerFactory.getLogger(ApprovalService.class);
 
     // Tenant → (WorkflowId → Workflow)
-    private final Map<String, Map<String, Workflow>> store = new ConcurrentHashMap<>();
+    protected final Map<String, Map<String, Workflow>> store = new ConcurrentHashMap<>();
 
     // =========================================================================
     // Domain Model (in-memory, package-private)
@@ -102,7 +102,7 @@ public class ApprovalService {
         final String workflowType;
         final String initiator;
         final List<Stage> stages;
-        final Instant createdAt;
+        Instant createdAt;  // package-private non-final for JDBC rehydration
         Status status;
         int currentStageIndex;
         Instant updatedAt;

@@ -29,20 +29,7 @@ spec:
         audit_trail: comprehensive
       tags: [compliance, audit, orchestration]
 
-    - id: security-posture-orchestrator
-      name: Security Posture Orchestrator
-      level: 1
-      type: orchestrator
-      description: "Coordinates security posture assessment across the organization"
-      domain: compliance
-      capabilities:
-        - security-posture
-        - risk-assessment
-        - control-evaluation
-      routing:
-        input_types: [posture_check, security_assessment]
-        output_types: [posture_report, risk_summary]
-      tags: [security, posture, compliance]
+    # security-posture-orchestrator: canonical entry in platform-catalog.yaml
 
     # Level 2: Framework Experts
     - id: soc2-compliance-agent
@@ -352,7 +339,6 @@ spec:
   hierarchy:
     level1:
       - compliance-audit-orchestrator
-      - security-posture-orchestrator
     level2:
       - soc2-compliance-agent
       - gdpr-compliance-agent

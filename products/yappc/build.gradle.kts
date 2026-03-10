@@ -54,6 +54,22 @@ subprojects {
         targetCompatibility = "21"
         options.encoding = "UTF-8"
     }
+
+    // ========================================================================
+    // Dependency Governance Constraints
+    // ========================================================================
+    configurations.all {
+        // Ban direct LangChain4J — use platform:java:ai-integration instead
+        exclude(group = "dev.langchain4j", module = "langchain4j")
+        exclude(group = "dev.langchain4j", module = "langchain4j-open-ai")
+        exclude(group = "dev.langchain4j", module = "langchain4j-anthropic")
+
+        // Ban Spring Reactor — use ActiveJ Promise
+        exclude(group = "io.projectreactor", module = "reactor-core")
+
+        // Ban RxJava — use ActiveJ Promise
+        exclude(group = "io.reactivex.rxjava3", module = "rxjava")
+    }
 }
 
 // ============================================================================

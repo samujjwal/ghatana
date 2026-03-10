@@ -55,7 +55,7 @@ class TaskOrchestratorTest extends EventloopTestBase {
       AIAgent<Map<String, Object>, String> mockAgent = createMockAgent(
           AgentName.CODE_GENERATOR_AGENT,
           List.of("code-generation"),
-          Promise.of(AgentResult.success("generated code")));
+          Promise.of(AgentResult.success("generated code", AgentResult.AgentMetrics.builder().build(), AgentResult.AgentTrace.of("test-agent", "test-request"))));
       agentRegistry.register(mockAgent);
 
       TaskDefinition task = TaskDefinition.builder()
@@ -111,10 +111,10 @@ class TaskOrchestratorTest extends EventloopTestBase {
     void shouldReturnFirstSuccess() {
       AIAgent<Map<String, Object>, String> agent1 = createMockAgent(
           AgentName.COPILOT_AGENT, List.of("analysis"),
-          Promise.of(AgentResult.success("result-from-copilot")));
+          Promise.of(AgentResult.success("result-from-copilot", AgentResult.AgentMetrics.builder().build(), AgentResult.AgentTrace.of("test-agent", "test-request"))));
       AIAgent<Map<String, Object>, String> agent2 = createMockAgent(
           AgentName.PREDICTION_AGENT, List.of("analysis"),
-          Promise.of(AgentResult.success("result-from-prediction")));
+          Promise.of(AgentResult.success("result-from-prediction", AgentResult.AgentMetrics.builder().build(), AgentResult.AgentTrace.of("test-agent", "test-request"))));
       agentRegistry.register(agent1);
       agentRegistry.register(agent2);
 
@@ -151,7 +151,7 @@ class TaskOrchestratorTest extends EventloopTestBase {
     void shouldFallbackToSequential() {
       AIAgent<Map<String, Object>, String> agent = createMockAgent(
           AgentName.ANOMALY_DETECTOR_AGENT, List.of("anomaly-detection"),
-          Promise.of(AgentResult.success("anomaly result")));
+          Promise.of(AgentResult.success("anomaly result", AgentResult.AgentMetrics.builder().build(), AgentResult.AgentTrace.of("test-agent", "test-request"))));
       agentRegistry.register(agent);
 
       TaskDefinition task = TaskDefinition.builder()
@@ -186,7 +186,7 @@ class TaskOrchestratorTest extends EventloopTestBase {
     void shouldDefaultToSequential() {
       AIAgent<Map<String, Object>, String> agent = createMockAgent(
           AgentName.SENTIMENT_AGENT, List.of("sentiment"),
-          Promise.of(AgentResult.success("sentiment ok")));
+          Promise.of(AgentResult.success("sentiment ok", AgentResult.AgentMetrics.builder().build(), AgentResult.AgentTrace.of("test-agent", "test-request"))));
       agentRegistry.register(agent);
 
       TaskDefinition task = TaskDefinition.builder()
@@ -212,7 +212,7 @@ class TaskOrchestratorTest extends EventloopTestBase {
     void shouldHandleInvalidPattern() {
       AIAgent<Map<String, Object>, String> agent = createMockAgent(
           AgentName.RECOMMENDATION_AGENT, List.of("recommendations"),
-          Promise.of(AgentResult.success("recommendation")));
+          Promise.of(AgentResult.success("recommendation", AgentResult.AgentMetrics.builder().build(), AgentResult.AgentTrace.of("test-agent", "test-request"))));
       agentRegistry.register(agent);
 
       TaskDefinition task = TaskDefinition.builder()
@@ -249,16 +249,17 @@ class TaskOrchestratorTest extends EventloopTestBase {
     AgentMetadata metadata = AgentMetadata.builder()
         .name(name)
         .version("1.0.0")
-        .description("Mock agent: " + name.displayName())
+        .description("Mock agent: " + name.getDisplayName())
         .capabilities(capabilities)
         .supportedModels(List.of("gpt-4"))
         .latencySLA(5000)
         .build();
 
     when(agent.getMetadata()).thenReturn(metadata);
-    when(agent.getName()).thenReturn(name);
-    when(agent.execute(any(), any())).thenReturn(result);
-    when(agent.healthCheck()).thenReturn(Promise.of(AgentHealth.healthy()));
+    when(agent.getId()).thenReturn(name.name().toLowerCase().replace("_", "-"));
+    doReturn(result).when(agent).process(any(), any());
+    lenient().when(agent.healthCheck()).thenReturn(Promise.of(AgentHealth.healthy(0L)));
+    lenient().when(agent.execute(any(), any())).thenReturn(result);
 
     return agent;
   }

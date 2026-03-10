@@ -10,8 +10,10 @@ import io.activej.promise.Promise;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import javax.inject.Inject;
+import io.activej.inject.annotation.Inject;
 import javax.sql.DataSource;
+import java.util.concurrent.Executor;
+import java.util.concurrent.Executors;
 import java.sql.*;
 import java.time.Instant;
 import java.util.*;
@@ -27,6 +29,12 @@ import java.util.*;
 public class JdbcProjectRepository implements ProjectRepository {
 
     private static final Logger logger = LoggerFactory.getLogger(JdbcProjectRepository.class);
+    private static final Executor JDBC_EXECUTOR = Executors.newFixedThreadPool(4, r -> {
+        Thread t = new Thread(r, "jdbc-repo");
+        t.setDaemon(true);
+        return t;
+    });
+
 
     private static final String INSERT_SQL = """
         INSERT INTO projects (id, workspace_id, name, key, description,
@@ -54,7 +62,7 @@ public class JdbcProjectRepository implements ProjectRepository {
 
     @Override
     public Promise<Project> save(Project p) {
-        return Promise.ofBlocking(() -> {
+        return Promise.ofBlocking(JDBC_EXECUTOR, () -> {
             if (p.getId() == null) p.setId(UUID.randomUUID());
             p.setUpdatedAt(Instant.now());
             if (p.getCreatedAt() == null) p.setCreatedAt(Instant.now());
@@ -74,7 +82,7 @@ public class JdbcProjectRepository implements ProjectRepository {
                 ps.setBoolean(i++, p.isArchived());
                 setTs(ps, i++, p.getArchivedAt());
                 setTs(ps, i++, p.getLastScanAt());
-                ps.setInt(i++, p.getScanCount());
+                ps.setInt(i++, 0); // scanCount not on domain model, default to 0
                 ps.setTimestamp(i++, Timestamp.from(p.getCreatedAt()));
                 ps.setTimestamp(i++, Timestamp.from(p.getUpdatedAt()));
                 ps.setInt(i++, p.getVersion());
@@ -86,7 +94,7 @@ public class JdbcProjectRepository implements ProjectRepository {
 
     @Override
     public Promise<Optional<Project>> findById(UUID workspaceId, UUID id) {
-        return Promise.ofBlocking(() -> {
+        return Promise.ofBlocking(JDBC_EXECUTOR, () -> {
             try (Connection conn = dataSource.getConnection();
                  PreparedStatement ps = conn.prepareStatement(
                      "SELECT * FROM projects WHERE workspace_id = ? AND id = ?")) {
@@ -100,7 +108,7 @@ public class JdbcProjectRepository implements ProjectRepository {
 
     @Override
     public Promise<Optional<Project>> findByKey(UUID workspaceId, String key) {
-        return Promise.ofBlocking(() -> {
+        return Promise.ofBlocking(JDBC_EXECUTOR, () -> {
             try (Connection conn = dataSource.getConnection();
                  PreparedStatement ps = conn.prepareStatement(
                      "SELECT * FROM projects WHERE workspace_id = ? AND key = ?")) {
@@ -114,7 +122,7 @@ public class JdbcProjectRepository implements ProjectRepository {
 
     @Override
     public Promise<List<Project>> findByWorkspace(UUID workspaceId) {
-        return Promise.ofBlocking(() -> {
+        return Promise.ofBlocking(JDBC_EXECUTOR, () -> {
             try (Connection conn = dataSource.getConnection();
                  PreparedStatement ps = conn.prepareStatement(
                      "SELECT * FROM projects WHERE workspace_id = ? ORDER BY name")) {
@@ -126,7 +134,7 @@ public class JdbcProjectRepository implements ProjectRepository {
 
     @Override
     public Promise<List<Project>> findActiveByWorkspace(UUID workspaceId) {
-        return Promise.ofBlocking(() -> {
+        return Promise.ofBlocking(JDBC_EXECUTOR, () -> {
             try (Connection conn = dataSource.getConnection();
                  PreparedStatement ps = conn.prepareStatement(
                      "SELECT * FROM projects WHERE workspace_id = ? AND archived = false ORDER BY name")) {
@@ -138,7 +146,7 @@ public class JdbcProjectRepository implements ProjectRepository {
 
     @Override
     public Promise<List<Project>> searchByName(UUID workspaceId, String query) {
-        return Promise.ofBlocking(() -> {
+        return Promise.ofBlocking(JDBC_EXECUTOR, () -> {
             try (Connection conn = dataSource.getConnection();
                  PreparedStatement ps = conn.prepareStatement(
                      "SELECT * FROM projects WHERE workspace_id = ? AND LOWER(name) LIKE ? ORDER BY name")) {
@@ -151,7 +159,7 @@ public class JdbcProjectRepository implements ProjectRepository {
 
     @Override
     public Promise<Boolean> delete(UUID workspaceId, UUID id) {
-        return Promise.ofBlocking(() -> {
+        return Promise.ofBlocking(JDBC_EXECUTOR, () -> {
             try (Connection conn = dataSource.getConnection();
                  PreparedStatement ps = conn.prepareStatement("DELETE FROM projects WHERE workspace_id = ? AND id = ?")) {
                 ps.setString(1, workspaceId.toString()); ps.setString(2, id.toString());
@@ -162,7 +170,7 @@ public class JdbcProjectRepository implements ProjectRepository {
 
     @Override
     public Promise<Boolean> exists(UUID workspaceId, UUID id) {
-        return Promise.ofBlocking(() -> {
+        return Promise.ofBlocking(JDBC_EXECUTOR, () -> {
             try (Connection conn = dataSource.getConnection();
                  PreparedStatement ps = conn.prepareStatement("SELECT 1 FROM projects WHERE workspace_id = ? AND id = ?")) {
                 ps.setString(1, workspaceId.toString()); ps.setString(2, id.toString());
@@ -173,7 +181,7 @@ public class JdbcProjectRepository implements ProjectRepository {
 
     @Override
     public Promise<Boolean> isKeyAvailable(UUID workspaceId, String key) {
-        return Promise.ofBlocking(() -> {
+        return Promise.ofBlocking(JDBC_EXECUTOR, () -> {
             try (Connection conn = dataSource.getConnection();
                  PreparedStatement ps = conn.prepareStatement("SELECT 1 FROM projects WHERE workspace_id = ? AND key = ?")) {
                 ps.setString(1, workspaceId.toString()); ps.setString(2, key);
@@ -184,7 +192,7 @@ public class JdbcProjectRepository implements ProjectRepository {
 
     @Override
     public Promise<Long> countByWorkspace(UUID workspaceId) {
-        return Promise.ofBlocking(() -> {
+        return Promise.ofBlocking(JDBC_EXECUTOR, () -> {
             try (Connection conn = dataSource.getConnection();
                  PreparedStatement ps = conn.prepareStatement("SELECT COUNT(*) FROM projects WHERE workspace_id = ?")) {
                 ps.setString(1, workspaceId.toString());
@@ -215,7 +223,7 @@ public class JdbcProjectRepository implements ProjectRepository {
         p.setArchived(rs.getBoolean("archived"));
         p.setArchivedAt(getTs(rs, "archived_at"));
         p.setLastScanAt(getTs(rs, "last_scan_at"));
-        p.setScanCount(rs.getInt("scan_count"));
+        // scan_count column exists in DB but not on domain model — intentionally skipped
         p.setCreatedAt(rs.getTimestamp("created_at").toInstant());
         p.setUpdatedAt(rs.getTimestamp("updated_at").toInstant());
         p.setVersion(rs.getInt("version"));

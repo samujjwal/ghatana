@@ -10,8 +10,10 @@ import io.activej.promise.Promise;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import javax.inject.Inject;
+import io.activej.inject.annotation.Inject;
 import javax.sql.DataSource;
+import java.util.concurrent.Executor;
+import java.util.concurrent.Executors;
 import java.sql.*;
 import java.time.Instant;
 import java.time.LocalDate;
@@ -28,6 +30,12 @@ import java.util.*;
 public class JdbcComplianceRepository implements ComplianceRepository {
 
     private static final Logger logger = LoggerFactory.getLogger(JdbcComplianceRepository.class);
+    private static final Executor JDBC_EXECUTOR = Executors.newFixedThreadPool(4, r -> {
+        Thread t = new Thread(r, "jdbc-repo");
+        t.setDaemon(true);
+        return t;
+    });
+
 
     private static final String INSERT_SQL = """
         INSERT INTO compliance_assessments (id, workspace_id, framework_id, project_id,
@@ -54,7 +62,7 @@ public class JdbcComplianceRepository implements ComplianceRepository {
 
     @Override
     public Promise<ComplianceAssessment> save(ComplianceAssessment a) {
-        return Promise.ofBlocking(() -> {
+        return Promise.ofBlocking(JDBC_EXECUTOR, () -> {
             if (a.getId() == null) a.setId(UUID.randomUUID());
             a.setUpdatedAt(Instant.now());
             if (a.getCreatedAt() == null) a.setCreatedAt(Instant.now());
@@ -91,7 +99,7 @@ public class JdbcComplianceRepository implements ComplianceRepository {
 
     @Override
     public Promise<ComplianceAssessment> findById(UUID workspaceId, UUID id) {
-        return Promise.ofBlocking(() -> {
+        return Promise.ofBlocking(JDBC_EXECUTOR, () -> {
             try (Connection conn = dataSource.getConnection();
                  PreparedStatement ps = conn.prepareStatement(
                      "SELECT * FROM compliance_assessments WHERE workspace_id = ? AND id = ?")) {
@@ -115,7 +123,7 @@ public class JdbcComplianceRepository implements ComplianceRepository {
 
     @Override
     public Promise<List<ComplianceAssessment>> findByProjectAndFramework(UUID workspaceId, UUID projectId, UUID frameworkId) {
-        return Promise.ofBlocking(() -> {
+        return Promise.ofBlocking(JDBC_EXECUTOR, () -> {
             try (Connection conn = dataSource.getConnection();
                  PreparedStatement ps = conn.prepareStatement(
                      "SELECT * FROM compliance_assessments WHERE workspace_id = ? AND project_id = ? AND framework_id = ? ORDER BY created_at DESC")) {
@@ -127,7 +135,7 @@ public class JdbcComplianceRepository implements ComplianceRepository {
 
     @Override
     public Promise<List<ComplianceAssessment>> findByStatus(UUID workspaceId, String status) {
-        return Promise.ofBlocking(() -> {
+        return Promise.ofBlocking(JDBC_EXECUTOR, () -> {
             try (Connection conn = dataSource.getConnection();
                  PreparedStatement ps = conn.prepareStatement(
                      "SELECT * FROM compliance_assessments WHERE workspace_id = ? AND status = ? ORDER BY created_at DESC")) {
@@ -139,7 +147,7 @@ public class JdbcComplianceRepository implements ComplianceRepository {
 
     @Override
     public Promise<List<ComplianceAssessment>> findByAssessmentType(UUID workspaceId, String assessmentType) {
-        return Promise.ofBlocking(() -> {
+        return Promise.ofBlocking(JDBC_EXECUTOR, () -> {
             try (Connection conn = dataSource.getConnection();
                  PreparedStatement ps = conn.prepareStatement(
                      "SELECT * FROM compliance_assessments WHERE workspace_id = ? AND assessment_type = ? ORDER BY created_at DESC")) {
@@ -151,7 +159,7 @@ public class JdbcComplianceRepository implements ComplianceRepository {
 
     @Override
     public Promise<Long> countByStatus(UUID workspaceId, UUID projectId, String status) {
-        return Promise.ofBlocking(() -> {
+        return Promise.ofBlocking(JDBC_EXECUTOR, () -> {
             try (Connection conn = dataSource.getConnection();
                  PreparedStatement ps = conn.prepareStatement(
                      "SELECT COUNT(*) FROM compliance_assessments WHERE workspace_id = ? AND project_id = ? AND status = ?")) {
@@ -163,7 +171,7 @@ public class JdbcComplianceRepository implements ComplianceRepository {
 
     @Override
     public Promise<Void> delete(UUID workspaceId, UUID id) {
-        return Promise.ofBlocking(() -> {
+        return Promise.ofBlocking(JDBC_EXECUTOR, () -> {
             try (Connection conn = dataSource.getConnection();
                  PreparedStatement ps = conn.prepareStatement("DELETE FROM compliance_assessments WHERE workspace_id = ? AND id = ?")) {
                 ps.setObject(1, workspaceId); ps.setObject(2, id); ps.executeUpdate();
@@ -174,7 +182,7 @@ public class JdbcComplianceRepository implements ComplianceRepository {
 
     @Override
     public Promise<Boolean> exists(UUID workspaceId, UUID id) {
-        return Promise.ofBlocking(() -> {
+        return Promise.ofBlocking(JDBC_EXECUTOR, () -> {
             try (Connection conn = dataSource.getConnection();
                  PreparedStatement ps = conn.prepareStatement("SELECT 1 FROM compliance_assessments WHERE workspace_id = ? AND id = ?")) {
                 ps.setObject(1, workspaceId); ps.setObject(2, id);
@@ -186,7 +194,7 @@ public class JdbcComplianceRepository implements ComplianceRepository {
     // ========== Helpers ==========
 
     private Promise<List<ComplianceAssessment>> queryUuids(String sql, UUID a, UUID b) {
-        return Promise.ofBlocking(() -> {
+        return Promise.ofBlocking(JDBC_EXECUTOR, () -> {
             try (Connection conn = dataSource.getConnection();
                  PreparedStatement ps = conn.prepareStatement(sql)) {
                 ps.setObject(1, a); ps.setObject(2, b);
@@ -207,9 +215,9 @@ public class JdbcComplianceRepository implements ComplianceRepository {
         o.setWorkspaceId(rs.getObject("workspace_id", UUID.class));
         o.setFrameworkId(rs.getObject("framework_id", UUID.class));
         o.setProjectId(rs.getObject("project_id", UUID.class));
-        Date assessmentDate = rs.getDate("assessment_date");
+        java.sql.Date assessmentDate = rs.getDate("assessment_date");
         if (assessmentDate != null) o.setAssessmentDate(assessmentDate.toLocalDate());
-        Date dueDate = rs.getDate("due_date");
+        java.sql.Date dueDate = rs.getDate("due_date");
         if (dueDate != null) o.setDueDate(dueDate.toLocalDate());
         o.setAssessorName(rs.getString("assessor_name"));
         o.setAssessmentType(rs.getString("assessment_type"));

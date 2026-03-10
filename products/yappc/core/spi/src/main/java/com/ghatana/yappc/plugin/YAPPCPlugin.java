@@ -8,6 +8,9 @@ import io.activej.promise.Promise;
  * <p>This is the base interface for all YAPPC plugins. All plugin types
  * (validators, generators, agents, etc.) extend this interface.
  * 
+ * <p>To bridge with the platform {@link com.ghatana.platform.plugin.Plugin} interface,
+ * use {@link YappcPluginToPlatformAdapter} which wraps any YAPPCPlugin as a platform Plugin.
+ * 
  * <p>Plugin Lifecycle:
  * <ol>
  *   <li>Plugin is discovered via ServiceLoader</li>
@@ -59,59 +62,50 @@ import io.activej.promise.Promise;
  * }</pre>
  * 
  * @author YAPPC Team
- * @version 1.0.0
+ * @version 2.0.0
  * @since 1.0.0
  
  * @doc.type interface
- * @doc.purpose Defines the contract for yappc plugin
+ * @doc.purpose YAPPC plugin SPI with platform Plugin bridge via adapter
  * @doc.layer core
  * @doc.pattern Plugin
 */
 public interface YAPPCPlugin {
     
     /**
-     * Initializes the plugin with the given context.
+     * Initializes the plugin with the YAPPC-specific context.
      * 
      * <p>This method is called once when the plugin is first loaded.
      * Plugins should perform one-time initialization here.
      * 
-     * @param context the plugin context providing access to YAPPC services
+     * @param context the YAPPC plugin context providing access to YAPPC services
      * @return a Promise that completes when initialization is done
      */
     Promise<Void> initialize(PluginContext context);
-    
+
     /**
-     * Starts the plugin, making it active and ready to process requests.
-     * 
-     * <p>This method is called after initialization and may be called
-     * multiple times if the plugin is stopped and restarted.
-     * 
-     * @return a Promise that completes when the plugin has started
+     * Starts the plugin after initialization.
+     *
+     * @return a Promise that completes when the plugin is started
      */
     Promise<Void> start();
-    
+
     /**
-     * Stops the plugin, making it inactive.
-     * 
-     * <p>The plugin should stop processing requests but maintain its
-     * state so it can be restarted if needed.
-     * 
-     * @return a Promise that completes when the plugin has stopped
+     * Stops the plugin (may be restarted later).
+     *
+     * @return a Promise that completes when the plugin is stopped
      */
     Promise<Void> stop();
-    
+
     /**
      * Shuts down the plugin and releases all resources.
-     * 
-     * <p>This method is called when the plugin is being unloaded.
-     * After this method returns, the plugin will not be used again.
-     * 
-     * @return a Promise that completes when shutdown is done
+     *
+     * @return a Promise that completes when shutdown is finished
      */
     Promise<Void> shutdown();
-    
+
     /**
-     * Returns the plugin metadata.
+     * Returns the YAPPC-specific plugin metadata.
      * 
      * @return the plugin metadata
      */

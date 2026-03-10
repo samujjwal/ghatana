@@ -10,11 +10,8 @@ import picocli.CommandLine.Option;
 import picocli.CommandLine.Parameters;
 import picocli.CommandLine.ParentCommand;
 
-import io.activej.eventloop.Eventloop;
-import io.activej.promise.Promise;
 import java.util.List;
 import java.util.concurrent.Callable;
-import java.util.concurrent.atomic.AtomicReference;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -57,13 +54,7 @@ public class SearchCommand implements Callable<Integer> {
         }
 
         KnowledgeGraphServiceImpl service = new KnowledgeGraphServiceImpl();
-        AtomicReference<List<GraphNode>> resultsRef = new AtomicReference<>();
-        Eventloop eventloop = Eventloop.getCurrentEventloop();
-        service.searchNodes("default", query)
-            .whenResult(resultsRef::set)
-            .whenException(e -> { throw new RuntimeException(e); });
-        eventloop.run();
-        List<GraphNode> results = resultsRef.get();
+        List<GraphNode> results = service.searchNodes("default", query).getResult();
 
         if (results.size() > limit) {
             results = results.subList(0, limit);

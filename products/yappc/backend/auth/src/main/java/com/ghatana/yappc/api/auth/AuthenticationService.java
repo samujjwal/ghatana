@@ -436,7 +436,7 @@ public class AuthenticationService {
             log.debug("Token revoked (in-memory); Data-Cloud persistence deferred");
             // entityService.saveEntity(Entity.builder().type("revoked_token").data(tokenData).build());
             return null;
-        }).whenException(e -> log.error("Failed to persist revoked token to Data-Cloud", e);
+        }).whenException(e -> log.error("Failed to persist revoked token to Data-Cloud", e));
     }
 
     private boolean isTokenRevoked(String tokenId) {
@@ -500,6 +500,6 @@ public class AuthenticationService {
             // emailService.send(email, "Password Reset Request", emailBody);
             
             return null;
-        }).whenException(e -> log.error("Failed to send password reset email", e);
+        }).whenException(e -> log.error("Failed to send password reset email", e));
     }
 }

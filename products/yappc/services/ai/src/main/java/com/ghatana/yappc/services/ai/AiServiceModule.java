@@ -18,7 +18,7 @@ import com.ghatana.yappc.ai.router.AIRouterConfig;
 import com.ghatana.yappc.ai.router.ModelSelector.SelectionStrategy;
 import com.ghatana.yappc.ai.router.SemanticCache.CacheConfig;
 import com.ghatana.yappc.ai.service.YAPPCAIService;
-import com.ghatana.yappc.canvas.ai.CanvasGenerationService;
+import com.ghatana.yappc.ai.canvas.CanvasGenerationService;
 import io.activej.inject.annotation.Provides;
 import io.activej.inject.module.AbstractModule;
 import org.slf4j.Logger;
@@ -98,7 +98,7 @@ public class AiServiceModule extends AbstractModule {
         } else {
             logger.warn("No OPENAI_API_KEY set — AI service running in dev mode without LLM provider");
             // Provide a stub that returns error promises so the injector still resolves
-            builder.addProvider("stub", new OpenAICompletionService(
+            builder.addProvider("stub", new ToolAwareOpenAICompletionService(
                     LLMConfiguration.builder().apiKey("stub").modelName("stub").build(), null, metrics));
             builder.defaultProvider("stub");
         }

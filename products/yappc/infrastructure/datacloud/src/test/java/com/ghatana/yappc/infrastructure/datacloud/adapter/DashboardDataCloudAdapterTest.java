@@ -63,7 +63,7 @@ class DashboardDataCloudAdapterTest extends EventloopTestBase {
         when(entityRepository.findAll(anyString(), anyString(), any(), any(), anyInt(), anyInt()))
             .thenReturn(Promise.of(List.of()));
 
-        List<Dashboard> result = dashboardRepository.findByWorkspaceId(workspaceId);
+        List<Dashboard> result = runPromise(() -> dashboardRepository.findByWorkspaceId(workspaceId));
 
         assertThat(result).isNotNull();
         verify(entityRepository).findAll(anyString(), anyString(), any(), any(), anyInt(), anyInt());
@@ -77,7 +77,7 @@ class DashboardDataCloudAdapterTest extends EventloopTestBase {
         when(entityRepository.findAll(anyString(), anyString(), any(), any(), anyInt(), anyInt()))
             .thenReturn(Promise.of(List.of()));
 
-        Optional<Dashboard> result = dashboardRepository.findByWorkspaceIdAndName(workspaceId, "test");
+        Optional<Dashboard> result = runPromise(() -> dashboardRepository.findByWorkspaceIdAndName(workspaceId, "test"));
 
         assertThat(result).isEmpty();
     }

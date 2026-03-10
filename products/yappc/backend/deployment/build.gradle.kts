@@ -13,6 +13,11 @@ dependencies {
     api(project(":products:yappc:libs:java:yappc-domain"))
     implementation(project(":products:yappc:backend:persistence"))
 
+    // ActiveJ (HTTP includes Reactor, DI, Promise)
+    implementation(libs.activej.http)
+    implementation(libs.activej.inject)
+    implementation(libs.activej.promise)
+
     // Docker
     implementation("com.github.docker-java:docker-java-core:3.3.6")
     implementation("com.github.docker-java:docker-java-transport-httpclient5:3.3.6")

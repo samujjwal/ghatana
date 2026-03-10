@@ -70,7 +70,7 @@ public class TestGenerationController extends AbstractModule {
      * @param request Test generation request
      * @return Test generation result
      */
-        private Promise<HttpResponse> generateTests(HttpRequest httpRequest) {
+        public Promise<HttpResponse> generateTests(HttpRequest httpRequest) {
         return JsonUtils.parseBody(httpRequest, TestGenerationRequest.class)
                 .then(
                         request -> {
@@ -89,7 +89,7 @@ public class TestGenerationController extends AbstractModule {
      * @param request Coverage analysis request
      * @return Coverage gaps report
      */
-        private Promise<HttpResponse> analyzeCoverage(HttpRequest httpRequest) {
+        public Promise<HttpResponse> analyzeCoverage(HttpRequest httpRequest) {
         return JsonUtils.parseBody(httpRequest, CoverageAnalysisRequest.class)
                 .then(
                         request -> {
@@ -105,7 +105,7 @@ public class TestGenerationController extends AbstractModule {
      * @param framework Optional framework filter (junit, jest, pytest)
      * @return List of test templates
      */
-        private Promise<HttpResponse> listTemplates(HttpRequest httpRequest) {
+        public Promise<HttpResponse> listTemplates(HttpRequest httpRequest) {
                 String framework = httpRequest.getQueryParameter("framework");
                 log.info("Listing test templates: framework={}", framework);
 

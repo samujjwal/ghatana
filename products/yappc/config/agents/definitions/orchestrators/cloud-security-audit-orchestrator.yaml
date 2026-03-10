@@ -4,7 +4,7 @@ version: 1.0.0
 description: Orchestrates cloud security audit — delegates to cloud-resource-discovery-agent and cloud-resource-risk-agent; produces risk-aggregated audit report.
 
 metadata:
-  level: 2
+  level: 1
   domain: cloud-security
   tags: [orchestrator, cloud-audit, devsecops]
 

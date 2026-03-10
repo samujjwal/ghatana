@@ -44,7 +44,8 @@ public final class PlatformCompatibility {
     @NotNull
     public static HttpResponse createResponse(int statusCode, @NotNull String body) {
         return HttpResponse.ofCode(statusCode)
-                .withBody(body.getBytes(StandardCharsets.UTF_8));
+                .withBody(body.getBytes(StandardCharsets.UTF_8))
+                .build();
     }
 
     /**
@@ -60,7 +61,8 @@ public final class PlatformCompatibility {
                 .withHeader(io.activej.http.HttpHeaders.CONTENT_TYPE,
                         io.activej.http.HttpHeaderValue.ofContentType(
                                 io.activej.http.ContentType.of(MediaTypes.JSON)))
-                .withBody(jsonBody.getBytes(StandardCharsets.UTF_8));
+                .withBody(jsonBody.getBytes(StandardCharsets.UTF_8))
+                .build();
     }
 
     /**
@@ -71,7 +73,7 @@ public final class PlatformCompatibility {
      */
     @NotNull
     public static HttpResponse createStatusResponse(int statusCode) {
-        return HttpResponse.ofCode(statusCode);
+        return HttpResponse.ofCode(statusCode).build();
     }
 
     /**
@@ -91,7 +93,7 @@ public final class PlatformCompatibility {
     @Nullable
     public static <T> T getAttached(@NotNull Object request, @NotNull Class<T> type) {
         if (request instanceof HttpRequest httpRequest) {
-            Object attached = httpRequest.getAttribute(type);
+            Object attached = httpRequest.getAttachment(type);
             if (type.isInstance(attached)) {
                 return (T) attached;
             }

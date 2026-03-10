@@ -212,9 +212,9 @@ public class CiSnapshotRunner {
  * Print CI test results in a format suitable for CI logs */
     public static void printCiResults(CiTestResult result) {
         log.info("=== CI SNAPSHOT TEST RESULTS ===");
-        log.info("Status: {}\", result.success() ? "PASS" : "FAIL");
-        log.info("Tests: {} total, {} passed, {} failed\", result.totalTests(), result.passedTests(), result.failedTests());
-        log.info(String.format("Execution Time: %.2f seconds\", result.executionTimeSeconds()));
+        log.info("Status: {}", result.success() ? "PASS" : "FAIL");
+        log.info("Tests: {} total, {} passed, {} failed", result.totalTests(), result.passedTests(), result.failedTests());
+        log.info(String.format("Execution Time: %.2f seconds", result.executionTimeSeconds()));
 
         if (!result.errorMessages().isEmpty()) {
             log.info("\\nERRORS:");

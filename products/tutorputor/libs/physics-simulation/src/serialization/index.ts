@@ -6,13 +6,13 @@
  */
 
 export {
-    type SimulationManifest,
-    MANIFEST_VERSION,
-    manifestSchema,
-    createManifest,
-    exportManifestToJSON,
-    downloadManifest,
-    parseManifest,
-    migrateManifest,
-    readManifestFromFile,
-} from './manifest';
+  type PhysicsSimulationManifest,
+  MANIFEST_VERSION,
+  physicsManifestSchema,
+  createManifest,
+  exportManifestToJSON,
+  downloadManifest,
+  parseManifest,
+  migrateManifest,
+  readManifestFromFile,
+} from "./manifest";

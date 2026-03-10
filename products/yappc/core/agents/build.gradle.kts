@@ -24,10 +24,14 @@ dependencies {
     // Agent framework from platform
     implementation(project(":platform:java:agent-framework"))
     implementation(project(":platform:java:agent-dispatch"))
+    implementation(project(":platform:java:agent-registry"))
+    implementation(project(":platform:java:agent-memory"))
+    implementation(project(":platform:java:agent-learning"))
     implementation(project(":platform:java:core"))
     implementation(project(":platform:java:workflow"))
     implementation(project(":platform:java:database"))
     implementation(project(":platform:java:ai-integration"))
+    implementation(project(":platform:java:event-cloud"))
 
     // ActiveJ for async operations
     implementation(libs.activej.promise)

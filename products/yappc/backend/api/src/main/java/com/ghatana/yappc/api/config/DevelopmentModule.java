@@ -11,11 +11,21 @@ import com.ghatana.platform.security.rbac.Permission;
 import com.ghatana.platform.security.rbac.RolePermissionRegistry;
 import com.ghatana.platform.security.rbac.SyncAuthorizationService;
 import com.ghatana.datacloud.application.version.VersionService;
+import com.ghatana.datacloud.entity.version.VersionRecord;
+import com.ghatana.datacloud.infrastructure.persistence.version.InMemoryVersionRecord;
 import com.ghatana.yappc.api.repository.AISuggestionRepository;
+import com.ghatana.yappc.api.repository.InMemoryAISuggestionRepository;
+import com.ghatana.yappc.api.repository.InMemoryRequirementRepository;
+import com.ghatana.yappc.api.repository.InMemoryWorkspaceRepository;
 import com.ghatana.yappc.api.repository.RequirementRepository;
 import com.ghatana.yappc.api.repository.WorkspaceRepository;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.SerializationFeature;
+import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
+import com.ghatana.platform.core.util.JsonUtils;
 import com.ghatana.yappc.api.service.AISuggestionService;
 import com.ghatana.yappc.api.service.ApprovalWorkflowService;
+import com.ghatana.yappc.api.service.LifecycleEventEmitter;
 import com.ghatana.yappc.api.service.RequirementService;
 import com.ghatana.yappc.api.service.WorkspaceService;
 import io.activej.inject.annotation.Provides;
@@ -80,6 +90,42 @@ public class DevelopmentModule extends SharedBaseModule {
     super.configure();
   }
 
+  // ========== Dev-only Repository Providers ==========
+  // These were removed from SharedBaseModule to eliminate DI conflicts with
+  // ProductionModule's JDBC overrides. DevelopmentModule owns InMemory repos.
+
+  /**
+   * Provides in-memory VersionRecord for development.
+   *
+   * <p>SharedBaseModule.versionService() consumes this to construct VersionService.
+   */
+  @Provides
+  VersionRecord versionRecord() {
+    logger.info("Creating InMemoryVersionRecord (dev — version history lost on restart)");
+    return new InMemoryVersionRecord();
+  }
+
+  /** Provides in-memory AISuggestionRepository for development. */
+  @Provides
+  AISuggestionRepository aiSuggestionRepository() {
+    logger.info("Creating InMemoryAISuggestionRepository");
+    return new InMemoryAISuggestionRepository();
+  }
+
+  /** Provides in-memory RequirementRepository for development. */
+  @Provides
+  RequirementRepository requirementRepository() {
+    logger.info("Creating InMemoryRequirementRepository");
+    return new InMemoryRequirementRepository();
+  }
+
+  /** Provides in-memory WorkspaceRepository for development. */
+  @Provides
+  WorkspaceRepository workspaceRepository() {
+    logger.info("Creating InMemoryWorkspaceRepository");
+    return new InMemoryWorkspaceRepository();
+  }
+
   // ========== Development-Specific Service Providers ==========
 
   /** Provides in-memory AuditService for development. */
@@ -89,8 +135,7 @@ public class DevelopmentModule extends SharedBaseModule {
     return new InMemoryAuditService();
   }
 
-  /**
-   * Provides permissive AuthorizationService for development. Uses default RolePermissionMapping
+  /** Provides permissive AuthorizationService for development. Uses default RolePermissionMapping
    * that grants all permissions.
    */
   @Provides
@@ -98,6 +143,124 @@ public class DevelopmentModule extends SharedBaseModule {
     logger.info("Creating permissive SyncAuthorizationService (all actions allowed in dev mode)");
     InMemoryRolePermissionRegistry registry = createDefaultRegistry();
     return new SyncAuthorizationService(registry);
+  }
+
+  /**
+   * Provides local YAPPC JwtTokenProvider for SecurityMiddleware (development).
+   *
+   * <p>Uses a fixed dev secret so the server starts without any env vars set.
+   * Tokens are still validated — dev mode is not auth-bypass.
+   *
+   * @doc.type class
+   * @doc.purpose Dev-mode YAPPC JwtTokenProvider for SecurityMiddleware
+   * @doc.layer api
+   * @doc.pattern Provider
+   */
+  @Provides
+  com.ghatana.yappc.api.security.JwtTokenProvider yappcJwtTokenProvider() {
+    String secretKey = java.util.Optional.ofNullable(System.getenv("JWT_SECRET_KEY"))
+        .filter(s -> !s.isBlank())
+        .orElse("dev-yappc-jwt-secret-key-32-chars!!");
+    logger.info("Creating development YAPPC JwtTokenProvider");
+    return new com.ghatana.yappc.api.security.JwtTokenProvider(secretKey, 60L, 7L);
+  }
+
+  // ========== Infrastructure Providers ==========
+
+  /**
+   * Provides ObjectMapper for development (identical config to ProductionModule).
+   *
+   * @doc.type class
+   * @doc.purpose Jackson ObjectMapper for JSON serialization in dev
+   * @doc.layer api
+   * @doc.pattern Provider
+   */
+  @Provides
+  ObjectMapper objectMapper() {
+    return JsonUtils.getDefaultMapper()
+        .registerModule(new JavaTimeModule())
+        .disable(SerializationFeature.WRITE_DATES_AS_TIMESTAMPS);
+  }
+
+  /**
+   * Provides noop LifecycleEventEmitter for development.
+   *
+   * <p>Events are logged at DEBUG level without actually connecting to AEP,
+   * so the dev environment starts without requiring an AEP sidecar.
+   *
+   * @doc.type class
+   * @doc.purpose Noop lifecycle event emitter for development without AEP
+   * @doc.layer api
+   * @doc.pattern Provider
+   */
+  @Provides
+  LifecycleEventEmitter lifecycleEventEmitter(ObjectMapper objectMapper) {
+    logger.info("Creating noop LifecycleEventEmitter (dev — events logged, not published)");
+    return LifecycleEventEmitter.noop(objectMapper);
+  }
+
+  /**
+   * Provides permissive PolicyEngine for development.
+   *
+   * <p>PermissivePolicyEngine allows all requests and logs what real OPA would evaluate.
+   * In production, the OpaRestPolicyEngine is used when {@code OPA_ENDPOINT} is set.
+   *
+   * @doc.type class
+   * @doc.purpose Permissive policy engine for dev without OPA sidecar
+   * @doc.layer api
+   * @doc.pattern Null Object
+   */
+  @Provides
+  com.ghatana.governance.PolicyEngine policyEngine() {
+    logger.info("Creating PermissivePolicyEngine (dev — all policy checks ALLOWED)");
+    return new com.ghatana.yappc.api.infrastructure.policy.PermissivePolicyEngine();
+  }
+
+  /**
+   * Provides in-memory MemoryStore for development — no persistence between restarts.
+   *
+   * @doc.type class
+   * @doc.purpose In-memory agent memory for development mode
+   * @doc.layer api
+   * @doc.pattern Null Object
+   * @doc.gaa.memory episodic, semantic, procedural, preference
+   */
+  @Provides
+  com.ghatana.agent.framework.memory.MemoryStore memoryStore() {
+    logger.info("Creating EventLogMemoryStore for agent memory (dev — in-memory only)");
+    return new com.ghatana.agent.framework.memory.EventLogMemoryStore();
+  }
+
+  /**
+   * Provides FeedbackLearningService with noop metrics for development mode.
+   *
+   * @doc.type class
+   * @doc.purpose Wires FeedbackLearningService for dev (noop metrics, no persistence)
+   * @doc.layer api
+   * @doc.pattern Service
+   */
+  @Provides
+  com.ghatana.yappc.ai.requirements.ai.feedback.FeedbackLearningService feedbackLearningService() {
+    logger.info("Creating FeedbackLearningService (dev — noop metrics)");
+    return new com.ghatana.yappc.ai.requirements.ai.feedback.FeedbackLearningService();
+  }
+
+  /**
+   * Provides a boot-time pipeline definition loader for development mode.
+   *
+   * <p>Scans the same directories as production; gracefully returns an empty
+   * loader when no pipeline YAMLs are found (no crash, just a WARN log).
+   *
+   * @doc.type class
+   * @doc.purpose Boot-time YAML pipeline manifest loader (dev)
+   * @doc.layer api
+   * @doc.pattern Registry, Loader
+   */
+  @Provides
+  com.ghatana.yappc.api.pipeline.PipelineDefinitionLoader pipelineDefinitionLoader(
+      com.fasterxml.jackson.databind.ObjectMapper objectMapper) {
+    logger.info("Creating PipelineDefinitionLoader (dev)");
+    return new com.ghatana.yappc.api.pipeline.PipelineDefinitionLoader(objectMapper);
   }
 
   // ========== Service Wiring (using development AuditService) ==========
@@ -128,14 +291,13 @@ public class DevelopmentModule extends SharedBaseModule {
    * variables, otherwise falls back to NoOpLLMGateway for offline development.
    */
   @Provides
-  com.ghatana.ai.llm.LLMGateway llmGateway() {
+  com.ghatana.ai.llm.LLMGateway llmGateway(io.activej.eventloop.Eventloop eventloop) {
     java.util.List<String> providers = new java.util.ArrayList<>();
     com.ghatana.ai.llm.DefaultLLMGateway.Builder builder = com.ghatana.ai.llm.DefaultLLMGateway.builder();
     com.ghatana.platform.observability.NoopMetricsCollector metricsCollector =
         new com.ghatana.platform.observability.NoopMetricsCollector();
-    java.net.http.HttpClient httpClient = java.net.http.HttpClient.newBuilder()
-        .connectTimeout(java.time.Duration.ofSeconds(30))
-        .build();
+    io.activej.dns.DnsClient dnsClient = io.activej.dns.DnsClient.builder(eventloop, java.net.InetAddress.getLoopbackAddress()).build();
+    io.activej.http.HttpClient httpClient = io.activej.http.HttpClient.create(eventloop, dnsClient);
 
     String openAiKey = System.getenv("OPENAI_API_KEY");
     if (openAiKey != null && !openAiKey.isBlank()) {
@@ -333,5 +495,61 @@ public class DevelopmentModule extends SharedBaseModule {
     registry.registerRole("USER", registry.getPermissions("MEMBER"));
 
     return registry;
+  }
+
+  // -------------------------------------------------------------------------
+  // Phase 4.2 — AI Integration: CodeGen & TestGen (dev stubs)
+  // -------------------------------------------------------------------------
+
+  /**
+   * Provides a no-op AIIntegrationService for local development.
+   *
+   * <p>Returns stub responses so the server starts without LLM credentials.
+   */
+  @Provides
+  com.ghatana.ai.AIIntegrationService aiIntegrationService() {
+    logger.warn("Using no-op AIIntegrationService — LLM calls will return stub text");
+    return new com.ghatana.ai.AIIntegrationService() {
+      @Override
+      public String generateCode(String prompt) {
+        return "// [DEV STUB] Code generation is disabled in development mode.\n"
+            + "// Prompt received: " + prompt.lines().findFirst().orElse("(empty)");
+      }
+
+      @Override
+      public io.activej.promise.Promise<String> complete(String prompt) {
+        return io.activej.promise.Promise.of(
+            "[DEV STUB] Completion disabled in development mode. Prompt: "
+                + prompt.lines().findFirst().orElse("(empty)"));
+      }
+    };
+  }
+
+  /** Provides CodeGenerationService (backed by dev AIIntegrationService). */
+  @Provides
+  com.ghatana.yappc.api.codegen.CodeGenerationService codeGenerationService(
+      com.ghatana.ai.AIIntegrationService aiIntegrationService) {
+    return new com.ghatana.yappc.api.codegen.CodeGenerationService(aiIntegrationService);
+  }
+
+  /** Provides CodeGenerationController (dev). */
+  @Provides
+  com.ghatana.yappc.api.codegen.CodeGenerationController codeGenerationController(
+      com.ghatana.yappc.api.codegen.CodeGenerationService codeGenerationService) {
+    return new com.ghatana.yappc.api.codegen.CodeGenerationController(codeGenerationService);
+  }
+
+  /** Provides TestGenerationService (backed by dev AIIntegrationService). */
+  @Provides
+  com.ghatana.yappc.api.testing.TestGenerationService testGenerationService(
+      com.ghatana.ai.AIIntegrationService aiIntegrationService) {
+    return new com.ghatana.yappc.api.testing.TestGenerationService(aiIntegrationService);
+  }
+
+  /** Provides TestGenerationController (dev). */
+  @Provides
+  com.ghatana.yappc.api.testing.TestGenerationController testGenerationController(
+      com.ghatana.yappc.api.testing.TestGenerationService testGenerationService) {
+    return new com.ghatana.yappc.api.testing.TestGenerationController(testGenerationService);
   }
 }

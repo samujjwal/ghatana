@@ -19,6 +19,9 @@ package com.ghatana.yappc.framework.core.plugin;
 import com.ghatana.yappc.framework.api.domain.BuildSystemType;
 import com.ghatana.yappc.framework.api.plugin.BuildGeneratorPlugin;
 import com.ghatana.yappc.framework.api.plugin.YappcPlugin;
+import com.ghatana.yappc.framework.core.plugin.sandbox.IsolatingPluginSandbox;
+import com.ghatana.yappc.framework.core.plugin.sandbox.PluginDescriptor;
+import com.ghatana.yappc.framework.core.plugin.sandbox.PluginLoadException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.ServiceLoader;
@@ -45,6 +48,50 @@ public class PluginManager {
     private static final Logger logger = LoggerFactory.getLogger(PluginManager.class);
 
     private final List<YappcPlugin> plugins = new CopyOnWriteArrayList<>();
+
+    /**
+     * Sandbox used for ClassLoader-isolated, permission-enforced plugin loading.
+     * Defaults to the current platform version marker; override via
+     * {@link #PluginManager(String)}.
+     */
+    private final IsolatingPluginSandbox sandbox;
+
+    /** Creates a manager using the running platform version for sandbox checks. */
+    public PluginManager() {
+        this.sandbox = new IsolatingPluginSandbox(PlatformVersion.CURRENT);
+    }
+
+    /**
+     * Creates a manager with a specific platform version for sandbox compatibility checks.
+     * Useful for testing or version-override scenarios.
+     *
+     * @param platformVersion current platform version string (SemVer)
+     */
+    public PluginManager(String platformVersion) {
+        this.sandbox = new IsolatingPluginSandbox(platformVersion);
+    }
+
+    /**
+     * Loads a plugin securely using the {@link IsolatingPluginSandbox}.
+     *
+     * <p>The plugin is loaded in an isolated {@link java.net.URLClassLoader} and
+     * wrapped with a {@link com.ghatana.yappc.framework.core.plugin.sandbox.PermissionProxy}
+     * that enforces the descriptor's {@link com.ghatana.yappc.framework.core.plugin.sandbox.PermissionSet}.
+     *
+     * @param <T>        plugin contract type
+     * @param descriptor plugin descriptor carrying classpath and permissions
+     * @param contract   interface the returned plugin must implement
+     * @return permission-enforcing proxy wrapping the loaded plugin
+     * @throws PluginLoadException if loading fails (version incompatibility, class not found, etc.)
+     */
+    public <T> T loadSecure(PluginDescriptor descriptor, Class<T> contract) throws PluginLoadException {
+        logger.info("loadSecure: {} (contract={})", descriptor.logId(), contract.getSimpleName());
+        T plugin = sandbox.loadPlugin(descriptor, contract);
+        if (plugin instanceof YappcPlugin yp) {
+            plugins.add(yp);
+        }
+        return plugin;
+    }
 
     /**
      * Discovers plugins on the classpath via {@link ServiceLoader}.

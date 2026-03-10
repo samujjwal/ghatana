@@ -1,8 +1,11 @@
 /**
  * IDE Route
- * 
- * Demo page for the Collaborative Polyglot IDE
- * 
+ *
+ * @deprecated ORPHANED — This route is NOT wired in the application router.
+ * The IDE has been migrated to the Canvas system (@ghatana/yappc-canvas).
+ * This file is retained only as a migration reference and will be deleted
+ * after the sunset date (2026-06-06).
+ *
  * @migration Migrated from @ghatana/yappc-ide to @ghatana/yappc-canvas
  * @see /docs/LIBRARY_CONSOLIDATION_PLAN.md
  */

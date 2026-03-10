@@ -50,6 +50,7 @@ dependencies {
     compileOnly("org.apache.tomcat:annotations-api:6.0.53")
     
     // Testing
+    testImplementation(project(":products:yappc:core:scaffold:api:http"))
     testImplementation(libs.junit.jupiter)
     testImplementation(libs.assertj.core)
     testImplementation(libs.mockito.core)

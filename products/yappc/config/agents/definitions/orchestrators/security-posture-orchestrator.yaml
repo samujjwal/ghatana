@@ -4,7 +4,7 @@ version: 1.0.0
 description: Orchestrates end-to-end security posture assessment — delegates to sentinel, security-scanner-agent, vulnerability-scoring-agent, dependency-auditor, and security-operations-agent.
 
 metadata:
-  level: 2
+  level: 1
   domain: security
   tags: [orchestrator, security-posture, devsecops]
 

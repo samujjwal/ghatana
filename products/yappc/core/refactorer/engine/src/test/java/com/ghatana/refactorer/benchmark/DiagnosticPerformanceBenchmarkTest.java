@@ -1,5 +1,6 @@
 package com.ghatana.refactorer.benchmark;
 
+import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
@@ -41,6 +42,13 @@ class DiagnosticPerformanceBenchmarkTest {
         smallProjectFiles = createTestProject(10);
         mediumProjectFiles = createTestProject(50);
         largeProjectFiles = createTestProject(100);
+    }
+    
+    @AfterEach
+    void tearDown() {
+        if (benchmark != null) {
+            benchmark.close();
+        }
     }
     
     @Test

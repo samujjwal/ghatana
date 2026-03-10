@@ -7,8 +7,6 @@ package com.ghatana.yappc.api.deployment;
 import static io.activej.http.HttpMethod.GET;
 import static io.activej.http.HttpMethod.POST;
 
-import com.ghatana.yappc.api.common.ApiResponse;
-import com.ghatana.yappc.api.common.JsonUtils;
 import com.ghatana.yappc.api.deployment.dto.DeploymentRequest;
 import com.ghatana.yappc.api.deployment.dto.HelmDeploymentRequest;
 import com.ghatana.yappc.api.deployment.dto.RollbackRequest;
@@ -88,7 +86,7 @@ public class DeploymentController extends AbstractModule {
         }
 
         private Promise<HttpResponse> deploy(HttpRequest httpRequest) {
-                return JsonUtils.parseBody(httpRequest, DeploymentRequest.class)
+                return DeploymentHttpUtils.parseBody(httpRequest, DeploymentRequest.class)
                                 .then(
                                                 request -> {
                                                         log.info(
@@ -97,31 +95,31 @@ public class DeploymentController extends AbstractModule {
                                                                         request.environment(),
                                                                         request.strategy());
 
-                                                        return deploymentService.deploy(request).map(ApiResponse::ok);
+                                                        return deploymentService.deploy(request).map(DeploymentHttpUtils::ok);
                                                 });
         }
 
         private Promise<HttpResponse> getStatus(String deploymentId) {
                 log.info("Getting deployment status: {}", deploymentId);
-                return deploymentService.getDeploymentStatus(deploymentId).map(ApiResponse::ok);
+                return deploymentService.getDeploymentStatus(deploymentId).map(DeploymentHttpUtils::ok);
         }
 
         private Promise<HttpResponse> rollback(HttpRequest httpRequest) {
-                return JsonUtils.parseBody(httpRequest, RollbackRequest.class)
+                return DeploymentHttpUtils.parseBody(httpRequest, RollbackRequest.class)
                                 .then(
                                                 request -> {
                                                         log.info("Rolling back deployment: {}", request.deploymentId());
-                                                        return deploymentService.rollback(request).map(ApiResponse::ok);
+                                                        return deploymentService.rollback(request).map(DeploymentHttpUtils::ok);
                                                 });
         }
 
         private Promise<HttpResponse> listEnvironments(HttpRequest httpRequest) {
                 log.info("Listing deployment environments");
-                return deploymentService.listEnvironments().map(ApiResponse::ok);
+                return deploymentService.listEnvironments().map(DeploymentHttpUtils::ok);
         }
 
         private Promise<HttpResponse> deployHelm(HttpRequest httpRequest) {
-                return JsonUtils.parseBody(httpRequest, HelmDeploymentRequest.class)
+                return DeploymentHttpUtils.parseBody(httpRequest, HelmDeploymentRequest.class)
                                 .then(
                                                 request -> {
                                                         log.info(
@@ -129,12 +127,12 @@ public class DeploymentController extends AbstractModule {
                                                                         request.chartName(),
                                                                         request.releaseName());
 
-                                                        return deploymentService.deployHelm(request).map(ApiResponse::ok);
+                                                        return deploymentService.deployHelm(request).map(DeploymentHttpUtils::ok);
                                                 });
         }
 
         private Promise<HttpResponse> getLogs(String deploymentId) {
                 log.info("Getting deployment logs: {}", deploymentId);
-                return deploymentService.getDeploymentLogs(deploymentId).map(ApiResponse::ok);
+                return deploymentService.getDeploymentLogs(deploymentId).map(DeploymentHttpUtils::ok);
         }
 }

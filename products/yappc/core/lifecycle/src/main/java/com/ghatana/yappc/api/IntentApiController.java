@@ -68,7 +68,7 @@ public class IntentApiController {
                         return Promise.of(badRequest400("Invalid JSON format"));
                     }
                 })
-                .whenException(e -> log.error("Error capturing intent", e);
+                .whenException(e -> log.error("Error capturing intent", e));
     }
     
     /**
@@ -101,7 +101,7 @@ public class IntentApiController {
                         return Promise.of(badRequest400("Invalid JSON format"));
                     }
                 })
-                .whenException(e -> log.error("Error analyzing intent", e);
+                .whenException(e -> log.error("Error analyzing intent", e));
     }
     
     /**
@@ -135,6 +135,6 @@ public class IntentApiController {
                         return error500("Internal server error");
                     }
                 })
-                .whenException(e -> log.error("Error retrieving intent: {}", intentId, e);
+                .whenException(e -> log.error("Error retrieving intent: {}", intentId, e));
     }
 }

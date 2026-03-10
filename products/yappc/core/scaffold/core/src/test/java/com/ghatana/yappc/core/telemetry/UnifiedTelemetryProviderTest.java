@@ -18,6 +18,7 @@ package com.ghatana.yappc.core.telemetry;
 
 import static org.junit.jupiter.api.Assertions.*;
 
+import com.ghatana.platform.testing.activej.EventloopTestBase;
 import com.ghatana.yappc.core.telemetry.model.TelemetryEvent;
 import io.opentelemetry.api.OpenTelemetry;
 import io.opentelemetry.api.common.AttributeKey;
@@ -25,7 +26,6 @@ import io.opentelemetry.api.common.Attributes;
 import io.opentelemetry.api.metrics.Meter;
 import io.opentelemetry.api.trace.Tracer;
 import java.nio.file.Path;
-import java.util.concurrent.CompletableFuture;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -43,7 +43,7 @@ import org.junit.jupiter.api.io.TempDir;
 
  */
 
-class UnifiedTelemetryProviderTest {
+class UnifiedTelemetryProviderTest extends EventloopTestBase {
 
     @TempDir Path tempDir;
 
@@ -149,11 +149,9 @@ class UnifiedTelemetryProviderTest {
                         .durationMs(123L)
                         .build();
 
-        CompletableFuture<Void> future = telemetryProvider.recordUsageEvent(event);
-        assertNotNull(future);
+        runPromise(() -> telemetryProvider.recordUsageEvent(event));
 
-        // Wait for completion
-        assertDoesNotThrow(() -> future.join());
+        // Wait for completion (runPromise already waited)
 
         // Disable usage collection
         telemetryProvider.setUsageCollectionEnabled(false);

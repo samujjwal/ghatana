@@ -4,7 +4,7 @@ version: 1.0.0
 description: Gates release artifacts against security, compliance, and quality requirements simultaneously. Enforces multi-dimensional release readiness criteria before allowing artifact promotion.
 
 metadata:
-  level: 2
+  level: 1
   domain: governance
   tags:
     - release-gate

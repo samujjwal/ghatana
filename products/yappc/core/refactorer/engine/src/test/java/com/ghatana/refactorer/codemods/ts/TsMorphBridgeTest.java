@@ -8,6 +8,7 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.List;
 import java.util.concurrent.ExecutionException;
+import com.ghatana.platform.testing.activej.EventloopTestBase;
 import org.apache.logging.log4j.Level;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.core.LoggerContext;
@@ -22,7 +23,7 @@ import org.junit.jupiter.api.io.TempDir;
  * @doc.layer core
  * @doc.pattern Test
 */
-class TsMorphBridgeTest {
+class TsMorphBridgeTest extends EventloopTestBase {
 
     @TempDir static Path tempDir;
     private TsMorphBridge bridge;
@@ -64,7 +65,7 @@ class TsMorphBridgeTest {
         TsMorphPlan plan = new TsMorphPlan(tempDir.resolve("test.ts"));
 
         // Apply the plan (should do nothing)
-        bridge.apply(plan).get();
+        runPromise(() -> bridge.apply(plan));
 
         // No exceptions should be thrown
         assertTrue(plan.isEmpty());
@@ -91,7 +92,7 @@ class TsMorphBridgeTest {
         assertEquals(2, plan.getActions().size());
 
         // Apply the plan
-        bridge.apply(plan).get();
+        runPromise(() -> bridge.apply(plan));
 
         // Verify the file was modified
         String content = Files.readString(testFile);

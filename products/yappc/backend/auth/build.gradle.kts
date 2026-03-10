@@ -14,11 +14,18 @@ dependencies {
     implementation(project(":products:yappc:backend:persistence"))
     implementation(project(":platform:java:security"))
 
+    // ActiveJ (HTTP, DI, Promise)
+    implementation(libs.activej.http)
+    implementation(libs.activej.inject)
+    implementation(libs.activej.promise)
+
     // Security
     implementation(libs.jackson.databind)
+    implementation(libs.jackson.dataformat.yaml)
     implementation(libs.slf4j.api)
 
     // Testing
+    testImplementation(project(":platform:java:testing"))
     testImplementation(libs.junit.jupiter)
     testImplementation(libs.assertj.core)
     testImplementation(libs.mockito.core)

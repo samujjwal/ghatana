@@ -9,26 +9,18 @@
  * @doc.pattern Types
  */
 
-// Local type definitions (mirroring contracts to avoid build order issues)
-export type SimulationDomain =
-  | "PHYSICS"
-  | "CHEMISTRY"
-  | "BIOLOGY"
-  | "MEDICINE"
-  | "ECONOMICS"
-  | "CS_DISCRETE"
-  | "MATH"
-  | "ENGINEERING";
+import type {
+  SimulationManifest,
+  SimulationDomain,
+} from "@ghatana/tutorputor-contracts/v1/simulation/types";
 
-// Placeholder for manifest until contracts are built
-export interface SimulationManifest {
-  id: string;
-  title: string;
-  domain: SimulationDomain;
-  // ... other fields defined in contracts
-}
+export type { SimulationManifest, SimulationDomain };
 
-export type DifficultyLevel = "beginner" | "intermediate" | "advanced" | "expert";
+export type DifficultyLevel =
+  | "beginner"
+  | "intermediate"
+  | "advanced"
+  | "expert";
 export type SortDirection = "asc" | "desc";
 
 // =============================================================================
@@ -61,7 +53,11 @@ export interface SimulationTemplate {
   license: TemplateLicense;
 }
 
-export type TemplateDifficulty = "beginner" | "intermediate" | "advanced" | "expert";
+export type TemplateDifficulty =
+  | "beginner"
+  | "intermediate"
+  | "advanced"
+  | "expert";
 
 export interface TemplateAuthor {
   id: string;
@@ -81,7 +77,12 @@ export interface TemplateStats {
   avgTimeMinutes: number;
 }
 
-export type TemplateLicense = "free" | "cc-by" | "cc-by-sa" | "cc-by-nc" | "proprietary";
+export type TemplateLicense =
+  | "free"
+  | "cc-by"
+  | "cc-by-sa"
+  | "cc-by-nc"
+  | "proprietary";
 
 // =============================================================================
 // Filter & Sort Types

@@ -4,12 +4,12 @@
 
 package com.ghatana.yappc.core.orchestrator;
 
+import com.ghatana.platform.testing.activej.EventloopTestBase;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import java.nio.file.Paths;
 import java.util.List;
 import java.util.Map;
-import java.util.concurrent.ExecutionException;
 
 import static org.junit.jupiter.api.Assertions.*;
 
@@ -25,7 +25,7 @@ import static org.junit.jupiter.api.Assertions.*;
 
  */
 
-class PolyglotBuildOrchestratorTest {
+class PolyglotBuildOrchestratorTest extends EventloopTestBase {
 
     private PolyglotBuildOrchestrator orchestrator;
 
@@ -35,7 +35,7 @@ class PolyglotBuildOrchestratorTest {
     }
 
     @Test
-    void testOrchestrateBuildsWithNoDependencies() throws ExecutionException, InterruptedException {
+    void testOrchestrateBuildsWithNoDependencies() throws Exception {
         List<PolyglotBuildOrchestrator.BuildTarget> targets = List.of(
                 new PolyglotBuildOrchestrator.BuildTarget(
                         "service-a",
@@ -50,7 +50,7 @@ class PolyglotBuildOrchestratorTest {
                         List.of(),
                         Map.of()));
 
-        PolyglotBuildOrchestrator.BuildOrchestrationResult result = orchestrator.orchestrateBuilds(targets).get();
+        PolyglotBuildOrchestrator.BuildOrchestrationResult result = runPromise(() -> orchestrator.orchestrateBuilds(targets));
 
         assertTrue(result.success());
         assertEquals(2, result.results().size());
@@ -58,7 +58,7 @@ class PolyglotBuildOrchestratorTest {
     }
 
     @Test
-    void testOrchestrateBuildsWithDependencies() throws ExecutionException, InterruptedException {
+    void testOrchestrateBuildsWithDependencies() throws Exception {
         List<PolyglotBuildOrchestrator.BuildTarget> targets = List.of(
                 new PolyglotBuildOrchestrator.BuildTarget(
                         "library",
@@ -73,7 +73,7 @@ class PolyglotBuildOrchestratorTest {
                         List.of("library"),
                         Map.of()));
 
-        PolyglotBuildOrchestrator.BuildOrchestrationResult result = orchestrator.orchestrateBuilds(targets).get();
+        PolyglotBuildOrchestrator.BuildOrchestrationResult result = runPromise(() -> orchestrator.orchestrateBuilds(targets));
 
         assertTrue(result.success());
         assertEquals(2, result.results().size());

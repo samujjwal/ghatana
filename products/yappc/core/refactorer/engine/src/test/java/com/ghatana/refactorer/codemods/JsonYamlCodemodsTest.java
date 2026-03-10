@@ -12,6 +12,7 @@ import java.nio.file.Path;
 import java.util.List;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
+import com.ghatana.platform.testing.activej.EventloopTestBase;
 import org.apache.logging.log4j.Logger;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -30,7 +31,7 @@ import org.mockito.ArgumentCaptor;
 
  */
 
-class JsonYamlCodemodsTest {
+class JsonYamlCodemodsTest extends EventloopTestBase {
     @TempDir Path tempDir;
     private Path schemaDir;
     private NodeBridge mockNodeBridge;
@@ -63,7 +64,7 @@ class JsonYamlCodemodsTest {
 
     @Test
     void testEmptyFilesList() {
-        List<UnifiedDiagnostic> results = codemods.normalizeAndValidate(List.of(), schemaDir);
+        List<UnifiedDiagnostic> results = runPromise(() -> codemods.normalizeAndValidate(List.of(), schemaDir));
         assertThat(results).isEmpty();
         verifyNoInteractions(mockNodeBridge);
     }
@@ -72,7 +73,7 @@ class JsonYamlCodemodsTest {
     void testNonExistentFile() {
         Path nonExistent = tempDir.resolve("nonexistent.json");
         List<UnifiedDiagnostic> results =
-                codemods.normalizeAndValidate(List.of(nonExistent), schemaDir);
+                runPromise(() -> codemods.normalizeAndValidate(List.of(nonExistent), schemaDir));
 
         assertThat(results).hasSize(1);
         assertThat(results.get(0).getMessage()).contains("File not found: " + nonExistent);
@@ -95,7 +96,7 @@ class JsonYamlCodemodsTest {
                 .thenReturn(new NodeBridge.Result(0, "", ""));
 
         List<UnifiedDiagnostic> results =
-                codemods.normalizeAndValidate(List.of(jsonFile), schemaDir);
+                runPromise(() -> codemods.normalizeAndValidate(List.of(jsonFile), schemaDir));
 
         assertThat(results).isEmpty();
     }
@@ -123,7 +124,7 @@ class JsonYamlCodemodsTest {
                 .thenReturn(new NodeBridge.Result(0, errorOutput, ""));
 
         List<UnifiedDiagnostic> results =
-                codemods.normalizeAndValidate(List.of(jsonFile), schemaDir);
+                runPromise(() -> codemods.normalizeAndValidate(List.of(jsonFile), schemaDir));
 
         assertThat(results).hasSize(1);
         // The actual message includes the error details from the Node.js script
@@ -147,7 +148,7 @@ class JsonYamlCodemodsTest {
                 .thenReturn(new NodeBridge.Result(1, "", "Invalid schema"));
 
         List<UnifiedDiagnostic> results =
-                codemods.normalizeAndValidate(List.of(jsonFile), schemaDir);
+                runPromise(() -> codemods.normalizeAndValidate(List.of(jsonFile), schemaDir));
 
         assertThat(results).hasSize(1);
         assertThat(results.get(0).getMessage())
@@ -171,7 +172,7 @@ class JsonYamlCodemodsTest {
 
         // Test finding .json schema
         List<UnifiedDiagnostic> results =
-                codemods.normalizeAndValidate(List.of(jsonFile), schemaDir);
+                runPromise(() -> codemods.normalizeAndValidate(List.of(jsonFile), schemaDir));
 
         ArgumentCaptor<String> schemaPathCaptor = ArgumentCaptor.forClass(String.class);
         verify(mockNodeBridge).executeScript(anyString(), schemaPathCaptor.capture(), anyString());
@@ -182,7 +183,7 @@ class JsonYamlCodemodsTest {
         Files.delete(schemaJson);
         Files.writeString(schemaYaml, "type: object");
 
-        results = codemods.normalizeAndValidate(List.of(jsonFile), schemaDir);
+        results = runPromise(() -> codemods.normalizeAndValidate(List.of(jsonFile), schemaDir));
 
         verify(mockNodeBridge, times(2))
                 .executeScript(anyString(), schemaPathCaptor.capture(), anyString());

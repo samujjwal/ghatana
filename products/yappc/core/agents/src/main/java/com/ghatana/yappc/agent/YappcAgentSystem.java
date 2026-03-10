@@ -6,12 +6,12 @@ import com.ghatana.agent.framework.planner.PlannerAgentFactory;
 import com.ghatana.agent.framework.runtime.BaseAgent;
 import com.ghatana.agent.framework.runtime.generators.LLMGenerator;
 import com.ghatana.yappc.agent.tools.YappcToolRegistry;
-import com.ghatana.yappc.sdlc.agent.HttpAepEventPublisher;
-import com.ghatana.yappc.sdlc.agent.YAPPCAgentBase;
-import com.ghatana.yappc.sdlc.agent.YAPPCAgentRegistry;
-import com.ghatana.yappc.sdlc.agent.generators.LLMGeneratorFactory;
-import com.ghatana.yappc.sdlc.agent.leads.*;
-import com.ghatana.yappc.sdlc.agent.specialists.*;
+import com.ghatana.yappc.agent.HttpAepEventPublisher;
+import com.ghatana.yappc.agent.YAPPCAgentBase;
+import com.ghatana.yappc.agent.YAPPCAgentRegistry;
+import com.ghatana.yappc.agent.generators.LLMGeneratorFactory;
+import com.ghatana.yappc.agent.leads.*;
+import com.ghatana.yappc.agent.specialists.*;
 import io.activej.eventloop.Eventloop;
 import io.activej.promise.Promise;
 import org.jetbrains.annotations.NotNull;
@@ -76,6 +76,9 @@ public class YappcAgentSystem {
     private final LLMGenerator.LLMGateway llmGateway;
     private final LLMGenerator.LLMConfig llmConfig;
 
+    // --- Observability ---
+    private final AgentHeartbeatService heartbeatService;
+
     private boolean initialized = false;
 
     private YappcAgentSystem(
@@ -94,6 +97,7 @@ public class YappcAgentSystem {
         this.memoryStore = memoryStore;
         this.llmGateway = llmGateway;
         this.llmConfig = llmConfig;
+        this.heartbeatService = new AgentHeartbeatService(sdlcRegistry, eventloop);
 
         // Configure AEP event publisher for all SDLC agents
         YAPPCAgentBase.configureAepEventPublisher(HttpAepEventPublisher.fromEnvironment());
@@ -137,7 +141,7 @@ public class YappcAgentSystem {
             log.info("Unified YAPPC agent system initialized. SDLC agents: {}, Planner agents: {}",
                     sdlcRegistry.getAgentCount(), plannerAgentInstances.size());
             return null;
-        });
+        }).then(() -> heartbeatService.start());
     }
 
     // ==================== SDLC BOOTSTRAP (inlined) ====================
@@ -151,6 +155,7 @@ public class YappcAgentSystem {
         registerTestingSpecialists();
         registerOpsSpecialists();
         registerPhaseLeads();
+        registerOrchestrators();
 
         log.info("SDLC agent bootstrap complete. Total agents: {}, Phases: {}",
                 sdlcRegistry.getAgentCount(), sdlcRegistry.getAllPhases());
@@ -308,6 +313,28 @@ public class YappcAgentSystem {
         log.info("Registered 4 Phase Lead agents");
     }
 
+    private void registerOrchestrators() {
+        log.info("Registering L1/L2 Orchestrator agents...");
+
+        sdlcRegistry.register(new GovernanceOrchestratorAgent(memoryStore,
+                new GovernanceOrchestratorAgent.GovernanceOrchestratorGenerator()));
+
+        sdlcRegistry.register(new AgentDispatcherAgent(memoryStore,
+                new AgentDispatcherAgent.AgentDispatcherGenerator(),
+                sdlcRegistry));
+
+        sdlcRegistry.register(new ReleaseOrchestratorAgent(memoryStore,
+                new ReleaseOrchestratorAgent.ReleaseOrchestratorGenerator()));
+
+        sdlcRegistry.register(new OperationsOrchestratorAgent(memoryStore,
+                new OperationsOrchestratorAgent.OperationsOrchestratorGenerator()));
+
+        sdlcRegistry.register(new MultiCloudOrchestratorAgent(memoryStore,
+                new MultiCloudOrchestratorAgent.MultiCloudOrchestratorGenerator()));
+
+        log.info("Registered 5 Orchestrator agents (3 L1Orchestrators, 1 L2Dispatcher, 1 L1Cloud)");
+    }
+
     // ==================== PLANNER BOOTSTRAP (inlined) ====================
 
     private void registerPlannerTools() {
@@ -425,8 +452,15 @@ public class YappcAgentSystem {
         return sdlcRegistry;
     }
 
-    /**
-     * Gets the planner agent registry.
+    /**     * Gets the agent heartbeat service.
+     *
+     * @return the heartbeat service (started after {@link #initialize()})
+     */
+    public AgentHeartbeatService getHeartbeatService() {
+        return heartbeatService;
+    }
+
+    /**     * Gets the planner agent registry.
      *
      * @return the planner agent registry
      * @throws IllegalStateException if not initialized

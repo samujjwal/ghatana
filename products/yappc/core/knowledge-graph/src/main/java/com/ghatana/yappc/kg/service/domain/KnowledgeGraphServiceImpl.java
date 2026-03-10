@@ -12,12 +12,17 @@ import java.util.Set;
 /**
  * Knowledge Graph service implementation for CLI.
  * Stub for compilation — no-op implementation pending backend wiring.
- 
+ *
+ * @deprecated Use {@link com.ghatana.yappc.knowledge.YAPPCGraphService} instead,
+ *             which is backed by the DataCloud Knowledge Graph plugin.
+ *             The {@code com.ghatana.yappc.kg} package is deprecated as of 2.0.0
+ *             and will be removed in a future release.
  * @doc.type class
- * @doc.purpose Handles knowledge graph service impl operations
+ * @doc.purpose Handles knowledge graph service impl operations (deprecated)
  * @doc.layer core
  * @doc.pattern Service
-*/
+ */
+@Deprecated(since = "2.0.0", forRemoval = true)
 public class KnowledgeGraphServiceImpl {
 
     public KnowledgeGraphServiceImpl() {}

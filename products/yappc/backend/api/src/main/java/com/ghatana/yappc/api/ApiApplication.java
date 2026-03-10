@@ -7,7 +7,7 @@ package com.ghatana.yappc.api;
 import static io.activej.http.HttpMethod.*;
 
 import com.ghatana.platform.observability.MetricsCollector;
-import com.ghatana.platform.observability.NoopMetricsCollector;
+import com.ghatana.yappc.api.observability.MicrometerMetricsCollector;
 import com.ghatana.yappc.api.ai.AISuggestionsController;
 import com.ghatana.yappc.api.config.FlywayConfiguration;
 import com.zaxxer.hikari.HikariConfig;
@@ -27,6 +27,8 @@ import com.ghatana.yappc.api.controller.StaticFileController;
 import com.ghatana.yappc.api.controller.WorkflowAgentController;
 import com.ghatana.yappc.api.middleware.CorsMiddleware;
 import com.ghatana.yappc.api.middleware.GlobalExceptionHandler;
+import com.ghatana.yappc.api.security.JwtTokenProvider;
+import com.ghatana.yappc.api.security.SecurityMiddleware;
 import com.ghatana.yappc.api.requirements.RequirementsController;
 import com.ghatana.yappc.api.version.VersionController;
 import com.ghatana.yappc.api.workspace.WorkspaceController;
@@ -74,10 +76,18 @@ public class ApiApplication extends HttpServerLauncher {
 
   private static final Logger logger = LoggerFactory.getLogger(ApiApplication.class);
 
+  /**
+   * Prometheus-backed MetricsCollector created before the DI module so the same instance
+   * can be both passed to {@link com.ghatana.yappc.api.config.ProductionModule} (for service
+   * injection) and referenced by the /metrics scrape endpoint closure.
+   */
+  private MicrometerMetricsCollector micrometerMetricsCollector;
+
   /** Provides API routing configuration. */
   @Provides
   AsyncServlet servlet(
       Reactor reactor,
+      JwtTokenProvider jwtTokenProvider,
       AuditController auditController,
       VersionController versionController,
       AuthorizationController authController,
@@ -93,7 +103,12 @@ public class ApiApplication extends HttpServerLauncher {
       BuildController buildController,
       WorkflowAgentController workflowAgentController,
       GraphQLController graphQLController,
-      WebSocketController webSocketController) {
+      WebSocketController webSocketController,
+      com.ghatana.yappc.api.codegen.CodeGenerationController codeGenerationController,
+      com.ghatana.yappc.api.testing.TestGenerationController testGenerationController,
+      com.ghatana.yappc.api.observability.HealthAggregationController healthAggregationController,
+      com.ghatana.yappc.api.workflow.WorkflowExecutionController workflowExecutionController,
+      com.ghatana.yappc.api.dlq.DlqController dlqController) {
 
     // Build routing servlet
     AsyncServlet routingServlet =
@@ -101,7 +116,7 @@ public class ApiApplication extends HttpServerLauncher {
             // CORS preflight handled by middleware - no explicit OPTIONS needed here
             
             // ========== WebSocket ==========
-            .with(GET, "/ws", webSocketController::handleRequest)
+            .with(GET, "/ws", webSocketController.createServlet(reactor))
 
             // ========== GraphQL API ==========
             .with(POST, "/graphql", graphQLController::handleRequest)
@@ -124,6 +139,8 @@ public class ApiApplication extends HttpServerLauncher {
                   String eventId = request.getPathParameter("eventId");
                   return auditController.getEvent(request, eventId);
                 })
+            // v1 lifecycle-oriented audit query (Observability 6.2)
+            .with(GET, "/api/v1/audit/events", auditController::queryAuditEventsV1)
 
             // ========== Version API ==========
             .with(POST, "/api/version/create", versionController::createVersion)
@@ -433,10 +450,67 @@ public class ApiApplication extends HttpServerLauncher {
                 GET,
                 "/api/agents/:id/health",
                 request -> workflowAgentController.getAgentHealth(request))
+
+            // ========== Code Generation API ==========
+            .with(POST, "/api/v1/codegen/from-openapi", codeGenerationController::generateFromOpenAPI)
+            .with(POST, "/api/v1/codegen/from-graphql", codeGenerationController::generateFromGraphQL)
+            .with(POST, "/api/v1/codegen/from-schema", codeGenerationController::generateFromSchema)
+            .with(POST, "/api/v1/codegen/preview", codeGenerationController::previewCode)
+
+            // ========== Test Generation API ==========
+            .with(POST, "/api/v1/testing/generate", testGenerationController::generateTests)
+            .with(POST, "/api/v1/testing/coverage", testGenerationController::analyzeCoverage)
+            .with(GET, "/api/v1/testing/templates", testGenerationController::listTemplates)
+
+            // ========== Observability: Prometheus scrape endpoint ==========
+            .with(
+                GET,
+                "/metrics",
+                request -> io.activej.promise.Promise.of(
+                    io.activej.http.HttpResponse.ok200()
+                        .withHeader(
+                            io.activej.http.HttpHeaders.CONTENT_TYPE,
+                            "text/plain; version=0.0.4; charset=utf-8")
+                        .withBody(micrometerMetricsCollector.scrape()
+                            .getBytes(java.nio.charset.StandardCharsets.UTF_8))
+                        .build()))
+
+            // ========== Health Aggregation (Observability 6.6) ==========
+            .with(GET, "/health/detailed", healthAggregationController::getDetailedHealth)
+
+            // ========== Workflow Execution (Orchestration 7.3) ==========
+            .with(
+                POST,
+                "/api/v1/workflows/:templateId/start",
+                request -> {
+                  String templateId = request.getPathParameter("templateId");
+                  return workflowExecutionController.startWorkflow(request, templateId);
+                })
+            .with(
+                GET,
+                "/api/v1/workflows/runs/:runId/status",
+                request -> {
+                  String runId = request.getPathParameter("runId");
+                  return workflowExecutionController.getRunStatus(request, runId);
+                })
+
+            // ========== DLQ Management (Orchestration 7.4) ==========
+            .with(GET,  "/api/v1/dlq", dlqController::listEntries)
+            .with(
+                POST,
+                "/api/v1/dlq/:id/retry",
+                request -> {
+                  String entryId = request.getPathParameter("id");
+                  return dlqController.retryEntry(request, entryId);
+                })
+
             .build();
 
-    // Wrap with global exception handler, then CORS middleware
-    return new CorsMiddleware(new GlobalExceptionHandler(routingServlet));
+    // Wrap: CorrelationId → CORS → GlobalExceptionHandler → SecurityMiddleware → RoutingServlet
+    return new com.ghatana.yappc.api.middleware.CorrelationIdFilter(
+        new CorsMiddleware(
+            new GlobalExceptionHandler(
+                SecurityMiddleware.create(jwtTokenProvider, routingServlet))));
   }
 
   /** Override the default module with ProductionModule for real service implementations. */
@@ -451,12 +525,15 @@ public class ApiApplication extends HttpServerLauncher {
   }
 
   /**
-   * Creates a MetricsCollector instance.
+   * Creates a production {@link MicrometerMetricsCollector} backed by a Prometheus registry.
    *
-   * <p>NOTE: Replace with proper metrics configuration for production.
+   * <p>The reference is stored in {@link #micrometerMetricsCollector} so the same instance
+   * can be served at the /metrics scrape endpoint.
    */
   private MetricsCollector createMetricsCollector() {
-    return new NoopMetricsCollector();
+    micrometerMetricsCollector = MicrometerMetricsCollector.create();
+    logger.info("Created MicrometerMetricsCollector — Prometheus scrape endpoint active at /metrics");
+    return micrometerMetricsCollector;
   }
 
   /**

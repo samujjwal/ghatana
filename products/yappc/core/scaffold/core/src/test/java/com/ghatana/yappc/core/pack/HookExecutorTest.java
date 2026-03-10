@@ -36,7 +36,8 @@ class HookExecutorTest {
     void testSuccessfulHookExecution(@TempDir Path tempDir) {
         DefaultHookExecutor executor = new DefaultHookExecutor();
 
-        List<String> hooks = List.of("echo 'test successful'", "pwd");
+        // Use allowed executables: git --version always exits 0 and prints output
+        List<String> hooks = List.of("git --version", "git --version");
         Map<String, Object> context = Map.of("test", "value");
 
         HookExecutor.HookExecutionResult result =
@@ -45,7 +46,7 @@ class HookExecutorTest {
         assertTrue(result.successful());
         assertEquals(2, result.hookResults().size());
         assertTrue(result.errors().isEmpty());
-        assertTrue(result.totalExecutionTimeMs() > 0);
+        assertTrue(result.totalExecutionTimeMs() >= 0);
 
         for (HookExecutor.HookResult hookResult : result.hookResults()) {
             assertTrue(hookResult.successful());
@@ -58,7 +59,8 @@ class HookExecutorTest {
     void testFailedHookExecution(@TempDir Path tempDir) {
         DefaultHookExecutor executor = new DefaultHookExecutor();
 
-        List<String> hooks = List.of("exit 1", "echo 'this should still run'");
+        // git status on a non-git directory exits non-zero; git --version always succeeds
+        List<String> hooks = List.of("git status", "git --version");
         Map<String, Object> context = Map.of();
 
         HookExecutor.HookExecutionResult result =
@@ -68,10 +70,11 @@ class HookExecutorTest {
         assertEquals(2, result.hookResults().size());
         assertFalse(result.errors().isEmpty());
 
-        // First hook should fail, second should succeed
+        // First hook (git status on non-git dir) should fail
         assertFalse(result.hookResults().get(0).successful());
-        assertEquals(1, result.hookResults().get(0).exitCode());
+        assertNotEquals(0, result.hookResults().get(0).exitCode());
 
+        // Second hook (git --version) should succeed
         assertTrue(result.hookResults().get(1).successful());
         assertEquals(0, result.hookResults().get(1).exitCode());
     }

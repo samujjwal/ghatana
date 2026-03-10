@@ -4,11 +4,14 @@ import java.time.Instant;
 import java.util.Map;
 
 /**
+ * @deprecated Use {@link com.ghatana.products.yappc.domain.observe.Metric} instead.
+ *             This class will be removed in a future release.
  * @doc.type record
- * @doc.purpose Runtime metric
+ * @doc.purpose Runtime metric (deprecated — see canonical Metric in libs:yappc-domain)
  * @doc.layer domain
- * @doc.pattern Value Object
+ * @doc.pattern ValueObject
  */
+@Deprecated(since = "2.0.0", forRemoval = true)
 public record Metric(
     String name,
     double value,

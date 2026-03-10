@@ -11,12 +11,9 @@ import picocli.CommandLine.Option;
 import picocli.CommandLine.Parameters;
 import picocli.CommandLine.ParentCommand;
 
-import io.activej.eventloop.Eventloop;
-import io.activej.promise.Promise;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.Callable;
-import java.util.concurrent.atomic.AtomicReference;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -70,13 +67,7 @@ public class EdgeCommand implements Runnable {
         @Override
         public Integer call() throws Exception {
             KnowledgeGraphServiceImpl service = new KnowledgeGraphServiceImpl();
-            AtomicReference<List<GraphRelationship>> edgesRef = new AtomicReference<>();
-            Eventloop eventloop = Eventloop.getCurrentEventloop();
-            service.listRelationships(nodeId)
-                .whenResult(edgesRef::set)
-                .whenException(e -> { throw new RuntimeException(e); });
-            eventloop.run();
-            List<GraphRelationship> edges = edgesRef.get();
+            List<GraphRelationship> edges = service.listRelationships(nodeId).getResult();
 
             if (relationType != null) {
                 edges = edges.stream()
@@ -156,13 +147,7 @@ public class EdgeCommand implements Runnable {
 
             try {
                 KnowledgeGraphEdge edge = builder.build();
-                AtomicReference<GraphRelationship> createdRef = new AtomicReference<>();
-                Eventloop eventloop = Eventloop.getCurrentEventloop();
-                service.createRelationship("default", edge)
-                    .whenResult(createdRef::set)
-                    .whenException(e -> { throw new RuntimeException(e); });
-                eventloop.run();
-                GraphRelationship created = createdRef.get();
+                GraphRelationship created = service.createRelationship("default", edge).getResult();
 
                 if (json) {
                     log.info("{}", mapper.writeValueAsString(created));
@@ -200,13 +185,7 @@ public class EdgeCommand implements Runnable {
             }
 
             KnowledgeGraphServiceImpl service = new KnowledgeGraphServiceImpl();
-            AtomicReference<Boolean> deletedRef = new AtomicReference<>();
-            Eventloop eventloop = Eventloop.getCurrentEventloop();
-            service.deleteRelationship("default", edgeId)
-                .whenResult(deletedRef::set)
-                .whenException(e -> { throw new RuntimeException(e); });
-            eventloop.run();
-            boolean deleted = deletedRef.get();
+            boolean deleted = service.deleteRelationship("default", edgeId).getResult();
 
             if (deleted) {
                 log.info("Edge deleted successfully: {}", edgeId);

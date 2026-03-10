@@ -439,7 +439,7 @@ public class AddCommand implements Callable<Integer> {
                 log.info("   1. Configure OTEL_EXPORTER_OTLP_ENDPOINT");
                 log.info("   2. Start your observability stack (docker-compose up -d)");
             }
-            log.info("   Check the generated files for configuration instructions.");
+            default -> log.info("   Check the generated files for configuration instructions.");
         }
     }
 

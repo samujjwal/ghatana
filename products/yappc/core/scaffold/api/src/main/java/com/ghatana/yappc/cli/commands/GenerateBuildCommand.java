@@ -17,12 +17,14 @@
 package com.ghatana.yappc.cli.commands;
 
 import com.ghatana.yappc.core.buildgen.*;
+import io.activej.eventloop.Eventloop;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.*;
 import java.util.concurrent.Callable;
+import java.util.concurrent.atomic.AtomicReference;
 import picocli.CommandLine.Command;
 import picocli.CommandLine.Option;
 import picocli.CommandLine.Parameters;
@@ -173,13 +175,20 @@ public class GenerateBuildCommand implements Callable<Integer> {
             }
 
             // Generate build script
-            GeneratedBuildScript result = generator.generateBuildScript(spec, rcaResults).get();
+            AtomicReference<GeneratedBuildScript> resultRef = new AtomicReference<>();
+            Eventloop el1 = Eventloop.create();
+            el1.post(() -> generator.generateBuildScript(spec, rcaResults).whenResult(resultRef::set));
+            el1.run();
+            GeneratedBuildScript result = resultRef.get();
 
             // Validate if requested
             if (validate) {
                 log.info("🔍 Validating generated build script...");
-                BuildScriptValidation validation =
-                        generator.validateBuildScript(result.getContent(), spec).get();
+                AtomicReference<BuildScriptValidation> valRef = new AtomicReference<>();
+                Eventloop el2 = Eventloop.create();
+                el2.post(() -> generator.validateBuildScript(result.getContent(), spec).whenResult(valRef::set));
+                el2.run();
+                BuildScriptValidation validation = valRef.get();
 
                 if (!validation.isValid()) {
                     log.error("❌ Validation failed with {} errors", validation.getErrors().size());

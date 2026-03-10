@@ -17,14 +17,14 @@ public class YappcArtifactRepository {
     
     private static final Logger log = LoggerFactory.getLogger(YappcArtifactRepository.class);
     
-    private final InMemoryArtifactStore store;
+    private final ArtifactStore store;
     
     /**
      * Constructor with artifact store.
      * 
-     * @param store Artifact store implementation
+     * @param store Artifact store implementation (InMemoryArtifactStore for dev, DataCloudArtifactStore for prod)
      */
-    public YappcArtifactRepository(InMemoryArtifactStore store) {
+    public YappcArtifactRepository(ArtifactStore store) {
         this.store = store;
     }
     
@@ -85,6 +85,17 @@ public class YappcArtifactRepository {
         return store.list(prefix);
     }
     
+    /**
+     * Lists all artifact paths matching the given path prefix.
+     * Used by {@code AdvancePhaseUseCase} to verify that required artifact IDs are present.
+     *
+     * @param prefix path prefix to match
+     * @return Promise of matching paths (empty list when none found)
+     */
+    public Promise<java.util.List<String>> list(String prefix) {
+        return store.list(prefix);
+    }
+
     /**
      * Stores artifact metadata.
      * 

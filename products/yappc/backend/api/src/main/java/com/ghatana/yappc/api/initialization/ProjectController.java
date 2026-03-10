@@ -47,16 +47,12 @@ public class ProjectController {
                                 CreateProjectRequest req = mapper.readValue(body.getArray(), CreateProjectRequest.class);
 
                                 CreateProjectInput input = new CreateProjectInput(
-                                        req.workspaceId(),
-                                        null,
-                                        req.key(),
+                                        UUID.fromString(req.workspaceId()),
                                         req.name(),
                                         req.description(),
-                                        ctx.userId(),
-                                        req.targetUsers(),
-                                        req.techStack(),
-                                        req.tags(),
-                                        req.settings()
+                                        null,
+                                        null,
+                                        null
                                 );
 
                                 return service.createProject(ctx.tenantId(), input)
@@ -105,11 +101,9 @@ public class ProjectController {
                                 UpdateProjectInput input = new UpdateProjectInput(
                                         req.name(),
                                         req.description(),
-                                        req.vision(),
-                                        req.targetUsers(),
-                                        req.techStack(),
-                                        req.tags(),
-                                        req.settings()
+                                        null,
+                                        null,
+                                        null
                                 );
                                 return service.updateProject(ctx.tenantId(), UUID.fromString(id), input)
                                         .map(ApiResponse::ok);

@@ -3,6 +3,7 @@ package com.ghatana.yappc.cli.commands;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.ghatana.platform.core.util.JsonUtils;
 import com.ghatana.yappc.core.maven.*;
+import io.activej.eventloop.Eventloop;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
@@ -11,6 +12,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.Callable;
+import java.util.concurrent.atomic.AtomicReference;
 import picocli.CommandLine;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -157,7 +159,11 @@ public class GenerateMavenCommand implements Callable<Integer> {
 
                 // Generate Maven project
                 MavenPomGenerator generator = new MavenPomGenerator();
-                GeneratedMavenProject project = generator.generatePom(spec).get();
+                AtomicReference<GeneratedMavenProject> projRef = new AtomicReference<>();
+                Eventloop el1 = Eventloop.create();
+                el1.post(() -> generator.generatePom(spec).whenResult(projRef::set));
+                el1.run();
+                GeneratedMavenProject project = projRef.get();
 
                 // Validate if requested
                 if (validate) {
@@ -221,18 +227,19 @@ public class GenerateMavenCommand implements Callable<Integer> {
                 // Show optimizations
                 if (!project.getOptimizations().isEmpty()) {
                     log.info("\n🚀 Applied Optimizations:");
-                    project.getOptimizations()
-                                log.info("  • {}", opt.getDescription()));
-                        }
-                        // Show warnings if (!project.getWarnings().isEmpty()) {
-                                log.info("\n⚠️  Warnings:");
+                    project.getOptimizations().forEach(opt ->
+                        log.info("  • {}", opt.getDescription()));
+                }
+                // Show warnings
+                if (!project.getWarnings().isEmpty()) {
+                    log.info("\n⚠️  Warnings:");
                     project.getWarnings().forEach(warning ->
                         log.info("  • {}", warning));
                 }
                 return 0;
             }
             catch (Exception e) {
-                        log.error("❌ Failed to generate Maven POM: {}", e.getMessage());
+                log.error("❌ Failed to generate Maven POM: {}", e.getMessage());
                 e.printStackTrace();
                 return 1;
             }
@@ -297,7 +304,11 @@ public class GenerateMavenCommand implements Callable<Integer> {
 
                 // Validate
                 MavenPomGenerator generator = new MavenPomGenerator();
-                MavenValidationResult result = generator.validateSpec(spec).get();
+                AtomicReference<MavenValidationResult> valRef = new AtomicReference<>();
+                Eventloop el2 = Eventloop.create();
+                el2.post(() -> generator.validateSpec(spec).whenResult(valRef::set));
+                el2.run();
+                MavenValidationResult result = valRef.get();
 
                 // Display results
                 log.info("Maven POM Validation Results");
@@ -315,18 +326,18 @@ public class GenerateMavenCommand implements Callable<Integer> {
 
                 if (!result.getWarnings().isEmpty()) {
                     log.info("\n⚠️  Warnings:");
-                    result.getWarnings()
-                                log.info("  • {}", warning.getMessage()));
-                        }
-                        if (!result.getRecommendations().isEmpty()) {
-                                log.info("\n💡 Recommendations:");
+                    result.getWarnings().forEach(warning ->
+                        log.info("  • {}", warning.getMessage()));
+                }
+                if (!result.getRecommendations().isEmpty()) {
+                    log.info("\n💡 Recommendations:");
                     result.getRecommendations().forEach(rec ->
                         log.info("  • {}", rec));
                 }
                 return result.isValid() ? 0 : 1;
             }
             catch (Exception e) {
-                        log.error("❌ Failed to validate Maven specification: {}", e.getMessage());
+                log.error("❌ Failed to validate Maven specification: {}", e.getMessage());
                 return 1;
             }
         }
@@ -355,7 +366,11 @@ public class GenerateMavenCommand implements Callable<Integer> {
 
                 // Get suggestions
                 MavenPomGenerator generator = new MavenPomGenerator();
-                MavenImprovementSuggestions suggestions = generator.suggestImprovements(spec).get();
+                AtomicReference<MavenImprovementSuggestions> sugRef = new AtomicReference<>();
+                Eventloop el3 = Eventloop.create();
+                el3.post(() -> generator.suggestImprovements(spec).whenResult(sugRef::set));
+                el3.run();
+                MavenImprovementSuggestions suggestions = sugRef.get();
 
                 // Display suggestions
                 log.info("Maven POM Improvement Suggestions");
@@ -372,7 +387,7 @@ public class GenerateMavenCommand implements Callable<Integer> {
                                                     upgrade.getArtifactId(),
                                                     upgrade.getCurrentVersion(),
                                                     upgrade.getRecommendedVersion(),
-                                                    upgrade.getRiskLevel());
+                                                    upgrade.getRiskLevel()));
                 }
 
                 if (!suggestions.getPluginRecommendations().isEmpty()) {
@@ -386,20 +401,19 @@ public class GenerateMavenCommand implements Callable<Integer> {
                                                             : "org.apache.maven.plugins",
                                                     plugin.getArtifactId(),
                                                     plugin.getPriority(),
-                                                    plugin.getPurpose());
+                                                    plugin.getPurpose()));
                 }
 
                 if (!suggestions.getGeneralRecommendations().isEmpty()) {
                     log.info("\n💡 General Recommendations:");
                     suggestions
-                            .getGeneralRecommendations()
                             .getGeneralRecommendations().forEach(rec ->
                                 log.info("  • {}", rec));
-                        }
-                        return 0;
-                    }
-                    catch (Exception e) {
-                                log.error("❌ Failed to get Maven suggestions: {}", e.getMessage());
+                }
+                return 0;
+            }
+            catch (Exception e) {
+                log.error("❌ Failed to get Maven suggestions: {}", e.getMessage());
                 return 1;
             }
         }

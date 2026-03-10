@@ -65,7 +65,7 @@ public class GenerationApiController {
                         return Promise.of(badRequest400("Invalid JSON format"));
                     }
                 })
-                .whenException(e -> log.error("Error generating artifacts", e);
+                .whenException(e -> log.error("Error generating artifacts", e));
     }
     
     /**
@@ -97,7 +97,7 @@ public class GenerationApiController {
                         return Promise.of(badRequest400("Invalid JSON format"));
                     }
                 })
-                .whenException(e -> log.error("Diff generation failed", e);
+                .whenException(e -> log.error("Diff generation failed", e));
     }
     
     /**
@@ -130,6 +130,6 @@ public class GenerationApiController {
                         return error500("Internal server error");
                     }
                 })
-                .whenException(e -> log.error("Error retrieving artifacts: {}", artifactsId, e);
+                .whenException(e -> log.error("Error retrieving artifacts: {}", artifactsId, e));
     }
 }

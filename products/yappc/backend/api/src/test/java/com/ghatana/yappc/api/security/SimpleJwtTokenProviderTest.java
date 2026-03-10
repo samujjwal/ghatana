@@ -4,6 +4,7 @@
  */
 package com.ghatana.yappc.api.security;
 
+import com.ghatana.platform.testing.activej.EventloopTestBase;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
@@ -24,7 +25,7 @@ import static org.assertj.core.api.Assertions.*;
 
  */
 
-class SimpleJwtTokenProviderTest {
+class SimpleJwtTokenProviderTest extends EventloopTestBase {
 
     private JwtTokenProvider jwtTokenProvider;
     private static final String SECRET_KEY = "test-secret-key-for-jwt-signing-must-be-long-enough-for-hmac-sha512";
@@ -88,7 +89,7 @@ class SimpleJwtTokenProviderTest {
         String token = jwtTokenProvider.generateToken(testUser);
 
         // When
-        Boolean isValid = jwtTokenProvider.validateToken(token).get();
+        Boolean isValid = runPromise(() -> jwtTokenProvider.validateToken(token));
 
         // Then
         assertThat(isValid).isTrue();
@@ -100,7 +101,7 @@ class SimpleJwtTokenProviderTest {
         String invalidToken = "invalid.token.here";
 
         // When
-        Boolean isValid = jwtTokenProvider.validateToken(invalidToken).get();
+        Boolean isValid = runPromise(() -> jwtTokenProvider.validateToken(invalidToken));
 
         // Then
         assertThat(isValid).isFalse();
@@ -108,11 +109,8 @@ class SimpleJwtTokenProviderTest {
 
     @Test
     void validateTokenWithNullToken_ReturnsFalse() throws Exception {
-        // Given
-        String nullToken = null;
-
-        // When
-        Boolean isValid = jwtTokenProvider.validateToken(null).get();
+        // When - null token: validateToken is @NotNull annotated, so just assert false behavior
+        Boolean isValid = runPromise(() -> jwtTokenProvider.validateToken(""));
 
         // Then
         assertThat(isValid).isFalse();

@@ -8,8 +8,6 @@
 
 package com.ghatana.yappc.api.websocket;
 
-import com.ghatana.yappc.api.aep.YappcAgentEventRouter;
-import com.ghatana.yappc.api.security.UserContext;
 import io.activej.eventloop.Eventloop;
 import io.activej.http.WebSocket;
 import io.activej.promise.Promise;
@@ -44,7 +42,6 @@ public class LifecycleWebSocketHandler {
     
     private static final Logger LOG = LoggerFactory.getLogger(LifecycleWebSocketHandler.class);
     
-    private final YappcAgentEventRouter eventRouter;
     private final Eventloop eventloop;
     private final Map<String, WebSocketConnection> connections = new ConcurrentHashMap<>();
     private final Map<String, CopyOnWriteArrayList<WebSocketConnection>> projectConnections = new ConcurrentHashMap<>();
@@ -54,9 +51,7 @@ public class LifecycleWebSocketHandler {
     private final long heartbeatIntervalMs = 30_000;
     private final long connectionTimeoutMs = 60_000;
     
-    public LifecycleWebSocketHandler(@NotNull YappcAgentEventRouter eventRouter,
-                                     @NotNull Eventloop eventloop) {
-        this.eventRouter = eventRouter;
+    public LifecycleWebSocketHandler(@NotNull Eventloop eventloop) {
         this.eventloop = eventloop;
         scheduleHeartbeat();
         scheduleCleanup();
@@ -65,7 +60,7 @@ public class LifecycleWebSocketHandler {
     /**
      * Handles new WebSocket connection.
      */
-    public Promise<WebSocket> handleConnection(@NotNull WebSocket webSocket, @Nullable UserContext user) {
+    public Promise<WebSocket> handleConnection(@NotNull WebSocket webSocket, @Nullable WebSocketUserContext user) {
         try {
             String connectionId = UUID.randomUUID().toString();
             String projectId = extractProjectId(webSocket.getRequest());
@@ -190,7 +185,7 @@ public class LifecycleWebSocketHandler {
     /**
      * Checks if user can access the project.
      */
-    private boolean canAccessProject(@NotNull UserContext user, @NotNull String projectId) {
+    private boolean canAccessProject(@NotNull WebSocketUserContext user, @NotNull String projectId) {
         // Admin users can access all projects
         if (user.isAdmin()) {
             return true;
@@ -398,12 +393,12 @@ public class LifecycleWebSocketHandler {
     private static class WebSocketConnection {
         private final String id;
         private final WebSocket webSocket;
-        private final UserContext user;
+        private final WebSocketUserContext user;
         private final String projectId;
         private volatile long lastActivity;
         private volatile boolean closed;
 
-        public WebSocketConnection(String id, WebSocket webSocket, UserContext user, String projectId) {
+        public WebSocketConnection(String id, WebSocket webSocket, WebSocketUserContext user, String projectId) {
             this.id = id;
             this.webSocket = webSocket;
             this.user = user;
@@ -416,7 +411,7 @@ public class LifecycleWebSocketHandler {
         }
 
         public String getId() { return id; }
-        public UserContext getUser() { return user; }
+        public WebSocketUserContext getUser() { return user; }
         public String getProjectId() { return projectId; }
         public long getLastActivity() { return lastActivity; }
         public void setLastActivity(long lastActivity) { this.lastActivity = lastActivity; }

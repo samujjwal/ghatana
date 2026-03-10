@@ -18,11 +18,11 @@ package com.ghatana.yappc.core.cache;
 
 import static org.junit.jupiter.api.Assertions.*;
 
+import com.ghatana.platform.testing.activej.EventloopTestBase;
 import java.nio.file.Path;
 import java.time.Duration;
 import java.util.Map;
 import java.util.Optional;
-import java.util.concurrent.CompletableFuture;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
 
@@ -38,7 +38,7 @@ import org.junit.jupiter.api.io.TempDir;
 
  */
 
-class LocalCacheManagerTest {
+class LocalCacheManagerTest extends EventloopTestBase {
 
     @TempDir Path tempDir;
 
@@ -51,9 +51,7 @@ class LocalCacheManagerTest {
                 new CachedArtifact("test content", "text/plain", Map.of("key", "value"));
 
         // Put and get
-        CompletableFuture<Void> putResult = cache.put("test-key", artifact);
-        assertNotNull(putResult);
-        putResult.join(); // Wait for completion
+        runPromise(() -> cache.put("test-key", artifact));
 
         Optional<CachedArtifact> result = cache.get("test-key");
         assertTrue(result.isPresent());
@@ -78,7 +76,7 @@ class LocalCacheManagerTest {
                         "persistent content", "application/json", Map.of("type", "test"));
 
         // Put and get
-        cache.put("persistent-key", artifact).join();
+        runPromise(() -> cache.put("persistent-key", artifact));
 
         Optional<CachedArtifact> result = cache.get("persistent-key");
         assertTrue(result.isPresent());
@@ -108,7 +106,7 @@ class LocalCacheManagerTest {
         CachedArtifact artifact =
                 new CachedArtifact("custom config content", "text/xml", Map.of("config", "custom"));
 
-        cache.put("custom-key", artifact).join();
+        runPromise(() -> cache.put("custom-key", artifact));
 
         Optional<CachedArtifact> result = cache.get("custom-key");
         assertTrue(result.isPresent());
@@ -133,8 +131,8 @@ class LocalCacheManagerTest {
         CachedArtifact artifact =
                 new CachedArtifact("backward compatible", "text/plain", Map.of("test", "backward"));
 
-        defaultCache.put("test1", artifact).join();
-        pathCache.put("test2", artifact).join();
+        runPromise(() -> defaultCache.put("test1", artifact));
+        runPromise(() -> pathCache.put("test2", artifact));
 
         assertTrue(defaultCache.get("test1").isPresent());
         assertTrue(pathCache.get("test2").isPresent());
@@ -147,8 +145,8 @@ class LocalCacheManagerTest {
         CachedArtifact artifact1 = new CachedArtifact("content1", "text/plain", Map.of());
         CachedArtifact artifact2 = new CachedArtifact("content2", "text/plain", Map.of());
 
-        cache.put("key1", artifact1).join();
-        cache.put("key2", artifact2).join();
+        runPromise(() -> cache.put("key1", artifact1));
+        runPromise(() -> cache.put("key2", artifact2));
 
         // Both should be present
         assertTrue(cache.get("key1").isPresent());

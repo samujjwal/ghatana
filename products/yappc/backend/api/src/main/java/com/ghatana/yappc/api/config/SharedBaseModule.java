@@ -4,11 +4,10 @@
  */
 package com.ghatana.yappc.api.config;
 
-import com.ghatana.agent.framework.memory.MemoryStore;
 import com.ghatana.ai.llm.LLMGateway;
 import com.ghatana.datacloud.application.version.VersionComparator;
 import com.ghatana.datacloud.application.version.VersionService;
-import com.ghatana.datacloud.infrastructure.persistence.version.InMemoryVersionRecord;
+import com.ghatana.datacloud.entity.version.VersionRecord;
 import com.ghatana.yappc.api.approval.ApprovalController;
 import com.ghatana.yappc.api.architecture.ArchitectureController;
 import com.ghatana.yappc.api.audit.AuditController;
@@ -16,11 +15,6 @@ import com.ghatana.yappc.api.auth.AuthorizationController;
 import com.ghatana.yappc.api.build.BuildController;
 import com.ghatana.yappc.api.build.BuildExecutorService;
 import com.ghatana.yappc.api.controller.RailController;
-import com.ghatana.yappc.api.repository.AISuggestionRepository;
-import com.ghatana.yappc.api.repository.InMemoryAISuggestionRepository;
-import com.ghatana.yappc.api.repository.InMemoryRequirementRepository;
-import com.ghatana.yappc.api.repository.InMemoryWorkspaceRepository;
-import com.ghatana.yappc.api.repository.RequirementRepository;
 import com.ghatana.yappc.api.repository.WorkspaceRepository;
 import com.ghatana.yappc.api.service.ArchitectureAnalysisService;
 import com.ghatana.yappc.api.service.RailService;
@@ -99,11 +93,19 @@ public class SharedBaseModule extends AbstractModule {
     return new RailService(workspaceRepository, llmGateway);
   }
 
-  /** Provides VersionService with InMemoryVersionRecord (identical in both environments). */
+  /**
+   * Provides VersionService, delegating persistence to the environment-specific VersionRecord.
+   *
+   * <p>ProductionModule supplies a {@link com.ghatana.yappc.api.repository.jdbc.JdbcVersionRecord}
+   * while DevelopmentModule supplies an in-memory variant.
+   *
+   * @param versionRecord environment-specific version persistence implementation
+   * @return configured VersionService
+   */
   @Provides
-  VersionService versionService() {
-    logger.info("Creating VersionService with InMemoryVersionRecord");
-    return new VersionService(new InMemoryVersionRecord(), new VersionComparator());
+  VersionService versionService(VersionRecord versionRecord) {
+    logger.info("Creating VersionService with {}", versionRecord.getClass().getSimpleName());
+    return new VersionService(versionRecord, new VersionComparator());
   }
 
   /** Provides ArchitectureAnalysisService (identical in both environments). */
@@ -113,42 +115,7 @@ public class SharedBaseModule extends AbstractModule {
     return new ArchitectureAnalysisService();
   }
 
-  // ========== Shared Repository Providers ==========
-
-  /** Provides AISuggestionRepository (identical in both environments). */
-  @Provides
-  AISuggestionRepository aiSuggestionRepository() {
-    logger.info("Creating InMemoryAISuggestionRepository");
-    return new InMemoryAISuggestionRepository();
-  }
-
-  /** Provides RequirementRepository (identical in both environments). */
-  @Provides
-  RequirementRepository requirementRepository() {
-    logger.info("Creating InMemoryRequirementRepository");
-    return new InMemoryRequirementRepository();
-  }
-
-  /** Provides WorkspaceRepository (identical in both environments). */
-  @Provides
-  WorkspaceRepository workspaceRepository() {
-    logger.info("Creating InMemoryWorkspaceRepository");
-    return new InMemoryWorkspaceRepository();
-  }
-
-  // ========== Memory & Learning ==========
-
-  /**
-   * Provides the default MemoryStore for agent memory operations.
-   *
-   * <p>Uses the event-log backed in-memory store by default. ProductionModule
-   * can override with a persistent MemoryPlane-backed adapter.
-   *
-   * @return MemoryStore for episodic, semantic, procedural and preference memory
-   */
-  @Provides
-  MemoryStore memoryStore() {
-    logger.info("Creating EventLogMemoryStore for agent memory");
-    return new com.ghatana.agent.framework.memory.EventLogMemoryStore();
-  }
 }
+// Note: MemoryStore binding is declared per-environment:
+//   DevelopmentModule → EventLogMemoryStore (in-memory)
+//   ProductionModule  → JdbcMemoryStore    (PostgreSQL write-through)

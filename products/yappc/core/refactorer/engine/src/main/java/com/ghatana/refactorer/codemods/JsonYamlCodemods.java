@@ -115,7 +115,7 @@ public final class JsonYamlCodemods {
         }
 
         // Wait for all validations to complete
-        return Promises.toList(promises)
+        return Promises.all(promises)
                 .map(ignored -> diagnostics)
                 .map(result -> result, e -> {
                     logger.error("Error during JSON/YAML validation: {}", e.getMessage(), e);

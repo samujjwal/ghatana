@@ -21,16 +21,20 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 /**
- * No-op LLM Gateway for testing without actual LLM integration.
+ * No-op LLM Gateway for offline development without actual LLM integration.
  *
- * <p>Returns mock responses for all LLM requests.
- * Replace with actual LLMGateway when AI services are configured.
+ * <p>Returns mock responses for all LLM requests. Used as a fallback when no
+ * LLM API keys (OPENAI_API_KEY, ANTHROPIC_API_KEY) are configured.
  *
+ * @deprecated Move to test fixtures or a dedicated dev-tools module. Production
+ *     code should fail fast when LLM integration is required but not configured,
+ *     rather than silently returning mock responses.
  * @doc.type class
- * @doc.purpose Mock LLM Gateway for development
+ * @doc.purpose Mock LLM Gateway for offline development
  * @doc.layer product
  * @doc.pattern Service
  */
+@Deprecated(since = "2.4.0", forRemoval = true)
 public class NoOpLLMGateway implements LLMGateway {
 
     private static final Logger logger = LoggerFactory.getLogger(NoOpLLMGateway.class);

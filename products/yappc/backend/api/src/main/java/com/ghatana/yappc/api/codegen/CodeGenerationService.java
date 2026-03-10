@@ -1,7 +1,6 @@
 package com.ghatana.yappc.api.codegen;
 
 import com.ghatana.ai.AIIntegrationService;
-import com.ghatana.ai.prompt.PromptTemplate;
 import com.ghatana.yappc.api.codegen.dto.*;
 import io.activej.inject.annotation.Inject;
 import io.activej.promise.Promise;

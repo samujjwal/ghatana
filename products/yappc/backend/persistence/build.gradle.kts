@@ -14,12 +14,18 @@ dependencies {
 
     // Platform
     implementation(project(":platform:java:core"))
+    implementation(libs.activej.inject)
+    implementation(libs.activej.http)
+    implementation(libs.activej.promise)
+
+    // Annotations
+    implementation(libs.jetbrains.annotations)
 
     // Database
     implementation(libs.hikaricp)
     implementation(libs.postgresql)
     implementation(libs.flyway.core)
-    implementation(libs.flyway.postgresql)
+    implementation(libs.flyway.database.postgresql)
 
     // JSON (for JSONB columns)
     implementation(libs.jackson.databind)
@@ -29,6 +35,7 @@ dependencies {
     implementation(libs.slf4j.api)
 
     // Testing
+    testImplementation(project(":platform:java:testing"))
     testImplementation(libs.junit.jupiter)
     testImplementation(libs.assertj.core)
     testImplementation(libs.mockito.core)

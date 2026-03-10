@@ -66,6 +66,9 @@ const BootstrapCollaboratePage = lazy(
 const ResumeSessionPage = lazy(
   () => import('../pages/bootstrapping/ResumeSessionPage')
 );
+const BootstrapPreviewPage = lazy(
+  () => import('../pages/bootstrapping/BootstrapPreviewPage')
+);
 
 // Initialization Phase (Phase 2)
 const SetupWizardPage = lazy(
@@ -100,6 +103,9 @@ const SprintBoardPage = lazy(
 const PullRequestDetailPage = lazy(
   () => import('../pages/development/PullRequestDetailPage')
 );
+const PullRequestsPage = lazy(
+  () => import('../pages/development/PullRequestsPage')
+);
 const VelocityPage = lazy(
   () => import('../pages/development/VelocityChartsPage')
 );
@@ -111,6 +117,21 @@ const CodeReviewDetailPage = lazy(
 );
 const SprintPlanningPage = lazy(
   () => import('../pages/development/SprintPlanningPage')
+);
+const BacklogPage = lazy(
+  () => import('../pages/development/BacklogPage')
+);
+const StoryDetailPage = lazy(
+  () => import('../pages/development/StoryDetailPage')
+);
+const EpicsPage = lazy(
+  () => import('../pages/development/EpicsPage')
+);
+const FeatureFlagsPage = lazy(
+  () => import('../pages/development/FeatureFlagsPage')
+);
+const DeploymentsPage = lazy(
+  () => import('../pages/development/DeploymentsPage')
 );
 
 // Operations Phase (Phase 4)
@@ -126,6 +147,22 @@ const RunbookDetailPage = lazy(
 );
 const OnCallPage = lazy(() => import('../pages/operations/OnCallPage'));
 const ServiceMapPage = lazy(() => import('../pages/operations/ServiceMapPage'));
+const IncidentsPage = lazy(
+  () => import('../pages/operations/IncidentsPage')
+);
+const IncidentDetailPage = lazy(
+  () => import('../pages/operations/IncidentDetailPage')
+);
+const AlertsPage = lazy(() => import('../pages/operations/AlertsPage'));
+const DashboardsPage = lazy(
+  () => import('../pages/operations/DashboardsPage')
+);
+const LogsPage = lazy(() => import('../pages/operations/LogsPage'));
+const MetricsPage = lazy(() => import('../pages/operations/MetricsPage'));
+const RunbooksPage = lazy(() => import('../pages/operations/RunbooksPage'));
+const PostmortemsPage = lazy(
+  () => import('../pages/operations/PostmortemsPage')
+);
 
 // Collaboration Phase (Phase 5)
 const TeamHubPage = lazy(
@@ -145,6 +182,20 @@ const DirectMessagePage = lazy(
 const ActivityFeedPage = lazy(
   () => import('../pages/collaboration/ActivityFeedPage')
 );
+const KnowledgeBasePage = lazy(
+  () => import('../pages/collaboration/KnowledgeBasePage')
+);
+const ArticleEditPage = lazy(
+  () => import('../pages/collaboration/ArticleEditPage')
+);
+const ArticleNewPage = lazy(
+  () => import('../pages/collaboration/ArticleNewPage')
+);
+const StandupsPage = lazy(
+  () => import('../pages/collaboration/StandupsPage')
+);
+const RetrosPage = lazy(() => import('../pages/collaboration/RetrosPage'));
+const GoalsPage = lazy(() => import('../pages/collaboration/GoalsPage'));
 
 // Security Phase (Phase 6)
 const SecurityDashboardPage = lazy(
@@ -158,6 +209,20 @@ const PolicyDetailPage = lazy(
   () => import('../pages/security/PolicyDetailPage')
 );
 const ThreatModelPage = lazy(() => import('../pages/security/ThreatModelPage'));
+const VulnerabilitiesPage = lazy(
+  () => import('../pages/security/VulnerabilitiesPage')
+);
+const ScansPage = lazy(() => import('../pages/security/ScansPage'));
+const CompliancePage = lazy(() => import('../pages/security/CompliancePage'));
+const ComplianceDetailPage = lazy(
+  () => import('../pages/security/ComplianceDetailPage')
+);
+const SecretsPage = lazy(() => import('../pages/security/SecretsPage'));
+const PoliciesPage = lazy(() => import('../pages/security/PoliciesPage'));
+const SecurityAlertsPage = lazy(
+  () => import('../pages/security/SecurityAlertsPage')
+);
+const AuditPage = lazy(() => import('../pages/security/AuditPage'));
 
 // Admin Pages
 const TeamsPage = lazy(() => import('../pages/admin/TeamsPage'));
@@ -338,6 +403,7 @@ const routes: RouteObject[] = [
           { path: 'upload', element: <UploadDocsPage /> },
           { path: 'collaborate', element: <BootstrapCollaboratePage /> },
           { path: 'resume', element: <ResumeSessionPage /> },
+          { path: 'preview', element: <BootstrapPreviewPage /> },
           { path: 'complete', element: <BootstrapCompletePage /> },
         ],
       },
@@ -363,12 +429,18 @@ const routes: RouteObject[] = [
           { index: true, element: <DevDashboardPage /> },
           { path: 'board', element: <SprintBoardPage /> },
           { path: 'board/:sprintId', element: <SprintBoardPage /> },
+          { path: 'backlog', element: <BacklogPage /> },
+          { path: 'stories/:storyId', element: <StoryDetailPage /> },
+          { path: 'epics', element: <EpicsPage /> },
+          { path: 'prs', element: <PullRequestsPage /> },
           { path: 'prs/:prId', element: <PullRequestDetailPage /> },
           { path: 'review/:prId', element: <CodeReviewPage /> },
           { path: 'velocity', element: <VelocityPage /> },
           { path: 'review-dashboard', element: <CodeReviewPage /> },
           { path: 'review-detail/:id', element: <CodeReviewDetailPage /> },
           { path: 'planning', element: <SprintPlanningPage /> },
+          { path: 'flags', element: <FeatureFlagsPage /> },
+          { path: 'deployments', element: <DeploymentsPage /> },
         ],
       },
 
@@ -377,17 +449,25 @@ const routes: RouteObject[] = [
         path: 'operations',
         children: [
           { index: true, element: <OpsDashboardPage /> },
+          { path: 'incidents', element: <IncidentsPage /> },
+          { path: 'incidents/:incidentId', element: <IncidentDetailPage /> },
           {
             path: 'incidents/:incidentId/warroom',
             element: <WarRoomPage />,
           },
+          { path: 'alerts', element: <AlertsPage /> },
+          { path: 'dashboards', element: <DashboardsPage /> },
           {
             path: 'dashboards/:dashboardId',
             element: <DashboardEditorPage />,
           },
+          { path: 'logs', element: <LogsPage /> },
+          { path: 'metrics', element: <MetricsPage /> },
+          { path: 'runbooks', element: <RunbooksPage /> },
           { path: 'runbooks/:runbookId', element: <RunbookDetailPage /> },
           { path: 'oncall', element: <OnCallPage /> },
           { path: 'services', element: <ServiceMapPage /> },
+          { path: 'postmortems', element: <PostmortemsPage /> },
         ],
       },
 
@@ -397,7 +477,13 @@ const routes: RouteObject[] = [
         children: [
           { index: true, element: <TeamHubPage /> },
           { path: 'calendar', element: <CalendarPage /> },
+          { path: 'knowledge', element: <KnowledgeBasePage /> },
+          { path: 'knowledge/new', element: <ArticleNewPage /> },
           { path: 'knowledge/:articleId', element: <ArticlePage /> },
+          { path: 'knowledge/:articleId/edit', element: <ArticleEditPage /> },
+          { path: 'standups', element: <StandupsPage /> },
+          { path: 'retros', element: <RetrosPage /> },
+          { path: 'goals', element: <GoalsPage /> },
           { path: 'messages', element: <MessagesPage /> },
           { path: 'messages/channel/:channelId', element: <ChannelPage /> },
           { path: 'messages/dm/:userId', element: <DirectMessagePage /> },
@@ -410,12 +496,23 @@ const routes: RouteObject[] = [
         path: 'security',
         children: [
           { index: true, element: <SecurityDashboardPage /> },
+          { path: 'vulnerabilities', element: <VulnerabilitiesPage /> },
           {
             path: 'vulnerabilities/:vulnId',
             element: <VulnerabilityDetailPage />,
           },
+          { path: 'scans', element: <ScansPage /> },
           { path: 'scans/:scanId', element: <ScanResultsPage /> },
+          { path: 'compliance', element: <CompliancePage /> },
+          {
+            path: 'compliance/:frameworkId',
+            element: <ComplianceDetailPage />,
+          },
+          { path: 'secrets', element: <SecretsPage /> },
+          { path: 'policies', element: <PoliciesPage /> },
           { path: 'policies/:policyId', element: <PolicyDetailPage /> },
+          { path: 'alerts', element: <SecurityAlertsPage /> },
+          { path: 'audit', element: <AuditPage /> },
           { path: 'threat-model', element: <ThreatModelPage /> },
         ],
       },

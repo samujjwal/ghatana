@@ -770,7 +770,8 @@ public class ADRCommand implements Runnable {
                 result.suggestions().forEach(suggestion ->
                     log.info("  - {}", suggestion));
             }
-            // Quality breakdown if (verbose) {
+            // Quality breakdown
+            if (verbose) {
                     log.info("\n📈 Quality Breakdown:");
                 log.info("  - Structure: {}", (content.contains("# ") ? "✅" : "❌"));
                 log.info("  - Completeness: {}", (content.length() > 200 ? "✅" : "❌"));
@@ -990,18 +991,20 @@ public class ADRCommand implements Runnable {
 
                 if (detailed) {
                     log.info("   ✅ Pros:");
-                        log.info("     • {}", pro);
-                        log.info("   ❌ Cons:");
-                        log.info("     • {}", con);
+                    alt.pros().forEach(pro ->
+                        log.info("     • {}", pro));
+                    log.info("   ❌ Cons:");
+                    alt.cons().forEach(con ->
+                        log.info("     • {}", con));
                 }
             }
             if (detailed && alternatives.comparisonMatrix() != null) {
-                        log.info("\n📊 Comparison Matrix:");
+                log.info("\n📊 Comparison Matrix:");
                 ComparisonMatrix matrix = alternatives.comparisonMatrix();
 
                 log.info(String.format("%-20s", "Alternative"));
-                matrix.criteria().forEach(criterion -> log.info(String.format("%-12s", criterion));
-                log.info("");;
+                matrix.criteria().forEach(criterion -> log.info(String.format("%-12s", criterion)));
+                log.info("");
                 log.info("-".repeat(20 + matrix.criteria().size() * 12));
 
                 for (Alternative alt : alternatives.alternatives()) {
@@ -1010,8 +1013,13 @@ public class ADRCommand implements Runnable {
                         Double score = matrix.scores().get(alt.name()).get(criterion);
                         log.info(String.format("%-12s", score != null ? String.format("%.1f", score * 10) : "N/A"));
                     }
-                    log.info("");;
+                    log.info("");
                 }
             }
 
             log.info("\n🎯 AI Recommendations:");
+            alternatives.recommendations().forEach(rec ->
+                log.info("  • {}", rec));
+        }
+    }
+}

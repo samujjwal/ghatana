@@ -40,8 +40,6 @@ import org.openrewrite.ExecutionContext;
 import org.openrewrite.Recipe;
 import org.openrewrite.TreeVisitor;
 import picocli.CommandLine;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 @CommandLine.Command(
         name = "debug",

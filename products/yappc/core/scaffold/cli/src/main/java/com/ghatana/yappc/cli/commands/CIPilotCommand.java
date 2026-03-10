@@ -18,7 +18,9 @@
 package com.ghatana.yappc.cli.commands;
 
 import com.ghatana.yappc.core.pilot.CIPilotTestRunner;
+import io.activej.eventloop.Eventloop;
 import java.util.concurrent.Callable;
+import java.util.concurrent.atomic.AtomicReference;
 import picocli.CommandLine;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -105,7 +107,11 @@ public class CIPilotCommand implements Callable<Integer> {
 
     private int runFullSuite(CIPilotTestRunner runner) {
         try {
-            var suiteResult = runner.runPilotTests().get();
+            AtomicReference<CIPilotTestRunner.PilotTestSuite> ref = new AtomicReference<>();
+            Eventloop eventloop = Eventloop.create();
+            eventloop.post(() -> runner.runPilotTests().whenResult(ref::set));
+            eventloop.run();
+            var suiteResult = ref.get();
 
             log.info("");;
             log.info("📋 Pilot Test Results:");
@@ -139,7 +145,7 @@ public class CIPilotCommand implements Callable<Integer> {
                                 r ->
                                         log.info("  ❌ {} ({}): {}", r.repository().name(),
                                                 r.platform(),
-                                                r.errorMessage());
+                                                r.errorMessage()));
             }
 
             log.info("");;

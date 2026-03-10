@@ -4,7 +4,7 @@ import com.ghatana.core.activej.launcher.UnifiedApplicationLauncher;
 import com.ghatana.yappc.ai.router.AIModelRouter;
 import com.ghatana.yappc.ai.service.YAPPCAIService;
 import com.ghatana.yappc.ai.canvas.CanvasService;
-import com.ghatana.yappc.canvas.ai.CanvasGenerationService;
+import com.ghatana.yappc.ai.canvas.CanvasGenerationService;
 import io.activej.http.HttpServer;
 import io.activej.inject.Injector;
 import io.activej.inject.module.ModuleBuilder;
@@ -83,24 +83,24 @@ public class YappcAiService extends UnifiedApplicationLauncher {
                                 .toPromise())
                 .with(POST, "/api/v1/ai/analyze", request ->
                         request.loadBody().map($ -> request.getBody().asString(java.nio.charset.StandardCharsets.UTF_8))
-                                .then(body -> aiService.analyze(body)
-                                        .map(result -> io.activej.http.HttpResponse.ok200()
-                                                .withBody(result.getBytes(java.nio.charset.StandardCharsets.UTF_8))
-                                                .withHeader(io.activej.http.HttpHeaders.CONTENT_TYPE, "application/json")))
-                                .mapException(e -> {
+                                .then(body -> aiService.analyzeCode(body)
+                                        .map(result -> (io.activej.http.HttpResponse) io.activej.http.HttpResponse.ok200()
+                                                .withBody(result.toString().getBytes(java.nio.charset.StandardCharsets.UTF_8))
+                                                .withHeader(io.activej.http.HttpHeaders.CONTENT_TYPE, "application/json")
+                                                .build()))
+                                .then(resp -> io.activej.promise.Promise.of(resp), e -> {
                                     logger.error("AI analyze request failed", e);
-                                    return io.activej.http.HttpError.ofCode(500);
+                                    return io.activej.promise.Promise.of(io.activej.http.HttpResponse.ofCode(500).withPlainText("Internal server error").build());
                                 }))
                 .with(POST, "/api/v1/ai/canvas/generate", request ->
                         request.loadBody().map($ -> request.getBody().asString(java.nio.charset.StandardCharsets.UTF_8))
                                 .then(body -> {
                                     try {
-                                        com.ghatana.contracts.canvas.v1.GenerateCodeRequest genRequest =
-                                                com.ghatana.contracts.canvas.v1.GenerateCodeRequest.newBuilder()
-                                                        .mergeFrom(com.google.protobuf.util.JsonFormat.parser()
-                                                                .ignoringUnknownFields()
-                                                                .merge(body, com.ghatana.contracts.canvas.v1.GenerateCodeRequest.newBuilder()))
-                                                        .build();
+                                        var requestBuilder = com.ghatana.contracts.canvas.v1.GenerateCodeRequest.newBuilder();
+                                        com.google.protobuf.util.JsonFormat.parser()
+                                                .ignoringUnknownFields()
+                                                .merge(body, requestBuilder);
+                                        com.ghatana.contracts.canvas.v1.GenerateCodeRequest genRequest = requestBuilder.build();
                                         return canvasGenService.generate(genRequest)
                                                 .map(result -> {
                                                     try {
@@ -109,7 +109,8 @@ public class YappcAiService extends UnifiedApplicationLauncher {
                                                                 .print(result);
                                                         return io.activej.http.HttpResponse.ok200()
                                                                 .withBody(json.getBytes(java.nio.charset.StandardCharsets.UTF_8))
-                                                                .withHeader(io.activej.http.HttpHeaders.CONTENT_TYPE, "application/json");
+                                                                .withHeader(io.activej.http.HttpHeaders.CONTENT_TYPE, "application/json")
+                                                                .build();
                                                     } catch (Exception e) {
                                                         throw new RuntimeException("Failed to serialize response", e);
                                                     }
@@ -119,7 +120,8 @@ public class YappcAiService extends UnifiedApplicationLauncher {
                                         return io.activej.promise.Promise.of(
                                                 io.activej.http.HttpResponse.ofCode(400)
                                                         .withPlainText("{\"error\":\"Invalid request: " +
-                                                                e.getMessage().replace("\"", "\\\"") + "\"}"));
+                                                                e.getMessage().replace("\"", "\\\"") + "\"}")
+                                                        .build());
                                     }
                                 })
                                 .mapException(e -> {

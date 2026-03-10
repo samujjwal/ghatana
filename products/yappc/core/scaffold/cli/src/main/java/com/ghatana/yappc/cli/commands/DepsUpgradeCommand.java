@@ -298,10 +298,9 @@ public class DepsUpgradeCommand implements Callable<Integer> {
         if (!simulation.projectedChanges().isEmpty()) {
             log.info("📝 PROJECTED CHANGES:");
             simulation
-                    .projectedChanges()
                     .projectedChanges().forEach((dep, change) ->
                         log.info("  • {}: {}", dep, change));
-                        log.info("");
+            log.info("");
         }
 
         if (!simulation.potentialIssues().isEmpty()) {
@@ -349,7 +348,7 @@ public class DepsUpgradeCommand implements Callable<Integer> {
             log.info("🏗️  By Ecosystem:");
             ecosystemCounts.forEach(
                     (ecosystem, deps) ->
-                            log.info("  • {}: {} dependencies", ecosystem, deps.size());
+                            log.info("  • {}: {} dependencies", ecosystem, deps.size()));
         }
 
         log.info("");;
