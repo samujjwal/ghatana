@@ -1,10 +1,18 @@
 package com.ghatana.tutorputor.ai.service;
 
-import com.ghatana.ai.gateway.AIGateway;
+import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.ghatana.ai.service.LLMService;
 import com.ghatana.tutorputor.contracts.ai.AiLearningProto;
 import com.ghatana.tutorputor.contracts.ai.AiLearningServiceGrpc;
 import io.grpc.stub.StreamObserver;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
+import java.io.IOException;
+import java.io.InputStream;
+import java.nio.charset.StandardCharsets;
+import java.util.Objects;
 import java.util.UUID;
 
 /**
@@ -12,10 +20,28 @@ import java.util.UUID;
  */
 public class AiLearningServiceImpl extends AiLearningServiceGrpc.AiLearningServiceImplBase {
 
-    private final AIGateway aiGateway;
+    private static final Logger logger = LoggerFactory.getLogger(AiLearningServiceImpl.class);
+    private final LLMService llmService;
+    private final ObjectMapper objectMapper;
+    private final String promptTemplate;
 
-    public AiLearningServiceImpl(AIGateway aiGateway) {
-        this.aiGateway = aiGateway;
+    public AiLearningServiceImpl(LLMService llmService) {
+        this.llmService = llmService;
+        this.objectMapper = new ObjectMapper();
+        this.promptTemplate = loadPromptTemplate();
+    }
+
+    private String loadPromptTemplate() {
+        try (InputStream is = getClass().getResourceAsStream("/prompts/learning-path-generator.st")) {
+            if (is == null) {
+                logger.warn("Prompt /prompts/learning-path-generator.st not found, using fallback.");
+                return "Generate a learning path for Subject: %s, Goal: %s, Level: %s (JSON)";
+            }
+            return new String(is.readAllBytes(), StandardCharsets.UTF_8);
+        } catch (IOException e) {
+            logger.error("Failed to load prompt template", e);
+            return "Generate a learning path for Subject: %s, Goal: %s, Level: %s (JSON)";
+        }
     }
 
     @Override
@@ -26,46 +52,77 @@ public class AiLearningServiceImpl extends AiLearningServiceGrpc.AiLearningServi
         String goal = request.getGoal().isBlank() ? "Learning Goal" : request.getGoal();
         String learnerLevel = request.getLearnerLevel().isBlank() ? "Intermediate" : request.getLearnerLevel();
 
-        String prompt = String.format(
-                "Create learning path for subject=%s, goal=%s, learnerLevel=%s",
-                subject, goal, learnerLevel
-        );
+        String prompt = promptTemplate
+                .replace("<subject>", subject)
+                .replace("<goal>", goal)
+                .replace("<learnerLevel>", learnerLevel);
 
-        aiGateway.generatePattern(prompt).whenComplete((generatedPlan, error) -> {
+        llmService.generate(prompt).whenComplete((generatedJson, error) -> {
             if (error != null) {
+                logger.error("LLM generation failed", error);
                 responseObserver.onError(error);
                 return;
             }
 
-            String description = (generatedPlan != null && !generatedPlan.isBlank())
-                    ? generatedPlan
-                    : "AI-generated learning path for " + goal;
-
-            AiLearningProto.GeneratePathResponse response = AiLearningProto.GeneratePathResponse.newBuilder()
-                    .setPathId(UUID.randomUUID().toString())
-                    .setTitle(subject + " Mastery")
-                    .setDescription(description)
-                    .addNodes(AiLearningProto.LearningNode.newBuilder()
-                            .setId("node-1")
-                            .setTitle("Foundations")
-                            .setType("READING")
-                            .setDescription("Build core knowledge required for " + subject)
-                            .setEstimatedMinutes(20)
-                            .addLearningObjectives("Understand foundational concepts")
-                            .build())
-                    .addNodes(AiLearningProto.LearningNode.newBuilder()
-                            .setId("node-2")
-                            .setTitle("Applied Practice")
-                            .setType("PROJECT")
-                            .setDescription("Apply concepts toward: " + goal)
-                            .setEstimatedMinutes(40)
-                            .addPrerequisites("node-1")
-                            .addLearningObjectives("Demonstrate practical understanding")
-                            .build())
-                    .build();
-
-            responseObserver.onNext(response);
-            responseObserver.onCompleted();
+            try {
+                AiLearningProto.GeneratePathResponse response = parseResponse(generatedJson, subject, goal);
+                responseObserver.onNext(response);
+                responseObserver.onCompleted();
+            } catch (Exception e) {
+                logger.error("Failed to parse LLM response", e);
+                // Fallback valid response
+                responseObserver.onNext(createFallbackResponse(subject, goal));
+                responseObserver.onCompleted();
+            }
         });
+    }
+
+    private AiLearningProto.GeneratePathResponse parseResponse(String json, String subject, String goal) throws IOException {
+        JsonNode root = objectMapper.readTree(json);
+        
+        AiLearningProto.GeneratePathResponse.Builder builder = AiLearningProto.GeneratePathResponse.newBuilder()
+                .setPathId(root.path("pathId").asText(UUID.randomUUID().toString()))
+                .setTitle(root.path("title").asText(subject + " Mastery"))
+                .setDescription(root.path("description").asText("AI-generated path for " + goal));
+
+        if (root.has("nodes") && root.get("nodes").isArray()) {
+            for (JsonNode node : root.get("nodes")) {
+                AiLearningProto.LearningNode.Builder nodeBuilder = AiLearningProto.LearningNode.newBuilder()
+                        .setId(node.path("id").asText())
+                        .setTitle(node.path("title").asText())
+                        .setDescription(node.path("description").asText())
+                        .setEstimatedMinutes(node.path("estimatedMinutes").asInt(30));
+
+                String type = node.path("type").asText("READING").toUpperCase();
+                nodeBuilder.setType(type);
+
+                if (node.has("prerequisites")) {
+                    node.get("prerequisites").forEach(p -> nodeBuilder.addPrerequisites(p.asText()));
+                }
+                
+                if (node.has("learningObjectives")) {
+                    node.get("learningObjectives").forEach(obj -> nodeBuilder.addLearningObjectives(obj.asText()));
+                }
+
+                builder.addNodes(nodeBuilder);
+            }
+        }
+        
+        return builder.build();
+    }
+
+    private AiLearningProto.GeneratePathResponse createFallbackResponse(String subject, String goal) {
+        return AiLearningProto.GeneratePathResponse.newBuilder()
+                .setPathId(UUID.randomUUID().toString())
+                .setTitle(subject + " Fallback Path")
+                .setDescription("Fallback path for " + goal)
+                .addNodes(AiLearningProto.LearningNode.newBuilder()
+                        .setId("node-1")
+                        .setTitle("Introduction")
+                        .setType("READING")
+                        .setDescription("Intro to " + subject)
+                        .setEstimatedMinutes(15)
+                        .build())
+                .build();
     }
 }

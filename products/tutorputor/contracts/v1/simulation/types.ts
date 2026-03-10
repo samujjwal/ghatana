@@ -1,6 +1,6 @@
 /**
  * Universal Simulation Protocol (USP) - Core Types
- * 
+ *
  * @doc.type module
  * @doc.purpose Define core simulation manifest, entity, step, and keyframe types
  * @doc.layer contracts
@@ -16,7 +16,9 @@ import type { TenantId, UserId, ModuleId } from "../types";
 export type SimulationId = string & { readonly __simulationId: unique symbol };
 export type SimEntityId = string & { readonly __simEntityId: unique symbol };
 export type SimStepId = string & { readonly __simStepId: unique symbol };
-export type SimulationSessionId = string & { readonly __simulationSessionId: unique symbol };
+export type SimulationSessionId = string & {
+  readonly __simulationSessionId: unique symbol;
+};
 
 // =============================================================================
 // Simulation Domain Types
@@ -26,14 +28,14 @@ export type SimulationSessionId = string & { readonly __simulationSessionId: uni
  * Supported simulation domains across the platform.
  */
 export type SimulationDomain =
-  | "CS_DISCRETE"        // Algorithms, data structures
-  | "PHYSICS"            // Mechanics, waves, thermodynamics
-  | "ECONOMICS"          // System dynamics, markets
-  | "CHEMISTRY"          // Reactions, molecular structures
-  | "BIOLOGY"            // Cellular, molecular biology
-  | "MEDICINE"           // PK/PD, epidemiology
-  | "ENGINEERING"        // Circuits, mechanics
-  | "MATHEMATICS";       // Geometric, calculus visualizations
+  | "CS_DISCRETE" // Algorithms, data structures
+  | "PHYSICS" // Mechanics, waves, thermodynamics
+  | "ECONOMICS" // System dynamics, markets
+  | "CHEMISTRY" // Reactions, molecular structures
+  | "BIOLOGY" // Cellular, molecular biology
+  | "MEDICINE" // PK/PD, epidemiology
+  | "ENGINEERING" // Circuits, mechanics
+  | "MATHEMATICS"; // Geometric, calculus visualizations
 
 /**
  * Easing functions for smooth animations.
@@ -224,7 +226,15 @@ export interface ChemBondEntity extends SimEntityBase {
   atom1Id: SimEntityId;
   atom2Id: SimEntityId;
   bondOrder?: 1 | 2 | 3 | 1.5;
-  bondType?: "covalent" | "ionic" | "hydrogen" | "metallic" | "single" | "double" | "triple" | "aromatic";
+  bondType?:
+    | "covalent"
+    | "ionic"
+    | "hydrogen"
+    | "metallic"
+    | "single"
+    | "double"
+    | "triple"
+    | "aromatic";
   stereochemistry?: "up" | "down" | "none";
   /** Visual highlight state. */
   highlighted?: boolean;
@@ -276,7 +286,15 @@ export interface BioCellEntity extends SimEntityBase {
 
 export interface BioOrganelleEntity extends SimEntityBase {
   type: "organelle";
-  organelleType: "nucleus" | "mitochondria" | "ribosome" | "er" | "golgi" | "lysosome" | "chloroplast" | "vacuole";
+  organelleType:
+    | "nucleus"
+    | "mitochondria"
+    | "ribosome"
+    | "er"
+    | "golgi"
+    | "lysosome"
+    | "chloroplast"
+    | "vacuole";
   activity?: number;
   /** ID of the parent cell entity that contains this organelle. */
   containedInId?: SimEntityId;
@@ -303,7 +321,14 @@ export interface BioEnzymeEntity extends SimEntityBase {
 
 export interface BioSignalEntity extends SimEntityBase {
   type: "signal";
-  signalType: "hormone" | "neurotransmitter" | "cytokine" | "ion" | "receptor" | "secondMessenger" | "ligand";
+  signalType:
+    | "hormone"
+    | "neurotransmitter"
+    | "cytokine"
+    | "ion"
+    | "receptor"
+    | "secondMessenger"
+    | "ligand";
   concentration?: number;
   receptor?: SimEntityId;
   /** Display name for the signal molecule. */
@@ -332,7 +357,7 @@ export interface MedCompartmentEntity extends SimEntityBase {
   compartmentType: "central" | "peripheral" | "effect";
   volume: number;
   concentration: number;
-  ke?: number;  // elimination rate constant
+  ke?: number; // elimination rate constant
   k12?: number; // transfer rate to peripheral
   k21?: number; // transfer rate from peripheral
   /** Visual highlight state. */
@@ -646,7 +671,7 @@ export interface EliminateAction extends SimActionBase {
 export interface SpreadDiseaseAction extends SimActionBase {
   action: "SPREAD_DISEASE";
   agentId: SimEntityId;
-  beta: number;  // transmission rate
+  beta: number; // transmission rate
   gamma: number; // recovery rate
 }
 
@@ -801,7 +826,14 @@ export interface EconomicsMetadata {
  * Chemistry-specific metadata.
  */
 export interface ChemistryMetadata {
-  reactionType?: "substitution" | "elimination" | "addition" | "oxidation" | "reduction" | "acid_base" | "combustion";
+  reactionType?:
+    | "substitution"
+    | "elimination"
+    | "addition"
+    | "oxidation"
+    | "reduction"
+    | "acid_base"
+    | "combustion";
   mechanism?: string;
   conditions?: {
     temperature?: number;
@@ -815,7 +847,13 @@ export interface ChemistryMetadata {
  * Biology-specific metadata.
  */
 export interface BiologyMetadata {
-  scale: "molecular" | "cellular" | "tissue" | "organ" | "organism" | "population";
+  scale:
+    | "molecular"
+    | "cellular"
+    | "tissue"
+    | "organ"
+    | "organism"
+    | "population";
   timeScale?: "ms" | "s" | "min" | "hour" | "day";
   process?: string;
 }
@@ -884,8 +922,8 @@ export interface PlaybackConfig {
  * Lifecycle tracking for simulation manifests.
  */
 export interface SimulationLifecycle {
-  status: 'draft' | 'validated' | 'published' | 'archived';
-  createdBy: 'userId' | 'ai' | 'template';
+  status: "draft" | "validated" | "published" | "archived";
+  createdBy: "userId" | "ai" | "template";
   validatedAt?: number;
   publishedAt?: number;
 }
@@ -909,7 +947,7 @@ export interface SimulationSafety {
  */
 export interface SimulationReplay {
   deterministic: boolean;
-  seedStrategy: 'fixed' | 'perSession';
+  seedStrategy: "fixed" | "perSession";
 }
 
 /**
@@ -923,13 +961,21 @@ export interface ECDMetadata {
   }>;
   evidence: Array<{
     id: string;
-    source: 'telemetry.parameterChange' | 'telemetry.timeOnTask' | 'grading.stateComparison';
+    source:
+      | "telemetry.parameterChange"
+      | "telemetry.timeOnTask"
+      | "grading.stateComparison";
     tolerance?: number;
     requiredForClaim: string[];
   }>;
   tasks: Array<{
     id: string;
-    type: 'prediction' | 'manipulation' | 'explanation' | 'design' | 'diagnosis';
+    type:
+      | "prediction"
+      | "manipulation"
+      | "explanation"
+      | "design"
+      | "diagnosis";
     claimIds: string[];
   }>;
 }
@@ -938,7 +984,7 @@ export interface ECDMetadata {
  * Template governance metadata.
  */
 export interface TemplateGovernance {
-  reviewStatus: 'draft' | 'submitted' | 'approved' | 'rejected' | 'deprecated';
+  reviewStatus: "draft" | "submitted" | "approved" | "rejected" | "deprecated";
   reviewerNotes?: string;
   lastValidatedAt?: number;
   approvedBy?: UserId;
@@ -950,8 +996,8 @@ export interface TemplateGovernance {
  * Rendering capabilities for VR/AR forward compatibility.
  */
 export interface RenderingCapabilities {
-  requiredCapabilities: Array<'2d' | '3d' | 'vr' | 'ar'>;
-  optionalCapabilities: Array<'2d' | '3d' | 'vr' | 'ar'>;
+  requiredCapabilities: Array<"2d" | "3d" | "vr" | "ar">;
+  optionalCapabilities: Array<"2d" | "3d" | "vr" | "ar">;
 }
 
 /**
@@ -960,7 +1006,7 @@ export interface RenderingCapabilities {
 export interface ComplianceMetadata {
   dataRetentionDays: number;
   analyticsConsentRequired: boolean;
-  auditLevel: 'none' | 'basic' | 'full';
+  auditLevel: "none" | "basic" | "full";
 }
 
 /**
@@ -1089,6 +1135,10 @@ export interface GenerateManifestRequest {
     maxEntities?: number;
     targetDuration?: number;
   };
+  options?: {
+    includeAnnotations?: boolean;
+    complexity?: "simple" | "medium" | "complex";
+  };
 }
 
 /**
@@ -1181,21 +1231,21 @@ export type MedicineConfig = MedicineMetadata;
  * Intent types for simulation refinement.
  */
 export type IntentType =
-  | 'add_entity'
-  | 'remove_entity'
-  | 'modify_entity'
-  | 'add_step'
-  | 'remove_step'
-  | 'modify_step'
-  | 'change_speed'
-  | 'change_visual'
-  | 'add_annotation'
-  | 'change_domain_config'
-  | 'explain'
-  | 'clarify'
-  | 'undo'
-  | 'redo'
-  | 'unknown';
+  | "add_entity"
+  | "remove_entity"
+  | "modify_entity"
+  | "add_step"
+  | "remove_step"
+  | "modify_step"
+  | "change_speed"
+  | "change_visual"
+  | "add_annotation"
+  | "change_domain_config"
+  | "explain"
+  | "clarify"
+  | "undo"
+  | "redo"
+  | "unknown";
 
 /**
  * Visual style parameters for intents.

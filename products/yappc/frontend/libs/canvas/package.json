@@ -32,7 +32,6 @@
   "dependencies": {
     "@ghatana/canvas": "workspace:*",
     "@ghatana/yappc-ai": "workspace:*",
-    "@ghatana/yappc-ide": "workspace:*",
     "@ghatana/yappc-types": "workspace:*",
     "@ghatana/yappc-ui": "workspace:*",
     "jotai": "^2.17.0",

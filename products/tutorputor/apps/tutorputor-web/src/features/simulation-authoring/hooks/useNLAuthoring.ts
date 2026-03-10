@@ -1,9 +1,9 @@
 /**
  * useNLAuthoring Hook
- * 
+ *
  * Custom hook for managing natural language simulation authoring workflow.
  * Handles API calls, state management, and conversation history.
- * 
+ *
  * @doc.type hook
  * @doc.purpose NL authoring state management and API integration
  * @doc.layer product
@@ -13,60 +13,29 @@
 import { useState, useCallback, useMemo, useRef } from "react";
 import { useMutation } from "@tanstack/react-query";
 import type {
-import { createLogger } from '../utils/logger.js';
-const logger = createLogger('useNLAuthoring');
   SimulationManifest,
   SimulationDomain,
-} from "./useSimulationTimeline";
+  GenerateManifestRequest as ContractGenerateRequest,
+  GenerateManifestResult,
+  RefineManifestRequest as ContractRefineRequest,
+  SuggestParametersRequest as ContractSuggestRequest,
+  SuggestParametersResult,
+} from "@ghatana/tutorputor-contracts/v1/simulation/types";
 
-// =============================================================================
-// Local Types (avoiding external contract dependencies)
-// =============================================================================
-
-interface GenerateManifestRequest {
-  prompt: string;
-  domain: SimulationDomain;
-  constraints?: {
-    maxSteps?: number;
-    maxEntities?: number;
-    targetDuration?: number;
-    difficultyLevel?: string;
-  };
-  options?: {
-    maxSteps?: number;
-    includeAnnotations?: boolean;
-    complexity?: "simple" | "medium" | "complex";
-  };
-}
-
-interface GenerateManifestResult {
-  manifest: SimulationManifest;
-  suggestions?: Array<{ text: string; type: string }>;
-  confidence?: number;
-}
-
-interface RefineManifestRequest {
-  manifest: SimulationManifest;
-  refinement: string;
+// Client-facing request types omit server-injected fields
+type GenerateManifestRequest = Omit<
+  ContractGenerateRequest,
+  "tenantId" | "userId"
+>;
+type RefineManifestRequest = Omit<
+  ContractRefineRequest,
+  "tenantId" | "userId"
+> & {
   feedback?: string;
-}
-
-interface SuggestParametersRequest {
-  domain: SimulationDomain;
-  context: string;
+};
+type SuggestParametersRequest = Omit<ContractSuggestRequest, "tenantId"> & {
   currentManifest?: SimulationManifest;
-}
-
-interface SuggestParametersResult {
-  suggestions: Array<{
-    parameterName: string;
-    suggestedValue: unknown;
-    explanation: string;
-    confidence: number;
-    text?: string;
-    type?: string;
-  }>;
-}
+};
 
 // =============================================================================
 // Types
@@ -180,7 +149,7 @@ export interface UseNLAuthoringReturn extends NLAuthoringState {
   clearHistory: () => void;
   reset: () => void;
   revertToSnapshot: (messageId: string) => void;
-  
+
   // Computed
   canRefine: boolean;
   historySnapshots: Array<{ id: string; title: string; timestamp: Date }>;
@@ -205,7 +174,9 @@ function createAPIClient(baseUrl: string): SimAuthorAPIClient {
     });
 
     if (!response.ok) {
-      const error = await response.json().catch(() => ({ message: "Unknown error" }));
+      const error = await response
+        .json()
+        .catch(() => ({ message: "Unknown error" }));
       throw new Error(error.message || `HTTP ${response.status}`);
     }
 
@@ -230,7 +201,9 @@ const DEFAULT_CONSTRAINTS: GenerationConstraints = {
   difficultyLevel: "intermediate",
 };
 
-export function useNLAuthoring(options: UseNLAuthoringOptions = {}): UseNLAuthoringReturn {
+export function useNLAuthoring(
+  options: UseNLAuthoringOptions = {},
+): UseNLAuthoringReturn {
   const {
     apiBaseUrl = "/api",
     initialDomain = "CS_DISCRETE",
@@ -243,14 +216,19 @@ export function useNLAuthoring(options: UseNLAuthoringOptions = {}): UseNLAuthor
 
   // State
   const [domain, setDomain] = useState<SimulationDomain>(
-    initialManifest?.domain || initialDomain
+    initialManifest?.domain || initialDomain,
   );
-  const [manifest, setManifest] = useState<SimulationManifest | null>(initialManifest);
+  const [manifest, setManifest] = useState<SimulationManifest | null>(
+    initialManifest,
+  );
   const [history, setHistory] = useState<AuthoringMessage[]>([]);
-  const [constraints, setConstraintsState] = useState<GenerationConstraints>(DEFAULT_CONSTRAINTS);
+  const [constraints, setConstraintsState] =
+    useState<GenerationConstraints>(DEFAULT_CONSTRAINTS);
   const [error, setError] = useState<Error | null>(null);
   const [confidence, setConfidence] = useState<number | null>(null);
-  const [suggestions, setSuggestions] = useState<ParameterSuggestion[] | null>(null);
+  const [suggestions, setSuggestions] = useState<ParameterSuggestion[] | null>(
+    null,
+  );
 
   // Generate unique message ID
   const generateMessageId = useCallback(() => {
@@ -259,32 +237,38 @@ export function useNLAuthoring(options: UseNLAuthoringOptions = {}): UseNLAuthor
   }, []);
 
   // Add message to history
-  const addMessage = useCallback((
-    role: AuthoringMessage["role"],
-    content: string,
-    type: AuthoringMessage["type"],
-    extras?: Partial<AuthoringMessage>
-  ): AuthoringMessage => {
-    const message: AuthoringMessage = {
-      id: generateMessageId(),
-      role,
-      content,
-      timestamp: new Date(),
-      type,
-      ...extras,
-    };
-    setHistory((prev) => [...prev, message]);
-    return message;
-  }, [generateMessageId]);
+  const addMessage = useCallback(
+    (
+      role: AuthoringMessage["role"],
+      content: string,
+      type: AuthoringMessage["type"],
+      extras?: Partial<AuthoringMessage>,
+    ): AuthoringMessage => {
+      const message: AuthoringMessage = {
+        id: generateMessageId(),
+        role,
+        content,
+        timestamp: new Date(),
+        type,
+        ...extras,
+      };
+      setHistory((prev) => [...prev, message]);
+      return message;
+    },
+    [generateMessageId],
+  );
 
   // Update manifest and notify
-  const updateManifest = useCallback((newManifest: SimulationManifest | null) => {
-    setManifest(newManifest);
-    if (newManifest) {
-      setDomain(newManifest.domain);
-    }
-    onManifestChange?.(newManifest);
-  }, [onManifestChange]);
+  const updateManifest = useCallback(
+    (newManifest: SimulationManifest | null) => {
+      setManifest(newManifest);
+      if (newManifest) {
+        setDomain(newManifest.domain);
+      }
+      onManifestChange?.(newManifest);
+    },
+    [onManifestChange],
+  );
 
   // Generate mutation
   const generateMutation = useMutation({
@@ -311,7 +295,7 @@ export function useNLAuthoring(options: UseNLAuthoringOptions = {}): UseNLAuthor
           {
             manifestSnapshot: result.manifest,
             confidence: result.confidence,
-          }
+          },
         );
       }
       setError(null);
@@ -346,7 +330,7 @@ export function useNLAuthoring(options: UseNLAuthoringOptions = {}): UseNLAuthor
           {
             manifestSnapshot: result.manifest,
             confidence: result.confidence,
-          }
+          },
         );
       }
       setError(null);
@@ -368,17 +352,19 @@ export function useNLAuthoring(options: UseNLAuthoringOptions = {}): UseNLAuthor
       return apiClient.suggest(request);
     },
     onSuccess: (result) => {
-      const paramSuggestions: ParameterSuggestion[] = result.suggestions.map((s) => ({
-        name: s.parameterName,
-        value: s.suggestedValue,
-        explanation: s.explanation,
-        confidence: s.confidence,
-      }));
+      const paramSuggestions: ParameterSuggestion[] = result.suggestions.map(
+        (s) => ({
+          name: s.parameterName,
+          value: s.suggestedValue,
+          explanation: s.explanation,
+          confidence: s.confidence,
+        }),
+      );
       setSuggestions(paramSuggestions);
       addMessage(
         "assistant",
         `Suggested ${paramSuggestions.length} parameters.`,
-        "suggest"
+        "suggest",
       );
     },
     onError: (err: Error) => {
@@ -387,31 +373,43 @@ export function useNLAuthoring(options: UseNLAuthoringOptions = {}): UseNLAuthor
   });
 
   // Public actions
-  const generate = useCallback(async (prompt: string): Promise<SimulationManifest | null> => {
-    addMessage("user", prompt, "generate");
-    const result = await generateMutation.mutateAsync(prompt);
-    return result.manifest || null;
-  }, [addMessage, generateMutation]);
+  const generate = useCallback(
+    async (prompt: string): Promise<SimulationManifest | null> => {
+      addMessage("user", prompt, "generate");
+      const result = await generateMutation.mutateAsync(prompt);
+      return result.manifest || null;
+    },
+    [addMessage, generateMutation],
+  );
 
-  const refine = useCallback(async (feedback: string): Promise<SimulationManifest | null> => {
-    addMessage("user", `Refine: ${feedback}`, "refine");
-    const result = await refineMutation.mutateAsync(feedback);
-    return result.manifest || null;
-  }, [addMessage, refineMutation]);
+  const refine = useCallback(
+    async (feedback: string): Promise<SimulationManifest | null> => {
+      addMessage("user", `Refine: ${feedback}`, "refine");
+      const result = await refineMutation.mutateAsync(feedback);
+      return result.manifest || null;
+    },
+    [addMessage, refineMutation],
+  );
 
-  const suggestParameters = useCallback(async (context: string): Promise<ParameterSuggestion[]> => {
-    const result = await suggestMutation.mutateAsync(context);
-    return result.suggestions.map((s) => ({
-      name: s.parameterName,
-      value: s.suggestedValue,
-      explanation: s.explanation,
-      confidence: s.confidence,
-    }));
-  }, [suggestMutation]);
+  const suggestParameters = useCallback(
+    async (context: string): Promise<ParameterSuggestion[]> => {
+      const result = await suggestMutation.mutateAsync(context);
+      return result.suggestions.map((s) => ({
+        name: s.parameterName,
+        value: s.suggestedValue,
+        explanation: s.explanation,
+        confidence: s.confidence,
+      }));
+    },
+    [suggestMutation],
+  );
 
-  const setConstraints = useCallback((updates: Partial<GenerationConstraints>) => {
-    setConstraintsState((prev) => ({ ...prev, ...updates }));
-  }, []);
+  const setConstraints = useCallback(
+    (updates: Partial<GenerationConstraints>) => {
+      setConstraintsState((prev) => ({ ...prev, ...updates }));
+    },
+    [],
+  );
 
   const clearHistory = useCallback(() => {
     setHistory([]);
@@ -430,17 +428,20 @@ export function useNLAuthoring(options: UseNLAuthoringOptions = {}): UseNLAuthor
     setDomain(initialDomain);
   }, [initialDomain]);
 
-  const revertToSnapshot = useCallback((messageId: string) => {
-    const message = history.find((m) => m.id === messageId);
-    if (message?.manifestSnapshot) {
-      updateManifest(message.manifestSnapshot);
-      addMessage(
-        "system",
-        `Reverted to snapshot from ${message.timestamp.toLocaleTimeString()}`,
-        "refine"
-      );
-    }
-  }, [history, updateManifest, addMessage]);
+  const revertToSnapshot = useCallback(
+    (messageId: string) => {
+      const message = history.find((m) => m.id === messageId);
+      if (message?.manifestSnapshot) {
+        updateManifest(message.manifestSnapshot);
+        addMessage(
+          "system",
+          `Reverted to snapshot from ${message.timestamp.toLocaleTimeString()}`,
+          "refine",
+        );
+      }
+    },
+    [history, updateManifest, addMessage],
+  );
 
   // Computed values
   const canRefine = manifest !== null;
@@ -455,7 +456,10 @@ export function useNLAuthoring(options: UseNLAuthoringOptions = {}): UseNLAuthor
       }));
   }, [history]);
 
-  const isLoading = generateMutation.isPending || refineMutation.isPending || suggestMutation.isPending;
+  const isLoading =
+    generateMutation.isPending ||
+    refineMutation.isPending ||
+    suggestMutation.isPending;
 
   return {
     // State

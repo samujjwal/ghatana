@@ -8,12 +8,13 @@
  */
 import type { FastifyInstance } from "fastify";
 import type { AIProxyService } from "@ghatana/tutorputor-contracts/v1/services";
-import type {
-  ModuleId,
-  TenantId,
-  UserId,
-} from "@ghatana/tutorputor-contracts/v1/types";
+import type { ModuleId } from "@ghatana/tutorputor-contracts/v1/types";
 import { AIContentGenerationService } from "./AIContentGenerationService.js";
+import {
+  getTenantId,
+  getUserId,
+  requireRole,
+} from "../../utils/request-helpers.js";
 
 interface AIRouteDeps {
   aiProxyService: AIProxyService & {
@@ -31,42 +32,6 @@ interface AIRouteDeps {
       }>
     >;
   };
-}
-
-/**
- * Helper to extract tenant ID from request headers or use default
- */
-function getTenantId(req: {
-  headers: Record<string, string | string[] | undefined>;
-}): TenantId {
-  const tenantId = req.headers["x-tenant-id"];
-  const value = Array.isArray(tenantId) ? tenantId[0] : tenantId;
-  return (value || "default") as TenantId;
-}
-
-/**
- * Helper to extract user ID from request headers or use default
- */
-function getUserId(req: {
-  headers: Record<string, string | string[] | undefined>;
-}): UserId {
-  const userId = req.headers["x-user-id"];
-  const value = Array.isArray(userId) ? userId[0] : userId;
-  return (value || "anonymous") as UserId;
-}
-
-/**
- * Helper to check user role (simplified version)
- */
-function requireRole(
-  req: { headers: Record<string, string | string[] | undefined> },
-  roles: string[],
-): void {
-  const userRole = req.headers["x-user-role"];
-  const role = Array.isArray(userRole) ? userRole[0] : userRole;
-  if (!role || !roles.includes(role)) {
-    throw new Error("Forbidden: insufficient permissions");
-  }
 }
 
 export async function registerAIRoutes(

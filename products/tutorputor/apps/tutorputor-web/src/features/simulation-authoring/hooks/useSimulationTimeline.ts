@@ -11,97 +11,31 @@
  */
 
 import { useState, useCallback, useRef, useEffect, useMemo } from "react";
+import type {
+  SimulationManifest,
+  SimulationStep,
+  SimEntity,
+  SimAction,
+  SimulationDomain,
+  SimStepId,
+  SimEntityId,
+} from "@ghatana/tutorputor-contracts/v1/simulation/types";
 
 // =============================================================================
-// Local Types (avoiding external contract dependencies)
+// Local Types (avoiding external contract dependencies) -> Replaced with Contracts
 // =============================================================================
 
-export type SimStepId = string;
-export type SimEntityId = string;
-
-export type SimulationDomain =
-  | "CS_DISCRETE"
-  | "PHYSICS"
-  | "ECONOMICS"
-  | "CHEMISTRY"
-  | "BIOLOGY"
-  | "MEDICINE"
-  | "ENGINEERING"
-  | "MATHEMATICS";
-
-export interface SimAction {
-  action: string;
-  type?: string;
-  target?: SimEntityId;
-  entityId?: SimEntityId;
-  params?: Record<string, unknown>;
-  duration?: number;
-  delay?: number;
-  easing?: string;
-}
-
-export interface SimulationStep {
-  id: SimStepId;
-  orderIndex?: number;
-  title?: string;
-  label?: string;
-  description?: string;
-  duration: number;
-  actions: SimAction[];
-  narration?: string;
-  checkpoint?: boolean;
-  breakpoint?: boolean;
-  assessmentHook?: {
-    prompt?: string;
-    type?: string;
-  };
-}
-
-export interface SimEntity {
-  id: SimEntityId;
-  type: string;
-  label?: string;
-  x?: number;
-  y?: number;
-  z?: number;
-  position?: { x: number; y: number };
-  data?: Record<string, unknown>;
-  properties?: Record<string, unknown>;
-}
-
-export interface CanvasSettings {
-  width?: number;
-  height?: number;
-  backgroundColor?: string;
-}
-
-export interface PlaybackSettings {
-  defaultSpeed?: number;
-  autoPlay?: boolean;
-  loop?: boolean;
-}
-
-export interface AccessibilitySettings {
-  altText?: string;
-  screenReaderNarration?: boolean;
-  reducedMotion?: boolean;
-}
-
-export interface SimulationManifest {
-  id: string;
-  title: string;
-  description?: string;
-  domain: SimulationDomain;
-  version: string;
-  initialEntities: SimEntity[];
-  steps: SimulationStep[];
-  canvas?: CanvasSettings;
-  playback?: PlaybackSettings;
-  accessibility?: AccessibilitySettings;
-  createdAt?: string;
-  updatedAt?: string;
-  metadata?: Record<string, unknown>;
-}
+// Re-export for consumers to avoid direct contract dependency if desired,
+// or they can import from contracts directly.
+export type {
+  SimulationManifest,
+  SimulationStep,
+  SimEntity,
+  SimAction,
+  SimulationDomain,
+  SimStepId,
+  SimEntityId,
+};
 
 // =============================================================================
 // Types

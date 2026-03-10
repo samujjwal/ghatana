@@ -17,37 +17,18 @@ import type {
   SimulationManifest,
   SimulationDomain,
 } from "../hooks/useSimulationTimeline";
+import type {
+  GenerateManifestRequest,
+  GenerateManifestResult,
+  RefineManifestRequest,
+} from "@ghatana/tutorputor-contracts/v1/simulation/types";
 
 // =============================================================================
-// Local Types (avoiding external contract dependencies)
+// Client Types (derived from contracts)
 // =============================================================================
 
-interface GenerateManifestRequest {
-  prompt: string;
-  domain: SimulationDomain;
-  constraints?: {
-    maxSteps?: number;
-    maxEntities?: number;
-    targetDuration?: number;
-  };
-  options?: {
-    maxSteps?: number;
-    includeAnnotations?: boolean;
-    complexity?: "simple" | "medium" | "complex";
-  };
-}
-
-interface GenerateManifestResult {
-  manifest: SimulationManifest;
-  suggestions?: string[];
-  confidence?: number;
-}
-
-interface RefineManifestRequest {
-  manifest: SimulationManifest;
-  refinement?: string;
-  feedback?: string;
-}
+type ClientGenerateManifestRequest = Omit<GenerateManifestRequest, "tenantId" | "userId">;
+type ClientRefineManifestRequest = Omit<RefineManifestRequest, "tenantId" | "userId">;
 
 // =============================================================================
 // Types
@@ -219,13 +200,13 @@ const DOMAIN_OPTIONS: Array<{
 // =============================================================================
 
 interface SimAuthorAPI {
-  generateManifest: (req: GenerateManifestRequest) => Promise<GenerateManifestResult>;
-  refineManifest: (req: RefineManifestRequest) => Promise<GenerateManifestResult>;
+  generateManifest: (req: ClientGenerateManifestRequest) => Promise<GenerateManifestResult>;
+  refineManifest: (req: ClientRefineManifestRequest) => Promise<GenerateManifestResult>;
 }
 
 function useSimAuthorAPI(baseUrl: string): SimAuthorAPI {
   const generateManifest = useCallback(
-    async (req: GenerateManifestRequest): Promise<GenerateManifestResult> => {
+    async (req: ClientGenerateManifestRequest): Promise<GenerateManifestResult> => {
       const response = await fetch(`${baseUrl}/api/sim-author/generate`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -243,7 +224,7 @@ function useSimAuthorAPI(baseUrl: string): SimAuthorAPI {
   );
 
   const refineManifest = useCallback(
-    async (req: RefineManifestRequest): Promise<GenerateManifestResult> => {
+    async (req: ClientRefineManifestRequest): Promise<GenerateManifestResult> => {
       const response = await fetch(`${baseUrl}/api/sim-author/refine`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },

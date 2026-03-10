@@ -16,15 +16,14 @@ import type { HealthAwareAssessmentService } from "./assessment-service";
 import type { HealthAwareAnalyticsService } from "./analytics-service";
 import type {
   ModuleId,
-  TenantId,
-  UserId,
   EnrollmentId,
   AssessmentId,
   AssessmentAttemptId,
   ClassroomId,
   AssessmentItemId,
-  AssessmentStatus
+  AssessmentStatus,
 } from "@ghatana/tutorputor-contracts/v1/types";
+import { getTenantId, getUserId } from "../../utils/request-helpers.js";
 
 // =============================================================================
 // Types
@@ -35,23 +34,6 @@ interface LearningRouteContext {
   pathwaysService: HealthAwarePathwaysService;
   assessmentService: HealthAwareAssessmentService;
   analyticsService: HealthAwareAnalyticsService;
-}
-
-// =============================================================================
-// Helpers
-// =============================================================================
-
-function getTenantId(request: any): TenantId {
-  // In a real app, middleware guarantees this or throws
-  return request.headers["x-tenant-id"] as unknown as TenantId;
-}
-
-function getUserId(request: any): UserId {
-  return request.headers["x-user-id"] as unknown as UserId;
-}
-
-function getUserRole(request: any): string {
-  return request.headers["x-user-role"] as string;
 }
 
 // =============================================================================
@@ -510,7 +492,10 @@ export default async function learningRoutes(
     async (request, reply) => {
       const tenantId = getTenantId(request);
       const { moduleId } = request.query;
-      const summary = await analyticsService.getSummary({ tenantId, moduleId: moduleId as ModuleId });
+      const summary = await analyticsService.getSummary({
+        tenantId,
+        moduleId: moduleId as ModuleId,
+      });
       return reply.send(summary);
     },
   );

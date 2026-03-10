@@ -32,127 +32,127 @@
 
 // Types
 export {
-    EntityType,
-    type PhysicsProperties,
-    type EntityAppearance,
-    type PhysicsEntity,
-    type PhysicsConfig,
-    type ToolboxItem,
-    type EntitySelection,
-} from './types';
+  EntityType,
+  type PhysicsProperties,
+  type EntityAppearance,
+  type PhysicsEntity,
+  type PhysicsConfig,
+  type ToolboxItem,
+  type EntitySelection,
+} from "./types";
 
 // Entity utilities
 export {
-    DEFAULT_PHYSICS,
-    ENTITY_DEFAULTS,
-    TOOLBOX_ITEMS,
-    DEFAULT_PHYSICS_CONFIG,
-    createEntity,
-    physicsPropertiesSchema,
-    entityAppearanceSchema,
-    physicsEntitySchema,
-    physicsConfigSchema,
-    validateEntity,
-    validatePhysicsConfig,
-    isValidEntityType,
-} from './entities';
+  DEFAULT_PHYSICS,
+  ENTITY_DEFAULTS,
+  TOOLBOX_ITEMS,
+  DEFAULT_PHYSICS_CONFIG,
+  createEntity,
+  physicsPropertiesSchema,
+  entityAppearanceSchema,
+  physicsEntitySchema,
+  physicsConfigSchema,
+  validateEntity,
+  validatePhysicsConfig,
+  isValidEntityType,
+} from "./entities";
 
 // Serialization
 export {
-    type SimulationManifest,
-    MANIFEST_VERSION,
-    manifestSchema,
-    createManifest,
-    exportManifestToJSON,
-    downloadManifest,
-    parseManifest,
-    migrateManifest,
-    readManifestFromFile,
-} from './serialization';
+  type PhysicsSimulationManifest,
+  MANIFEST_VERSION,
+  physicsManifestSchema,
+  createManifest,
+  exportManifestToJSON,
+  downloadManifest,
+  parseManifest,
+  migrateManifest,
+  readManifestFromFile,
+} from "./serialization";
 
 // Rendering
 export {
-    KonvaEntityRenderer,
-    type KonvaEntityRendererProps,
-} from './rendering';
+  KonvaEntityRenderer,
+  type KonvaEntityRendererProps,
+} from "./rendering";
 
 // State atoms
 export {
-    // Core state atoms
-    simulationEntitiesAtom,
-    simulationPhysicsConfigAtom,
-    simulationSelectionAtom,
-    simulationHistoryAtom,
-    simulationHistoryIndexAtom,
-    simulationPreviewModeAtom,
-    // Derived atoms
-    selectedEntityAtom,
-    canUndoAtom,
-    canRedoAtom,
-    historyStatusAtom,
-    // Action atoms
-    addHistoryEntryAtom,
-    undoAtom,
-    redoAtom,
-    addEntityAtom,
-    updateEntityAtom,
-    deleteEntityAtom,
-    clearAllEntitiesAtom,
-    loadEntitiesAtom,
-    type SimulationHistoryEntry,
-} from './state';
+  // Core state atoms
+  simulationEntitiesAtom,
+  simulationPhysicsConfigAtom,
+  simulationSelectionAtom,
+  simulationHistoryAtom,
+  simulationHistoryIndexAtom,
+  simulationPreviewModeAtom,
+  // Derived atoms
+  selectedEntityAtom,
+  canUndoAtom,
+  canRedoAtom,
+  historyStatusAtom,
+  // Action atoms
+  addHistoryEntryAtom,
+  undoAtom,
+  redoAtom,
+  addEntityAtom,
+  updateEntityAtom,
+  deleteEntityAtom,
+  clearAllEntitiesAtom,
+  loadEntitiesAtom,
+  type SimulationHistoryEntry,
+} from "./state";
 
 // Hooks
 export {
-    useSimulation,
-    useSimulationKeyboardShortcuts,
-    type UseSimulationResult,
-} from './hooks';
+  useSimulation,
+  useSimulationKeyboardShortcuts,
+  type UseSimulationResult,
+} from "./hooks";
 
 // Components
 export {
-    DraggableToolboxItem,
-    EntityToolbox,
-    PhysicsPropertyPanel,
-    PhysicsConfigPanel,
-    SimulationCanvas,
-    SimulationToolbar,
-    type DraggableToolboxItemProps,
-    type EntityToolboxProps,
-    type EntityDropPayload,
-    type PhysicsPropertyPanelProps,
-    type PhysicsConfigPanelProps,
-    type SimulationCanvasProps,
-    type SimulationToolbarProps,
-} from './components';
+  DraggableToolboxItem,
+  EntityToolbox,
+  PhysicsPropertyPanel,
+  PhysicsConfigPanel,
+  SimulationCanvas,
+  SimulationToolbar,
+  type DraggableToolboxItemProps,
+  type EntityToolboxProps,
+  type EntityDropPayload,
+  type PhysicsPropertyPanelProps,
+  type PhysicsConfigPanelProps,
+  type SimulationCanvasProps,
+  type SimulationToolbarProps,
+} from "./components";
 
 // Adapters - Unified rendering backend abstraction
 export {
-    type RenderingBackend,
-    type RenderableElement,
-    type RenderingCapabilities,
-    type IRenderingAdapter,
-    type RenderingAdapterFactory,
-    KONVA_CAPABILITIES,
-    REACT_FLOW_CAPABILITIES,
-    WEBGL_CAPABILITIES,
-    renderingAdapterRegistry,
-    registerRenderingAdapter,
-    getRenderingAdapter,
-    selectBestAdapter,
-    KonvaRenderingAdapter,
-} from './adapters';
+  type RenderingBackend,
+  type RenderableElement,
+  type RenderingCapabilities,
+  type IRenderingAdapter,
+  type RenderingAdapterFactory,
+  KONVA_CAPABILITIES,
+  REACT_FLOW_CAPABILITIES,
+  WEBGL_CAPABILITIES,
+  renderingAdapterRegistry,
+  registerRenderingAdapter,
+  getRenderingAdapter,
+  selectBestAdapter,
+  KonvaRenderingAdapter,
+} from "./adapters";
 
 // Collaboration - Yjs-based real-time collaboration
 export {
-    usePhysicsCollaboration,
-    type CollaborationUser,
-    type PhysicsCollaborationState,
-    type UsePhysicsCollaborationOptions,
-    UserCursor,
-    CollaborationCursors,
-    CollaborationStatusBar,
-    type UserCursorProps,
-    type CollaborationCursorsProps,
-    type CollaborationStatusBarProps,
-} from './collaboration';
+  usePhysicsCollaboration,
+  type CollaborationUser,
+  type PhysicsCollaborationState,
+  type UsePhysicsCollaborationOptions,
+  UserCursor,
+  CollaborationCursors,
+  CollaborationStatusBar,
+  type UserCursorProps,
+  type CollaborationCursorsProps,
+  type CollaborationStatusBarProps,
+} from "./collaboration";

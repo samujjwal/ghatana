@@ -12,43 +12,21 @@
 
 import { useState, useCallback, useRef } from "react";
 import { useMutation, useQuery } from "@tanstack/react-query";
+import type {
+  SimulationManifest,
+  SimulationStep,
+  SimEntity,
+  SimAction,
+  SimKeyframe,
+} from "@ghatana/tutorputor-contracts/v1/simulation/types";
 
-// Local type definitions (mirroring contracts to avoid build order issues)
-export interface SimulationManifest {
-  id: string;
-  title: string;
-  domain: string;
-  steps: SimulationStep[];
-  entities?: SimEntity[];
-  metadata?: Record<string, unknown>;
-}
-
-export interface SimulationStep {
-  id: string;
-  label: string;
-  duration?: number;
-  actions?: SimAction[];
-}
-
-export interface SimEntity {
-  id: string;
-  type: string;
-  label: string;
-  properties?: Record<string, unknown>;
-}
-
-export interface SimAction {
-  type: string;
-  targetEntityId?: string;
-  parameters?: Record<string, unknown>;
-}
-
-export interface SimKeyframe {
-  stepIndex: number;
-  time: number;
-  entities: Record<string, unknown>;
-  parameters?: Record<string, unknown>;
-}
+export type {
+  SimulationManifest,
+  SimulationStep,
+  SimEntity,
+  SimAction,
+  SimKeyframe,
+};
 
 // =============================================================================
 // Types
@@ -127,7 +105,7 @@ async function streamTutorQuestion(
     currentKeyframe?: SimKeyframe;
     recentActions?: TrackedUserAction[];
   },
-  onChunk: (chunk: { type: string; content?: string }) => void
+  onChunk: (chunk: { type: string; content?: string }) => void,
 ): Promise<void> {
   const response = await fetch("/api/tutor/simulation/stream", {
     method: "POST",
@@ -194,7 +172,8 @@ export function useSimulationTutor(options: SimulationTutorHookOptions) {
   const recentActionsRef = useRef<TrackedUserAction[]>([]);
 
   // Generate unique message ID
-  const generateId = () => `msg_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+  const generateId = () =>
+    `msg_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
 
   /**
    * Update the current simulation keyframe.
@@ -299,8 +278,8 @@ export function useSimulationTutor(options: SimulationTutorHookOptions) {
                   prev.map((msg) =>
                     msg.id === tutorMessageId
                       ? { ...msg, content: msg.content + (chunk.content ?? "") }
-                      : msg
-                  )
+                      : msg,
+                  ),
                 );
                 break;
               case "hint":
@@ -319,15 +298,15 @@ export function useSimulationTutor(options: SimulationTutorHookOptions) {
                           hints: newHints,
                           suggestions: newSuggestions,
                         }
-                      : msg
-                  )
+                      : msg,
+                  ),
                 );
                 setHints(newHints);
                 setSuggestions(newSuggestions);
                 setIsStreaming(false);
                 break;
             }
-          }
+          },
         );
       } catch (error) {
         onError?.(error as Error);
@@ -335,13 +314,17 @@ export function useSimulationTutor(options: SimulationTutorHookOptions) {
         setMessages((prev) =>
           prev.map((msg) =>
             msg.id === tutorMessageId
-              ? { ...msg, isStreaming: false, content: "Sorry, I encountered an error." }
-              : msg
-          )
+              ? {
+                  ...msg,
+                  isStreaming: false,
+                  content: "Sorry, I encountered an error.",
+                }
+              : msg,
+          ),
         );
       }
     },
-    [simulationId, manifest, onError]
+    [simulationId, manifest, onError],
   );
 
   /**
@@ -360,7 +343,7 @@ export function useSimulationTutor(options: SimulationTutorHookOptions) {
     (question: string) => {
       askWithStream(question);
     },
-    [askWithStream]
+    [askWithStream],
   );
 
   return {
@@ -394,7 +377,9 @@ export function useSimulationTutorContext(simulationId: string | null) {
   return useQuery({
     queryKey: ["simulation-tutor-context", simulationId],
     queryFn: async () => {
-      const response = await fetch(`/api/tutor/simulation/${simulationId}/context`);
+      const response = await fetch(
+        `/api/tutor/simulation/${simulationId}/context`,
+      );
       if (!response.ok) {
         throw new Error("Failed to fetch context");
       }

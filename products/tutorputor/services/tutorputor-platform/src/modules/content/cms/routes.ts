@@ -19,9 +19,12 @@ import type {
   ModuleDraftPatch,
   ModuleId,
   ModuleSummary,
-  TenantId,
-  UserId,
 } from "@ghatana/tutorputor-contracts/v1/types";
+import {
+  getTenantId,
+  getUserId,
+  requireRole,
+} from "../../../utils/request-helpers.js";
 
 // =============================================================================
 // Types
@@ -29,25 +32,6 @@ import type {
 
 interface CMSRouteContext {
   cmsService: CMSService;
-}
-
-// =============================================================================
-// Helper Functions
-// =============================================================================
-
-function getTenantId(request: any): TenantId {
-  return (request.headers["x-tenant-id"] as string) as TenantId;
-}
-
-function getUserId(request: any): UserId {
-  return (request.headers["x-user-id"] as string) as UserId;
-}
-
-function requireRole(request: any, roles: string[]): void {
-  const userRole = request.headers["x-user-role"] as string;
-  if (!roles.includes(userRole)) {
-    throw new Error(`Insufficient permissions. Required: ${roles.join(", ")}`);
-  }
 }
 
 async function respondWithErrors<T>(
