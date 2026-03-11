@@ -1,0 +1,97 @@
+id: journey-design-capability-agent
+name: Journey Design Capability Agent
+version: 1.0.0
+description: "Designs and documents user journeys: end-to-end journey mapping, emotional arc analysis, pain point overlays, and service blueprint creation"
+
+metadata:
+  level: 2
+  domain: ux
+  tags: [capability, journey-design, user-journey, service-blueprint, emotional-arc, level2]
+
+generator:
+  type: PIPELINE
+  steps:
+    - name: journey_context_synthesis
+      type: LLM
+      provider: ANTHROPIC
+      model: claude-3-5-sonnet-20241022
+      temperature: 0.2
+      max_tokens: 2500
+      prompt: |
+        Synthesise context for journey design:
+
+        Persona: {{context.persona}}
+        JTBD: {{context.jtbd}}
+        Research insights: {{context.research_insights}}
+        Touchpoints: {{context.touchpoints}}
+
+        Identify: journey stages (awareness→onboarding→core use→mastery→advocacy), key tasks per stage, channels used, existing touchpoints. Output journey structure JSON.
+    - name: journey_map_generation
+      type: LLM
+      provider: ANTHROPIC
+      model: claude-3-5-sonnet-20241022
+      temperature: 0.2
+      max_tokens: 4000
+      prompt: |
+        Generate detailed user journey map:
+
+        Journey structure: {{journey_context_synthesis}}
+        Pain point data: {{context.pain_points}}
+        Emotional research: {{context.emotional_data}}
+
+        For each stage produce: steps (user actions), thoughts (what they're thinking), emotions (emoji + description), pain points (severity 1-3), opportunities (design interventions), channels. Format as journey map table.
+    - name: service_blueprint
+      type: LLM
+      provider: ANTHROPIC
+      model: claude-3-5-sonnet-20241022
+      temperature: 0.1
+      max_tokens: 3000
+      prompt: |
+        Create service blueprint from journey map:
+
+        Journey map: {{journey_map_generation}}
+        System capabilities: {{context.system_capabilities}}
+
+        Map: user actions (front stage), visible employee actions, invisible backstage actions, support processes, physical/digital evidence. Identify failure points and improvement opportunities. Output blueprint structure.
+
+memory:
+  episodic:
+    enabled: true
+    retention_days: 365
+    categories: [journey-maps, service-blueprints, journey-reviews, pain-point-analyses]
+  semantic:
+    enabled: true
+    categories: [journey-patterns, persona-journeys, touchpoint-catalogue]
+  procedural:
+    enabled: true
+    categories: [journey-mapping-technique, service-blueprint-method, emotional-arc-analysis]
+
+tools: [journey_map_builder, service_blueprint_tool, persona_registry]
+
+capabilities:
+  - journey-mapping
+  - emotional-arc-analysis
+  - service-blueprint-creation
+  - pain-point-overlay
+
+routing:
+  input_types: [journey_design_request, persona, research_data, touchpoint_audit]
+  output_types: [journey_map, service_blueprint, pain_point_report, opportunity_list]
+
+delegation:
+  can_delegate_to:
+    - journey-mapping-task-agent
+    - emotional-arc-task-agent
+    - service-blueprint-task-agent
+    - pain-point-task-agent
+  escalates_to: ux-orchestrator
+
+governance:
+  requires_approval: false
+  can_block: false
+  audit_trail: standard
+
+performance:
+  expected_latency_ms: 8000
+  max_latency_ms: 30000
+  timeout_ms: 120000

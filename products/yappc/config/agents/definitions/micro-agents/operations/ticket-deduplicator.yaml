@@ -1,0 +1,51 @@
+id: ticket-deduplicator
+name: Ticket Deduplicator
+version: 1.0.0
+description: "Detect whether an incoming support ticket is a duplicate of an existing open ticket using semantic matching"
+
+metadata:
+  level: 3
+  domain: operations
+  type: micro-agent
+  tags: [ticket-deduplication, semantic-matching, level3, micro]
+
+generator:
+  type: RULE_BASED
+  steps:
+    - name: execute
+      type: RULE_BASED
+      rules:
+        - "ticket-deduplication"
+        - "semantic-matching"
+
+memory:
+  episodic:
+    enabled: false
+  semantic:
+    enabled: false
+  procedural:
+    enabled: false
+
+tools: [semantic_matcher]
+
+capabilities:
+  - ticket-deduplication
+  - semantic-matching
+
+routing:
+  input_types: [dedup_request]
+  output_types: [duplicate_verdict]
+
+delegation:
+  can_delegate_to: []
+  escalates_to: support-capability-agent
+
+governance:
+  requires_approval: false
+  can_block: false
+  audit_trail: standard
+
+performance:
+  expected_latency_ms: 200
+  max_latency_ms: 1000
+  timeout_ms: 2000

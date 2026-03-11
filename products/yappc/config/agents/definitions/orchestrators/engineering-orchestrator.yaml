@@ -1,0 +1,90 @@
+id: engineering-orchestrator
+name: Engineering Orchestrator
+version: 1.0.0
+description: "Top-level engineering orchestrator coordinating delivery planning, agile execution, frontend/backend implementation, code quality, and developer experience"
+
+metadata:
+  level: 1
+  domain: engineering
+  tags: [orchestrator, engineering, coordination, level1]
+
+generator:
+  type: PIPELINE
+  steps:
+    - name: engineering_triage
+      type: LLM
+      provider: ANTHROPIC
+      model: claude-3-5-sonnet-20241022
+      temperature: 0.2
+      max_tokens: 2500
+      prompt: |
+        You are the Engineering Orchestrator. Triage the engineering request:
+
+        Request: {{input}}
+        Current sprint: {{context.sprint}}
+        Team capacity: {{context.capacity}}
+        Codebase context: {{context.codebase}}
+
+        Determine:
+        1. Engineering domain (frontend, backend, infra, data, AI)
+        2. Delivery phase (planning, implementation, review, quality)
+        3. Priority and urgency
+        4. Sub-orchestrators to activate
+        5. Code quality gates to apply
+
+        Output as JSON: {domain, phase, priority, delegation_plan, quality_gates}
+    - name: implementation_delegation
+      type: SERVICE_CALL
+      service: agent-dispatcher
+      endpoint: /dispatch
+      description: "Route to appropriate engineering sub-orchestrators based on domain and phase"
+    - name: quality_gate_check
+      type: SERVICE_CALL
+      service: agent-dispatcher
+      endpoint: /dispatch
+      description: "Dispatch to code-review-orchestrator for quality validation"
+
+memory:
+  episodic:
+    enabled: true
+    retention_days: 365
+    categories: [engineering-tasks, code-changes, sprint-outcomes]
+  semantic:
+    enabled: true
+    categories: [codebase-knowledge, engineering-patterns, quality-standards]
+  procedural:
+    enabled: true
+    categories: [engineering-workflows, quality-gate-rules, review-standards]
+
+tools: [task_delegator, quality_gate_checker, sprint_tracker, code_context_builder]
+
+capabilities:
+  - engineering-coordination
+  - delivery-planning
+  - implementation-oversight
+  - code-quality-enforcement
+  - developer-experience
+
+routing:
+  input_types: [engineering_request, feature_plan, sprint_plan, implementation_task, code_review_request]
+  output_types: [implementation_plan, sprint_board, code_review, quality_report, engineering_summary]
+
+delegation:
+  can_delegate_to:
+    - delivery-planning-orchestrator
+    - agile-execution-orchestrator
+    - frontend-engineering-orchestrator
+    - backend-engineering-orchestrator
+    - work-management-orchestrator
+    - code-review-orchestrator
+  escalates_to: null
+
+governance:
+  requires_approval: false
+  can_block: true
+  audit_trail: standard
+
+performance:
+  expected_latency_ms: 5000
+  max_latency_ms: 60000
+  timeout_ms: 90000

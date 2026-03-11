@@ -1,0 +1,102 @@
+id: plugin-architecture-orchestrator
+name: Plugin Architecture Orchestrator
+version: 1.0.0
+description: "Designs plugin system architecture: plugin lifecycle management, versioning strategy, compatibility contracts, API surface design, and marketplace integration"
+
+metadata:
+  level: 1
+  domain: architecture
+  tags: [orchestrator, plugin-architecture, extensibility, marketplace, level1]
+
+generator:
+  type: PIPELINE
+  steps:
+    - name: plugin_system_design
+      type: LLM
+      provider: ANTHROPIC
+      model: claude-3-5-sonnet-20241022
+      temperature: 0.3
+      max_tokens: 4000
+      prompt: |
+        Design or evolve the plugin system architecture:
+
+        Request: {{input}}
+        Current plugin system: {{context.plugin_system}}
+        Plugin consumer requirements: {{context.plugin_consumers}}
+
+        Design:
+        1. Plugin extension points API (hooks, events, UI injection points)
+        2. Plugin manifest schema (capabilities, permissions, dependencies)
+        3. Plugin lifecycle (install, activate, update, deactivate, uninstall)
+        4. Plugin isolation model (sandboxing, permission enforcement)
+        5. Plugin marketplace integration spec
+        6. Versioning and compatibility contract
+
+        Output as JSON: {extension_points, manifest_schema, lifecycle, isolation_model, marketplace_spec, versioning_strategy}
+    - name: plugin_contract_design
+      type: LLM
+      provider: ANTHROPIC
+      model: claude-3-5-sonnet-20241022
+      temperature: 0.2
+      max_tokens: 3000
+      prompt: |
+        Generate formal plugin API contracts:
+        System design: {{plugin_system_design}}
+
+        Produce: {plugin_api_spec (OpenAPI format), manifest_json_schema, lifecycle_hook_signatures, permission_model}
+    - name: compatibility_matrix
+      type: LLM
+      provider: ANTHROPIC
+      model: claude-3-5-sonnet-20241022
+      temperature: 0.1
+      max_tokens: 2000
+      prompt: |
+        Define plugin compatibility rules and migration paths:
+        Contracts: {{plugin_contract_design}}
+
+        Produce: compatibility_rules, semver_policy, breaking_change_criteria, migration_guide_template.
+
+memory:
+  episodic:
+    enabled: true
+    retention_days: 1095
+    categories: [plugin-architecture-decisions, compatibility-changes, marketplace-versions]
+  semantic:
+    enabled: true
+    categories: [plugin-patterns, extension-point-catalogue, compatibility-rules]
+  procedural:
+    enabled: true
+    categories: [plugin-design-procedures, compatibility-assessment-rules]
+
+tools: [plugin_architect, contract_designer, manifest_builder, compatibility_checker]
+
+capabilities:
+  - plugin-architecture
+  - plugin-contract-design
+  - lifecycle-management-design
+  - plugin-isolation
+  - marketplace-integration
+
+routing:
+  input_types: [plugin_architecture_request, plugin_spec, compatibility_requirements]
+  output_types: [plugin_architecture_doc, plugin_contracts, manifest_schema, compatibility_matrix]
+
+delegation:
+  can_delegate_to:
+    - plugin-contract-capability-agent
+    - plugin-lifecycle-task-agent
+    - plugin-compatibility-task-agent
+    - plugin-manifest-validator
+  escalates_to: architecture-orchestrator
+
+governance:
+  requires_approval: true
+  approval_chain:
+    - architecture-orchestrator
+  can_block: false
+  audit_trail: comprehensive
+
+performance:
+  expected_latency_ms: 12000
+  max_latency_ms: 90000
+  timeout_ms: 120000

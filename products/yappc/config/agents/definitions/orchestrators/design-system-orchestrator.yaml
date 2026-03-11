@@ -1,0 +1,113 @@
+id: design-system-orchestrator
+name: Design System Orchestrator
+version: 1.0.0
+description: "Manages the design system lifecycle: component library governance, design token management, documentation, versioning, and contribution workflows"
+
+metadata:
+  level: 1
+  domain: ux
+  tags: [orchestrator, design-system, tokens, component-library, level1]
+
+generator:
+  type: PIPELINE
+  steps:
+    - name: design_system_assessment
+      type: LLM
+      provider: ANTHROPIC
+      model: claude-3-5-sonnet-20241022
+      temperature: 0.2
+      max_tokens: 2500
+      prompt: |
+        Assess the design system request:
+
+        Request: {{input}}
+        Current design system state: {{context.design_system}}
+        Usage analytics: {{context.usage_data}}
+
+        Determine:
+        1. Type of request (new component, token update, doc improvement, version bump)
+        2. Impact scope (how many consumers affected)
+        3. Breaking vs non-breaking change
+        4. Required review process
+        5. Documentation updates needed
+
+        Output as JSON: {request_type, scope, is_breaking, review_process, doc_updates}
+    - name: component_governance
+      type: LLM
+      provider: ANTHROPIC
+      model: claude-3-5-sonnet-20241022
+      temperature: 0.2
+      max_tokens: 3000
+      prompt: |
+        Apply design system governance to the request:
+        Assessment: {{design_system_assessment}}
+        Governance rules: {{context.governance_rules}}
+
+        For new components: check uniqueness, reusability threshold, naming conventions, accessibility requirements.
+        For updates: check backward compatibility, migration path for consumers, deprecation plan if needed.
+    - name: token_management
+      type: LLM
+      provider: ANTHROPIC
+      model: claude-3-5-sonnet-20241022
+      temperature: 0.1
+      max_tokens: 2500
+      prompt: |
+        Manage design token changes:
+        Request: {{input}}, Assessment: {{design_system_assessment}}
+
+        Generate: token additions/updates, semantic token mapping, platform-specific output (CSS vars, iOS, Android).
+        Include: token_name, value, category, platform_targets, change_type
+    - name: documentation_update
+      type: LLM
+      provider: ANTHROPIC
+      model: claude-3-5-sonnet-20241022
+      temperature: 0.3
+      max_tokens: 3000
+      prompt: |
+        Generate design system documentation updates:
+        Changes: {{component_governance}}, {{token_management}}
+
+        Write: component usage guidelines, prop documentation, do/don't examples, storybook descriptions.
+
+memory:
+  episodic:
+    enabled: true
+    retention_days: 1095
+    categories: [design-system-changes, version-history, breaking-changes]
+  semantic:
+    enabled: true
+    categories: [component-library, token-registry, usage-patterns, governance-rules]
+  procedural:
+    enabled: true
+    categories: [contribution-workflow, versioning-procedure, breaking-change-process]
+
+tools: [token_manager, component_registry, version_manager, doc_generator]
+
+capabilities:
+  - design-system-governance
+  - design-token-management
+  - component-library-management
+  - design-system-documentation
+  - versioning
+
+routing:
+  input_types: [component_proposal, token_update, design_system_request, design_contribuion]
+  output_types: [component_spec, token_update, design_system_doc, release_notes, migration_guide]
+
+delegation:
+  can_delegate_to:
+    - ui-orchestrator
+    - frontend-engineering-orchestrator
+  escalates_to: ux-orchestrator
+
+governance:
+  requires_approval: true
+  approval_chain:
+    - ux-orchestrator
+  can_block: true
+  audit_trail: comprehensive
+
+performance:
+  expected_latency_ms: 8000
+  max_latency_ms: 60000
+  timeout_ms: 90000

@@ -1,0 +1,63 @@
+id: requirement-gap-analysis-task-agent
+name: Requirement Gap Analysis Task Agent
+version: 1.0.0
+description: "Identify requirement gaps against functional scope, user journey coverage, edge cases, and NFR domains"
+
+metadata:
+  level: 3
+  domain: requirements
+  type: worker
+  tags: [gap-analysis, coverage-assessment, gap-recommendation, level3]
+
+generator:
+  type: PIPELINE
+  steps:
+    - name: execute
+      type: LLM
+      provider: ANTHROPIC
+      model: claude-3-5-sonnet-20241022
+      temperature: 0.1
+      max_tokens: 2000
+      prompt: |
+        Execute task: Identify requirement gaps against functional scope, user journey coverage, edge cases, and NFR domains
+
+        Input: {{input}}
+        Context: {{context}}
+
+        Produce a structured, precise output meeting the task specification.
+
+memory:
+  episodic:
+    enabled: true
+    retention_days: 90
+    categories: [task-executions]
+  semantic:
+    enabled: true
+    categories: [domain-knowledge]
+  procedural:
+    enabled: false
+
+tools: [gap_analyser, coverage_checker]
+
+capabilities:
+  - gap-analysis
+  - coverage-assessment
+  - gap-recommendation
+
+routing:
+  input_types: [gap_analysis_request]
+  output_types: [gap_analysis_report]
+
+delegation:
+  can_delegate_to: []
+  escalates_to: requirement-analysis-capability-agent
+
+governance:
+  requires_approval: false
+  can_block: false
+  audit_trail: standard
+
+performance:
+  expected_latency_ms: 3000
+  max_latency_ms: 15000
+  timeout_ms: 30000

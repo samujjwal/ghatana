@@ -1,0 +1,102 @@
+id: change-management-orchestrator
+name: Change Management Orchestrator
+version: 1.0.0
+description: "Manages change request assessment, CAB coordination, risk scoring, rollback planning, and post-change verification across all operational domains"
+
+metadata:
+  level: 1
+  domain: operations
+  tags: [orchestrator, change-management, cab, risk, rollback, level1]
+
+generator:
+  type: PIPELINE
+  steps:
+    - name: change_request_analysis
+      type: LLM
+      provider: ANTHROPIC
+      model: claude-3-5-sonnet-20241022
+      temperature: 0.1
+      max_tokens: 2500
+      prompt: |
+        Analyse the change request:
+
+        Change: {{input}}
+        Change history for component: {{context.component_change_history}}
+        Current maintenance windows: {{context.maintenance_windows}}
+        Blast radius mapping: {{context.blast_radius}}
+        Freeze windows: {{context.change_freeze}}
+
+        Assess: risk score (1-10), change category (standard/normal/emergency/major), blast radius, CAB requirement, recommended window, rollback complexity. Output JSON.
+    - name: rollback_plan_generation
+      type: LLM
+      provider: ANTHROPIC
+      model: claude-3-5-sonnet-20241022
+      temperature: 0.1
+      max_tokens: 2000
+      prompt: |
+        Generate rollback plan for the change:
+
+        Change: {{input}}
+        Risk assessment: {{change_request_analysis}}
+        Service topology: {{context.service_topology}}
+
+        Produce: rollback steps, data reversion if needed, verification checkpoints, estimated rollback time, communication plan. Output rollback plan JSON.
+    - name: cab_coordination
+      type: SERVICE_CALL
+      service: governance-workflow
+      endpoint: /cab-review
+      description: "Submit change to CAB if required, collect approvals, enforce freeze window checks"
+    - name: change_execution_gating
+      type: RULE_BASED
+      description: "Apply all approval and freeze window gates before dispatching to execution"
+    - name: post_change_verification
+      type: SERVICE_CALL
+      service: agent-dispatcher
+      endpoint: /dispatch
+      description: "Coordinate post-change health checks and SLO verification"
+
+memory:
+  episodic:
+    enabled: true
+    retention_days: 730
+    categories: [change-requests, cab-decisions, rollbacks, verifications]
+  semantic:
+    enabled: true
+    categories: [change-patterns, blast-radius-maps, approval-policies]
+  procedural:
+    enabled: true
+    categories: [cab-procedures, risk-scoring, rollback-playbooks]
+
+tools: [change_registry, risk_scorer, cab_workflow, blast_radius_analyser, maintenance_window_api]
+
+capabilities:
+  - change-request-assessment
+  - cab-coordination
+  - risk-scoring
+  - rollback-planning
+  - post-change-verification
+
+routing:
+  input_types: [change_request, emergency_change_request, change_calendar_update]
+  output_types: [change_assessment, rollback_plan, cab_decision, post_change_report]
+
+delegation:
+  can_delegate_to:
+    - change-capability-agent
+    - change-assessment-task-agent
+    - risk-scoring-task-agent
+    - cab-workflow-task-agent
+    - rollback-planning-task-agent
+    - post-change-verification-task-agent
+  escalates_to: operations-orchestrator
+
+governance:
+  requires_approval: true
+  approval_chain: [change-advisory-board]
+  can_block: true
+  audit_trail: comprehensive
+
+performance:
+  expected_latency_ms: 5000
+  max_latency_ms: 30000
+  timeout_ms: 86400000

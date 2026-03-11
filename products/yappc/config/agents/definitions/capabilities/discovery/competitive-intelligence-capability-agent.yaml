@@ -1,0 +1,98 @@
+id: competitive-intelligence-capability-agent
+name: Competitive Intelligence Capability Agent
+version: 1.0.0
+description: "Tracks and analyses competitor products: feature parity mapping, positioning analysis, pricing intelligence, win/loss analysis, and competitive threat scoring"
+
+metadata:
+  level: 2
+  domain: discovery
+  tags: [capability, competitive-intelligence, competitor-analysis, positioning, level2]
+
+generator:
+  type: PIPELINE
+  steps:
+    - name: competitor_landscape_mapping
+      type: LLM
+      provider: ANTHROPIC
+      model: claude-3-5-sonnet-20241022
+      temperature: 0.1
+      max_tokens: 3000
+      prompt: |
+        Map the competitive landscape:
+
+        Market space: {{context.market_space}}
+        Known competitors: {{context.competitor_list}}
+        Recent news and signals: {{context.market_signals}}
+        Our product positioning: {{context.own_positioning}}
+
+        Produce: competitive landscape table (player, tier, primary differentiator, target segment, pricing model, key strengths, key weaknesses, threat level 1-5). Identify emerging threats. Output JSON.
+    - name: feature_parity_analysis
+      type: LLM
+      provider: ANTHROPIC
+      model: claude-3-5-sonnet-20241022
+      temperature: 0.1
+      max_tokens: 3000
+      prompt: |
+        Compare feature parity against top 3 competitors:
+
+        Competitors: {{competitor_landscape_mapping.top_competitors}}
+        Feature taxonomy: {{context.feature_taxonomy}}
+        Competitor product data: {{context.competitor_product_data}}
+
+        For each feature: who has it, quality level (basic/advanced), our status (have/partial/missing), strategic importance. Identify: where we lead, where we lag, table stakes vs differentiators. Output JSON matrix.
+    - name: strategic_intelligence_brief
+      type: LLM
+      provider: ANTHROPIC
+      model: claude-3-5-sonnet-20241022
+      temperature: 0.2
+      max_tokens: 2000
+      prompt: |
+        Write competitive intelligence brief:
+
+        Landscape: {{competitor_landscape_mapping}}
+        Feature parity: {{feature_parity_analysis}}
+
+        Produce: market position summary, top competitive threats (3), our differentiation story, recommended response moves (3), areas to harvest vs invest. Executive ready, 600w max.
+
+memory:
+  episodic:
+    enabled: true
+    retention_days: 365
+    categories: [ci-briefings, competitor-moves, win-loss-data, parity-snapshots]
+  semantic:
+    enabled: true
+    categories: [competitor-profiles, feature-taxonomy, market-positioning]
+  procedural:
+    enabled: true
+    categories: [competitive-analysis-methods, win-loss-analysis, threat-scoring]
+
+tools: [competitor_tracker, market_data, win_loss_database, product_comparison_engine]
+
+capabilities:
+  - competitor-landscape-mapping
+  - feature-parity-analysis
+  - pricing-intelligence
+  - win-loss-analysis
+  - threat-scoring
+
+routing:
+  input_types: [ci_request, competitor_alert, win_loss_report, market_signal]
+  output_types: [competitive_landscape_report, feature_parity_matrix, ci_brief, threat_assessment]
+
+delegation:
+  can_delegate_to:
+    - competitor-profile-task-agent
+    - win-loss-analysis-task-agent
+    - market-positioning-task-agent
+    - pricing-intelligence-task-agent
+  escalates_to: market-research-orchestrator
+
+governance:
+  requires_approval: false
+  can_block: false
+  audit_trail: standard
+
+performance:
+  expected_latency_ms: 8000
+  max_latency_ms: 30000
+  timeout_ms: 120000

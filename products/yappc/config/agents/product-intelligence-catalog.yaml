@@ -1,0 +1,426 @@
+apiVersion: ghatana.yappc/v2
+kind: DomainAgentCatalog
+
+metadata:
+  name: product-intelligence
+  version: 1.0.0
+  description: "Product analytics, experimentation, feedback synthesis, enhancement planning, and competitive intelligence agents"
+  domain: product-intelligence
+  agentCount: 34
+
+spec:
+  agents:
+
+    # ── Level 1 Orchestrators ───────────────────────────────────────────────
+    - id: product-intelligence-orchestrator
+      name: Product Intelligence Orchestrator
+      level: 1
+      type: orchestrator
+      description: "Coordinates product intelligence: analytics, experimentation, feedback synthesis, and enhancement planning"
+      domain: product-intelligence
+      capabilities: [product-analytics, experimentation, feedback-synthesis, enhancement-planning, competitive-intelligence]
+      routing:
+        input_types: [analytics_request, experiment_request, feedback_data, enhancement_request]
+        output_types: [analytics_report, experiment_design, feedback_insights, enhancement_plan]
+      delegation:
+        can_delegate_to:
+          - feedback-orchestrator
+          - experimentation-orchestrator
+          - enhancement-orchestrator
+          - analytics-orchestrator
+        escalates_to: null
+      governance:
+        requires_approval: false
+        can_block: false
+        audit_trail: standard
+      tags: [orchestrator, product-intelligence, analytics, level1]
+
+    - id: feedback-orchestrator
+      name: Feedback Orchestrator
+      level: 1
+      type: orchestrator
+      description: "Orchestrates feedback pipeline: collection, NLP processing, theme clustering, sentiment analysis, and prioritisation"
+      domain: product-intelligence
+      capabilities: [feedback-collection, nlp-processing, theme-clustering, sentiment-analysis, feedback-prioritisation]
+      routing:
+        input_types: [feedback_source, feedback_batch, feedback_request]
+        output_types: [feedback_themes, sentiment_report, prioritised_feedback, trend_signals]
+      delegation:
+        can_delegate_to:
+          - feedback-analytics-capability-agent
+          - feedback-theme-clustering-task-agent
+          - sentiment-analysis-task-agent
+          - feedback-prioritisation-task-agent
+        escalates_to: product-intelligence-orchestrator
+      tags: [orchestrator, feedback, sentiment, level1]
+
+    - id: experimentation-orchestrator
+      name: Experimentation Orchestrator
+      level: 1
+      type: orchestrator
+      description: "Manages experiment lifecycle: hypothesis design, A/B test setup, statistical analysis, and results interpretation"
+      domain: product-intelligence
+      capabilities: [experiment-design, ab-test-management, statistical-analysis, results-interpretation, rollout-decision]
+      routing:
+        input_types: [experiment_hypothesis, experiment_request, experiment_data]
+        output_types: [experiment_design, ab_test_config, statistical_report, rollout_recommendation]
+      delegation:
+        can_delegate_to:
+          - experimentation-capability-agent
+          - ab-test-design-task-agent
+          - statistical-analysis-task-agent
+          - experiment-results-task-agent
+        escalates_to: product-intelligence-orchestrator
+      tags: [orchestrator, experimentation, ab-testing, level1]
+
+    - id: enhancement-orchestrator
+      name: Enhancement Orchestrator
+      level: 1
+      type: orchestrator
+      description: "Plans product enhancements: translates insights into improvement opportunities, scopes enhancements, and prioritises"
+      domain: product-intelligence
+      capabilities: [insight-to-enhancement, opportunity-scoping, enhancement-prioritisation, impact-estimation]
+      routing:
+        input_types: [insight, feedback_themes, analytics_signals, enhancement_request]
+        output_types: [enhancement_spec, opportunity_map, prioritised_backlog, impact_estimate]
+      delegation:
+        can_delegate_to:
+          - enhancement-capability-agent
+          - opportunity-scoping-task-agent
+          - enhancement-prioritisation-task-agent
+          - impact-estimation-task-agent
+        escalates_to: product-intelligence-orchestrator
+      tags: [orchestrator, enhancement, planning, level1]
+
+    # ── Level 2 Capability Agents ───────────────────────────────────────────
+    - id: feedback-analytics-capability-agent
+      name: Feedback Analytics Capability Agent
+      level: 2
+      type: domain-expert
+      description: "Feedback analytics expertise: NLP pipeline, topic modelling, trend detection, and cross-source signal fusion"
+      domain: product-intelligence
+      capabilities: [nlp-pipeline, topic-modelling, trend-detection, signal-fusion, feedback-classification]
+      memory:
+        episodic:
+          enabled: true
+          retention_days: 730
+          categories: [feedback-history, theme-evolution, sentiment-trends]
+        semantic:
+          enabled: true
+          categories: [feedback-themes, known-pain-points, feature-requests]
+      tools: [nlp_pipeline, topic_modeller, trend_detector, signal_fuser]
+      tags: [capability, feedback, nlp, level2]
+
+    - id: experimentation-capability-agent
+      name: Experimentation Capability Agent
+      level: 2
+      type: domain-expert
+      description: "Experimentation expertise: statistical power analysis, sample size calculation, CUPED, sequential testing"
+      domain: product-intelligence
+      capabilities: [power-analysis, sample-size-calculation, cuped, sequential-testing, peeking-prevention]
+      memory:
+        semantic:
+          enabled: true
+          categories: [experiment-history, statistical-methods, baseline-metrics]
+        episodic:
+          enabled: true
+          retention_days: 730
+          categories: [completed-experiments, rollout-decisions]
+      tools: [power_calculator, sample_sizer, statistical_engine, cuped_calculator]
+      tags: [capability, experimentation, statistics, level2]
+
+    - id: enhancement-capability-agent
+      name: Enhancement Capability Agent
+      level: 2
+      type: domain-expert
+      description: "Enhancement planning expertise: opportunity scoring, value-effort matrices, impact modelling, roadmap mapping"
+      domain: product-intelligence
+      capabilities: [opportunity-scoring, value-effort-matrix, impact-modelling, roadmap-contribution]
+      memory:
+        semantic:
+          enabled: true
+          categories: [enhancement-history, scoring-models, impact-patterns]
+      tools: [opportunity_scorer, value_effort_calculator, impact_modeller]
+      tags: [capability, enhancement, prioritisation, level2]
+
+    - id: analytics-capability-agent
+      name: Analytics Capability Agent
+      level: 2
+      type: domain-expert
+      description: "Product analytics expertise: funnel analysis, cohort analysis, retention analysis, and engagement metrics"
+      domain: product-intelligence
+      capabilities: [funnel-analysis, cohort-analysis, retention-analysis, engagement-metrics, dau-mau-tracking]
+      memory:
+        episodic:
+          enabled: true
+          retention_days: 365
+          categories: [metric-snapshots, trend-data]
+        semantic:
+          enabled: true
+          categories: [metric-benchmarks, industry-standards, analytics-patterns]
+      tools: [funnel_analyzer, cohort_calculator, retention_tracker, engagement_scorer]
+      tags: [capability, analytics, metrics, level2]
+
+    # ── Level 3 Task Agents ─────────────────────────────────────────────────
+    - id: feedback-theme-clustering-task-agent
+      name: Feedback Theme Clustering Task Agent
+      level: 3
+      type: worker
+      description: "Clusters feedback items into coherent themes using embedding-based clustering"
+      domain: product-intelligence
+      capabilities: [theme-clustering, embedding-based-clustering, cluster-labelling]
+      tools: [clustering_engine, theme_labeller, embedding_generator]
+      tags: [task, feedback, clustering, level3]
+
+    - id: sentiment-analysis-task-agent
+      name: Sentiment Analysis Task Agent
+      level: 3
+      type: worker
+      description: "Analyses sentiment in feedback: per-aspect sentiment, sentiment trend, and outlier detection"
+      domain: product-intelligence
+      capabilities: [sentiment-analysis, aspect-sentiment, trend-analysis, outlier-detection]
+      tools: [sentiment_analyzer, aspect_extractor, trend_calculator]
+      tags: [task, sentiment, analysis, level3]
+
+    - id: feedback-prioritisation-task-agent
+      name: Feedback Prioritisation Task Agent
+      level: 3
+      type: worker
+      description: "Prioritises feedback themes by volume, sentiment intensity, customer segment, and strategic alignment"
+      domain: product-intelligence
+      capabilities: [feedback-prioritisation, volume-scoring, segment-weighting, strategic-alignment]
+      tools: [priority_scorer, segment_weighter, alignment_checker]
+      tags: [task, prioritisation, feedback, level3]
+
+    - id: ab-test-design-task-agent
+      name: A/B Test Design Task Agent
+      level: 3
+      type: worker
+      description: "Designs A/B tests: defines control/treatment, primary/secondary metrics, success criteria, and guard rails"
+      domain: product-intelligence
+      capabilities: [ab-test-design, metric-definition, success-criteria, guard-rail-definition]
+      tools: [ab_test_designer, metric_definer, guard_rail_builder]
+      tags: [task, ab-test, design, level3]
+
+    - id: statistical-analysis-task-agent
+      name: Statistical Analysis Task Agent
+      level: 3
+      type: worker
+      description: "Performs statistical analysis on experiment data: t-tests, Mann-Whitney, confidence intervals, p-values"
+      domain: product-intelligence
+      capabilities: [t-test, mann-whitney, confidence-interval, p-value, multiple-comparison-correction]
+      tools: [stats_engine, hypothesis_tester, ci_calculator]
+      tags: [task, statistics, hypothesis-testing, level3]
+
+    - id: experiment-results-task-agent
+      name: Experiment Results Task Agent
+      level: 3
+      type: worker
+      description: "Interprets experiment results: generates plain-language summary, rollout recommendation, and learnings"
+      domain: product-intelligence
+      capabilities: [results-interpretation, rollout-recommendation, learnings-extraction, summary-generation]
+      tools: [results_interpreter, recommendation_engine, learnings_extractor]
+      tags: [task, experiment-results, interpretation, level3]
+
+    - id: opportunity-scoping-task-agent
+      name: Opportunity Scoping Task Agent
+      level: 3
+      type: worker
+      description: "Scopes enhancement opportunities: defines problem statement, affected users, and success metrics"
+      domain: product-intelligence
+      capabilities: [opportunity-scoping, problem-statement, user-impact, success-metrics]
+      tools: [opportunity_scoper, problem_definer, metric_selector]
+      tags: [task, opportunity, scoping, level3]
+
+    - id: enhancement-prioritisation-task-agent
+      name: Enhancement Prioritisation Task Agent
+      level: 3
+      type: worker
+      description: "Prioritises enhancements using RICE or WSJF scoring aligned to strategic themes"
+      domain: product-intelligence
+      capabilities: [rice-scoring, wsjf-scoring, strategic-alignment, prioritised-list-generation]
+      tools: [rice_calculator, wsjf_scorer, strategic_aligner]
+      tags: [task, prioritisation, rice, level3]
+
+    - id: impact-estimation-task-agent
+      name: Impact Estimation Task Agent
+      level: 3
+      type: worker
+      description: "Estimates impact of planned enhancements on north-star metrics using historical data and causal models"
+      domain: product-intelligence
+      capabilities: [impact-estimation, north-star-projection, causal-modelling, sensitivity-analysis]
+      tools: [impact_estimator, causal_model, sensitivity_analyzer]
+      tags: [task, impact, estimation, level3]
+
+    - id: funnel-analysis-task-agent
+      name: Funnel Analysis Task Agent
+      level: 3
+      type: worker
+      description: "Analyses conversion funnels: stage conversion rates, drop-off identification, and improvement opportunities"
+      domain: product-intelligence
+      capabilities: [funnel-analysis, conversion-rate, drop-off-identification, funnel-comparison]
+      tools: [funnel_analyzer, conversion_calculator, drop_off_detector]
+      tags: [task, funnel, conversion, level3]
+
+    - id: cohort-analysis-task-agent
+      name: Cohort Analysis Task Agent
+      level: 3
+      type: worker
+      description: "Performs cohort analysis: retention curves, engagement cohorts, and feature adoption cohorts"
+      domain: product-intelligence
+      capabilities: [cohort-analysis, retention-curve, engagement-cohort, adoption-tracking]
+      tools: [cohort_builder, retention_calculator, adoption_tracker]
+      tags: [task, cohort, retention, level3]
+
+    - id: competitive-intelligence-task-agent
+      name: Competitive Intelligence Task Agent
+      level: 3
+      type: worker
+      description: "Gathers and analyses competitive intelligence: feature comparison, positioning gaps, and market signals"
+      domain: product-intelligence
+      capabilities: [competitive-analysis, feature-comparison, positioning-gap, market-signal]
+      tools: [competitor_analyzer, feature_mapper, gap_detector]
+      tags: [task, competitive, intelligence, level3]
+
+    - id: churn-prediction-task-agent
+      name: Churn Prediction Task Agent
+      level: 3
+      type: worker
+      description: "Predicts user churn risk using behavioural signals and engagement patterns"
+      domain: product-intelligence
+      capabilities: [churn-prediction, risk-scoring, behavioural-signal-analysis, engagement-drop-detection]
+      tools: [churn_predictor, risk_scorer, signal_analyzer]
+      tags: [task, churn, prediction, level3]
+
+    - id: feature-adoption-task-agent
+      name: Feature Adoption Task Agent
+      level: 3
+      type: worker
+      description: "Tracks and analyses feature adoption: discovery rate, activation rate, stickiness, and usage depth"
+      domain: product-intelligence
+      capabilities: [adoption-tracking, discovery-analysis, activation-rate, stickiness-measurement]
+      tools: [adoption_tracker, usage_analyzer, stickiness_calculator]
+      tags: [task, feature-adoption, analytics, level3]
+
+    - id: nps-analysis-task-agent
+      name: NPS Analysis Task Agent
+      level: 3
+      type: worker
+      description: "Analyses NPS data: score trends, promoter/passive/detractor segmentation, and verbatim theme extraction"
+      domain: product-intelligence
+      capabilities: [nps-analysis, segment-analysis, verbatim-extraction, trend-tracking]
+      tools: [nps_analyzer, segment_calculator, verbatim_extractor]
+      tags: [task, nps, customer-satisfaction, level3]
+
+    # ── Level 3 Micro Agents ────────────────────────────────────────────────
+    - id: sentiment-scorer
+      name: Sentiment Scorer
+      level: 3
+      type: micro-agent
+      description: "Atomic unit: score a single text string for sentiment polarity (positive/negative/neutral) and intensity"
+      domain: product-intelligence
+      capabilities: [sentiment-scoring, polarity-classification, intensity-measurement]
+      tags: [micro, sentiment, scoring, level3]
+
+    - id: rice-calculator
+      name: RICE Calculator
+      level: 3
+      type: micro-agent
+      description: "Atomic unit: calculate RICE score from reach, impact, confidence, and effort inputs"
+      domain: product-intelligence
+      capabilities: [rice-calculation, score-normalisation]
+      tags: [micro, rice, prioritisation, level3]
+
+    - id: p-value-interpreter
+      name: P-Value Interpreter
+      level: 3
+      type: micro-agent
+      description: "Atomic unit: interpret whether a p-value is significant at given alpha level with plain-language explanation"
+      domain: product-intelligence
+      capabilities: [p-value-interpretation, significance-check, plain-language-explanation]
+      tags: [micro, statistics, significance, level3]
+
+    - id: sample-size-calculator
+      name: Sample Size Calculator
+      level: 3
+      type: micro-agent
+      description: "Atomic unit: calculate required sample size for an experiment given MDE, power, and alpha"
+      domain: product-intelligence
+      capabilities: [sample-size-calculation, mde-input, power-calculation]
+      tags: [micro, sample-size, statistics, level3]
+
+    - id: feature-flag-recommender
+      name: Feature Flag Recommender
+      level: 3
+      type: micro-agent
+      description: "Atomic unit: recommend feature flag rollout percentage based on experiment confidence and risk level"
+      domain: product-intelligence
+      capabilities: [rollout-recommendation, confidence-assessment, risk-based-gating]
+      tags: [micro, feature-flags, rollout, level3]
+
+    - id: retention-rate-calculator
+      name: Retention Rate Calculator
+      level: 3
+      type: micro-agent
+      description: "Atomic unit: calculate day-N, week-N, or month-N retention rate from a user activity dataset"
+      domain: product-intelligence
+      capabilities: [retention-rate-calculation, period-selection, cohort-aggregation]
+      tags: [micro, retention, calculation, level3]
+
+    - id: theme-label-generator
+      name: Theme Label Generator
+      level: 3
+      type: micro-agent
+      description: "Atomic unit: generate a concise human-readable label for a cluster of similar feedback items"
+      domain: product-intelligence
+      capabilities: [cluster-labelling, theme-naming, keyword-extraction]
+      tags: [micro, themes, labelling, level3]
+
+    - id: north-star-contributor-scorer
+      name: North Star Contributor Scorer
+      level: 3
+      type: micro-agent
+      description: "Atomic unit: score how much a proposed feature contributes to the product north-star metric"
+      domain: product-intelligence
+      capabilities: [north-star-scoring, contribution-estimation]
+      tags: [micro, north-star, scoring, level3]
+
+    - id: engagement-index-calculator
+      name: Engagement Index Calculator
+      level: 3
+      type: micro-agent
+      description: "Atomic unit: compute a composite engagement index from weighted DAU, session length, and action depth metrics"
+      domain: product-intelligence
+      capabilities: [engagement-calculation, composite-scoring, metric-weighting]
+      tags: [micro, engagement, index, level3]
+
+    - id: churn-risk-classifier
+      name: Churn Risk Classifier
+      level: 3
+      type: micro-agent
+      description: "Atomic unit: classify a user as low/medium/high churn risk based on engagement signals"
+      domain: product-intelligence
+      capabilities: [churn-risk-classification, signal-aggregation]
+      tags: [micro, churn-risk, classification, level3]
+
+  hierarchy:
+    level1: [product-intelligence-orchestrator, feedback-orchestrator, experimentation-orchestrator, enhancement-orchestrator]
+    level2: [feedback-analytics-capability-agent, experimentation-capability-agent, enhancement-capability-agent, analytics-capability-agent]
+    level3: [feedback-theme-clustering-task-agent, sentiment-analysis-task-agent, feedback-prioritisation-task-agent, ab-test-design-task-agent, statistical-analysis-task-agent, experiment-results-task-agent, opportunity-scoping-task-agent, enhancement-prioritisation-task-agent, impact-estimation-task-agent, funnel-analysis-task-agent, cohort-analysis-task-agent, competitive-intelligence-task-agent, churn-prediction-task-agent, feature-adoption-task-agent, nps-analysis-task-agent, sentiment-scorer, rice-calculator, p-value-interpreter, sample-size-calculator, feature-flag-recommender, retention-rate-calculator, theme-label-generator, north-star-contributor-scorer, engagement-index-calculator, churn-risk-classifier]
+
+  capability_routing:
+    product-analytics:
+      primary: product-intelligence-orchestrator
+      fallback: [analytics-capability-agent]
+    feedback-processing:
+      primary: feedback-orchestrator
+      fallback: [feedback-analytics-capability-agent]
+    experimentation:
+      primary: experimentation-orchestrator
+      fallback: [experimentation-capability-agent]
+    enhancement-planning:
+      primary: enhancement-orchestrator
+      fallback: [enhancement-capability-agent]
+    churn-prediction:
+      primary: analytics-capability-agent
+      fallback: [churn-prediction-task-agent]

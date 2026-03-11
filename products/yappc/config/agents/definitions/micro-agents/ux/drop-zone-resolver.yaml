@@ -1,0 +1,51 @@
+id: drop-zone-resolver
+name: Drop Zone Resolver
+version: 1.0.0
+description: "Resolve the valid drop zone for a dragged element based on type compatibility and spatial rules"
+
+metadata:
+  level: 3
+  domain: ux
+  type: micro-agent
+  tags: [drop-zone-resolution, compatibility-checking, level3, micro]
+
+generator:
+  type: RULE_BASED
+  steps:
+    - name: execute
+      type: RULE_BASED
+      rules:
+        - "drop-zone-resolution"
+        - "compatibility-checking"
+
+memory:
+  episodic:
+    enabled: false
+  semantic:
+    enabled: false
+  procedural:
+    enabled: false
+
+tools: [drop_zone_resolver]
+
+capabilities:
+  - drop-zone-resolution
+  - compatibility-checking
+
+routing:
+  input_types: [drop_resolve_request]
+  output_types: [drop_zone_verdict]
+
+delegation:
+  can_delegate_to: []
+  escalates_to: canvas-interaction-capability-agent
+
+governance:
+  requires_approval: false
+  can_block: false
+  audit_trail: standard
+
+performance:
+  expected_latency_ms: 100
+  max_latency_ms: 500
+  timeout_ms: 1000

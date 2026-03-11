@@ -1,0 +1,63 @@
+id: rollback-planning-task-agent
+name: Rollback Planning Task Agent
+version: 1.0.0
+description: "Generate step-by-step rollback plans for change requests with trigger criteria, execution sequence, and success validation"
+
+metadata:
+  level: 3
+  domain: operations
+  type: worker
+  tags: [rollback-plan-generation, trigger-criteria-definition, success-validation, level3]
+
+generator:
+  type: PIPELINE
+  steps:
+    - name: execute
+      type: LLM
+      provider: ANTHROPIC
+      model: claude-3-5-sonnet-20241022
+      temperature: 0.1
+      max_tokens: 2000
+      prompt: |
+        Execute task: Generate step-by-step rollback plans for change requests with trigger criteria, execution sequence, and success validation
+
+        Input: {{input}}
+        Context: {{context}}
+
+        Produce a structured, precise output meeting the task specification.
+
+memory:
+  episodic:
+    enabled: true
+    retention_days: 90
+    categories: [task-executions]
+  semantic:
+    enabled: true
+    categories: [domain-knowledge]
+  procedural:
+    enabled: false
+
+tools: [rollback_planner, sequence_generator, validation_definer]
+
+capabilities:
+  - rollback-plan-generation
+  - trigger-criteria-definition
+  - success-validation
+
+routing:
+  input_types: [rollback_planning_request]
+  output_types: [rollback_plan]
+
+delegation:
+  can_delegate_to: []
+  escalates_to: change-management-capability-agent
+
+governance:
+  requires_approval: false
+  can_block: false
+  audit_trail: standard
+
+performance:
+  expected_latency_ms: 3000
+  max_latency_ms: 15000
+  timeout_ms: 30000

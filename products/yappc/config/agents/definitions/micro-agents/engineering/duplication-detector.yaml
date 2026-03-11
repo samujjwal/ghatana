@@ -1,0 +1,51 @@
+id: duplication-detector
+name: Duplication Detector
+version: 1.0.0
+description: "Detect duplicated code blocks across a codebase above a configurable similarity threshold"
+
+metadata:
+  level: 3
+  domain: engineering
+  type: micro-agent
+  tags: [duplication-detection, similarity-checking, level3, micro]
+
+generator:
+  type: RULE_BASED
+  steps:
+    - name: execute
+      type: RULE_BASED
+      rules:
+        - "duplication-detection"
+        - "similarity-checking"
+
+memory:
+  episodic:
+    enabled: false
+  semantic:
+    enabled: false
+  procedural:
+    enabled: false
+
+tools: [duplication_detector]
+
+capabilities:
+  - duplication-detection
+  - similarity-checking
+
+routing:
+  input_types: [dup_detect_request]
+  output_types: [duplication_report]
+
+delegation:
+  can_delegate_to: []
+  escalates_to: code-quality-capability-agent
+
+governance:
+  requires_approval: false
+  can_block: false
+  audit_trail: standard
+
+performance:
+  expected_latency_ms: 200
+  max_latency_ms: 1000
+  timeout_ms: 2000

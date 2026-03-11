@@ -1,0 +1,49 @@
+id: measurability-checker
+name: Measurability Checker
+version: 1.0.0
+description: "Check whether an NFR has a specific measurable target value and flag if it is unmeasurable"
+
+metadata:
+  level: 3
+  domain: requirements
+  type: micro-agent
+  tags: [measurability-checking, level3, micro]
+
+generator:
+  type: RULE_BASED
+  steps:
+    - name: execute
+      type: RULE_BASED
+      rules:
+        - "measurability-checking"
+
+memory:
+  episodic:
+    enabled: false
+  semantic:
+    enabled: false
+  procedural:
+    enabled: false
+
+tools: [measurability_checker]
+
+capabilities:
+  - measurability-checking
+
+routing:
+  input_types: [measurability_request]
+  output_types: [measurability_verdict]
+
+delegation:
+  can_delegate_to: []
+  escalates_to: requirement-quality-capability-agent
+
+governance:
+  requires_approval: false
+  can_block: false
+  audit_trail: standard
+
+performance:
+  expected_latency_ms: 100
+  max_latency_ms: 500
+  timeout_ms: 1000

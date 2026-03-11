@@ -1,0 +1,63 @@
+id: data-access-task-agent
+name: Data Access Task Agent
+version: 1.0.0
+description: "Implement data access layer using Prisma (Node) or JDBC repositories (Java) with query optimisation and connection pooling"
+
+metadata:
+  level: 3
+  domain: engineering
+  type: worker
+  tags: [data-access-implementation, query-optimisation, connection-pooling, level3]
+
+generator:
+  type: PIPELINE
+  steps:
+    - name: execute
+      type: LLM
+      provider: ANTHROPIC
+      model: claude-3-5-sonnet-20241022
+      temperature: 0.1
+      max_tokens: 2000
+      prompt: |
+        Execute task: Implement data access layer using Prisma (Node) or JDBC repositories (Java) with query optimisation and connection pooling
+
+        Input: {{input}}
+        Context: {{context}}
+
+        Produce a structured, precise output meeting the task specification.
+
+memory:
+  episodic:
+    enabled: true
+    retention_days: 90
+    categories: [task-executions]
+  semantic:
+    enabled: true
+    categories: [domain-knowledge]
+  procedural:
+    enabled: false
+
+tools: [prisma_generator, jdbc_query_builder]
+
+capabilities:
+  - data-access-implementation
+  - query-optimisation
+  - connection-pooling
+
+routing:
+  input_types: [data_access_request]
+  output_types: [data_access_code]
+
+delegation:
+  can_delegate_to: []
+  escalates_to: backend-capability-agent
+
+governance:
+  requires_approval: false
+  can_block: false
+  audit_trail: standard
+
+performance:
+  expected_latency_ms: 4000
+  max_latency_ms: 20000
+  timeout_ms: 40000

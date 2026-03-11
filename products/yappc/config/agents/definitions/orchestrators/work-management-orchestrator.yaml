@@ -1,0 +1,93 @@
+id: work-management-orchestrator
+name: Work Management Orchestrator
+version: 1.0.0
+description: "Manages work items across project management tools: creates issues, manages epics, tracks work item lifecycle, and maintains work item quality standards"
+
+metadata:
+  level: 1
+  domain: engineering
+  tags: [orchestrator, work-management, issues, epics, jira, github, level1]
+
+generator:
+  type: PIPELINE
+  steps:
+    - name: work_decomposition
+      type: LLM
+      provider: ANTHROPIC
+      model: claude-3-5-sonnet-20241022
+      temperature: 0.3
+      max_tokens: 4000
+      prompt: |
+        Decompose work into trackable items:
+
+        Initiative: {{input}}
+        Epic structure: {{context.epic_structure}}
+        Team composition: {{context.team}}
+
+        Decompose into:
+        1. Epics (large chunks of related work, ~2-4 sprints)
+        2. Stories (user-facing vertical slices, ~1-5 days)
+        3. Tasks (technical tasks, chores, bugs)
+        4. For each item: title, description, acceptance criteria, label candidates, component, size estimate
+
+        Apply: vertical slice principle, INVEST criteria for stories.
+        Return structured hierarchy: {epics: [{id, title, stories: [{id, title, ac, labels, size}]}]}
+    - name: issue_creation_dispatch
+      type: SERVICE_CALL
+      service: agent-dispatcher
+      endpoint: /dispatch/batch
+      description: "Create all issues in the target project management system"
+    - name: work_item_quality_check
+      type: LLM
+      provider: ANTHROPIC
+      model: claude-3-5-sonnet-20241022
+      temperature: 0.1
+      max_tokens: 2000
+      prompt: |
+        Quality check created work items:
+        Items: {{issue_creation_dispatch}}
+
+        Verify each item has: clear title, non-trivial AC, appropriate size estimate, correct labels.
+        Flag items failing quality threshold for revision.
+
+memory:
+  episodic:
+    enabled: true
+    retention_days: 365
+    categories: [work-item-creations, epic-structures, sprint-allocations]
+  semantic:
+    enabled: true
+    categories: [issue-templates, decomposition-patterns, label-taxonomy]
+  procedural:
+    enabled: true
+    categories: [work-item-creation-rules, invest-criteria, decomposition-heuristics]
+
+tools: [issue_creator, epic_manager, label_assigner, ac_builder, size_estimator]
+
+capabilities:
+  - work-decomposition
+  - issue-creation
+  - epic-management
+  - work-item-lifecycle
+  - quality-enforcement
+
+routing:
+  input_types: [feature_plan, epic_breakdown_request, issue_creation_request, work_item_update]
+  output_types: [work_items, epic_structure, sprint_board, work_item_quality_report]
+
+delegation:
+  can_delegate_to:
+    - work-decomposition-task-agent
+    - issue-creation-task-agent
+    - story-point-estimation-task-agent
+  escalates_to: delivery-planning-orchestrator
+
+governance:
+  requires_approval: false
+  can_block: false
+  audit_trail: standard
+
+performance:
+  expected_latency_ms: 5000
+  max_latency_ms: 40000
+  timeout_ms: 60000

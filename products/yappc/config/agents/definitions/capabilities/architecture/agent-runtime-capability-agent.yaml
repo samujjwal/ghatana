@@ -1,0 +1,97 @@
+id: agent-runtime-capability-agent
+name: Agent Runtime Capability Agent (Architecture)
+version: 1.0.0
+description: "Architects the agent execution runtime: context assembly pipeline, tool registry design, streaming architecture, multi-agent coordination protocols, and agent isolation model"
+
+metadata:
+  level: 2
+  domain: architecture
+  tags: [capability, agent-runtime, architecture, context-assembly, tool-registry, streaming, level2]
+
+generator:
+  type: PIPELINE
+  steps:
+    - name: runtime_architecture_design
+      type: LLM
+      provider: ANTHROPIC
+      model: claude-3-5-sonnet-20241022
+      temperature: 0.1
+      max_tokens: 3000
+      prompt: |
+        Design agent runtime architecture:
+
+        Agent framework requirements: {{input}}
+        Scale targets: {{context.scale_targets}}
+        Latency requirements: {{context.latency_sla}}
+        Multi-tenancy requirements: {{context.tenancy_model}}
+
+        Design: execution model (single-threaded event loop vs thread pool vs actor model), context window assembly pipeline (retrieval → compression → injection order), tool invocation protocol (sync vs async, timeout, retry), streaming architecture (SSE vs WebSocket vs gRPC streaming), agent isolation boundaries (per-tenant, per-session). Output architecture spec JSON.
+    - name: tool_registry_design
+      type: LLM
+      provider: ANTHROPIC
+      model: claude-3-5-sonnet-20241022
+      temperature: 0.1
+      max_tokens: 2500
+      prompt: |
+        Design tool registry and invocation system:
+
+        Runtime architecture: {{runtime_architecture_design}}
+        Tool catalogue: {{context.tool_catalogue}}
+
+        Define: tool descriptor schema (name, description, input schema, output schema, auth requirements, rate limits), registry lookup protocol, tool execution sandbox, result serialisation, error classification (transient/permanent/timeout), circuit breaker per tool. Output tool registry spec.
+    - name: multi_agent_coordination_protocol
+      type: LLM
+      provider: ANTHROPIC
+      model: claude-3-5-sonnet-20241022
+      temperature: 0.1
+      max_tokens: 2500
+      prompt: |
+        Design multi-agent coordination protocol:
+
+        Runtime architecture: {{runtime_architecture_design}}
+        Agent catalogue: {{context.agent_catalogue}}
+
+        Define: agent-to-agent message format, delegation protocol (request/response, timeout, cancellation), result aggregation patterns (fan-out/fan-in, cascading, parallel), shared context propagation, deadlock prevention, audit trail for multi-agent calls. Output coordination protocol spec.
+
+memory:
+  episodic:
+    enabled: true
+    retention_days: 730
+    categories: [runtime-designs, tool-registry-specs, coordination-protocols, architecture-adrs]
+  semantic:
+    enabled: true
+    categories: [runtime-patterns, tool-registry-standards, multi-agent-protocols]
+  procedural:
+    enabled: true
+    categories: [runtime-design-rules, tool-registry-design, coordination-protocol-patterns]
+
+tools: [architecture_designer, runtime_modeller, protocol_designer]
+
+capabilities:
+  - agent-execution-runtime-design
+  - context-assembly-pipeline-design
+  - tool-registry-architecture
+  - multi-agent-coordination-design
+
+routing:
+  input_types: [agent_runtime_architecture_request, tool_registry_request, coordination_protocol_request]
+  output_types: [runtime_architecture_spec, tool_registry_spec, coordination_protocol_spec, runtime_adr]
+
+delegation:
+  can_delegate_to:
+    - runtime-spec-task-agent
+    - tool-registry-task-agent
+    - coordination-protocol-task-agent
+    - streaming-architecture-task-agent
+  escalates_to: runtime-architecture-orchestrator
+
+governance:
+  requires_approval: true
+  approval_chain: [architecture-board]
+  can_block: false
+  audit_trail: comprehensive
+
+performance:
+  expected_latency_ms: 8000
+  max_latency_ms: 30000
+  timeout_ms: 120000

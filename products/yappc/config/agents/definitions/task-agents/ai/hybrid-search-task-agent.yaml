@@ -1,0 +1,63 @@
+id: hybrid-search-task-agent
+name: Hybrid Search Task Agent
+version: 1.0.0
+description: "Execute hybrid search combining BM25 keyword and vector semantic similarity with configurable alpha blending"
+
+metadata:
+  level: 3
+  domain: ai
+  type: worker
+  tags: [hybrid-search, bm25-keyword-search, alpha-blending, level3]
+
+generator:
+  type: PIPELINE
+  steps:
+    - name: execute
+      type: LLM
+      provider: ANTHROPIC
+      model: claude-3-5-sonnet-20241022
+      temperature: 0.1
+      max_tokens: 2000
+      prompt: |
+        Execute task: Execute hybrid search combining BM25 keyword and vector semantic similarity with configurable alpha blending
+
+        Input: {{input}}
+        Context: {{context}}
+
+        Produce a structured, precise output meeting the task specification.
+
+memory:
+  episodic:
+    enabled: true
+    retention_days: 90
+    categories: [task-executions]
+  semantic:
+    enabled: true
+    categories: [domain-knowledge]
+  procedural:
+    enabled: false
+
+tools: [bm25_engine, vector_store_client, alpha_blender]
+
+capabilities:
+  - hybrid-search
+  - bm25-keyword-search
+  - alpha-blending
+
+routing:
+  input_types: [hybrid_search_request]
+  output_types: [hybrid_search_results]
+
+delegation:
+  can_delegate_to: []
+  escalates_to: search-capability-agent
+
+governance:
+  requires_approval: false
+  can_block: false
+  audit_trail: standard
+
+performance:
+  expected_latency_ms: 800
+  max_latency_ms: 4000
+  timeout_ms: 8000

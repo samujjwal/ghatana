@@ -217,3 +217,56 @@ personas:
       - PROJECT_READ
       - REQUIREMENT_READ
       - REQUIREMENT_APPROVE
+
+  # ── New Domain Personas ────────────────────────────────────────────────
+  - id: AI_ENGINEER
+    display_name: "AI Engineer"
+    category: execution
+    role: EDITOR
+    permissions:
+      - PROJECT_READ
+      - REQUIREMENT_READ
+      - AI_SUGGESTION_REQUEST
+      - AI_SUGGESTION_FEEDBACK
+      - AI_MODEL_MANAGE
+
+  - id: DATA_ENGINEER
+    display_name: "Data Engineer"
+    category: execution
+    role: EDITOR
+    permissions:
+      - PROJECT_READ
+      - REQUIREMENT_READ
+      - AI_SUGGESTION_REQUEST
+      - DATA_PIPELINE_MANAGE
+
+  - id: PLATFORM_ENGINEER
+    display_name: "Platform Engineer"
+    category: execution
+    role: EDITOR
+    permissions:
+      - PROJECT_READ
+      - REQUIREMENT_READ
+      - INFRA_MANAGE
+      - PLATFORM_CONFIGURE
+
+  - id: INNOVATION_LEAD
+    display_name: "Innovation Lead"
+    category: strategic
+    role: EDITOR
+    permissions:
+      - PROJECT_READ
+      - PROJECT_UPDATE
+      - REQUIREMENT_CREATE
+      - REQUIREMENT_READ
+      - REQUIREMENT_UPDATE
+      - AI_SUGGESTION_REQUEST
+
+  - id: UX_RESEARCHER
+    display_name: "UX Researcher"
+    category: execution
+    role: EDITOR
+    permissions:
+      - PROJECT_READ
+      - REQUIREMENT_READ
+      - AI_SUGGESTION_REQUEST

@@ -1,0 +1,98 @@
+id: data-pipeline-capability-agent
+name: Data Pipeline Capability Agent
+version: 1.0.0
+description: "Designs and monitors AI data pipelines: training data collection, feature engineering, embedding generation, model evaluation pipelines, and data quality validation"
+
+metadata:
+  level: 2
+  domain: ai
+  tags: [capability, data-pipeline, feature-engineering, embeddings, ml-ops, data-quality, level2]
+
+generator:
+  type: PIPELINE
+  steps:
+    - name: pipeline_design
+      type: LLM
+      provider: ANTHROPIC
+      model: claude-3-5-sonnet-20241022
+      temperature: 0.1
+      max_tokens: 3000
+      prompt: |
+        Design AI data pipeline:
+
+        Pipeline goal: {{input}}
+        Data sources: {{context.data_sources}}
+        Volume and velocity: {{context.volume}}
+        Model requirements: {{context.model_requirements}}
+
+        Design: data collection strategy, preprocessing steps (cleaning, normalisation, deduplication), feature engineering transforms, embedding generation (model choice, batch size, parallelisation), storage format (Parquet, TFRecord, etc.), quality validation gates, incremental refresh strategy. Output pipeline DAG JSON.
+    - name: data_quality_validation
+      type: LLM
+      provider: ANTHROPIC
+      model: claude-3-5-sonnet-20241022
+      temperature: 0.0
+      max_tokens: 2000
+      prompt: |
+        Define data quality validation rules:
+
+        Pipeline design: {{pipeline_design}}
+        Data schema: {{context.data_schema}}
+
+        For each pipeline stage define: schema validation (column types, nullability), completeness checks (min fill rate per field), statistical checks (distribution drift, outlier thresholds), business rule validations, referential integrity. Set alert thresholds. Output quality ruleset JSON.
+    - name: pipeline_monitoring_spec
+      type: LLM
+      provider: ANTHROPIC
+      model: claude-3-5-sonnet-20241022
+      temperature: 0.1
+      max_tokens: 2000
+      prompt: |
+        Design pipeline monitoring and alerting:
+
+        Pipeline: {{pipeline_design}}
+        Quality rules: {{data_quality_validation}}
+        SLA: {{context.pipeline_sla}}
+
+        Define: stage-level metrics (throughput, latency, error rate), data freshness SLO, data quality score trend alerts, embedding drift detection, pipeline DAG health dashboard spec.
+
+memory:
+  episodic:
+    enabled: true
+    retention_days: 365
+    categories: [pipeline-designs, quality-reports, monitoring-specs, pipeline-runs]
+  semantic:
+    enabled: true
+    categories: [pipeline-patterns, feature-engineering-techniques, embedding-models]
+  procedural:
+    enabled: true
+    categories: [pipeline-design-rules, quality-validation-methods, monitoring-standards]
+
+tools: [pipeline_designer, data_quality_engine, embedding_generator, pipeline_monitor]
+
+capabilities:
+  - data-collection-design
+  - feature-engineering
+  - embedding-generation-pipeline
+  - data-quality-validation
+  - pipeline-monitoring
+
+routing:
+  input_types: [data_pipeline_request, embedding_pipeline_request, feature_engineering_request]
+  output_types: [pipeline_dag, quality_ruleset, monitoring_spec, embedding_config]
+
+delegation:
+  can_delegate_to:
+    - data-collection-task-agent
+    - feature-engineering-task-agent
+    - embedding-pipeline-task-agent
+    - data-quality-task-agent
+  escalates_to: ai-orchestrator
+
+governance:
+  requires_approval: false
+  can_block: false
+  audit_trail: standard
+
+performance:
+  expected_latency_ms: 5000
+  max_latency_ms: 30000
+  timeout_ms: 120000

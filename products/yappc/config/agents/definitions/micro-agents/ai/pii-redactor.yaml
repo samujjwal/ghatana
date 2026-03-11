@@ -1,0 +1,51 @@
+id: pii-redactor
+name: Pii Redactor
+version: 1.0.0
+description: "Detect and redact PII entities (names, emails, phone numbers, addresses) from text before persistence"
+
+metadata:
+  level: 3
+  domain: ai
+  type: micro-agent
+  tags: [pii-detection, pii-redaction, level3, micro]
+
+generator:
+  type: RULE_BASED
+  steps:
+    - name: execute
+      type: RULE_BASED
+      rules:
+        - "pii-detection"
+        - "pii-redaction"
+
+memory:
+  episodic:
+    enabled: false
+  semantic:
+    enabled: false
+  procedural:
+    enabled: false
+
+tools: [pii_detector, redactor]
+
+capabilities:
+  - pii-detection
+  - pii-redaction
+
+routing:
+  input_types: [redact_request]
+  output_types: [redacted_text]
+
+delegation:
+  can_delegate_to: []
+  escalates_to: memory-capability-agent
+
+governance:
+  requires_approval: false
+  can_block: false
+  audit_trail: standard
+
+performance:
+  expected_latency_ms: 200
+  max_latency_ms: 1000
+  timeout_ms: 2000

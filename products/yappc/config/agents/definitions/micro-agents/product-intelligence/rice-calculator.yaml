@@ -1,0 +1,49 @@
+id: rice-calculator
+name: Rice Calculator
+version: 1.0.0
+description: "Calculate RICE score (Reach × Impact × Confidence / Effort) from component inputs"
+
+metadata:
+  level: 3
+  domain: product-intelligence
+  type: micro-agent
+  tags: [rice-calculation, level3, micro]
+
+generator:
+  type: RULE_BASED
+  steps:
+    - name: execute
+      type: RULE_BASED
+      rules:
+        - "rice-calculation"
+
+memory:
+  episodic:
+    enabled: false
+  semantic:
+    enabled: false
+  procedural:
+    enabled: false
+
+tools: [rice_calculator]
+
+capabilities:
+  - rice-calculation
+
+routing:
+  input_types: [rice_request]
+  output_types: [rice_score]
+
+delegation:
+  can_delegate_to: []
+  escalates_to: enhancement-capability-agent
+
+governance:
+  requires_approval: false
+  can_block: false
+  audit_trail: standard
+
+performance:
+  expected_latency_ms: 50
+  max_latency_ms: 250
+  timeout_ms: 500

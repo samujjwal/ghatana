@@ -1,0 +1,100 @@
+id: security-architecture-capability-agent
+name: Security Architecture Capability Agent
+version: 1.0.0
+description: "Designs security architecture: threat modelling, defence-in-depth layering, authentication/authorisation design, cryptography selection, and secure data flow design"
+
+metadata:
+  level: 2
+  domain: architecture
+  tags: [capability, security-architecture, threat-modelling, authn, authz, cryptography, level2]
+
+generator:
+  type: PIPELINE
+  steps:
+    - name: threat_model
+      type: LLM
+      provider: ANTHROPIC
+      model: claude-3-5-sonnet-20241022
+      temperature: 0.1
+      max_tokens: 3000
+      prompt: |
+        Construct STRIDE threat model:
+
+        System being designed: {{input}}
+        Data flows: {{context.data_flows}}
+        Trust boundaries: {{context.trust_boundaries}}
+        Compliance requirements: {{context.compliance_requirements}}
+
+        Apply STRIDE to each component and data flow: Spoofing, Tampering, Repudiation, Information Disclosure, Denial of Service, Elevation of Privilege. For each threat: description, affected assets, risk rating (DREAD: Damage, Reproducibility, Exploitability, Affected users, Discoverability), recommended countermeasure. Output STRIDE model JSON.
+    - name: security_controls_design
+      type: LLM
+      provider: ANTHROPIC
+      model: claude-3-5-sonnet-20241022
+      temperature: 0.1
+      max_tokens: 3000
+      prompt: |
+        Design layered security controls:
+
+        Threat model: {{threat_model}}
+        Architecture: {{context.architecture}}
+        Compliance framework: {{context.compliance_requirements}}
+
+        Design controls per layer: network (WAF, TLS, mTLS, VPC), application (input validation, OWASP Top 10 mitigations, CSP, CORS), identity (AuthN flow: OIDC/SAML choice, MFA, session management), authorisation (RBAC/ABAC model, policy enforcement), data (encryption at rest/in transit, key management, masking). Output security controls spec.
+    - name: cryptography_selection
+      type: LLM
+      provider: ANTHROPIC
+      model: claude-3-5-sonnet-20241022
+      temperature: 0.0
+      max_tokens: 2000
+      prompt: |
+        Select cryptographic primitives and key management strategy:
+
+        Security controls: {{security_controls_design}}
+        Compliance requirements: {{context.compliance_requirements}}
+        Performance constraints: {{context.performance_constraints}}
+
+        Recommend: symmetric encryption algorithm (AES-256-GCM preferred), asymmetric (RSA-4096/ECDSA-P384), hashing (SHA-256/SHA-3), KDF (Argon2id for passwords), TLS version (1.3 minimum), key rotation policy, HSM/KMS usage. Justify all selections with NIST/FIPS alignment.
+
+memory:
+  episodic:
+    enabled: true
+    retention_days: 730
+    categories: [threat-models, security-designs, cryptography-decisions, security-reviews]
+  semantic:
+    enabled: true
+    categories: [stride-patterns, security-controls-library, cryptographic-standards]
+  procedural:
+    enabled: true
+    categories: [threat-modelling-method, defence-in-depth-framework, owasp-mitigations]
+
+tools: [threat_modeller, security_controls_analyser, cryptography_advisor, compliance_checker]
+
+capabilities:
+  - threat-modelling
+  - security-controls-design
+  - authentication-design
+  - authorisation-model-design
+  - cryptography-selection
+
+routing:
+  input_types: [security_architecture_request, threat_model_request, auth_design_request]
+  output_types: [threat_model, security_controls_spec, auth_design, crypto_spec, security_adr]
+
+delegation:
+  can_delegate_to:
+    - threat-model-task-agent
+    - security-controls-task-agent
+    - auth-design-task-agent
+    - crypto-selection-task-agent
+  escalates_to: architecture-orchestrator
+
+governance:
+  requires_approval: true
+  approval_chain: [security-lead, architecture-board]
+  can_block: true
+  audit_trail: comprehensive
+
+performance:
+  expected_latency_ms: 8000
+  max_latency_ms: 30000
+  timeout_ms: 120000

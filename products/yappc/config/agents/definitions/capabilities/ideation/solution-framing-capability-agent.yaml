@@ -1,0 +1,97 @@
+id: solution-framing-capability-agent
+name: Solution Framing Capability Agent
+version: 1.0.0
+description: "Frames product solutions from problem space insights: concept generation, solution architecture sketching, lean canvas population, and press-release/FAQ authoring"
+
+metadata:
+  level: 2
+  domain: ideation
+  tags: [capability, solution-framing, lean-canvas, press-release, concept, level2]
+
+generator:
+  type: PIPELINE
+  steps:
+    - name: solution_ideation
+      type: LLM
+      provider: ANTHROPIC
+      model: claude-3-5-sonnet-20241022
+      temperature: 0.5
+      max_tokens: 3000
+      prompt: |
+        Generate solution concepts for the problem:
+
+        Problem statement: {{input.problem}}
+        User insights: {{context.user_insights}}
+        Constraints: {{context.constraints}}
+        Strategic direction: {{context.strategic_direction}}
+
+        Generate 5 distinct solution concepts ranging from incremental to breakthrough. For each: concept name, one-paragraph description, core mechanism, key assumptions, UX sketch (text), differentiators. Avoid feature lists — focus on user value.
+    - name: lean_canvas_population
+      type: LLM
+      provider: ANTHROPIC
+      model: claude-3-5-sonnet-20241022
+      temperature: 0.2
+      max_tokens: 2500
+      prompt: |
+        Populate Lean Canvas for the strongest concept:
+
+        Selected concept: {{context.selected_concept}}
+        Market context: {{context.market_context}}
+        User research: {{context.user_insights}}
+
+        Complete all 9 Lean Canvas sections: Problem, Customer Segments, Unique Value Proposition, Solution, Channels, Revenue Streams, Cost Structure, Key Metrics, Unfair Advantage. Be specific, not generic.
+    - name: press_release_faq
+      type: LLM
+      provider: ANTHROPIC
+      model: claude-3-5-sonnet-20241022
+      temperature: 0.3
+      max_tokens: 2500
+      prompt: |
+        Write Amazon-style press release and FAQ:
+
+        Lean Canvas: {{lean_canvas_population}}
+        Target persona: {{context.primary_persona}}
+
+        Write: headline, sub-headline (customer benefit), 3-paragraph body (problem → solution → vision), customer quote (authentic, specific), CTA. Then 5 anticipated FAQs with honest answers. Working backwards from customer delight.
+
+memory:
+  episodic:
+    enabled: true
+    retention_days: 365
+    categories: [solution-concepts, lean-canvases, press-releases, concept-sessions]
+  semantic:
+    enabled: true
+    categories: [solution-patterns, lean-canvas-templates, concept-history]
+  procedural:
+    enabled: true
+    categories: [ideation-techniques, lean-canvas-method, working-backwards-method]
+
+tools: [concept_generator, lean_canvas_builder, narrative_composer]
+
+capabilities:
+  - solution-concept-generation
+  - lean-canvas-authoring
+  - press-release-faq-writing
+  - solution-architecture-sketching
+
+routing:
+  input_types: [ideation_request, problem_statement, hypothesis_set]
+  output_types: [solution_concept_set, lean_canvas, press_release_faq, solution_brief]
+
+delegation:
+  can_delegate_to:
+    - product-concept-task-agent
+    - lean-canvas-task-agent
+    - pr-faq-task-agent
+    - solution-sketch-task-agent
+  escalates_to: ideation-orchestrator
+
+governance:
+  requires_approval: false
+  can_block: false
+  audit_trail: standard
+
+performance:
+  expected_latency_ms: 8000
+  max_latency_ms: 30000
+  timeout_ms: 120000

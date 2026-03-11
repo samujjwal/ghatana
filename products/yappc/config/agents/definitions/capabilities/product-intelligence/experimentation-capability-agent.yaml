@@ -1,0 +1,101 @@
+id: experimentation-capability-agent
+name: Experimentation Capability Agent
+version: 1.0.0
+description: "Designs statistically sound experiments (A/B, multivariate, holdout), configures experiment parameters, monitors running experiments for significance, performs statistical analysis, and renders clear verdicts with business interpretation"
+
+metadata:
+  level: 2
+  domain: product-intelligence
+  tags: [capability, experimentation, ab-testing, statistics, hypothesis, level2]
+
+generator:
+  type: PIPELINE
+  steps:
+    - name: hypothesis_and_design
+      type: LLM
+      provider: ANTHROPIC
+      model: claude-3-5-sonnet-20241022
+      temperature: 0.2
+      max_tokens: 2500
+      prompt: |
+        Design experiment from product hypothesis:
+
+        Hypothesis: {{input.hypothesis}}
+        Primary metric: {{input.primary_metric}}
+        Success threshold: {{input.success_threshold}}
+        Current baseline metrics: {{context.baseline_metrics}}
+        Traffic available: {{context.traffic_volumes}}
+        Previous experiments: {{context.experiment_history}}
+
+        Produce: null/alternative hypothesis pair, experiment type (A/B / multivariate / holdout), control and treatment configurations, primary and guardrail metrics, required sample size (power=0.8, α=0.05), minimum detectable effect, recommended experiment duration, exclusion criteria (novelty effect, ramp-up period). Flag if hypothesis conflicts with prior experiments. Output experiment design JSON.
+    - name: statistical_analysis
+      type: LLM
+      provider: ANTHROPIC
+      model: claude-3-5-sonnet-20241022
+      temperature: 0.0
+      max_tokens: 2500
+      prompt: |
+        Perform rigorous statistical analysis on experiment results:
+
+        Experiment design: {{hypothesis_and_design}}
+        Raw results: {{context.experiment_results}}
+        Statistical engine output: {{context.stats_engine_output}}
+
+        Analyse: p-value vs. significance threshold, confidence intervals, effect size (Cohen's d or relative lift), multiple comparison correction (Bonferroni if multivariate), SRM (Sample Ratio Mismatch) check, novelty effect decay analysis, segment interaction effects. Test guardrail metrics for degradation. Output statistical analysis with verdict confidence score.
+    - name: experiment_verdict
+      type: LLM
+      provider: ANTHROPIC
+      model: claude-3-5-sonnet-20241022
+      temperature: 0.1
+      max_tokens: 2000
+      prompt: |
+        Render experiment verdict with business interpretation:
+
+        Statistical analysis: {{statistical_analysis}}
+        Business context: {{context.business_objectives}}
+        Rollout capabilities: {{context.rollout_system}}
+
+        Render: SHIP / ITERATE / KILL verdict with rationale, business impact projection at full rollout (revenue / retention / engagement), risks of shipping vs. not shipping, recommended rollout strategy (% ramp with monitoring thresholds), follow-up experiments if ITERATE, learning captured regardless of outcome. Output decision-ready verdict report.
+
+memory:
+  episodic:
+    enabled: true
+    retention_days: 1095
+    categories: [experiment-designs, statistical-results, verdicts, rollout-outcomes]
+  semantic:
+    enabled: true
+    categories: [experiment-patterns, metric-definitions, statistical-benchmarks]
+  procedural:
+    enabled: true
+    categories: [sample-size-formulas, significance-testing, srm-detection]
+
+tools: [experiment_designer, stats_engine, traffic_allocator, results_monitor]
+
+capabilities:
+  - hypothesis-design
+  - experiment-configuration
+  - statistical-analysis
+  - significance-testing
+  - experiment-verdict
+
+routing:
+  input_types: [experiment_request, running_experiment_review, experiment_conclusion_request]
+  output_types: [experiment_design, statistical_analysis_report, experiment_verdict, rollout_recommendation]
+
+delegation:
+  can_delegate_to:
+    - ab-test-design-task-agent
+    - statistical-analysis-task-agent
+    - experiment-results-task-agent
+  escalates_to: experimentation-orchestrator
+
+governance:
+  requires_approval: true
+  approval_chain: [product-lead, data-scientist]
+  can_block: false
+  audit_trail: comprehensive
+
+performance:
+  expected_latency_ms: 10000
+  max_latency_ms: 60000
+  timeout_ms: 300000

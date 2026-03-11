@@ -1,0 +1,51 @@
+id: scope-boundary-checker
+name: Scope Boundary Checker
+version: 1.0.0
+description: "Check whether a proposed feature is within the defined MVP/V1 scope boundary and return in-scope/out-of-scope verdict"
+
+metadata:
+  level: 3
+  domain: ideation
+  type: micro-agent
+  tags: [scope-checking, boundary-enforcement, level3, micro]
+
+generator:
+  type: RULE_BASED
+  steps:
+    - name: execute
+      type: RULE_BASED
+      rules:
+        - "scope-checking"
+        - "boundary-enforcement"
+
+memory:
+  episodic:
+    enabled: false
+  semantic:
+    enabled: false
+  procedural:
+    enabled: false
+
+tools: [scope_checker]
+
+capabilities:
+  - scope-checking
+  - boundary-enforcement
+
+routing:
+  input_types: [scope_check_request]
+  output_types: [scope_verdict]
+
+delegation:
+  can_delegate_to: []
+  escalates_to: concept-validation-capability-agent
+
+governance:
+  requires_approval: false
+  can_block: false
+  audit_trail: standard
+
+performance:
+  expected_latency_ms: 100
+  max_latency_ms: 500
+  timeout_ms: 1000

@@ -1,0 +1,51 @@
+id: contrast-checker
+name: Contrast Checker
+version: 1.0.0
+description: "Check foreground/background colour pairs against WCAG 2.2 AA contrast ratio requirements"
+
+metadata:
+  level: 3
+  domain: ux
+  type: micro-agent
+  tags: [contrast-checking, wcag-compliance, level3, micro]
+
+generator:
+  type: RULE_BASED
+  steps:
+    - name: execute
+      type: RULE_BASED
+      rules:
+        - "contrast-checking"
+        - "wcag-compliance"
+
+memory:
+  episodic:
+    enabled: false
+  semantic:
+    enabled: false
+  procedural:
+    enabled: false
+
+tools: [contrast_calculator]
+
+capabilities:
+  - contrast-checking
+  - wcag-compliance
+
+routing:
+  input_types: [contrast_check_request]
+  output_types: [contrast_result]
+
+delegation:
+  can_delegate_to: []
+  escalates_to: accessibility-capability-agent
+
+governance:
+  requires_approval: false
+  can_block: false
+  audit_trail: standard
+
+performance:
+  expected_latency_ms: 100
+  max_latency_ms: 500
+  timeout_ms: 1000

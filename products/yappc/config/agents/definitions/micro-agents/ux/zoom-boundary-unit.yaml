@@ -1,0 +1,51 @@
+id: zoom-boundary-unit
+name: Zoom Boundary Unit
+version: 1.0.0
+description: "Enforce min/max zoom boundaries and clamp zoom level to valid range for canvas interactions"
+
+metadata:
+  level: 3
+  domain: ux
+  type: micro-agent
+  tags: [zoom-boundary-enforcement, clamping, level3, micro]
+
+generator:
+  type: RULE_BASED
+  steps:
+    - name: execute
+      type: RULE_BASED
+      rules:
+        - "zoom-boundary-enforcement"
+        - "clamping"
+
+memory:
+  episodic:
+    enabled: false
+  semantic:
+    enabled: false
+  procedural:
+    enabled: false
+
+tools: [boundary_enforcer]
+
+capabilities:
+  - zoom-boundary-enforcement
+  - clamping
+
+routing:
+  input_types: [zoom_request]
+  output_types: [clamped_zoom]
+
+delegation:
+  can_delegate_to: []
+  escalates_to: canvas-interaction-capability-agent
+
+governance:
+  requires_approval: false
+  can_block: false
+  audit_trail: standard
+
+performance:
+  expected_latency_ms: 50
+  max_latency_ms: 250
+  timeout_ms: 500

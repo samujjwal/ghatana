@@ -1,0 +1,51 @@
+id: error-copy-generator
+name: Error Copy Generator
+version: 1.0.0
+description: "Generate user-friendly error messages from technical error codes following UX writing principles"
+
+metadata:
+  level: 3
+  domain: ux
+  type: micro-agent
+  tags: [error-copy-generation, ux-writing, level3, micro]
+
+generator:
+  type: RULE_BASED
+  steps:
+    - name: execute
+      type: RULE_BASED
+      rules:
+        - "error-copy-generation"
+        - "ux-writing"
+
+memory:
+  episodic:
+    enabled: false
+  semantic:
+    enabled: false
+  procedural:
+    enabled: false
+
+tools: [error_copy_writer]
+
+capabilities:
+  - error-copy-generation
+  - ux-writing
+
+routing:
+  input_types: [error_copy_request]
+  output_types: [error_message]
+
+delegation:
+  can_delegate_to: []
+  escalates_to: screen-design-capability-agent
+
+governance:
+  requires_approval: false
+  can_block: false
+  audit_trail: standard
+
+performance:
+  expected_latency_ms: 200
+  max_latency_ms: 1000
+  timeout_ms: 2000

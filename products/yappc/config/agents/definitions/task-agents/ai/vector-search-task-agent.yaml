@@ -1,0 +1,63 @@
+id: vector-search-task-agent
+name: Vector Search Task Agent
+version: 1.0.0
+description: "Execute vector similarity search against embedding indexes with configurable top-K, filters, and score thresholds"
+
+metadata:
+  level: 3
+  domain: ai
+  type: worker
+  tags: [vector-search, embedding-query, similarity-scoring, level3]
+
+generator:
+  type: PIPELINE
+  steps:
+    - name: execute
+      type: LLM
+      provider: ANTHROPIC
+      model: claude-3-5-sonnet-20241022
+      temperature: 0.1
+      max_tokens: 2000
+      prompt: |
+        Execute task: Execute vector similarity search against embedding indexes with configurable top-K, filters, and score thresholds
+
+        Input: {{input}}
+        Context: {{context}}
+
+        Produce a structured, precise output meeting the task specification.
+
+memory:
+  episodic:
+    enabled: true
+    retention_days: 90
+    categories: [task-executions]
+  semantic:
+    enabled: true
+    categories: [domain-knowledge]
+  procedural:
+    enabled: false
+
+tools: [vector_store_client, embedding_generator]
+
+capabilities:
+  - vector-search
+  - embedding-query
+  - similarity-scoring
+
+routing:
+  input_types: [vector_search_request]
+  output_types: [vector_search_results]
+
+delegation:
+  can_delegate_to: []
+  escalates_to: search-capability-agent
+
+governance:
+  requires_approval: false
+  can_block: false
+  audit_trail: standard
+
+performance:
+  expected_latency_ms: 500
+  max_latency_ms: 2500
+  timeout_ms: 5000

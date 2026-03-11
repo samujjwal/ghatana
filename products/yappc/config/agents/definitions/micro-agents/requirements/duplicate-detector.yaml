@@ -1,0 +1,51 @@
+id: duplicate-detector
+name: Duplicate Detector
+version: 1.0.0
+description: "Detect duplicate or near-duplicate requirements in a list using cosine similarity and return duplicate pairs"
+
+metadata:
+  level: 3
+  domain: requirements
+  type: micro-agent
+  tags: [duplicate-detection, similarity-scoring, level3, micro]
+
+generator:
+  type: RULE_BASED
+  steps:
+    - name: execute
+      type: RULE_BASED
+      rules:
+        - "duplicate-detection"
+        - "similarity-scoring"
+
+memory:
+  episodic:
+    enabled: false
+  semantic:
+    enabled: false
+  procedural:
+    enabled: false
+
+tools: [similarity_calculator]
+
+capabilities:
+  - duplicate-detection
+  - similarity-scoring
+
+routing:
+  input_types: [dup_detect_request]
+  output_types: [duplicate_pairs]
+
+delegation:
+  can_delegate_to: []
+  escalates_to: requirement-quality-capability-agent
+
+governance:
+  requires_approval: false
+  can_block: false
+  audit_trail: standard
+
+performance:
+  expected_latency_ms: 200
+  max_latency_ms: 1000
+  timeout_ms: 2000

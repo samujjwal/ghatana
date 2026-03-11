@@ -1,0 +1,103 @@
+id: change-management-capability-agent
+name: Change Management Capability Agent
+version: 1.0.0
+description: "Assesses change request risk, coordinates CAB review workflow, generates detailed rollback plans, tracks post-change verification, and maintains change audit trail"
+
+metadata:
+  level: 2
+  domain: operations
+  tags: [capability, change-management, cab, risk, rollback, audit, level2]
+
+generator:
+  type: PIPELINE
+  steps:
+    - name: change_risk_assessment
+      type: LLM
+      provider: ANTHROPIC
+      model: claude-3-5-sonnet-20241022
+      temperature: 0.0
+      max_tokens: 2500
+      prompt: |
+        Assess change request risk comprehensively:
+
+        Change request: {{input.change_request}}
+        System dependency map: {{context.system_topology}}
+        Recent incidents: {{context.recent_incidents}}
+        Historical change outcomes: {{context.change_history}}
+        Current SLO status: {{context.slo_status}}
+
+        Produce: risk score (0-10) with justification, blast radius (services/users affected), change window recommendation, required validation steps, dependency conflicts, risk mitigation measures. Flag if emergency change protocol applies. Output structured risk assessment JSON.
+    - name: cab_workflow_coordination
+      type: LLM
+      provider: ANTHROPIC
+      model: claude-3-5-sonnet-20241022
+      temperature: 0.1
+      max_tokens: 2000
+      prompt: |
+        Coordinate CAB review process:
+
+        Risk assessment: {{change_risk_assessment}}
+        CAB roster: {{context.cab_roster}}
+        Change calendar: {{context.change_calendar}}
+
+        Determine: required approvers based on risk level, review SLA (standard 48h / expedited 4h / emergency 30min), scheduling conflicts, concurrent change freeze rules. Draft CAB briefing document. Output CAB workflow plan with approver assignments.
+    - name: rollback_plan_generation
+      type: LLM
+      provider: ANTHROPIC
+      model: claude-3-5-sonnet-20241022
+      temperature: 0.0
+      max_tokens: 2500
+      prompt: |
+        Generate comprehensive rollback plan:
+
+        Change request: {{input.change_request}}
+        System topology: {{context.system_topology}}
+        CAB workflow: {{cab_workflow_coordination}}
+        Data migration: {{context.data_migrations}}
+
+        Define: rollback trigger criteria (metrics thresholds), step-by-step rollback sequence with owner per step, estimated rollback duration, data integrity verification steps, customer communication template if rollback occurs, post-rollback health checks. Output execution-ready rollback plan.
+
+memory:
+  episodic:
+    enabled: true
+    retention_days: 1825
+    categories: [change-requests, cab-reviews, risk-assessments, rollback-events]
+  semantic:
+    enabled: true
+    categories: [change-patterns, cab-policies, risk-heuristics]
+  procedural:
+    enabled: true
+    categories: [risk-scoring-procedures, cab-workflow-templates, rollback-playbooks]
+
+tools: [change_tracker, risk_scorer, cab_workflow, rollback_planner]
+
+capabilities:
+  - change-risk-assessment
+  - cab-coordination
+  - rollback-planning
+  - post-change-verification
+  - change-audit-trail
+
+routing:
+  input_types: [change_request, emergency_change_request, post_change_review]
+  output_types: [risk_assessment, cab_brief, rollback_plan, post_change_report]
+
+delegation:
+  can_delegate_to:
+    - change-assessment-task-agent
+    - risk-scoring-task-agent
+    - cab-workflow-task-agent
+    - rollback-planning-task-agent
+    - post-change-verification-task-agent
+  escalates_to: change-management-orchestrator
+
+governance:
+  requires_approval: true
+  approval_chain: [change-advisory-board]
+  can_block: true
+  audit_trail: comprehensive
+
+performance:
+  expected_latency_ms: 10000
+  max_latency_ms: 60000
+  timeout_ms: 300000

@@ -1,0 +1,98 @@
+id: opportunity-scoring-capability-agent
+name: Opportunity Scoring Capability Agent
+version: 1.0.0
+description: "Scores and validates market opportunities: ICE/demand scoring, TAM/SAM/SOM sizing, feasibility assessment, and opportunity ranking for portfolio intake"
+
+metadata:
+  level: 2
+  domain: discovery
+  tags: [capability, opportunity, scoring, tam, feasibility, ice, level2]
+
+generator:
+  type: PIPELINE
+  steps:
+    - name: market_sizing
+      type: LLM
+      provider: ANTHROPIC
+      model: claude-3-5-sonnet-20241022
+      temperature: 0.1
+      max_tokens: 2500
+      prompt: |
+        Size the market opportunity:
+
+        Opportunity: {{input}}
+        Market data: {{context.market_data}}
+        Comparable products: {{context.comparables}}
+
+        Compute TAM, SAM, SOM with methodology. Provide 3-year addressable market projection. Surface assumptions and sensitivity. Output market sizing JSON with ranges.
+    - name: feasibility_assessment
+      type: LLM
+      provider: ANTHROPIC
+      model: claude-3-5-sonnet-20241022
+      temperature: 0.1
+      max_tokens: 2000
+      prompt: |
+        Assess opportunity feasibility:
+
+        Opportunity: {{input}}
+        Capabilities inventory: {{context.capabilities}}
+        Technology constraints: {{context.tech_constraints}}
+        Regulatory context: {{context.regulatory_context}}
+
+        Score: technical feasibility (1-5), organisational readiness (1-5), regulatory risk (1-5), time-to-value estimate, build/buy/partner recommendation. Flag showstoppers. Output JSON.
+    - name: ice_scoring
+      type: LLM
+      provider: ANTHROPIC
+      model: claude-3-5-sonnet-20241022
+      temperature: 0.0
+      max_tokens: 1500
+      prompt: |
+        Compute ICE score for opportunity:
+
+        Market sizing: {{market_sizing}}
+        Feasibility: {{feasibility_assessment}}
+        Demand signals: {{context.demand_signals}}
+
+        Score Impact (1-10), Confidence (1-10), Ease (1-10). ICE = (I × C × E)/10. Provide rationale per dimension. Recommend: pursue/investigate/park/decline.
+
+memory:
+  episodic:
+    enabled: true
+    retention_days: 365
+    categories: [opportunity-assessments, market-sizes, ice-scores, feasibility-reports]
+  semantic:
+    enabled: true
+    categories: [market-data, comparable-products, ice-benchmarks]
+  procedural:
+    enabled: true
+    categories: [tam-sam-som-methods, ice-scoring, feasibility-criteria]
+
+tools: [market_data_api, feasibility_checker, ice_scorer, opportunity_registry]
+
+capabilities:
+  - market-sizing
+  - opportunity-scoring
+  - feasibility-assessment
+  - demand-validation
+
+routing:
+  input_types: [opportunity_submission, market_signal, discovery_output]
+  output_types: [opportunity_score, market_sizing_report, feasibility_assessment, ice_score]
+
+delegation:
+  can_delegate_to:
+    - market-sizing-task-agent
+    - feasibility-task-agent
+    - demand-validation-task-agent
+    - opportunity-comparison-task-agent
+  escalates_to: opportunity-assessment-orchestrator
+
+governance:
+  requires_approval: false
+  can_block: false
+  audit_trail: standard
+
+performance:
+  expected_latency_ms: 5000
+  max_latency_ms: 20000
+  timeout_ms: 60000

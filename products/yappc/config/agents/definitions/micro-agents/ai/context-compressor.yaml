@@ -1,0 +1,51 @@
+id: context-compressor
+name: Context Compressor
+version: 1.0.0
+description: "Compress long context by summarising older conversation turns while preserving key facts and decisions"
+
+metadata:
+  level: 3
+  domain: ai
+  type: micro-agent
+  tags: [context-compression, summarisation, level3, micro]
+
+generator:
+  type: RULE_BASED
+  steps:
+    - name: execute
+      type: RULE_BASED
+      rules:
+        - "context-compression"
+        - "summarisation"
+
+memory:
+  episodic:
+    enabled: false
+  semantic:
+    enabled: false
+  procedural:
+    enabled: false
+
+tools: [compressor]
+
+capabilities:
+  - context-compression
+  - summarisation
+
+routing:
+  input_types: [compress_request]
+  output_types: [compressed_context]
+
+delegation:
+  can_delegate_to: []
+  escalates_to: agent-runtime-capability-agent-ai
+
+governance:
+  requires_approval: false
+  can_block: false
+  audit_trail: standard
+
+performance:
+  expected_latency_ms: 500
+  max_latency_ms: 2500
+  timeout_ms: 5000

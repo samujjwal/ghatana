@@ -1,0 +1,97 @@
+id: differentiation-capability-agent
+name: Differentiation Capability Agent
+version: 1.0.0
+description: "Crafts product differentiation strategy: unique value proposition definition, positioning maps, moat analysis, and narrative differentiation for sales and marketing"
+
+metadata:
+  level: 2
+  domain: ideation
+  tags: [capability, differentiation, positioning, uvp, moat, narrative, level2]
+
+generator:
+  type: PIPELINE
+  steps:
+    - name: differentiation_landscape_analysis
+      type: LLM
+      provider: ANTHROPIC
+      model: claude-3-5-sonnet-20241022
+      temperature: 0.1
+      max_tokens: 2500
+      prompt: |
+        Analyse differentiation landscape:
+
+        Our product concept: {{input.concept}}
+        Competitive landscape: {{context.competitive_landscape}}
+        Customer needs hierarchy: {{context.customer_needs}}
+
+        Map the differentiation space: table stakes (must-have, no advantage), performance differentiators (more = better), excitement differentiators (unexpected delight), niche opportunities (underserved segments). Identify white space. Output positioning map JSON.
+    - name: uvp_crafting
+      type: LLM
+      provider: ANTHROPIC
+      model: claude-3-5-sonnet-20241022
+      temperature: 0.3
+      max_tokens: 2000
+      prompt: |
+        Craft the Unique Value Proposition:
+
+        Differentiation landscape: {{differentiation_landscape_analysis}}
+        Target persona: {{context.primary_persona}}
+        Jobs to be done: {{context.jtbd}}
+
+        Write 3 UVP candidates in format: "For [target customer] who [key need], [product name] is [category] that [key benefit]. Unlike [primary alternative], [product name] [key differentiator]." Score each on clarity, uniqueness, believability (1-5 each). Recommend best.
+    - name: moat_analysis
+      type: LLM
+      provider: ANTHROPIC
+      model: claude-3-5-sonnet-20241022
+      temperature: 0.1
+      max_tokens: 2000
+      prompt: |
+        Analyse and recommend moat-building strategy:
+
+        UVP: {{uvp_crafting.recommended_uvp}}
+        Capabilities: {{context.capabilities}}
+        Market position: {{differentiation_landscape_analysis}}
+
+        Identify moat candidates: network effects, switching costs, data advantages, brand/trust, proprietary technology, regulatory barriers. Rate each (strength 1-5, defensibility 1-5, time-to-build in months). Recommend top 2 to invest in.
+
+memory:
+  episodic:
+    enabled: true
+    retention_days: 365
+    categories: [differentiation-analyses, uvp-versions, moat-assessments, positioning-maps]
+  semantic:
+    enabled: true
+    categories: [competitive-positions, uvp-library, moat-patterns]
+  procedural:
+    enabled: true
+    categories: [positioning-map-method, uvp-crafting-technique, moat-analysis-framework]
+
+tools: [competitive_intelligence, positioning_map_tool, uvp_evaluator, moat_analyser]
+
+capabilities:
+  - uvp-definition
+  - positioning-map-creation
+  - moat-analysis
+  - differentiation-narrative
+
+routing:
+  input_types: [differentiation_request, concept, competitive_analysis]
+  output_types: [uvp, positioning_map, moat_analysis_report, differentiation_narrative]
+
+delegation:
+  can_delegate_to:
+    - uvp-task-agent
+    - positioning-task-agent
+    - moat-analysis-task-agent
+    - differentiation-narrative-task-agent
+  escalates_to: product-framing-orchestrator
+
+governance:
+  requires_approval: false
+  can_block: false
+  audit_trail: standard
+
+performance:
+  expected_latency_ms: 8000
+  max_latency_ms: 20000
+  timeout_ms: 60000

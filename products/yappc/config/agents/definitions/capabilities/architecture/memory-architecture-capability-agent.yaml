@@ -1,0 +1,103 @@
+id: memory-architecture-capability-agent
+name: Memory Architecture Capability Agent
+version: 1.0.0
+description: "Architects the agent memory system: multi-tier storage design, retrieval pipeline architecture, retention and governance policy design, and reflection loop implementation"
+
+metadata:
+  level: 2
+  domain: architecture
+  tags: [capability, memory-architecture, episodic, semantic, procedural, retention, level2]
+
+generator:
+  type: PIPELINE
+  steps:
+    - name: memory_tier_design
+      type: LLM
+      provider: ANTHROPIC
+      model: claude-3-5-sonnet-20241022
+      temperature: 0.1
+      max_tokens: 3000
+      prompt: |
+        Design multi-tier memory architecture:
+
+        Agent framework requirements: {{input}}
+        Tenancy model: {{context.tenancy_model}}
+        Data privacy requirements: {{context.privacy_requirements}}
+        Performance targets: {{context.latency_targets}}
+
+        Design 3-tier memory system:
+        - Episodic: event log store (immutable, append-only, time-ordered; recommend technology: EventLog, Kafka, or append-only DB)
+        - Semantic: vector store (embedding model selection, index type, similarity search algorithm, ANN library choice)
+        - Procedural: policy store (queryable, versioned, confidence-scored; recommend: relational DB with full-text search)
+
+        Add short-term working memory (in-process, current turn). Define boundaries: what goes where, TTL per tier, access patterns. Output tier spec JSON.
+    - name: retrieval_pipeline_design
+      type: LLM
+      provider: ANTHROPIC
+      model: claude-3-5-sonnet-20241022
+      temperature: 0.1
+      max_tokens: 2500
+      prompt: |
+        Design memory retrieval pipeline:
+
+        Memory tiers: {{memory_tier_design}}
+        Retrieval latency budget: {{context.latency_targets}}
+
+        Design: retrieval trigger (when to pull from each tier), parallel vs sequential retrieval, result scoring and fusion (episodic recency + semantic relevance + procedural confidence), context window budget allocation, staleness detection, cache warming strategy. Output retrieval pipeline spec.
+    - name: governance_and_retention_design
+      type: LLM
+      provider: ANTHROPIC
+      model: claude-3-5-sonnet-20241022
+      temperature: 0.1
+      max_tokens: 2000
+      prompt: |
+        Design memory governance and retention system:
+
+        Memory tiers: {{memory_tier_design}}
+        Privacy requirements: {{context.privacy_requirements}}
+        Compliance requirements: {{context.compliance_requirements}}
+
+        Define: retention policies per tier (default and per-category TTLs), PII redaction pipeline (detect → redact before persistence), right-to-erasure implementation, tenant isolation enforcement, audit logging for memory access, reflection loop scheduling (when to consolidate episodic → semantic).
+
+memory:
+  episodic:
+    enabled: true
+    retention_days: 730
+    categories: [memory-architecture-designs, retrieval-specs, governance-policies, architecture-adrs]
+  semantic:
+    enabled: true
+    categories: [memory-architecture-patterns, storage-technology-benchmarks, retrieval-algorithms]
+  procedural:
+    enabled: true
+    categories: [memory-design-rules, retention-policy-standards, governance-frameworks]
+
+tools: [memory_tier_designer, vector_db_selector, retention_policy_engine]
+
+capabilities:
+  - memory-tier-architecture
+  - retrieval-pipeline-design
+  - retention-governance-design
+  - reflection-loop-design
+
+routing:
+  input_types: [memory_architecture_request, retrieval_design_request, governance_design_request]
+  output_types: [memory_tier_spec, retrieval_pipeline_spec, governance_policy_spec, memory_adr]
+
+delegation:
+  can_delegate_to:
+    - memory-tier-task-agent
+    - retrieval-pipeline-task-agent
+    - retention-policy-task-agent
+    - reflection-loop-task-agent
+  escalates_to: runtime-architecture-orchestrator
+
+governance:
+  requires_approval: true
+  approval_chain: [architecture-board, data-governance-lead]
+  can_block: false
+  audit_trail: comprehensive
+
+performance:
+  expected_latency_ms: 8000
+  max_latency_ms: 30000
+  timeout_ms: 120000

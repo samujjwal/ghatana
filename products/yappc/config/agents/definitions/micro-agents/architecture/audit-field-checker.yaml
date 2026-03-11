@@ -1,0 +1,51 @@
+id: audit-field-checker
+name: Audit Field Checker
+version: 1.0.0
+description: "Verify that a data model or event schema includes all required audit fields (created_at, updated_at, created_by, tenant_id)"
+
+metadata:
+  level: 3
+  domain: architecture
+  type: micro-agent
+  tags: [audit-field-checking, schema-compliance, level3, micro]
+
+generator:
+  type: RULE_BASED
+  steps:
+    - name: execute
+      type: RULE_BASED
+      rules:
+        - "audit-field-checking"
+        - "schema-compliance"
+
+memory:
+  episodic:
+    enabled: false
+  semantic:
+    enabled: false
+  procedural:
+    enabled: false
+
+tools: [audit_field_checker]
+
+capabilities:
+  - audit-field-checking
+  - schema-compliance
+
+routing:
+  input_types: [audit_check_request]
+  output_types: [audit_field_result]
+
+delegation:
+  can_delegate_to: []
+  escalates_to: security-architecture-capability-agent
+
+governance:
+  requires_approval: false
+  can_block: false
+  audit_trail: standard
+
+performance:
+  expected_latency_ms: 100
+  max_latency_ms: 500
+  timeout_ms: 1000

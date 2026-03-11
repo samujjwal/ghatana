@@ -1,0 +1,112 @@
+id: customer-insight-orchestrator
+name: Customer Insight Orchestrator
+version: 1.0.0
+description: "Synthesises customer insights from interviews, surveys, NPS, usage analytics, and support tickets to build rich customer understanding"
+
+metadata:
+  level: 1
+  domain: discovery
+  tags: [orchestrator, customer-insight, jtbd, interviews, level1]
+
+generator:
+  type: PIPELINE
+  steps:
+    - name: insight_source_inventory
+      type: LLM
+      provider: ANTHROPIC
+      model: claude-3-5-sonnet-20241022
+      temperature: 0.2
+      max_tokens: 1500
+      prompt: |
+        Inventory available customer insight sources for: {{input}}
+        Sources available: {{context.available_sources}}
+
+        Prioritise sources by richness and relevance.
+        Plan extraction and synthesis approach.
+        Output: {sources_prioritised, extraction_plan, synthesis_approach}
+    - name: qualitative_synthesis
+      type: LLM
+      provider: ANTHROPIC
+      model: claude-3-5-sonnet-20241022
+      temperature: 0.3
+      max_tokens: 4000
+      prompt: |
+        Synthesise qualitative customer data:
+        Interview transcripts: {{context.interview_data}}
+        Support tickets: {{context.support_data}}
+        NPS verbatims: {{context.nps_verbatims}}
+
+        Extract:
+        1. JTBD (jobs-to-be-done) statements ranked by frequency
+        2. Pain points categorised by severity and frequency
+        3. Desired outcomes and success measures
+        4. Moments of delight and frustration
+        5. Customer language patterns for messaging
+
+        Output: {jtbd_list, pain_points, desired_outcomes, emotional_moments, customer_language}
+    - name: quantitative_synthesis
+      type: LLM
+      provider: ANTHROPIC
+      model: claude-3-5-sonnet-20241022
+      temperature: 0.1
+      max_tokens: 2000
+      prompt: |
+        Synthesise quantitative customer data:
+        Usage analytics: {{context.analytics_data}}
+        NPS scores: {{context.nps_scores}}
+        Survey results: {{context.survey_data}}
+
+        Produce: {behaviour_patterns, adoption_metrics, satisfaction_drivers, segment_differences}
+    - name: persona_synthesis
+      type: LLM
+      provider: ANTHROPIC
+      model: claude-3-5-sonnet-20241022
+      temperature: 0.3
+      max_tokens: 3000
+      prompt: |
+        Build customer persona profiles from all insights:
+        Qualitative: {{qualitative_synthesis}}, Quantitative: {{quantitative_synthesis}}
+
+        Define 3-5 customer personas with: name, role, goals, frustrations, jtbd, success_metrics, quote
+
+memory:
+  episodic:
+    enabled: true
+    retention_days: 730
+    categories: [interview-sessions, insight-extractions, persona-versions]
+  semantic:
+    enabled: true
+    categories: [customer-personas, jtbd-library, pain-point-catalogue, customer-language]
+  procedural:
+    enabled: true
+    categories: [interview-techniques, synthesis-methods, persona-building]
+
+tools: [interview_synthesizer, survey_analyzer, persona_builder, jtbd_extractor]
+
+capabilities:
+  - customer-interview-synthesis
+  - jtbd-extraction
+  - persona-building
+  - pain-point-mapping
+  - quantitative-insight-synthesis
+
+routing:
+  input_types: [customer_insight_request, interview_transcripts, survey_data, support_data]
+  output_types: [insight_report, persona_set, jtbd_map, pain_point_catalogue]
+
+delegation:
+  can_delegate_to:
+    - feedback-orchestrator
+    - sentiment-analysis-task-agent
+    - feedback-theme-clustering-task-agent
+  escalates_to: discovery-orchestrator
+
+governance:
+  requires_approval: false
+  can_block: false
+  audit_trail: standard
+
+performance:
+  expected_latency_ms: 12000
+  max_latency_ms: 90000
+  timeout_ms: 120000

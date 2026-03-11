@@ -1,0 +1,51 @@
+id: strategic-theme-tagger
+name: Strategic Theme Tagger
+version: 1.0.0
+description: "Tag initiatives with one or more strategic theme labels from a predefined taxonomy"
+
+metadata:
+  level: 3
+  domain: portfolio
+  type: micro-agent
+  tags: [theme-tagging, taxonomy-matching, level3, micro]
+
+generator:
+  type: RULE_BASED
+  steps:
+    - name: execute
+      type: RULE_BASED
+      rules:
+        - "theme-tagging"
+        - "taxonomy-matching"
+
+memory:
+  episodic:
+    enabled: false
+  semantic:
+    enabled: false
+  procedural:
+    enabled: false
+
+tools: [theme_tagger]
+
+capabilities:
+  - theme-tagging
+  - taxonomy-matching
+
+routing:
+  input_types: [tagging_request]
+  output_types: [tagged_items]
+
+delegation:
+  can_delegate_to: []
+  escalates_to: strategic-planning-capability-agent
+
+governance:
+  requires_approval: false
+  can_block: false
+  audit_trail: standard
+
+performance:
+  expected_latency_ms: 100
+  max_latency_ms: 500
+  timeout_ms: 1000

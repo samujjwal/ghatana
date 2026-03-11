@@ -1,0 +1,63 @@
+id: domain-model-task-agent
+name: Domain Model Task Agent
+version: 1.0.0
+description: "Build domain models using DDD tactical patterns: aggregates, entities, value objects, domain events, and repositories"
+
+metadata:
+  level: 3
+  domain: architecture
+  type: worker
+  tags: [domain-modelling, aggregate-design, event-identification, level3]
+
+generator:
+  type: PIPELINE
+  steps:
+    - name: execute
+      type: LLM
+      provider: ANTHROPIC
+      model: claude-3-5-sonnet-20241022
+      temperature: 0.1
+      max_tokens: 2000
+      prompt: |
+        Execute task: Build domain models using DDD tactical patterns: aggregates, entities, value objects, domain events, and repositories
+
+        Input: {{input}}
+        Context: {{context}}
+
+        Produce a structured, precise output meeting the task specification.
+
+memory:
+  episodic:
+    enabled: true
+    retention_days: 90
+    categories: [task-executions]
+  semantic:
+    enabled: true
+    categories: [domain-knowledge]
+  procedural:
+    enabled: false
+
+tools: [domain_model_builder, ddd_pattern_library]
+
+capabilities:
+  - domain-modelling
+  - aggregate-design
+  - event-identification
+
+routing:
+  input_types: [domain_model_request]
+  output_types: [domain_model]
+
+delegation:
+  can_delegate_to: []
+  escalates_to: service-design-capability-agent
+
+governance:
+  requires_approval: false
+  can_block: false
+  audit_trail: standard
+
+performance:
+  expected_latency_ms: 4000
+  max_latency_ms: 20000
+  timeout_ms: 40000

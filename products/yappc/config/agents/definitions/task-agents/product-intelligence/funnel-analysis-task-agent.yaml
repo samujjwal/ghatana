@@ -1,0 +1,63 @@
+id: funnel-analysis-task-agent
+name: Funnel Analysis Task Agent
+version: 1.0.0
+description: "Build and analyse conversion funnels step-by-step computing drop-off rates, time-in-step, and user path distributions"
+
+metadata:
+  level: 3
+  domain: product-intelligence
+  type: worker
+  tags: [funnel-construction, drop-off-analysis, path-distribution, level3]
+
+generator:
+  type: PIPELINE
+  steps:
+    - name: execute
+      type: LLM
+      provider: ANTHROPIC
+      model: claude-3-5-sonnet-20241022
+      temperature: 0.1
+      max_tokens: 2000
+      prompt: |
+        Execute task: Build and analyse conversion funnels step-by-step computing drop-off rates, time-in-step, and user path distributions
+
+        Input: {{input}}
+        Context: {{context}}
+
+        Produce a structured, precise output meeting the task specification.
+
+memory:
+  episodic:
+    enabled: true
+    retention_days: 90
+    categories: [task-executions]
+  semantic:
+    enabled: true
+    categories: [domain-knowledge]
+  procedural:
+    enabled: false
+
+tools: [funnel_builder, drop_off_analyser, path_analyser]
+
+capabilities:
+  - funnel-construction
+  - drop-off-analysis
+  - path-distribution
+
+routing:
+  input_types: [funnel_analysis_request]
+  output_types: [funnel_analysis_report]
+
+delegation:
+  can_delegate_to: []
+  escalates_to: analytics-capability-agent
+
+governance:
+  requires_approval: false
+  can_block: false
+  audit_trail: standard
+
+performance:
+  expected_latency_ms: 4000
+  max_latency_ms: 20000
+  timeout_ms: 40000

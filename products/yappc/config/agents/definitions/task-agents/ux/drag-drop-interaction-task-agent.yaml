@@ -1,0 +1,63 @@
+id: drag-drop-interaction-task-agent
+name: Drag Drop Interaction Task Agent
+version: 1.0.0
+description: "Specify drag-and-drop interaction mechanics including drag initiation, preview rendering, drop zone highlighting, and snap behaviour"
+
+metadata:
+  level: 3
+  domain: ux
+  type: worker
+  tags: [drag-drop-specification, preview-design, drop-zone-specification, level3]
+
+generator:
+  type: PIPELINE
+  steps:
+    - name: execute
+      type: LLM
+      provider: ANTHROPIC
+      model: claude-3-5-sonnet-20241022
+      temperature: 0.1
+      max_tokens: 2000
+      prompt: |
+        Execute task: Specify drag-and-drop interaction mechanics including drag initiation, preview rendering, drop zone highlighting, and snap behaviour
+
+        Input: {{input}}
+        Context: {{context}}
+
+        Produce a structured, precise output meeting the task specification.
+
+memory:
+  episodic:
+    enabled: true
+    retention_days: 90
+    categories: [task-executions]
+  semantic:
+    enabled: true
+    categories: [domain-knowledge]
+  procedural:
+    enabled: false
+
+tools: [drag_drop_spec_writer, snap_behaviour_definer]
+
+capabilities:
+  - drag-drop-specification
+  - preview-design
+  - drop-zone-specification
+
+routing:
+  input_types: [drag_drop_request]
+  output_types: [drag_drop_specification]
+
+delegation:
+  can_delegate_to: []
+  escalates_to: canvas-interaction-capability-agent
+
+governance:
+  requires_approval: false
+  can_block: false
+  audit_trail: standard
+
+performance:
+  expected_latency_ms: 2000
+  max_latency_ms: 10000
+  timeout_ms: 20000

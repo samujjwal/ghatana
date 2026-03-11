@@ -1,0 +1,51 @@
+id: navigation-depth-checker
+name: Navigation Depth Checker
+version: 1.0.0
+description: "Check navigation hierarchy depth does not exceed recommended maximum (4 levels) and flag deep paths"
+
+metadata:
+  level: 3
+  domain: ux
+  type: micro-agent
+  tags: [depth-checking, navigation-validation, level3, micro]
+
+generator:
+  type: RULE_BASED
+  steps:
+    - name: execute
+      type: RULE_BASED
+      rules:
+        - "depth-checking"
+        - "navigation-validation"
+
+memory:
+  episodic:
+    enabled: false
+  semantic:
+    enabled: false
+  procedural:
+    enabled: false
+
+tools: [depth_checker]
+
+capabilities:
+  - depth-checking
+  - navigation-validation
+
+routing:
+  input_types: [depth_check_request]
+  output_types: [depth_violations]
+
+delegation:
+  can_delegate_to: []
+  escalates_to: flow-design-capability-agent
+
+governance:
+  requires_approval: false
+  can_block: false
+  audit_trail: standard
+
+performance:
+  expected_latency_ms: 100
+  max_latency_ms: 500
+  timeout_ms: 1000

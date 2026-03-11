@@ -1,0 +1,51 @@
+id: use-case-splitter
+name: Use Case Splitter
+version: 1.0.0
+description: "Split a compound use case description into individual atomic use case statements"
+
+metadata:
+  level: 3
+  domain: ideation
+  type: micro-agent
+  tags: [use-case-splitting, atomic-extraction, level3, micro]
+
+generator:
+  type: RULE_BASED
+  steps:
+    - name: execute
+      type: RULE_BASED
+      rules:
+        - "use-case-splitting"
+        - "atomic-extraction"
+
+memory:
+  episodic:
+    enabled: false
+  semantic:
+    enabled: false
+  procedural:
+    enabled: false
+
+tools: [splitter]
+
+capabilities:
+  - use-case-splitting
+  - atomic-extraction
+
+routing:
+  input_types: [split_request]
+  output_types: [atomic_use_cases]
+
+delegation:
+  can_delegate_to: []
+  escalates_to: solution-framing-capability-agent
+
+governance:
+  requires_approval: false
+  can_block: false
+  audit_trail: standard
+
+performance:
+  expected_latency_ms: 100
+  max_latency_ms: 500
+  timeout_ms: 1000

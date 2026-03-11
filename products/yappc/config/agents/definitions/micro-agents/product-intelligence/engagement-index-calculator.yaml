@@ -1,0 +1,49 @@
+id: engagement-index-calculator
+name: Engagement Index Calculator
+version: 1.0.0
+description: "Calculate a composite engagement index from session frequency, depth, and feature breadth metrics"
+
+metadata:
+  level: 3
+  domain: product-intelligence
+  type: micro-agent
+  tags: [engagement-index-computation, level3, micro]
+
+generator:
+  type: RULE_BASED
+  steps:
+    - name: execute
+      type: RULE_BASED
+      rules:
+        - "engagement-index-computation"
+
+memory:
+  episodic:
+    enabled: false
+  semantic:
+    enabled: false
+  procedural:
+    enabled: false
+
+tools: [engagement_calculator]
+
+capabilities:
+  - engagement-index-computation
+
+routing:
+  input_types: [engagement_request]
+  output_types: [engagement_index]
+
+delegation:
+  can_delegate_to: []
+  escalates_to: analytics-capability-agent
+
+governance:
+  requires_approval: false
+  can_block: false
+  audit_trail: standard
+
+performance:
+  expected_latency_ms: 100
+  max_latency_ms: 500
+  timeout_ms: 1000

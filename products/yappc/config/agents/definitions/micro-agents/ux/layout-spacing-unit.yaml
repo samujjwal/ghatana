@@ -1,0 +1,51 @@
+id: layout-spacing-unit
+name: Layout Spacing Unit
+version: 1.0.0
+description: "Verify component spacing values conform to the 4px/8px spacing grid and flag deviations"
+
+metadata:
+  level: 3
+  domain: ux
+  type: micro-agent
+  tags: [spacing-validation, grid-conformance, level3, micro]
+
+generator:
+  type: RULE_BASED
+  steps:
+    - name: execute
+      type: RULE_BASED
+      rules:
+        - "spacing-validation"
+        - "grid-conformance"
+
+memory:
+  episodic:
+    enabled: false
+  semantic:
+    enabled: false
+  procedural:
+    enabled: false
+
+tools: [spacing_checker]
+
+capabilities:
+  - spacing-validation
+  - grid-conformance
+
+routing:
+  input_types: [spacing_check_request]
+  output_types: [spacing_violations]
+
+delegation:
+  can_delegate_to: []
+  escalates_to: screen-design-capability-agent
+
+governance:
+  requires_approval: false
+  can_block: false
+  audit_trail: standard
+
+performance:
+  expected_latency_ms: 100
+  max_latency_ms: 500
+  timeout_ms: 1000

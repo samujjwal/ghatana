@@ -1,0 +1,49 @@
+id: review-sentiment-unit
+name: Review Sentiment Unit
+version: 1.0.0
+description: "Score the sentiment of a product review text as positive, neutral, or negative with confidence score"
+
+metadata:
+  level: 3
+  domain: discovery
+  type: micro-agent
+  tags: [sentiment-scoring, level3, micro]
+
+generator:
+  type: RULE_BASED
+  steps:
+    - name: execute
+      type: RULE_BASED
+      rules:
+        - "sentiment-scoring"
+
+memory:
+  episodic:
+    enabled: false
+  semantic:
+    enabled: false
+  procedural:
+    enabled: false
+
+tools: [sentiment_scorer]
+
+capabilities:
+  - sentiment-scoring
+
+routing:
+  input_types: [sentiment_request]
+  output_types: [sentiment_score]
+
+delegation:
+  can_delegate_to: []
+  escalates_to: customer-research-capability-agent
+
+governance:
+  requires_approval: false
+  can_block: false
+  audit_trail: standard
+
+performance:
+  expected_latency_ms: 100
+  max_latency_ms: 500
+  timeout_ms: 1000

@@ -1,0 +1,63 @@
+id: support-ticket-clustering-task-agent
+name: Support Ticket Clustering Task Agent
+version: 1.0.0
+description: "Cluster support tickets by problem type, frequency, and severity to identify systemic product issues"
+
+metadata:
+  level: 3
+  domain: discovery
+  type: worker
+  tags: [ticket-clustering, issue-classification, impact-scoring, level3]
+
+generator:
+  type: PIPELINE
+  steps:
+    - name: execute
+      type: LLM
+      provider: ANTHROPIC
+      model: claude-3-5-sonnet-20241022
+      temperature: 0.1
+      max_tokens: 2000
+      prompt: |
+        Execute task: Cluster support tickets by problem type, frequency, and severity to identify systemic product issues
+
+        Input: {{input}}
+        Context: {{context}}
+
+        Produce a structured, precise output meeting the task specification.
+
+memory:
+  episodic:
+    enabled: true
+    retention_days: 90
+    categories: [task-executions]
+  semantic:
+    enabled: true
+    categories: [domain-knowledge]
+  procedural:
+    enabled: false
+
+tools: [ticket_fetcher, nlp_clusterer, impact_scorer]
+
+capabilities:
+  - ticket-clustering
+  - issue-classification
+  - impact-scoring
+
+routing:
+  input_types: [ticket_clustering_request]
+  output_types: [ticket_cluster_report]
+
+delegation:
+  can_delegate_to: []
+  escalates_to: customer-research-capability-agent
+
+governance:
+  requires_approval: false
+  can_block: false
+  audit_trail: standard
+
+performance:
+  expected_latency_ms: 4000
+  max_latency_ms: 20000
+  timeout_ms: 40000

@@ -1,0 +1,49 @@
+id: churn-risk-classifier
+name: Churn Risk Classifier
+version: 1.0.0
+description: "Classify a user into low/medium/high churn risk tier based on behavioural signals relative to churn model thresholds"
+
+metadata:
+  level: 3
+  domain: product-intelligence
+  type: micro-agent
+  tags: [churn-risk-classification, level3, micro]
+
+generator:
+  type: RULE_BASED
+  steps:
+    - name: execute
+      type: RULE_BASED
+      rules:
+        - "churn-risk-classification"
+
+memory:
+  episodic:
+    enabled: false
+  semantic:
+    enabled: false
+  procedural:
+    enabled: false
+
+tools: [churn_classifier]
+
+capabilities:
+  - churn-risk-classification
+
+routing:
+  input_types: [churn_classify_request]
+  output_types: [churn_risk_tier]
+
+delegation:
+  can_delegate_to: []
+  escalates_to: analytics-capability-agent
+
+governance:
+  requires_approval: false
+  can_block: false
+  audit_trail: standard
+
+performance:
+  expected_latency_ms: 100
+  max_latency_ms: 500
+  timeout_ms: 1000

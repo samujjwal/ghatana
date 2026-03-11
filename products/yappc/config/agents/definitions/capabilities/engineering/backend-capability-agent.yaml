@@ -1,0 +1,102 @@
+id: backend-capability-agent
+name: Backend Engineering Capability Agent
+version: 1.0.0
+description: "Leads backend engineering: API implementation, domain logic development, data access patterns, database migrations, integration testing, and service reliability"
+
+metadata:
+  level: 2
+  domain: engineering
+  tags: [capability, backend, api, domain-logic, database, migrations, java, level2]
+
+generator:
+  type: PIPELINE
+  steps:
+    - name: backend_design_analysis
+      type: LLM
+      provider: ANTHROPIC
+      model: claude-3-5-sonnet-20241022
+      temperature: 0.1
+      max_tokens: 2500
+      prompt: |
+        Analyse backend requirements and design implementation approach:
+
+        Feature spec: {{input}}
+        Service architecture: {{context.service_architecture}}
+        Tech stack (Java 21/ActiveJ, Fastify/Prisma): {{context.tech_stack}}
+        Existing code patterns: {{context.code_patterns}}
+
+        Break down: API endpoints to create (method, path, request/response schema), domain objects (entities, value objects, aggregates), repository interfaces, service methods, event publishing requirements, error handling strategy. Follow project conventions (ActiveJ Promises, no CompletableFuture, no blocking event loop). Output implementation plan JSON.
+    - name: implementation_spec_generation
+      type: LLM
+      provider: ANTHROPIC
+      model: claude-3-5-sonnet-20241022
+      temperature: 0.2
+      max_tokens: 4000
+      prompt: |
+        Generate backend implementation specifications:
+
+        Implementation plan: {{backend_design_analysis}}
+        Code conventions: {{context.code_conventions}}
+        Security requirements: {{context.security_requirements}}
+
+        For each component: class/interface spec (with @doc tags per project standards: @doc.type, @doc.purpose, @doc.layer, @doc.pattern), method signatures, exception types, ActiveJ Promise chains, SQL/Prisma queries, unit test strategy. Flag any security-sensitive operations requiring special handling (input validation, SQL parameterisation, auth checks).
+    - name: migration_design
+      type: LLM
+      provider: ANTHROPIC
+      model: claude-3-5-sonnet-20241022
+      temperature: 0.1
+      max_tokens: 2000
+      prompt: |
+        Design database migrations for the feature:
+
+        Implementation spec: {{implementation_spec_generation}}
+        Existing schema: {{context.database_schema}}
+        Zero-downtime requirement: {{context.zero_downtime}}
+
+        Produce: migration SQL (or Prisma schema changes), expand-contract approach if needed, indexes to add/drop, estimated migration time, rollback script, backfill script if required.
+
+memory:
+  episodic:
+    enabled: true
+    retention_days: 365
+    categories: [backend-designs, api-implementations, migration-records, integration-results]
+  semantic:
+    enabled: true
+    categories: [backend-patterns, activej-patterns, api-design-standards, db-patterns]
+  procedural:
+    enabled: true
+    categories: [activej-coding-standards, repository-pattern, api-implementation-rules]
+
+tools: [java_class_writer, api_handler_generator, db_guardian, migration_planner]
+
+capabilities:
+  - api-implementation
+  - domain-logic-development
+  - database-migration
+  - integration-testing
+  - service-reliability
+
+routing:
+  input_types: [backend_feature_request, api_implementation_request, migration_request, integration_request]
+  output_types: [backend_implementation_spec, api_handler, migration_script, integration_test_plan]
+
+delegation:
+  can_delegate_to:
+    - java-class-writer
+    - java-expert
+    - api-handler-generator
+    - db-guardian
+    - migration-writer
+    - unit-test-writer
+    - integration-test-writer
+  escalates_to: backend-engineering-orchestrator
+
+governance:
+  requires_approval: false
+  can_block: false
+  audit_trail: standard
+
+performance:
+  expected_latency_ms: 8000
+  max_latency_ms: 30000
+  timeout_ms: 120000

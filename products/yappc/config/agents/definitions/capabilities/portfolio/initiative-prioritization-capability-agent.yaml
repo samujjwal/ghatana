@@ -1,0 +1,95 @@
+id: initiative-prioritization-capability-agent
+name: Initiative Prioritization Capability Agent
+version: 1.0.0
+description: "Applies structured frameworks (WSJF, ICE, RICE) to prioritise product initiatives and ensure portfolio sequencing aligns with capacity and strategy"
+
+metadata:
+  level: 2
+  domain: portfolio
+  tags: [capability, prioritization, wsjf, ice, rice, sequencing, level2]
+
+generator:
+  type: PIPELINE
+  steps:
+    - name: initiative_data_enrichment
+      type: LLM
+      provider: ANTHROPIC
+      model: claude-3-5-sonnet-20241022
+      temperature: 0.1
+      max_tokens: 2500
+      prompt: |
+        Enrich initiative data for prioritisation:
+
+        Initiative list: {{input.initiatives}}
+        Revenue data: {{context.revenue_data}}
+        Engineering capacity: {{context.engineering_capacity}}
+        Strategic priorities: {{context.strategic_priorities}}
+
+        For each initiative estimate: user value (1-10), revenue potential ($K), effort (T-shirt), time-criticality, risk-reduction value, strategic fit score. Output enriched JSON.
+    - name: scoring_application
+      type: LLM
+      provider: ANTHROPIC
+      model: claude-3-5-sonnet-20241022
+      temperature: 0.0
+      max_tokens: 2000
+      prompt: |
+        Apply prioritisation scoring model:
+
+        Enriched initiatives: {{initiative_data_enrichment}}
+        Scoring framework: {{context.scoring_framework}}
+        Capacity constraints: {{context.engineering_capacity}}
+
+        Apply selected framework (WSJF/RICE/ICE). Rank initiatives. Flag resource conflicts. Produce sequenced roadmap with quarters. Output ranked list JSON.
+    - name: sequencing_rationale
+      type: LLM
+      provider: ANTHROPIC
+      model: claude-3-5-sonnet-20241022
+      temperature: 0.2
+      max_tokens: 1500
+      prompt: |
+        Write prioritisation rationale for stakeholders:
+
+        Ranked list: {{scoring_application}}
+
+        Produce narrative explaining: top 5 choices and why, what was deprioritised and why, tradeoffs made, risks of the sequencing, next review trigger.
+
+memory:
+  episodic:
+    enabled: true
+    retention_days: 365
+    categories: [prioritisation-decisions, scoring-outputs, sequencing-changes]
+  semantic:
+    enabled: true
+    categories: [scoring-frameworks, capacity-models, initiative-history]
+  procedural:
+    enabled: true
+    categories: [wsjf-calculations, rice-scoring, sequencing-rules]
+
+tools: [initiative_registry, scoring_engine, capacity_planner, roadmap_api]
+
+capabilities:
+  - initiative-scoring
+  - portfolio-sequencing
+  - capacity-aligned-planning
+  - prioritisation-rationale
+
+routing:
+  input_types: [prioritisation_request, initiative_list, quarterly_planning_trigger]
+  output_types: [ranked_initiative_list, sequenced_roadmap, prioritisation_rationale]
+
+delegation:
+  can_delegate_to:
+    - portfolio-scoring-task-agent
+    - initiative-sequencing-task-agent
+    - budget-envelope-task-agent
+  escalates_to: portfolio-orchestrator
+
+governance:
+  requires_approval: false
+  can_block: false
+  audit_trail: standard
+
+performance:
+  expected_latency_ms: 5000
+  max_latency_ms: 20000
+  timeout_ms: 60000

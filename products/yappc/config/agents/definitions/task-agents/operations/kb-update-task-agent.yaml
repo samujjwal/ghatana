@@ -1,0 +1,63 @@
+id: kb-update-task-agent
+name: Kb Update Task Agent
+version: 1.0.0
+description: "Author or update knowledge base articles from resolved ticket learnings with accuracy verification"
+
+metadata:
+  level: 3
+  domain: operations
+  type: worker
+  tags: [kb-article-authoring, accuracy-verification, article-publication, level3]
+
+generator:
+  type: PIPELINE
+  steps:
+    - name: execute
+      type: LLM
+      provider: ANTHROPIC
+      model: claude-3-5-sonnet-20241022
+      temperature: 0.1
+      max_tokens: 2000
+      prompt: |
+        Execute task: Author or update knowledge base articles from resolved ticket learnings with accuracy verification
+
+        Input: {{input}}
+        Context: {{context}}
+
+        Produce a structured, precise output meeting the task specification.
+
+memory:
+  episodic:
+    enabled: true
+    retention_days: 90
+    categories: [task-executions]
+  semantic:
+    enabled: true
+    categories: [domain-knowledge]
+  procedural:
+    enabled: false
+
+tools: [kb_author, accuracy_verifier, kb_publisher]
+
+capabilities:
+  - kb-article-authoring
+  - accuracy-verification
+  - article-publication
+
+routing:
+  input_types: [kb_update_request]
+  output_types: [kb_article]
+
+delegation:
+  can_delegate_to: []
+  escalates_to: support-capability-agent
+
+governance:
+  requires_approval: false
+  can_block: false
+  audit_trail: standard
+
+performance:
+  expected_latency_ms: 3000
+  max_latency_ms: 15000
+  timeout_ms: 30000

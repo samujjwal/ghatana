@@ -1,0 +1,86 @@
+id: governance-review-capability-agent
+name: Governance Review Capability Agent
+version: 1.0.0
+description: "Conducts portfolio governance reviews: policy compliance checks, approval workflow coordination, audit trail management, and escalation handling"
+
+metadata:
+  level: 2
+  domain: portfolio
+  tags: [capability, governance, compliance, audit, approval, level2]
+
+generator:
+  type: PIPELINE
+  steps:
+    - name: policy_compliance_check
+      type: LLM
+      provider: ANTHROPIC
+      model: claude-3-5-sonnet-20241022
+      temperature: 0.0
+      max_tokens: 2000
+      prompt: |
+        Check initiative/decision against governance policies:
+
+        Item for review: {{input}}
+        Applicable policies: {{context.governance_policies}}
+        Previous decisions (precedents): {{context.decision_precedents}}
+
+        Identify: compliant items, policy violations, ambiguous areas requiring human judgement, suggested remediation for violations. Score compliance (0-100). Output compliance report JSON.
+    - name: approval_workflow_coordination
+      type: SERVICE_CALL
+      service: governance-workflow
+      endpoint: /initiate
+      description: "Initiate approval workflow with the correct approval chain based on item type and risk level"
+    - name: audit_record_generation
+      type: LLM
+      provider: ANTHROPIC
+      model: claude-3-5-sonnet-20241022
+      temperature: 0.0
+      max_tokens: 1500
+      prompt: |
+        Generate formal audit record:
+
+        Governance review: {{policy_compliance_check}}
+        Approvals collected: {{approval_workflow_coordination}}
+        Decision outcome: {{context.decision_outcome}}
+
+        Produce immutable audit record: item ID, timestamp, policy references, compliance score, approvers, decision, rationale, next review date.
+
+memory:
+  episodic:
+    enabled: true
+    retention_days: 2555
+    categories: [governance-reviews, compliance-checks, audit-records, approvals]
+  semantic:
+    enabled: true
+    categories: [governance-policies, compliance-patterns, approval-chains]
+  procedural:
+    enabled: true
+    categories: [review-procedures, escalation-rules, audit-standards]
+
+tools: [policy_store, governance_workflow, audit_ledger]
+
+capabilities:
+  - policy-compliance-checking
+  - approval-workflow-coordination
+  - audit-trail-management
+  - escalation-handling
+
+routing:
+  input_types: [governance_review_request, approval_request, audit_query]
+  output_types: [compliance_report, approval_decision, audit_record, escalation_brief]
+
+delegation:
+  can_delegate_to:
+    - executive-status-synthesis-task-agent
+  escalates_to: governance-orchestrator
+
+governance:
+  requires_approval: true
+  approval_chain: [governance-lead]
+  can_block: true
+  audit_trail: comprehensive
+
+performance:
+  expected_latency_ms: 5000
+  max_latency_ms: 30000
+  timeout_ms: 86400000

@@ -1,0 +1,51 @@
+id: concept-deduplicator
+name: Concept Deduplicator
+version: 1.0.0
+description: "Detect near-duplicate product concepts in a candidate list using semantic similarity and flag duplicates"
+
+metadata:
+  level: 3
+  domain: ideation
+  type: micro-agent
+  tags: [deduplication, semantic-similarity, level3, micro]
+
+generator:
+  type: RULE_BASED
+  steps:
+    - name: execute
+      type: RULE_BASED
+      rules:
+        - "deduplication"
+        - "semantic-similarity"
+
+memory:
+  episodic:
+    enabled: false
+  semantic:
+    enabled: false
+  procedural:
+    enabled: false
+
+tools: [semantic_comparator]
+
+capabilities:
+  - deduplication
+  - semantic-similarity
+
+routing:
+  input_types: [dedup_request]
+  output_types: [deduplicated_concepts]
+
+delegation:
+  can_delegate_to: []
+  escalates_to: solution-framing-capability-agent
+
+governance:
+  requires_approval: false
+  can_block: false
+  audit_trail: standard
+
+performance:
+  expected_latency_ms: 200
+  max_latency_ms: 1000
+  timeout_ms: 2000

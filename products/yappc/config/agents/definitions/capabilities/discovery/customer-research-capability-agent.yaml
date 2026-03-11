@@ -1,0 +1,96 @@
+id: customer-research-capability-agent
+name: Customer Research Capability Agent
+version: 1.0.0
+description: "Leads customer research operations: interview facilitation, observation sessions, survey design, JTBD analysis, and insight synthesis from qualitative data"
+
+metadata:
+  level: 2
+  domain: discovery
+  tags: [capability, customer-research, jtbd, interviews, qualitative, level2]
+
+generator:
+  type: PIPELINE
+  steps:
+    - name: research_plan_generation
+      type: LLM
+      provider: ANTHROPIC
+      model: claude-3-5-sonnet-20241022
+      temperature: 0.2
+      max_tokens: 2500
+      prompt: |
+        Design customer research plan:
+
+        Research goal: {{input}}
+        Target personas: {{context.personas}}
+        Time and resource budget: {{context.research_budget}}
+        Existing knowledge: {{context.existing_insights}}
+
+        Produce: research questions, methods (interviews/survey/diary/usability), participant criteria (n=?), screening criteria, discussion guide outline, synthesis approach.
+    - name: interview_synthesis
+      type: LLM
+      provider: ANTHROPIC
+      model: claude-3-5-sonnet-20241022
+      temperature: 0.2
+      max_tokens: 4000
+      prompt: |
+        Synthesise interview and research data into insights:
+
+        Raw transcripts/notes: {{context.raw_research_data}}
+        JTBD framework: {{context.jtbd_framework}}
+        Research questions: {{research_plan_generation.research_questions}}
+
+        Extract: top 10 insights, JTBD statements (functional/emotional/social), pain points ranked by frequency, unmet needs, surprise findings, behavioural patterns. Quote evidence per insight. Output structured JSON.
+    - name: insight_narrative
+      type: LLM
+      provider: ANTHROPIC
+      model: claude-3-5-sonnet-20241022
+      temperature: 0.3
+      max_tokens: 2000
+      prompt: |
+        Write customer insight narrative for product team:
+
+        Synthesised insights: {{interview_synthesis}}
+
+        Produce: empathy summary (who are these people and what do they struggle with), key jobs to be done, current workarounds, moment of insight (most surprising finding), implications for product. 500w max.
+
+memory:
+  episodic:
+    enabled: true
+    retention_days: 730
+    categories: [research-sessions, interviews, surveys, insight-reports]
+  semantic:
+    enabled: true
+    categories: [customer-segments, jtbd-library, insight-themes]
+  procedural:
+    enabled: true
+    categories: [research-methodologies, synthesis-techniques, jtbd-extraction]
+
+tools: [research_planner, transcript_processor, jtbd_framework, insight_repository]
+
+capabilities:
+  - research-planning
+  - interview-synthesis
+  - jtbd-analysis
+  - qualitative-insight-extraction
+
+routing:
+  input_types: [research_request, raw_interview_data, survey_results, observation_notes]
+  output_types: [research_plan, insight_report, jtbd_statements, customer_narrative]
+
+delegation:
+  can_delegate_to:
+    - interview-analysis-task-agent
+    - jtbd-mapping-task-agent
+    - persona-synthesis-task-agent
+    - survey-analysis-task-agent
+  escalates_to: customer-insight-orchestrator
+
+governance:
+  requires_approval: false
+  can_block: false
+  audit_trail: standard
+
+performance:
+  expected_latency_ms: 8000
+  max_latency_ms: 30000
+  timeout_ms: 120000

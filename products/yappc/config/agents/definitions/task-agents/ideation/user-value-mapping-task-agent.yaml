@@ -1,0 +1,63 @@
+id: user-value-mapping-task-agent
+name: User Value Mapping Task Agent
+version: 1.0.0
+description: "Map product features to specific user value outcomes showing direct line from feature to user job to measurable value"
+
+metadata:
+  level: 3
+  domain: ideation
+  type: worker
+  tags: [value-mapping, feature-benefit-mapping, outcome-definition, level3]
+
+generator:
+  type: PIPELINE
+  steps:
+    - name: execute
+      type: LLM
+      provider: ANTHROPIC
+      model: claude-3-5-sonnet-20241022
+      temperature: 0.1
+      max_tokens: 2000
+      prompt: |
+        Execute task: Map product features to specific user value outcomes showing direct line from feature to user job to measurable value
+
+        Input: {{input}}
+        Context: {{context}}
+
+        Produce a structured, precise output meeting the task specification.
+
+memory:
+  episodic:
+    enabled: true
+    retention_days: 90
+    categories: [task-executions]
+  semantic:
+    enabled: true
+    categories: [domain-knowledge]
+  procedural:
+    enabled: false
+
+tools: [value_mapper, benefit_extractor]
+
+capabilities:
+  - value-mapping
+  - feature-benefit-mapping
+  - outcome-definition
+
+routing:
+  input_types: [value_mapping_request]
+  output_types: [user_value_map]
+
+delegation:
+  can_delegate_to: []
+  escalates_to: concept-validation-capability-agent
+
+governance:
+  requires_approval: false
+  can_block: false
+  audit_trail: standard
+
+performance:
+  expected_latency_ms: 2000
+  max_latency_ms: 10000
+  timeout_ms: 20000

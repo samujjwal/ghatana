@@ -1,0 +1,90 @@
+id: strategic-planning-capability-agent
+name: Strategic Planning Capability Agent
+version: 1.0.0
+description: "Facilitates strategic planning: vision articulation, north-star definition, market positioning, and annual/quarterly roadmap framing"
+
+metadata:
+  level: 2
+  domain: portfolio
+  tags: [capability, strategy, planning, vision, roadmap, level2]
+
+generator:
+  type: PIPELINE
+  steps:
+    - name: market_context_ingestion
+      type: SERVICE_CALL
+      service: intelligence-store
+      endpoint: /market-context
+      description: "Pull latest market trends, competitor moves, and macro signals"
+    - name: strategic_options_generation
+      type: LLM
+      provider: ANTHROPIC
+      model: claude-3-5-sonnet-20241022
+      temperature: 0.3
+      max_tokens: 3000
+      prompt: |
+        Generate strategic options based on context:
+
+        Vision/mission: {{context.vision}}
+        Market context: {{market_context_ingestion}}
+        Current positioning: {{context.positioning}}
+        Strengths/weaknesses: {{context.swot}}
+        Resource constraints: {{context.constraints}}
+
+        Produce 3-5 distinct strategic options with: title, one-paragraph description, key bets, risk profile (low/medium/high), resource requirements, and 12-month milestones.
+    - name: strategic_plan_synthesis
+      type: LLM
+      provider: ANTHROPIC
+      model: claude-3-5-sonnet-20241022
+      temperature: 0.2
+      max_tokens: 3000
+      prompt: |
+        Synthesise selected strategy into actionable plan:
+
+        Selected option: {{context.selected_option}}
+        Strategic options: {{strategic_options_generation}}
+        Stakeholder constraints: {{context.stakeholder_input}}
+
+        Output: north-star metric, 3 strategic pillars, 12-month OKR draft, key risks and mitigations, resource allocation recommendations, communication narrative.
+
+memory:
+  episodic:
+    enabled: true
+    retention_days: 365
+    categories: [strategic-sessions, option-evaluations, plan-versions]
+  semantic:
+    enabled: true
+    categories: [market-positions, strategic-frameworks, competitor-profiles]
+  procedural:
+    enabled: true
+    categories: [planning-methodologies, option-evaluation-criteria]
+
+tools: [intelligence_store, strategy_canvas, scenario_modeller]
+
+capabilities:
+  - vision-articulation
+  - strategic-option-generation
+  - north-star-definition
+  - roadmap-framing
+
+routing:
+  input_types: [strategic_planning_request, annual_planning_trigger, strategy_review]
+  output_types: [strategic_plan, strategic_options_report, north_star_brief]
+
+delegation:
+  can_delegate_to:
+    - strategy-option-comparison-task-agent
+    - strategic-dependency-review-task-agent
+    - initiative-sequencing-task-agent
+  escalates_to: product-strategy-orchestrator
+
+governance:
+  requires_approval: true
+  approval_chain: [executive-sponsor]
+  can_block: false
+  audit_trail: standard
+
+performance:
+  expected_latency_ms: 8000
+  max_latency_ms: 30000
+  timeout_ms: 120000

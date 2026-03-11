@@ -1,0 +1,88 @@
+id: goal-management-capability-agent
+name: Goal Management Capability Agent
+version: 1.0.0
+description: "Manages OKR lifecycle: drafting, alignment checks, progress tracking, scoring, and retrospective analysis across product and engineering teams"
+
+metadata:
+  level: 2
+  domain: portfolio
+  tags: [capability, okr, goals, kpi, alignment, tracking, level2]
+
+generator:
+  type: PIPELINE
+  steps:
+    - name: okr_draft_generation
+      type: LLM
+      provider: ANTHROPIC
+      model: claude-3-5-sonnet-20241022
+      temperature: 0.2
+      max_tokens: 3000
+      prompt: |
+        Draft OKRs based on strategic input:
+
+        Strategic plan: {{context.strategic_plan}}
+        Previous cycle OKRs: {{context.previous_okrs}}
+        Team structure: {{context.team_structure}}
+        Company OKRs (parent): {{context.company_okrs}}
+
+        Draft Objectives (3-5) with Key Results (3 KRs each). KRs must be: measurable, time-bound, ambitious but achievable. Ensure vertical alignment with company OKRs. Output JSON.
+    - name: alignment_check
+      type: LLM
+      provider: ANTHROPIC
+      model: claude-3-5-sonnet-20241022
+      temperature: 0.0
+      max_tokens: 1500
+      prompt: |
+        Check OKR alignment across hierarchy:
+
+        Drafted OKRs: {{okr_draft_generation}}
+        Parent OKRs: {{context.company_okrs}}
+        Adjacent team OKRs: {{context.peer_okrs}}
+
+        Identify: misalignments, duplicate KRs, conflicting objectives, gaps in coverage, overly safe targets. Score alignment (0-100). Flag issues with recommendations.
+    - name: progress_tracking
+      type: SERVICE_CALL
+      service: okr-tracker
+      endpoint: /update
+      description: "Pull latest metric values, compute KR progress, flag at-risk OKRs"
+
+memory:
+  episodic:
+    enabled: true
+    retention_days: 365
+    categories: [okr-drafts, alignment-checks, progress-updates, cycle-retrospectives]
+  semantic:
+    enabled: true
+    categories: [okr-patterns, metric-definitions, team-structures]
+  procedural:
+    enabled: true
+    categories: [okr-drafting-rules, alignment-criteria, scoring-logic]
+
+tools: [okr_tracker, metrics_store, team_registry]
+
+capabilities:
+  - okr-drafting
+  - goal-alignment
+  - progress-tracking
+  - cycle-retrospective
+
+routing:
+  input_types: [okr_planning_request, okr_review_trigger, progress_check]
+  output_types: [okr_draft, alignment_report, progress_report, retrospective_summary]
+
+delegation:
+  can_delegate_to:
+    - okr-definition-task-agent
+    - kpi-selection-task-agent
+    - strategic-dependency-review-task-agent
+  escalates_to: portfolio-orchestrator
+
+governance:
+  requires_approval: false
+  can_block: false
+  audit_trail: standard
+
+performance:
+  expected_latency_ms: 5000
+  max_latency_ms: 15000
+  timeout_ms: 60000

@@ -1,0 +1,64 @@
+id: tool-invocation-task-agent
+name: Tool Invocation Task Agent
+version: 1.0.0
+description: "Parse LLM tool call requests, validate parameters, execute tool functions, and handle errors with retry logic"
+
+metadata:
+  level: 3
+  domain: ai
+  type: worker
+  tags: [tool-invocation, parameter-validation, error-handling, retry-logic, level3]
+
+generator:
+  type: PIPELINE
+  steps:
+    - name: execute
+      type: LLM
+      provider: ANTHROPIC
+      model: claude-3-5-sonnet-20241022
+      temperature: 0.1
+      max_tokens: 2000
+      prompt: |
+        Execute task: Parse LLM tool call requests, validate parameters, execute tool functions, and handle errors with retry logic
+
+        Input: {{input}}
+        Context: {{context}}
+
+        Produce a structured, precise output meeting the task specification.
+
+memory:
+  episodic:
+    enabled: true
+    retention_days: 90
+    categories: [task-executions]
+  semantic:
+    enabled: true
+    categories: [domain-knowledge]
+  procedural:
+    enabled: false
+
+tools: [tool_registry, tool_executor, parameter_validator]
+
+capabilities:
+  - tool-invocation
+  - parameter-validation
+  - error-handling
+  - retry-logic
+
+routing:
+  input_types: [tool_invocation_request]
+  output_types: [tool_execution_result]
+
+delegation:
+  can_delegate_to: []
+  escalates_to: agent-runtime-capability-agent-ai
+
+governance:
+  requires_approval: false
+  can_block: false
+  audit_trail: standard
+
+performance:
+  expected_latency_ms: 2000
+  max_latency_ms: 10000
+  timeout_ms: 20000

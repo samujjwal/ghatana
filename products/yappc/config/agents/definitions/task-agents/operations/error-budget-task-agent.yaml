@@ -1,0 +1,63 @@
+id: error-budget-task-agent
+name: Error Budget Task Agent
+version: 1.0.0
+description: "Track error budget consumption, project exhaustion timeline, and enforce error budget policies (halt deploys when < 10%)"
+
+metadata:
+  level: 3
+  domain: operations
+  type: worker
+  tags: [error-budget-tracking, exhaustion-projection, policy-enforcement, level3]
+
+generator:
+  type: PIPELINE
+  steps:
+    - name: execute
+      type: LLM
+      provider: ANTHROPIC
+      model: claude-3-5-sonnet-20241022
+      temperature: 0.1
+      max_tokens: 2000
+      prompt: |
+        Execute task: Track error budget consumption, project exhaustion timeline, and enforce error budget policies (halt deploys when < 10%)
+
+        Input: {{input}}
+        Context: {{context}}
+
+        Produce a structured, precise output meeting the task specification.
+
+memory:
+  episodic:
+    enabled: true
+    retention_days: 90
+    categories: [task-executions]
+  semantic:
+    enabled: true
+    categories: [domain-knowledge]
+  procedural:
+    enabled: false
+
+tools: [error_budget_tracker, exhaustion_projector, policy_enforcer]
+
+capabilities:
+  - error-budget-tracking
+  - exhaustion-projection
+  - policy-enforcement
+
+routing:
+  input_types: [error_budget_request]
+  output_types: [error_budget_status]
+
+delegation:
+  can_delegate_to: []
+  escalates_to: sre-capability-agent
+
+governance:
+  requires_approval: false
+  can_block: false
+  audit_trail: standard
+
+performance:
+  expected_latency_ms: 1000
+  max_latency_ms: 5000
+  timeout_ms: 10000

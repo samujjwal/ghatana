@@ -1,0 +1,51 @@
+id: hallucination-detector
+name: Hallucination Detector
+version: 1.0.0
+description: "Detect factual hallucinations in an LLM output by comparing claimed facts against a verified knowledge base"
+
+metadata:
+  level: 3
+  domain: ai
+  type: micro-agent
+  tags: [hallucination-detection, fact-checking, level3, micro]
+
+generator:
+  type: RULE_BASED
+  steps:
+    - name: execute
+      type: RULE_BASED
+      rules:
+        - "hallucination-detection"
+        - "fact-checking"
+
+memory:
+  episodic:
+    enabled: false
+  semantic:
+    enabled: false
+  procedural:
+    enabled: false
+
+tools: [fact_checker, kb_reader]
+
+capabilities:
+  - hallucination-detection
+  - fact-checking
+
+routing:
+  input_types: [hallucination_check_request]
+  output_types: [hallucination_flags]
+
+delegation:
+  can_delegate_to: []
+  escalates_to: llm-integration-capability-agent
+
+governance:
+  requires_approval: false
+  can_block: false
+  audit_trail: standard
+
+performance:
+  expected_latency_ms: 500
+  max_latency_ms: 2500
+  timeout_ms: 5000

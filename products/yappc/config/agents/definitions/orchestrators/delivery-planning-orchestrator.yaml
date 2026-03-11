@@ -1,0 +1,97 @@
+id: delivery-planning-orchestrator
+name: Delivery Planning Orchestrator
+version: 1.0.0
+description: "Plans engineering delivery: translates roadmap initiatives into sprint plans, manages dependencies, tracks capacity, and forecasts delivery timelines"
+
+metadata:
+  level: 1
+  domain: engineering
+  tags: [orchestrator, delivery-planning, sprint, capacity, level1]
+
+generator:
+  type: PIPELINE
+  steps:
+    - name: delivery_context
+      type: LLM
+      provider: ANTHROPIC
+      model: claude-3-5-sonnet-20241022
+      temperature: 0.2
+      max_tokens: 2500
+      prompt: |
+        Gather delivery planning context:
+        Initiative: {{input}}
+        Backlog: {{context.backlog}}
+        Team velocity: {{context.velocity}}
+        Capacity: {{context.capacity}}
+        Dependencies: {{context.dependencies}}
+
+        Assess: story points available, velocity trend, dependency risks, blocking items.
+        Return: {available_points, velocity_3sprint_avg, dependency_map, blocking_items}
+    - name: sprint_composition
+      type: LLM
+      provider: ANTHROPIC
+      model: claude-3-5-sonnet-20241022
+      temperature: 0.2
+      max_tokens: 3000
+      prompt: |
+        Compose an optimal sprint plan:
+        Delivery context: {{delivery_context}}
+        Prioritised backlog: {{context.prioritised_backlog}}
+
+        Select stories for sprint respecting: capacity constraints, dependency ordering, risk distribution.
+        Return: {sprint_goal, selected_stories, story_point_total, risk_items, stretch_goals}
+    - name: timeline_forecast
+      type: LLM
+      provider: ANTHROPIC
+      model: claude-3-5-sonnet-20241022
+      temperature: 0.1
+      max_tokens: 2000
+      prompt: |
+        Forecast delivery timeline:
+        Sprint composition: {{sprint_composition}}
+        Historical velocity: {{delivery_context.velocity_3sprint_avg}}
+
+        Project: when remaining backlog will be complete (best, likely, worst case).
+        Return: {best_case_date, likely_date, worst_case_date, key_risks}
+
+memory:
+  episodic:
+    enabled: true
+    retention_days: 365
+    categories: [sprint-plans, delivery-forecasts, planning-outcomes]
+  semantic:
+    enabled: true
+    categories: [velocity-benchmarks, planning-heuristics, estimation-patterns]
+  procedural:
+    enabled: true
+    categories: [sprint-planning-procedures, dependency-management-rules]
+
+tools: [sprint_planner, velocity_tracker, capacity_calculator, dependency_mapper]
+
+capabilities:
+  - delivery-planning
+  - sprint-planning
+  - capacity-planning
+  - dependency-mapping
+  - timeline-forecasting
+
+routing:
+  input_types: [delivery_request, roadmap, sprint_input, capacity_data, backlog]
+  output_types: [sprint_plan, delivery_plan, risk_assessment, capacity_report, timeline_forecast]
+
+delegation:
+  can_delegate_to:
+    - work-management-orchestrator
+    - agile-execution-orchestrator
+    - delivery-planning-capability-agent
+  escalates_to: engineering-orchestrator
+
+governance:
+  requires_approval: false
+  can_block: false
+  audit_trail: standard
+
+performance:
+  expected_latency_ms: 5000
+  max_latency_ms: 45000
+  timeout_ms: 60000

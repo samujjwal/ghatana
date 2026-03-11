@@ -1,0 +1,101 @@
+id: ux-orchestrator
+name: UX Orchestrator
+version: 1.0.0
+description: "Orchestrates UX design lifecycle: user research, information architecture, wireframing, usability testing, and design handoff"
+
+metadata:
+  level: 1
+  domain: ux
+  tags: [orchestrator, ux, design, usability, level1]
+
+generator:
+  type: PIPELINE
+  steps:
+    - name: ux_strategy
+      type: LLM
+      provider: ANTHROPIC
+      model: claude-3-5-sonnet-20241022
+      temperature: 0.3
+      max_tokens: 3000
+      prompt: |
+        You are the UX Orchestrator. Plan the UX design approach for:
+
+        Feature/Product: {{input}}
+        User personas: {{context.personas}}
+        User research data: {{context.research_data}}
+        Design system: {{context.design_system}}
+
+        Define:
+        1. UX strategy and principles for this feature
+        2. Key user flows to design (prioritised)
+        3. Research questions requiring validation
+        4. Design artefacts needed (IA, wireframes, prototypes)
+        5. Usability test plan
+        6. Delegation plan
+
+        Output as JSON: {strategy, principles, key_flows, research_questions, artefacts_needed, delegation_plan}
+    - name: ia_design_dispatch
+      type: SERVICE_CALL
+      service: agent-dispatcher
+      endpoint: /dispatch
+      description: "Route to information architecture agents for IA design"
+    - name: wireframe_dispatch
+      type: SERVICE_CALL
+      service: agent-dispatcher
+      endpoint: /dispatch
+      description: "Route to ui-orchestrator for wireframe and screen design"
+    - name: ux_synthesis
+      type: LLM
+      provider: ANTHROPIC
+      model: claude-3-5-sonnet-20241022
+      temperature: 0.3
+      max_tokens: 2500
+      prompt: |
+        Synthesise all UX artefacts into a design brief:
+        IA: {{ia_design_dispatch}}, Wireframes: {{wireframe_dispatch}}
+        Strategy: {{ux_strategy}}
+
+        Produce: design_brief, design_rationale, handoff_checklist, usability_test_scenarios
+
+memory:
+  episodic:
+    enabled: true
+    retention_days: 730
+    categories: [design-sessions, usability-test-results, design-iterations]
+  semantic:
+    enabled: true
+    categories: [ux-patterns, accessibility-rules, design-precedents, heuristics]
+  procedural:
+    enabled: true
+    categories: [ux-process, usability-test-procedures, design-review-checklists]
+
+tools: [ia_designer, wireframe_generator, usability_tester, design_brief_builder]
+
+capabilities:
+  - ux-strategy
+  - information-architecture
+  - user-flow-design
+  - usability-testing
+  - design-handoff
+
+routing:
+  input_types: [ux_request, feature_brief, persona_set, user_flows]
+  output_types: [ux_brief, wireframes, ia_document, usability_test_plan, design_handoff]
+
+delegation:
+  can_delegate_to:
+    - ui-orchestrator
+    - interaction-design-orchestrator
+    - design-system-orchestrator
+    - customer-insight-orchestrator
+  escalates_to: product-strategy-orchestrator
+
+governance:
+  requires_approval: false
+  can_block: false
+  audit_trail: standard
+
+performance:
+  expected_latency_ms: 12000
+  max_latency_ms: 90000
+  timeout_ms: 120000

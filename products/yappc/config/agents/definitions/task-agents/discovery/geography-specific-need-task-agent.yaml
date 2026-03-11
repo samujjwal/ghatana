@@ -1,0 +1,63 @@
+id: geography-specific-need-task-agent
+name: Geography Specific Need Task Agent
+version: 1.0.0
+description: "Identify geography-specific user needs, localisation requirements, and market nuances for expansion planning"
+
+metadata:
+  level: 3
+  domain: discovery
+  type: worker
+  tags: [geo-need-analysis, localisation-requirements, market-nuance-mapping, level3]
+
+generator:
+  type: PIPELINE
+  steps:
+    - name: execute
+      type: LLM
+      provider: ANTHROPIC
+      model: claude-3-5-sonnet-20241022
+      temperature: 0.1
+      max_tokens: 2000
+      prompt: |
+        Execute task: Identify geography-specific user needs, localisation requirements, and market nuances for expansion planning
+
+        Input: {{input}}
+        Context: {{context}}
+
+        Produce a structured, precise output meeting the task specification.
+
+memory:
+  episodic:
+    enabled: true
+    retention_days: 90
+    categories: [task-executions]
+  semantic:
+    enabled: true
+    categories: [domain-knowledge]
+  procedural:
+    enabled: false
+
+tools: [geo_data_reader, localisation_checker]
+
+capabilities:
+  - geo-need-analysis
+  - localisation-requirements
+  - market-nuance-mapping
+
+routing:
+  input_types: [geo_need_request]
+  output_types: [geo_need_report]
+
+delegation:
+  can_delegate_to: []
+  escalates_to: customer-research-capability-agent
+
+governance:
+  requires_approval: false
+  can_block: false
+  audit_trail: standard
+
+performance:
+  expected_latency_ms: 3000
+  max_latency_ms: 15000
+  timeout_ms: 30000

@@ -1,0 +1,51 @@
+id: table-column-priority-unit
+name: Table Column Priority Unit
+version: 1.0.0
+description: "Rank table columns by importance for progressive disclosure on smaller viewports"
+
+metadata:
+  level: 3
+  domain: ux
+  type: micro-agent
+  tags: [column-prioritisation, responsive-priority, level3, micro]
+
+generator:
+  type: RULE_BASED
+  steps:
+    - name: execute
+      type: RULE_BASED
+      rules:
+        - "column-prioritisation"
+        - "responsive-priority"
+
+memory:
+  episodic:
+    enabled: false
+  semantic:
+    enabled: false
+  procedural:
+    enabled: false
+
+tools: [column_prioritiser]
+
+capabilities:
+  - column-prioritisation
+  - responsive-priority
+
+routing:
+  input_types: [column_priority_request]
+  output_types: [column_priority_order]
+
+delegation:
+  can_delegate_to: []
+  escalates_to: screen-design-capability-agent
+
+governance:
+  requires_approval: false
+  can_block: false
+  audit_trail: standard
+
+performance:
+  expected_latency_ms: 100
+  max_latency_ms: 500
+  timeout_ms: 1000

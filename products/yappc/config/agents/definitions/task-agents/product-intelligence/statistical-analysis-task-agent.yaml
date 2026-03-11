@@ -1,0 +1,64 @@
+id: statistical-analysis-task-agent
+name: Statistical Analysis Task Agent
+version: 1.0.0
+description: "Run statistical significance tests (t-test, chi-square, CUPED) on experiment results and compute confidence intervals"
+
+metadata:
+  level: 3
+  domain: product-intelligence
+  type: worker
+  tags: [statistical-testing, significance-computation, confidence-intervals, cuped, level3]
+
+generator:
+  type: PIPELINE
+  steps:
+    - name: execute
+      type: LLM
+      provider: ANTHROPIC
+      model: claude-3-5-sonnet-20241022
+      temperature: 0.1
+      max_tokens: 2000
+      prompt: |
+        Execute task: Run statistical significance tests (t-test, chi-square, CUPED) on experiment results and compute confidence intervals
+
+        Input: {{input}}
+        Context: {{context}}
+
+        Produce a structured, precise output meeting the task specification.
+
+memory:
+  episodic:
+    enabled: true
+    retention_days: 90
+    categories: [task-executions]
+  semantic:
+    enabled: true
+    categories: [domain-knowledge]
+  procedural:
+    enabled: false
+
+tools: [stats_engine, cuped_calculator, ci_calculator]
+
+capabilities:
+  - statistical-testing
+  - significance-computation
+  - confidence-intervals
+  - cuped
+
+routing:
+  input_types: [statistical_analysis_request]
+  output_types: [statistical_analysis_result]
+
+delegation:
+  can_delegate_to: []
+  escalates_to: experimentation-capability-agent
+
+governance:
+  requires_approval: false
+  can_block: false
+  audit_trail: standard
+
+performance:
+  expected_latency_ms: 3000
+  max_latency_ms: 15000
+  timeout_ms: 30000

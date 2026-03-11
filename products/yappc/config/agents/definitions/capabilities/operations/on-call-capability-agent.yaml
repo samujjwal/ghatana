@@ -1,0 +1,102 @@
+id: on-call-capability-agent
+name: On-Call Capability Agent
+version: 1.0.0
+description: "Correlates alert storms to root incidents, makes escalation routing decisions, retrieves and selects relevant runbooks, triggers auto-remediation sequences, and provides real-time on-call situational awareness"
+
+metadata:
+  level: 2
+  domain: operations
+  tags: [capability, on-call, alerting, escalation, auto-remediation, incident, level2]
+
+generator:
+  type: PIPELINE
+  steps:
+    - name: alert_correlation
+      type: LLM
+      provider: ANTHROPIC
+      model: claude-3-5-sonnet-20241022
+      temperature: 0.0
+      max_tokens: 2000
+      prompt: |
+        Correlate alert storm to root incident:
+
+        Active alerts: {{input.alerts}}
+        Service topology: {{context.service_topology}}
+        Recent deployments: {{context.recent_deployments}}
+        Known issues: {{context.known_issues}}
+        Historical alerts: {{context.alert_history}}
+
+        Perform: noise reduction (deduplicate/parent-child grouping), identify probable root cause service, distinguish symptom vs. cause alerts, assess blast radius (services and users affected), estimate severity P1-P4. Output correlated incident summary JSON.
+    - name: runbook_selection
+      type: LLM
+      provider: ANTHROPIC
+      model: claude-3-5-sonnet-20241022
+      temperature: 0.0
+      max_tokens: 1500
+      prompt: |
+        Select optimal runbook for correlated incident:
+
+        Incident summary: {{alert_correlation}}
+        Available runbooks: {{context.runbooks}}
+        Auto-remediation capabilities: {{context.auto_remediation_scripts}}
+        On-call roster: {{context.on_call_roster}}
+
+        Select: best matching runbook with match confidence, steps eligible for automated execution, steps requiring human decision, escalation target (on-call engineer or incident commander), estimated remediation time. Flag if no runbook matches (→ escalate immediately). Output runbook execution plan.
+    - name: escalation_routing
+      type: LLM
+      provider: ANTHROPIC
+      model: claude-3-5-sonnet-20241022
+      temperature: 0.0
+      max_tokens: 1500
+      prompt: |
+        Determine escalation routing and communication plan:
+
+        Incident: {{alert_correlation}}
+        Runbook plan: {{runbook_selection}}
+        On-call roster: {{context.on_call_roster}}
+        Communication policies: {{context.comm_policies}}
+
+        Route to: primary on-call with context brief, secondary if P1 and after 5 min no ack, incident commander if P1 multi-service. Draft: PagerDuty alert description, Slack incident channel message, customer-facing status page update (if customer-visible). Output escalation plan with contact list and message templates.
+
+memory:
+  episodic:
+    enabled: true
+    retention_days: 365
+    categories: [alert-correlations, runbook-executions, escalation-events, auto-remediations]
+  semantic:
+    enabled: true
+    categories: [runbook-library, service-topology, alert-patterns]
+  procedural:
+    enabled: true
+    categories: [alert-correlation-heuristics, escalation-routing-rules, auto-remediation-playbooks]
+
+tools: [alert_correlator, runbook_selector, pagerduty_client, auto_remediator]
+
+capabilities:
+  - alert-correlation
+  - escalation-routing
+  - runbook-retrieval-and-selection
+  - auto-remediation-triggering
+  - on-call-situational-awareness
+
+routing:
+  input_types: [alert_event, incident_report, on_call_handoff_request]
+  output_types: [correlated_incident, runbook_execution_plan, escalation_plan, status_update]
+
+delegation:
+  can_delegate_to:
+    - alert-triage-task-agent
+    - escalation-task-agent
+    - runbook-execution-task-agent
+    - auto-remediation-task-agent
+  escalates_to: on-call-orchestrator
+
+governance:
+  requires_approval: false
+  can_block: false
+  audit_trail: comprehensive
+
+performance:
+  expected_latency_ms: 500
+  max_latency_ms: 3000
+  timeout_ms: 15000

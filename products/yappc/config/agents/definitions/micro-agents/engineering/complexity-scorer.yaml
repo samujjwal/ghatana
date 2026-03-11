@@ -1,0 +1,51 @@
+id: complexity-scorer
+name: Complexity Scorer
+version: 1.0.0
+description: "Compute cyclomatic and cognitive complexity scores for a code module and flag violations against thresholds"
+
+metadata:
+  level: 3
+  domain: engineering
+  type: micro-agent
+  tags: [complexity-scoring, threshold-checking, level3, micro]
+
+generator:
+  type: RULE_BASED
+  steps:
+    - name: execute
+      type: RULE_BASED
+      rules:
+        - "complexity-scoring"
+        - "threshold-checking"
+
+memory:
+  episodic:
+    enabled: false
+  semantic:
+    enabled: false
+  procedural:
+    enabled: false
+
+tools: [complexity_calculator]
+
+capabilities:
+  - complexity-scoring
+  - threshold-checking
+
+routing:
+  input_types: [complexity_request]
+  output_types: [complexity_scores]
+
+delegation:
+  can_delegate_to: []
+  escalates_to: code-quality-capability-agent
+
+governance:
+  requires_approval: false
+  can_block: false
+  audit_trail: standard
+
+performance:
+  expected_latency_ms: 200
+  max_latency_ms: 1000
+  timeout_ms: 2000

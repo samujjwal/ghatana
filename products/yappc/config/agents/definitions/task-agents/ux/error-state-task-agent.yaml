@@ -1,0 +1,63 @@
+id: error-state-task-agent
+name: Error State Task Agent
+version: 1.0.0
+description: "Specify error states with user-friendly error messages, recovery actions, and appropriate visual hierarchy for all error types"
+
+metadata:
+  level: 3
+  domain: ux
+  type: worker
+  tags: [error-state-design, error-copy-writing, recovery-action-specification, level3]
+
+generator:
+  type: PIPELINE
+  steps:
+    - name: execute
+      type: LLM
+      provider: ANTHROPIC
+      model: claude-3-5-sonnet-20241022
+      temperature: 0.1
+      max_tokens: 2000
+      prompt: |
+        Execute task: Specify error states with user-friendly error messages, recovery actions, and appropriate visual hierarchy for all error types
+
+        Input: {{input}}
+        Context: {{context}}
+
+        Produce a structured, precise output meeting the task specification.
+
+memory:
+  episodic:
+    enabled: true
+    retention_days: 90
+    categories: [task-executions]
+  semantic:
+    enabled: true
+    categories: [domain-knowledge]
+  procedural:
+    enabled: false
+
+tools: [error_state_designer, error_copy_writer]
+
+capabilities:
+  - error-state-design
+  - error-copy-writing
+  - recovery-action-specification
+
+routing:
+  input_types: [error_state_request]
+  output_types: [error_state_specification]
+
+delegation:
+  can_delegate_to: []
+  escalates_to: screen-design-capability-agent
+
+governance:
+  requires_approval: false
+  can_block: false
+  audit_trail: standard
+
+performance:
+  expected_latency_ms: 2000
+  max_latency_ms: 10000
+  timeout_ms: 20000

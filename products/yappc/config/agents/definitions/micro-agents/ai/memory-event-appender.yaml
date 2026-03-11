@@ -1,0 +1,51 @@
+id: memory-event-appender
+name: Memory Event Appender
+version: 1.0.0
+description: "Append a single memory event to the episodic event log with timestamp and metadata"
+
+metadata:
+  level: 3
+  domain: ai
+  type: micro-agent
+  tags: [event-appending, event-log-write, level3, micro]
+
+generator:
+  type: RULE_BASED
+  steps:
+    - name: execute
+      type: RULE_BASED
+      rules:
+        - "event-appending"
+        - "event-log-write"
+
+memory:
+  episodic:
+    enabled: false
+  semantic:
+    enabled: false
+  procedural:
+    enabled: false
+
+tools: [event_log_writer]
+
+capabilities:
+  - event-appending
+  - event-log-write
+
+routing:
+  input_types: [append_request]
+  output_types: [append_result]
+
+delegation:
+  can_delegate_to: []
+  escalates_to: memory-capability-agent
+
+governance:
+  requires_approval: false
+  can_block: false
+  audit_trail: standard
+
+performance:
+  expected_latency_ms: 100
+  max_latency_ms: 500
+  timeout_ms: 1000

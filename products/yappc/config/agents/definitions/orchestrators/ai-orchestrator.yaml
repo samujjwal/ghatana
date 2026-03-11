@@ -1,0 +1,96 @@
+id: ai-orchestrator
+name: AI Orchestrator
+version: 1.0.0
+description: "Coordinates all AI/ML capabilities: search, memory management, LLM integration, data pipelines, agent runtime, and AI quality evaluation"
+
+metadata:
+  level: 1
+  domain: ai
+  tags: [orchestrator, ai, llm, memory, search, level1]
+
+generator:
+  type: PIPELINE
+  steps:
+    - name: ai_request_triage
+      type: LLM
+      provider: ANTHROPIC
+      model: claude-3-5-sonnet-20241022
+      temperature: 0.1
+      max_tokens: 2000
+      prompt: |
+        Triage the AI capability request:
+
+        Request: {{input}}
+        Available AI capabilities: {{context.capabilities}}
+        Cost budget: {{context.cost_budget}}
+        Latency requirements: {{context.latency_sla}}
+
+        Determine:
+        1. AI capability type (search, memory-write, memory-read, inference, evaluation)
+        2. Model/capability selection
+        3. Cost and latency trade-offs
+        4. Quality gates to apply
+        5. Delegation plan
+
+        Output as JSON: {capability_type, selected_model, cost_estimate, latency_estimate, delegation_plan}
+    - name: capability_dispatch
+      type: SERVICE_CALL
+      service: agent-dispatcher
+      endpoint: /dispatch
+      description: "Route to search-orchestrator, memory-orchestrator, or agent-runtime-orchestrator based on triage"
+    - name: quality_evaluation
+      type: LLM
+      provider: ANTHROPIC
+      model: claude-3-5-sonnet-20241022
+      temperature: 0.1
+      max_tokens: 1500
+      prompt: |
+        Evaluate AI capability quality:
+        Result: {{capability_dispatch}}
+        Quality criteria: {{context.quality_criteria}}
+
+        Score: relevance, coherence, faithfulness, safety. Flag issues.
+
+memory:
+  episodic:
+    enabled: true
+    retention_days: 365
+    categories: [ai-requests, model-calls, quality-evaluations, cost-records]
+  semantic:
+    enabled: true
+    categories: [model-benchmarks, capability-patterns, cost-models]
+  procedural:
+    enabled: true
+    categories: [model-selection-rules, quality-thresholds, fallback-procedures]
+
+tools: [ai_router, model_selector, quality_evaluator, cost_tracker]
+
+capabilities:
+  - ai-coordination
+  - llm-integration
+  - search-integration
+  - memory-management
+  - quality-evaluation
+
+routing:
+  input_types: [ai_task, llm_request, search_request, memory_request, inference_request]
+  output_types: [ai_response, search_results, memory_result, quality_evaluation_report]
+
+delegation:
+  can_delegate_to:
+    - search-orchestrator
+    - agent-runtime-orchestrator
+    - memory-orchestrator
+    - data-pipeline-capability-agent
+    - llm-integration-capability-agent
+  escalates_to: null
+
+governance:
+  requires_approval: false
+  can_block: false
+  audit_trail: comprehensive
+
+performance:
+  expected_latency_ms: 2000
+  max_latency_ms: 30000
+  timeout_ms: 60000

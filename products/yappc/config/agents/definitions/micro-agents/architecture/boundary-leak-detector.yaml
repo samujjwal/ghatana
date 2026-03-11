@@ -1,0 +1,51 @@
+id: boundary-leak-detector
+name: Boundary Leak Detector
+version: 1.0.0
+description: "Detect bounded context boundary leaks where domain concepts cross context boundaries inappropriately"
+
+metadata:
+  level: 3
+  domain: architecture
+  type: micro-agent
+  tags: [boundary-checking, leak-detection, level3, micro]
+
+generator:
+  type: RULE_BASED
+  steps:
+    - name: execute
+      type: RULE_BASED
+      rules:
+        - "boundary-checking"
+        - "leak-detection"
+
+memory:
+  episodic:
+    enabled: false
+  semantic:
+    enabled: false
+  procedural:
+    enabled: false
+
+tools: [boundary_analyser]
+
+capabilities:
+  - boundary-checking
+  - leak-detection
+
+routing:
+  input_types: [boundary_check_request]
+  output_types: [boundary_leaks]
+
+delegation:
+  can_delegate_to: []
+  escalates_to: service-design-capability-agent
+
+governance:
+  requires_approval: false
+  can_block: false
+  audit_trail: standard
+
+performance:
+  expected_latency_ms: 200
+  max_latency_ms: 1000
+  timeout_ms: 2000

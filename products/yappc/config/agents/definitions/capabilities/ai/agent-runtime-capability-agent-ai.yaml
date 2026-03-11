@@ -1,0 +1,88 @@
+id: agent-runtime-capability-agent-ai
+name: Agent Runtime Capability Agent (AI Domain)
+version: 1.0.0
+description: "Manages agent turn execution: context window optimisation, tool call orchestration, streaming response management, and turn-level observability within the AI domain"
+
+metadata:
+  level: 2
+  domain: ai
+  tags: [capability, agent-runtime, context-window, tool-calls, streaming, level2]
+
+generator:
+  type: PIPELINE
+  steps:
+    - name: context_window_optimisation
+      type: LLM
+      provider: ANTHROPIC
+      model: claude-3-5-sonnet-20241022
+      temperature: 0.0
+      max_tokens: 2000
+      prompt: |
+        Optimise context window for agent turn:
+
+        Raw context: {{input.context_candidates}}
+        Token budget: {{input.token_budget}}
+        Current turn goal: {{input.goal}}
+        Memory retrievals: {{context.memory_chunks}}
+
+        Rank and prune context by relevance to goal. Apply: recency decay, semantic similarity scoring, mandatory system context, tool schemas (condensed). Output optimised context within token budget.
+    - name: tool_execution_management
+      type: SERVICE_CALL
+      service: tool-executor
+      endpoint: /execute
+      description: "Execute selected tools with timeout, retry, and circuit breaker enforcement"
+    - name: streaming_response_assembly
+      type: LLM
+      provider: ANTHROPIC
+      model: claude-3-5-sonnet-20241022
+      temperature: 0.2
+      max_tokens: 4000
+      prompt: |
+        Assemble streaming response from turn outputs:
+
+        Tool results: {{tool_execution_management}}
+        Turn goal: {{input.goal}}
+        Response format: {{context.response_format}}
+
+        Compose coherent response, integrate tool results naturally, maintain conversation tone, apply format constraints (markdown/plain/structured). Optimise for streaming (deliver content progressively).
+
+memory:
+  episodic:
+    enabled: true
+    retention_days: 30
+    categories: [agent-turns, tool-results, context-optimisations, turn-latencies]
+  semantic:
+    enabled: true
+    categories: [tool-usage-patterns, context-compression-strategies, streaming-patterns]
+  procedural:
+    enabled: true
+    categories: [context-window-rules, tool-selection-logic, streaming-assembly-rules]
+
+tools: [context_window_manager, tool_executor, streaming_controller, turn_tracer]
+
+capabilities:
+  - context-window-optimisation
+  - tool-call-orchestration
+  - streaming-response-management
+  - turn-level-observability
+
+routing:
+  input_types: [agent_turn, tool_call_batch, streaming_request]
+  output_types: [optimised_context, tool_results, streaming_response, turn_trace]
+
+delegation:
+  can_delegate_to:
+    - context-window-task-agent
+    - tool-invocation-task-agent
+    - streaming-task-agent
+  escalates_to: agent-runtime-orchestrator
+
+governance:
+  requires_approval: false
+  can_block: false
+  audit_trail: comprehensive
+
+performance:
+  expected_latency_ms: 500
+  max_latency_ms: 5000
+  timeout_ms: 30000

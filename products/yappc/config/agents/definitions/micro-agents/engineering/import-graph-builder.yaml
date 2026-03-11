@@ -1,0 +1,51 @@
+id: import-graph-builder
+name: Import Graph Builder
+version: 1.0.0
+description: "Build a module import dependency graph and identify cycles, fan-in hotspots, and circular dependencies"
+
+metadata:
+  level: 3
+  domain: engineering
+  type: micro-agent
+  tags: [import-graph-construction, cycle-detection, level3, micro]
+
+generator:
+  type: RULE_BASED
+  steps:
+    - name: execute
+      type: RULE_BASED
+      rules:
+        - "import-graph-construction"
+        - "cycle-detection"
+
+memory:
+  episodic:
+    enabled: false
+  semantic:
+    enabled: false
+  procedural:
+    enabled: false
+
+tools: [import_graph_builder]
+
+capabilities:
+  - import-graph-construction
+  - cycle-detection
+
+routing:
+  input_types: [graph_build_request]
+  output_types: [import_graph]
+
+delegation:
+  can_delegate_to: []
+  escalates_to: code-quality-capability-agent
+
+governance:
+  requires_approval: false
+  can_block: false
+  audit_trail: standard
+
+performance:
+  expected_latency_ms: 300
+  max_latency_ms: 1500
+  timeout_ms: 3000

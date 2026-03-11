@@ -1,0 +1,97 @@
+id: enhancement-orchestrator
+name: Enhancement Orchestrator
+version: 1.0.0
+description: "Converts insights from feedback, experiments, and analytics into scoped enhancement opportunities with prioritisation, effort estimation, and backlog integration"
+
+metadata:
+  level: 1
+  domain: product-intelligence
+  tags: [orchestrator, enhancements, backlog, prioritisation, opportunity, level1]
+
+generator:
+  type: PIPELINE
+  steps:
+    - name: insight_aggregation
+      type: SERVICE_CALL
+      service: intelligence-store
+      endpoint: /latest-insights
+      description: "Pull latest actionable insights from feedback, experimentation, and analytics domains"
+    - name: opportunity_scoping
+      type: LLM
+      provider: ANTHROPIC
+      model: claude-3-5-sonnet-20241022
+      temperature: 0.2
+      max_tokens: 3000
+      prompt: |
+        Convert insights into scoped enhancement opportunities:
+
+        Insights: {{insight_aggregation}}
+        Current backlog: {{context.backlog_summary}}
+        Product themes for quarter: {{context.product_themes}}
+        Engineering capacity: {{context.engineering_capacity}}
+
+        For each unique opportunity: title, one-line description, why now (evidence from insights), user impact, revenue impact, estimated effort (S/M/L/XL), dependencies, risks. Output JSON list.
+    - name: priority_scoring
+      type: LLM
+      provider: ANTHROPIC
+      model: claude-3-5-sonnet-20241022
+      temperature: 0.1
+      max_tokens: 2000
+      prompt: |
+        Score enhancement opportunities for prioritisation:
+
+        Opportunities: {{opportunity_scoping}}
+        Scoring model: {{context.prioritisation_model}}
+        Strategic bets: {{context.strategic_bets}}
+
+        Apply WSJF or configured scoring model. Produce ranked list with score breakdown, recommended action (now/next/later/spike), and rationale. Flag any blockers.
+    - name: backlog_integration
+      type: SERVICE_CALL
+      service: work-management
+      endpoint: /bulk-create
+      description: "Create or update enhancement items in work management system (Jira/Linear)"
+
+memory:
+  episodic:
+    enabled: true
+    retention_days: 365
+    categories: [opportunities, prioritisations, backlog-updates, insight-sources]
+  semantic:
+    enabled: true
+    categories: [opportunity-patterns, scoring-models, product-themes]
+  procedural:
+    enabled: true
+    categories: [wsjf-scoring, backlog-integration-rules, opportunity-evaluation]
+
+tools: [intelligence_store, backlog_system, scoring_engine, capacity_planner]
+
+capabilities:
+  - insight-to-enhancement
+  - opportunity-scoping
+  - prioritisation-scoring
+  - backlog-integration
+  - roadmap-alignment
+
+routing:
+  input_types: [insight_batch, enhancement_request, backlog_grooming_trigger]
+  output_types: [enhancement_opportunity_list, prioritised_backlog, opportunity_brief]
+
+delegation:
+  can_delegate_to:
+    - enhancement-capability-agent
+    - opportunity-scoping-task-agent
+    - enhancement-prioritisation-task-agent
+    - backlog-integration-task-agent
+    - roadmap-alignment-task-agent
+    - insight-synthesis-task-agent
+  escalates_to: product-intelligence-orchestrator
+
+governance:
+  requires_approval: false
+  can_block: false
+  audit_trail: standard
+
+performance:
+  expected_latency_ms: 5000
+  max_latency_ms: 30000
+  timeout_ms: 120000

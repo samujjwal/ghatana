@@ -1,0 +1,51 @@
+id: theme-label-generator
+name: Theme Label Generator
+version: 1.0.0
+description: "Generate a short descriptive label name for a feedback cluster given sample verbatims"
+
+metadata:
+  level: 3
+  domain: product-intelligence
+  type: micro-agent
+  tags: [theme-labelling, cluster-naming, level3, micro]
+
+generator:
+  type: RULE_BASED
+  steps:
+    - name: execute
+      type: RULE_BASED
+      rules:
+        - "theme-labelling"
+        - "cluster-naming"
+
+memory:
+  episodic:
+    enabled: false
+  semantic:
+    enabled: false
+  procedural:
+    enabled: false
+
+tools: [label_generator]
+
+capabilities:
+  - theme-labelling
+  - cluster-naming
+
+routing:
+  input_types: [label_gen_request]
+  output_types: [theme_label]
+
+delegation:
+  can_delegate_to: []
+  escalates_to: feedback-capability-agent
+
+governance:
+  requires_approval: false
+  can_block: false
+  audit_trail: standard
+
+performance:
+  expected_latency_ms: 200
+  max_latency_ms: 1000
+  timeout_ms: 2000

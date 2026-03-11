@@ -1,0 +1,465 @@
+apiVersion: ghatana.yappc/v2
+kind: DomainAgentCatalog
+
+metadata:
+  name: engineering
+  version: 1.0.0
+  description: "Engineering delivery planning, agile execution, implementation, code quality, and technical excellence agents"
+  domain: engineering
+  agentCount: 41
+
+spec:
+  agents:
+
+    # ── Level 1 Orchestrators ───────────────────────────────────────────────
+    - id: engineering-orchestrator
+      name: Engineering Orchestrator
+      level: 1
+      type: orchestrator
+      description: "Top-level engineering orchestrator coordinating delivery planning, agile execution, implementation, and code quality"
+      domain: engineering
+      capabilities: [engineering-coordination, delivery-planning, agile-execution, code-quality]
+      routing:
+        input_types: [engineering_request, feature_plan, sprint_plan, implementation_task]
+        output_types: [implementation_plan, sprint_board, code_review, quality_report]
+      delegation:
+        can_delegate_to:
+          - delivery-planning-orchestrator
+          - agile-execution-orchestrator
+          - frontend-engineering-orchestrator
+          - backend-engineering-orchestrator
+        escalates_to: null
+      governance:
+        requires_approval: false
+        can_block: true
+        audit_trail: standard
+      tags: [orchestrator, engineering, coordination, level1]
+
+    - id: delivery-planning-orchestrator
+      name: Delivery Planning Orchestrator
+      level: 1
+      type: orchestrator
+      description: "Plans engineering delivery: sprint planning, roadmap translation, dependency mapping, risk assessment"
+      domain: engineering
+      capabilities: [delivery-planning, sprint-planning, dependency-mapping, capacity-planning]
+      routing:
+        input_types: [delivery_request, roadmap, sprint_input, capacity_data]
+        output_types: [sprint_plan, delivery_plan, risk_assessment, capacity_report]
+      delegation:
+        can_delegate_to:
+          - work-management-orchestrator
+          - delivery-planning-capability-agent
+        escalates_to: engineering-orchestrator
+      tags: [orchestrator, delivery-planning, sprints, level1]
+
+    - id: agile-execution-orchestrator
+      name: Agile Execution Orchestrator
+      level: 1
+      type: orchestrator
+      description: "Manages agile ceremonies and execution: stand-up insights, velocity tracking, backlog grooming, and retrospectives"
+      domain: engineering
+      capabilities: [agile-execution, velocity-tracking, retrospective-facilitation, backlog-management]
+      routing:
+        input_types: [sprint_data, velocity_metrics, backlog, retrospective_notes]
+        output_types: [sprint_health_report, backlog_refinement, retrospective_insights]
+      delegation:
+        can_delegate_to:
+          - work-management-orchestrator
+          - engineering-metrics-capability-agent
+        escalates_to: engineering-orchestrator
+      tags: [orchestrator, agile, execution, level1]
+
+    - id: frontend-engineering-orchestrator
+      name: Frontend Engineering Orchestrator
+      level: 1
+      type: orchestrator
+      description: "Orchestrates frontend engineering: component generation, UI logic, state management, accessibility, and performance"
+      domain: engineering
+      capabilities: [frontend-engineering, component-generation, state-management, accessibility, performance-optimisation]
+      routing:
+        input_types: [ui_spec, component_request, frontend_task]
+        output_types: [component_code, ui_logic, accessibility_report, performance_report]
+      delegation:
+        can_delegate_to:
+          - frontend-capability-agent
+          - component-generation-task-agent
+          - a11y-audit-task-agent
+        escalates_to: engineering-orchestrator
+      tags: [orchestrator, frontend, ui, level1]
+
+    - id: backend-engineering-orchestrator
+      name: Backend Engineering Orchestrator
+      level: 1
+      type: orchestrator
+      description: "Orchestrates backend engineering: API implementation, domain logic, data access, messaging, and integration"
+      domain: engineering
+      capabilities: [backend-engineering, api-implementation, domain-logic, data-access, integration]
+      routing:
+        input_types: [api_spec, domain_model, backend_task, integration_spec]
+        output_types: [api_implementation, service_logic, data_layer, integration_code]
+      delegation:
+        can_delegate_to:
+          - backend-capability-agent
+          - api-implementation-task-agent
+          - domain-logic-task-agent
+        escalates_to: engineering-orchestrator
+      tags: [orchestrator, backend, api, level1]
+
+    - id: work-management-orchestrator
+      name: Work Management Orchestrator
+      level: 1
+      type: orchestrator
+      description: "Manages work items, issue tracking, story breakdown, and work item lifecycle across project management tools"
+      domain: engineering
+      capabilities: [work-management, issue-tracking, story-breakdown, work-item-lifecycle]
+      routing:
+        input_types: [feature_plane, work_item_request, sprint_request]
+        output_types: [work_items, story_breakdown, sprint_board, issue_tracker_update]
+      delegation:
+        can_delegate_to:
+          - work-decomposition-task-agent
+          - issue-creation-task-agent
+          - story-point-estimation-task-agent
+        escalates_to: delivery-planning-orchestrator
+      tags: [orchestrator, work-management, issue-tracking, level1]
+
+    # ── Level 2 Capability Agents ───────────────────────────────────────────
+    - id: delivery-planning-capability-agent
+      name: Delivery Planning Capability Agent
+      level: 2
+      type: domain-expert
+      description: "Specialises in delivery planning: capacity calculation, dependency risk, velocity forecasting, and commitment feasibility"
+      domain: engineering
+      capabilities: [capacity-planning, velocity-forecasting, dependency-risk, commitment-feasibility]
+      memory:
+        episodic:
+          enabled: true
+          retention_days: 365
+          categories: [sprint-history, velocity-data, planning-outcomes]
+        semantic:
+          enabled: true
+          categories: [planning-patterns, estimation-heuristics]
+      tools: [capacity_calculator, velocity_forecaster, dependency_analyzer]
+      tags: [capability, delivery-planning, forecasting, level2]
+
+    - id: engineering-metrics-capability-agent
+      name: Engineering Metrics Capability Agent
+      level: 2
+      type: domain-expert
+      description: "Tracks and analyses engineering metrics: DORA metrics, code quality trends, velocity patterns, cycle time"
+      domain: engineering
+      capabilities: [dora-metrics, code-quality-metrics, velocity-analysis, cycle-time-analysis]
+      memory:
+        semantic:
+          enabled: true
+          categories: [metric-benchmarks, improvement-patterns]
+        episodic:
+          enabled: true
+          retention_days: 365
+          categories: [metric-history, trend-data]
+      tools: [dora_collector, quality_metrics_analyzer, velocity_tracker]
+      tags: [capability, metrics, dora, level2]
+
+    - id: frontend-capability-agent
+      name: Frontend Capability Agent
+      level: 2
+      type: domain-expert
+      description: "Frontend engineering expert: React/component patterns, CSS architecture, state management, web performance"
+      domain: engineering
+      capabilities: [react-patterns, component-architecture, css-architecture, web-performance, state-management]
+      memory:
+        semantic:
+          enabled: true
+          categories: [frontend-patterns, component-library, performance-heuristics]
+      tools: [component_generator, accessibility_checker, bundle_analyzer]
+      tags: [capability, frontend, react, level2]
+
+    - id: backend-capability-agent
+      name: Backend Capability Agent
+      level: 2
+      type: domain-expert
+      description: "Backend engineering expert: API design, domain logic patterns, repository patterns, messaging, performance"
+      domain: engineering
+      capabilities: [api-implementation, domain-logic, repository-pattern, messaging-patterns, backend-performance]
+      memory:
+        semantic:
+          enabled: true
+          categories: [backend-patterns, service-implementations, api-patterns]
+      tools: [api_builder, service_generator, performance_profiler]
+      tags: [capability, backend, api, level2]
+
+    - id: code-quality-capability-agent
+      name: Code Quality Capability Agent
+      level: 2
+      type: domain-expert
+      description: "Code quality expert: static analysis, technical debt scoring, refactoring opportunities, clean code enforcement"
+      domain: engineering
+      capabilities: [static-analysis, technical-debt-scoring, refactoring, clean-code, dependency-analysis]
+      tools: [static_analyzer, tech_debt_scorer, refactoring_advisor, dependency_analyzer]
+      tags: [capability, code-quality, static-analysis, level2]
+
+    - id: devex-capability-agent
+      name: Developer Experience Capability Agent
+      level: 2
+      type: domain-expert
+      description: "Developer experience expert: toolchain optimisation, build time improvement, DX metrics, onboarding optimisation"
+      domain: engineering
+      capabilities: [devex-optimisation, build-performance, toolchain-setup, dx-metrics, onboarding-design]
+      tools: [build_performance_analyzer, toolchain_advisor, dx_metric_collector]
+      tags: [capability, devex, toolchain, level2]
+
+    # ── Level 3 Task Agents ─────────────────────────────────────────────────
+    - id: work-decomposition-task-agent
+      name: Work Decomposition Task Agent
+      level: 3
+      type: worker
+      description: "Decomposes epics and features into implementable stories and tasks following vertical slice principles"
+      domain: engineering
+      capabilities: [work-decomposition, story-breakdown, vertical-slicing, task-sizing]
+      tools: [story_decomposer, task_sizer]
+      tags: [task, decomposition, stories, level3]
+
+    - id: issue-creation-task-agent
+      name: Issue Creation Task Agent
+      level: 3
+      type: worker
+      description: "Creates well-structured GitHub/Jira issues with acceptance criteria, labels, and component assignments"
+      domain: engineering
+      capabilities: [issue-creation, acceptance-criteria, label-assignment, component-tagging]
+      tools: [issue_creator, acceptance_criteria_builder]
+      tags: [task, issue-creation, github, level3]
+
+    - id: story-point-estimation-task-agent
+      name: Story Point Estimation Task Agent
+      level: 3
+      type: worker
+      description: "Estimates story points using planning poker heuristics and historical velocity data"
+      domain: engineering
+      capabilities: [story-point-estimation, complexity-assessment, historical-comparison]
+      tools: [estimator, complexity_scorer, velocity_comparator]
+      tags: [task, estimation, story-points, level3]
+
+    - id: sprint-planning-task-agent
+      name: Sprint Planning Task Agent
+      level: 3
+      type: worker
+      description: "Assembles sprint plans: selects stories based on priority, capacity, and dependencies"
+      domain: engineering
+      capabilities: [sprint-planning, capacity-allocation, dependency-ordering, priority-balancing]
+      tools: [sprint_planner, capacity_allocator, dependency_sorter]
+      tags: [task, sprint-planning, capacity, level3]
+
+    - id: component-generation-task-agent
+      name: Component Generation Task Agent
+      level: 3
+      type: worker
+      description: "Generates React/TypeScript components from design specs with props, tests, and Storybook stories"
+      domain: engineering
+      capabilities: [component-generation, typescript-typing, storybook-story, unit-test-generation]
+      tools: [component_generator, storybook_writer, test_generator]
+      tags: [task, component-generation, react, level3]
+
+    - id: a11y-audit-task-agent
+      name: Accessibility Audit Task Agent
+      level: 3
+      type: worker
+      description: "Audits UI components for WCAG 2.1 AA accessibility compliance and generates remediation guidance"
+      domain: engineering
+      capabilities: [accessibility-audit, wcag-compliance, aria-validation, remediation-guidance]
+      tools: [axe_runner, aria_validator, wcag_checker]
+      tags: [task, accessibility, wcag, level3]
+
+    - id: api-implementation-task-agent
+      name: API Implementation Task Agent
+      level: 3
+      type: worker
+      description: "Implements REST/GraphQL API endpoints from contract specs with validation, error handling, and tests"
+      domain: engineering
+      capabilities: [api-implementation, openapi-generation, graphql-resolver, error-handling, endpoint-testing]
+      tools: [api_builder, resolver_generator, endpoint_tester]
+      tags: [task, api-implementation, rest, level3]
+
+    - id: domain-logic-task-agent
+      name: Domain Logic Task Agent
+      level: 3
+      type: worker
+      description: "Implements domain logic: aggregates, domain services, commands, events following DDD patterns"
+      domain: engineering
+      capabilities: [domain-logic-implementation, aggregate-implementation, command-handling, domain-event-publishing]
+      tools: [aggregate_builder, command_handler_generator, event_publisher_builder]
+      tags: [task, domain-logic, ddd, level3]
+
+    - id: data-access-task-agent
+      name: Data Access Task Agent
+      level: 3
+      type: worker
+      description: "Implements data access layer: repositories, queries, migrations, and data mapping"
+      domain: engineering
+      capabilities: [repository-implementation, query-builder, migration-generation, data-mapping]
+      tools: [repository_generator, query_builder, migration_runner]
+      tags: [task, data-access, repositories, level3]
+
+    - id: technical-debt-management-task-agent
+      name: Technical Debt Management Task Agent
+      level: 3
+      type: worker
+      description: "Identifies, categorises, and prioritises technical debt items for remediation planning"
+      domain: engineering
+      capabilities: [tech-debt-identification, debt-categorisation, remediation-prioritisation, debt-tracking]
+      tools: [tech_debt_scanner, debt_prioritiser, debt_tracker]
+      tags: [task, technical-debt, remediation, level3]
+
+    - id: dependency-update-task-agent
+      name: Dependency Update Task Agent
+      level: 3
+      type: worker
+      description: "Manages dependency updates: analyses breaking changes, generates upgrade PRs, and validates compatibility"
+      domain: engineering
+      capabilities: [dependency-analysis, breaking-change-detection, upgrade-pr-generation, compatibility-validation]
+      tools: [dependency_scanner, upgrade_planner, compatibility_tester]
+      tags: [task, dependencies, upgrades, level3]
+
+    - id: code-generation-task-agent
+      name: Code Generation Task Agent
+      level: 3
+      type: worker
+      description: "Generates boilerplate and scaffold code from templates and specifications"
+      domain: engineering
+      capabilities: [code-generation, template-rendering, scaffold-creation, boilerplate-reduction]
+      tools: [code_generator, template_engine, scaffold_builder]
+      tags: [task, code-generation, scaffolding, level3]
+
+    - id: refactoring-task-agent
+      name: Refactoring Task Agent
+      level: 3
+      type: worker
+      description: "Applies safe refactoring transformations: extract method/class, rename, move, and modernise patterns"
+      domain: engineering
+      capabilities: [refactoring, extract-method, rename, move-class, pattern-modernisation]
+      tools: [refactoring_engine, rename_tool, extract_tool]
+      tags: [task, refactoring, transformation, level3]
+
+    - id: performance-profiling-task-agent
+      name: Performance Profiling Task Agent
+      level: 3
+      type: worker
+      description: "Profiles application performance: CPU, memory, IO, and identifies bottlenecks with optimisation recommendations"
+      domain: engineering
+      capabilities: [performance-profiling, bottleneck-identification, cpu-analysis, memory-analysis, optimisation-recommendation]
+      tools: [profiler, bottleneck_analyzer, perf_report_builder]
+      tags: [task, performance, profiling, level3]
+
+    - id: velocity-tracker-task-agent
+      name: Velocity Tracker Task Agent
+      level: 3
+      type: worker
+      description: "Tracks sprint velocity, calculates rolling averages, and identifies velocity trends and anomalies"
+      domain: engineering
+      capabilities: [velocity-tracking, rolling-average, trend-analysis, anomaly-detection]
+      tools: [velocity_tracker, rolling_average_calculator, trend_analyzer]
+      tags: [task, velocity, tracking, level3]
+
+    - id: retrospective-analysis-task-agent
+      name: Retrospective Analysis Task Agent
+      level: 3
+      type: worker
+      description: "Analyses sprint retrospective data, identifies recurring patterns, and tracks improvement action items"
+      domain: engineering
+      capabilities: [retrospective-analysis, pattern-identification, action-item-tracking, team-health]
+      tools: [retrospective_analyzer, pattern_extractor, action_tracker]
+      tags: [task, retrospective, team-health, level3]
+
+    # ── Level 3 Micro Agents ────────────────────────────────────────────────
+    - id: complexity-scorer
+      name: Complexity Scorer
+      level: 3
+      type: micro-agent
+      description: "Atomic unit: compute cyclomatic complexity score for a code block or function"
+      domain: engineering
+      capabilities: [complexity-scoring, cyclomatic-complexity]
+      tags: [micro, complexity, scoring, level3]
+
+    - id: duplication-detector
+      name: Duplication Detector
+      level: 3
+      type: micro-agent
+      description: "Atomic unit: detect duplicate or near-duplicate code blocks across a codebase"
+      domain: engineering
+      capabilities: [duplication-detection, similarity-scoring]
+      tags: [micro, duplication, detection, level3]
+
+    - id: import-graph-builder
+      name: Import Graph Builder
+      level: 3
+      type: micro-agent
+      description: "Atomic unit: build a dependency import graph from source files"
+      domain: engineering
+      capabilities: [import-graph, dependency-dependency]
+      tags: [micro, imports, graph, level3]
+
+    - id: dead-code-finder
+      name: Dead Code Finder
+      level: 3
+      type: micro-agent
+      description: "Atomic unit: identify unreachable or unused code in a given module"
+      domain: engineering
+      capabilities: [dead-code-detection, unused-symbol-detection]
+      tags: [micro, dead-code, cleanup, level3]
+
+    - id: test-coverage-reporter
+      name: Test Coverage Reporter
+      level: 3
+      type: micro-agent
+      description: "Atomic unit: generate a test coverage percentage and uncovered-lines report for a module"
+      domain: engineering
+      capabilities: [coverage-reporting, uncovered-line-detection]
+      tags: [micro, test-coverage, reporting, level3]
+
+    - id: build-time-analyzer
+      name: Build Time Analyzer
+      level: 3
+      type: micro-agent
+      description: "Atomic unit: parse build logs to identify slowest compilation phases and modules"
+      domain: engineering
+      capabilities: [build-time-analysis, phase-breakdown]
+      tags: [micro, build, performance, level3]
+
+    - id: story-acceptance-formatter
+      name: Story Acceptance Formatter
+      level: 3
+      type: micro-agent
+      description: "Atomic unit: format acceptance criteria into Given/When/Then BDD syntax"
+      domain: engineering
+      capabilities: [acceptance-formatting, bdd-syntax, gherkin]
+      tags: [micro, acceptance-criteria, bdd, level3]
+
+    - id: label-classifier
+      name: Label Classifier
+      level: 3
+      type: micro-agent
+      description: "Atomic unit: classify a work item and assign appropriate GitHub labels from the label taxonomy"
+      domain: engineering
+      capabilities: [label-classification, taxonomy-matching]
+      tags: [micro, labels, classification, level3]
+
+  hierarchy:
+    level1: [engineering-orchestrator, delivery-planning-orchestrator, agile-execution-orchestrator, frontend-engineering-orchestrator, backend-engineering-orchestrator, work-management-orchestrator]
+    level2: [delivery-planning-capability-agent, engineering-metrics-capability-agent, frontend-capability-agent, backend-capability-agent, code-quality-capability-agent, devex-capability-agent]
+    level3: [work-decomposition-task-agent, issue-creation-task-agent, story-point-estimation-task-agent, sprint-planning-task-agent, component-generation-task-agent, a11y-audit-task-agent, api-implementation-task-agent, domain-logic-task-agent, data-access-task-agent, technical-debt-management-task-agent, dependency-update-task-agent, code-generation-task-agent, refactoring-task-agent, performance-profiling-task-agent, velocity-tracker-task-agent, retrospective-analysis-task-agent, complexity-scorer, duplication-detector, import-graph-builder, dead-code-finder, test-coverage-reporter, build-time-analyzer, story-acceptance-formatter, label-classifier]
+
+  capability_routing:
+    delivery-planning:
+      primary: delivery-planning-orchestrator
+      fallback: [delivery-planning-capability-agent]
+    sprint-planning:
+      primary: delivery-planning-orchestrator
+      fallback: [sprint-planning-task-agent]
+    frontend-engineering:
+      primary: frontend-engineering-orchestrator
+      fallback: [frontend-capability-agent]
+    backend-engineering:
+      primary: backend-engineering-orchestrator
+      fallback: [backend-capability-agent]
+    code-quality:
+      primary: code-quality-capability-agent
+      fallback: [complexity-scorer, duplication-detector]

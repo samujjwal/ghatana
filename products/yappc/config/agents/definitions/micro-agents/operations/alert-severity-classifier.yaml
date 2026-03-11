@@ -1,0 +1,49 @@
+id: alert-severity-classifier
+name: Alert Severity Classifier
+version: 1.0.0
+description: "Classify an alert into P1/P2/P3/P4 severity based on affected service tier and metric deviation magnitude"
+
+metadata:
+  level: 3
+  domain: operations
+  type: micro-agent
+  tags: [severity-classification, level3, micro]
+
+generator:
+  type: RULE_BASED
+  steps:
+    - name: execute
+      type: RULE_BASED
+      rules:
+        - "severity-classification"
+
+memory:
+  episodic:
+    enabled: false
+  semantic:
+    enabled: false
+  procedural:
+    enabled: false
+
+tools: [severity_classifier]
+
+capabilities:
+  - severity-classification
+
+routing:
+  input_types: [classify_request]
+  output_types: [severity_label]
+
+delegation:
+  can_delegate_to: []
+  escalates_to: on-call-capability-agent
+
+governance:
+  requires_approval: false
+  can_block: false
+  audit_trail: standard
+
+performance:
+  expected_latency_ms: 100
+  max_latency_ms: 500
+  timeout_ms: 1000

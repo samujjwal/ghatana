@@ -1,0 +1,98 @@
+id: spec-authoring-capability-agent
+name: Specification Authoring Capability Agent
+version: 1.0.0
+description: "Authors comprehensive functional specifications: FRS documents, BDD/Gherkin feature files, API contracts, and data dictionary entries"
+
+metadata:
+  level: 2
+  domain: requirements
+  tags: [capability, spec-authoring, frs, gherkin, bdd, api-contract, level2]
+
+generator:
+  type: PIPELINE
+  steps:
+    - name: spec_scoping
+      type: LLM
+      provider: ANTHROPIC
+      model: claude-3-5-sonnet-20241022
+      temperature: 0.1
+      max_tokens: 2000
+      prompt: |
+        Scope the specification document:
+
+        Requirements: {{input.requirements}}
+        Feature context: {{context.feature_context}}
+        Audience: {{context.audience}}
+        Template: {{context.spec_template}}
+
+        Define: document title, scope (in/out), sections to include, level of detail required, dependencies to reference. Output spec outline JSON.
+    - name: frs_body_generation
+      type: LLM
+      provider: ANTHROPIC
+      model: claude-3-5-sonnet-20241022
+      temperature: 0.2
+      max_tokens: 6000
+      prompt: |
+        Write the functional requirements specification body:
+
+        Scope: {{spec_scoping}}
+        Requirements: {{input.requirements}}
+        System context: {{context.system_context}}
+        NFRs: {{context.nfrs}}
+
+        Write complete FRS with: Overview, Actors & Roles, Use Cases (main + alternative + exception flows), Functional Requirements (numbered, testable), Non-Functional Requirements (measurable), Data Requirements, Integration Points, Constraints & Assumptions. Use precise language.
+    - name: gherkin_feature_generation
+      type: LLM
+      provider: ANTHROPIC
+      model: claude-3-5-sonnet-20241022
+      temperature: 0.1
+      max_tokens: 4000
+      prompt: |
+        Generate Gherkin feature files from specification:
+
+        FRS: {{frs_body_generation}}
+        Acceptance criteria: {{context.acceptance_criteria}}
+
+        For each feature: write valid Gherkin (Feature, Background if applicable, Scenario/Scenario Outline for data-driven, Examples). Cover: happy path, major edge cases, error handling. Tag scenarios with @smoke, @regression, @e2e appropriately.
+
+memory:
+  episodic:
+    enabled: true
+    retention_days: 730
+    categories: [spec-documents, gherkin-files, api-contracts, data-dictionaries]
+  semantic:
+    enabled: true
+    categories: [spec-templates, gherkin-patterns, api-contract-standards]
+  procedural:
+    enabled: true
+    categories: [frs-writing-style, gherkin-syntax, api-spec-formats]
+
+tools: [spec_builder, gherkin_validator, api_contract_generator, doc_publisher]
+
+capabilities:
+  - frs-authoring
+  - gherkin-feature-writing
+  - api-contract-authoring
+  - data-dictionary-maintenance
+
+routing:
+  input_types: [spec_request, requirements_set, feature_for_spec]
+  output_types: [frs_document, gherkin_feature_files, api_contract, data_dictionary_entry]
+
+delegation:
+  can_delegate_to:
+    - frs-authoring-task-agent
+    - gherkin-generation-task-agent
+    - api-contract-task-agent
+    - data-dictionary-task-agent
+  escalates_to: specification-orchestrator
+
+governance:
+  requires_approval: false
+  can_block: false
+  audit_trail: standard
+
+performance:
+  expected_latency_ms: 8000
+  max_latency_ms: 30000
+  timeout_ms: 120000

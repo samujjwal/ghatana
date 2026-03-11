@@ -1,0 +1,96 @@
+id: canvas-interaction-capability-agent
+name: Canvas Interaction Capability Agent
+version: 1.0.0
+description: "Designs complex canvas and rich interaction surfaces: drag-and-drop, infinite canvas, multi-select, undo/redo, real-time collaboration overlays, and gesture-based interaction"
+
+metadata:
+  level: 2
+  domain: ux
+  tags: [capability, canvas, interaction, drag-drop, collaboration, gesture, level2]
+
+generator:
+  type: PIPELINE
+  steps:
+    - name: interaction_model_design
+      type: LLM
+      provider: ANTHROPIC
+      model: claude-3-5-sonnet-20241022
+      temperature: 0.2
+      max_tokens: 3000
+      prompt: |
+        Design the interaction model for the canvas surface:
+
+        Feature requirements: {{input}}
+        User mental model: {{context.user_mental_model}}
+        Comparable interaction patterns: {{context.interaction_references}}
+        Platform constraints: {{context.platform}}
+
+        Define: primary interactions (select/move/resize/connect/zoom/pan), input methods (mouse/touch/keyboard/stylus), interaction states (idle/hover/active/selected/disabled), feedback mechanisms (visual/haptic/audio), undo/redo strategy, conflict resolution in collaborative mode. Output interaction model JSON.
+    - name: gesture_specification
+      type: LLM
+      provider: ANTHROPIC
+      model: claude-3-5-sonnet-20241022
+      temperature: 0.1
+      max_tokens: 2500
+      prompt: |
+        Specify gesture library for canvas:
+
+        Interaction model: {{interaction_model_design}}
+        Touch/Pointer capabilities: {{context.platform_capabilities}}
+
+        Define all gestures: name, trigger (tap/swipe/pinch/drag/long-press), action, minimum touch targets, touch area tolerance, gesture priority (conflict resolution order), accessibility alternative (keyboard/switch). Output gesture spec JSON.
+    - name: collaboration_ux_design
+      type: LLM
+      provider: ANTHROPIC
+      model: claude-3-5-sonnet-20241022
+      temperature: 0.2
+      max_tokens: 2500
+      prompt: |
+        Design real-time collaboration UX layer:
+
+        Canvas design: {{interaction_model_design}}
+        Collaboration requirements: {{context.collab_requirements}}
+
+        Specify: cursor presence (avatar, label, colour), selection awareness (who has what selected), conflict highlighting (concurrent edits), follow mode (presenter follows), comment anchoring, notification toasts for join/leave/mention. User experience for up to 50 simultaneous collaborators.
+
+memory:
+  episodic:
+    enabled: true
+    retention_days: 365
+    categories: [interaction-model-designs, gesture-specs, collaboration-ux-designs]
+  semantic:
+    enabled: true
+    categories: [interaction-patterns, gesture-libraries, collaboration-ux-patterns]
+  procedural:
+    enabled: true
+    categories: [canvas-interaction-design, gesture-specification-method, collab-ux-patterns]
+
+tools: [interaction_prototyper, gesture_library, collaboration_ux_framework]
+
+capabilities:
+  - canvas-interaction-design
+  - gesture-specification
+  - collaboration-ux-design
+  - rich-interaction-modelling
+
+routing:
+  input_types: [canvas_design_request, interaction_spec_request, collaboration_ux_request]
+  output_types: [interaction_model, gesture_spec, collaboration_ux_spec, canvas_prototype_spec]
+
+delegation:
+  can_delegate_to:
+    - canvas-interaction-task-agent
+    - gesture-design-task-agent
+    - collaboration-ux-task-agent
+    - undo-redo-task-agent
+  escalates_to: interaction-design-orchestrator
+
+governance:
+  requires_approval: false
+  can_block: false
+  audit_trail: standard
+
+performance:
+  expected_latency_ms: 8000
+  max_latency_ms: 20000
+  timeout_ms: 60000

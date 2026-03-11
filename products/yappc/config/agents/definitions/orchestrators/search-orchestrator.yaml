@@ -1,0 +1,100 @@
+id: search-orchestrator
+name: Search Orchestrator
+version: 1.0.0
+description: "Coordinates vector search, full-text search, semantic hybrid search, relevance evaluation, and re-ranking pipelines"
+
+metadata:
+  level: 1
+  domain: ai
+  tags: [orchestrator, search, vector, semantic, level1]
+
+generator:
+  type: PIPELINE
+  steps:
+    - name: query_analysis
+      type: LLM
+      provider: ANTHROPIC
+      model: claude-3-5-sonnet-20241022
+      temperature: 0.1
+      max_tokens: 1500
+      prompt: |
+        Analyze the search query to determine optimal retrieval strategy:
+
+        Query: {{input.query}}
+        Collections available: {{context.collections}}
+        Search quality target: {{context.quality_target}}
+
+        Determine:
+        1. Search type: vector, full-text, hybrid, graph, or multi-hop
+        2. Embedding model to apply
+        3. Filter predicates (metadata, date, domain)
+        4. Re-ranking strategy
+        5. Result fusion if multi-channel
+
+        Output JSON: {search_type, embedding_model, filters, rerank_strategy, fusion_method, top_k}
+    - name: retrieval_execution
+      type: SERVICE_CALL
+      service: vector-db
+      endpoint: /search
+      description: "Execute search across relevant indexes"
+    - name: relevance_reranking
+      type: LLM
+      provider: ANTHROPIC
+      model: claude-3-5-sonnet-20241022
+      temperature: 0.0
+      max_tokens: 2000
+      prompt: |
+        Re-rank and refine retrieved results for relevance:
+
+        Original query: {{input.query}}
+        Retrieved candidates: {{retrieval_execution}}
+        Rerank strategy: {{query_analysis.rerank_strategy}}
+
+        Produce final ranked list with relevance scores, snippets, and citations.
+    - name: quality_check
+      type: RULE_BASED
+      description: "Apply minimum relevance threshold and result count validation"
+
+memory:
+  episodic:
+    enabled: true
+    retention_days: 60
+    categories: [search-queries, retrieval-results, relevance-scores]
+  semantic:
+    enabled: true
+    categories: [query-patterns, collection-schemas, relevance-benchmarks]
+  procedural:
+    enabled: true
+    categories: [search-strategies, reranking-rules, fusion-algorithms]
+
+tools: [vector_db_search, full_text_search, embedding_service, reranker, hybrid_fusion]
+
+capabilities:
+  - vector-search
+  - hybrid-search
+  - semantic-retrieval
+  - re-ranking
+  - query-understanding
+
+routing:
+  input_types: [search_request, retrieval_task, query]
+  output_types: [search_results, ranked_documents, relevance_report]
+
+delegation:
+  can_delegate_to:
+    - search-capability-agent
+    - vector-search-task-agent
+    - hybrid-search-task-agent
+    - re-ranking-task-agent
+    - query-analysis-task-agent
+  escalates_to: ai-orchestrator
+
+governance:
+  requires_approval: false
+  can_block: false
+  audit_trail: standard
+
+performance:
+  expected_latency_ms: 500
+  max_latency_ms: 3000
+  timeout_ms: 10000

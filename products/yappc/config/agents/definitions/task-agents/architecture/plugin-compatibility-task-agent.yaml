@@ -1,0 +1,63 @@
+id: plugin-compatibility-task-agent
+name: Plugin Compatibility Task Agent
+version: 1.0.0
+description: "Generate plugin compatibility matrix and define semver contract rules for plugin API changes"
+
+metadata:
+  level: 3
+  domain: architecture
+  type: worker
+  tags: [compatibility-matrix, semver-rules, breaking-change-definition, level3]
+
+generator:
+  type: PIPELINE
+  steps:
+    - name: execute
+      type: LLM
+      provider: ANTHROPIC
+      model: claude-3-5-sonnet-20241022
+      temperature: 0.1
+      max_tokens: 2000
+      prompt: |
+        Execute task: Generate plugin compatibility matrix and define semver contract rules for plugin API changes
+
+        Input: {{input}}
+        Context: {{context}}
+
+        Produce a structured, precise output meeting the task specification.
+
+memory:
+  episodic:
+    enabled: true
+    retention_days: 90
+    categories: [task-executions]
+  semantic:
+    enabled: true
+    categories: [domain-knowledge]
+  procedural:
+    enabled: false
+
+tools: [compatibility_matrix_builder, semver_rule_engine]
+
+capabilities:
+  - compatibility-matrix
+  - semver-rules
+  - breaking-change-definition
+
+routing:
+  input_types: [plugin_compat_request]
+  output_types: [plugin_compat_matrix]
+
+delegation:
+  can_delegate_to: []
+  escalates_to: plugin-contract-capability-agent
+
+governance:
+  requires_approval: false
+  can_block: false
+  audit_trail: standard
+
+performance:
+  expected_latency_ms: 2000
+  max_latency_ms: 10000
+  timeout_ms: 20000

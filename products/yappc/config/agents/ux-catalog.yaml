@@ -1,0 +1,581 @@
+apiVersion: ghatana.yappc/v2
+kind: DomainAgentCatalog
+
+metadata:
+  name: ux-ui
+  version: 1.0.0
+  description: "UX research, UI design, interaction design, design system, canvas, and accessibility agents"
+  domain: ux-ui
+  agentCount: 52
+
+spec:
+  agents:
+
+    # ── Level 1 Orchestrators ───────────────────────────────────────────────
+    - id: ux-orchestrator
+      name: UX Orchestrator
+      level: 1
+      type: orchestrator
+      description: "Coordinates the full UX design process: persona modelling, journey design, flow design, screen design, and accessibility"
+      domain: ux-ui
+      capabilities: [ux-coordination, persona-modelling, journey-design, accessibility-governance]
+      routing:
+        input_types: [ux_request, product_brief, requirements_set, persona_data]
+        output_types: [user_journeys, screen_flows, wireframes, interaction_specs, design_constraints]
+      delegation:
+        can_delegate_to:
+          - ui-orchestrator
+          - interaction-design-orchestrator
+          - design-system-orchestrator
+          - persona-modelling-capability-agent
+          - journey-design-capability-agent
+        escalates_to: portfolio-orchestrator
+      tags: [orchestrator, ux, design, level1]
+
+    - id: ui-orchestrator
+      name: UI Orchestrator
+      level: 1
+      type: orchestrator
+      description: "Coordinates UI implementation design: screen states, component composition, visual hierarchy, and responsive layouts"
+      domain: ux-ui
+      capabilities: [ui-design-coordination, screen-design, component-composition, responsive-design]
+      routing:
+        input_types: [ui_request, ux_flows, wireframes, design_system_tokens]
+        output_types: [screen_specs, component_specs, layout_guidance]
+      delegation:
+        can_delegate_to:
+          - screen-design-capability-agent
+          - design-consistency-capability-agent
+          - wireframe-task-agent
+          - screen-state-task-agent
+        escalates_to: ux-orchestrator
+      tags: [orchestrator, ui, screens, level1]
+
+    - id: interaction-design-orchestrator
+      name: Interaction Design Orchestrator
+      level: 1
+      type: orchestrator
+      description: "Coordinates interaction design: micro-interactions, canvas tooling, drag-drop, keyboard shortcuts, and animation"
+      domain: ux-ui
+      capabilities: [interaction-design, microinteraction-design, canvas-interaction, keyboard-design]
+      routing:
+        input_types: [interaction_request, canvas_spec, keyboard_requirements]
+        output_types: [interaction_patterns, animation_specs, keyboard_map]
+      delegation:
+        can_delegate_to:
+          - canvas-interaction-capability-agent
+          - interaction-pattern-task-agent
+          - drag-drop-interaction-task-agent
+          - keyboard-shortcut-task-agent
+        escalates_to: ux-orchestrator
+      tags: [orchestrator, interaction-design, canvas, level1]
+
+    - id: design-system-orchestrator
+      name: Design System Orchestrator
+      level: 1
+      type: orchestrator
+      description: "Manages the design system: token alignment, component standards, design consistency, and governance"
+      domain: ux-ui
+      capabilities: [design-system-management, token-governance, component-standards, consistency-enforcement]
+      routing:
+        input_types: [design_system_request, token_update, component_change]
+        output_types: [design_tokens, component_library_update, consistency_report]
+      delegation:
+        can_delegate_to:
+          - design-consistency-capability-agent
+          - design-token-alignment-task-agent
+          - component-composition-task-agent
+        escalates_to: ux-orchestrator
+      tags: [orchestrator, design-system, tokens, level1]
+
+    # ── Level 2 Capability Agents ───────────────────────────────────────────
+    - id: persona-modelling-capability-agent
+      name: Persona Modelling Capability Agent
+      level: 2
+      type: domain-expert
+      description: "Creates, validates, and maintains detailed user personas grounded in research data"
+      domain: ux-ui
+      capabilities: [persona-creation, persona-validation, persona-maintenance, archetype-modelling]
+      memory:
+        semantic:
+          enabled: true
+          categories: [persona-models, user-archetypes, research-evidence]
+        episodic:
+          enabled: true
+          retention_days: 365
+          categories: [persona-sessions, research-synthesis]
+      tools: [persona_builder, archetype_modeller, evidence_evaluator]
+      tags: [capability, persona, modelling, level2]
+
+    - id: journey-design-capability-agent
+      name: Journey Design Capability Agent
+      level: 2
+      type: domain-expert
+      description: "Designs customer journey maps across all touchpoints, identifying pain points, opportunities, and moments of delight"
+      domain: ux-ui
+      capabilities: [journey-mapping, touchpoint-analysis, pain-point-identification, opportunity-spotting]
+      memory:
+        semantic:
+          enabled: true
+          categories: [journey-patterns, touchpoint-models]
+      tools: [journey_mapper, touchpoint_analyzer, emotion_curve_plotter]
+      tags: [capability, journey, mapping, level2]
+
+    - id: flow-design-capability-agent
+      name: Flow Design Capability Agent
+      level: 2
+      type: domain-expert
+      description: "Designs task flows, navigation models, and information architecture for complex product surfaces"
+      domain: ux-ui
+      capabilities: [flow-design, navigation-design, information-architecture, task-modelling]
+      tools: [flow_builder, nav_designer, ia_architect]
+      tags: [capability, flow-design, navigation, level2]
+
+    - id: screen-design-capability-agent
+      name: Screen Design Capability Agent
+      level: 2
+      type: domain-expert
+      description: "Designs individual screens and screen states with attention to hierarchy, density, and responsiveness"
+      domain: ux-ui
+      capabilities: [screen-design, visual-hierarchy, responsive-design, density-optimisation]
+      tools: [screen_designer, hierarchy_analyzer, responsive_checker]
+      tags: [capability, screen-design, visual, level2]
+
+    - id: accessibility-capability-agent
+      name: Accessibility Capability Agent
+      level: 2
+      type: domain-expert
+      description: "Ensures WCAG 2.2 AA compliance across all design artefacts: contrast, focus order, labelling, and screen reader compatibility"
+      domain: ux-ui
+      capabilities: [accessibility-review, wcag-compliance, contrast-checking, focus-order-validation]
+      tools: [wcag_checker, contrast_analyzer, focus_order_validator, screen_reader_emulator]
+      tags: [capability, accessibility, wcag, level2]
+
+    - id: design-consistency-capability-agent
+      name: Design Consistency Capability Agent
+      level: 2
+      type: domain-expert
+      description: "Enforces design consistency across screens, components, icons, and interactions referencing the design system"
+      domain: ux-ui
+      capabilities: [consistency-enforcement, design-audit, pattern-compliance, icon-standardisation]
+      tools: [consistency_checker, design_auditor, pattern_validator]
+      tags: [capability, design-consistency, system, level2]
+
+    - id: canvas-interaction-capability-agent
+      name: Canvas Interaction Capability Agent
+      level: 2
+      type: domain-expert
+      description: "Designs and validates canvas-specific interactions: pan, zoom, drag-drop, snap, and selection behaviours"
+      domain: ux-ui
+      capabilities: [canvas-design, pan-zoom-design, drag-drop-design, snap-design, selection-behaviour]
+      tools: [canvas_designer, pan_zoom_validator, snap_calculator]
+      tags: [capability, canvas, interaction, level2]
+
+    # ── Level 3 Task Agents ─────────────────────────────────────────────────
+    - id: persona-definition-task-agent
+      name: Persona Definition Task Agent
+      level: 3
+      type: worker
+      description: "Defines individual persona cards with demographics, goals, frustrations, behaviours, and technology comfort"
+      domain: ux-ui
+      capabilities: [persona-definition, card-generation, demographic-modelling]
+      tools: [persona_card_builder, demographic_modeller]
+      tags: [task, persona, definition, level3]
+
+    - id: user-journey-task-agent
+      name: User Journey Task Agent
+      level: 3
+      type: worker
+      description: "Creates detailed user journey maps with stages, actions, thoughts, emotions, pain points, and opportunities"
+      domain: ux-ui
+      capabilities: [journey-map-creation, stage-definition, emotion-curve-plotting, opportunity-identification]
+      tools: [journey_map_builder, emotion_plotter]
+      tags: [task, journey-map, ux, level3]
+
+    - id: task-flow-task-agent
+      name: Task Flow Task Agent
+      level: 3
+      type: worker
+      description: "Creates granular task flows documenting every step, decision point, and alternative path"
+      domain: ux-ui
+      capabilities: [task-flow-design, decision-point-modelling, alternative-path-design]
+      tools: [flow_builder, decision_modeller]
+      tags: [task, task-flow, ux, level3]
+
+    - id: navigation-model-task-agent
+      name: Navigation Model Task Agent
+      level: 3
+      type: worker
+      description: "Designs the product navigation model including hierarchy, patterns, breadcrumbs, and deep-linking strategy"
+      domain: ux-ui
+      capabilities: [navigation-design, hierarchy-planning, pattern-selection, deep-linking]
+      tools: [nav_modeller, hierarchy_builder]
+      tags: [task, navigation, information-architecture, level3]
+
+    - id: information-architecture-task-agent
+      name: Information Architecture Task Agent
+      level: 3
+      type: worker
+      description: "Designs the information architecture: content organisation, taxonomies, labelling systems, and findability"
+      domain: ux-ui
+      capabilities: [ia-design, taxonomy-creation, labelling-systems, findability-optimisation]
+      tools: [ia_builder, taxonomy_creator, card_sorter]
+      tags: [task, information-architecture, taxonomy, level3]
+
+    - id: wireframe-task-agent
+      name: Wireframe Task Agent
+      level: 3
+      type: worker
+      description: "Creates low and mid-fidelity wireframes for key screens and user flows"
+      domain: ux-ui
+      capabilities: [wireframe-creation, fidelity-selection, layout-planning]
+      tools: [wireframe_builder, layout_planner]
+      tags: [task, wireframe, design, level3]
+
+    - id: screen-state-task-agent
+      name: Screen State Task Agent
+      level: 3
+      type: worker
+      description: "Defines all screen states: loading, empty, error, partial data, full data, and edge cases"
+      domain: ux-ui
+      capabilities: [screen-state-design, state-enumeration, edge-case-design]
+      tools: [state_machine_designer, screen_state_builder]
+      tags: [task, screen-states, ui, level3]
+
+    - id: empty-state-task-agent
+      name: Empty State Task Agent
+      level: 3
+      type: worker
+      description: "Designs empty states for first-use, no-results, and cleared-content scenarios with copy and illustration guidance"
+      domain: ux-ui
+      capabilities: [empty-state-design, copy-generation, illustration-guidance]
+      tools: [empty_state_builder, copy_generator]
+      tags: [task, empty-state, ui, level3]
+
+    - id: error-state-task-agent
+      name: Error State Task Agent
+      level: 3
+      type: worker
+      description: "Designs error states with helpful copy, recovery actions, and prevention guidance for all error categories"
+      domain: ux-ui
+      capabilities: [error-state-design, error-copy-writing, recovery-action-design]
+      tools: [error_state_builder, error_copy_generator]
+      tags: [task, error-state, copy, level3]
+
+    - id: interaction-pattern-task-agent
+      name: Interaction Pattern Task Agent
+      level: 3
+      type: worker
+      description: "Documents and standardises interaction patterns for common UI actions (save, delete, search, filter, sort)"
+      domain: ux-ui
+      capabilities: [interaction-pattern-design, pattern-documentation, standardisation]
+      tools: [pattern_library_builder, interaction_documenter]
+      tags: [task, interaction-patterns, standardisation, level3]
+
+    - id: form-ux-task-agent
+      name: Form UX Task Agent
+      level: 3
+      type: worker
+      description: "Designs optimal form experiences: field grouping, validation feedback, progressive disclosure, and error recovery"
+      domain: ux-ui
+      capabilities: [form-ux-design, field-grouping, validation-design, progressive-disclosure]
+      tools: [form_designer, validation_ux_builder]
+      tags: [task, forms, ux, level3]
+
+    - id: table-ux-task-agent
+      name: Table UX Task Agent
+      level: 3
+      type: worker
+      description: "Designs table and data grid experiences: column priority, sorting, filtering, selection, and row actions"
+      domain: ux-ui
+      capabilities: [table-ux-design, column-priority, sorting-ux, filtering-ux, row-actions]
+      tools: [table_designer, column_prioritizer]
+      tags: [task, tables, data-grid, level3]
+
+    - id: dashboard-ux-task-agent
+      name: Dashboard UX Task Agent
+      level: 3
+      type: worker
+      description: "Designs dashboard layouts with card hierarchies, widget placement, data density, and drill-down patterns"
+      domain: ux-ui
+      capabilities: [dashboard-ux-design, card-hierarchy, widget-placement, data-density]
+      tools: [dashboard_designer, widget_planner]
+      tags: [task, dashboard, layout, level3]
+
+    - id: search-page-ux-task-agent
+      name: Search Page UX Task Agent
+      level: 3
+      type: worker
+      description: "Designs search experiences: query input, filters, result layout, empty states, and refinement flows"
+      domain: ux-ui
+      capabilities: [search-ux-design, filter-design, result-layout, query-input-design]
+      tools: [search_ux_builder, filter_designer]
+      tags: [task, search, ux, level3]
+
+    - id: canvas-tooling-ux-task-agent
+      name: Canvas Tooling UX Task Agent
+      level: 3
+      type: worker
+      description: "Designs the canvas tooling experience: tool palettes, context menus, property panels, and multi-select behaviours"
+      domain: ux-ui
+      capabilities: [canvas-tooling-design, palette-design, context-menu-design, multi-select-design]
+      tools: [canvas_ux_builder, palette_designer]
+      tags: [task, canvas, tooling, level3]
+
+    - id: drag-drop-interaction-task-agent
+      name: Drag Drop Interaction Task Agent
+      level: 3
+      type: worker
+      description: "Defines drag-and-drop interaction models: drag handles, drop zones, preview feedback, and rejection states"
+      domain: ux-ui
+      capabilities: [drag-drop-design, drop-zone-definition, preview-design, rejection-feedback]
+      tools: [drag_drop_designer, drop_zone_planner]
+      tags: [task, drag-drop, interaction, level3]
+
+    - id: pan-zoom-task-agent
+      name: Pan Zoom Task Agent
+      level: 3
+      type: worker
+      description: "Designs pan and zoom behaviours for canvas surfaces including bounds, snap points, and performance thresholds"
+      domain: ux-ui
+      capabilities: [pan-zoom-design, bounds-definition, snap-point-design, performance-threshold]
+      tools: [pan_zoom_designer, bounds_calculator]
+      tags: [task, pan-zoom, canvas, level3]
+
+    - id: keyboard-shortcut-task-agent
+      name: Keyboard Shortcut Task Agent
+      level: 3
+      type: worker
+      description: "Designs the keyboard shortcut system: action mapping, conflict detection, discoverability design, and OS adaptation"
+      domain: ux-ui
+      capabilities: [keyboard-shortcut-design, conflict-detection, discoverability, os-adaptation]
+      tools: [keyboard_planner, conflict_detector, shortcut_documenter]
+      tags: [task, keyboard, shortcuts, level3]
+
+    - id: design-token-alignment-task-agent
+      name: Design Token Alignment Task Agent
+      level: 3
+      type: worker
+      description: "Aligns design tokens across Figma, CSS, and component libraries ensuring single source of truth"
+      domain: ux-ui
+      capabilities: [token-alignment, design-system-sync, token-validation, naming-convention]
+      tools: [token_aligner, design_system_sync, token_validator]
+      tags: [task, design-tokens, alignment, level3]
+
+    - id: accessibility-review-task-agent
+      name: Accessibility Review Task Agent
+      level: 3
+      type: worker
+      description: "Conducts structured WCAG 2.2 accessibility reviews on designs and provides remediation guidance"
+      domain: ux-ui
+      capabilities: [accessibility-review, wcag-audit, remediation-guidance, priority-ranking]
+      tools: [wcag_auditor, remediation_advisor]
+      tags: [task, accessibility, review, level3]
+
+    - id: responsive-layout-task-agent
+      name: Responsive Layout Task Agent
+      level: 3
+      type: worker
+      description: "Designs responsive layout strategies for mobile, tablet, and desktop breakpoints"
+      domain: ux-ui
+      capabilities: [responsive-design, breakpoint-planning, layout-adaptation, content-priority]
+      tools: [breakpoint_designer, layout_adapter]
+      tags: [task, responsive, layout, level3]
+
+    - id: component-composition-task-agent
+      name: Component Composition Task Agent
+      level: 3
+      type: worker
+      description: "Defines how components compose to form screens, with prop contracts and slot specifications"
+      domain: ux-ui
+      capabilities: [component-composition, prop-contract-definition, slot-specification, hierarchy-design]
+      tools: [composition_planner, prop_documenter]
+      tags: [task, component, composition, level3]
+
+    - id: content-hierarchy-task-agent
+      name: Content Hierarchy Task Agent
+      level: 3
+      type: worker
+      description: "Establishes content hierarchy within screens applying visual weight, typographic scale, and reading order"
+      domain: ux-ui
+      capabilities: [content-hierarchy-design, typographic-scale, visual-weight, reading-order]
+      tools: [hierarchy_builder, typography_scaler]
+      tags: [task, content-hierarchy, typography, level3]
+
+    - id: visual-density-review-task-agent
+      name: Visual Density Review Task Agent
+      level: 3
+      type: worker
+      description: "Reviews and optimises visual density across screens for readability, scannability, and cognitive efficiency"
+      domain: ux-ui
+      capabilities: [density-review, readability-optimisation, scannability-analysis]
+      tools: [density_analyzer, readability_scorer]
+      tags: [task, visual-density, review, level3]
+
+    - id: cognitive-load-reduction-task-agent
+      name: Cognitive Load Reduction Task Agent
+      level: 3
+      type: worker
+      description: "Identifies and reduces sources of cognitive overload through progressive disclosure, chunking, and defaults"
+      domain: ux-ui
+      capabilities: [cognitive-load-reduction, progressive-disclosure, chunking, default-setting]
+      tools: [cognitive_load_analyzer, progressive_disclosure_designer]
+      tags: [task, cognitive-load, ux, level3]
+
+    # ── Level 3 Micro Agents ────────────────────────────────────────────────
+    - id: label-clarity-checker
+      name: Label Clarity Checker
+      level: 3
+      type: micro-agent
+      description: "Atomic unit: evaluate the clarity and specificity of a UI label or button text"
+      domain: ux-ui
+      capabilities: [label-clarity, copy-evaluation]
+      tags: [micro, labels, clarity, level3]
+
+    - id: focus-order-validator
+      name: Focus Order Validator
+      level: 3
+      type: micro-agent
+      description: "Atomic unit: validate that the keyboard focus order of a screen follows logical reading order"
+      domain: ux-ui
+      capabilities: [focus-order-validation, keyboard-accessibility]
+      tags: [micro, focus-order, accessibility, level3]
+
+    - id: contrast-checker
+      name: Contrast Checker
+      level: 3
+      type: micro-agent
+      description: "Atomic unit: check foreground/background colour contrast ratio against WCAG AA and AAA thresholds"
+      domain: ux-ui
+      capabilities: [contrast-checking, wcag-compliance]
+      tags: [micro, contrast, accessibility, level3]
+
+    - id: layout-spacing-unit
+      name: Layout Spacing Unit
+      level: 3
+      type: micro-agent
+      description: "Atomic unit: validate spacing values against the design system 8pt grid and spacing scale"
+      domain: ux-ui
+      capabilities: [spacing-validation, grid-alignment]
+      tags: [micro, spacing, grid, level3]
+
+    - id: icon-consistency-unit
+      name: Icon Consistency Unit
+      level: 3
+      type: micro-agent
+      description: "Atomic unit: check that icons used in a screen are consistent with the design system icon set"
+      domain: ux-ui
+      capabilities: [icon-consistency, design-system-compliance]
+      tags: [micro, icons, consistency, level3]
+
+    - id: navigation-depth-checker
+      name: Navigation Depth Checker
+      level: 3
+      type: micro-agent
+      description: "Atomic unit: check that navigation hierarchy does not exceed maximum recommended depth"
+      domain: ux-ui
+      capabilities: [navigation-depth-checking, hierarchy-validation]
+      tags: [micro, navigation, depth, level3]
+
+    - id: drag-handle-validator
+      name: Drag Handle Validator
+      level: 3
+      type: micro-agent
+      description: "Atomic unit: validate drag handle affordance visibility and hit target size"
+      domain: ux-ui
+      capabilities: [drag-handle-validation, affordance-checking, hit-target-sizing]
+      tags: [micro, drag-handle, validation, level3]
+
+    - id: drop-zone-resolver
+      name: Drop Zone Resolver
+      level: 3
+      type: micro-agent
+      description: "Atomic unit: resolve which drop zone accepts a dragged item given type and constraints"
+      domain: ux-ui
+      capabilities: [drop-zone-resolution, type-matching, constraint-checking]
+      tags: [micro, drop-zone, resolution, level3]
+
+    - id: canvas-snap-unit
+      name: Canvas Snap Unit
+      level: 3
+      type: micro-agent
+      description: "Atomic unit: calculate nearest valid snap position for a canvas element being moved"
+      domain: ux-ui
+      capabilities: [snap-calculation, grid-snap, object-snap]
+      tags: [micro, snap, canvas, level3]
+
+    - id: zoom-boundary-unit
+      name: Zoom Boundary Unit
+      level: 3
+      type: micro-agent
+      description: "Atomic unit: enforce minimum and maximum zoom boundaries for a canvas viewport"
+      domain: ux-ui
+      capabilities: [zoom-boundary-enforcement, viewport-constraint]
+      tags: [micro, zoom, boundaries, level3]
+
+    - id: empty-state-generator
+      name: Empty State Generator
+      level: 3
+      type: micro-agent
+      description: "Atomic unit: generate copy and guidance for an empty state given context type and persona"
+      domain: ux-ui
+      capabilities: [empty-state-copy-generation, context-aware-messaging]
+      tags: [micro, empty-state, copy, level3]
+
+    - id: error-copy-generator
+      name: Error Copy Generator
+      level: 3
+      type: micro-agent
+      description: "Atomic unit: generate clear, actionable error message copy for a given error code and context"
+      domain: ux-ui
+      capabilities: [error-copy-generation, actionable-messaging]
+      tags: [micro, error-copy, messaging, level3]
+
+    - id: table-column-priority-unit
+      name: Table Column Priority Unit
+      level: 3
+      type: micro-agent
+      description: "Atomic unit: rank table columns by data importance for responsive column collapsing"
+      domain: ux-ui
+      capabilities: [column-priority-ranking, responsive-prioritisation]
+      tags: [micro, column-priority, tables, level3]
+
+    - id: form-field-grouping-unit
+      name: Form Field Grouping Unit
+      level: 3
+      type: micro-agent
+      description: "Atomic unit: group form fields into logical sections based on semantic relatedness"
+      domain: ux-ui
+      capabilities: [field-grouping, semantic-clustering, section-creation]
+      tags: [micro, form-fields, grouping, level3]
+
+    - id: shortcut-conflict-detector
+      name: Shortcut Conflict Detector
+      level: 3
+      type: micro-agent
+      description: "Atomic unit: detect conflicts between a new shortcut and existing shortcut bindings"
+      domain: ux-ui
+      capabilities: [shortcut-conflict-detection, binding-validation]
+      tags: [micro, shortcuts, conflict, level3]
+
+  hierarchy:
+    level1: [ux-orchestrator, ui-orchestrator, interaction-design-orchestrator, design-system-orchestrator]
+    level2: [persona-modelling-capability-agent, journey-design-capability-agent, flow-design-capability-agent, screen-design-capability-agent, accessibility-capability-agent, design-consistency-capability-agent, canvas-interaction-capability-agent]
+    level3: [persona-definition-task-agent, user-journey-task-agent, task-flow-task-agent, navigation-model-task-agent, information-architecture-task-agent, wireframe-task-agent, screen-state-task-agent, empty-state-task-agent, error-state-task-agent, interaction-pattern-task-agent, form-ux-task-agent, table-ux-task-agent, dashboard-ux-task-agent, search-page-ux-task-agent, canvas-tooling-ux-task-agent, drag-drop-interaction-task-agent, pan-zoom-task-agent, keyboard-shortcut-task-agent, design-token-alignment-task-agent, accessibility-review-task-agent, responsive-layout-task-agent, component-composition-task-agent, content-hierarchy-task-agent, visual-density-review-task-agent, cognitive-load-reduction-task-agent, label-clarity-checker, focus-order-validator, contrast-checker, layout-spacing-unit, icon-consistency-unit, navigation-depth-checker, drag-handle-validator, drop-zone-resolver, canvas-snap-unit, zoom-boundary-unit, empty-state-generator, error-copy-generator, table-column-priority-unit, form-field-grouping-unit, shortcut-conflict-detector]
+
+  capability_routing:
+    ux-design:
+      primary: ux-orchestrator
+      fallback: [persona-modelling-capability-agent]
+    ui-design:
+      primary: ui-orchestrator
+      fallback: [screen-design-capability-agent]
+    accessibility:
+      primary: accessibility-capability-agent
+      fallback: [accessibility-review-task-agent]
+    canvas-interaction:
+      primary: canvas-interaction-capability-agent
+      fallback: [drag-drop-interaction-task-agent]
+    design-system:
+      primary: design-system-orchestrator
+      fallback: [design-consistency-capability-agent]

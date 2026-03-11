@@ -1,0 +1,63 @@
+id: workflow-architecture-task-agent
+name: Workflow Architecture Task Agent
+version: 1.0.0
+description: "Design workflow orchestration and choreography patterns with BPMN-aligned state machines and saga compensation flows"
+
+metadata:
+  level: 3
+  domain: architecture
+  type: worker
+  tags: [workflow-design, state-machine-definition, saga-compensation, level3]
+
+generator:
+  type: PIPELINE
+  steps:
+    - name: execute
+      type: LLM
+      provider: ANTHROPIC
+      model: claude-3-5-sonnet-20241022
+      temperature: 0.1
+      max_tokens: 2000
+      prompt: |
+        Execute task: Design workflow orchestration and choreography patterns with BPMN-aligned state machines and saga compensation flows
+
+        Input: {{input}}
+        Context: {{context}}
+
+        Produce a structured, precise output meeting the task specification.
+
+memory:
+  episodic:
+    enabled: true
+    retention_days: 90
+    categories: [task-executions]
+  semantic:
+    enabled: true
+    categories: [domain-knowledge]
+  procedural:
+    enabled: false
+
+tools: [workflow_designer, state_machine_builder, saga_designer]
+
+capabilities:
+  - workflow-design
+  - state-machine-definition
+  - saga-compensation
+
+routing:
+  input_types: [workflow_architecture_request]
+  output_types: [workflow_architecture_spec]
+
+delegation:
+  can_delegate_to: []
+  escalates_to: event-architecture-capability-agent
+
+governance:
+  requires_approval: false
+  can_block: false
+  audit_trail: standard
+
+performance:
+  expected_latency_ms: 4000
+  max_latency_ms: 20000
+  timeout_ms: 40000

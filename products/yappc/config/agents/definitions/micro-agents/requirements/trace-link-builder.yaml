@@ -1,0 +1,49 @@
+id: trace-link-builder
+name: Trace Link Builder
+version: 1.0.0
+description: "Build a single traceability link record connecting source artefact to target artefact with link type"
+
+metadata:
+  level: 3
+  domain: requirements
+  type: micro-agent
+  tags: [trace-link-creation, level3, micro]
+
+generator:
+  type: RULE_BASED
+  steps:
+    - name: execute
+      type: RULE_BASED
+      rules:
+        - "trace-link-creation"
+
+memory:
+  episodic:
+    enabled: false
+  semantic:
+    enabled: false
+  procedural:
+    enabled: false
+
+tools: [link_builder]
+
+capabilities:
+  - trace-link-creation
+
+routing:
+  input_types: [link_build_request]
+  output_types: [trace_link]
+
+delegation:
+  can_delegate_to: []
+  escalates_to: traceability-capability-agent
+
+governance:
+  requires_approval: false
+  can_block: false
+  audit_trail: standard
+
+performance:
+  expected_latency_ms: 100
+  max_latency_ms: 500
+  timeout_ms: 1000

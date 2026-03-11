@@ -1,0 +1,51 @@
+id: p-value-interpreter
+name: P Value Interpreter
+version: 1.0.0
+description: "Interpret a p-value in context of significance threshold and return statistically significant/inconclusive verdict"
+
+metadata:
+  level: 3
+  domain: product-intelligence
+  type: micro-agent
+  tags: [p-value-interpretation, significance-assessment, level3, micro]
+
+generator:
+  type: RULE_BASED
+  steps:
+    - name: execute
+      type: RULE_BASED
+      rules:
+        - "p-value-interpretation"
+        - "significance-assessment"
+
+memory:
+  episodic:
+    enabled: false
+  semantic:
+    enabled: false
+  procedural:
+    enabled: false
+
+tools: [significance_interpreter]
+
+capabilities:
+  - p-value-interpretation
+  - significance-assessment
+
+routing:
+  input_types: [p_value_request]
+  output_types: [significance_verdict]
+
+delegation:
+  can_delegate_to: []
+  escalates_to: experimentation-capability-agent
+
+governance:
+  requires_approval: false
+  can_block: false
+  audit_trail: standard
+
+performance:
+  expected_latency_ms: 50
+  max_latency_ms: 250
+  timeout_ms: 500

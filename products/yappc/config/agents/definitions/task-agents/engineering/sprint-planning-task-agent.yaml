@@ -1,0 +1,63 @@
+id: sprint-planning-task-agent
+name: Sprint Planning Task Agent
+version: 1.0.0
+description: "Plan sprint by mapping backlog items to team capacity, factoring in velocity, planned absences, and technical debt allocation"
+
+metadata:
+  level: 3
+  domain: engineering
+  type: worker
+  tags: [sprint-planning, capacity-matching, velocity-application, level3]
+
+generator:
+  type: PIPELINE
+  steps:
+    - name: execute
+      type: LLM
+      provider: ANTHROPIC
+      model: claude-3-5-sonnet-20241022
+      temperature: 0.1
+      max_tokens: 2000
+      prompt: |
+        Execute task: Plan sprint by mapping backlog items to team capacity, factoring in velocity, planned absences, and technical debt allocation
+
+        Input: {{input}}
+        Context: {{context}}
+
+        Produce a structured, precise output meeting the task specification.
+
+memory:
+  episodic:
+    enabled: true
+    retention_days: 90
+    categories: [task-executions]
+  semantic:
+    enabled: true
+    categories: [domain-knowledge]
+  procedural:
+    enabled: false
+
+tools: [sprint_planner, capacity_calculator, velocity_reader]
+
+capabilities:
+  - sprint-planning
+  - capacity-matching
+  - velocity-application
+
+routing:
+  input_types: [sprint_planning_request]
+  output_types: [sprint_plan]
+
+delegation:
+  can_delegate_to: []
+  escalates_to: engineering-metrics-capability-agent
+
+governance:
+  requires_approval: false
+  can_block: false
+  audit_trail: standard
+
+performance:
+  expected_latency_ms: 3000
+  max_latency_ms: 15000
+  timeout_ms: 30000

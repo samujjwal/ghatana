@@ -1,0 +1,97 @@
+id: concept-validation-capability-agent
+name: Concept Validation Capability Agent
+version: 1.0.0
+description: "Validates product concepts through assumption mapping, experiment design, prototype review, and early signal interpretation before full investment"
+
+metadata:
+  level: 2
+  domain: ideation
+  tags: [capability, concept-validation, assumptions, experiment-design, prototyping, level2]
+
+generator:
+  type: PIPELINE
+  steps:
+    - name: assumption_mapping
+      type: LLM
+      provider: ANTHROPIC
+      model: claude-3-5-sonnet-20241022
+      temperature: 0.2
+      max_tokens: 2500
+      prompt: |
+        Map and risk-rank all assumptions in the concept:
+
+        Concept: {{input}}
+        Business model: {{context.business_model}}
+
+        Extract every assumption in 4 categories: Desirability (will users want this?), Feasibility (can we build it?), Viability (is it a sustainable business?), Ethics (is it safe/fair?). For each assumption: stated/unstated, evidence (none/weak/strong), risk if wrong (low/high), testability (easy/hard). Output assumption map JSON.
+    - name: experiment_design
+      type: LLM
+      provider: ANTHROPIC
+      model: claude-3-5-sonnet-20241022
+      temperature: 0.2
+      max_tokens: 3000
+      prompt: |
+        Design validation experiments for riskiest assumptions:
+
+        Assumption map: {{assumption_mapping}}
+        Budget for validation: {{context.validation_budget}}
+        Time to next gate: {{context.gate_date}}
+
+        Prioritise top 5 riskiest assumptions. For each design a minimum-cost experiment: method, effort (days), what good/bad signal looks like, decision criteria (proceed/pivot/stop). Output experiment backlog JSON.
+    - name: signal_interpretation
+      type: LLM
+      provider: ANTHROPIC
+      model: claude-3-5-sonnet-20241022
+      temperature: 0.1
+      max_tokens: 2000
+      prompt: |
+        Interpret validation signals and recommend next action:
+
+        Experiment results: {{context.validation_results}}
+        Original assumptions: {{assumption_mapping}}
+        Decision criteria: {{experiment_design}}
+
+        Assess each experiment result against decision criteria. Aggregate into concept verdict: PROCEED / PIVOT (specify pivot direction) / STOP. Confidence score (0-100). Rationale 200w.
+
+memory:
+  episodic:
+    enabled: true
+    retention_days: 365
+    categories: [concept-validations, assumption-maps, experiment-results, verdicts]
+  semantic:
+    enabled: true
+    categories: [validation-methods, assumption-patterns, pivot-histories]
+  procedural:
+    enabled: true
+    categories: [assumption-mapping-technique, experiment-design-patterns, signal-interpretation]
+
+tools: [assumption_mapper, experiment_designer, signal_tracker, concept_registry]
+
+capabilities:
+  - assumption-mapping
+  - experiment-design
+  - prototype-review
+  - signal-interpretation
+  - concept-verdict
+
+routing:
+  input_types: [concept_for_validation, experiment_results, prototype_review_request]
+  output_types: [assumption_map, experiment_backlog, validation_verdict, pivot_recommendation]
+
+delegation:
+  can_delegate_to:
+    - assumption-mapping-task-agent
+    - validation-experiment-task-agent
+    - prototype-analysis-task-agent
+    - signal-interpretation-task-agent
+  escalates_to: ideation-orchestrator
+
+governance:
+  requires_approval: false
+  can_block: false
+  audit_trail: standard
+
+performance:
+  expected_latency_ms: 8000
+  max_latency_ms: 30000
+  timeout_ms: 120000

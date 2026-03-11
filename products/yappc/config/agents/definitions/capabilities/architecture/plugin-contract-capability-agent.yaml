@@ -1,0 +1,97 @@
+id: plugin-contract-capability-agent
+name: Plugin Contract Capability Agent
+version: 1.0.0
+description: "Defines and governs plugin API contracts: extension point design, plugin lifecycle specification, sandboxing policies, compatibility matrices, and plugin marketplace standards"
+
+metadata:
+  level: 2
+  domain: architecture
+  tags: [capability, plugin, extension-points, contracts, sandboxing, lifecycle, level2]
+
+generator:
+  type: PIPELINE
+  steps:
+    - name: extension_point_design
+      type: LLM
+      provider: ANTHROPIC
+      model: claude-3-5-sonnet-20241022
+      temperature: 0.2
+      max_tokens: 3000
+      prompt: |
+        Design plugin extension points:
+
+        Platform capabilities: {{context.platform_capabilities}}
+        Plugin requirements: {{input}}
+        Integration scenarios: {{context.integration_scenarios}}
+
+        Identify: extension points (hooks, event subscriptions, UI slots, data transforms), hook signatures (input/output types), priority and ordering model, caching implications, failure isolation strategy. Design for: loose coupling, progressive capability exposure, versioned contracts. Output extension point spec JSON.
+    - name: plugin_lifecycle_specification
+      type: LLM
+      provider: ANTHROPIC
+      model: claude-3-5-sonnet-20241022
+      temperature: 0.1
+      max_tokens: 2500
+      prompt: |
+        Specify plugin lifecycle and sandboxing:
+
+        Extension points: {{extension_point_design}}
+        Security requirements: {{context.security_requirements}}
+        Performance SLAs: {{context.performance_sla}}
+
+        Define: lifecycle phases (register, install, activate, execute, deactivate, uninstall), state machine transitions, sandboxing mechanism (WASM/subprocess/iframe), resource limits (CPU/memory/network), timeout enforcement, failure isolation (circuit breaker), audit event types. Output lifecycle and sandbox spec.
+    - name: compatibility_matrix
+      type: LLM
+      provider: ANTHROPIC
+      model: claude-3-5-sonnet-20241022
+      temperature: 0.0
+      max_tokens: 2000
+      prompt: |
+        Design plugin compatibility and versioning strategy:
+
+        Extension points: {{extension_point_design}}
+        Platform versioning: {{context.platform_versions}}
+
+        Define: semantic versioning for extension point contracts, compatibility matrix (extension point version × plugin API version), deprecation policy (min 2 major versions), migration path for breaking changes, compatibility shim strategy. Output compatibility matrix and deprecation policy.
+
+memory:
+  episodic:
+    enabled: true
+    retention_days: 730
+    categories: [extension-point-designs, lifecycle-specs, compatibility-matrices, contract-versions]
+  semantic:
+    enabled: true
+    categories: [plugin-patterns, extension-point-library, compatibility-standards]
+  procedural:
+    enabled: true
+    categories: [extension-point-design-rules, lifecycle-state-machine, deprecation-policy]
+
+tools: [extension_point_designer, sandbox_evaluator, compatibility_checker, contract_validator]
+
+capabilities:
+  - extension-point-design
+  - plugin-lifecycle-specification
+  - sandboxing-design
+  - compatibility-matrix-management
+
+routing:
+  input_types: [plugin_contract_request, extension_point_design_request, compatibility_check]
+  output_types: [extension_point_spec, lifecycle_spec, sandbox_spec, compatibility_matrix]
+
+delegation:
+  can_delegate_to:
+    - extension-point-task-agent
+    - lifecycle-spec-task-agent
+    - sandbox-design-task-agent
+    - compatibility-matrix-task-agent
+  escalates_to: plugin-architecture-orchestrator
+
+governance:
+  requires_approval: true
+  approval_chain: [architecture-board]
+  can_block: false
+  audit_trail: comprehensive
+
+performance:
+  expected_latency_ms: 8000
+  max_latency_ms: 20000
+  timeout_ms: 60000

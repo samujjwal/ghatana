@@ -291,6 +291,116 @@ agents:
     status: active
     max_concurrent: 1
 
+  # ── New Domain Orchestrators (10 domains) ─────────────────────────────────
+
+  - id: portfolio-orchestrator
+    name: Portfolio Orchestrator
+    capabilities:
+      - portfolio-analysis
+      - roadmap-strategy
+      - investment-evaluation
+      - portfolio-health-monitoring
+    status: active
+    max_concurrent: 2
+
+  - id: discovery-orchestrator
+    name: Discovery Orchestrator
+    capabilities:
+      - user-research
+      - market-analysis
+      - insight-synthesis
+      - opportunity-identification
+    status: active
+    max_concurrent: 3
+
+  - id: ideation-orchestrator
+    name: Ideation Orchestrator
+    capabilities:
+      - concept-generation
+      - feasibility-analysis
+      - innovation-scouting
+    status: active
+    max_concurrent: 3
+
+  - id: requirements-orchestrator
+    name: Requirements Orchestrator
+    capabilities:
+      - requirements-analysis
+      - acceptance-criteria-writing
+      - story-mapping
+      - spec-validation
+      - traceability-management
+    status: active
+    max_concurrent: 3
+
+  - id: ux-orchestrator
+    name: UX Orchestrator
+    capabilities:
+      - ux-research
+      - interaction-design
+      - accessibility-auditing
+      - design-system-curation
+      - prototype-building
+      - usability-testing
+    status: active
+    max_concurrent: 3
+
+  - id: architecture-orchestrator
+    name: Architecture Orchestrator
+    capabilities:
+      - system-design
+      - api-architecture
+      - data-architecture
+      - security-architecture
+      - integration-architecture
+      - scalability-analysis
+    status: active
+    max_concurrent: 2
+
+  - id: engineering-orchestrator
+    name: Engineering Orchestrator
+    capabilities:
+      - code-quality-governance
+      - platform-engineering
+      - devex-optimization
+      - technical-debt-management
+      - build-reliability
+    status: active
+    max_concurrent: 3
+
+  - id: ai-orchestrator
+    name: AI Orchestrator
+    capabilities:
+      - ml-engineering
+      - prompt-engineering
+      - model-evaluation
+      - ai-safety-review
+      - semantic-search
+    status: active
+    max_concurrent: 2
+
+  - id: operations-orchestrator
+    name: Operations Orchestrator
+    capabilities:
+      - site-reliability-engineering
+      - infrastructure-management
+      - support-engineering
+      - change-management
+      - cost-optimization
+      - on-call-coordination
+    status: active
+    max_concurrent: 3
+
+  - id: product-intelligence-orchestrator
+    name: Product Intelligence Orchestrator
+    capabilities:
+      - feedback-analysis
+      - experimentation-coordination
+      - enhancement-prioritization
+      - product-analytics
+    status: active
+    max_concurrent: 2
+
 # ============================================================================
 # Domain-Level Mappings (26 Canonical Domains)
 # ============================================================================
@@ -603,6 +713,120 @@ domain_mappings:
     capability_requirements:
       - feature-flag-management
       - deployment-automation
+
+  # ── New Domain Mappings (10 strategic domains) ──────────────────────────
+
+  # D36. Portfolio Management
+  portfolio-management:
+    primary_agent: portfolio-orchestrator
+    fallback_agents:
+      - research-agent
+    execution_mode: async
+    capability_requirements:
+      - portfolio-analysis
+      - roadmap-strategy
+
+  # D37. Product Discovery
+  product-discovery:
+    primary_agent: discovery-orchestrator
+    fallback_agents:
+      - research-agent
+    execution_mode: async
+    capability_requirements:
+      - user-research
+      - market-analysis
+      - insight-synthesis
+
+  # D38. Ideation & Innovation
+  ideation-innovation:
+    primary_agent: ideation-orchestrator
+    fallback_agents:
+      - research-agent
+      - ai-assistant
+    execution_mode: async
+    capability_requirements:
+      - concept-generation
+      - feasibility-analysis
+
+  # D39. Requirements Engineering (domain-level)
+  requirements-engineering-domain:
+    primary_agent: requirements-orchestrator
+    fallback_agents:
+      - research-agent
+    execution_mode: async
+    capability_requirements:
+      - requirements-analysis
+      - acceptance-criteria-writing
+      - story-mapping
+
+  # D40. UX & Design
+  ux-design-domain:
+    primary_agent: ux-orchestrator
+    fallback_agents:
+      - design-agent
+    execution_mode: async
+    capability_requirements:
+      - ux-research
+      - interaction-design
+      - accessibility-auditing
+
+  # D41. Architecture Domain
+  architecture-domain:
+    primary_agent: architecture-orchestrator
+    fallback_agents:
+      - systems-architect
+    execution_mode: async
+    capability_requirements:
+      - system-design
+      - api-architecture
+      - data-architecture
+
+  # D42. Engineering Excellence
+  engineering-excellence:
+    primary_agent: engineering-orchestrator
+    fallback_agents:
+      - code-generator
+      - code-analyzer
+    execution_mode: async
+    capability_requirements:
+      - code-quality-governance
+      - platform-engineering
+      - technical-debt-management
+
+  # D43. AI & ML Engineering
+  ai-ml-engineering:
+    primary_agent: ai-orchestrator
+    fallback_agents:
+      - ai-assistant
+      - research-agent
+    execution_mode: async
+    capability_requirements:
+      - ml-engineering
+      - model-evaluation
+      - ai-safety-review
+
+  # D44. Operations & SRE
+  operations-sre:
+    primary_agent: operations-orchestrator
+    fallback_agents:
+      - deployment-agent
+    execution_mode: async
+    capability_requirements:
+      - site-reliability-engineering
+      - infrastructure-management
+      - on-call-coordination
+
+  # D45. Product Intelligence
+  product-intelligence-domain:
+    primary_agent: product-intelligence-orchestrator
+    fallback_agents:
+      - research-agent
+      - ai-assistant
+    execution_mode: async
+    capability_requirements:
+      - feedback-analysis
+      - experimentation-coordination
+      - product-analytics
 
 # ============================================================================
 # Task-Specific Overrides

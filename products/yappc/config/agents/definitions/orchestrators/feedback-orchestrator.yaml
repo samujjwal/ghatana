@@ -1,0 +1,104 @@
+id: feedback-orchestrator
+name: Feedback Orchestrator
+version: 1.0.0
+description: "Collects and synthesises user feedback: NLP classification, theme clustering, sentiment analysis, volume scoring, and prioritisation for product decisions"
+
+metadata:
+  level: 1
+  domain: product-intelligence
+  tags: [orchestrator, feedback, sentiment, nlp, clustering, level1]
+
+generator:
+  type: PIPELINE
+  steps:
+    - name: feedback_ingestion
+      type: SERVICE_CALL
+      service: feedback-aggregator
+      endpoint: /pull
+      description: "Pull feedback from all channels: in-app, support tickets, app stores, NPS surveys, social listening"
+    - name: feedback_classification
+      type: LLM
+      provider: ANTHROPIC
+      model: claude-3-5-sonnet-20241022
+      temperature: 0.1
+      max_tokens: 3000
+      prompt: |
+        Classify and enrich feedback items:
+
+        Feedback batch: {{feedback_ingestion}}
+        Product feature taxonomy: {{context.feature_taxonomy}}
+        User segments: {{context.user_segments}}
+
+        For each item: category (bug/usability/feature-request/praise/complaint), sentiment (-1 to 1), affected feature, user segment, urgency signal (blocking/frustrating/nice-to-have), quality score. Batch output as JSON array.
+    - name: theme_clustering
+      type: LLM
+      provider: ANTHROPIC
+      model: claude-3-5-sonnet-20241022
+      temperature: 0.2
+      max_tokens: 3000
+      prompt: |
+        Cluster classified feedback into coherent themes:
+
+        Classified items: {{feedback_classification}}
+        Minimum cluster size: {{context.cluster_threshold}}
+
+        Identify: top 10 themes by volume, theme label, representative quotes (3 per theme), sentiment breakdown, affected segments, trend direction (rising/stable/declining). Output JSON theme list.
+    - name: prioritisation_scoring
+      type: LLM
+      provider: ANTHROPIC
+      model: claude-3-5-sonnet-20241022
+      temperature: 0.1
+      max_tokens: 2000
+      prompt: |
+        Score themes for product prioritisation:
+
+        Themes: {{theme_clustering}}
+        Active roadmap: {{context.product_roadmap}}
+        Revenue segments: {{context.revenue_segments}}
+
+        Apply RICE + sentiment weighting. Produce final prioritised list with scores, roadmap alignment flags, and next action recommendations (investigate/roadmap/close/escalate).
+
+memory:
+  episodic:
+    enabled: true
+    retention_days: 365
+    categories: [feedback-batches, theme-reports, sentiment-trends, prioritisation-outputs]
+  semantic:
+    enabled: true
+    categories: [feedback-taxonomy, user-segments, theme-history]
+  procedural:
+    enabled: true
+    categories: [classification-rules, clustering-algorithms, rice-scoring]
+
+tools: [feedback_aggregator, nlp_classifier, theme_clusterer, sentiment_analyser, priority_scorer]
+
+capabilities:
+  - feedback-collection
+  - nlp-classification
+  - theme-clustering
+  - sentiment-analysis
+  - feedback-prioritisation
+
+routing:
+  input_types: [feedback_sync_trigger, feedback_item, feedback_batch_request]
+  output_types: [feedback_summary, theme_report, sentiment_report, prioritisation_list]
+
+delegation:
+  can_delegate_to:
+    - feedback-capability-agent
+    - feedback-collection-task-agent
+    - feedback-classification-task-agent
+    - theme-clustering-task-agent
+    - sentiment-analysis-task-agent
+    - feedback-prioritisation-task-agent
+  escalates_to: product-intelligence-orchestrator
+
+governance:
+  requires_approval: false
+  can_block: false
+  audit_trail: standard
+
+performance:
+  expected_latency_ms: 5000
+  max_latency_ms: 30000
+  timeout_ms: 120000

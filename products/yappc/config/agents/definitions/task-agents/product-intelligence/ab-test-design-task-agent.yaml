@@ -1,0 +1,64 @@
+id: ab-test-design-task-agent
+name: Ab Test Design Task Agent
+version: 1.0.0
+description: "Design A/B test configurations including variant definitions, traffic allocation, experiment duration, and metric measurement plan"
+
+metadata:
+  level: 3
+  domain: product-intelligence
+  type: worker
+  tags: [ab-test-design, variant-definition, traffic-allocation, metric-plan, level3]
+
+generator:
+  type: PIPELINE
+  steps:
+    - name: execute
+      type: LLM
+      provider: ANTHROPIC
+      model: claude-3-5-sonnet-20241022
+      temperature: 0.1
+      max_tokens: 2000
+      prompt: |
+        Execute task: Design A/B test configurations including variant definitions, traffic allocation, experiment duration, and metric measurement plan
+
+        Input: {{input}}
+        Context: {{context}}
+
+        Produce a structured, precise output meeting the task specification.
+
+memory:
+  episodic:
+    enabled: true
+    retention_days: 90
+    categories: [task-executions]
+  semantic:
+    enabled: true
+    categories: [domain-knowledge]
+  procedural:
+    enabled: false
+
+tools: [ab_test_designer, traffic_allocator, metric_planner]
+
+capabilities:
+  - ab-test-design
+  - variant-definition
+  - traffic-allocation
+  - metric-plan
+
+routing:
+  input_types: [ab_test_design_request]
+  output_types: [ab_test_configuration]
+
+delegation:
+  can_delegate_to: []
+  escalates_to: experimentation-capability-agent
+
+governance:
+  requires_approval: false
+  can_block: false
+  audit_trail: standard
+
+performance:
+  expected_latency_ms: 3000
+  max_latency_ms: 15000
+  timeout_ms: 30000

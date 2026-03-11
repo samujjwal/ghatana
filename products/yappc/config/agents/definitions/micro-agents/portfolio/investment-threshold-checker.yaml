@@ -1,0 +1,51 @@
+id: investment-threshold-checker
+name: Investment Threshold Checker
+version: 1.0.0
+description: "Check whether an investment amount exceeds defined approval thresholds and return required approver tier"
+
+metadata:
+  level: 3
+  domain: portfolio
+  type: micro-agent
+  tags: [threshold-checking, approval-tier-determination, level3, micro]
+
+generator:
+  type: RULE_BASED
+  steps:
+    - name: execute
+      type: RULE_BASED
+      rules:
+        - "threshold-checking"
+        - "approval-tier-determination"
+
+memory:
+  episodic:
+    enabled: false
+  semantic:
+    enabled: false
+  procedural:
+    enabled: false
+
+tools: [threshold_checker]
+
+capabilities:
+  - threshold-checking
+  - approval-tier-determination
+
+routing:
+  input_types: [threshold_check_request]
+  output_types: [approval_tier]
+
+delegation:
+  can_delegate_to: []
+  escalates_to: business-case-capability-agent
+
+governance:
+  requires_approval: false
+  can_block: false
+  audit_trail: standard
+
+performance:
+  expected_latency_ms: 100
+  max_latency_ms: 500
+  timeout_ms: 1000

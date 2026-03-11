@@ -1,0 +1,63 @@
+id: feature-extraction-task-agent
+name: Feature Extraction Task Agent
+version: 1.0.0
+description: "Extract structured features from unstructured text for training datasets and analytical pipelines"
+
+metadata:
+  level: 3
+  domain: ai
+  type: worker
+  tags: [feature-extraction, structured-extraction, schema-enforcement, level3]
+
+generator:
+  type: PIPELINE
+  steps:
+    - name: execute
+      type: LLM
+      provider: ANTHROPIC
+      model: claude-3-5-sonnet-20241022
+      temperature: 0.1
+      max_tokens: 2000
+      prompt: |
+        Execute task: Extract structured features from unstructured text for training datasets and analytical pipelines
+
+        Input: {{input}}
+        Context: {{context}}
+
+        Produce a structured, precise output meeting the task specification.
+
+memory:
+  episodic:
+    enabled: true
+    retention_days: 90
+    categories: [task-executions]
+  semantic:
+    enabled: true
+    categories: [domain-knowledge]
+  procedural:
+    enabled: false
+
+tools: [feature_extractor, schema_enforcer]
+
+capabilities:
+  - feature-extraction
+  - structured-extraction
+  - schema-enforcement
+
+routing:
+  input_types: [feature_extraction_request]
+  output_types: [extracted_features]
+
+delegation:
+  can_delegate_to: []
+  escalates_to: data-pipeline-capability-agent
+
+governance:
+  requires_approval: false
+  can_block: false
+  audit_trail: standard
+
+performance:
+  expected_latency_ms: 2000
+  max_latency_ms: 10000
+  timeout_ms: 20000

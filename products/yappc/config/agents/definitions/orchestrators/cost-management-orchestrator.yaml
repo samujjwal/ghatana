@@ -1,0 +1,98 @@
+id: cost-management-orchestrator
+name: Cost Management Orchestrator
+version: 1.0.0
+description: "Detects cost anomalies, drives rightsizing and resource optimisation, advises on reserved capacity, and tracks cloud spending against budgets"
+
+metadata:
+  level: 1
+  domain: operations
+  tags: [orchestrator, cost, cloud-spend, rightsizing, finops, level1]
+
+generator:
+  type: PIPELINE
+  steps:
+    - name: cost_anomaly_detection
+      type: SERVICE_CALL
+      service: cost-analytics
+      endpoint: /anomalies
+      description: "Identify current cost anomalies and over-budget services"
+    - name: cost_analysis
+      type: LLM
+      provider: ANTHROPIC
+      model: claude-3-5-sonnet-20241022
+      temperature: 0.1
+      max_tokens: 2500
+      prompt: |
+        Analyse cloud cost patterns and produce optimisation plan:
+
+        Cost anomalies: {{cost_anomaly_detection}}
+        Current month spend: {{context.month_spend}}
+        Budget allocations: {{context.budget_allocations}}
+        Resource utilisation: {{context.resource_utilisation}}
+        Reserved/spot capacity: {{context.capacity_inventory}}
+
+        Identify: over-provisioned resources, wastage (idle, unattached), rightsizing candidates, reserved instance opportunities, spot usage expansion, estimated savings per recommendation. Output prioritised list.
+    - name: rightsizing_recommendations
+      type: LLM
+      provider: ANTHROPIC
+      model: claude-3-5-sonnet-20241022
+      temperature: 0.1
+      max_tokens: 2000
+      prompt: |
+        Produce specific rightsizing and cost reduction actions:
+
+        Analysis: {{cost_analysis}}
+        Approved automation level: {{context.automation_level}}
+
+        For each recommendation: resource ID, current size, recommended size, estimated monthly saving, risk level, automation (auto-apply vs human-approval). Output action list.
+    - name: cost_action_execution
+      type: SERVICE_CALL
+      service: agent-dispatcher
+      endpoint: /dispatch
+      description: "Execute low-risk automatable optimisations; queue approval for high-risk changes"
+
+memory:
+  episodic:
+    enabled: true
+    retention_days: 365
+    categories: [cost-anomalies, optimisation-actions, savings-realised, budget-events]
+  semantic:
+    enabled: true
+    categories: [cost-patterns, resource-pricing, reserved-strategies]
+  procedural:
+    enabled: true
+    categories: [rightsizing-rules, budget-alert-policies, approval-thresholds]
+
+tools: [cloud_cost_explorer, resource_utilisation_api, reserved_capacity_api, budget_tracker]
+
+capabilities:
+  - cost-anomaly-detection
+  - rightsizing
+  - reserved-capacity-planning
+  - budget-tracking
+  - savings-reporting
+
+routing:
+  input_types: [cost_report_request, budget_alert, cost_review_trigger]
+  output_types: [cost_report, optimisation_plan, savings_projection, budget_alert_action]
+
+delegation:
+  can_delegate_to:
+    - cost-capability-agent
+    - cost-anomaly-task-agent
+    - rightsizing-task-agent
+    - reserved-capacity-task-agent
+    - budget-alert-task-agent
+    - savings-report-task-agent
+  escalates_to: operations-orchestrator
+
+governance:
+  requires_approval: true
+  approval_chain: [finance-lead]
+  can_block: false
+  audit_trail: comprehensive
+
+performance:
+  expected_latency_ms: 5000
+  max_latency_ms: 30000
+  timeout_ms: 120000

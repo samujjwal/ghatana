@@ -1,0 +1,121 @@
+id: architecture-orchestrator
+name: Architecture Orchestrator
+version: 1.0.0
+description: "Top-level architecture orchestrator — coordinates HLD/LLD generation, ADR management, API contract design, event architecture, and security/observability architecture"
+
+metadata:
+  level: 1
+  domain: architecture
+  tags: [orchestrator, architecture, hld, lld, adr, level1]
+
+generator:
+  type: PIPELINE
+  steps:
+    - name: architecture_triage
+      type: LLM
+      provider: ANTHROPIC
+      model: claude-3-5-sonnet-20241022
+      temperature: 0.2
+      max_tokens: 3000
+      prompt: |
+        You are the Architecture Orchestrator. Triage the architecture request:
+
+        Request: {{input}}
+        Existing architecture: {{context.current_architecture}}
+        Requirements: {{context.requirements}}
+        Constraints: {{context.constraints}}
+
+        Determine:
+        1. Architecture type (new feature, new service, platform change, refactoring)
+        2. Required design artefacts (HLD, LLD, API spec, event schema, ADR)
+        3. Cross-cutting concerns to address (security, observability, multi-tenancy)
+        4. Sub-orchestrators to activate
+        5. Risk areas requiring extra scrutiny
+
+        Output as JSON: {architecture_type, required_artefacts, cross_cutting_concerns, delegation_plan, risk_areas}
+    - name: hld_generation
+      type: LLM
+      provider: ANTHROPIC
+      model: claude-3-5-sonnet-20241022
+      temperature: 0.3
+      max_tokens: 5000
+      prompt: |
+        Generate a High-Level Design document:
+        Architecture type: {{architecture_triage.architecture_type}}
+        Requirements: {{context.requirements}}
+        Existing components: {{context.system_components}}
+
+        HLD must include:
+        1. System context diagram description (actors, external systems)
+        2. Container architecture (services, databases, messagebrokers, frontends)
+        3. Key design decisions with rationale
+        4. Technology choices with justification
+        5. Data flow descriptions for primary scenarios
+        6. Scale and performance considerations
+        7. Security model overview
+        8. Open questions for LLD phase
+    - name: adr_generation
+      type: LLM
+      provider: ANTHROPIC
+      model: claude-3-5-sonnet-20241022
+      temperature: 0.2
+      max_tokens: 3000
+      prompt: |
+        Generate Architecture Decision Records for key decisions:
+        HLD: {{hld_generation}}
+        Key decisions: {{architecture_triage.risk_areas}}
+
+        For each decision: {title, status, context, decision, consequences, alternatives_considered}
+    - name: sub_architecture_dispatch
+      type: SERVICE_CALL
+      service: agent-dispatcher
+      endpoint: /dispatch/batch
+      description: "Dispatch to platform-architecture, plugin-architecture, runtime-architecture orchestrators as needed"
+
+memory:
+  episodic:
+    enabled: true
+    retention_days: 1095
+    categories: [architecture-decisions, hld-versions, lld-versions, adr-history]
+  semantic:
+    enabled: true
+    categories: [architecture-patterns, service-catalogue, technology-decisions, adrs]
+  procedural:
+    enabled: true
+    categories: [architecture-review-procedures, design-standards, adr-templates]
+
+tools: [architecture_designer, hld_builder, lld_builder, adr_writer, api_contract_builder]
+
+capabilities:
+  - architecture-coordination
+  - hld-generation
+  - lld-generation
+  - adr-management
+  - cross-cutting-concern-design
+
+routing:
+  input_types: [architecture_request, requirements_set, constraints, design_review_request]
+  output_types: [hld, lld, api_contracts, event_contracts, adr_set, architecture_review]
+
+delegation:
+  can_delegate_to:
+    - platform-architecture-orchestrator
+    - plugin-architecture-orchestrator
+    - runtime-architecture-orchestrator
+    - domain-architecture-capability-agent
+    - service-design-capability-agent
+    - event-architecture-capability-agent
+    - security-architecture-capability-agent
+  escalates_to: null
+
+governance:
+  requires_approval: true
+  approval_chain:
+    - portfolio-orchestrator
+  can_block: true
+  audit_trail: comprehensive
+
+performance:
+  expected_latency_ms: 20000
+  max_latency_ms: 180000
+  timeout_ms: 240000

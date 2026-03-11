@@ -1,0 +1,51 @@
+id: plugin-manifest-validator
+name: Plugin Manifest Validator
+version: 1.0.0
+description: "Validate a plugin manifest against the plugin contract schema checking required fields and value constraints"
+
+metadata:
+  level: 3
+  domain: architecture
+  type: micro-agent
+  tags: [manifest-validation, schema-conformance, level3, micro]
+
+generator:
+  type: RULE_BASED
+  steps:
+    - name: execute
+      type: RULE_BASED
+      rules:
+        - "manifest-validation"
+        - "schema-conformance"
+
+memory:
+  episodic:
+    enabled: false
+  semantic:
+    enabled: false
+  procedural:
+    enabled: false
+
+tools: [manifest_validator]
+
+capabilities:
+  - manifest-validation
+  - schema-conformance
+
+routing:
+  input_types: [manifest_validate_request]
+  output_types: [manifest_validation_result]
+
+delegation:
+  can_delegate_to: []
+  escalates_to: plugin-contract-capability-agent
+
+governance:
+  requires_approval: false
+  can_block: false
+  audit_trail: standard
+
+performance:
+  expected_latency_ms: 100
+  max_latency_ms: 500
+  timeout_ms: 1000

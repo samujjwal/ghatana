@@ -1,0 +1,63 @@
+id: requirement-source-linking-task-agent
+name: Requirement Source Linking Task Agent
+version: 1.0.0
+description: "Link each requirement to its originating source (user story, regulation, interview, business objective) for traceability"
+
+metadata:
+  level: 3
+  domain: requirements
+  type: worker
+  tags: [source-linking, traceability-establishment, evidence-attachment, level3]
+
+generator:
+  type: PIPELINE
+  steps:
+    - name: execute
+      type: LLM
+      provider: ANTHROPIC
+      model: claude-3-5-sonnet-20241022
+      temperature: 0.1
+      max_tokens: 2000
+      prompt: |
+        Execute task: Link each requirement to its originating source (user story, regulation, interview, business objective) for traceability
+
+        Input: {{input}}
+        Context: {{context}}
+
+        Produce a structured, precise output meeting the task specification.
+
+memory:
+  episodic:
+    enabled: true
+    retention_days: 90
+    categories: [task-executions]
+  semantic:
+    enabled: true
+    categories: [domain-knowledge]
+  procedural:
+    enabled: false
+
+tools: [source_linker, evidence_store]
+
+capabilities:
+  - source-linking
+  - traceability-establishment
+  - evidence-attachment
+
+routing:
+  input_types: [source_linking_request]
+  output_types: [source_linked_requirements]
+
+delegation:
+  can_delegate_to: []
+  escalates_to: traceability-capability-agent
+
+governance:
+  requires_approval: false
+  can_block: false
+  audit_trail: standard
+
+performance:
+  expected_latency_ms: 2000
+  max_latency_ms: 10000
+  timeout_ms: 20000

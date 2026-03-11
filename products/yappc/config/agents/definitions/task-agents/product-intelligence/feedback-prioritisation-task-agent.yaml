@@ -1,0 +1,63 @@
+id: feedback-prioritisation-task-agent
+name: Feedback Prioritisation Task Agent
+version: 1.0.0
+description: "Prioritise feedback themes using RICE scoring weighted by user segment value, churn risk signal, and strategic alignment"
+
+metadata:
+  level: 3
+  domain: product-intelligence
+  type: worker
+  tags: [feedback-prioritisation, rice-scoring, strategic-alignment, level3]
+
+generator:
+  type: PIPELINE
+  steps:
+    - name: execute
+      type: LLM
+      provider: ANTHROPIC
+      model: claude-3-5-sonnet-20241022
+      temperature: 0.1
+      max_tokens: 2000
+      prompt: |
+        Execute task: Prioritise feedback themes using RICE scoring weighted by user segment value, churn risk signal, and strategic alignment
+
+        Input: {{input}}
+        Context: {{context}}
+
+        Produce a structured, precise output meeting the task specification.
+
+memory:
+  episodic:
+    enabled: true
+    retention_days: 90
+    categories: [task-executions]
+  semantic:
+    enabled: true
+    categories: [domain-knowledge]
+  procedural:
+    enabled: false
+
+tools: [rice_calculator, strategic_aligner, churn_signal_detector]
+
+capabilities:
+  - feedback-prioritisation
+  - rice-scoring
+  - strategic-alignment
+
+routing:
+  input_types: [feedback_prioritisation_request]
+  output_types: [prioritised_feedback_themes]
+
+delegation:
+  can_delegate_to: []
+  escalates_to: feedback-capability-agent
+
+governance:
+  requires_approval: false
+  can_block: false
+  audit_trail: standard
+
+performance:
+  expected_latency_ms: 3000
+  max_latency_ms: 15000
+  timeout_ms: 30000

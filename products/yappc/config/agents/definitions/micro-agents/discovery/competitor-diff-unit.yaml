@@ -1,0 +1,51 @@
+id: competitor-diff-unit
+name: Competitor Diff Unit
+version: 1.0.0
+description: "Diff two feature lists and return added, removed, and changed features with structured diff output"
+
+metadata:
+  level: 3
+  domain: discovery
+  type: micro-agent
+  tags: [feature-diff, change-detection, level3, micro]
+
+generator:
+  type: RULE_BASED
+  steps:
+    - name: execute
+      type: RULE_BASED
+      rules:
+        - "feature-diff"
+        - "change-detection"
+
+memory:
+  episodic:
+    enabled: false
+  semantic:
+    enabled: false
+  procedural:
+    enabled: false
+
+tools: [diff_engine]
+
+capabilities:
+  - feature-diff
+  - change-detection
+
+routing:
+  input_types: [diff_request]
+  output_types: [feature_diff]
+
+delegation:
+  can_delegate_to: []
+  escalates_to: competitive-intelligence-capability-agent
+
+governance:
+  requires_approval: false
+  can_block: false
+  audit_trail: standard
+
+performance:
+  expected_latency_ms: 100
+  max_latency_ms: 500
+  timeout_ms: 1000

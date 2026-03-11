@@ -1,0 +1,51 @@
+id: jtbd-pattern-extractor
+name: Jtbd Pattern Extractor
+version: 1.0.0
+description: "Extract JTBD statement pattern from interview text returning job executor, job, and expected outcome"
+
+metadata:
+  level: 3
+  domain: discovery
+  type: micro-agent
+  tags: [jtbd-extraction, pattern-matching, level3, micro]
+
+generator:
+  type: RULE_BASED
+  steps:
+    - name: execute
+      type: RULE_BASED
+      rules:
+        - "jtbd-extraction"
+        - "pattern-matching"
+
+memory:
+  episodic:
+    enabled: false
+  semantic:
+    enabled: false
+  procedural:
+    enabled: false
+
+tools: [jtbd_extractor]
+
+capabilities:
+  - jtbd-extraction
+  - pattern-matching
+
+routing:
+  input_types: [jtbd_extract_request]
+  output_types: [jtbd_pattern]
+
+delegation:
+  can_delegate_to: []
+  escalates_to: customer-research-capability-agent
+
+governance:
+  requires_approval: false
+  can_block: false
+  audit_trail: standard
+
+performance:
+  expected_latency_ms: 200
+  max_latency_ms: 1000
+  timeout_ms: 2000

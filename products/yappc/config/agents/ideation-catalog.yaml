@@ -1,0 +1,354 @@
+apiVersion: ghatana.yappc/v2
+kind: DomainAgentCatalog
+
+metadata:
+  name: ideation
+  version: 1.0.0
+  description: "Ideation, concept design, product framing, MVP definition, and differentiation agents"
+  domain: ideation
+  agentCount: 30
+
+spec:
+  agents:
+
+    # ── Level 1 Orchestrators ───────────────────────────────────────────────
+    - id: ideation-orchestrator
+      name: Ideation Orchestrator
+      level: 1
+      type: orchestrator
+      description: "Coordinates the full ideation process from problem framing through concept validation and MVP definition"
+      domain: ideation
+      capabilities: [ideation-coordination, concept-generation, concept-validation, mvp-definition]
+      routing:
+        input_types: [ideation_request, opportunity_backlog, problem_statement]
+        output_types: [product_concepts, value_proposition, mvp_scope, product_framing_brief]
+      delegation:
+        can_delegate_to:
+          - concept-design-orchestrator
+          - product-framing-orchestrator
+          - idea-generation-capability-agent
+          - solution-framing-capability-agent
+        escalates_to: portfolio-orchestrator
+      tags: [orchestrator, ideation, concepts, level1]
+
+    - id: concept-design-orchestrator
+      name: Concept Design Orchestrator
+      level: 1
+      type: orchestrator
+      description: "Drives concept design sessions, generates multiple solution concepts, and runs structured screening"
+      domain: ideation
+      capabilities: [concept-design, ideation-facilitation, concept-screening, creative-synthesis]
+      routing:
+        input_types: [concept_design_request, problem_space_definition]
+        output_types: [concept_portfolio, screening_results, design_brief]
+      delegation:
+        can_delegate_to:
+          - idea-generation-capability-agent
+          - concept-validation-capability-agent
+          - product-concept-task-agent
+          - concept-screening-task-agent
+        escalates_to: ideation-orchestrator
+      tags: [orchestrator, concept-design, creativity, level1]
+
+    - id: product-framing-orchestrator
+      name: Product Framing Orchestrator
+      level: 1
+      type: orchestrator
+      description: "Defines the product narrative, target personas, differentiation angle, and V1 scope"
+      domain: ideation
+      capabilities: [product-framing, narrative-development, differentiation-analysis, scope-definition]
+      routing:
+        input_types: [framing_request, approved_concept, persona_data]
+        output_types: [product_brief, value_proposition, differentiation_statement, v1_scope]
+      delegation:
+        can_delegate_to:
+          - differentiation-capability-agent
+          - value-proposition-task-agent
+          - product-narrative-task-agent
+          - v1-scope-task-agent
+        escalates_to: ideation-orchestrator
+      tags: [orchestrator, product-framing, narrative, level1]
+
+    # ── Level 2 Capability Agents ───────────────────────────────────────────
+    - id: idea-generation-capability-agent
+      name: Idea Generation Capability Agent
+      level: 2
+      type: domain-expert
+      description: "Generates diverse solution ideas using structured creativity techniques (SCAMPER, lateral thinking, analogical reasoning)"
+      domain: ideation
+      capabilities: [idea-generation, creative-techniques, divergent-thinking, analogy-reasoning]
+      memory:
+        semantic:
+          enabled: true
+          categories: [idea-patterns, creativity-techniques, innovation-exemplars]
+      tools: [idea_generator, scamper_engine, analogical_reasoner]
+      tags: [capability, idea-generation, creativity, level2]
+
+    - id: solution-framing-capability-agent
+      name: Solution Framing Capability Agent
+      level: 2
+      type: domain-expert
+      description: "Frames candidate solutions with clear problem-solution fit, value hypotheses, and feasibility assessments"
+      domain: ideation
+      capabilities: [solution-framing, value-hypothesis, feasibility-assessment, fit-analysis]
+      tools: [solution_framer, value_hypothesis_builder, feasibility_assessor]
+      tags: [capability, solution-framing, value-hypothesis, level2]
+
+    - id: concept-validation-capability-agent
+      name: Concept Validation Capability Agent
+      level: 2
+      type: domain-expert
+      description: "Validates product concepts against user needs, market fit, and technical feasibility"
+      domain: ideation
+      capabilities: [concept-validation, market-fit-assessment, technical-feasibility, user-desirability]
+      memory:
+        episodic:
+          enabled: true
+          retention_days: 180
+          categories: [validation-sessions, screening-results, concept-feedback]
+      tools: [validation_framework, fit_scorer, feasibility_checker]
+      tags: [capability, concept-validation, screening, level2]
+
+    - id: differentiation-capability-agent
+      name: Differentiation Capability Agent
+      level: 2
+      type: domain-expert
+      description: "Identifies and articulates unique differentiation angles, competitive moats, and positioning anchors"
+      domain: ideation
+      capabilities: [differentiation-analysis, positioning, moat-identification, value-uniqueness]
+      tools: [differentiation_analyzer, positioning_mapper, moat_evaluator]
+      tags: [capability, differentiation, positioning, level2]
+
+    # ── Level 3 Task Agents ─────────────────────────────────────────────────
+    - id: product-concept-task-agent
+      name: Product Concept Task Agent
+      level: 3
+      type: worker
+      description: "Generates structured product concept documents with problem, solution, target user, and value hypothesis"
+      domain: ideation
+      capabilities: [concept-documentation, structured-ideation, hypothesis-formulation]
+      tools: [concept_template, hypothesis_builder]
+      tags: [task, product-concept, documentation, level3]
+
+    - id: value-proposition-task-agent
+      name: Value Proposition Task Agent
+      level: 3
+      type: worker
+      description: "Crafts compelling value propositions using the Value Proposition Canvas and Jobs-to-be-Done frameworks"
+      domain: ideation
+      capabilities: [value-proposition-design, benefit-articulation, pain-gain-mapping]
+      tools: [vp_canvas, benefit_articulator]
+      tags: [task, value-proposition, benefits, level3]
+
+    - id: product-narrative-task-agent
+      name: Product Narrative Task Agent
+      level: 3
+      type: worker
+      description: "Creates the product narrative including vision, mission, story arc, and messaging hierarchy"
+      domain: ideation
+      capabilities: [product-narrative, messaging, vision-articulation, story-development]
+      tools: [narrative_builder, messaging_framework]
+      tags: [task, narrative, messaging, level3]
+
+    - id: user-value-mapping-task-agent
+      name: User Value Mapping Task Agent
+      level: 3
+      type: worker
+      description: "Maps product capabilities to user values, goals, and emotional outcomes"
+      domain: ideation
+      capabilities: [user-value-mapping, benefit-mapping, emotional-outcome-identification]
+      tools: [value_mapper, user_goal_mapper]
+      tags: [task, user-value, mapping, level3]
+
+    - id: use-case-expansion-task-agent
+      name: Use Case Expansion Task Agent
+      level: 3
+      type: worker
+      description: "Expands a core use case into a comprehensive use case library covering primary, secondary, and edge scenarios"
+      domain: ideation
+      capabilities: [use-case-expansion, scenario-generation, edge-case-identification]
+      tools: [use_case_expander, scenario_generator]
+      tags: [task, use-cases, expansion, level3]
+
+    - id: innovation-option-task-agent
+      name: Innovation Option Task Agent
+      level: 3
+      type: worker
+      description: "Generates incremental, adjacent, and breakthrough innovation options for a given problem space"
+      domain: ideation
+      capabilities: [innovation-option-generation, horizon-planning, breakthrough-ideation]
+      tools: [innovation_canvas, horizon_planner]
+      tags: [task, innovation, options, level3]
+
+    - id: concept-screening-task-agent
+      name: Concept Screening Task Agent
+      level: 3
+      type: worker
+      description: "Applies structured screening criteria to evaluate and shortlist product concepts"
+      domain: ideation
+      capabilities: [concept-screening, criteria-evaluation, shortlisting]
+      tools: [screening_matrix, criteria_evaluator]
+      tags: [task, screening, concepts, level3]
+
+    - id: mvp-definition-task-agent
+      name: MVP Definition Task Agent
+      level: 3
+      type: worker
+      description: "Defines the minimum viable product scope by applying MVP principles, lean startup thinking, and risk prioritisation"
+      domain: ideation
+      capabilities: [mvp-definition, scope-prioritisation, lean-validation, risk-based-scoping]
+      tools: [mvp_canvas, scope_filter, risk_ranker]
+      tags: [task, mvp, scope, level3]
+
+    - id: v1-scope-task-agent
+      name: V1 Scope Task Agent
+      level: 3
+      type: worker
+      description: "Defines the v1 product scope beyond MVP, establishing the full first-release feature set and acceptance conditions"
+      domain: ideation
+      capabilities: [v1-scoping, feature-selection, release-definition, acceptance-criteria]
+      tools: [scope_builder, release_definer]
+      tags: [task, v1, scope, level3]
+
+    - id: differentiation-review-task-agent
+      name: Differentiation Review Task Agent
+      level: 3
+      type: worker
+      description: "Reviews the product concept for differentiation clarity, uniqueness, and defensibility"
+      domain: ideation
+      capabilities: [differentiation-review, uniqueness-assessment, defensibility-analysis]
+      tools: [differentiation_checker, uniqueness_scorer]
+      tags: [task, differentiation, review, level3]
+
+    - id: product-name-exploration-task-agent
+      name: Product Name Exploration Task Agent
+      level: 3
+      type: worker
+      description: "Generates and evaluates product name candidates against memorability, domain availability, and brand fit"
+      domain: ideation
+      capabilities: [name-generation, name-evaluation, brand-fit-assessment]
+      tools: [name_generator, domain_checker, brand_validator]
+      tags: [task, naming, branding, level3]
+
+    - id: problem-solution-fit-task-agent
+      name: Problem Solution Fit Task Agent
+      level: 3
+      type: worker
+      description: "Assesses the degree of fit between the defined problem and proposed solution using evidence-based scoring"
+      domain: ideation
+      capabilities: [problem-solution-fit, evidence-evaluation, fit-scoring]
+      tools: [fit_assessor, evidence_scorer]
+      tags: [task, problem-solution-fit, validation, level3]
+
+    # ── Level 3 Micro Agents ────────────────────────────────────────────────
+    - id: idea-mutator
+      name: Idea Mutator
+      level: 3
+      type: micro-agent
+      description: "Atomic unit: take an existing idea and generate permutations by applying mutation operators"
+      domain: ideation
+      capabilities: [idea-mutation, variation-generation]
+      tags: [micro, mutation, ideas, level3]
+
+    - id: value-prop-formatter
+      name: Value Prop Formatter
+      level: 3
+      type: micro-agent
+      description: "Atomic unit: format a raw value proposition into the canonical 'For X who Y, our product Z unlike W' structure"
+      domain: ideation
+      capabilities: [value-prop-formatting, narrative-structuring]
+      tags: [micro, formatting, value-prop, level3]
+
+    - id: concept-deduplicator
+      name: Concept Deduplicator
+      level: 3
+      type: micro-agent
+      description: "Atomic unit: detect and merge near-duplicate product concepts from a candidate list"
+      domain: ideation
+      capabilities: [deduplication, similarity-detection, concept-merging]
+      tags: [micro, deduplication, concepts, level3]
+
+    - id: benefit-tagger
+      name: Benefit Tagger
+      level: 3
+      type: micro-agent
+      description: "Atomic unit: tag concept benefits by type (functional, emotional, social, economic)"
+      domain: ideation
+      capabilities: [benefit-tagging, benefit-classification]
+      tags: [micro, tagging, benefits, level3]
+
+    - id: scope-boundary-checker
+      name: Scope Boundary Checker
+      level: 3
+      type: micro-agent
+      description: "Atomic unit: check if a proposed feature is within the defined concept scope boundaries"
+      domain: ideation
+      capabilities: [scope-checking, boundary-validation]
+      tags: [micro, scope, boundary, level3]
+
+    - id: mvp-filter-unit
+      name: MVP Filter Unit
+      level: 3
+      type: micro-agent
+      description: "Atomic unit: classify a feature as MVP-essential, nice-to-have, or post-MVP"
+      domain: ideation
+      capabilities: [mvp-filtering, feature-classification]
+      tags: [micro, mvp, filtering, level3]
+
+    - id: narrative-polisher
+      name: Narrative Polisher
+      level: 3
+      type: micro-agent
+      description: "Atomic unit: polish and sharpen a product narrative for clarity, tone, and impact"
+      domain: ideation
+      capabilities: [narrative-editing, tone-alignment, clarity-improvement]
+      tags: [micro, narrative, polishing, level3]
+
+    - id: differentiation-scorer
+      name: Differentiation Scorer
+      level: 3
+      type: micro-agent
+      description: "Atomic unit: score the uniqueness and defensibility of a product's differentiation angle"
+      domain: ideation
+      capabilities: [differentiation-scoring, moat-assessment]
+      tags: [micro, differentiation, scoring, level3]
+
+    - id: use-case-splitter
+      name: Use Case Splitter
+      level: 3
+      type: micro-agent
+      description: "Atomic unit: split a compound use case into atomic, independently testable use cases"
+      domain: ideation
+      capabilities: [use-case-splitting, atomisation]
+      tags: [micro, splitting, use-cases, level3]
+
+    - id: concept-novelty-detector
+      name: Concept Novelty Detector
+      level: 3
+      type: micro-agent
+      description: "Atomic unit: assess the novelty of a concept relative to known existing solutions"
+      domain: ideation
+      capabilities: [novelty-detection, prior-art-checking]
+      tags: [micro, novelty, detection, level3]
+
+  hierarchy:
+    level1: [ideation-orchestrator, concept-design-orchestrator, product-framing-orchestrator]
+    level2: [idea-generation-capability-agent, solution-framing-capability-agent, concept-validation-capability-agent, differentiation-capability-agent]
+    level3: [product-concept-task-agent, value-proposition-task-agent, product-narrative-task-agent, user-value-mapping-task-agent, use-case-expansion-task-agent, innovation-option-task-agent, concept-screening-task-agent, mvp-definition-task-agent, v1-scope-task-agent, differentiation-review-task-agent, product-name-exploration-task-agent, problem-solution-fit-task-agent, idea-mutator, value-prop-formatter, concept-deduplicator, benefit-tagger, scope-boundary-checker, mvp-filter-unit, narrative-polisher, differentiation-scorer, use-case-splitter, concept-novelty-detector]
+
+  capability_routing:
+    ideation-coordination:
+      primary: ideation-orchestrator
+      fallback: [concept-design-orchestrator]
+    concept-generation:
+      primary: idea-generation-capability-agent
+      fallback: [product-concept-task-agent]
+    concept-validation:
+      primary: concept-validation-capability-agent
+      fallback: [problem-solution-fit-task-agent]
+    mvp-definition:
+      primary: mvp-definition-task-agent
+      fallback: [scope-boundary-checker]
+    differentiation:
+      primary: differentiation-capability-agent
+      fallback: [differentiation-review-task-agent]

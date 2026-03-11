@@ -1,0 +1,408 @@
+apiVersion: ghatana.yappc/v2
+kind: DomainAgentCatalog
+
+metadata:
+  name: discovery
+  version: 1.0.0
+  description: "Discovery, market research, customer insight, and opportunity assessment agents"
+  domain: discovery
+  agentCount: 33
+
+spec:
+  agents:
+
+    # ── Level 1 Orchestrators ───────────────────────────────────────────────
+    - id: discovery-orchestrator
+      name: Discovery Orchestrator
+      level: 1
+      type: orchestrator
+      description: "Coordinates the full discovery process: market scanning, customer research, opportunity identification, and synthesis"
+      domain: discovery
+      capabilities: [discovery-coordination, research-synthesis, opportunity-identification, problem-framing]
+      routing:
+        input_types: [discovery_request, research_brief, market_query]
+        output_types: [discovery_report, opportunity_list, problem_map, market_insight_pack]
+      delegation:
+        can_delegate_to:
+          - market-research-orchestrator
+          - customer-insight-orchestrator
+          - opportunity-assessment-orchestrator
+          - trend-monitoring-capability-agent
+        escalates_to: portfolio-orchestrator
+      governance:
+        requires_approval: false
+        audit_trail: standard
+      tags: [orchestrator, discovery, research, level1]
+
+    - id: market-research-orchestrator
+      name: Market Research Orchestrator
+      level: 1
+      type: orchestrator
+      description: "Drives market landscape analysis, competitor intelligence, and regulatory environment scanning"
+      domain: discovery
+      capabilities: [market-research, competitor-analysis, regulatory-scanning, trend-identification]
+      routing:
+        input_types: [market_research_request, competitor_analysis_request]
+        output_types: [market_report, competitive_intelligence, regulatory_landscape]
+      delegation:
+        can_delegate_to:
+          - competitive-intelligence-capability-agent
+          - market-trend-scan-task-agent
+          - competitor-feature-comparison-task-agent
+          - regulatory-landscape-task-agent
+        escalates_to: discovery-orchestrator
+      tags: [orchestrator, market-research, competitive-intelligence, level1]
+
+    - id: customer-insight-orchestrator
+      name: Customer Insight Orchestrator
+      level: 1
+      type: orchestrator
+      description: "Synthesises customer research, interview data, support signals, and behavioral patterns into actionable insights"
+      domain: discovery
+      capabilities: [customer-research, interview-synthesis, feedback-analysis, persona-validation]
+      routing:
+        input_types: [customer_research_request, interview_data, support_tickets]
+        output_types: [customer_insight_pack, persona_validation, pain_point_map]
+      delegation:
+        can_delegate_to:
+          - customer-research-capability-agent
+          - interview-synthesis-task-agent
+          - support-ticket-clustering-task-agent
+          - user-review-mining-task-agent
+        escalates_to: discovery-orchestrator
+      tags: [orchestrator, customer-insight, research, level1]
+
+    - id: opportunity-assessment-orchestrator
+      name: Opportunity Assessment Orchestrator
+      level: 1
+      type: orchestrator
+      description: "Evaluates and scores identified opportunities against strategic fit, market size, and feasibility"
+      domain: discovery
+      capabilities: [opportunity-evaluation, scoring, feasibility-assessment, market-sizing]
+      routing:
+        input_types: [opportunity_list, assessment_request]
+        output_types: [scored_opportunities, opportunity_backlog, assessment_report]
+      delegation:
+        can_delegate_to:
+          - opportunity-scoring-capability-agent
+          - opportunity-hypothesis-task-agent
+          - opportunity-backlog-task-agent
+        escalates_to: discovery-orchestrator
+      tags: [orchestrator, opportunity, assessment, level1]
+
+    # ── Level 2 Capability Agents ───────────────────────────────────────────
+    - id: trend-monitoring-capability-agent
+      name: Trend Monitoring Capability Agent
+      level: 2
+      type: domain-expert
+      description: "Continuously monitors technology, market, and behavioral trends to detect emerging signals"
+      domain: discovery
+      capabilities: [trend-monitoring, signal-detection, foresight-analysis, pattern-recognition]
+      memory:
+        semantic:
+          enabled: true
+          categories: [trend-patterns, signal-sources, durability-indicators]
+        episodic:
+          enabled: true
+          retention_days: 730
+          categories: [detected-trends, trend-evolutions]
+      tools: [trend_monitor, signal_aggregator, news_analyzer]
+      tags: [capability, trend-monitoring, foresight, level2]
+
+    - id: customer-research-capability-agent
+      name: Customer Research Capability Agent
+      level: 2
+      type: domain-expert
+      description: "Conducts and synthesises customer research across interviews, surveys, and behavioral data"
+      domain: discovery
+      capabilities: [customer-research, interview-analysis, survey-synthesis, behavioral-analysis]
+      memory:
+        episodic:
+          enabled: true
+          retention_days: 365
+          categories: [customer-interviews, research-insights, persona-evidence]
+      tools: [interview_analyzer, survey_processor, sentiment_extractor]
+      tags: [capability, customer-research, interviews, level2]
+
+    - id: competitive-intelligence-capability-agent
+      name: Competitive Intelligence Capability Agent
+      level: 2
+      type: domain-expert
+      description: "Tracks competitor features, pricing, messaging, and strategic moves to maintain market awareness"
+      domain: discovery
+      capabilities: [competitor-tracking, feature-comparison, positioning-analysis, intelligence-synthesis]
+      memory:
+        semantic:
+          enabled: true
+          categories: [competitor-profiles, market-positioning, feature-matrices]
+      tools: [competitor_tracker, feature_matrix, web_scraper]
+      tags: [capability, competitive-intelligence, market, level2]
+
+    - id: problem-discovery-capability-agent
+      name: Problem Discovery Capability Agent
+      level: 2
+      type: domain-expert
+      description: "Discovers, articulates, and validates problems worth solving from multiple evidence sources"
+      domain: discovery
+      capabilities: [problem-identification, root-cause-analysis, impact-assessment, problem-validation]
+      memory:
+        episodic:
+          enabled: true
+          retention_days: 365
+          categories: [discovered-problems, validation-results]
+      tools: [feedback_aggregator, impact_assessor, user_research_analyzer]
+      tags: [capability, problem-discovery, validation, level2]
+
+    - id: opportunity-scoring-capability-agent
+      name: Opportunity Scoring Capability Agent
+      level: 2
+      type: domain-expert
+      description: "Scores and ranks opportunities against strategic value, market size, urgency, and feasibility dimensions"
+      domain: discovery
+      capabilities: [opportunity-scoring, market-sizing, urgency-assessment, feasibility-analysis]
+      tools: [scoring_engine, market_sizer, feasibility_checker]
+      tags: [capability, opportunity-scoring, ranking, level2]
+
+    # ── Level 3 Task Agents ─────────────────────────────────────────────────
+    - id: market-trend-scan-task-agent
+      name: Market Trend Scan Task Agent
+      level: 3
+      type: worker
+      description: "Scans market landscape for emerging trends, disruptions, and growth patterns"
+      domain: discovery
+      capabilities: [market-scanning, trend-identification, growth-analysis]
+      tools: [market_data_aggregator, trend_detector]
+      tags: [task, market-scan, trends, level3]
+
+    - id: competitor-feature-comparison-task-agent
+      name: Competitor Feature Comparison Task Agent
+      level: 3
+      type: worker
+      description: "Builds and maintains feature comparison matrices across key competitors"
+      domain: discovery
+      capabilities: [competitor-comparison, feature-matrix, differentiation-analysis]
+      tools: [feature_matrix, competitor_tracker]
+      tags: [task, competitor, features, level3]
+
+    - id: user-review-mining-task-agent
+      name: User Review Mining Task Agent
+      level: 3
+      type: worker
+      description: "Mines app store reviews, social media, and support tickets for user sentiment and pain points"
+      domain: discovery
+      capabilities: [review-mining, sentiment-analysis, pain-point-extraction]
+      tools: [review_miner, sentiment_analyzer, nlp_extractor]
+      tags: [task, review-mining, sentiment, level3]
+
+    - id: interview-synthesis-task-agent
+      name: Interview Synthesis Task Agent
+      level: 3
+      type: worker
+      description: "Synthesises qualitative research from customer interviews into structured insights and themes"
+      domain: discovery
+      capabilities: [interview-synthesis, theme-extraction, insight-clustering, affinity-mapping]
+      tools: [transcript_analyzer, theme_extractor, affinity_mapper]
+      tags: [task, interview, synthesis, level3]
+
+    - id: support-ticket-clustering-task-agent
+      name: Support Ticket Clustering Task Agent
+      level: 3
+      type: worker
+      description: "Clusters support tickets by theme, severity, and recurrence to surface the most pressing user problems"
+      domain: discovery
+      capabilities: [ticket-clustering, theme-identification, frequency-analysis]
+      tools: [ticket_clusterer, frequency_analyzer]
+      tags: [task, support-tickets, clustering, level3]
+
+    - id: opportunity-hypothesis-task-agent
+      name: Opportunity Hypothesis Task Agent
+      level: 3
+      type: worker
+      description: "Formulates structured opportunity hypotheses linking problem evidence to potential solutions"
+      domain: discovery
+      capabilities: [hypothesis-formulation, evidence-linking, opportunity-framing]
+      tools: [hypothesis_builder, evidence_linker]
+      tags: [task, hypothesis, opportunity, level3]
+
+    - id: segment-analysis-task-agent
+      name: Segment Analysis Task Agent
+      level: 3
+      type: worker
+      description: "Analyses market and customer segments to identify highest-value targets"
+      domain: discovery
+      capabilities: [segment-analysis, segment-sizing, segment-scoring, target-identification]
+      tools: [segment_analyzer, market_sizer]
+      tags: [task, segmentation, analysis, level3]
+
+    - id: problem-statement-task-agent
+      name: Problem Statement Task Agent
+      level: 3
+      type: worker
+      description: "Crafts clear, evidence-backed problem statements that meet SMART criteria"
+      domain: discovery
+      capabilities: [problem-statement-drafting, evidence-validation, measurability-checking]
+      tools: [problem_statement_builder, smart_validator]
+      tags: [task, problem-statement, drafting, level3]
+
+    - id: jobs-to-be-done-task-agent
+      name: Jobs To Be Done Task Agent
+      level: 3
+      type: worker
+      description: "Applies JTBD framework to identify customer functional, emotional, and social jobs"
+      domain: discovery
+      capabilities: [jtbd-analysis, job-extraction, outcome-mapping, demand-characterisation]
+      tools: [jtbd_framework, outcome_mapper]
+      tags: [task, jtbd, customer-jobs, level3]
+
+    - id: regulatory-landscape-task-agent
+      name: Regulatory Landscape Task Agent
+      level: 3
+      type: worker
+      description: "Maps regulatory requirements, compliance obligations, and emerging regulations relevant to the product domain"
+      domain: discovery
+      capabilities: [regulatory-scanning, compliance-mapping, regulation-tracking]
+      tools: [regulation_scanner, compliance_mapper]
+      tags: [task, regulatory, compliance, level3]
+
+    - id: geography-specific-need-task-agent
+      name: Geography Specific Need Task Agent
+      level: 3
+      type: worker
+      description: "Identifies geography-specific user needs, regulatory requirements, and market dynamics"
+      domain: discovery
+      capabilities: [geo-analysis, localisation-needs, regional-regulations, cultural-context]
+      tools: [geo_analyzer, regional_data_fetcher]
+      tags: [task, geo, localisation, level3]
+
+    - id: demand-signal-detection-task-agent
+      name: Demand Signal Detection Task Agent
+      level: 3
+      type: worker
+      description: "Detects early demand signals from search trends, waitlists, social signals, and partner requests"
+      domain: discovery
+      capabilities: [demand-signal-detection, signal-aggregation, early-warning]
+      tools: [signal_detector, trend_aggregator]
+      tags: [task, demand-signals, detection, level3]
+
+    - id: opportunity-backlog-task-agent
+      name: Opportunity Backlog Task Agent
+      level: 3
+      type: worker
+      description: "Maintains and curates the opportunity backlog, ensuring relevance, scoring, and readiness for ideation"
+      domain: discovery
+      capabilities: [backlog-management, opportunity-curation, readiness-assessment]
+      tools: [backlog_manager, opportunity_curator]
+      tags: [task, backlog, opportunity, level3]
+
+    # ── Level 3 Micro Agents ────────────────────────────────────────────────
+    - id: review-sentiment-unit
+      name: Review Sentiment Unit
+      level: 3
+      type: micro-agent
+      description: "Atomic unit: classify a single review as positive, negative, or neutral with topic extraction"
+      domain: discovery
+      capabilities: [sentiment-classification, topic-extraction]
+      tags: [micro, sentiment, reviews, level3]
+
+    - id: theme-clusterer
+      name: Theme Clusterer
+      level: 3
+      type: micro-agent
+      description: "Atomic unit: cluster a set of text items into thematic groups"
+      domain: discovery
+      capabilities: [clustering, theme-extraction]
+      tags: [micro, clustering, themes, level3]
+
+    - id: competitor-diff-unit
+      name: Competitor Diff Unit
+      level: 3
+      type: micro-agent
+      description: "Atomic unit: compute differential between our feature set and a single competitor"
+      domain: discovery
+      capabilities: [feature-diff, gap-identification]
+      tags: [micro, competitor, diff, level3]
+
+    - id: support-issue-tagger
+      name: Support Issue Tagger
+      level: 3
+      type: micro-agent
+      description: "Atomic unit: apply structured tags (category, severity, product-area) to a single support ticket"
+      domain: discovery
+      capabilities: [issue-tagging, taxonomy-classification]
+      tags: [micro, support, tagging, level3]
+
+    - id: jtbd-pattern-extractor
+      name: JTBD Pattern Extractor
+      level: 3
+      type: micro-agent
+      description: "Atomic unit: extract job-to-be-done statements from raw interview transcripts"
+      domain: discovery
+      capabilities: [jtbd-extraction, pattern-recognition]
+      tags: [micro, jtbd, extraction, level3]
+
+    - id: segment-scorer
+      name: Segment Scorer
+      level: 3
+      type: micro-agent
+      description: "Atomic unit: score a market segment on size, growth, accessibility, and strategic fit"
+      domain: discovery
+      capabilities: [segment-scoring]
+      tags: [micro, segment, scoring, level3]
+
+    - id: pain-point-normalizer
+      name: Pain Point Normalizer
+      level: 3
+      type: micro-agent
+      description: "Atomic unit: normalise free-text pain-point descriptions to a canonical structured format"
+      domain: discovery
+      capabilities: [normalisation, pain-point-structuring]
+      tags: [micro, normalisation, pain-points, level3]
+
+    - id: trend-change-detector
+      name: Trend Change Detector
+      level: 3
+      type: micro-agent
+      description: "Atomic unit: detect inflection points and momentum changes in time-series trend data"
+      domain: discovery
+      capabilities: [change-detection, trend-analysis]
+      tags: [micro, trend, change-detection, level3]
+
+    - id: research-evidence-linker
+      name: Research Evidence Linker
+      level: 3
+      type: micro-agent
+      description: "Atomic unit: link a claim or hypothesis to one or more evidence artefacts"
+      domain: discovery
+      capabilities: [evidence-linking, source-attribution]
+      tags: [micro, evidence, linking, level3]
+
+    - id: opportunity-confidence-unit
+      name: Opportunity Confidence Unit
+      level: 3
+      type: micro-agent
+      description: "Atomic unit: compute confidence score for an opportunity based on evidence strength and coverage"
+      domain: discovery
+      capabilities: [confidence-scoring, evidence-evaluation]
+      tags: [micro, confidence, scoring, level3]
+
+  hierarchy:
+    level1: [discovery-orchestrator, market-research-orchestrator, customer-insight-orchestrator, opportunity-assessment-orchestrator]
+    level2: [trend-monitoring-capability-agent, customer-research-capability-agent, competitive-intelligence-capability-agent, problem-discovery-capability-agent, opportunity-scoring-capability-agent]
+    level3: [market-trend-scan-task-agent, competitor-feature-comparison-task-agent, user-review-mining-task-agent, interview-synthesis-task-agent, support-ticket-clustering-task-agent, opportunity-hypothesis-task-agent, segment-analysis-task-agent, problem-statement-task-agent, jobs-to-be-done-task-agent, regulatory-landscape-task-agent, geography-specific-need-task-agent, demand-signal-detection-task-agent, opportunity-backlog-task-agent, review-sentiment-unit, theme-clusterer, competitor-diff-unit, support-issue-tagger, jtbd-pattern-extractor, segment-scorer, pain-point-normalizer, trend-change-detector, research-evidence-linker, opportunity-confidence-unit]
+
+  capability_routing:
+    discovery-coordination:
+      primary: discovery-orchestrator
+      fallback: [customer-insight-orchestrator]
+    market-research:
+      primary: market-research-orchestrator
+      fallback: [competitive-intelligence-capability-agent]
+    customer-insight:
+      primary: customer-insight-orchestrator
+      fallback: [customer-research-capability-agent]
+    opportunity-scoring:
+      primary: opportunity-assessment-orchestrator
+      fallback: [opportunity-scoring-capability-agent]
+    trend-monitoring:
+      primary: trend-monitoring-capability-agent
+      fallback: [market-trend-scan-task-agent]

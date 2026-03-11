@@ -1,0 +1,100 @@
+id: event-architecture-capability-agent
+name: Event Architecture Capability Agent
+version: 1.0.0
+description: "Designs event-driven architecture: event modelling, schema design, topic and partition strategy, event sourcing patterns, and CQRS implementation guidance"
+
+metadata:
+  level: 2
+  domain: architecture
+  tags: [capability, event-architecture, event-driven, kafka, cqrs, event-sourcing, level2]
+
+generator:
+  type: PIPELINE
+  steps:
+    - name: event_storming_synthesis
+      type: LLM
+      provider: ANTHROPIC
+      model: claude-3-5-sonnet-20241022
+      temperature: 0.2
+      max_tokens: 3000
+      prompt: |
+        Perform event storming analysis to derive event model:
+
+        Business process: {{input}}
+        Domain model: {{context.domain_model}}
+        Integration requirements: {{context.integration_requirements}}
+
+        Identify: domain events (what happened), commands (what triggers events), aggregates (what owns state), read models (what queries need), external systems (integration boundaries). Output event model JSON using standard event storming notation.
+    - name: event_schema_design
+      type: LLM
+      provider: ANTHROPIC
+      model: claude-3-5-sonnet-20241022
+      temperature: 0.1
+      max_tokens: 3000
+      prompt: |
+        Design event schemas and transport topology:
+
+        Event model: {{event_storming_synthesis}}
+        Transport platform: {{context.event_platform}}
+        Volume and latency requirements: {{context.volume_requirements}}
+
+        For each event: schema (Avro/Protobuf/JSON), required and optional fields, versioning strategy, topic name, partition key, retention policy, consumer groups, ordering guarantees needed. Output schema and topology spec.
+    - name: sourcing_and_cqrs_guidance
+      type: LLM
+      provider: ANTHROPIC
+      model: claude-3-5-sonnet-20241022
+      temperature: 0.1
+      max_tokens: 2500
+      prompt: |
+        Recommend event sourcing and CQRS implementation approach:
+
+        Event model: {{event_storming_synthesis}}
+        Read patterns: {{context.read_patterns}}
+        Performance requirements: {{context.sla_requirements}}
+
+        Determine: which aggregates benefit from event sourcing (vs CRUD), event store requirements (append-only, snapshots, projections), CQRS read model design, projection rebuild strategy, eventual consistency implications and mitigations.
+
+memory:
+  episodic:
+    enabled: true
+    retention_days: 730
+    categories: [event-models, schema-designs, cqrs-designs, event-architecture-adrs]
+  semantic:
+    enabled: true
+    categories: [event-patterns, kafka-topology-templates, cqrs-patterns]
+  procedural:
+    enabled: true
+    categories: [event-storming-method, schema-design-rules, cqrs-implementation-guide]
+
+tools: [event_modeller, schema_registry, kafka_topology_designer, cqrs_framework_docs]
+
+capabilities:
+  - event-storming
+  - event-schema-design
+  - topic-partition-strategy
+  - event-sourcing-design
+  - cqrs-design
+
+routing:
+  input_types: [event_architecture_request, event_modelling_request, cqrs_design_request]
+  output_types: [event_model, event_schema_set, kafka_topology_spec, cqrs_design, sourcing_guide]
+
+delegation:
+  can_delegate_to:
+    - event-storming-task-agent
+    - schema-design-task-agent
+    - topology-task-agent
+    - cqrs-design-task-agent
+    - event-sourcing-task-agent
+  escalates_to: architecture-orchestrator
+
+governance:
+  requires_approval: true
+  approval_chain: [architecture-board]
+  can_block: false
+  audit_trail: comprehensive
+
+performance:
+  expected_latency_ms: 8000
+  max_latency_ms: 30000
+  timeout_ms: 120000

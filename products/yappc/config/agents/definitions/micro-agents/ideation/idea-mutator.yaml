@@ -1,0 +1,51 @@
+id: idea-mutator
+name: Idea Mutator
+version: 1.0.0
+description: "Generate N variations of a product idea by applying specified mutation operators (expand, constrain, reverse, combine)"
+
+metadata:
+  level: 3
+  domain: ideation
+  type: micro-agent
+  tags: [idea-mutation, variation-generation, level3, micro]
+
+generator:
+  type: RULE_BASED
+  steps:
+    - name: execute
+      type: RULE_BASED
+      rules:
+        - "idea-mutation"
+        - "variation-generation"
+
+memory:
+  episodic:
+    enabled: false
+  semantic:
+    enabled: false
+  procedural:
+    enabled: false
+
+tools: [mutation_engine]
+
+capabilities:
+  - idea-mutation
+  - variation-generation
+
+routing:
+  input_types: [mutation_request]
+  output_types: [idea_variations]
+
+delegation:
+  can_delegate_to: []
+  escalates_to: solution-framing-capability-agent
+
+governance:
+  requires_approval: false
+  can_block: false
+  audit_trail: standard
+
+performance:
+  expected_latency_ms: 300
+  max_latency_ms: 1500
+  timeout_ms: 3000

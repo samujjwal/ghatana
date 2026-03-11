@@ -1,0 +1,96 @@
+id: feedback-capability-agent
+name: Feedback Capability Agent
+version: 1.0.0
+description: "Ingests multi-channel feedback (in-app, email, support tickets, app-store reviews, social), classifies by type and theme using NLP, performs sentiment analysis, clusters themes, and surfaces top-priority feedback signals"
+
+metadata:
+  level: 2
+  domain: product-intelligence
+  tags: [capability, feedback, nlp, sentiment, theme-clustering, voc, level2]
+
+generator:
+  type: PIPELINE
+  steps:
+    - name: feedback_collection
+      type: SERVICE_CALL
+      service: feedback-ingestion
+      endpoint: /collect
+      description: "Pull feedback from all channels: in-app, email, support tickets, app-store, NPS surveys, Intercom, Slack"
+    - name: feedback_classification
+      type: LLM
+      provider: ANTHROPIC
+      model: claude-3-5-sonnet-20241022
+      temperature: 0.0
+      max_tokens: 3000
+      prompt: |
+        Classify and score incoming feedback items:
+
+        Feedback items: {{feedback_collection}}
+        Product taxonomy: {{context.product_taxonomy}}
+        Existing feature areas: {{context.feature_areas}}
+
+        For each feedback item classify:
+        - Type: bug-report | feature-request | praise | question | churn-signal | nps-comment
+        - Feature area: map to internal taxonomy
+        - Sentiment: positive / neutral / negative with score (0-1)
+        - Urgency: critical (churn signal / P0 bug) / high / medium / low
+        - Verbatim quality: signal-rich | average | noise
+
+        Filter out noise (<0.3 quality). Output classified feedback JSONL.
+    - name: theme_clustering
+      type: LLM
+      provider: ANTHROPIC
+      model: claude-3-5-sonnet-20241022
+      temperature: 0.2
+      max_tokens: 3000
+      prompt: |
+        Cluster classified feedback into actionable themes:
+
+        Classified feedback: {{feedback_classification}}
+        Prior themes: {{context.prior_themes}}
+        Time period: {{context.time_period}}
+
+        Identify: top 10 emerging themes by volume and urgency weight, trend vs. prior period (new/growing/stable/declining), representative verbatim quotes (2-3 per theme), affected user segments, estimated users impacted per theme. Surface churn-risk signals separately. Output theme report with RICE input data ready for scoring.
+
+memory:
+  episodic:
+    enabled: true
+    retention_days: 730
+    categories: [feedback-ingestion-runs, theme-clustering-results, sentiment-trends]
+  semantic:
+    enabled: true
+    categories: [feedback-taxonomy, theme-library, product-known-issues]
+  procedural:
+    enabled: true
+    categories: [classification-criteria, theme-clustering-algorithms, sentiment-scoring]
+
+tools: [feedback_collector, nlp_classifier, sentiment_analyser, theme_clusterer]
+
+capabilities:
+  - multi-channel-feedback-ingestion
+  - nlp-classification
+  - sentiment-analysis
+  - theme-clustering
+  - churn-signal-detection
+
+routing:
+  input_types: [feedback_collection_request, voc_review_request, nps_analysis_request]
+  output_types: [classified_feedback, theme_cluster_report, sentiment_trend_report, churn_signal_alert]
+
+delegation:
+  can_delegate_to:
+    - sentiment-analysis-task-agent
+    - feedback-theme-clustering-task-agent
+    - feedback-prioritisation-task-agent
+    - nps-analysis-task-agent
+  escalates_to: product-intelligence-orchestrator
+
+governance:
+  requires_approval: false
+  can_block: false
+  audit_trail: standard
+
+performance:
+  expected_latency_ms: 8000
+  max_latency_ms: 45000
+  timeout_ms: 180000

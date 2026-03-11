@@ -1,0 +1,63 @@
+id: rightsizing-task-agent
+name: Rightsizing Task Agent
+version: 1.0.0
+description: "Identify over-provisioned resources using utilisation data and recommend optimal size configurations with savings estimates"
+
+metadata:
+  level: 3
+  domain: operations
+  type: worker
+  tags: [rightsizing-analysis, utilisation-evaluation, savings-estimation, level3]
+
+generator:
+  type: PIPELINE
+  steps:
+    - name: execute
+      type: LLM
+      provider: ANTHROPIC
+      model: claude-3-5-sonnet-20241022
+      temperature: 0.1
+      max_tokens: 2000
+      prompt: |
+        Execute task: Identify over-provisioned resources using utilisation data and recommend optimal size configurations with savings estimates
+
+        Input: {{input}}
+        Context: {{context}}
+
+        Produce a structured, precise output meeting the task specification.
+
+memory:
+  episodic:
+    enabled: true
+    retention_days: 90
+    categories: [task-executions]
+  semantic:
+    enabled: true
+    categories: [domain-knowledge]
+  procedural:
+    enabled: false
+
+tools: [rightsizing_engine, utilisation_reader, savings_calculator]
+
+capabilities:
+  - rightsizing-analysis
+  - utilisation-evaluation
+  - savings-estimation
+
+routing:
+  input_types: [rightsizing_request]
+  output_types: [rightsizing_recommendations]
+
+delegation:
+  can_delegate_to: []
+  escalates_to: cost-management-capability-agent
+
+governance:
+  requires_approval: false
+  can_block: false
+  audit_trail: standard
+
+performance:
+  expected_latency_ms: 3000
+  max_latency_ms: 15000
+  timeout_ms: 30000

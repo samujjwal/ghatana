@@ -1,0 +1,63 @@
+id: graphql-schema-task-agent
+name: Graphql Schema Task Agent
+version: 1.0.0
+description: "Design GraphQL schemas with type definitions, queries, mutations, subscriptions, and federation directives"
+
+metadata:
+  level: 3
+  domain: architecture
+  type: worker
+  tags: [graphql-schema-design, type-system-definition, federation-design, level3]
+
+generator:
+  type: PIPELINE
+  steps:
+    - name: execute
+      type: LLM
+      provider: ANTHROPIC
+      model: claude-3-5-sonnet-20241022
+      temperature: 0.1
+      max_tokens: 2000
+      prompt: |
+        Execute task: Design GraphQL schemas with type definitions, queries, mutations, subscriptions, and federation directives
+
+        Input: {{input}}
+        Context: {{context}}
+
+        Produce a structured, precise output meeting the task specification.
+
+memory:
+  episodic:
+    enabled: true
+    retention_days: 90
+    categories: [task-executions]
+  semantic:
+    enabled: true
+    categories: [domain-knowledge]
+  procedural:
+    enabled: false
+
+tools: [graphql_schema_builder, federation_config_writer]
+
+capabilities:
+  - graphql-schema-design
+  - type-system-definition
+  - federation-design
+
+routing:
+  input_types: [graphql_schema_request]
+  output_types: [graphql_schema]
+
+delegation:
+  can_delegate_to: []
+  escalates_to: service-design-capability-agent
+
+governance:
+  requires_approval: false
+  can_block: false
+  audit_trail: standard
+
+performance:
+  expected_latency_ms: 4000
+  max_latency_ms: 20000
+  timeout_ms: 40000

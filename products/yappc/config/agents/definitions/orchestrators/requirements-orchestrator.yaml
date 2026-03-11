@@ -1,0 +1,101 @@
+id: requirements-orchestrator
+name: Requirements Orchestrator
+version: 1.0.0
+description: "Orchestrates requirements engineering: elicitation, analysis, specification, acceptance criteria generation, and requirements traceability"
+
+metadata:
+  level: 1
+  domain: requirements
+  tags: [orchestrator, requirements, specification, acceptance-criteria, level1]
+
+generator:
+  type: PIPELINE
+  steps:
+    - name: requirements_elicitation
+      type: LLM
+      provider: ANTHROPIC
+      model: claude-3-5-sonnet-20241022
+      temperature: 0.3
+      max_tokens: 4000
+      prompt: |
+        You are the Requirements Orchestrator. Elicit and structure requirements from:
+
+        Source: {{input}}
+        Personas: {{context.personas}}
+        Business rules: {{context.business_rules}}
+        Constraints: {{context.constraints}}
+
+        Extract and categorise:
+        1. Functional requirements (user stories + acceptance criteria in Given/When/Then)
+        2. Non-functional requirements (performance, security, scalability, accessibility)
+        3. Business rules and constraints
+        4. Domain assumptions
+        5. Out-of-scope exclusions
+
+        Format requirements with IDs (FR-001, NFR-001, BR-001).
+        Output as JSON: {functional_reqs, nfr_reqs, business_rules, assumptions, out_of_scope}
+    - name: requirements_analysis
+      type: LLM
+      provider: ANTHROPIC
+      model: claude-3-5-sonnet-20241022
+      temperature: 0.2
+      max_tokens: 3000
+      prompt: |
+        Analyse requirements for quality issues:
+        Requirements: {{requirements_elicitation}}
+
+        Check for: ambiguity, incompleteness, inconsistency, untestability, over-specification.
+        For each issue: {req_id, issue_type, description, suggested_fix}
+    - name: spec_generation_dispatch
+      type: SERVICE_CALL
+      service: agent-dispatcher
+      endpoint: /dispatch
+      description: "Dispatch to specification-orchestrator for formatted spec generation"
+    - name: traceability_dispatch
+      type: SERVICE_CALL
+      service: agent-dispatcher
+      endpoint: /dispatch
+      description: "Dispatch to traceability-orchestrator to build trace matrix"
+
+memory:
+  episodic:
+    enabled: true
+    retention_days: 1095
+    categories: [requirements-sessions, specification-versions, requirements-changes]
+  semantic:
+    enabled: true
+    categories: [requirements-patterns, domain-glossary, acceptance-criteria-templates]
+  procedural:
+    enabled: true
+    categories: [elicitation-techniques, requirements-quality-rules, specification-templates]
+
+tools: [requirements_extractor, requirement_analyser, spec_builder, trace_matrix_builder]
+
+capabilities:
+  - requirements-elicitation
+  - requirements-analysis
+  - specification-generation
+  - acceptance-criteria-creation
+  - traceability-management
+
+routing:
+  input_types: [product_brief, design_brief, feature_request, user_story, epic]
+  output_types: [requirements_spec, acceptance_criteria, nfr_set, requirements_analysis_report]
+
+delegation:
+  can_delegate_to:
+    - specification-orchestrator
+    - traceability-orchestrator
+    - architecture-orchestrator
+    - ux-orchestrator
+  escalates_to: product-strategy-orchestrator
+
+governance:
+  requires_approval: false
+  can_block: false
+  audit_trail: standard
+
+performance:
+  expected_latency_ms: 10000
+  max_latency_ms: 90000
+  timeout_ms: 120000

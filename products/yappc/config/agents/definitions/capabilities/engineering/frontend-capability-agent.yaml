@@ -1,0 +1,100 @@
+id: frontend-capability-agent
+name: Frontend Engineering Capability Agent
+version: 1.0.0
+description: "Leads frontend engineering: React/RN component generation, state management architecture, performance optimisation, bundle analysis, and cross-browser compatibility"
+
+metadata:
+  level: 2
+  domain: engineering
+  tags: [capability, frontend, react, state-management, performance, accessibility, level2]
+
+generator:
+  type: PIPELINE
+  steps:
+    - name: frontend_design_analysis
+      type: LLM
+      provider: ANTHROPIC
+      model: claude-3-5-sonnet-20241022
+      temperature: 0.1
+      max_tokens: 2500
+      prompt: |
+        Analyse frontend requirements and design:
+
+        Feature spec: {{input}}
+        Design system: {{context.design_system}}
+        State architecture: {{context.state_architecture}}
+        Performance budgets: {{context.performance_budgets}}
+
+        Break down: component hierarchy, state ownership (local vs Jotai vs server), data fetching strategy (TanStack Query), event handling model, re-render optimisation opportunities, code splitting points. Output implementation plan JSON.
+    - name: component_generation_spec
+      type: LLM
+      provider: ANTHROPIC
+      model: claude-3-5-sonnet-20241022
+      temperature: 0.2
+      max_tokens: 4000
+      prompt: |
+        Generate component specifications for implementation:
+
+        Implementation plan: {{frontend_design_analysis}}
+        Component library: {{context.component_library}}
+        TypeScript strictness: {{context.ts_config}}
+
+        For each new component: props interface (TypeScript), state shape, hooks needed, event handlers, accessibility (ARIA roles, keyboard handling), test strategy (RTL selectors, key interactions to test), Storybook story variants. Output component specs.
+    - name: performance_optimisation_plan
+      type: LLM
+      provider: ANTHROPIC
+      model: claude-3-5-sonnet-20241022
+      temperature: 0.1
+      max_tokens: 2000
+      prompt: |
+        Plan frontend performance optimisations:
+
+        Component specs: {{component_generation_spec}}
+        Current perf metrics: {{context.current_perf_metrics}}
+        Target Core Web Vitals: {{context.cwv_targets}}
+
+        Identify: memo opportunities (React.memo, useMemo, useCallback), virtualisation needs (large lists), lazy loading candidates, bundle splitting opportunities, image optimisation requirements, CSS-in-JS vs Tailwind performance trade-offs.
+
+memory:
+  episodic:
+    enabled: true
+    retention_days: 365
+    categories: [component-specs, feature-implementations, perf-optimisations, bundle-analyses]
+  semantic:
+    enabled: true
+    categories: [component-patterns, react-patterns, state-architecture-library]
+  procedural:
+    enabled: true
+    categories: [component-generation-rules, state-management-patterns, perf-optimisation-techniques]
+
+tools: [component_generator, bundle_analyser, perf_profiler, accessibility_scanner]
+
+capabilities:
+  - react-component-generation
+  - state-management-architecture
+  - performance-optimisation
+  - bundle-analysis
+  - accessibility-implementation
+
+routing:
+  input_types: [frontend_feature_request, component_request, perf_review, bundle_analysis_request]
+  output_types: [component_specs, implementation_plan, perf_optimisation_plan, bundle_report]
+
+delegation:
+  can_delegate_to:
+    - react-component-writer
+    - react-expert
+    - front-end-perf-task-agent
+    - bundle-analysis-task-agent
+    - a11y-implementation-task-agent
+  escalates_to: frontend-engineering-orchestrator
+
+governance:
+  requires_approval: false
+  can_block: false
+  audit_trail: standard
+
+performance:
+  expected_latency_ms: 5000
+  max_latency_ms: 20000
+  timeout_ms: 60000

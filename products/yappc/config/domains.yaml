@@ -67,3 +67,115 @@ domains:
     personas: ["designer"]
     phases: ["intent", "context", "plan", "execute"]
     capabilities: ["ui-design", "ux-research", "prototyping"]
+
+  # ── Strategic & Product Domains (new) ────────────────────────────────────
+
+  - id: "portfolio"
+    name: "Portfolio Management"
+    description: "Executive portfolio strategy, investment planning, and initiative prioritization"
+    color: "#7c3aed"
+    icon: "📊"
+    order: 7
+    personas: ["product-owner", "innovation-lead"]
+    phases: ["intent", "context", "plan", "observe"]
+    capabilities: ["portfolio-analysis", "investment-evaluation", "roadmap-strategy"]
+    orchestrator: portfolio-orchestrator
+
+  - id: "discovery"
+    name: "Product Discovery"
+    description: "User research, market analysis, and opportunity identification"
+    color: "#0891b2"
+    icon: "🔍"
+    order: 8
+    personas: ["product-owner", "ux-researcher", "innovation-lead"]
+    phases: ["intent", "context", "observe", "learn"]
+    capabilities: ["user-research", "market-analysis", "insight-synthesis"]
+    orchestrator: discovery-orchestrator
+
+  - id: "ideation"
+    name: "Ideation & Innovation"
+    description: "Structured concept generation, feasibility assessment, and innovation scouting"
+    color: "#d97706"
+    icon: "💡"
+    order: 9
+    personas: ["product-owner", "innovation-lead"]
+    phases: ["intent", "context", "execute", "verify"]
+    capabilities: ["concept-generation", "feasibility-analysis", "innovation-scouting"]
+    orchestrator: ideation-orchestrator
+
+  - id: "requirements"
+    name: "Requirements Engineering"
+    description: "Requirements capture, story mapping, acceptance criteria, and traceability"
+    color: "#16a34a"
+    icon: "📋"
+    order: 10
+    personas: ["product-owner", "developer", "architect"]
+    phases: ["intent", "context", "plan", "execute", "verify", "institutionalize"]
+    capabilities: ["requirements-analysis", "story-mapping", "acceptance-criteria-writing", "traceability-management"]
+    orchestrator: requirements-orchestrator
+
+  - id: "ux"
+    name: "UX Design"
+    description: "End-to-end UX: research, interaction design, prototyping, usability testing, accessibility"
+    color: "#db2777"
+    icon: "🖌️"
+    order: 11
+    personas: ["designer", "ux-researcher"]
+    phases: ["intent", "context", "plan", "execute", "verify"]
+    capabilities: ["ux-research", "interaction-design", "prototype-building", "usability-testing", "accessibility-auditing"]
+    orchestrator: ux-orchestrator
+
+  - id: "architecture"
+    name: "Software Architecture"
+    description: "System design, API architecture, data modeling, security architecture, and ADR management"
+    color: "#6d28d9"
+    icon: "🏛️"
+    order: 12
+    personas: ["architect", "developer"]
+    phases: ["context", "plan", "execute", "verify", "institutionalize"]
+    capabilities: ["system-design", "api-architecture", "data-architecture", "security-architecture", "adr-writing"]
+    orchestrator: architecture-orchestrator
+
+  - id: "engineering"
+    name: "Engineering Excellence"
+    description: "Code quality, technical debt management, platform engineering, and developer experience"
+    color: "#0f766e"
+    icon: "⚙️"
+    order: 13
+    personas: ["developer", "platform-engineer"]
+    phases: ["context", "execute", "verify", "learn"]
+    capabilities: ["code-quality-governance", "technical-debt-management", "platform-engineering", "devex-optimization"]
+    orchestrator: engineering-orchestrator
+
+  - id: "ai"
+    name: "AI & ML Engineering"
+    description: "Model development, prompt engineering, model evaluation, AI safety, and semantic search"
+    color: "#4f46e5"
+    icon: "🤖"
+    order: 14
+    personas: ["ai-engineer", "data-engineer", "developer"]
+    phases: ["intent", "context", "plan", "execute", "verify", "observe", "learn"]
+    capabilities: ["ml-engineering", "prompt-engineering", "model-evaluation", "ai-safety-review", "semantic-search"]
+    orchestrator: ai-orchestrator
+
+  - id: "operations"
+    name: "Operations & SRE"
+    description: "Site reliability, infrastructure management, incident response, change management, and cost optimization"
+    color: "#dc2626"
+    icon: "🔧"
+    order: 15
+    personas: ["devops", "platform-engineer"]
+    phases: ["context", "execute", "verify", "learn", "institutionalize"]
+    capabilities: ["site-reliability-engineering", "infrastructure-management", "on-call-coordination", "change-management", "cost-optimization"]
+    orchestrator: operations-orchestrator
+
+  - id: "product-intelligence"
+    name: "Product Intelligence"
+    description: "Feedback analysis, A/B experimentation, product analytics, and enhancement prioritization"
+    color: "#0369a1"
+    icon: "📈"
+    order: 16
+    personas: ["product-owner", "data-engineer", "innovation-lead"]
+    phases: ["context", "execute", "verify", "learn", "institutionalize"]
+    capabilities: ["feedback-analysis", "experimentation-coordination", "product-analytics", "enhancement-prioritization"]
+    orchestrator: product-intelligence-orchestrator

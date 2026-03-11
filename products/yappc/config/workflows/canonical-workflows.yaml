@@ -474,3 +474,239 @@ workflows:
           - institutionalize
         tasks:
           - collab-010 # Knowledge Sharing
+
+  # ===== New Domain Workflows (10 Strategic Domains) =====
+
+  - id: portfolio-review
+    name: "Portfolio Review"
+    description: "Comprehensive portfolio health assessment and roadmap alignment workflow"
+    category: strategic
+    icon: "dashboard"
+    color: "#7c3aed"
+    estimated_duration: "1-2 days"
+    lifecycle_stages: [intent, context, plan, execute, observe]
+    orchestrator: portfolio-orchestrator
+    phases:
+      - id: portfolio-discovery
+        name: "Portfolio Discovery"
+        stages: [intent, context]
+        agents: [portfolio-analyst-capability-agent, metrics-aggregator-capability-agent]
+      - id: portfolio-assessment
+        name: "Portfolio Assessment"
+        stages: [plan, execute]
+        agents: [investment-evaluator-capability-agent, portfolio-health-monitor-capability-agent, dependency-mapper-capability-agent]
+      - id: strategy-alignment
+        name: "Strategy Alignment"
+        stages: [observe]
+        agents: [roadmap-strategist-capability-agent]
+
+  - id: product-discovery
+    name: "Product Discovery"
+    description: "Structured product discovery workflow from user research to opportunity identification"
+    category: discovery
+    icon: "search"
+    color: "#0891b2"
+    estimated_duration: "1-3 weeks"
+    lifecycle_stages: [intent, context, plan, execute, observe, learn]
+    orchestrator: discovery-orchestrator
+    phases:
+      - id: research-planning
+        name: "Research Planning"
+        stages: [intent, context]
+        agents: [user-researcher-capability-agent, market-analyst-capability-agent]
+      - id: research-execution
+        name: "Research Execution"
+        stages: [plan, execute]
+        agents: [user-researcher-capability-agent]
+      - id: synthesis
+        name: "Synthesis"
+        stages: [observe, learn]
+        agents: [insight-synthesizer-capability-agent, opportunity-identifier-capability-agent]
+
+  - id: ideation-sprint
+    name: "Ideation Sprint"
+    description: "Structured ideation sprint from problem statement to ranked concept selection"
+    category: ideation
+    icon: "lightbulb"
+    color: "#d97706"
+    estimated_duration: "2-5 days"
+    lifecycle_stages: [intent, context, execute, verify]
+    orchestrator: ideation-orchestrator
+    phases:
+      - id: ideation-setup
+        name: "Ideation Setup"
+        stages: [intent, context]
+        agents: [concept-generator-capability-agent, innovation-scout-capability-agent]
+      - id: idea-generation
+        name: "Idea Generation"
+        stages: [execute]
+        agents: [concept-generator-capability-agent]
+      - id: feasibility-evaluation
+        name: "Feasibility Evaluation"
+        stages: [verify]
+        agents: [feasibility-analyst-capability-agent]
+
+  - id: requirements-sprint
+    name: "Requirements Sprint"
+    description: "Full requirements engineering from epics to validated acceptance criteria"
+    category: requirements
+    icon: "list_alt"
+    color: "#16a34a"
+    estimated_duration: "3-7 days"
+    lifecycle_stages: [intent, context, plan, execute, verify, institutionalize]
+    orchestrator: requirements-orchestrator
+    phases:
+      - id: requirements-discovery
+        name: "Requirements Discovery"
+        stages: [intent, context]
+        agents: [requirements-analyst-capability-agent]
+      - id: story-mapping
+        name: "Story Mapping"
+        stages: [plan, execute]
+        agents: [story-mapper-capability-agent, acceptance-criteria-writer-capability-agent]
+      - id: spec-validation
+        name: "Spec Validation"
+        stages: [verify]
+        agents: [spec-validator-capability-agent, traceability-manager-capability-agent]
+      - id: requirements-institutionalization
+        name: "Institutionalization"
+        stages: [institutionalize]
+        agents: [traceability-manager-capability-agent]
+
+  - id: ux-sprint
+    name: "UX Design Sprint"
+    description: "End-to-end UX design sprint from research to validated prototype"
+    category: ux
+    icon: "palette"
+    color: "#db2777"
+    estimated_duration: "1-2 weeks"
+    lifecycle_stages: [intent, context, plan, execute, verify]
+    orchestrator: ux-orchestrator
+    phases:
+      - id: ux-research
+        name: "UX Research"
+        stages: [intent, context]
+        agents: [ux-researcher-capability-agent]
+      - id: design
+        name: "Design"
+        stages: [plan, execute]
+        agents: [interaction-designer-capability-agent, design-system-curator-capability-agent, prototype-builder-capability-agent]
+      - id: validation
+        name: "Validation"
+        stages: [verify]
+        agents: [usability-tester-capability-agent, accessibility-auditor-capability-agent]
+
+  - id: architecture-review
+    name: "Architecture Review"
+    description: "Drive-through architecture review with security, scalability, and ADR capture"
+    category: architecture
+    icon: "architecture"
+    color: "#6d28d9"
+    estimated_duration: "1-3 days"
+    lifecycle_stages: [context, plan, execute, verify, institutionalize]
+    orchestrator: architecture-orchestrator
+    phases:
+      - id: current-state
+        name: "Current State Analysis"
+        stages: [context]
+        agents: [system-designer-capability-agent, data-architect-capability-agent]
+      - id: design-review
+        name: "Design Review"
+        stages: [plan, execute]
+        agents: [api-architect-capability-agent, security-architect-capability-agent, integration-architect-capability-agent, scalability-analyst-capability-agent]
+      - id: decision-record
+        name: "Decision Recording"
+        stages: [verify, institutionalize]
+        agents: [adr-writer-capability-agent, tech-radar-curator-capability-agent]
+
+  - id: engineering-health-check
+    name: "Engineering Health Check"
+    description: "Periodic assessment of code quality, technical debt, and platform reliability"
+    category: engineering
+    icon: "health_and_safety"
+    color: "#0f766e"
+    estimated_duration: "1-2 days"
+    lifecycle_stages: [context, execute, verify, learn]
+    orchestrator: engineering-orchestrator
+    phases:
+      - id: assessment
+        name: "Engineering Assessment"
+        stages: [context, execute]
+        agents: [code-quality-guardian-capability-agent, technical-debt-manager-capability-agent, build-reliability-engineer-capability-agent]
+      - id: optimization
+        name: "Optimization Planning"
+        stages: [verify, learn]
+        agents: [devex-optimizer-capability-agent, platform-engineer-capability-agent]
+
+  - id: ai-model-lifecycle
+    name: "AI Model Lifecycle"
+    description: "Full lifecycle management of an AI model from design to production monitoring"
+    category: ai
+    icon: "model_training"
+    color: "#4f46e5"
+    estimated_duration: "1-4 weeks"
+    lifecycle_stages: [intent, context, plan, execute, verify, observe, learn]
+    orchestrator: ai-orchestrator
+    phases:
+      - id: model-design
+        name: "Model Design"
+        stages: [intent, context, plan]
+        agents: [ml-engineer-capability-agent, prompt-engineer-capability-agent]
+      - id: model-build
+        name: "Model Build & Evaluation"
+        stages: [execute, verify]
+        agents: [model-evaluator-capability-agent, ai-safety-reviewer-capability-agent]
+      - id: model-deploy
+        name: "Model Deployment"
+        stages: [observe, learn]
+        agents: [search-capability-agent, ml-engineer-capability-agent]
+
+  - id: incident-response
+    name: "Incident Response"
+    description: "Structured incident response from detection through resolution and postmortem"
+    category: operations
+    icon: "emergency"
+    color: "#dc2626"
+    estimated_duration: "hours to days"
+    lifecycle_stages: [context, execute, verify, learn, institutionalize]
+    orchestrator: operations-orchestrator
+    phases:
+      - id: triage
+        name: "Triage"
+        stages: [context]
+        agents: [on-call-coordinator-capability-agent, sre-capability-agent]
+      - id: mitigation
+        name: "Mitigation"
+        stages: [execute]
+        agents: [sre-capability-agent, infrastructure-manager-capability-agent, support-engineer-capability-agent]
+      - id: resolution
+        name: "Resolution & Root Cause"
+        stages: [verify, learn]
+        agents: [sre-capability-agent, change-management-coordinator-capability-agent]
+      - id: postmortem
+        name: "Postmortem"
+        stages: [institutionalize]
+        agents: [cost-optimization-analyst-capability-agent, change-management-coordinator-capability-agent]
+
+  - id: product-intelligence-cycle
+    name: "Product Intelligence Cycle"
+    description: "Closed-loop product intelligence from feedback collection to enhancement prioritization"
+    category: product-intelligence
+    icon: "insights"
+    color: "#0369a1"
+    estimated_duration: "weekly cycle"
+    lifecycle_stages: [context, execute, verify, learn, institutionalize]
+    orchestrator: product-intelligence-orchestrator
+    phases:
+      - id: data-collection
+        name: "Data Collection"
+        stages: [context]
+        agents: [feedback-analyst-capability-agent, product-analytics-capability-agent]
+      - id: analysis
+        name: "Analysis"
+        stages: [execute, verify]
+        agents: [experimentation-coordinator-capability-agent, product-analytics-capability-agent]
+      - id: prioritization
+        name: "Prioritization"
+        stages: [learn, institutionalize]
+        agents: [enhancement-prioritizer-capability-agent, feedback-analyst-capability-agent]

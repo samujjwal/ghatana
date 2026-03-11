@@ -1,0 +1,101 @@
+id: enhancement-capability-agent
+name: Enhancement Capability Agent
+version: 1.0.0
+description: "Converts product insights and feedback themes into scoped enhancement opportunities, scores using WSJF, integrates approved enhancements into the product backlog, and maintains the insight-to-outcome traceability chain"
+
+metadata:
+  level: 2
+  domain: product-intelligence
+  tags: [capability, enhancement, opportunity-scoping, wsjf, backlog, level2]
+
+generator:
+  type: PIPELINE
+  steps:
+    - name: insight_synthesis
+      type: LLM
+      provider: ANTHROPIC
+      model: claude-3-5-sonnet-20241022
+      temperature: 0.2
+      max_tokens: 2500
+      prompt: |
+        Synthesise insights into enhancement opportunities:
+
+        Feedback themes: {{input.feedback_themes}}
+        Experiment verdicts: {{input.experiment_verdicts}}
+        Analytics signals: {{input.analytics_signals}}
+        Strategic objectives: {{context.okrs}}
+        Existing backlog: {{context.backlog}}
+
+        For each distinct signal cluster: define the enhancement opportunity (problem statement + desired outcome + affected user segment), estimate affected users, map to strategic OKR, check for duplicates in backlog. Exclude already-planned items. Output 5-15 ranked opportunity candidates.
+    - name: opportunity_scoping
+      type: LLM
+      provider: ANTHROPIC
+      model: claude-3-5-sonnet-20241022
+      temperature: 0.2
+      max_tokens: 3000
+      prompt: |
+        Scope each enhancement opportunity for prioritisation:
+
+        Opportunities: {{insight_synthesis}}
+        Engineering capacity signals: {{context.team_capacity}}
+        Technical complexity assessments: {{context.tech_assessments}}
+
+        For each opportunity produce: user/business value score (1-10), time criticality score (1-10), risk reduction score (1-10), opportunity enablement score (1-10), job size estimate (S/M/L/XL → story points), WSJF score = (value + time_criticality + risk_reduction + opportunity_enablement) / job_size, confidence in estimates. Output scoped opportunity list with WSJF ranking.
+    - name: backlog_integration
+      type: LLM
+      provider: ANTHROPIC
+      model: claude-3-5-sonnet-20241022
+      temperature: 0.1
+      max_tokens: 2000
+      prompt: |
+        Prepare enhancements for backlog integration:
+
+        Ranked opportunities: {{opportunity_scoping}}
+        Backlog format: {{context.backlog_format}}
+        Sprint cadence: {{context.sprint_cadence}}
+        Traceability requirements: {{context.traceability_policy}}
+
+        For top-N opportunities (N = capacity for next 2 sprints): draft user story with acceptance criteria, attach insight provenance (feedback theme IDs, experiment IDs, metric signals), assign recommended epic/milestone, suggest definition-of-done metrics for post-ship measurement. Output backlog items ready for PM review.
+
+memory:
+  episodic:
+    enabled: true
+    retention_days: 730
+    categories: [enhancement-opportunities, wsjf-scorings, backlog-integrations, shipped-outcomes]
+  semantic:
+    enabled: true
+    categories: [opportunity-patterns, wsjf-calibration, backlog-taxonomy]
+  procedural:
+    enabled: true
+    categories: [insight-synthesis, wsjf-computation, backlog-formatting]
+
+tools: [insight_aggregator, wsjf_scorer, backlog_manager, traceability_tracker]
+
+capabilities:
+  - insight-synthesis
+  - opportunity-scoping
+  - wsjf-prioritisation
+  - backlog-integration
+  - insight-outcome-traceability
+
+routing:
+  input_types: [insight_bundle, enhancement_request, backlog_grooming_request]
+  output_types: [enhancement_opportunity_list, wsjf_ranking, backlog_items, traceability_map]
+
+delegation:
+  can_delegate_to:
+    - opportunity-scoping-task-agent
+    - enhancement-prioritisation-task-agent
+    - impact-estimation-task-agent
+    - churn-prediction-task-agent
+  escalates_to: product-intelligence-orchestrator
+
+governance:
+  requires_approval: false
+  can_block: false
+  audit_trail: standard
+
+performance:
+  expected_latency_ms: 8000
+  max_latency_ms: 45000
+  timeout_ms: 180000

@@ -1,0 +1,100 @@
+id: business-case-capability-agent
+name: Business Case Capability Agent
+version: 1.0.0
+description: "Constructs rigorous business cases: financial modelling, ROI analysis, cost-benefit analysis, risk quantification, and executive narratives for investment decisions"
+
+metadata:
+  level: 2
+  domain: portfolio
+  tags: [capability, business-case, roi, financial-modelling, investment, level2]
+
+generator:
+  type: PIPELINE
+  steps:
+    - name: financial_model_construction
+      type: LLM
+      provider: ANTHROPIC
+      model: claude-3-5-sonnet-20241022
+      temperature: 0.1
+      max_tokens: 3000
+      prompt: |
+        Build financial model for the investment case:
+
+        Initiative: {{input}}
+        Revenue assumptions: {{context.revenue_assumptions}}
+        Cost data: {{context.cost_data}}
+        Market sizing: {{context.market_sizing}}
+        Discount rate: {{context.discount_rate}}
+        Time horizon: {{context.time_horizon_years}}
+
+        Compute: 3-year P&L projection, NPV, IRR, payback period, break-even month, sensitivity ranges (optimistic/base/pessimistic). Output structured financial model JSON.
+    - name: risk_quantification
+      type: LLM
+      provider: ANTHROPIC
+      model: claude-3-5-sonnet-20241022
+      temperature: 0.1
+      max_tokens: 2000
+      prompt: |
+        Quantify business case risks:
+
+        Financial model: {{financial_model_construction}}
+        Risk register: {{context.risk_register}}
+
+        Identify top 5 risks, assign probability (%), impact ($), expected value. Compute risk-adjusted NPV. Suggest mitigation investments. Output risk analysis JSON.
+    - name: executive_narrative
+      type: LLM
+      provider: ANTHROPIC
+      model: claude-3-5-sonnet-20241022
+      temperature: 0.3
+      max_tokens: 2000
+      prompt: |
+        Write executive business case narrative:
+
+        Financial model: {{financial_model_construction}}
+        Risk analysis: {{risk_quantification}}
+        Strategic context: {{context.strategic_narrative}}
+
+        Write concise (500w max) executive summary: opportunity framing, financial highlights, risk summary, recommendation, ask (budget/headcount). Persuasive but honest.
+
+memory:
+  episodic:
+    enabled: true
+    retention_days: 365
+    categories: [business-cases, financial-models, investment-decisions]
+  semantic:
+    enabled: true
+    categories: [financial-templates, industry-benchmarks, ROI-patterns]
+  procedural:
+    enabled: true
+    categories: [financial-modelling-steps, risk-quantification-methods, npv-calculation]
+
+tools: [financial_modeller, market_data, risk_register]
+
+capabilities:
+  - financial-modelling
+  - roi-analysis
+  - cost-benefit-analysis
+  - risk-quantification
+  - executive-narrative
+
+routing:
+  input_types: [business_case_request, investment_proposal]
+  output_types: [business_case_document, financial_model, risk_analysis, executive_summary]
+
+delegation:
+  can_delegate_to:
+    - business-case-drafting-task-agent
+    - investment-risk-review-task-agent
+    - budget-envelope-task-agent
+  escalates_to: investment-planning-orchestrator
+
+governance:
+  requires_approval: true
+  approval_chain: [finance-lead]
+  can_block: false
+  audit_trail: comprehensive
+
+performance:
+  expected_latency_ms: 8000
+  max_latency_ms: 30000
+  timeout_ms: 120000

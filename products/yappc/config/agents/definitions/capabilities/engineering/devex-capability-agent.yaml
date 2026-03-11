@@ -1,0 +1,100 @@
+id: devex-capability-agent
+name: Developer Experience Capability Agent
+version: 1.0.0
+description: "Improves developer experience: local dev environment tooling, CI/CD pipeline optimisation, developer documentation, onboarding experience, and build performance"
+
+metadata:
+  level: 2
+  domain: engineering
+  tags: [capability, devex, dx, developer-experience, ci-cd, onboarding, build, level2]
+
+generator:
+  type: PIPELINE
+  steps:
+    - name: devex_assessment
+      type: LLM
+      provider: ANTHROPIC
+      model: claude-3-5-sonnet-20241022
+      temperature: 0.2
+      max_tokens: 2500
+      prompt: |
+        Assess current developer experience:
+
+        Developer feedback: {{context.developer_feedback}}
+        Build metrics: {{context.build_metrics}}
+        CI/CD performance: {{context.cicd_metrics}}
+        Onboarding time data: {{context.onboarding_metrics}}
+
+        Identify friction areas: slow builds, flaky tests, unclear documentation, environment setup pain, excessive context switching, poor tooling, long feedback loops. Rate each by frequency and impact. Output friction map JSON.
+    - name: devex_improvement_plan
+      type: LLM
+      provider: ANTHROPIC
+      model: claude-3-5-sonnet-20241022
+      temperature: 0.2
+      max_tokens: 3000
+      prompt: |
+        Generate developer experience improvement plan:
+
+        Friction map: {{devex_assessment}}
+        Engineering capacity: {{context.engineering_capacity}}
+        Tooling budget: {{context.tooling_budget}}
+
+        For each friction area: recommended fix, tooling/automation opportunity, effort (T-shirt), impact (hours saved per dev per week), quick win flag. Sequence recommendations by ROI. Include: build cache strategy, test parallelisation, dev container standardisation, documentation automation opportunities.
+    - name: documentation_gap_analysis
+      type: LLM
+      provider: ANTHROPIC
+      model: claude-3-5-sonnet-20241022
+      temperature: 0.1
+      max_tokens: 2000
+      prompt: |
+        Identify developer documentation gaps:
+
+        Friction map: {{devex_assessment}}
+        Existing docs inventory: {{context.docs_inventory}}
+        Onboarding flow: {{context.onboarding_flow}}
+
+        Find: missing getting started guides, outdated API docs, absent architecture decision records, missing runbooks, unexplained code conventions. Prioritise by onboarding impact and frequency of questions. Output documentation backlog.
+
+memory:
+  episodic:
+    enabled: true
+    retention_days: 365
+    categories: [devex-assessments, improvement-plans, ci-cd-optimisations, doc-gap-reports]
+  semantic:
+    enabled: true
+    categories: [devex-patterns, build-optimisation-techniques, ci-cd-best-practices]
+  procedural:
+    enabled: true
+    categories: [devex-assessment-method, build-optimisation-steps, onboarding-improvement]
+
+tools: [build_analyser, cicd_metrics_api, developer_feedback_aggregator, docs_auditor]
+
+capabilities:
+  - developer-experience-assessment
+  - ci-cd-optimisation
+  - build-performance-improvement
+  - onboarding-experience-design
+  - developer-documentation
+
+routing:
+  input_types: [devex_review_request, build_performance_request, onboarding_review, doc_gap_request]
+  output_types: [devex_assessment_report, improvement_plan, ci_cd_optimisation_spec, documentation_backlog]
+
+delegation:
+  can_delegate_to:
+    - build-optimisation-task-agent
+    - ci-cd-task-agent
+    - documentation-gap-task-agent
+    - onboarding-task-agent
+    - dev-container-task-agent
+  escalates_to: engineering-orchestrator
+
+governance:
+  requires_approval: false
+  can_block: false
+  audit_trail: standard
+
+performance:
+  expected_latency_ms: 5000
+  max_latency_ms: 15000
+  timeout_ms: 60000

@@ -1,5 +1,5 @@
-id: technical-debt-assessor
-name: Technical Debt Assessor
+id: technical-debt-assessor-agent
+name: Technical Debt Assessor Agent
 version: 1.0.0
 description: Assesses and tracks technical debt. Recommends debt paydown priorities and integrates tech debt into planning.
 

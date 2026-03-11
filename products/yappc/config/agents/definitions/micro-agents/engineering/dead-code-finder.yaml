@@ -1,0 +1,51 @@
+id: dead-code-finder
+name: Dead Code Finder
+version: 1.0.0
+description: "Identify unreachable code paths, unused variables, and exported symbols with no external references"
+
+metadata:
+  level: 3
+  domain: engineering
+  type: micro-agent
+  tags: [dead-code-detection, unreachable-code-identification, level3, micro]
+
+generator:
+  type: RULE_BASED
+  steps:
+    - name: execute
+      type: RULE_BASED
+      rules:
+        - "dead-code-detection"
+        - "unreachable-code-identification"
+
+memory:
+  episodic:
+    enabled: false
+  semantic:
+    enabled: false
+  procedural:
+    enabled: false
+
+tools: [dead_code_finder]
+
+capabilities:
+  - dead-code-detection
+  - unreachable-code-identification
+
+routing:
+  input_types: [dead_code_request]
+  output_types: [dead_code_report]
+
+delegation:
+  can_delegate_to: []
+  escalates_to: code-quality-capability-agent
+
+governance:
+  requires_approval: false
+  can_block: false
+  audit_trail: standard
+
+performance:
+  expected_latency_ms: 300
+  max_latency_ms: 1500
+  timeout_ms: 3000

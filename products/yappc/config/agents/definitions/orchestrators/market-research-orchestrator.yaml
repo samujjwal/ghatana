@@ -1,0 +1,111 @@
+id: market-research-orchestrator
+name: Market Research Orchestrator
+version: 1.0.0
+description: "Conducts systematic market research: market sizing (TAM/SAM/SOM), competitive landscape mapping, trend analysis, and segment profiling"
+
+metadata:
+  level: 1
+  domain: discovery
+  tags: [orchestrator, market-research, tam, competitive, level1]
+
+generator:
+  type: PIPELINE
+  steps:
+    - name: market_scoping
+      type: LLM
+      provider: ANTHROPIC
+      model: claude-3-5-sonnet-20241022
+      temperature: 0.2
+      max_tokens: 2500
+      prompt: |
+        You are the Market Research Orchestrator. Scope the market research for:
+
+        Market area: {{input}}
+        Geographic scope: {{context.geography}}
+        Industry verticals: {{context.verticals}}
+
+        Define:
+        1. TAM/SAM/SOM calculation methodology
+        2. Primary and secondary data sources
+        3. Competitive landscape players to analyse
+        4. Market trends to investigate
+        5. Segment profiles to develop
+
+        Output as JSON: {market_definition, sizing_methodology, data_sources, competitors_to_analyse, trends_to_track}
+    - name: market_sizing
+      type: LLM
+      provider: ANTHROPIC
+      model: claude-3-5-sonnet-20241022
+      temperature: 0.1
+      max_tokens: 2000
+      prompt: |
+        Calculate market sizing:
+        Market scope: {{market_scoping}}
+        Data inputs: {{context.market_data}}
+
+        Compute TAM, SAM, SOM with methodology, assumptions, and confidence intervals.
+        Return: {tam, sam, som, methodology, assumptions, confidence}
+    - name: competitive_landscape
+      type: LLM
+      provider: ANTHROPIC
+      model: claude-3-5-sonnet-20241022
+      temperature: 0.2
+      max_tokens: 3000
+      prompt: |
+        Map the competitive landscape:
+        Competitors to analyse: {{market_scoping.competitors_to_analyse}}
+        Market data: {{context.competitive_data}}
+
+        For each competitor: {name, positioning, strengths, weaknesses, pricing, market_share_est}
+        Identify white spaces and differentiation opportunities.
+    - name: market_synthesis
+      type: LLM
+      provider: ANTHROPIC
+      model: claude-3-5-sonnet-20241022
+      temperature: 0.3
+      max_tokens: 2500
+      prompt: |
+        Synthesise market research into actionable brief:
+        Sizing: {{market_sizing}}, Competitive: {{competitive_landscape}}
+        Return: {executive_summary, opportunity_size, competitive_position, strategic_recommendations}
+
+memory:
+  episodic:
+    enabled: true
+    retention_days: 730
+    categories: [market-analyses, competitive-snapshots, tam-calculations]
+  semantic:
+    enabled: true
+    categories: [market-data, competitor-profiles, industry-trends, sizing-models]
+  procedural:
+    enabled: true
+    categories: [market-sizing-methodologies, competitive-analysis-frameworks]
+
+tools: [market_sizer, competitor_analyzer, trend_tracker, segment_profiler]
+
+capabilities:
+  - market-sizing
+  - competitive-analysis
+  - segment-profiling
+  - trend-analysis
+  - market-opportunity-assessment
+
+routing:
+  input_types: [market_research_request, competitive_question, market_sizing_request]
+  output_types: [market_research_report, competitive_landscape, market_sizing, segment_profiles]
+
+delegation:
+  can_delegate_to:
+    - opportunity-assessment-orchestrator
+    - competitive-intelligence-task-agent
+  escalates_to: discovery-orchestrator
+
+governance:
+  requires_approval: false
+  can_block: false
+  audit_trail: standard
+
+performance:
+  expected_latency_ms: 12000
+  max_latency_ms: 90000
+  timeout_ms: 120000

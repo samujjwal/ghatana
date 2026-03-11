@@ -1,0 +1,89 @@
+id: search-capability-agent
+name: Search Capability Agent
+version: 1.0.0
+description: "Executes search operations: query preprocessing, vector and full-text search execution, hybrid result fusion, and relevance evaluation"
+
+metadata:
+  level: 2
+  domain: ai
+  tags: [capability, search, vector, full-text, hybrid, relevance, level2]
+
+generator:
+  type: PIPELINE
+  steps:
+    - name: query_preprocessing
+      type: LLM
+      provider: ANTHROPIC
+      model: claude-3-5-sonnet-20241022
+      temperature: 0.0
+      max_tokens: 1000
+      prompt: |
+        Preprocess and expand search query:
+
+        Raw query: {{input.query}}
+        Search context: {{context.search_context}}
+        Collection metadata: {{context.collection_metadata}}
+
+        Apply: query cleaning, keyword extraction, semantic expansion (add relevant synonyms and related terms), filter inference from context, query classification (factual/conceptual/navigational). Output preprocessed query JSON.
+    - name: multi_channel_retrieval
+      type: SERVICE_CALL
+      service: search-engine
+      endpoint: /multi-search
+      description: "Execute vector, full-text, and metadata filter searches in parallel"
+    - name: result_fusion_and_ranking
+      type: LLM
+      provider: ANTHROPIC
+      model: claude-3-5-sonnet-20241022
+      temperature: 0.0
+      max_tokens: 2000
+      prompt: |
+        Fuse and rank results from multiple search channels:
+
+        Preprocessed query: {{query_preprocessing}}
+        Vector results: {{multi_channel_retrieval.vector_results}}
+        Full-text results: {{multi_channel_retrieval.fulltext_results}}
+        Metadata filter results: {{multi_channel_retrieval.metadata_results}}
+
+        Apply RRF (Reciprocal Rank Fusion) or score-based fusion. Deduplicate by document ID. Rerank top-50 → top-10 by relevance. Add snippet extraction and highlight positions. Output ranked result list JSON.
+
+memory:
+  episodic:
+    enabled: true
+    retention_days: 30
+    categories: [search-queries, retrieval-results, relevance-scores, user-clicks]
+  semantic:
+    enabled: true
+    categories: [query-patterns, collection-schemas, relevance-models]
+  procedural:
+    enabled: true
+    categories: [query-expansion-rules, fusion-algorithms, ranking-policies]
+
+tools: [vector_index, full_text_index, metadata_filter, reranker, snippet_extractor]
+
+capabilities:
+  - vector-search-execution
+  - full-text-search
+  - hybrid-result-fusion
+  - relevance-ranking
+
+routing:
+  input_types: [search_request, query]
+  output_types: [search_results, ranked_documents, search_metadata]
+
+delegation:
+  can_delegate_to:
+    - vector-search-task-agent
+    - hybrid-search-task-agent
+    - re-ranking-task-agent
+    - query-analysis-task-agent
+  escalates_to: search-orchestrator
+
+governance:
+  requires_approval: false
+  can_block: false
+  audit_trail: standard
+
+performance:
+  expected_latency_ms: 200
+  max_latency_ms: 2000
+  timeout_ms: 5000

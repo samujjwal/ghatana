@@ -1,0 +1,63 @@
+id: visual-density-review-task-agent
+name: Visual Density Review Task Agent
+version: 1.0.0
+description: "Review UI for appropriate visual density, identify overcrowded or too-sparse areas, and recommend density improvements"
+
+metadata:
+  level: 3
+  domain: ux
+  type: worker
+  tags: [density-review, spacing-audit, improvement-recommendation, level3]
+
+generator:
+  type: PIPELINE
+  steps:
+    - name: execute
+      type: LLM
+      provider: ANTHROPIC
+      model: claude-3-5-sonnet-20241022
+      temperature: 0.1
+      max_tokens: 2000
+      prompt: |
+        Execute task: Review UI for appropriate visual density, identify overcrowded or too-sparse areas, and recommend density improvements
+
+        Input: {{input}}
+        Context: {{context}}
+
+        Produce a structured, precise output meeting the task specification.
+
+memory:
+  episodic:
+    enabled: true
+    retention_days: 90
+    categories: [task-executions]
+  semantic:
+    enabled: true
+    categories: [domain-knowledge]
+  procedural:
+    enabled: false
+
+tools: [density_reviewer, spacing_analyser]
+
+capabilities:
+  - density-review
+  - spacing-audit
+  - improvement-recommendation
+
+routing:
+  input_types: [density_review_request]
+  output_types: [density_review_report]
+
+delegation:
+  can_delegate_to: []
+  escalates_to: design-consistency-capability-agent
+
+governance:
+  requires_approval: false
+  can_block: false
+  audit_trail: standard
+
+performance:
+  expected_latency_ms: 2000
+  max_latency_ms: 10000
+  timeout_ms: 20000

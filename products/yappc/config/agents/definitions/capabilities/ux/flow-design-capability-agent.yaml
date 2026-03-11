@@ -1,0 +1,95 @@
+id: flow-design-capability-agent
+name: Flow Design Capability Agent
+version: 1.0.0
+description: "Designs task and user flows: screen-level flow diagrams, decision trees, modal/drawer interaction flows, and edge case/error flow coverage"
+
+metadata:
+  level: 2
+  domain: ux
+  tags: [capability, flow-design, task-flow, user-flow, interaction-flow, level2]
+
+generator:
+  type: PIPELINE
+  steps:
+    - name: flow_requirements_analysis
+      type: LLM
+      provider: ANTHROPIC
+      model: claude-3-5-sonnet-20241022
+      temperature: 0.1
+      max_tokens: 2000
+      prompt: |
+        Analyse requirements for flow design:
+
+        Feature requirements: {{input.requirements}}
+        User stories: {{context.user_stories}}
+        Existing navigation: {{context.navigation_structure}}
+
+        Identify: primary task flow(s), branching conditions, edge cases requiring separate flows, error states needing design, flows to deprecate/update. Output flow inventory JSON.
+    - name: flow_diagram_specification
+      type: LLM
+      provider: ANTHROPIC
+      model: claude-3-5-sonnet-20241022
+      temperature: 0.1
+      max_tokens: 4000
+      prompt: |
+        Specify flow diagrams in structured text format:
+
+        Flow inventory: {{flow_requirements_analysis}}
+        Design system components: {{context.design_system}}
+
+        For each major flow: start node, decision nodes (conditions → outcomes), screen nodes (screen name + key content), terminal nodes (success/error/exit). Cover: happy path, error recovery, exit points, deep links. Use structured text format compatible with Mermaid/draw.io.
+    - name: edge_case_coverage_review
+      type: LLM
+      provider: ANTHROPIC
+      model: claude-3-5-sonnet-20241022
+      temperature: 0.1
+      max_tokens: 2000
+      prompt: |
+        Review edge case coverage in flows:
+
+        Flow specs: {{flow_diagram_specification}}
+        NFRs (accessibility, performance): {{context.nfrs}}
+
+        Identify: unhandled error states, missing empty states, missing loading states, offline scenarios, permission denied flows, session timeout handling. Add missing branches.
+
+memory:
+  episodic:
+    enabled: true
+    retention_days: 365
+    categories: [flow-designs, flow-diagrams, edge-case-reviews, flow-revisions]
+  semantic:
+    enabled: true
+    categories: [flow-patterns, navigation-structures, error-flow-library]
+  procedural:
+    enabled: true
+    categories: [flow-design-rules, edge-case-checklist, mermaid-syntax]
+
+tools: [flow_diagram_generator, navigation_mapper, edge_case_checker]
+
+capabilities:
+  - task-flow-design
+  - user-flow-diagramming
+  - edge-case-coverage
+  - error-flow-design
+
+routing:
+  input_types: [flow_design_request, user_story, feature_requirements]
+  output_types: [flow_diagram, edge_case_report, flow_specification, navigation_update]
+
+delegation:
+  can_delegate_to:
+    - task-flow-task-agent
+    - error-flow-task-agent
+    - edge-case-flow-task-agent
+    - navigation-design-task-agent
+  escalates_to: ux-orchestrator
+
+governance:
+  requires_approval: false
+  can_block: false
+  audit_trail: standard
+
+performance:
+  expected_latency_ms: 5000
+  max_latency_ms: 15000
+  timeout_ms: 60000

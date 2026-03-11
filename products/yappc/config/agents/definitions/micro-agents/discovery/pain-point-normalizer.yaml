@@ -1,0 +1,51 @@
+id: pain-point-normalizer
+name: Pain Point Normalizer
+version: 1.0.0
+description: "Normalise a pain point description to standard format: user action, barrier, consequence"
+
+metadata:
+  level: 3
+  domain: discovery
+  type: micro-agent
+  tags: [text-normalisation, pain-point-formatting, level3, micro]
+
+generator:
+  type: RULE_BASED
+  steps:
+    - name: execute
+      type: RULE_BASED
+      rules:
+        - "text-normalisation"
+        - "pain-point-formatting"
+
+memory:
+  episodic:
+    enabled: false
+  semantic:
+    enabled: false
+  procedural:
+    enabled: false
+
+tools: [normaliser]
+
+capabilities:
+  - text-normalisation
+  - pain-point-formatting
+
+routing:
+  input_types: [normalise_request]
+  output_types: [normalised_pain_point]
+
+delegation:
+  can_delegate_to: []
+  escalates_to: problem-discovery-capability-agent
+
+governance:
+  requires_approval: false
+  can_block: false
+  audit_trail: standard
+
+performance:
+  expected_latency_ms: 100
+  max_latency_ms: 500
+  timeout_ms: 1000

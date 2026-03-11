@@ -1,0 +1,51 @@
+id: value-prop-formatter
+name: Value Prop Formatter
+version: 1.0.0
+description: "Format a raw value proposition statement into the canonical form: For [target], [product] is a [category] that [key-benefit]. Unlike [alternative], [differentiator]"
+
+metadata:
+  level: 3
+  domain: ideation
+  type: micro-agent
+  tags: [text-formatting, vp-canonical-format, level3, micro]
+
+generator:
+  type: RULE_BASED
+  steps:
+    - name: execute
+      type: RULE_BASED
+      rules:
+        - "text-formatting"
+        - "vp-canonical-format"
+
+memory:
+  episodic:
+    enabled: false
+  semantic:
+    enabled: false
+  procedural:
+    enabled: false
+
+tools: [formatter]
+
+capabilities:
+  - text-formatting
+  - vp-canonical-format
+
+routing:
+  input_types: [format_request]
+  output_types: [formatted_value_prop]
+
+delegation:
+  can_delegate_to: []
+  escalates_to: solution-framing-capability-agent
+
+governance:
+  requires_approval: false
+  can_block: false
+  audit_trail: standard
+
+performance:
+  expected_latency_ms: 100
+  max_latency_ms: 500
+  timeout_ms: 1000

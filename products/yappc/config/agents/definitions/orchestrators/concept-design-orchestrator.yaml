@@ -1,0 +1,101 @@
+id: concept-design-orchestrator
+name: Concept Design Orchestrator
+version: 1.0.0
+description: "Develops product concepts into detailed design briefs: feature decomposition, user flow sketching, value proposition articulation, and prototype planning"
+
+metadata:
+  level: 1
+  domain: ideation
+  tags: [orchestrator, concept-design, prototype, feature-brief, level1]
+
+generator:
+  type: PIPELINE
+  steps:
+    - name: concept_expansion
+      type: LLM
+      provider: ANTHROPIC
+      model: claude-3-5-sonnet-20241022
+      temperature: 0.4
+      max_tokens: 3500
+      prompt: |
+        Expand the selected concept into a detailed design brief:
+
+        Concept: {{input.concept}}
+        Customer personas: {{context.personas}}
+        JTBD: {{context.jtbd}}
+        Technical constraints: {{context.tech_constraints}}
+
+        Produce:
+        1. Value proposition statement
+        2. Core feature set (must-have vs nice-to-have)
+        3. User flow overview (3-5 key workflows)
+        4. Key design decisions and trade-offs
+        5. Open questions requiring UX research
+
+        Output as JSON: {value_proposition, feature_set, user_flows, design_decisions, open_questions}
+    - name: feature_decomposition
+      type: LLM
+      provider: ANTHROPIC
+      model: claude-3-5-sonnet-20241022
+      temperature: 0.2
+      max_tokens: 3000
+      prompt: |
+        Decompose features into implementable epics and capabilities:
+        Feature set: {{concept_expansion.feature_set}}
+        Technical context: {{context.tech_constraints}}
+
+        For each feature: {epic_name, user_story_summary, acceptance_criteria_preview, size_estimate_rough}
+    - name: prototype_plan
+      type: LLM
+      provider: ANTHROPIC
+      model: claude-3-5-sonnet-20241022
+      temperature: 0.3
+      max_tokens: 2000
+      prompt: |
+        Create a prototype plan for validating the concept:
+        Design brief: {{concept_expansion}}
+        Resources: {{context.design_resources}}
+
+        Define: prototype_fidelity, flows_to_prototype, test_scenarios, validation_criteria.
+
+memory:
+  episodic:
+    enabled: true
+    retention_days: 730
+    categories: [concept-designs, feature-briefs, prototype-outcomes]
+  semantic:
+    enabled: true
+    categories: [design-patterns, ux-conventions, component-library-knowledge]
+  procedural:
+    enabled: true
+    categories: [concept-design-templates, feature-decomposition-methods]
+
+tools: [concept_expander, feature_decomposer, prototype_planner, value_prop_builder]
+
+capabilities:
+  - concept-design
+  - feature-brief-creation
+  - user-flow-design
+  - prototype-planning
+  - value-proposition-articulation
+
+routing:
+  input_types: [concept, ideation_output, shortlisted_idea]
+  output_types: [design_brief, feature_set, user_flows, prototype_plan]
+
+delegation:
+  can_delegate_to:
+    - product-framing-orchestrator
+    - ux-orchestrator
+    - requirements-orchestrator
+  escalates_to: ideation-orchestrator
+
+governance:
+  requires_approval: false
+  can_block: false
+  audit_trail: standard
+
+performance:
+  expected_latency_ms: 12000
+  max_latency_ms: 90000
+  timeout_ms: 120000

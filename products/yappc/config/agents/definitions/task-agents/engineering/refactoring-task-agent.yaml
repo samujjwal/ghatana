@@ -1,0 +1,63 @@
+id: refactoring-task-agent
+name: Refactoring Task Agent
+version: 1.0.0
+description: "Plan and execute safe refactoring operations (extract method, rename, move class) with impact analysis and test preservation"
+
+metadata:
+  level: 3
+  domain: engineering
+  type: worker
+  tags: [refactoring-planning, impact-analysis, test-preservation, level3]
+
+generator:
+  type: PIPELINE
+  steps:
+    - name: execute
+      type: LLM
+      provider: ANTHROPIC
+      model: claude-3-5-sonnet-20241022
+      temperature: 0.1
+      max_tokens: 2000
+      prompt: |
+        Execute task: Plan and execute safe refactoring operations (extract method, rename, move class) with impact analysis and test preservation
+
+        Input: {{input}}
+        Context: {{context}}
+
+        Produce a structured, precise output meeting the task specification.
+
+memory:
+  episodic:
+    enabled: true
+    retention_days: 90
+    categories: [task-executions]
+  semantic:
+    enabled: true
+    categories: [domain-knowledge]
+  procedural:
+    enabled: false
+
+tools: [refactoring_planner, impact_analyser, test_runner]
+
+capabilities:
+  - refactoring-planning
+  - impact-analysis
+  - test-preservation
+
+routing:
+  input_types: [refactoring_request]
+  output_types: [refactoring_plan, refactored_code]
+
+delegation:
+  can_delegate_to: []
+  escalates_to: code-quality-capability-agent
+
+governance:
+  requires_approval: false
+  can_block: false
+  audit_trail: standard
+
+performance:
+  expected_latency_ms: 5000
+  max_latency_ms: 25000
+  timeout_ms: 50000

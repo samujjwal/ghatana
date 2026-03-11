@@ -1,0 +1,99 @@
+id: cost-management-capability-agent
+name: Cost Management Capability Agent
+version: 1.0.0
+description: "Analyses cloud cost anomalies, identifies rightsizing opportunities, recommends reserved capacity purchases, tracks budget compliance, and generates actionable savings reports"
+
+metadata:
+  level: 2
+  domain: operations
+  tags: [capability, cost-management, cloud-cost, rightsizing, finops, level2]
+
+generator:
+  type: PIPELINE
+  steps:
+    - name: cost_anomaly_detection
+      type: SERVICE_CALL
+      service: cost-analytics
+      endpoint: /anomalies/current
+      description: "Fetch cost anomalies, spend trends by dimension (service, team, environment, region)"
+    - name: rightsizing_analysis
+      type: LLM
+      provider: ANTHROPIC
+      model: claude-3-5-sonnet-20241022
+      temperature: 0.1
+      max_tokens: 3000
+      prompt: |
+        Analyse cloud spend and identify optimisation opportunities:
+
+        Cost anomalies: {{cost_anomaly_detection}}
+        Resource utilisation: {{context.utilisation_metrics}}
+        Current reserved capacity: {{context.reserved_instances}}
+        Budget allocations: {{context.budgets}}
+        Historical spend: {{context.spend_history}}
+
+        Identify:
+        1. Anomaly root causes with evidence
+        2. Overprovisioned resources (CPU < 20% or Memory < 30% sustained 7d)
+        3. Idle resources (< 5% utilisation 14d)
+        4. Savings Plan / Reserved Instance coverage gaps
+        5. Cross-region data transfer waste
+        6. S3/storage lifecycle policy gaps
+
+        Quantify monthly savings potential per finding. Rank by ROI. Output rightsizing analysis JSON.
+    - name: savings_report_synthesis
+      type: LLM
+      provider: ANTHROPIC
+      model: claude-3-5-sonnet-20241022
+      temperature: 0.2
+      max_tokens: 2500
+      prompt: |
+        Synthesise executive savings report and action plan:
+
+        Rightsizing analysis: {{rightsizing_analysis}}
+        Budget compliance: {{context.budgets}}
+        Finance approval thresholds: {{context.approval_thresholds}}
+
+        Produce: executive summary with total savings potential, prioritised action table (action → owner → effort → savings), reserved capacity purchase recommendations with break-even analysis, budget forecast for 3/6/12 months assuming actions taken, items requiring finance-lead approval. Format for finance review.
+
+memory:
+  episodic:
+    enabled: true
+    retention_days: 1095
+    categories: [cost-anomalies, rightsizing-actions, reserved-purchases, savings-achieved]
+  semantic:
+    enabled: true
+    categories: [pricing-models, rightsizing-benchmarks, finops-patterns]
+  procedural:
+    enabled: true
+    categories: [anomaly-triage, rightsizing-criteria, reserved-capacity-selection]
+
+tools: [cost_explorer, rightsizing_engine, budget_tracker, reserved_capacity_planner]
+
+capabilities:
+  - cost-anomaly-analysis
+  - rightsizing-identification
+  - reserved-capacity-recommendations
+  - budget-compliance-tracking
+  - savings-reporting
+
+routing:
+  input_types: [cost_review_request, budget_alert, cost_anomaly_notification]
+  output_types: [cost_anomaly_report, rightsizing_plan, savings_report, budget_forecast]
+
+delegation:
+  can_delegate_to:
+    - cost-anomaly-task-agent
+    - rightsizing-task-agent
+    - reserved-capacity-task-agent
+    - savings-report-task-agent
+  escalates_to: cost-management-orchestrator
+
+governance:
+  requires_approval: false
+  can_block: false
+  audit_trail: comprehensive
+
+performance:
+  expected_latency_ms: 5000
+  max_latency_ms: 30000
+  timeout_ms: 120000

@@ -1,0 +1,98 @@
+id: support-orchestrator
+name: Support Orchestrator
+version: 1.0.0
+description: "Coordinates customer and internal support: ticket triage, automated resolution, runbook execution, knowledge base updates, and escalation management"
+
+metadata:
+  level: 1
+  domain: operations
+  tags: [orchestrator, support, tickets, runbooks, kb, level1]
+
+generator:
+  type: PIPELINE
+  steps:
+    - name: ticket_triage
+      type: LLM
+      provider: ANTHROPIC
+      model: claude-3-5-sonnet-20241022
+      temperature: 0.1
+      max_tokens: 2000
+      prompt: |
+        Triage support ticket:
+
+        Ticket: {{input}}
+        Similar resolved tickets: {{context.similar_tickets}}
+        Runbooks available: {{context.runbooks}}
+        Current system status: {{context.system_status}}
+
+        Determine: priority (P1-P4), category (bug/question/feature/access), auto-resolvable (yes/no), runbook match, required routing (L1/L2/L3/engineering). Output JSON triage.
+    - name: kb_search
+      type: SERVICE_CALL
+      service: knowledge-base
+      endpoint: /search
+      description: "Search knowledge base for existing answers, FAQs, and resolution patterns"
+    - name: resolution_generation
+      type: LLM
+      provider: ANTHROPIC
+      model: claude-3-5-sonnet-20241022
+      temperature: 0.2
+      max_tokens: 3000
+      prompt: |
+        Generate support response or resolution plan:
+
+        Ticket: {{input}}
+        KB results: {{kb_search}}
+        Triage: {{ticket_triage}}
+        Runbook: {{context.matched_runbook}}
+
+        If auto-resolvable: draft resolution with steps. If escalation needed: prepare brief for next tier. Include KB article update recommendations.
+    - name: resolution_dispatch
+      type: SERVICE_CALL
+      service: agent-dispatcher
+      endpoint: /dispatch
+      description: "Execute resolution or route ticket to appropriate support capability agent"
+
+memory:
+  episodic:
+    enabled: true
+    retention_days: 365
+    categories: [tickets, resolutions, escalations, runbook-executions]
+  semantic:
+    enabled: true
+    categories: [knowledge-base, resolution-patterns, escalation-criteria]
+  procedural:
+    enabled: true
+    categories: [triage-rules, escalation-paths, resolution-scripts]
+
+tools: [ticket_system, knowledge_base, runbook_executor, escalation_manager]
+
+capabilities:
+  - ticket-triage
+  - automated-resolution
+  - runbook-execution
+  - knowledge-base-management
+  - escalation-coordination
+
+routing:
+  input_types: [support_ticket, customer_request, internal_request, escalation]
+  output_types: [resolution, kb_article, escalation_brief, runbook_result]
+
+delegation:
+  can_delegate_to:
+    - support-capability-agent
+    - ticket-triage-task-agent
+    - automated-resolution-task-agent
+    - runbook-execution-task-agent
+    - kb-update-task-agent
+    - escalation-routing-task-agent
+  escalates_to: operations-orchestrator
+
+governance:
+  requires_approval: false
+  can_block: false
+  audit_trail: standard
+
+performance:
+  expected_latency_ms: 3000
+  max_latency_ms: 15000
+  timeout_ms: 60000

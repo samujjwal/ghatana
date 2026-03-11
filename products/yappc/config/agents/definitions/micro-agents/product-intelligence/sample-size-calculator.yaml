@@ -1,0 +1,49 @@
+id: sample-size-calculator
+name: Sample Size Calculator
+version: 1.0.0
+description: "Calculate minimum required sample size for A/B test given baseline rate, MDE, alpha, and power"
+
+metadata:
+  level: 3
+  domain: product-intelligence
+  type: micro-agent
+  tags: [sample-size-calculation, level3, micro]
+
+generator:
+  type: RULE_BASED
+  steps:
+    - name: execute
+      type: RULE_BASED
+      rules:
+        - "sample-size-calculation"
+
+memory:
+  episodic:
+    enabled: false
+  semantic:
+    enabled: false
+  procedural:
+    enabled: false
+
+tools: [sample_size_calculator]
+
+capabilities:
+  - sample-size-calculation
+
+routing:
+  input_types: [sample_size_request]
+  output_types: [required_sample_size]
+
+delegation:
+  can_delegate_to: []
+  escalates_to: experimentation-capability-agent
+
+governance:
+  requires_approval: false
+  can_block: false
+  audit_trail: standard
+
+performance:
+  expected_latency_ms: 50
+  max_latency_ms: 250
+  timeout_ms: 500

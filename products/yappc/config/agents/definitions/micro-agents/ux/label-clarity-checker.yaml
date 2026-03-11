@@ -1,0 +1,51 @@
+id: label-clarity-checker
+name: Label Clarity Checker
+version: 1.0.0
+description: "Check UI label text for clarity, length, and tone consistency against the design writing guide"
+
+metadata:
+  level: 3
+  domain: ux
+  type: micro-agent
+  tags: [label-checking, clarity-scoring, level3, micro]
+
+generator:
+  type: RULE_BASED
+  steps:
+    - name: execute
+      type: RULE_BASED
+      rules:
+        - "label-checking"
+        - "clarity-scoring"
+
+memory:
+  episodic:
+    enabled: false
+  semantic:
+    enabled: false
+  procedural:
+    enabled: false
+
+tools: [clarity_checker]
+
+capabilities:
+  - label-checking
+  - clarity-scoring
+
+routing:
+  input_types: [label_check_request]
+  output_types: [label_check_result]
+
+delegation:
+  can_delegate_to: []
+  escalates_to: design-consistency-capability-agent
+
+governance:
+  requires_approval: false
+  can_block: false
+  audit_trail: standard
+
+performance:
+  expected_latency_ms: 100
+  max_latency_ms: 500
+  timeout_ms: 1000

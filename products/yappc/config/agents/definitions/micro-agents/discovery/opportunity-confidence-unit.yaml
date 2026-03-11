@@ -1,0 +1,51 @@
+id: opportunity-confidence-unit
+name: Opportunity Confidence Unit
+version: 1.0.0
+description: "Compute an evidence-weighted confidence score for an opportunity hypothesis"
+
+metadata:
+  level: 3
+  domain: discovery
+  type: micro-agent
+  tags: [confidence-scoring, evidence-weighting, level3, micro]
+
+generator:
+  type: RULE_BASED
+  steps:
+    - name: execute
+      type: RULE_BASED
+      rules:
+        - "confidence-scoring"
+        - "evidence-weighting"
+
+memory:
+  episodic:
+    enabled: false
+  semantic:
+    enabled: false
+  procedural:
+    enabled: false
+
+tools: [confidence_calculator]
+
+capabilities:
+  - confidence-scoring
+  - evidence-weighting
+
+routing:
+  input_types: [confidence_request]
+  output_types: [confidence_score]
+
+delegation:
+  can_delegate_to: []
+  escalates_to: opportunity-scoring-capability-agent
+
+governance:
+  requires_approval: false
+  can_block: false
+  audit_trail: standard
+
+performance:
+  expected_latency_ms: 100
+  max_latency_ms: 500
+  timeout_ms: 1000

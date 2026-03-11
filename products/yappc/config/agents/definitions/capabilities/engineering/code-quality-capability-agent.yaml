@@ -1,0 +1,90 @@
+id: code-quality-capability-agent
+name: Code Quality Capability Agent
+version: 1.0.0
+description: "Ensures code quality: code review, static analysis orchestration, linting compliance, cyclomatic complexity analysis, duplication detection, and quality gate enforcement"
+
+metadata:
+  level: 2
+  domain: engineering
+  tags: [capability, code-quality, code-review, static-analysis, linting, quality-gates, level2]
+
+generator:
+  type: PIPELINE
+  steps:
+    - name: static_analysis_orchestration
+      type: SERVICE_CALL
+      service: code-analysis
+      endpoint: /analyse
+      description: "Run Checkstyle, PMD, SpotBugs, ESLint, and SonarQube against changed files"
+    - name: code_review_synthesis
+      type: LLM
+      provider: ANTHROPIC
+      model: claude-3-5-sonnet-20241022
+      temperature: 0.1
+      max_tokens: 4000
+      prompt: |
+        Synthesise code review feedback:
+
+        Code changes: {{input.diff}}
+        Static analysis results: {{static_analysis_orchestration}}
+        Code conventions: {{context.code_conventions}}
+        Architecture patterns: {{context.architecture_patterns}}
+
+        Review for: correctness (logic errors, edge cases), security (injection risks, auth gaps, OWASP Top 10), performance (N+1 queries, blocking ops in event loop, excessive allocations), maintainability (readability, naming, coupling), test coverage adequacy, documentation completeness (@doc tags, JavaDoc). Output structured review comments categorised by severity (blocker/major/minor/nit).
+    - name: quality_gate_evaluation
+      type: LLM
+      provider: ANTHROPIC
+      model: claude-3-5-sonnet-20241022
+      temperature: 0.0
+      max_tokens: 1500
+      prompt: |
+        Evaluate quality gate pass/fail:
+
+        Code review: {{code_review_synthesis}}
+        Static analysis: {{static_analysis_orchestration}}
+        Quality thresholds: {{context.quality_thresholds}}
+
+        Determine: PASS (no blockers, <5 majors) / FAIL (any blocker or ≥5 majors). List blocking issues. Estimate effort to fix (hours). Recommend: approve / request-changes / comment.
+
+memory:
+  episodic:
+    enabled: true
+    retention_days: 365
+    categories: [code-reviews, static-analysis-results, quality-gate-decisions, fix-records]
+  semantic:
+    enabled: true
+    categories: [code-quality-patterns, review-patterns, quality-gate-thresholds]
+  procedural:
+    enabled: true
+    categories: [code-review-checklist, static-analysis-rules, quality-gate-criteria]
+
+tools: [code_reviewer, static_analyser, checkstyle, pmd, eslint, sonar_api]
+
+capabilities:
+  - code-review
+  - static-analysis-orchestration
+  - quality-gate-enforcement
+  - duplication-detection
+  - complexity-analysis
+
+routing:
+  input_types: [code_review_request, pr_diff, quality_check, commit_for_review]
+  output_types: [code_review_comments, quality_gate_decision, analysis_report, fix_recommendations]
+
+delegation:
+  can_delegate_to:
+    - code-reviewer
+    - dependency-auditor
+    - vuln-scanner
+    - performance-optimizer
+  escalates_to: engineering-orchestrator
+
+governance:
+  requires_approval: false
+  can_block: true
+  audit_trail: standard
+
+performance:
+  expected_latency_ms: 5000
+  max_latency_ms: 15000
+  timeout_ms: 60000

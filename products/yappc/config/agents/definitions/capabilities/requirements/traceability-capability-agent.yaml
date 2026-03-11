@@ -1,0 +1,88 @@
+id: traceability-capability-agent
+name: Traceability Capability Agent
+version: 1.0.0
+description: "Maintains bidirectional requirement traceability: linking business goals to requirements, test cases, and implementation; detecting coverage gaps and orphaned artefacts"
+
+metadata:
+  level: 2
+  domain: requirements
+  tags: [capability, traceability, trace-matrix, coverage, linkage, level2]
+
+generator:
+  type: PIPELINE
+  steps:
+    - name: trace_matrix_build
+      type: SERVICE_CALL
+      service: traceability-store
+      endpoint: /rebuild
+      description: "Rebuild bidirectional trace matrix from all artefact sources"
+    - name: coverage_analysis
+      type: LLM
+      provider: ANTHROPIC
+      model: claude-3-5-sonnet-20241022
+      temperature: 0.0
+      max_tokens: 2500
+      prompt: |
+        Analyse traceability coverage:
+
+        Trace matrix: {{trace_matrix_build}}
+        Artefact inventory: {{context.artefact_inventory}}
+
+        Compute coverage metrics: percent requirements traced to tests, percent requirements implemented, orphaned test cases (no requirement), requirements with no implementation, business goals with no requirements. Flag critical gaps (high-risk requirements not covered). Output coverage report JSON.
+    - name: gap_remediation_plan
+      type: LLM
+      provider: ANTHROPIC
+      model: claude-3-5-sonnet-20241022
+      temperature: 0.2
+      max_tokens: 2000
+      prompt: |
+        Produce traceability gap remediation plan:
+
+        Coverage analysis: {{coverage_analysis}}
+        Team capacity: {{context.team_capacity}}
+        Release deadline: {{context.release_deadline}}
+
+        Prioritise gaps by risk. For each: gap description, remediation action, owner, estimated effort. Identify quick wins vs complex fixes. Output actionable plan with deadlines.
+
+memory:
+  episodic:
+    enabled: true
+    retention_days: 730
+    categories: [trace-matrices, coverage-analyses, gap-reports, remediation-plans]
+  semantic:
+    enabled: true
+    categories: [traceability-patterns, artefact-linkage-types, coverage-benchmarks]
+  procedural:
+    enabled: true
+    categories: [matrix-build-procedures, coverage-calculation, gap-prioritisation]
+
+tools: [traceability_store, artefact_registry, coverage_calculator]
+
+capabilities:
+  - trace-matrix-management
+  - coverage-analysis
+  - gap-detection
+  - remediation-planning
+  - artefact-linkage
+
+routing:
+  input_types: [traceability_request, coverage_check, artefact_change_event]
+  output_types: [trace_matrix, coverage_report, gap_report, remediation_plan]
+
+delegation:
+  can_delegate_to:
+    - trace-link-task-agent
+    - coverage-calculation-task-agent
+    - orphan-detection-task-agent
+    - gap-remediation-task-agent
+  escalates_to: traceability-orchestrator
+
+governance:
+  requires_approval: false
+  can_block: false
+  audit_trail: comprehensive
+
+performance:
+  expected_latency_ms: 5000
+  max_latency_ms: 20000
+  timeout_ms: 60000

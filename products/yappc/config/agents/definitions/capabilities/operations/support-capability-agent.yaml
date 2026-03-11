@@ -1,0 +1,100 @@
+id: support-capability-agent
+name: Support Capability Agent
+version: 1.0.0
+description: "Resolves support tickets via KB search and automated resolution, authors KB articles from incident learnings, determines escalation path, and drives CSAT improvement"
+
+metadata:
+  level: 2
+  domain: operations
+  tags: [capability, support, ticket, kb, escalation, csat, level2]
+
+generator:
+  type: PIPELINE
+  steps:
+    - name: ticket_triage
+      type: LLM
+      provider: ANTHROPIC
+      model: claude-3-5-sonnet-20241022
+      temperature: 0.1
+      max_tokens: 1500
+      prompt: |
+        Triage incoming support ticket:
+
+        Ticket: {{input.ticket}}
+        Historical tickets: {{context.similar_tickets}}
+        KB articles: {{context.kb_articles}}
+        Product version: {{context.product_version}}
+
+        Classify: severity (P1-P4), category, affected component, user impact. Detect duplicates or known issues. Score resolution confidence from KB. Identify if automated resolution is feasible. Output structured triage JSON.
+    - name: resolution_execution
+      type: LLM
+      provider: ANTHROPIC
+      model: claude-3-5-sonnet-20241022
+      temperature: 0.2
+      max_tokens: 2500
+      prompt: |
+        Generate resolution steps for support ticket:
+
+        Triage result: {{ticket_triage}}
+        KB articles: {{context.kb_articles}}
+        Available runbooks: {{context.runbooks}}
+        Customer environment: {{context.customer_env}}
+
+        Produce: step-by-step resolution guide tailored to customer context, confidence score for each step, workaround if primary resolution unavailable, customer-facing communication draft. If resolution confidence < 0.7, recommend escalation path. Output resolution plan.
+    - name: kb_update_synthesis
+      type: LLM
+      provider: ANTHROPIC
+      model: claude-3-5-sonnet-20241022
+      temperature: 0.3
+      max_tokens: 2000
+      prompt: |
+        Synthesise KB improvement from ticket learnings:
+
+        Ticket resolution: {{resolution_execution}}
+        Existing KB coverage: {{context.kb_articles}}
+        CSAT feedback: {{context.csat_data}}
+
+        Determine: new KB articles to create, existing articles to update, FAQ additions, runbook improvements. Output KB update tasks ranked by impact on ticket deflection rate.
+
+memory:
+  episodic:
+    enabled: true
+    retention_days: 365
+    categories: [ticket-resolutions, escalation-events, kb-updates, csat-scores]
+  semantic:
+    enabled: true
+    categories: [resolution-patterns, kb-articles, product-known-issues]
+  procedural:
+    enabled: true
+    categories: [triage-procedures, escalation-routing, resolution-playbooks]
+
+tools: [kb_search, ticket_manager, runbook_executor, csat_tracker]
+
+capabilities:
+  - ticket-triage
+  - automated-resolution
+  - kb-authoring
+  - escalation-routing
+  - csat-improvement
+
+routing:
+  input_types: [support_ticket, kb_review_request, csat_analysis_request]
+  output_types: [ticket_resolution, escalation_decision, kb_article_draft, csat_improvement_plan]
+
+delegation:
+  can_delegate_to:
+    - ticket-triage-task-agent
+    - automated-resolution-task-agent
+    - kb-update-task-agent
+    - escalation-routing-task-agent
+  escalates_to: support-orchestrator
+
+governance:
+  requires_approval: false
+  can_block: false
+  audit_trail: standard
+
+performance:
+  expected_latency_ms: 3000
+  max_latency_ms: 15000
+  timeout_ms: 60000

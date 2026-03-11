@@ -1,0 +1,51 @@
+id: config-drift-reporter
+name: Config Drift Reporter
+version: 1.0.0
+description: "Report configuration drift items between expected and actual resource configuration as structured diff"
+
+metadata:
+  level: 3
+  domain: operations
+  type: micro-agent
+  tags: [drift-reporting, diff-generation, level3, micro]
+
+generator:
+  type: RULE_BASED
+  steps:
+    - name: execute
+      type: RULE_BASED
+      rules:
+        - "drift-reporting"
+        - "diff-generation"
+
+memory:
+  episodic:
+    enabled: false
+  semantic:
+    enabled: false
+  procedural:
+    enabled: false
+
+tools: [drift_reporter]
+
+capabilities:
+  - drift-reporting
+  - diff-generation
+
+routing:
+  input_types: [drift_report_request]
+  output_types: [drift_diff]
+
+delegation:
+  can_delegate_to: []
+  escalates_to: infra-capability-agent
+
+governance:
+  requires_approval: false
+  can_block: false
+  audit_trail: standard
+
+performance:
+  expected_latency_ms: 200
+  max_latency_ms: 1000
+  timeout_ms: 2000

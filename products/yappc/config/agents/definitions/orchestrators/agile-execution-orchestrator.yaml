@@ -1,0 +1,100 @@
+id: agile-execution-orchestrator
+name: Agile Execution Orchestrator
+version: 1.0.0
+description: "Manages agile ceremonies and execution insights: daily stand-up extraction, sprint health scoring, retrospective facilitation, and backlog grooming"
+
+metadata:
+  level: 1
+  domain: engineering
+  tags: [orchestrator, agile, scrum, retrospective, velocity, level1]
+
+generator:
+  type: PIPELINE
+  steps:
+    - name: sprint_health_check
+      type: LLM
+      provider: ANTHROPIC
+      model: claude-3-5-sonnet-20241022
+      temperature: 0.2
+      max_tokens: 2500
+      prompt: |
+        Assess sprint health for: {{input}}
+        Metrics: {{context.sprint_metrics}}
+        Blockers: {{context.blockers}}
+        Velocity: {{context.velocity}}
+        Days remaining: {{context.days_remaining}}
+
+        Score sprint on: scope_completion_trajectory, blocker_count, team_wellbeing_signals, risk_to_sprint_goal.
+        Return: {health_score, trajectory, blockers_summary, risk_level, recommended_action}
+    - name: ceremony_facilitation
+      type: LLM
+      provider: ANTHROPIC
+      model: claude-3-5-sonnet-20241022
+      temperature: 0.3
+      max_tokens: 3000
+      prompt: |
+        Facilitate the requested agile ceremony:
+        Ceremony type: {{input.ceremony_type}}
+        Sprint data: {{context.sprint_data}}
+        Team context: {{context.team_context}}
+
+        Based on ceremony type:
+        - STANDUP: Extract blockers, progress, risks from updates; produce action items
+        - RETRO: Facilitate Went-Well/Improvements/Actions; cluster themes; commit action items
+        - GROOMING: Review backlog items, add acceptance criteria, estimate story points
+
+        Return ceremony output in structured format.
+    - name: improvement_tracking
+      type: LLM
+      provider: ANTHROPIC
+      model: claude-3-5-sonnet-20241022
+      temperature: 0.2
+      max_tokens: 2000
+      prompt: |
+        Track and review improvement actions from retrospectives:
+        Previous retro actions: {{context.retro_actions}}
+        Current sprint outcomes: {{context.outcomes}}
+
+        Score each action: implemented?, impact_observed?, continue_next_sprint?
+
+memory:
+  episodic:
+    enabled: true
+    retention_days: 365
+    categories: [sprint-reviews, retrospective-records, standup-summaries]
+  semantic:
+    enabled: true
+    categories: [agile-patterns, improvement-themes, team-health-signals]
+  procedural:
+    enabled: true
+    categories: [ceremony-facilitation-guides, retro-formats, grooming-procedures]
+
+tools: [sprint_health_scorer, ceremony_facilitator, velocity_tracker, improvement_tracker]
+
+capabilities:
+  - agile-ceremony-facilitation
+  - sprint-health-assessment
+  - velocity-tracking
+  - retrospective-facilitation
+  - backlog-grooming
+
+routing:
+  input_types: [sprint_data, ceremony_request, velocity_metrics, retro_notes, backlog]
+  output_types: [sprint_health_report, ceremony_summary, action_items, backlog_refinement, velocity_report]
+
+delegation:
+  can_delegate_to:
+    - work-management-orchestrator
+    - engineering-metrics-capability-agent
+    - retrospective-analysis-task-agent
+  escalates_to: engineering-orchestrator
+
+governance:
+  requires_approval: false
+  can_block: false
+  audit_trail: standard
+
+performance:
+  expected_latency_ms: 4000
+  max_latency_ms: 30000
+  timeout_ms: 45000

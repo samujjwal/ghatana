@@ -1,0 +1,51 @@
+id: schema-comparer
+name: Schema Comparer
+version: 1.0.0
+description: "Compare two schema versions (Avro/JSON Schema/Proto) and enumerate breaking vs. non-breaking changes"
+
+metadata:
+  level: 3
+  domain: architecture
+  type: micro-agent
+  tags: [schema-comparison, breaking-change-detection, level3, micro]
+
+generator:
+  type: RULE_BASED
+  steps:
+    - name: execute
+      type: RULE_BASED
+      rules:
+        - "schema-comparison"
+        - "breaking-change-detection"
+
+memory:
+  episodic:
+    enabled: false
+  semantic:
+    enabled: false
+  procedural:
+    enabled: false
+
+tools: [schema_comparator]
+
+capabilities:
+  - schema-comparison
+  - breaking-change-detection
+
+routing:
+  input_types: [schema_compare_request]
+  output_types: [schema_diff]
+
+delegation:
+  can_delegate_to: []
+  escalates_to: data-architecture-capability-agent
+
+governance:
+  requires_approval: false
+  can_block: false
+  audit_trail: standard
+
+performance:
+  expected_latency_ms: 200
+  max_latency_ms: 1000
+  timeout_ms: 2000

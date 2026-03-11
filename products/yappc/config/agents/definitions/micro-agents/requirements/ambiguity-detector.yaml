@@ -1,0 +1,51 @@
+id: ambiguity-detector
+name: Ambiguity Detector
+version: 1.0.0
+description: "Detect ambiguous language in a requirement (vague terms like 'fast', 'easy', 'appropriate') and flag them with suggestions"
+
+metadata:
+  level: 3
+  domain: requirements
+  type: micro-agent
+  tags: [ambiguity-detection, vague-term-flagging, level3, micro]
+
+generator:
+  type: RULE_BASED
+  steps:
+    - name: execute
+      type: RULE_BASED
+      rules:
+        - "ambiguity-detection"
+        - "vague-term-flagging"
+
+memory:
+  episodic:
+    enabled: false
+  semantic:
+    enabled: false
+  procedural:
+    enabled: false
+
+tools: [ambiguity_detector]
+
+capabilities:
+  - ambiguity-detection
+  - vague-term-flagging
+
+routing:
+  input_types: [ambiguity_request]
+  output_types: [ambiguity_flags]
+
+delegation:
+  can_delegate_to: []
+  escalates_to: requirement-quality-capability-agent
+
+governance:
+  requires_approval: false
+  can_block: false
+  audit_trail: standard
+
+performance:
+  expected_latency_ms: 100
+  max_latency_ms: 500
+  timeout_ms: 1000

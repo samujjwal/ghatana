@@ -1,0 +1,49 @@
+id: token-counter
+name: Token Counter
+version: 1.0.0
+description: "Count tokens for a text string using the specified model's tokenizer and return token count"
+
+metadata:
+  level: 3
+  domain: ai
+  type: micro-agent
+  tags: [token-counting, level3, micro]
+
+generator:
+  type: RULE_BASED
+  steps:
+    - name: execute
+      type: RULE_BASED
+      rules:
+        - "token-counting"
+
+memory:
+  episodic:
+    enabled: false
+  semantic:
+    enabled: false
+  procedural:
+    enabled: false
+
+tools: [tokenizer]
+
+capabilities:
+  - token-counting
+
+routing:
+  input_types: [count_request]
+  output_types: [token_count]
+
+delegation:
+  can_delegate_to: []
+  escalates_to: agent-runtime-capability-agent-ai
+
+governance:
+  requires_approval: false
+  can_block: false
+  audit_trail: standard
+
+performance:
+  expected_latency_ms: 50
+  max_latency_ms: 250
+  timeout_ms: 500

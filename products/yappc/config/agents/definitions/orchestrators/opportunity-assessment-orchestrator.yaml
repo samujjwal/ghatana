@@ -1,0 +1,112 @@
+id: opportunity-assessment-orchestrator
+name: Opportunity Assessment Orchestrator
+version: 1.0.0
+description: "Evaluates and scores product opportunities: demand validation, feasibility assessment, strategic fit scoring, and opportunity prioritisation"
+
+metadata:
+  level: 1
+  domain: discovery
+  tags: [orchestrator, opportunity, assessment, prioritisation, level1]
+
+generator:
+  type: PIPELINE
+  steps:
+    - name: opportunity_framing
+      type: LLM
+      provider: ANTHROPIC
+      model: claude-3-5-sonnet-20241022
+      temperature: 0.3
+      max_tokens: 2500
+      prompt: |
+        Frame the product opportunity for assessment:
+
+        Opportunity input: {{input}}
+        Customer context: {{context.customer_insights}}
+        Market context: {{context.market_data}}
+
+        Structure the opportunity using the Opportunity Solution Tree format:
+        - Desired outcome (metric to move)
+        - Opportunity (customer need/pain)
+        - Assumption risks
+        - Solution space options
+
+        Output: {desired_outcome, opportunity_statement, assumption_risks, solution_space}
+    - name: demand_validation
+      type: LLM
+      provider: ANTHROPIC
+      model: claude-3-5-sonnet-20241022
+      temperature: 0.2
+      max_tokens: 2000
+      prompt: |
+        Validate demand signals for the opportunity:
+        Opportunity: {{opportunity_framing}}
+        Evidence: {{context.demand_signals}}
+
+        Score demand on: customer_frequency, customer_intensity, market_size_fit, urgency.
+        Return: {demand_score, evidence_quality, signal_sources, gaps}
+    - name: feasibility_assessment
+      type: LLM
+      provider: ANTHROPIC
+      model: claude-3-5-sonnet-20241022
+      temperature: 0.2
+      max_tokens: 2000
+      prompt: |
+        Assess feasibility of pursuing the opportunity:
+        Opportunity: {{opportunity_framing}}, Demand: {{demand_validation}}
+        Capabilities: {{context.team_capabilities}}, Constraints: {{context.constraints}}
+
+        Score: technical_feasibility, resource_feasibility, time_feasibility, risk_level.
+        Return: {feasibility_score, blockers, enablers, risk_register}
+    - name: opportunity_scoring
+      type: LLM
+      provider: ANTHROPIC
+      model: claude-3-5-sonnet-20241022
+      temperature: 0.1
+      max_tokens: 1500
+      prompt: |
+        Score and rank the opportunity for portfolio consideration:
+        All inputs: {{opportunity_framing}}, {{demand_validation}}, {{feasibility_assessment}}
+
+        Apply ICE framework: impact × confidence × ease.
+        Return: {ice_score, strategic_fit_score, final_recommendation, rationale}
+
+memory:
+  episodic:
+    enabled: true
+    retention_days: 730
+    categories: [opportunity-assessments, scored-opportunities, portfolio-decisions]
+  semantic:
+    enabled: true
+    categories: [opportunity-patterns, ice-benchmarks, strategic-priorities]
+  procedural:
+    enabled: true
+    categories: [opportunity-scoring-rules, feasibility-criteria]
+
+tools: [opportunity_scorer, demand_validator, feasibility_assessor, ice_calculator]
+
+capabilities:
+  - opportunity-framing
+  - demand-validation
+  - feasibility-assessment
+  - opportunity-scoring
+  - prioritisation
+
+routing:
+  input_types: [opportunity_request, discovery_output, market_signal, customer_pain]
+  output_types: [opportunity_score, assessment_report, prioritised_opportunities, ice_scores]
+
+delegation:
+  can_delegate_to:
+    - ideation-orchestrator
+    - product-strategy-orchestrator
+  escalates_to: discovery-orchestrator
+
+governance:
+  requires_approval: false
+  can_block: false
+  audit_trail: standard
+
+performance:
+  expected_latency_ms: 8000
+  max_latency_ms: 60000
+  timeout_ms: 90000

@@ -1,0 +1,51 @@
+id: model-router
+name: Model Router
+version: 1.0.0
+description: "Select the optimal LLM model for a given task based on capability requirements, latency budget, and cost target"
+
+metadata:
+  level: 3
+  domain: ai
+  type: micro-agent
+  tags: [model-selection, routing, level3, micro]
+
+generator:
+  type: RULE_BASED
+  steps:
+    - name: execute
+      type: RULE_BASED
+      rules:
+        - "model-selection"
+        - "routing"
+
+memory:
+  episodic:
+    enabled: false
+  semantic:
+    enabled: false
+  procedural:
+    enabled: false
+
+tools: [model_router]
+
+capabilities:
+  - model-selection
+  - routing
+
+routing:
+  input_types: [routing_request]
+  output_types: [selected_model]
+
+delegation:
+  can_delegate_to: []
+  escalates_to: llm-integration-capability-agent
+
+governance:
+  requires_approval: false
+  can_block: false
+  audit_trail: standard
+
+performance:
+  expected_latency_ms: 50
+  max_latency_ms: 250
+  timeout_ms: 500

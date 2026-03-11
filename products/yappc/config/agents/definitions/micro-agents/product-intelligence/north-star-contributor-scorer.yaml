@@ -1,0 +1,51 @@
+id: north-star-contributor-scorer
+name: North Star Contributor Scorer
+version: 1.0.0
+description: "Score how strongly a metric contributes to the north-star metric using correlation and causal evidence"
+
+metadata:
+  level: 3
+  domain: product-intelligence
+  type: micro-agent
+  tags: [contribution-scoring, correlation-analysis, level3, micro]
+
+generator:
+  type: RULE_BASED
+  steps:
+    - name: execute
+      type: RULE_BASED
+      rules:
+        - "contribution-scoring"
+        - "correlation-analysis"
+
+memory:
+  episodic:
+    enabled: false
+  semantic:
+    enabled: false
+  procedural:
+    enabled: false
+
+tools: [contribution_scorer]
+
+capabilities:
+  - contribution-scoring
+  - correlation-analysis
+
+routing:
+  input_types: [contribution_request]
+  output_types: [contribution_score]
+
+delegation:
+  can_delegate_to: []
+  escalates_to: analytics-capability-agent
+
+governance:
+  requires_approval: false
+  can_block: false
+  audit_trail: standard
+
+performance:
+  expected_latency_ms: 200
+  max_latency_ms: 1000
+  timeout_ms: 2000

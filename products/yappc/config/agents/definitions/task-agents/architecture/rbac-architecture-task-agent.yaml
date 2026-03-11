@@ -1,0 +1,63 @@
+id: rbac-architecture-task-agent
+name: Rbac Architecture Task Agent
+version: 1.0.0
+description: "Design role-based access control architecture with role hierarchy, permission matrices, and inheritance rules"
+
+metadata:
+  level: 3
+  domain: architecture
+  type: worker
+  tags: [rbac-design, role-hierarchy, permission-matrix, level3]
+
+generator:
+  type: PIPELINE
+  steps:
+    - name: execute
+      type: LLM
+      provider: ANTHROPIC
+      model: claude-3-5-sonnet-20241022
+      temperature: 0.1
+      max_tokens: 2000
+      prompt: |
+        Execute task: Design role-based access control architecture with role hierarchy, permission matrices, and inheritance rules
+
+        Input: {{input}}
+        Context: {{context}}
+
+        Produce a structured, precise output meeting the task specification.
+
+memory:
+  episodic:
+    enabled: true
+    retention_days: 90
+    categories: [task-executions]
+  semantic:
+    enabled: true
+    categories: [domain-knowledge]
+  procedural:
+    enabled: false
+
+tools: [rbac_designer, permission_matrix_builder]
+
+capabilities:
+  - rbac-design
+  - role-hierarchy
+  - permission-matrix
+
+routing:
+  input_types: [rbac_request]
+  output_types: [rbac_architecture_spec]
+
+delegation:
+  can_delegate_to: []
+  escalates_to: security-architecture-capability-agent
+
+governance:
+  requires_approval: false
+  can_block: false
+  audit_trail: standard
+
+performance:
+  expected_latency_ms: 3000
+  max_latency_ms: 15000
+  timeout_ms: 30000

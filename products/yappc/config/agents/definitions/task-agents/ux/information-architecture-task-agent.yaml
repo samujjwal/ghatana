@@ -1,0 +1,63 @@
+id: information-architecture-task-agent
+name: Information Architecture Task Agent
+version: 1.0.0
+description: "Design information architecture with content classification, labelling system, and search strategy"
+
+metadata:
+  level: 3
+  domain: ux
+  type: worker
+  tags: [ia-design, content-classification, labelling-system, level3]
+
+generator:
+  type: PIPELINE
+  steps:
+    - name: execute
+      type: LLM
+      provider: ANTHROPIC
+      model: claude-3-5-sonnet-20241022
+      temperature: 0.1
+      max_tokens: 2000
+      prompt: |
+        Execute task: Design information architecture with content classification, labelling system, and search strategy
+
+        Input: {{input}}
+        Context: {{context}}
+
+        Produce a structured, precise output meeting the task specification.
+
+memory:
+  episodic:
+    enabled: true
+    retention_days: 90
+    categories: [task-executions]
+  semantic:
+    enabled: true
+    categories: [domain-knowledge]
+  procedural:
+    enabled: false
+
+tools: [ia_designer, card_sort_analyser]
+
+capabilities:
+  - ia-design
+  - content-classification
+  - labelling-system
+
+routing:
+  input_types: [ia_request]
+  output_types: [information_architecture]
+
+delegation:
+  can_delegate_to: []
+  escalates_to: flow-design-capability-agent
+
+governance:
+  requires_approval: false
+  can_block: false
+  audit_trail: standard
+
+performance:
+  expected_latency_ms: 4000
+  max_latency_ms: 20000
+  timeout_ms: 40000

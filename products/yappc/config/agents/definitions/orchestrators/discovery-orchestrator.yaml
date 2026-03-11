@@ -1,0 +1,108 @@
+id: discovery-orchestrator
+name: Discovery Orchestrator
+version: 1.0.0
+description: "Orchestrates the discovery phase: market research, customer interviews, opportunity mapping, and synthesis into product opportunities"
+
+metadata:
+  level: 1
+  domain: discovery
+  tags: [orchestrator, discovery, research, phase0, level1]
+
+generator:
+  type: PIPELINE
+  steps:
+    - name: discovery_plan
+      type: LLM
+      provider: ANTHROPIC
+      model: claude-3-5-sonnet-20241022
+      temperature: 0.3
+      max_tokens: 3000
+      prompt: |
+        You are the Discovery Orchestrator. Plan a discovery sprint for:
+
+        Research focus: {{input}}
+        Target customers: {{context.target_segments}}
+        Known assumptions: {{context.assumptions}}
+        Constraints: {{context.constraints}}
+
+        Design a discovery plan:
+        1. Research questions to answer
+        2. Data sources (market data, interviews, analytics)
+        3. Research methods (JTBD, problem interviews, surveys)
+        4. Opportunity hypothesis to validate
+        5. Success criteria for discovery completion
+
+        Output as JSON: {research_questions, data_sources, methods, hypotheses, success_criteria, delegation_plan}
+    - name: market_research_dispatch
+      type: SERVICE_CALL
+      service: agent-dispatcher
+      endpoint: /dispatch
+      description: "Dispatch to market-research-orchestrator for market sizing and competitive context"
+    - name: customer_insight_dispatch
+      type: SERVICE_CALL
+      service: agent-dispatcher
+      endpoint: /dispatch
+      description: "Dispatch to customer-insight-orchestrator for interview and survey synthesis"
+    - name: opportunity_synthesis
+      type: LLM
+      provider: ANTHROPIC
+      model: claude-3-5-sonnet-20241022
+      temperature: 0.3
+      max_tokens: 3500
+      prompt: |
+        Synthesise discovery findings into structured opportunities:
+        Market research: {{market_research_dispatch}}
+        Customer insights: {{customer_insight_dispatch}}
+        Discovery plan: {{discovery_plan}}
+
+        Produce a discovery report with:
+        1. Top 3-5 validated opportunities with evidence
+        2. Key customer pain points by severity
+        3. Market window assessment
+        4. Recommended focus for ideation phase
+        5. Unvalidated assumptions requiring further research
+
+        Use opportunity framing: "We believe [customer] has [problem] and [solution] will [outcome] as evidenced by [signal]"
+
+memory:
+  episodic:
+    enabled: true
+    retention_days: 730
+    categories: [discovery-sessions, interview-summaries, opportunity-backlogs]
+  semantic:
+    enabled: true
+    categories: [discovery-patterns, market-knowledge, customer-archetypes]
+  procedural:
+    enabled: true
+    categories: [discovery-methods, interview-guides, synthesis-templates]
+
+tools: [research_planner, interview_synthesizer, opportunity_mapper, market_analyzer]
+
+capabilities:
+  - discovery-orchestration
+  - research-planning
+  - customer-insight-synthesis
+  - opportunity-mapping
+  - market-analysis
+
+routing:
+  input_types: [discovery_request, research_focus, customer_segment, market_question]
+  output_types: [discovery_report, opportunity_brief, validated_hypotheses, research_plan]
+
+delegation:
+  can_delegate_to:
+    - market-research-orchestrator
+    - customer-insight-orchestrator
+    - opportunity-assessment-orchestrator
+    - ideation-orchestrator
+  escalates_to: portfolio-orchestrator
+
+governance:
+  requires_approval: false
+  can_block: false
+  audit_trail: standard
+
+performance:
+  expected_latency_ms: 15000
+  max_latency_ms: 120000
+  timeout_ms: 180000

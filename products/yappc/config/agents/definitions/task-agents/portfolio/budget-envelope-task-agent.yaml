@@ -1,0 +1,63 @@
+id: budget-envelope-task-agent
+name: Budget Envelope Task Agent
+version: 1.0.0
+description: "Calculate and validate budget envelopes for initiatives based on historical actuals, team capacity, and cost drivers"
+
+metadata:
+  level: 3
+  domain: portfolio
+  type: worker
+  tags: [budget-calculation, cost-driver-analysis, variance-tracking, level3]
+
+generator:
+  type: PIPELINE
+  steps:
+    - name: execute
+      type: LLM
+      provider: ANTHROPIC
+      model: claude-3-5-sonnet-20241022
+      temperature: 0.1
+      max_tokens: 2000
+      prompt: |
+        Execute task: Calculate and validate budget envelopes for initiatives based on historical actuals, team capacity, and cost drivers
+
+        Input: {{input}}
+        Context: {{context}}
+
+        Produce a structured, precise output meeting the task specification.
+
+memory:
+  episodic:
+    enabled: true
+    retention_days: 90
+    categories: [task-executions]
+  semantic:
+    enabled: true
+    categories: [domain-knowledge]
+  procedural:
+    enabled: false
+
+tools: [budget_calculator, cost_actuals_reader]
+
+capabilities:
+  - budget-calculation
+  - cost-driver-analysis
+  - variance-tracking
+
+routing:
+  input_types: [budget_request]
+  output_types: [budget_envelope]
+
+delegation:
+  can_delegate_to: []
+  escalates_to: business-case-capability-agent
+
+governance:
+  requires_approval: false
+  can_block: false
+  audit_trail: standard
+
+performance:
+  expected_latency_ms: 2000
+  max_latency_ms: 10000
+  timeout_ms: 20000

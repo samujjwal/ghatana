@@ -1,0 +1,51 @@
+id: icon-consistency-unit
+name: Icon Consistency Unit
+version: 1.0.0
+description: "Check that icon usage in a screen spec matches the approved icon library and style guidelines"
+
+metadata:
+  level: 3
+  domain: ux
+  type: micro-agent
+  tags: [icon-consistency-check, library-compliance, level3, micro]
+
+generator:
+  type: RULE_BASED
+  steps:
+    - name: execute
+      type: RULE_BASED
+      rules:
+        - "icon-consistency-check"
+        - "library-compliance"
+
+memory:
+  episodic:
+    enabled: false
+  semantic:
+    enabled: false
+  procedural:
+    enabled: false
+
+tools: [icon_checker]
+
+capabilities:
+  - icon-consistency-check
+  - library-compliance
+
+routing:
+  input_types: [icon_check_request]
+  output_types: [icon_violations]
+
+delegation:
+  can_delegate_to: []
+  escalates_to: design-consistency-capability-agent
+
+governance:
+  requires_approval: false
+  can_block: false
+  audit_trail: standard
+
+performance:
+  expected_latency_ms: 100
+  max_latency_ms: 500
+  timeout_ms: 1000

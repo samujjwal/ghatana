@@ -1,0 +1,96 @@
+id: requirement-governance-capability-agent
+name: Requirement Governance Capability Agent
+version: 1.0.0
+description: "Governs requirement lifecycle: baseline management, change control, version history, signoff workflows, and requirement audit for regulated contexts"
+
+metadata:
+  level: 2
+  domain: requirements
+  tags: [capability, requirement-governance, baseline, change-control, signoff, level2]
+
+generator:
+  type: PIPELINE
+  steps:
+    - name: baseline_assessment
+      type: SERVICE_CALL
+      service: requirement-repository
+      endpoint: /baseline
+      description: "Retrieve current baselined requirements and pending change requests"
+    - name: change_impact_analysis
+      type: LLM
+      provider: ANTHROPIC
+      model: claude-3-5-sonnet-20241022
+      temperature: 0.1
+      max_tokens: 2500
+      prompt: |
+        Analyse impact of proposed requirement change:
+
+        Change request: {{input}}
+        Current baseline: {{baseline_assessment}}
+        Traceability links: {{context.traceability_matrix}}
+        In-progress work: {{context.sprint_content}}
+
+        Identify: downstream requirements affected, test cases to update, in-progress work at risk, estimated churn effort (story points), scope vs roadmap impact, change approval authority needed. Output impact report JSON.
+    - name: signoff_coordination
+      type: SERVICE_CALL
+      service: governance-workflow
+      endpoint: /signoff
+      description: "Route requirement set to appropriate stakeholders for formal signoff based on type and risk"
+    - name: baseline_update
+      type: LLM
+      provider: ANTHROPIC
+      model: claude-3-5-sonnet-20241022
+      temperature: 0.0
+      max_tokens: 1000
+      prompt: |
+        Generate baseline update record:
+
+        Approved change: {{input}}
+        Impact analysis: {{change_impact_analysis}}
+        Signoff confirmation: {{signoff_coordination}}
+
+        Produce formal change record: change ID, date, changed requirements, rationale, approver, affected artifacts, version increment.
+
+memory:
+  episodic:
+    enabled: true
+    retention_days: 2555
+    categories: [baselines, change-requests, impact-analyses, signoff-records]
+  semantic:
+    enabled: true
+    categories: [requirement-baselines, change-patterns, governance-policies]
+  procedural:
+    enabled: true
+    categories: [change-control-process, signoff-matrix, baseline-management]
+
+tools: [requirement_repository, governance_workflow, traceability_store, audit_ledger]
+
+capabilities:
+  - baseline-management
+  - change-impact-analysis
+  - signoff-coordination
+  - version-history-management
+  - requirement-audit
+
+routing:
+  input_types: [change_request, signoff_request, audit_request, baseline_freeze_trigger]
+  output_types: [impact_report, signoff_decision, baseline_update_record, audit_report]
+
+delegation:
+  can_delegate_to:
+    - change-impact-task-agent
+    - baseline-management-task-agent
+    - signoff-workflow-task-agent
+    - audit-report-task-agent
+  escalates_to: traceability-orchestrator
+
+governance:
+  requires_approval: true
+  approval_chain: [product-lead, engineering-lead]
+  can_block: true
+  audit_trail: comprehensive
+
+performance:
+  expected_latency_ms: 5000
+  max_latency_ms: 30000
+  timeout_ms: 86400000

@@ -1,0 +1,86 @@
+id: portfolio-analysis-capability-agent
+name: Portfolio Analysis Capability Agent
+version: 1.0.0
+description: "Analyses product portfolio health: scoring initiatives, identifying gaps, modelling investment balance, and producing portfolio health reports"
+
+metadata:
+  level: 2
+  domain: portfolio
+  tags: [capability, portfolio, analysis, investment, scoring, level2]
+
+generator:
+  type: PIPELINE
+  steps:
+    - name: portfolio_data_collection
+      type: SERVICE_CALL
+      service: portfolio-store
+      endpoint: /snapshot
+      description: "Pull current initiative list with status, budget, and performance data"
+    - name: portfolio_scoring
+      type: LLM
+      provider: ANTHROPIC
+      model: claude-3-5-sonnet-20241022
+      temperature: 0.1
+      max_tokens: 3000
+      prompt: |
+        Analyse portfolio health and score each initiative:
+
+        Portfolio snapshot: {{portfolio_data_collection}}
+        Scoring criteria: {{context.scoring_criteria}}
+        Strategic themes: {{context.strategic_themes}}
+        Budget envelopes: {{context.budget_envelopes}}
+
+        For each initiative compute: strategic alignment (0-10), market opportunity (0-10), execution risk (0-10), investment efficiency (ROI estimate). Identify portfolio gaps and over-concentration. Output scored portfolio JSON.
+    - name: health_report_generation
+      type: LLM
+      provider: ANTHROPIC
+      model: claude-3-5-sonnet-20241022
+      temperature: 0.2
+      max_tokens: 2000
+      prompt: |
+        Generate portfolio health report:
+
+        Scored portfolio: {{portfolio_scoring}}
+
+        Produce: executive summary, top 3 risks, rebalancing recommendations, underinvested areas, initiatives to accelerate or stop. Format as structured report.
+
+memory:
+  episodic:
+    enabled: true
+    retention_days: 365
+    categories: [portfolio-snapshots, health-reports, scoring-histories]
+  semantic:
+    enabled: true
+    categories: [scoring-models, industry-benchmarks, portfolio-patterns]
+  procedural:
+    enabled: true
+    categories: [scoring-procedures, gap-analysis-methods, rebalancing-rules]
+
+tools: [portfolio_store, scoring_engine, benchmark_data]
+
+capabilities:
+  - portfolio-health-analysis
+  - initiative-scoring
+  - investment-balance-modelling
+  - gap-identification
+
+routing:
+  input_types: [portfolio_review_request, initiative_list]
+  output_types: [portfolio_health_report, scored_initiative_list, rebalancing_recommendation]
+
+delegation:
+  can_delegate_to:
+    - portfolio-scoring-task-agent
+    - strategy-option-comparison-task-agent
+    - budget-envelope-task-agent
+  escalates_to: portfolio-orchestrator
+
+governance:
+  requires_approval: false
+  can_block: false
+  audit_trail: standard
+
+performance:
+  expected_latency_ms: 5000
+  max_latency_ms: 20000
+  timeout_ms: 60000

@@ -1,0 +1,51 @@
+id: change-window-validator
+name: Change Window Validator
+version: 1.0.0
+description: "Validate that a proposed change time falls within an approved change window and not in a freeze period"
+
+metadata:
+  level: 3
+  domain: operations
+  type: micro-agent
+  tags: [change-window-validation, freeze-detection, level3, micro]
+
+generator:
+  type: RULE_BASED
+  steps:
+    - name: execute
+      type: RULE_BASED
+      rules:
+        - "change-window-validation"
+        - "freeze-detection"
+
+memory:
+  episodic:
+    enabled: false
+  semantic:
+    enabled: false
+  procedural:
+    enabled: false
+
+tools: [window_validator]
+
+capabilities:
+  - change-window-validation
+  - freeze-detection
+
+routing:
+  input_types: [window_validate_request]
+  output_types: [window_verdict]
+
+delegation:
+  can_delegate_to: []
+  escalates_to: change-management-capability-agent
+
+governance:
+  requires_approval: false
+  can_block: false
+  audit_trail: standard
+
+performance:
+  expected_latency_ms: 100
+  max_latency_ms: 500
+  timeout_ms: 1000

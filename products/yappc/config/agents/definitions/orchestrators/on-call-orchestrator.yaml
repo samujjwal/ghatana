@@ -1,0 +1,99 @@
+id: on-call-orchestrator
+name: On-Call Orchestrator
+version: 1.0.0
+description: "Manages on-call alert triage, escalation paths, runbook retrieval, incident handoff, and on-call load balancing to reduce engineer burnout"
+
+metadata:
+  level: 1
+  domain: operations
+  tags: [orchestrator, on-call, alerts, escalation, pagerduty, level1]
+
+generator:
+  type: PIPELINE
+  steps:
+    - name: alert_triage
+      type: LLM
+      provider: ANTHROPIC
+      model: claude-3-5-sonnet-20241022
+      temperature: 0.0
+      max_tokens: 2000
+      prompt: |
+        Triage incoming alert:
+
+        Alert: {{input}}
+        Current on-call schedule: {{context.on_call_schedule}}
+        Open incidents: {{context.open_incidents}}
+        Service SLO status: {{context.slo_status}}
+        Alert correlation window (5 min): {{context.alert_correlation}}
+
+        Determine: severity (S1-S4), deduplicate with open incidents, identify affected services, runbook match, whether to page immediately or suppress. Output JSON triage decision.
+    - name: runbook_retrieval
+      type: SERVICE_CALL
+      service: runbook-store
+      endpoint: /match
+      description: "Retrieve matching runbooks from knowledge base for triaged alert"
+    - name: escalation_decision
+      type: LLM
+      provider: ANTHROPIC
+      model: claude-3-5-sonnet-20241022
+      temperature: 0.0
+      max_tokens: 1500
+      prompt: |
+        Determine escalation path:
+
+        Triage: {{alert_triage}}
+        Runbooks: {{runbook_retrieval}}
+        On-call schedule: {{context.on_call_schedule}}
+        Escalation policy: {{context.escalation_policy}}
+
+        Output: page primary on-call (yes/no), page secondary (yes/no), auto-remediate (yes/no), notify channels, expected resolution SLA, incident commander if S1/S2.
+    - name: remediation_dispatch
+      type: SERVICE_CALL
+      service: agent-dispatcher
+      endpoint: /dispatch
+      description: "Execute automated remediation or page on-call engineers via PagerDuty/OpsGenie"
+
+memory:
+  episodic:
+    enabled: true
+    retention_days: 365
+    categories: [alerts, escalations, runbook-executions, on-call-handoffs]
+  semantic:
+    enabled: true
+    categories: [alert-patterns, runbooks, escalation-policies, on-call-schedules]
+  procedural:
+    enabled: true
+    categories: [alert-triage-rules, escalation-chains, auto-remediation-scripts]
+
+tools: [alerting_platform, pagerduty_api, runbook_executor, incident_tracker, on_call_scheduler]
+
+capabilities:
+  - alert-triage
+  - escalation-management
+  - runbook-retrieval
+  - auto-remediation
+  - incident-handoff
+
+routing:
+  input_types: [alert_event, pagerduty_webhook, monitoring_trigger]
+  output_types: [escalation_action, runbook_result, incident_created, on_call_notification]
+
+delegation:
+  can_delegate_to:
+    - on-call-capability-agent
+    - alert-triage-task-agent
+    - escalation-task-agent
+    - runbook-execution-task-agent
+    - auto-remediation-task-agent
+    - incident-handoff-task-agent
+  escalates_to: operations-orchestrator
+
+governance:
+  requires_approval: false
+  can_block: true
+  audit_trail: comprehensive
+
+performance:
+  expected_latency_ms: 500
+  max_latency_ms: 3000
+  timeout_ms: 10000

@@ -1,0 +1,51 @@
+id: budget-threshold-monitor
+name: Budget Threshold Monitor
+version: 1.0.0
+description: "Monitor current spend against budget thresholds and trigger alert when crossing defined warning/critical percentages"
+
+metadata:
+  level: 3
+  domain: operations
+  type: micro-agent
+  tags: [threshold-monitoring, alert-triggering, level3, micro]
+
+generator:
+  type: RULE_BASED
+  steps:
+    - name: execute
+      type: RULE_BASED
+      rules:
+        - "threshold-monitoring"
+        - "alert-triggering"
+
+memory:
+  episodic:
+    enabled: false
+  semantic:
+    enabled: false
+  procedural:
+    enabled: false
+
+tools: [threshold_monitor]
+
+capabilities:
+  - threshold-monitoring
+  - alert-triggering
+
+routing:
+  input_types: [monitor_request]
+  output_types: [budget_alert]
+
+delegation:
+  can_delegate_to: []
+  escalates_to: cost-management-capability-agent
+
+governance:
+  requires_approval: false
+  can_block: false
+  audit_trail: standard
+
+performance:
+  expected_latency_ms: 200
+  max_latency_ms: 1000
+  timeout_ms: 2000

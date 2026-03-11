@@ -1,0 +1,94 @@
+id: requirement-quality-capability-agent
+name: Requirement Quality Capability Agent
+version: 1.0.0
+description: "Ensures requirement quality: INVEST criteria validation, ambiguity detection, acceptance criteria completeness, and testability scoring"
+
+metadata:
+  level: 2
+  domain: requirements
+  tags: [capability, requirement-quality, invest, acceptance-criteria, testability, level2]
+
+generator:
+  type: PIPELINE
+  steps:
+    - name: invest_validation
+      type: LLM
+      provider: ANTHROPIC
+      model: claude-3-5-sonnet-20241022
+      temperature: 0.0
+      max_tokens: 3000
+      prompt: |
+        Validate requirements against INVEST criteria:
+
+        Requirements to review: {{input.requirements}}
+
+        For each requirement score (0-2) on: Independent, Negotiable, Valuable, Estimable, Small, Testable. Total /12. Flag requirements scoring below 8. Provide specific improvement suggestions per dimension. Output scored list JSON.
+    - name: ambiguity_detection
+      type: LLM
+      provider: ANTHROPIC
+      model: claude-3-5-sonnet-20241022
+      temperature: 0.0
+      max_tokens: 2000
+      prompt: |
+        Detect and classify ambiguities in requirements:
+
+        Requirements: {{input.requirements}}
+
+        Identify: vague terms (fast, easy, seamless, etc.), missing quantification, undefined actors, implicit assumptions, context-dependent statements. For each ambiguity: location, type, suggested rewrite. Output ambiguity list.
+    - name: acceptance_criteria_review
+      type: LLM
+      provider: ANTHROPIC
+      model: claude-3-5-sonnet-20241022
+      temperature: 0.1
+      max_tokens: 3000
+      prompt: |
+        Review and improve acceptance criteria:
+
+        Requirements with ACs: {{input.requirements}}
+        INVEST scores: {{invest_validation}}
+        Ambiguities: {{ambiguity_detection}}
+
+        For each requirement: validate ACs are testable (Given/When/Then), cover happy path + at least 2 edge cases + 1 error case, pass Definition of Done checks. Rewrite weak ACs. Flag missing ACs. Output improved ACs.
+
+memory:
+  episodic:
+    enabled: true
+    retention_days: 365
+    categories: [quality-reviews, invest-scores, ambiguity-reports, ac-improvements]
+  semantic:
+    enabled: true
+    categories: [quality-patterns, invest-benchmarks, ac-templates]
+  procedural:
+    enabled: true
+    categories: [invest-scoring, ambiguity-detection-patterns, gherkin-writing]
+
+tools: [requirement_quality_scorer, ambiguity_detector, ac_validator]
+
+capabilities:
+  - invest-validation
+  - ambiguity-detection
+  - acceptance-criteria-review
+  - testability-scoring
+  - requirement-rewriting
+
+routing:
+  input_types: [requirement_quality_check, requirement_set, ac_review_request]
+  output_types: [quality_report, invest_scores, ambiguity_report, improved_requirements, improved_acs]
+
+delegation:
+  can_delegate_to:
+    - invest-validation-task-agent
+    - ambiguity-detection-task-agent
+    - ac-writing-task-agent
+    - testability-check-task-agent
+  escalates_to: requirements-orchestrator
+
+governance:
+  requires_approval: false
+  can_block: false
+  audit_trail: standard
+
+performance:
+  expected_latency_ms: 5000
+  max_latency_ms: 15000
+  timeout_ms: 60000

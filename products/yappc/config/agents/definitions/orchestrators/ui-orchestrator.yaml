@@ -1,0 +1,107 @@
+id: ui-orchestrator
+name: UI Orchestrator
+version: 1.0.0
+description: "Orchestrates UI design delivery: screen design, component design, responsive layout, visual design application, and design token management"
+
+metadata:
+  level: 1
+  domain: ux
+  tags: [orchestrator, ui, screens, visual-design, level1]
+
+generator:
+  type: PIPELINE
+  steps:
+    - name: ui_planning
+      type: LLM
+      provider: ANTHROPIC
+      model: claude-3-5-sonnet-20241022
+      temperature: 0.3
+      max_tokens: 2500
+      prompt: |
+        Plan UI design delivery for:
+
+        Feature: {{input}}
+        UX brief: {{context.ux_brief}}
+        Design system: {{context.design_system}}
+        Brand guidelines: {{context.brand}}
+
+        Define:
+        1. Screen inventory (all UI states required)
+        2. Component reuse opportunities from design system
+        3. New component candidates requiring design
+        4. Responsive breakpoints to design for
+        5. Visual design decisions (typography, colour, spacing)
+
+        Output as JSON: {screen_inventory, reuse_components, new_components, breakpoints, visual_decisions}
+    - name: component_design
+      type: LLM
+      provider: ANTHROPIC
+      model: claude-3-5-sonnet-20241022
+      temperature: 0.3
+      max_tokens: 3000
+      prompt: |
+        Design UI components for the feature:
+        Components needed: {{ui_planning.new_components}}
+        Design system tokens: {{context.design_tokens}}
+
+        For each component: {name, variants, props, states, accessibility_requirements, design_token_usage}
+    - name: screen_design_synthesis
+      type: LLM
+      provider: ANTHROPIC
+      model: claude-3-5-sonnet-20241022
+      temperature: 0.2
+      max_tokens: 3000
+      prompt: |
+        Synthesise screen designs with layout specifications:
+        Screens: {{ui_planning.screen_inventory}}
+        Components: {{component_design}}
+        Visual decisions: {{ui_planning.visual_decisions}}
+
+        For each screen: {screen_name, layout_grid, component_placement, spacing, content, states}
+    - name: design_token_update_dispatch
+      type: SERVICE_CALL
+      service: agent-dispatcher
+      endpoint: /dispatch
+      description: "Route any new design tokens to design-system-orchestrator for integration"
+
+memory:
+  episodic:
+    enabled: true
+    retention_days: 730
+    categories: [ui-designs, component-iterations, design-reviews]
+  semantic:
+    enabled: true
+    categories: [ui-patterns, design-tokens, component-library, visual-design-decisions]
+  procedural:
+    enabled: true
+    categories: [ui-design-process, component-design-standards, handoff-procedures]
+
+tools: [screen_designer, component_designer, token_manager, layout_generator]
+
+capabilities:
+  - screen-design
+  - component-design
+  - visual-design-application
+  - design-token-management
+  - responsive-layout-design
+
+routing:
+  input_types: [ui_request, ux_brief, wireframes, design_tokens]
+  output_types: [screen_designs, component_specs, design_tokens, design_handoff_package]
+
+delegation:
+  can_delegate_to:
+    - design-system-orchestrator
+    - interaction-design-orchestrator
+    - frontend-engineering-orchestrator
+  escalates_to: ux-orchestrator
+
+governance:
+  requires_approval: false
+  can_block: false
+  audit_trail: standard
+
+performance:
+  expected_latency_ms: 10000
+  max_latency_ms: 75000
+  timeout_ms: 100000

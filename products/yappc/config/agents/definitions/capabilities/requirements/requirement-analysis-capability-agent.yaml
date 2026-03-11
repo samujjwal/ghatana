@@ -1,0 +1,98 @@
+id: requirement-analysis-capability-agent
+name: Requirement Analysis Capability Agent
+version: 1.0.0
+description: "Elicits, structures, and analyses product requirements: stakeholder needs extraction, conflict resolution, gap analysis, and NFR identification"
+
+metadata:
+  level: 2
+  domain: requirements
+  tags: [capability, requirements, elicitation, analysis, stakeholders, nfr, level2]
+
+generator:
+  type: PIPELINE
+  steps:
+    - name: stakeholder_needs_extraction
+      type: LLM
+      provider: ANTHROPIC
+      model: claude-3-5-sonnet-20241022
+      temperature: 0.1
+      max_tokens: 3000
+      prompt: |
+        Extract and structure stakeholder needs:
+
+        Input: {{input}}
+        Stakeholder profiles: {{context.stakeholders}}
+        Business context: {{context.business_context}}
+        Existing requirements: {{context.existing_requirements}}
+
+        Extract: functional needs (what system must do), non-functional needs (quality attributes: performance, security, scalability, accessibility, maintainability), constraints (regulatory, technical, business), assumptions. Flag ambiguities and conflicts. Output structured JSON.
+    - name: requirement_gap_analysis
+      type: LLM
+      provider: ANTHROPIC
+      model: claude-3-5-sonnet-20241022
+      temperature: 0.1
+      max_tokens: 2000
+      prompt: |
+        Identify gaps in the extracted requirements:
+
+        Extracted needs: {{stakeholder_needs_extraction}}
+        Feature scope: {{context.feature_scope}}
+        Acceptance criteria patterns: {{context.ac_patterns}}
+
+        Find: missing scenarios (happy path/edge case/error), untestable requirements, orphaned requirements (no user story), missing NFRs for critical paths, conflicting requirements. Output gap list with severity.
+    - name: requirement_conflict_resolution
+      type: LLM
+      provider: ANTHROPIC
+      model: claude-3-5-sonnet-20241022
+      temperature: 0.2
+      max_tokens: 2000
+      prompt: |
+        Resolve requirement conflicts:
+
+        Extracted needs: {{stakeholder_needs_extraction}}
+        Conflicts identified: {{requirement_gap_analysis.conflicts}}
+
+        For each conflict: document both positions, assess business impact of each, recommend resolution with rationale, flag cases requiring stakeholder decision. Output resolution recommendations.
+
+memory:
+  episodic:
+    enabled: true
+    retention_days: 365
+    categories: [elicitation-sessions, requirement-sets, gap-analyses, conflict-resolutions]
+  semantic:
+    enabled: true
+    categories: [requirement-patterns, nfr-catalogue, stakeholder-profiles]
+  procedural:
+    enabled: true
+    categories: [elicitation-techniques, gap-analysis-methods, conflict-resolution-rules]
+
+tools: [requirement_repository, stakeholder_registry, nfr_catalogue, gap_analyser]
+
+capabilities:
+  - requirement-elicitation
+  - stakeholder-need-extraction
+  - gap-analysis
+  - conflict-resolution
+  - nfr-identification
+
+routing:
+  input_types: [elicitation_request, raw_requirements, stakeholder_input, feature_request]
+  output_types: [structured_requirements, gap_report, conflict_resolution_report, nfr_list]
+
+delegation:
+  can_delegate_to:
+    - requirement-capture-task-agent
+    - nfr-extraction-task-agent
+    - conflict-resolution-task-agent
+    - stakeholder-interview-task-agent
+  escalates_to: requirements-orchestrator
+
+governance:
+  requires_approval: false
+  can_block: false
+  audit_trail: standard
+
+performance:
+  expected_latency_ms: 5000
+  max_latency_ms: 20000
+  timeout_ms: 60000

@@ -1,0 +1,95 @@
+id: backend-engineering-orchestrator
+name: Backend Engineering Orchestrator
+version: 1.0.0
+description: "Orchestrates backend engineering: API implementation, domain service logic, repository patterns, data migrations, messaging integration, and service testing"
+
+metadata:
+  level: 1
+  domain: engineering
+  tags: [orchestrator, backend, api, domain-logic, level1]
+
+generator:
+  type: PIPELINE
+  steps:
+    - name: backend_task_analysis
+      type: LLM
+      provider: ANTHROPIC
+      model: claude-3-5-sonnet-20241022
+      temperature: 0.2
+      max_tokens: 2500
+      prompt: |
+        Analyse the backend engineering task:
+
+        Task: {{input}}
+        API spec: {{context.api_spec}}
+        Domain model: {{context.domain_model}}
+        Database schema: {{context.db_schema}}
+
+        Determine:
+        1. API endpoints/resolvers to implement
+        2. Domain services and aggregates to create/update
+        3. Database changes required (migrations, queries)
+        4. Messaging/event publishing changes
+        5. Tests to write (unit, integration)
+        6. Performance considerations
+
+        Output as JSON: {api_changes, domain_changes, db_changes, event_changes, test_plan, delegation_plan}
+    - name: api_implementation_dispatch
+      type: SERVICE_CALL
+      service: agent-dispatcher
+      endpoint: /dispatch/batch
+      description: "Dispatch API endpoints to api-implementation-task-agent"
+    - name: domain_logic_dispatch
+      type: SERVICE_CALL
+      service: agent-dispatcher
+      endpoint: /dispatch
+      description: "Dispatch domain logic to domain-logic-task-agent"
+    - name: integration_test_dispatch
+      type: SERVICE_CALL
+      service: agent-dispatcher
+      endpoint: /dispatch
+      description: "Dispatch integration tests to integration-test-writer agent"
+
+memory:
+  episodic:
+    enabled: true
+    retention_days: 365
+    categories: [backend-implementations, api-versions, domain-changes]
+  semantic:
+    enabled: true
+    categories: [api-patterns, domain-patterns, repository-patterns, messaging-patterns]
+  procedural:
+    enabled: true
+    categories: [backend-dev-standards, api-naming-conventions, error-handling-rules]
+
+tools: [api_builder, service_generator, migration_runner, test_orchestrator, db_schema_analyser]
+
+capabilities:
+  - backend-engineering
+  - api-implementation
+  - domain-logic-implementation
+  - data-access-layer
+  - messaging-integration
+
+routing:
+  input_types: [backend_task, api_spec, domain_model, database_change_request]
+  output_types: [api_implementation, service_logic, data_layer, migration_scripts, integration_tests]
+
+delegation:
+  can_delegate_to:
+    - backend-capability-agent
+    - api-implementation-task-agent
+    - domain-logic-task-agent
+    - data-access-task-agent
+    - code-review-orchestrator
+  escalates_to: engineering-orchestrator
+
+governance:
+  requires_approval: false
+  can_block: false
+  audit_trail: standard
+
+performance:
+  expected_latency_ms: 10000
+  max_latency_ms: 90000
+  timeout_ms: 120000

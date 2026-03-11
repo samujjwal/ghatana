@@ -1,0 +1,63 @@
+id: cohort-analysis-task-agent
+name: Cohort Analysis Task Agent
+version: 1.0.0
+description: "Perform cohort retention analysis by acquisition cohort showing week-over-week retention curves and cohort quality comparison"
+
+metadata:
+  level: 3
+  domain: product-intelligence
+  type: worker
+  tags: [cohort-retention-analysis, retention-curve-generation, cohort-quality-comparison, level3]
+
+generator:
+  type: PIPELINE
+  steps:
+    - name: execute
+      type: LLM
+      provider: ANTHROPIC
+      model: claude-3-5-sonnet-20241022
+      temperature: 0.1
+      max_tokens: 2000
+      prompt: |
+        Execute task: Perform cohort retention analysis by acquisition cohort showing week-over-week retention curves and cohort quality comparison
+
+        Input: {{input}}
+        Context: {{context}}
+
+        Produce a structured, precise output meeting the task specification.
+
+memory:
+  episodic:
+    enabled: true
+    retention_days: 90
+    categories: [task-executions]
+  semantic:
+    enabled: true
+    categories: [domain-knowledge]
+  procedural:
+    enabled: false
+
+tools: [cohort_analyser, retention_curve_builder]
+
+capabilities:
+  - cohort-retention-analysis
+  - retention-curve-generation
+  - cohort-quality-comparison
+
+routing:
+  input_types: [cohort_analysis_request]
+  output_types: [cohort_retention_report]
+
+delegation:
+  can_delegate_to: []
+  escalates_to: analytics-capability-agent
+
+governance:
+  requires_approval: false
+  can_block: false
+  audit_trail: standard
+
+performance:
+  expected_latency_ms: 4000
+  max_latency_ms: 20000
+  timeout_ms: 40000

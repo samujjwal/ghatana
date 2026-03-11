@@ -1,0 +1,51 @@
+id: requirement-tagger
+name: Requirement Tagger
+version: 1.0.0
+description: "Tag a requirement with domain, feature area, and component labels from a product taxonomy"
+
+metadata:
+  level: 3
+  domain: requirements
+  type: micro-agent
+  tags: [requirement-tagging, taxonomy-labelling, level3, micro]
+
+generator:
+  type: RULE_BASED
+  steps:
+    - name: execute
+      type: RULE_BASED
+      rules:
+        - "requirement-tagging"
+        - "taxonomy-labelling"
+
+memory:
+  episodic:
+    enabled: false
+  semantic:
+    enabled: false
+  procedural:
+    enabled: false
+
+tools: [tagger]
+
+capabilities:
+  - requirement-tagging
+  - taxonomy-labelling
+
+routing:
+  input_types: [tag_request]
+  output_types: [tagged_requirement]
+
+delegation:
+  can_delegate_to: []
+  escalates_to: requirement-analysis-capability-agent
+
+governance:
+  requires_approval: false
+  can_block: false
+  audit_trail: standard
+
+performance:
+  expected_latency_ms: 100
+  max_latency_ms: 500
+  timeout_ms: 1000

@@ -1,0 +1,51 @@
+id: differentiation-scorer
+name: Differentiation Scorer
+version: 1.0.0
+description: "Score a product concept's differentiation against listed alternatives on a 1-10 scale with justification"
+
+metadata:
+  level: 3
+  domain: ideation
+  type: micro-agent
+  tags: [differentiation-scoring, competitive-comparison, level3, micro]
+
+generator:
+  type: RULE_BASED
+  steps:
+    - name: execute
+      type: RULE_BASED
+      rules:
+        - "differentiation-scoring"
+        - "competitive-comparison"
+
+memory:
+  episodic:
+    enabled: false
+  semantic:
+    enabled: false
+  procedural:
+    enabled: false
+
+tools: [differentiation_scorer]
+
+capabilities:
+  - differentiation-scoring
+  - competitive-comparison
+
+routing:
+  input_types: [differentiation_score_request]
+  output_types: [differentiation_score]
+
+delegation:
+  can_delegate_to: []
+  escalates_to: differentiation-capability-agent
+
+governance:
+  requires_approval: false
+  can_block: false
+  audit_trail: standard
+
+performance:
+  expected_latency_ms: 200
+  max_latency_ms: 1000
+  timeout_ms: 2000

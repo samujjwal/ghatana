@@ -1,0 +1,51 @@
+id: event-versioning-unit
+name: Event Versioning Unit
+version: 1.0.0
+description: "Assign the correct semantic version to an event schema change based on change type (major/minor/patch)"
+
+metadata:
+  level: 3
+  domain: architecture
+  type: micro-agent
+  tags: [version-assignment, semver-determination, level3, micro]
+
+generator:
+  type: RULE_BASED
+  steps:
+    - name: execute
+      type: RULE_BASED
+      rules:
+        - "version-assignment"
+        - "semver-determination"
+
+memory:
+  episodic:
+    enabled: false
+  semantic:
+    enabled: false
+  procedural:
+    enabled: false
+
+tools: [version_calculator]
+
+capabilities:
+  - version-assignment
+  - semver-determination
+
+routing:
+  input_types: [versioning_request]
+  output_types: [version_assignment]
+
+delegation:
+  can_delegate_to: []
+  escalates_to: event-architecture-capability-agent
+
+governance:
+  requires_approval: false
+  can_block: false
+  audit_trail: standard
+
+performance:
+  expected_latency_ms: 100
+  max_latency_ms: 500
+  timeout_ms: 1000

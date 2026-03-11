@@ -1,0 +1,63 @@
+id: requirement-completeness-task-agent
+name: Requirement Completeness Task Agent
+version: 1.0.0
+description: "Check requirement completeness against domain coverage checklist, identify gaps, and suggest missing requirements"
+
+metadata:
+  level: 3
+  domain: requirements
+  type: worker
+  tags: [completeness-checking, gap-identification, suggestion-generation, level3]
+
+generator:
+  type: PIPELINE
+  steps:
+    - name: execute
+      type: LLM
+      provider: ANTHROPIC
+      model: claude-3-5-sonnet-20241022
+      temperature: 0.1
+      max_tokens: 2000
+      prompt: |
+        Execute task: Check requirement completeness against domain coverage checklist, identify gaps, and suggest missing requirements
+
+        Input: {{input}}
+        Context: {{context}}
+
+        Produce a structured, precise output meeting the task specification.
+
+memory:
+  episodic:
+    enabled: true
+    retention_days: 90
+    categories: [task-executions]
+  semantic:
+    enabled: true
+    categories: [domain-knowledge]
+  procedural:
+    enabled: false
+
+tools: [completeness_checker, gap_suggester]
+
+capabilities:
+  - completeness-checking
+  - gap-identification
+  - suggestion-generation
+
+routing:
+  input_types: [completeness_request]
+  output_types: [completeness_report, gap_suggestions]
+
+delegation:
+  can_delegate_to: []
+  escalates_to: requirement-quality-capability-agent
+
+governance:
+  requires_approval: false
+  can_block: false
+  audit_trail: standard
+
+performance:
+  expected_latency_ms: 3000
+  max_latency_ms: 15000
+  timeout_ms: 30000

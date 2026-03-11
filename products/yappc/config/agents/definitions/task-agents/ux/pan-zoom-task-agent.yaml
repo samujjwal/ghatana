@@ -1,0 +1,63 @@
+id: pan-zoom-task-agent
+name: Pan Zoom Task Agent
+version: 1.0.0
+description: "Define pan and zoom interaction specs for canvas/map UX including min/max zoom, inertia, keyboard shortcuts, and focus-zoom behavior"
+
+metadata:
+  level: 3
+  domain: ux
+  type: worker
+  tags: [pan-zoom-specification, boundary-definition, keyboard-shortcut-spec, level3]
+
+generator:
+  type: PIPELINE
+  steps:
+    - name: execute
+      type: LLM
+      provider: ANTHROPIC
+      model: claude-3-5-sonnet-20241022
+      temperature: 0.1
+      max_tokens: 2000
+      prompt: |
+        Execute task: Define pan and zoom interaction specs for canvas/map UX including min/max zoom, inertia, keyboard shortcuts, and focus-zoom behavior
+
+        Input: {{input}}
+        Context: {{context}}
+
+        Produce a structured, precise output meeting the task specification.
+
+memory:
+  episodic:
+    enabled: true
+    retention_days: 90
+    categories: [task-executions]
+  semantic:
+    enabled: true
+    categories: [domain-knowledge]
+  procedural:
+    enabled: false
+
+tools: [pan_zoom_spec_writer, boundary_definer]
+
+capabilities:
+  - pan-zoom-specification
+  - boundary-definition
+  - keyboard-shortcut-spec
+
+routing:
+  input_types: [pan_zoom_request]
+  output_types: [pan_zoom_specification]
+
+delegation:
+  can_delegate_to: []
+  escalates_to: canvas-interaction-capability-agent
+
+governance:
+  requires_approval: false
+  can_block: false
+  audit_trail: standard
+
+performance:
+  expected_latency_ms: 2000
+  max_latency_ms: 10000
+  timeout_ms: 20000

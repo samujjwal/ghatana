@@ -1,0 +1,63 @@
+id: embedding-generation-task-agent
+name: Embedding Generation Task Agent
+version: 1.0.0
+description: "Generate text embeddings for content using configured embedding models with batching and caching"
+
+metadata:
+  level: 3
+  domain: ai
+  type: worker
+  tags: [embedding-generation, batched-processing, embedding-caching, level3]
+
+generator:
+  type: PIPELINE
+  steps:
+    - name: execute
+      type: LLM
+      provider: ANTHROPIC
+      model: claude-3-5-sonnet-20241022
+      temperature: 0.1
+      max_tokens: 2000
+      prompt: |
+        Execute task: Generate text embeddings for content using configured embedding models with batching and caching
+
+        Input: {{input}}
+        Context: {{context}}
+
+        Produce a structured, precise output meeting the task specification.
+
+memory:
+  episodic:
+    enabled: true
+    retention_days: 90
+    categories: [task-executions]
+  semantic:
+    enabled: true
+    categories: [domain-knowledge]
+  procedural:
+    enabled: false
+
+tools: [embedding_model_client, batch_processor, embedding_cache]
+
+capabilities:
+  - embedding-generation
+  - batched-processing
+  - embedding-caching
+
+routing:
+  input_types: [embedding_request]
+  output_types: [embeddings]
+
+delegation:
+  can_delegate_to: []
+  escalates_to: data-pipeline-capability-agent
+
+governance:
+  requires_approval: false
+  can_block: false
+  audit_trail: standard
+
+performance:
+  expected_latency_ms: 1000
+  max_latency_ms: 5000
+  timeout_ms: 10000

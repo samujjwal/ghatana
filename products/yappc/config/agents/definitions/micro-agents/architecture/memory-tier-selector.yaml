@@ -1,0 +1,49 @@
+id: memory-tier-selector
+name: Memory Tier Selector
+version: 1.0.0
+description: "Select the appropriate memory tier (episodic, semantic, procedural, preference) for a given memory content type"
+
+metadata:
+  level: 3
+  domain: architecture
+  type: micro-agent
+  tags: [memory-tier-selection, level3, micro]
+
+generator:
+  type: RULE_BASED
+  steps:
+    - name: execute
+      type: RULE_BASED
+      rules:
+        - "memory-tier-selection"
+
+memory:
+  episodic:
+    enabled: false
+  semantic:
+    enabled: false
+  procedural:
+    enabled: false
+
+tools: [tier_selector]
+
+capabilities:
+  - memory-tier-selection
+
+routing:
+  input_types: [tier_select_request]
+  output_types: [memory_tier]
+
+delegation:
+  can_delegate_to: []
+  escalates_to: memory-architecture-capability-agent
+
+governance:
+  requires_approval: false
+  can_block: false
+  audit_trail: standard
+
+performance:
+  expected_latency_ms: 100
+  max_latency_ms: 500
+  timeout_ms: 1000

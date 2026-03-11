@@ -1,0 +1,51 @@
+id: form-field-grouping-unit
+name: Form Field Grouping Unit
+version: 1.0.0
+description: "Group form fields into logical sections based on data domain and relationship"
+
+metadata:
+  level: 3
+  domain: ux
+  type: micro-agent
+  tags: [field-grouping, logical-organisation, level3, micro]
+
+generator:
+  type: RULE_BASED
+  steps:
+    - name: execute
+      type: RULE_BASED
+      rules:
+        - "field-grouping"
+        - "logical-organisation"
+
+memory:
+  episodic:
+    enabled: false
+  semantic:
+    enabled: false
+  procedural:
+    enabled: false
+
+tools: [field_grouper]
+
+capabilities:
+  - field-grouping
+  - logical-organisation
+
+routing:
+  input_types: [grouping_request]
+  output_types: [field_groups]
+
+delegation:
+  can_delegate_to: []
+  escalates_to: screen-design-capability-agent
+
+governance:
+  requires_approval: false
+  can_block: false
+  audit_trail: standard
+
+performance:
+  expected_latency_ms: 100
+  max_latency_ms: 500
+  timeout_ms: 1000

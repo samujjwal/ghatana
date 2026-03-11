@@ -1,0 +1,63 @@
+id: rate-limit-architecture-task-agent
+name: Rate Limit Architecture Task Agent
+version: 1.0.0
+description: "Design rate limiting architecture with sliding window, token bucket, and quota management strategies per tenant/user/API"
+
+metadata:
+  level: 3
+  domain: architecture
+  type: worker
+  tags: [rate-limit-design, algorithm-selection, quota-management, level3]
+
+generator:
+  type: PIPELINE
+  steps:
+    - name: execute
+      type: LLM
+      provider: ANTHROPIC
+      model: claude-3-5-sonnet-20241022
+      temperature: 0.1
+      max_tokens: 2000
+      prompt: |
+        Execute task: Design rate limiting architecture with sliding window, token bucket, and quota management strategies per tenant/user/API
+
+        Input: {{input}}
+        Context: {{context}}
+
+        Produce a structured, precise output meeting the task specification.
+
+memory:
+  episodic:
+    enabled: true
+    retention_days: 90
+    categories: [task-executions]
+  semantic:
+    enabled: true
+    categories: [domain-knowledge]
+  procedural:
+    enabled: false
+
+tools: [rate_limit_designer, quota_manager]
+
+capabilities:
+  - rate-limit-design
+  - algorithm-selection
+  - quota-management
+
+routing:
+  input_types: [rate_limit_request]
+  output_types: [rate_limit_spec]
+
+delegation:
+  can_delegate_to: []
+  escalates_to: security-architecture-capability-agent
+
+governance:
+  requires_approval: false
+  can_block: false
+  audit_trail: standard
+
+performance:
+  expected_latency_ms: 3000
+  max_latency_ms: 15000
+  timeout_ms: 30000

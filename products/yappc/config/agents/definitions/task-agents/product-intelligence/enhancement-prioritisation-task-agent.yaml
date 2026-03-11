@@ -1,0 +1,63 @@
+id: enhancement-prioritisation-task-agent
+name: Enhancement Prioritisation Task Agent
+version: 1.0.0
+description: "Score and rank enhancement opportunities using WSJF with calibrated value, time-criticality, risk-reduction, and job-size estimates"
+
+metadata:
+  level: 3
+  domain: product-intelligence
+  type: worker
+  tags: [wsjf-prioritisation, score-calibration, ranking, level3]
+
+generator:
+  type: PIPELINE
+  steps:
+    - name: execute
+      type: LLM
+      provider: ANTHROPIC
+      model: claude-3-5-sonnet-20241022
+      temperature: 0.1
+      max_tokens: 2000
+      prompt: |
+        Execute task: Score and rank enhancement opportunities using WSJF with calibrated value, time-criticality, risk-reduction, and job-size estimates
+
+        Input: {{input}}
+        Context: {{context}}
+
+        Produce a structured, precise output meeting the task specification.
+
+memory:
+  episodic:
+    enabled: true
+    retention_days: 90
+    categories: [task-executions]
+  semantic:
+    enabled: true
+    categories: [domain-knowledge]
+  procedural:
+    enabled: false
+
+tools: [wsjf_scorer, calibration_engine]
+
+capabilities:
+  - wsjf-prioritisation
+  - score-calibration
+  - ranking
+
+routing:
+  input_types: [prioritisation_request]
+  output_types: [wsjf_ranked_enhancements]
+
+delegation:
+  can_delegate_to: []
+  escalates_to: enhancement-capability-agent
+
+governance:
+  requires_approval: false
+  can_block: false
+  audit_trail: standard
+
+performance:
+  expected_latency_ms: 2000
+  max_latency_ms: 10000
+  timeout_ms: 20000

@@ -1,0 +1,63 @@
+id: demand-signal-detection-task-agent
+name: Demand Signal Detection Task Agent
+version: 1.0.0
+description: "Detect demand signals from search trends, feature request volumes, support escalations, and sales call themes"
+
+metadata:
+  level: 3
+  domain: discovery
+  type: worker
+  tags: [demand-signal-aggregation, signal-strength-scoring, trend-detection, level3]
+
+generator:
+  type: PIPELINE
+  steps:
+    - name: execute
+      type: LLM
+      provider: ANTHROPIC
+      model: claude-3-5-sonnet-20241022
+      temperature: 0.1
+      max_tokens: 2000
+      prompt: |
+        Execute task: Detect demand signals from search trends, feature request volumes, support escalations, and sales call themes
+
+        Input: {{input}}
+        Context: {{context}}
+
+        Produce a structured, precise output meeting the task specification.
+
+memory:
+  episodic:
+    enabled: true
+    retention_days: 90
+    categories: [task-executions]
+  semantic:
+    enabled: true
+    categories: [domain-knowledge]
+  procedural:
+    enabled: false
+
+tools: [search_trend_reader, feature_request_aggregator, sales_call_analyser]
+
+capabilities:
+  - demand-signal-aggregation
+  - signal-strength-scoring
+  - trend-detection
+
+routing:
+  input_types: [demand_signal_request]
+  output_types: [demand_signal_report]
+
+delegation:
+  can_delegate_to: []
+  escalates_to: opportunity-scoring-capability-agent
+
+governance:
+  requires_approval: false
+  can_block: false
+  audit_trail: standard
+
+performance:
+  expected_latency_ms: 4000
+  max_latency_ms: 20000
+  timeout_ms: 40000

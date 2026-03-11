@@ -1,0 +1,106 @@
+id: experimentation-orchestrator
+name: Experimentation Orchestrator
+version: 1.0.0
+description: "Manages full experiment lifecycle: hypothesis framing, A/B and multivariate test setup, traffic allocation, statistical significance analysis, and verdicts"
+
+metadata:
+  level: 1
+  domain: product-intelligence
+  tags: [orchestrator, experimentation, ab-testing, statistics, hypothesis, level1]
+
+generator:
+  type: PIPELINE
+  steps:
+    - name: experiment_intake
+      type: LLM
+      provider: ANTHROPIC
+      model: claude-3-5-sonnet-20241022
+      temperature: 0.2
+      max_tokens: 2000
+      prompt: |
+        Evaluate experiment request for rigour:
+
+        Request: {{input}}
+        Existing experiments: {{context.active_experiments}}
+        Traffic budget: {{context.traffic_budget}}
+        Minimum detectable effect: {{context.mde_target}}
+
+        Validate: hypothesis clarity (null/alternative), primary metric, guardrail metrics, sample size estimate, risk of interference with other experiments, ethical considerations. Output validation JSON.
+    - name: experiment_design
+      type: LLM
+      provider: ANTHROPIC
+      model: claude-3-5-sonnet-20241022
+      temperature: 0.1
+      max_tokens: 3000
+      prompt: |
+        Design the experiment:
+
+        Validated request: {{experiment_intake}}
+        Traffic allocation model: {{context.allocation_model}}
+
+        Produce: experiment spec (ID, variants, allocation splits, targeting rules, duration, primary/secondary metrics, success criteria, stop rules). Output JSON experiment spec.
+    - name: experiment_setup
+      type: SERVICE_CALL
+      service: experiment-platform
+      endpoint: /create
+      description: "Create experiment in experimentation platform with spec from design step"
+    - name: results_analysis
+      type: LLM
+      provider: ANTHROPIC
+      model: claude-3-5-sonnet-20241022
+      temperature: 0.0
+      max_tokens: 3000
+      prompt: |
+        Analyse experiment results:
+
+        Experiment spec: {{experiment_design}}
+        Raw results: {{context.experiment_results}}
+        Confidence threshold: {{context.confidence_threshold}}
+
+        Compute: lift per variant, statistical significance (p-value, confidence intervals), practical significance, guardrail status, recommendation (ship/iterate/kill). Produce results report.
+
+memory:
+  episodic:
+    enabled: true
+    retention_days: 730
+    categories: [experiments, designs, results, verdicts]
+  semantic:
+    enabled: true
+    categories: [experiment-patterns, metric-definitions, hypothesis-library]
+  procedural:
+    enabled: true
+    categories: [power-analysis, significance-testing, stop-rules]
+
+tools: [experiment_platform, stats_engine, traffic_allocator, metric_store]
+
+capabilities:
+  - hypothesis-framing
+  - experiment-design
+  - ab-test-setup
+  - statistical-analysis
+  - experiment-verdict
+
+routing:
+  input_types: [experiment_request, experiment_results_ready, experiment_stop_trigger]
+  output_types: [experiment_spec, experiment_results_report, verdict, learn_summary]
+
+delegation:
+  can_delegate_to:
+    - experimentation-capability-agent
+    - experiment-design-task-agent
+    - ab-test-setup-task-agent
+    - statistical-analysis-task-agent
+    - experiment-verdict-task-agent
+    - multivariate-test-task-agent
+  escalates_to: product-intelligence-orchestrator
+
+governance:
+  requires_approval: true
+  approval_chain: [product-lead, data-scientist]
+  can_block: false
+  audit_trail: comprehensive
+
+performance:
+  expected_latency_ms: 5000
+  max_latency_ms: 30000
+  timeout_ms: 120000

@@ -1,0 +1,63 @@
+id: change-risk-assessment-task-agent
+name: Change Risk Assessment Task Agent
+version: 1.0.0
+description: "Score the risk of a specific change request using blast radius, recent incident context, and system stability indicators"
+
+metadata:
+  level: 3
+  domain: operations
+  type: worker
+  tags: [risk-scoring, blast-radius-estimation, stability-assessment, level3]
+
+generator:
+  type: PIPELINE
+  steps:
+    - name: execute
+      type: LLM
+      provider: ANTHROPIC
+      model: claude-3-5-sonnet-20241022
+      temperature: 0.1
+      max_tokens: 2000
+      prompt: |
+        Execute task: Score the risk of a specific change request using blast radius, recent incident context, and system stability indicators
+
+        Input: {{input}}
+        Context: {{context}}
+
+        Produce a structured, precise output meeting the task specification.
+
+memory:
+  episodic:
+    enabled: true
+    retention_days: 90
+    categories: [task-executions]
+  semantic:
+    enabled: true
+    categories: [domain-knowledge]
+  procedural:
+    enabled: false
+
+tools: [risk_scorer, blast_radius_calculator, stability_reader]
+
+capabilities:
+  - risk-scoring
+  - blast-radius-estimation
+  - stability-assessment
+
+routing:
+  input_types: [change_risk_request]
+  output_types: [change_risk_score]
+
+delegation:
+  can_delegate_to: []
+  escalates_to: change-management-capability-agent
+
+governance:
+  requires_approval: false
+  can_block: false
+  audit_trail: standard
+
+performance:
+  expected_latency_ms: 3000
+  max_latency_ms: 15000
+  timeout_ms: 30000

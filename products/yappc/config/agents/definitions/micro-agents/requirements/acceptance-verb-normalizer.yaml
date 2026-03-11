@@ -1,0 +1,51 @@
+id: acceptance-verb-normalizer
+name: Acceptance Verb Normalizer
+version: 1.0.0
+description: "Normalise acceptance criteria verbs to SHALL/SHOULD/MAY and alert on weak verbs like 'should be able to'"
+
+metadata:
+  level: 3
+  domain: requirements
+  type: micro-agent
+  tags: [verb-normalisation, modal-verb-enforcement, level3, micro]
+
+generator:
+  type: RULE_BASED
+  steps:
+    - name: execute
+      type: RULE_BASED
+      rules:
+        - "verb-normalisation"
+        - "modal-verb-enforcement"
+
+memory:
+  episodic:
+    enabled: false
+  semantic:
+    enabled: false
+  procedural:
+    enabled: false
+
+tools: [normaliser]
+
+capabilities:
+  - verb-normalisation
+  - modal-verb-enforcement
+
+routing:
+  input_types: [normalise_request]
+  output_types: [normalised_ac]
+
+delegation:
+  can_delegate_to: []
+  escalates_to: spec-authoring-capability-agent
+
+governance:
+  requires_approval: false
+  can_block: false
+  audit_trail: standard
+
+performance:
+  expected_latency_ms: 100
+  max_latency_ms: 500
+  timeout_ms: 1000

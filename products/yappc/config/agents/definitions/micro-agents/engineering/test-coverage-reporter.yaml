@@ -1,0 +1,51 @@
+id: test-coverage-reporter
+name: Test Coverage Reporter
+version: 1.0.0
+description: "Report line, branch, and function coverage from JaCoCo or Istanbul coverage reports with gap identification"
+
+metadata:
+  level: 3
+  domain: engineering
+  type: micro-agent
+  tags: [coverage-reporting, gap-identification, level3, micro]
+
+generator:
+  type: RULE_BASED
+  steps:
+    - name: execute
+      type: RULE_BASED
+      rules:
+        - "coverage-reporting"
+        - "gap-identification"
+
+memory:
+  episodic:
+    enabled: false
+  semantic:
+    enabled: false
+  procedural:
+    enabled: false
+
+tools: [coverage_parser]
+
+capabilities:
+  - coverage-reporting
+  - gap-identification
+
+routing:
+  input_types: [coverage_request]
+  output_types: [coverage_report]
+
+delegation:
+  can_delegate_to: []
+  escalates_to: code-quality-capability-agent
+
+governance:
+  requires_approval: false
+  can_block: false
+  audit_trail: standard
+
+performance:
+  expected_latency_ms: 200
+  max_latency_ms: 1000
+  timeout_ms: 2000

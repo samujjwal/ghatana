@@ -1,0 +1,63 @@
+id: procedural-memory-task-agent
+name: Procedural Memory Task Agent
+version: 1.0.0
+description: "Store and retrieve procedural policies with version tracking, confidence scoring, and usage frequency updates"
+
+metadata:
+  level: 3
+  domain: ai
+  type: worker
+  tags: [procedural-memory-store, policy-retrieval, confidence-tracking, level3]
+
+generator:
+  type: PIPELINE
+  steps:
+    - name: execute
+      type: LLM
+      provider: ANTHROPIC
+      model: claude-3-5-sonnet-20241022
+      temperature: 0.1
+      max_tokens: 2000
+      prompt: |
+        Execute task: Store and retrieve procedural policies with version tracking, confidence scoring, and usage frequency updates
+
+        Input: {{input}}
+        Context: {{context}}
+
+        Produce a structured, precise output meeting the task specification.
+
+memory:
+  episodic:
+    enabled: true
+    retention_days: 90
+    categories: [task-executions]
+  semantic:
+    enabled: true
+    categories: [domain-knowledge]
+  procedural:
+    enabled: false
+
+tools: [procedural_memory_store, policy_retriever, confidence_tracker]
+
+capabilities:
+  - procedural-memory-store
+  - policy-retrieval
+  - confidence-tracking
+
+routing:
+  input_types: [procedural_memory_request]
+  output_types: [procedural_memory_result]
+
+delegation:
+  can_delegate_to: []
+  escalates_to: memory-capability-agent
+
+governance:
+  requires_approval: false
+  can_block: false
+  audit_trail: standard
+
+performance:
+  expected_latency_ms: 400
+  max_latency_ms: 2000
+  timeout_ms: 4000

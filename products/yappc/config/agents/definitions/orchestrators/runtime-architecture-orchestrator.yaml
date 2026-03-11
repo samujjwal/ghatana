@@ -1,0 +1,112 @@
+id: runtime-architecture-orchestrator
+name: Runtime Architecture Orchestrator
+version: 1.0.0
+description: "Designs agent runtime architecture: execution engine model, turn pipeline, context assembly strategy, memory tier integration, tool invocation patterns, and streaming"
+
+metadata:
+  level: 1
+  domain: architecture
+  tags: [orchestrator, runtime-architecture, agent-runtime, execution-engine, level1]
+
+generator:
+  type: PIPELINE
+  steps:
+    - name: runtime_requirements_analysis
+      type: LLM
+      provider: ANTHROPIC
+      model: claude-3-5-sonnet-20241022
+      temperature: 0.2
+      max_tokens: 3000
+      prompt: |
+        Analyse runtime architecture requirements:
+
+        Request: {{input}}
+        Agent types to support: {{context.agent_types}}
+        Performance requirements: {{context.performance_reqs}}
+        Memory requirements: {{context.memory_reqs}}
+
+        Analyse:
+        1. Execution model requirements (sync, async, streaming, batch)
+        2. Context assembly needs (token budgets, retrieval strategies)
+        3. Memory tier integration (episodic, semantic, procedural access patterns)
+        4. Tool invocation requirements (sync, async, parallel, timeout handling)
+        5. Observability requirements (traces, metrics, cost tracking)
+
+        Output as JSON: {execution_model, context_assembly, memory_integration, tool_invocation, observability}
+    - name: execution_engine_design
+      type: LLM
+      provider: ANTHROPIC
+      model: claude-3-5-sonnet-20241022
+      temperature: 0.3
+      max_tokens: 4000
+      prompt: |
+        Design the execution engine:
+        Requirements: {{runtime_requirements_analysis}}
+
+        Produce:
+        1. Turn pipeline stages (perceive, reason, act, capture, reflect)
+        2. Context assembly algorithm and priority rules
+        3. LLM provider abstraction and fallback chain
+        4. Tool executor with parallel execution and timeout management
+        5. Streaming response handling design
+        6. Error recovery and retry strategies
+
+        Include sequence diagrams as ASCII art for key flows.
+    - name: memory_integration_design
+      type: LLM
+      provider: ANTHROPIC
+      model: claude-3-5-sonnet-20241022
+      temperature: 0.2
+      max_tokens: 3000
+      prompt: |
+        Design memory system integration:
+        Runtime: {{execution_engine_design}}
+        Memory requirements: {{runtime_requirements_analysis.memory_integration}}
+
+        Design: read/write patterns, cache warming strategy, eviction coordination, cross-tenant isolation.
+
+memory:
+  episodic:
+    enabled: true
+    retention_days: 1095
+    categories: [runtime-decisions, performance-measurements, architecture-versions]
+  semantic:
+    enabled: true
+    categories: [runtime-patterns, execution-models, memory-patterns, tool-patterns]
+  procedural:
+    enabled: true
+    categories: [runtime-design-procedures, performance-tuning-rules]
+
+tools: [runtime_architect, execution_engine_designer, memory_integrator, performance_modeller]
+
+capabilities:
+  - runtime-architecture
+  - execution-engine-design
+  - context-assembly-design
+  - memory-integration
+  - tool-invocation-pattern
+
+routing:
+  input_types: [runtime_architecture_request, agent_requirements, memory_requirements, performance_targets]
+  output_types: [runtime_architecture_doc, execution_model, context_assembly_design, memory_integration_spec]
+
+delegation:
+  can_delegate_to:
+    - agent-runtime-capability-agent
+    - memory-architecture-capability-agent
+    - agent-memory-design-task-agent
+    - context-assembly-task-agent
+    - memory-orchestrator
+  escalates_to: architecture-orchestrator
+
+governance:
+  requires_approval: true
+  approval_chain:
+    - architecture-orchestrator
+  can_block: false
+  audit_trail: comprehensive
+
+performance:
+  expected_latency_ms: 15000
+  max_latency_ms: 120000
+  timeout_ms: 150000

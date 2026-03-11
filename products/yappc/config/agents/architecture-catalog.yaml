@@ -1,0 +1,589 @@
+apiVersion: ghatana.yappc/v2
+kind: DomainAgentCatalog
+
+metadata:
+  name: architecture
+  version: 1.0.0
+  description: "System architecture, platform design, plugin architecture, runtime architecture, and memory design agents"
+  domain: architecture
+  agentCount: 51
+
+spec:
+  agents:
+
+    # ── Level 1 Orchestrators ───────────────────────────────────────────────
+    - id: architecture-orchestrator
+      name: Architecture Orchestrator
+      level: 1
+      type: orchestrator
+      description: "Coordinates architectural design across domains, services, events, data, security and observability"
+      domain: architecture
+      capabilities: [architecture-coordination, hld-generation, lld-generation, adr-management]
+      routing:
+        input_types: [architecture_request, requirements_set, constraints, design_review_request]
+        output_types: [hld, lld, api_contracts, event_contracts, adr_set]
+      delegation:
+        can_delegate_to:
+          - platform-architecture-orchestrator
+          - plugin-architecture-orchestrator
+          - runtime-architecture-orchestrator
+          - domain-architecture-capability-agent
+          - service-design-capability-agent
+        escalates_to: null
+      governance:
+        requires_approval: true
+        can_block: true
+        audit_trail: comprehensive
+      tags: [orchestrator, architecture, design, level1]
+
+    - id: platform-architecture-orchestrator
+      name: Platform Architecture Orchestrator
+      level: 1
+      type: orchestrator
+      description: "Drives platform-level architectural decisions: infrastructure topology, shared services, cross-cutting concerns"
+      domain: architecture
+      capabilities: [platform-architecture, infrastructure-design, shared-services, cross-cutting-concerns]
+      routing:
+        input_types: [platform_architecture_request, infra_requirements, shared_service_needs]
+        output_types: [platform_design, infra_topology, shared_service_contracts]
+      delegation:
+        can_delegate_to:
+          - observability-architecture-capability-agent
+          - deployment-topology-task-agent
+          - audit-architecture-task-agent
+          - tenant-isolation-task-agent
+        escalates_to: architecture-orchestrator
+      tags: [orchestrator, platform-architecture, infrastructure, level1]
+
+    - id: plugin-architecture-orchestrator
+      name: Plugin Architecture Orchestrator
+      level: 1
+      type: orchestrator
+      description: "Designs plugin systems: lifecycle management, versioning, compatibility, contract enforcement, and marketplace integration"
+      domain: architecture
+      capabilities: [plugin-architecture, lifecycle-management, plugin-contracts, compatibility-management]
+      routing:
+        input_types: [plugin_architecture_request, plugin_spec, compatibility_requirements]
+        output_types: [plugin_architecture_doc, plugin_contracts, compatibility_matrix]
+      delegation:
+        can_delegate_to:
+          - plugin-contract-capability-agent
+          - plugin-lifecycle-task-agent
+          - plugin-compatibility-task-agent
+        escalates_to: architecture-orchestrator
+      tags: [orchestrator, plugin-architecture, extensibility, level1]
+
+    - id: runtime-architecture-orchestrator
+      name: Runtime Architecture Orchestrator
+      level: 1
+      type: orchestrator
+      description: "Designs agent runtime architecture: execution engine, context assembly, memory integration, and tool invocation patterns"
+      domain: architecture
+      capabilities: [runtime-architecture, execution-engine-design, context-assembly, memory-integration]
+      routing:
+        input_types: [runtime_architecture_request, agent_requirements, memory_requirements]
+        output_types: [runtime_architecture_doc, execution_model, context_assembly_design]
+      delegation:
+        can_delegate_to:
+          - agent-runtime-capability-agent
+          - memory-architecture-capability-agent
+          - agent-memory-design-task-agent
+          - context-assembly-task-agent
+        escalates_to: architecture-orchestrator
+      tags: [orchestrator, runtime-architecture, agent-runtime, level1]
+
+    # ── Level 2 Capability Agents ───────────────────────────────────────────
+    - id: domain-architecture-capability-agent
+      name: Domain Architecture Capability Agent
+      level: 2
+      type: domain-expert
+      description: "Designs domain models, bounded contexts, and domain-driven design artefacts"
+      domain: architecture
+      capabilities: [domain-modelling, bounded-context-design, aggregate-design, ddd-application]
+      memory:
+        semantic:
+          enabled: true
+          categories: [domain-patterns, ddd-patterns, bounded-context-models]
+        episodic:
+          enabled: true
+          retention_days: 730
+          categories: [design-sessions, adr-history]
+      tools: [domain_modeller, context_mapper, aggregate_designer]
+      tags: [capability, domain-architecture, ddd, level2]
+
+    - id: service-design-capability-agent
+      name: Service Design Capability Agent
+      level: 2
+      type: domain-expert
+      description: "Designs microservice and macro-service boundaries, API contracts, inter-service communication patterns"
+      domain: architecture
+      capabilities: [service-boundary-design, api-contract-design, communication-pattern-selection, service-mesh]
+      tools: [service_boundary_designer, api_contract_builder, communication_pattern_selector]
+      tags: [capability, service-design, microservices, level2]
+
+    - id: event-architecture-capability-agent
+      name: Event Architecture Capability Agent
+      level: 2
+      type: domain-expert
+      description: "Designs event-driven architectures: event schemas, event sourcing, CQRS, saga patterns, and event bus configuration"
+      domain: architecture
+      capabilities: [event-schema-design, event-sourcing, cqrs-design, saga-design, event-bus-configuration]
+      memory:
+        semantic:
+          enabled: true
+          categories: [event-patterns, saga-patterns, event-schema-library]
+      tools: [event_schema_designer, saga_modeller, event_bus_configurator]
+      tags: [capability, event-architecture, event-sourcing, level2]
+
+    - id: data-architecture-capability-agent
+      name: Data Architecture Capability Agent
+      level: 2
+      type: domain-expert
+      description: "Designs data storage strategies, caching architectures, search architectures, and data platform components"
+      domain: architecture
+      capabilities: [data-store-selection, caching-architecture, search-architecture, data-platform-design]
+      tools: [data_store_selector, caching_advisor, search_architect]
+      tags: [capability, data-architecture, caching, level2]
+
+    - id: security-architecture-capability-agent
+      name: Security Architecture Capability Agent
+      level: 2
+      type: domain-expert
+      description: "Designs security controls, RBAC models, tenant isolation, audit architecture, and rate limiting"
+      domain: architecture
+      capabilities: [security-control-design, rbac-design, tenant-isolation, audit-architecture, rate-limit-design]
+      tools: [security_architect, rbac_designer, tenant_isolator, rate_limit_designer]
+      tags: [capability, security-architecture, rbac, level2]
+
+    - id: observability-architecture-capability-agent
+      name: Observability Architecture Capability Agent
+      level: 2
+      type: domain-expert
+      description: "Designs observability stacks: tracing, metrics, logging, alerting, and SLO/SLA definitions"
+      domain: architecture
+      capabilities: [observability-design, tracing-design, metrics-design, logging-design, slo-definition]
+      tools: [observability_architect, slo_designer, trace_planner]
+      tags: [capability, observability, monitoring, level2]
+
+    - id: plugin-contract-capability-agent
+      name: Plugin Contract Capability Agent
+      level: 2
+      type: domain-expert
+      description: "Defines and enforces plugin API contracts, manifest schemas, capability declarations, and lifecycle hooks"
+      domain: architecture
+      capabilities: [plugin-contract-design, manifest-schema, capability-declaration, lifecycle-hook-design]
+      tools: [plugin_contract_builder, manifest_validator, capability_definer]
+      tags: [capability, plugin-contracts, extensibility, level2]
+
+    - id: agent-runtime-capability-agent
+      name: Agent Runtime Capability Agent
+      level: 2
+      type: domain-expert
+      description: "Designs agent runtime abstractions: execution contracts, turn pipeline, tool invocation, escalation patterns"
+      domain: architecture
+      capabilities: [agent-runtime-design, execution-contract, tool-invocation-pattern, escalation-design]
+      tools: [runtime_architect, execution_contract_builder, tool_pattern_designer]
+      tags: [capability, agent-runtime, execution, level2]
+
+    - id: memory-architecture-capability-agent
+      name: Memory Architecture Capability Agent
+      level: 2
+      type: domain-expert
+      description: "Designs multi-tier memory architectures: working memory, episodic, semantic, and procedural storage with eviction and retention policies"
+      domain: architecture
+      capabilities: [memory-architecture, tier-selection, retention-policy-design, eviction-strategy]
+      memory:
+        semantic:
+          enabled: true
+          categories: [memory-patterns, storage-architectures, retention-models]
+      tools: [memory_architect, tier_selector, retention_designer]
+      tags: [capability, memory-architecture, multi-tier, level2]
+
+    # ── Level 3 Task Agents ─────────────────────────────────────────────────
+    - id: domain-model-task-agent
+      name: Domain Model Task Agent
+      level: 3
+      type: worker
+      description: "Creates comprehensive domain models with entities, value objects, aggregates, and domain events"
+      domain: architecture
+      capabilities: [domain-model-creation, entity-design, value-object-design, aggregate-design]
+      tools: [domain_modeller, entity_builder]
+      tags: [task, domain-model, ddd, level3]
+
+    - id: bounded-context-task-agent
+      name: Bounded Context Task Agent
+      level: 3
+      type: worker
+      description: "Defines bounded context boundaries, context maps, and integration patterns between contexts"
+      domain: architecture
+      capabilities: [bounded-context-definition, context-mapping, integration-pattern-selection]
+      tools: [context_mapper, boundary_definer]
+      tags: [task, bounded-context, mapping, level3]
+
+    - id: service-boundary-task-agent
+      name: Service Boundary Task Agent
+      level: 3
+      type: worker
+      description: "Defines service boundaries applying decomposition heuristics, cohesion and coupling analysis"
+      domain: architecture
+      capabilities: [service-boundary-definition, decomposition-analysis, cohesion-coupling-assessment]
+      tools: [service_boundary_tool, decomposition_analyzer]
+      tags: [task, service-boundary, decomposition, level3]
+
+    - id: api-contract-task-agent
+      name: API Contract Task Agent
+      level: 3
+      type: worker
+      description: "Creates and validates API contracts in OpenAPI/AsyncAPI/GraphQL ensuring backward compatibility and naming conventions"
+      domain: architecture
+      capabilities: [api-contract-creation, openapi-spec, asyncapi-spec, backward-compatibility-check]
+      tools: [api_contract_builder, openapi_validator, backward_compat_checker]
+      tags: [task, api-contract, openapi, level3]
+
+    - id: graphql-schema-task-agent
+      name: GraphQL Schema Task Agent
+      level: 3
+      type: worker
+      description: "Designs GraphQL schemas with type definitions, queries, mutations, subscriptions, and federation support"
+      domain: architecture
+      capabilities: [graphql-schema-design, type-definition, query-design, federation-design]
+      tools: [graphql_schema_builder, federation_planner]
+      tags: [task, graphql, schema, level3]
+
+    - id: event-schema-task-agent
+      name: Event Schema Task Agent
+      level: 3
+      type: worker
+      description: "Designs and versions event schemas with backward-compatible evolution strategies"
+      domain: architecture
+      capabilities: [event-schema-design, schema-versioning, evolution-strategy, registry-integration]
+      tools: [event_schema_builder, schema_registry, evolution_advisor]
+      tags: [task, event-schema, versioning, level3]
+
+    - id: workflow-architecture-task-agent
+      name: Workflow Architecture Task Agent
+      level: 3
+      type: worker
+      description: "Designs workflow and orchestration architectures for long-running processes and saga patterns"
+      domain: architecture
+      capabilities: [workflow-design, orchestration-architecture, saga-design, compensating-transaction]
+      tools: [workflow_designer, saga_builder, compensation_planner]
+      tags: [task, workflow, orchestration, level3]
+
+    - id: data-store-selection-task-agent
+      name: Data Store Selection Task Agent
+      level: 3
+      type: worker
+      description: "Selects appropriate data stores (relational, document, time-series, graph, vector) based on workload characteristics"
+      domain: architecture
+      capabilities: [data-store-selection, workload-analysis, consistency-model-selection]
+      tools: [data_store_selector, workload_analyzer, consistency_advisor]
+      tags: [task, data-store, selection, level3]
+
+    - id: caching-strategy-task-agent
+      name: Caching Strategy Task Agent
+      level: 3
+      type: worker
+      description: "Designs caching strategies: cache topology, TTL policies, invalidation patterns, and cache-aside vs write-through"
+      domain: architecture
+      capabilities: [caching-strategy, ttl-design, invalidation-pattern, topology-selection]
+      tools: [cache_designer, ttl_calculator, invalidation_planner]
+      tags: [task, caching, strategy, level3]
+
+    - id: search-architecture-task-agent
+      name: Search Architecture Task Agent
+      level: 3
+      type: worker
+      description: "Designs search architectures: index design, relevance tuning, faceting, and semantic search integration"
+      domain: architecture
+      capabilities: [search-architecture, index-design, relevance-tuning, semantic-search]
+      tools: [search_architect, index_designer, relevance_tuner]
+      tags: [task, search, architecture, level3]
+
+    - id: security-control-task-agent
+      name: Security Control Task Agent
+      level: 3
+      type: worker
+      description: "Defines security controls mapped to threat model findings and compliance requirements"
+      domain: architecture
+      capabilities: [security-control-definition, threat-mitigation, compliance-mapping, control-validation]
+      tools: [security_control_builder, threat_mitigator, compliance_mapper]
+      tags: [task, security-controls, threat-mitigation, level3]
+
+    - id: rbac-architecture-task-agent
+      name: RBAC Architecture Task Agent
+      level: 3
+      type: worker
+      description: "Designs role-based access control models: role hierarchy, permission matrices, and attribute-based extensions"
+      domain: architecture
+      capabilities: [rbac-design, role-hierarchy, permission-matrix, abac-extensions]
+      tools: [rbac_designer, permission_matrix_builder, role_hierarchy_modeller]
+      tags: [task, rbac, access-control, level3]
+
+    - id: tenant-isolation-task-agent
+      name: Tenant Isolation Task Agent
+      level: 3
+      type: worker
+      description: "Designs tenant isolation patterns: schema-per-tenant, row-level-security, network isolation, and data partitioning"
+      domain: architecture
+      capabilities: [tenant-isolation, multi-tenancy-design, rls-design, data-partitioning]
+      tools: [tenant_isolator, rls_designer, partition_planner]
+      tags: [task, tenant-isolation, multi-tenancy, level3]
+
+    - id: audit-architecture-task-agent
+      name: Audit Architecture Task Agent
+      level: 3
+      type: worker
+      description: "Designs audit logging architecture: what to log, retention policies, tamper-evidence, and query patterns"
+      domain: architecture
+      capabilities: [audit-architecture, log-design, retention-policy, tamper-evidence]
+      tools: [audit_architect, retention_planner, tamper_evidence_designer]
+      tags: [task, audit, logging, level3]
+
+    - id: observability-plan-task-agent
+      name: Observability Plan Task Agent
+      level: 3
+      type: worker
+      description: "Creates comprehensive observability plans covering metrics, traces, logs, and dashboards for each service"
+      domain: architecture
+      capabilities: [observability-planning, metrics-definition, trace-instrumentation-plan, dashboard-design]
+      tools: [observability_planner, metrics_definer, trace_planner]
+      tags: [task, observability, plan, level3]
+
+    - id: deployment-topology-task-agent
+      name: Deployment Topology Task Agent
+      level: 3
+      type: worker
+      description: "Designs deployment topologies: environments, regions, AZ distribution, and service placement"
+      domain: architecture
+      capabilities: [deployment-topology, environment-design, region-planning, service-placement]
+      tools: [topology_designer, environment_planner, region_mapper]
+      tags: [task, deployment, topology, level3]
+
+    - id: plugin-lifecycle-task-agent
+      name: Plugin Lifecycle Task Agent
+      level: 3
+      type: worker
+      description: "Designs plugin lifecycle hooks: install, activate, deactivate, upgrade, and uninstall flows"
+      domain: architecture
+      capabilities: [plugin-lifecycle-design, hook-definition, version-upgrade-flow, rollback-design]
+      tools: [lifecycle_designer, hook_definer, upgrade_flow_builder]
+      tags: [task, plugin-lifecycle, hooks, level3]
+
+    - id: plugin-compatibility-task-agent
+      name: Plugin Compatibility Task Agent
+      level: 3
+      type: worker
+      description: "Manages plugin compatibility matrices, version constraints, and breaking change detection"
+      domain: architecture
+      capabilities: [plugin-compatibility, version-constraint-management, breaking-change-detection]
+      tools: [compatibility_checker, version_constraint_enforcer, breaking_change_detector]
+      tags: [task, plugin-compatibility, versioning, level3]
+
+    - id: agent-memory-design-task-agent
+      name: Agent Memory Design Task Agent
+      level: 3
+      type: worker
+      description: "Designs per-agent memory configurations: tier selection, retention, eviction, and access patterns"
+      domain: architecture
+      capabilities: [agent-memory-design, tier-configuration, retention-setting, access-pattern-design]
+      tools: [memory_configurator, retention_designer, access_pattern_builder]
+      tags: [task, agent-memory, configuration, level3]
+
+    - id: context-assembly-task-agent
+      name: Context Assembly Task Agent
+      level: 3
+      type: worker
+      description: "Designs context assembly patterns: what context to include in agent turns, prioritisation, and token budgeting"
+      domain: architecture
+      capabilities: [context-assembly-design, context-prioritisation, token-budgeting, retrieval-strategy]
+      tools: [context_assembler_designer, token_budget_planner]
+      tags: [task, context-assembly, tokens, level3]
+
+    - id: policy-enforcement-architecture-task-agent
+      name: Policy Enforcement Architecture Task Agent
+      level: 3
+      type: worker
+      description: "Designs policy enforcement points, policy evaluation engines, and OPA/Rego integration patterns"
+      domain: architecture
+      capabilities: [policy-enforcement-design, opa-integration, policy-evaluation, enforcement-point-placement]
+      tools: [policy_architect, opa_integrator, enforcement_planner]
+      tags: [task, policy-enforcement, opa, level3]
+
+    - id: rate-limit-architecture-task-agent
+      name: Rate Limit Architecture Task Agent
+      level: 3
+      type: worker
+      description: "Designs rate limiting strategies: token bucket, leaky bucket, sliding window, and distributed rate limiting"
+      domain: architecture
+      capabilities: [rate-limiting-design, algorithm-selection, distributed-rate-limiting, quota-management]
+      tools: [rate_limit_designer, algorithm_selector, quota_manager]
+      tags: [task, rate-limiting, throttling, level3]
+
+    - id: backup-recovery-architecture-task-agent
+      name: Backup Recovery Architecture Task Agent
+      level: 3
+      type: worker
+      description: "Designs backup and disaster recovery architectures: RPO/RTO targets, backup schedules, and recovery procedures"
+      domain: architecture
+      capabilities: [backup-design, disaster-recovery, rpo-rto-definition, recovery-procedure-design]
+      tools: [backup_architect, dr_planner, rto_calculator]
+      tags: [task, backup-recovery, disaster-recovery, level3]
+
+    # ── Level 3 Micro Agents ────────────────────────────────────────────────
+    - id: schema-comparer
+      name: Schema Comparer
+      level: 3
+      type: micro-agent
+      description: "Atomic unit: compare two schemas and produce a structured diff of additions, removals, and modifications"
+      domain: architecture
+      capabilities: [schema-comparison, diff-generation]
+      tags: [micro, schema, comparison, level3]
+
+    - id: backward-compatibility-checker
+      name: Backward Compatibility Checker
+      level: 3
+      type: micro-agent
+      description: "Atomic unit: check if a schema change is backward-compatible with a previous version"
+      domain: architecture
+      capabilities: [backward-compatibility-checking, breaking-change-detection]
+      tags: [micro, compatibility, schemas, level3]
+
+    - id: event-versioning-unit
+      name: Event Versioning Unit
+      level: 3
+      type: micro-agent
+      description: "Atomic unit: assign or validate a semantic version number for an event schema change"
+      domain: architecture
+      capabilities: [event-versioning, semantic-versioning]
+      tags: [micro, versioning, events, level3]
+
+    - id: boundary-leak-detector
+      name: Boundary Leak Detector
+      level: 3
+      type: micro-agent
+      description: "Atomic unit: detect if a domain concept has leaked across its bounded context boundary"
+      domain: architecture
+      capabilities: [boundary-leak-detection, context-boundary-validation]
+      tags: [micro, boundary, leak-detection, level3]
+
+    - id: topology-shape-unit
+      name: Topology Shape Unit
+      level: 3
+      type: micro-agent
+      description: "Atomic unit: classify deployment topology as star, mesh, hub-spoke, or hybrid"
+      domain: architecture
+      capabilities: [topology-classification, shape-identification]
+      tags: [micro, topology, classification, level3]
+
+    - id: consistency-model-selector
+      name: Consistency Model Selector
+      level: 3
+      type: micro-agent
+      description: "Atomic unit: select appropriate consistency model (strong, eventual, causal) for a given workload"
+      domain: architecture
+      capabilities: [consistency-model-selection, workload-classification]
+      tags: [micro, consistency, selection, level3]
+
+    - id: cache-invalidation-advisor
+      name: Cache Invalidation Advisor
+      level: 3
+      type: micro-agent
+      description: "Atomic unit: recommend cache invalidation strategy for a given data access pattern"
+      domain: architecture
+      capabilities: [cache-invalidation-recommendation, pattern-analysis]
+      tags: [micro, cache, invalidation, level3]
+
+    - id: tenant-scope-validator
+      name: Tenant Scope Validator
+      level: 3
+      type: micro-agent
+      description: "Atomic unit: validate that a query or operation is correctly scoped to a single tenant"
+      domain: architecture
+      capabilities: [tenant-scope-validation, isolation-checking]
+      tags: [micro, tenant, validation, level3]
+
+    - id: role-scope-checker
+      name: Role Scope Checker
+      level: 3
+      type: micro-agent
+      description: "Atomic unit: check that a role's permission scope does not exceed intended boundaries"
+      domain: architecture
+      capabilities: [role-scope-checking, rbac-validation]
+      tags: [micro, role, scope, level3]
+
+    - id: plugin-manifest-validator
+      name: Plugin Manifest Validator
+      level: 3
+      type: micro-agent
+      description: "Atomic unit: validate a plugin manifest against the canonical plugin manifest schema"
+      domain: architecture
+      capabilities: [manifest-validation, schema-compliance]
+      tags: [micro, plugin, manifest, level3]
+
+    - id: memory-tier-selector
+      name: Memory Tier Selector
+      level: 3
+      type: micro-agent
+      description: "Atomic unit: select the appropriate memory tier (working/episodic/semantic/procedural) for data given its characteristics"
+      domain: architecture
+      capabilities: [memory-tier-selection, tier-classification]
+      tags: [micro, memory, tier-selection, level3]
+
+    - id: policy-rule-translator
+      name: Policy Rule Translator
+      level: 3
+      type: micro-agent
+      description: "Atomic unit: translate a natural language policy statement into Rego rule syntax"
+      domain: architecture
+      capabilities: [policy-translation, rego-generation, nl-to-policy]
+      tags: [micro, policy, rego-translation, level3]
+
+    - id: audit-field-checker
+      name: Audit Field Checker
+      level: 3
+      type: micro-agent
+      description: "Atomic unit: verify that an event or log entry contains all required audit fields"
+      domain: architecture
+      capabilities: [audit-field-validation, completeness-checking]
+      tags: [micro, audit, field-validation, level3]
+
+    - id: trace-span-planner
+      name: Trace Span Planner
+      level: 3
+      type: micro-agent
+      description: "Atomic unit: plan OpenTelemetry span boundaries and attributes for a service operation"
+      domain: architecture
+      capabilities: [trace-span-planning, otel-instrumentation, span-attribute-design]
+      tags: [micro, tracing, otel, level3]
+
+    - id: failure-mode-classifier
+      name: Failure Mode Classifier
+      level: 3
+      type: micro-agent
+      description: "Atomic unit: classify a system failure mode by category, severity, and blast radius"
+      domain: architecture
+      capabilities: [failure-mode-classification, blast-radius-estimation, severity-scoring]
+      tags: [micro, failure-modes, classification, level3]
+
+  hierarchy:
+    level1: [architecture-orchestrator, platform-architecture-orchestrator, plugin-architecture-orchestrator, runtime-architecture-orchestrator]
+    level2: [domain-architecture-capability-agent, service-design-capability-agent, event-architecture-capability-agent, data-architecture-capability-agent, security-architecture-capability-agent, observability-architecture-capability-agent, plugin-contract-capability-agent, agent-runtime-capability-agent, memory-architecture-capability-agent]
+    level3: [domain-model-task-agent, bounded-context-task-agent, service-boundary-task-agent, api-contract-task-agent, graphql-schema-task-agent, event-schema-task-agent, workflow-architecture-task-agent, data-store-selection-task-agent, caching-strategy-task-agent, search-architecture-task-agent, security-control-task-agent, rbac-architecture-task-agent, tenant-isolation-task-agent, audit-architecture-task-agent, observability-plan-task-agent, deployment-topology-task-agent, plugin-lifecycle-task-agent, plugin-compatibility-task-agent, agent-memory-design-task-agent, context-assembly-task-agent, policy-enforcement-architecture-task-agent, rate-limit-architecture-task-agent, backup-recovery-architecture-task-agent, schema-comparer, backward-compatibility-checker, event-versioning-unit, boundary-leak-detector, topology-shape-unit, consistency-model-selector, cache-invalidation-advisor, tenant-scope-validator, role-scope-checker, plugin-manifest-validator, memory-tier-selector, policy-rule-translator, audit-field-checker, trace-span-planner, failure-mode-classifier]
+
+  capability_routing:
+    architecture-design:
+      primary: architecture-orchestrator
+      fallback: [domain-architecture-capability-agent]
+    event-architecture:
+      primary: event-architecture-capability-agent
+      fallback: [event-schema-task-agent]
+    plugin-architecture:
+      primary: plugin-architecture-orchestrator
+      fallback: [plugin-contract-capability-agent]
+    memory-architecture:
+      primary: memory-architecture-capability-agent
+      fallback: [memory-tier-selector]
+    security-architecture:
+      primary: security-architecture-capability-agent
+      fallback: [security-control-task-agent]

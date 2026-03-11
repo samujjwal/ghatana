@@ -1,0 +1,63 @@
+id: drift-detection-task-agent
+name: Drift Detection Task Agent
+version: 1.0.0
+description: "Detect infrastructure drift between desired IaC state and actual deployed state and classify drift severity"
+
+metadata:
+  level: 3
+  domain: operations
+  type: worker
+  tags: [drift-detection, state-comparison, severity-classification, level3]
+
+generator:
+  type: PIPELINE
+  steps:
+    - name: execute
+      type: LLM
+      provider: ANTHROPIC
+      model: claude-3-5-sonnet-20241022
+      temperature: 0.1
+      max_tokens: 2000
+      prompt: |
+        Execute task: Detect infrastructure drift between desired IaC state and actual deployed state and classify drift severity
+
+        Input: {{input}}
+        Context: {{context}}
+
+        Produce a structured, precise output meeting the task specification.
+
+memory:
+  episodic:
+    enabled: true
+    retention_days: 90
+    categories: [task-executions]
+  semantic:
+    enabled: true
+    categories: [domain-knowledge]
+  procedural:
+    enabled: false
+
+tools: [drift_detector, state_comparator, severity_classifier]
+
+capabilities:
+  - drift-detection
+  - state-comparison
+  - severity-classification
+
+routing:
+  input_types: [drift_detection_request]
+  output_types: [drift_report]
+
+delegation:
+  can_delegate_to: []
+  escalates_to: infra-capability-agent
+
+governance:
+  requires_approval: false
+  can_block: false
+  audit_trail: standard
+
+performance:
+  expected_latency_ms: 3000
+  max_latency_ms: 15000
+  timeout_ms: 30000

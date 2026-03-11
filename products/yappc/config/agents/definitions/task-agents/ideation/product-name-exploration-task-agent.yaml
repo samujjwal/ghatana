@@ -1,0 +1,63 @@
+id: product-name-exploration-task-agent
+name: Product Name Exploration Task Agent
+version: 1.0.0
+description: "Generate and evaluate product name candidates for memorability, availability, cultural fit, and brand alignment"
+
+metadata:
+  level: 3
+  domain: ideation
+  type: worker
+  tags: [name-generation, availability-checking, brand-alignment, level3]
+
+generator:
+  type: PIPELINE
+  steps:
+    - name: execute
+      type: LLM
+      provider: ANTHROPIC
+      model: claude-3-5-sonnet-20241022
+      temperature: 0.1
+      max_tokens: 2000
+      prompt: |
+        Execute task: Generate and evaluate product name candidates for memorability, availability, cultural fit, and brand alignment
+
+        Input: {{input}}
+        Context: {{context}}
+
+        Produce a structured, precise output meeting the task specification.
+
+memory:
+  episodic:
+    enabled: true
+    retention_days: 90
+    categories: [task-executions]
+  semantic:
+    enabled: true
+    categories: [domain-knowledge]
+  procedural:
+    enabled: false
+
+tools: [name_generator, trademark_checker, brand_evaluator]
+
+capabilities:
+  - name-generation
+  - availability-checking
+  - brand-alignment
+
+routing:
+  input_types: [name_exploration_request]
+  output_types: [product_name_candidates]
+
+delegation:
+  can_delegate_to: []
+  escalates_to: solution-framing-capability-agent
+
+governance:
+  requires_approval: false
+  can_block: false
+  audit_trail: standard
+
+performance:
+  expected_latency_ms: 3000
+  max_latency_ms: 15000
+  timeout_ms: 30000

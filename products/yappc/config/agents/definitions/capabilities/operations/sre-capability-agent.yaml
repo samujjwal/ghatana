@@ -1,0 +1,90 @@
+id: sre-capability-agent
+name: SRE Capability Agent
+version: 1.0.0
+description: "Executes SRE practices: SLO health monitoring, error budget burn rate calculation, toil identification, automated runbook step execution, and reliability risk assessment"
+
+metadata:
+  level: 2
+  domain: operations
+  tags: [capability, sre, slo, error-budget, toil, runbook, level2]
+
+generator:
+  type: PIPELINE
+  steps:
+    - name: slo_health_evaluation
+      type: SERVICE_CALL
+      service: slo-tracking
+      endpoint: /current-health
+      description: "Pull real-time SLO status, error budget remaining, and burn rate for all services"
+    - name: reliability_risk_analysis
+      type: LLM
+      provider: ANTHROPIC
+      model: claude-3-5-sonnet-20241022
+      temperature: 0.0
+      max_tokens: 2500
+      prompt: |
+        Analyse reliability risks and error budget position:
+
+        SLO health: {{slo_health_evaluation}}
+        Recent incidents: {{context.recent_incidents}}
+        Planned changes: {{context.upcoming_changes}}
+        Toil metrics: {{context.toil_metrics}}
+
+        Compute: error budget burn rate (1h/6h/24h windows), time-to-exhaustion, risk of SLO breach from planned changes, top toil sources by time cost, reliability debt accumulation rate. Flag services at critical risk. Output risk analysis JSON.
+    - name: reliability_action_dispatch
+      type: LLM
+      provider: ANTHROPIC
+      model: claude-3-5-sonnet-20241022
+      temperature: 0.1
+      max_tokens: 2000
+      prompt: |
+        Determine immediate reliability actions:
+
+        Risk analysis: {{reliability_risk_analysis}}
+        Available runbooks: {{context.runbooks}}
+        On-call status: {{context.on_call_status}}
+
+        Prescribe: runbooks to execute immediately, error budget policy decisions (halt deploys if <10% remaining), toil automation tickets to create, reliability review to schedule, stakeholder communications needed. Output action list with priority.
+
+memory:
+  episodic:
+    enabled: true
+    retention_days: 365
+    categories: [slo-health-checks, error-budget-events, runbook-executions, toil-records]
+  semantic:
+    enabled: true
+    categories: [slo-definitions, runbook-library, reliability-patterns]
+  procedural:
+    enabled: true
+    categories: [burn-rate-calculation, toil-triage, error-budget-policy]
+
+tools: [slo_tracker, error_budget_calculator, runbook_executor, toil_analyser]
+
+capabilities:
+  - slo-monitoring
+  - error-budget-tracking
+  - toil-identification
+  - runbook-execution
+  - reliability-risk-assessment
+
+routing:
+  input_types: [slo_check_request, reliability_review_request, toil_report]
+  output_types: [slo_health_report, error_budget_status, toil_analysis, reliability_action_list]
+
+delegation:
+  can_delegate_to:
+    - slo-management-task-agent
+    - error-budget-task-agent
+    - toil-automation-task-agent
+    - runbook-execution-task-agent
+  escalates_to: sre-orchestrator
+
+governance:
+  requires_approval: false
+  can_block: true
+  audit_trail: comprehensive
+
+performance:
+  expected_latency_ms: 2000
+  max_latency_ms: 10000
+  timeout_ms: 30000

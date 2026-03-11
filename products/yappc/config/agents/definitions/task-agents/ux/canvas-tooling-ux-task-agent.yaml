@@ -1,0 +1,63 @@
+id: canvas-tooling-ux-task-agent
+name: Canvas Tooling Ux Task Agent
+version: 1.0.0
+description: "Design canvas tooling UX including toolbar layout, tool mode switching, property panel design, and contextual menus"
+
+metadata:
+  level: 3
+  domain: ux
+  type: worker
+  tags: [canvas-tooling-design, toolbar-layout, property-panel-spec, level3]
+
+generator:
+  type: PIPELINE
+  steps:
+    - name: execute
+      type: LLM
+      provider: ANTHROPIC
+      model: claude-3-5-sonnet-20241022
+      temperature: 0.1
+      max_tokens: 2000
+      prompt: |
+        Execute task: Design canvas tooling UX including toolbar layout, tool mode switching, property panel design, and contextual menus
+
+        Input: {{input}}
+        Context: {{context}}
+
+        Produce a structured, precise output meeting the task specification.
+
+memory:
+  episodic:
+    enabled: true
+    retention_days: 90
+    categories: [task-executions]
+  semantic:
+    enabled: true
+    categories: [domain-knowledge]
+  procedural:
+    enabled: false
+
+tools: [canvas_designer, tooling_spec_writer]
+
+capabilities:
+  - canvas-tooling-design
+  - toolbar-layout
+  - property-panel-spec
+
+routing:
+  input_types: [canvas_tooling_request]
+  output_types: [canvas_tooling_specification]
+
+delegation:
+  can_delegate_to: []
+  escalates_to: canvas-interaction-capability-agent
+
+governance:
+  requires_approval: false
+  can_block: false
+  audit_trail: standard
+
+performance:
+  expected_latency_ms: 3000
+  max_latency_ms: 15000
+  timeout_ms: 30000

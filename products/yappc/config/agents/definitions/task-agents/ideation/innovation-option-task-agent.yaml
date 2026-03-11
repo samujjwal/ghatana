@@ -1,0 +1,63 @@
+id: innovation-option-task-agent
+name: Innovation Option Task Agent
+version: 1.0.0
+description: "Explore disruptive innovation options by applying Blue Ocean, TRIZ, and analogical reasoning frameworks"
+
+metadata:
+  level: 3
+  domain: ideation
+  type: worker
+  tags: [innovation-exploration, disruption-mapping, analogy-reasoning, level3]
+
+generator:
+  type: PIPELINE
+  steps:
+    - name: execute
+      type: LLM
+      provider: ANTHROPIC
+      model: claude-3-5-sonnet-20241022
+      temperature: 0.1
+      max_tokens: 2000
+      prompt: |
+        Execute task: Explore disruptive innovation options by applying Blue Ocean, TRIZ, and analogical reasoning frameworks
+
+        Input: {{input}}
+        Context: {{context}}
+
+        Produce a structured, precise output meeting the task specification.
+
+memory:
+  episodic:
+    enabled: true
+    retention_days: 90
+    categories: [task-executions]
+  semantic:
+    enabled: true
+    categories: [domain-knowledge]
+  procedural:
+    enabled: false
+
+tools: [innovation_framework_engine, analogy_finder]
+
+capabilities:
+  - innovation-exploration
+  - disruption-mapping
+  - analogy-reasoning
+
+routing:
+  input_types: [innovation_option_request]
+  output_types: [innovation_options]
+
+delegation:
+  can_delegate_to: []
+  escalates_to: differentiation-capability-agent
+
+governance:
+  requires_approval: false
+  can_block: false
+  audit_trail: standard
+
+performance:
+  expected_latency_ms: 4000
+  max_latency_ms: 20000
+  timeout_ms: 40000

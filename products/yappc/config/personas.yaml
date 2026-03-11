@@ -55,3 +55,48 @@ personas:
     color: "#f43f5e"
     focusAreas: ["design", "ux", "ui"]
     permissions: ["design.create", "prototype.create"]
+
+  - id: "ai-engineer"
+    label: "AI Engineer"
+    description: "AI/ML engineer responsible for model development and deployment"
+    category: "TECHNICAL"
+    icon: "psychology"
+    color: "#6366f1"
+    focusAreas: ["ai", "ml", "model-evaluation", "prompt-engineering"]
+    permissions: ["ai.model.manage", "ai.suggestion.request", "ai.suggestion.feedback"]
+
+  - id: "data-engineer"
+    label: "Data Engineer"
+    description: "Data engineer responsible for pipelines and data infrastructure"
+    category: "TECHNICAL"
+    icon: "storage"
+    color: "#0ea5e9"
+    focusAreas: ["data-pipelines", "analytics", "data-architecture"]
+    permissions: ["data.pipeline.manage", "code.read", "code.write"]
+
+  - id: "platform-engineer"
+    label: "Platform Engineer"
+    description: "Platform engineer responsible for developer tooling and infrastructure"
+    category: "TECHNICAL"
+    icon: "build_circle"
+    color: "#14b8a6"
+    focusAreas: ["platform", "devex", "infrastructure", "tooling"]
+    permissions: ["infra.manage", "platform.configure", "code.read"]
+
+  - id: "innovation-lead"
+    label: "Innovation Lead"
+    description: "Drives ideation, innovation strategy, and concept evaluation"
+    category: "STRATEGIC"
+    icon: "lightbulb"
+    color: "#f97316"
+    focusAreas: ["ideation", "innovation", "portfolio-strategy"]
+    permissions: ["requirements.define", "roadmap.manage", "ai.suggestion.request"]
+
+  - id: "ux-researcher"
+    label: "UX Researcher"
+    description: "Conducts user research, usability studies, and synthesis"
+    category: "CREATIVE"
+    icon: "person_search"
+    color: "#e879f9"
+    focusAreas: ["user-research", "usability-testing", "insight-synthesis"]
+    permissions: ["design.create", "ai.suggestion.request"]

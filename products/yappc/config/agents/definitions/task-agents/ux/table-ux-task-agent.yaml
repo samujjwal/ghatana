@@ -1,0 +1,63 @@
+id: table-ux-task-agent
+name: Table Ux Task Agent
+version: 1.0.0
+description: "Design table/data-grid UX with column priority (mobile-first), sorting/filtering patterns, inline actions, and pagination"
+
+metadata:
+  level: 3
+  domain: ux
+  type: worker
+  tags: [table-design, column-prioritisation, sorting-filtering-ux, level3]
+
+generator:
+  type: PIPELINE
+  steps:
+    - name: execute
+      type: LLM
+      provider: ANTHROPIC
+      model: claude-3-5-sonnet-20241022
+      temperature: 0.1
+      max_tokens: 2000
+      prompt: |
+        Execute task: Design table/data-grid UX with column priority (mobile-first), sorting/filtering patterns, inline actions, and pagination
+
+        Input: {{input}}
+        Context: {{context}}
+
+        Produce a structured, precise output meeting the task specification.
+
+memory:
+  episodic:
+    enabled: true
+    retention_days: 90
+    categories: [task-executions]
+  semantic:
+    enabled: true
+    categories: [domain-knowledge]
+  procedural:
+    enabled: false
+
+tools: [table_designer, column_priority_engine]
+
+capabilities:
+  - table-design
+  - column-prioritisation
+  - sorting-filtering-ux
+
+routing:
+  input_types: [table_ux_request]
+  output_types: [table_ux_specification]
+
+delegation:
+  can_delegate_to: []
+  escalates_to: screen-design-capability-agent
+
+governance:
+  requires_approval: false
+  can_block: false
+  audit_trail: standard
+
+performance:
+  expected_latency_ms: 3000
+  max_latency_ms: 15000
+  timeout_ms: 30000

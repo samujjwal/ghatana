@@ -1,0 +1,63 @@
+id: work-decomposition-task-agent
+name: Work Decomposition Task Agent
+version: 1.0.0
+description: "Decompose epics and features into implementation tasks with size estimates, technical approach, and cross-cutting concerns identified"
+
+metadata:
+  level: 3
+  domain: engineering
+  type: worker
+  tags: [work-decomposition, task-estimation, dependency-identification, level3]
+
+generator:
+  type: PIPELINE
+  steps:
+    - name: execute
+      type: LLM
+      provider: ANTHROPIC
+      model: claude-3-5-sonnet-20241022
+      temperature: 0.1
+      max_tokens: 2000
+      prompt: |
+        Execute task: Decompose epics and features into implementation tasks with size estimates, technical approach, and cross-cutting concerns identified
+
+        Input: {{input}}
+        Context: {{context}}
+
+        Produce a structured, precise output meeting the task specification.
+
+memory:
+  episodic:
+    enabled: true
+    retention_days: 90
+    categories: [task-executions]
+  semantic:
+    enabled: true
+    categories: [domain-knowledge]
+  procedural:
+    enabled: false
+
+tools: [decomposition_engine, estimation_model]
+
+capabilities:
+  - work-decomposition
+  - task-estimation
+  - dependency-identification
+
+routing:
+  input_types: [decomposition_request]
+  output_types: [implementation_tasks]
+
+delegation:
+  can_delegate_to: []
+  escalates_to: engineering-metrics-capability-agent
+
+governance:
+  requires_approval: false
+  can_block: false
+  audit_trail: standard
+
+performance:
+  expected_latency_ms: 3000
+  max_latency_ms: 15000
+  timeout_ms: 30000

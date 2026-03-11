@@ -1,0 +1,104 @@
+id: product-strategy-orchestrator
+name: Product Strategy Orchestrator
+version: 1.0.0
+description: "Drives product strategy: vision articulation, market positioning, product-market fit analysis, strategic roadmap, and north-star metric definition"
+
+metadata:
+  level: 1
+  domain: portfolio
+  tags: [orchestrator, product-strategy, vision, roadmap, level1]
+
+generator:
+  type: PIPELINE
+  steps:
+    - name: market_context_analysis
+      type: LLM
+      provider: ANTHROPIC
+      model: claude-3-5-sonnet-20241022
+      temperature: 0.3
+      max_tokens: 3500
+      prompt: |
+        You are the Product Strategy Orchestrator. Analyse the market context for the given product:
+
+        Product: {{input.product}}
+        Market data: {{context.market_data}}
+        Competitive landscape: {{context.competitors}}
+        Customer insights: {{context.customer_insights}}
+
+        Produce:
+        1. Market opportunity sizing and segmentation
+        2. Competitive differentiation analysis
+        3. Target customer profile and jobs-to-be-done
+        4. Product-market fit assessment (current vs desired)
+        5. Strategic options (build vs buy, go-to-market variants)
+
+        Output as JSON: {market_opportunity, differentiation, customer_profile, pmf_score, strategic_options}
+    - name: vision_definition
+      type: LLM
+      provider: ANTHROPIC
+      model: claude-3-5-sonnet-20241022
+      temperature: 0.4
+      max_tokens: 2000
+      prompt: |
+        Draft a compelling product vision and positioning statement:
+        Market context: {{market_context_analysis}}
+        Brand guidelines: {{context.brand}}
+
+        Output: {vision_statement, positioning_statement, north_star_metric, strategic_bets}
+    - name: roadmap_synthesis
+      type: LLM
+      provider: ANTHROPIC
+      model: claude-3-5-sonnet-20241022
+      temperature: 0.2
+      max_tokens: 3000
+      prompt: |
+        Create a strategic roadmap aligned to the vision:
+        Vision: {{vision_definition}}
+        Initiative pipeline: {{context.initiatives}}
+        Resource constraints: {{context.constraints}}
+
+        Return: {roadmap_themes, quarterly_milestones, dependencies, risks}
+
+memory:
+  episodic:
+    enabled: true
+    retention_days: 1095
+    categories: [strategy-decisions, market-analyses, competitive-moves]
+  semantic:
+    enabled: true
+    categories: [strategic-frameworks, market-knowledge, competitor-profiles, positioning-models]
+  procedural:
+    enabled: true
+    categories: [strategy-review-cadence, market-analysis-procedures]
+
+tools: [market_analyzer, competitive_intelligence_tool, vision_builder, roadmap_planner]
+
+capabilities:
+  - product-strategy
+  - market-analysis
+  - vision-definition
+  - roadmap-planning
+  - north-star-metric-definition
+
+routing:
+  input_types: [strategy_request, market_update, competitive_alert, vision_review]
+  output_types: [strategy_document, vision_statement, roadmap, positioning_brief]
+
+delegation:
+  can_delegate_to:
+    - market-research-orchestrator
+    - opportunity-assessment-orchestrator
+    - discovery-orchestrator
+  escalates_to: portfolio-orchestrator
+
+governance:
+  requires_approval: true
+  approval_chain:
+    - portfolio-orchestrator
+  can_block: false
+  audit_trail: comprehensive
+
+performance:
+  expected_latency_ms: 15000
+  max_latency_ms: 90000
+  timeout_ms: 120000

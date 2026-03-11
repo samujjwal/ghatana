@@ -1,0 +1,51 @@
+id: canvas-snap-unit
+name: Canvas Snap Unit
+version: 1.0.0
+description: "Calculate snap target position for an element being dragged given grid size, guides, and nearby object edges"
+
+metadata:
+  level: 3
+  domain: ux
+  type: micro-agent
+  tags: [snap-calculation, guide-alignment, level3, micro]
+
+generator:
+  type: RULE_BASED
+  steps:
+    - name: execute
+      type: RULE_BASED
+      rules:
+        - "snap-calculation"
+        - "guide-alignment"
+
+memory:
+  episodic:
+    enabled: false
+  semantic:
+    enabled: false
+  procedural:
+    enabled: false
+
+tools: [snap_calculator]
+
+capabilities:
+  - snap-calculation
+  - guide-alignment
+
+routing:
+  input_types: [snap_request]
+  output_types: [snap_position]
+
+delegation:
+  can_delegate_to: []
+  escalates_to: canvas-interaction-capability-agent
+
+governance:
+  requires_approval: false
+  can_block: false
+  audit_trail: standard
+
+performance:
+  expected_latency_ms: 50
+  max_latency_ms: 250
+  timeout_ms: 500

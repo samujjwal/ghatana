@@ -1,0 +1,63 @@
+id: experiment-results-task-agent
+name: Experiment Results Task Agent
+version: 1.0.0
+description: "Synthesise experiment results into a decision-ready report with statistical summary, business impact projection, and recommendation"
+
+metadata:
+  level: 3
+  domain: product-intelligence
+  type: worker
+  tags: [results-synthesis, business-impact-projection, decision-recommendation, level3]
+
+generator:
+  type: PIPELINE
+  steps:
+    - name: execute
+      type: LLM
+      provider: ANTHROPIC
+      model: claude-3-5-sonnet-20241022
+      temperature: 0.1
+      max_tokens: 2000
+      prompt: |
+        Execute task: Synthesise experiment results into a decision-ready report with statistical summary, business impact projection, and recommendation
+
+        Input: {{input}}
+        Context: {{context}}
+
+        Produce a structured, precise output meeting the task specification.
+
+memory:
+  episodic:
+    enabled: true
+    retention_days: 90
+    categories: [task-executions]
+  semantic:
+    enabled: true
+    categories: [domain-knowledge]
+  procedural:
+    enabled: false
+
+tools: [results_synthesiser, impact_projector]
+
+capabilities:
+  - results-synthesis
+  - business-impact-projection
+  - decision-recommendation
+
+routing:
+  input_types: [experiment_results_request]
+  output_types: [experiment_results_report]
+
+delegation:
+  can_delegate_to: []
+  escalates_to: experimentation-capability-agent
+
+governance:
+  requires_approval: false
+  can_block: false
+  audit_trail: standard
+
+performance:
+  expected_latency_ms: 3000
+  max_latency_ms: 15000
+  timeout_ms: 30000

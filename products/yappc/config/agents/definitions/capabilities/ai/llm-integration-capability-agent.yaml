@@ -1,0 +1,101 @@
+id: llm-integration-capability-agent
+name: LLM Integration Capability Agent
+version: 1.0.0
+description: "Manages LLM integrations: model selection, prompt engineering, token management, cost optimisation, fallback chain design, and LLM output evaluation"
+
+metadata:
+  level: 2
+  domain: ai
+  tags: [capability, llm, prompt-engineering, model-selection, cost, fallback, level2]
+
+generator:
+  type: PIPELINE
+  steps:
+    - name: model_selection
+      type: LLM
+      provider: ANTHROPIC
+      model: claude-3-5-sonnet-20241022
+      temperature: 0.1
+      max_tokens: 2000
+      prompt: |
+        Select optimal LLM for the task:
+
+        Task specification: {{input}}
+        Model catalogue: {{context.model_catalogue}}
+        Latency budget: {{context.latency_budget}}
+        Cost budget per call ($): {{context.cost_budget}}
+        Quality requirements: {{context.quality_requirements}}
+
+        Evaluate candidates: capability fit, context window adequacy, cost per 1K tokens (input/output), p50 latency, reliability, provider availability. Recommend primary + fallback model. Justify selection. Output model selection JSON.
+    - name: prompt_engineering
+      type: LLM
+      provider: ANTHROPIC
+      model: claude-3-5-sonnet-20241022
+      temperature: 0.2
+      max_tokens: 3000
+      prompt: |
+        Design optimised prompt for the task:
+
+        Task: {{input}}
+        Selected model: {{model_selection.primary_model}}
+        Few-shot examples available: {{context.examples}}
+        Output format requirements: {{context.output_format}}
+
+        Produce: system prompt (persona, constraints, output format instructions), user prompt template (with placeholders), few-shot examples if beneficial (max 3), chain-of-thought strategy (when to enable), temperature recommendation, JSON mode if structured output needed. Output prompt spec.
+    - name: cost_and_fallback_strategy
+      type: LLM
+      provider: ANTHROPIC
+      model: claude-3-5-sonnet-20241022
+      temperature: 0.1
+      max_tokens: 2000
+      prompt: |
+        Design cost optimisation and fallback chain:
+
+        Model selection: {{model_selection}}
+        Expected call volume: {{context.call_volume}}
+        Quality thresholds: {{context.quality_thresholds}}
+
+        Define: token usage optimisation (prompt compression, response length control), caching strategy (exact match + semantic cache), fallback chain (primary → cheaper alternative → rule-based), retry policy (transient errors only, max 3 attempts, exponential backoff), cost alert thresholds. Output strategy spec.
+
+memory:
+  episodic:
+    enabled: true
+    retention_days: 90
+    categories: [model-selections, prompt-versions, evaluation-results, cost-records]
+  semantic:
+    enabled: true
+    categories: [prompt-patterns, model-benchmarks, cost-models]
+  procedural:
+    enabled: true
+    categories: [model-selection-criteria, prompt-engineering-techniques, cost-optimisation-rules]
+
+tools: [model_selector, prompt_evaluator, token_counter, cost_tracker, llm_evaluator]
+
+capabilities:
+  - model-selection
+  - prompt-engineering
+  - token-management
+  - cost-optimisation
+  - fallback-chain-design
+
+routing:
+  input_types: [llm_task_request, prompt_design_request, model_selection_request]
+  output_types: [model_selection, prompt_spec, cost_optimisation_plan, fallback_chain]
+
+delegation:
+  can_delegate_to:
+    - model-selection-task-agent
+    - prompt-engineering-task-agent
+    - cost-optimisation-task-agent
+    - llm-evaluation-task-agent
+  escalates_to: ai-orchestrator
+
+governance:
+  requires_approval: false
+  can_block: false
+  audit_trail: standard
+
+performance:
+  expected_latency_ms: 2000
+  max_latency_ms: 10000
+  timeout_ms: 30000

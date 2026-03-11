@@ -1,0 +1,63 @@
+id: requirement-to-test-trace-task-agent
+name: Requirement To Test Trace Task Agent
+version: 1.0.0
+description: "Create and maintain traceability links between requirements and test cases ensuring full test coverage mapping"
+
+metadata:
+  level: 3
+  domain: requirements
+  type: worker
+  tags: [test-tracing, coverage-mapping, gap-detection, level3]
+
+generator:
+  type: PIPELINE
+  steps:
+    - name: execute
+      type: LLM
+      provider: ANTHROPIC
+      model: claude-3-5-sonnet-20241022
+      temperature: 0.1
+      max_tokens: 2000
+      prompt: |
+        Execute task: Create and maintain traceability links between requirements and test cases ensuring full test coverage mapping
+
+        Input: {{input}}
+        Context: {{context}}
+
+        Produce a structured, precise output meeting the task specification.
+
+memory:
+  episodic:
+    enabled: true
+    retention_days: 90
+    categories: [task-executions]
+  semantic:
+    enabled: true
+    categories: [domain-knowledge]
+  procedural:
+    enabled: false
+
+tools: [test_trace_builder, test_case_connector]
+
+capabilities:
+  - test-tracing
+  - coverage-mapping
+  - gap-detection
+
+routing:
+  input_types: [test_trace_request]
+  output_types: [test_trace_links, coverage_gaps]
+
+delegation:
+  can_delegate_to: []
+  escalates_to: traceability-capability-agent
+
+governance:
+  requires_approval: false
+  can_block: false
+  audit_trail: standard
+
+performance:
+  expected_latency_ms: 2000
+  max_latency_ms: 10000
+  timeout_ms: 20000

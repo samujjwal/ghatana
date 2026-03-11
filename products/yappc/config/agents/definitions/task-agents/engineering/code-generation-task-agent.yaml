@@ -1,0 +1,63 @@
+id: code-generation-task-agent
+name: Code Generation Task Agent
+version: 1.0.0
+description: "Generate boilerplate and scaffold code for new services, modules, or features following project conventions"
+
+metadata:
+  level: 3
+  domain: engineering
+  type: worker
+  tags: [code-scaffolding, boilerplate-generation, convention-application, level3]
+
+generator:
+  type: PIPELINE
+  steps:
+    - name: execute
+      type: LLM
+      provider: ANTHROPIC
+      model: claude-3-5-sonnet-20241022
+      temperature: 0.1
+      max_tokens: 2000
+      prompt: |
+        Execute task: Generate boilerplate and scaffold code for new services, modules, or features following project conventions
+
+        Input: {{input}}
+        Context: {{context}}
+
+        Produce a structured, precise output meeting the task specification.
+
+memory:
+  episodic:
+    enabled: true
+    retention_days: 90
+    categories: [task-executions]
+  semantic:
+    enabled: true
+    categories: [domain-knowledge]
+  procedural:
+    enabled: false
+
+tools: [scaffold_generator, template_engine, convention_enforcer]
+
+capabilities:
+  - code-scaffolding
+  - boilerplate-generation
+  - convention-application
+
+routing:
+  input_types: [code_generation_request]
+  output_types: [generated_code]
+
+delegation:
+  can_delegate_to: []
+  escalates_to: backend-capability-agent
+
+governance:
+  requires_approval: false
+  can_block: false
+  audit_trail: standard
+
+performance:
+  expected_latency_ms: 4000
+  max_latency_ms: 20000
+  timeout_ms: 40000

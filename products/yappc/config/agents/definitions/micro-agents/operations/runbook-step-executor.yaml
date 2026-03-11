@@ -1,0 +1,51 @@
+id: runbook-step-executor
+name: Runbook Step Executor
+version: 1.0.0
+description: "Execute a single runbook step command with timeout, output capture, and exit-code-based success determination"
+
+metadata:
+  level: 3
+  domain: operations
+  type: micro-agent
+  tags: [step-execution, command-execution, level3, micro]
+
+generator:
+  type: RULE_BASED
+  steps:
+    - name: execute
+      type: RULE_BASED
+      rules:
+        - "step-execution"
+        - "command-execution"
+
+memory:
+  episodic:
+    enabled: false
+  semantic:
+    enabled: false
+  procedural:
+    enabled: false
+
+tools: [step_executor]
+
+capabilities:
+  - step-execution
+  - command-execution
+
+routing:
+  input_types: [step_execute_request]
+  output_types: [step_execution_result]
+
+delegation:
+  can_delegate_to: []
+  escalates_to: sre-capability-agent
+
+governance:
+  requires_approval: false
+  can_block: false
+  audit_trail: standard
+
+performance:
+  expected_latency_ms: 3000
+  max_latency_ms: 15000
+  timeout_ms: 30000

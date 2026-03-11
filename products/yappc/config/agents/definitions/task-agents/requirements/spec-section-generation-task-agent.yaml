@@ -1,0 +1,63 @@
+id: spec-section-generation-task-agent
+name: Spec Section Generation Task Agent
+version: 1.0.0
+description: "Generate individual sections of a functional requirements specification from structured requirement inputs"
+
+metadata:
+  level: 3
+  domain: requirements
+  type: worker
+  tags: [spec-section-writing, template-application, cross-reference-insertion, level3]
+
+generator:
+  type: PIPELINE
+  steps:
+    - name: execute
+      type: LLM
+      provider: ANTHROPIC
+      model: claude-3-5-sonnet-20241022
+      temperature: 0.1
+      max_tokens: 2000
+      prompt: |
+        Execute task: Generate individual sections of a functional requirements specification from structured requirement inputs
+
+        Input: {{input}}
+        Context: {{context}}
+
+        Produce a structured, precise output meeting the task specification.
+
+memory:
+  episodic:
+    enabled: true
+    retention_days: 90
+    categories: [task-executions]
+  semantic:
+    enabled: true
+    categories: [domain-knowledge]
+  procedural:
+    enabled: false
+
+tools: [spec_template_engine, section_writer]
+
+capabilities:
+  - spec-section-writing
+  - template-application
+  - cross-reference-insertion
+
+routing:
+  input_types: [spec_section_request]
+  output_types: [spec_section]
+
+delegation:
+  can_delegate_to: []
+  escalates_to: spec-authoring-capability-agent
+
+governance:
+  requires_approval: false
+  can_block: false
+  audit_trail: standard
+
+performance:
+  expected_latency_ms: 3000
+  max_latency_ms: 15000
+  timeout_ms: 30000

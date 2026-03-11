@@ -1,0 +1,51 @@
+id: consistency-model-selector
+name: Consistency Model Selector
+version: 1.0.0
+description: "Select appropriate consistency model (strong, eventual, causal, session) for a given access pattern and tolerance"
+
+metadata:
+  level: 3
+  domain: architecture
+  type: micro-agent
+  tags: [consistency-model-selection, trade-off-evaluation, level3, micro]
+
+generator:
+  type: RULE_BASED
+  steps:
+    - name: execute
+      type: RULE_BASED
+      rules:
+        - "consistency-model-selection"
+        - "trade-off-evaluation"
+
+memory:
+  episodic:
+    enabled: false
+  semantic:
+    enabled: false
+  procedural:
+    enabled: false
+
+tools: [consistency_selector]
+
+capabilities:
+  - consistency-model-selection
+  - trade-off-evaluation
+
+routing:
+  input_types: [consistency_request]
+  output_types: [consistency_model]
+
+delegation:
+  can_delegate_to: []
+  escalates_to: data-architecture-capability-agent
+
+governance:
+  requires_approval: false
+  can_block: false
+  audit_trail: standard
+
+performance:
+  expected_latency_ms: 100
+  max_latency_ms: 500
+  timeout_ms: 1000

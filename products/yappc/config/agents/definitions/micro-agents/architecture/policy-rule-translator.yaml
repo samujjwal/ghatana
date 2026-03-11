@@ -1,0 +1,53 @@
+id: policy-rule-translator
+name: Policy Rule Translator
+version: 1.0.0
+description: "Translate a natural language access policy rule into OPA Rego or CEL expression"
+
+metadata:
+  level: 3
+  domain: architecture
+  type: micro-agent
+  tags: [rule-translation, opa-rego-generation, cel-generation, level3, micro]
+
+generator:
+  type: RULE_BASED
+  steps:
+    - name: execute
+      type: RULE_BASED
+      rules:
+        - "rule-translation"
+        - "opa-rego-generation"
+        - "cel-generation"
+
+memory:
+  episodic:
+    enabled: false
+  semantic:
+    enabled: false
+  procedural:
+    enabled: false
+
+tools: [rule_translator]
+
+capabilities:
+  - rule-translation
+  - opa-rego-generation
+  - cel-generation
+
+routing:
+  input_types: [translate_request]
+  output_types: [translated_rule]
+
+delegation:
+  can_delegate_to: []
+  escalates_to: security-architecture-capability-agent
+
+governance:
+  requires_approval: false
+  can_block: false
+  audit_trail: standard
+
+performance:
+  expected_latency_ms: 300
+  max_latency_ms: 1500
+  timeout_ms: 3000

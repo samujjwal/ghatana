@@ -1,0 +1,63 @@
+id: requirement-capture-task-agent
+name: Requirement Capture Task Agent
+version: 1.0.0
+description: "Capture raw requirements from multiple sources (stakeholder interviews, documents, existing systems) and produce structured requirement records"
+
+metadata:
+  level: 3
+  domain: requirements
+  type: worker
+  tags: [requirement-capture, source-parsing, structured-extraction, level3]
+
+generator:
+  type: PIPELINE
+  steps:
+    - name: execute
+      type: LLM
+      provider: ANTHROPIC
+      model: claude-3-5-sonnet-20241022
+      temperature: 0.1
+      max_tokens: 2000
+      prompt: |
+        Execute task: Capture raw requirements from multiple sources (stakeholder interviews, documents, existing systems) and produce structured requirement records
+
+        Input: {{input}}
+        Context: {{context}}
+
+        Produce a structured, precise output meeting the task specification.
+
+memory:
+  episodic:
+    enabled: true
+    retention_days: 90
+    categories: [task-executions]
+  semantic:
+    enabled: true
+    categories: [domain-knowledge]
+  procedural:
+    enabled: false
+
+tools: [document_parser, interview_analyser, requirement_recorder]
+
+capabilities:
+  - requirement-capture
+  - source-parsing
+  - structured-extraction
+
+routing:
+  input_types: [capture_request]
+  output_types: [raw_requirements]
+
+delegation:
+  can_delegate_to: []
+  escalates_to: requirement-analysis-capability-agent
+
+governance:
+  requires_approval: false
+  can_block: false
+  audit_trail: standard
+
+performance:
+  expected_latency_ms: 3000
+  max_latency_ms: 15000
+  timeout_ms: 30000

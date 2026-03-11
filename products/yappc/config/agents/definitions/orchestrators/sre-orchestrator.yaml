@@ -1,0 +1,99 @@
+id: sre-orchestrator
+name: SRE Orchestrator
+version: 1.0.0
+description: "Coordinates SLO management, error budget tracking, toil reduction, runbook automation, reliability review, and post-incident learning"
+
+metadata:
+  level: 1
+  domain: operations
+  tags: [orchestrator, sre, slo, reliability, toil, level1]
+
+generator:
+  type: PIPELINE
+  steps:
+    - name: reliability_assessment
+      type: LLM
+      provider: ANTHROPIC
+      model: claude-3-5-sonnet-20241022
+      temperature: 0.1
+      max_tokens: 2000
+      prompt: |
+        Assess the reliability situation:
+
+        Input: {{input}}
+        Current SLO statuses: {{context.slo_dashboard}}
+        Error budget remaining: {{context.error_budgets}}
+        Recent incidents (7 days): {{context.recent_incidents}}
+        Toil catalogue: {{context.toil_catalogue}}
+
+        Identify burning SLOs, error budget burn rate, high-toil sources, and highest reliability risk. Order by priority. Output JSON list.
+    - name: runbook_selection
+      type: SERVICE_CALL
+      service: runbook-store
+      endpoint: /match
+      description: "Match trigger to existing runbooks or flag gap for new runbook authoring"
+    - name: reliability_action_plan
+      type: LLM
+      provider: ANTHROPIC
+      model: claude-3-5-sonnet-20241022
+      temperature: 0.2
+      max_tokens: 2500
+      prompt: |
+        Produce a reliability action plan:
+
+        Assessment: {{reliability_assessment}}
+        Runbooks available: {{runbook_selection}}
+        Budget policy: {{context.budget_policy}}
+
+        Generate: immediate mitigations, runbook executions, SLO alerts to suppress, toil automation candidates, post-incident review schedule, and reliability improvement tickets.
+    - name: remediation_execution
+      type: SERVICE_CALL
+      service: agent-dispatcher
+      endpoint: /dispatch
+      description: "Dispatch to sre-capability-agent, toil-automation-task-agent, or on-call-orchestrator as needed"
+
+memory:
+  episodic:
+    enabled: true
+    retention_days: 365
+    categories: [slo-events, error-budget-burns, incidents, toil-records, runbook-executions]
+  semantic:
+    enabled: true
+    categories: [runbooks, reliability-patterns, slo-definitions]
+  procedural:
+    enabled: true
+    categories: [incident-response, slo-defence, toil-triage]
+
+tools: [slo_dashboard, error_budget_tracker, runbook_executor, toil_analyser]
+
+capabilities:
+  - slo-management
+  - error-budget-tracking
+  - toil-analysis
+  - runbook-automation
+  - post-incident-review
+
+routing:
+  input_types: [slo_alert, reliability_review_request, post_incident_request, toil_report]
+  output_types: [reliability_action_plan, runbook_result, toil_automation_spec, post_incident_report]
+
+delegation:
+  can_delegate_to:
+    - sre-capability-agent
+    - slo-management-task-agent
+    - error-budget-task-agent
+    - toil-automation-task-agent
+    - runbook-execution-task-agent
+    - post-incident-review-task-agent
+    - on-call-orchestrator
+  escalates_to: operations-orchestrator
+
+governance:
+  requires_approval: false
+  can_block: true
+  audit_trail: comprehensive
+
+performance:
+  expected_latency_ms: 3000
+  max_latency_ms: 15000
+  timeout_ms: 60000

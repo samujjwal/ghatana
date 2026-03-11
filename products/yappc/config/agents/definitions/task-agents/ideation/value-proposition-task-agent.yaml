@@ -1,0 +1,63 @@
+id: value-proposition-task-agent
+name: Value Proposition Task Agent
+version: 1.0.0
+description: "Craft value propositions using the value proposition canvas format: customer jobs, pains, gains, products/features, pain relievers, gain creators"
+
+metadata:
+  level: 3
+  domain: ideation
+  type: worker
+  tags: [value-proposition-design, canvas-completion, benefit-articulation, level3]
+
+generator:
+  type: PIPELINE
+  steps:
+    - name: execute
+      type: LLM
+      provider: ANTHROPIC
+      model: claude-3-5-sonnet-20241022
+      temperature: 0.1
+      max_tokens: 2000
+      prompt: |
+        Execute task: Craft value propositions using the value proposition canvas format: customer jobs, pains, gains, products/features, pain relievers, gain creators
+
+        Input: {{input}}
+        Context: {{context}}
+
+        Produce a structured, precise output meeting the task specification.
+
+memory:
+  episodic:
+    enabled: true
+    retention_days: 90
+    categories: [task-executions]
+  semantic:
+    enabled: true
+    categories: [domain-knowledge]
+  procedural:
+    enabled: false
+
+tools: [vpc_template_engine, benefit_mapper]
+
+capabilities:
+  - value-proposition-design
+  - canvas-completion
+  - benefit-articulation
+
+routing:
+  input_types: [value_prop_request]
+  output_types: [value_proposition_canvas]
+
+delegation:
+  can_delegate_to: []
+  escalates_to: solution-framing-capability-agent
+
+governance:
+  requires_approval: false
+  can_block: false
+  audit_trail: standard
+
+performance:
+  expected_latency_ms: 3000
+  max_latency_ms: 15000
+  timeout_ms: 30000

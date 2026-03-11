@@ -1,0 +1,63 @@
+id: v1-scope-task-agent
+name: V1 Scope Task Agent
+version: 1.0.0
+description: "Define V1 product scope as the next coherent scope after MVP incorporating validated learnings and commercial requirements"
+
+metadata:
+  level: 3
+  domain: ideation
+  type: worker
+  tags: [v1-scoping, feature-graduation, commercial-viability-check, level3]
+
+generator:
+  type: PIPELINE
+  steps:
+    - name: execute
+      type: LLM
+      provider: ANTHROPIC
+      model: claude-3-5-sonnet-20241022
+      temperature: 0.1
+      max_tokens: 2000
+      prompt: |
+        Execute task: Define V1 product scope as the next coherent scope after MVP incorporating validated learnings and commercial requirements
+
+        Input: {{input}}
+        Context: {{context}}
+
+        Produce a structured, precise output meeting the task specification.
+
+memory:
+  episodic:
+    enabled: true
+    retention_days: 90
+    categories: [task-executions]
+  semantic:
+    enabled: true
+    categories: [domain-knowledge]
+  procedural:
+    enabled: false
+
+tools: [scope_planner, commercial_checker]
+
+capabilities:
+  - v1-scoping
+  - feature-graduation
+  - commercial-viability-check
+
+routing:
+  input_types: [v1_scope_request]
+  output_types: [v1_scope]
+
+delegation:
+  can_delegate_to: []
+  escalates_to: concept-validation-capability-agent
+
+governance:
+  requires_approval: false
+  can_block: false
+  audit_trail: standard
+
+performance:
+  expected_latency_ms: 3000
+  max_latency_ms: 15000
+  timeout_ms: 30000

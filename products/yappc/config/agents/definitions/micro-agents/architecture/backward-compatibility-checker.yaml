@@ -1,0 +1,51 @@
+id: backward-compatibility-checker
+name: Backward Compatibility Checker
+version: 1.0.0
+description: "Check schema or API change for backward compatibility violations against defined compatibility rules"
+
+metadata:
+  level: 3
+  domain: architecture
+  type: micro-agent
+  tags: [backward-compatibility-check, rule-enforcement, level3, micro]
+
+generator:
+  type: RULE_BASED
+  steps:
+    - name: execute
+      type: RULE_BASED
+      rules:
+        - "backward-compatibility-check"
+        - "rule-enforcement"
+
+memory:
+  episodic:
+    enabled: false
+  semantic:
+    enabled: false
+  procedural:
+    enabled: false
+
+tools: [compatibility_checker]
+
+capabilities:
+  - backward-compatibility-check
+  - rule-enforcement
+
+routing:
+  input_types: [compatibility_request]
+  output_types: [compatibility_verdict]
+
+delegation:
+  can_delegate_to: []
+  escalates_to: event-architecture-capability-agent
+
+governance:
+  requires_approval: false
+  can_block: false
+  audit_trail: standard
+
+performance:
+  expected_latency_ms: 200
+  max_latency_ms: 1000
+  timeout_ms: 2000

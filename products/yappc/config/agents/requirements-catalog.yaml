@@ -1,0 +1,527 @@
+apiVersion: ghatana.yappc/v2
+kind: DomainAgentCatalog
+
+metadata:
+  name: requirements
+  version: 1.0.0
+  description: "Requirements engineering, specification authoring, traceability, and quality assurance agents"
+  domain: requirements
+  agentCount: 48
+
+spec:
+  agents:
+
+    # ── Level 1 Orchestrators ───────────────────────────────────────────────
+    - id: requirements-orchestrator
+      name: Requirements Orchestrator
+      level: 1
+      type: orchestrator
+      description: "Coordinates the end-to-end requirements lifecycle from intake through approval and versioning"
+      domain: requirements
+      capabilities: [requirements-management, intake-coordination, lifecycle-management, traceability-coordination]
+      routing:
+        input_types: [requirement_request, user_story, product_brief, feedback_data]
+        output_types: [structured_requirements, acceptance_criteria, versioned_spec, traceability_graph]
+      delegation:
+        can_delegate_to:
+          - specification-orchestrator
+          - traceability-orchestrator
+          - requirement-intake-capability-agent
+          - requirement-analysis-capability-agent
+        escalates_to: portfolio-orchestrator
+      governance:
+        requires_approval: false
+        audit_trail: comprehensive
+      tags: [orchestrator, requirements, lifecycle, level1]
+
+    - id: specification-orchestrator
+      name: Specification Orchestrator
+      level: 1
+      type: orchestrator
+      description: "Manages specification authoring, section generation, review workflows, and export to multiple formats"
+      domain: requirements
+      capabilities: [spec-authoring, section-generation, review-workflow, export-management]
+      routing:
+        input_types: [spec_request, requirements_set, review_trigger]
+        output_types: [specification_document, review_feedback, export_artefact]
+      delegation:
+        can_delegate_to:
+          - spec-authoring-capability-agent
+          - spec-section-generation-task-agent
+          - functional-requirement-drafting-task-agent
+          - nfr-drafting-task-agent
+        escalates_to: requirements-orchestrator
+      tags: [orchestrator, specification, authoring, level1]
+
+    - id: traceability-orchestrator
+      name: Traceability Orchestrator
+      level: 1
+      type: orchestrator
+      description: "Maintains bidirectional traceability between requirements, stories, test cases, and implementation artefacts"
+      domain: requirements
+      capabilities: [traceability-management, link-creation, gap-analysis, coverage-reporting]
+      routing:
+        input_types: [traceability_request, link_creation_event, coverage_query]
+        output_types: [traceability_graph, coverage_report, gap_analysis]
+      delegation:
+        can_delegate_to:
+          - traceability-capability-agent
+          - requirement-to-story-trace-task-agent
+          - requirement-to-test-trace-task-agent
+          - requirement-gap-analysis-task-agent
+        escalates_to: requirements-orchestrator
+      tags: [orchestrator, traceability, coverage, level1]
+
+    # ── Level 2 Capability Agents ───────────────────────────────────────────
+    - id: requirement-intake-capability-agent
+      name: Requirement Intake Capability Agent
+      level: 2
+      type: domain-expert
+      description: "Manages the intake pipeline for requirements from all sources: user text, imports, ideation outputs, and stakeholder sessions"
+      domain: requirements
+      capabilities: [requirement-intake, source-parsing, deduplication, initial-classification]
+      memory:
+        episodic:
+          enabled: true
+          retention_days: 90
+          categories: [intake-sessions, raw-submissions, parsed-results]
+      tools: [requirement_parser, deduplication_engine, intake_classifier]
+      tags: [capability, intake, requirements, level2]
+
+    - id: requirement-analysis-capability-agent
+      name: Requirement Analysis Capability Agent
+      level: 2
+      type: domain-expert
+      description: "Performs deep analysis of requirements: ambiguity detection, completeness checking, conflict detection, and dependency mapping"
+      domain: requirements
+      capabilities: [ambiguity-detection, completeness-checking, conflict-detection, dependency-mapping]
+      memory:
+        semantic:
+          enabled: true
+          categories: [requirement-patterns, ambiguity-patterns, conflict-patterns]
+      tools: [ambiguity_detector, completeness_checker, conflict_analyzer]
+      tags: [capability, analysis, requirements, level2]
+
+    - id: requirement-quality-capability-agent
+      name: Requirement Quality Capability Agent
+      level: 2
+      type: domain-expert
+      description: "Enforces requirement quality standards: measurability, testability, INVEST criteria, and SMART acceptance criteria"
+      domain: requirements
+      capabilities: [quality-enforcement, invest-validation, smart-checking, testability-assessment]
+      tools: [quality_checker, invest_validator, smart_evaluator, testability_assessor]
+      tags: [capability, quality, requirements, level2]
+
+    - id: requirement-governance-capability-agent
+      name: Requirement Governance Capability Agent
+      level: 2
+      type: domain-expert
+      description: "Manages requirement approval workflows, versioning, change control, and audit trails"
+      domain: requirements
+      capabilities: [approval-workflow, version-management, change-control, audit-management]
+      memory:
+        episodic:
+          enabled: true
+          retention_days: 730
+          categories: [approval-decisions, version-history, change-records]
+      tools: [approval_workflow, version_manager, change_controller, audit_recorder]
+      tags: [capability, governance, approval, level2]
+
+    - id: traceability-capability-agent
+      name: Traceability Capability Agent
+      level: 2
+      type: domain-expert
+      description: "Creates and maintains traceability links between requirements, stories, tests, and implementation artefacts"
+      domain: requirements
+      capabilities: [trace-link-creation, link-maintenance, coverage-analysis, impact-tracing]
+      tools: [trace_link_builder, coverage_analyzer, impact_tracer]
+      tags: [capability, traceability, links, level2]
+
+    - id: spec-authoring-capability-agent
+      name: Spec Authoring Capability Agent
+      level: 2
+      type: domain-expert
+      description: "Authors comprehensive specification documents from structured requirements, generating sections, tables, and diagrams"
+      domain: requirements
+      capabilities: [spec-authoring, document-generation, section-composition, export-formatting]
+      tools: [spec_builder, document_generator, export_formatter]
+      tags: [capability, spec-authoring, documentation, level2]
+
+    # ── Level 3 Task Agents ─────────────────────────────────────────────────
+    - id: requirement-capture-task-agent
+      name: Requirement Capture Task Agent
+      level: 3
+      type: worker
+      description: "Captures raw requirement intent from user text, meeting notes, or document imports and converts to structured records"
+      domain: requirements
+      capabilities: [requirement-capture, text-parsing, structure-generation]
+      tools: [nlp_parser, structure_extractor, requirement_builder]
+      tags: [task, capture, requirements, level3]
+
+    - id: nl-requirement-parsing-task-agent
+      name: Natural Language Requirement Parsing Task Agent
+      level: 3
+      type: worker
+      description: "Parses natural language requirement statements into structured components: actor, action, object, condition, quality"
+      domain: requirements
+      capabilities: [nl-parsing, component-extraction, structure-normalisation]
+      tools: [nl_parser, component_extractor]
+      tags: [task, parsing, nlp, level3]
+
+    - id: requirement-normalisation-task-agent
+      name: Requirement Normalisation Task Agent
+      level: 3
+      type: worker
+      description: "Normalises requirement statements to consistent grammar, terminology, and format"
+      domain: requirements
+      capabilities: [normalisation, terminology-standardisation, format-alignment]
+      tools: [normaliser, terminology_mapper]
+      tags: [task, normalisation, requirements, level3]
+
+    - id: requirement-type-classification-task-agent
+      name: Requirement Type Classification Task Agent
+      level: 3
+      type: worker
+      description: "Classifies requirements by type: functional, non-functional, constraint, assumption, business rule"
+      domain: requirements
+      capabilities: [type-classification, taxonomy-application, confidence-scoring]
+      tools: [classifier, taxonomy_mapper]
+      tags: [task, classification, typing, level3]
+
+    - id: requirement-priority-task-agent
+      name: Requirement Priority Task Agent
+      level: 3
+      type: worker
+      description: "Assigns priority levels (MoSCoW, WSJF, or custom) to requirements based on value, urgency, and risk"
+      domain: requirements
+      capabilities: [priority-assignment, moscow-scoring, wsjf-calculation, risk-weighted-priority]
+      tools: [priority_engine, moscow_scorer, wsjf_calculator]
+      tags: [task, priority, moscow, wsjf, level3]
+
+    - id: requirement-source-linking-task-agent
+      name: Requirement Source Linking Task Agent
+      level: 3
+      type: worker
+      description: "Links requirements to their originating sources: personas, user interviews, business goals, regulations"
+      domain: requirements
+      capabilities: [source-linking, provenance-tracking, evidence-attribution]
+      tools: [source_linker, provenance_tracker]
+      tags: [task, source-linking, provenance, level3]
+
+    - id: requirement-conflict-detection-task-agent
+      name: Requirement Conflict Detection Task Agent
+      level: 3
+      type: worker
+      description: "Detects contradictions, ambiguities, and conflicts between requirements within and across requirement sets"
+      domain: requirements
+      capabilities: [conflict-detection, contradiction-analysis, ambiguity-flagging]
+      tools: [conflict_detector, contradiction_analyzer]
+      tags: [task, conflict, detection, level3]
+
+    - id: requirement-deduplication-task-agent
+      name: Requirement Deduplication Task Agent
+      level: 3
+      type: worker
+      description: "Identifies and merges duplicate or near-duplicate requirements, preserving the canonical form and source provenance"
+      domain: requirements
+      capabilities: [deduplication, similarity-detection, canonical-merging]
+      tools: [deduplication_engine, similarity_scorer, merge_resolver]
+      tags: [task, deduplication, requirements, level3]
+
+    - id: requirement-completeness-task-agent
+      name: Requirement Completeness Task Agent
+      level: 3
+      type: worker
+      description: "Checks requirement sets for completeness against defined coverage areas and coverage models"
+      domain: requirements
+      capabilities: [completeness-checking, coverage-assessment, gap-identification]
+      tools: [completeness_checker, coverage_model]
+      tags: [task, completeness, coverage, level3]
+
+    - id: functional-requirement-drafting-task-agent
+      name: Functional Requirement Drafting Task Agent
+      level: 3
+      type: worker
+      description: "Drafts detailed functional requirements with clear behaviour specifications, pre/post conditions, and exception handling"
+      domain: requirements
+      capabilities: [functional-requirement-drafting, behaviour-specification, condition-modelling]
+      tools: [fr_builder, behaviour_modeller, condition_writer]
+      tags: [task, functional-requirements, drafting, level3]
+
+    - id: nfr-drafting-task-agent
+      name: NFR Drafting Task Agent
+      level: 3
+      type: worker
+      description: "Drafts non-functional requirements for performance, scalability, security, accessibility, and reliability"
+      domain: requirements
+      capabilities: [nfr-drafting, quality-attribute-specification, measurement-criterion-definition]
+      tools: [nfr_builder, quality_attribute_mapper]
+      tags: [task, nfr, quality-attributes, level3]
+
+    - id: constraint-capture-task-agent
+      name: Constraint Capture Task Agent
+      level: 3
+      type: worker
+      description: "Identifies and documents design, technology, regulatory, and budget constraints"
+      domain: requirements
+      capabilities: [constraint-capture, constraint-classification, constraint-documentation]
+      tools: [constraint_extractor, constraint_classifier]
+      tags: [task, constraints, capture, level3]
+
+    - id: acceptance-criteria-task-agent
+      name: Acceptance Criteria Task Agent
+      level: 3
+      type: worker
+      description: "Generates Gherkin-style and structured acceptance criteria from functional and NFR requirements"
+      domain: requirements
+      capabilities: [acceptance-criteria-generation, gherkin-authoring, scenario-definition]
+      tools: [ac_generator, gherkin_builder, scenario_writer]
+      tags: [task, acceptance-criteria, gherkin, level3]
+
+    - id: definition-of-done-task-agent
+      name: Definition of Done Task Agent
+      level: 3
+      type: worker
+      description: "Defines and validates the Definition of Done for stories, features, and epics"
+      domain: requirements
+      capabilities: [definition-of-done, dod-generation, dod-validation, exit-criteria]
+      tools: [dod_builder, exit_criteria_checker]
+      tags: [task, definition-of-done, quality, level3]
+
+    - id: requirement-dependency-task-agent
+      name: Requirement Dependency Task Agent
+      level: 3
+      type: worker
+      description: "Maps and documents dependencies between requirements including ordering and blocking relationships"
+      domain: requirements
+      capabilities: [dependency-mapping, ordering-analysis, blocker-identification]
+      tools: [dependency_mapper, ordering_engine]
+      tags: [task, dependencies, requirements, level3]
+
+    - id: requirement-approval-task-agent
+      name: Requirement Approval Task Agent
+      level: 3
+      type: worker
+      description: "Manages the requirement approval workflow including stakeholder routing, sign-off tracking, and rejection handling"
+      domain: requirements
+      capabilities: [approval-workflow, stakeholder-routing, sign-off-tracking, rejection-management]
+      tools: [approval_router, sign_off_tracker, rejection_handler]
+      tags: [task, approval, workflow, level3]
+
+    - id: requirement-versioning-task-agent
+      name: Requirement Versioning Task Agent
+      level: 3
+      type: worker
+      description: "Creates and manages requirement versions, snapshots, change history, and diff views"
+      domain: requirements
+      capabilities: [versioning, snapshot-creation, change-history, diff-generation]
+      tools: [version_manager, snapshot_builder, diff_generator]
+      tags: [task, versioning, history, level3]
+
+    - id: spec-section-generation-task-agent
+      name: Spec Section Generation Task Agent
+      level: 3
+      type: worker
+      description: "Generates individual specification sections (executive summary, scope, use cases, NFRs, risks) from structured requirements"
+      domain: requirements
+      capabilities: [section-generation, doc-composition, template-application]
+      tools: [section_generator, template_engine]
+      tags: [task, spec-sections, documentation, level3]
+
+    - id: requirement-to-story-trace-task-agent
+      name: Requirement To Story Trace Task Agent
+      level: 3
+      type: worker
+      description: "Creates and validates traceability links from requirements to user stories ensuring full coverage"
+      domain: requirements
+      capabilities: [req-to-story-tracing, coverage-validation, link-generation]
+      tools: [trace_link_builder, coverage_checker]
+      tags: [task, traceability, stories, level3]
+
+    - id: requirement-to-test-trace-task-agent
+      name: Requirement To Test Trace Task Agent
+      level: 3
+      type: worker
+      description: "Creates and validates traceability links from requirements to test cases ensuring test coverage"
+      domain: requirements
+      capabilities: [req-to-test-tracing, test-coverage-validation, link-generation]
+      tools: [trace_link_builder, test_coverage_checker]
+      tags: [task, traceability, testing, level3]
+
+    - id: requirement-gap-analysis-task-agent
+      name: Requirement Gap Analysis Task Agent
+      level: 3
+      type: worker
+      description: "Identifies gaps in requirements coverage against defined scope, personas, use cases, and NFR categories"
+      domain: requirements
+      capabilities: [gap-analysis, coverage-gap-detection, scope-coverage-mapping]
+      tools: [gap_analyzer, scope_mapper]
+      tags: [task, gap-analysis, coverage, level3]
+
+    - id: persona-aligned-requirement-task-agent
+      name: Persona Aligned Requirement Task Agent
+      level: 3
+      type: worker
+      description: "Validates that requirements are properly aligned to and cover the needs of all defined user personas"
+      domain: requirements
+      capabilities: [persona-alignment, persona-coverage, needs-mapping]
+      tools: [persona_mapper, coverage_checker]
+      tags: [task, persona, alignment, level3]
+
+    # ── Level 3 Micro Agents ────────────────────────────────────────────────
+    - id: requirement-sentence-splitter
+      name: Requirement Sentence Splitter
+      level: 3
+      type: micro-agent
+      description: "Atomic unit: split a compound requirement sentence into atomic, independently-verifiable requirement statements"
+      domain: requirements
+      capabilities: [sentence-splitting, atomisation]
+      tags: [micro, splitting, requirements, level3]
+
+    - id: requirement-classifier
+      name: Requirement Classifier
+      level: 3
+      type: micro-agent
+      description: "Atomic unit: classify a single requirement into the taxonomy (functional / NFR / constraint / assumption / business-rule)"
+      domain: requirements
+      capabilities: [requirement-classification]
+      tags: [micro, classification, requirements, level3]
+
+    - id: requirement-tagger
+      name: Requirement Tagger
+      level: 3
+      type: micro-agent
+      description: "Atomic unit: apply domain, component, and theme tags to a single requirement"
+      domain: requirements
+      capabilities: [requirement-tagging, tag-application]
+      tags: [micro, tagging, requirements, level3]
+
+    - id: requirement-template-applier
+      name: Requirement Template Applier
+      level: 3
+      type: micro-agent
+      description: "Atomic unit: apply a standard requirement template to a raw text statement"
+      domain: requirements
+      capabilities: [template-application, requirement-formatting]
+      tags: [micro, template, formatting, level3]
+
+    - id: duplicate-detector
+      name: Duplicate Detector
+      level: 3
+      type: micro-agent
+      description: "Atomic unit: detect if a new requirement is semantically duplicate of an existing one"
+      domain: requirements
+      capabilities: [duplicate-detection, semantic-similarity]
+      tags: [micro, duplicate, detection, level3]
+
+    - id: dependency-extractor
+      name: Dependency Extractor
+      level: 3
+      type: micro-agent
+      description: "Atomic unit: extract dependency statements from requirement text ('requires', 'depends on', 'after')"
+      domain: requirements
+      capabilities: [dependency-extraction, relation-parsing]
+      tags: [micro, dependency, extraction, level3]
+
+    - id: ambiguity-detector
+      name: Ambiguity Detector
+      level: 3
+      type: micro-agent
+      description: "Atomic unit: detect ambiguous terms and vague language in a requirement statement"
+      domain: requirements
+      capabilities: [ambiguity-detection, vagueness-flagging]
+      tags: [micro, ambiguity, quality, level3]
+
+    - id: measurability-checker
+      name: Measurability Checker
+      level: 3
+      type: micro-agent
+      description: "Atomic unit: check if a requirement contains a measurable acceptance threshold"
+      domain: requirements
+      capabilities: [measurability-checking, threshold-validation]
+      tags: [micro, measurability, quality, level3]
+
+    - id: testability-checker
+      name: Testability Checker
+      level: 3
+      type: micro-agent
+      description: "Atomic unit: assess if a requirement is testable and completeable by a test case"
+      domain: requirements
+      capabilities: [testability-checking]
+      tags: [micro, testability, quality, level3]
+
+    - id: priority-normalizer
+      name: Priority Normalizer
+      level: 3
+      type: micro-agent
+      description: "Atomic unit: normalise heterogeneous priority labels (High/1/P0/Critical) to a canonical scale"
+      domain: requirements
+      capabilities: [priority-normalisation, label-normalisation]
+      tags: [micro, priority, normalisation, level3]
+
+    - id: source-evidence-linker
+      name: Source Evidence Linker
+      level: 3
+      type: micro-agent
+      description: "Atomic unit: link a requirement to its originating evidence artefact (interview, ticket, doc)"
+      domain: requirements
+      capabilities: [evidence-linking, source-attribution]
+      tags: [micro, evidence, linking, level3]
+
+    - id: requirement-diff-unit
+      name: Requirement Diff Unit
+      level: 3
+      type: micro-agent
+      description: "Atomic unit: compute semantic diff between two versions of a requirement"
+      domain: requirements
+      capabilities: [version-diff, semantic-comparison]
+      tags: [micro, diff, versioning, level3]
+
+    - id: acceptance-verb-normalizer
+      name: Acceptance Verb Normalizer
+      level: 3
+      type: micro-agent
+      description: "Atomic unit: normalise acceptance criteria verbs to standard Given/When/Then Gherkin vocabulary"
+      domain: requirements
+      capabilities: [verb-normalisation, gherkin-formatting]
+      tags: [micro, gherkin, normalisation, level3]
+
+    - id: constraint-parser
+      name: Constraint Parser
+      level: 3
+      type: micro-agent
+      description: "Atomic unit: parse and classify a constraint statement (design / technology / regulatory / time / budget)"
+      domain: requirements
+      capabilities: [constraint-parsing, constraint-classification]
+      tags: [micro, constraint, parsing, level3]
+
+    - id: trace-link-builder
+      name: Trace Link Builder
+      level: 3
+      type: micro-agent
+      description: "Atomic unit: create a typed traceability link between two artefacts with confidence score"
+      domain: requirements
+      capabilities: [trace-link-creation, link-typing]
+      tags: [micro, traceability, links, level3]
+
+  hierarchy:
+    level1: [requirements-orchestrator, specification-orchestrator, traceability-orchestrator]
+    level2: [requirement-intake-capability-agent, requirement-analysis-capability-agent, requirement-quality-capability-agent, requirement-governance-capability-agent, traceability-capability-agent, spec-authoring-capability-agent]
+    level3: [requirement-capture-task-agent, nl-requirement-parsing-task-agent, requirement-normalisation-task-agent, requirement-type-classification-task-agent, requirement-priority-task-agent, requirement-source-linking-task-agent, requirement-conflict-detection-task-agent, requirement-deduplication-task-agent, requirement-completeness-task-agent, functional-requirement-drafting-task-agent, nfr-drafting-task-agent, constraint-capture-task-agent, acceptance-criteria-task-agent, definition-of-done-task-agent, requirement-dependency-task-agent, requirement-approval-task-agent, requirement-versioning-task-agent, spec-section-generation-task-agent, requirement-to-story-trace-task-agent, requirement-to-test-trace-task-agent, requirement-gap-analysis-task-agent, persona-aligned-requirement-task-agent, requirement-sentence-splitter, requirement-classifier, requirement-tagger, requirement-template-applier, duplicate-detector, dependency-extractor, ambiguity-detector, measurability-checker, testability-checker, priority-normalizer, source-evidence-linker, requirement-diff-unit, acceptance-verb-normalizer, constraint-parser, trace-link-builder]
+
+  capability_routing:
+    requirements-management:
+      primary: requirements-orchestrator
+      fallback: [requirement-intake-capability-agent]
+    requirement-analysis:
+      primary: requirement-analysis-capability-agent
+      fallback: [ambiguity-detector]
+    traceability-management:
+      primary: traceability-orchestrator
+      fallback: [traceability-capability-agent]
+    acceptance-criteria:
+      primary: acceptance-criteria-task-agent
+      fallback: [acceptance-verb-normalizer]
+    spec-authoring:
+      primary: specification-orchestrator
+      fallback: [spec-authoring-capability-agent]

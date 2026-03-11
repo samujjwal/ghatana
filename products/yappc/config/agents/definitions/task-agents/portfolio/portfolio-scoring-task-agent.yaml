@@ -1,0 +1,63 @@
+id: portfolio-scoring-task-agent
+name: Portfolio Scoring Task Agent
+version: 1.0.0
+description: "Score portfolio health across strategic alignment, investment balance, execution velocity, and risk exposure dimensions"
+
+metadata:
+  level: 3
+  domain: portfolio
+  type: worker
+  tags: [portfolio-health-scoring, dimension-weighting, trend-analysis, level3]
+
+generator:
+  type: PIPELINE
+  steps:
+    - name: execute
+      type: LLM
+      provider: ANTHROPIC
+      model: claude-3-5-sonnet-20241022
+      temperature: 0.1
+      max_tokens: 2000
+      prompt: |
+        Execute task: Score portfolio health across strategic alignment, investment balance, execution velocity, and risk exposure dimensions
+
+        Input: {{input}}
+        Context: {{context}}
+
+        Produce a structured, precise output meeting the task specification.
+
+memory:
+  episodic:
+    enabled: true
+    retention_days: 90
+    categories: [task-executions]
+  semantic:
+    enabled: true
+    categories: [domain-knowledge]
+  procedural:
+    enabled: false
+
+tools: [portfolio_data_reader, scoring_engine, benchmark_comparator]
+
+capabilities:
+  - portfolio-health-scoring
+  - dimension-weighting
+  - trend-analysis
+
+routing:
+  input_types: [portfolio_score_request]
+  output_types: [portfolio_health_score]
+
+delegation:
+  can_delegate_to: []
+  escalates_to: portfolio-analysis-capability-agent
+
+governance:
+  requires_approval: false
+  can_block: false
+  audit_trail: standard
+
+performance:
+  expected_latency_ms: 2000
+  max_latency_ms: 10000
+  timeout_ms: 20000

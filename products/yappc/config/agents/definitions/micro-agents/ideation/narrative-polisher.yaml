@@ -1,0 +1,51 @@
+id: narrative-polisher
+name: Narrative Polisher
+version: 1.0.0
+description: "Polish a product narrative draft for clarity, concision, and persuasiveness without changing the core message"
+
+metadata:
+  level: 3
+  domain: ideation
+  type: micro-agent
+  tags: [text-polishing, clarity-improvement, level3, micro]
+
+generator:
+  type: RULE_BASED
+  steps:
+    - name: execute
+      type: RULE_BASED
+      rules:
+        - "text-polishing"
+        - "clarity-improvement"
+
+memory:
+  episodic:
+    enabled: false
+  semantic:
+    enabled: false
+  procedural:
+    enabled: false
+
+tools: [polisher]
+
+capabilities:
+  - text-polishing
+  - clarity-improvement
+
+routing:
+  input_types: [polish_request]
+  output_types: [polished_narrative]
+
+delegation:
+  can_delegate_to: []
+  escalates_to: solution-framing-capability-agent
+
+governance:
+  requires_approval: false
+  can_block: false
+  audit_trail: standard
+
+performance:
+  expected_latency_ms: 300
+  max_latency_ms: 1500
+  timeout_ms: 3000

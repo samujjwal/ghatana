@@ -1,0 +1,88 @@
+id: design-consistency-capability-agent
+name: Design Consistency Capability Agent
+version: 1.0.0
+description: "Enforces design consistency: cross-screen component auditing, design token drift detection, pattern library compliance, and handoff quality validation"
+
+metadata:
+  level: 2
+  domain: ux
+  tags: [capability, design-consistency, design-system, token-drift, pattern-compliance, level2]
+
+generator:
+  type: PIPELINE
+  steps:
+    - name: consistency_audit
+      type: LLM
+      provider: ANTHROPIC
+      model: claude-3-5-sonnet-20241022
+      temperature: 0.0
+      max_tokens: 3000
+      prompt: |
+        Audit design for consistency across components and screens:
+
+        Design artefacts: {{input}}
+        Design system version: {{context.design_system_version}}
+        Design token library: {{context.design_tokens}}
+        Component library: {{context.component_library}}
+
+        Flag: custom styles overriding tokens, non-standard component variants, inconsistent spacing, typography mismatches, colour values not in palette, component naming divergence. Categorise by severity. Output audit JSON.
+    - name: drift_detection
+      type: SERVICE_CALL
+      service: design-token-store
+      endpoint: /drift-check
+      description: "Compare current design file tokens against design system source of truth to detect drift"
+    - name: compliance_report
+      type: LLM
+      provider: ANTHROPIC
+      model: claude-3-5-sonnet-20241022
+      temperature: 0.1
+      max_tokens: 2000
+      prompt: |
+        Produce design compliance report with remediation plan:
+
+        Consistency audit: {{consistency_audit}}
+        Token drift: {{drift_detection}}
+
+        Summarise: compliance score (0-100), critical violations (blockers for release), major issues, minor issues. Provide specific fix instructions for each. Prioritise by design system impact.
+
+memory:
+  episodic:
+    enabled: true
+    retention_days: 365
+    categories: [consistency-audits, drift-reports, compliance-scores, remediation-records]
+  semantic:
+    enabled: true
+    categories: [design-system-standards, component-library, token-catalogue]
+  procedural:
+    enabled: true
+    categories: [consistency-check-rules, drift-detection-methods, compliance-scoring]
+
+tools: [design_token_store, component_registry, figma_inspector, consistency_scorer]
+
+capabilities:
+  - consistency-auditing
+  - token-drift-detection
+  - pattern-library-compliance
+  - handoff-quality-validation
+
+routing:
+  input_types: [consistency_check_request, design_handoff, component_review, token_update]
+  output_types: [consistency_audit_report, drift_report, compliance_score, remediation_guide]
+
+delegation:
+  can_delegate_to:
+    - token-drift-task-agent
+    - consistency-check-task-agent
+    - component-compliance-task-agent
+    - handoff-validation-task-agent
+  escalates_to: design-system-orchestrator
+
+governance:
+  requires_approval: false
+  can_block: true
+  audit_trail: standard
+
+performance:
+  expected_latency_ms: 3000
+  max_latency_ms: 10000
+  timeout_ms: 30000

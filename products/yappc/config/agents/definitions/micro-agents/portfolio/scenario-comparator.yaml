@@ -1,0 +1,51 @@
+id: scenario-comparator
+name: Scenario Comparator
+version: 1.0.0
+description: "Compare two or more scenarios across a set of named dimensions and produce a structured comparison table"
+
+metadata:
+  level: 3
+  domain: portfolio
+  type: micro-agent
+  tags: [scenario-comparison, dimension-evaluation, level3, micro]
+
+generator:
+  type: RULE_BASED
+  steps:
+    - name: execute
+      type: RULE_BASED
+      rules:
+        - "scenario-comparison"
+        - "dimension-evaluation"
+
+memory:
+  episodic:
+    enabled: false
+  semantic:
+    enabled: false
+  procedural:
+    enabled: false
+
+tools: [comparator]
+
+capabilities:
+  - scenario-comparison
+  - dimension-evaluation
+
+routing:
+  input_types: [comparison_request]
+  output_types: [comparison_table]
+
+delegation:
+  can_delegate_to: []
+  escalates_to: strategic-planning-capability-agent
+
+governance:
+  requires_approval: false
+  can_block: false
+  audit_trail: standard
+
+performance:
+  expected_latency_ms: 200
+  max_latency_ms: 1000
+  timeout_ms: 2000

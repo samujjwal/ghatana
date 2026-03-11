@@ -135,3 +135,155 @@ event_routing:
   - topic: "deployment.feature-flags.sync"
     agent_id: "feature-flag-integration-agent"
     description: "Route feature flag sync requests to flag integration agent"
+
+  # ── New Domain Event Routing (10 strategic domains) ─────────────────────
+
+  # Portfolio domain triggers
+  - topic: "portfolio.review.requested"
+    agent_id: "portfolio-orchestrator"
+    description: "Route portfolio review requests to portfolio orchestrator"
+
+  - topic: "roadmap.update.requested"
+    agent_id: "portfolio-orchestrator"
+    description: "Route roadmap update requests to portfolio orchestrator"
+
+  - topic: "investment.evaluation.requested"
+    agent_id: "portfolio-orchestrator"
+    description: "Route investment evaluation requests to portfolio orchestrator"
+
+  # Discovery domain triggers
+  - topic: "research.session.requested"
+    agent_id: "discovery-orchestrator"
+    description: "Route user research session requests to discovery orchestrator"
+
+  - topic: "market.analysis.requested"
+    agent_id: "discovery-orchestrator"
+    description: "Route market analysis requests to discovery orchestrator"
+
+  - topic: "insights.synthesis.requested"
+    agent_id: "discovery-orchestrator"
+    description: "Route insight synthesis requests to discovery orchestrator"
+
+  # Ideation domain triggers
+  - topic: "ideation.session.requested"
+    agent_id: "ideation-orchestrator"
+    description: "Route ideation session requests to ideation orchestrator"
+
+  - topic: "concept.evaluation.requested"
+    agent_id: "ideation-orchestrator"
+    description: "Route concept evaluation requests to ideation orchestrator"
+
+  # Requirements domain triggers
+  - topic: "requirements.capture.requested"
+    agent_id: "requirements-orchestrator"
+    description: "Route requirements capture requests to requirements orchestrator"
+
+  - topic: "spec.validation.requested"
+    agent_id: "requirements-orchestrator"
+    description: "Route spec validation requests to requirements orchestrator"
+
+  - topic: "acceptance-criteria.generate.requested"
+    agent_id: "requirements-orchestrator"
+    description: "Route AC generation requests to requirements orchestrator"
+
+  # UX domain triggers
+  - topic: "ux.research.requested"
+    agent_id: "ux-orchestrator"
+    description: "Route UX research requests to UX orchestrator"
+
+  - topic: "usability.test.requested"
+    agent_id: "ux-orchestrator"
+    description: "Route usability test requests to UX orchestrator"
+
+  - topic: "accessibility.audit.requested"
+    agent_id: "ux-orchestrator"
+    description: "Route accessibility audit requests to UX orchestrator"
+
+  - topic: "design-system.update.requested"
+    agent_id: "ux-orchestrator"
+    description: "Route design system update requests to UX orchestrator"
+
+  # Architecture domain triggers
+  - topic: "architecture.review.requested"
+    agent_id: "architecture-orchestrator"
+    description: "Route architecture review requests to architecture orchestrator"
+
+  - topic: "adr.create.requested"
+    agent_id: "architecture-orchestrator"
+    description: "Route ADR creation requests to architecture orchestrator"
+
+  - topic: "api.design.requested"
+    agent_id: "architecture-orchestrator"
+    description: "Route API design requests to architecture orchestrator"
+
+  - topic: "tech-radar.update.requested"
+    agent_id: "architecture-orchestrator"
+    description: "Route tech radar update requests to architecture orchestrator"
+
+  # Engineering domain triggers
+  - topic: "code.quality.review.requested"
+    agent_id: "engineering-orchestrator"
+    description: "Route code quality review requests to engineering orchestrator"
+
+  - topic: "technical.debt.assessment.requested"
+    agent_id: "engineering-orchestrator"
+    description: "Route technical debt assessment requests to engineering orchestrator"
+
+  - topic: "platform.improvement.requested"
+    agent_id: "engineering-orchestrator"
+    description: "Route platform improvement requests to engineering orchestrator"
+
+  # AI domain triggers
+  - topic: "model.evaluation.requested"
+    agent_id: "ai-orchestrator"
+    description: "Route model evaluation requests to AI orchestrator"
+
+  - topic: "prompt.engineering.requested"
+    agent_id: "ai-orchestrator"
+    description: "Route prompt engineering requests to AI orchestrator"
+
+  - topic: "ai.safety.review.requested"
+    agent_id: "ai-orchestrator"
+    description: "Route AI safety review requests to AI orchestrator"
+
+  - topic: "ml.pipeline.build.requested"
+    agent_id: "ai-orchestrator"
+    description: "Route ML pipeline build requests to AI orchestrator"
+
+  # Operations domain triggers
+  - topic: "sre.review.requested"
+    agent_id: "operations-orchestrator"
+    description: "Route SRE review requests to operations orchestrator"
+
+  - topic: "change.request.created"
+    agent_id: "operations-orchestrator"
+    description: "Route change requests to operations orchestrator"
+
+  - topic: "cost.optimization.requested"
+    agent_id: "operations-orchestrator"
+    description: "Route cost optimization requests to operations orchestrator"
+
+  - topic: "on-call.escalation.requested"
+    agent_id: "operations-orchestrator"
+    description: "Route on-call escalation requests to operations orchestrator"
+
+  - topic: "runbook.execution.requested"
+    agent_id: "operations-orchestrator"
+    description: "Route runbook execution requests to operations orchestrator"
+
+  # Product Intelligence domain triggers
+  - topic: "feedback.analysis.requested"
+    agent_id: "product-intelligence-orchestrator"
+    description: "Route feedback analysis requests to product intelligence orchestrator"
+
+  - topic: "experiment.create.requested"
+    agent_id: "product-intelligence-orchestrator"
+    description: "Route experiment creation requests to product intelligence orchestrator"
+
+  - topic: "metrics.analysis.requested"
+    agent_id: "product-intelligence-orchestrator"
+    description: "Route metrics analysis requests to product intelligence orchestrator"
+
+  - topic: "enhancement.prioritization.requested"
+    agent_id: "product-intelligence-orchestrator"
+    description: "Route enhancement prioritization requests to product intelligence orchestrator"

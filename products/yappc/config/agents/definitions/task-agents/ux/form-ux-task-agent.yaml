@@ -1,0 +1,63 @@
+id: form-ux-task-agent
+name: Form Ux Task Agent
+version: 1.0.0
+description: "Design form UX with field ordering, validation feedback, inline help, progressive disclosure, and submission flow"
+
+metadata:
+  level: 3
+  domain: ux
+  type: worker
+  tags: [form-design, validation-ux, error-handling-ux, level3]
+
+generator:
+  type: PIPELINE
+  steps:
+    - name: execute
+      type: LLM
+      provider: ANTHROPIC
+      model: claude-3-5-sonnet-20241022
+      temperature: 0.1
+      max_tokens: 2000
+      prompt: |
+        Execute task: Design form UX with field ordering, validation feedback, inline help, progressive disclosure, and submission flow
+
+        Input: {{input}}
+        Context: {{context}}
+
+        Produce a structured, precise output meeting the task specification.
+
+memory:
+  episodic:
+    enabled: true
+    retention_days: 90
+    categories: [task-executions]
+  semantic:
+    enabled: true
+    categories: [domain-knowledge]
+  procedural:
+    enabled: false
+
+tools: [form_designer, validation_ux_spec]
+
+capabilities:
+  - form-design
+  - validation-ux
+  - error-handling-ux
+
+routing:
+  input_types: [form_ux_request]
+  output_types: [form_ux_specification]
+
+delegation:
+  can_delegate_to: []
+  escalates_to: screen-design-capability-agent
+
+governance:
+  requires_approval: false
+  can_block: false
+  audit_trail: standard
+
+performance:
+  expected_latency_ms: 3000
+  max_latency_ms: 15000
+  timeout_ms: 30000

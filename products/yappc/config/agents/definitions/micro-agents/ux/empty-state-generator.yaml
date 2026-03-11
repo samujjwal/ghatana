@@ -1,0 +1,51 @@
+id: empty-state-generator
+name: Empty State Generator
+version: 1.0.0
+description: "Generate empty state copy (headline, sub-copy, CTA label) for a given screen context and user goal"
+
+metadata:
+  level: 3
+  domain: ux
+  type: micro-agent
+  tags: [copy-generation, empty-state-creation, level3, micro]
+
+generator:
+  type: RULE_BASED
+  steps:
+    - name: execute
+      type: RULE_BASED
+      rules:
+        - "copy-generation"
+        - "empty-state-creation"
+
+memory:
+  episodic:
+    enabled: false
+  semantic:
+    enabled: false
+  procedural:
+    enabled: false
+
+tools: [copy_generator]
+
+capabilities:
+  - copy-generation
+  - empty-state-creation
+
+routing:
+  input_types: [empty_state_gen_request]
+  output_types: [empty_state_copy]
+
+delegation:
+  can_delegate_to: []
+  escalates_to: screen-design-capability-agent
+
+governance:
+  requires_approval: false
+  can_block: false
+  audit_trail: standard
+
+performance:
+  expected_latency_ms: 200
+  max_latency_ms: 1000
+  timeout_ms: 2000

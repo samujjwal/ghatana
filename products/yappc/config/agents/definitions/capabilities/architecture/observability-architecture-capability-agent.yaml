@@ -1,0 +1,99 @@
+id: observability-architecture-capability-agent
+name: Observability Architecture Capability Agent
+version: 1.0.0
+description: "Designs observability architecture: metrics instrumentation, structured logging strategy, distributed tracing topology, alerting rules, and SLO/SLI definition"
+
+metadata:
+  level: 2
+  domain: architecture
+  tags: [capability, observability, metrics, tracing, logging, slo, opentelemetry, level2]
+
+generator:
+  type: PIPELINE
+  steps:
+    - name: observability_requirements
+      type: LLM
+      provider: ANTHROPIC
+      model: claude-3-5-sonnet-20241022
+      temperature: 0.1
+      max_tokens: 2500
+      prompt: |
+        Define observability requirements for the system:
+
+        System architecture: {{input}}
+        SLO targets: {{context.slo_targets}}
+        User journeys to instrument: {{context.key_journeys}}
+        Existing observability stack: {{context.obs_stack}}
+
+        Identify: what must be measurable (SLIs per service), what must be traceable (critical paths), what must be logged (business events, errors, security events), alerting philosophy (symptom vs cause). Output observability requirements JSON.
+    - name: telemetry_design
+      type: LLM
+      provider: ANTHROPIC
+      model: claude-3-5-sonnet-20241022
+      temperature: 0.1
+      max_tokens: 3000
+      prompt: |
+        Design the telemetry instrumentation plan:
+
+        Observability requirements: {{observability_requirements}}
+        Technology stack: {{context.tech_stack}}
+        OpenTelemetry compatibility: {{context.otel_support}}
+
+        For metrics: metric names (following Prometheus naming), types (counter/gauge/histogram), labels, cardinality guidance. For traces: span naming, context propagation strategy, sampling rates (head/tail), trace-log correlation. For logs: log levels, structured fields (correlation IDs, user context), log aggregation topology. Output telemetry spec JSON.
+    - name: slo_definition
+      type: LLM
+      provider: ANTHROPIC
+      model: claude-3-5-sonnet-20241022
+      temperature: 0.1
+      max_tokens: 2500
+      prompt: |
+        Define SLOs and derive alerting rules:
+
+        Observability requirements: {{observability_requirements}}
+        Business criticality: {{context.service_criticality}}
+
+        For each service define: SLIs (error rate, latency p50/p95/p99, availability %), SLO targets, error budget (monthly), alert rules (burn rate alerts: 1h window 14.4x, 6h window 6x, 24h window 3x). Include alert routing (who, when, how). Output SLO specification JSON.
+
+memory:
+  episodic:
+    enabled: true
+    retention_days: 730
+    categories: [observability-designs, slo-definitions, telemetry-specs, alerting-rules]
+  semantic:
+    enabled: true
+    categories: [metric-patterns, slo-benchmarks, otel-instrumentation-guides]
+  procedural:
+    enabled: true
+    categories: [slo-definition-process, telemetry-design-method, alerting-philosophy]
+
+tools: [telemetry_designer, slo_calculator, alert_rule_generator, otel_validator]
+
+capabilities:
+  - metrics-instrumentation-design
+  - distributed-tracing-topology
+  - structured-logging-strategy
+  - slo-sli-definition
+  - alerting-rule-design
+
+routing:
+  input_types: [observability_design_request, slo_definition_request, telemetry_spec_request]
+  output_types: [telemetry_spec, slo_document, alert_rules, observability_architecture_doc]
+
+delegation:
+  can_delegate_to:
+    - metrics-design-task-agent
+    - tracing-design-task-agent
+    - logging-design-task-agent
+    - slo-definition-task-agent
+    - alert-rule-task-agent
+  escalates_to: architecture-orchestrator
+
+governance:
+  requires_approval: false
+  can_block: false
+  audit_trail: standard
+
+performance:
+  expected_latency_ms: 8000
+  max_latency_ms: 20000
+  timeout_ms: 60000

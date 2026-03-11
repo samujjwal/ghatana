@@ -1,0 +1,63 @@
+id: executive-status-synthesis-task-agent
+name: Executive Status Synthesis Task Agent
+version: 1.0.0
+description: "Synthesise cross-initiative status into concise executive briefings with RAG indicators, blockers, and decisions needed"
+
+metadata:
+  level: 3
+  domain: portfolio
+  type: worker
+  tags: [status-aggregation, rag-scoring, executive-narrative, level3]
+
+generator:
+  type: PIPELINE
+  steps:
+    - name: execute
+      type: LLM
+      provider: ANTHROPIC
+      model: claude-3-5-sonnet-20241022
+      temperature: 0.1
+      max_tokens: 2000
+      prompt: |
+        Execute task: Synthesise cross-initiative status into concise executive briefings with RAG indicators, blockers, and decisions needed
+
+        Input: {{input}}
+        Context: {{context}}
+
+        Produce a structured, precise output meeting the task specification.
+
+memory:
+  episodic:
+    enabled: true
+    retention_days: 90
+    categories: [task-executions]
+  semantic:
+    enabled: true
+    categories: [domain-knowledge]
+  procedural:
+    enabled: false
+
+tools: [status_aggregator, rag_classifier, doc_writer]
+
+capabilities:
+  - status-aggregation
+  - rag-scoring
+  - executive-narrative
+
+routing:
+  input_types: [status_synthesis_request]
+  output_types: [executive_status_brief]
+
+delegation:
+  can_delegate_to: []
+  escalates_to: portfolio-analysis-capability-agent
+
+governance:
+  requires_approval: false
+  can_block: false
+  audit_trail: standard
+
+performance:
+  expected_latency_ms: 2000
+  max_latency_ms: 10000
+  timeout_ms: 20000

@@ -1,0 +1,108 @@
+id: traceability-orchestrator
+name: Traceability Orchestrator
+version: 1.0.0
+description: "Manages requirements traceability: builds bidirectional trace matrices from requirements through design to code and tests; detects coverage gaps and orphaned artefacts"
+
+metadata:
+  level: 1
+  domain: requirements
+  tags: [orchestrator, traceability, trace-matrix, coverage, level1]
+
+generator:
+  type: PIPELINE
+  steps:
+    - name: trace_link_discovery
+      type: LLM
+      provider: ANTHROPIC
+      model: claude-3-5-sonnet-20241022
+      temperature: 0.1
+      max_tokens: 3000
+      prompt: |
+        Discover and build trace links between artefacts:
+
+        Requirements: {{context.requirements}}
+        Design artefacts: {{context.design_docs}}
+        Code components: {{context.code_inventory}}
+        Test cases: {{context.test_cases}}
+
+        For each requirement ID, identify:
+        - Upstream: business goal / user story
+        - Lateral: design element, API spec
+        - Downstream: implementation component, test case
+
+        Output as JSON trace_links array: [{req_id, upstream, lateral, downstream, coverage_status}]
+    - name: coverage_analysis
+      type: LLM
+      provider: ANTHROPIC
+      model: claude-3-5-sonnet-20241022
+      temperature: 0.1
+      max_tokens: 2000
+      prompt: |
+        Analyse coverage gaps in the trace matrix:
+        Trace links: {{trace_link_discovery}}
+
+        Identify:
+        1. Untested requirements (no test case linked)
+        2. Unimplemented requirements (no code linked)
+        3. Orphaned tests (no requirement linked)
+        4. Orphaned code (no requirement linked)
+        5. Missing design documents
+
+        Return: {coverage_percentage, gaps_by_type, orphaned_artefacts, priority_gaps}
+    - name: trace_matrix_generation
+      type: TEMPLATE
+      template: trace_matrix_xlsx
+      description: "Generate formatted trace matrix report in multiple formats (JSON, CSV, HTML)"
+    - name: gap_remediation_plan
+      type: LLM
+      provider: ANTHROPIC
+      model: claude-3-5-sonnet-20241022
+      temperature: 0.2
+      max_tokens: 2000
+      prompt: |
+        Create remediation plan for coverage gaps:
+        Gaps: {{coverage_analysis}}
+
+        Prioritise gaps by risk and compliance impact.
+        Return: {remediation_items_ranked, estimated_effort, recommended_owners}
+
+memory:
+  episodic:
+    enabled: true
+    retention_days: 1095
+    categories: [trace-matrices, coverage-snapshots, gap-remediations]
+  semantic:
+    enabled: true
+    categories: [trace-link-patterns, coverage-thresholds, artefact-types]
+  procedural:
+    enabled: true
+    categories: [trace-analysis-procedures, coverage-rules, remediation-workflows]
+
+tools: [trace_link_builder, coverage_analyzer, matrix_generator, gap_reporter]
+
+capabilities:
+  - traceability-management
+  - trace-matrix-generation
+  - coverage-analysis
+  - gap-detection
+  - remediation-planning
+
+routing:
+  input_types: [requirements_set, design_artefacts, code_artefacts, test_cases]
+  output_types: [trace_matrix, coverage_report, gap_analysis, remediation_plan]
+
+delegation:
+  can_delegate_to:
+    - specification-orchestrator
+    - compliance-audit-orchestrator
+  escalates_to: requirements-orchestrator
+
+governance:
+  requires_approval: false
+  can_block: false
+  audit_trail: standard
+
+performance:
+  expected_latency_ms: 8000
+  max_latency_ms: 60000
+  timeout_ms: 90000

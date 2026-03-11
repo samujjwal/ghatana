@@ -1,0 +1,51 @@
+id: focus-order-validator
+name: Focus Order Validator
+version: 1.0.0
+description: "Validate that the focus order of interactive elements follows logical reading order and is keyboard navigable"
+
+metadata:
+  level: 3
+  domain: ux
+  type: micro-agent
+  tags: [focus-order-validation, keyboard-nav-check, level3, micro]
+
+generator:
+  type: RULE_BASED
+  steps:
+    - name: execute
+      type: RULE_BASED
+      rules:
+        - "focus-order-validation"
+        - "keyboard-nav-check"
+
+memory:
+  episodic:
+    enabled: false
+  semantic:
+    enabled: false
+  procedural:
+    enabled: false
+
+tools: [focus_validator]
+
+capabilities:
+  - focus-order-validation
+  - keyboard-nav-check
+
+routing:
+  input_types: [focus_order_request]
+  output_types: [focus_order_verdict]
+
+delegation:
+  can_delegate_to: []
+  escalates_to: accessibility-capability-agent
+
+governance:
+  requires_approval: false
+  can_block: false
+  audit_trail: standard
+
+performance:
+  expected_latency_ms: 200
+  max_latency_ms: 1000
+  timeout_ms: 2000

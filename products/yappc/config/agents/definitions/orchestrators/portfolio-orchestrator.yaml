@@ -1,0 +1,116 @@
+id: portfolio-orchestrator
+name: Portfolio Orchestrator
+version: 1.0.0
+description: "Top-level portfolio orchestrator — coordinates product portfolio strategy, investment planning, OKR alignment, and governance across all products and initiatives"
+
+metadata:
+  level: 1
+  domain: portfolio
+  tags: [orchestrator, portfolio, strategy, level1]
+
+generator:
+  type: PIPELINE
+  steps:
+    - name: portfolio_assessment
+      type: LLM
+      provider: ANTHROPIC
+      model: claude-3-5-sonnet-20241022
+      temperature: 0.3
+      max_tokens: 4000
+      prompt: |
+        You are the Portfolio Orchestrator. Assess the current portfolio state and incoming request:
+
+        Request: {{input}}
+        Portfolio context: {{context.portfolio}}
+        OKRs: {{context.okrs}}
+        Investment constraints: {{context.budget}}
+
+        Produce a portfolio assessment covering:
+        1. Strategic alignment analysis (how does this map to business goals?)
+        2. Investment prioritisation recommendation (ROI, strategic fit, risk)
+        3. Resource allocation considerations (teams, budget, timeline)
+        4. Inter-product dependencies and conflicts
+        5. Governance requirements (approvals needed, compliance gates)
+        6. Delegation plan (which sub-agents to activate)
+
+        Output as JSON: {
+          strategic_alignment, investment_priority, resource_requirements,
+          dependencies, governance_requirements, delegation_plan
+        }
+    - name: investment_evaluation
+      type: LLM
+      provider: ANTHROPIC
+      model: claude-3-5-sonnet-20241022
+      temperature: 0.2
+      max_tokens: 2000
+      prompt: |
+        Evaluate investment return for the portfolio decision:
+        Decision context: {{portfolio_assessment}}
+        Financial data: {{context.financials}}
+
+        Score each initiative on: expected_value, time_to_value, risk_factor, strategic_multiplier.
+        Return ranked_initiatives with scores.
+    - name: governance_check
+      type: SERVICE_CALL
+      service: agent-dispatcher
+      endpoint: /dispatch
+      description: "Route governance check to governance-orchestrator if requirements_approval = true"
+    - name: portfolio_synthesis
+      type: LLM
+      provider: ANTHROPIC
+      model: claude-3-5-sonnet-20241022
+      temperature: 0.2
+      max_tokens: 2500
+      prompt: |
+        Synthesise portfolio decision from all sub-outputs:
+        Assessment: {{portfolio_assessment}}
+        Investment evaluation: {{investment_evaluation}}
+        Governance outcome: {{governance_check}}
+
+        Produce final portfolio recommendation with rationale, decision record, and next actions.
+
+memory:
+  episodic:
+    enabled: true
+    retention_days: 1095
+    categories: [portfolio-decisions, investment-history, governance-outcomes]
+  semantic:
+    enabled: true
+    categories: [portfolio-patterns, strategic-frameworks, okr-history, industry-benchmarks]
+  procedural:
+    enabled: true
+    categories: [portfolio-review-procedures, governance-workflows, investment-criteria]
+
+tools: [portfolio_manager, okr_tracker, investment_evaluator, governance_gateway]
+
+capabilities:
+  - portfolio-strategy
+  - investment-planning
+  - okr-management
+  - strategic-alignment
+  - governance-coordination
+
+routing:
+  input_types: [portfolio_request, initiative_proposal, okr_review, investment_proposal]
+  output_types: [portfolio_decision, investment_plan, okr_alignment_report, governance_record]
+
+delegation:
+  can_delegate_to:
+    - product-strategy-orchestrator
+    - investment-planning-orchestrator
+    - governance-orchestrator
+    - market-research-orchestrator
+  escalates_to: null
+
+governance:
+  requires_approval: true
+  approval_chain:
+    - investment-planning-orchestrator
+    - governance-orchestrator
+  can_block: true
+  audit_trail: comprehensive
+
+performance:
+  expected_latency_ms: 10000
+  max_latency_ms: 60000
+  timeout_ms: 90000

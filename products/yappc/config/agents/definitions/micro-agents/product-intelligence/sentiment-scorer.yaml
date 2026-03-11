@@ -1,0 +1,49 @@
+id: sentiment-scorer
+name: Sentiment Scorer
+version: 1.0.0
+description: "Score text sentiment as a continuous value -1.0 to +1.0 using fine-grained sentiment analysis"
+
+metadata:
+  level: 3
+  domain: product-intelligence
+  type: micro-agent
+  tags: [sentiment-scoring, level3, micro]
+
+generator:
+  type: RULE_BASED
+  steps:
+    - name: execute
+      type: RULE_BASED
+      rules:
+        - "sentiment-scoring"
+
+memory:
+  episodic:
+    enabled: false
+  semantic:
+    enabled: false
+  procedural:
+    enabled: false
+
+tools: [sentiment_scorer]
+
+capabilities:
+  - sentiment-scoring
+
+routing:
+  input_types: [score_request]
+  output_types: [sentiment_value]
+
+delegation:
+  can_delegate_to: []
+  escalates_to: feedback-capability-agent
+
+governance:
+  requires_approval: false
+  can_block: false
+  audit_trail: standard
+
+performance:
+  expected_latency_ms: 100
+  max_latency_ms: 500
+  timeout_ms: 1000

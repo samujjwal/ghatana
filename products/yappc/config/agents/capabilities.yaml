@@ -816,3 +816,386 @@ categories:
     description: Capabilities for multi-agent orchestration and coordination
     icon: hub
     color: "#F97316"
+
+
+# ============================================================================
+# New Domain Capabilities (10 Strategic Domains)
+# ============================================================================
+
+  # Portfolio
+  - id: portfolio-analysis
+    name: Portfolio Analysis
+    description: Assess and analyze product portfolio health, value, and strategic fit
+    category: strategy
+    agent_capability: PortfolioAnalysis
+    input_types: [portfolio_data, initiative_data]
+    output_types: [portfolio_report, health_assessment]
+
+  - id: investment-evaluation
+    name: Investment Evaluation
+    description: Evaluate investment cases and ROI for initiatives and products
+    category: strategy
+    agent_capability: InvestmentEvaluation
+    input_types: [business_case, financial_data]
+    output_types: [investment_recommendation, roi_analysis]
+
+  - id: roadmap-strategy
+    name: Roadmap Strategy
+    description: Define, sequence, and align product roadmaps with business objectives
+    category: strategy
+    agent_capability: RoadmapStrategy
+    input_types: [strategic_goals, initiative_list]
+    output_types: [roadmap_document, sequencing_plan]
+
+  # Discovery
+  - id: user-research
+    name: User Research
+    description: Conduct user interviews, surveys, and observational research
+    category: discovery
+    agent_capability: UserResearch
+    input_types: [research_plan, user_segment]
+    output_types: [research_report, user_insights]
+
+  - id: market-analysis
+    name: Market Analysis
+    description: Analyze market trends, competitive landscape, and customer segments
+    category: discovery
+    agent_capability: MarketAnalysis
+    input_types: [market_brief, competitor_data]
+    output_types: [market_report, opportunity_map]
+
+  - id: insight-synthesis
+    name: Insight Synthesis
+    description: Synthesize research findings into actionable insights and opportunity themes
+    category: discovery
+    agent_capability: InsightSynthesis
+    input_types: [research_data, observations]
+    output_types: [synthesis_report, insight_themes]
+
+  - id: opportunity-identification
+    name: Opportunity Identification
+    description: Identify and evaluate product opportunities from research signals
+    category: discovery
+    agent_capability: OpportunityIdentification
+    input_types: [insight_themes, market_data]
+    output_types: [opportunity_brief, priority_opportunities]
+
+  # Ideation
+  - id: concept-generation
+    name: Concept Generation
+    description: Generate creative product concepts and feature ideas from problem statements
+    category: ideation
+    agent_capability: ConceptGeneration
+    input_types: [problem_statement, opportunity_brief]
+    output_types: [concept_list, concept_brief]
+
+  - id: feasibility-analysis
+    name: Feasibility Analysis
+    description: Assess technical and business feasibility of concepts and ideas
+    category: ideation
+    agent_capability: FeasibilityAnalysis
+    input_types: [concept_brief, constraints]
+    output_types: [feasibility_report, recommendation]
+
+  - id: innovation-scouting
+    name: Innovation Scouting
+    description: Scout emerging technologies and industry innovations for applicability
+    category: ideation
+    agent_capability: InnovationScouting
+    input_types: [technology_landscape, strategic_goals]
+    output_types: [innovation_report, technology_recommendations]
+
+  # Requirements
+  - id: requirements-analysis
+    name: Requirements Analysis
+    description: Elicit, analyze, and structure business and technical requirements
+    category: requirements
+    agent_capability: RequirementsAnalysis
+    input_types: [stakeholder_input, product_brief]
+    output_types: [requirements_document, epics]
+
+  - id: story-mapping
+    name: Story Mapping
+    description: Create user story maps that visualize user journeys and work breakdown
+    category: requirements
+    agent_capability: StoryMapping
+    input_types: [requirements_document, user_journey]
+    output_types: [story_map, sprint_backlog]
+
+  - id: acceptance-criteria-writing
+    name: Acceptance Criteria Writing
+    description: Define clear, testable acceptance criteria for user stories
+    category: requirements
+    agent_capability: AcceptanceCriteriaWriting
+    input_types: [user_story, requirements]
+    output_types: [acceptance_criteria, test_checklist]
+
+  - id: traceability-management
+    name: Traceability Management
+    description: Maintain bidirectional traceability between requirements, tests, and code
+    category: requirements
+    agent_capability: TraceabilityManagement
+    input_types: [requirements, test_results, code_changes]
+    output_types: [traceability_matrix, coverage_report]
+
+  - id: spec-validation
+    name: Spec Validation
+    description: Validate requirements specifications for completeness, consistency, and testability
+    category: requirements
+    agent_capability: SpecValidation
+    input_types: [requirements_document, constraints]
+    output_types: [validation_report, gap_analysis]
+
+  # UX
+  - id: ux-research
+    name: UX Research
+    description: Conduct usability studies, user interviews, and UX evaluations
+    category: ux
+    agent_capability: UxResearch
+    input_types: [research_questions, user_segment]
+    output_types: [ux_report, usability_findings]
+
+  - id: interaction-design
+    name: Interaction Design
+    description: Design user flows, interaction patterns, and wireframes
+    category: ux
+    agent_capability: InteractionDesign
+    input_types: [user_requirements, design_brief]
+    output_types: [wireframes, interaction_flows]
+
+  - id: prototype-building
+    name: Prototype Building
+    description: Build interactive prototypes for user validation
+    category: ux
+    agent_capability: PrototypeBuilding
+    input_types: [wireframes, interaction_flows]
+    output_types: [prototype, prototype_spec]
+
+  - id: usability-testing
+    name: Usability Testing
+    description: Plan and execute usability tests and synthesize findings
+    category: ux
+    agent_capability: UsabilityTesting
+    input_types: [prototype, test_plan]
+    output_types: [usability_report, issues_list]
+
+  - id: accessibility-auditing
+    name: Accessibility Auditing
+    description: Audit designs and implementations for WCAG compliance and accessibility
+    category: ux
+    agent_capability: AccessibilityAuditing
+    input_types: [design_artifact, code_artifact]
+    output_types: [accessibility_report, remediation_plan]
+
+  - id: design-system-curation
+    name: Design System Curation
+    description: Maintain and evolve the design system, component library, and design tokens
+    category: ux
+    agent_capability: DesignSystemCuration
+    input_types: [design_patterns, component_needs]
+    output_types: [design_system_update, component_spec]
+
+  # Architecture
+  - id: system-design
+    name: System Design
+    description: Design high-level system architecture and component interactions
+    category: architecture
+    agent_capability: SystemDesign
+    input_types: [requirements, constraints]
+    output_types: [architecture_document, system_diagram]
+
+  - id: api-architecture
+    name: API Architecture
+    description: Design RESTful, GraphQL, and event-driven API contracts
+    category: architecture
+    agent_capability: ApiArchitecture
+    input_types: [system_requirements, integration_needs]
+    output_types: [api_contract, openapi_spec]
+
+  - id: data-architecture
+    name: Data Architecture
+    description: Design data models, schemas, and data flow architectures
+    category: architecture
+    agent_capability: DataArchitecture
+    input_types: [data_requirements, system_design]
+    output_types: [data_model, schema_definitions]
+
+  - id: security-architecture
+    name: Security Architecture
+    description: Design security architecture, threat models, and control plans
+    category: architecture
+    agent_capability: SecurityArchitecture
+    input_types: [system_design, compliance_requirements]
+    output_types: [threat_model, security_control_plan]
+
+  - id: integration-architecture
+    name: Integration Architecture
+    description: Design system integration patterns, middleware, and event buses
+    category: architecture
+    agent_capability: IntegrationArchitecture
+    input_types: [system_components, integration_requirements]
+    output_types: [integration_blueprint, event_schema]
+
+  - id: scalability-analysis
+    name: Scalability Analysis
+    description: Analyze and design for scalability, performance, and resilience
+    category: architecture
+    agent_capability: ScalabilityAnalysis
+    input_types: [system_design, load_projections]
+    output_types: [scalability_report, design_recommendations]
+
+  - id: adr-writing
+    name: ADR Writing
+    description: Author Architecture Decision Records for key design decisions
+    category: architecture
+    agent_capability: AdrWriting
+    input_types: [design_decision, alternatives]
+    output_types: [adr_document]
+
+  - id: tech-radar-curation
+    name: Tech Radar Curation
+    description: Curate and maintain the technology radar with adopt/trial/assess/hold recommendations
+    category: architecture
+    agent_capability: TechRadarCuration
+    input_types: [technology_signals, team_feedback]
+    output_types: [tech_radar_update, adoption_recommendation]
+
+  # Engineering
+  - id: code-quality-governance
+    name: Code Quality Governance
+    description: Enforce code quality standards, style guides, and review gates
+    category: engineering
+    agent_capability: CodeQualityGovernance
+    input_types: [code_changes, quality_targets]
+    output_types: [quality_report, review_findings]
+
+  - id: technical-debt-management
+    name: Technical Debt Management
+    description: Identify, track, and schedule technical debt remediation
+    category: engineering
+    agent_capability: TechnicalDebtManagement
+    input_types: [codebase_analysis, debt_registry]
+    output_types: [debt_report, remediation_plan]
+
+  - id: platform-engineering
+    name: Platform Engineering
+    description: Build and maintain internal developer platforms, tooling, and golden paths
+    category: engineering
+    agent_capability: PlatformEngineering
+    input_types: [developer_needs, platform_requirements]
+    output_types: [platform_spec, tooling_recommendations]
+
+  - id: devex-optimization
+    name: Developer Experience Optimization
+    description: Improve developer tooling, workflows, and productivity metrics
+    category: engineering
+    agent_capability: DevexOptimization
+    input_types: [developer_feedback, workflow_data]
+    output_types: [devex_report, improvement_plan]
+
+  - id: build-reliability
+    name: Build Reliability Engineering
+    description: Ensure reliable, fast CI/CD pipelines and build infrastructure
+    category: engineering
+    agent_capability: BuildReliability
+    input_types: [pipeline_metrics, failure_data]
+    output_types: [reliability_report, optimization_plan]
+
+  # AI & ML
+  - id: ml-engineering
+    name: ML Engineering
+    description: Design and build machine learning pipelines, feature stores, and training workflows
+    category: ai
+    agent_capability: MlEngineering
+    input_types: [ml_requirements, dataset_spec]
+    output_types: [ml_pipeline, model_spec]
+
+  - id: model-evaluation
+    name: Model Evaluation
+    description: Evaluate AI model quality, fairness, and performance metrics
+    category: ai
+    agent_capability: ModelEvaluation
+    input_types: [model_artifact, evaluation_criteria]
+    output_types: [evaluation_report, benchmark_results]
+
+  - id: ai-safety-review
+    name: AI Safety Review
+    description: Review AI systems for safety, bias, and alignment concerns
+    category: ai
+    agent_capability: AiSafetyReview
+    input_types: [model_artifact, safety_criteria]
+    output_types: [safety_report, remediation_recommendations]
+
+  - id: semantic-search
+    name: Semantic Search
+    description: Build and manage semantic search indexes and embedding pipelines
+    category: ai
+    agent_capability: SemanticSearch
+    input_types: [content_corpus, search_requirements]
+    output_types: [search_index, embedding_spec]
+
+  # Operations & SRE
+  - id: site-reliability-engineering
+    name: Site Reliability Engineering
+    description: Define and manage SLOs, SLIs, error budgets, and reliability practices
+    category: operations
+    agent_capability: SiteReliabilityEngineering
+    input_types: [service_metrics, reliability_targets]
+    output_types: [slo_definition, reliability_report]
+
+  - id: infrastructure-management
+    name: Infrastructure Management
+    description: Provision, configure, and manage cloud and on-prem infrastructure
+    category: operations
+    agent_capability: InfrastructureManagement
+    input_types: [infra_requirements, cloud_config]
+    output_types: [infra_plan, provisioning_spec]
+
+  - id: on-call-coordination
+    name: On-Call Coordination
+    description: Coordinate on-call schedules, escalations, and incident response
+    category: operations
+    agent_capability: OnCallCoordination
+    input_types: [incident_data, on_call_schedule]
+    output_types: [escalation_plan, incident_brief]
+
+  - id: change-management
+    name: Change Management
+    description: Review, approve, and coordinate infrastructure and application changes
+    category: operations
+    agent_capability: ChangeManagement
+    input_types: [change_request, risk_assessment]
+    output_types: [change_approval, rollout_plan]
+
+  # Product Intelligence
+  - id: feedback-analysis
+    name: Feedback Analysis
+    description: Collect, classify, and analyze user feedback signals
+    category: product-intelligence
+    agent_capability: FeedbackAnalysis
+    input_types: [feedback_data, support_tickets, reviews]
+    output_types: [feedback_report, sentiment_analysis]
+
+  - id: experimentation-coordination
+    name: Experimentation Coordination
+    description: Design, execute, and analyze A/B and multivariate experiments
+    category: product-intelligence
+    agent_capability: ExperimentationCoordination
+    input_types: [experiment_brief, metrics_spec]
+    output_types: [experiment_plan, results_analysis]
+
+  - id: product-analytics
+    name: Product Analytics
+    description: Analyze product usage metrics, retention, and user behavior
+    category: product-intelligence
+    agent_capability: ProductAnalytics
+    input_types: [usage_data, analytics_query]
+    output_types: [analytics_report, cohort_analysis]
+
+  - id: enhancement-prioritization
+    name: Enhancement Prioritization
+    description: Prioritize product enhancements based on impact, effort, and strategic fit
+    category: product-intelligence
+    agent_capability: EnhancementPrioritization
+    input_types: [enhancement_list, scoring_criteria]
+    output_types: [priority_ranking, roadmap_input]

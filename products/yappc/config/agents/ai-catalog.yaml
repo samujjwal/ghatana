@@ -1,0 +1,400 @@
+apiVersion: ghatana.yappc/v2
+kind: DomainAgentCatalog
+
+metadata:
+  name: ai
+  version: 1.0.0
+  description: "AI/ML integration, search infrastructure, memory management, agent runtime, data pipelines, and vector store agents"
+  domain: ai
+  agentCount: 38
+
+spec:
+  agents:
+
+    # ── Level 1 Orchestrators ───────────────────────────────────────────────
+    - id: ai-orchestrator
+      name: AI Orchestrator
+      level: 1
+      type: orchestrator
+      description: "Coordinates AI/ML capabilities across search, memory, inference, and data pipeline domains"
+      domain: ai
+      capabilities: [ai-coordination, llm-integration, search-integration, memory-management, inference-management]
+      routing:
+        input_types: [ai_task, llm_request, search_request, memory_request, inference_request]
+        output_types: [ai_response, search_results, memory_result, inference_result]
+      delegation:
+        can_delegate_to:
+          - search-orchestrator
+          - agent-runtime-orchestrator
+          - memory-orchestrator
+          - data-orchestrator
+        escalates_to: null
+      governance:
+        requires_approval: false
+        can_block: false
+        audit_trail: comprehensive
+      tags: [orchestrator, ai, llm, level1]
+
+    - id: search-orchestrator
+      name: Search Orchestrator
+      level: 1
+      type: orchestrator
+      description: "Orchestrates search across vector, full-text, semantic, and hybrid modes with relevance tuning and re-ranking"
+      domain: ai
+      capabilities: [search-coordination, vector-search, full-text-search, semantic-search, hybrid-search, re-ranking]
+      routing:
+        input_types: [search_query, semantic_query, vector_query]
+        output_types: [search_results, ranked_results, semantic_results]
+      delegation:
+        can_delegate_to:
+          - search-capability-agent
+          - vector-search-task-agent
+          - hybrid-search-task-agent
+          - re-ranking-task-agent
+        escalates_to: ai-orchestrator
+      tags: [orchestrator, search, vector, level1]
+
+    - id: agent-runtime-orchestrator
+      name: Agent Runtime Orchestrator
+      level: 1
+      type: orchestrator
+      description: "Manages agent execution runtime: turn lifecycle, tool invocation, context window management, streaming"
+      domain: ai
+      capabilities: [agent-runtime-management, turn-lifecycle, tool-invocation, context-window-management, streaming]
+      routing:
+        input_types: [agent_turn_request, tool_invocation_request, streaming_request]
+        output_types: [agent_turn_result, tool_invocation_result, streamed_output]
+      delegation:
+        can_delegate_to:
+          - agent-runtime-capability-agent-ai
+          - context-window-task-agent
+          - tool-invocation-task-agent
+        escalates_to: ai-orchestrator
+      tags: [orchestrator, agent-runtime, execution, level1]
+
+    - id: memory-orchestrator
+      name: Memory Orchestrator
+      level: 1
+      type: orchestrator
+      description: "Manages all memory operations: episodic capture, semantic retrieval, procedural policy application, and preference management"
+      domain: ai
+      capabilities: [memory-management, episodic-capture, semantic-retrieval, procedural-application, preference-management]
+      routing:
+        input_types: [memory_write_request, memory_read_request, memory_search_request]
+        output_types: [memory_write_result, memory_read_result, memory_search_results]
+      delegation:
+        can_delegate_to:
+          - memory-capability-agent
+          - episodic-memory-task-agent
+          - semantic-memory-task-agent
+          - procedural-memory-task-agent
+        escalates_to: ai-orchestrator
+      tags: [orchestrator, memory, episodic, level1]
+
+    # ── Level 2 Capability Agents ───────────────────────────────────────────
+    - id: search-capability-agent
+      name: Search Capability Agent
+      level: 2
+      type: domain-expert
+      description: "Deep search expertise: query planning, index strategy, relevance tuning, embedding selection, and result fusion"
+      domain: ai
+      capabilities: [query-planning, index-strategy, relevance-tuning, embedding-selection, result-fusion]
+      memory:
+        semantic:
+          enabled: true
+          categories: [search-patterns, relevance-models, embedding-configurations]
+        episodic:
+          enabled: true
+          retention_days: 365
+          categories: [search-sessions, relevance-feedback]
+      tools: [query_planner, index_designer, embedding_selector, result_fuser]
+      tags: [capability, search, relevance, level2]
+
+    - id: agent-runtime-capability-agent-ai
+      name: Agent Runtime Capability Agent
+      level: 2
+      type: domain-expert
+      description: "Agent runtime expertise: prompt engineering, context assembly optimisation, model selection, cost optimisation"
+      domain: ai
+      capabilities: [prompt-engineering, context-optimisation, model-selection, cost-optimisation, latency-optimisation]
+      memory:
+        semantic:
+          enabled: true
+          categories: [prompt-patterns, model-benchmarks, cost-models]
+      tools: [prompt_engineer, model_selector, cost_optimizer, latency_measurer]
+      tags: [capability, agent-runtime, prompt-engineering, level2]
+
+    - id: memory-capability-agent
+      name: Memory Capability Agent
+      level: 2
+      type: domain-expert
+      description: "Memory system expertise: event sourcing for memory, retention policies, decay functions, and privacy compliance"
+      domain: ai
+      capabilities: [memory-event-sourcing, retention-policy, decay-functions, memory-privacy, memory-governance]
+      memory:
+        episodic:
+          enabled: true
+          retention_days: 730
+          categories: [memory-events, retention-decisions]
+        semantic:
+          enabled: true
+          categories: [memory-patterns, privacy-rules]
+      tools: [event_log_writer, retention_manager, decay_calculator, privacy_enforcer]
+      tags: [capability, memory, event-sourcing, level2]
+
+    - id: data-pipeline-capability-agent
+      name: Data Pipeline Capability Agent
+      level: 2
+      type: domain-expert
+      description: "Data pipeline expertise: ETL/ELT design, feature engineering, stream processing, and batch scheduling"
+      domain: ai
+      capabilities: [etl-design, feature-engineering, stream-processing, batch-scheduling, data-quality]
+      tools: [pipeline_designer, feature_engineer, stream_processor, batch_scheduler]
+      tags: [capability, data-pipeline, etl, level2]
+
+    - id: llm-integration-capability-agent
+      name: LLM Integration Capability Agent
+      level: 2
+      type: domain-expert
+      description: "LLM integration expertise: provider abstraction, fallback chains, response parsing, safety filtering, and structured output"
+      domain: ai
+      capabilities: [llm-provider-abstraction, fallback-chain, response-parsing, safety-filtering, structured-output]
+      tools: [llm_router, fallback_chain_builder, response_parser, safety_filter]
+      tags: [capability, llm, provider-abstraction, level2]
+
+    # ── Level 3 Task Agents ─────────────────────────────────────────────────
+    - id: vector-search-task-agent
+      name: Vector Search Task Agent
+      level: 3
+      type: worker
+      description: "Executes vector similarity search with configurable k, similarity metric, and pre/post-filtering"
+      domain: ai
+      capabilities: [vector-search, similarity-computation, pre-filtering, post-filtering]
+      tools: [vector_store, similarity_computer, filter_engine]
+      tags: [task, vector-search, similarity, level3]
+
+    - id: hybrid-search-task-agent
+      name: Hybrid Search Task Agent
+      level: 3
+      type: worker
+      description: "Combines dense vector and sparse keyword retrieval using RRF/weighted fusion"
+      domain: ai
+      capabilities: [hybrid-search, rrf-fusion, bm25-keyword, dense-retrieval, score-fusion]
+      tools: [hybrid_search_engine, rrf_fuser, bm25_retriever]
+      tags: [task, hybrid-search, fusion, level3]
+
+    - id: re-ranking-task-agent
+      name: Re-ranking Task Agent
+      level: 3
+      type: worker
+      description: "Re-ranks retrieved results using cross-encoder relevance models and business rules"
+      domain: ai
+      capabilities: [re-ranking, cross-encoder, relevance-scoring, business-rule-reranking]
+      tools: [cross_encoder, relevance_scorer, rule_ranker]
+      tags: [task, re-ranking, relevance, level3]
+
+    - id: context-window-task-agent
+      name: Context Window Task Agent
+      level: 3
+      type: worker
+      description: "Manages context window composition: prioritises messages, applies compression, and estimates token usage"
+      domain: ai
+      capabilities: [context-composition, message-prioritisation, context-compression, token-estimation]
+      tools: [context_composer, token_estimator, compression_engine]
+      tags: [task, context-window, tokens, level3]
+
+    - id: tool-invocation-task-agent
+      name: Tool Invocation Task Agent
+      level: 3
+      type: worker
+      description: "Manages tool invocation: resolves tool schemas, validates parameters, handles errors and retries"
+      domain: ai
+      capabilities: [tool-invocation, schema-resolution, parameter-validation, error-handling, retry-management]
+      tools: [tool_resolver, parameter_validator, retry_manager]
+      tags: [task, tool-invocation, execution, level3]
+
+    - id: episodic-memory-task-agent
+      name: Episodic Memory Task Agent
+      level: 3
+      type: worker
+      description: "Manages episodic memory: captures agent interactions as events, applies retention rules, and supports temporal queries"
+      domain: ai
+      capabilities: [episodic-capture, event-appending, temporal-querying, retention-enforcement]
+      tools: [event_log_writer, temporal_query_engine, retention_enforcer]
+      tags: [task, episodic-memory, event-log, level3]
+
+    - id: semantic-memory-task-agent
+      name: Semantic Memory Task Agent
+      level: 3
+      type: worker
+      description: "Manages semantic memory: indexes facts and patterns in vector store, supports similarity-based retrieval"
+      domain: ai
+      capabilities: [semantic-indexing, fact-storage, semantic-retrieval, similarity-based-retrieval]
+      tools: [embedding_generator, vector_store_writer, semantic_retriever]
+      tags: [task, semantic-memory, vector-store, level3]
+
+    - id: procedural-memory-task-agent
+      name: Procedural Memory Task Agent
+      level: 3
+      type: worker
+      description: "Manages procedural memory: stores learned procedures and policies, supports pattern-based policy matching"
+      domain: ai
+      capabilities: [procedure-storage, policy-storage, pattern-matching, policy-retrieval]
+      tools: [procedure_store, policy_matcher, confidence_scorer]
+      tags: [task, procedural-memory, policy, level3]
+
+    - id: embedding-generation-task-agent
+      name: Embedding Generation Task Agent
+      level: 3
+      type: worker
+      description: "Generates text embeddings from multiple providers with caching and batch processing"
+      domain: ai
+      capabilities: [embedding-generation, provider-selection, batch-embedding, embedding-caching]
+      tools: [embedding_generator, batch_processor, embedding_cache]
+      tags: [task, embeddings, generation, level3]
+
+    - id: prompt-optimisation-task-agent
+      name: Prompt Optimisation Task Agent
+      level: 3
+      type: worker
+      description: "Optimises prompts for target models: few-shot selection, chain-of-thought insertion, and instruction tuning"
+      domain: ai
+      capabilities: [prompt-optimisation, few-shot-selection, chain-of-thought, instruction-tuning]
+      tools: [prompt_optimizer, few_shot_selector, cot_injector]
+      tags: [task, prompt, optimisation, level3]
+
+    - id: feature-extraction-task-agent
+      name: Feature Extraction Task Agent
+      level: 3
+      type: worker
+      description: "Extracts structured features from unstructured text for ML training and analytics pipelines"
+      domain: ai
+      capabilities: [feature-extraction, entity-extraction, relation-extraction, classification]
+      tools: [ner_extractor, relation_extractor, classifier]
+      tags: [task, feature-extraction, nlp, level3]
+
+    - id: model-evaluation-task-agent
+      name: Model Evaluation Task Agent
+      level: 3
+      type: worker
+      description: "Evaluates LLM responses using RAGAS, G-Eval, and custom domain-specific metrics"
+      domain: ai
+      capabilities: [model-evaluation, ragas-evaluation, quality-scoring, bias-detection]
+      tools: [ragas_evaluator, quality_scorer, bias_detector]
+      tags: [task, model-evaluation, ragas, level3]
+
+    # ── Level 3 Micro Agents ────────────────────────────────────────────────
+    - id: token-counter
+      name: Token Counter
+      level: 3
+      type: micro-agent
+      description: "Atomic unit: count tokens in a text string for a specific model's tokenizer"
+      domain: ai
+      capabilities: [token-counting, tokenizer-selection]
+      tags: [micro, tokens, counting, level3]
+
+    - id: embedding-similarity-scorer
+      name: Embedding Similarity Scorer
+      level: 3
+      type: micro-agent
+      description: "Atomic unit: compute cosine similarity between two embedding vectors"
+      domain: ai
+      capabilities: [cosine-similarity, embedding-comparison]
+      tags: [micro, embeddings, similarity, level3]
+
+    - id: memory-event-appender
+      name: Memory Event Appender
+      level: 3
+      type: micro-agent
+      description: "Atomic unit: append a single memory event to the append-only event log"
+      domain: ai
+      capabilities: [event-appending, event-log-write]
+      tags: [micro, memory, event-log, level3]
+
+    - id: retention-policy-enforcer
+      name: Retention Policy Enforcer
+      level: 3
+      type: micro-agent
+      description: "Atomic unit: evaluate whether a memory record should be retained or expired based on retention policy"
+      domain: ai
+      capabilities: [retention-evaluation, expiry-decision]
+      tags: [micro, retention, policy, level3]
+
+    - id: pii-redactor
+      name: PII Redactor
+      level: 3
+      type: micro-agent
+      description: "Atomic unit: detect and redact PII entities from a text string before memory persistence"
+      domain: ai
+      capabilities: [pii-detection, pii-redaction, entity-masking]
+      tags: [micro, pii, privacy, level3]
+
+    - id: model-router
+      name: Model Router
+      level: 3
+      type: micro-agent
+      description: "Atomic unit: select the optimal LLM model for a request based on task type, cost, and latency constraints"
+      domain: ai
+      capabilities: [model-routing, task-classification, model-selection]
+      tags: [micro, routing, model-selection, level3]
+
+    - id: safety-scorer
+      name: Safety Scorer
+      level: 3
+      type: micro-agent
+      description: "Atomic unit: score a text or prompt for safety policy violations and harm categories"
+      domain: ai
+      capabilities: [safety-scoring, harm-classification, policy-checking]
+      tags: [micro, safety, scoring, level3]
+
+    - id: confidence-calibrator
+      name: Confidence Calibrator
+      level: 3
+      type: micro-agent
+      description: "Atomic unit: calibrate model confidence scores to produce well-calibrated probability estimates"
+      domain: ai
+      capabilities: [confidence-calibration, probability-estimation]
+      tags: [micro, confidence, calibration, level3]
+
+    - id: hallucination-detector
+      name: Hallucination Detector
+      level: 3
+      type: micro-agent
+      description: "Atomic unit: detect potential hallucinations in LLM output by comparing with source grounding"
+      domain: ai
+      capabilities: [hallucination-detection, grounding-verification, faithfulness-check]
+      tags: [micro, hallucination, detection, level3]
+
+    - id: context-compressor
+      name: Context Compressor
+      level: 3
+      type: micro-agent
+      description: "Atomic unit: compress a context block to reduce token usage while preserving key information"
+      domain: ai
+      capabilities: [context-compression, summarisation, key-info-preservation]
+      tags: [micro, context, compression, level3]
+
+  hierarchy:
+    level1: [ai-orchestrator, search-orchestrator, agent-runtime-orchestrator, memory-orchestrator]
+    level2: [search-capability-agent, agent-runtime-capability-agent-ai, memory-capability-agent, data-pipeline-capability-agent, llm-integration-capability-agent]
+    level3: [vector-search-task-agent, hybrid-search-task-agent, re-ranking-task-agent, context-window-task-agent, tool-invocation-task-agent, episodic-memory-task-agent, semantic-memory-task-agent, procedural-memory-task-agent, embedding-generation-task-agent, prompt-optimisation-task-agent, feature-extraction-task-agent, model-evaluation-task-agent, token-counter, embedding-similarity-scorer, memory-event-appender, retention-policy-enforcer, pii-redactor, model-router, safety-scorer, confidence-calibrator, hallucination-detector, context-compressor]
+
+  capability_routing:
+    vector-search:
+      primary: search-orchestrator
+      fallback: [vector-search-task-agent]
+    hybrid-search:
+      primary: search-orchestrator
+      fallback: [hybrid-search-task-agent]
+    memory-management:
+      primary: memory-orchestrator
+      fallback: [memory-capability-agent]
+    llm-integration:
+      primary: llm-integration-capability-agent
+      fallback: [model-router]
+    agent-runtime:
+      primary: agent-runtime-orchestrator
+      fallback: [agent-runtime-capability-agent-ai]
+    pii-protection:
+      primary: memory-capability-agent
+      fallback: [pii-redactor]

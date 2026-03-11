@@ -54,14 +54,74 @@ spec:
       description: "Governance and guardrail agents"
       agentCount: 20
 
+    - name: portfolio
+      file: portfolio-catalog.yaml
+      priority: 8
+      description: "Portfolio management, strategy, investment planning, and governance agents"
+      agentCount: 31
+
+    - name: discovery
+      file: discovery-catalog.yaml
+      priority: 9
+      description: "Market research, customer discovery, and opportunity assessment agents"
+      agentCount: 33
+
+    - name: ideation
+      file: ideation-catalog.yaml
+      priority: 10
+      description: "Ideation, concept design, and product framing agents"
+      agentCount: 30
+
+    - name: requirements
+      file: requirements-catalog.yaml
+      priority: 11
+      description: "Requirements engineering, specification, and traceability agents"
+      agentCount: 48
+
+    - name: ux
+      file: ux-catalog.yaml
+      priority: 12
+      description: "UX/UI design, interaction design, and design system agents"
+      agentCount: 52
+
+    - name: architecture
+      file: architecture-catalog.yaml
+      priority: 13
+      description: "System architecture, platform, plugin, and runtime architecture agents"
+      agentCount: 51
+
+    - name: engineering
+      file: engineering-catalog.yaml
+      priority: 14
+      description: "Engineering delivery, agile execution, frontend, backend, and code quality agents"
+      agentCount: 41
+
+    - name: ai
+      file: ai-catalog.yaml
+      priority: 15
+      description: "AI/ML integration, search, memory management, and agent runtime agents"
+      agentCount: 38
+
+    - name: operations
+      file: operations-catalog.yaml
+      priority: 16
+      description: "Operations, SRE, incident management, infrastructure, and support agents"
+      agentCount: 38
+
+    - name: product-intelligence
+      file: product-intelligence-catalog.yaml
+      priority: 17
+      description: "Product analytics, experimentation, feedback synthesis, and enhancement planning agents"
+      agentCount: 34
+
   aggregation:
     mode: merge
     deduplicate: true
     validate: true
     
   statistics:
-    totalAgents: 194
-    totalCatalogs: 7
+    totalAgents: 590
+    totalCatalogs: 17
     
   # Backward compatibility - provides aggregated view
   compatibility:

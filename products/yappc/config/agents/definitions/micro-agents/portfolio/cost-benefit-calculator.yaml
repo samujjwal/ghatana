@@ -1,0 +1,53 @@
+id: cost-benefit-calculator
+name: Cost Benefit Calculator
+version: 1.0.0
+description: "Calculate NPV, IRR, payback period, and ROI given a cash flow model and discount rate"
+
+metadata:
+  level: 3
+  domain: portfolio
+  type: micro-agent
+  tags: [npv-calculation, irr-calculation, payback-period, level3, micro]
+
+generator:
+  type: RULE_BASED
+  steps:
+    - name: execute
+      type: RULE_BASED
+      rules:
+        - "npv-calculation"
+        - "irr-calculation"
+        - "payback-period"
+
+memory:
+  episodic:
+    enabled: false
+  semantic:
+    enabled: false
+  procedural:
+    enabled: false
+
+tools: [financial_calculator]
+
+capabilities:
+  - npv-calculation
+  - irr-calculation
+  - payback-period
+
+routing:
+  input_types: [cash_flow_input]
+  output_types: [financial_metrics]
+
+delegation:
+  can_delegate_to: []
+  escalates_to: business-case-capability-agent
+
+governance:
+  requires_approval: false
+  can_block: false
+  audit_trail: standard
+
+performance:
+  expected_latency_ms: 300
+  max_latency_ms: 1500
+  timeout_ms: 3000

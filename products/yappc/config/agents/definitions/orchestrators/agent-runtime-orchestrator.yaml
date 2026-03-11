@@ -1,0 +1,98 @@
+id: agent-runtime-orchestrator
+name: Agent Runtime Orchestrator
+version: 1.0.0
+description: "Manages agent turn lifecycle, tool invocation, context window assembly, streaming, and multi-agent coordination"
+
+metadata:
+  level: 1
+  domain: ai
+  tags: [orchestrator, agent-runtime, turn-lifecycle, tool-invocation, context, level1]
+
+generator:
+  type: PIPELINE
+  steps:
+    - name: turn_intake
+      type: RULE_BASED
+      description: "Parse agent turn request: identity, permissions, budget, prior context"
+    - name: context_assembly
+      type: LLM
+      provider: ANTHROPIC
+      model: claude-3-5-sonnet-20241022
+      temperature: 0.0
+      max_tokens: 2000
+      prompt: |
+        Assemble context window for agent turn:
+
+        Agent ID: {{input.agent_id}}
+        User message: {{input.message}}
+        Conversation history: {{context.history}}
+        Memory retrieved: {{context.memory_chunks}}
+        Available tools: {{context.available_tools}}
+        Token budget: {{context.token_budget}}
+
+        Compose optimised context: prioritise relevance, truncate history if needed, inject memory fragments, list tool signatures. Output assembled context JSON.
+    - name: tool_invocation_planning
+      type: LLM
+      provider: ANTHROPIC
+      model: claude-3-5-sonnet-20241022
+      temperature: 0.1
+      max_tokens: 1500
+      prompt: |
+        Plan tool invocations for the agent turn:
+
+        Context: {{context_assembly}}
+        Goal: {{input.message}}
+
+        Select required tools, validate permissions, order invocations, handle dependencies and retry rules.
+    - name: execution_loop
+      type: SERVICE_CALL
+      service: agent-execution-engine
+      endpoint: /execute
+      description: "Execute agent turn with tool calls, streaming, and turn management"
+    - name: response_validation
+      type: RULE_BASED
+      description: "Validate output for safety, format compliance, and token limits before returning to caller"
+
+memory:
+  episodic:
+    enabled: true
+    retention_days: 30
+    categories: [agent-turns, tool-invocations, execution-traces]
+  semantic:
+    enabled: true
+    categories: [agent-capabilities, tool-schemas, execution-patterns]
+  procedural:
+    enabled: true
+    categories: [context-assembly-rules, tool-selection-logic, retry-policies]
+
+tools: [context_window_manager, tool_registry, execution_engine, streaming_controller]
+
+capabilities:
+  - agent-turn-management
+  - context-window-assembly
+  - tool-invocation
+  - streaming-coordination
+  - multi-agent-coordination
+
+routing:
+  input_types: [agent_turn_request, tool_call, streaming_request]
+  output_types: [agent_response, tool_results, execution_trace]
+
+delegation:
+  can_delegate_to:
+    - agent-runtime-capability-agent-ai
+    - context-window-task-agent
+    - tool-invocation-task-agent
+    - streaming-task-agent
+    - multi-agent-coordination-task-agent
+  escalates_to: ai-orchestrator
+
+governance:
+  requires_approval: false
+  can_block: true
+  audit_trail: comprehensive
+
+performance:
+  expected_latency_ms: 1000
+  max_latency_ms: 30000
+  timeout_ms: 120000

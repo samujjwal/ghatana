@@ -101,7 +101,7 @@ delegation:
     - release-train-engineer-agent
     - estimation-agent
     - scope-negotiation-agent
-    - technical-debt-assessor
+    - technical-debt-assessor-agent
     - dependency-resolution-agent
   escalates_to:
     - master-orchestrator-agent

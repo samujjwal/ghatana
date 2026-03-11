@@ -1,0 +1,96 @@
+id: accessibility-capability-agent
+name: Accessibility Capability Agent
+version: 1.0.0
+description: "Ensures product accessibility: WCAG 2.2 compliance review, semantic HTML auditing, keyboard navigation design, screen reader compatibility, and ARIA annotation"
+
+metadata:
+  level: 2
+  domain: ux
+  tags: [capability, accessibility, wcag, a11y, aria, screen-reader, level2]
+
+generator:
+  type: PIPELINE
+  steps:
+    - name: accessibility_audit
+      type: LLM
+      provider: ANTHROPIC
+      model: claude-3-5-sonnet-20241022
+      temperature: 0.0
+      max_tokens: 3000
+      prompt: |
+        Conduct accessibility audit against WCAG 2.2:
+
+        Design or component to audit: {{input}}
+        WCAG level target: {{context.wcag_level}}
+        Platform: {{context.platform}}
+
+        Check all 4 POUR principles (Perceivable, Operable, Understandable, Robust). For each criterion: pass/fail/not-applicable, severity (critical/major/minor), evidence, recommendation. Output audit report JSON.
+    - name: keyboard_navigation_design
+      type: LLM
+      provider: ANTHROPIC
+      model: claude-3-5-sonnet-20241022
+      temperature: 0.1
+      max_tokens: 2000
+      prompt: |
+        Design keyboard navigation for the interface:
+
+        Screen/component: {{input}}
+        Audit findings: {{accessibility_audit}}
+
+        Specify: focus order (tab sequence), focus indicators (visible, 3:1 contrast min), keyboard shortcuts, skip links, modal focus trap behaviour, ARIA landmarks, roving tabindex patterns where applicable. Output keyboard nav spec.
+    - name: aria_annotation_generation
+      type: LLM
+      provider: ANTHROPIC
+      model: claude-3-5-sonnet-20241022
+      temperature: 0.0
+      max_tokens: 3000
+      prompt: |
+        Generate ARIA annotations for components:
+
+        Components needing ARIA: {{accessibility_audit.aria_gaps}}
+        Keyboard nav spec: {{keyboard_navigation_design}}
+
+        For each component: appropriate ARIA role, required ARIA properties (aria-label, aria-describedby, aria-expanded, aria-hidden, etc.), live region config if dynamic. Provide correct HTML snippet. Flag where native HTML semantics should be used instead.
+
+memory:
+  episodic:
+    enabled: true
+    retention_days: 365
+    categories: [a11y-audits, wcag-reports, aria-annotations, keyboard-nav-specs]
+  semantic:
+    enabled: true
+    categories: [wcag-criteria, aria-patterns, accessible-component-library]
+  procedural:
+    enabled: true
+    categories: [accessibility-audit-checklist, wcag-test-procedures, aria-authoring-guide]
+
+tools: [a11y_scanner, wcag_checker, aria_validator, colour_contrast_checker]
+
+capabilities:
+  - wcag-compliance-review
+  - keyboard-navigation-design
+  - aria-annotation
+  - screen-reader-compatibility
+  - colour-contrast-analysis
+
+routing:
+  input_types: [a11y_review_request, design_for_a11y_check, component_for_a11y]
+  output_types: [wcag_audit_report, keyboard_nav_spec, aria_annotations, a11y_fix_recommendations]
+
+delegation:
+  can_delegate_to:
+    - wcag-audit-task-agent
+    - keyboard-navigation-task-agent
+    - aria-annotation-task-agent
+    - colour-contrast-task-agent
+  escalates_to: ux-orchestrator
+
+governance:
+  requires_approval: false
+  can_block: true
+  audit_trail: standard
+
+performance:
+  expected_latency_ms: 5000
+  max_latency_ms: 15000
+  timeout_ms: 60000

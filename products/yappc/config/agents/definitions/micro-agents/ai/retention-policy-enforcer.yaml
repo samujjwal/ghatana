@@ -1,0 +1,51 @@
+id: retention-policy-enforcer
+name: Retention Policy Enforcer
+version: 1.0.0
+description: "Evaluate a memory item against retention policy rules and return retain/expire decision"
+
+metadata:
+  level: 3
+  domain: ai
+  type: micro-agent
+  tags: [retention-enforcement, policy-application, level3, micro]
+
+generator:
+  type: RULE_BASED
+  steps:
+    - name: execute
+      type: RULE_BASED
+      rules:
+        - "retention-enforcement"
+        - "policy-application"
+
+memory:
+  episodic:
+    enabled: false
+  semantic:
+    enabled: false
+  procedural:
+    enabled: false
+
+tools: [retention_checker]
+
+capabilities:
+  - retention-enforcement
+  - policy-application
+
+routing:
+  input_types: [retention_request]
+  output_types: [retention_decision]
+
+delegation:
+  can_delegate_to: []
+  escalates_to: memory-capability-agent
+
+governance:
+  requires_approval: false
+  can_block: false
+  audit_trail: standard
+
+performance:
+  expected_latency_ms: 100
+  max_latency_ms: 500
+  timeout_ms: 1000

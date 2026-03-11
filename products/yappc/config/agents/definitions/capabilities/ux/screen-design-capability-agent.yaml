@@ -1,0 +1,97 @@
+id: screen-design-capability-agent
+name: Screen Design Capability Agent
+version: 1.0.0
+description: "Produces screen-level design specifications: wireframe descriptions, component layout, responsive behaviour, content hierarchy, and design token application"
+
+metadata:
+  level: 2
+  domain: ux
+  tags: [capability, screen-design, wireframes, layout, responsive, design-tokens, level2]
+
+generator:
+  type: PIPELINE
+  steps:
+    - name: screen_context_analysis
+      type: LLM
+      provider: ANTHROPIC
+      model: claude-3-5-sonnet-20241022
+      temperature: 0.1
+      max_tokens: 2000
+      prompt: |
+        Analyse context for screen design:
+
+        Screen requirements: {{input}}
+        User flow position: {{context.flow_position}}
+        User goals at this moment: {{context.user_goals}}
+        Platform (web/mobile/tablet): {{context.platform}}
+
+        Define: screen purpose, primary action, secondary actions, content hierarchy (H1-H4), data to display, components needed from design system, responsive breakpoints to address. Output design brief JSON.
+    - name: wireframe_specification
+      type: LLM
+      provider: ANTHROPIC
+      model: claude-3-5-sonnet-20241022
+      temperature: 0.2
+      max_tokens: 4000
+      prompt: |
+        Create wireframe specification in structured markup:
+
+        Design brief: {{screen_context_analysis}}
+        Design system components: {{context.design_system_components}}
+        Design tokens (spacing, typography, colours): {{context.design_tokens}}
+
+        Describe screen layout in annotated wireframe format: regions (header/sidebar/main/footer), component placement (name, size, position), content placeholders, interaction notes, responsive stacking order. Format as structured markdown/YAML for Figma handoff.
+    - name: design_token_application
+      type: LLM
+      provider: ANTHROPIC
+      model: claude-3-5-sonnet-20241022
+      temperature: 0.0
+      max_tokens: 2000
+      prompt: |
+        Apply design tokens to screen specification:
+
+        Wireframe spec: {{wireframe_specification}}
+        Design token library: {{context.design_tokens}}
+
+        For each component in spec: map to correct design tokens (colour, spacing, typography, border radius, shadows, elevation). Flag any design token gaps needing new token definition. Output token-mapped spec.
+
+memory:
+  episodic:
+    enabled: true
+    retention_days: 365
+    categories: [screen-designs, wireframes, token-applications, design-revisions]
+  semantic:
+    enabled: true
+    categories: [screen-patterns, layout-templates, design-token-library]
+  procedural:
+    enabled: true
+    categories: [wireframe-conventions, token-application-rules, responsive-grid-system]
+
+tools: [wireframe_builder, design_token_mapper, component_library, responsive_grid]
+
+capabilities:
+  - wireframe-specification
+  - component-layout
+  - responsive-design
+  - design-token-application
+
+routing:
+  input_types: [screen_design_request, wireframe_request, design_revision]
+  output_types: [wireframe_spec, screen_specification, component_list, responsive_layout]
+
+delegation:
+  can_delegate_to:
+    - wireframe-task-agent
+    - layout-task-agent
+    - responsive-design-task-agent
+    - design-token-task-agent
+  escalates_to: ui-orchestrator
+
+governance:
+  requires_approval: false
+  can_block: false
+  audit_trail: standard
+
+performance:
+  expected_latency_ms: 5000
+  max_latency_ms: 20000
+  timeout_ms: 60000

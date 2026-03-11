@@ -1,0 +1,89 @@
+id: memory-capability-agent
+name: Memory Capability Agent
+version: 1.0.0
+description: "Executes memory operations: episodic event capture, semantic encoding and retrieval, procedural policy lookup, preference CRUD, and memory reflection synthesis"
+
+metadata:
+  level: 2
+  domain: ai
+  tags: [capability, memory, episodic, semantic, procedural, preference, level2]
+
+generator:
+  type: PIPELINE
+  steps:
+    - name: memory_operation_dispatch
+      type: RULE_BASED
+      description: "Route to correct memory operation handler based on operation type and tier"
+    - name: encoding_and_storage
+      type: LLM
+      provider: ANTHROPIC
+      model: claude-3-5-sonnet-20241022
+      temperature: 0.0
+      max_tokens: 2000
+      prompt: |
+        Encode content for memory storage:
+
+        Content to store: {{input.content}}
+        Memory tier: {{memory_operation_dispatch.tier}}
+        Entities to extract: {{context.entity_schema}}
+        Privacy rules: {{context.redaction_rules}}
+
+        Apply: entity extraction, PII detection and redaction (before storage), category tagging, expiry calculation, embedding anchors for semantic search, confidence score for procedural knowledge. Output encoded memory record JSON.
+    - name: retrieval_and_synthesis
+      type: LLM
+      provider: ANTHROPIC
+      model: claude-3-5-sonnet-20241022
+      temperature: 0.1
+      max_tokens: 2500
+      prompt: |
+        Retrieve and synthesise relevant memory:
+
+        Query: {{input.query}}
+        Retreived episodic: {{context.episodic_hits}}
+        Retrieved semantic: {{context.semantic_hits}}
+        Relevant procedures: {{context.procedural_policies}}
+
+        Merge fragments: deduplicate, resolve temporal conflicts (prefer recent), apply confidence weighting, summarise into coherent context additions. Flag contradictions needing human resolution.
+
+memory:
+  episodic:
+    enabled: true
+    retention_days: 730
+    categories: [memory-ops, retrievals, encodings, reflection-sessions]
+  semantic:
+    enabled: true
+    categories: [memory-schemas, entity-types, retrieval-patterns]
+  procedural:
+    enabled: true
+    categories: [retention-rules, encoding-procedures, retrieval-strategies]
+
+tools: [episodic_store, semantic_vector_db, procedural_policy_store, preference_db]
+
+capabilities:
+  - episodic-capture
+  - semantic-encoding
+  - procedural-lookup
+  - preference-management
+  - memory-synthesis
+
+routing:
+  input_types: [memory_write, memory_read, preference_update, memory_reflect]
+  output_types: [memory_record_id, retrieved_context, preference_ack, reflection_summary]
+
+delegation:
+  can_delegate_to:
+    - episodic-memory-task-agent
+    - semantic-memory-task-agent
+    - procedural-memory-task-agent
+    - preference-task-agent
+  escalates_to: memory-orchestrator
+
+governance:
+  requires_approval: false
+  can_block: false
+  audit_trail: comprehensive
+
+performance:
+  expected_latency_ms: 200
+  max_latency_ms: 2000
+  timeout_ms: 10000

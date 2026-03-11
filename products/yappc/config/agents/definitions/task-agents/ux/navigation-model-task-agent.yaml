@@ -1,0 +1,63 @@
+id: navigation-model-task-agent
+name: Navigation Model Task Agent
+version: 1.0.0
+description: "Define the navigation model including hierarchy structure, navigation patterns (tabs/drawers/breadcrumbs), and entry points"
+
+metadata:
+  level: 3
+  domain: ux
+  type: worker
+  tags: [navigation-design, hierarchy-definition, pattern-selection, level3]
+
+generator:
+  type: PIPELINE
+  steps:
+    - name: execute
+      type: LLM
+      provider: ANTHROPIC
+      model: claude-3-5-sonnet-20241022
+      temperature: 0.1
+      max_tokens: 2000
+      prompt: |
+        Execute task: Define the navigation model including hierarchy structure, navigation patterns (tabs/drawers/breadcrumbs), and entry points
+
+        Input: {{input}}
+        Context: {{context}}
+
+        Produce a structured, precise output meeting the task specification.
+
+memory:
+  episodic:
+    enabled: true
+    retention_days: 90
+    categories: [task-executions]
+  semantic:
+    enabled: true
+    categories: [domain-knowledge]
+  procedural:
+    enabled: false
+
+tools: [navigation_modeller, pattern_library]
+
+capabilities:
+  - navigation-design
+  - hierarchy-definition
+  - pattern-selection
+
+routing:
+  input_types: [navigation_model_request]
+  output_types: [navigation_model]
+
+delegation:
+  can_delegate_to: []
+  escalates_to: flow-design-capability-agent
+
+governance:
+  requires_approval: false
+  can_block: false
+  audit_trail: standard
+
+performance:
+  expected_latency_ms: 3000
+  max_latency_ms: 15000
+  timeout_ms: 30000

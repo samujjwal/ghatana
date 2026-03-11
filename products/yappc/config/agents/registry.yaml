@@ -5,22 +5,25 @@
 # - Agent hierarchy and delegation relationships
 # - Agent discovery and routing
 # - Capability-to-agent mappings
-# - Phase-organized agent taxonomy (142 agents)
+# - Phase-organized agent taxonomy (636 agents)
 
 apiVersion: ghatana.yappc/v1
 kind: AgentRegistry
 
 metadata:
-  version: 2.1.0
+  version: 3.0.0
   updated: "2026-01-19T00:00:00Z"
-  description: "Comprehensive agent registry for YAPPC platform - 228 agents across 13 phases"
+  description: "Comprehensive agent registry for YAPPC platform - 636 agents across 10 domains + 13 phases"
   statistics:
-    total_agents: 228
-    level_1_orchestrators: 14
-    level_2_experts: 68
-    level_3_workers: 146
+    total_agents: 636
+    level_1_orchestrators: 63
+    level_2_experts: 120
+    level_3_workers: 273
+    domains_new: 10
+    phases_existing: 13
+    catalog_files: 17
 
-# Phase-organized agent directories
+# Phase-organized agent directories (existing)
 phases:
   phase0-meta: "definitions/phase0-meta/"       # 33 agents - Governance, Knowledge, Orchestration, Integration
   phase1-ideation: "definitions/phase1-ideation/"   # 17 agents - Discovery, Validation, Research
@@ -37,6 +40,41 @@ phases:
   phase12-scaling: "definitions/phase12-scaling/"   # 6 agents - Horizontal, Sharding, Team Topology
   phase13-devsecops: "definitions/phase13-devsecops/"  # 8 agents - Cloud Security, Compliance, Lifecycle
   phase-debug: "definitions/phase-debug/"           # 13 agents - Debug Orchestrator + 12 debug micro-agents
+
+# Domain-organized agent directories (new - 10 domains, 408 agents)
+domains:
+  # All definitions auto-discovered via definitions/**/*.yaml glob
+  orchestrators: "definitions/orchestrators/"       # 49 orchestrators (level 1)
+  capabilities_portfolio: "definitions/capabilities/portfolio/"     # 6 capability agents (level 2)
+  capabilities_discovery: "definitions/capabilities/discovery/"     # 4 capability agents (level 2)
+  capabilities_ideation: "definitions/capabilities/ideation/"       # 3 capability agents (level 2)
+  capabilities_requirements: "definitions/capabilities/requirements/" # 5 capability agents (level 2)
+  capabilities_ux: "definitions/capabilities/ux/"                   # 6 capability agents (level 2)
+  capabilities_architecture: "definitions/capabilities/architecture/" # 8 capability agents (level 2)
+  capabilities_engineering: "definitions/capabilities/engineering/"  # 5 capability agents (level 2)
+  capabilities_ai: "definitions/capabilities/ai/"                   # 5 capability agents (level 2)
+  capabilities_operations: "definitions/capabilities/operations/"   # 6 capability agents (level 2)
+  capabilities_product_intelligence: "definitions/capabilities/product-intelligence/" # 4 capability agents (level 2)
+  task_agents_portfolio: "definitions/task-agents/portfolio/"       # 10 task agents (level 3)
+  task_agents_discovery: "definitions/task-agents/discovery/"       # 13 task agents (level 3)
+  task_agents_ideation: "definitions/task-agents/ideation/"         # 12 task agents (level 3)
+  task_agents_requirements: "definitions/task-agents/requirements/" # 22 task agents (level 3)
+  task_agents_ux: "definitions/task-agents/ux/"                     # 25 task agents (level 3)
+  task_agents_architecture: "definitions/task-agents/architecture/" # 23 task agents (level 3)
+  task_agents_engineering: "definitions/task-agents/engineering/"   # 17 task agents (level 3)
+  task_agents_ai: "definitions/task-agents/ai/"                     # 12 task agents (level 3)
+  task_agents_operations: "definitions/task-agents/operations/"     # 14 task agents (level 3)
+  task_agents_product_intelligence: "definitions/task-agents/product-intelligence/" # 14 task agents (level 3)
+  micro_agents_portfolio: "definitions/micro-agents/portfolio/"     # 10 micro agents (level 3)
+  micro_agents_discovery: "definitions/micro-agents/discovery/"     # 10 micro agents (level 3)
+  micro_agents_ideation: "definitions/micro-agents/ideation/"       # 10 micro agents (level 3)
+  micro_agents_requirements: "definitions/micro-agents/requirements/" # 15 micro agents (level 3)
+  micro_agents_ux: "definitions/micro-agents/ux/"                   # 15 micro agents (level 3)
+  micro_agents_architecture: "definitions/micro-agents/architecture/" # 15 micro agents (level 3)
+  micro_agents_engineering: "definitions/micro-agents/engineering/" # 8 micro agents (level 3)
+  micro_agents_ai: "definitions/micro-agents/ai/"                   # 10 micro agents (level 3)
+  micro_agents_operations: "definitions/micro-agents/operations/"   # 10 micro agents (level 3)
+  micro_agents_product_intelligence: "definitions/micro-agents/product-intelligence/" # 10 micro agents (level 3)
 
 # ============================================================================
 # Agent Hierarchy
@@ -555,6 +593,399 @@ hierarchy:
       reports_to:
         - agent.yappc.ux-director
 
+  # ==========================================================================
+  # Domain Orchestrators (Level 1 — Strategic Layer, New 10 Domains)
+  # ==========================================================================
+
+  level_1_domain_orchestrators:
+
+    # Portfolio Domain
+    - id: agent.yappc.portfolio-orchestrator
+      definition: definitions/orchestrators/portfolio-orchestrator.yaml
+      category: portfolio
+      reports_to:
+        - agent.yappc.products-officer
+
+    # Discovery Domain
+    - id: agent.yappc.discovery-orchestrator
+      definition: definitions/orchestrators/discovery-orchestrator.yaml
+      category: discovery
+      reports_to:
+        - agent.yappc.products-officer
+
+    # Ideation Domain
+    - id: agent.yappc.ideation-orchestrator
+      definition: definitions/orchestrators/ideation-orchestrator.yaml
+      category: ideation
+      reports_to:
+        - agent.yappc.products-officer
+
+    # Requirements Domain
+    - id: agent.yappc.requirements-orchestrator
+      definition: definitions/orchestrators/requirements-orchestrator.yaml
+      category: requirements
+      reports_to:
+        - agent.yappc.products-officer
+
+    # UX Domain
+    - id: agent.yappc.ux-orchestrator
+      definition: definitions/orchestrators/ux-orchestrator.yaml
+      category: ux
+      reports_to:
+        - agent.yappc.ux-director
+
+    # Architecture Domain
+    - id: agent.yappc.architecture-orchestrator
+      definition: definitions/orchestrators/architecture-orchestrator.yaml
+      category: architecture
+      reports_to:
+        - agent.yappc.systems-architect
+
+    # Engineering Domain
+    - id: agent.yappc.engineering-orchestrator
+      definition: definitions/orchestrators/engineering-orchestrator.yaml
+      category: engineering
+      reports_to:
+        - agent.yappc.systems-architect
+
+    # AI Domain
+    - id: agent.yappc.ai-orchestrator
+      definition: definitions/orchestrators/ai-orchestrator.yaml
+      category: ai
+      reports_to:
+        - agent.yappc.systems-architect
+
+    # Operations Domain
+    - id: agent.yappc.operations-orchestrator
+      definition: definitions/orchestrators/operations-orchestrator.yaml
+      category: operations
+      reports_to:
+        - agent.yappc.head-of-devops
+
+    # Product Intelligence Domain
+    - id: agent.yappc.product-intelligence-orchestrator
+      definition: definitions/orchestrators/product-intelligence-orchestrator.yaml
+      category: product-intelligence
+      reports_to:
+        - agent.yappc.products-officer
+
+  # ==========================================================================
+  # Domain Capability Agents (Level 2 — Expert Layer, New 10 Domains)
+  # ==========================================================================
+
+  level_2_domain_experts:
+
+    # --- Portfolio ---
+    - id: agent.yappc.portfolio-analysis-capability-agent
+      definition: definitions/capabilities/portfolio/portfolio-analysis-capability-agent.yaml
+      category: portfolio
+      reports_to: [agent.yappc.portfolio-orchestrator]
+
+    - id: agent.yappc.strategic-planning-capability-agent
+      definition: definitions/capabilities/portfolio/strategic-planning-capability-agent.yaml
+      category: portfolio
+      reports_to: [agent.yappc.portfolio-orchestrator]
+
+    - id: agent.yappc.initiative-prioritization-capability-agent
+      definition: definitions/capabilities/portfolio/initiative-prioritization-capability-agent.yaml
+      category: portfolio
+      reports_to: [agent.yappc.portfolio-orchestrator]
+
+    - id: agent.yappc.business-case-capability-agent
+      definition: definitions/capabilities/portfolio/business-case-capability-agent.yaml
+      category: portfolio
+      reports_to: [agent.yappc.portfolio-orchestrator]
+
+    - id: agent.yappc.goal-management-capability-agent
+      definition: definitions/capabilities/portfolio/goal-management-capability-agent.yaml
+      category: portfolio
+      reports_to: [agent.yappc.portfolio-orchestrator]
+
+    - id: agent.yappc.governance-review-capability-agent
+      definition: definitions/capabilities/portfolio/governance-review-capability-agent.yaml
+      category: portfolio
+      reports_to: [agent.yappc.portfolio-orchestrator]
+
+    # --- Discovery ---
+    - id: agent.yappc.competitive-intelligence-capability-agent
+      definition: definitions/capabilities/discovery/competitive-intelligence-capability-agent.yaml
+      category: discovery
+      reports_to: [agent.yappc.discovery-orchestrator]
+
+    - id: agent.yappc.customer-research-capability-agent
+      definition: definitions/capabilities/discovery/customer-research-capability-agent.yaml
+      category: discovery
+      reports_to: [agent.yappc.discovery-orchestrator]
+
+    - id: agent.yappc.opportunity-scoring-capability-agent
+      definition: definitions/capabilities/discovery/opportunity-scoring-capability-agent.yaml
+      category: discovery
+      reports_to: [agent.yappc.discovery-orchestrator]
+
+    - id: agent.yappc.problem-discovery-capability-agent
+      definition: definitions/capabilities/discovery/problem-discovery-capability-agent.yaml
+      category: discovery
+      reports_to: [agent.yappc.discovery-orchestrator]
+
+    # --- Ideation ---
+    - id: agent.yappc.concept-validation-capability-agent
+      definition: definitions/capabilities/ideation/concept-validation-capability-agent.yaml
+      category: ideation
+      reports_to: [agent.yappc.ideation-orchestrator]
+
+    - id: agent.yappc.differentiation-capability-agent
+      definition: definitions/capabilities/ideation/differentiation-capability-agent.yaml
+      category: ideation
+      reports_to: [agent.yappc.ideation-orchestrator]
+
+    - id: agent.yappc.solution-framing-capability-agent
+      definition: definitions/capabilities/ideation/solution-framing-capability-agent.yaml
+      category: ideation
+      reports_to: [agent.yappc.ideation-orchestrator]
+
+    # --- Requirements ---
+    - id: agent.yappc.requirement-analysis-capability-agent
+      definition: definitions/capabilities/requirements/requirement-analysis-capability-agent.yaml
+      category: requirements
+      reports_to: [agent.yappc.requirements-orchestrator]
+
+    - id: agent.yappc.requirement-governance-capability-agent
+      definition: definitions/capabilities/requirements/requirement-governance-capability-agent.yaml
+      category: requirements
+      reports_to: [agent.yappc.requirements-orchestrator]
+
+    - id: agent.yappc.requirement-quality-capability-agent
+      definition: definitions/capabilities/requirements/requirement-quality-capability-agent.yaml
+      category: requirements
+      reports_to: [agent.yappc.requirements-orchestrator]
+
+    - id: agent.yappc.spec-authoring-capability-agent
+      definition: definitions/capabilities/requirements/spec-authoring-capability-agent.yaml
+      category: requirements
+      reports_to: [agent.yappc.requirements-orchestrator]
+
+    - id: agent.yappc.traceability-capability-agent
+      definition: definitions/capabilities/requirements/traceability-capability-agent.yaml
+      category: requirements
+      reports_to: [agent.yappc.requirements-orchestrator]
+
+    # --- UX ---
+    - id: agent.yappc.accessibility-capability-agent
+      definition: definitions/capabilities/ux/accessibility-capability-agent.yaml
+      category: ux
+      reports_to: [agent.yappc.ux-orchestrator]
+
+    - id: agent.yappc.canvas-interaction-capability-agent
+      definition: definitions/capabilities/ux/canvas-interaction-capability-agent.yaml
+      category: ux
+      reports_to: [agent.yappc.ux-orchestrator]
+
+    - id: agent.yappc.design-consistency-capability-agent
+      definition: definitions/capabilities/ux/design-consistency-capability-agent.yaml
+      category: ux
+      reports_to: [agent.yappc.ux-orchestrator]
+
+    - id: agent.yappc.flow-design-capability-agent
+      definition: definitions/capabilities/ux/flow-design-capability-agent.yaml
+      category: ux
+      reports_to: [agent.yappc.ux-orchestrator]
+
+    - id: agent.yappc.journey-design-capability-agent
+      definition: definitions/capabilities/ux/journey-design-capability-agent.yaml
+      category: ux
+      reports_to: [agent.yappc.ux-orchestrator]
+
+    - id: agent.yappc.screen-design-capability-agent
+      definition: definitions/capabilities/ux/screen-design-capability-agent.yaml
+      category: ux
+      reports_to: [agent.yappc.ux-orchestrator]
+
+    # --- Architecture ---
+    - id: agent.yappc.agent-runtime-capability-agent
+      definition: definitions/capabilities/architecture/agent-runtime-capability-agent.yaml
+      category: architecture
+      reports_to: [agent.yappc.architecture-orchestrator]
+
+    - id: agent.yappc.data-architecture-capability-agent
+      definition: definitions/capabilities/architecture/data-architecture-capability-agent.yaml
+      category: architecture
+      reports_to: [agent.yappc.architecture-orchestrator]
+
+    - id: agent.yappc.event-architecture-capability-agent
+      definition: definitions/capabilities/architecture/event-architecture-capability-agent.yaml
+      category: architecture
+      reports_to: [agent.yappc.architecture-orchestrator]
+
+    - id: agent.yappc.memory-architecture-capability-agent
+      definition: definitions/capabilities/architecture/memory-architecture-capability-agent.yaml
+      category: architecture
+      reports_to: [agent.yappc.architecture-orchestrator]
+
+    - id: agent.yappc.observability-architecture-capability-agent
+      definition: definitions/capabilities/architecture/observability-architecture-capability-agent.yaml
+      category: architecture
+      reports_to: [agent.yappc.architecture-orchestrator]
+
+    - id: agent.yappc.plugin-contract-capability-agent
+      definition: definitions/capabilities/architecture/plugin-contract-capability-agent.yaml
+      category: architecture
+      reports_to: [agent.yappc.architecture-orchestrator]
+
+    - id: agent.yappc.security-architecture-capability-agent
+      definition: definitions/capabilities/architecture/security-architecture-capability-agent.yaml
+      category: architecture
+      reports_to: [agent.yappc.architecture-orchestrator]
+
+    - id: agent.yappc.service-design-capability-agent
+      definition: definitions/capabilities/architecture/service-design-capability-agent.yaml
+      category: architecture
+      reports_to: [agent.yappc.architecture-orchestrator]
+
+    # --- Engineering ---
+    - id: agent.yappc.backend-capability-agent
+      definition: definitions/capabilities/engineering/backend-capability-agent.yaml
+      category: engineering
+      reports_to: [agent.yappc.engineering-orchestrator]
+
+    - id: agent.yappc.code-quality-capability-agent
+      definition: definitions/capabilities/engineering/code-quality-capability-agent.yaml
+      category: engineering
+      reports_to: [agent.yappc.engineering-orchestrator]
+
+    - id: agent.yappc.devex-capability-agent
+      definition: definitions/capabilities/engineering/devex-capability-agent.yaml
+      category: engineering
+      reports_to: [agent.yappc.engineering-orchestrator]
+
+    - id: agent.yappc.engineering-metrics-capability-agent
+      definition: definitions/capabilities/engineering/engineering-metrics-capability-agent.yaml
+      category: engineering
+      reports_to: [agent.yappc.engineering-orchestrator]
+
+    - id: agent.yappc.frontend-capability-agent
+      definition: definitions/capabilities/engineering/frontend-capability-agent.yaml
+      category: engineering
+      reports_to: [agent.yappc.engineering-orchestrator]
+
+    # --- AI ---
+    - id: agent.yappc.agent-runtime-capability-agent-ai
+      definition: definitions/capabilities/ai/agent-runtime-capability-agent-ai.yaml
+      category: ai
+      reports_to: [agent.yappc.ai-orchestrator]
+
+    - id: agent.yappc.data-pipeline-capability-agent
+      definition: definitions/capabilities/ai/data-pipeline-capability-agent.yaml
+      category: ai
+      reports_to: [agent.yappc.ai-orchestrator]
+
+    - id: agent.yappc.llm-integration-capability-agent
+      definition: definitions/capabilities/ai/llm-integration-capability-agent.yaml
+      category: ai
+      reports_to: [agent.yappc.ai-orchestrator]
+
+    - id: agent.yappc.memory-capability-agent
+      definition: definitions/capabilities/ai/memory-capability-agent.yaml
+      category: ai
+      reports_to: [agent.yappc.ai-orchestrator]
+
+    - id: agent.yappc.search-capability-agent
+      definition: definitions/capabilities/ai/search-capability-agent.yaml
+      category: ai
+      reports_to: [agent.yappc.ai-orchestrator]
+
+    # --- Operations ---
+    - id: agent.yappc.change-management-capability-agent
+      definition: definitions/capabilities/operations/change-management-capability-agent.yaml
+      category: operations
+      reports_to: [agent.yappc.operations-orchestrator]
+
+    - id: agent.yappc.cost-management-capability-agent
+      definition: definitions/capabilities/operations/cost-management-capability-agent.yaml
+      category: operations
+      reports_to: [agent.yappc.operations-orchestrator]
+
+    - id: agent.yappc.infra-capability-agent
+      definition: definitions/capabilities/operations/infra-capability-agent.yaml
+      category: operations
+      reports_to: [agent.yappc.operations-orchestrator]
+
+    - id: agent.yappc.on-call-capability-agent
+      definition: definitions/capabilities/operations/on-call-capability-agent.yaml
+      category: operations
+      reports_to: [agent.yappc.operations-orchestrator]
+
+    - id: agent.yappc.sre-capability-agent
+      definition: definitions/capabilities/operations/sre-capability-agent.yaml
+      category: operations
+      reports_to: [agent.yappc.operations-orchestrator]
+
+    - id: agent.yappc.support-capability-agent
+      definition: definitions/capabilities/operations/support-capability-agent.yaml
+      category: operations
+      reports_to: [agent.yappc.operations-orchestrator]
+
+    # --- Product Intelligence ---
+    - id: agent.yappc.analytics-capability-agent
+      definition: definitions/capabilities/product-intelligence/analytics-capability-agent.yaml
+      category: product-intelligence
+      reports_to: [agent.yappc.product-intelligence-orchestrator]
+
+    - id: agent.yappc.enhancement-capability-agent
+      definition: definitions/capabilities/product-intelligence/enhancement-capability-agent.yaml
+      category: product-intelligence
+      reports_to: [agent.yappc.product-intelligence-orchestrator]
+
+    - id: agent.yappc.experimentation-capability-agent
+      definition: definitions/capabilities/product-intelligence/experimentation-capability-agent.yaml
+      category: product-intelligence
+      reports_to: [agent.yappc.product-intelligence-orchestrator]
+
+    - id: agent.yappc.feedback-capability-agent
+      definition: definitions/capabilities/product-intelligence/feedback-capability-agent.yaml
+      category: product-intelligence
+      reports_to: [agent.yappc.product-intelligence-orchestrator]
+
+  # ==========================================================================
+  # Domain Task & Micro Agents (Level 3 — Worker Layer, New 10 Domains)
+  # Auto-discovered via definitions/**/*.yaml glob; key entries listed here.
+  # ==========================================================================
+
+  level_3_domain_workers:
+    # All 162 task agents and 111 micro agents across 10 domains are
+    # auto-discovered via the glob pattern in agent-catalog.yaml.
+    # Directory references are maintained in the `domains:` section above.
+    # Representative root entries per domain:
+    portfolio:
+      task_agents: definitions/task-agents/portfolio/
+      micro_agents: definitions/micro-agents/portfolio/
+    discovery:
+      task_agents: definitions/task-agents/discovery/
+      micro_agents: definitions/micro-agents/discovery/
+    ideation:
+      task_agents: definitions/task-agents/ideation/
+      micro_agents: definitions/micro-agents/ideation/
+    requirements:
+      task_agents: definitions/task-agents/requirements/
+      micro_agents: definitions/micro-agents/requirements/
+    ux:
+      task_agents: definitions/task-agents/ux/
+      micro_agents: definitions/micro-agents/ux/
+    architecture:
+      task_agents: definitions/task-agents/architecture/
+      micro_agents: definitions/micro-agents/architecture/
+    engineering:
+      task_agents: definitions/task-agents/engineering/
+      micro_agents: definitions/micro-agents/engineering/
+    ai:
+      task_agents: definitions/task-agents/ai/
+      micro_agents: definitions/micro-agents/ai/
+    operations:
+      task_agents: definitions/task-agents/operations/
+      micro_agents: definitions/micro-agents/operations/
+    product-intelligence:
+      task_agents: definitions/task-agents/product-intelligence/
+      micro_agents: definitions/micro-agents/product-intelligence/
+
 # ============================================================================
 # Capability Routing
 # ============================================================================
@@ -617,6 +1048,67 @@ capability_routing:
   feature-flag-management:
     - agent.yappc.feature-flag-agent
     - agent.yappc.feature-flag-integration-agent
+
+  # Domain capability routing (new 10 domains)
+  portfolio-management:
+    - agent.yappc.portfolio-orchestrator
+    - agent.yappc.portfolio-analyst-capability-agent
+    - agent.yappc.roadmap-strategist-capability-agent
+    - agent.yappc.investment-evaluator-capability-agent
+
+  discovery-research:
+    - agent.yappc.discovery-orchestrator
+    - agent.yappc.user-researcher-capability-agent
+    - agent.yappc.market-analyst-capability-agent
+    - agent.yappc.insight-synthesizer-capability-agent
+
+  ideation-innovation:
+    - agent.yappc.ideation-orchestrator
+    - agent.yappc.concept-generator-capability-agent
+    - agent.yappc.feasibility-analyst-capability-agent
+
+  requirements-management:
+    - agent.yappc.requirements-orchestrator
+    - agent.yappc.requirements-analyst-capability-agent
+    - agent.yappc.acceptance-criteria-writer-capability-agent
+    - agent.yappc.story-mapper-capability-agent
+
+  ux-design:
+    - agent.yappc.ux-orchestrator
+    - agent.yappc.ux-researcher-capability-agent
+    - agent.yappc.interaction-designer-capability-agent
+    - agent.yappc.accessibility-auditor-capability-agent
+
+  architecture-design:
+    - agent.yappc.architecture-orchestrator
+    - agent.yappc.system-designer-capability-agent
+    - agent.yappc.api-architect-capability-agent
+    - agent.yappc.data-architect-capability-agent
+
+  engineering-excellence:
+    - agent.yappc.engineering-orchestrator
+    - agent.yappc.code-quality-guardian-capability-agent
+    - agent.yappc.platform-engineer-capability-agent
+    - agent.yappc.technical-debt-manager-capability-agent
+
+  ai-ml-engineering:
+    - agent.yappc.ai-orchestrator
+    - agent.yappc.ml-engineer-capability-agent
+    - agent.yappc.prompt-engineer-capability-agent
+    - agent.yappc.model-evaluator-capability-agent
+    - agent.yappc.ai-safety-reviewer-capability-agent
+
+  site-reliability:
+    - agent.yappc.operations-orchestrator
+    - agent.yappc.sre-capability-agent
+    - agent.yappc.on-call-coordinator-capability-agent
+    - agent.yappc.infrastructure-manager-capability-agent
+
+  product-intelligence:
+    - agent.yappc.product-intelligence-orchestrator
+    - agent.yappc.feedback-analyst-capability-agent
+    - agent.yappc.experimentation-coordinator-capability-agent
+    - agent.yappc.product-analytics-capability-agent
 
 # ============================================================================
 # Governance Rules

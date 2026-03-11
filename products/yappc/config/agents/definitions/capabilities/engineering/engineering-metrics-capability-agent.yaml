@@ -1,0 +1,90 @@
+id: engineering-metrics-capability-agent
+name: Engineering Metrics Capability Agent
+version: 1.0.0
+description: "Tracks and analyses engineering performance: DORA metrics, cycle time, code quality trends, test coverage, technical debt quantification, and team velocity"
+
+metadata:
+  level: 2
+  domain: engineering
+  tags: [capability, engineering-metrics, dora, cycle-time, velocity, technical-debt, level2]
+
+generator:
+  type: PIPELINE
+  steps:
+    - name: metrics_collection
+      type: SERVICE_CALL
+      service: metrics-aggregator
+      endpoint: /engineering-metrics
+      description: "Collect DORA metrics, build times, cycle times, deploy frequencies, and code quality metrics"
+    - name: metrics_analysis
+      type: LLM
+      provider: ANTHROPIC
+      model: claude-3-5-sonnet-20241022
+      temperature: 0.1
+      max_tokens: 3000
+      prompt: |
+        Analyse engineering metrics and identify trends:
+
+        Metrics: {{metrics_collection}}
+        Benchmark targets: {{context.benchmark_targets}}
+        Team context: {{context.team_context}}
+        Historical trend (90 days): {{context.historical_trends}}
+
+        Assess performance across DORA metrics: Deployment Frequency, Lead Time for Changes, Change Failure Rate, Time to Restore Service. Identify: deteriorating metrics, root cause signals, team-level patterns, correlations (e.g. test coverage → CFR). Output analysis JSON with interpretations.
+    - name: improvement_recommendations
+      type: LLM
+      provider: ANTHROPIC
+      model: claude-3-5-sonnet-20241022
+      temperature: 0.2
+      max_tokens: 2500
+      prompt: |
+        Recommend engineering improvement actions:
+
+        Metrics analysis: {{metrics_analysis}}
+        Engineering practices: {{context.engineering_practices}}
+        Capacity constraints: {{context.capacity}}
+
+        For each deteriorating metric: root cause (top 2 hypotheses), specific improvement action, expected metric impact, effort estimate, measurement plan. Prioritise by impact/effort ratio. Output action recommendations.
+
+memory:
+  episodic:
+    enabled: true
+    retention_days: 365
+    categories: [metrics-snapshots, analysis-reports, improvement-actions, dora-trends]
+  semantic:
+    enabled: true
+    categories: [dora-benchmarks, improvement-patterns, engineering-practices-library]
+  procedural:
+    enabled: true
+    categories: [dora-measurement, cycle-time-analysis, technical-debt-quantification]
+
+tools: [dora_metrics_api, code_quality_scanner, deploy_tracker, cycle_time_analyser]
+
+capabilities:
+  - dora-metrics-tracking
+  - cycle-time-analysis
+  - code-quality-trending
+  - technical-debt-quantification
+  - velocity-analysis
+
+routing:
+  input_types: [metrics_review_request, engineering_health_check, metrics_alert]
+  output_types: [engineering_metrics_report, dora_scorecard, improvement_plan, trend_analysis]
+
+delegation:
+  can_delegate_to:
+    - dora-metrics-task-agent
+    - cycle-time-task-agent
+    - tech-debt-task-agent
+    - code-quality-trend-task-agent
+  escalates_to: engineering-orchestrator
+
+governance:
+  requires_approval: false
+  can_block: false
+  audit_trail: standard
+
+performance:
+  expected_latency_ms: 5000
+  max_latency_ms: 15000
+  timeout_ms: 60000

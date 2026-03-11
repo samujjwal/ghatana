@@ -1,0 +1,90 @@
+id: product-intelligence-orchestrator
+name: Product Intelligence Orchestrator
+version: 1.0.0
+description: "Top-level product intelligence coordinator: aggregates feedback, experimentation results, and analytics to drive data-informed enhancement prioritisation"
+
+metadata:
+  level: 1
+  domain: product-intelligence
+  tags: [orchestrator, product-intelligence, analytics, experimentation, feedback, level1]
+
+generator:
+  type: PIPELINE
+  steps:
+    - name: intelligence_request_triage
+      type: LLM
+      provider: ANTHROPIC
+      model: claude-3-5-sonnet-20241022
+      temperature: 0.1
+      max_tokens: 2000
+      prompt: |
+        Triage the product intelligence request:
+
+        Request: {{input}}
+        Active experiments: {{context.active_experiments}}
+        Feedback queue depth: {{context.feedback_queue}}
+        Analytics data freshness: {{context.analytics_freshness}}
+
+        Classify: type (feedback-synthesis, experiment-analysis, enhancement-prioritisation, analytics-insight). Route to sub-orchestrator. Output JSON routing plan.
+    - name: intelligence_dispatch
+      type: SERVICE_CALL
+      service: agent-dispatcher
+      endpoint: /dispatch
+      description: "Route to feedback-orchestrator, experimentation-orchestrator, enhancement-orchestrator, or analytics capability agents"
+    - name: cross_domain_synthesis
+      type: LLM
+      provider: ANTHROPIC
+      model: claude-3-5-sonnet-20241022
+      temperature: 0.2
+      max_tokens: 3000
+      prompt: |
+        Synthesise insights across feedback, experimentation, and analytics:
+
+        Delegated results: {{intelligence_dispatch}}
+        Active roadmap: {{context.product_roadmap}}
+        OKR targets: {{context.okr_targets}}
+
+        Produce executive product intelligence brief: top insights, recommended priority shifts, experiment verdicts, enhancement backlog updates, risk signals.
+
+memory:
+  episodic:
+    enabled: true
+    retention_days: 365
+    categories: [intelligence-reports, experiment-verdicts, feedback-summaries, enhancement-prioritisations]
+  semantic:
+    enabled: true
+    categories: [product-metrics, user-segments, experiment-history]
+  procedural:
+    enabled: true
+    categories: [intelligence-synthesis, prioritisation-frameworks, analytics-pipelines]
+
+tools: [analytics_platform, experiment_tracker, feedback_aggregator, roadmap_api]
+
+capabilities:
+  - feedback-intelligence
+  - experimentation-analysis
+  - enhancement-prioritisation
+  - product-analytics
+
+routing:
+  input_types: [intelligence_request, analytics_trigger, experiment_result, feedback_batch]
+  output_types: [intelligence_brief, prioritisation_update, experiment_verdict, analytics_report]
+
+delegation:
+  can_delegate_to:
+    - feedback-orchestrator
+    - experimentation-orchestrator
+    - enhancement-orchestrator
+    - product-analytics-capability-agent
+    - kpi-tracking-task-agent
+  escalates_to: null
+
+governance:
+  requires_approval: false
+  can_block: false
+  audit_trail: standard
+
+performance:
+  expected_latency_ms: 5000
+  max_latency_ms: 30000
+  timeout_ms: 120000

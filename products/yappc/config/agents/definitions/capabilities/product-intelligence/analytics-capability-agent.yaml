@@ -1,0 +1,98 @@
+id: analytics-capability-agent
+name: Analytics Capability Agent
+version: 1.0.0
+description: "Computes product KPIs, builds and interprets funnel analyses, performs cohort and retention analysis, produces segmented usage reports, and surfaces leading indicators of product health"
+
+metadata:
+  level: 2
+  domain: product-intelligence
+  tags: [capability, analytics, kpi, funnel, cohort, retention, level2]
+
+generator:
+  type: PIPELINE
+  steps:
+    - name: kpi_computation
+      type: SERVICE_CALL
+      service: analytics-engine
+      endpoint: /kpis/compute
+      description: "Compute all product KPIs for specified time range across configured dimensions (feature, segment, cohort)"
+    - name: funnel_and_cohort_analysis
+      type: LLM
+      provider: ANTHROPIC
+      model: claude-3-5-sonnet-20241022
+      temperature: 0.1
+      max_tokens: 3000
+      prompt: |
+        Analyse product funnels and cohort behaviour:
+
+        KPIs: {{kpi_computation}}
+        Funnel definitions: {{context.funnel_definitions}}
+        Cohort definitions: {{context.cohort_definitions}}
+        Raw event data summary: {{context.event_stats}}
+        Previous period: {{context.prior_period_kpis}}
+
+        Perform:
+        1. Funnel: conversion rate per step, drop-off rates, time-between-steps P50/P95, high-impact drop-off points
+        2. Cohort: retention by week 1/2/4/8/12, revenue per cohort, feature adoption curves
+        3. Segment comparison: power users vs. casual vs. at-risk
+        4. MoM / WoW trend deltas with significance markers
+        5. Leading indicators: early signals correlating with 30-day retention
+
+        Highlight anomalies and unexpected changes. Output structured analytics report JSON.
+    - name: insight_narrative
+      type: LLM
+      provider: ANTHROPIC
+      model: claude-3-5-sonnet-20241022
+      temperature: 0.3
+      max_tokens: 2000
+      prompt: |
+        Translate analytics findings into product insights narrative:
+
+        Analytics report: {{funnel_and_cohort_analysis}}
+        Product context: {{context.product_strategy}}
+        Audience: {{context.report_audience}}
+
+        Write: executive summary (3-5 bullets), key wins this period, areas of concern requiring attention, data-driven hypotheses explaining anomalies, recommended actions with metric targets. Tailor depth to audience. Flag metrics nearing dangerous thresholds. Output narrative in structured markdown.
+
+memory:
+  episodic:
+    enabled: true
+    retention_days: 1095
+    categories: [kpi-snapshots, funnel-analyses, cohort-results, retention-reports]
+  semantic:
+    enabled: true
+    categories: [metric-definitions, product-benchmarks, segment-profiles]
+  procedural:
+    enabled: true
+    categories: [kpi-computation-rules, funnel-construction, cohort-analysis-methods]
+
+tools: [analytics_engine, funnel_builder, cohort_analyser, kpi_dashboard]
+
+capabilities:
+  - kpi-computation
+  - funnel-analysis
+  - cohort-analysis
+  - retention-analysis
+  - segmented-usage-reporting
+
+routing:
+  input_types: [analytics_report_request, kpi_review_request, cohort_analysis_request]
+  output_types: [kpi_report, funnel_analysis, cohort_retention_report, insight_narrative]
+
+delegation:
+  can_delegate_to:
+    - funnel-analysis-task-agent
+    - cohort-analysis-task-agent
+    - feature-adoption-task-agent
+    - impact-estimation-task-agent
+  escalates_to: product-intelligence-orchestrator
+
+governance:
+  requires_approval: false
+  can_block: false
+  audit_trail: standard
+
+performance:
+  expected_latency_ms: 10000
+  max_latency_ms: 60000
+  timeout_ms: 240000

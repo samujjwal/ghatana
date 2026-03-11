@@ -1,0 +1,112 @@
+id: specification-orchestrator
+name: Specification Orchestrator
+version: 1.0.0
+description: "Produces formal requirement specifications: FRS documents, BDD feature files, OpenAPI specs from requirements, and review-ready specification packages"
+
+metadata:
+  level: 1
+  domain: requirements
+  tags: [orchestrator, specification, frs, bdd, gherkin, level1]
+
+generator:
+  type: PIPELINE
+  steps:
+    - name: spec_format_selection
+      type: RULE_BASED
+      rules:
+        - "if output_format == BDD → generate Gherkin feature files"
+        - "if output_format == FRS → generate formal FRS document"
+        - "if output_format == API → generate OpenAPI spec"
+        - "if output_format == ALL → generate all formats"
+    - name: formal_spec_generation
+      type: LLM
+      provider: ANTHROPIC
+      model: claude-3-5-sonnet-20241022
+      temperature: 0.1
+      max_tokens: 6000
+      prompt: |
+        Generate a formal requirements specification from:
+
+        Requirements: {{input.requirements}}
+        Format selected: {{spec_format_selection}}
+        Document style: {{context.org_style}}
+
+        Produce specification with:
+        1. Document header (title, version, date, authors, status)
+        2. Introduction (purpose, scope, definitions)
+        3. Functional requirements with IDs, priority, rationale
+        4. Non-functional requirements with measurable thresholds
+        5. Constraints and assumptions
+        6. Acceptance criteria in formal testable format
+        7. Traceability references
+
+        Ensure every requirement is: specific, measurable, achievable, relevant, time-bound.
+    - name: bdd_feature_generation
+      type: LLM
+      provider: ANTHROPIC
+      model: claude-3-5-sonnet-20241022
+      temperature: 0.1
+      max_tokens: 4000
+      prompt: |
+        Convert functional requirements to Gherkin feature files:
+        Requirements: {{input.requirements}}
+
+        For each requirement/scenario:
+        Feature: [feature name]
+        Scenario: [scenario name]
+          Given [precondition]
+          When [action]
+          Then [expected outcome]
+          And [additional assertion]
+
+        Include positive paths, negative paths, and edge cases.
+    - name: spec_review_package
+      type: LLM
+      provider: ANTHROPIC
+      model: claude-3-5-sonnet-20241022
+      temperature: 0.2
+      max_tokens: 2000
+      prompt: |
+        Package specifications for review:
+        Generated specs: {{formal_spec_generation}}, {{bdd_feature_generation}}
+
+        Produce review checklist with: completeness_check, consistency_check, ambiguity_flags, suggested_reviewers.
+
+memory:
+  episodic:
+    enabled: true
+    retention_days: 1095
+    categories: [specification-versions, review-cycles, approved-specs]
+  semantic:
+    enabled: true
+    categories: [spec-templates, bdd-patterns, domain-glossary]
+  procedural:
+    enabled: true
+    categories: [spec-formatting-rules, review-procedures]
+
+tools: [spec_formatter, gherkin_writer, frs_builder, review_packager]
+
+capabilities:
+  - specification-generation
+  - bdd-feature-file-creation
+  - formal-spec-writing
+  - specification-review-packaging
+
+routing:
+  input_types: [requirements_set, functional_requirements, user_stories]
+  output_types: [frs_document, bdd_feature_files, specification_package, review_checklist]
+
+delegation:
+  can_delegate_to:
+    - traceability-orchestrator
+  escalates_to: requirements-orchestrator
+
+governance:
+  requires_approval: false
+  can_block: false
+  audit_trail: standard
+
+performance:
+  expected_latency_ms: 8000
+  max_latency_ms: 60000
+  timeout_ms: 90000

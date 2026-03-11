@@ -1,0 +1,90 @@
+id: infra-capability-agent
+name: Infrastructure Capability Agent
+version: 1.0.0
+description: "Executes infrastructure lifecycle operations: IaC plan generation, resource provisioning, drift detection and remediation, capacity planning, and compliance gate enforcement"
+
+metadata:
+  level: 2
+  domain: operations
+  tags: [capability, infrastructure, iac, drift, capacity, provisioning, level2]
+
+generator:
+  type: PIPELINE
+  steps:
+    - name: infra_state_snapshot
+      type: SERVICE_CALL
+      service: infra-state
+      endpoint: /current
+      description: "Pull current resource inventory, IaC state, drift deltas, and compliance posture"
+    - name: iac_plan_generation
+      type: LLM
+      provider: ANTHROPIC
+      model: claude-3-5-sonnet-20241022
+      temperature: 0.0
+      max_tokens: 3000
+      prompt: |
+        Generate IaC execution plan from infrastructure request:
+
+        Current infra state: {{infra_state_snapshot}}
+        Change request: {{input.change_request}}
+        Compliance requirements: {{context.compliance_rules}}
+        Cost limits: {{context.cost_budget}}
+
+        Produce: Terraform/Pulumi plan steps, resource dependency graph, blast radius analysis, estimated cost delta, compliance gate pass/fail checklist, rollback sequence. Flag any configuration that violates security or cost policies. Output structured JSON plan.
+    - name: drift_remediation_plan
+      type: LLM
+      provider: ANTHROPIC
+      model: claude-3-5-sonnet-20241022
+      temperature: 0.0
+      max_tokens: 2000
+      prompt: |
+        Detect and remediate infrastructure drift:
+
+        IaC plan: {{iac_plan_generation}}
+        Detected drift items: {{infra_state_snapshot.drift_items}}
+        Remediation priority rules: {{context.remediation_policy}}
+
+        Prioritise drift items by: security risk, compliance impact, service stability. Generate safe remediation sequence. Mark automated vs. manual resolution steps. Output drift remediation plan with estimated effort.
+
+memory:
+  episodic:
+    enabled: true
+    retention_days: 730
+    categories: [provisioning-events, drift-detections, compliance-audits, capacity-changes]
+  semantic:
+    enabled: true
+    categories: [infra-patterns, compliance-rules, cost-benchmarks]
+  procedural:
+    enabled: true
+    categories: [iac-plan-templates, drift-remediation-procedures, capacity-scaling-policies]
+
+tools: [terraform_plan, drift_scanner, cost_estimator, compliance_checker, capacity_analyser]
+
+capabilities:
+  - iac-plan-generation
+  - resource-provisioning
+  - drift-detection-remediation
+  - capacity-planning
+  - compliance-gate-enforcement
+
+routing:
+  input_types: [provisioning_request, drift_report, capacity_review_request]
+  output_types: [iac_execution_plan, drift_remediation_plan, capacity_recommendation, compliance_report]
+
+delegation:
+  can_delegate_to:
+    - iac-provisioning-task-agent
+    - drift-detection-task-agent
+    - resource-lifecycle-task-agent
+    - capacity-planning-task-agent
+  escalates_to: infra-provisioning-orchestrator
+
+governance:
+  requires_approval: false
+  can_block: true
+  audit_trail: comprehensive
+
+performance:
+  expected_latency_ms: 5000
+  max_latency_ms: 30000
+  timeout_ms: 120000

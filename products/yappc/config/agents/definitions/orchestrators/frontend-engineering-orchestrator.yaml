@@ -1,0 +1,100 @@
+id: frontend-engineering-orchestrator
+name: Frontend Engineering Orchestrator
+version: 1.0.0
+description: "Orchestrates frontend engineering: component generation, UI logic, state management, accessibility auditing, performance optimisation, and Storybook management"
+
+metadata:
+  level: 1
+  domain: engineering
+  tags: [orchestrator, frontend, react, typescript, level1]
+
+generator:
+  type: PIPELINE
+  steps:
+    - name: frontend_task_analysis
+      type: LLM
+      provider: ANTHROPIC
+      model: claude-3-5-sonnet-20241022
+      temperature: 0.2
+      max_tokens: 2500
+      prompt: |
+        Analyse the frontend engineering task:
+
+        Task: {{input}}
+        UI spec: {{context.ui_spec}}
+        Design tokens: {{context.design_tokens}}
+        Component library: {{context.component_library}}
+
+        Determine:
+        1. Components to build or update
+        2. State management approach (local, Jotai, TanStack Query)
+        3. Routing changes required
+        4. Accessibility requirements (WCAG level)
+        5. Performance targets (LCP, FID, CLS)
+
+        Output as JSON: {components, state_strategy, routing_changes, a11y_level, perf_targets, delegation_plan}
+    - name: component_generation_dispatch
+      type: SERVICE_CALL
+      service: agent-dispatcher
+      endpoint: /dispatch/batch
+      description: "Dispatch to component-generation-task-agent for each component"
+    - name: accessibility_audit_dispatch
+      type: SERVICE_CALL
+      service: agent-dispatcher
+      endpoint: /dispatch
+      description: "Dispatch to a11y-audit-task-agent on generated components"
+    - name: performance_check
+      type: LLM
+      provider: ANTHROPIC
+      model: claude-3-5-sonnet-20241022
+      temperature: 0.1
+      max_tokens: 2000
+      prompt: |
+        Generate frontend performance recommendations:
+        Components: {{component_generation_dispatch}}
+        Targets: {{frontend_task_analysis.perf_targets}}
+
+        Suggest: bundle-splitting, lazy loading, image optimisation, caching strategies.
+
+memory:
+  episodic:
+    enabled: true
+    retention_days: 365
+    categories: [frontend-implementations, component-reviews, performance-audits]
+  semantic:
+    enabled: true
+    categories: [component-patterns, react-patterns, accessibility-rules, performance-heuristics]
+  procedural:
+    enabled: true
+    categories: [component-development-standards, a11y-checklist, performance-budgets]
+
+tools: [component_generator, storybook_writer, a11y_auditor, bundle_analyzer, typescript_checker]
+
+capabilities:
+  - frontend-engineering
+  - component-generation
+  - state-management
+  - accessibility-enforcement
+  - performance-optimisation
+
+routing:
+  input_types: [frontend_task, ui_spec, component_request, a11y_audit_request]
+  output_types: [component_code, storybook_stories, a11y_report, performance_report, typescript_types]
+
+delegation:
+  can_delegate_to:
+    - frontend-capability-agent
+    - component-generation-task-agent
+    - a11y-audit-task-agent
+    - design-system-orchestrator
+  escalates_to: engineering-orchestrator
+
+governance:
+  requires_approval: false
+  can_block: false
+  audit_trail: standard
+
+performance:
+  expected_latency_ms: 8000
+  max_latency_ms: 60000
+  timeout_ms: 90000

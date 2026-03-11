@@ -1,0 +1,51 @@
+id: portfolio-conflict-detector
+name: Portfolio Conflict Detector
+version: 1.0.0
+description: "Detect conflicting objectives or resource claims between initiatives in a portfolio"
+
+metadata:
+  level: 3
+  domain: portfolio
+  type: micro-agent
+  tags: [conflict-detection, resource-conflict, level3, micro]
+
+generator:
+  type: RULE_BASED
+  steps:
+    - name: execute
+      type: RULE_BASED
+      rules:
+        - "conflict-detection"
+        - "resource-conflict"
+
+memory:
+  episodic:
+    enabled: false
+  semantic:
+    enabled: false
+  procedural:
+    enabled: false
+
+tools: [conflict_detector]
+
+capabilities:
+  - conflict-detection
+  - resource-conflict
+
+routing:
+  input_types: [conflict_check_request]
+  output_types: [conflict_report]
+
+delegation:
+  can_delegate_to: []
+  escalates_to: portfolio-analysis-capability-agent
+
+governance:
+  requires_approval: false
+  can_block: false
+  audit_trail: standard
+
+performance:
+  expected_latency_ms: 200
+  max_latency_ms: 1000
+  timeout_ms: 2000

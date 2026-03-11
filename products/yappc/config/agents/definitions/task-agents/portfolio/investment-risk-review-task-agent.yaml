@@ -1,0 +1,63 @@
+id: investment-risk-review-task-agent
+name: Investment Risk Review Task Agent
+version: 1.0.0
+description: "Assess investment risk by analysing market assumptions, technical feasibility uncertainty, competitive threats, and execution risk"
+
+metadata:
+  level: 3
+  domain: portfolio
+  type: worker
+  tags: [risk-identification, risk-scoring, mitigation-mapping, level3]
+
+generator:
+  type: PIPELINE
+  steps:
+    - name: execute
+      type: LLM
+      provider: ANTHROPIC
+      model: claude-3-5-sonnet-20241022
+      temperature: 0.1
+      max_tokens: 2000
+      prompt: |
+        Execute task: Assess investment risk by analysing market assumptions, technical feasibility uncertainty, competitive threats, and execution risk
+
+        Input: {{input}}
+        Context: {{context}}
+
+        Produce a structured, precise output meeting the task specification.
+
+memory:
+  episodic:
+    enabled: true
+    retention_days: 90
+    categories: [task-executions]
+  semantic:
+    enabled: true
+    categories: [domain-knowledge]
+  procedural:
+    enabled: false
+
+tools: [risk_scorer, assumption_analyser]
+
+capabilities:
+  - risk-identification
+  - risk-scoring
+  - mitigation-mapping
+
+routing:
+  input_types: [risk_review_request]
+  output_types: [investment_risk_assessment]
+
+delegation:
+  can_delegate_to: []
+  escalates_to: business-case-capability-agent
+
+governance:
+  requires_approval: false
+  can_block: false
+  audit_trail: standard
+
+performance:
+  expected_latency_ms: 3000
+  max_latency_ms: 15000
+  timeout_ms: 30000

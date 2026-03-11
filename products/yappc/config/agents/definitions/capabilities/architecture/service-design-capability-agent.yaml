@@ -1,0 +1,98 @@
+id: service-design-capability-agent
+name: Service Design Capability Agent
+version: 1.0.0
+description: "Designs service architectures: bounded context mapping, service boundary definition, API contract design, inter-service communication patterns, and dependency management"
+
+metadata:
+  level: 2
+  domain: architecture
+  tags: [capability, service-design, bounded-context, api, microservices, ddd, level2]
+
+generator:
+  type: PIPELINE
+  steps:
+    - name: domain_model_analysis
+      type: LLM
+      provider: ANTHROPIC
+      model: claude-3-5-sonnet-20241022
+      temperature: 0.1
+      max_tokens: 3000
+      prompt: |
+        Analyse domain and derive service boundaries:
+
+        Requirements: {{input}}
+        Existing services: {{context.existing_services}}
+        Domain ubiquitous language: {{context.ubiquitous_language}}
+        Team topology: {{context.team_topology}}
+
+        Apply DDD bounded context analysis: identify aggregates, entities, value objects, domain events. Define context boundaries using: cohesion (what naturally belongs together), coupling (what must be separated), team ownership, data sovereignty. Output bounded context map JSON.
+    - name: service_interface_design
+      type: LLM
+      provider: ANTHROPIC
+      model: claude-3-5-sonnet-20241022
+      temperature: 0.1
+      max_tokens: 3000
+      prompt: |
+        Design service interfaces and communication contracts:
+
+        Bounded contexts: {{domain_model_analysis}}
+        Integration requirements: {{context.integration_requirements}}
+        Performance SLAs: {{context.sla_requirements}}
+
+        For each service: public API surface (REST/gRPC/GraphQL selection with rationale), event contracts (published/consumed events), sync vs async communication choices, API versioning strategy, backward compatibility requirements. Output service interface specs.
+    - name: dependency_analysis
+      type: LLM
+      provider: ANTHROPIC
+      model: claude-3-5-sonnet-20241022
+      temperature: 0.1
+      max_tokens: 2000
+      prompt: |
+        Analyse and validate service dependencies:
+
+        Service interfaces: {{service_interface_design}}
+        Current architecture: {{context.current_architecture}}
+
+        Identify: circular dependencies (must resolve), deep coupling chains (simplify), fan-in/fan-out hotspots (isolate), critical path dependencies (SLA risk), missing abstractions. Output dependency report with remediation recommendations.
+
+memory:
+  episodic:
+    enabled: true
+    retention_days: 730
+    categories: [service-designs, bounded-contexts, api-contracts, dependency-analyses]
+  semantic:
+    enabled: true
+    categories: [service-patterns, ddd-models, api-design-standards]
+  procedural:
+    enabled: true
+    categories: [bounded-context-mapping, api-design-rules, dependency-analysis-method]
+
+tools: [architecture_diagram_tool, api_designer, dependency_graph, ddd_mapper]
+
+capabilities:
+  - bounded-context-mapping
+  - service-boundary-definition
+  - api-contract-design
+  - dependency-analysis
+
+routing:
+  input_types: [service_design_request, domain_model_request, api_design_request]
+  output_types: [bounded_context_map, service_interface_spec, dependency_report, api_contract]
+
+delegation:
+  can_delegate_to:
+    - bounded-context-task-agent
+    - api-design-task-agent
+    - dependency-analysis-task-agent
+    - service-interface-task-agent
+  escalates_to: architecture-orchestrator
+
+governance:
+  requires_approval: true
+  approval_chain: [architecture-board]
+  can_block: false
+  audit_trail: comprehensive
+
+performance:
+  expected_latency_ms: 8000
+  max_latency_ms: 30000
+  timeout_ms: 120000

@@ -1,0 +1,63 @@
+id: deployment-topology-task-agent
+name: Deployment Topology Task Agent
+version: 1.0.0
+description: "Design deployment topology including container orchestration, service mesh, network policies, and multi-region strategy"
+
+metadata:
+  level: 3
+  domain: architecture
+  type: worker
+  tags: [deployment-topology-design, network-policy-spec, multi-region-strategy, level3]
+
+generator:
+  type: PIPELINE
+  steps:
+    - name: execute
+      type: LLM
+      provider: ANTHROPIC
+      model: claude-3-5-sonnet-20241022
+      temperature: 0.1
+      max_tokens: 2000
+      prompt: |
+        Execute task: Design deployment topology including container orchestration, service mesh, network policies, and multi-region strategy
+
+        Input: {{input}}
+        Context: {{context}}
+
+        Produce a structured, precise output meeting the task specification.
+
+memory:
+  episodic:
+    enabled: true
+    retention_days: 90
+    categories: [task-executions]
+  semantic:
+    enabled: true
+    categories: [domain-knowledge]
+  procedural:
+    enabled: false
+
+tools: [topology_designer, network_policy_builder]
+
+capabilities:
+  - deployment-topology-design
+  - network-policy-spec
+  - multi-region-strategy
+
+routing:
+  input_types: [deployment_topology_request]
+  output_types: [deployment_topology_spec]
+
+delegation:
+  can_delegate_to: []
+  escalates_to: service-design-capability-agent
+
+governance:
+  requires_approval: false
+  can_block: false
+  audit_trail: standard
+
+performance:
+  expected_latency_ms: 4000
+  max_latency_ms: 20000
+  timeout_ms: 40000

@@ -1,0 +1,471 @@
+apiVersion: ghatana.yappc/v2
+kind: DomainAgentCatalog
+
+metadata:
+  name: operations
+  version: 1.0.0
+  description: "Operations, SRE, incident management, on-call, infrastructure reliability, cost management, and support agents"
+  domain: operations
+  agentCount: 38
+
+spec:
+  agents:
+
+    # ── Level 1 Orchestrators ───────────────────────────────────────────────
+    - id: operations-orchestrator
+      name: Operations Orchestrator
+      level: 1
+      type: orchestrator
+      description: "Top-level operations orchestrator coordinating SRE, incident response, infrastructure, and support functions"
+      domain: operations
+      capabilities: [operations-coordination, sre-management, incident-management, infra-reliability, support-management]
+      routing:
+        input_types: [incident_alert, operations_request, infra_request, support_request]
+        output_types: [incident_response, operations_report, infra_change, support_resolution]
+      delegation:
+        can_delegate_to:
+          - sre-orchestrator
+          - infra-provisioning-orchestrator
+          - support-orchestrator
+          - change-management-orchestrator
+        escalates_to: null
+      governance:
+        requires_approval: false
+        can_block: true
+        audit_trail: comprehensive
+      tags: [orchestrator, operations, sre, level1]
+
+    - id: sre-orchestrator
+      name: SRE Orchestrator
+      level: 1
+      type: orchestrator
+      description: "Orchestrates SRE practices: SLO management, error budget tracking, toil reduction, and reliability improvement"
+      domain: operations
+      capabilities: [slo-management, error-budget-tracking, toil-reduction, reliability-improvement, runbook-execution]
+      routing:
+        input_types: [slo_request, error_budget_data, toil_report, reliability_event]
+        output_types: [slo_report, error_budget_status, toil_reduction_plan, reliability_review]
+      delegation:
+        can_delegate_to:
+          - sre-capability-agent
+          - slo-management-task-agent
+          - error-budget-task-agent
+          - toil-reduction-task-agent
+        escalates_to: operations-orchestrator
+      tags: [orchestrator, sre, slo, level1]
+
+    - id: infra-provisioning-orchestrator
+      name: Infrastructure Provisioning Orchestrator
+      level: 1
+      type: orchestrator
+      description: "Orchestrates infrastructure provisioning, scaling, and decommissioning using IaC workflows"
+      domain: operations
+      capabilities: [iac-orchestration, resource-provisioning, auto-scaling, resource-decommissioning, drift-detection]
+      routing:
+        input_types: [provisioning_request, scaling_trigger, decommission_request]
+        output_types: [provisioning_plan, scaling_action, decommission_plan, drift_report]
+      delegation:
+        can_delegate_to:
+          - infra-capability-agent
+          - iac-generation-task-agent
+          - auto-scaling-task-agent
+          - drift-detection-task-agent
+        escalates_to: operations-orchestrator
+      tags: [orchestrator, infrastructure, provisioning, level1]
+
+    - id: support-orchestrator
+      name: Support Orchestrator
+      level: 1
+      type: orchestrator
+      description: "Orchestrates customer and internal support: ticket triage, runbook execution, knowledge base updates, and escalation"
+      domain: operations
+      capabilities: [ticket-triage, runbook-execution, knowledge-base-management, escalation]
+      routing:
+        input_types: [support_ticket, escalation_request, kb_update_request]
+        output_types: [ticket_response, runbook_result, kb_article, escalation_record]
+      delegation:
+        can_delegate_to:
+          - support-capability-agent
+          - ticket-triage-task-agent
+          - runbook-execution-task-agent
+          - kb-update-task-agent
+        escalates_to: operations-orchestrator
+      tags: [orchestrator, support, ticket, level1]
+
+    - id: change-management-orchestrator
+      name: Change Management Orchestrator
+      level: 1
+      type: orchestrator
+      description: "Manages change lifecycle: change request assessment, CAB coordination, rollback planning, and post-change review"
+      domain: operations
+      capabilities: [change-assessment, cab-coordination, rollback-planning, post-change-review]
+      routing:
+        input_types: [change_request, change_review_request]
+        output_types: [change_assessment, cab_agenda, rollback_plan, post_change_report]
+      delegation:
+        can_delegate_to:
+          - change-management-capability-agent
+          - change-risk-assessment-task-agent
+          - rollback-planning-task-agent
+        escalates_to: operations-orchestrator
+      tags: [orchestrator, change-management, cab, level1]
+
+    - id: cost-management-orchestrator
+      name: Cost Management Orchestrator
+      level: 1
+      type: orchestrator
+      description: "Manages cloud and infrastructure costs: anomaly detection, rightsizing, reserved capacity, and cost allocation"
+      domain: operations
+      capabilities: [cost-anomaly-detection, rightsizing, reserved-capacity, cost-allocation, budget-enforcement]
+      routing:
+        input_types: [cost_report, budget_data, rightsizing_request]
+        output_types: [cost_anomaly_report, rightsizing_plan, allocation_report, budget_alert]
+      delegation:
+        can_delegate_to:
+          - cost-management-capability-agent
+          - cost-anomaly-task-agent
+          - rightsizing-task-agent
+        escalates_to: operations-orchestrator
+      tags: [orchestrator, cost-management, cloud-costs, level1]
+
+    - id: on-call-orchestrator
+      name: On-Call Orchestrator
+      level: 1
+      type: orchestrator
+      description: "Manages on-call workflows: alert triage, escalation, runbook retrieval, and post-incident handoff"
+      domain: operations
+      capabilities: [alert-triage, on-call-escalation, runbook-retrieval, incident-handoff]
+      routing:
+        input_types: [alert, on_call_page, incident_notification]
+        output_types: [triage_result, escalation_action, runbook, incident_handoff]
+      delegation:
+        can_delegate_to:
+          - incident-management-orchestrator
+          - alert-triage-task-agent
+          - runbook-execution-task-agent
+        escalates_to: sre-orchestrator
+      tags: [orchestrator, on-call, alerting, level1]
+
+    # ── Level 2 Capability Agents ───────────────────────────────────────────
+    - id: sre-capability-agent
+      name: SRE Capability Agent
+      level: 2
+      type: domain-expert
+      description: "SRE expertise: SLO definition, error budget calculation, reliability patterns, toil measurement, and chaos engineering"
+      domain: operations
+      capabilities: [slo-definition, error-budget-calculation, reliability-patterns, toil-measurement, chaos-engineering]
+      memory:
+        episodic:
+          enabled: true
+          retention_days: 730
+          categories: [incidents, slo-breaches, toil-records]
+        semantic:
+          enabled: true
+          categories: [sre-patterns, reliability-playbooks, runbooks]
+      tools: [slo_calculator, error_budget_tracker, toil_measurer, chaos_planner]
+      tags: [capability, sre, reliability, level2]
+
+    - id: infra-capability-agent
+      name: Infrastructure Capability Agent
+      level: 2
+      type: domain-expert
+      description: "Infrastructure expertise: IaC (Terraform/Pulumi), Kubernetes configuration, networking, storage, and security hardening"
+      domain: operations
+      capabilities: [iac-generation, kubernetes-config, networking-config, storage-config, security-hardening]
+      tools: [terraform_generator, k8s_configurator, network_planner, security_hardener]
+      tags: [capability, infrastructure, terraform, level2]
+
+    - id: support-capability-agent
+      name: Support Capability Agent
+      level: 2
+      type: domain-expert
+      description: "Support expertise: ticket classification, root cause analysis, knowledge base retrieval, and customer communication"
+      domain: operations
+      capabilities: [ticket-classification, root-cause-analysis, kb-retrieval, customer-communication]
+      memory:
+        episodic:
+          enabled: true
+          retention_days: 365
+          categories: [resolved-tickets, customer-interactions]
+        semantic:
+          enabled: true
+          categories: [known-issues, runbooks, kb-articles]
+      tools: [ticket_classifier, kb_retriever, root_cause_analyzer]
+      tags: [capability, support, knowledge-base, level2]
+
+    - id: change-management-capability-agent
+      name: Change Management Capability Agent
+      level: 2
+      type: domain-expert
+      description: "Change management expertise: risk scoring, blast radius estimation, dependency chain analysis, and rollback strategy"
+      domain: operations
+      capabilities: [change-risk-scoring, blast-radius-estimation, dependency-analysis, rollback-strategy]
+      tools: [change_risk_scorer, blast_radius_estimator, dependency_analyzer]
+      tags: [capability, change-management, risk, level2]
+
+    - id: cost-management-capability-agent
+      name: Cost Management Capability Agent
+      level: 2
+      type: domain-expert
+      description: "Cloud cost expertise: tagging strategy, cost allocation, waste identification, and reserved capacity optimisation"
+      domain: operations
+      capabilities: [cost-allocation, waste-identification, tagging-strategy, reserved-capacity]
+      tools: [cost_analyzer, waste_detector, reservation_advisor]
+      tags: [capability, cost-management, optimisation, level2]
+
+    # ── Level 3 Task Agents ─────────────────────────────────────────────────
+    - id: slo-management-task-agent
+      name: SLO Management Task Agent
+      level: 3
+      type: worker
+      description: "Creates and manages SLOs: defines objectives, tracks compliance, and generates SLO compliance reports"
+      domain: operations
+      capabilities: [slo-creation, slo-tracking, slo-reporting, sli-definition]
+      tools: [slo_builder, slo_tracker, slo_reporter]
+      tags: [task, slo, management, level3]
+
+    - id: error-budget-task-agent
+      name: Error Budget Task Agent
+      level: 3
+      type: worker
+      description: "Manages error budgets: calculates remaining budget, triggers freeze policies, and forecasts depletion"
+      domain: operations
+      capabilities: [error-budget-calculation, freeze-policy-enforcement, depletion-forecasting]
+      tools: [budget_calculator, freeze_enforcer, depletion_forecaster]
+      tags: [task, error-budget, slo, level3]
+
+    - id: toil-reduction-task-agent
+      name: Toil Reduction Task Agent
+      level: 3
+      type: worker
+      description: "Identifies and prioritises toil for automation: measures toil load, proposes automation candidates"
+      domain: operations
+      capabilities: [toil-identification, toil-measurement, automation-candidate-selection, automation-planning]
+      tools: [toil_measurer, automation_planner, toil_tracker]
+      tags: [task, toil, automation, level3]
+
+    - id: iac-generation-task-agent
+      name: IaC Generation Task Agent
+      level: 3
+      type: worker
+      description: "Generates Terraform/Pulumi infrastructure-as-code from resource specifications and architectural decisions"
+      domain: operations
+      capabilities: [terraform-generation, pulumi-generation, module-templating, resource-specification]
+      tools: [terraform_generator, pulumi_generator, module_builder]
+      tags: [task, iac, terraform, level3]
+
+    - id: auto-scaling-task-agent
+      name: Auto Scaling Task Agent
+      level: 3
+      type: worker
+      description: "Configures and manages auto-scaling policies based on metrics, schedules, and capacity targets"
+      domain: operations
+      capabilities: [hpa-configuration, vpa-configuration, schedule-based-scaling, metrics-based-scaling]
+      tools: [scaling_configurator, metrics_analyzer, schedule_planner]
+      tags: [task, auto-scaling, kubernetes, level3]
+
+    - id: drift-detection-task-agent
+      name: Drift Detection Task Agent
+      level: 3
+      type: worker
+      description: "Detects configuration drift between desired (IaC) and actual infrastructure state"
+      domain: operations
+      capabilities: [drift-detection, state-comparison, remediation-plan-generation]
+      tools: [state_comparator, drift_detector, remediation_planner]
+      tags: [task, drift-detection, configuration, level3]
+
+    - id: ticket-triage-task-agent
+      name: Ticket Triage Task Agent
+      level: 3
+      type: worker
+      description: "Triages support tickets: classifies severity, assigns to team, and suggests initial response"
+      domain: operations
+      capabilities: [ticket-classification, severity-assignment, team-routing, initial-response]
+      tools: [classifier, severity_scorer, router]
+      tags: [task, ticket-triage, support, level3]
+
+    - id: runbook-execution-task-agent
+      name: Runbook Execution Task Agent
+      level: 3
+      type: worker
+      description: "Executes runbook steps: runs automated steps, prompts for manual steps, and tracks completion"
+      domain: operations
+      capabilities: [runbook-execution, automated-step-run, manual-step-prompt, completion-tracking]
+      tools: [runbook_executor, step_runner, completion_tracker]
+      tags: [task, runbook, execution, level3]
+
+    - id: kb-update-task-agent
+      name: Knowledge Base Update Task Agent
+      level: 3
+      type: worker
+      description: "Updates knowledge base articles from resolved incidents and support tickets"
+      domain: operations
+      capabilities: [kb-article-generation, incident-knowledge-extraction, kb-update]
+      tools: [kb_writer, knowledge_extractor, article_publisher]
+      tags: [task, knowledge-base, documentation, level3]
+
+    - id: alert-triage-task-agent
+      name: Alert Triage Task Agent
+      level: 3
+      type: worker
+      description: "Triages incoming alerts: deduplicates, groups, correlates, and routes to the appropriate responder"
+      domain: operations
+      capabilities: [alert-deduplication, alert-grouping, alert-correlation, alert-routing]
+      tools: [alert_deduplicator, correlation_engine, alert_router]
+      tags: [task, alert-triage, correlation, level3]
+
+    - id: change-risk-assessment-task-agent
+      name: Change Risk Assessment Task Agent
+      level: 3
+      type: worker
+      description: "Assesses change risk with standardised risk scoring across scope, complexity, rollback difficulty, and impact"
+      domain: operations
+      capabilities: [risk-scoring, scope-assessment, rollback-feasibility, impact-assessment]
+      tools: [risk_scorer, scope_analyzer, impact_assessor]
+      tags: [task, change-risk, assessment, level3]
+
+    - id: rollback-planning-task-agent
+      name: Rollback Planning Task Agent
+      level: 3
+      type: worker
+      description: "Creates detailed rollback plans for changes including step-by-step reversal, verification steps, and communication plan"
+      domain: operations
+      capabilities: [rollback-plan-generation, reversal-step-design, verification-check, communication-planning]
+      tools: [rollback_planner, reversal_designer, verification_builder]
+      tags: [task, rollback, planning, level3]
+
+    - id: cost-anomaly-task-agent
+      name: Cost Anomaly Task Agent
+      level: 3
+      type: worker
+      description: "Detects cost anomalies using statistical models, identifies root cause resources, and triggers alerts"
+      domain: operations
+      capabilities: [anomaly-detection, root-cause-identification, alert-triggering, cost-spike-analysis]
+      tools: [anomaly_detector, cost_root_cause_analyzer, alert_trigger]
+      tags: [task, cost-anomaly, detection, level3]
+
+    - id: rightsizing-task-agent
+      name: Rightsizing Task Agent
+      level: 3
+      type: worker
+      description: "Analyses resource utilisation and recommends rightsizing for over-provisioned compute and storage"
+      domain: operations
+      capabilities: [utilisation-analysis, rightsizing-recommendation, savings-estimation]
+      tools: [utilisation_analyzer, rightsizing_advisor, savings_calculator]
+      tags: [task, rightsizing, cost-optimisation, level3]
+
+    # ── Level 3 Micro Agents ────────────────────────────────────────────────
+    - id: slo-compliance-checker
+      name: SLO Compliance Checker
+      level: 3
+      type: micro-agent
+      description: "Atomic unit: check whether current SLI values are within SLO targets"
+      domain: operations
+      capabilities: [slo-compliance-check, threshold-comparison]
+      tags: [micro, slo, compliance, level3]
+
+    - id: alert-severity-classifier
+      name: Alert Severity Classifier
+      level: 3
+      type: micro-agent
+      description: "Atomic unit: classify an alert into P1/P2/P3/P4 severity based on impact heuristics"
+      domain: operations
+      capabilities: [severity-classification, impact-assessment]
+      tags: [micro, alert, severity, level3]
+
+    - id: resource-tag-validator
+      name: Resource Tag Validator
+      level: 3
+      type: micro-agent
+      description: "Atomic unit: validate that a cloud resource has all mandatory cost allocation tags"
+      domain: operations
+      capabilities: [tag-validation, compliance-check, cost-allocation]
+      tags: [micro, tagging, validation, level3]
+
+    - id: runbook-step-executor
+      name: Runbook Step Executor
+      level: 3
+      type: micro-agent
+      description: "Atomic unit: execute a single runbook step and return success/failure status with output"
+      domain: operations
+      capabilities: [step-execution, output-capture, status-reporting]
+      tags: [micro, runbook, execution, level3]
+
+    - id: ticket-deduplicator
+      name: Ticket Deduplicator
+      level: 3
+      type: micro-agent
+      description: "Atomic unit: detect if an incoming support ticket is a duplicate of an existing open ticket"
+      domain: operations
+      capabilities: [duplicate-detection, similarity-matching]
+      tags: [micro, tickets, deduplication, level3]
+
+    - id: budget-threshold-monitor
+      name: Budget Threshold Monitor
+      level: 3
+      type: micro-agent
+      description: "Atomic unit: check if current spend has crossed budget thresholds and return alert level"
+      domain: operations
+      capabilities: [budget-threshold-check, alert-level-determination]
+      tags: [micro, budget, monitoring, level3]
+
+    - id: config-drift-reporter
+      name: Config Drift Reporter
+      level: 3
+      type: micro-agent
+      description: "Atomic unit: produce a structured report of which configuration attributes have drifted"
+      domain: operations
+      capabilities: [drift-reporting, attribute-comparison]
+      tags: [micro, drift, reporting, level3]
+
+    - id: change-window-validator
+      name: Change Window Validator
+      level: 3
+      type: micro-agent
+      description: "Atomic unit: validate whether a proposed change falls within an approved change window"
+      domain: operations
+      capabilities: [change-window-validation, schedule-checking]
+      tags: [micro, change-window, validation, level3]
+
+    - id: incident-severity-scorer
+      name: Incident Severity Scorer
+      level: 3
+      type: micro-agent
+      description: "Atomic unit: score an incident by SEV level based on customer impact, blast radius, and revenue risk"
+      domain: operations
+      capabilities: [incident-severity-scoring, impact-analysis, blast-radius-estimation]
+      tags: [micro, incident, severity, level3]
+
+    - id: utilisation-percentage-calculator
+      name: Utilisation Percentage Calculator
+      level: 3
+      type: micro-agent
+      description: "Atomic unit: calculate resource utilisation percentage from raw metrics data"
+      domain: operations
+      capabilities: [utilisation-calculation, metric-processing]
+      tags: [micro, utilisation, calculation, level3]
+
+  hierarchy:
+    level1: [operations-orchestrator, sre-orchestrator, infra-provisioning-orchestrator, support-orchestrator, change-management-orchestrator, cost-management-orchestrator, on-call-orchestrator]
+    level2: [sre-capability-agent, infra-capability-agent, support-capability-agent, change-management-capability-agent, cost-management-capability-agent]
+    level3: [slo-management-task-agent, error-budget-task-agent, toil-reduction-task-agent, iac-generation-task-agent, auto-scaling-task-agent, drift-detection-task-agent, ticket-triage-task-agent, runbook-execution-task-agent, kb-update-task-agent, alert-triage-task-agent, change-risk-assessment-task-agent, rollback-planning-task-agent, cost-anomaly-task-agent, rightsizing-task-agent, slo-compliance-checker, alert-severity-classifier, resource-tag-validator, runbook-step-executor, ticket-deduplicator, budget-threshold-monitor, config-drift-reporter, change-window-validator, incident-severity-scorer, utilisation-percentage-calculator]
+
+  capability_routing:
+    sre-management:
+      primary: sre-orchestrator
+      fallback: [sre-capability-agent]
+    incident-management:
+      primary: on-call-orchestrator
+      fallback: [incident-management-orchestrator]
+    infra-provisioning:
+      primary: infra-provisioning-orchestrator
+      fallback: [infra-capability-agent]
+    support:
+      primary: support-orchestrator
+      fallback: [support-capability-agent]
+    cost-management:
+      primary: cost-management-orchestrator
+      fallback: [cost-management-capability-agent]
+    change-management:
+      primary: change-management-orchestrator
+      fallback: [change-management-capability-agent]

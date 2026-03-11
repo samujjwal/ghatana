@@ -1,0 +1,379 @@
+apiVersion: ghatana.yappc/v2
+kind: DomainAgentCatalog
+
+metadata:
+  name: portfolio
+  version: 1.0.0
+  description: "Executive, portfolio, strategy and governance agents covering investment planning, OKR management, and strategic decision-making"
+  domain: portfolio
+  agentCount: 31
+
+spec:
+  agents:
+
+    # ── Level 1 Orchestrators ───────────────────────────────────────────────
+    - id: portfolio-orchestrator
+      name: Portfolio Orchestrator
+      level: 1
+      type: orchestrator
+      description: "Coordinates portfolio-level strategy, investment decisions, and initiative prioritization across all products"
+      domain: portfolio
+      capabilities: [portfolio-management, investment-planning, initiative-prioritization, strategic-alignment]
+      routing:
+        input_types: [portfolio_request, investment_decision, strategic_review]
+        output_types: [portfolio_plan, investment_recommendation, strategic_brief]
+      delegation:
+        can_delegate_to:
+          - product-strategy-orchestrator
+          - investment-planning-orchestrator
+          - governance-orchestrator
+          - portfolio-analysis-capability-agent
+        escalates_to: null
+      governance:
+        requires_approval: true
+        audit_trail: comprehensive
+      tags: [orchestrator, portfolio, strategic, level1]
+
+    - id: product-strategy-orchestrator
+      name: Product Strategy Orchestrator
+      level: 1
+      type: orchestrator
+      description: "Drives product strategy formulation, market positioning, and strategic initiative sequencing"
+      domain: portfolio
+      capabilities: [strategy-formulation, market-positioning, okr-management, roadmap-alignment]
+      routing:
+        input_types: [strategy_request, market_data, okr_definition]
+        output_types: [strategy_document, okr_set, roadmap_guidance]
+      delegation:
+        can_delegate_to:
+          - strategic-planning-capability-agent
+          - okr-definition-task-agent
+          - kpi-selection-task-agent
+        escalates_to: portfolio-orchestrator
+      governance:
+        requires_approval: true
+        audit_trail: comprehensive
+      tags: [orchestrator, strategy, okr, level1]
+
+    - id: investment-planning-orchestrator
+      name: Investment Planning Orchestrator
+      level: 1
+      type: orchestrator
+      description: "Coordinates investment analysis, budget allocation, and ROI modelling for product initiatives"
+      domain: portfolio
+      capabilities: [investment-analysis, budget-planning, roi-modelling, risk-assessment]
+      routing:
+        input_types: [investment_request, budget_envelope, roi_analysis]
+        output_types: [investment_plan, budget_allocation, risk_assessment]
+      delegation:
+        can_delegate_to:
+          - business-case-capability-agent
+          - budget-envelope-task-agent
+          - investment-risk-review-task-agent
+        escalates_to: portfolio-orchestrator
+      tags: [orchestrator, investment, budget, level1]
+
+    - id: governance-orchestrator
+      name: Governance Orchestrator
+      level: 1
+      type: orchestrator
+      description: "Enforces governance policies, approval chains, and compliance posture across all portfolio initiatives"
+      domain: portfolio
+      capabilities: [governance-enforcement, approval-management, compliance-monitoring, audit-coordination]
+      routing:
+        input_types: [governance_request, approval_request, compliance_check]
+        output_types: [governance_decision, approval_result, compliance_report]
+      delegation:
+        can_delegate_to:
+          - governance-review-capability-agent
+          - governance-checklist-unit
+        escalates_to: null
+      governance:
+        requires_approval: false
+        can_block: true
+        audit_trail: comprehensive
+      tags: [orchestrator, governance, compliance, level1]
+
+    # ── Level 2 Capability Agents ───────────────────────────────────────────
+    - id: portfolio-analysis-capability-agent
+      name: Portfolio Analysis Capability Agent
+      level: 2
+      type: domain-expert
+      description: "Analyses the full product portfolio for balance, risk exposure, and strategic fit"
+      domain: portfolio
+      capabilities: [portfolio-analysis, risk-scoring, strategic-fit-assessment, balance-checking]
+      tools: [portfolio_analyzer, risk_matrix, scoring_engine]
+      tags: [capability, portfolio, analysis, level2]
+
+    - id: strategic-planning-capability-agent
+      name: Strategic Planning Capability Agent
+      level: 2
+      type: domain-expert
+      description: "Supports long-range strategic planning, scenario analysis, and objective setting"
+      domain: portfolio
+      capabilities: [strategic-planning, scenario-analysis, objective-setting, theme-alignment]
+      memory:
+        semantic:
+          enabled: true
+          categories: [strategic-patterns, market-models, planning-frameworks]
+      tools: [strategy_modeller, scenario_builder, okr_framework]
+      tags: [capability, strategy, planning, level2]
+
+    - id: initiative-prioritization-capability-agent
+      name: Initiative Prioritization Capability Agent
+      level: 2
+      type: domain-expert
+      description: "Applies weighted scoring, dependency analysis, and resource constraints to rank initiatives"
+      domain: portfolio
+      capabilities: [initiative-ranking, weighted-scoring, dependency-analysis, resource-modelling]
+      tools: [scoring_engine, dependency_mapper, resource_planner]
+      tags: [capability, prioritization, scoring, level2]
+
+    - id: goal-management-capability-agent
+      name: Goal Management Capability Agent
+      level: 2
+      type: domain-expert
+      description: "Tracks OKRs, KPIs, and strategic objectives across the portfolio lifecycle"
+      domain: portfolio
+      capabilities: [okr-tracking, kpi-management, objective-cascading, progress-reporting]
+      memory:
+        episodic:
+          enabled: true
+          retention_days: 365
+          categories: [okr-history, kpi-trends, goal-outcomes]
+      tools: [okr_tracker, kpi_dashboard, progress_reporter]
+      tags: [capability, goals, okr, kpi, level2]
+
+    - id: business-case-capability-agent
+      name: Business Case Capability Agent
+      level: 2
+      type: domain-expert
+      description: "Constructs, validates, and scores business cases for investment decisions"
+      domain: portfolio
+      capabilities: [business-case-drafting, roi-calculation, benefit-mapping, risk-quantification]
+      tools: [business_case_builder, roi_calculator, benefit_mapper]
+      tags: [capability, business-case, roi, level2]
+
+    - id: governance-review-capability-agent
+      name: Governance Review Capability Agent
+      level: 2
+      type: domain-expert
+      description: "Conducts structured governance reviews, policy checks, and approval workflow management"
+      domain: portfolio
+      capabilities: [governance-review, policy-enforcement, approval-workflow, audit-evidence]
+      tools: [policy_checker, approval_workflow, audit_recorder]
+      tags: [capability, governance, review, level2]
+
+    # ── Level 3 Task Agents ─────────────────────────────────────────────────
+    - id: portfolio-scoring-task-agent
+      name: Portfolio Scoring Task Agent
+      level: 3
+      type: worker
+      description: "Applies multi-criteria scoring to rank portfolio items by strategic value and risk"
+      domain: portfolio
+      capabilities: [weighted-scoring, portfolio-ranking, criteria-evaluation]
+      tools: [scoring_engine, criteria_evaluator]
+      tags: [task, scoring, portfolio, level3]
+
+    - id: business-case-drafting-task-agent
+      name: Business Case Drafting Task Agent
+      level: 3
+      type: worker
+      description: "Drafts structured business cases with problem statement, solution options, costs, benefits, and risks"
+      domain: portfolio
+      capabilities: [business-case-drafting, cost-benefit-analysis, option-comparison]
+      tools: [business_case_template, cost_calculator]
+      tags: [task, business-case, drafting, level3]
+
+    - id: strategy-option-comparison-task-agent
+      name: Strategy Option Comparison Task Agent
+      level: 3
+      type: worker
+      description: "Compares strategic options across multiple dimensions using structured frameworks"
+      domain: portfolio
+      capabilities: [option-comparison, scenario-analysis, trade-off-assessment]
+      tools: [option_comparator, scenario_builder]
+      tags: [task, strategy, comparison, level3]
+
+    - id: budget-envelope-task-agent
+      name: Budget Envelope Task Agent
+      level: 3
+      type: worker
+      description: "Defines and validates budget envelopes for initiatives based on capacity and priorities"
+      domain: portfolio
+      capabilities: [budget-planning, capacity-modelling, allocation-optimisation]
+      tools: [budget_calculator, capacity_planner]
+      tags: [task, budget, planning, level3]
+
+    - id: initiative-sequencing-task-agent
+      name: Initiative Sequencing Task Agent
+      level: 3
+      type: worker
+      description: "Sequences initiatives considering dependencies, resource availability, and strategic timing"
+      domain: portfolio
+      capabilities: [initiative-sequencing, dependency-ordering, resource-levelling]
+      tools: [sequencer, dependency_resolver]
+      tags: [task, sequencing, planning, level3]
+
+    - id: executive-status-synthesis-task-agent
+      name: Executive Status Synthesis Task Agent
+      level: 3
+      type: worker
+      description: "Synthesises portfolio status into concise executive-level summaries and dashboards"
+      domain: portfolio
+      capabilities: [status-synthesis, executive-reporting, dashboard-generation]
+      tools: [report_builder, dashboard_generator]
+      tags: [task, reporting, synthesis, level3]
+
+    - id: investment-risk-review-task-agent
+      name: Investment Risk Review Task Agent
+      level: 3
+      type: worker
+      description: "Reviews investment proposals for risk exposure, mitigation strategies, and residual risk"
+      domain: portfolio
+      capabilities: [risk-review, risk-quantification, mitigation-planning]
+      tools: [risk_analyzer, mitigation_planner]
+      tags: [task, risk, investment, level3]
+
+    - id: okr-definition-task-agent
+      name: OKR Definition Task Agent
+      level: 3
+      type: worker
+      description: "Facilitates OKR definition workshops, validates objective measurability, and ensures key result clarity"
+      domain: portfolio
+      capabilities: [okr-definition, measurability-validation, objective-alignment]
+      tools: [okr_framework, measurability_checker]
+      tags: [task, okr, definition, level3]
+
+    - id: kpi-selection-task-agent
+      name: KPI Selection Task Agent
+      level: 3
+      type: worker
+      description: "Selects and validates KPIs that are actionable, measurable, and aligned to strategic objectives"
+      domain: portfolio
+      capabilities: [kpi-selection, metric-validation, indicator-alignment]
+      tools: [kpi_library, metric_validator]
+      tags: [task, kpi, metrics, level3]
+
+    - id: strategic-dependency-review-task-agent
+      name: Strategic Dependency Review Task Agent
+      level: 3
+      type: worker
+      description: "Identifies and documents cross-initiative strategic dependencies and resolution paths"
+      domain: portfolio
+      capabilities: [dependency-identification, cross-initiative-analysis, resolution-planning]
+      tools: [dependency_mapper, conflict_resolver]
+      tags: [task, dependency, strategy, level3]
+
+    # ── Level 3 Micro Agents ────────────────────────────────────────────────
+    - id: weighted-scoring-unit
+      name: Weighted Scoring Unit
+      level: 3
+      type: micro-agent
+      description: "Atomic unit: apply weighted criteria scoring to a single item"
+      domain: portfolio
+      capabilities: [weighted-scoring]
+      tags: [micro, scoring, atomic, level3]
+
+    - id: priority-ranker
+      name: Priority Ranker
+      level: 3
+      type: micro-agent
+      description: "Atomic unit: rank a list of items by composite priority score"
+      domain: portfolio
+      capabilities: [priority-ranking]
+      tags: [micro, ranking, atomic, level3]
+
+    - id: cost-benefit-calculator
+      name: Cost Benefit Calculator
+      level: 3
+      type: micro-agent
+      description: "Atomic unit: calculate cost-benefit ratio and NPV for an initiative"
+      domain: portfolio
+      capabilities: [cost-benefit-calculation, npv-calculation]
+      tags: [micro, finance, calculation, level3]
+
+    - id: scenario-comparator
+      name: Scenario Comparator
+      level: 3
+      type: micro-agent
+      description: "Atomic unit: compare two or more scenarios side-by-side on defined dimensions"
+      domain: portfolio
+      capabilities: [scenario-comparison]
+      tags: [micro, scenario, comparison, level3]
+
+    - id: budget-variance-checker
+      name: Budget Variance Checker
+      level: 3
+      type: micro-agent
+      description: "Atomic unit: check actual vs. planned budget and flag variances above threshold"
+      domain: portfolio
+      capabilities: [budget-variance-checking]
+      tags: [micro, budget, variance, level3]
+
+    - id: strategic-theme-tagger
+      name: Strategic Theme Tagger
+      level: 3
+      type: micro-agent
+      description: "Atomic unit: tag an initiative with relevant strategic themes from the portfolio taxonomy"
+      domain: portfolio
+      capabilities: [theme-tagging, taxonomy-classification]
+      tags: [micro, tagging, themes, level3]
+
+    - id: objective-normalizer
+      name: Objective Normalizer
+      level: 3
+      type: micro-agent
+      description: "Atomic unit: normalise objective statements to standard SMART format"
+      domain: portfolio
+      capabilities: [objective-normalisation, smart-validation]
+      tags: [micro, normalisation, objectives, level3]
+
+    - id: investment-threshold-checker
+      name: Investment Threshold Checker
+      level: 3
+      type: micro-agent
+      description: "Atomic unit: verify an investment request meets minimum justification thresholds"
+      domain: portfolio
+      capabilities: [threshold-checking, investment-validation]
+      tags: [micro, threshold, validation, level3]
+
+    - id: portfolio-conflict-detector
+      name: Portfolio Conflict Detector
+      level: 3
+      type: micro-agent
+      description: "Atomic unit: detect conflicting priorities or resource contention across portfolio items"
+      domain: portfolio
+      capabilities: [conflict-detection, contention-analysis]
+      tags: [micro, conflict, detection, level3]
+
+    - id: governance-checklist-unit
+      name: Governance Checklist Unit
+      level: 3
+      type: micro-agent
+      description: "Atomic unit: run a governance checklist against an initiative and return pass/fail/warn results"
+      domain: portfolio
+      capabilities: [checklist-execution, governance-validation]
+      tags: [micro, checklist, governance, level3]
+
+  hierarchy:
+    level1: [portfolio-orchestrator, product-strategy-orchestrator, investment-planning-orchestrator, governance-orchestrator]
+    level2: [portfolio-analysis-capability-agent, strategic-planning-capability-agent, initiative-prioritization-capability-agent, goal-management-capability-agent, business-case-capability-agent, governance-review-capability-agent]
+    level3: [portfolio-scoring-task-agent, business-case-drafting-task-agent, strategy-option-comparison-task-agent, budget-envelope-task-agent, initiative-sequencing-task-agent, executive-status-synthesis-task-agent, investment-risk-review-task-agent, okr-definition-task-agent, kpi-selection-task-agent, strategic-dependency-review-task-agent, weighted-scoring-unit, priority-ranker, cost-benefit-calculator, scenario-comparator, budget-variance-checker, strategic-theme-tagger, objective-normalizer, investment-threshold-checker, portfolio-conflict-detector, governance-checklist-unit]
+
+  capability_routing:
+    portfolio-management:
+      primary: portfolio-orchestrator
+      fallback: [portfolio-analysis-capability-agent]
+    investment-planning:
+      primary: investment-planning-orchestrator
+      fallback: [business-case-capability-agent]
+    okr-management:
+      primary: product-strategy-orchestrator
+      fallback: [goal-management-capability-agent]
+    governance-enforcement:
+      primary: governance-orchestrator
+      fallback: [governance-review-capability-agent]
+    weighted-scoring:
+      primary: initiative-prioritization-capability-agent
+      fallback: [weighted-scoring-unit]

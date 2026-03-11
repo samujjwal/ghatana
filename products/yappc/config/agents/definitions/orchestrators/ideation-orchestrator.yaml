@@ -1,0 +1,109 @@
+id: ideation-orchestrator
+name: Ideation Orchestrator
+version: 1.0.0
+description: "Orchestrates ideation sessions: structured brainstorming, solution generation, concept evaluation, and idea prioritisation"
+
+metadata:
+  level: 1
+  domain: ideation
+  tags: [orchestrator, ideation, brainstorming, concepts, level1]
+
+generator:
+  type: PIPELINE
+  steps:
+    - name: ideation_setup
+      type: LLM
+      provider: ANTHROPIC
+      model: claude-3-5-sonnet-20241022
+      temperature: 0.4
+      max_tokens: 2000
+      prompt: |
+        You are the Ideation Orchestrator. Set up an ideation session for:
+
+        Opportunity: {{input.opportunity}}
+        Desired outcome: {{input.desired_outcome}}
+        Constraints: {{context.constraints}}
+        Team capabilities: {{context.capabilities}}
+
+        Design the ideation approach:
+        1. Ideation mode (diverge, converge, or both)
+        2. Techniques to apply (crazy 8s, SCAMPER, analogical, first-principles)
+        3. Solution space boundaries
+        4. Evaluation criteria
+        5. Delegation plan
+
+        Output as JSON: {mode, techniques, boundaries, criteria, delegation_plan}
+    - name: solution_generation
+      type: LLM
+      provider: ANTHROPIC
+      model: claude-3-5-sonnet-20241022
+      temperature: 0.7
+      max_tokens: 5000
+      prompt: |
+        Generate diverse solution concepts for:
+        Opportunity: {{input.opportunity}}
+        JTBD: {{context.jtbd}}
+        Setup: {{ideation_setup}}
+
+        Generate 10-15 distinct solution concepts ranging from incremental to radical.
+        For each: {id, name, description, core_mechanism, differentiation, feasibility_guess}
+    - name: concept_evaluation
+      type: LLM
+      provider: ANTHROPIC
+      model: claude-3-5-sonnet-20241022
+      temperature: 0.2
+      max_tokens: 3000
+      prompt: |
+        Evaluate and shortlist the generated concepts:
+        Concepts: {{solution_generation}}
+        Criteria: {{ideation_setup.criteria}}
+        Desired outcomes: {{input.desired_outcome}}
+
+        Score each on: desirability, feasibility, viability, novelty.
+        Return top 3-5 concepts with scores and rationale.
+    - name: concept_refinement_dispatch
+      type: SERVICE_CALL
+      service: agent-dispatcher
+      endpoint: /dispatch
+      description: "Dispatch top concepts to concept-design-orchestrator for detailed framing"
+
+memory:
+  episodic:
+    enabled: true
+    retention_days: 730
+    categories: [ideation-sessions, concepts-generated, shortlisted-ideas]
+  semantic:
+    enabled: true
+    categories: [solution-patterns, innovation-analogies, design-precedents]
+  procedural:
+    enabled: true
+    categories: [ideation-techniques, evaluation-frameworks, concept-selection-criteria]
+
+tools: [idea_generator, concept_evaluator, brainstorm_facilitator, innovation_library]
+
+capabilities:
+  - ideation-facilitation
+  - solution-generation
+  - concept-evaluation
+  - idea-prioritisation
+
+routing:
+  input_types: [ideation_request, opportunity_brief, jtbd_map, problem_statement]
+  output_types: [concept_set, shortlisted_ideas, ideation_report, ranked_concepts]
+
+delegation:
+  can_delegate_to:
+    - concept-design-orchestrator
+    - product-framing-orchestrator
+    - requirements-orchestrator
+  escalates_to: portfolio-orchestrator
+
+governance:
+  requires_approval: false
+  can_block: false
+  audit_trail: standard
+
+performance:
+  expected_latency_ms: 15000
+  max_latency_ms: 90000
+  timeout_ms: 120000
