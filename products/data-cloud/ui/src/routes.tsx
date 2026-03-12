@@ -61,6 +61,23 @@ const NotFound = React.lazy(() =>
   import('./pages/NotFound').then((m) => ({ default: m.NotFound }))
 );
 
+// AEP Integration Pages — new in Track 4
+const EventExplorerPage = React.lazy(() =>
+  import('./pages/EventExplorerPage').then((m) => ({ default: m.EventExplorerPage }))
+);
+const MemoryPlaneViewerPage = React.lazy(() =>
+  import('./pages/MemoryPlaneViewerPage').then((m) => ({ default: m.MemoryPlaneViewerPage }))
+);
+const EntityBrowserPage = React.lazy(() =>
+  import('./pages/EntityBrowserPage').then((m) => ({ default: m.EntityBrowserPage }))
+);
+const DataFabricPage = React.lazy(() =>
+  import('./pages/DataFabricPage').then((m) => ({ default: m.DataFabricPage }))
+);
+const AgentPluginManagerPage = React.lazy(() =>
+  import('./pages/AgentPluginManagerPage').then((m) => ({ default: m.AgentPluginManagerPage }))
+);
+
 // Legacy pages (kept for backward compatibility)
 const CreateCollectionPage = React.lazy(() =>
   import('./pages/CreateCollectionPage').then((m) => ({ default: m.CreateCollectionPage }))
@@ -286,6 +303,33 @@ export const routes: RouteObject[] = [
       {
         path: 'alerts',
         element: withSuspense(AlertsPage),
+      },
+
+      // AEP Integration Pages
+      // Event Explorer — browse/tail events across four-tier fabric
+      {
+        path: 'events',
+        element: withSuspense(EventExplorerPage),
+      },
+      // Memory Plane Viewer — browse agent memory items by type
+      {
+        path: 'memory',
+        element: withSuspense(MemoryPlaneViewerPage),
+      },
+      // Entity Browser — inspects entities with schema
+      {
+        path: 'entities',
+        element: withSuspense(EntityBrowserPage),
+      },
+      // Data Fabric — four-tier topology canvas using @ghatana/flow-canvas
+      {
+        path: 'fabric',
+        element: withSuspense(DataFabricPage),
+      },
+      // Agent Registry — manage and monitor registered agents
+      {
+        path: 'agents',
+        element: withSuspense(AgentPluginManagerPage),
       },
 
       // Settings

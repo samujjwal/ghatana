@@ -15,13 +15,19 @@ dependencies {
 
     // Core Platform Libraries
     implementation(project(":platform:java:core"))
-    implementation(project(":platform:java:event-cloud"))  // Ph1c: EventCloud not transitively exported from core:agents
     implementation(project(":platform:java:runtime"))
     implementation(project(":platform:java:workflow"))
     implementation(project(":platform:java:observability"))
     implementation(project(":platform:java:ai-integration"))
     implementation(project(":platform:java:security"))
     implementation(project(":platform:java:governance"))
+    implementation(project(":platform:java:yaml-template"))    // YAPPC-Ph3: YamlTemplateEngine
+
+    // AEP platform (YAPPC-Ph4: OperatorCatalog, InMemoryOperatorCatalog, AepOperatorCatalogLoader)
+    implementation(project(":products:aep:platform"))
+
+    // Platform: Agent Memory — YAPPC-Ph7/8 (persistent MemoryPlane, MemoryStoreAdapter, Jdbc stores)
+    implementation(project(":platform:java:agent-memory"))
 
     // YAPPC lifecycle module (full monorepo path)
     implementation(project(":products:yappc:core:lifecycle"))

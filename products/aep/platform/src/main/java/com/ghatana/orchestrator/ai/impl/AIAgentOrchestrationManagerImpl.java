@@ -1,10 +1,14 @@
 package com.ghatana.orchestrator.ai.impl;
 
+import com.fasterxml.jackson.core.type.TypeReference;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.ghatana.aep.agent.AepContextBridge;
 import com.ghatana.aep.domain.agent.registry.AgentExecutionContext;
 import com.ghatana.agent.framework.api.AgentContext;
 import com.ghatana.agent.framework.runtime.AgentTurnPipeline;
 import com.ghatana.agent.registry.service.AgentRegistryService;
+import com.ghatana.datacloud.spi.EventLogStore;
+import com.ghatana.datacloud.spi.TenantContext;
 import com.ghatana.platform.domain.auth.TenantId;
 import com.ghatana.orchestrator.ai.AIAgentOrchestrationManager;
 import com.ghatana.orchestrator.core.Orchestrator;
@@ -12,10 +16,13 @@ import com.ghatana.orchestrator.executor.AgentStepRunner;
 import com.ghatana.orchestrator.queue.ExecutionQueue;
 import com.ghatana.platform.observability.MetricsCollector;
 import com.ghatana.platform.domain.domain.event.Event;
+import com.ghatana.platform.types.identity.Offset;
 import io.activej.promise.Promise;
 import io.activej.promise.Promises;
 import lombok.extern.slf4j.Slf4j;
 
+import java.nio.ByteBuffer;
+import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
@@ -35,14 +42,37 @@ import java.util.concurrent.atomic.AtomicLong;
  * are executed sequentially, fanning out each step across all current input events
  * in parallel via {@link Promises#toList}.
  *
+ * <h2>Event Sourcing (YAPPC-Ph1e)</h2>
+ * <p>All state mutations ({@code registerAgent}, {@code chainAgents}, execution
+ * start/complete/fail/cancel) are durably appended to the {@link EventLogStore}
+ * as typed, JSON-payload events. On startup call {@link #rebuildFromEventLog()}
+ * to replay the log and reconstruct in-memory state.
+ *
+ * <p>The {@link EventLogStore} is optional: if {@code null}, event sourcing is
+ * silently skipped and the implementation behaves as in-memory only.
+ *
  * @doc.type class
  * @doc.purpose AI agent orchestration manager with AgentTurnPipeline lifecycle wiring
  * @doc.layer product
- * @doc.pattern Service, Chain-of-Responsibility
+ * @doc.pattern Service, Chain-of-Responsibility, EventSourced
  * @doc.gaa.lifecycle perceive|reason|act|capture|reflect
+ * @doc.gaa.memory episodic
  */
 @Slf4j
 public class AIAgentOrchestrationManagerImpl implements AIAgentOrchestrationManager {
+
+    // ==================== Event-type constants for the event log ====================
+
+    private static final String EVT_AGENT_REGISTERED      = "ORCHESTRATION_AGENT_REGISTERED";
+    private static final String EVT_CHAIN_CREATED          = "ORCHESTRATION_CHAIN_CREATED";
+    private static final String EVT_EXECUTION_STARTED      = "ORCHESTRATION_EXECUTION_STARTED";
+    private static final String EVT_EXECUTION_COMPLETED    = "ORCHESTRATION_EXECUTION_COMPLETED";
+    private static final String EVT_EXECUTION_FAILED       = "ORCHESTRATION_EXECUTION_FAILED";
+    private static final String EVT_EXECUTION_CANCELLED    = "ORCHESTRATION_EXECUTION_CANCELLED";
+
+    private static final ObjectMapper MAPPER = new ObjectMapper();
+
+    // ==================== Dependencies ====================
 
     private final AgentRegistryService agentRegistryService;
     private final Orchestrator orchestrator;
@@ -52,9 +82,21 @@ public class AIAgentOrchestrationManagerImpl implements AIAgentOrchestrationMana
     private final ExecutorService executorService;
     private final AepContextBridge contextBridge;
 
+    /**
+     * Optional: when non-null, all state mutations are appended as events for
+     * durable event-sourcing (YAPPC-Ph1e).
+     */
+    private final EventLogStore eventLogStore;
+
+    /**
+     * Tenant context used when writing and reading orchestration events.
+     * Defaults to the {@code "aep-system"} system tenant.
+     */
+    private final TenantContext systemTenant;
+
     private final ExecutorService blockingExecutor = Executors.newFixedThreadPool(4);
 
-    // AI orchestration state management
+    // AI orchestration state management (in-memory, rebuilt from event log on startup)
     private final Map<String, AgentDefinition> agentDefinitions = new ConcurrentHashMap<>();
     private final Map<String, List<String>> agentChains = new ConcurrentHashMap<>();
     private final Map<String, AgentExecutionStatus> executionStatuses = new ConcurrentHashMap<>();
@@ -62,6 +104,53 @@ public class AIAgentOrchestrationManagerImpl implements AIAgentOrchestrationMana
     private final Map<String, AgentTurnPipeline<Event, List<Event>>> pipelineCache = new ConcurrentHashMap<>();
     private final AtomicLong executionIdCounter = new AtomicLong(0);
 
+    // ==================== Constructors ====================
+
+    /**
+     * Full constructor with event-sourcing support.
+     *
+     * @param agentRegistryService agent registry service
+     * @param orchestrator         core orchestrator
+     * @param executionQueue       execution queue
+     * @param agentStepRunner      step runner
+     * @param metrics              metrics collector
+     * @param executorService      async executor
+     * @param contextBridge        AEP context bridge
+     * @param eventLogStore        event log store for durable state sourcing (may be {@code null})
+     * @param systemTenantId       tenant id for orchestration events (default: {@code "aep-system"})
+     */
+    public AIAgentOrchestrationManagerImpl(
+            AgentRegistryService agentRegistryService,
+            Orchestrator orchestrator,
+            ExecutionQueue executionQueue,
+            AgentStepRunner agentStepRunner,
+            MetricsCollector metrics,
+            ExecutorService executorService,
+            AepContextBridge contextBridge,
+            EventLogStore eventLogStore,
+            String systemTenantId) {
+        this.agentRegistryService = agentRegistryService;
+        this.orchestrator = orchestrator;
+        this.executionQueue = executionQueue;
+        this.agentStepRunner = agentStepRunner;
+        this.metrics = metrics;
+        this.executorService = executorService;
+        this.contextBridge = contextBridge;
+        this.eventLogStore = eventLogStore;
+        this.systemTenant = TenantContext.of(systemTenantId != null ? systemTenantId : "aep-system");
+    }
+
+    /**
+     * Backwards-compatible constructor without event sourcing.
+     *
+     * @param agentRegistryService agent registry service
+     * @param orchestrator         core orchestrator
+     * @param executionQueue       execution queue
+     * @param agentStepRunner      step runner
+     * @param metrics              metrics collector
+     * @param executorService      async executor
+     * @param contextBridge        AEP context bridge
+     */
     public AIAgentOrchestrationManagerImpl(
             AgentRegistryService agentRegistryService,
             Orchestrator orchestrator,
@@ -70,13 +159,8 @@ public class AIAgentOrchestrationManagerImpl implements AIAgentOrchestrationMana
             MetricsCollector metrics,
             ExecutorService executorService,
             AepContextBridge contextBridge) {
-        this.agentRegistryService = agentRegistryService;
-        this.orchestrator = orchestrator;
-        this.executionQueue = executionQueue;
-        this.agentStepRunner = agentStepRunner;
-        this.metrics = metrics;
-        this.executorService = executorService;
-        this.contextBridge = contextBridge;
+        this(agentRegistryService, orchestrator, executionQueue, agentStepRunner,
+             metrics, executorService, contextBridge, null, null);
     }
     
     // ==================== AGENT REGISTRATION ====================
@@ -102,13 +186,24 @@ public class AIAgentOrchestrationManagerImpl implements AIAgentOrchestrationMana
                 agentDefinitions.put(agentDef.id(), agentDef);
                 pipelineCache.put(agentDef.id(), buildPipeline(agentDef.id()));
 
+                // Event sourcing: append durable state event
+                String agentTypeVal = (agentDef.metadata() != null)
+                        ? agentDef.metadata().getOrDefault("agentType", "unknown")
+                        : "unknown";
+                appendStateEvent(EVT_AGENT_REGISTERED, Map.of(
+                        "agentId", agentDef.id(),
+                        "agentName", agentDef.name() != null ? agentDef.name() : "",
+                        "agentType", agentTypeVal,
+                        "timestamp", System.currentTimeMillis()
+                ));
+
                 log.info("Registered AI agent for orchestration with pipeline: {}", agentDef.id());
                 metrics.incrementCounter("ai.agent.registered");
 
                 return agentDef.id();
                 
             } catch (Exception e) {
-                System.err.println("Failed to register AI agent: " + agentDef.id() + ", error: " + e.getMessage());
+                log.error("Failed to register AI agent: {}, error: {}", agentDef.id(), e.getMessage(), e);
                 metrics.incrementCounter("ai.agent.registration.failed");
                 throw new RuntimeException("Failed to register AI agent", e);
             }
@@ -139,7 +234,15 @@ public class AIAgentOrchestrationManagerImpl implements AIAgentOrchestrationMana
                 
                 // Store the chain
                 agentChains.put(chainId, agentIds);
-                
+
+                // Event sourcing: append durable chain-created event
+                appendStateEvent(EVT_CHAIN_CREATED, Map.of(
+                        "chainId", chainId,
+                        "chainName", chainName,
+                        "agentIds", agentIds,
+                        "timestamp", System.currentTimeMillis()
+                ));
+
                 log.info("Created AI agent chain '{}' with {} agents: {}", chainName, agentIds.size(), agentIds);
                 metrics.incrementCounter("ai.chain.created");
 
@@ -184,7 +287,15 @@ public class AIAgentOrchestrationManagerImpl implements AIAgentOrchestrationMana
             Map.of("inputEventType", inputEvent.getType())
         );
         executionStatuses.put(executionId, status);
-        
+
+        // Event sourcing: append execution-started event (fire-and-forget; never blocks caller)
+        appendStateEvent(EVT_EXECUTION_STARTED, Map.of(
+                "executionId", executionId,
+                "chainId", chainId,
+                "inputEventType", inputEvent.getType(),
+                "timestamp", System.currentTimeMillis()
+        ));
+
         return executeChainInternal(executionId, chainId, agentIds, Arrays.asList(inputEvent), context, 0);
     }
     
@@ -202,6 +313,12 @@ public class AIAgentOrchestrationManagerImpl implements AIAgentOrchestrationMana
         if (stepIndex >= agentIds.size()) {
             updateExecutionStatus(executionId, ExecutionState.COMPLETED, 100.0, null);
             metrics.incrementCounter("ai.chain.completed");
+            appendStateEvent(EVT_EXECUTION_COMPLETED, Map.of(
+                    "executionId", executionId,
+                    "chainId", chainId,
+                    "outputEventCount", currentEvents.size(),
+                    "timestamp", System.currentTimeMillis()
+            ));
             return Promise.of(currentEvents);
         }
 
@@ -238,6 +355,14 @@ public class AIAgentOrchestrationManagerImpl implements AIAgentOrchestrationMana
                 .mapException(e -> {
                     updateExecutionStatus(executionId, ExecutionState.FAILED, progress, e.getMessage());
                     metrics.incrementCounter("ai.chain.failed");
+                    appendStateEvent(EVT_EXECUTION_FAILED, Map.of(
+                            "executionId", executionId,
+                            "chainId", chainId,
+                            "stepIndex", stepIndex,
+                            "agentId", currentAgentId,
+                            "error", e.getMessage() != null ? e.getMessage() : "unknown",
+                            "timestamp", System.currentTimeMillis()
+                    ));
                     log.error("Agent chain {} failed at step {} (agent {})", chainId, stepIndex, currentAgentId, e);
                     return new RuntimeException("Chain execution failed at step " + stepIndex + " (agent " + currentAgentId + ")", e);
                 });
@@ -277,6 +402,11 @@ public class AIAgentOrchestrationManagerImpl implements AIAgentOrchestrationMana
             
             if (status.state() == ExecutionState.RUNNING || status.state() == ExecutionState.PENDING) {
                 updateExecutionStatus(executionId, ExecutionState.CANCELLED, status.progress(), "Cancelled by user");
+                appendStateEvent(EVT_EXECUTION_CANCELLED, Map.of(
+                        "executionId", executionId,
+                        "chainId", status.agentOrChainId(),
+                        "timestamp", System.currentTimeMillis()
+                ));
                 log.info("Cancelled execution: {}", executionId);
                 metrics.incrementCounter("ai.execution.cancelled");
                 return true;
@@ -411,5 +541,186 @@ public class AIAgentOrchestrationManagerImpl implements AIAgentOrchestrationMana
                state == ExecutionState.FAILED ||
                state == ExecutionState.CANCELLED ||
                state == ExecutionState.TIMED_OUT;
+    }
+
+    // ==================== EVENT SOURCING SUPPORT (YAPPC-Ph1e) ====================
+
+    /**
+     * Appends an orchestration state-mutation event to the {@link EventLogStore}.
+     *
+     * <p>This method is fire-and-forget: failures are logged as warnings and never
+     * propagate to the caller. If {@code eventLogStore} is {@code null} (in-memory mode),
+     * this method is a no-op.
+     *
+     * @param eventType the event type string (one of the {@code EVT_*} constants)
+     * @param payload   key-value data describing the mutation
+     *
+     * @doc.gaa.memory episodic
+     * @doc.gaa.lifecycle capture
+     */
+    private void appendStateEvent(String eventType, Map<String, Object> payload) {
+        if (eventLogStore == null) {
+            return; // no-op when running without event log (dev/test mode)
+        }
+        try {
+            byte[] payloadBytes = MAPPER.writeValueAsBytes(payload);
+            EventLogStore.EventEntry entry = EventLogStore.EventEntry.builder()
+                    .eventId(UUID.randomUUID())
+                    .eventType(eventType)
+                    .eventVersion("1.0.0")
+                    .payload(payloadBytes)
+                    .contentType("application/json")
+                    .build();
+            // Fire-and-forget: we don't block the caller waiting for the append Promise.
+            // The Promise is started but its result is not observed here.
+            eventLogStore.append(systemTenant, entry)
+                    .whenException(e -> log.warn("[EventSource] failed to append {} event: {}", eventType, e.getMessage()));
+        } catch (Exception e) {
+            log.warn("[EventSource] failed to serialize {} event payload: {}", eventType, e.getMessage());
+        }
+    }
+
+    /**
+     * Replays all orchestration events from the event log to rebuild in-memory state.
+     *
+     * <p>Call this during application startup <em>before</em> handling any requests.
+     * The method reads events in batches from offset 0, processes recognized event types
+     * to restore {@code agentDefinitions}, {@code agentChains}, and
+     * {@code executionStatuses}, and updates the execution-ID counter to avoid
+     * ID collisions after restart.
+     *
+     * <p>If {@code eventLogStore} is {@code null}, this method returns immediately.
+     *
+     * @return a {@link Promise} that completes when the replay is done
+     *
+     * @doc.gaa.memory episodic
+     * @doc.gaa.lifecycle perceive
+     */
+    public Promise<Void> rebuildFromEventLog() {
+        if (eventLogStore == null) {
+            log.debug("[EventSource] rebuildFromEventLog skipped — no event store configured");
+            return Promise.complete();
+        }
+        return Promise.ofBlocking(blockingExecutor, () -> {
+            log.info("[EventSource] Rebuilding orchestration state from event log (tenant={})", systemTenant.tenantId());
+            int batchSize = 500;
+            long offset = 0;
+            int totalReplayed = 0;
+            long maxExecutionId = 0;
+
+            while (true) {
+                // Safe: runs on blocking executor, never on event loop
+                List<EventLogStore.EventEntry> batch = eventLogStore
+                        .read(systemTenant, Offset.of(offset), batchSize)
+                        .getResult();
+
+                if (batch == null || batch.isEmpty()) break;
+
+                for (EventLogStore.EventEntry entry : batch) {
+                    try {
+                        replayEvent(entry);
+                        totalReplayed++;
+                        // Track highest execution counter to avoid ID collisions post-restart
+                        if (entry.eventType().equals(EVT_EXECUTION_STARTED)) {
+                            Map<String, Object> data = MAPPER.readValue(
+                                    toBytes(entry.payload()), new TypeReference<Map<String, Object>>() {});
+                            String execId = (String) data.get("executionId");
+                            if (execId != null && execId.startsWith("exec_")) {
+                                try {
+                                    long counter = Long.parseLong(execId.substring(5));
+                                    if (counter > maxExecutionId) maxExecutionId = counter;
+                                } catch (NumberFormatException ignored) { /* non-numeric suffix */ }
+                            }
+                        }
+                    } catch (Exception e) {
+                        log.warn("[EventSource] failed to replay event id={} type={}: {}",
+                                entry.eventId(), entry.eventType(), e.getMessage());
+                    }
+                }
+
+                offset += batch.size();
+                if (batch.size() < batchSize) break; // last page
+            }
+
+            if (maxExecutionId > 0) {
+                executionIdCounter.set(maxExecutionId);
+            }
+            log.info("[EventSource] Rebuilt state: {} agents, {} chains, {} executions replayed (total events={})",
+                    agentDefinitions.size(), agentChains.size(), executionStatuses.size(), totalReplayed);
+            return null;
+        });
+    }
+
+    /**
+     * Applies a single event log entry to the in-memory state.
+     *
+     * @param entry the event log entry to replay
+     * @throws Exception if the payload cannot be deserialised
+     */
+    @SuppressWarnings("unchecked")
+    private void replayEvent(EventLogStore.EventEntry entry) throws Exception {
+        byte[] payloadBytes = toBytes(entry.payload());
+        Map<String, Object> data = MAPPER.readValue(payloadBytes, new TypeReference<Map<String, Object>>() {});
+
+        switch (entry.eventType()) {
+            case EVT_AGENT_REGISTERED -> {
+                String agentId = (String) data.get("agentId");
+                if (agentId != null && !agentDefinitions.containsKey(agentId)) {
+                    // Restore minimal AgentDefinition from the event; pipeline built lazily
+                    String agentName = (String) data.getOrDefault("agentName", agentId);
+                    String agentType = (String) data.getOrDefault("agentType", "unknown");
+                    AgentDefinition restored = new AgentDefinition(agentId, agentName, null, null,
+                            null, null, null, null, Map.of("agentType", agentType));
+                    agentDefinitions.put(agentId, restored);
+                }
+            }
+            case EVT_CHAIN_CREATED -> {
+                String chainId = (String) data.get("chainId");
+                List<String> agentIds = (List<String>) data.get("agentIds");
+                if (chainId != null && agentIds != null && !agentChains.containsKey(chainId)) {
+                    agentChains.put(chainId, new ArrayList<>(agentIds));
+                }
+            }
+            case EVT_EXECUTION_STARTED -> {
+                String executionId = (String) data.get("executionId");
+                String chainId = (String) data.get("chainId");
+                if (executionId != null && !executionStatuses.containsKey(executionId)) {
+                    long ts = ((Number) data.getOrDefault("timestamp", System.currentTimeMillis())).longValue();
+                    executionStatuses.put(executionId, new AgentExecutionStatus(
+                            executionId, chainId, ExecutionState.PENDING,
+                            0.0, ts, null, null, Map.of()));
+                }
+            }
+            case EVT_EXECUTION_COMPLETED -> {
+                String executionId = (String) data.get("executionId");
+                if (executionId != null) {
+                    updateExecutionStatus(executionId, ExecutionState.COMPLETED, 100.0, null);
+                }
+            }
+            case EVT_EXECUTION_FAILED -> {
+                String executionId = (String) data.get("executionId");
+                String error = (String) data.getOrDefault("error", "replayed failure");
+                if (executionId != null) {
+                    updateExecutionStatus(executionId, ExecutionState.FAILED, 0.0, error);
+                }
+            }
+            case EVT_EXECUTION_CANCELLED -> {
+                String executionId = (String) data.get("executionId");
+                if (executionId != null) {
+                    updateExecutionStatus(executionId, ExecutionState.CANCELLED, 0.0, "Replayed: cancelled by user");
+                }
+            }
+            default -> {
+                // Ignore unrecognised event types — forward-compatible with future events
+            }
+        }
+    }
+
+    /** Extracts a byte array from a {@link java.nio.ByteBuffer}. */
+    private static byte[] toBytes(java.nio.ByteBuffer buf) {
+        if (buf == null) return new byte[0];
+        byte[] bytes = new byte[buf.remaining()];
+        buf.duplicate().get(bytes);
+        return bytes;
     }
 }

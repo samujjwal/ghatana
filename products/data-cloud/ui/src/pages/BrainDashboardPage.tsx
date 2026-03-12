@@ -15,29 +15,13 @@ import { SpotlightRing } from '../components/brain/SpotlightRing';
 import { AutonomyTimeline } from '../components/brain/AutonomyTimeline';
 import { DashboardKPI } from '../components/cards/DashboardCard';
 import { useQuery } from '@tanstack/react-query';
-
-interface BrainStats {
-  spotlightItemsCount: number;
-  autonomyActionsToday: number;
-  averageConfidence: number;
-  activeSubsystems: number;
-}
-
-const fetchBrainStats = async (): Promise<BrainStats> => {
-  // TODO: Implement actual API call
-  return {
-    spotlightItemsCount: 3,
-    autonomyActionsToday: 24,
-    averageConfidence: 0.87,
-    activeSubsystems: 8,
-  };
-};
+import { brainService, type BrainStats } from '../api/brain.service';
 
 export function BrainDashboardPage() {
-  const { data: stats } = useQuery({
+  const { data: stats } = useQuery<BrainStats>({
     queryKey: ['brain-stats'],
-    queryFn: fetchBrainStats,
-    refetchInterval: 60000, // Refresh every minute
+    queryFn: () => brainService.getBrainStats(),
+    refetchInterval: 60_000,
   });
 
   return (

@@ -1,0 +1,23 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "AgentResult",
+  "description": "Emitted by a YAPPC agent upon completion of its assigned stage task.",
+  "type": "object",
+  "required": ["eventId", "eventType", "timestamp", "agentId", "status"],
+  "additionalProperties": true,
+  "properties": {
+    "eventId":       { "type": "string", "minLength": 1 },
+    "eventType":     { "type": "string", "const": "agent.result" },
+    "timestamp":     { "type": "number", "minimum": 0 },
+    "agentId":       { "type": "string", "minLength": 1 },
+    "status": {
+      "type": "string",
+      "enum": ["success", "failure", "partial_success", "error", "timeout", "cancelled"]
+    },
+    "executionTime": { "type": "integer", "minimum": 0 },
+    "outputData":    { "type": "object" },
+    "context":       { "type": "object" },
+    "metrics":       { "type": "object" },
+    "errorMessage":  { "type": "string" }
+  }
+}

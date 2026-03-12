@@ -7,6 +7,15 @@ package com.ghatana.aep.di;
 import com.ghatana.aep.agent.AepContextBridge;
 import com.ghatana.aep.config.EnvConfig;
 import com.ghatana.agent.framework.memory.MemoryStore;
+import com.ghatana.agent.memory.model.working.WorkingMemoryConfig;
+import com.ghatana.agent.memory.persistence.JdbcMemoryItemRepository;
+import com.ghatana.agent.memory.persistence.JdbcTaskStateRepository;
+import com.ghatana.agent.memory.persistence.MemoryItemRepository;
+import com.ghatana.agent.memory.persistence.MemoryStoreAdapter;
+import com.ghatana.agent.memory.persistence.PersistentMemoryPlane;
+import com.ghatana.agent.memory.store.MemoryPlane;
+import com.ghatana.agent.memory.store.taskstate.JdbcTaskStateStore;
+import com.ghatana.agent.memory.store.taskstate.TaskStateStore;
 import com.ghatana.core.database.config.JpaConfig;
 import com.ghatana.statestore.checkpoint.CheckpointStorage;
 import com.ghatana.statestore.checkpoint.PostgresCheckpointStorage;
@@ -25,10 +34,15 @@ import javax.sql.DataSource;
  *       configured from {@code AEP_DB_*} environment variables</li>
  *   <li>{@link CheckpointStorage} → {@link PostgresCheckpointStorage} — durable
  *       agent-lifecycle checkpoint store backed by the {@code aep_checkpoints} table</li>
+ *   <li>{@link MemoryItemRepository} → {@link JdbcMemoryItemRepository} — JDBC-backed
+ *       store for episodic, semantic, and procedural memory items</li>
+ *   <li>{@link TaskStateStore} → {@link JdbcTaskStateStore} — task-state persistence</li>
+ *   <li>{@link WorkingMemoryConfig} — bounded working-memory configuration (1000 items / 10 MB)</li>
+ *   <li>{@link MemoryPlane} → {@link PersistentMemoryPlane} — multi-tier agent memory plane</li>
+ *   <li>{@link MemoryStore} → {@link MemoryStoreAdapter} — bridge from MemoryPlane to the
+ *       agent-framework MemoryStore SPI</li>
  *   <li>{@link AepContextBridge} — translates AEP {@code AgentExecutionContext} into the
  *       richer {@link com.ghatana.agent.framework.api.AgentContext} expected by BaseAgent</li>
- *   <li>{@link MemoryStore} — defaults to {@code MemoryStore.noOp()} until Track 0D
- *       ({@code PersistentMemoryPlane}) is wired</li>
  * </ul>
  *
  * <h2>Required Environment Variables</h2>
@@ -49,16 +63,18 @@ import javax.sql.DataSource;
  * );
  * AepContextBridge bridge = injector.getInstance(AepContextBridge.class);
  * CheckpointStorage checkpoints = injector.getInstance(CheckpointStorage.class);
+ * MemoryStore memory = injector.getInstance(MemoryStore.class);
  * }</pre>
  *
  * @doc.type class
- * @doc.purpose ActiveJ DI module for GAA agent lifecycle components (DataSource, CheckpointStorage, AepContextBridge)
+ * @doc.purpose ActiveJ DI module for GAA agent lifecycle components (DataSource, CheckpointStorage, MemoryStore)
  * @doc.layer product
  * @doc.pattern Module
  * @doc.gaa.lifecycle perceive|reason|act|capture|reflect
  * @see AepContextBridge
  * @see PostgresCheckpointStorage
- * @see CheckpointStorage
+ * @see PersistentMemoryPlane
+ * @see MemoryStoreAdapter
  */
 public class AepAgentModule extends AbstractModule {
 
@@ -102,17 +118,76 @@ public class AepAgentModule extends AbstractModule {
     }
 
     /**
-     * Provides the default {@link MemoryStore} for AEP agents.
+     * Provides the {@link MemoryItemRepository} implementation bound to
+     * {@link JdbcMemoryItemRepository}.
      *
-     * <p>Returns {@link MemoryStore#noOp()} as a placeholder.  Track 0D
-     * ({@code PersistentMemoryPlane}) will replace this binding with a
-     * fully-persistent implementation backed by the agent memory PostgreSQL tables.
+     * <p>Backed by the {@code agent_memory_items} table. Uses the shared AEP data source.
      *
-     * @return no-op memory store
+     * @param dataSource the AEP data source
+     * @return JDBC-backed memory item repository
      */
     @Provides
-    MemoryStore memoryStore() {
-        return MemoryStore.noOp();
+    MemoryItemRepository memoryItemRepository(DataSource dataSource) {
+        return new JdbcMemoryItemRepository(dataSource);
+    }
+
+    /**
+     * Provides the {@link TaskStateStore} implementation bound to {@link JdbcTaskStateStore}.
+     *
+     * <p>Initialized without an EventCloud – event sourcing for task state is not required
+     * in the AEP standalone deployment. Enable by passing a DataCloudClient when available.
+     *
+     * @return JDBC-backed task state store
+     */
+    @Provides
+    TaskStateStore taskStateStore() {
+        return new JdbcTaskStateStore(new JdbcTaskStateRepository());
+    }
+
+    /**
+     * Provides the {@link WorkingMemoryConfig} for bounded in-process working memory.
+     *
+     * <p>Defaults: 1000 entries, 10 MB, LRU eviction.
+     *
+     * @return working memory configuration
+     */
+    @Provides
+    WorkingMemoryConfig workingMemoryConfig() {
+        return WorkingMemoryConfig.builder().build();
+    }
+
+    /**
+     * Provides the {@link MemoryPlane} implementation bound to {@link PersistentMemoryPlane}.
+     *
+     * <p>Wires together {@link MemoryItemRepository}, {@link TaskStateStore}, and
+     * {@link WorkingMemoryConfig}. EventCloud archival is omitted here — the AEP
+     * event pipeline handles durability at the infrastructure level.
+     *
+     * @param itemRepository     JDBC-backed item store
+     * @param taskStateStore     task state persistence
+     * @param workingMemoryConfig bounded-memory configuration
+     * @return persistent multi-tier memory plane
+     */
+    @Provides
+    MemoryPlane memoryPlane(MemoryItemRepository itemRepository,
+                            TaskStateStore taskStateStore,
+                            WorkingMemoryConfig workingMemoryConfig) {
+        return new PersistentMemoryPlane(itemRepository, taskStateStore, workingMemoryConfig);
+    }
+
+    /**
+     * Provides the {@link MemoryStore} bound to {@link MemoryStoreAdapter}.
+     *
+     * <p>Adapts the {@link MemoryPlane} to the {@link MemoryStore} SPI expected by the
+     * GAA agent-framework, enabling agents to read and write episodic, semantic, and
+     * procedural memory across turns.
+     *
+     * @param memoryPlane the persistent memory plane
+     * @return memory store adapter
+     */
+    @Provides
+    MemoryStore memoryStore(MemoryPlane memoryPlane) {
+        return new MemoryStoreAdapter(memoryPlane);
     }
 
     /**

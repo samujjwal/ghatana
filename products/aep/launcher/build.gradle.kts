@@ -12,7 +12,13 @@ dependencies {
     implementation(project(":platform:java:observability"))
     implementation(project(":platform:java:config"))
     implementation(project(":platform:java:http"))
+    implementation(project(":platform:java:governance"))
     
+    // gRPC transport (for AepGrpcServer)
+    implementation(libs.grpc.netty.shaded)
+    implementation(libs.grpc.stub)
+    implementation(libs.grpc.protobuf)
+
     // ActiveJ framework
     implementation(libs.activej.launcher)
     implementation(libs.activej.http)
@@ -34,6 +40,7 @@ dependencies {
     // Testing
     testImplementation(libs.junit.jupiter)
     testImplementation(libs.mockito.core)
+    testImplementation(libs.assertj.core)
 }
 
 tasks.named<Test>("test") {

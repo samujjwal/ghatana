@@ -23,6 +23,8 @@ import com.ghatana.yappc.services.observe.ObserveService;
 import com.ghatana.yappc.services.evolve.EvolutionService;
 import com.ghatana.yappc.services.learn.LearningService;
 import com.ghatana.yappc.services.validate.ValidationService;
+import com.ghatana.yappc.services.lifecycle.workflow.LifecycleWorkflowService;
+import com.ghatana.platform.workflow.engine.DurableWorkflowEngine;
 import io.activej.http.AsyncServlet;
 import io.activej.http.HttpResponse;
 import io.activej.http.HttpServer;
@@ -159,6 +161,8 @@ public class YappcLifecycleService extends UnifiedApplicationLauncher {
                 injector.getInstance(PrometheusMeterRegistry.class);
         HumanApprovalService humanApprovalService =
                 injector.getInstance(HumanApprovalService.class);
+        LifecycleWorkflowService workflowService =
+                injector.getInstance(LifecycleWorkflowService.class);
 
         // ── Auth filter (Security 4.3) ────────────────────────────────────
         // API keys are comma-separated in YAPPC_API_KEYS env var.
@@ -171,7 +175,7 @@ public class YappcLifecycleService extends UnifiedApplicationLauncher {
         AsyncServlet apiServlet = buildApiServlet(eventloop,
                 intentController, shapeController, generationController,
                 validationController, advancePhaseUseCase, aepPublisher,
-                humanApprovalService);
+                humanApprovalService, workflowService);
         AsyncServlet securedApiServlet = authFilter.secure(apiServlet);
 
         // ── Outer router: /health public, everything else auth-gated ─────
@@ -245,7 +249,8 @@ public class YappcLifecycleService extends UnifiedApplicationLauncher {
             ValidationApiController validationController,
             AdvancePhaseUseCase advancePhaseUseCase,
             AepEventPublisher aepPublisher,
-            HumanApprovalService humanApprovalService) {
+            HumanApprovalService humanApprovalService,
+            LifecycleWorkflowService workflowService) {
 
         ObjectMapper objectMapper = new ObjectMapper();
 
@@ -414,7 +419,96 @@ public class YappcLifecycleService extends UnifiedApplicationLauncher {
                                         + "\"observe\",\"evolve\",\"learn\",\"validate\"]}")
                                 .toPromise())
 
+                // ── Canonical Workflow Routes (YAPPC-Ph9) ────────────────────
+                // GET  /api/v1/workflows/templates        — list registered template IDs
+                // POST /api/v1/workflows/:templateId/start — start a new workflow run
+                // GET  /api/v1/workflows/:runId/status    — get run status
+                .with(GET, "/api/v1/workflows/templates", request -> {
+                    try {
+                        java.util.Set<String> templates = workflowService.registeredTemplates();
+                        String json = objectMapper.writeValueAsString(
+                                java.util.Map.of("templates", templates, "count", templates.size()));
+                        return HttpResponse.ok200().withJson(json).toPromise();
+                    } catch (Exception e) {
+                        logger.warn("Failed to list workflow templates: {}", e.getMessage());
+                        return Promise.of(HttpResponse.ofCode(500)
+                                .withJson("{\"error\":\"Failed to list templates\"}").build());
+                    }
+                })
+                .with(POST, "/api/v1/workflows/:templateId/start", request -> {
+                    String templateId = request.getPathParameter("templateId");
+                    String rawTenantId = request.getHeader(
+                            io.activej.http.HttpHeaders.of("X-Tenant-Id"));
+                    final String tenantId = rawTenantId != null ? rawTenantId : "default";
+                    return request.loadBody().then(body -> {
+                        try {
+                            @SuppressWarnings("unchecked")
+                            java.util.Map<String, Object> inputVars = body.array().length > 0
+                                    ? objectMapper.readValue(
+                                            body.getString(StandardCharsets.UTF_8),
+                                            java.util.Map.class)
+                                    : java.util.Map.of();
+                            if (!workflowService.isRegistered(templateId)) {
+                                return Promise.of(HttpResponse.ofCode(404)
+                                        .withJson("{\"error\":\"Unknown workflow template: "
+                                                + templateId + "\"}").build());
+                            }
+                            DurableWorkflowEngine.WorkflowExecution exec =
+                                    workflowService.startWorkflow(templateId, tenantId, inputVars);
+                            String runId = exec.workflowId();
+                            String resp = objectMapper.writeValueAsString(java.util.Map.of(
+                                    "runId",      runId,
+                                    "templateId", templateId,
+                                    "tenantId",   tenantId,
+                                    "status",     "STARTED"));
+                            return Promise.of(HttpResponse.ofCode(202).withJson(resp).build());
+                        } catch (IllegalArgumentException e) {
+                            return Promise.of(HttpResponse.ofCode(404)
+                                    .withJson("{\"error\":\"" + e.getMessage() + "\"}").build());
+                        } catch (Exception e) {
+                            logger.warn("Failed to start workflow '{}': {}", templateId, e.getMessage());
+                            return Promise.of(HttpResponse.ofCode(500)
+                                    .withJson("{\"error\":\"" + e.getMessage() + "\"}").build());
+                        }
+                    });
+                })
+                .with(GET, "/api/v1/workflows/:runId/status", request -> {
+                    String runId = request.getPathParameter("runId");
+                    try {
+                        java.util.Optional<DurableWorkflowEngine.WorkflowRun> run =
+                                workflowService.getRunStatus(runId);
+                        if (run.isEmpty()) {
+                            return Promise.of(HttpResponse.ofCode(404)
+                                    .withJson("{\"error\":\"Run not found: " + runId + "\"}").build());
+                        }
+                        DurableWorkflowEngine.WorkflowRun wr = run.get();
+                        java.util.Map<String, Object> status = new java.util.LinkedHashMap<>();
+                        status.put("runId",          wr.workflowId());
+                        status.put("status",         wr.status().name());
+                        status.put("stepStatuses",   stepStatusesToMap(wr.stepStatuses()));
+                        if (wr.failureReason() != null) {
+                            status.put("failureReason", wr.failureReason());
+                        }
+                        return Promise.of(HttpResponse.ok200()
+                                .withJson(objectMapper.writeValueAsString(status)).build());
+                    } catch (Exception e) {
+                        logger.warn("Failed to get run status '{}': {}", runId, e.getMessage());
+                        return Promise.of(HttpResponse.ofCode(500)
+                                .withJson("{\"error\":\"" + e.getMessage() + "\"}").build());
+                    }
+                })
+
                 .build();
+    }
+
+    /** Converts a step-status array to a list of name strings for JSON serialization. */
+    private static java.util.List<String> stepStatusesToMap(
+            DurableWorkflowEngine.StepStatus[] statuses) {
+        java.util.List<String> result = new java.util.ArrayList<>(statuses.length);
+        for (DurableWorkflowEngine.StepStatus s : statuses) {
+            result.add(s.name());
+        }
+        return result;
     }
 
     @Override

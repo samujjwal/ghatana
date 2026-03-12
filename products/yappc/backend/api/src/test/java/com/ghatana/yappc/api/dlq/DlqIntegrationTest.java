@@ -5,6 +5,7 @@
 package com.ghatana.yappc.api.dlq;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.ghatana.core.template.YamlTemplateEngine;
 import com.ghatana.platform.testing.activej.EventloopTestBase;
 import com.ghatana.platform.workflow.engine.DurableWorkflowEngine;
 import com.ghatana.yappc.api.workflow.WorkflowMaterializer;
@@ -98,7 +99,7 @@ class DlqIntegrationTest extends EventloopTestBase {
         DurableWorkflowEngine engine = DurableWorkflowEngine.builder()
                 .stateStore(new DurableWorkflowEngine.InMemoryWorkflowStateStore())
                 .build();
-        workflowMaterializer = new WorkflowMaterializer(engine);
+        workflowMaterializer = new WorkflowMaterializer(engine, new YamlTemplateEngine());
         workflowMaterializer.materializeAll();
 
         dlqController = new DlqController(dlqRepository, workflowMaterializer);

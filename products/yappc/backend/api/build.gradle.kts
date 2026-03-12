@@ -18,6 +18,15 @@ java {
     }
 }
 
+// Include AEP-specific sources (EventSchemaValidator, EventValidationResult)
+// alongside the standard source directories. Use setSrcDirs to avoid duplicates.
+sourceSets {
+    main {
+        java.setSrcDirs(listOf("src/main/java", "aep/src/main/java"))
+        resources.setSrcDirs(listOf("src/main/resources", "aep/src/main/resources"))
+    }
+}
+
 
 
 repositories {
@@ -77,6 +86,12 @@ dependencies {
     implementation(libs.jackson.databind)
     implementation(libs.jackson.datatype.jsr310)
     implementation(libs.jackson.dataformat.yaml)
+
+    // JSON Schema validation (networknt) — used by EventSchemaValidator (AEP)
+    implementation(libs.networknt.validator)
+
+    // YAML Template Engine — used by WorkflowMaterializer (Ph3)
+    implementation(project(":platform:java:yaml-template"))
     
     // Logging
     implementation(libs.slf4j.api)

@@ -1,5 +1,6 @@
 import React from 'react';
-import { NodeProps, Node, Handle, Position } from '@xyflow/react';
+import { NodeProps, Handle, Position } from '@ghatana/flow-canvas';
+import type { Node } from '@ghatana/flow-canvas';
 import { useAtom } from 'jotai';
 import { selectedNodeAtom } from '@/stores/workflow.store';
 

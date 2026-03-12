@@ -956,6 +956,95 @@ class AepDiModulesTest {
     }
 
     // ═══════════════════════════════════════════════════════════════
+    //  6. AepLearningModule
+    // ═══════════════════════════════════════════════════════════════
+
+    @Nested
+    @DisplayName("AepLearningModule")
+    class AepLearningModuleTests {
+
+        private Injector buildInjector() {
+            Module schedulerStub = ModuleBuilder.create()
+                    .bind(ScheduledExecutorService.class)
+                    .toInstance(mock(ScheduledExecutorService.class))
+                    .build();
+            return Injector.of(schedulerStub, new AepLearningModule());
+        }
+
+        @Test
+        @DisplayName("provides HumanReviewQueue bound to InMemoryHumanReviewQueue")
+        void providesHumanReviewQueue() {
+            var injector = buildInjector();
+            var queue = injector.getInstance(
+                    com.ghatana.agent.learning.review.HumanReviewQueue.class);
+            assertThat(queue).isNotNull();
+            assertThat(queue).isInstanceOf(
+                    com.ghatana.agent.learning.review.InMemoryHumanReviewQueue.class);
+        }
+
+        @Test
+        @DisplayName("provides ConflictResolver bound to EntrenchmentConflictResolver")
+        void providesConflictResolver() {
+            var injector = buildInjector();
+            var resolver = injector.getInstance(
+                    com.ghatana.agent.learning.consolidation.ConflictResolver.class);
+            assertThat(resolver).isNotNull();
+            assertThat(resolver).isInstanceOf(
+                    com.ghatana.agent.learning.consolidation.EntrenchmentConflictResolver.class);
+        }
+
+        @Test
+        @DisplayName("provides ConsolidationPipeline")
+        void providesConsolidationPipeline() {
+            var injector = buildInjector();
+            var pipeline = injector.getInstance(
+                    com.ghatana.agent.learning.consolidation.ConsolidationPipeline.class);
+            assertThat(pipeline).isNotNull();
+        }
+
+        @Test
+        @DisplayName("provides ConsolidationScheduler with AEP_SYSTEM agent id")
+        void providesConsolidationScheduler() {
+            var injector = buildInjector();
+            var scheduler = injector.getInstance(
+                    com.ghatana.agent.learning.consolidation.ConsolidationScheduler.class);
+            assertThat(scheduler).isNotNull();
+        }
+
+        @Test
+        @DisplayName("singleton semantics: same HumanReviewQueue instance returned twice")
+        void humanReviewQueueIsSingleton() {
+            var injector = buildInjector();
+            var type = com.ghatana.agent.learning.review.HumanReviewQueue.class;
+            assertThat(injector.getInstance(type)).isSameAs(injector.getInstance(type));
+        }
+
+        @Test
+        @DisplayName("singleton semantics: same ConsolidationPipeline instance returned twice")
+        void consolidationPipelineIsSingleton() {
+            var injector = buildInjector();
+            var type = com.ghatana.agent.learning.consolidation.ConsolidationPipeline.class;
+            assertThat(injector.getInstance(type)).isSameAs(injector.getInstance(type));
+        }
+
+        @Test
+        @DisplayName("all learning bindings can be instantiated without exception")
+        void allBindingsInstantiateCleanly() {
+            assertThatCode(() -> {
+                var injector = buildInjector();
+                injector.getInstance(
+                        com.ghatana.agent.learning.review.HumanReviewQueue.class);
+                injector.getInstance(
+                        com.ghatana.agent.learning.consolidation.ConflictResolver.class);
+                injector.getInstance(
+                        com.ghatana.agent.learning.consolidation.ConsolidationPipeline.class);
+                injector.getInstance(
+                        com.ghatana.agent.learning.consolidation.ConsolidationScheduler.class);
+            }).doesNotThrowAnyException();
+        }
+    }
+
+    // ═══════════════════════════════════════════════════════════════
     //  Stub/Mock Helpers
     // ═══════════════════════════════════════════════════════════════
 

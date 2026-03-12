@@ -1,0 +1,32 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "AgentDispatch",
+  "description": "Emitted to dispatch a YAPPC agent to perform stage-specific work.",
+  "type": "object",
+  "required": ["eventId", "eventType", "timestamp", "agentId", "fromStage", "toStage"],
+  "additionalProperties": true,
+  "properties": {
+    "eventId":         { "type": "string", "minLength": 1 },
+    "eventType":       { "type": "string", "const": "agent.dispatch" },
+    "timestamp":       { "type": "number", "minimum": 0 },
+    "agentId":         { "type": "string", "minLength": 1 },
+    "fromStage": {
+      "type": "string",
+      "enum": [
+        "ideate", "plan", "shape", "generate", "execute",
+        "verify", "validate", "review", "deploy", "monitor"
+      ]
+    },
+    "toStage": {
+      "type": "string",
+      "enum": [
+        "ideate", "plan", "shape", "generate", "execute",
+        "verify", "validate", "review", "deploy", "monitor"
+      ]
+    },
+    "executionContext": { "type": "object" },
+    "inputData":        { "type": "object" },
+    "priority":         { "type": "string", "enum": ["low", "normal", "high", "critical"] },
+    "timeout":          { "type": "integer", "minimum": 0 }
+  }
+}

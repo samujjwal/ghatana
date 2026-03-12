@@ -42,6 +42,9 @@ export default defineConfig({
   resolve: {
     alias: {
       '@': path.resolve(__dirname, './src'),
+      // Redirect @ghatana/flow-canvas to a lightweight stub so jsdom tests don't
+      // need ReactFlow's browser-only DOM APIs. vi.mock() calls in tests supersede this.
+      '@ghatana/flow-canvas': path.resolve(__dirname, 'src/__tests__/stubs/flow-canvas.tsx'),
       // Provide explicit aliases for `entities` subpaths used by jsdom/parse5 to avoid ESM exports mismatch
       ...(entitiesDecodePath ? { 'entities/decode': entitiesDecodePath } : {}),
       ...(entitiesEscapePath ? { 'entities/escape': entitiesEscapePath } : {}),

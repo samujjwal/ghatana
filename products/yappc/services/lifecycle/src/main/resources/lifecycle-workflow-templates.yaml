@@ -1,0 +1,142 @@
+# YAPPC Canonical Workflow Templates
+# Consumed by WorkflowMaterializer at service startup.
+# Each entry defines a durable workflow that can be started via:
+#   POST /api/v1/workflows/{id}/start
+#
+# Step types:
+#   lifecycle-phase-advance  — records a phase transition in context (fromPhase→toPhase)
+#   lifecycle-gate-check     — records a gate-check decision point in context
+#   (any other type)         — passthrough step; logs and forwards context unchanged
+
+workflows:
+  # ─── New Feature Development ───────────────────────────────────────────────
+  - id: new-feature
+    name: "New Feature Development"
+    version: "1.0.0"
+    description: "End-to-end workflow for delivering a new software feature through YAPPC phases"
+    category: delivery
+    steps:
+      - id: phase-ideation-to-intent
+        type: lifecycle-phase-advance
+        config:
+          fromPhase: IDEATION
+          toPhase: INTENT
+
+      - id: gate-intent-complete
+        type: lifecycle-gate-check
+        config:
+          phase: INTENT
+
+      - id: phase-intent-to-shape
+        type: lifecycle-phase-advance
+        config:
+          fromPhase: INTENT
+          toPhase: SHAPE
+
+      - id: gate-shape-complete
+        type: lifecycle-gate-check
+        config:
+          phase: SHAPE
+
+      - id: phase-shape-to-generate
+        type: lifecycle-phase-advance
+        config:
+          fromPhase: SHAPE
+          toPhase: GENERATE
+
+      - id: gate-generate-complete
+        type: lifecycle-gate-check
+        config:
+          phase: GENERATE
+
+      - id: phase-generate-to-validate
+        type: lifecycle-phase-advance
+        config:
+          fromPhase: GENERATE
+          toPhase: VALIDATE
+
+      - id: gate-validate-complete
+        type: lifecycle-gate-check
+        config:
+          phase: VALIDATE
+
+      - id: phase-validate-to-observe
+        type: lifecycle-phase-advance
+        config:
+          fromPhase: VALIDATE
+          toPhase: OBSERVE
+
+  # ─── Bug Fix Workflow ───────────────────────────────────────────────────────
+  - id: bug-fix
+    name: "Bug Fix"
+    version: "1.0.0"
+    description: "Accelerated workflow for diagnosing and fixing a defect"
+    category: maintenance
+    steps:
+      - id: phase-triage-to-shape
+        type: lifecycle-phase-advance
+        config:
+          fromPhase: TRIAGE
+          toPhase: SHAPE
+
+      - id: gate-diagnosis-complete
+        type: lifecycle-gate-check
+        config:
+          phase: SHAPE
+
+      - id: phase-shape-to-generate
+        type: lifecycle-phase-advance
+        config:
+          fromPhase: SHAPE
+          toPhase: GENERATE
+
+      - id: gate-fix-complete
+        type: lifecycle-gate-check
+        config:
+          phase: GENERATE
+
+      - id: phase-generate-to-validate
+        type: lifecycle-phase-advance
+        config:
+          fromPhase: GENERATE
+          toPhase: VALIDATE
+
+  # ─── Security Remediation Workflow ─────────────────────────────────────────
+  - id: security-remediation
+    name: "Security Remediation"
+    version: "1.0.0"
+    description: "Controlled workflow for remediating a security vulnerability"
+    category: security
+    steps:
+      - id: phase-assess-to-shape
+        type: lifecycle-phase-advance
+        config:
+          fromPhase: ASSESS
+          toPhase: SHAPE
+
+      - id: gate-impact-assessment
+        type: lifecycle-gate-check
+        config:
+          phase: SHAPE
+
+      - id: phase-shape-to-generate
+        type: lifecycle-phase-advance
+        config:
+          fromPhase: SHAPE
+          toPhase: GENERATE
+
+      - id: gate-patch-complete
+        type: lifecycle-gate-check
+        config:
+          phase: GENERATE
+
+      - id: phase-generate-to-validate
+        type: lifecycle-phase-advance
+        config:
+          fromPhase: GENERATE
+          toPhase: VALIDATE
+
+      - id: gate-security-sign-off
+        type: lifecycle-gate-check
+        config:
+          phase: VALIDATE

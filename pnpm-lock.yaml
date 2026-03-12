@@ -139,6 +139,31 @@ importers:
         specifier: ^5.9.3
         version: 5.9.3
 
+  platform/typescript/flow-canvas:
+    dependencies:
+      '@xyflow/react':
+        specifier: ^12.10.0
+        version: 12.10.1(@types/react@18.3.28)(immer@11.1.4)(react-dom@19.2.4(react@19.2.4))(react@19.2.4)
+    devDependencies:
+      '@types/react':
+        specifier: ^18.3.0
+        version: 18.3.28
+      '@types/react-dom':
+        specifier: ^18.3.0
+        version: 18.3.7(@types/react@18.3.28)
+      react:
+        specifier: ^19.2.4
+        version: 19.2.4
+      react-dom:
+        specifier: ^19.2.4
+        version: 19.2.4(react@19.2.4)
+      tsup:
+        specifier: ^8.3.0
+        version: 8.5.1(@microsoft/api-extractor@7.57.6(@types/node@25.2.0))(jiti@2.6.1)(postcss@8.5.8)(tsx@4.21.0)(typescript@5.9.3)(yaml@2.8.2)
+      typescript:
+        specifier: ^5.7.0
+        version: 5.9.3
+
   platform/typescript/i18n:
     dependencies:
       i18next:
@@ -159,6 +184,31 @@ importers:
     devDependencies:
       typescript:
         specifier: ^5.6.0
+        version: 5.9.3
+
+  platform/typescript/platform-shell:
+    dependencies:
+      jotai:
+        specifier: ^2.17.0
+        version: 2.18.0(@babel/core@7.29.0)(@babel/template@7.28.6)(@types/react@18.3.28)(react@19.2.4)
+    devDependencies:
+      '@types/react':
+        specifier: ^18.3.0
+        version: 18.3.28
+      '@types/react-dom':
+        specifier: ^18.3.0
+        version: 18.3.7(@types/react@18.3.28)
+      react:
+        specifier: ^19.2.4
+        version: 19.2.4
+      react-dom:
+        specifier: ^19.2.4
+        version: 19.2.4(react@19.2.4)
+      tsup:
+        specifier: ^8.3.0
+        version: 8.5.1(@microsoft/api-extractor@7.57.6(@types/node@25.2.0))(jiti@2.6.1)(postcss@8.5.8)(tsx@4.21.0)(typescript@5.9.3)(yaml@2.8.2)
+      typescript:
+        specifier: ^5.7.0
         version: 5.9.3
 
   platform/typescript/realtime:
@@ -288,6 +338,9 @@ importers:
       '@ghatana/ui':
         specifier: workspace:*
         version: link:../../../platform/typescript/ui
+      '@tanstack/react-query':
+        specifier: ^5.90.21
+        version: 5.90.21(react@19.2.4)
       '@xyflow/react':
         specifier: ^12.10.0
         version: 12.10.1(@types/react@19.2.14)(immer@11.1.4)(react-dom@19.2.4(react@19.2.4))(react@19.2.4)
@@ -555,6 +608,9 @@ importers:
       '@ghatana/canvas':
         specifier: workspace:*
         version: link:../../../platform/typescript/canvas
+      '@ghatana/flow-canvas':
+        specifier: workspace:*
+        version: link:../../../platform/typescript/flow-canvas
       '@ghatana/realtime':
         specifier: workspace:*
         version: link:../../../platform/typescript/realtime
@@ -10846,6 +10902,11 @@ packages:
   '@types/range-parser@1.2.7':
     resolution: {integrity: sha512-hKormJbkJqzQGhziax5PItDUTMAM9uE2XXQmM37dyd4hVM+5aVl7oVxMVUiVQn2oCQFN/LKCZdvSM0pFRqbSmQ==}
 
+  '@types/react-dom@18.3.7':
+    resolution: {integrity: sha512-MEe3UeoENYVFXzoXEWsvcpg6ZvlrFNlOQ7EOsvhI3CfAXwzPfO8Qwuxd40nepsYKqyyVQnTdEfv68q91yLcKrQ==}
+    peerDependencies:
+      '@types/react': ^18.0.0
+
   '@types/react-dom@19.1.11':
     resolution: {integrity: sha512-3BKc/yGdNTYQVVw4idqHtSOcFsgGuBbMveKCOgF8wQ5QtrYOc3jDIlzg3jef04zcXFIHLelyGlj0T+BJ8+KN+w==}
     peerDependencies:
@@ -10882,6 +10943,9 @@ packages:
     resolution: {integrity: sha512-8TV6R3h2j7a91c+1DXdJi3Syo69zzIZbz7Lg5tORM5LEJG7X/E6a1V3drRyBRZq7/utz7A+c4OgYLiLcYGHG6w==}
     peerDependencies:
       '@types/react': '*'
+
+  '@types/react@18.3.28':
+    resolution: {integrity: sha512-z9VXpC7MWrhfWipitjNdgCauoMLRdIILQsAEV+ZesIzBq/oUlxk0m3ApZuMFCXdnS4U7KrI+l3WRUEGQ8K1QKw==}
 
   '@types/react@19.1.17':
     resolution: {integrity: sha512-Qec1E3mhALmaspIrhWt9jkQMNdw6bReVu64mjvhbhq2NFPftLPVr+l1SZgmw/66WwBNpDh7ao5AT6gF5v41PFA==}
@@ -31457,6 +31521,10 @@ snapshots:
 
   '@types/range-parser@1.2.7': {}
 
+  '@types/react-dom@18.3.7(@types/react@18.3.28)':
+    dependencies:
+      '@types/react': 18.3.28
+
   '@types/react-dom@19.1.11(@types/react@19.1.17)':
     dependencies:
       '@types/react': 19.1.17
@@ -31497,6 +31565,11 @@ snapshots:
   '@types/react-transition-group@4.4.12(@types/react@19.2.14)':
     dependencies:
       '@types/react': 19.2.14
+
+  '@types/react@18.3.28':
+    dependencies:
+      '@types/prop-types': 15.7.15
+      csstype: 3.2.3
 
   '@types/react@19.1.17':
     dependencies:
@@ -32320,6 +32393,17 @@ snapshots:
   '@xtuc/ieee754@1.2.0': {}
 
   '@xtuc/long@4.2.2': {}
+
+  '@xyflow/react@12.10.1(@types/react@18.3.28)(immer@11.1.4)(react-dom@19.2.4(react@19.2.4))(react@19.2.4)':
+    dependencies:
+      '@xyflow/system': 0.0.75
+      classcat: 5.0.5
+      react: 19.2.4
+      react-dom: 19.2.4(react@19.2.4)
+      zustand: 4.5.7(@types/react@18.3.28)(immer@11.1.4)(react@19.2.4)
+    transitivePeerDependencies:
+      - '@types/react'
+      - immer
 
   '@xyflow/react@12.10.1(@types/react@19.2.14)(immer@11.1.4)(react-dom@19.2.4(react@19.2.4))(react@19.2.4)':
     dependencies:
@@ -38355,6 +38439,13 @@ snapshots:
       - '@types/react'
       - react-dom
       - redux
+
+  jotai@2.18.0(@babel/core@7.29.0)(@babel/template@7.28.6)(@types/react@18.3.28)(react@19.2.4):
+    optionalDependencies:
+      '@babel/core': 7.29.0
+      '@babel/template': 7.28.6
+      '@types/react': 18.3.28
+      react: 19.2.4
 
   jotai@2.18.0(@babel/core@7.29.0)(@babel/template@7.28.6)(@types/react@19.1.17)(react@19.2.4):
     optionalDependencies:
@@ -46051,6 +46142,14 @@ snapshots:
   zod@3.25.76: {}
 
   zod@4.3.6: {}
+
+  zustand@4.5.7(@types/react@18.3.28)(immer@11.1.4)(react@19.2.4):
+    dependencies:
+      use-sync-external-store: 1.6.0(react@19.2.4)
+    optionalDependencies:
+      '@types/react': 18.3.28
+      immer: 11.1.4
+      react: 19.2.4
 
   zustand@4.5.7(@types/react@19.2.14)(immer@11.1.4)(react@19.2.4):
     dependencies:

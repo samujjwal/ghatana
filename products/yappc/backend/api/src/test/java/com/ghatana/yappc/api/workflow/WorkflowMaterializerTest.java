@@ -7,6 +7,7 @@ package com.ghatana.yappc.api.workflow;
 import com.ghatana.platform.testing.activej.EventloopTestBase;
 import com.ghatana.platform.workflow.WorkflowContext;
 import com.ghatana.platform.workflow.engine.DurableWorkflowEngine;
+import com.ghatana.core.template.YamlTemplateEngine;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -45,7 +46,7 @@ class WorkflowMaterializerTest extends EventloopTestBase {
         engine = DurableWorkflowEngine.builder()
                 .stateStore(stateStore)
                 .build();
-        materializer = new WorkflowMaterializer(engine);
+        materializer = new WorkflowMaterializer(engine, new YamlTemplateEngine());
     }
 
     // -------------------------------------------------------------------------

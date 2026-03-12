@@ -1,0 +1,20 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "ShapeCreated",
+  "description": "Emitted when a new architectural shape (component) is created in a YAPPC project.",
+  "type": "object",
+  "required": ["eventId", "eventType", "timestamp", "shapeId", "shapeType", "projectId"],
+  "additionalProperties": true,
+  "properties": {
+    "eventId":    { "type": "string",  "minLength": 1 },
+    "eventType":  { "type": "string",  "const": "shape.created" },
+    "timestamp":  { "type": "number",  "minimum": 0 },
+    "shapeId":    { "type": "string",  "minLength": 1 },
+    "shapeType":  {
+      "type": "string",
+      "enum": ["component", "service", "module", "interface", "boundary", "entity", "aggregate", "event", "query", "command"]
+    },
+    "projectId":  { "type": "string",  "minLength": 1 },
+    "properties": { "type": "object" }
+  }
+}

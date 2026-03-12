@@ -1,6 +1,6 @@
 # YAPPC Stub Pages — Replacement Tracker
 
-> **Created:** 2025-01-19 | **Total Stubs:** 57 | **Replaced:** 3
+> **Created:** 2025-01-19 | **Total Stubs:** 57 | **Replaced:** 5
 
 ## Priority Tiers
 
@@ -10,8 +10,8 @@
 | `LoginPage` | ✅ Replaced | Full email/password form + SSO link |
 | `LandingPage` | ✅ Replaced | Marketing hero + feature highlights |
 | `ProjectsPage` | ✅ Replaced | Grid listing with TanStack Query |
-| `RegisterPage` | ❌ Stub | Sign-up form |
-| `ForgotPasswordPage` | ❌ Stub | Password reset request |
+| `RegisterPage` | ✅ Replaced | Full sign-up form with validation + POST /api/auth/register |
+| `ForgotPasswordPage` | ✅ Replaced | Email form + POST /api/auth/forgot-password + success state |
 | `ResetPasswordPage` | ❌ Stub | Token-based password reset |
 | `SSOCallbackPage` | ❌ Stub | OAuth2 callback handler |
 | `ProfilePage` | ❌ Stub | User profile/settings |

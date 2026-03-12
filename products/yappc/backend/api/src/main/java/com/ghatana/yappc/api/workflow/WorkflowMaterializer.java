@@ -6,6 +6,8 @@ package com.ghatana.yappc.api.workflow;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.dataformat.yaml.YAMLFactory;
+import com.ghatana.core.template.TemplateContext;
+import com.ghatana.core.template.YamlTemplateEngine;
 import com.ghatana.platform.workflow.DefaultWorkflowContext;
 import com.ghatana.platform.workflow.WorkflowContext;
 import com.ghatana.platform.workflow.WorkflowStep;
@@ -61,6 +63,7 @@ public class WorkflowMaterializer {
 
     private final DurableWorkflowEngine engine;
     private final ObjectMapper yamlMapper;
+    private final YamlTemplateEngine templateEngine;
 
     /** Registry: templateId → list of materialized step definitions. */
     private final Map<String, List<DurableWorkflowEngine.StepDefinition>> templateRegistry =
@@ -73,10 +76,12 @@ public class WorkflowMaterializer {
     /**
      * Creates a new {@code WorkflowMaterializer}.
      *
-     * @param engine the durable workflow engine to submit runs to
+     * @param engine         the durable workflow engine to submit runs to
+     * @param templateEngine the YAML template engine for variable substitution
      */
-    public WorkflowMaterializer(DurableWorkflowEngine engine) {
+    public WorkflowMaterializer(DurableWorkflowEngine engine, YamlTemplateEngine templateEngine) {
         this.engine = Objects.requireNonNull(engine, "engine");
+        this.templateEngine = Objects.requireNonNull(templateEngine, "templateEngine");
         this.yamlMapper = new ObjectMapper(new YAMLFactory());
         this.yamlMapper.findAndRegisterModules();
     }
@@ -102,7 +107,9 @@ public class WorkflowMaterializer {
 
         CanonicalWorkflowsManifest manifest;
         try {
-            manifest = yamlMapper.readValue(yaml, CanonicalWorkflowsManifest.class);
+            String rawYaml = new String(yaml.readAllBytes(), java.nio.charset.StandardCharsets.UTF_8);
+            String rendered = templateEngine.render(rawYaml, TemplateContext.empty());
+            manifest = yamlMapper.readValue(rendered, CanonicalWorkflowsManifest.class);
         } catch (Exception e) {
             log.error("Failed to parse '{}': {}", TEMPLATES_RESOURCE, e.getMessage(), e);
             return 0;

@@ -10,7 +10,7 @@ import com.ghatana.platform.types.identity.OperatorId;
 import com.ghatana.platform.workflow.operator.AbstractOperator;
 import com.ghatana.platform.workflow.operator.OperatorResult;
 import com.ghatana.platform.workflow.operator.OperatorType;
-import com.ghatana.yappc.agent.AepEventPublisher;
+import com.ghatana.yappc.services.lifecycle.AepEventBridge;
 import io.activej.promise.Promise;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -57,14 +57,14 @@ public class LifecycleStatePublisherOperator extends AbstractOperator {
     /** Inbound event type when no agents were assigned (forwarded gate.passed). */
     public static final String EVENT_GATE_PASSED       = GateOrchestratorOperator.EVENT_GATE_PASSED;
 
-    private final AepEventPublisher publisher;
+    private final AepEventBridge publisher;
 
     /**
      * Creates a {@code LifecycleStatePublisherOperator}.
      *
-     * @param publisher AEP event publisher for {@code lifecycle.phase.advanced} events
+     * @param publisher AEP event bridge for {@code lifecycle.phase.advanced} events
      */
-    public LifecycleStatePublisherOperator(AepEventPublisher publisher) {
+    public LifecycleStatePublisherOperator(AepEventBridge publisher) {
         super(
             OperatorId.of("yappc", "stream", "lifecycle-state-publisher", "1.0.0"),
             OperatorType.STREAM,
@@ -89,7 +89,7 @@ public class LifecycleStatePublisherOperator extends AbstractOperator {
 
         String advancedAt  = Instant.now().toString();
 
-        // Build and publish lifecycle.phase.advanced event via AepEventBridge
+        // Build and publish lifecycle.phase.advanced event via AepEventBridge (best-effort)
         Map<String, Object> payload = new java.util.LinkedHashMap<>();
         payload.put("projectId",   projectId);
         payload.put("fromPhase",   fromPhase);
@@ -99,8 +99,8 @@ public class LifecycleStatePublisherOperator extends AbstractOperator {
         payload.put("advancedAt",  advancedAt);
         payload.put("source",      "lifecycle-pipeline");
 
-        // Fire-and-forget publish (best-effort, swallows failures)
-        publisher.publish(EVENT_PHASE_ADVANCED, tenantId, payload)
+        // publishRawEvent swallows failures internally
+        publisher.publishRawEvent(EVENT_PHASE_ADVANCED, tenantId, payload)
             .whenException(e -> log.warn("Failed to publish {} event for project={}: {}",
                     EVENT_PHASE_ADVANCED, projectId, e.getMessage()));
 

@@ -15,7 +15,8 @@
  * @doc.pattern Page Component
  */
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import {
     Sparkles,
     Zap,
@@ -36,157 +37,8 @@ import {
     metricCardStyles,
 } from '../lib/theme';
 import { AlertRuleForm, type AlertRule } from '../components/alerts/AlertRuleForm';
-
-/**
- * Alert severity type
- */
-type AlertSeverity = 'critical' | 'warning' | 'info';
-
-/**
- * Alert status type
- */
-type AlertStatus = 'active' | 'acknowledged' | 'resolved';
-
-/**
- * Alert interface
- */
-interface Alert {
-    id: string;
-    title: string;
-    description: string;
-    severity: AlertSeverity;
-    status: AlertStatus;
-    source: string;
-    createdAt: string;
-    acknowledgedAt?: string;
-    resolvedAt?: string;
-}
-
-/**
- * Mock alerts data
- */
-const mockAlerts: Alert[] = [
-    {
-        id: 'alert-1',
-        title: 'High Memory Usage',
-        description: 'Memory usage exceeded 90% threshold on processing node',
-        severity: 'critical',
-        status: 'active',
-        source: 'System Monitor',
-        createdAt: '2024-01-12T10:30:00Z',
-    },
-    {
-        id: 'alert-2',
-        title: 'Workflow Execution Failed',
-        description: 'ETL pipeline failed due to connection timeout',
-        severity: 'critical',
-        status: 'acknowledged',
-        source: 'Workflow Engine',
-        createdAt: '2024-01-12T09:15:00Z',
-        acknowledgedAt: '2024-01-12T09:20:00Z',
-    },
-    {
-        id: 'alert-3',
-        title: 'Data Quality Warning',
-        description: 'Null value ratio exceeded 5% in user-events collection',
-        severity: 'warning',
-        status: 'active',
-        source: 'Data Quality',
-        createdAt: '2024-01-12T08:00:00Z',
-    },
-    {
-        id: 'alert-4',
-        title: 'Schema Version Updated',
-        description: 'New schema version deployed for transaction-events',
-        severity: 'info',
-        status: 'resolved',
-        source: 'Schema Registry',
-        createdAt: '2024-01-11T16:45:00Z',
-        resolvedAt: '2024-01-11T17:00:00Z',
-    },
-    {
-        id: 'alert-5',
-        title: 'Storage Capacity Warning',
-        description: 'Hot tier storage at 75% capacity',
-        severity: 'warning',
-        status: 'active',
-        source: 'Storage Manager',
-        createdAt: '2024-01-11T14:20:00Z',
-    },
-];
-
-/**
- * AI-detected alert groups (correlated alerts)
- */
-interface AlertGroup {
-    id: string;
-    title: string;
-    rootCause: string;
-    alertIds: string[];
-    aiConfidence: number;
-    suggestedAction: string;
-    suggestedActionType: 'auto' | 'manual';
-}
-
-const mockAlertGroups: AlertGroup[] = [
-    {
-        id: 'group-1',
-        title: 'Memory & Pipeline Issues',
-        rootCause: 'High memory usage is causing pipeline timeouts',
-        alertIds: ['alert-1', 'alert-2'],
-        aiConfidence: 0.87,
-        suggestedAction: 'Scale up processing node memory to 16GB',
-        suggestedActionType: 'auto',
-    },
-    {
-        id: 'group-2',
-        title: 'Data Quality Cascade',
-        rootCause: 'Upstream schema change affecting data quality',
-        alertIds: ['alert-3'],
-        aiConfidence: 0.72,
-        suggestedAction: 'Review schema changes in source system',
-        suggestedActionType: 'manual',
-    },
-];
-
-/**
- * AI Resolution Suggestion
- */
-interface ResolutionSuggestion {
-    id: string;
-    alertId: string;
-    suggestion: string;
-    confidence: number;
-    canAutoResolve: boolean;
-    steps?: string[];
-}
-
-const mockSuggestions: ResolutionSuggestion[] = [
-    {
-        id: 'sug-1',
-        alertId: 'alert-1',
-        suggestion: 'Increase memory allocation to 16GB',
-        confidence: 0.92,
-        canAutoResolve: true,
-        steps: ['Scale processing node', 'Restart affected services', 'Verify memory usage'],
-    },
-    {
-        id: 'sug-2',
-        alertId: 'alert-2',
-        suggestion: 'Retry failed pipeline with increased timeout',
-        confidence: 0.85,
-        canAutoResolve: true,
-        steps: ['Update timeout settings', 'Trigger pipeline retry'],
-    },
-    {
-        id: 'sug-3',
-        alertId: 'alert-3',
-        suggestion: 'Review and fix null value sources',
-        confidence: 0.78,
-        canAutoResolve: false,
-        steps: ['Identify null value sources', 'Update data validation', 'Re-process affected records'],
-    },
-];
+import { alertsService } from '../api/alerts.service';
+import type { Alert, AlertGroup, ResolutionSuggestion, AlertSeverity, AlertStatus } from '../api/alerts.service';
 
 /**
  * Severity styles
@@ -394,28 +246,72 @@ function ResolutionSuggestionCard({
  * Alerts Page Component
  */
 export function AlertsPage(): React.ReactElement {
+    const queryClient = useQueryClient();
     const [filter, setFilter] = useState<'all' | AlertSeverity>('all');
     const [statusFilter, setStatusFilter] = useState<'all' | AlertStatus>('all');
     const [isRuleFormOpen, setIsRuleFormOpen] = useState(false);
     const [viewMode, setViewMode] = useState<'list' | 'grouped'>('grouped');
     const [dismissedSuggestions, setDismissedSuggestions] = useState<string[]>([]);
 
-    const filteredAlerts = mockAlerts.filter((alert) => {
+    const { data: allAlerts = [] } = useQuery({
+        queryKey: ['alerts'],
+        queryFn: () => alertsService.getAlerts(),
+    });
+
+    const { data: alertGroups = [] } = useQuery({
+        queryKey: ['alerts', 'groups'],
+        queryFn: () => alertsService.getAlertGroups(),
+    });
+
+    const { data: suggestions = [] } = useQuery({
+        queryKey: ['alerts', 'suggestions'],
+        queryFn: () => alertsService.getResolutionSuggestions(),
+    });
+
+    const acknowledgeMutation = useMutation({
+        mutationFn: (alertId: string) => alertsService.acknowledgeAlert(alertId),
+        onSuccess: () => queryClient.invalidateQueries({ queryKey: ['alerts'] }),
+    });
+
+    const resolveMutation = useMutation({
+        mutationFn: (alertId: string) => alertsService.resolveAlert(alertId),
+        onSuccess: () => queryClient.invalidateQueries({ queryKey: ['alerts'] }),
+    });
+
+    const resolveGroupMutation = useMutation({
+        mutationFn: (groupId: string) => alertsService.resolveGroup(groupId),
+        onSuccess: () => queryClient.invalidateQueries({ queryKey: ['alerts'] }),
+    });
+
+    const applySuggestionMutation = useMutation({
+        mutationFn: (suggestionId: string) => alertsService.applySuggestion(suggestionId),
+        onSuccess: () => queryClient.invalidateQueries({ queryKey: ['alerts'] }),
+    });
+
+    // SSE stream for live alert events
+    useEffect(() => {
+        const es = alertsService.openStream();
+        es.addEventListener('message', () => {
+            queryClient.invalidateQueries({ queryKey: ['alerts'] });
+        });
+        return () => es.close();
+    }, [queryClient]);
+
+    const filteredAlerts = allAlerts.filter((alert) => {
         if (filter !== 'all' && alert.severity !== filter) return false;
         if (statusFilter !== 'all' && alert.status !== statusFilter) return false;
         return true;
     });
 
     const alertCounts = {
-        critical: mockAlerts.filter((a) => a.severity === 'critical' && a.status === 'active').length,
-        warning: mockAlerts.filter((a) => a.severity === 'warning' && a.status === 'active').length,
-        info: mockAlerts.filter((a) => a.severity === 'info' && a.status === 'active').length,
-        total: mockAlerts.filter((a) => a.status === 'active').length,
+        critical: allAlerts.filter((a) => a.severity === 'critical' && a.status === 'active').length,
+        warning: allAlerts.filter((a) => a.severity === 'warning' && a.status === 'active').length,
+        info: allAlerts.filter((a) => a.severity === 'info' && a.status === 'active').length,
+        total: allAlerts.filter((a) => a.status === 'active').length,
     };
 
-    const handleSaveRule = (rule: AlertRule) => {
-        console.log('Saving alert rule:', rule);
-        // TODO: Integrate with API
+    const handleSaveRule = (_rule: AlertRule) => {
+        // TODO: Integrate with alert rules API
     };
 
     return (
@@ -518,41 +414,41 @@ export function AlertsPage(): React.ReactElement {
             </div>
 
             {/* AI Grouped View */}
-            {viewMode === 'grouped' && mockAlertGroups.length > 0 && (
+            {viewMode === 'grouped' && alertGroups.length > 0 && (
                 <div className="mb-6">
                     <div className="flex items-center gap-2 mb-4">
                         <Sparkles className="h-5 w-5 text-purple-500" />
                         <h2 className={textStyles.h3}>AI-Detected Correlations</h2>
                         <span className="text-xs px-2 py-0.5 bg-purple-100 dark:bg-purple-900/30 text-purple-600 dark:text-purple-400 rounded">
-                            {mockAlertGroups.length} groups found
+                            {alertGroups.length} groups found
                         </span>
                     </div>
-                    {mockAlertGroups.map((group) => (
+                    {alertGroups.map((group) => (
                         <AlertGroupCard
                             key={group.id}
                             group={group}
-                            alerts={mockAlerts}
-                            onResolveGroup={() => console.log('Resolving group:', group.id)}
+                            alerts={allAlerts}
+                            onResolveGroup={() => resolveGroupMutation.mutate(group.id)}
                         />
                     ))}
                 </div>
             )}
 
             {/* AI Resolution Suggestions */}
-            {viewMode === 'list' && mockSuggestions.filter(s => !dismissedSuggestions.includes(s.id)).length > 0 && (
+            {viewMode === 'list' && suggestions.filter(s => !dismissedSuggestions.includes(s.id)).length > 0 && (
                 <div className="mb-6">
                     <div className="flex items-center gap-2 mb-4">
                         <Lightbulb className="h-5 w-5 text-amber-500" />
                         <h2 className={textStyles.h3}>AI Resolution Suggestions</h2>
                     </div>
                     <div className="space-y-3">
-                        {mockSuggestions
+                        {suggestions
                             .filter(s => !dismissedSuggestions.includes(s.id))
                             .map((suggestion) => (
                                 <ResolutionSuggestionCard
                                     key={suggestion.id}
                                     suggestion={suggestion}
-                                    onApply={() => console.log('Applying:', suggestion.id)}
+                                    onApply={() => applySuggestionMutation.mutate(suggestion.id)}
                                     onDismiss={() => setDismissedSuggestions([...dismissedSuggestions, suggestion.id])}
                                 />
                             ))}
@@ -592,10 +488,20 @@ export function AlertsPage(): React.ReactElement {
                             </div>
                             <div className="flex gap-2">
                                 {alert.status === 'active' && (
-                                    <button className={cn(buttonStyles.secondary, buttonStyles.sm)}>Acknowledge</button>
+                                    <button
+                                        onClick={() => acknowledgeMutation.mutate(alert.id)}
+                                        className={cn(buttonStyles.secondary, buttonStyles.sm)}
+                                    >
+                                        Acknowledge
+                                    </button>
                                 )}
                                 {alert.status !== 'resolved' && (
-                                    <button className={cn(buttonStyles.success, buttonStyles.sm)}>Resolve</button>
+                                    <button
+                                        onClick={() => resolveMutation.mutate(alert.id)}
+                                        className={cn(buttonStyles.success, buttonStyles.sm)}
+                                    >
+                                        Resolve
+                                    </button>
                                 )}
                             </div>
                         </div>

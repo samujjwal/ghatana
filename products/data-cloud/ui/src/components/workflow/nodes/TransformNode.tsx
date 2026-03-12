@@ -1,5 +1,6 @@
 import React from 'react';
-import { Handle, Position, Node, NodeProps } from '@xyflow/react';
+import { Handle, Position, NodeProps } from '@ghatana/flow-canvas';
+import type { Node } from '@ghatana/flow-canvas';
 
 type TransformNodeData = Record<string, unknown> & {
   label?: string;

@@ -1,0 +1,25 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "TaskStatusChanged",
+  "description": "Emitted when a task transitions between lifecycle states in a YAPPC project.",
+  "type": "object",
+  "required": ["eventId", "eventType", "timestamp", "taskId", "projectId", "oldStatus", "newStatus"],
+  "additionalProperties": true,
+  "properties": {
+    "eventId":    { "type": "string", "minLength": 1 },
+    "eventType":  { "type": "string", "const": "task.status.changed" },
+    "timestamp":  { "type": "number", "minimum": 0 },
+    "taskId":     { "type": "string", "minLength": 1 },
+    "projectId":  { "type": "string", "minLength": 1 },
+    "oldStatus":  {
+      "type": "string",
+      "enum": ["pending", "in_progress", "blocked", "under_review", "completed", "cancelled", "failed"]
+    },
+    "newStatus":  {
+      "type": "string",
+      "enum": ["pending", "in_progress", "blocked", "under_review", "completed", "cancelled", "failed"]
+    },
+    "assigneeId": { "type": "string" },
+    "reason":     { "type": "string" }
+  }
+}

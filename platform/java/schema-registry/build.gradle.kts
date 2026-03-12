@@ -30,6 +30,7 @@ dependencies {
 
     // Testing
     testImplementation(project(":platform:java:testing"))
+    testImplementation(project(":products:data-cloud:platform")) // InMemoryEventLogStoreProvider
     testImplementation(libs.junit.jupiter)
     testImplementation(libs.assertj.core)
     testRuntimeOnly(libs.junit.jupiter.engine)

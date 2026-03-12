@@ -117,6 +117,7 @@
       "@ghatana/yappc-store/*": [
         "../../libs/state/src/*"
       ],
+      "@ghatana/yappc-state": [
         "../../libs/state/src/index.ts"
       ],
       "@ghatana/yappc-state/*": [
@@ -148,12 +149,6 @@
   "references": [
     {
       "path": "../../libs/types/tsconfig.json"
-    },
-    {
-      "path": "../../libs/state/tsconfig.json"
-    },
-    {
-      "path": "../../libs/graphql/tsconfig.json"
     },
     {
       "path": "../../libs/mocks/tsconfig.json"

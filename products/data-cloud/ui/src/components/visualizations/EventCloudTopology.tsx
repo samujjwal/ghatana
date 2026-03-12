@@ -18,8 +18,8 @@
  */
 
 import React, { useCallback, useMemo, memo } from 'react';
-import { ReactFlow, Background, Controls, MiniMap, Panel, type Node } from '@xyflow/react';
-import '@xyflow/react/dist/style.css';
+import { FlowCanvas, FlowControls, Panel } from '@ghatana/flow-canvas';
+import type { Node } from '@ghatana/flow-canvas';
 
 import {
     BaseTopologyNode,
@@ -338,7 +338,7 @@ export function EventCloudTopology({
 
     return (
         <div className={cn('h-full w-full', className)}>
-            <ReactFlow
+            <FlowCanvas
                 nodes={nodes}
                 edges={edges}
                 onNodesChange={onNodesChange as any}
@@ -356,9 +356,7 @@ export function EventCloudTopology({
                 elementsSelectable={true}
                 className="bg-gray-50 dark:bg-gray-900"
             >
-                <Background color="#e5e7eb" gap={16} />
-                <Controls showInteractive={!readOnly} />
-                {defaultConfig.enableZoomControls && <MiniMap nodeStrokeWidth={3} pannable zoomable />}
+                <FlowControls />
 
                 {/* Control Panel */}
                 <Panel position="top-right" className="flex gap-2">
@@ -382,7 +380,7 @@ export function EventCloudTopology({
                         ))}
                     </div>
                 </Panel>
-            </ReactFlow>
+            </FlowCanvas>
         </div>
     );
 }

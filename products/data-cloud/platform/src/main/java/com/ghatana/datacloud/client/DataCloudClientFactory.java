@@ -195,7 +195,7 @@ public class DataCloudClientFactory {
         return switch (mode) {
             case "STANDALONE"   -> standalone(config.serverUrl());
             case "DISTRIBUTED"  -> distributed(config.clusterUrls());
-            default             -> embedded(new ServerConfig());
+            default             -> embedded(ServerConfig.defaultConfig());
         };
     }
 

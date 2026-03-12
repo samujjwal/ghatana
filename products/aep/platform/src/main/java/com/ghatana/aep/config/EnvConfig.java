@@ -37,6 +37,7 @@ import java.util.Map;
  *   <tr><td>AEP_DB_URL</td><td>jdbc:postgresql://localhost:5432/aep</td><td>JDBC URL for the AEP PostgreSQL database</td></tr>
  *   <tr><td>AEP_DB_USERNAME</td><td>aep</td><td>AEP database username</td></tr>
  *   <tr><td>AEP_DB_PASSWORD</td><td>(required)</td><td>AEP database password</td></tr>
+ *   <tr><td>AEP_DC_BASE_URL</td><td>http://localhost:8085</td><td>Data-Cloud service base URL for agent/pipeline registry</td></tr>
  *   <tr><td>AEP_DB_POOL_SIZE</td><td>10</td><td>HikariCP max pool size for the AEP database</td></tr>
  *   <tr><td>APP_ENV</td><td>production</td><td>deployment environment (development|production)</td></tr>
  * </table>
@@ -70,10 +71,12 @@ public final class EnvConfig {
     public static final String S3_REGION               = "S3_REGION";
     public static final String S3_BUCKET               = "S3_BUCKET";
     public static final String APP_ENV                 = "APP_ENV";
-    public static final String AEP_DB_URL              = "AEP_DB_URL";
-    public static final String AEP_DB_USERNAME         = "AEP_DB_USERNAME";
-    public static final String AEP_DB_PASSWORD         = "AEP_DB_PASSWORD";
-    public static final String AEP_DB_POOL_SIZE        = "AEP_DB_POOL_SIZE";
+    public static final String AEP_DC_BASE_URL                          = "AEP_DC_BASE_URL";
+    public static final String AEP_DB_URL                          = "AEP_DB_URL";
+    public static final String AEP_DB_USERNAME                     = "AEP_DB_USERNAME";
+    public static final String AEP_DB_PASSWORD                     = "AEP_DB_PASSWORD";
+    public static final String AEP_DB_POOL_SIZE                    = "AEP_DB_POOL_SIZE";
+    public static final String AEP_CONSOLIDATION_INTERVAL_HOURS    = "AEP_CONSOLIDATION_INTERVAL_HOURS";
 
     private final Map<String, String> env;
 
@@ -182,4 +185,10 @@ public final class EnvConfig {
     public String aepDbUsername()  { return get(AEP_DB_USERNAME, "aep"); }
     public String aepDbPassword()  { return require(AEP_DB_PASSWORD); }
     public int    aepDbPoolSize()  { return getInt(AEP_DB_POOL_SIZE, 10); }
+
+    /** @return Data-Cloud service base URL (default: {@code http://localhost:8085}). Configurable via {@code AEP_DC_BASE_URL}. */
+    public String aepDcBaseUrl()   { return get(AEP_DC_BASE_URL, "http://localhost:8085"); }
+
+    /** @return consolidation interval in hours (default: 6). Configurable via {@code AEP_CONSOLIDATION_INTERVAL_HOURS}. */
+    public int consolidationIntervalHours() { return getInt(AEP_CONSOLIDATION_INTERVAL_HOURS, 6); }
 }

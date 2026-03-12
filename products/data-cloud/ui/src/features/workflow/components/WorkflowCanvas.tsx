@@ -1,12 +1,12 @@
 /**
- * Workflow canvas component using ReactFlow.
+ * Workflow canvas component using FlowCanvas.
  *
  * <p><b>Purpose</b><br>
  * Visual workflow editor with node and edge management.
  * Provides drag-drop, selection, and connection validation.
  *
  * <p><b>Architecture</b><br>
- * - ReactFlow integration
+ * - @ghatana/flow-canvas integration
  * - Custom node types
  * - Edge validation
  * - Selection management
@@ -20,19 +20,13 @@
 import React, { useCallback, useMemo } from 'react';
 import { useAtom, useSetAtom } from 'jotai';
 import {
-  ReactFlow,
-  Node,
-  Edge,
-  Connection,
-  NodeChange,
+  FlowCanvas,
+  FlowControls,
   useNodesState,
   useEdgesState,
-  Background,
-  Controls,
-  MiniMap,
   addEdge,
-} from '@xyflow/react';
-import '@xyflow/react/dist/style.css';
+} from '@ghatana/flow-canvas';
+import type { Node, Edge, Connection, NodeChange } from '@ghatana/flow-canvas';
 import {
   workflowAtom,
   selectedNodeIdAtom,
@@ -204,7 +198,7 @@ export const WorkflowCanvas: React.FC<WorkflowCanvasProps> = ({
 
   return (
     <div className="w-full h-full bg-gray-50">
-      <ReactFlow
+      <FlowCanvas
         nodes={reactFlowNodes}
         edges={reactFlowEdges}
         nodeTypes={nodeTypes}
@@ -216,10 +210,8 @@ export const WorkflowCanvas: React.FC<WorkflowCanvasProps> = ({
         fitView
         deleteKeyCode={readOnly ? null : 'Delete'}
       >
-        <Background color="#aaa" gap={16} />
-        <Controls />
-        <MiniMap />
-      </ReactFlow>
+        <FlowControls />
+      </FlowCanvas>
     </div>
   );
 };

@@ -21,6 +21,7 @@
       "@ghatana/yappc-types/devsecops/*": [
         "../../libs/types/src/devsecops/*"
       ],
+      "@ghatana/yappc-state": [
         "../../libs/state/src"
       ],
       "@ghatana/yappc-state/*": [

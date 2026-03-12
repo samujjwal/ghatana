@@ -1,6 +1,8 @@
 package com.ghatana.datacloud.launcher.grpc;
 
 import com.ghatana.datacloud.grpc.EventLogGrpcService;
+import com.ghatana.datacloud.grpc.EventQueryGrpcService;
+import com.ghatana.datacloud.grpc.EventServiceGrpcService;
 import com.ghatana.datacloud.spi.EventLogStore;
 import com.ghatana.platform.governance.security.TenantGrpcInterceptor;
 import io.grpc.Server;
@@ -16,7 +18,9 @@ import java.util.concurrent.TimeUnit;
  *
  * <p>Starts a single-port gRPC server exposing:
  * <ul>
- *   <li>{@link EventLogGrpcService} — {@code EventLogService} (Append, ReadByType)</li>
+ *   <li>{@link EventLogGrpcService}  — {@code EventLogService} (Append, ReadByType)</li>
+ *   <li>{@link EventQueryGrpcService} — {@code EventQueryService} (ExecuteQuery, ExplainQuery)</li>
+ *   <li>{@link EventServiceGrpcService} — {@code EventService} (Ingest, IngestBatch, IngestStream, Query, GetEvent)</li>
  * </ul>
  *
  * <p>Port is resolved from the {@code DATACLOUD_GRPC_PORT} environment variable with a default
@@ -45,6 +49,8 @@ public final class DataCloudGrpcServer implements AutoCloseable {
         this.server = ServerBuilder.forPort(port)
                 .intercept(TenantGrpcInterceptor.lenient())
                 .addService(new EventLogGrpcService(eventLogStore))
+                .addService(new EventQueryGrpcService(eventLogStore))
+                .addService(new EventServiceGrpcService(eventLogStore))
                 .build();
     }
 

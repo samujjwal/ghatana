@@ -24,6 +24,8 @@ export default [
 
     // Auth routes
     route('login', 'routes/login.tsx'),
+    route('register', 'routes/register.tsx'),
+    route('forgot-password', 'routes/forgot-password.tsx'),
     route('onboarding', 'routes/onboarding.tsx'),
 
     // App routes with shell layout

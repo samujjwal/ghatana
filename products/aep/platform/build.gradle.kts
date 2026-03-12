@@ -21,6 +21,10 @@ dependencies {
     api(project(":platform:java:domain"))
     api(project(":platform:java:workflow"))
     api(project(":platform:java:agent-framework"))
+    api(project(":platform:java:agent-dispatch"))
+    api(project(":platform:java:agent-learning"))
+    api(project(":platform:java:agent-memory"))
+    api(project(":platform:java:agent-registry"))
     api(project(":platform:java:connectors"))
     api(project(":products:data-cloud:spi"))       // SPI interfaces only (not full platform)
     api(project(":platform:java:plugin"))
@@ -108,6 +112,10 @@ dependencies {
 
     // H2 in-memory database for JDBC integration tests
     testImplementation(libs.h2)
+
+    // Testcontainers for PostgreSQL integration tests
+    testImplementation(libs.testcontainers.core)
+    testImplementation(libs.testcontainers.postgresql)
 
     // JMH Benchmarks
     testImplementation(libs.jmh.core)

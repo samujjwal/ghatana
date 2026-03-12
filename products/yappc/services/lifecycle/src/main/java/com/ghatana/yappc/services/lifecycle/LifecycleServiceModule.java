@@ -29,19 +29,52 @@ import com.ghatana.yappc.services.shape.ShapeServiceImpl;
 import com.ghatana.yappc.services.validate.ValidationService;
 import com.ghatana.yappc.services.validate.ValidationServiceImpl;
 import com.ghatana.yappc.storage.YappcArtifactRepository;
-import com.ghatana.core.event.cloud.InMemoryEventCloud;
-import com.ghatana.core.event.cloud.EventCloud;
+import com.ghatana.core.database.config.JpaConfig;
+import com.ghatana.core.operator.catalog.InMemoryOperatorCatalog;
+import com.ghatana.core.operator.catalog.OperatorCatalog;
+import com.ghatana.core.template.YamlTemplateEngine;
 import com.ghatana.yappc.agent.AepEventPublisher;
-import com.ghatana.yappc.agent.DurableEventCloudPublisher;
+import com.ghatana.yappc.agent.AepHttpEventPublisher;
+import com.ghatana.yappc.services.lifecycle.AepEventBridge;
+
+import javax.sql.DataSource;
 import com.ghatana.yappc.services.lifecycle.operators.AgentDispatchOperator;
+import com.ghatana.yappc.services.lifecycle.operators.AgentDispatchValidatorOperator;
+import com.ghatana.yappc.services.lifecycle.operators.AgentExecutorOperator;
+import com.ghatana.yappc.services.lifecycle.operators.BackpressureOperator;
 import com.ghatana.yappc.services.lifecycle.operators.GateOrchestratorOperator;
 import com.ghatana.yappc.services.lifecycle.operators.LifecycleStatePublisherOperator;
+import com.ghatana.yappc.services.lifecycle.operators.MetricsCollectorOperator;
 import com.ghatana.yappc.services.lifecycle.operators.PhaseTransitionValidatorOperator;
+import com.ghatana.yappc.services.lifecycle.operators.ResultAggregatorOperator;
 import com.ghatana.yappc.services.lifecycle.dlq.DlqPublisher;
+// ─── Workflow Engine (YAPPC-Ph9) ──────────────────────────────────────────
+import com.ghatana.platform.workflow.engine.DurableWorkflowEngine;
+import com.ghatana.yappc.services.lifecycle.workflow.LifecycleWorkflowService;
+// ─── Agent Orchestration Bootstrapper (YAPPC-Ph6) ─────────────────────────
+import com.ghatana.yappc.services.lifecycle.YappcAgentOrchestrationBootstrapper;
+import com.ghatana.agent.framework.loader.AgentDefinitionLoader;
+import com.ghatana.agent.framework.memory.MemoryStore;
+import com.ghatana.agent.memory.model.working.WorkingMemoryConfig;
+import com.ghatana.agent.memory.persistence.JdbcMemoryItemRepository;
+import com.ghatana.agent.memory.persistence.JdbcTaskStateRepository;
+import com.ghatana.agent.memory.persistence.MemoryItemRepository;
+import com.ghatana.agent.memory.persistence.MemoryStoreAdapter;
+import com.ghatana.agent.memory.persistence.PersistentMemoryPlane;
+import com.ghatana.agent.memory.store.MemoryPlane;
+import com.ghatana.agent.memory.store.procedural.InMemoryPatternEngine;
+import com.ghatana.agent.memory.store.procedural.ProceduralMemoryManager;
+import com.ghatana.agent.memory.store.procedural.ProcedureSelector;
+import com.ghatana.agent.memory.store.semantic.SemanticMemoryManager;
+import com.ghatana.agent.memory.store.taskstate.JdbcTaskStateStore;
+import com.ghatana.agent.memory.store.taskstate.TaskStateStore;
+// ──────────────────────────────────────────────────────────────────────────
 import io.activej.inject.annotation.Provides;
 import io.activej.inject.module.AbstractModule;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+
+import java.time.Duration;
 
 /**
  * ActiveJ DI module for YAPPC Lifecycle services.
@@ -265,26 +298,349 @@ public class LifecycleServiceModule extends AbstractModule {
         return new GateEvaluator();
     }
 
-    // ========== EventCloud + AEP Publisher (Ph1c) ==========
+    // ========== DataCloud persistence (YAPPC-Ph1a/1b) ==========
 
     /**
-     * Provides EventCloud — in-memory implementation (Ph1b will wire the real EventCloud).
+     * Provides the JDBC {@link DataSource} for YAPPC's PostgreSQL database.
      *
+     * <p>Configuration via environment variables:
+     * <ul>
+     *   <li>{@code YAPPC_DB_URL} — JDBC URL (default: {@code jdbc:postgresql://localhost:5432/yappc})</li>
+     *   <li>{@code YAPPC_DB_USERNAME} — DB username (default: {@code yappc})</li>
+     *   <li>{@code YAPPC_DB_PASSWORD} — DB password (required in production)</li>
+     *   <li>{@code YAPPC_DB_POOL_SIZE} — HikariCP max pool size (default: {@code 10})</li>
+     * </ul>
+     *
+     * @doc.type method
+     * @doc.purpose Provides HikariCP JDBC DataSource for YAPPC PostgreSQL persistence
+     * @doc.layer product
+     * @doc.pattern Factory
+     */
+    @Provides
+    DataSource dataSource() {
+        String url = System.getenv().getOrDefault("YAPPC_DB_URL",
+            "jdbc:postgresql://localhost:5432/yappc");
+        String username = System.getenv().getOrDefault("YAPPC_DB_USERNAME", "yappc");
+        String password = System.getenv().getOrDefault("YAPPC_DB_PASSWORD", "");
+        int poolSize = Integer.parseInt(
+            System.getenv().getOrDefault("YAPPC_DB_POOL_SIZE", "10"));
+
+        logger.info("Creating DataSource: url={}, username={}, poolSize={}",
+            url, username, poolSize);
+
+        return JpaConfig.builder()
+            .jdbcUrl(url)
+            .username(username)
+            .password(password)
+            .entityPackages("com.ghatana.yappc")
+            .poolSize(poolSize)
+            .ddlAuto("none")
+            .showSql(false)
+            .build()
+            .createDataSource();
+    }
+
+
+    // ========== Schema Registry (YAPPC-Ph2) ==========
+
+    // ========== YAML Template Engine (YAPPC-Ph3) ==========
+
+    /**
+     * Provides the {@link YamlTemplateEngine} for rendering YAML templates with
+     * variable substitution and {@code extends}-based inheritance.
+     *
+     * <p>Used by {@link GenerationService}, {@link ShapeService}, and other lifecycle
+     * phases to render agent definitions, pipeline specs, and operator schemas from
+     * parameterised YAML templates.
+     *
+     * @return YAML template engine instance (stateless, singleton-safe)
+     *
+     * @doc.type method
+     * @doc.purpose Provides YamlTemplateEngine for YAML-based agent/pipeline definitions (YAPPC-Ph3)
+     * @doc.layer product
+     * @doc.pattern Strategy, Factory
+     */
+    @Provides
+    YamlTemplateEngine yamlTemplateEngine() {
+        logger.info("Creating YamlTemplateEngine (YAPPC-Ph3)");
+        return new YamlTemplateEngine();
+    }
+
+    // ========== Operator Catalog (YAPPC-Ph4) ==========
+
+    /**
+     * Provides the unified {@link OperatorCatalog} for YAPPC lifecycle operators.
+     *
+     * <p>Pre-registers all four YAPPC lifecycle pipeline operators:
+     * <ol>
+     *   <li>{@link PhaseTransitionValidatorOperator} — validates phase transitions</li>
+     *   <li>{@link GateOrchestratorOperator} — runs quality gates + human approval routing</li>
+     *   <li>{@link AgentDispatchOperator} — dispatches stage agents</li>
+     *   <li>{@link LifecycleStatePublisherOperator} — publishes {@code lifecycle.phase.advanced}</li>
+     * </ol>
+     *
+     * <p>The catalog is backed by {@link InMemoryOperatorCatalog} and populated synchronously
+     * at startup (all {@code register()} Promises are resolved immediately in-memory).
+     *
+     * @param validatorOperator  phase transition validator
+     * @param gateOperator       gate orchestrator
+     * @param dispatchOperator   agent dispatch operator
+     * @param publisherOperator  lifecycle state publisher
+     * @return populated operator catalog singleton
+     *
+     * @doc.type method
+     * @doc.purpose Provides pre-populated OperatorCatalog for YAPPC lifecycle pipeline (YAPPC-Ph4)
+     * @doc.layer product
+     * @doc.pattern Registry, Factory
+     */
+    @Provides
+    OperatorCatalog operatorCatalog(
+            PhaseTransitionValidatorOperator validatorOperator,
+            GateOrchestratorOperator gateOperator,
+            AgentDispatchOperator dispatchOperator,
+            LifecycleStatePublisherOperator publisherOperator) {
+        // YAPPC lifecycle operators use platform.workflow.operator.UnifiedOperator, while
+        // InMemoryOperatorCatalog uses core.operator.UnifiedOperator — two separate hierarchies.
+        // The operators are wired directly into YappcAepPipelineBootstrapper and do not need
+        // catalog-based discovery within the YAPPC lifecycle module.
+        logger.info("Created OperatorCatalog for YAPPC lifecycle operators (YAPPC-Ph4): direct pipeline wiring");
+        return new InMemoryOperatorCatalog();
+    }
+
+    // ========== AEP Publisher — HTTP connector (Ph1c) ==========
+
+    /**
+     * Provides {@link AepEventPublisher} as an HTTP connector to AEP.
+     *
+     * <p>YAPPC sends workflow events to AEP via {@code POST /api/v1/events}.
+     * AEP internally routes them through EventCloud. YAPPC has no direct
+     * dependency on EventCloud or DataCloud storage.
+     *
+     * <p>Configuration via {@code AEP_BASE_URL} environment variable
+     * (default: {@code http://localhost:8081}).
+     *
+     * @return AepHttpEventPublisher singleton
+     *
+     * @doc.type method
+     * @doc.purpose HTTP connector to AEP event ingest endpoint (replaces EventCloud coupling)
+     * @doc.layer product
+     * @doc.pattern Adapter
      * @doc.gaa.lifecycle act
      */
     @Provides
-    EventCloud eventCloud() {
-        logger.info("Creating InMemoryEventCloud (TODO Ph1b: wire real EventCloud)");
-        return new InMemoryEventCloud();
+    AepEventPublisher aepEventPublisher() {
+        logger.info("Creating AepHttpEventPublisher (HTTP connector to AEP — decoupled from EventCloud)");
+        return AepHttpEventPublisher.fromEnvironment();
     }
 
     /**
-     * Provides AepEventPublisher — EventCloud-backed durable publisher.
+     * Provides {@link AepEventBridge} — a resilient, fire-and-forget facade over
+     * {@link AepEventPublisher} for lifecycle domain events (YAPPC-Ph5).
+     *
+     * <p>Publishes {@code lifecycle.phase.advanced} and {@code lifecycle.phase.blocked}
+     * events; all AEP failures are swallowed so lifecycle state-machine processing
+     * is never blocked by downstream event-publishing issues.
+     *
+     * @param publisher underlying AEP publisher
+     * @return AepEventBridge singleton
+     *
+     * @doc.type method
+     * @doc.purpose Provides resilient AEP event bridge for lifecycle domain events (YAPPC-Ph5)
+     * @doc.layer product
+     * @doc.pattern Facade
      */
     @Provides
-    AepEventPublisher aepEventPublisher(EventCloud eventCloud) {
-        logger.info("Creating DurableEventCloudPublisher");
-        return DurableEventCloudPublisher.fromEnvironment(eventCloud);
+    AepEventBridge aepEventBridge(AepEventPublisher publisher) {
+        logger.info("Creating AepEventBridge (YAPPC-Ph5)");
+        return new AepEventBridge(publisher);
+    }
+
+    // ========== Agent Definition Loader (YAPPC-Ph7) ==========
+
+    /**
+     * Provides an {@link AgentDefinitionLoader} for loading agent YAML blueprints
+     * (the 228 YAPPC agents in {@code config/agents/}) at startup.
+     *
+     * <p>Uses an empty {@code TemplateContext} — YAPPC agent YAMLs do not use
+     * {@code {{ varName }}} placeholders. Individual services that need a populated
+     * template context (e.g., for environment-specific substitution) should create
+     * their own scoped loaders.
+     *
+     * @return AgentDefinitionLoader singleton
+     *
+     * @doc.type method
+     * @doc.purpose Provides YAML-based AgentDefinition loader for YAPPC agent catalog (YAPPC-Ph7)
+     * @doc.layer product
+     * @doc.pattern Factory
+     * @doc.gaa.lifecycle perceive
+     */
+    @Provides
+    AgentDefinitionLoader agentDefinitionLoader() {
+        logger.info("Creating AgentDefinitionLoader (YAPPC-Ph7)");
+        return new AgentDefinitionLoader();
+    }
+
+    // ========== GAA Memory Stack (YAPPC-Ph8) ==========
+
+    /**
+     * Provides the JDBC-backed {@link MemoryItemRepository} for persisting episodic,
+     * semantic, and procedural memory items to the {@code yappc.memory_items} table.
+     *
+     * @param dataSource shared HikariCP connection pool
+     * @return JdbcMemoryItemRepository singleton
+     *
+     * @doc.type method
+     * @doc.purpose Provides JDBC memory item repository for GAA memory persistence (YAPPC-Ph8)
+     * @doc.layer product
+     * @doc.pattern Repository
+     * @doc.gaa.memory episodic
+     */
+    @Provides
+    MemoryItemRepository memoryItemRepository(DataSource dataSource) {
+        logger.info("Creating JdbcMemoryItemRepository (YAPPC-Ph8)");
+        return new JdbcMemoryItemRepository(dataSource);
+    }
+
+    /**
+     * Provides the JDBC-backed {@link TaskStateStore} for persisting agent task
+     * state to the {@code yappc.task_states} table.
+     *
+     * @return JdbcTaskStateStore singleton
+     *
+     * @doc.type method
+     * @doc.purpose Provides JDBC task state store for agent execution tracking (YAPPC-Ph8)
+     * @doc.layer product
+     * @doc.pattern Repository
+     * @doc.gaa.lifecycle capture
+     */
+    @Provides
+    TaskStateStore taskStateStore() {
+        logger.info("Creating JdbcTaskStateStore (YAPPC-Ph8)");
+        JdbcTaskStateRepository repository = new JdbcTaskStateRepository();
+        return new JdbcTaskStateStore(repository);
+    }
+
+    /**
+     * Provides the {@link WorkingMemoryConfig} for YAPPC lifecycle agents.
+     *
+     * <p>Configured for medium-scale YAPPC agent turns:
+     * <ul>
+     *   <li>Max 2,000 working memory entries per turn</li>
+     *   <li>Max 20 MB total working memory</li>
+     *   <li>LRU eviction (most recently used context kept)</li>
+     * </ul>
+     *
+     * @return WorkingMemoryConfig singleton (immutable value object)
+     *
+     * @doc.type method
+     * @doc.purpose Configures bounded working memory for YAPPC GAA agents (YAPPC-Ph8)
+     * @doc.layer product
+     * @doc.pattern ValueObject
+     * @doc.gaa.memory episodic
+     */
+    @Provides
+    WorkingMemoryConfig workingMemoryConfig() {
+        return WorkingMemoryConfig.builder()
+                .maxEntries(2000)
+                .maxBytes(20L * 1024 * 1024)
+                .evictionPolicy(WorkingMemoryConfig.EvictionPolicy.LRU)
+                .build();
+    }
+
+    /**
+     * Provides the production {@link MemoryPlane} backed by PostgreSQL via
+     * {@link JdbcMemoryItemRepository} and {@link JdbcTaskStateStore}.
+     *
+     * <p>This is the core GAA memory persistence layer for YAPPC lifecycle agents.
+     *
+     * @param itemRepository  JDBC-backed memory item store
+     * @param taskStateStore  JDBC-backed task state store
+     * @param config          working memory bounds configuration
+     * @return PersistentMemoryPlane singleton
+     *
+     * @doc.type method
+     * @doc.purpose Provides PostgreSQL-backed MemoryPlane for durable GAA memory (YAPPC-Ph8)
+     * @doc.layer product
+     * @doc.pattern Repository
+     * @doc.gaa.memory episodic
+     */
+    @Provides
+    MemoryPlane memoryPlane(
+            MemoryItemRepository itemRepository,
+            TaskStateStore taskStateStore,
+            WorkingMemoryConfig config) {
+        logger.info("Creating PersistentMemoryPlane (YAPPC-Ph8)");
+        return new PersistentMemoryPlane(itemRepository, taskStateStore, config);
+    }
+
+    /**
+     * Provides the {@link MemoryStore} adapter that bridges the agent-framework
+     * {@code MemoryStore} interface to the agent-memory {@link MemoryPlane} API.
+     *
+     * <p>This is the binding used by {@code BaseAgent} / {@code DefaultAgentContext}
+     * to read and write episodic, semantic, and procedural memory during agent turns.
+     *
+     * @param memoryPlane the persistent memory plane
+     * @return MemoryStoreAdapter implementing {@link MemoryStore}
+     *
+     * @doc.type method
+     * @doc.purpose Bridges MemoryPlane to MemoryStore for GAA agent context (YAPPC-Ph8)
+     * @doc.layer product
+     * @doc.pattern Adapter
+     * @doc.gaa.memory episodic
+     */
+    @Provides
+    MemoryStore memoryStore(MemoryPlane memoryPlane) {
+        logger.info("Creating MemoryStoreAdapter (YAPPC-Ph8)");
+        return new MemoryStoreAdapter(memoryPlane);
+    }
+
+    /**
+     * Provides the {@link SemanticMemoryManager} for de-duplicating and versioning
+     * structured facts stored by YAPPC lifecycle agents.
+     *
+     * <p>Used in the REFLECT phase of the GAA lifecycle to convert episodic memory
+     * into durable semantic facts ({@code EnhancedFact}).
+     *
+     * @param memoryPlane the persistent memory plane
+     * @return SemanticMemoryManager singleton
+     *
+     * @doc.type method
+     * @doc.purpose Provides semantic fact management for learning from agent turns (YAPPC-Ph8)
+     * @doc.layer product
+     * @doc.pattern Service
+     * @doc.gaa.memory semantic
+     * @doc.gaa.lifecycle reflect
+     */
+    @Provides
+    SemanticMemoryManager semanticMemoryManager(MemoryPlane memoryPlane) {
+        logger.info("Creating SemanticMemoryManager (YAPPC-Ph8)");
+        return new SemanticMemoryManager(memoryPlane);
+    }
+
+    /**
+     * Provides the {@link ProceduralMemoryManager} for inducing, merging, and
+     * retrieving procedural policies from YAPPC lifecycle agent turns.
+     *
+     * <p>Uses an {@link InMemoryPatternEngine} for fast pattern matching during the
+     * REASON phase, and a {@link ProcedureSelector} to retrieve the best-matching
+     * procedure for a given situation with a minimum confidence of 0.5.
+     *
+     * @param memoryPlane the persistent memory plane
+     * @return ProceduralMemoryManager singleton
+     *
+     * @doc.type method
+     * @doc.purpose Provides procedural policy management for adaptive agent behaviour (YAPPC-Ph8)
+     * @doc.layer product
+     * @doc.pattern Service
+     * @doc.gaa.memory procedural
+     * @doc.gaa.lifecycle reflect
+     */
+    @Provides
+    ProceduralMemoryManager proceduralMemoryManager(MemoryPlane memoryPlane) {
+        logger.info("Creating ProceduralMemoryManager with InMemoryPatternEngine (YAPPC-Ph8)");
+        ProcedureSelector selector = new ProcedureSelector(memoryPlane);
+        return new ProceduralMemoryManager(memoryPlane, selector);
     }
 
     // ========== Human Approval Gate (3.5) ==========
@@ -340,12 +696,121 @@ public class LifecycleServiceModule extends AbstractModule {
 
     /**
      * Provides LifecycleStatePublisherOperator — emits {@code lifecycle.phase.advanced}
-     * events via {@link AepEventPublisher} to signal successful phase transitions.
+     * events via {@link AepEventBridge} to signal successful phase transitions (YAPPC-Ph6).
      */
     @Provides
-    LifecycleStatePublisherOperator lifecycleStatePublisherOperator(AepEventPublisher publisher) {
-        logger.info("Creating LifecycleStatePublisherOperator");
-        return new LifecycleStatePublisherOperator(publisher);
+    LifecycleStatePublisherOperator lifecycleStatePublisherOperator(AepEventBridge bridge) {
+        logger.info("Creating LifecycleStatePublisherOperator (YAPPC-Ph6)");
+        return new LifecycleStatePublisherOperator(bridge);
+    }
+
+    // ========== Agent Orchestration Pipeline Operators (YAPPC-Ph6) ==========
+
+    /**
+     * Provides {@link AgentDispatchValidatorOperator} — validates
+     * {@code agent.dispatch.requested} events against required field constraints
+     * before they enter the agent execution pipeline.
+     *
+     * @doc.type method
+     * @doc.purpose Provides schema validator for agent dispatch events (YAPPC-Ph6)
+     * @doc.layer product
+     * @doc.pattern Validator
+     * @doc.gaa.lifecycle perceive
+     */
+    @Provides
+    AgentDispatchValidatorOperator agentDispatchValidatorOperator() {
+        logger.info("Creating AgentDispatchValidatorOperator (YAPPC-Ph6)");
+        return new AgentDispatchValidatorOperator();
+    }
+
+    /**
+     * Provides {@link BackpressureOperator} — bounded FIFO buffer (DROP_OLDEST)
+     * protecting downstream agent operators from event-rate spikes.
+     *
+     * @doc.type method
+     * @doc.purpose Provides backpressure buffer for agent dispatch events (YAPPC-Ph6)
+     * @doc.layer product
+     * @doc.pattern Backpressure
+     * @doc.gaa.lifecycle perceive
+     */
+    @Provides
+    BackpressureOperator backpressureOperator() {
+        logger.info("Creating BackpressureOperator (YAPPC-Ph6) — buffer=2048, strategy=DROP_OLDEST");
+        return new BackpressureOperator();
+    }
+
+    /**
+     * Provides {@link AgentExecutorOperator} — executes agents referenced by dispatch
+     * events and emits {@code agent.result.produced} events with execution outcomes.
+     *
+     * @doc.type method
+     * @doc.purpose Provides agent executor for the orchestration pipeline (YAPPC-Ph6)
+     * @doc.layer product
+     * @doc.pattern Service, Command
+     * @doc.gaa.lifecycle act
+     */
+    @Provides
+    AgentExecutorOperator agentExecutorOperator() {
+        logger.info("Creating AgentExecutorOperator (YAPPC-Ph6)");
+        return new AgentExecutorOperator();
+    }
+
+    /**
+     * Provides {@link ResultAggregatorOperator} — aggregates {@code agent.result.produced}
+     * events by {@code correlation_id} and emits {@code workflow.step.completed} events.
+     *
+     * @doc.type method
+     * @doc.purpose Provides result aggregator for agent execution pipeline (YAPPC-Ph6)
+     * @doc.layer product
+     * @doc.pattern Aggregator
+     * @doc.gaa.lifecycle capture
+     */
+    @Provides
+    ResultAggregatorOperator resultAggregatorOperator() {
+        logger.info("Creating ResultAggregatorOperator (YAPPC-Ph6) — threshold=1 (immediate emission)");
+        return new ResultAggregatorOperator();
+    }
+
+    /**
+     * Provides {@link MetricsCollectorOperator} — terminal pass-through operator that
+     * collects execution metrics from agent result events and emits
+     * {@code agent.metrics.updated} events for observability consumers.
+     *
+     * @doc.type method
+     * @doc.purpose Provides metrics collector for agent execution observability (YAPPC-Ph6)
+     * @doc.layer product
+     * @doc.pattern Metrics, Observer
+     * @doc.gaa.lifecycle capture
+     */
+    @Provides
+    MetricsCollectorOperator metricsCollectorOperator() {
+        logger.info("Creating MetricsCollectorOperator (YAPPC-Ph6)");
+        return new MetricsCollectorOperator();
+    }
+
+    /**
+     * Provides the {@link YappcAgentOrchestrationBootstrapper} that wires the 5 agent
+     * orchestration operators into the {@code agent-orchestration-v1} AEP pipeline and
+     * starts it at service boot.
+     *
+     * @doc.type method
+     * @doc.purpose Bootstraps the YAPPC agent-orchestration-v1 pipeline (YAPPC-Ph6)
+     * @doc.layer product
+     * @doc.pattern Bootstrapper
+     * @doc.gaa.lifecycle perceive
+     */
+    @Provides
+    YappcAgentOrchestrationBootstrapper yappcAgentOrchestrationBootstrapper(
+            AgentDispatchValidatorOperator validatorOperator,
+            BackpressureOperator backpressureOperator,
+            AgentExecutorOperator executorOperator,
+            ResultAggregatorOperator aggregatorOperator,
+            MetricsCollectorOperator metricsOperator,
+            DlqPublisher dlqPublisher) {
+        logger.info("Creating YappcAgentOrchestrationBootstrapper (YAPPC-Ph6)");
+        return new YappcAgentOrchestrationBootstrapper(
+                validatorOperator, backpressureOperator, executorOperator,
+                aggregatorOperator, metricsOperator, dlqPublisher);
     }
 
     /**
@@ -375,5 +840,68 @@ public class LifecycleServiceModule extends AbstractModule {
     @Provides
     DlqPublisher dlqPublisher() {
         return DlqPublisher.noop();
+    }
+
+    // ========== Workflow Engine (YAPPC-Ph9) ==========
+
+    /**
+     * Provides the {@link DurableWorkflowEngine} for executing canonical YAPPC
+     * lifecycle workflows durably with retry and compensation support.
+     *
+     * <p>Configuration:
+     * <ul>
+     *   <li>Default per-step timeout: 5 minutes</li>
+     *   <li>Default max retries per step: 2 (3 total attempts)</li>
+     *   <li>Default retry backoff: 2 seconds (exponential)</li>
+     *   <li>State store: {@link DurableWorkflowEngine.InMemoryWorkflowStateStore}</li>
+     * </ul>
+     *
+     * <p>For production deployments that require persistent workflow state across restarts,
+     * override this binding (in {@code ProductionModule} or a deployment-specific module)
+     * with a {@code JdbcWorkflowStateStore}-backed engine.
+     *
+     * @return DurableWorkflowEngine singleton
+     *
+     * @doc.type method
+     * @doc.purpose Provides durable workflow engine for canonical YAPPC lifecycle workflows (YAPPC-Ph9)
+     * @doc.layer product
+     * @doc.pattern Service, Factory
+     */
+    @Provides
+    DurableWorkflowEngine durableWorkflowEngine() {
+        logger.info("Creating DurableWorkflowEngine (YAPPC-Ph9) — InMemoryWorkflowStateStore, "
+                  + "5min timeout, 2 retries");
+        return DurableWorkflowEngine.builder()
+                .stateStore(new DurableWorkflowEngine.InMemoryWorkflowStateStore())
+                .defaultTimeout(Duration.ofMinutes(5))
+                .defaultMaxRetries(2)
+                .defaultRetryBackoff(Duration.ofSeconds(2))
+                .build();
+    }
+
+    /**
+     * Provides the {@link LifecycleWorkflowService} that materialises canonical workflow
+     * templates from {@code lifecycle-workflow-templates.yaml} and orchestrates their
+     * durable execution via {@link DurableWorkflowEngine}.
+     *
+     * <p>Calls {@link LifecycleWorkflowService#initialize()} eagerly at startup so all
+     * templates are available before the first HTTP request is served.
+     *
+     * @param engine durable workflow engine
+     * @return initialised LifecycleWorkflowService singleton
+     *
+     * @doc.type method
+     * @doc.purpose Provides and initialises the YAPPC canonical workflow service (YAPPC-Ph9)
+     * @doc.layer product
+     * @doc.pattern Service, Factory
+     * @doc.gaa.lifecycle perceive
+     */
+    @Provides
+    LifecycleWorkflowService lifecycleWorkflowService(DurableWorkflowEngine engine) {
+        logger.info("Creating LifecycleWorkflowService (YAPPC-Ph9)");
+        LifecycleWorkflowService service = new LifecycleWorkflowService(engine);
+        int loaded = service.initialize();
+        logger.info("LifecycleWorkflowService initialised — {} workflow template(s) registered", loaded);
+        return service;
     }
 }

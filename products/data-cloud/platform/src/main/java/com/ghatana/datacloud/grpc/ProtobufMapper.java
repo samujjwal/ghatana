@@ -11,7 +11,6 @@ import java.nio.ByteBuffer;
 import java.nio.charset.StandardCharsets;
 import java.time.Instant;
 import java.util.Map;
-import java.util.Optional;
 import java.util.UUID;
 
 /**
@@ -58,9 +57,9 @@ public final class ProtobufMapper {
                 ? ByteBuffer.allocate(0)
                 : ByteBuffer.wrap(payloadJson.getBytes(StandardCharsets.UTF_8));
         Map<String, String> headers = Map.copyOf(event.getHeadersMap());
-        Optional<String> idempotencyKey = event.getIdempotencyKey().isBlank()
-                ? Optional.empty()
-                : Optional.of(event.getIdempotencyKey());
+        String idempotencyKey = event.getIdempotencyKey().isBlank()
+                ? null
+                : event.getIdempotencyKey();
 
         return EventEntry.builder()
                 .eventId(eventId)

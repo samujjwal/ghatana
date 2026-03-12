@@ -8,7 +8,7 @@
  */
 
 import React from 'react';
-import { Handle, Position } from '@xyflow/react';
+import { Handle, Position } from '@ghatana/flow-canvas';
 import type { DecisionNodeData } from '../../types/workflow.types';
 
 /**

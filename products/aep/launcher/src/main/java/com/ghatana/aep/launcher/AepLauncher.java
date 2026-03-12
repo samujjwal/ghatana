@@ -3,9 +3,13 @@ package com.ghatana.aep.launcher;
 import com.ghatana.aep.Aep;
 import com.ghatana.aep.AepEngine;
 import com.ghatana.aep.catalog.AepOperatorCatalogLoader;
+import com.ghatana.aep.launcher.grpc.AepGrpcServer;
+import com.ghatana.agent.registry.InMemoryAgentFrameworkRegistry;
 import com.ghatana.core.operator.catalog.DefaultOperatorCatalog;
 import com.ghatana.core.operator.catalog.OperatorCatalog;
 import com.ghatana.core.operator.spi.OperatorProviderRegistry;
+import com.ghatana.datacloud.DataCloud;
+import com.ghatana.datacloud.DataCloudClient;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -60,6 +64,11 @@ public class AepLauncher {
             // Start HTTP server if configured
             if (shouldStartHttpServer(args)) {
                 startHttpServer(engine, config);
+            }
+
+            // Start gRPC server if configured
+            if (shouldStartGrpcServer(args)) {
+                startGrpcServer();
             }
 
             // Keep running
@@ -129,6 +138,30 @@ public class AepLauncher {
         return System.getenv("AEP_HTTP_ENABLED") != null;
     }
 
+    private static boolean shouldStartGrpcServer(String[] args) {
+        for (String arg : args) {
+            if ("--grpc".equals(arg)) {
+                return true;
+            }
+        }
+        return System.getenv("AEP_GRPC_ENABLED") != null;
+    }
+
+    private static void startGrpcServer() {
+        try {
+            AepGrpcServer grpcServer = new AepGrpcServer(new InMemoryAgentFrameworkRegistry());
+            grpcServer.start();
+            log.info("gRPC server started on port {}", grpcServer.getPort());
+
+            Runtime.getRuntime().addShutdownHook(new Thread(() -> {
+                log.info("Stopping gRPC server...");
+                grpcServer.close();
+            }));
+        } catch (Exception e) {
+            log.error("Failed to start gRPC server", e);
+        }
+    }
+
     private static void startHttpServer(AepEngine engine, Aep.AepConfig config) {
         int port = 8080;
         String portEnv = System.getenv("AEP_HTTP_PORT");
@@ -137,8 +170,9 @@ public class AepLauncher {
         }
 
         try {
+            DataCloudClient agentDataCloud = createAgentDataCloudClient();
             com.ghatana.aep.launcher.http.AepHttpServer httpServer =
-                new com.ghatana.aep.launcher.http.AepHttpServer(engine, port);
+                new com.ghatana.aep.launcher.http.AepHttpServer(engine, port, null, agentDataCloud);
             httpServer.start();
             log.info("HTTP server started on port {}", port);
 
@@ -146,9 +180,31 @@ public class AepLauncher {
             Runtime.getRuntime().addShutdownHook(new Thread(() -> {
                 log.info("Stopping HTTP server...");
                 httpServer.stop();
+                if (agentDataCloud != null) {
+                    agentDataCloud.close();
+                }
             }));
         } catch (Exception e) {
             log.error("Failed to start HTTP server on port {}", port, e);
+        }
+    }
+
+    /**
+     * Creates a {@link DataCloudClient} for agent-registry queries.
+     *
+     * <p>Creates an embedded in-process Data-Cloud instance backed by in-memory storage.
+     * For production deployments that connect to an external Data-Cloud service, inject
+     * the client via the DI module instead of using this factory method.
+     *
+     * @return configured client, or {@code null} on failure (agent registry endpoints degrade gracefully)
+     */
+    private static DataCloudClient createAgentDataCloudClient() {
+        try {
+            log.info("Creating embedded DataCloudClient for agent registry");
+            return DataCloud.embedded();
+        } catch (Exception e) {
+            log.warn("DataCloudClient creation failed — agent registry endpoints will be unavailable: {}", e.getMessage());
+            return null;
         }
     }
 }

@@ -18,6 +18,7 @@
   "dependencies": {
     "@ghatana/theme": "workspace:*",
     "@ghatana/ui": "workspace:*",
+    "@tanstack/react-query": "^5.90.21",
     "@xyflow/react": "^12.10.0",
     "axios": "^1.13.4",
     "clsx": "^2.1.1",

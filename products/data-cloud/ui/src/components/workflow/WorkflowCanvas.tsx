@@ -1,25 +1,26 @@
 import React, { useCallback, useEffect, useState } from 'react';
 import { useAtom } from 'jotai';
 import {
-  ReactFlow,
-  Node,
-  Edge,
+  FlowCanvas,
+  FlowControls,
   addEdge,
-  Connection,
   useNodesState,
   useEdgesState,
-  Background,
-  Controls,
-  MiniMap,
-  Panel,
-} from '@xyflow/react';
-import '@xyflow/react/dist/style.css';
+} from '@ghatana/flow-canvas';
+import type { Node, Edge, Connection } from '@ghatana/flow-canvas';
 import { workflowAtom, selectedNodeAtom, selectedEdgeAtom } from '@/stores/workflow.store';
 import type { WorkflowNode as WorkflowNodeType } from '@/types/workflow.types';
 import { ApiCallNode } from './nodes/ApiCallNode';
 import { DecisionNode } from './nodes/DecisionNode';
 import { ApprovalNode } from './nodes/ApprovalNode';
 import { TransformNode } from './nodes/TransformNode';
+
+// Convenience type aliases for this canvas's node/edge data shapes
+type CanvasNodeData = { label?: string; config?: Record<string, unknown> };
+type CanvasEdgeData = { label?: string };
+type FlowNode = Node<CanvasNodeData>;
+type FlowEdge = Edge<CanvasEdgeData>;
+type FlowConnection = Connection;
 
 /**
  * Workflow canvas component with ReactFlow integration.
@@ -29,10 +30,9 @@ import { TransformNode } from './nodes/TransformNode';
  * node rendering, edge connections, zoom/pan controls, and selection handling.
  *
  * <p><b>Features</b><br>
- * - ReactFlow integration for graph visualization
+ * - @ghatana/flow-canvas integration for graph visualization
  * - Custom node types (API Call, Decision, Approval, Transform)
  * - Zoom and pan controls
- * - Minimap for navigation
  * - Node and edge selection
  * - Keyboard shortcuts (Delete, Ctrl+Z, Ctrl+Y)
  * - Real-time state synchronization with Jotai
@@ -59,7 +59,7 @@ import { TransformNode } from './nodes/TransformNode';
  * <p><b>Thread Safety</b><br>
  * React component - safe for concurrent rendering.
  *
- * @see ReactFlow
+ * @see FlowCanvas
  * @see ApiCallNode
  * @see DecisionNode
  * @doc.type component
@@ -89,16 +89,16 @@ export function WorkflowCanvas({ workflowId }: WorkflowCanvasProps): JSX.Element
   const [selectedEdgeId, setSelectedEdgeAtom] = useAtom(selectedEdgeAtom);
 
   // Initialize nodes and edges from workflow
-  const initialNodes: Node[] =
+  const initialNodes: FlowNode[] =
     workflow?.nodes.map((node: WorkflowNodeType) => ({
       id: node.id,
-      data: { label: node.label, config: node.config },
+      data: { label: node.label ?? '', config: node.config as Record<string, unknown> | undefined },
       position: { x: node.position?.x ?? 0, y: node.position?.y ?? 0 },
       type: mapNodeType(node.type),
       selected: node.id === selectedNodeId,
     })) || [];
 
-  const initialEdges: Edge[] =
+  const initialEdges: FlowEdge[] =
     workflow?.edges.map((edge) => ({
       id: edge.id,
       source: edge.source,
@@ -112,8 +112,8 @@ export function WorkflowCanvas({ workflowId }: WorkflowCanvasProps): JSX.Element
 
   // Handle node connection
   const onConnect = useCallback(
-    (connection: Connection) => {
-      const newEdge: Edge = {
+    (connection: FlowConnection) => {
+      const newEdge: FlowEdge = {
         id: `edge-${Date.now()}`,
         source: connection.source || '',
         target: connection.target || '',
@@ -126,7 +126,7 @@ export function WorkflowCanvas({ workflowId }: WorkflowCanvasProps): JSX.Element
 
   // Handle node selection
   const onNodeClick = useCallback(
-    (event: React.MouseEvent, node: Node) => {
+    (event: React.MouseEvent, node: FlowNode) => {
       setSelectedNodeId(node.id);
     },
     [setSelectedNodeId]
@@ -134,7 +134,7 @@ export function WorkflowCanvas({ workflowId }: WorkflowCanvasProps): JSX.Element
 
   // Handle edge selection
   const onEdgeClick = useCallback(
-    (event: React.MouseEvent, edge: Edge) => {
+    (event: React.MouseEvent, edge: FlowEdge) => {
       setSelectedEdgeAtom(edge.id);
     },
     [setSelectedEdgeAtom]
@@ -160,7 +160,7 @@ export function WorkflowCanvas({ workflowId }: WorkflowCanvasProps): JSX.Element
 
   return (
     <div className="w-full h-full bg-gray-50">
-      <ReactFlow
+      <FlowCanvas
         nodes={nodes}
         edges={edges}
         onNodesChange={onNodesChange}
@@ -171,16 +171,14 @@ export function WorkflowCanvas({ workflowId }: WorkflowCanvasProps): JSX.Element
         nodeTypes={nodeTypes}
         fitView
       >
-        <Background color="#aaa" gap={16} />
-        <Controls />
-        <MiniMap />
-        <Panel position="top-left" className="bg-white p-2 rounded shadow">
-          <div className="text-sm font-semibold">Workflow Canvas</div>
+        <FlowControls />
+        <div className="absolute top-2 left-2 bg-white p-2 rounded shadow text-sm z-10">
+          <div className="font-semibold">Workflow Canvas</div>
           <div className="text-xs text-gray-600">
             Nodes: {nodes.length} | Edges: {edges.length}
           </div>
-        </Panel>
-      </ReactFlow>
+        </div>
+      </FlowCanvas>
     </div>
   );
 }

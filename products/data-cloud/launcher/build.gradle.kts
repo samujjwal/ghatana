@@ -11,6 +11,7 @@ dependencies {
     implementation(project(":platform:java:observability"))
     implementation(project(":platform:java:config"))
     implementation(project(":platform:java:http"))
+    implementation(project(":platform:java:governance"))
 
     // gRPC transport (runtime) — needed to start the gRPC server
     implementation(libs.grpc.netty.shaded)
@@ -22,6 +23,8 @@ dependencies {
     implementation(libs.activej.config)
     implementation(libs.activej.eventloop)
     implementation(libs.activej.promise)
+    implementation(libs.activej.csp)
+    implementation(libs.activej.bytebuf)
     
     // Jackson for JSON
     implementation(libs.jackson.core)
@@ -36,6 +39,7 @@ dependencies {
     // Testing
     testImplementation(libs.junit.jupiter)
     testImplementation(libs.mockito.core)
+    testImplementation(libs.assertj.core)
 }
 
 tasks.named<Test>("test") {

@@ -236,6 +236,37 @@ export class AuthService {
     }
 
     /**
+     * Request a password-reset email for the given address.
+     */
+    public async forgotPassword(email: string): Promise<{ success: boolean; error?: string }> {
+        try {
+            if (!email) {
+                return { success: false, error: 'Email is required' };
+            }
+
+            logger.info('Forgot-password request', 'auth', { email });
+
+            const response = await fetch('/api/auth/forgot-password', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ email }),
+            });
+
+            if (!response.ok) {
+                const err = await response.json().catch(() => ({}));
+                return { success: false, error: err.message || 'Failed to send reset email' };
+            }
+
+            return { success: true };
+        } catch (error) {
+            logger.error('Forgot-password error', 'auth', {
+                error: error instanceof Error ? error.message : String(error),
+            });
+            return { success: false, error: 'Failed to send reset email' };
+        }
+    }
+
+    /**
      * Logout current user
      */
     public async logout(): Promise<void> {

@@ -11,17 +11,14 @@
 
 import React, { useCallback, useMemo } from 'react';
 import {
-  ReactFlow,
-  Node,
-  Edge,
-  Controls,
-  Background,
+  FlowCanvas,
+  FlowControls,
   useNodesState,
   useEdgesState,
   MarkerType,
   Position,
-} from '@xyflow/react';
-import '@xyflow/react/dist/style.css';
+} from '@ghatana/flow-canvas';
+import type { Node, Edge } from '@ghatana/flow-canvas';
 import { Database, Table, FileText, BarChart3, Workflow } from 'lucide-react';
 import { LineageNode, LineageEdge } from '../../api/lineage.service';
 
@@ -103,7 +100,7 @@ export function LineageGraph({
 
   return (
     <div style={{ height }} className="border border-gray-300 rounded-lg overflow-hidden bg-gray-50">
-      <ReactFlow
+      <FlowCanvas
         nodes={nodes}
         edges={edges}
         onNodesChange={onNodesChange}
@@ -113,9 +110,8 @@ export function LineageGraph({
         fitView
         attributionPosition="bottom-left"
       >
-        <Background />
-        <Controls />
-      </ReactFlow>
+        <FlowControls />
+      </FlowCanvas>
     </div>
   );
 }

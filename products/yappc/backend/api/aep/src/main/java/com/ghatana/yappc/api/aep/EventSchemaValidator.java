@@ -1,184 +1,159 @@
-/**
+/*
  * Copyright (c) 2025 Ghatana Technologies
- * YAPPC AEP - Event Schema Validator
- * 
- * Validates event payloads against JSON schemas to ensure event integrity
- * and compatibility across the platform.
+ * YAPPC AEP — Event Schema Validator
  */
 
 package com.ghatana.yappc.api.aep;
 
-import com.ghatana.core.validation.ValidationResult;
-import com.ghatana.core.validation.SchemaValidationService;
-import io.activej.inject.annotation.Inject;
+import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.networknt.schema.JsonSchema;
+import com.networknt.schema.JsonSchemaFactory;
+import com.networknt.schema.SpecVersion;
+import com.networknt.schema.ValidationMessage;
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.io.InputStream;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
-import java.util.concurrent.ConcurrentHashMap;
-
+import java.util.Set;
+import java.util.stream.Collectors;
 /**
- * Event Schema Validator - Validates AEP events against JSON schemas.
- * 
- * <p><b>Purpose</b><br>
- * Ensures event payloads conform to expected schemas before processing.
- * Provides validation error details for debugging and error handling.
- * 
- * <p><b>Features</b><br>
- * - JSON schema validation using platform validation service
- * - Schema caching for performance
- * - Support for multiple event types
- * - Detailed validation error reporting
- 
+ * Validates YAPPC AEP event payloads against JSON-Schema (Draft-07) definitions
+ * loaded from the classpath ({@code config/agents/event-schemas/}).
+ *
+ * <p>Schemas are loaded once at construction time and cached for the lifetime
+ * of the validator.  Unknown event types are <em>allowed</em> (pass-through)
+ * so that the pipeline can evolve independently of the validator.
+ *
  * @doc.type class
- * @doc.purpose Handles event schema validator operations
+ * @doc.purpose Validates YAPPC AEP event payloads against classpath JSON schemas
  * @doc.layer product
  * @doc.pattern Validator
-*/
+ */
 public class EventSchemaValidator {
-    
+
     private static final Logger LOG = LoggerFactory.getLogger(EventSchemaValidator.class);
-    
-    private final SchemaValidationService schemaValidationService;
-    private final Map<String, String> eventSchemas = new ConcurrentHashMap<>();
-    
+    private static final String SCHEMA_BASE_PATH = "config/agents/event-schemas/";
+
+    private final ObjectMapper objectMapper = new ObjectMapper();
+    private final JsonSchemaFactory schemaFactory =
+            JsonSchemaFactory.getInstance(SpecVersion.VersionFlag.V7);
+    private final Map<String, JsonSchema> compiledSchemas;
+
     /**
-     * Creates a new event schema validator.
-     * 
-     * @param schemaValidationService the platform schema validation service
+     * Creates an EventSchemaValidator and loads all known schemas from the classpath.
      */
-    @Inject
-    public EventSchemaValidator(@NotNull SchemaValidationService schemaValidationService) {
-        this.schemaValidationService = schemaValidationService;
-        loadEventSchemas();
+    public EventSchemaValidator() {
+        this.compiledSchemas = new HashMap<>();
+        loadSchemas();
     }
-    
+
+    // -------------------------------------------------------------------------
+    // Public API
+    // -------------------------------------------------------------------------
+
     /**
-     * Validates an event payload against its expected schema.
-     * 
-     * @param eventType the event type to validate
-     * @param payload the event payload to validate
-     * @return validation result with success status and error details
+     * Validates {@code eventPayload} against the JSON schema registered for
+     * {@code eventType}.
+     *
+     * <p>If no schema is registered for the given event type the payload is
+     * considered valid (pass-through semantics).  If {@code eventPayload} is
+     * {@code null} an error result is returned immediately.
+     *
+     * @param eventType    the event type string (e.g. {@code "phase.transition"})
+     * @param eventPayload the payload map to validate (may be {@code null})
+     * @return an {@link EventValidationResult} — never {@code null}
      */
     @NotNull
-    public ValidationResult validateEvent(@NotNull String eventType, @NotNull Map<String, Object> payload) {
+    public EventValidationResult validateEvent(
+            @NotNull String eventType,
+            @Nullable Map<String, Object> eventPayload) {
+
+        if (eventPayload == null) {
+            return EventValidationResult.failure(List.of("Validation error: payload must not be null"));
+        }
+
+        JsonSchema schema = compiledSchemas.get(eventType);
+        if (schema == null) {
+            LOG.debug("No schema registered for event type '{}' — allowing pass-through", eventType);
+            return EventValidationResult.success();
+        }
+
         try {
-            String schema = eventSchemas.get(eventType);
-            if (schema == null) {
-                LOG.warn("No schema found for event type: {}", eventType);
-                return ValidationResult.failure("No schema found for event type: " + eventType);
+            JsonNode node = objectMapper.valueToTree(eventPayload);
+            Set<ValidationMessage> violations = schema.validate(node);
+            if (violations.isEmpty()) {
+                LOG.debug("Validation passed for event type '{}'", eventType);
+                return EventValidationResult.success();
             }
-            
-            return schemaValidationService.validate(payload, schema);
-            
+            List<String> errors = violations.stream()
+                    .map(ValidationMessage::getMessage)
+                    .collect(Collectors.toList());
+            LOG.warn("Validation failed for event type '{}': {}", eventType, errors);
+            return EventValidationResult.failure(errors);
         } catch (Exception e) {
-            LOG.error("Error validating event type: {}", eventType, e);
-            return ValidationResult.failure("Validation error: " + e.getMessage());
+            LOG.error("Unexpected error validating event type '{}': {}", eventType, e.getMessage(), e);
+            return EventValidationResult.failure(List.of("Validation error: " + e.getMessage()));
         }
     }
-    
+
     /**
-     * Checks if a schema exists for the given event type.
-     * 
+     * Returns {@code true} if a compiled schema exists for {@code eventType}.
+     *
      * @param eventType the event type to check
-     * @return true if schema exists, false otherwise
+     * @return {@code true} if a schema is registered
      */
     public boolean hasSchema(@NotNull String eventType) {
-        return eventSchemas.containsKey(eventType);
+        return compiledSchemas.containsKey(eventType);
     }
-    
+
     /**
-     * Loads event schemas from classpath resources.
-     */
-    private void loadEventSchemas() {
-        // For now, provide basic schemas for common event types
-        // In a full implementation, these would be loaded from config files
-        
-        eventSchemas.put("agent_dispatch", createAgentDispatchSchema());
-        eventSchemas.put("agent_result", createAgentResultSchema());
-        eventSchemas.put("phase_transition", createPhaseTransitionSchema());
-        eventSchemas.put("task_status", createTaskStatusSchema());
-        
-        LOG.info("Loaded {} event schemas", eventSchemas.size());
-    }
-    
-    /**
-     * Creates a basic schema for agent dispatch events.
+     * Returns an unmodifiable view of all event types that have a registered schema.
+     *
+     * @return immutable set of supported event type strings
      */
     @NotNull
-    private String createAgentDispatchSchema() {
-        return """
-            {
-                "type": "object",
-                "required": ["agentId", "eventType", "timestamp", "payload"],
-                "properties": {
-                    "agentId": {"type": "string"},
-                    "eventType": {"type": "string"},
-                    "timestamp": {"type": "number"},
-                    "payload": {"type": "object"}
-                }
-            }
-            """;
+    public Set<String> getSupportedEventTypes() {
+        return Collections.unmodifiableSet(compiledSchemas.keySet());
     }
-    
-    /**
-     * Creates a basic schema for agent result events.
-     */
-    @NotNull
-    private String createAgentResultSchema() {
-        return """
-            {
-                "type": "object",
-                "required": ["agentId", "result", "timestamp"],
-                "properties": {
-                    "agentId": {"type": "string"},
-                    "result": {"type": "object"},
-                    "success": {"type": "boolean"},
-                    "timestamp": {"type": "number"},
-                    "explanation": {"type": "string"}
+
+    // -------------------------------------------------------------------------
+    // Schema loading
+    // -------------------------------------------------------------------------
+
+    private void loadSchemas() {
+        String[][] schemaEntries = {
+            {"shape-created-v1.json",       "shape.created"},
+            {"task-status-changed-v1.json", "task.status.changed"},
+            {"phase-transition-v1.json",    "phase.transition"},
+            {"agent-dispatch-v1.json",      "agent.dispatch"},
+            {"agent-result-v1.json",        "agent.result"},
+        };
+
+        for (String[] entry : schemaEntries) {
+            String file      = entry[0];
+            String eventType = entry[1];
+            String resource  = SCHEMA_BASE_PATH + file;
+
+            try (InputStream is = getClass().getClassLoader().getResourceAsStream(resource)) {
+                if (is == null) {
+                    LOG.warn("Schema resource not found on classpath: {}", resource);
+                    continue;
                 }
+                JsonSchema schema = schemaFactory.getSchema(is);
+                compiledSchemas.put(eventType, schema);
+                LOG.debug("Loaded schema '{}' from '{}'", eventType, resource);
+            } catch (Exception e) {
+                LOG.error("Failed to load schema '{}' from '{}': {}", eventType, resource, e.getMessage(), e);
             }
-            """;
-    }
-    
-    /**
-     * Creates a basic schema for phase transition events.
-     */
-    @NotNull
-    private String createPhaseTransitionSchema() {
-        return """
-            {
-                "type": "object",
-                "required": ["projectId", "fromPhase", "toPhase", "timestamp"],
-                "properties": {
-                    "projectId": {"type": "string"},
-                    "fromPhase": {"type": "string"},
-                    "toPhase": {"type": "string"},
-                    "timestamp": {"type": "number"},
-                    "gateResult": {"type": "object"}
-                }
-            }
-            """;
-    }
-    
-    /**
-     * Creates a basic schema for task status events.
-     */
-    @NotNull
-    private String createTaskStatusSchema() {
-        return """
-            {
-                "type": "object",
-                "required": ["taskId", "status", "timestamp"],
-                "properties": {
-                    "taskId": {"type": "string"},
-                    "status": {"type": "string"},
-                    "timestamp": {"type": "number"},
-                    "result": {"type": "object"},
-                    "error": {"type": "string"}
-                }
-            }
-            """;
+        }
+
+        LOG.info("EventSchemaValidator ready — {} schema(s) loaded", compiledSchemas.size());
     }
 }

@@ -1,0 +1,19 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "PhaseTransition",
+  "description": "Emitted when a YAPPC project lifecycle advances from one stage gate to the next.",
+  "type": "object",
+  "required": ["eventId", "eventType", "timestamp", "projectId", "fromStage", "toStage"],
+  "additionalProperties": true,
+  "properties": {
+    "eventId":      { "type": "string", "minLength": 1 },
+    "eventType":    { "type": "string", "const": "phase.transition" },
+    "timestamp":    { "type": "number", "minimum": 0 },
+    "projectId":    { "type": "string", "minLength": 1 },
+    "fromStage":    { "type": "string", "minLength": 1 },
+    "toStage":      { "type": "string", "minLength": 1 },
+    "triggerEvent": { "type": "string" },
+    "correlationId":{ "type": "string" },
+    "gateResult":   { "type": "object" }
+  }
+}

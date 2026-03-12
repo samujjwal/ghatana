@@ -1377,6 +1377,19 @@ public class ProductionModule extends SharedBaseModule {
   // -------------------------------------------------------------------------
 
   /**
+   * Provides the shared {@link com.ghatana.core.template.YamlTemplateEngine}
+   * for variable substitution in YAML template resources (YAPPC-Ph3).
+   *
+   * @doc.layer product
+   * @doc.pattern Factory
+   */
+  @Provides
+  com.ghatana.core.template.YamlTemplateEngine yamlTemplateEngine() {
+    logger.info("Creating YamlTemplateEngine (YAPPC-Ph3)");
+    return new com.ghatana.core.template.YamlTemplateEngine();
+  }
+
+  /**
    * Provides {@link com.ghatana.yappc.api.workflow.WorkflowMaterializer} — reads
    * {@code lifecycle-workflow-templates.yaml} and registers all templates with the
    * durable workflow engine at startup.
@@ -1386,10 +1399,11 @@ public class ProductionModule extends SharedBaseModule {
    */
   @Provides
   com.ghatana.yappc.api.workflow.WorkflowMaterializer workflowMaterializer(
-      DurableWorkflowEngine engine) {
+      DurableWorkflowEngine engine,
+      com.ghatana.core.template.YamlTemplateEngine templateEngine) {
     logger.info("Creating WorkflowMaterializer — materializing canonical workflow templates");
     com.ghatana.yappc.api.workflow.WorkflowMaterializer materializer =
-        new com.ghatana.yappc.api.workflow.WorkflowMaterializer(engine);
+        new com.ghatana.yappc.api.workflow.WorkflowMaterializer(engine, templateEngine);
     int loaded = materializer.materializeAll();
     logger.info("WorkflowMaterializer ready — {} template(s) loaded", loaded);
     return materializer;

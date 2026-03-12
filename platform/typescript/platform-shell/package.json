@@ -1,0 +1,40 @@
+{
+  "name": "@ghatana/platform-shell",
+  "version": "0.1.0",
+  "description": "Ghatana platform shell — tenant selector, auth bridge, notification center, product picker",
+  "author": "Ghatana Platform Team",
+  "license": "UNLICENSED",
+  "private": true,
+  "main": "dist/index.js",
+  "module": "dist/index.mjs",
+  "types": "dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.mjs",
+      "require": "./dist/index.js"
+    }
+  },
+  "scripts": {
+    "build": "tsup src/index.ts --format cjs,esm --dts --external react --external jotai",
+    "dev": "tsup src/index.ts --format cjs,esm --dts --watch",
+    "typecheck": "tsc --noEmit",
+    "lint": "eslint src --ext .ts,.tsx"
+  },
+  "peerDependencies": {
+    "jotai": "^2.0.0",
+    "react": "^18.0.0",
+    "react-dom": "^18.0.0"
+  },
+  "dependencies": {
+    "jotai": "^2.17.0"
+  },
+  "devDependencies": {
+    "@types/react": "^18.3.0",
+    "@types/react-dom": "^18.3.0",
+    "react": "^18.3.0",
+    "react-dom": "^18.3.0",
+    "tsup": "^8.3.0",
+    "typescript": "^5.7.0"
+  }
+}

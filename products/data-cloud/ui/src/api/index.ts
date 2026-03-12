@@ -37,3 +37,11 @@ export * from './schema.service';
 // Suggestion (existing)
 export * from './suggestion.service';
 
+// Events — AEP event fabric explorer
+export * from './events.service';
+export { eventsService } from './events.service';
+
+// Memory — agent memory plane viewer
+export * from './memory.service';
+export { memoryService } from './memory.service';
+

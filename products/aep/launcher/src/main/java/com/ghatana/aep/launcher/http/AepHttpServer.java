@@ -1,6 +1,10 @@
 package com.ghatana.aep.launcher.http;
 
 import com.ghatana.aep.AepEngine;
+import com.ghatana.agent.learning.review.HumanReviewQueue;
+import com.ghatana.agent.learning.review.ReviewDecision;
+import com.ghatana.agent.learning.review.ReviewFilter;
+import com.ghatana.datacloud.DataCloudClient;
 import com.ghatana.orchestrator.deployment.contract.DeploymentRequest;
 import com.ghatana.orchestrator.deployment.contract.DeploymentResponse;
 import com.ghatana.orchestrator.deployment.http.DeploymentHttpAdapter;
@@ -19,6 +23,7 @@ import io.activej.http.*;
 import io.activej.eventloop.Eventloop;
 import io.activej.promise.Promise;
 import io.activej.promise.Promises;
+import org.jetbrains.annotations.Nullable;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -47,18 +52,54 @@ public class AepHttpServer {
     private final PipelineRepository pipelineRepository;
     private final PipelineValidator pipelineValidator;
     private final CapabilitiesService capabilitiesService;
+    /** Optional: wired in when AepLearningModule is active. Null-safe throughout. */
+    private final HumanReviewQueue humanReviewQueue;
+    /**
+     * Optional Data-Cloud client for agent registry queries (AEP-P5).
+     * {@code null} if Data-Cloud is not configured; endpoint falls back to an empty response.
+     */
+    @Nullable
+    private final DataCloudClient agentDataCloud;
     private HttpServer server;
     private Eventloop eventloop;
 
     /**
-     * Creates a new AEP HTTP server.
+     * Creates a new AEP HTTP server (without learning-loop endpoints or Data-Cloud registry).
      *
      * @param engine the AEP engine instance
      * @param port the port to listen on
      */
     public AepHttpServer(AepEngine engine, int port) {
+        this(engine, port, null, null);
+    }
+
+    /**
+     * Creates a new AEP HTTP server with optional learning-loop (HITL) endpoints.
+     *
+     * @param engine the AEP engine instance
+     * @param port the port to listen on
+     * @param humanReviewQueue HITL queue; may be {@code null} to disable HITL endpoints
+     */
+    public AepHttpServer(AepEngine engine, int port, HumanReviewQueue humanReviewQueue) {
+        this(engine, port, humanReviewQueue, null);
+    }
+
+    /**
+     * Creates a new AEP HTTP server with optional learning-loop and Data-Cloud agent registry.
+     *
+     * @param engine           the AEP engine instance
+     * @param port             the port to listen on
+     * @param humanReviewQueue HITL queue; may be {@code null} to disable HITL endpoints
+     * @param agentDataCloud   Data-Cloud client for agent registry queries (AEP-P5);
+     *                         may be {@code null} if Data-Cloud is not configured
+     */
+    public AepHttpServer(AepEngine engine, int port,
+                         @Nullable HumanReviewQueue humanReviewQueue,
+                         @Nullable DataCloudClient agentDataCloud) {
         this.engine = engine;
         this.port = port;
+        this.humanReviewQueue = humanReviewQueue;
+        this.agentDataCloud = agentDataCloud;
         this.objectMapper = JsonUtils.getDefaultMapper();
         DeploymentOrchestrator orchestrator = new DeploymentOrchestrator(
             new EventCloudDeploymentEventPublisher(engine.eventCloud()),
@@ -119,7 +160,21 @@ public class AepHttpServer {
             // Analytics endpoints
             .with(HttpMethod.POST, "/api/v1/analytics/anomalies", this::handleDetectAnomalies)
             .with(HttpMethod.POST, "/api/v1/analytics/forecast", this::handleForecast)
-            
+
+            // Agent management endpoints (AEP-P5/P7)
+            .with(HttpMethod.GET, "/api/v1/agents", this::handleListAgents)
+            .with(HttpMethod.GET, "/api/v1/agents/:agentId", this::handleGetAgent)
+            .with(HttpMethod.POST, "/api/v1/agents/:agentId/execute", this::handleExecuteAgent)
+            .with(HttpMethod.GET, "/api/v1/agents/:agentId/memory", this::handleGetAgentMemory)
+
+            // HITL (Human-in-the-Loop) endpoints (AEP-P7)
+            .with(HttpMethod.GET, "/api/v1/hitl/pending", this::handleListHitlPending)
+            .with(HttpMethod.POST, "/api/v1/hitl/:reviewId/approve", this::handleHitlApprove)
+            .with(HttpMethod.POST, "/api/v1/hitl/:reviewId/reject", this::handleHitlReject)
+
+            // Server-Sent Events endpoints for real-time UI updates (AEP-P7)
+            .with(HttpMethod.GET, "/events/stream", this::handleSseStream)
+
             .build();
 
         server = HttpServer.builder(eventloop, router)
@@ -141,11 +196,18 @@ public class AepHttpServer {
      * Stops the HTTP server.
      */
     public void stop() {
-        if (server != null) {
-            server.close();
-        }
         if (eventloop != null) {
-            eventloop.breakEventloop();
+            // server.close() must be called from the reactor thread;
+            // schedule it there and then break the eventloop.
+            eventloop.execute(() -> {
+                if (server != null) {
+                    server.close();
+                }
+                eventloop.breakEventloop();
+            });
+        } else if (server != null) {
+            // eventloop was never started — safe to call directly
+            server.close();
         }
         log.info("AEP HTTP Server stopped");
     }
@@ -749,7 +811,376 @@ public class AepHttpServer {
         }
     }
 
+    // ==================== Agent Management Endpoints (AEP-P5/P7) ====================
+
+    /**
+     * Lists all registered agents for the requesting tenant.
+     * Tenant is resolved from the {@code X-Tenant-Id} request header (defaults to {@code "default"}).
+     *
+     * <p>Queries the {@code agent-registry} collection in Data-Cloud and returns a lightweight
+     * summary (id, name, type, status) for each registered agent.
+     * Falls back to an empty list when Data-Cloud is not configured.
+     */
+    private Promise<HttpResponse> handleListAgents(HttpRequest request) {
+        String tenantId = resolveTenantId(request);
+
+        if (agentDataCloud == null) {
+            log.debug("[agents] DataCloudClient not configured — returning empty agent list for tenant={}", tenantId);
+            return Promise.of(jsonResponse(Map.of(
+                "tenantId", tenantId,
+                "agents", List.of(),
+                "count", 0,
+                "timestamp", Instant.now().toString(),
+                "note", "DataCloud not configured; start with DC_SERVER_URL to enable agent registry"
+            )));
+        }
+
+        return agentDataCloud.query(tenantId, "agent-registry", DataCloudClient.Query.limit(1000))
+            .map(entities -> {
+                List<Map<String, Object>> summaries = entities.stream()
+                    .map(e -> Map.<String, Object>of(
+                        "id", e.id(),
+                        "name", e.data().getOrDefault("name", e.id()),
+                        "type", e.data().getOrDefault("type", "unknown"),
+                        "status", e.data().getOrDefault("status", "ACTIVE"),
+                        "tenantId", tenantId
+                    ))
+                    .toList();
+                return jsonResponse(Map.of(
+                    "tenantId", tenantId,
+                    "agents", summaries,
+                    "count", summaries.size(),
+                    "timestamp", Instant.now().toString()
+                ));
+            })
+            .then(Promise::of, e -> {
+                log.error("[agents] list failed for tenant={}: {}", tenantId, e.getMessage(), e);
+                return Promise.of(errorResponse(500, "Failed to list agents: " + e.getMessage()));
+            });
+    }
+
+    /**
+     * Returns the detail of a single agent by ID.
+     *
+     * <p>Queries the {@code agent-registry} collection in Data-Cloud.
+     *
+     * @return 200 with agent detail, 404 if not found, 503 if Data-Cloud not configured
+     */
+    private Promise<HttpResponse> handleGetAgent(HttpRequest request) {
+        String agentId = request.getPathParameter("agentId");
+        if (agentId == null || agentId.isBlank()) {
+            return Promise.of(errorResponse(400, "agentId path parameter is required"));
+        }
+
+        if (agentDataCloud == null) {
+            return Promise.of(errorResponse(503,
+                "Agent registry not available — DataCloudClient not configured"));
+        }
+
+        String tenantId = resolveTenantId(request);
+        return agentDataCloud.findById(tenantId, "agent-registry", agentId)
+            .map(opt -> opt
+                .map(e -> jsonResponse(Map.of(
+                    "id", e.id(),
+                    "tenantId", tenantId,
+                    "data", e.data(),
+                    "timestamp", Instant.now().toString()
+                )))
+                .orElse(errorResponse(404, "Agent not found: " + agentId)))
+            .then(Promise::of, e -> {
+                log.error("[agents] get failed for agentId={}: {}", agentId, e.getMessage(), e);
+                return Promise.of(errorResponse(500, "Failed to get agent: " + e.getMessage()));
+            });
+    }
+
+    /**
+     * Executes a targeted agent invocation by submitting an agent-execute event to the AEP engine.
+     *
+     * <p>Request body: {@code {"input": {...}, "tenantId": "..."}} (tenantId optional; falls back to header).
+     * The event is submitted as type {@code "agent.invocation"} with the agentId encoded in the payload,
+     * allowing the AEP operator catalog to route it to the correct agent pipeline.
+     *
+     * @return 200 with processing result, 400 on bad request, 500 on engine failure
+     */
+    @SuppressWarnings("unchecked")
+    private Promise<HttpResponse> handleExecuteAgent(HttpRequest request) {
+        String agentId = request.getPathParameter("agentId");
+        if (agentId == null || agentId.isBlank()) {
+            return Promise.of(errorResponse(400, "agentId path parameter is required"));
+        }
+        // loadBody() is asynchronous — use .then() to process after body is loaded
+        return request.loadBody()
+            .then(buf -> {
+                try {
+                    String bodyStr = buf.getString(StandardCharsets.UTF_8);
+                    Map<String, Object> reqBody = bodyStr.isBlank()
+                        ? Map.of()
+                        : objectMapper.readValue(bodyStr, Map.class);
+
+                    String tenantId = reqBody.containsKey("tenantId")
+                        ? (String) reqBody.get("tenantId")
+                        : resolveTenantId(request);
+
+                    Map<String, Object> input = reqBody.containsKey("input")
+                        ? (Map<String, Object>) reqBody.get("input")
+                        : Map.of();
+
+                    // Wrap as an AEP agent-invocation event; the operator catalog will route by agentId.
+                    Map<String, Object> payload = new java.util.HashMap<>(input);
+                    payload.put("agentId", agentId);
+                    payload.put("tenantId", tenantId);
+
+                    AepEngine.Event event = new AepEngine.Event(
+                        "agent.invocation",
+                        Map.copyOf(payload),
+                        Map.of("agentId", agentId),
+                        Instant.now()
+                    );
+
+                    return engine.process(tenantId, event)
+                        .map(result -> jsonResponse(Map.of(
+                            "agentId", agentId,
+                            "tenantId", tenantId,
+                            "eventId", result.eventId(),
+                            "success", result.success(),
+                            "detections", result.detections().size(),
+                            "timestamp", Instant.now().toString()
+                        )))
+                        .then(Promise::of, e -> {
+                            log.error("[agents] execute failed for agentId={}: {}", agentId, e.getMessage(), e);
+                            return Promise.of(errorResponse(500, "Agent execution failed: " + e.getMessage()));
+                        });
+                } catch (Exception e) {
+                    log.error("[agents] bad request for execute agentId={}: {}", agentId, e.getMessage(), e);
+                    return Promise.of(errorResponse(400, "Invalid request: " + e.getMessage()));
+                }
+            }, e -> {
+                log.error("[agents] failed to read body for agentId={}: {}", agentId, e.getMessage(), e);
+                return Promise.of(errorResponse(400, "Failed to read request body"));
+            });
+    }
+
+    /**
+     * Returns a summary of stored memory items for a given agent.
+     *
+     * <p>Queries the {@code dc_memory} collection in Data-Cloud filtered by {@code agentId}.
+     * Returns item counts grouped by memory type (episodic, semantic, procedural, preference).
+     * Falls back to a 503 when Data-Cloud is not configured.
+     *
+     * @return 200 with memory summary, 503 if Data-Cloud not configured
+     */
+    private Promise<HttpResponse> handleGetAgentMemory(HttpRequest request) {
+        String agentId = request.getPathParameter("agentId");
+        if (agentId == null || agentId.isBlank()) {
+            return Promise.of(errorResponse(400, "agentId path parameter is required"));
+        }
+
+        if (agentDataCloud == null) {
+            return Promise.of(errorResponse(503,
+                "Agent memory not available — DataCloudClient not configured"));
+        }
+
+        String tenantId = resolveTenantId(request);
+        DataCloudClient.Query query = DataCloudClient.Query.builder()
+            .filter(DataCloudClient.Filter.eq("agentId", agentId))
+            .limit(10_000)
+            .build();
+
+        return agentDataCloud.query(tenantId, "dc_memory", query)
+            .map(items -> {
+                long episodic = items.stream()
+                    .filter(e -> "EPISODIC".equals(e.data().get("type"))).count();
+                long semantic = items.stream()
+                    .filter(e -> "SEMANTIC".equals(e.data().get("type"))).count();
+                long procedural = items.stream()
+                    .filter(e -> "PROCEDURAL".equals(e.data().get("type"))).count();
+                long preference = items.stream()
+                    .filter(e -> "PREFERENCE".equals(e.data().get("type"))).count();
+                long other = items.size() - episodic - semantic - procedural - preference;
+
+                return jsonResponse(Map.of(
+                    "agentId", agentId,
+                    "tenantId", tenantId,
+                    "total", items.size(),
+                    "byType", Map.of(
+                        "episodic", episodic,
+                        "semantic", semantic,
+                        "procedural", procedural,
+                        "preference", preference,
+                        "other", other
+                    ),
+                    "timestamp", Instant.now().toString()
+                ));
+            })
+            .then(Promise::of, e -> {
+                log.error("[agents] memory query failed for agentId={}: {}", agentId, e.getMessage(), e);
+                return Promise.of(errorResponse(500, "Failed to query agent memory: " + e.getMessage()));
+            });
+    }
+
+    /**
+     * Lists all pending HITL review items.
+     *
+     * @return 200 with list of pending items, or 501 if HITL queue is not configured
+     */
+    private Promise<HttpResponse> handleListHitlPending(HttpRequest request) {
+        if (humanReviewQueue == null) {
+            return Promise.of(errorResponse(501, "HITL queue not configured — start AEP with AepLearningModule"));
+        }
+        return humanReviewQueue.getPending(null).map(items -> {
+            List<Map<String, Object>> summaries = items.stream()
+                .map(item -> Map.<String, Object>of(
+                    "reviewId", item.getReviewId(),
+                    "agentId", item.getSkillId(),
+                    "type", item.getItemType().name(),
+                    "status", item.getStatus().name(),
+                    "createdAt", item.getCreatedAt().toString()
+                ))
+                .collect(java.util.stream.Collectors.toList());
+            return jsonResponse(Map.of(
+                "pending", summaries,
+                "count", summaries.size(),
+                "timestamp", Instant.now().toString()
+            ));
+        });
+    }
+
+    /**
+     * Approves a HITL review item, promoting the candidate to the memory/policy store.
+     *
+     * <p>Request body: {@code {"reviewer": "...", "rationale": "...", "notes": "..."}}.
+     *
+     * @return 200 with approved item, or 404 if not found, 501 if not configured
+     */
+    @SuppressWarnings("unchecked")
+    private Promise<HttpResponse> handleHitlApprove(HttpRequest request) {
+        if (humanReviewQueue == null) {
+            return Promise.of(errorResponse(501, "HITL queue not configured"));
+        }
+        String reviewId = request.getPathParameter("reviewId");
+        if (reviewId == null || reviewId.isBlank()) {
+            return Promise.of(errorResponse(400, "reviewId path parameter is required"));
+        }
+        // loadBody() is asynchronous — use .then() to process after body is loaded
+        return request.loadBody()
+            .then(buf -> {
+                try {
+                    String body = buf.getString(StandardCharsets.UTF_8);
+                    Map<String, Object> data = body.isBlank()
+                        ? Map.of()
+                        : objectMapper.readValue(body, Map.class);
+                    String reviewer = (String) data.getOrDefault("reviewer", "unknown");
+                    String rationale = (String) data.getOrDefault("rationale", "Approved via API");
+                    String notes = (String) data.get("notes");
+                    ReviewDecision decision = new ReviewDecision(reviewer, rationale, Instant.now(), notes);
+                    return humanReviewQueue.approve(reviewId, decision)
+                        .map(item -> jsonResponse(Map.of(
+                            "reviewId", item.getReviewId(),
+                            "status", item.getStatus().name(),
+                            "decidedAt", Instant.now().toString()
+                        )))
+                        .then(Promise::of, e -> {
+                            log.warn("HITL approve failed for reviewId={}: {}", reviewId, e.getMessage());
+                            return Promise.of(errorResponse(404, "Review item not found: " + reviewId));
+                        });
+                } catch (Exception e) {
+                    log.warn("HITL approve bad request for reviewId={}: {}", reviewId, e.getMessage());
+                    return Promise.of(errorResponse(400, "Invalid request: " + e.getMessage()));
+                }
+            }, e -> {
+                log.warn("HITL approve failed to read body for reviewId={}: {}", reviewId, e.getMessage());
+                return Promise.of(errorResponse(400, "Failed to read request body"));
+            });
+    }
+
+    /**
+     * Rejects a HITL review item, discarding the candidate.
+     *
+     * <p>Request body: {@code {"reviewer": "...", "rationale": "...", "notes": "..."}}.
+     *
+     * @return 200 with rejected item, or 404 if not found, 501 if not configured
+     */
+    @SuppressWarnings("unchecked")
+    private Promise<HttpResponse> handleHitlReject(HttpRequest request) {
+        if (humanReviewQueue == null) {
+            return Promise.of(errorResponse(501, "HITL queue not configured"));
+        }
+        String reviewId = request.getPathParameter("reviewId");
+        if (reviewId == null || reviewId.isBlank()) {
+            return Promise.of(errorResponse(400, "reviewId path parameter is required"));
+        }
+        // loadBody() is asynchronous — use .then() to process after body is loaded
+        return request.loadBody()
+            .then(buf -> {
+                try {
+                    String body = buf.getString(StandardCharsets.UTF_8);
+                    Map<String, Object> data = body.isBlank()
+                        ? Map.of()
+                        : objectMapper.readValue(body, Map.class);
+                    String reviewer = (String) data.getOrDefault("reviewer", "unknown");
+                    String rationale = (String) data.getOrDefault("rationale", "Rejected via API");
+                    String notes = (String) data.get("notes");
+                    ReviewDecision decision = new ReviewDecision(reviewer, rationale, Instant.now(), notes);
+                    return humanReviewQueue.reject(reviewId, decision)
+                        .map(item -> jsonResponse(Map.of(
+                            "reviewId", item.getReviewId(),
+                            "status", item.getStatus().name(),
+                            "decidedAt", Instant.now().toString()
+                        )))
+                        .then(Promise::of, e -> {
+                            log.warn("HITL reject failed for reviewId={}: {}", reviewId, e.getMessage());
+                            return Promise.of(errorResponse(404, "Review item not found: " + reviewId));
+                        });
+                } catch (Exception e) {
+                    log.warn("HITL reject bad request for reviewId={}: {}", reviewId, e.getMessage());
+                    return Promise.of(errorResponse(400, "Invalid request: " + e.getMessage()));
+                }
+            }, e -> {
+                log.warn("HITL reject failed to read body for reviewId={}: {}", reviewId, e.getMessage());
+                return Promise.of(errorResponse(400, "Failed to read request body"));
+            });
+    }
+
+    // ==================== SSE Endpoints (AEP-P7) ====================
+
+    /**
+     * Server-Sent Events stream for real-time AEP updates.
+     *
+     * <p>Sends an initial connection acknowledgement event followed by a
+     * keep-alive heartbeat. Full streaming of pipeline-run, agent-output, and
+     * HITL-queue events will be wired once the event-bus bridge (AEP-P8) is complete.
+     *
+     * <p>Clients should reconnect on network interruption using the standard SSE
+     * reconnect mechanism ({@code retry:} field in the event stream).
+     */
+    private Promise<HttpResponse> handleSseStream(HttpRequest request) {
+        // Bootstrap SSE: send connection event + heartbeat.
+        // AEP-P8 will replace this with a real publisher sourced from the event cloud.
+        String sseBody = "retry: 3000\n"
+            + "event: connected\n"
+            + "data: {\"service\":\"aep\",\"timestamp\":\"" + Instant.now() + "\"}\n\n"
+            + "event: heartbeat\n"
+            + "data: {\"ts\":\"" + Instant.now() + "\"}\n\n";
+        return Promise.of(HttpResponse.ok200()
+            .withHeader(HttpHeaders.CONTENT_TYPE, HttpHeaderValue.of("text/event-stream"))
+            .withHeader(HttpHeaders.of("Cache-Control"), HttpHeaderValue.of("no-cache"))
+            .withHeader(HttpHeaders.of("X-Accel-Buffering"), HttpHeaderValue.of("no"))
+            .withBody(sseBody.getBytes(StandardCharsets.UTF_8))
+            .build());
+    }
+
     // ==================== Helper Methods ====================
+
+    /**
+     * Resolves the tenant ID from the {@code X-Tenant-Id} header or {@code tenantId} query parameter,
+     * defaulting to {@code "default"}.
+     */
+    private String resolveTenantId(HttpRequest request) {
+        String fromHeader = request.getHeader(HttpHeaders.of("X-Tenant-Id"));
+        if (fromHeader != null && !fromHeader.isBlank()) return fromHeader;
+        String fromQuery = request.getQueryParameter("tenantId");
+        return (fromQuery != null && !fromQuery.isBlank()) ? fromQuery : "default";
+    }
 
     private HttpResponse jsonResponse(Map<String, Object> data) {
         try {
