@@ -16,6 +16,9 @@ dependencies {
     // EventRecord and EventCloud abstractions (platform-only, no product dependency)
     api(project(":platform:java:event-cloud"))
 
+    // Data-Cloud SPI — EventLogStore interface implemented by GrpcEventLogStore / HttpEventLogStore
+    implementation(project(":products:data-cloud:spi"))
+
     // ActiveJ Promise support (type references OK per architecture)
     api(libs.activej.promise)
     implementation(libs.activej.common)
@@ -29,6 +32,7 @@ dependencies {
     
     // Jackson for JSON serialization
     implementation(libs.jackson.databind)
+    implementation(libs.jackson.datatype.jsr310)
 
     // Kafka client (KafkaConnector)
     implementation(libs.kafka.clients)
@@ -47,6 +51,8 @@ dependencies {
     testImplementation(libs.assertj.core)
     testImplementation(libs.mockito.core)
     testImplementation(libs.mockito.junit.jupiter)
+    // WireMock for EventLogStore HTTP transport tests
+    testImplementation(libs.wiremock.jre8.standalone)
 }
 
 tasks.withType<Test> {

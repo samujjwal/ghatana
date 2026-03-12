@@ -10,7 +10,7 @@ import com.ghatana.platform.types.identity.OperatorId;
 import com.ghatana.platform.workflow.operator.AbstractOperator;
 import com.ghatana.platform.workflow.operator.OperatorResult;
 import com.ghatana.platform.workflow.operator.OperatorType;
-import com.ghatana.yappc.services.lifecycle.AepEventBridge;
+import com.ghatana.yappc.agent.AepEventPublisher;
 import io.activej.promise.Promise;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -57,14 +57,14 @@ public class LifecycleStatePublisherOperator extends AbstractOperator {
     /** Inbound event type when no agents were assigned (forwarded gate.passed). */
     public static final String EVENT_GATE_PASSED       = GateOrchestratorOperator.EVENT_GATE_PASSED;
 
-    private final AepEventBridge aepEventBridge;
+    private final AepEventPublisher publisher;
 
     /**
      * Creates a {@code LifecycleStatePublisherOperator}.
      *
-     * @param aepEventBridge bridge used to publish {@code lifecycle.phase.advanced} events
+     * @param publisher AEP event publisher for {@code lifecycle.phase.advanced} events
      */
-    public LifecycleStatePublisherOperator(AepEventBridge aepEventBridge) {
+    public LifecycleStatePublisherOperator(AepEventPublisher publisher) {
         super(
             OperatorId.of("yappc", "stream", "lifecycle-state-publisher", "1.0.0"),
             OperatorType.STREAM,
@@ -73,7 +73,7 @@ public class LifecycleStatePublisherOperator extends AbstractOperator {
             List.of("lifecycle.publish", "lifecycle.state"),
             null
         );
-        this.aepEventBridge = Objects.requireNonNull(aepEventBridge, "aepEventBridge");
+        this.publisher = Objects.requireNonNull(publisher, "publisher");
     }
 
     @Override
@@ -99,8 +99,8 @@ public class LifecycleStatePublisherOperator extends AbstractOperator {
         payload.put("advancedAt",  advancedAt);
         payload.put("source",      "lifecycle-pipeline");
 
-        // Fire-and-forget publish (AepEventBridge swallows failures internally)
-        aepEventBridge.publishRawEvent(EVENT_PHASE_ADVANCED, tenantId, payload)
+        // Fire-and-forget publish (best-effort, swallows failures)
+        publisher.publish(EVENT_PHASE_ADVANCED, tenantId, payload)
             .whenException(e -> log.warn("Failed to publish {} event for project={}: {}",
                     EVENT_PHASE_ADVANCED, projectId, e.getMessage()));
 

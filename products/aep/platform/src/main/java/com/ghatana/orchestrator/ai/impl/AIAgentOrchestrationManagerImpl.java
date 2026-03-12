@@ -1,8 +1,11 @@
 package com.ghatana.orchestrator.ai.impl;
 
-// removed unused import: Agent
+import com.ghatana.aep.agent.AepContextBridge;
 import com.ghatana.aep.domain.agent.registry.AgentExecutionContext;
+import com.ghatana.agent.framework.api.AgentContext;
+import com.ghatana.agent.framework.runtime.AgentTurnPipeline;
 import com.ghatana.agent.registry.service.AgentRegistryService;
+import com.ghatana.platform.domain.auth.TenantId;
 import com.ghatana.orchestrator.ai.AIAgentOrchestrationManager;
 import com.ghatana.orchestrator.core.Orchestrator;
 import com.ghatana.orchestrator.executor.AgentStepRunner;
@@ -10,7 +13,7 @@ import com.ghatana.orchestrator.queue.ExecutionQueue;
 import com.ghatana.platform.observability.MetricsCollector;
 import com.ghatana.platform.domain.domain.event.Event;
 import io.activej.promise.Promise;
-import lombok.RequiredArgsConstructor;
+import io.activej.promise.Promises;
 import lombok.extern.slf4j.Slf4j;
 
 import java.util.ArrayList;
@@ -26,29 +29,55 @@ import java.util.concurrent.atomic.AtomicLong;
 /**
  * Implementation of AIAgentOrchestrationManager that integrates AI orchestration
  * capabilities with the existing EventCloud orchestrator infrastructure.
- * 
- * This class consolidates functionality from event-core DefaultAgentOrchestrationManager
- * while leveraging the existing orchestrator's pipeline management, execution queue,
- * and monitoring capabilities.
+ *
+ * <p>Each registered agent is wrapped in an {@link AgentTurnPipeline} that enforces
+ * the GAA PERCEIVE → REASON → ACT → CAPTURE → REFLECT lifecycle. Agent chains
+ * are executed sequentially, fanning out each step across all current input events
+ * in parallel via {@link Promises#toList}.
+ *
+ * @doc.type class
+ * @doc.purpose AI agent orchestration manager with AgentTurnPipeline lifecycle wiring
+ * @doc.layer product
+ * @doc.pattern Service, Chain-of-Responsibility
+ * @doc.gaa.lifecycle perceive|reason|act|capture|reflect
  */
 @Slf4j
-@RequiredArgsConstructor
 public class AIAgentOrchestrationManagerImpl implements AIAgentOrchestrationManager {
-    
+
     private final AgentRegistryService agentRegistryService;
     private final Orchestrator orchestrator;
     private final ExecutionQueue executionQueue;
     private final AgentStepRunner agentStepRunner;
     private final MetricsCollector metrics;
-    private final ExecutorService blockingExecutor = Executors.newFixedThreadPool(4);
     private final ExecutorService executorService;
-    
+    private final AepContextBridge contextBridge;
+
+    private final ExecutorService blockingExecutor = Executors.newFixedThreadPool(4);
+
     // AI orchestration state management
     private final Map<String, AgentDefinition> agentDefinitions = new ConcurrentHashMap<>();
     private final Map<String, List<String>> agentChains = new ConcurrentHashMap<>();
     private final Map<String, AgentExecutionStatus> executionStatuses = new ConcurrentHashMap<>();
     private final Map<String, ScheduleDefinition> schedules = new ConcurrentHashMap<>();
+    private final Map<String, AgentTurnPipeline<Event, List<Event>>> pipelineCache = new ConcurrentHashMap<>();
     private final AtomicLong executionIdCounter = new AtomicLong(0);
+
+    public AIAgentOrchestrationManagerImpl(
+            AgentRegistryService agentRegistryService,
+            Orchestrator orchestrator,
+            ExecutionQueue executionQueue,
+            AgentStepRunner agentStepRunner,
+            MetricsCollector metrics,
+            ExecutorService executorService,
+            AepContextBridge contextBridge) {
+        this.agentRegistryService = agentRegistryService;
+        this.orchestrator = orchestrator;
+        this.executionQueue = executionQueue;
+        this.agentStepRunner = agentStepRunner;
+        this.metrics = metrics;
+        this.executorService = executorService;
+        this.contextBridge = contextBridge;
+    }
     
     // ==================== AGENT REGISTRATION ====================
 
@@ -69,16 +98,13 @@ public class AIAgentOrchestrationManagerImpl implements AIAgentOrchestrationMana
                     }
                 }
                 
-                // Store agent definition for orchestration
+                // Store agent definition and build its AgentTurnPipeline
                 agentDefinitions.put(agentDef.id(), agentDef);
-                
-                // Register with agent registry service for execution
-                // Note: This would require converting AgentDefinition to AgentManifestProto
-                // For now, we'll just track it in orchestration
-                
-                System.out.println("Registered AI agent for orchestration: " + agentDef.id());
+                pipelineCache.put(agentDef.id(), buildPipeline(agentDef.id()));
+
+                log.info("Registered AI agent for orchestration with pipeline: {}", agentDef.id());
                 metrics.incrementCounter("ai.agent.registered");
-                
+
                 return agentDef.id();
                 
             } catch (Exception e) {
@@ -114,13 +140,13 @@ public class AIAgentOrchestrationManagerImpl implements AIAgentOrchestrationMana
                 // Store the chain
                 agentChains.put(chainId, agentIds);
                 
-                System.out.println("Created AI agent chain '" + chainName + "' with " + agentIds.size() + " agents: " + agentIds);
+                log.info("Created AI agent chain '{}' with {} agents: {}", chainName, agentIds.size(), agentIds);
                 metrics.incrementCounter("ai.chain.created");
-                
+
                 return chainId;
-                
+
             } catch (Exception e) {
-                System.err.println("Failed to create agent chain '" + chainName + "': " + e.getMessage());
+                log.error("Failed to create agent chain '{}': {}", chainName, e.getMessage(), e);
                 metrics.incrementCounter("ai.chain.creation.failed");
                 throw new RuntimeException("Failed to create agent chain", e);
             }
@@ -163,59 +189,58 @@ public class AIAgentOrchestrationManagerImpl implements AIAgentOrchestrationMana
     }
     
     /**
-     * Internal recursive method to execute agent chain
+     * Internal recursive method to execute agent chain steps.
+     *
+     * <p>Each step fans out execution across all {@code currentEvents} in parallel using
+     * {@link Promises#toList}. The accumulated output events are then passed to the
+     * next step via tail recursion through {@link Promise#then}, so the event loop is
+     * never blocked.</p>
      */
-    private Promise<List<Event>> executeChainInternal(String executionId, String chainId, List<String> agentIds, 
+    private Promise<List<Event>> executeChainInternal(String executionId, String chainId, List<String> agentIds,
                                                      List<Event> currentEvents, AgentExecutionContext context, int stepIndex) {
-        
+
         if (stepIndex >= agentIds.size()) {
-            // Chain completed successfully
             updateExecutionStatus(executionId, ExecutionState.COMPLETED, 100.0, null);
             metrics.incrementCounter("ai.chain.completed");
             return Promise.of(currentEvents);
         }
-        
+
         String currentAgentId = agentIds.get(stepIndex);
         double progress = (double) stepIndex / agentIds.size() * 100.0;
-        
-        // Update execution status
         updateExecutionStatus(executionId, ExecutionState.RUNNING, progress, null);
-        
-        // Execute current agent with all current events
-        List<Event> accumulatedEvents = new ArrayList<>();
-        
-        // For simplicity, execute agents sequentially with accumulated events
-        // In a real implementation, you might want to handle this differently
-        Promise<List<Event>> currentStepPromise = Promise.of(accumulatedEvents);
-        
-        for (Event event : currentEvents) {
-            // This is a simplified approach - in practice you'd handle this more elegantly
-            try {
-                List<Event> outputEvents = agentRegistryService.executeAgent(currentAgentId, event, context).getResult();
-                if (outputEvents != null) {
-                    accumulatedEvents.addAll(outputEvents);
-                }
-            } catch (Exception e) {
-                return Promise.ofException(e);
-            }
-        }
-        
-        // Check if we have output events
-        if (accumulatedEvents.isEmpty() && stepIndex < agentIds.size() - 1) {
-            // No events to pass to next agent - this might be intentional or an error
-            System.err.println("Agent " + currentAgentId + " produced no output events in chain " + chainId);
-        }
-                
-        // Continue with next agent in chain
-        try {
-            return executeChainInternal(executionId, chainId, agentIds, accumulatedEvents, context, stepIndex + 1);
-        } catch (Exception throwable) {
-            // Chain execution failed
-            updateExecutionStatus(executionId, ExecutionState.FAILED, progress, throwable.getMessage());
-            metrics.incrementCounter("ai.chain.failed");
-            System.err.println("Agent chain execution failed at step " + stepIndex + " (agent " + currentAgentId + "): " + throwable.getMessage());
-            return Promise.ofException(new RuntimeException("Chain execution failed", throwable));
-        }
+
+        // Resolve (or lazily build) the GAA pipeline for this agent.
+        AgentContext agentCtx = contextBridge.toAgentContext(context, currentAgentId);
+        AgentTurnPipeline<Event, List<Event>> pipeline =
+                pipelineCache.computeIfAbsent(currentAgentId, this::buildPipeline);
+
+        // Fan out: one Promise per input event, all dispatched without blocking.
+        List<Promise<List<Event>>> eventPromises = currentEvents.stream()
+                .map(event -> pipeline.execute(event, agentCtx))
+                .toList();
+
+        return Promises.toList(eventPromises)
+                .map(results -> {
+                    List<Event> accumulated = new ArrayList<>();
+                    for (List<Event> outEvents : results) {
+                        if (outEvents != null) {
+                            accumulated.addAll(outEvents);
+                        }
+                    }
+                    return accumulated;
+                })
+                .then(accumulated -> {
+                    if (accumulated.isEmpty() && stepIndex < agentIds.size() - 1) {
+                        log.warn("Agent {} produced no output events in chain {}", currentAgentId, chainId);
+                    }
+                    return executeChainInternal(executionId, chainId, agentIds, accumulated, context, stepIndex + 1);
+                })
+                .mapException(e -> {
+                    updateExecutionStatus(executionId, ExecutionState.FAILED, progress, e.getMessage());
+                    metrics.incrementCounter("ai.chain.failed");
+                    log.error("Agent chain {} failed at step {} (agent {})", chainId, stepIndex, currentAgentId, e);
+                    return new RuntimeException("Chain execution failed at step " + stepIndex + " (agent " + currentAgentId + ")", e);
+                });
     }
 
     @Override
@@ -225,10 +250,8 @@ public class AIAgentOrchestrationManagerImpl implements AIAgentOrchestrationMana
         return Promise.ofBlocking(blockingExecutor, () -> {
             String scheduleId = "schedule_" + UUID.randomUUID().toString();
             schedules.put(scheduleId, schedule);
-            
-            System.out.println("Scheduled execution for " + agentOrChainId + ": " + schedule.cronExpression());
+            log.info("Scheduled execution for {}: {}", agentOrChainId, schedule.cronExpression());
             metrics.incrementCounter("ai.schedule.created");
-            
             return scheduleId;
         });
     }
@@ -254,7 +277,7 @@ public class AIAgentOrchestrationManagerImpl implements AIAgentOrchestrationMana
             
             if (status.state() == ExecutionState.RUNNING || status.state() == ExecutionState.PENDING) {
                 updateExecutionStatus(executionId, ExecutionState.CANCELLED, status.progress(), "Cancelled by user");
-                System.out.println("Cancelled execution: " + executionId);
+                log.info("Cancelled execution: {}", executionId);
                 metrics.incrementCounter("ai.execution.cancelled");
                 return true;
             }
@@ -347,12 +370,46 @@ public class AIAgentOrchestrationManagerImpl implements AIAgentOrchestrationMana
     }
     
     /**
-     * Helper method to determine if execution state is terminal
+     * Builds an {@link AgentTurnPipeline} that wraps registry-service execution
+     * with the GAA PERCEIVE → REASON → ACT → CAPTURE → REFLECT lifecycle.
+     *
+     * <ul>
+     *   <li><b>PERCEIVE</b>: identity — memory enrichment wired in AEP-P3</li>
+     *   <li><b>REASON</b>: delegates to {@code AgentRegistryService.executeAgent()}</li>
+     *   <li><b>ACT</b>: identity pass-through</li>
+     *   <li><b>CAPTURE</b>: no-op — episode storage wired in AEP-P3</li>
+     *   <li><b>REFLECT</b>: no-op — learning loop wired in AEP-P4</li>
+     * </ul>
+     *
+     * @param agentId the agent identifier used for tracing
+     * @return a new pipeline instance
+     */
+    private AgentTurnPipeline<Event, List<Event>> buildPipeline(String agentId) {
+        return AgentTurnPipeline.<Event, List<Event>>builder(agentId)
+                // PERCEIVE: identity pass-through — memory enrichment added in AEP-P3
+                .perceive((input, ctx) -> Promise.of(input))
+                // REASON: delegate to the agent registry service for actual execution
+                .reason((input, ctx) -> {
+                    AgentExecutionContext aepCtx = ctx::getTenantId;
+                    return agentRegistryService.executeAgent(
+                            TenantId.of(ctx.getTenantId()), agentId, input, aepCtx);
+                })
+                // ACT: identity pass-through
+                .act((output, ctx) -> Promise.of(output))
+                // CAPTURE: no-op — episode storage added in AEP-P3
+                .capture((input, output, ctx) -> Promise.complete())
+                // REFLECT: no-op — learning loop added in AEP-P4 (fire-and-forget)
+                .reflect((input, output, ctx) -> Promise.complete())
+                .build();
+    }
+
+    /**
+     * Helper method to determine if execution state is terminal.
      */
     private boolean isTerminalState(ExecutionState state) {
-        return state == ExecutionState.COMPLETED || 
-               state == ExecutionState.FAILED || 
-               state == ExecutionState.CANCELLED || 
+        return state == ExecutionState.COMPLETED ||
+               state == ExecutionState.FAILED ||
+               state == ExecutionState.CANCELLED ||
                state == ExecutionState.TIMED_OUT;
     }
 }

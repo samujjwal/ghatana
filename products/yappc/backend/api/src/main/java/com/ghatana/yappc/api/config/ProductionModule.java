@@ -20,6 +20,7 @@ import com.ghatana.yappc.api.aep.AepClientFactory;
 import com.ghatana.yappc.api.aep.AepConfig;
 import com.ghatana.yappc.api.aep.AepException;
 import com.ghatana.yappc.api.aep.AepService;
+import com.ghatana.yappc.api.outbox.OutboxRelayService;
 import com.ghatana.yappc.api.service.LifecycleEventEmitter;
 import com.ghatana.platform.security.rbac.SyncAuthorizationService;
 import com.ghatana.datacloud.application.version.VersionService;
@@ -185,6 +186,7 @@ public class ProductionModule extends SharedBaseModule {
   protected void configure() {
     logger.info("Configuring YAPPC API with production services");
     install(new DataSourceModule());
+    install(new DataCloudModule());
     bind(com.ghatana.yappc.api.controller.GraphQLController.class);
     // Inherit shared components from SharedBaseModule
     super.configure();
@@ -284,6 +286,26 @@ public class ProductionModule extends SharedBaseModule {
   @Provides
   AepService aepService(AepClient client) {
     return new AepService(client);
+  }
+
+  /**
+   * Provides and starts the transactional outbox relay service.
+   *
+   * <p>Polls {@code yappc.event_outbox} every 500 ms for {@code PENDING} entries and forwards each
+   * to AEP via {@link AepClient#publishEvent}. Marks entries {@code DELIVERED} on success or
+   * {@code FAILED} with exponential back-off on error.
+   *
+   * @doc.type class
+   * @doc.purpose Durable domain-event delivery from outbox to AEP
+   * @doc.layer product
+   * @doc.pattern Scheduler, Transactional Outbox
+   */
+  @Provides
+  OutboxRelayService outboxRelayService(DataSource dataSource, AepClient aepClient) {
+    OutboxRelayService relay = new OutboxRelayService(dataSource, aepClient);
+    relay.start();
+    logger.info("OutboxRelayService started — domain events forwarded to AEP every 500 ms");
+    return relay;
   }
 
   /**

@@ -11,6 +11,9 @@ dependencies {
     implementation(project(":platform:java:observability"))
     implementation(project(":platform:java:config"))
     implementation(project(":platform:java:http"))
+
+    // gRPC transport (runtime) — needed to start the gRPC server
+    implementation(libs.grpc.netty.shaded)
     
     // ActiveJ framework
     implementation(libs.activej.launcher)

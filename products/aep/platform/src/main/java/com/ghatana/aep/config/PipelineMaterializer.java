@@ -11,11 +11,16 @@ import com.ghatana.core.operator.OperatorId;
 import com.ghatana.core.pipeline.Pipeline;
 import com.ghatana.core.pipeline.PipelineBuilder;
 import com.ghatana.core.pipeline.PipelineEdge;
+import com.ghatana.core.template.TemplateContext;
+import com.ghatana.core.template.YamlTemplateEngine;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.dataformat.yaml.YAMLFactory;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.io.IOException;
 import java.util.*;
 import java.util.stream.Collectors;
 
@@ -43,7 +48,7 @@ import java.util.stream.Collectors;
  * </ol>
  *
  * @doc.type class
- * @doc.purpose PipelineSpec → Pipeline materializer
+ * @doc.purpose PipelineSpec → Pipeline materializer with YAML template rendering support
  * @doc.layer product
  * @doc.pattern Materializer, Builder
  *
@@ -55,25 +60,82 @@ public class PipelineMaterializer {
     private static final Logger log = LoggerFactory.getLogger(PipelineMaterializer.class);
 
     private static final String DEFAULT_NAMESPACE = "aep";
-    private static final String DEFAULT_TYPE = "agent";
-    private static final String DEFAULT_VERSION = "latest";
+    private static final String DEFAULT_TYPE      = "agent";
+    private static final String DEFAULT_VERSION   = "latest";
+
+    private static final ObjectMapper YAML_MAPPER = new ObjectMapper(new YAMLFactory());
 
     private final OperatorIdResolver operatorIdResolver;
+    private final YamlTemplateEngine templateEngine;
 
     /**
-     * Creates a materializer with default operator ID resolution.
+     * Creates a materializer with default operator ID resolution and no template rendering.
      */
     public PipelineMaterializer() {
-        this(null);
+        this(null, null);
     }
 
     /**
-     * Creates a materializer with a custom operator ID resolver.
+     * Creates a materializer with a custom operator ID resolver and no template rendering.
      *
      * @param resolver custom resolver, or null for default behavior
      */
     public PipelineMaterializer(@Nullable OperatorIdResolver resolver) {
+        this(resolver, null);
+    }
+
+    /**
+     * Creates a materializer with both a custom operator ID resolver and a YAML template engine.
+     *
+     * <p>When a {@code YamlTemplateEngine} is provided, {@link #materializeFromYaml} can be
+     * used to render {@code {{ varName }}} placeholders before parsing.
+     *
+     * @param resolver      custom resolver, or null for default behavior
+     * @param templateEngine template engine for YAML rendering, or null to skip rendering
+     */
+    public PipelineMaterializer(@Nullable OperatorIdResolver resolver,
+                                @Nullable YamlTemplateEngine templateEngine) {
         this.operatorIdResolver = resolver;
+        this.templateEngine     = templateEngine;
+    }
+
+    /**
+     * Materializes a pipeline from a raw YAML string.
+     *
+     * <p>The YAML is first rendered through the {@link YamlTemplateEngine} (if one was
+     * provided at construction) to resolve any {@code {{ varName }}} placeholders, then
+     * parsed into a {@link PipelineSpec} and materialized.
+     *
+     * @param rawYaml    raw YAML string containing the pipeline specification
+     * @param ctx        template variable bindings (may be {@code null} if no engine is set)
+     * @param pipelineId unique pipeline identifier
+     * @param version    pipeline version
+     * @return an executable Pipeline
+     * @throws PipelineMaterializationException if the YAML is invalid or the spec is malformed
+     * @throws IllegalStateException if template rendering fails (unresolved placeholders)
+     */
+    @NotNull
+    public Pipeline materializeFromYaml(
+            @NotNull String rawYaml,
+            @Nullable TemplateContext ctx,
+            @NotNull String pipelineId,
+            @NotNull String version) {
+        Objects.requireNonNull(rawYaml, "rawYaml must not be null");
+
+        String resolvedYaml = rawYaml;
+        if (templateEngine != null && ctx != null) {
+            resolvedYaml = templateEngine.render(rawYaml, ctx);
+        } else if (templateEngine != null) {
+            resolvedYaml = templateEngine.render(rawYaml, TemplateContext.empty());
+        }
+
+        try {
+            PipelineSpec spec = YAML_MAPPER.readValue(resolvedYaml, PipelineSpec.class);
+            return materialize(spec, pipelineId, version);
+        } catch (IOException e) {
+            throw new PipelineMaterializationException(
+                    "Failed to parse YAML for pipeline '" + pipelineId + "': " + e.getMessage(), e);
+        }
     }
 
     /**
@@ -177,8 +239,10 @@ public class PipelineMaterializer {
                             builder.edge(depNodeId, nodeId, PipelineEdge.LABEL_PRIMARY);
                             wiredNodes.add(nodeId);
                         } else {
-                            log.warn("Unresolved dependency '{}' for agent '{}' in pipeline '{}'",
-                                    dep, agentName, pipelineId);
+                            throw new IllegalStateException(
+                                    "Unresolvable operator dependency '" + dep + "' for agent '" +
+                                    agentName + "' in pipeline '" + pipelineId +
+                                    "'. All referenced operators must be declared in the pipeline spec.");
                         }
                     }
                 }

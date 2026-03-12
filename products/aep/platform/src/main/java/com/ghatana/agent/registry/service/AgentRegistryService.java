@@ -2,6 +2,7 @@ package com.ghatana.agent.registry.service;
 
 import com.ghatana.aep.domain.agent.registry.AgentExecutionContext;
 import com.ghatana.platform.domain.agent.registry.AgentMetrics;
+import com.ghatana.platform.domain.auth.TenantId;
 import com.ghatana.agent.Agent;
 import com.ghatana.contracts.agent.v1.AgentManifestProto;
 import com.ghatana.contracts.agent.v1.AgentInputProto;
@@ -53,113 +54,131 @@ import java.util.Set;
 public interface AgentRegistryService {
     
     // ==================== MANIFEST MANAGEMENT ====================
-    /**
-     * Register a new agent manifest
-     */
-    Promise<AgentManifestProto> register(AgentManifestProto manifest);
 
     /**
-     * Get an agent by ID
+     * Register a new agent manifest scoped to the given tenant.
+     *
+     * @param tenantId tenant that owns this agent manifest
+     * @param manifest the agent manifest to register
      */
-    Promise<AgentManifestProto> getById(String id);
+    Promise<AgentManifestProto> register(TenantId tenantId, AgentManifestProto manifest);
 
     /**
-     * List all agents
+     * Get an agent manifest by ID within a tenant.
+     *
+     * @param tenantId tenant scope
+     * @param id       agent identifier
      */
-    Promise<List<AgentManifestProto>> listAll();
+    Promise<AgentManifestProto> getById(TenantId tenantId, String id);
 
     /**
-     * Update an existing agent
+     * List all agent manifests visible to a tenant.
+     *
+     * @param tenantId tenant scope
      */
-    Promise<AgentManifestProto> update(String id, AgentManifestProto manifest);
+    Promise<List<AgentManifestProto>> listAll(TenantId tenantId);
 
     /**
-     * Delete an agent
-     * @param id The ID of the agent to delete
-     * @param hardDelete If true, permanently delete the agent
-     * @return A Promise that completes with true if the agent was deleted, false if not found
+     * Update an existing agent manifest.
+     *
+     * @param tenantId tenant scope
+     * @param id       agent identifier
+     * @param manifest updated manifest
      */
-    Promise<Boolean> delete(String id, boolean hardDelete);
-    
+    Promise<AgentManifestProto> update(TenantId tenantId, String id, AgentManifestProto manifest);
+
+    /**
+     * Delete an agent manifest.
+     *
+     * @param tenantId   tenant scope
+     * @param id         agent identifier
+     * @param hardDelete if {@code true}, permanently delete; otherwise soft-delete
+     * @return {@code true} if deleted, {@code false} if not found
+     */
+    Promise<Boolean> delete(TenantId tenantId, String id, boolean hardDelete);
+
     // ==================== AGENT DISCOVERY ====================
-    
+
     /**
-     * Find agents that can process a specific event type
-     * 
-     * @param eventTypeId The event type to find processors for
-     * @return Promise containing list of agent manifests that support the event type
+     * Find agent manifests that handle a specific event type.
+     *
+     * @param tenantId    tenant scope
+     * @param eventTypeId the event type to match
      */
-    Promise<List<AgentManifestProto>> findByEventType(String eventTypeId);
-    
+    Promise<List<AgentManifestProto>> findByEventType(TenantId tenantId, String eventTypeId);
+
     /**
-     * Find agents with specific capabilities
-     * 
-     * @param capabilities Set of required capabilities
-     * @return Promise containing list of agent manifests with matching capabilities
+     * Find agent manifests that declare all of the given capabilities.
+     *
+     * @param tenantId     tenant scope
+     * @param capabilities required capability set
      */
-    Promise<List<AgentManifestProto>> findByCapabilities(Set<String> capabilities);
-    
+    Promise<List<AgentManifestProto>> findByCapabilities(TenantId tenantId, Set<String> capabilities);
+
     // ==================== AGENT EXECUTION ====================
-    
+
     /**
-     * Get runtime agent instance for execution
-     * 
-     * @param agentId The ID of the agent to retrieve
-     * @return Promise containing the runtime agent instance
+     * Retrieve a runtime agent instance for execution.
+     *
+     * @param tenantId tenant scope
+     * @param agentId  agent identifier
      */
-    Promise<Agent> getAgentInstance(String agentId);
-    
+    Promise<Agent> getAgentInstance(TenantId tenantId, String agentId);
+
     /**
-     * Execute an agent with event input
-     * 
-     * @param agentId The ID of the agent to execute
-     * @param event The event to process
-     * @param context Execution context with security and tenant information
-     * @return Promise containing the list of output events
+     * Execute an agent with a single event input.
+     *
+     * @param tenantId agent's owning tenant
+     * @param agentId  agent identifier
+     * @param event    event to process
+     * @param context  execution context (also carries {@link AgentExecutionContext#tenantId()})
+     * @return output events produced by the agent
      */
-    Promise<List<Event>> executeAgent(String agentId, Event event, AgentExecutionContext context);
-    
+    Promise<List<Event>> executeAgent(TenantId tenantId, String agentId, Event event, AgentExecutionContext context);
+
     /**
-     * Execute an agent with protocol buffer input/output
-     * 
-     * @param agentId The ID of the agent to execute
-     * @param input Protocol buffer input containing event and context
-     * @return Promise containing protocol buffer output with results
+     * Execute an agent using protocol-buffer I/O.
+     *
+     * @param tenantId tenant scope
+     * @param agentId  agent identifier
+     * @param input    protobuf input
      */
-    Promise<AgentResultProto> executeAgentProto(String agentId, AgentInputProto input);
-    
+    Promise<AgentResultProto> executeAgentProto(TenantId tenantId, String agentId, AgentInputProto input);
+
     /**
-     * Execute batch processing for multiple events
-     * 
-     * @param agentId The ID of the agent to execute
-     * @param events List of events to process
-     * @param context Execution context
-     * @return Promise containing all output events from batch processing
+     * Execute an agent against a batch of events.
+     *
+     * @param tenantId tenant scope
+     * @param agentId  agent identifier
+     * @param events   events to process
+     * @param context  execution context
+     * @return all output events produced during batch processing
      */
-    Promise<List<Event>> executeBatch(String agentId, List<Event> events, AgentExecutionContext context);
-    
+    Promise<List<Event>> executeBatch(TenantId tenantId, String agentId, List<Event> events, AgentExecutionContext context);
+
     // ==================== MONITORING & METRICS ====================
-    
+
     /**
-     * Get current metrics for an agent
-     * 
-     * @param agentId The ID of the agent
-     * @return Promise containing current agent metrics
+     * Get runtime metrics for a specific agent.
+     *
+     * @param tenantId tenant scope
+     * @param agentId  agent identifier
      */
-    Promise<AgentMetrics> getAgentMetrics(String agentId);
-    
+    Promise<AgentMetrics> getAgentMetrics(TenantId tenantId, String agentId);
+
     /**
-     * Check agent health status
-     * 
-     * @param agentId The ID of the agent to check
-     * @return Promise containing true if agent is healthy
+     * Check the health of a specific agent.
+     *
+     * @param tenantId tenant scope
+     * @param agentId  agent identifier
+     * @return {@code true} if the agent is healthy
      */
-    Promise<Boolean> isAgentHealthy(String agentId);
-    
+    Promise<Boolean> isAgentHealthy(TenantId tenantId, String agentId);
+
     /**
-     * Get metrics for all registered agents
-     * 
-     * @return Promise containing metrics for all agents
+     * Get runtime metrics for all agents visible to this tenant.
+     *
+     * @param tenantId tenant scope
      */
-    Promise<List<AgentMetrics>> getAllAgentMetrics();
+    Promise<List<AgentMetrics>> getAllAgentMetrics(TenantId tenantId);
 }

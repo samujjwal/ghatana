@@ -14,6 +14,7 @@ import com.ghatana.yappc.api.GenerationApiController;
 import com.ghatana.yappc.api.IntentApiController;
 import com.ghatana.yappc.api.ShapeApiController;
 import com.ghatana.yappc.api.ValidationApiController;
+import com.ghatana.yappc.agent.AepEventPublisher;
 import com.ghatana.yappc.services.intent.IntentService;
 import com.ghatana.yappc.services.shape.ShapeService;
 import com.ghatana.yappc.services.generate.GenerationService;
@@ -152,8 +153,8 @@ public class YappcLifecycleService extends UnifiedApplicationLauncher {
                 injector.getInstance(ValidationApiController.class);
         AdvancePhaseUseCase advancePhaseUseCase =
                 injector.getInstance(AdvancePhaseUseCase.class);
-        AepEventBridge aepEventBridge =
-                injector.getInstance(AepEventBridge.class);
+        AepEventPublisher aepPublisher =
+                injector.getInstance(AepEventPublisher.class);
         PrometheusMeterRegistry prometheusRegistry =
                 injector.getInstance(PrometheusMeterRegistry.class);
         HumanApprovalService humanApprovalService =
@@ -169,7 +170,7 @@ public class YappcLifecycleService extends UnifiedApplicationLauncher {
         // ── Build authenticated API servlet with all lifecycle routes ─────
         AsyncServlet apiServlet = buildApiServlet(eventloop,
                 intentController, shapeController, generationController,
-                validationController, advancePhaseUseCase, aepEventBridge,
+                validationController, advancePhaseUseCase, aepPublisher,
                 humanApprovalService);
         AsyncServlet securedApiServlet = authFilter.secure(apiServlet);
 
@@ -243,7 +244,7 @@ public class YappcLifecycleService extends UnifiedApplicationLauncher {
             GenerationApiController generationController,
             ValidationApiController validationController,
             AdvancePhaseUseCase advancePhaseUseCase,
-            AepEventBridge aepEventBridge,
+            AepEventPublisher aepPublisher,
             HumanApprovalService humanApprovalService) {
 
         ObjectMapper objectMapper = new ObjectMapper();
@@ -272,8 +273,14 @@ public class YappcLifecycleService extends UnifiedApplicationLauncher {
                                         (String) json.get("requestedBy"));
                                 return advancePhaseUseCase.execute(tr)
                                         .map(result -> {
-                                            // Fire-and-forget AEP event (3.4)
-                                            aepEventBridge.publishTransitionEvent(tr, result)
+                                            // Fire-and-forget AEP event (3.4/Ph1c)
+                                            String eventType = result.isSuccess()
+                                                    ? "lifecycle.phase.advanced"
+                                                    : "lifecycle.phase.blocked";
+                                            String tid = tr.tenantId() != null
+                                                    ? tr.tenantId() : "default";
+                                            aepPublisher.publish(eventType, tid,
+                                                    buildTransitionPayload(tr, result))
                                                     .whenComplete((v, e) -> {
                                                         if (e != null) {
                                                             logger.warn("AEP event publish failed: {}", e.getMessage());
@@ -415,6 +422,31 @@ public class YappcLifecycleService extends UnifiedApplicationLauncher {
         logger.info("=== YAPPC Lifecycle Service v{} started on port {} ===",
                 getServiceVersion(),
                 System.getProperty("yappc.lifecycle.port", String.valueOf(DEFAULT_PORT)));
+    }
+
+    // ─────────────────────────────────────────────────────────────────────────
+    // Private helpers
+    // ─────────────────────────────────────────────────────────────────────────
+
+    /**
+     * Builds the AEP event payload for a lifecycle phase transition,
+     * previously handled by AepEventBridge.buildPayload() (deleted in Ph1c).
+     */
+    private static Map<String, Object> buildTransitionPayload(
+            TransitionRequest request, TransitionResult result) {
+        Map<String, Object> payload = new java.util.HashMap<>();
+        payload.put("projectId",  request.projectId());
+        payload.put("tenantId",   request.tenantId());
+        payload.put("fromPhase",  request.fromPhase());
+        payload.put("toPhase",    result.isSuccess() ? result.toPhase() : request.toPhase());
+        payload.put("timestamp",  java.time.Instant.now().toString());
+        payload.put("status",     result.status());
+        if (!result.isSuccess()) {
+            payload.put("blockCode",        result.blockCode());
+            payload.put("blockReason",      result.blockReason());
+            payload.put("missingArtifacts", result.missingArtifacts());
+        }
+        return payload;
     }
 
     public static void main(String[] args) throws Exception {

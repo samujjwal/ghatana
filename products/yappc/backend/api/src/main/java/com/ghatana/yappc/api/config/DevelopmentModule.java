@@ -86,6 +86,9 @@ public class DevelopmentModule extends SharedBaseModule {
     logger.info("⚠️  YAPPC API running in DEVELOPMENT mode with mock services");
     logger.info("   Data will not be persisted across restarts");
 
+    // Wire Data-Cloud client (embedded mode by default in dev — set DC_DEPLOYMENT_MODE=embedded)
+    install(new DataCloudModule());
+
     // Inherit shared components from SharedBaseModule
     super.configure();
   }

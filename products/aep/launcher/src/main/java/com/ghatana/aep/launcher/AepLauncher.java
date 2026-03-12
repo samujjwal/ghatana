@@ -2,6 +2,10 @@ package com.ghatana.aep.launcher;
 
 import com.ghatana.aep.Aep;
 import com.ghatana.aep.AepEngine;
+import com.ghatana.aep.catalog.AepOperatorCatalogLoader;
+import com.ghatana.core.operator.catalog.DefaultOperatorCatalog;
+import com.ghatana.core.operator.catalog.OperatorCatalog;
+import com.ghatana.core.operator.spi.OperatorProviderRegistry;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -42,6 +46,10 @@ public class AepLauncher {
             log.info("  Worker Threads: {}", config.workerThreads());
             log.info("  EventCloud: {}", engine.eventCloud().getClass().getSimpleName());
 
+            // Load operator catalog before starting server — discovers YAML operator
+            // definitions from classpath resources/operators/ and registers them
+            loadOperatorCatalog();
+
             // Register shutdown hook
             Runtime.getRuntime().addShutdownHook(new Thread(() -> {
                 log.info("Shutting down AEP...");
@@ -64,6 +72,17 @@ public class AepLauncher {
         } catch (Exception e) {
             log.error("Failed to start AEP", e);
             System.exit(1);
+        }
+    }
+
+    private static void loadOperatorCatalog() {
+        try {
+            OperatorCatalog catalog = new DefaultOperatorCatalog();
+            OperatorProviderRegistry registry = OperatorProviderRegistry.create();
+            new AepOperatorCatalogLoader(catalog, registry).loadFromClasspath();
+            log.info("Operator catalog loaded from classpath");
+        } catch (Exception e) {
+            log.warn("Operator catalog loading failed — continuing without catalog: {}", e.getMessage());
         }
     }
 

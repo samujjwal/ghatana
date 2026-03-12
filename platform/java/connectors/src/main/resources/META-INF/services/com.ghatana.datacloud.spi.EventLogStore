@@ -1,0 +1,2 @@
+com.ghatana.core.connectors.eventlog.GrpcEventLogStore
+com.ghatana.core.connectors.eventlog.HttpEventLogStore

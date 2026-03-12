@@ -4,6 +4,14 @@
  */
 package com.ghatana.aep.di;
 
+import com.ghatana.agent.catalog.CatalogRegistry;
+import com.ghatana.agent.dispatch.AgentDispatcher;
+import com.ghatana.agent.dispatch.CatalogAgentDispatcher;
+import com.ghatana.agent.dispatch.tier.DefaultLlmExecutionPlan;
+import com.ghatana.agent.dispatch.tier.DefaultServiceOrchestrationPlan;
+import com.ghatana.agent.dispatch.tier.LlmExecutionPlan;
+import com.ghatana.agent.dispatch.tier.LlmProvider;
+import com.ghatana.agent.dispatch.tier.ServiceOrchestrationPlan;
 import com.ghatana.orchestrator.cache.PipelineCache;
 import com.ghatana.orchestrator.config.OrchestratorConfig;
 import com.ghatana.orchestrator.core.Orchestrator;
@@ -39,6 +47,15 @@ import java.time.Duration;
  * (for {@code Eventloop}), and from the observability layer
  * (for {@link MetricsCollector}).
  *
+ * <p>Also provides the agent dispatch stack:
+ * <ul>
+ *   <li>{@link CatalogRegistry} — ServiceLoader-discovered agent catalog registry</li>
+ *   <li>{@link LlmExecutionPlan} — Tier-L LLM execution (stub until AEP-P7)</li>
+ *   <li>{@link ServiceOrchestrationPlan} — Tier-S delegation plan</li>
+ *   <li>{@link CatalogAgentDispatcher} / {@link AgentDispatcher} — three-tier
+ *       catalog-backed dispatcher</li>
+ * </ul>
+ *
  * <p><b>Usage:</b>
  * <pre>{@code
  * Injector injector = Injector.of(
@@ -47,15 +64,18 @@ import java.time.Duration;
  *     new AepOrchestrationModule()
  * );
  * Orchestrator orchestrator = injector.getInstance(Orchestrator.class);
+ * AgentDispatcher dispatcher = injector.getInstance(AgentDispatcher.class);
  * }</pre>
  *
  * @doc.type class
- * @doc.purpose ActiveJ DI module for orchestration, checkpointing, and execution
+ * @doc.purpose ActiveJ DI module for orchestration, checkpointing, execution, and agent dispatch
  * @doc.layer product
  * @doc.pattern Module
  * @see Orchestrator
  * @see CheckpointStore
  * @see ExecutionQueue
+ * @see CatalogAgentDispatcher
+ * @see AgentDispatcher
  */
 public class AepOrchestrationModule extends AbstractModule {
 
@@ -147,5 +167,96 @@ public class AepOrchestrationModule extends AbstractModule {
                 config,
                 metrics,
                 specFormatLoader);
+    }
+
+    // ==================== Agent Dispatch Stack (AEP-P2) ====================
+
+    /**
+     * Provides the catalog registry populated via ServiceLoader discovery.
+     *
+     * <p>Discovers all {@link com.ghatana.agent.catalog.AgentCatalog} implementations
+     * on the classpath and merges them into a single queryable registry.
+     *
+     * @return merged catalog registry
+     */
+    @Provides
+    CatalogRegistry catalogRegistry() {
+        return CatalogRegistry.discover();
+    }
+
+    /**
+     * Provides a stub {@link LlmProvider} that throws {@link UnsupportedOperationException}.
+     *
+     * <p><b>This is intentionally a stub.</b> LLM integration is wired in AEP-P7 when
+     * the AI inference service is connected. Any attempt to dispatch to the LLM tier
+     * before that will fail fast with an informative message.
+     *
+     * @return stub LLM provider
+     */
+    @Provides
+    LlmProvider llmProvider() {
+        return (provider, model, prompt, temperature, maxTokens) -> {
+            throw new UnsupportedOperationException(
+                    "LLM provider not yet configured — stub active until AEP-P7. "
+                    + "Set AEP_LLM_PROVIDER env var and wire the AI inference service.");
+        };
+    }
+
+    /**
+     * Provides the Tier-L LLM execution plan using the configured {@link LlmProvider}.
+     *
+     * @param llmProvider LLM provider SPI implementation
+     * @return default LLM execution plan
+     */
+    @Provides
+    LlmExecutionPlan llmExecutionPlan(LlmProvider llmProvider) {
+        return new DefaultLlmExecutionPlan(llmProvider);
+    }
+
+    /**
+     * Provides the Tier-S service orchestration plan.
+     *
+     * <p>{@link DefaultServiceOrchestrationPlan} reads the delegation chain from
+     * catalog entries and dispatches recursively via the parent dispatcher.
+     *
+     * @return default service orchestration plan
+     */
+    @Provides
+    ServiceOrchestrationPlan serviceOrchestrationPlan() {
+        return new DefaultServiceOrchestrationPlan();
+    }
+
+    /**
+     * Provides the {@link CatalogAgentDispatcher} — the primary agent dispatch component.
+     *
+     * <p>Implements a three-tier resolution strategy:
+     * <ol>
+     *   <li>Tier-J: registered Java {@link com.ghatana.agent.TypedAgent} beans</li>
+     *   <li>Tier-S: catalog entry with delegation chain → {@link ServiceOrchestrationPlan}</li>
+     *   <li>Tier-L: catalog entry with LLM generator → {@link LlmExecutionPlan}</li>
+     * </ol>
+     *
+     * @param catalogRegistry     aggregated agent catalog
+     * @param llmExecutionPlan    Tier-L execution plan
+     * @param serviceOrchestrationPlan Tier-S execution plan
+     * @return catalog-backed agent dispatcher
+     */
+    @Provides
+    CatalogAgentDispatcher catalogAgentDispatcher(
+            CatalogRegistry catalogRegistry,
+            LlmExecutionPlan llmExecutionPlan,
+            ServiceOrchestrationPlan serviceOrchestrationPlan) {
+        return new CatalogAgentDispatcher(catalogRegistry, llmExecutionPlan, serviceOrchestrationPlan);
+    }
+
+    /**
+     * Provides {@link AgentDispatcher} bound to {@link CatalogAgentDispatcher}.
+     *
+     * @param dispatcher the concrete dispatcher implementation
+     * @return agent dispatcher interface binding
+     */
+    @Provides
+    AgentDispatcher agentDispatcher(CatalogAgentDispatcher dispatcher) {
+        return dispatcher;
     }
 }

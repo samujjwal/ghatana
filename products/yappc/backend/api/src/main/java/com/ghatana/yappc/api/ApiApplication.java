@@ -20,6 +20,7 @@ import com.ghatana.yappc.api.auth.AuthenticationController;
 import com.ghatana.yappc.api.auth.AuthorizationController;
 import com.ghatana.yappc.api.build.BuildController;
 import com.ghatana.yappc.api.config.ProductionModule;
+import com.ghatana.yappc.api.outbox.OutboxRelayService;
 import com.ghatana.yappc.api.controller.ConfigController;
 import com.ghatana.yappc.api.controller.DashboardController;
 import com.ghatana.yappc.api.controller.RailController;
@@ -108,7 +109,8 @@ public class ApiApplication extends HttpServerLauncher {
       com.ghatana.yappc.api.testing.TestGenerationController testGenerationController,
       com.ghatana.yappc.api.observability.HealthAggregationController healthAggregationController,
       com.ghatana.yappc.api.workflow.WorkflowExecutionController workflowExecutionController,
-      com.ghatana.yappc.api.dlq.DlqController dlqController) {
+      com.ghatana.yappc.api.dlq.DlqController dlqController,
+      OutboxRelayService outboxRelayService) {
 
     // Build routing servlet
     AsyncServlet routingServlet =

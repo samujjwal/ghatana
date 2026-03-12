@@ -21,6 +21,7 @@ import com.ghatana.aep.connector.strategy.s3.S3StorageStrategy;
 import com.ghatana.aep.connector.strategy.sqs.SqsConfig;
 import com.ghatana.aep.connector.strategy.sqs.SqsConsumerStrategy;
 import com.ghatana.aep.connector.strategy.sqs.SqsProducerStrategy;
+import com.ghatana.aep.config.EnvConfig;
 import io.activej.eventloop.Eventloop;
 import io.activej.inject.annotation.Named;
 import io.activej.inject.annotation.Provides;
@@ -82,87 +83,91 @@ public class AepConnectorModule extends AbstractModule {
     // ═══════════════════════════════════════════════════════════════
 
     /**
-     * Provides default Kafka consumer configuration.
+     * Provides default Kafka consumer configuration driven by environment variables.
      *
-     * <p>Connects to {@code localhost:9092} with consumer group {@code aep-consumer-group}
-     * and subscribes to the {@code events} topic. Override by providing your own
-     * {@link KafkaConsumerConfig} binding.
+     * <p>Override by providing your own {@link KafkaConsumerConfig} binding.
      *
      * @return default Kafka consumer config
      */
     @Provides
     KafkaConsumerConfig kafkaConsumerConfig() {
+        EnvConfig env = EnvConfig.fromSystem();
         return KafkaConsumerConfig.builder()
-                .bootstrapServers("localhost:9092")
-                .groupId("aep-consumer-group")
-                .topics(List.of("events"))
+                .bootstrapServers(env.kafkaBootstrapServers())
+                .groupId(env.kafkaConsumerGroup())
+                .topics(List.of(env.kafkaInputTopic()))
                 .batchSize(100)
                 .build();
     }
 
     /**
-     * Provides default Kafka producer configuration.
+     * Provides default Kafka producer configuration driven by environment variables.
      *
      * @return default Kafka producer config
      */
     @Provides
     KafkaProducerConfig kafkaProducerConfig() {
+        EnvConfig env = EnvConfig.fromSystem();
         return KafkaProducerConfig.builder()
-                .bootstrapServers("localhost:9092")
-                .topic("events-out")
+                .bootstrapServers(env.kafkaBootstrapServers())
+                .topic(env.kafkaOutputTopic())
                 .build();
     }
 
     /**
-     * Provides default RabbitMQ configuration.
+     * Provides default RabbitMQ configuration driven by environment variables.
      *
      * @return default RabbitMQ config
      */
     @Provides
     RabbitMQConfig rabbitMQConfig() {
+        EnvConfig env = EnvConfig.fromSystem();
         return RabbitMQConfig.builder()
-                .host("localhost")
-                .port(5672)
-                .queueName("aep-events")
+                .host(env.rabbitMqHost())
+                .port(env.rabbitMqPort())
+                .queueName(env.rabbitMqQueue())
                 .build();
     }
 
     /**
-     * Provides default SQS configuration.
+     * Provides default SQS configuration driven by environment variables.
      *
      * @return default SQS config
      */
     @Provides
     SqsConfig sqsConfig() {
+        EnvConfig env = EnvConfig.fromSystem();
         return SqsConfig.builder()
-                .region("us-east-1")
-                .queueName("aep-events")
-                .queueUrl("https://sqs.us-east-1.amazonaws.com/000000000000/aep-events")
+                .region(env.sqsRegion())
+                .queueName(env.sqsQueueName())
+                .queueUrl(env.sqsQueueUrl())
                 .build();
     }
 
     /**
-     * Provides default S3 configuration.
+     * Provides default S3 configuration driven by environment variables.
      *
      * @return default S3 config
      */
     @Provides
     S3Config s3Config() {
+        EnvConfig env = EnvConfig.fromSystem();
         return S3Config.builder()
-                .region("us-east-1")
-                .bucketName("aep-storage")
+                .region(env.s3Region())
+                .bucketName(env.s3Bucket())
                 .build();
     }
 
     /**
-     * Provides default HTTP ingress configuration.
+     * Provides default HTTP ingress configuration driven by environment variables.
      *
      * @return default HTTP ingress config
      */
     @Provides
     HttpIngressConfig httpIngressConfig() {
+        EnvConfig env = EnvConfig.fromSystem();
         return HttpIngressConfig.builder()
-                .endpoint("http://localhost:8080/events")
+                .endpoint(env.httpIngressEndpoint())
                 .build();
     }
 

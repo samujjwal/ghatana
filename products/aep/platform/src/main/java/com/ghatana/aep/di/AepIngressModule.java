@@ -8,9 +8,13 @@ import com.ghatana.ingress.api.HealthController;
 import com.ghatana.ingress.api.ratelimit.RateLimitStorage;
 import com.ghatana.ingress.api.ratelimit.RedisRateLimitStorage;
 import com.ghatana.ingress.app.IdempotencyService;
+import com.ghatana.aep.config.EnvConfig;
 import io.activej.eventloop.Eventloop;
 import io.activej.inject.annotation.Provides;
 import io.activej.inject.module.AbstractModule;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import redis.clients.jedis.Jedis;
 import redis.clients.jedis.JedisPool;
 import redis.clients.jedis.JedisPoolConfig;
 
@@ -58,8 +62,8 @@ import java.time.Duration;
  */
 public class AepIngressModule extends AbstractModule {
 
-    private static final String DEFAULT_REDIS_HOST = "localhost";
-    private static final int DEFAULT_REDIS_PORT = 6379;
+    private static final Logger log = LoggerFactory.getLogger(AepIngressModule.class);
+
     private static final int DEFAULT_MAX_POOL_SIZE = 16;
     private static final int DEFAULT_MAX_IDLE = 8;
     private static final Duration DEFAULT_POOL_TIMEOUT = Duration.ofSeconds(5);
@@ -72,25 +76,61 @@ public class AepIngressModule extends AbstractModule {
     private static final Duration DEFAULT_IDEMPOTENCY_TTL = Duration.ofHours(24);
 
     /**
-     * Provides a shared Redis connection pool.
+     * Provides a shared Redis connection pool with startup health check.
      *
-     * <p>The pool is configured for production use with bounded connections, 
-     * idle eviction, and fairness. Shared by both the rate limiter and
-     * idempotency service to minimize Redis connection overhead.
+     * <p>The pool is configured for production use with bounded connections,
+     * idle eviction, borrowing/returning validation, and fairness. A PING
+     * is issued immediately after pool creation to fail fast when Redis is
+     * unreachable in non-development environments. Shared by both the rate
+     * limiter and idempotency service to minimise Redis connection overhead.
      *
-     * @return Jedis connection pool
+     * @return Jedis connection pool (verified reachable)
+     * @throws IllegalStateException if Redis is unreachable outside dev mode
      */
     @Provides
     JedisPool jedisPool() {
+        EnvConfig env = EnvConfig.fromSystem();
         JedisPoolConfig poolConfig = new JedisPoolConfig();
         poolConfig.setMaxTotal(DEFAULT_MAX_POOL_SIZE);
         poolConfig.setMaxIdle(DEFAULT_MAX_IDLE);
         poolConfig.setMinIdle(2);
         poolConfig.setTestOnBorrow(true);
+        poolConfig.setTestOnReturn(true);
         poolConfig.setTestWhileIdle(true);
         poolConfig.setBlockWhenExhausted(true);
-        return new JedisPool(poolConfig, DEFAULT_REDIS_HOST, DEFAULT_REDIS_PORT,
+        JedisPool pool = new JedisPool(poolConfig, env.redisHost(), env.redisPort(),
                 (int) DEFAULT_POOL_TIMEOUT.toMillis());
+        verifyRedisReachable(pool, env);
+        return pool;
+    }
+
+    /**
+     * Verifies Redis is reachable by issuing a PING immediately after pool creation.
+     *
+     * <p>In development ({@code APP_ENV=development}) a failure is only logged as a
+     * warning so that local development without Redis still works. In all other
+     * environments the application fails fast with a clear error message.
+     *
+     * @param pool the newly created pool
+     * @param env  AEP environment config (checked for dev mode)
+     * @throws IllegalStateException if Redis is unreachable in non-dev mode
+     */
+    private void verifyRedisReachable(JedisPool pool, EnvConfig env) {
+        try (Jedis jedis = pool.getResource()) {
+            String pong = jedis.ping();
+            log.info("Redis health check OK: host={}:{} response={}",
+                    env.redisHost(), env.redisPort(), pong);
+        } catch (Exception e) {
+            if (env.isDevelopment()) {
+                log.warn("Redis unreachable at {}:{} — running in dev mode, continuing without Redis. "
+                        + "Rate-limiting and idempotency will not function. Error: {}",
+                        env.redisHost(), env.redisPort(), e.getMessage());
+            } else {
+                throw new IllegalStateException(
+                        "AEP startup failed: Redis unreachable at " + env.redisHost()
+                        + ":" + env.redisPort() + ". Set APP_ENV=development to skip this check.", e);
+            }
+        }
     }
 
     /**

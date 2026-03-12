@@ -4,6 +4,7 @@
  */
 package com.ghatana.yappc.services.lifecycle;
 
+import com.ghatana.yappc.agent.AepEventPublisher;
 import io.activej.promise.Promise;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -55,13 +56,13 @@ public class HumanApprovalService {
     // tenant → (requestId → request)
     private final Map<String, Map<String, ApprovalRequest>> store = new ConcurrentHashMap<>();
 
-    private final AepEventBridge aepEventBridge;
+    private final AepEventPublisher publisher;
 
     /**
-     * @param aepEventBridge bridge used to publish AEP events on request / decision
+     * @param publisher AEP event publisher for request / decision events
      */
-    public HumanApprovalService(AepEventBridge aepEventBridge) {
-        this.aepEventBridge = Objects.requireNonNull(aepEventBridge, "aepEventBridge must not be null");
+    public HumanApprovalService(AepEventPublisher publisher) {
+        this.publisher = Objects.requireNonNull(publisher, "publisher must not be null");
     }
 
     // ─── Public API ───────────────────────────────────────────────────────────
@@ -105,7 +106,7 @@ public class HumanApprovalService {
         log.info("[tenant={}] Approval requested id={} type={} project={}", tenantId, req.id(), approvalType, projectId);
 
         // Fire-and-forget: notify AEP listeners (e.g., WebSocket push to frontend)
-        aepEventBridge.publishRawEvent(EVENT_APPROVAL_REQUESTED, tenantId, toPayload(req))
+        publisher.publish(EVENT_APPROVAL_REQUESTED, tenantId, toPayload(req))
                 .whenComplete((v, e) -> {
                     if (e != null) {
                         log.warn("AEP approval.requested event failed: {}", e.getMessage());
@@ -216,7 +217,7 @@ public class HumanApprovalService {
     }
 
     private void publishDecision(ApprovalRequest req) {
-        aepEventBridge.publishRawEvent(EVENT_APPROVAL_DECIDED, req.tenantId(), toPayload(req))
+        publisher.publish(EVENT_APPROVAL_DECIDED, req.tenantId(), toPayload(req))
                 .whenComplete((v, e) -> {
                     if (e != null) {
                         log.warn("AEP approval.decided event failed id={}: {}", req.id(), e.getMessage());

@@ -2,6 +2,7 @@ package com.ghatana.datacloud.launcher;
 
 import com.ghatana.datacloud.DataCloud;
 import com.ghatana.datacloud.DataCloudClient;
+import com.ghatana.datacloud.launcher.grpc.DataCloudGrpcServer;
 import com.ghatana.datacloud.launcher.http.DataCloudHttpServer;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -42,7 +43,12 @@ public class DataCloudLauncher {
             if (shouldStartHttpServer(args)) {
                 startHttpServer(client, config);
             }
-            
+
+            // Start gRPC server if configured
+            if (shouldStartGrpcServer(args)) {
+                startGrpcServer(client, args);
+            }
+
             // Keep running
             log.info("Data-Cloud is ready to serve requests");
             Thread.currentThread().join();
@@ -89,6 +95,30 @@ public class DataCloudLauncher {
         }
         
         return builder.build();
+    }
+
+    private static boolean shouldStartGrpcServer(String[] args) {
+        for (String arg : args) {
+            if ("--grpc".equals(arg)) {
+                return true;
+            }
+        }
+        return System.getenv("DATACLOUD_GRPC_ENABLED") != null
+                || System.getenv("DATACLOUD_GRPC_PORT") != null;
+    }
+
+    private static void startGrpcServer(DataCloudClient client, String[] args) {
+        try {
+            DataCloudGrpcServer grpcServer = new DataCloudGrpcServer(client.eventLogStore());
+            grpcServer.start();
+
+            Runtime.getRuntime().addShutdownHook(new Thread(() -> {
+                log.info("Stopping gRPC server...");
+                grpcServer.close();
+            }));
+        } catch (Exception e) {
+            log.error("Failed to start gRPC server", e);
+        }
     }
 
     private static boolean shouldStartHttpServer(String[] args) {

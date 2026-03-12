@@ -29,6 +29,10 @@ import com.ghatana.yappc.services.shape.ShapeServiceImpl;
 import com.ghatana.yappc.services.validate.ValidationService;
 import com.ghatana.yappc.services.validate.ValidationServiceImpl;
 import com.ghatana.yappc.storage.YappcArtifactRepository;
+import com.ghatana.core.event.cloud.InMemoryEventCloud;
+import com.ghatana.core.event.cloud.EventCloud;
+import com.ghatana.yappc.agent.AepEventPublisher;
+import com.ghatana.yappc.agent.DurableEventCloudPublisher;
 import com.ghatana.yappc.services.lifecycle.operators.AgentDispatchOperator;
 import com.ghatana.yappc.services.lifecycle.operators.GateOrchestratorOperator;
 import com.ghatana.yappc.services.lifecycle.operators.LifecycleStatePublisherOperator;
@@ -261,16 +265,26 @@ public class LifecycleServiceModule extends AbstractModule {
         return new GateEvaluator();
     }
 
-    // ========== AEP Event Bridge (3.4) ==========
+    // ========== EventCloud + AEP Publisher (Ph1c) ==========
 
     /**
-     * Provides AepEventBridge — publishes lifecycle transition events to the AEP event bus.
-     * Uses {@link com.ghatana.yappc.agent.HttpAepEventPublisher} configured from environment.
+     * Provides EventCloud — in-memory implementation (Ph1b will wire the real EventCloud).
+     *
+     * @doc.gaa.lifecycle act
      */
     @Provides
-    AepEventBridge aepEventBridge() {
-        logger.info("Creating AepEventBridge (HTTP publisher from environment)");
-        return new AepEventBridge(com.ghatana.yappc.agent.HttpAepEventPublisher.fromEnvironment());
+    EventCloud eventCloud() {
+        logger.info("Creating InMemoryEventCloud (TODO Ph1b: wire real EventCloud)");
+        return new InMemoryEventCloud();
+    }
+
+    /**
+     * Provides AepEventPublisher — EventCloud-backed durable publisher.
+     */
+    @Provides
+    AepEventPublisher aepEventPublisher(EventCloud eventCloud) {
+        logger.info("Creating DurableEventCloudPublisher");
+        return DurableEventCloudPublisher.fromEnvironment(eventCloud);
     }
 
     // ========== Human Approval Gate (3.5) ==========
@@ -281,9 +295,9 @@ public class LifecycleServiceModule extends AbstractModule {
      * class to persist to the {@code yappc.approval_requests} table (V18 migration).
      */
     @Provides
-    HumanApprovalService humanApprovalService(AepEventBridge aepEventBridge) {
+    HumanApprovalService humanApprovalService(AepEventPublisher publisher) {
         logger.info("Creating HumanApprovalService");
-        return new HumanApprovalService(aepEventBridge);
+        return new HumanApprovalService(publisher);
     }
 
     // ========== Lifecycle Pipeline Operators (7.1) ==========
@@ -326,12 +340,12 @@ public class LifecycleServiceModule extends AbstractModule {
 
     /**
      * Provides LifecycleStatePublisherOperator — emits {@code lifecycle.phase.advanced}
-     * events via {@link AepEventBridge} to signal successful phase transitions.
+     * events via {@link AepEventPublisher} to signal successful phase transitions.
      */
     @Provides
-    LifecycleStatePublisherOperator lifecycleStatePublisherOperator(AepEventBridge aepEventBridge) {
+    LifecycleStatePublisherOperator lifecycleStatePublisherOperator(AepEventPublisher publisher) {
         logger.info("Creating LifecycleStatePublisherOperator");
-        return new LifecycleStatePublisherOperator(aepEventBridge);
+        return new LifecycleStatePublisherOperator(publisher);
     }
 
     /**

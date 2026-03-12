@@ -4,14 +4,23 @@
  */
 package com.ghatana.datacloud.di;
 
+import com.ghatana.datacloud.config.DataCloudEnvConfig;
 import com.ghatana.datacloud.plugins.iceberg.CoolTierStoragePlugin;
 import com.ghatana.datacloud.plugins.iceberg.IcebergStorageConfig;
 import com.ghatana.datacloud.plugins.redis.RedisHotTierPlugin;
 import com.ghatana.datacloud.plugins.redis.RedisStorageConfig;
 import com.ghatana.datacloud.plugins.s3archive.ColdTierArchivePlugin;
 import com.ghatana.datacloud.plugins.s3archive.S3ArchiveConfig;
+import com.ghatana.datacloud.spi.EventLogStore;
+import com.ghatana.datacloud.storage.WarmTierEventLogStore;
+import com.zaxxer.hikari.HikariConfig;
+import com.zaxxer.hikari.HikariDataSource;
 import io.activej.inject.annotation.Provides;
 import io.activej.inject.module.AbstractModule;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
+import javax.sql.DataSource;
 
 /**
  * ActiveJ DI module for data-cloud tiered storage plugins.
@@ -50,9 +59,52 @@ import io.activej.inject.module.AbstractModule;
  */
 public class DataCloudStorageModule extends AbstractModule {
 
+    private static final Logger log = LoggerFactory.getLogger(DataCloudStorageModule.class);
+
     // ═══════════════════════════════════════════════════════════════
-    //  Hot Tier — Redis
+    //  Warm Tier — PostgreSQL Event Log (EventLogStore SPI)
     // ═══════════════════════════════════════════════════════════════
+
+    /**
+     * Provides a HikariCP DataSource for the warm-tier event log.
+     *
+     * <p>Reads connection parameters from {@link DataCloudEnvConfig}:
+     * {@code DATACLOUD_PG_URL}, {@code DATACLOUD_PG_USER},
+     * {@code DATACLOUD_PG_PASSWORD}, and {@code DATACLOUD_PG_POOL_SIZE}.
+     *
+     * @return configured HikariDataSource
+     */
+    @Provides
+    DataSource warmTierDataSource() {
+        DataCloudEnvConfig env = DataCloudEnvConfig.fromSystem();
+        HikariConfig cfg = new HikariConfig();
+        cfg.setJdbcUrl(env.pgUrl());
+        cfg.setUsername(env.pgUser());
+        cfg.setPassword(env.pgPassword());
+        cfg.setMaximumPoolSize(env.pgPoolSize());
+        cfg.setMinimumIdle(2);
+        cfg.setConnectionTimeout(30_000L);
+        cfg.setIdleTimeout(600_000L);
+        cfg.setMaxLifetime(1_800_000L);
+        cfg.setPoolName("dc-warm-tier");
+        cfg.addDataSourceProperty("ApplicationName", "data-cloud-warm-tier");
+        log.info("Warm-tier DataSource → {}", env.pgUrl());
+        return new HikariDataSource(cfg);
+    }
+
+    /**
+     * Provides the warm-tier {@link EventLogStore} (PostgreSQL-backed).
+     *
+     * <p>Bound as {@link EventLogStore} so it is discovered by the ActiveJ DI
+     * injector and can be consumed by any service that depends on the SPI.
+     *
+     * @param dataSource HikariCP DataSource from {@link #warmTierDataSource()}
+     * @return warm-tier event log store
+     */
+    @Provides
+    EventLogStore warmTierEventLogStore(DataSource dataSource) {
+        return new WarmTierEventLogStore(dataSource);
+    }
 
     /**
      * Provides the Redis hot-tier storage configuration.
@@ -64,9 +116,10 @@ public class DataCloudStorageModule extends AbstractModule {
      */
     @Provides
     RedisStorageConfig redisStorageConfig() {
+        DataCloudEnvConfig env = DataCloudEnvConfig.fromSystem();
         return RedisStorageConfig.builder()
-                .host("localhost")
-                .port(6379)
+                .host(env.redisHost())
+                .port(env.redisPort())
                 .build();
     }
 
@@ -130,9 +183,10 @@ public class DataCloudStorageModule extends AbstractModule {
      */
     @Provides
     S3ArchiveConfig s3ArchiveConfig() {
+        DataCloudEnvConfig env = DataCloudEnvConfig.fromSystem();
         return S3ArchiveConfig.builder()
-                .bucketName("dc-archive")
-                .region("us-east-1")
+                .bucketName(env.s3ArchiveBucket())
+                .region(env.s3Region())
                 .build();
     }
 

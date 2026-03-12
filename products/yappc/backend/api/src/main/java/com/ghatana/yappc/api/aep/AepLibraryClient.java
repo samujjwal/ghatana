@@ -6,14 +6,9 @@ package com.ghatana.yappc.api.aep;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.ghatana.aep.Aep;
+import com.ghatana.aep.AepEngine;
 import com.ghatana.platform.core.util.JsonUtils;
-import java.io.IOException;
-import java.lang.reflect.InvocationTargetException;
-import java.lang.reflect.Method;
-import java.net.MalformedURLException;
-import java.net.URLClassLoader;
-import java.nio.file.Files;
-import java.nio.file.Path;
 import java.time.Instant;
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
@@ -23,47 +18,38 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 /**
- * In-process AEP client that loads AEP classes from classpath or configured library JAR.
- 
+ * In-process AEP client that calls the embedded {@link AepEngine} via direct typed API.
+ *
+ * <p>The {@code :products:aep:platform} module is always on the YAPPC API compile classpath; no
+ * class-loader tricks or reflection are needed. Because {@link AepEngine} implementations return
+ * pre-resolved {@code Promise.of()} values, calling {@code .getResult()} is safe here — it
+ * returns immediately without scheduling work on an event-loop.
+ *
  * @doc.type class
- * @doc.purpose Handles aep library client operations
+ * @doc.purpose In-process AEP client using direct typed API (no reflection)
  * @doc.layer product
- * @doc.pattern Implementation
-*/
+ * @doc.pattern Client, Adapter
+ */
 public final class AepLibraryClient implements AepClient {
 
   private static final Logger LOG = LoggerFactory.getLogger(AepLibraryClient.class);
   private static final String DEFAULT_TENANT_ID = "default";
-  private static final String AEP_CLASS = "com.ghatana.aep.Aep";
-  private static final String AEP_EVENT_CLASS = "com.ghatana.aep.AepEngine$Event";
 
   private final ObjectMapper objectMapper;
-  private final URLClassLoader managedClassLoader;
-  private final ClassLoader aepClassLoader;
-  private final Class<?> eventClass;
-  private final Object engine;
+  private final AepEngine engine;
 
-  public AepLibraryClient(String libraryPath) throws AepException {
+  /**
+   * Creates an {@link AepLibraryClient} backed by an embedded {@link AepEngine}.
+   *
+   * <p>The {@code libraryPath} parameter is accepted for backward API compatibility but is
+   * intentionally ignored — AEP classes are always loaded from the standard classpath.
+   *
+   * @param libraryPath ignored; retained for compatibility with {@link AepClientFactory}
+   */
+  public AepLibraryClient(@SuppressWarnings("unused") String libraryPath) {
     this.objectMapper = JsonUtils.getDefaultMapper();
-    this.managedClassLoader = createManagedClassLoader(libraryPath);
-    this.aepClassLoader =
-        managedClassLoader != null
-            ? managedClassLoader
-            : Thread.currentThread().getContextClassLoader();
-
-    try {
-      Class<?> aepClass = Class.forName(AEP_CLASS, true, aepClassLoader);
-      this.eventClass = Class.forName(AEP_EVENT_CLASS, true, aepClassLoader);
-      Method embedded = aepClass.getMethod("embedded");
-      this.engine = embedded.invoke(null);
-      LOG.info("Initialized AEP library client using classpath/JAR loading");
-    } catch (ReflectiveOperationException e) {
-      closeManagedClassLoader();
-      throw new AepException(
-          "Failed to initialize embedded AEP. Ensure AEP classes are present on classpath"
-              + " or set AEP_LIBRARY_PATH to a valid JAR.",
-          rootCause(e));
-    }
+    this.engine = Aep.embedded();
+    LOG.info("Initialized AEP library client (embedded, direct typed API)");
   }
 
   @Override
@@ -71,15 +57,13 @@ public final class AepLibraryClient implements AepClient {
     Map<String, Object> payloadMap = asMap(parseJsonValue(payload, "payload"));
     String tenantId = extractTenantId(payloadMap);
 
-    Object event = createEvent(eventType, payloadMap);
-    Object result = awaitPromise(invokeEngine("process", new Class<?>[] {String.class, eventClass}, tenantId, event));
+    AepEngine.Event event = new AepEngine.Event(eventType, payloadMap, Map.of(), Instant.now());
+    AepEngine.ProcessingResult result = engine.process(tenantId, event).getResult();
 
-    String eventId = invokeRecordString(result, "eventId");
-    boolean success = invokeRecordBoolean(result, "success");
-    if (!success) {
+    if (result == null || !result.success()) {
       throw new AepException("AEP library failed to process event: " + eventType);
     }
-    return eventId;
+    return result.eventId();
   }
 
   @Override
@@ -87,8 +71,8 @@ public final class AepLibraryClient implements AepClient {
     Map<String, Object> queryMap = asMap(parseJsonValue(query, "query"));
     String tenantId = extractTenantId(queryMap);
 
-    Object patternsObj = awaitPromise(invokeEngine("listPatterns", new Class<?>[] {String.class}, tenantId));
-    List<?> patterns = patternsObj instanceof List<?> list ? list : List.of();
+    List<AepEngine.Pattern> patterns = engine.listPatterns(tenantId).getResult();
+    if (patterns == null) patterns = List.of();
 
     Map<String, Object> response = new LinkedHashMap<>();
     response.put("tenantId", tenantId);
@@ -104,13 +88,12 @@ public final class AepLibraryClient implements AepClient {
     String tenantId = extractTenantId(contextMap);
 
     if ("detect-patterns".equalsIgnoreCase(action)) {
-      List<Object> events = toEvents(contextMap.get("events"));
+      List<AepEngine.Event> events = toEvents(contextMap.get("events"));
       if (events.isEmpty()) {
-        events = List.of(createEvent("action." + action, contextMap));
+        events = List.of(new AepEngine.Event("action." + action, contextMap, Map.of(), Instant.now()));
       }
-      Object anomaliesObj =
-          awaitPromise(invokeEngine("detectAnomalies", new Class<?>[] {String.class, List.class}, tenantId, events));
-      List<?> anomalies = anomaliesObj instanceof List<?> list ? list : List.of();
+      List<AepEngine.Anomaly> anomalies = engine.detectAnomalies(tenantId, events).getResult();
+      if (anomalies == null) anomalies = List.of();
 
       Map<String, Object> response = new LinkedHashMap<>();
       response.put("action", action);
@@ -121,70 +104,43 @@ public final class AepLibraryClient implements AepClient {
       return writeJson(response);
     }
 
-    Object event = createEvent("action." + action, contextMap);
-    Object result = awaitPromise(invokeEngine("process", new Class<?>[] {String.class, eventClass}, tenantId, event));
+    AepEngine.Event event = new AepEngine.Event("action." + action, contextMap, Map.of(), Instant.now());
+    AepEngine.ProcessingResult result = engine.process(tenantId, event).getResult();
+    boolean success = result != null && result.success();
+    int detectionCount = result != null ? result.detections().size() : 0;
+    String eventId = result != null ? result.eventId() : null;
 
     Map<String, Object> response = new LinkedHashMap<>();
     response.put("action", action);
-    response.put("status", invokeRecordBoolean(result, "success") ? "submitted" : "failed");
-    response.put("eventId", invokeRecordString(result, "eventId"));
-    response.put("detections", invokeRecordListSize(result, "detections"));
+    response.put("status", success ? "submitted" : "failed");
+    response.put("eventId", eventId);
+    response.put("detections", detectionCount);
     response.put("mode", "library");
     return writeJson(response);
   }
 
   @Override
   public String healthCheck() throws AepException {
-    Object eventCloud = invokeEngine("eventCloud", new Class<?>[0]);
-    return eventCloud != null ? "healthy" : "unhealthy";
+    return engine.eventCloud() != null ? "healthy" : "unhealthy";
   }
 
   @Override
   public void close() {
     try {
-      invokeEngine("close", new Class<?>[0]);
+      engine.close();
     } catch (Exception e) {
       LOG.warn("Error closing embedded AEP engine", e);
-    } finally {
-      closeManagedClassLoader();
     }
   }
 
-  private URLClassLoader createManagedClassLoader(String libraryPath) throws AepException {
-    if (libraryPath == null || libraryPath.isBlank()) {
-      return null;
-    }
+  // ==================== Private Helpers ====================
 
-    Path path = Path.of(libraryPath).toAbsolutePath().normalize();
-    if (!Files.exists(path)) {
-      LOG.warn("AEP library path does not exist: {} (falling back to classpath)", path);
-      return null;
-    }
-
-    try {
-      LOG.info("Loading AEP classes from {}", path);
-      return new URLClassLoader(new java.net.URL[] {path.toUri().toURL()}, Thread.currentThread().getContextClassLoader());
-    } catch (MalformedURLException e) {
-      throw new AepException("Invalid AEP library path: " + path, e);
-    }
-  }
-
-  private Object createEvent(String type, Map<String, Object> payload) throws AepException {
-    try {
-      return eventClass
-          .getConstructor(String.class, Map.class, Map.class, Instant.class)
-          .newInstance(type, payload, Map.of(), Instant.now());
-    } catch (ReflectiveOperationException e) {
-      throw new AepException("Failed to create AEP Event instance", rootCause(e));
-    }
-  }
-
-  private List<Object> toEvents(Object rawEvents) throws AepException {
+  private List<AepEngine.Event> toEvents(Object rawEvents) {
     if (!(rawEvents instanceof List<?> eventList)) {
       return List.of();
     }
 
-    List<Object> events = new ArrayList<>();
+    List<AepEngine.Event> events = new ArrayList<>();
     for (Object eventObj : eventList) {
       if (!(eventObj instanceof Map<?, ?> rawEventMap)) {
         continue;
@@ -192,58 +148,9 @@ public final class AepLibraryClient implements AepClient {
       Map<String, Object> eventMap = toStringObjectMap(rawEventMap);
       String type = String.valueOf(eventMap.getOrDefault("type", "unknown"));
       Map<String, Object> payload = asMap(eventMap.get("payload"));
-      events.add(createEvent(type, payload));
+      events.add(new AepEngine.Event(type, payload, Map.of(), Instant.now()));
     }
     return events;
-  }
-
-  private Object invokeEngine(String methodName, Class<?>[] paramTypes, Object... args)
-      throws AepException {
-    try {
-      Method method = engine.getClass().getMethod(methodName, paramTypes);
-      return method.invoke(engine, args);
-    } catch (ReflectiveOperationException e) {
-      throw new AepException("AEP library call failed: " + methodName, rootCause(e));
-    }
-  }
-
-  private Object awaitPromise(Object promise) throws AepException {
-    try {
-      Method getResult = promise.getClass().getMethod("getResult");
-      return getResult.invoke(promise);
-    } catch (ReflectiveOperationException e) {
-      throw new AepException("Failed to resolve AEP promise result", rootCause(e));
-    }
-  }
-
-  private String invokeRecordString(Object record, String method) throws AepException {
-    try {
-      Object value = record.getClass().getMethod(method).invoke(record);
-      return value != null ? String.valueOf(value) : null;
-    } catch (ReflectiveOperationException e) {
-      throw new AepException("Failed to read AEP response field: " + method, rootCause(e));
-    }
-  }
-
-  private boolean invokeRecordBoolean(Object record, String method) throws AepException {
-    try {
-      Object value = record.getClass().getMethod(method).invoke(record);
-      return value instanceof Boolean b && b;
-    } catch (ReflectiveOperationException e) {
-      throw new AepException("Failed to read AEP response field: " + method, rootCause(e));
-    }
-  }
-
-  private int invokeRecordListSize(Object record, String method) throws AepException {
-    try {
-      Object value = record.getClass().getMethod(method).invoke(record);
-      if (value instanceof List<?> list) {
-        return list.size();
-      }
-      return 0;
-    } catch (ReflectiveOperationException e) {
-      throw new AepException("Failed to read AEP response field: " + method, rootCause(e));
-    }
   }
 
   private Object parseJsonValue(String json, String fieldName) throws AepException {
@@ -294,22 +201,5 @@ public final class AepLibraryClient implements AepClient {
     } catch (JsonProcessingException e) {
       throw new AepException("Failed to serialize AEP response", e);
     }
-  }
-
-  private void closeManagedClassLoader() {
-    if (managedClassLoader != null) {
-      try {
-        managedClassLoader.close();
-      } catch (IOException e) {
-        LOG.warn("Failed to close AEP library classloader", e);
-      }
-    }
-  }
-
-  private Throwable rootCause(ReflectiveOperationException e) {
-    if (e instanceof InvocationTargetException ite && ite.getCause() != null) {
-      return ite.getCause();
-    }
-    return e;
   }
 }

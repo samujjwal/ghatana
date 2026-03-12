@@ -117,6 +117,14 @@ dependencies {
     implementation(libs.micrometer.registry.prometheus) // Prometheus registry is internal impl
 
     // =========================================================================
+    // gRPC (EventLog and Event Service implementations)
+    // =========================================================================
+    implementation(project(":platform:contracts"))              // Proto-generated stubs (EventLogServiceGrpc, etc.)
+    implementation(libs.grpc.stub)                              // ServiceImplBase abstract class
+    implementation(libs.grpc.protobuf)                          // Proto wire marshalling for gRPC
+    compileOnly("javax.annotation:javax.annotation-api:1.3.2") // @Generated annotation on proto stubs
+
+    // =========================================================================
     // AI INTEGRATION
     // =========================================================================
     implementation(project(":platform:java:ai-integration"))

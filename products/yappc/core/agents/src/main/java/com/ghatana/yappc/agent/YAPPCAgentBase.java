@@ -55,7 +55,8 @@ public abstract class YAPPCAgentBase<I, O> extends BaseAgent<StepRequest<I>, Ste
    * @deprecated Use constructor-injected publisher instead. Will be removed in 3.0.
    */
   @Deprecated(since = "2.4.0", forRemoval = true)
-  private static volatile AepEventPublisher globalAepEventPublisher = HttpAepEventPublisher.fromEnvironment();
+  private static volatile AepEventPublisher globalAepEventPublisher =
+      (type, tenant, payload) -> Promise.complete(); // no-op default
 
   private final AepEventPublisher aepEventPublisher;
   private final String stepName;

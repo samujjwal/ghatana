@@ -252,6 +252,15 @@ public class InMemoryEventCloud implements EventCloud {
         return new InMemoryHistoryScan(query);
     }
 
+    /**
+     * Convenience publish: accepted as a no-op for in-memory (testing/dev) deployments.
+     * Production implementations should override to serialize and call {@link #append}.
+     */
+    @Override
+    public Promise<Void> publish(String topic, Map<String, Object> payload) {
+        return Promise.complete();
+    }
+
     // ==================== Helper Methods ====================
 
     private PartitionId assignPartition(EventRecord event) {

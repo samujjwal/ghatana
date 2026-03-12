@@ -1,9 +1,12 @@
 package com.ghatana.datacloud.client;
 
+import com.ghatana.datacloud.config.DataCloudEnvConfig;
+import com.ghatana.datacloud.config.DataCloudStartupValidator;
 import com.ghatana.datacloud.deployment.ServerConfig;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.util.Map;
 import java.util.Objects;
 
 /**
@@ -156,8 +159,49 @@ public class DataCloudClientFactory {
     }
     
     /**
+     * Creates a Data-Cloud client by reading configuration from environment variables.
+     *
+     * <p>Reads {@code DC_DEPLOYMENT_MODE} to decide which factory method to call:
+     * <ul>
+     *   <li>{@code EMBEDDED} (default) — calls {@link #embedded(ServerConfig)} with empty config</li>
+     *   <li>{@code STANDALONE} — calls {@link #standalone(String)} with {@code DC_SERVER_URL}</li>
+     *   <li>{@code DISTRIBUTED} — calls {@link #distributed(String)} with {@code DC_CLUSTER_URLS}</li>
+     * </ul>
+     *
+     * <p>Runs {@link DataCloudStartupValidator} first to fail fast on misconfiguration.
+     *
+     * @return fully configured Data-Cloud client
+     * @throws IllegalStateException if required environment variables are missing/invalid
+     */
+    public static DataCloudClient fromEnvironment() {
+        return fromEnvironment(System.getenv());
+    }
+
+    /**
+     * Creates a Data-Cloud client from the supplied environment map.
+     * Primarily for testing without modifying system env.
+     *
+     * @param env environment map
+     * @return fully configured Data-Cloud client
+     * @throws IllegalStateException if required environment variables are missing/invalid
+     */
+    public static DataCloudClient fromEnvironment(Map<String, String> env) {
+        DataCloudEnvConfig config = DataCloudEnvConfig.fromMap(env);
+        DataCloudStartupValidator.validate(config);
+
+        String mode = config.deploymentMode();
+        logger.info("Creating Data-Cloud client from environment — mode={}", mode);
+
+        return switch (mode) {
+            case "STANDALONE"   -> standalone(config.serverUrl());
+            case "DISTRIBUTED"  -> distributed(config.clusterUrls());
+            default             -> embedded(new ServerConfig());
+        };
+    }
+
+    /**
      * Creates a builder for advanced client configuration.
-     * 
+     *
      * @return client builder
      */
     public static DataCloudClientBuilder builder() {

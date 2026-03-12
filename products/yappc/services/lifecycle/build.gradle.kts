@@ -15,6 +15,7 @@ dependencies {
 
     // Core Platform Libraries
     implementation(project(":platform:java:core"))
+    implementation(project(":platform:java:event-cloud"))  // Ph1c: EventCloud not transitively exported from core:agents
     implementation(project(":platform:java:runtime"))
     implementation(project(":platform:java:workflow"))
     implementation(project(":platform:java:observability"))

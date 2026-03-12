@@ -6,7 +6,6 @@ import com.ghatana.agent.framework.planner.PlannerAgentFactory;
 import com.ghatana.agent.framework.runtime.BaseAgent;
 import com.ghatana.agent.framework.runtime.generators.LLMGenerator;
 import com.ghatana.yappc.agent.tools.YappcToolRegistry;
-import com.ghatana.yappc.agent.HttpAepEventPublisher;
 import com.ghatana.yappc.agent.YAPPCAgentBase;
 import com.ghatana.yappc.agent.YAPPCAgentRegistry;
 import com.ghatana.yappc.agent.generators.LLMGeneratorFactory;
@@ -98,9 +97,7 @@ public class YappcAgentSystem {
         this.llmGateway = llmGateway;
         this.llmConfig = llmConfig;
         this.heartbeatService = new AgentHeartbeatService(sdlcRegistry, eventloop);
-
-        // Configure AEP event publisher for all SDLC agents
-        YAPPCAgentBase.configureAepEventPublisher(HttpAepEventPublisher.fromEnvironment());
+        // AEP event publisher is wired via DI in LifecycleServiceModule (Ph1c)
     }
 
     // ==================== INITIALIZATION ====================
