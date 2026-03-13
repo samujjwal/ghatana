@@ -135,7 +135,7 @@ Capabilities:
 
 - **Consent Management** — per-scope, revocable consents tracked in the database; optional integrations and high-sensitivity processing validate consent before execution
 - **Audit Logging** — immutable log of all sensitive profile and preference changes
-- **Recommendation Quality Monitoring** — CTR, save rate, dismiss rate, conversion lift, explanation helpfulness scores
+- **Recommendation Quality Monitoring** — time-to-decision, shade-miss rate, adverse reaction reports, return reduction, explanation helpfulness scores
 - **Safety Outcome Monitoring** — shade-miss, adverse reaction, return, and regret signals routed for review and model updates
 - **Feature & Score Drift Detection** — alerting when distribution shift exceeds defined thresholds
 - **Fairness Monitoring** — recommendation quality checks across skin-tone and demographic cohorts
@@ -164,12 +164,13 @@ Observability stack: Micrometer, OpenTelemetry, Prometheus, Grafana.
 
 ### Observability
 
-- All services emit structured logs, traces, and metrics
-- Distributed tracing via OpenTelemetry across all service calls
+- All deployables emit structured logs, traces, and metrics
+- Distributed tracing via OpenTelemetry across deployable boundaries
 - SLO targets defined per experience tier
 
 ### Scalability Strategy
 
-- Start as a modular monolith if team size warrants
-- Extract ingestion, recommendation engine, and community analysis into independent services as load grows
-- Keep explainability and consent as first-class services from day one — do not bury them in application logic
+- Start with a modular monolith across `api` and `core-worker`, with `ml-inference` kept separate only because the Python runtime is materially different
+- Keep profile, catalog, recommendation, explainability, community, and governance as explicit internal modules with stable contracts and test boundaries
+- Extract a module into an independent service only when runtime isolation, sustained load, compliance or security needs, or team ownership create a clear operational benefit
+- Keep explainability and consent first-class from day one, but as modules first rather than mandatory standalone services

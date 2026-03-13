@@ -74,12 +74,14 @@ public class AepEventBridge {
      */
     public Promise<Void> publishRawEvent(String eventType, String tenantId, Map<String, Object> payload) {
         return publisher.publish(eventType, tenantId, payload)
-                .mapException(e -> {
-                    log.warn("Failed to publish event type={} tenant={}: {}",
-                            eventType, tenantId, e.getMessage());
-                    return null;
-                })
-                .map(v -> null);
+                .then(
+                        v -> Promise.of((Void) null),
+                        e -> {
+                            log.warn("Failed to publish event type={} tenant={}: {}",
+                                    eventType, tenantId, e.getMessage());
+                            return Promise.of((Void) null);
+                        }
+                );
     }
 
     /**

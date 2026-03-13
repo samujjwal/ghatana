@@ -5,6 +5,7 @@ import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 import com.ghatana.datacloud.entity.EntityRepository;
 import com.ghatana.yappc.infrastructure.datacloud.adapter.YappcDataCloudRepository;
 import com.ghatana.yappc.infrastructure.datacloud.mapper.YappcEntityMapper;
+import com.ghatana.products.yappc.domain.Identifiable;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -56,5 +57,7 @@ class DataCloudIntegrationTest {
         assert repository != null;
     }
     
-    record TestEntity(UUID id, String name, int value) {}
+    record TestEntity(UUID id, String name, int value) implements Identifiable<UUID> {
+        @Override public UUID getId() { return id; }
+    }
 }

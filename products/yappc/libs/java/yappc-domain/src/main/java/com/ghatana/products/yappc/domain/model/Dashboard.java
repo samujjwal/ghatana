@@ -17,6 +17,7 @@ import lombok.NoArgsConstructor;
 import java.time.Instant;
 import java.util.Objects;
 import java.util.UUID;
+import com.ghatana.products.yappc.domain.Identifiable;
 
 /**
  * Domain model representing a user-configurable dashboard in the YAPPC platform.
@@ -36,7 +37,7 @@ import java.util.UUID;
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder(toBuilder = true)
-public class Dashboard {
+public class Dashboard implements Identifiable<UUID> {
 
     /**
      * Unique identifier for the dashboard.

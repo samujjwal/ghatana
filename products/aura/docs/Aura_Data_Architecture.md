@@ -196,3 +196,16 @@ Tracks every recommendation generated, the reasoning behind it, user feedback, a
 3. **Data minimization:** Analytics streams receive tokenized user IDs, never raw PII.
 4. **Auditability:** All profile changes and recommendation events are timestamped and immutable.
 5. **User rights:** Self-serve data export and account deletion trigger traceable workflows across all stores.
+
+## Data Quality Operating Requirements
+
+| Quality Domain | Minimum Standard | Required Product/System Behavior if Not Met |
+| -------------- | ---------------- | ------------------------------------------- |
+| Ingredient completeness | No strong safety-positive claim without parseable ingredient data | lower confidence, surface missing-data trust flag, suppress strong recommendation |
+| Shade normalization | No strong shade-match claim without canonical depth and undertone mapping | allow browsing but suppress strong shade recommendation |
+| Provenance | Every recommendation reason must trace to canonical facts, validated learned signals, or reviewed aggregates | drop unsupported reason and reduce confidence |
+| Commerce freshness | Stale price or availability data must be identified by freshness scoring | rerank, flag stale, or suppress purchase CTA |
+| Outcome linkage | Post-use outcomes should be linked to recommendation, product, and model version where feasible | treat as weaker label if linkage is missing |
+
+See `Aura_AI_ML_Data_Operating_Model.md` for source-tier policy, label strategy, deletion handling,
+and human-review flows.

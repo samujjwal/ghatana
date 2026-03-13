@@ -237,11 +237,14 @@ class InMemoryClusterCoordinatorTest extends EventloopTestBase {
             DistributedLock lock1 = runPromise(() -> coordinator.tryLock("resource-1"));
             assertThat(lock1).isNotNull();
 
-            // Release in background after small delay
+            // Release in background after small delay.
+            // NOTE: InMemoryLock.release() is synchronous and thread-safe (ConcurrentHashMap).
+            // We call it directly without runPromise() to avoid deadlocking the eventloop,
+            // which is blocked in the acquireLock() busy-wait loop below.
             CompletableFuture.runAsync(() -> {
                 try {
                     Thread.sleep(50);
-                    runPromise(() -> lock1.release());
+                    lock1.release(); // synchronous, no eventloop needed
                 } catch (InterruptedException e) {
                     Thread.currentThread().interrupt();
                 }

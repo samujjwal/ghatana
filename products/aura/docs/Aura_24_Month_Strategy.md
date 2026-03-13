@@ -21,7 +21,8 @@ Build a defensible, personalized beauty intelligence platform in Year 1. Expand 
 
 #### Q1 — Foundation & MVP
 
-- Monorepo, CI/CD, and environments established
+- Monorepo, Gitea Actions CI/CD, and environments established
+- Modular-monolith boundaries defined (`api`, `core-worker`, `ml-inference`) with explicit service-extraction criteria
 - Core domain model and Prisma schema finalized
 - Auth, user onboarding, and profile flow shipped
 - Product catalog ingestion pipeline operational (MVP coverage of top 5 beauty categories)

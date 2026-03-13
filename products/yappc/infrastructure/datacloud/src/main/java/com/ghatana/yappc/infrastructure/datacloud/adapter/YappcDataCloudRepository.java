@@ -3,6 +3,7 @@ package com.ghatana.yappc.infrastructure.datacloud.adapter;
 import com.ghatana.datacloud.entity.Entity;
 import com.ghatana.datacloud.entity.EntityRepository;
 import com.ghatana.platform.governance.security.TenantContext;
+import com.ghatana.products.yappc.domain.Identifiable;
 import com.ghatana.yappc.infrastructure.datacloud.mapper.YappcEntityMapper;
 import io.activej.promise.Promise;
 import org.jetbrains.annotations.NotNull;
@@ -23,13 +24,13 @@ import java.util.stream.Collectors;
  * All operations resolve the tenant ID from {@link TenantContext} at call-time to ensure proper
  * multi-tenant data isolation. No hardcoded tenant identifier is used.
  *
- * @param <T> Entity type
+ * @param <T> Entity type — must implement {@link Identifiable} to ensure it carries a stable UUID
  * @doc.type class
  * @doc.purpose Generic data-cloud repository adapter with proper tenant isolation
  * @doc.layer infrastructure
  * @doc.pattern Repository/Adapter
  */
-public class YappcDataCloudRepository<T> {
+public class YappcDataCloudRepository<T extends Identifiable<UUID>> {
 
     private static final Logger LOG = LoggerFactory.getLogger(YappcDataCloudRepository.class);
 

@@ -5,6 +5,7 @@
 package com.ghatana.yappc.infrastructure.datacloud.entity;
 
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
+import com.ghatana.products.yappc.domain.Identifiable;
 import java.time.Instant;
 import java.util.Map;
 import java.util.UUID;
@@ -43,7 +44,7 @@ import java.util.UUID;
  * @doc.layer platform
  * @doc.pattern ValueObject
  */
-public class TaskEntity {
+public class TaskEntity implements Identifiable<UUID> {
 
   // Core identification
   private UUID id;

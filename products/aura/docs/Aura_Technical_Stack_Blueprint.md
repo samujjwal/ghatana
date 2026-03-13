@@ -12,6 +12,16 @@ Aura uses a **hybrid backend** strategy with a deliberate seam between user-faci
 
 This separation allows the user-facing API to iterate rapidly (with JavaScript's ecosystem advantages) while the computationally intensive recommendation and ingestion systems leverage Java / ActiveJ's performance and async event-loop model.
 
+### Modularity Guardrails
+
+- Start with three deployable boundaries: `apps/api`, `apps/core-worker`, and `apps/ml-inference`.
+- Keep product domains explicit inside those deployables: profile, catalog, recommendation,
+  explainability, community, and governance.
+- Extract a domain into its own service only when runtime isolation, scaling behavior, compliance
+  requirements, release cadence, or team ownership make a separate deployable materially better.
+- Avoid both extremes: no service-per-concept by default, and no monolithic blob of shared utilities
+  that erases domain boundaries.
+
 ---
 
 ## Frontend
@@ -58,7 +68,7 @@ This separation allows the user-facing API to iterate rapidly (with JavaScript's
 | Technology            | Purpose                                                 |
 | --------------------- | ------------------------------------------------------- |
 | Python 3.11           | ML model development and inference                      |
-| FastAPI               | Microservice endpoints for model inference              |
+| FastAPI               | Inference endpoints for separate-runtime model serving  |
 | PyTorch               | Model training (shade matching, ranking)                |
 | scikit-learn          | Gradient boosted ranking, feature preprocessing         |
 | pgvector              | Semantic similarity via vector embeddings in PostgreSQL |
@@ -81,10 +91,12 @@ This separation allows the user-facing API to iterate rapidly (with JavaScript's
 
 | Technology                 | Role                                              |
 | -------------------------- | ------------------------------------------------- |
-| Apache Kafka (or Redpanda) | Durable event bus for inter-service communication |
+| Apache Kafka (or Redpanda) | Durable event bus when cross-process decoupling is warranted |
 | Dead-letter topics         | Failed event retry and investigation              |
 
-All event consumers must be idempotent. All events are immutable and versioned.
+All event consumers must be idempotent. All events are immutable and versioned. Start with in-process
+domain events and durable job execution where possible; introduce Kafka or Redpanda once fan-out,
+independent retries, or throughput make a dedicated bus worthwhile.
 
 ---
 
@@ -92,8 +104,8 @@ All event consumers must be idempotent. All events are immutable and versioned.
 
 | Technology    | Role                                                                     |
 | ------------- | ------------------------------------------------------------------------ |
-| Micrometer    | JVM metrics instrumentation (Java services)                              |
-| OpenTelemetry | Distributed tracing and structured logging across all services           |
+| Micrometer    | JVM metrics instrumentation (Java deployables)                           |
+| OpenTelemetry | Distributed tracing and structured logging across deployable boundaries  |
 | Prometheus    | Metrics collection and alerting rules                                    |
 | Grafana       | Dashboards for service health, recommendation quality, model performance |
 
@@ -103,10 +115,10 @@ All event consumers must be idempotent. All events are immutable and versioned.
 
 | Technology     | Role                                       |
 | -------------- | ------------------------------------------ |
-| Docker         | Containerization of all services           |
-| Kubernetes     | Orchestration, scaling, health checks      |
+| Docker         | Containerization of all deployables        |
+| Kubernetes     | Orchestration, scaling, health checks when scale requires it |
 | Helm           | Kubernetes release management              |
-| GitHub Actions | CI/CD pipelines: test, lint, build, deploy |
+| Gitea Actions  | CI/CD pipelines: test, lint, build, deploy |
 | Terraform      | Infrastructure-as-code for cloud resources |
 
 ---
@@ -140,7 +152,9 @@ Consolidating relational and vector storage reduces operational complexity signi
 
 ### Why Python for ML inference?
 
-The ML ecosystem (PyTorch, scikit-learn, HuggingFace) is Python-native. Inference services are thin, stateless microservices that can be scaled independently and replaced as model architectures evolve.
+The ML ecosystem (PyTorch, scikit-learn, HuggingFace) is Python-native. Keep ML inference behind a
+small FastAPI runtime boundary because the Python toolchain is distinct, but avoid fragmenting models
+into many deployables until traffic or ownership clearly requires it.
 
 ### Why React Router v7 eliminates Next.js?
 
@@ -159,6 +173,6 @@ Aura's technology stack prioritizes **open-source tools with permissive licenses
 | **Frontend Routing & State** | MIT (React Router v7, Jotai, TanStack Query)                            |
 | **Observability**            | Apache 2.0 (Micrometer, OpenTelemetry, Prometheus)                      |
 | **Infrastructure**           | Apache 2.0 and permissive (Docker, Kubernetes, Helm)                    |
-| **Build & Deployment**       | Apache 2.0 and open-source (Gradle, pnpm, Terraform)                    |
+| **Build & Deployment**       | Permissive open-source (Gitea, Gradle, pnpm, Terraform)                 |
 
 **Rationale**: Permissive licenses (MIT, Apache 2.0, BSD) allow commercial use, modification, and redistribution with minimal restrictions. This ensures Aura can evolve without licensing concerns and allows the community to contribute back improvements freely.

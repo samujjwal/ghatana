@@ -23,7 +23,7 @@ import org.slf4j.LoggerFactory;
  * <p><b>Usage:</b>
  *
  * <pre>{@code
- * LLMMetrics metrics = LLMMetrics.getInstance();
+ * LLMInferenceMetrics metrics = LLMInferenceMetrics.getInstance();
  *
  * long startTime = System.currentTimeMillis();
  * try {
@@ -45,12 +45,12 @@ import org.slf4j.LoggerFactory;
  * @version 1.0
  * @since Session 14C (GPU Acceleration)
  */
-public final class LLMMetrics {
+public final class LLMInferenceMetrics {
 
-  private static final Logger log = LoggerFactory.getLogger(LLMMetrics.class);
+  private static final Logger log = LoggerFactory.getLogger(LLMInferenceMetrics.class);
 
   /** Singleton instance */
-  private static final LLMMetrics INSTANCE = new LLMMetrics();
+  private static final LLMInferenceMetrics INSTANCE = new LLMInferenceMetrics();
 
   /** Total successful requests */
   private final AtomicInteger successCount = new AtomicInteger(0);
@@ -70,7 +70,7 @@ public final class LLMMetrics {
   /** First request timestamp */
   private volatile long firstRequestTime = 0;
 
-  private LLMMetrics() {
+  private LLMInferenceMetrics() {
     // Initialize latency buckets
     latencyBuckets.put("<100ms", new AtomicInteger(0));
     latencyBuckets.put("<500ms", new AtomicInteger(0));
@@ -81,7 +81,7 @@ public final class LLMMetrics {
   }
 
   /** Get singleton instance. */
-  public static LLMMetrics getInstance() {
+  public static LLMInferenceMetrics getInstance() {
     return INSTANCE;
   }
 
@@ -227,7 +227,7 @@ public final class LLMMetrics {
    * <p><b>Usage:</b>
    *
    * <pre>{@code
-   * Promise<String> result = LLMMetrics.instrument(
+   * Promise<String> result = LLMInferenceMetrics.instrument(
    *     () -> ollama.generate(prompt)
    * );
    * }</pre>

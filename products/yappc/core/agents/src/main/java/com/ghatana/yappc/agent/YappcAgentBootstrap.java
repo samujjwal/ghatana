@@ -1,5 +1,7 @@
 package com.ghatana.yappc.agent;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.dataformat.yaml.YAMLFactory;
 import com.ghatana.agent.framework.planner.PlannerAgentFactory;
 import io.activej.eventloop.Eventloop;
 import io.activej.promise.Promise;
@@ -18,13 +20,13 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 /**
- * Bootstrap orchestrator for YAPPC agents using the AEP PlannerAgentFactory.
+ * Bootstrap orchestrator for YAPPC agents.
  *
- * <p>Loads agent definitions from YAML files, creates agents via {@link PlannerAgentFactory},
+ * <p>Loads agent definitions from YAML files, parses them into raw maps,
  * and registers them in an internal registry for lookup during execution.
  *
  * @doc.type class
- * @doc.purpose Bootstrap YAPPC agents from YAML definitions using AEP runtime
+ * @doc.purpose Bootstrap YAPPC agents from YAML definitions
  * @doc.layer product
  * @doc.pattern Factory, Bootstrap
  */
@@ -105,9 +107,9 @@ public final class YappcAgentBootstrap {
 
     /**
      * Initializes the bootstrap by scanning the config path for YAML definitions
-     * and creating agents via the factory.
+     * and loading them as raw agent descriptor maps.
      *
-     * @return Promise that completes on success, or fails if no agents could be created
+     * @return Promise that completes on success, or fails if the definitions directory is missing
      */
     @NotNull
     public Promise<Void> initialize() {
@@ -115,38 +117,39 @@ public final class YappcAgentBootstrap {
 
         if (!Files.exists(definitionsDir)) {
             return Promise.ofException(
-                new IOException("No agents loaded successfully: definitions directory not found: "
-                    + definitionsDir));
+                new IOException("Agent definitions directory not found: " + definitionsDir));
         }
 
+        ObjectMapper yamlMapper = new ObjectMapper(new YAMLFactory());
         List<String> loadedAgents = new ArrayList<>();
 
         try (var stream = Files.list(definitionsDir)) {
             stream.filter(p -> p.toString().endsWith(".yaml") || p.toString().endsWith(".yml"))
                 .forEach(yamlPath -> {
-                    Object agent = factory.createAgent(yamlPath.toString());
-                    if (agent != null) {
-                        String agentId = yamlPath.getFileName().toString()
-                            .replace(".yaml", "").replace(".yml", "");
-                        agentRegistry.put(agentId, agent);
+                    try {
+                        @SuppressWarnings("unchecked")
+                        Map<String, Object> definition = yamlMapper.readValue(
+                                yamlPath.toFile(), Map.class);
+                        String agentId = (String) definition.get("id");
+                        if (agentId == null || agentId.isBlank()) {
+                            agentId = yamlPath.getFileName().toString()
+                                    .replace(".yaml", "").replace(".yml", "");
+                        }
+                        agentRegistry.put(agentId, definition);
                         loadedAgents.add(agentId);
-                        log.info("Loaded agent: {}", agentId);
-                    } else {
-                        log.warn("Failed to create agent from: {}", yamlPath);
+                        log.info("Loaded agent definition: {}", agentId);
+                    } catch (Exception e) {
+                        log.warn("Failed to load agent definition from {}: {}",
+                                yamlPath, e.getMessage());
                     }
                 });
         } catch (IOException e) {
             return Promise.ofException(
-                new IOException("No agents loaded successfully: " + e.getMessage(), e));
-        }
-
-        if (loadedAgents.isEmpty()) {
-            return Promise.ofException(
-                new IOException("No agents loaded successfully from " + definitionsDir));
+                new IOException("Error scanning definitions directory: " + e.getMessage(), e));
         }
 
         initialized.set(true);
-        log.info("Bootstrap initialized with {} agents", loadedAgents.size());
+        log.info("Bootstrap initialized with {} agent definitions", loadedAgents.size());
         return Promise.complete();
     }
 

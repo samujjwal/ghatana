@@ -133,7 +133,7 @@ class GPUPerformanceTest extends EventloopTestBase {
   @DisplayName("Should collect LLM performance metrics")
   void shouldCollectMetrics() {
     // GIVEN
-    LLMMetrics metrics = LLMMetrics.getInstance();
+    LLMInferenceMetrics metrics = LLMInferenceMetrics.getInstance();
     metrics.reset(); // Clear any previous metrics
 
     // WHEN
@@ -142,7 +142,7 @@ class GPUPerformanceTest extends EventloopTestBase {
     metrics.recordFailure(2000); // Failed after 2000ms
 
     // THEN
-    LLMMetrics.PerformanceSnapshot snapshot = metrics.getSnapshot();
+    LLMInferenceMetrics.PerformanceSnapshot snapshot = metrics.getSnapshot();
 
     assertThat(snapshot.totalRequests()).isEqualTo(3);
     assertThat(snapshot.successCount()).isEqualTo(2);
@@ -169,7 +169,7 @@ class GPUPerformanceTest extends EventloopTestBase {
   @DisplayName("Should track latency distribution")
   void shouldTrackLatencyDistribution() {
     // GIVEN
-    LLMMetrics metrics = LLMMetrics.getInstance();
+    LLMInferenceMetrics metrics = LLMInferenceMetrics.getInstance();
     metrics.reset();
 
     // WHEN
@@ -181,7 +181,7 @@ class GPUPerformanceTest extends EventloopTestBase {
     metrics.recordSuccess(6000, 400); // 5s+
 
     // THEN
-    LLMMetrics.PerformanceSnapshot snapshot = metrics.getSnapshot();
+    LLMInferenceMetrics.PerformanceSnapshot snapshot = metrics.getSnapshot();
 
     assertThat(snapshot.latencyDistribution())
         .containsKeys("<100ms", "<500ms", "<1s", "<2s", "<5s", "5s+");
@@ -202,7 +202,7 @@ class GPUPerformanceTest extends EventloopTestBase {
   @DisplayName("Should calculate throughput metrics")
   void shouldCalculateThroughput() throws InterruptedException {
     // GIVEN
-    LLMMetrics metrics = LLMMetrics.getInstance();
+    LLMInferenceMetrics metrics = LLMInferenceMetrics.getInstance();
     metrics.reset();
 
     // WHEN
@@ -212,7 +212,7 @@ class GPUPerformanceTest extends EventloopTestBase {
     }
 
     // THEN
-    LLMMetrics.PerformanceSnapshot snapshot = metrics.getSnapshot();
+    LLMInferenceMetrics.PerformanceSnapshot snapshot = metrics.getSnapshot();
 
     assertThat(snapshot.totalRequests()).isEqualTo(10);
     assertThat(snapshot.totalTokens()).isEqualTo(1000);

@@ -16,9 +16,12 @@ Date: March 2026
 | Topic | Authoritative Document | Section |
 |-------|------------------------|---------|
 | Product Vision & Scope | `Aura_Master_Platform_Specification.md` | §1-2 |
+| Consumer Value Delivery | `Aura_Consumer_Value_Operating_Model.md` | Complete |
+| Task Execution Detail | `Aura_Task_Execution_Matrix.md` | Complete |
 | System Architecture | `Aura_Master_Platform_Specification.md` | §3 |
 | Technical Stack | `Aura_Technical_Stack_Blueprint.md` | Complete |
 | Data Architecture | `Aura_Data_Architecture.md` | Complete |
+| AI/ML and Data Operating Model | `Aura_AI_ML_Data_Operating_Model.md` | Complete |
 | API Contracts | `Aura_API_Contracts.md` | Complete |
 | AI Engine Design | `Aura_AI_Engine_Design.md` | Complete |
 | Database Schema | `Aura_Database_Schema_Prisma.md` | Complete |
@@ -84,6 +87,8 @@ Aura uses a **7-layer platform architecture**:
 
 ### Product & Strategy
 - `Aura_PRD_v1.md` - Product Requirements Document
+- `Aura_Consumer_Value_Operating_Model.md` - How Aura delivers concrete value and trust to consumers
+- `Aura_Task_Execution_Matrix.md` - Task-level what/how/where/validation guide for active delivery
 - `Aura_24_Month_Strategy.md` - Long-term product strategy
 - `Aura_Product_Roadmap_Epics.md` - Engineering epic breakdown
 - `Aura_GTM_Strategy.md` - Go-to-market strategy
@@ -98,6 +103,7 @@ Aura uses a **7-layer platform architecture**:
 - `Aura_C4_Architecture_Diagrams.md` - Visual architecture diagrams
 
 ### AI & Intelligence
+- `Aura_AI_ML_Data_Operating_Model.md` - Data quality, model risk, label strategy, and learning loops
 - `Aura_AI_Engine_Design.md` - AI model architecture
 - `Aura_AI_Agent_Architecture.md` - Specialized AI agents
 - `Aura_AI_Model_Training_Pipeline.md` - ML training pipeline
@@ -113,6 +119,7 @@ Aura uses a **7-layer platform architecture**:
 
 ### Implementation & Operations
 - `Aura_Monorepo_Structure.md` - Code organization
+- `Aura_Task_Execution_Matrix.md` - Task execution map for active delivery work
 - `Aura_Engineering_Sprint_Plan_6_Months.md` - Development timeline
 - `Aura_UI_UX_Blueprint.md` - Design system
 - `Aura_API_Contracts.md` - API specifications
@@ -144,7 +151,7 @@ Aura uses a **7-layer platform architecture**:
 | Frontend                                                  | React Router v7 + Tailwind CSS        |
 | Mobile                                                    | React Native                          |
 | Databases                                                 | PostgreSQL, Redis, pgvector           |
-| ML Inference                                              | Python microservices                  |
+| ML Inference                                              | Python + FastAPI inference service    |
 | Observability                                             | Micrometer, OpenTelemetry, Prometheus |
 | Infrastructure                                            | Docker, Kubernetes                    |
 
@@ -166,6 +173,7 @@ Aura uses a **7-layer platform architecture**:
 ### Strategy & Vision
 
 - [Aura_PRD_v1.md](Aura_PRD_v1.md) — Product requirements, user problems, success criteria
+- [Aura_Consumer_Value_Operating_Model.md](Aura_Consumer_Value_Operating_Model.md) — Consumer value loops, trust contract, outcome-first delivery
 - [Aura_24_Month_Strategy.md](Aura_24_Month_Strategy.md) — 24-month objectives and milestones
 - [Aura_Product_Roadmap_Epics.md](Aura_Product_Roadmap_Epics.md) — Engineering epics by phase
 - [Aura_GTM_Strategy.md](Aura_GTM_Strategy.md) — Go-to-market channels and growth loops
@@ -182,6 +190,7 @@ Aura uses a **7-layer platform architecture**:
 
 ### AI & Intelligence
 
+- [Aura_AI_ML_Data_Operating_Model.md](Aura_AI_ML_Data_Operating_Model.md) — Data tiers, label strategy, model controls, review operations
 - [Aura_Personal_Intelligence_Engine_Spec.md](Aura_Personal_Intelligence_Engine_Spec.md) — You Index, context engine, reasoning engine
 - [Aura_Recommendation_Algorithms.md](Aura_Recommendation_Algorithms.md) — Scoring formulas, ranking pipeline
 - [Aura_AI_Engine_Design.md](Aura_AI_Engine_Design.md) — AI models for shade matching, ingredient safety, ranking
@@ -205,6 +214,7 @@ Aura uses a **7-layer platform architecture**:
 
 ### Engineering
 
+- [Aura_Task_Execution_Matrix.md](Aura_Task_Execution_Matrix.md) — Sprint task execution map with what/how/where/validation
 - [Aura_Technical_Stack_Blueprint.md](Aura_Technical_Stack_Blueprint.md) — Technology decisions and rationale
 - [Aura_Engineering_Sprint_Plan_6_Months.md](Aura_Engineering_Sprint_Plan_6_Months.md) — Sprint-level execution plan
 

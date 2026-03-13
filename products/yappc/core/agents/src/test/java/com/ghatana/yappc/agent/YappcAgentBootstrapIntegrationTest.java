@@ -98,41 +98,44 @@ class YappcAgentBootstrapIntegrationTest extends EventloopTestBase {
     }
     
     @Test
-    @DisplayName("Should fail initialization when agent creation not yet implemented")
+    @DisplayName("Should succeed initialization when valid agent YAML definitions exist")
     void shouldFailInitializationWhenAgentCreationNotImplemented() throws IOException {
-        // GIVEN - agent YAML exists but PlannerAgentFactory.createAgent() returns null (not yet implemented)
+        // GIVEN - valid agent YAML exists; bootstrap now parses YAML into raw maps
         createMockAgentDefinitions();
-        
+
         YappcAgentBootstrap bootstrap = YappcAgentBootstrap.create(
             eventloop,
             tempConfigDir.toString()
         );
-        
-        // WHEN/THEN - initialization fails because no agents can be created from YAML yet
-        assertThatThrownBy(() -> runPromise(() -> bootstrap.initialize()))
-            .isInstanceOf(RuntimeException.class)
-            .hasRootCauseInstanceOf(IOException.class)
-            .rootCause()
-            .hasMessageContaining("No agents loaded successfully");
+
+        // WHEN - initialization should succeed (agents loaded as raw YAML maps)
+        runPromise(() -> bootstrap.initialize());
+
+        // THEN - agent is accessible from registry
+        assertThat(bootstrap.getAgent("test-agent")).isNotNull();
     }
     
     @Test
-    @DisplayName("Should fail when looking up agent before creation is implemented")
+    @DisplayName("Should succeed agent lookup after initialization with valid YAML")
     void shouldFailAgentLookupWhenCreationNotImplemented() throws IOException {
-        // GIVEN - agent YAML exists but PlannerAgentFactory.createAgent() returns null
+        // GIVEN - valid agent YAML exists; bootstrap loads it as a raw map
         createMockAgentDefinitions();
-        
+
         YappcAgentBootstrap bootstrap = YappcAgentBootstrap.create(
             eventloop,
             tempConfigDir.toString()
         );
-        
-        // WHEN/THEN - initialization itself fails because no agents loaded
-        assertThatThrownBy(() -> runPromise(() -> bootstrap.initialize()))
-            .isInstanceOf(RuntimeException.class)
-            .hasRootCauseInstanceOf(IOException.class)
-            .rootCause()
-            .hasMessageContaining("No agents loaded successfully");
+
+        // WHEN
+        runPromise(() -> bootstrap.initialize());
+
+        // THEN - loaded definition is accessible
+        Object agentDef = bootstrap.getAgent("test-agent");
+        assertThat(agentDef).isNotNull();
+        assertThat(agentDef).isInstanceOf(java.util.Map.class);
+        @SuppressWarnings("unchecked")
+        java.util.Map<String, Object> defMap = (java.util.Map<String, Object>) agentDef;
+        assertThat(defMap.get("id")).isEqualTo("test-agent");
     }
     
     @Test
@@ -151,25 +154,23 @@ class YappcAgentBootstrapIntegrationTest extends EventloopTestBase {
     }
     
     @Test
-    @DisplayName("Should handle repeated initialization attempts gracefully")
+    @DisplayName("Should handle repeated initialization attempts gracefully (idempotent)")
     void shouldHandleMultipleInitializations() throws IOException {
-        // GIVEN - agent YAML exists but PlannerAgentFactory.createAgent() returns null
+        // GIVEN - valid agent YAML exists
         createMockAgentDefinitions();
-        
+
         YappcAgentBootstrap bootstrap = YappcAgentBootstrap.create(
             eventloop,
             tempConfigDir.toString()
         );
-        
-        // WHEN - first initialization fails (no agents loaded)
-        assertThatThrownBy(() -> runPromise(() -> bootstrap.initialize()))
-            .isInstanceOf(RuntimeException.class)
-            .hasRootCauseInstanceOf(IOException.class);
-        
-        // THEN - second initialization also fails (bootstrap was not marked initialized)
-        assertThatThrownBy(() -> runPromise(() -> bootstrap.initialize()))
-            .isInstanceOf(RuntimeException.class)
-            .hasRootCauseInstanceOf(IOException.class);
+
+        // WHEN - first initialization succeeds
+        runPromise(() -> bootstrap.initialize());
+        assertThat(bootstrap.getAgent("test-agent")).isNotNull();
+
+        // THEN - second initialization also succeeds (idempotent — already initialized)
+        runPromise(() -> bootstrap.initialize());
+        assertThat(bootstrap.getAgent("test-agent")).isNotNull();
     }
     
     // ==================== HELPER METHODS ====================

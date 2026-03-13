@@ -52,10 +52,15 @@ public abstract class YAPPCAgentBase<I, O> extends BaseAgent<StepRequest<I>, Ste
   private static final Logger log = LoggerFactory.getLogger(YAPPCAgentBase.class);
 
   /**
-   * @deprecated Use constructor-injected publisher instead. Will be removed in 3.0.
+   * Package-private for same-package initialisation by {@link YappcAgentSystem}.
+   * Agents constructed via the 4-arg constructor (320+ specialist agents) read this
+   * field once at construction time. Do NOT mutate after the system has bootstrapped.
+   *
+   * @deprecated Will be removed in 3.0 once all specialists migrate to the 5-arg
+   *             constructor that accepts {@link AepEventPublisher} directly.
    */
   @Deprecated(since = "2.4.0", forRemoval = true)
-  private static volatile AepEventPublisher globalAepEventPublisher =
+  static volatile AepEventPublisher globalAepEventPublisher =
       (type, tenant, payload) -> Promise.complete(); // no-op default
 
   private final AepEventPublisher aepEventPublisher;
@@ -346,8 +351,21 @@ public abstract class YAPPCAgentBase<I, O> extends BaseAgent<StepRequest<I>, Ste
     return aepEventPublisher.publish(eventType, tenantId, payload);
   }
 
+  // configureAepEventPublisher() was the public static setter. Production callers
+  // (YappcAgentSystem) now use direct package-private field access. The public
+  // method is kept solely for test classes that reside in subpackages and cannot
+  // access package-private members of this package directly.
+
   /**
-   * @deprecated Use constructor injection of {@link AepEventPublisher} instead.
+   * Sets the global publisher used by agents constructed via the deprecated 4-arg
+   * constructor.
+   *
+   * <p><b>Production</b>: Use direct field access from within {@code com.ghatana.yappc.agent}
+   * (e.g., {@link YappcAgentSystem}) instead of this method.
+   *
+   * <p><b>Tests</b>: Call before constructing specialist agents to inject a test publisher.
+   *
+   * @deprecated Will be removed in 3.0 when all specialists migrate to the 5-arg constructor.
    */
   @Deprecated(since = "2.4.0", forRemoval = true)
   public static void configureAepEventPublisher(AepEventPublisher publisher) {

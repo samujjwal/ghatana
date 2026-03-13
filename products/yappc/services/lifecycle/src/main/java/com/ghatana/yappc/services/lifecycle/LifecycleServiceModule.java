@@ -33,8 +33,9 @@ import com.ghatana.core.database.config.JpaConfig;
 import com.ghatana.core.operator.catalog.InMemoryOperatorCatalog;
 import com.ghatana.core.operator.catalog.OperatorCatalog;
 import com.ghatana.core.template.YamlTemplateEngine;
+import com.ghatana.aep.event.AepEventCloudFactory;
+import com.ghatana.aep.event.EventCloud;
 import com.ghatana.yappc.agent.AepEventPublisher;
-import com.ghatana.yappc.agent.AepHttpEventPublisher;
 import com.ghatana.yappc.agent.YappcAgentSystem;
 import com.ghatana.yappc.services.lifecycle.AepEventBridge;
 
@@ -49,6 +50,11 @@ import com.ghatana.yappc.services.lifecycle.operators.MetricsCollectorOperator;
 import com.ghatana.yappc.services.lifecycle.operators.PhaseTransitionValidatorOperator;
 import com.ghatana.yappc.services.lifecycle.operators.ResultAggregatorOperator;
 import com.ghatana.yappc.services.lifecycle.dlq.DlqPublisher;
+import com.ghatana.yappc.services.lifecycle.dlq.JdbcDlqPublisher;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import io.micrometer.core.instrument.MeterRegistry;
+import io.micrometer.prometheus.PrometheusConfig;
+import io.micrometer.prometheus.PrometheusMeterRegistry;
 // ─── Workflow Engine (YAPPC-Ph9) ──────────────────────────────────────────
 import com.ghatana.platform.workflow.engine.DurableWorkflowEngine;
 import com.ghatana.yappc.services.lifecycle.workflow.LifecycleWorkflowService;
@@ -77,6 +83,8 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.time.Duration;
+import java.util.concurrent.Executor;
+import java.util.concurrent.Executors;
 
 /**
  * ActiveJ DI module for YAPPC Lifecycle services.
@@ -409,30 +417,53 @@ public class LifecycleServiceModule extends AbstractModule {
         return new InMemoryOperatorCatalog();
     }
 
-    // ========== AEP Publisher — HTTP connector (Ph1c) ==========
+    // ========== EventCloud — transport-agnostic event log (Ph1c) ==========
 
     /**
-     * Provides {@link AepEventPublisher} as an HTTP connector to AEP.
+     * Provides the AEP {@link EventCloud} facade for the lifecycle service.
      *
-     * <p>YAPPC sends workflow events to AEP via {@code POST /api/v1/events}.
-     * AEP internally routes them through EventCloud. YAPPC has no direct
-     * dependency on EventCloud or DataCloud storage.
+     * <p>Transport is selected via the {@code EVENT_CLOUD_TRANSPORT} environment
+     * variable ({@code eventlog} default, {@code grpc}, or {@code http}). The
+     * factory fails fast at startup if the selected transport is not properly
+     * configured (e.g. missing gRPC endpoint). Lifecycle code never manages
+     * transport details — all of that is encapsulated in the active connector.
      *
-     * <p>Configuration via {@code AEP_BASE_URL} environment variable
-     * (default: {@code http://localhost:8081}).
-     *
-     * @return AepHttpEventPublisher singleton
+     * @return EventCloud facade singleton
      *
      * @doc.type method
-     * @doc.purpose HTTP connector to AEP event ingest endpoint (replaces EventCloud coupling)
+     * @doc.purpose Provides transport-agnostic EventCloud facade for lifecycle event publishing (Ph1c)
+     * @doc.layer product
+     * @doc.pattern Factory
+     */
+    @Provides
+    EventCloud eventCloud() {
+        logger.info("Creating EventCloud via AepEventCloudFactory (transport: {})",
+                System.getenv().getOrDefault("EVENT_CLOUD_TRANSPORT", "eventlog"));
+        return AepEventCloudFactory.createDefault();
+    }
+
+    // ========== AEP Publisher — EventCloud-backed (Ph1c) ==========
+
+    /**
+     * Provides {@link AepEventPublisher} as a {@link DurableEventCloudPublisher}.
+     *
+     * <p>Replaces {@code AepHttpEventPublisher}. Events are appended directly to
+     * the active {@link EventCloud} connector (gRPC/HTTP/EventLog) — no bespoke
+     * HTTP client, no hardcoded AEP URL, no manual retry logic.
+     *
+     * @param eventCloud active EventCloud facade
+     * @return DurableEventCloudPublisher singleton
+     *
+     * @doc.type method
+     * @doc.purpose Provides durable EventCloud-backed AepEventPublisher (replaces HttpAepEventPublisher)
      * @doc.layer product
      * @doc.pattern Adapter
      * @doc.gaa.lifecycle act
      */
     @Provides
-    AepEventPublisher aepEventPublisher() {
-        logger.info("Creating AepHttpEventPublisher (HTTP connector to AEP — decoupled from EventCloud)");
-        return AepHttpEventPublisher.fromEnvironment();
+    AepEventPublisher aepEventPublisher(EventCloud eventCloud) {
+        logger.info("Creating DurableEventCloudPublisher (EventCloud-backed, transport-agnostic)");
+        return new DurableEventCloudPublisher(eventCloud);
     }
 
     /**
@@ -816,9 +847,9 @@ public class LifecycleServiceModule extends AbstractModule {
      * @doc.gaa.lifecycle capture
      */
     @Provides
-    MetricsCollectorOperator metricsCollectorOperator() {
-        logger.info("Creating MetricsCollectorOperator (YAPPC-Ph6)");
-        return new MetricsCollectorOperator();
+    MetricsCollectorOperator metricsCollectorOperator(MeterRegistry meterRegistry) {
+        logger.info("Creating MetricsCollectorOperator (YAPPC-Ph6) — Micrometer-wired");
+        return new MetricsCollectorOperator(meterRegistry);
     }
 
     /**
@@ -862,17 +893,37 @@ public class LifecycleServiceModule extends AbstractModule {
     }
 
     /**
-     * Provides a no-op {@link DlqPublisher} for standalone lifecycle service deployments.
-     * Overridden by {@code ProductionModule} in {@code backend/api} with the JDBC implementation.
+     * Provides the Micrometer {@link MeterRegistry} backed by Prometheus for YAPPC
+     * lifecycle service observability.
      *
      * @doc.type method
-     * @doc.purpose Default (no-op) DLQ publisher for lifecycle-only deployments
+     * @doc.purpose Provides Prometheus-backed MeterRegistry for YAPPC observability
      * @doc.layer product
      * @doc.pattern Factory
      */
     @Provides
-    DlqPublisher dlqPublisher() {
-        return DlqPublisher.noop();
+    MeterRegistry meterRegistry() {
+        logger.info("Creating PrometheusMeterRegistry");
+        return new PrometheusMeterRegistry(PrometheusConfig.DEFAULT);
+    }
+
+    /**
+     * Provides {@link JdbcDlqPublisher} backed by the YAPPC PostgreSQL data source.
+     *
+     * <p>All JDBC calls are dispatched on a virtual-thread executor so the ActiveJ
+     * event loop is never blocked.
+     *
+     * @doc.type method
+     * @doc.purpose JDBC-backed DLQ publisher for failed YAPPC pipeline events
+     * @doc.layer product
+     * @doc.pattern Repository, Factory
+     */
+    @Provides
+    DlqPublisher dlqPublisher(DataSource dataSource) {
+        Executor executor = Executors.newVirtualThreadPerTaskExecutor();
+        ObjectMapper objectMapper = new ObjectMapper();
+        logger.info("Creating JdbcDlqPublisher (YAPPC-Ph12)");
+        return new JdbcDlqPublisher(dataSource, executor, objectMapper);
     }
 
     // ========== Workflow Engine (YAPPC-Ph9) ==========

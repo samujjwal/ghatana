@@ -11,6 +11,9 @@ import com.ghatana.platform.workflow.operator.AbstractOperator;
 import com.ghatana.platform.workflow.operator.OperatorResult;
 import com.ghatana.platform.workflow.operator.OperatorType;
 import io.activej.promise.Promise;
+import io.micrometer.core.instrument.Counter;
+import io.micrometer.core.instrument.MeterRegistry;
+import io.micrometer.core.instrument.simple.SimpleMeterRegistry;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -60,10 +63,14 @@ public class MetricsCollectorOperator extends AbstractOperator {
     /** Running count of all agent executions seen by this operator. */
     private final AtomicLong totalExecutions = new AtomicLong(0);
 
+    private final MeterRegistry meterRegistry;
+
     /**
-     * Creates a {@code MetricsCollectorOperator}.
+     * Creates a {@code MetricsCollectorOperator} with Micrometer metrics registration.
+     *
+     * @param meterRegistry Micrometer registry to publish metrics to
      */
-    public MetricsCollectorOperator() {
+    public MetricsCollectorOperator(MeterRegistry meterRegistry) {
         super(
             OperatorId.of("yappc", "stream", "metrics-collector", "1.0.0"),
             OperatorType.STREAM,
@@ -72,6 +79,18 @@ public class MetricsCollectorOperator extends AbstractOperator {
             List.of("agent.metrics", "observability"),
             null
         );
+        this.meterRegistry = Objects.requireNonNull(meterRegistry, "meterRegistry");
+        // Register gauge for the running execution counter
+        io.micrometer.core.instrument.Gauge.builder("agent_executions_total", totalExecutions, AtomicLong::get)
+                .description("Running total of agent executions observed by this lifecycle pipeline operator")
+                .register(meterRegistry);
+    }
+
+    /**
+     * Creates a {@code MetricsCollectorOperator} with a no-op registry (test / standalone use).
+     */
+    public MetricsCollectorOperator() {
+        this(new SimpleMeterRegistry());
     }
 
     @Override
@@ -86,6 +105,19 @@ public class MetricsCollectorOperator extends AbstractOperator {
 
         log.debug("Collecting metrics: agentId={} status={} totalExecutions={}",
                 agentId, status, execCount);
+
+        // Record Micrometer counter for agent dispatch failures
+        if ("error".equalsIgnoreCase(status)) {
+            String reason = payloadStr(event, "_error");
+            Counter.builder("agent_dispatch_failures_total")
+                    .description("Total agent dispatch failures observed by the lifecycle pipeline")
+                    .tags(
+                        "tenant",  Objects.toString(tenantId, "unknown"),
+                        "agentId", Objects.toString(agentId,  "unknown"),
+                        "reason",  Objects.toString(reason,   "unknown"))
+                    .register(meterRegistry)
+                    .increment();
+        }
 
         Event metricsEvent = GEvent.builder()
                 .typeTenantVersion(tenantId != null ? tenantId : "", EVENT_METRICS_UPDATED, "v1")

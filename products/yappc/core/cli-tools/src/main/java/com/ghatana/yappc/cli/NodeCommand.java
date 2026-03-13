@@ -3,18 +3,19 @@ package com.ghatana.yappc.cli;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.ghatana.platform.core.util.JsonUtils;
 import com.fasterxml.jackson.databind.SerializationFeature;
-import com.ghatana.kg.core.KnowledgeGraphNode;
-import com.ghatana.yappc.kg.service.domain.GraphNode;
-import com.ghatana.yappc.kg.service.domain.KnowledgeGraphServiceImpl;
+import com.ghatana.yappc.cli.adapter.CliKgFacade;
+import com.ghatana.yappc.knowledge.model.YAPPCGraphNode;
 import picocli.CommandLine.Command;
 import picocli.CommandLine.Option;
 import picocli.CommandLine.Parameters;
 import picocli.CommandLine.ParentCommand;
 
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
+import java.util.UUID;
 import java.util.concurrent.Callable;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -69,18 +70,19 @@ public class NodeCommand implements Runnable {
 
         @Override
         public Integer call() throws Exception {
-            KnowledgeGraphServiceImpl service = new KnowledgeGraphServiceImpl();
-            List<GraphNode> nodes = service.listNodes().getResult();
+            CliKgFacade service = new CliKgFacade();
+            List<YAPPCGraphNode> nodes = service.listNodes(null);
 
             if (nodeType != null) {
+                final String typeFilter = nodeType.toUpperCase();
                 nodes = nodes.stream()
-                    .filter(n -> n.types().contains(nodeType))
+                    .filter(n -> n.type().name().equals(typeFilter))
                     .toList();
             }
 
             if (tag != null) {
                 nodes = nodes.stream()
-                    .filter(n -> n.tags().contains(tag))
+                    .filter(n -> n.tags() != null && n.tags().contains(tag))
                     .toList();
             }
 
@@ -92,10 +94,10 @@ public class NodeCommand implements Runnable {
                 } else {
                     log.info("Found {} nodes:", nodes.size());
                     log.info("-".repeat(60));
-                    for (GraphNode node : nodes) {
+                    for (YAPPCGraphNode node : nodes) {
                         log.info("  ID: {}", node.id());
-                        log.info("  Label: {}", node.label());
-                        log.info("  Types: {}", node.types());
+                        log.info("  Name: {}", node.name());
+                        log.info("  Type: {}", node.type());
                         log.info("  Tags: {}", node.tags());
                         log.info("-".repeat(60));
                     }
@@ -120,23 +122,23 @@ public class NodeCommand implements Runnable {
 
         @Override
         public Integer call() throws Exception {
-            KnowledgeGraphServiceImpl service = new KnowledgeGraphServiceImpl();
-            Optional<GraphNode> node = service.findNode(nodeId).getResult();
+            CliKgFacade service = new CliKgFacade();
+            Optional<YAPPCGraphNode> node = service.findNode(nodeId, null);
 
             if (node.isEmpty()) {
                 log.error("Node not found: {}", nodeId);
                 return 1;
             }
 
-            GraphNode n = node.get();
+            YAPPCGraphNode n = node.get();
             if (json) {
                 log.info("{}", mapper.writeValueAsString(n));
             } else {
                 log.info("Node Details:");
                 log.info("-".repeat(40));
                 log.info("  ID: {}", n.id());
-                log.info("  Label: {}", n.label());
-                log.info("  Types: {}", n.types());
+                log.info("  Name: {}", n.name());
+                log.info("  Type: {}", n.type());
                 log.info("  Tags: {}", n.tags());
             }
 
@@ -173,42 +175,42 @@ public class NodeCommand implements Runnable {
 
         @Override
         public Integer call() throws Exception {
-            KnowledgeGraphServiceImpl service = new KnowledgeGraphServiceImpl();
+            CliKgFacade service = new CliKgFacade();
 
-            KnowledgeGraphNode.Builder builder = KnowledgeGraphNode.builder()
-                .label(label)
-                .nodeType(nodeType);
-
-            if (description != null) {
-                builder.description(description);
+            YAPPCGraphNode.YAPPCNodeType resolvedType;
+            try {
+                resolvedType = YAPPCGraphNode.YAPPCNodeType.valueOf(nodeType.toUpperCase());
+            } catch (IllegalArgumentException e) {
+                resolvedType = YAPPCGraphNode.YAPPCNodeType.COMPONENT;
             }
 
-            if (sourceUri != null) {
-                builder.sourceUri(sourceUri);
-            }
-
-            if (tags != null) {
-                builder.tags(Set.copyOf(tags));
-            }
-
+            Map<String, Object> props = new HashMap<>();
+            if (description != null) props.put("description", description);
+            if (sourceUri != null)   props.put("sourceUri", sourceUri);
             if (properties != null) {
                 for (String prop : properties) {
                     String[] parts = prop.split("=", 2);
-                    if (parts.length == 2) {
-                        builder.property(parts[0], parts[1]);
-                    }
+                    if (parts.length == 2) props.put(parts[0], parts[1]);
                 }
             }
 
-            KnowledgeGraphNode node = builder.build();
-            GraphNode created = service.createNode("default", node).getResult();
+            YAPPCGraphNode node = YAPPCGraphNode.builder()
+                .id(UUID.randomUUID().toString())
+                .type(resolvedType)
+                .name(label)
+                .description(description)
+                .tags(tags != null ? Set.copyOf(tags) : Set.of())
+                .properties(props.isEmpty() ? null : props)
+                .build();
+
+            YAPPCGraphNode created = service.createNode(node);
 
             if (json) {
                 log.info("{}", mapper.writeValueAsString(created));
             } else {
                 log.info("Node created successfully:");
                 log.info("  ID: {}", created.id());
-                log.info("  Label: {}", created.label());
+                log.info("  Name: {}", created.name());
             }
 
             return 0;
@@ -234,8 +236,8 @@ public class NodeCommand implements Runnable {
                 return 1;
             }
 
-            KnowledgeGraphServiceImpl service = new KnowledgeGraphServiceImpl();
-            boolean deleted = service.deleteNode("default", nodeId).getResult();
+            CliKgFacade service = new CliKgFacade();
+            boolean deleted = service.deleteNode(nodeId, null);
 
             if (deleted) {
                 log.info("Node deleted successfully: {}", nodeId);

@@ -5,6 +5,7 @@ import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 import com.ghatana.datacloud.entity.Entity;
 import com.ghatana.datacloud.entity.EntityRepository;
 import com.ghatana.yappc.infrastructure.datacloud.mapper.YappcEntityMapper;
+import com.ghatana.products.yappc.domain.Identifiable;
 import io.activej.promise.Promise;
 import com.ghatana.platform.testing.activej.EventloopTestBase;
 import org.junit.jupiter.api.BeforeEach;
@@ -120,5 +121,7 @@ class YappcDataCloudRepositoryTest extends EventloopTestBase {
         verify(entityRepository).delete(anyString(), anyString(), any(UUID.class));
     }
 
-    record TestEntity(UUID id, String name, int value) {}
+    record TestEntity(UUID id, String name, int value) implements Identifiable<UUID> {
+        @Override public UUID getId() { return id; }
+    }
 }

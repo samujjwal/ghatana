@@ -3,9 +3,8 @@ package com.ghatana.yappc.cli;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.ghatana.platform.core.util.JsonUtils;
 import com.fasterxml.jackson.databind.SerializationFeature;
-import com.ghatana.kg.core.KnowledgeGraph;
-import com.ghatana.yappc.kg.service.domain.GraphNode;
-import com.ghatana.yappc.kg.service.domain.KnowledgeGraphServiceImpl;
+import com.ghatana.yappc.cli.adapter.CliKgFacade;
+import com.ghatana.yappc.knowledge.model.YAPPCGraphNode;
 import picocli.CommandLine.Command;
 import picocli.CommandLine.Option;
 import picocli.CommandLine.Parameters;
@@ -74,19 +73,19 @@ public class GraphCommand implements Runnable {
 
         @Override
         public Integer call() throws Exception {
-            KnowledgeGraphServiceImpl service = new KnowledgeGraphServiceImpl();
+            CliKgFacade service = new CliKgFacade();
 
             try {
-                KnowledgeGraph graph = service.createGraph(graphId, name, description, projectId).getResult();
+                CliKgFacade.GraphInfo graph = service.createGraph(graphId, name, description, projectId);
 
                 if (json) {
-                    log.info(mapper.writeValueAsString(new GraphInfo( graph.getId(), graph.getName(), graph.getDescription(), graph.getNodeCount(), graph.getEdgeCount() )));
+                    log.info(mapper.writeValueAsString(new GraphInfo( graph.id(), graph.name(), graph.description(), graph.nodeCount(), graph.edgeCount() )));
                 } else {
                     log.info("Graph created successfully:");
-                    log.info("  ID: {}", graph.getId());
-                    log.info("  Name: {}", graph.getName());
-                    if (graph.getDescription() != null) {
-                        log.info("  Description: {}", graph.getDescription());
+                    log.info("  ID: {}", graph.id());
+                    log.info("  Name: {}", graph.name());
+                    if (graph.description() != null) {
+                        log.info("  Description: {}", graph.description());
                     }
                 }
 
@@ -112,30 +111,30 @@ public class GraphCommand implements Runnable {
 
         @Override
         public Integer call() throws Exception {
-            KnowledgeGraphServiceImpl service = new KnowledgeGraphServiceImpl();
-            Optional<KnowledgeGraph> graphOpt = service.getGraph(graphId).getResult();
+            CliKgFacade service = new CliKgFacade();
+            Optional<CliKgFacade.GraphInfo> graphOpt = service.getGraph(graphId);
 
             if (graphOpt.isEmpty()) {
                 log.error("Graph not found: {}", graphId);
                 return 1;
             }
 
-            KnowledgeGraph graph = graphOpt.get();
+            CliKgFacade.GraphInfo graph = graphOpt.get();
 
             if (json) {
-                log.info(mapper.writeValueAsString(new GraphInfo( graph.getId(), graph.getName(), graph.getDescription(), graph.getNodeCount(), graph.getEdgeCount() )));
+                log.info(mapper.writeValueAsString(new GraphInfo( graph.id(), graph.name(), graph.description(), graph.nodeCount(), graph.edgeCount() )));
             } else {
                 log.info("Graph Information:");
                 log.info("=".repeat(50));
-                log.info("  ID: {}", graph.getId());
-                log.info("  Name: {}", graph.getName());
-                if (graph.getDescription() != null) {
-                    log.info("  Description: {}", graph.getDescription());
+                log.info("  ID: {}", graph.id());
+                log.info("  Name: {}", graph.name());
+                if (graph.description() != null) {
+                    log.info("  Description: {}", graph.description());
                 }
-                log.info("  Nodes: {}", graph.getNodeCount());
-                log.info("  Edges: {}", graph.getEdgeCount());
-                log.info("  Created: {}", graph.getCreatedAt());
-                log.info("  Updated: {}", graph.getUpdatedAt());
+                log.info("  Nodes: {}", graph.nodeCount());
+                log.info("  Edges: {}", graph.edgeCount());
+                log.info("  Created: {}", graph.createdAt());
+                log.info("  Updated: {}", graph.updatedAt());
             }
 
             return 0;
@@ -161,10 +160,10 @@ public class GraphCommand implements Runnable {
                 return 1;
             }
 
-            KnowledgeGraphServiceImpl service = new KnowledgeGraphServiceImpl();
+            CliKgFacade service = new CliKgFacade();
 
             try {
-                boolean deleted = service.deleteGraph(graphId).getResult();
+                boolean deleted = service.deleteGraph(graphId);
 
                 if (deleted) {
                     log.info("Graph deleted successfully: {}", graphId);
@@ -194,15 +193,15 @@ public class GraphCommand implements Runnable {
 
         @Override
         public Integer call() throws Exception {
-            KnowledgeGraphServiceImpl service = new KnowledgeGraphServiceImpl();
-            Optional<KnowledgeGraph> graphOpt = service.getGraph("default").getResult();
+            CliKgFacade service = new CliKgFacade();
+            Optional<CliKgFacade.GraphInfo> graphOpt = service.getGraph("default");
 
             if (graphOpt.isEmpty()) {
                 log.error("Default graph not found");
                 return 1;
             }
 
-            KnowledgeGraph graph = graphOpt.get();
+            CliKgFacade.GraphInfo graph = graphOpt.get();
             boolean hasPath = graph.hasPath(sourceId, targetId);
 
             if (hasPath) {
@@ -229,8 +228,8 @@ public class GraphCommand implements Runnable {
 
         @Override
         public Integer call() throws Exception {
-            KnowledgeGraphServiceImpl service = new KnowledgeGraphServiceImpl();
-            List<GraphNode> related = service.getRelatedNodes("default", nodeId).getResult();
+            CliKgFacade service = new CliKgFacade();
+            List<YAPPCGraphNode> related = service.getRelatedNodes("default", nodeId, null);
 
             if (json) {
                 log.info("{}", mapper.writeValueAsString(related));
@@ -239,8 +238,8 @@ public class GraphCommand implements Runnable {
                     log.info("No related nodes found for: {}", nodeId);
                 } else {
                     log.info("Found {} related nodes:", related.size());
-                    for (GraphNode node : related) {
-                        log.info("  - {} ({})", node.label(), node.id());
+                    for (YAPPCGraphNode node : related) {
+                        log.info("  - {} ({})", node.name(), node.id());
                     }
                 }
             }

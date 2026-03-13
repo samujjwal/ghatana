@@ -16,7 +16,7 @@ import com.ghatana.yappc.agent.StepResult;
 import com.ghatana.yappc.agent.WorkflowStep;
 import com.ghatana.yappc.agent.YappcAgentSystem;
 import io.activej.promise.Promise;
-import org.jetbrains.annotations.Nullable;
+import org.jetbrains.annotations.NotNull;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -61,15 +61,15 @@ public class AgentExecutorOperator extends AbstractOperator {
     /** Event type emitted after agent execution completes or fails. */
     public static final String EVENT_RESULT_PRODUCED    = "agent.result.produced";
 
-    @Nullable
+    @NotNull
     private final YappcAgentSystem yappcAgentSystem;
 
     /**
-     * Creates an {@code AgentExecutorOperator} with a wired {@link YappcAgentSystem}.
+     * Creates an {@code AgentExecutorOperator} wired to a {@link YappcAgentSystem}.
      *
-     * @param yappcAgentSystem initialized YAPPC agent system for real dispatch (nullable for stub mode)
+     * @param yappcAgentSystem fully initialised YAPPC agent system (required)
      */
-    public AgentExecutorOperator(@Nullable YappcAgentSystem yappcAgentSystem) {
+    public AgentExecutorOperator(@NotNull YappcAgentSystem yappcAgentSystem) {
         super(
             OperatorId.of("yappc", "stream", "agent-executor", "1.0.0"),
             OperatorType.STREAM,
@@ -78,17 +78,7 @@ public class AgentExecutorOperator extends AbstractOperator {
             List.of("agent.execute", "agent.result"),
             null
         );
-        this.yappcAgentSystem = yappcAgentSystem;
-    }
-
-    /**
-     * Creates an {@code AgentExecutorOperator} in stub mode (no agent dispatch).
-     *
-     * @deprecated Use {@link #AgentExecutorOperator(YappcAgentSystem)} for production use.
-     */
-    @Deprecated(since = "2.4.0", forRemoval = true)
-    public AgentExecutorOperator() {
-        this(null);
+        this.yappcAgentSystem = Objects.requireNonNull(yappcAgentSystem, "yappcAgentSystem");
     }
 
     @Override
@@ -131,13 +121,13 @@ public class AgentExecutorOperator extends AbstractOperator {
         String resultCorrelationId = correlationId != null ? correlationId : UUID.randomUUID().toString();
         String effectiveTenant     = tenantId != null ? tenantId : "";
 
-        if (yappcAgentSystem == null || !yappcAgentSystem.isInitialized()) {
-            log.error("[AgentExecutor] YappcAgentSystem not available or not initialized. "
-                    + "Dropping dispatch for agentId={} — wire a YappcAgentSystem via LifecycleServiceModule.",
+        if (!yappcAgentSystem.isInitialized()) {
+            log.error("[AgentExecutor] YappcAgentSystem is not yet initialized. "
+                    + "Dropping dispatch for agentId={} — ensure yappcAgentSystem.initialize() completes before events arrive.",
                     agentId);
             return Promise.of(buildResultEvent(effectiveTenant, agentId, "error",
                     fromStage, toStage, resultCorrelationId,
-                    Map.of("_error", "agent_system_unavailable")));
+                    Map.of("_error", "agent_system_not_initialized")));
         }
 
         WorkflowStep<Object, Object> agent =

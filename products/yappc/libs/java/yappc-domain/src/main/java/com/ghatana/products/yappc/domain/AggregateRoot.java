@@ -45,7 +45,7 @@ import java.util.List;
  * @doc.layer domain
  * @doc.pattern Aggregate Root / Domain-Driven Design
  */
-public abstract class AggregateRoot<ID> {
+public abstract class AggregateRoot<ID> implements Identifiable<ID> {
 
     /** Uncommitted domain events raised during the current unit of work. */
     private final List<DomainEvent> uncommittedEvents = new ArrayList<>();

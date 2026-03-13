@@ -1,8 +1,13 @@
 # Aura Product Roadmap & Engineering Epic Breakdown
 
+Detailed `what`, `how`, `where`, and validation guidance for active delivery tasks lives in
+`Aura_Task_Execution_Matrix.md`. No epic should enter implementation until it is decomposed there.
+
 ## Phase 1 — Curated Me (Months 1–3)
 
 **Goal:** Ship a compelling beauty intelligence MVP that demonstrates the core Aura value proposition: personalized, explainable product recommendations for beauty.
+
+**Execution detail:** See `Aura_Task_Execution_Matrix.md` rows `S01-T01` through `S06-T05`.
 
 ### Engineering Epics
 
@@ -32,6 +37,8 @@
 
 **Goal:** Improve personalization quality and launch the first ML-powered recommendation improvements alongside explainable AI features.
 
+**Execution detail:** See `Aura_Task_Execution_Matrix.md` rows `S07-T01` through `S12-T04`.
+
 ### Engineering Epics
 
 | Epic                                 | Description                                                                              |
@@ -60,6 +67,9 @@
 
 **Goal:** Deliver context-aware personalization through optional wellness and lifestyle integrations.
 
+**Execution rule:** Decompose each Phase 3 epic into task rows in `Aura_Task_Execution_Matrix.md`
+before implementation begins.
+
 ### Engineering Epics
 
 | Epic                         | Description                                                                               |
@@ -83,6 +93,9 @@
 ## Phase 4 — Aura Collective (Months 10+)
 
 **Goal:** Activate community intelligence at scale and launch brand analytics as a B2B revenue stream.
+
+**Execution rule:** Decompose each Phase 4 epic into task rows in `Aura_Task_Execution_Matrix.md`
+before implementation begins.
 
 ### Engineering Epics
 

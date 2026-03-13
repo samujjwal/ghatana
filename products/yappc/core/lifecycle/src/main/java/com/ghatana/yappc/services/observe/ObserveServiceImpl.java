@@ -2,7 +2,10 @@ package com.ghatana.yappc.services.observe;
 
 import com.ghatana.audit.AuditLogger;
 import com.ghatana.platform.observability.MetricsCollector;
-import com.ghatana.yappc.domain.observe.*;
+import com.ghatana.products.yappc.domain.observe.Metric;
+import com.ghatana.yappc.domain.observe.LogEntry;
+import com.ghatana.yappc.domain.observe.Observation;
+import com.ghatana.yappc.domain.observe.TraceSpan;
 import com.ghatana.yappc.domain.run.RunResult;
 import io.activej.promise.Promise;
 import org.slf4j.Logger;
@@ -86,31 +89,21 @@ public class ObserveServiceImpl implements ObserveService {
     }
     
     private List<Metric> collectMetrics(RunResult run) {
+        String projectRef = run.runSpecRef(); // best available project context
+        long durationMs = run.completedAt() != null
+                ? run.completedAt().toEpochMilli() - run.startedAt().toEpochMilli()
+                : 0L;
         List<Metric> collectedMetrics = List.of(
-            Metric.builder()
-                    .name("run.duration")
-                    .value(run.completedAt() != null ? 
-                        run.completedAt().toEpochMilli() - run.startedAt().toEpochMilli() : 0)
-                    .unit("milliseconds")
-                    .tags(Map.of("run_id", run.id(), "status", run.status().name()))
-                    .timestamp(Instant.now())
-                    .build(),
-            Metric.builder()
-                    .name("run.task_count")
-                    .value(run.taskResults().size())
-                    .unit("count")
-                    .tags(Map.of("run_id", run.id()))
-                    .timestamp(Instant.now())
-                    .build(),
-            Metric.builder()
-                    .name("run.success_rate")
-                    .value(calculateSuccessRate(run))
-                    .unit("percentage")
-                    .tags(Map.of("run_id", run.id()))
-                    .timestamp(Instant.now())
-                    .build()
+            Metric.of("run.duration", durationMs, "milliseconds",
+                    projectRef, null,
+                    Map.of("run_id", run.id(), "status", run.status().name())),
+            Metric.of("run.task_count", run.taskResults().size(), "count",
+                    projectRef, null,
+                    Map.of("run_id", run.id())),
+            Metric.of("run.success_rate", calculateSuccessRate(run), "percentage",
+                    projectRef, null,
+                    Map.of("run_id", run.id()))
         );
-        
         return collectedMetrics;
     }
     

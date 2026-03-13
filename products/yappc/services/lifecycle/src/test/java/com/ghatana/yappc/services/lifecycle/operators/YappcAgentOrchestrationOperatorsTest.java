@@ -8,14 +8,18 @@ import com.ghatana.platform.domain.domain.event.Event;
 import com.ghatana.platform.domain.domain.event.GEvent;
 import com.ghatana.platform.testing.activej.EventloopTestBase;
 import com.ghatana.platform.workflow.operator.OperatorResult;
+import com.ghatana.yappc.agent.YappcAgentSystem;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
+import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.mockito.Mockito.lenient;
+import static org.mockito.Mockito.when;
 
 /**
  * Unit tests for the YAPPC agent-orchestration-v1 pipeline operators.
@@ -231,28 +235,35 @@ class YappcAgentOrchestrationOperatorsTest extends EventloopTestBase {
     @DisplayName("AgentExecutorOperator")
     class AgentExecutorOperatorTests {
 
+        @Mock
+        private YappcAgentSystem yappcAgentSystem;
+
         private AgentExecutorOperator operator;
 
         @BeforeEach
         void setUp() {
-            operator = new AgentExecutorOperator();
+            // Use lenient stubbing: isInitialized() is only called in some test cases
+            // (tests that reach past the agentId-null guard don't need the stub)
+            lenient().when(yappcAgentSystem.isInitialized()).thenReturn(false);
+            operator = new AgentExecutorOperator(yappcAgentSystem);
         }
 
         @Test
-        @DisplayName("should emit agent.result.produced with status=success")
+        @DisplayName("should emit agent.result.produced with status=error when agent system is not yet initialized")
         void shouldEmitResultProducedEvent() {
-            // GIVEN
+            // GIVEN — operator with an uninitialized YappcAgentSystem
             Event event = buildDispatchValidatedEvent("agent-1", "plan", "exec", "tenant-1", "corr-001");
 
             // WHEN
             OperatorResult result = runPromise(() -> operator.process(event));
 
-            // THEN
+            // THEN — OperatorResult is a success (carries the result event),
+            // but the result event payload has status=error because the agent system is not initialized.
             assertThat(result.isSuccess()).isTrue();
             assertThat(result.getOutputEvents()).hasSize(1);
             Event out = result.getOutputEvents().get(0);
             assertThat(out.getType()).isEqualTo(AgentExecutorOperator.EVENT_RESULT_PRODUCED);
-            assertThat(out.getPayload("status")).isEqualTo("success");
+            assertThat(out.getPayload("status")).isEqualTo("error");
             assertThat(out.getPayload("agentId")).isEqualTo("agent-1");
             assertThat(out.getPayload("correlationId")).isEqualTo("corr-001");
         }

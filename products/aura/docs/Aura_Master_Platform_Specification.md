@@ -40,6 +40,12 @@ to deliver personalized recommendations with clear, verifiable explanations.
 
 **Core question Aura answers:** _"What is right for me right now?"_
 
+Detailed execution guidance lives in:
+
+- `Aura_Consumer_Value_Operating_Model.md` for how Aura proves value to consumers session by session
+- `Aura_AI_ML_Data_Operating_Model.md` for how Aura manages data quality, model risk, and learning loops
+- `Aura_Task_Execution_Matrix.md` for task-level what/how/where/validation detail across active delivery work
+
 ---
 
 # 2. Core Product Pillars
@@ -223,7 +229,7 @@ See [Aura_Recommendation_Algorithms.md](Aura_Recommendation_Algorithms.md) for d
 2. **Data Validation** — schema validation, null handling, drift checks, label integrity
 3. **Feature Engineering** — product embeddings, user preference vectors, ingredient conflict features, price sensitivity features, source trust features
 4. **Model Training** — baseline: rules + gradient boosted ranking; later: deep retrieval and ranking if warranted
-5. **Evaluation** — offline: NDCG, MAP, precision@k; business: CTR, save rate, conversion lift; trust: explanation helpfulness, dismiss/hide rate
+5. **Evaluation** — offline: NDCG, MAP, precision@k; outcomes: time-to-decision, shade-miss rate, adverse reaction rate, return reduction; trust: explanation helpfulness, low-confidence disclosure quality
 6. **Deployment** — model registry → champion/challenger rollout → shadow evaluation → canary release
 7. **Monitoring** — feature drift, score distribution drift, recommendation diversity, fairness checks across demographics
 
@@ -353,7 +359,7 @@ Aura follows a hybrid backend strategy with clear seam between user-facing CRUD 
 | ---------------- | ---------- | --------------------- | ---------------------------------------------------- |
 | **User API**     | Node.js    | Fastify + Prisma      | Profile, preferences, CRUD, real-time feed           |
 | **Core Domain**  | Java 21    | ActiveJ               | Recommendations, ingestion workers, ranking pipeline |
-| **ML Inference** | Python     | FastAPI microservices | Model serving, feature pipelines                     |
+| **ML Inference** | Python     | FastAPI inference service | Model serving, feature pipelines, evaluation hooks |
 
 ## Full Stack
 
@@ -372,7 +378,11 @@ Aura follows a hybrid backend strategy with clear seam between user-facing CRUD 
 | ML Training      | PyTorch, scikit-learn                 |
 | Observability    | Micrometer, OpenTelemetry, Prometheus |
 | Infrastructure   | Docker, Kubernetes                    |
-| CI/CD            | GitHub Actions                        |
+| CI/CD            | Gitea Actions                         |
+
+Aura keeps the early-stage deployment surface intentionally small: `api`, `core-worker`, and
+`ml-inference`. Product domains stay modular through explicit internal boundaries and shared
+contracts, not through day-one service sprawl.
 
 See [Aura_Technical_Stack_Blueprint.md](Aura_Technical_Stack_Blueprint.md) for decisions and rationale.
 
@@ -382,19 +392,21 @@ See [Aura_Technical_Stack_Blueprint.md](Aura_Technical_Stack_Blueprint.md) for d
 
 ```text
 aura/
+  .gitea/
+    workflows/            -- Gitea Actions CI/CD pipelines
   apps/
     web/                  -- React Router v7 web application (with Vite or Rsbuild build tool)
     mobile/               -- React Native app
-    api-gateway/          -- Fastify GraphQL / REST gateway
-    ingestion-worker/     -- Java/ActiveJ ingestion pipeline
-    recommendation-worker/ -- Java/ActiveJ recommendation engine
-  services/
-    profile-service/      -- User profile, You Index (Fastify + Prisma)
-    catalog-service/      -- Product catalog management (Java/ActiveJ)
-    recommendation-service/ -- Core ranking and explanation (Java/ActiveJ)
-    explainability-service/
-    community-intelligence-service/
-    governance-service/   -- Consent, audit, moderation
+    api/                  -- Fastify GraphQL / REST BFF and modular monolith for user-facing flows
+    core-worker/          -- Java/ActiveJ host for ingestion, enrichment, ranking, and async jobs
+    ml-inference/         -- Python/FastAPI inference boundary for model serving
+  domains/
+    profile/              -- You Index rules, overrides, visibility, and consent-aware profile logic
+    catalog/              -- Product, ingredient, shade, and source normalization rules
+    recommendation/       -- Candidate generation, scoring, confidence, and ranking logic
+    explainability/       -- Reason codes, evidence assembly, trust copy, transparency rules
+    community/            -- Review analysis, sentiment, and twin-user signals
+    governance/           -- Consent policy, audit, moderation, and safety rules
   packages/
     ui/                   -- Shared UI component library
     design-tokens/
@@ -420,8 +432,11 @@ aura/
     docker/
     kubernetes/
     terraform/
-    github-actions/
 ```
+
+`domains/` are hard module boundaries, not day-one deployment units. Extract a domain into its own
+service only when runtime isolation, sustained load, compliance needs, or team ownership create a
+clear operational benefit.
 
 ---
 
@@ -468,7 +483,7 @@ aura/
 2. **Personalization Advantage** — recommendation quality compounds as user data grows
 3. **Network Effects** — community participation (reviews, routines, twin discovery) increases platform value for all users
 4. **Brand Intelligence Layer** — B2B revenue from anonymized analytics creates a second data flywheel
-5. **AI Learning Flywheel** — user interactions → feedback signals → model updates → better recommendations → more engagement
+5. **AI Learning Flywheel** — user interactions → feedback signals → model updates → better recommendations → better outcomes and stronger trust
 
 ---
 

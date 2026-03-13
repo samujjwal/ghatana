@@ -3,16 +3,17 @@ package com.ghatana.yappc.cli;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.ghatana.platform.core.util.JsonUtils;
 import com.fasterxml.jackson.databind.SerializationFeature;
-import com.ghatana.kg.core.KnowledgeGraphEdge;
-import com.ghatana.yappc.kg.service.domain.GraphRelationship;
-import com.ghatana.yappc.kg.service.domain.KnowledgeGraphServiceImpl;
+import com.ghatana.yappc.cli.adapter.CliKgFacade;
+import com.ghatana.yappc.knowledge.model.YAPPCGraphEdge;
 import picocli.CommandLine.Command;
 import picocli.CommandLine.Option;
 import picocli.CommandLine.Parameters;
 import picocli.CommandLine.ParentCommand;
 
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.UUID;
 import java.util.concurrent.Callable;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -66,12 +67,13 @@ public class EdgeCommand implements Runnable {
 
         @Override
         public Integer call() throws Exception {
-            KnowledgeGraphServiceImpl service = new KnowledgeGraphServiceImpl();
-            List<GraphRelationship> edges = service.listRelationships(nodeId).getResult();
+            CliKgFacade service = new CliKgFacade();
+            List<YAPPCGraphEdge> edges = service.listEdges(nodeId, null);
 
             if (relationType != null) {
+                final String typeFilter = relationType.toUpperCase();
                 edges = edges.stream()
-                    .filter(e -> e.type().equals(relationType))
+                    .filter(e -> e.relationshipType().name().equals(typeFilter))
                     .toList();
             }
 
@@ -83,11 +85,14 @@ public class EdgeCommand implements Runnable {
                 } else {
                     log.info("Found {} edges for node '{}':", edges.size(), nodeId);
                     log.info("-".repeat(70));
-                    for (GraphRelationship edge : edges) {
+                    for (YAPPCGraphEdge edge : edges) {
+                        double confidence = edge.properties() != null
+                                ? (double) edge.properties().getOrDefault("weight", 1.0)
+                                : 1.0;
                         log.info("  ID: {}", edge.id());
-                        log.info("  Source: {} -> Target: {}", edge.sourceId(), edge.targetId());
-                        log.info("  Type: {}", edge.type());
-                        log.info(String.format("  Confidence: %.2f", edge.confidence()));
+                        log.info("  Source: {} -> Target: {}", edge.sourceNodeId(), edge.targetNodeId());
+                        log.info("  Type: {}", edge.relationshipType().name());
+                        log.info(String.format("  Confidence: %.2f", confidence));
                         log.info("-".repeat(70));
                     }
                 }
@@ -128,33 +133,41 @@ public class EdgeCommand implements Runnable {
                 return 1;
             }
 
-            KnowledgeGraphServiceImpl service = new KnowledgeGraphServiceImpl();
+            CliKgFacade service = new CliKgFacade();
 
-            KnowledgeGraphEdge.Builder builder = KnowledgeGraphEdge.builder()
-                .sourceNodeId(sourceNodeId)
-                .targetNodeId(targetNodeId)
-                .relationshipType(relationType)
-                .weight(weight);
+            YAPPCGraphEdge.YAPPCRelationshipType resolvedType;
+            try {
+                resolvedType = YAPPCGraphEdge.YAPPCRelationshipType.valueOf(relationType.toUpperCase());
+            } catch (IllegalArgumentException e) {
+                resolvedType = YAPPCGraphEdge.YAPPCRelationshipType.DEPENDS_ON;
+            }
 
+            Map<String, Object> props = new HashMap<>();
+            props.put("weight", weight);
             if (properties != null) {
                 for (String prop : properties) {
                     String[] parts = prop.split("=", 2);
-                    if (parts.length == 2) {
-                        builder.property(parts[0], parts[1]);
-                    }
+                    if (parts.length == 2) props.put(parts[0], parts[1]);
                 }
             }
 
             try {
-                KnowledgeGraphEdge edge = builder.build();
-                GraphRelationship created = service.createRelationship("default", edge).getResult();
+                YAPPCGraphEdge edge = YAPPCGraphEdge.builder()
+                    .id(UUID.randomUUID().toString())
+                    .sourceNodeId(sourceNodeId)
+                    .targetNodeId(targetNodeId)
+                    .relationshipType(resolvedType)
+                    .properties(props)
+                    .build();
+
+                YAPPCGraphEdge created = service.createEdge(edge);
 
                 if (json) {
                     log.info("{}", mapper.writeValueAsString(created));
                 } else {
                     log.info("Edge created successfully:");
                     log.info("  ID: {}", created.id());
-                    log.info("  {} -[{}]-> {}", created.sourceId(), created.type(), created.targetId());
+                    log.info("  {} -[{}]-> {}", created.sourceNodeId(), created.relationshipType().name(), created.targetNodeId());
                 }
 
                 return 0;
@@ -184,8 +197,8 @@ public class EdgeCommand implements Runnable {
                 return 1;
             }
 
-            KnowledgeGraphServiceImpl service = new KnowledgeGraphServiceImpl();
-            boolean deleted = service.deleteRelationship("default", edgeId).getResult();
+            CliKgFacade service = new CliKgFacade();
+            boolean deleted = service.deleteEdge(edgeId);
 
             if (deleted) {
                 log.info("Edge deleted successfully: {}", edgeId);

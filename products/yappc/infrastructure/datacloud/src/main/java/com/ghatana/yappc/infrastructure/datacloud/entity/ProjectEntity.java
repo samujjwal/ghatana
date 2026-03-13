@@ -4,6 +4,11 @@
  */
 package com.ghatana.yappc.infrastructure.datacloud.entity;
 
+import com.ghatana.products.yappc.domain.AggregateRoot;
+import com.ghatana.products.yappc.domain.events.ProjectCompletedEvent;
+import com.ghatana.products.yappc.domain.events.ProjectCreatedEvent;
+import com.ghatana.products.yappc.domain.events.ProjectStageAdvancedEvent;
+
 import java.time.Instant;
 import java.util.Map;
 import java.util.UUID;
@@ -36,9 +41,9 @@ import java.util.UUID;
  * @doc.type class
  * @doc.purpose Handles project entity operations
  * @doc.layer platform
- * @doc.pattern ValueObject
+ * @doc.pattern Aggregate Root / Domain-Driven Design
 */
-public class ProjectEntity {
+public class ProjectEntity extends AggregateRoot<UUID> {
 
   private UUID id;
   private String name;
@@ -79,17 +84,24 @@ public class ProjectEntity {
   }
 
   /**
-   * Creates a project with basic info.
+   * Creates a project with basic info and raises a {@link ProjectCreatedEvent}.
+   *
+   * @param name        project display name
+   * @param description project description
+   * @param createdBy   user or service initiating creation
    */
+  @SuppressWarnings("this-escape") // Safe: raiseEvent() only appends to a final ArrayList in AggregateRoot
   public ProjectEntity(String name, String description, String createdBy) {
     this();
     this.name = name;
     this.description = description;
     this.createdBy = createdBy;
+    raiseEvent(new ProjectCreatedEvent(this.id, this.tenantId, name, createdBy));
   }
 
   // Getters and setters
 
+  @Override
   public UUID getId() {
     return id;
   }
@@ -239,12 +251,16 @@ public class ProjectEntity {
    */
   public boolean advanceStage(String newStage) {
     if (isValidStageTransition(this.currentStage, newStage)) {
+      String previousStage = this.currentStage;
       this.currentStage = newStage;
       touch();
+
+      raiseEvent(new ProjectStageAdvancedEvent(this.id, this.tenantId, previousStage, newStage));
 
       if ("institutionalize".equals(newStage)) {
         this.status = "COMPLETED";
         this.completedAt = Instant.now();
+        raiseEvent(new ProjectCompletedEvent(this.id, this.tenantId, this.completedAt));
       }
 
       return true;

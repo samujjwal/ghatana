@@ -13,6 +13,7 @@ import com.ghatana.datacloud.plugins.s3archive.ColdTierArchivePlugin;
 import com.ghatana.datacloud.plugins.s3archive.S3ArchiveConfig;
 import com.ghatana.datacloud.spi.EventLogStore;
 import com.ghatana.datacloud.storage.WarmTierEventLogStore;
+import com.ghatana.datacloud.workflow.WorkflowRunRepository;
 import com.zaxxer.hikari.HikariConfig;
 import com.zaxxer.hikari.HikariDataSource;
 import io.activej.inject.annotation.Provides;
@@ -202,5 +203,24 @@ public class DataCloudStorageModule extends AbstractModule {
     @Provides
     ColdTierArchivePlugin coldTierArchivePlugin(S3ArchiveConfig config) {
         return new ColdTierArchivePlugin(config);
+    }
+
+    // ═══════════════════════════════════════════════════════════════
+    //  Workflow Repository — Event-Sourced Workflow Run Tracking
+    // ═══════════════════════════════════════════════════════════════
+
+    /**
+     * Provides the event-sourced {@link WorkflowRunRepository}.
+     *
+     * <p>Uses the warm-tier {@link EventLogStore} (PostgreSQL) to append and
+     * replay workflow lifecycle events ({@code workflow.run.started},
+     * {@code workflow.step.completed}, {@code workflow.run.finished}, etc.).
+     *
+     * @param eventLogStore warm-tier event log store
+     * @return workflow run repository
+     */
+    @Provides
+    WorkflowRunRepository workflowRunRepository(EventLogStore eventLogStore) {
+        return new WorkflowRunRepository(eventLogStore);
     }
 }

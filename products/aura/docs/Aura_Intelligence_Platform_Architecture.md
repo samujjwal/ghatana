@@ -15,7 +15,7 @@ It connects:
 - product ingestion pipelines
 - canonical knowledge models
 - user profile intelligence
-- recommendation services
+- recommendation modules and pipelines
 - agent orchestration
 - analytics and learning loops
 
@@ -323,7 +323,7 @@ Aura should use an event-driven architecture for scalability and coordination.
 ## Benefits
 
 - asynchronous scaling
-- decoupled services
+- decoupled processors and runtime boundaries
 - replayability
 - better analytics and model learning
 
@@ -447,12 +447,11 @@ A dedicated policy engine should validate:
 
 ## Recommendation Observability
 
-- recommendation CTR
-- save rate
-- hide/dismiss rate
-- conversion lift
-- explanation open rate
-- trust feedback
+- median time-to-decision
+- shade-miss rate
+- adverse reaction report volume and review SLA
+- recommendation-attributed return reduction
+- explanation helpfulness and trust feedback
 
 ## Model Monitoring
 
@@ -467,23 +466,25 @@ A dedicated policy engine should validate:
 
 ## Early Stage
 
-Start with a modular monolith plus workers.
+Start with three deployables: `api`, `core-worker`, and `ml-inference`.
+
+Keep profile, catalog, recommendation, explainability, community, and governance as explicit
+internal modules with shared contracts and test boundaries.
 
 ## Growth Stage
 
-Split out:
+Split out only when evidence justifies it:
 
-- ingestion
-- recommendation
-- community intelligence
-- explainability
-- governance
+- ingestion if source throughput, retry isolation, or freshness SLOs need their own runtime
+- recommendation if ranking latency, scaling profile, or release cadence diverges materially
+- community intelligence if corpus ingestion or NLP workloads need independent scaling
+- explainability or governance only if compliance, security, or ownership needs demand a separate boundary
 
 ## Scale Stage
 
 Adopt:
 
-- event bus
+- event bus when fan-out, cross-process retries, or throughput require it
 - independent model-serving infrastructure
 - feature store
 - distributed retrieval and caching tiers
@@ -502,15 +503,15 @@ Adopt:
 | Mobile frontend    | React Native + NativeWind              | iOS and Android                                           |
 | Relational storage | PostgreSQL                             | Primary transactional store                               |
 | Cache              | Redis                                  | Session state, recommendation cache, feature cache        |
-| Queue / event bus  | Kafka, NATS, or cloud equivalent       | Event streaming between services                          |
+| Queue / event bus  | Kafka, NATS, or cloud equivalent       | Introduce when cross-process async workflows need durable fan-out |
 | Vector storage     | pgvector (embedded in PostgreSQL)      | Semantic retrieval; upgrade to Pinecone/Weaviate at scale |
 | Object storage     | S3-compatible blob store               | Raw ingestion payloads, model artifacts                   |
 
 ## AI / ML
 
-- Python model services
+- Python inference boundary
 - embedding pipelines
-- ranking services
+- ranking pipelines
 - model registry
 - evaluation pipeline
 
@@ -519,7 +520,7 @@ Adopt:
 - Docker
 - Kubernetes when scale requires
 - OpenTelemetry + Prometheus + Grafana
-- CI/CD with environment promotion gates
+- Gitea Actions CI/CD with environment promotion gates
 
 ---
 

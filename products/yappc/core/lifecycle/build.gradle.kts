@@ -17,6 +17,7 @@ dependencies {
     api(project(":platform:java:observability"))
     api(project(":platform:java:agent-framework"))
     api(project(":products:yappc:core:agents"))
+    api(project(":products:yappc:libs:java:yappc-domain"))  // canonical domain model (Metric, etc.)
     // api(project(":libs:validation-api")) - path needs verification
     api(project(":products:data-cloud:platform"))
     // api(project(":libs:event-cloud")) - path needs verification

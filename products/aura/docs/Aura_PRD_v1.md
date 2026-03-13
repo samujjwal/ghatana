@@ -51,6 +51,20 @@ Aura becomes the **intelligence layer for lifestyle decisions**. It sits between
 4. **Privacy Control** — users own their data. All integrations require explicit, revocable consent.
 5. **Trust Before Monetization** — commercial placements are labeled. Affiliate relationships are disclosed.
 
+## Consumer Value Delivery Model
+
+Aura should be judged by whether it helps consumers finish high-anxiety shopping jobs better than
+retailer pages, creators, and community threads alone.
+
+That means every major user flow must:
+
+1. Reduce time-to-decision.
+2. Reduce wrong-fit, unsafe, or regretted purchases.
+3. Show clear reasons and evidence.
+4. Capture post-use outcomes so the system learns from real results.
+
+Detailed execution guidance lives in `Aura_Consumer_Value_Operating_Model.md`.
+
 ---
 
 ## Core Platform Pillars

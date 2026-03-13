@@ -1,6 +1,7 @@
 package com.ghatana.products.yappc.domain.model;
 
 import com.vladmihalcea.hibernate.type.json.JsonBinaryType;
+import com.ghatana.products.yappc.domain.Identifiable;
 import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -58,7 +59,7 @@ import java.util.UUID;
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder
-public class Widget {
+public class Widget implements Identifiable<UUID> {
 
     @Id
     @UuidGenerator

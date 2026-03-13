@@ -9,6 +9,9 @@ Train and continuously improve models for:
 - Recommendation ranking (personalized scoring)
 - Review sentiment classification (benefit extraction, warning detection)
 
+Detailed operating guidance for source tiers, cold start, sparse labels, deletion handling, and
+human review lives in `Aura_AI_ML_Data_Operating_Model.md`.
+
 ---
 
 ## Pipeline Stages
@@ -49,7 +52,7 @@ Train and continuously improve models for:
 | ------------------------ | --------------------------------------- | ---------------------------------------------------------------- |
 | Shade Matcher            | Embeddings + cosine similarity          | Shade satisfaction feedback, expert shade mapping labels         |
 | Ingredient Safety Scorer | Rule augmented classifier               | Expert labels, community warning signals, dermatology references |
-| Recommendation Ranker    | Gradient-boosted trees → deep retrieval | Save rate, CTR, conversion lift, explicit "helpful" ratings      |
+| Recommendation Ranker    | Gradient-boosted trees → deep retrieval | Saves, shortlist acceptance, keep/not-keep, helpful ratings, post-use outcomes where available |
 | Sentiment Classifier     | Fine-tuned transformer (BERT-class)     | Human-labeled review segments                                    |
 
 Training approach:
@@ -118,3 +121,31 @@ All models must pass fairness evaluation before deployment:
 | Sentiment Classifier     | Monthly batch retraining + manual review when new warning patterns emerge |
 | Shade Matcher            | Quarterly retraining + triggered by new brand catalog ingestion           |
 | Ingredient Safety Scorer | Triggered by expert label updates or new ingredient database releases     |
+
+---
+
+## Cold Start and Sparse Signal Strategy
+
+1. Start from deterministic rules and declared profile fields.
+2. Use catalog facts and source-trust features before collaborative or deep-personalization signals.
+3. Weight post-use outcomes more heavily than shallow engagement labels.
+4. Do not promote deep retrieval or heavier model families until label volume and quality justify it.
+5. Preserve deterministic fallback paths for unsupported, sparse, or low-confidence scenarios.
+
+## Human Review and Dataset Operations
+
+High-risk or high-ambiguity signals should enter review queues before they shape global behavior:
+
+- adverse reaction reports and severe warning clusters
+- repeated shade mismatches on supported products
+- source conflicts on ingredients, shades, or freshness-sensitive commerce data
+- fairness or confidence regressions during rollout
+
+Reviewed outcomes should feed both rules updates and future training datasets.
+
+## Deletion and Training Snapshot Policy
+
+1. Training data snapshots must be versioned and hashable.
+2. Revoked optional imports and deleted user data must be excluded from future snapshots.
+3. Existing models should be retired on normal cadence unless legal or safety obligations require accelerated retraining.
+4. Model cards and dataset cards should document exclusions, cohort coverage, and known blind spots.
