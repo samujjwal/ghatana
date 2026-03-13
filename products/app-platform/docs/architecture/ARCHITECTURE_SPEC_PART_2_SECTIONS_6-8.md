@@ -40,7 +40,7 @@ Execution baseline:
 - Reuse Ghatana `shared-services/ai-inference-service` for inference gateway patterns
 - Reuse Ghatana `shared-services/feature-store-ingest` for event-to-feature ingestion
 - Reuse Ghatana `platform/java/ai-integration` for shared Java AI integration
-- Keep Siddhanta production policy constraints from [ADR-005_AI_AGENT_ARCHITECTURE.md](ADR-005_AI_AGENT_ARCHITECTURE.md), especially local-only production LLM inference
+- Keep Siddhanta production policy constraints from [../adr/ADR-005_AI_AGENT_ARCHITECTURE.md](../adr/ADR-005_AI_AGENT_ARCHITECTURE.md), especially local-only production LLM inference
 
 ### 6.2 AI Use Cases in Project Siddhanta
 

@@ -7,7 +7,7 @@
 
 Version: 1.0.1 | Status: Strategic & Tactical Reference | Date: March 10, 2026
 
-Shared terminology and policy baseline: [Documentation_Glossary_and_Policy_Appendix.md](../archive/Documentation_Glossary_and_Policy_Appendix.md)
+Shared terminology and policy baseline: [Documentation_Glossary_and_Policy_Appendix.md](archive/Documentation_Glossary_and_Policy_Appendix.md)
 Shared authoritative source register: [Authoritative_Source_Register.md](Authoritative_Source_Register.md)
 Reference style for time-sensitive external facts: `ASR-*` IDs from the shared source register.
 Legal-claim traceability: [Legal_Claim_Citation_Appendix.md](Legal_Claim_Citation_Appendix.md)
@@ -24,7 +24,7 @@ Reference style for legal / regulatory claims: `LCA-*` IDs from the legal append
 > - Every **legal / regulatory** claim MUST be mapped to an `LCA-*` entry in **Legal_Claim_Citation_Appendix.md**.
 > - Where a primary source is not yet attached or clause extraction is pending, the claim MUST be tagged **[VERIFY]** and listed in **Appendix A: Source Validation Ledger** with the missing authority needed.
 >
-> **Implementation stack authority:** For current technology choices, use [../adr/ADR-011_STACK_STANDARDIZATION_AND_GHATANA_PLATFORM_ALIGNMENT.md](../adr/ADR-011_STACK_STANDARDIZATION_AND_GHATANA_PLATFORM_ALIGNMENT.md). This strategy document may discuss broader options, but ADR-011 defines the actual implementation baseline.
+> **Implementation stack authority:** For current technology choices, use [adr/ADR-011_STACK_STANDARDIZATION_AND_GHATANA_PLATFORM_ALIGNMENT.md](adr/ADR-011_STACK_STANDARDIZATION_AND_GHATANA_PLATFORM_ALIGNMENT.md). This strategy document may discuss broader options, but ADR-011 defines the actual implementation baseline.
 
 ---
 

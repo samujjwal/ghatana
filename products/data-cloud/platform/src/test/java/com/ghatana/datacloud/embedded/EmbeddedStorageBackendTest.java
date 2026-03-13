@@ -8,6 +8,7 @@ package com.ghatana.datacloud.embedded;
 import com.ghatana.datacloud.embedded.EmbeddableDataCloud.EmbeddedEventStream;
 import com.ghatana.datacloud.embedded.EmbeddableDataCloud.EmbeddedStore;
 import com.ghatana.datacloud.record.Record;
+import com.ghatana.platform.testing.activej.EventloopTestBase;
 import org.junit.jupiter.api.*;
 import org.junit.jupiter.api.io.TempDir;
 
@@ -23,7 +24,7 @@ import static org.assertj.core.api.Assertions.*;
  * <p>Also tests the shared {@link RecordCodec} serialization layer.
  */
 @DisplayName("Embedded Storage Backends")
-class EmbeddedStorageBackendTest {
+class EmbeddedStorageBackendTest extends EventloopTestBase {
 
     @TempDir
     Path tempDir;
@@ -131,9 +132,9 @@ class EmbeddedStorageBackendTest {
         @DisplayName("put and get round-trip")
         void putAndGet() {
             Record entity = sampleEntity();
-            store.put("key-1", entity).getResult();
+            runPromise(() -> store.put("key-1", entity));
 
-            Optional<Record> found = store.get("key-1").getResult();
+            Optional<Record> found = runPromise(() -> store.get("key-1"));
             assertThat(found).isPresent();
             assertThat(found.get().id()).isEqualTo(entity.id());
             assertThat(found.get().tenantId()).isEqualTo("tenant-1");
@@ -143,57 +144,57 @@ class EmbeddedStorageBackendTest {
         @Test
         @DisplayName("get returns empty for missing key")
         void getMissing() {
-            assertThat(store.get("missing").getResult()).isEmpty();
+            assertThat(runPromise(() -> store.get("missing"))).isEmpty();
         }
 
         @Test
         @DisplayName("put overwrites existing key")
         void putOverwrite() {
-            store.put("key-1", sampleEntity()).getResult();
-            store.put("key-1", sampleEvent()).getResult();
+            runPromise(() -> store.put("key-1", sampleEntity()));
+            runPromise(() -> store.put("key-1", sampleEvent()));
 
-            Record found = store.get("key-1").getResult().orElseThrow();
+            Record found = runPromise(() -> store.get("key-1")).orElseThrow();
             assertThat(found.collectionName()).isEqualTo("clicks");
         }
 
         @Test
         @DisplayName("delete returns true for existing key")
         void deleteExisting() {
-            store.put("key-1", sampleEntity()).getResult();
-            assertThat(store.delete("key-1").getResult()).isTrue();
-            assertThat(store.get("key-1").getResult()).isEmpty();
+            runPromise(() -> store.put("key-1", sampleEntity()));
+            assertThat(runPromise(() -> store.delete("key-1"))).isTrue();
+            assertThat(runPromise(() -> store.get("key-1"))).isEmpty();
         }
 
         @Test
         @DisplayName("delete returns false for missing key")
         void deleteMissing() {
-            assertThat(store.delete("missing").getResult()).isFalse();
+            assertThat(runPromise(() -> store.delete("missing"))).isFalse();
         }
 
         @Test
         @DisplayName("exists checks correctly")
         void existsCheck() {
-            assertThat(store.exists("key-1").getResult()).isFalse();
-            store.put("key-1", sampleEntity()).getResult();
-            assertThat(store.exists("key-1").getResult()).isTrue();
+            assertThat(runPromise(() -> store.exists("key-1"))).isFalse();
+            runPromise(() -> store.put("key-1", sampleEntity()));
+            assertThat(runPromise(() -> store.exists("key-1"))).isTrue();
         }
 
         @Test
         @DisplayName("count tracks records")
         void countTracks() {
-            assertThat(store.count().getResult()).isZero();
-            store.put("k1", sampleEntity()).getResult();
-            store.put("k2", sampleEvent()).getResult();
-            assertThat(store.count().getResult()).isEqualTo(2);
+            assertThat(runPromise(() -> store.count())).isZero();
+            runPromise(() -> store.put("k1", sampleEntity()));
+            runPromise(() -> store.put("k2", sampleEvent()));
+            assertThat(runPromise(() -> store.count())).isEqualTo(2);
         }
 
         @Test
         @DisplayName("clear removes all records")
         void clearAll() {
-            store.put("k1", sampleEntity()).getResult();
-            store.put("k2", sampleEvent()).getResult();
-            store.clear().getResult();
-            assertThat(store.count().getResult()).isZero();
+            runPromise(() -> store.put("k1", sampleEntity()));
+            runPromise(() -> store.put("k2", sampleEvent()));
+            runPromise(() -> store.clear());
+            assertThat(runPromise(() -> store.count())).isZero();
         }
     }
 
@@ -222,8 +223,8 @@ class EmbeddedStorageBackendTest {
         @Test
         @DisplayName("put and get round-trip")
         void putAndGet() {
-            store.put("r-1", sampleEntity()).getResult();
-            Optional<Record> found = store.get("r-1").getResult();
+            runPromise(() -> store.put("r-1", sampleEntity()));
+            Optional<Record> found = runPromise(() -> store.get("r-1"));
             assertThat(found).isPresent();
             assertThat(found.get().id()).isEqualTo(sampleEntity().id());
         }
@@ -231,39 +232,39 @@ class EmbeddedStorageBackendTest {
         @Test
         @DisplayName("get returns empty for missing key")
         void getMissing() {
-            assertThat(store.get("absent").getResult()).isEmpty();
+            assertThat(runPromise(() -> store.get("absent"))).isEmpty();
         }
 
         @Test
         @DisplayName("delete removes record")
         void deleteRemoves() {
-            store.put("r-1", sampleEntity()).getResult();
-            assertThat(store.delete("r-1").getResult()).isTrue();
-            assertThat(store.get("r-1").getResult()).isEmpty();
+            runPromise(() -> store.put("r-1", sampleEntity()));
+            assertThat(runPromise(() -> store.delete("r-1"))).isTrue();
+            assertThat(runPromise(() -> store.get("r-1"))).isEmpty();
         }
 
         @Test
         @DisplayName("delete returns false for missing")
         void deleteFalse() {
-            assertThat(store.delete("absent").getResult()).isFalse();
+            assertThat(runPromise(() -> store.delete("absent"))).isFalse();
         }
 
         @Test
         @DisplayName("exists checks correctly")
         void existsCheck() {
-            assertThat(store.exists("r-1").getResult()).isFalse();
-            store.put("r-1", sampleEntity()).getResult();
-            assertThat(store.exists("r-1").getResult()).isTrue();
+            assertThat(runPromise(() -> store.exists("r-1"))).isFalse();
+            runPromise(() -> store.put("r-1", sampleEntity()));
+            assertThat(runPromise(() -> store.exists("r-1"))).isTrue();
         }
 
         @Test
         @DisplayName("count and clear")
         void countAndClear() {
-            store.put("a", sampleEntity()).getResult();
-            store.put("b", sampleEvent()).getResult();
-            assertThat(store.count().getResult()).isEqualTo(2);
-            store.clear().getResult();
-            assertThat(store.count().getResult()).isZero();
+            runPromise(() -> store.put("a", sampleEntity()));
+            runPromise(() -> store.put("b", sampleEvent()));
+            assertThat(runPromise(() -> store.count())).isEqualTo(2);
+            runPromise(() -> store.clear());
+            assertThat(runPromise(() -> store.count())).isZero();
         }
 
         @Test
@@ -300,8 +301,8 @@ class EmbeddedStorageBackendTest {
         @Test
         @DisplayName("put and get round-trip")
         void putAndGet() {
-            store.put("s-1", sampleEntity()).getResult();
-            Optional<Record> found = store.get("s-1").getResult();
+            runPromise(() -> store.put("s-1", sampleEntity()));
+            Optional<Record> found = runPromise(() -> store.get("s-1"));
             assertThat(found).isPresent();
             assertThat(found.get().id()).isEqualTo(sampleEntity().id());
             assertThat(found.get().data()).containsEntry("name", "Alice");
@@ -310,27 +311,27 @@ class EmbeddedStorageBackendTest {
         @Test
         @DisplayName("get returns empty for missing key")
         void getMissing() {
-            assertThat(store.get("absent").getResult()).isEmpty();
+            assertThat(runPromise(() -> store.get("absent"))).isEmpty();
         }
 
         @Test
         @DisplayName("delete removes record")
         void deleteRemoves() {
-            store.put("s-1", sampleEntity()).getResult();
-            assertThat(store.delete("s-1").getResult()).isTrue();
-            assertThat(store.get("s-1").getResult()).isEmpty();
+            runPromise(() -> store.put("s-1", sampleEntity()));
+            assertThat(runPromise(() -> store.delete("s-1"))).isTrue();
+            assertThat(runPromise(() -> store.get("s-1"))).isEmpty();
         }
 
         @Test
         @DisplayName("exists, count, clear")
         void existsCountClear() {
-            assertThat(store.exists("s-1").getResult()).isFalse();
-            store.put("s-1", sampleEntity()).getResult();
-            store.put("s-2", sampleEvent()).getResult();
-            assertThat(store.exists("s-1").getResult()).isTrue();
-            assertThat(store.count().getResult()).isEqualTo(2);
-            store.clear().getResult();
-            assertThat(store.count().getResult()).isZero();
+            assertThat(runPromise(() -> store.exists("s-1"))).isFalse();
+            runPromise(() -> store.put("s-1", sampleEntity()));
+            runPromise(() -> store.put("s-2", sampleEvent()));
+            assertThat(runPromise(() -> store.exists("s-1"))).isTrue();
+            assertThat(runPromise(() -> store.count())).isEqualTo(2);
+            runPromise(() -> store.clear());
+            assertThat(runPromise(() -> store.count())).isZero();
         }
     }
 

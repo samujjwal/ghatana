@@ -42,8 +42,10 @@ export interface PipelineToolbarProps {
   onUndo: () => void;
   onRedo: () => void;
   onNew: () => void;
+  onRunNow?: () => void;
   saving?: boolean;
   validating?: boolean;
+  running?: boolean;
 }
 
 export function PipelineToolbar({
@@ -53,8 +55,10 @@ export function PipelineToolbar({
   onUndo,
   onRedo,
   onNew,
+  onRunNow,
   saving = false,
   validating = false,
+  running = false,
 }: PipelineToolbarProps) {
   const [pipeline] = useAtom(pipelineAtom);
   const dirty = useAtomValue(isDirtyAtom);
@@ -145,6 +149,19 @@ export function PipelineToolbar({
       >
         {saving ? 'Saving…' : 'Save'}
       </button>
+
+      {/* Run Now */}
+      {onRunNow && (
+        <button
+          onClick={onRunNow}
+          disabled={running}
+          className="px-3 py-1 text-xs font-medium rounded bg-green-600 text-white
+                     hover:bg-green-700 disabled:opacity-40 transition-colors"
+          data-testid="btn-run-now"
+        >
+          {running ? 'Running…' : '▶ Run'}
+        </button>
+      )}
 
       {/* Export */}
       <button

@@ -34,7 +34,9 @@ dependencies {
     api(project(":platform:java:database"))
     api(project(":platform:java:http"))
     api(project(":platform:java:config"))
-    
+    api(project(":platform:contracts"))            // Generated gRPC stubs (EventServiceGrpc, etc.)
+    api(project(":platform:java:schema-registry"))  // SchemaRegistry, ValidationResult
+
     // =========================================================================
     // ACTIVEJ (Async Runtime)
     // =========================================================================

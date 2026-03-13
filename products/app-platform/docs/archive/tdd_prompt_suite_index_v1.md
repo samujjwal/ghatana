@@ -1,9 +1,9 @@
 # Siddhanta TDD Prompt Suite Index
 
-This index organizes the specialized TDD prompts according to the current execution plan and implementation order in [../CURRENT_EXECUTION_PLAN.md](../CURRENT_EXECUTION_PLAN.md).
+This index organizes the specialized TDD prompts according to the current execution plan and implementation order in [../CURRENT_EXECUTION_PLAN.md](plans/CURRENT_EXECUTION_PLAN.md).
 
 Use the base prompt first:
-- [tdd_test_spec_generation_prompt_v1.md](tdd_test_spec_generation_prompt_v1.md)
+- [tdd_test_spec_generation_prompt_v1.md](../tdd_test_spec_generation_prompt_v1.md)
 
 Then apply the specialized prompt that matches the current implementation wave.
 
@@ -43,9 +43,9 @@ Then apply the specialized prompt that matches the current implementation wave.
 ## Authority Order
 
 All prompts in this suite assume the following source precedence:
-1. [../ADR-011_STACK_STANDARDIZATION_AND_GHATANA_PLATFORM_ALIGNMENT.md](../ADR-011_STACK_STANDARDIZATION_AND_GHATANA_PLATFORM_ALIGNMENT.md)
+1. [../ADR-011_STACK_STANDARDIZATION_AND_GHATANA_PLATFORM_ALIGNMENT.md](../adr/ADR-011_STACK_STANDARDIZATION_AND_GHATANA_PLATFORM_ALIGNMENT.md)
 2. Current accepted ADRs
-3. [../CURRENT_EXECUTION_PLAN.md](../CURRENT_EXECUTION_PLAN.md)
+3. [../CURRENT_EXECUTION_PLAN.md](plans/CURRENT_EXECUTION_PLAN.md)
 4. Relevant LLDs
 5. Relevant epics and stories
 6. Architecture and C4 docs

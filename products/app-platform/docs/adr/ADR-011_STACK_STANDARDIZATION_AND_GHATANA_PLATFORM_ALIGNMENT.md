@@ -14,22 +14,22 @@ The program also needs a single implementation baseline that is consistent with 
 
 Primary alignment sources:
 
-- [CURRENT_EXECUTION_PLAN.md](CURRENT_EXECUTION_PLAN.md)
+- [../UNIFIED_IMPLEMENTATION_PLAN.md](../UNIFIED_IMPLEMENTATION_PLAN.md)
 - [ADR-005_AI_AGENT_ARCHITECTURE.md](ADR-005_AI_AGENT_ARCHITECTURE.md)
 - [ADR-007_DATABASE_TECHNOLOGY.md](ADR-007_DATABASE_TECHNOLOGY.md)
 - [ADR-008_API_GATEWAY_TECHNOLOGY.md](ADR-008_API_GATEWAY_TECHNOLOGY.md)
 - [ADR-009_EVENT_BUS_TECHNOLOGY.md](ADR-009_EVENT_BUS_TECHNOLOGY.md)
 - [ADR-010_CONTAINER_ORCHESTRATION.md](ADR-010_CONTAINER_ORCHESTRATION.md)
-- [/home/samujjwal/Developments/ghatana/.github/copilot-instructions.md](/home/samujjwal/Developments/ghatana/.github/copilot-instructions.md)
-- [../ghatana/products/aep/platform/build.gradle.kts](../ghatana/products/aep/platform/build.gradle.kts)
-- [../ghatana/platform/java/event-cloud/build.gradle.kts](../ghatana/platform/java/event-cloud/build.gradle.kts)
-- [../ghatana/platform/java/workflow/build.gradle.kts](../ghatana/platform/java/workflow/build.gradle.kts)
-- [../ghatana/products/data-cloud/platform/build.gradle.kts](../ghatana/products/data-cloud/platform/build.gradle.kts)
-- [../ghatana/products/data-cloud/spi/build.gradle.kts](../ghatana/products/data-cloud/spi/build.gradle.kts)
-- [../ghatana/platform/java/ai-integration/README.md](../ghatana/platform/java/ai-integration/README.md)
-- [../ghatana/shared-services/ai-registry/README.md](../ghatana/shared-services/ai-registry/README.md)
-- [../ghatana/shared-services/ai-inference-service/README.md](../ghatana/shared-services/ai-inference-service/README.md)
-- [../ghatana/shared-services/feature-store-ingest/README.md](../ghatana/shared-services/feature-store-ingest/README.md)
+- [../../../../.github/copilot-instructions.md](../../../../.github/copilot-instructions.md)
+- [../../../aep/platform/build.gradle.kts](../../../aep/platform/build.gradle.kts)
+- [../../../../platform/java/event-cloud/build.gradle.kts](../../../../platform/java/event-cloud/build.gradle.kts)
+- [../../../../platform/java/workflow/build.gradle.kts](../../../../platform/java/workflow/build.gradle.kts)
+- [../../../data-cloud/platform/build.gradle.kts](../../../data-cloud/platform/build.gradle.kts)
+- [../../../data-cloud/spi/build.gradle.kts](../../../data-cloud/spi/build.gradle.kts)
+- [../../../../platform/java/ai-integration/README.md](../../../../platform/java/ai-integration/README.md)
+- [../../../../shared-services/ai-registry/README.md](../../../../shared-services/ai-registry/README.md)
+- [../../../../shared-services/ai-inference-service/README.md](../../../../shared-services/ai-inference-service/README.md)
+- [../../../../shared-services/feature-store-ingest/README.md](../../../../shared-services/feature-store-ingest/README.md)
 
 ---
 
@@ -40,8 +40,8 @@ Primary alignment sources:
 For stack and implementation-baseline questions, documents must be interpreted in this order:
 
 1. This ADR
-2. Current accepted finance ADRs and [CURRENT_EXECUTION_PLAN.md](CURRENT_EXECUTION_PLAN.md)
-3. Ghatana engineering standard in [/home/samujjwal/Developments/ghatana/.github/copilot-instructions.md](/home/samujjwal/Developments/ghatana/.github/copilot-instructions.md)
+2. Current accepted finance ADRs and [../UNIFIED_IMPLEMENTATION_PLAN.md](../UNIFIED_IMPLEMENTATION_PLAN.md)
+3. Ghatana engineering standard in [../../../../.github/copilot-instructions.md](../../../../.github/copilot-instructions.md)
 4. Older C4, architecture, and research documents as historical context only
 
 If an older document conflicts with this ADR, this ADR wins.
@@ -85,10 +85,10 @@ If an older document conflicts with this ADR, this ADR wins.
 
 AppPlatform will reuse Ghatana AI platform products instead of inventing separate infrastructure:
 
-- Model registry: [../ghatana/shared-services/ai-registry/README.md](../ghatana/shared-services/ai-registry/README.md)
-- Inference gateway and serving baseline: [../ghatana/shared-services/ai-inference-service/README.md](../ghatana/shared-services/ai-inference-service/README.md)
-- Feature ingestion: [../ghatana/shared-services/feature-store-ingest/README.md](../ghatana/shared-services/feature-store-ingest/README.md)
-- Shared AI integration library: [../ghatana/platform/java/ai-integration/README.md](../ghatana/platform/java/ai-integration/README.md)
+- Model registry: [../../../../shared-services/ai-registry/README.md](../../../../shared-services/ai-registry/README.md)
+- Inference gateway and serving baseline: [../../../../shared-services/ai-inference-service/README.md](../../../../shared-services/ai-inference-service/README.md)
+- Feature ingestion: [../../../../shared-services/feature-store-ingest/README.md](../../../../shared-services/feature-store-ingest/README.md)
+- Shared AI integration library: [../../../../platform/java/ai-integration/README.md](../../../../platform/java/ai-integration/README.md)
 
 These products must be used under AppPlatform's production policy constraints from [ADR-005_AI_AGENT_ARCHITECTURE.md](ADR-005_AI_AGENT_ARCHITECTURE.md), especially local-only production LLM inference and auditable AI decisions.
 
@@ -96,8 +96,8 @@ These products must be used under AppPlatform's production policy constraints fr
 
 AppPlatform will standardize event processing on the Ghatana event stack:
 
-- Event orchestration platform: [../ghatana/products/aep/platform/build.gradle.kts](../ghatana/products/aep/platform/build.gradle.kts)
-- Event runtime/client abstraction: [../ghatana/platform/java/event-cloud/build.gradle.kts](../ghatana/platform/java/event-cloud/build.gradle.kts)
+- Event orchestration platform: [../../../aep/platform/build.gradle.kts](../../../aep/platform/build.gradle.kts)
+- Event runtime/client abstraction: [../../../../platform/java/event-cloud/build.gradle.kts](../../../../platform/java/event-cloud/build.gradle.kts)
 
 Kafka remains the canonical event backbone. AppPlatform should integrate through Ghatana event abstractions rather than building a second custom event runtime beside them.
 
@@ -105,8 +105,8 @@ Kafka remains the canonical event backbone. AppPlatform should integrate through
 
 AppPlatform will use Ghatana workflow components:
 
-- Workflow runtime: [../ghatana/platform/java/workflow/build.gradle.kts](../ghatana/platform/java/workflow/build.gradle.kts)
-- Cross-service orchestration support: [../ghatana/products/aep/platform/build.gradle.kts](../ghatana/products/aep/platform/build.gradle.kts)
+- Workflow runtime: [../../../../platform/java/workflow/build.gradle.kts](../../../../platform/java/workflow/build.gradle.kts)
+- Cross-service orchestration support: [../../../aep/platform/build.gradle.kts](../../../aep/platform/build.gradle.kts)
 
 Camunda and Temporal are not part of the baseline stack. Introducing either requires a new ADR.
 
@@ -114,10 +114,10 @@ Camunda and Temporal are not part of the baseline stack. Introducing either requ
 
 AppPlatform will use Ghatana Data Cloud abstractions for shared data-governance and storage integration concerns:
 
-- Data Cloud platform: [../ghatana/products/data-cloud/platform/build.gradle.kts](../ghatana/products/data-cloud/platform/build.gradle.kts)
-- Data Cloud SPI: [../ghatana/products/data-cloud/spi/build.gradle.kts](../ghatana/products/data-cloud/spi/build.gradle.kts)
+- Data Cloud platform: [../../../data-cloud/platform/build.gradle.kts](../../../data-cloud/platform/build.gradle.kts)
+- Data Cloud SPI: [../../../data-cloud/spi/build.gradle.kts](../../../data-cloud/spi/build.gradle.kts)
 
-This does not change the primary persistence baseline: PostgreSQL, TimescaleDB, Redis, Elasticsearch, MinIO/S3, and pgvector remain the standard stores. Data Cloud is the shared abstraction and governance layer above them.
+This does not change the primary persistence baseline: PostgreSQL, TimescaleDB, Redis, OpenSearch, Ceph/S3-compatible object storage, and pgvector remain the standard stores. Data Cloud is the shared abstraction and governance layer above them.
 
 ### 5. Explicit Baseline Exclusions
 

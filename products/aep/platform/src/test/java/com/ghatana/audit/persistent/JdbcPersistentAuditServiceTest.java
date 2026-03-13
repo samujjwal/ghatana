@@ -21,6 +21,7 @@ import java.util.logging.Logger;
 import java.util.stream.IntStream;
 
 import static org.assertj.core.api.Assertions.*;
+import com.ghatana.platform.testing.activej.EventloopTestBase;
 
 /**
  * Integration tests for {@link JdbcPersistentAuditService} — the persistent
@@ -47,7 +48,7 @@ import static org.assertj.core.api.Assertions.*;
  * </ul>
  */
 @TestMethodOrder(OrderAnnotation.class)
-class JdbcPersistentAuditServiceTest {
+class JdbcPersistentAuditServiceTest extends EventloopTestBase {
 
     private static SimpleDataSource dataSource;
     private JdbcPersistentAuditService service;
@@ -119,9 +120,9 @@ class JdbcPersistentAuditServiceTest {
                     "AGENT", "agent-1", true,
                     Map.of("action", "CREATE", "source", "api", "ipAddress", "10.0.0.1"));
 
-            service.record(event).getResult();
+            runPromise(() -> service.record(event));
 
-            List<AuditEvent> events = service.findByTenantId("t1").getResult();
+            List<AuditEvent> events = runPromise(() -> service.findByTenantId("t1"));
             assertThat(events).hasSize(1);
             AuditEvent stored = events.getFirst();
             assertThat(stored.getEventType()).isEqualTo("AGENT_CREATED");
@@ -135,7 +136,7 @@ class JdbcPersistentAuditServiceTest {
         @Test
         @DisplayName("record() auto-derives action from eventType")
         void recordDerivesAction() throws SQLException {
-            service.record(auditEvent("t1", "PIPELINE_EXECUTED", "user@co", "PIPELINE", "p-1", true, Map.of())).getResult();
+            runPromise(() -> service.record(auditEvent("t1", "PIPELINE_EXECUTED", "user@co", "PIPELINE", "p-1", true, Map.of())));
 
             try (Connection conn = dataSource.getConnection();
                  Statement stmt = conn.createStatement();
@@ -152,8 +153,8 @@ class JdbcPersistentAuditServiceTest {
                     .tenantId("t1").eventType("TEST_EVENT")
                     .timestamp(Instant.now()).success(true).build();
 
-            assertThatCode(() -> service.record(event).getResult()).doesNotThrowAnyException();
-            assertThat(service.countByTenantId("t1").getResult()).isEqualTo(1L);
+            assertThatCode(() -> runPromise(() -> service.record(event))).doesNotThrowAnyException();
+            assertThat(runPromise(() -> service.countByTenantId("t1"))).isEqualTo(1L);
         }
 
         @Test
@@ -163,9 +164,9 @@ class JdbcPersistentAuditServiceTest {
                     "action", "CREATE", "reason", "auto-provisioned",
                     "count", 42, "tags", List.of("prod", "critical"));
 
-            service.record(auditEvent("t1", "CONFIG_CHANGE", "sys", "CONFIG", "c-1", true, details)).getResult();
+            runPromise(() -> service.record(auditEvent("t1", "CONFIG_CHANGE", "sys", "CONFIG", "c-1", true, details)));
 
-            AuditEvent stored = service.findByTenantId("t1").getResult().getFirst();
+            AuditEvent stored = runPromise(() -> service.findByTenantId("t1")).getFirst();
             assertThat(stored.getDetails()).containsEntry("reason", "auto-provisioned");
         }
 
@@ -173,9 +174,9 @@ class JdbcPersistentAuditServiceTest {
         @DisplayName("multiple records are append-only")
         void multipleRecordsAppendOnly() {
             for (int i = 0; i < 5; i++) {
-                service.record(auditEvent("t1", "EVENT_" + i, "user", "RES", "r-" + i, true, Map.of("action", "CREATE"))).getResult();
+                runPromise(() -> service.record(auditEvent("t1", "EVENT_" + i, "user", "RES", "r-" + i, true, Map.of("action", "CREATE"))));
             }
-            assertThat(service.countByTenantId("t1").getResult()).isEqualTo(5L);
+            assertThat(runPromise(() -> service.countByTenantId("t1"))).isEqualTo(5L);
         }
     }
 
@@ -193,14 +194,14 @@ class JdbcPersistentAuditServiceTest {
             seedEvents("t1", 10);
             seedEvents("t2", 5);
 
-            assertThat(service.findByTenantId("t1").getResult()).hasSize(10);
-            assertThat(service.findByTenantId("t2").getResult()).hasSize(5);
+            assertThat(runPromise(() -> service.findByTenantId("t1"))).hasSize(10);
+            assertThat(runPromise(() -> service.findByTenantId("t2"))).hasSize(5);
         }
 
         @Test
         @DisplayName("findByTenantId returns empty for unknown tenant")
         void findEmptyForUnknownTenant() {
-            assertThat(service.findByTenantId("nonexistent").getResult()).isEmpty();
+            assertThat(runPromise(() -> service.findByTenantId("nonexistent"))).isEmpty();
         }
 
         @Test
@@ -208,9 +209,9 @@ class JdbcPersistentAuditServiceTest {
         void findPaginated() {
             seedEvents("t1", 20);
 
-            List<AuditEvent> page1 = service.findByTenantId("t1", 0, 5).getResult();
-            List<AuditEvent> page2 = service.findByTenantId("t1", 5, 5).getResult();
-            List<AuditEvent> page5 = service.findByTenantId("t1", 20, 5).getResult();
+            List<AuditEvent> page1 = runPromise(() -> service.findByTenantId("t1", 0, 5));
+            List<AuditEvent> page2 = runPromise(() -> service.findByTenantId("t1", 5, 5));
+            List<AuditEvent> page5 = runPromise(() -> service.findByTenantId("t1", 20, 5));
 
             assertThat(page1).hasSize(5);
             assertThat(page2).hasSize(5);
@@ -229,11 +230,11 @@ class JdbcPersistentAuditServiceTest {
         @Test
         @DisplayName("findByResource returns matching events")
         void findByResource() {
-            service.record(auditEvent("t1", "CREATED", "u", "AGENT", "a-1", true, Map.of("action", "CREATE"))).getResult();
-            service.record(auditEvent("t1", "UPDATED", "u", "AGENT", "a-1", true, Map.of("action", "UPDATE"))).getResult();
-            service.record(auditEvent("t1", "CREATED", "u", "PIPELINE", "p-1", true, Map.of("action", "CREATE"))).getResult();
+            runPromise(() -> service.record(auditEvent("t1", "CREATED", "u", "AGENT", "a-1", true, Map.of("action", "CREATE"))));
+            runPromise(() -> service.record(auditEvent("t1", "UPDATED", "u", "AGENT", "a-1", true, Map.of("action", "UPDATE"))));
+            runPromise(() -> service.record(auditEvent("t1", "CREATED", "u", "PIPELINE", "p-1", true, Map.of("action", "CREATE"))));
 
-            List<AuditEvent> agentEvents = service.findByResource("t1", "AGENT", "a-1").getResult();
+            List<AuditEvent> agentEvents = runPromise(() -> service.findByResource("t1", "AGENT", "a-1"));
             assertThat(agentEvents).hasSize(2);
             assertThat(agentEvents).allMatch(e -> "AGENT".equals(e.getResourceType()));
         }
@@ -241,7 +242,7 @@ class JdbcPersistentAuditServiceTest {
         @Test
         @DisplayName("findByResource returns empty for no match")
         void findByResourceEmpty() {
-            assertThat(service.findByResource("t1", "AGENT", "nonexistent").getResult()).isEmpty();
+            assertThat(runPromise(() -> service.findByResource("t1", "AGENT", "nonexistent"))).isEmpty();
         }
     }
 
@@ -256,11 +257,11 @@ class JdbcPersistentAuditServiceTest {
         @Test
         @DisplayName("findByPrincipal returns events for specific actor")
         void findByPrincipal() {
-            service.record(auditEvent("t1", "LOGIN", "alice@co", null, null, true, Map.of("action", "LOGIN"))).getResult();
-            service.record(auditEvent("t1", "LOGIN", "bob@co", null, null, true, Map.of("action", "LOGIN"))).getResult();
-            service.record(auditEvent("t1", "LOGOUT", "alice@co", null, null, true, Map.of("action", "LOGOUT"))).getResult();
+            runPromise(() -> service.record(auditEvent("t1", "LOGIN", "alice@co", null, null, true, Map.of("action", "LOGIN"))));
+            runPromise(() -> service.record(auditEvent("t1", "LOGIN", "bob@co", null, null, true, Map.of("action", "LOGIN"))));
+            runPromise(() -> service.record(auditEvent("t1", "LOGOUT", "alice@co", null, null, true, Map.of("action", "LOGOUT"))));
 
-            List<AuditEvent> aliceEvents = service.findByPrincipal("t1", "alice@co").getResult();
+            List<AuditEvent> aliceEvents = runPromise(() -> service.findByPrincipal("t1", "alice@co"));
             assertThat(aliceEvents).hasSize(2);
             assertThat(aliceEvents).allMatch(e -> "alice@co".equals(e.getPrincipal()));
         }
@@ -277,12 +278,12 @@ class JdbcPersistentAuditServiceTest {
         @Test
         @DisplayName("findByEventType filters correctly")
         void findByEventType() {
-            service.record(auditEvent("t1", "USER_LOGIN", "u", null, null, true, Map.of("action", "LOGIN"))).getResult();
-            service.record(auditEvent("t1", "DATA_ACCESS", "u", "TABLE", "t-1", true, Map.of("action", "READ"))).getResult();
-            service.record(auditEvent("t1", "USER_LOGIN", "u2", null, null, true, Map.of("action", "LOGIN"))).getResult();
+            runPromise(() -> service.record(auditEvent("t1", "USER_LOGIN", "u", null, null, true, Map.of("action", "LOGIN"))));
+            runPromise(() -> service.record(auditEvent("t1", "DATA_ACCESS", "u", "TABLE", "t-1", true, Map.of("action", "READ"))));
+            runPromise(() -> service.record(auditEvent("t1", "USER_LOGIN", "u2", null, null, true, Map.of("action", "LOGIN"))));
 
-            assertThat(service.findByEventType("t1", "USER_LOGIN").getResult()).hasSize(2);
-            assertThat(service.findByEventType("t1", "DATA_ACCESS").getResult()).hasSize(1);
+            assertThat(runPromise(() -> service.findByEventType("t1", "USER_LOGIN"))).hasSize(2);
+            assertThat(runPromise(() -> service.findByEventType("t1", "DATA_ACCESS"))).hasSize(1);
         }
     }
 
@@ -302,11 +303,11 @@ class JdbcPersistentAuditServiceTest {
             Instant twoDaysAgo = now.minus(2, ChronoUnit.DAYS);
             Instant threeDaysAgo = now.minus(3, ChronoUnit.DAYS);
 
-            service.record(auditEventAt("t1", "OLD", threeDaysAgo, Map.of("action", "CREATE"))).getResult();
-            service.record(auditEventAt("t1", "RECENT", yesterday, Map.of("action", "CREATE"))).getResult();
-            service.record(auditEventAt("t1", "NOW", now, Map.of("action", "CREATE"))).getResult();
+            runPromise(() -> service.record(auditEventAt("t1", "OLD", threeDaysAgo, Map.of("action", "CREATE"))));
+            runPromise(() -> service.record(auditEventAt("t1", "RECENT", yesterday, Map.of("action", "CREATE"))));
+            runPromise(() -> service.record(auditEventAt("t1", "NOW", now, Map.of("action", "CREATE"))));
 
-            List<AuditEvent> recent = service.findByTimeRange("t1", twoDaysAgo, now).getResult();
+            List<AuditEvent> recent = runPromise(() -> service.findByTimeRange("t1", twoDaysAgo, now));
             assertThat(recent).hasSize(2);
             assertThat(recent).extracting(AuditEvent::getEventType).containsExactlyInAnyOrder("RECENT", "NOW");
         }
@@ -323,12 +324,12 @@ class JdbcPersistentAuditServiceTest {
         @Test
         @DisplayName("findById returns matching event")
         void findById() {
-            service.record(auditEvent("t1", "TEST", "u", "X", "x-1", true, Map.of("action", "CREATE"))).getResult();
+            runPromise(() -> service.record(auditEvent("t1", "TEST", "u", "X", "x-1", true, Map.of("action", "CREATE"))));
 
-            List<AuditEvent> all = service.findByTenantId("t1").getResult();
+            List<AuditEvent> all = runPromise(() -> service.findByTenantId("t1"));
             String id = all.getFirst().getId();
 
-            Optional<AuditEvent> found = service.findById("t1", id).getResult();
+            Optional<AuditEvent> found = runPromise(() -> service.findById("t1", id));
             assertThat(found).isPresent();
             assertThat(found.get().getEventType()).isEqualTo("TEST");
         }
@@ -336,11 +337,11 @@ class JdbcPersistentAuditServiceTest {
         @Test
         @DisplayName("findById returns empty for wrong tenant")
         void findByIdWrongTenant() {
-            service.record(auditEvent("t1", "TEST", "u", "X", "x-1", true, Map.of("action", "CREATE"))).getResult();
-            String id = service.findByTenantId("t1").getResult().getFirst().getId();
+            runPromise(() -> service.record(auditEvent("t1", "TEST", "u", "X", "x-1", true, Map.of("action", "CREATE"))));
+            String id = runPromise(() -> service.findByTenantId("t1")).getFirst().getId();
 
             // Query with different tenant
-            Optional<AuditEvent> found = service.findById("t2", id).getResult();
+            Optional<AuditEvent> found = runPromise(() -> service.findById("t2", id));
             assertThat(found).isEmpty();
         }
     }
@@ -359,9 +360,9 @@ class JdbcPersistentAuditServiceTest {
             seedEvents("t1", 15);
             seedEvents("t2", 3);
 
-            assertThat(service.countByTenantId("t1").getResult()).isEqualTo(15L);
-            assertThat(service.countByTenantId("t2").getResult()).isEqualTo(3L);
-            assertThat(service.countByTenantId("empty").getResult()).isEqualTo(0L);
+            assertThat(runPromise(() -> service.countByTenantId("t1"))).isEqualTo(15L);
+            assertThat(runPromise(() -> service.countByTenantId("t2"))).isEqualTo(3L);
+            assertThat(runPromise(() -> service.countByTenantId("empty"))).isEqualTo(0L);
         }
     }
 
@@ -377,10 +378,10 @@ class JdbcPersistentAuditServiceTest {
         @DisplayName("search with all criteria")
         void searchAllCriteria() {
             Instant now = Instant.now();
-            service.record(auditEvent("t1", "AGENT_CREATED", "alice@co", "AGENT", "a-1", true, Map.of("action", "CREATE"))).getResult();
-            service.record(auditEvent("t1", "AGENT_UPDATED", "bob@co", "AGENT", "a-1", true, Map.of("action", "UPDATE"))).getResult();
-            service.record(auditEvent("t1", "PIPELINE_CREATED", "alice@co", "PIPELINE", "p-1", true, Map.of("action", "CREATE"))).getResult();
-            service.record(auditEvent("t1", "AGENT_DELETED", "alice@co", "AGENT", "a-2", false, Map.of("action", "DELETE", "errorMessage", "forbidden"))).getResult();
+            runPromise(() -> service.record(auditEvent("t1", "AGENT_CREATED", "alice@co", "AGENT", "a-1", true, Map.of("action", "CREATE"))));
+            runPromise(() -> service.record(auditEvent("t1", "AGENT_UPDATED", "bob@co", "AGENT", "a-1", true, Map.of("action", "UPDATE"))));
+            runPromise(() -> service.record(auditEvent("t1", "PIPELINE_CREATED", "alice@co", "PIPELINE", "p-1", true, Map.of("action", "CREATE"))));
+            runPromise(() -> service.record(auditEvent("t1", "AGENT_DELETED", "alice@co", "AGENT", "a-2", false, Map.of("action", "DELETE", "errorMessage", "forbidden"))));
 
             // Search for alice's successful AGENT events
             AuditSearchCriteria criteria = AuditSearchCriteria.builder()
@@ -389,7 +390,7 @@ class JdbcPersistentAuditServiceTest {
                     .success(true)
                     .build();
 
-            List<AuditEvent> results = service.search("t1", criteria).getResult();
+            List<AuditEvent> results = runPromise(() -> service.search("t1", criteria));
             assertThat(results).hasSize(1);
             assertThat(results.getFirst().getEventType()).isEqualTo("AGENT_CREATED");
         }
@@ -404,7 +405,7 @@ class JdbcPersistentAuditServiceTest {
                     .limit(5)
                     .build();
 
-            assertThat(service.search("t1", criteria).getResult()).hasSize(5);
+            assertThat(runPromise(() -> service.search("t1", criteria))).hasSize(5);
         }
 
         @Test
@@ -413,15 +414,15 @@ class JdbcPersistentAuditServiceTest {
             Instant now = Instant.now();
             Instant hourAgo = now.minus(1, ChronoUnit.HOURS);
 
-            service.record(auditEventAt("t1", "OLD", now.minus(2, ChronoUnit.HOURS), Map.of("action", "CREATE"))).getResult();
-            service.record(auditEventAt("t1", "RECENT", now.minus(30, ChronoUnit.MINUTES), Map.of("action", "CREATE"))).getResult();
+            runPromise(() -> service.record(auditEventAt("t1", "OLD", now.minus(2, ChronoUnit.HOURS), Map.of("action", "CREATE"))));
+            runPromise(() -> service.record(auditEventAt("t1", "RECENT", now.minus(30, ChronoUnit.MINUTES), Map.of("action", "CREATE"))));
 
             AuditSearchCriteria criteria = AuditSearchCriteria.builder()
                     .fromDate(hourAgo)
                     .toDate(now)
                     .build();
 
-            List<AuditEvent> results = service.search("t1", criteria).getResult();
+            List<AuditEvent> results = runPromise(() -> service.search("t1", criteria));
             assertThat(results).hasSize(1);
             assertThat(results.getFirst().getEventType()).isEqualTo("RECENT");
         }
@@ -435,19 +436,19 @@ class JdbcPersistentAuditServiceTest {
             AuditSearchCriteria page2 = AuditSearchCriteria.builder().offset(7).limit(7).build();
             AuditSearchCriteria page3 = AuditSearchCriteria.builder().offset(14).limit(7).build();
 
-            assertThat(service.search("t1", page1).getResult()).hasSize(7);
-            assertThat(service.search("t1", page2).getResult()).hasSize(7);
-            assertThat(service.search("t1", page3).getResult()).hasSize(6);
+            assertThat(runPromise(() -> service.search("t1", page1))).hasSize(7);
+            assertThat(runPromise(() -> service.search("t1", page2))).hasSize(7);
+            assertThat(runPromise(() -> service.search("t1", page3))).hasSize(6);
         }
 
         @Test
         @DisplayName("search failures only")
         void searchFailuresOnly() {
-            service.record(auditEvent("t1", "OK", "u", "X", "1", true, Map.of("action", "CREATE"))).getResult();
-            service.record(auditEvent("t1", "FAIL", "u", "X", "2", false, Map.of("action", "CREATE", "errorMessage", "boom"))).getResult();
+            runPromise(() -> service.record(auditEvent("t1", "OK", "u", "X", "1", true, Map.of("action", "CREATE"))));
+            runPromise(() -> service.record(auditEvent("t1", "FAIL", "u", "X", "2", false, Map.of("action", "CREATE", "errorMessage", "boom"))));
 
             AuditSearchCriteria criteria = AuditSearchCriteria.builder().success(false).build();
-            List<AuditEvent> failures = service.search("t1", criteria).getResult();
+            List<AuditEvent> failures = runPromise(() -> service.search("t1", criteria));
             assertThat(failures).hasSize(1);
             assertThat(failures.getFirst().getSuccess()).isFalse();
         }
@@ -464,11 +465,11 @@ class JdbcPersistentAuditServiceTest {
         @Test
         @DisplayName("events are completely isolated between tenants")
         void tenantIsolation() {
-            service.record(auditEvent("t1", "SECRET", "admin", "CONFIG", "c-1", true, Map.of("action", "CREATE"))).getResult();
-            service.record(auditEvent("t2", "PUBLIC", "user", "DOC", "d-1", true, Map.of("action", "CREATE"))).getResult();
+            runPromise(() -> service.record(auditEvent("t1", "SECRET", "admin", "CONFIG", "c-1", true, Map.of("action", "CREATE"))));
+            runPromise(() -> service.record(auditEvent("t2", "PUBLIC", "user", "DOC", "d-1", true, Map.of("action", "CREATE"))));
 
-            List<AuditEvent> t1Events = service.findByTenantId("t1").getResult();
-            List<AuditEvent> t2Events = service.findByTenantId("t2").getResult();
+            List<AuditEvent> t1Events = runPromise(() -> service.findByTenantId("t1"));
+            List<AuditEvent> t2Events = runPromise(() -> service.findByTenantId("t2"));
 
             assertThat(t1Events).hasSize(1).allMatch(e -> "SECRET".equals(e.getEventType()));
             assertThat(t2Events).hasSize(1).allMatch(e -> "PUBLIC".equals(e.getEventType()));
@@ -477,11 +478,11 @@ class JdbcPersistentAuditServiceTest {
         @Test
         @DisplayName("findByResource is tenant-scoped")
         void resourceQueryTenantScoped() {
-            service.record(auditEvent("t1", "A", "u", "AGENT", "shared-id", true, Map.of("action", "CREATE"))).getResult();
-            service.record(auditEvent("t2", "B", "u", "AGENT", "shared-id", true, Map.of("action", "CREATE"))).getResult();
+            runPromise(() -> service.record(auditEvent("t1", "A", "u", "AGENT", "shared-id", true, Map.of("action", "CREATE"))));
+            runPromise(() -> service.record(auditEvent("t2", "B", "u", "AGENT", "shared-id", true, Map.of("action", "CREATE"))));
 
-            assertThat(service.findByResource("t1", "AGENT", "shared-id").getResult()).hasSize(1);
-            assertThat(service.findByResource("t2", "AGENT", "shared-id").getResult()).hasSize(1);
+            assertThat(runPromise(() -> service.findByResource("t1", "AGENT", "shared-id"))).hasSize(1);
+            assertThat(runPromise(() -> service.findByResource("t2", "AGENT", "shared-id"))).hasSize(1);
         }
 
         @Test
@@ -490,8 +491,8 @@ class JdbcPersistentAuditServiceTest {
             seedEvents("t1", 10);
             seedEvents("t2", 3);
 
-            assertThat(service.countByTenantId("t1").getResult()).isEqualTo(10L);
-            assertThat(service.countByTenantId("t2").getResult()).isEqualTo(3L);
+            assertThat(runPromise(() -> service.countByTenantId("t1"))).isEqualTo(10L);
+            assertThat(runPromise(() -> service.countByTenantId("t2"))).isEqualTo(3L);
         }
     }
 
@@ -516,7 +517,7 @@ class JdbcPersistentAuditServiceTest {
                 futures.add(executor.submit(() -> {
                     try {
                         service.record(auditEvent("t1", "CONCURRENT_" + idx, "thread-" + idx,
-                                "RES", "r-" + idx, true, Map.of("action", "CREATE"))).getResult();
+runPromise(() -> "RES", "r-" + idx, true, Map.of("action", "CREATE"))));
                     } finally {
                         latch.countDown();
                     }
@@ -527,7 +528,7 @@ class JdbcPersistentAuditServiceTest {
             executor.shutdown();
 
             // Verify all 50 written
-            assertThat(service.countByTenantId("t1").getResult()).isEqualTo(50L);
+            assertThat(runPromise(() -> service.countByTenantId("t1"))).isEqualTo(50L);
 
             // Verify no exceptions
             for (Future<?> f : futures) {
@@ -551,8 +552,8 @@ class JdbcPersistentAuditServiceTest {
                     .tenantId("t1").eventType("MINIMAL")
                     .timestamp(Instant.now()).success(true).build();
 
-            assertThatCode(() -> service.record(event).getResult()).doesNotThrowAnyException();
-            assertThat(service.findByTenantId("t1").getResult()).hasSize(1);
+            assertThatCode(() -> runPromise(() -> service.record(event))).doesNotThrowAnyException();
+            assertThat(runPromise(() -> service.findByTenantId("t1"))).hasSize(1);
         }
 
         @Test
@@ -564,8 +565,8 @@ class JdbcPersistentAuditServiceTest {
                 largeDetails.put("field_" + i, "value_" + "x".repeat(100));
             }
 
-            service.record(auditEvent("t1", "LARGE", "u", "X", "x-1", true, largeDetails)).getResult();
-            AuditEvent stored = service.findByTenantId("t1").getResult().getFirst();
+            runPromise(() -> service.record(auditEvent("t1", "LARGE", "u", "X", "x-1", true, largeDetails)));
+            AuditEvent stored = runPromise(() -> service.findByTenantId("t1")).getFirst();
             assertThat(stored.getDetails()).containsKey("field_99");
         }
 
@@ -577,9 +578,9 @@ class JdbcPersistentAuditServiceTest {
             details.put("previousState", Map.of("status", "DRAFT"));
             details.put("newState", Map.of("status", "ACTIVE"));
 
-            service.record(auditEvent("t1", "STATUS_CHANGE", "admin", "PIPELINE", "p-1", true, details)).getResult();
+            runPromise(() -> service.record(auditEvent("t1", "STATUS_CHANGE", "admin", "PIPELINE", "p-1", true, details)));
 
-            AuditEvent stored = service.findByTenantId("t1").getResult().getFirst();
+            AuditEvent stored = runPromise(() -> service.findByTenantId("t1")).getFirst();
             assertThat(stored.getDetails()).containsKey("previousState");
             assertThat(stored.getDetails()).containsKey("newState");
         }
@@ -595,7 +596,7 @@ class JdbcPersistentAuditServiceTest {
         @DisplayName("findById with non-numeric ID returns empty or exception")
         void findByIdNonNumeric() {
             // Non-numeric IDs cause NumberFormatException → Promise.ofException → getResult() returns null
-            Optional<AuditEvent> result = service.findById("t1", "not-a-number").getResult();
+            Optional<AuditEvent> result = runPromise(() -> service.findById("t1", "not-a-number"));
             // ActiveJ Promise.ofException().getResult() returns null
             assertThat(result).isNull();
         }
@@ -635,7 +636,7 @@ class JdbcPersistentAuditServiceTest {
     private void seedEvents(String tenantId, int count) {
         for (int i = 0; i < count; i++) {
             service.record(auditEvent(tenantId, "TEST_EVENT", "user-" + i,
-                    "RESOURCE", "r-" + i, true, Map.of("action", "CREATE", "index", i))).getResult();
+runPromise(() -> "RESOURCE", "r-" + i, true, Map.of("action", "CREATE", "index", i))));
         }
     }
 

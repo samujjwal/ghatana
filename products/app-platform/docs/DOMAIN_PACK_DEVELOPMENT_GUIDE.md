@@ -1329,9 +1329,10 @@ Domain packs must meet the following certification criteria:
 ## Resources
 
 - [Domain Pack Interface Specification](DOMAIN_PACK_INTERFACE_SPECIFICATION.md)
-- [Domain Pack API Reference](../api/domain-pack-api.md)
-- [Kernel SDK Documentation](../sdk/kernel-sdk.md)
-- [Testing Framework Guide](../testing/testing-guide.md)
+- [Platform SDK LLD](lld/LLD_K12_PLATFORM_SDK.md)
+- [Pack Certification Epic](epics/EPIC-P-01-Pack-Certification.md)
+- [Integration Testing Epic](epics/EPIC-T-01-Integration-Testing.md)
+- [Plugin Sandbox Specification](PLUGIN_SANDBOX_SPECIFICATION.md)
 - [Marketplace Governance](MARKETPLACE_GOVERNANCE.md)
 - [Inter-Domain Pack Communication Spec](INTER_DOMAIN_PACK_COMMUNICATION_SPEC.md)
 - [Domain Pack Upgrade Runbook](DOMAIN_PACK_UPGRADE_RUNBOOK.md)

@@ -11,6 +11,7 @@ import java.time.Duration;
 import java.util.*;
 import java.util.concurrent.atomic.AtomicInteger;
 
+import com.ghatana.platform.testing.activej.EventloopTestBase;
 import static org.assertj.core.api.Assertions.*;
 
 /**
@@ -33,7 +34,7 @@ import static org.assertj.core.api.Assertions.*;
  *   <li>Pipeline with no edges (isolated stages)</li>
  * </ul>
  */
-class PipelineExecutionEngineTest {
+class PipelineExecutionEngineTest extends EventloopTestBase {
 
     private PipelineExecutionEngine engine;
     private DefaultOperatorCatalog catalog;
@@ -54,9 +55,9 @@ class PipelineExecutionEngineTest {
     private void registerPassThroughOperator(String namespace, String type, String name, String version) {
         OperatorId id = OperatorId.of(namespace, type, name, version);
         TestPassThroughOperator op = new TestPassThroughOperator(id, name);
-        op.initialize(OperatorConfig.empty()).getResult();
-        op.start().getResult();
-        catalog.register(op).getResult();
+        runPromise(() -> op.initialize(OperatorConfig.empty()));
+        runPromise(() -> op.start());
+        runPromise(() -> catalog.register(op));
     }
 
     /**
@@ -66,9 +67,9 @@ class PipelineExecutionEngineTest {
                                           String errorMessage) {
         OperatorId id = OperatorId.of(namespace, type, name, version);
         TestFailingOperator op = new TestFailingOperator(id, name, errorMessage);
-        op.initialize(OperatorConfig.empty()).getResult();
-        op.start().getResult();
-        catalog.register(op).getResult();
+        runPromise(() -> op.initialize(OperatorConfig.empty()));
+        runPromise(() -> op.start());
+        runPromise(() -> catalog.register(op));
     }
 
     /**
@@ -77,9 +78,9 @@ class PipelineExecutionEngineTest {
     private void registerEmptyOutputOperator(String namespace, String type, String name, String version) {
         OperatorId id = OperatorId.of(namespace, type, name, version);
         TestEmptyOutputOperator op = new TestEmptyOutputOperator(id, name);
-        op.initialize(OperatorConfig.empty()).getResult();
-        op.start().getResult();
-        catalog.register(op).getResult();
+        runPromise(() -> op.initialize(OperatorConfig.empty()));
+        runPromise(() -> op.start());
+        runPromise(() -> catalog.register(op));
     }
 
     /**
@@ -89,9 +90,9 @@ class PipelineExecutionEngineTest {
                                               int outputCount) {
         OperatorId id = OperatorId.of(namespace, type, name, version);
         TestMultiOutputOperator op = new TestMultiOutputOperator(id, name, outputCount);
-        op.initialize(OperatorConfig.empty()).getResult();
-        op.start().getResult();
-        catalog.register(op).getResult();
+        runPromise(() -> op.initialize(OperatorConfig.empty()));
+        runPromise(() -> op.start());
+        runPromise(() -> catalog.register(op));
     }
 
     /**
@@ -101,9 +102,9 @@ class PipelineExecutionEngineTest {
                                                            String version) {
         OperatorId id = OperatorId.of(namespace, type, name, version);
         TestCountingOperator op = new TestCountingOperator(id, name);
-        op.initialize(OperatorConfig.empty()).getResult();
-        op.start().getResult();
-        catalog.register(op).getResult();
+        runPromise(() -> op.initialize(OperatorConfig.empty()));
+        runPromise(() -> op.start());
+        runPromise(() -> catalog.register(op));
         return op;
     }
 
@@ -150,7 +151,7 @@ class PipelineExecutionEngineTest {
                 .build();
 
         Event input = testEvent("order.placed");
-        PipelineExecutionResult result = engine.execute(pipeline, input, defaultContext()).getResult();
+        PipelineExecutionResult result = runPromise(() -> engine.execute(pipeline, input, defaultContext()));
 
         assertThat(result.isSuccess()).isTrue();
         assertThat(result.stagesExecuted()).isEqualTo(1);
@@ -175,7 +176,7 @@ class PipelineExecutionEngineTest {
                 .build();
 
         Event input = testEvent("transaction");
-        PipelineExecutionResult result = engine.execute(pipeline, input, defaultContext()).getResult();
+        PipelineExecutionResult result = runPromise(() -> engine.execute(pipeline, input, defaultContext()));
 
         assertThat(result.isSuccess()).isTrue();
         assertThat(result.stagesExecuted()).isEqualTo(3);
@@ -202,7 +203,7 @@ class PipelineExecutionEngineTest {
                 .build();
 
         Event input = testEvent("data");
-        PipelineExecutionResult result = engine.execute(pipeline, input, defaultContext()).getResult();
+        PipelineExecutionResult result = runPromise(() -> engine.execute(pipeline, input, defaultContext()));
 
         assertThat(result.isSuccess()).isTrue();
         assertThat(result.stagesExecuted()).isEqualTo(3);
@@ -227,7 +228,7 @@ class PipelineExecutionEngineTest {
                 .build();
 
         Event input = testEvent("event");
-        PipelineExecutionResult result = engine.execute(pipeline, input, defaultContext()).getResult();
+        PipelineExecutionResult result = runPromise(() -> engine.execute(pipeline, input, defaultContext()));
 
         assertThat(result.isSuccess()).isTrue();
         assertThat(result.stagesExecuted()).isEqualTo(3);
@@ -256,7 +257,7 @@ class PipelineExecutionEngineTest {
                 .build();
 
         Event input = testEvent("diamond.input");
-        PipelineExecutionResult result = engine.execute(pipeline, input, defaultContext()).getResult();
+        PipelineExecutionResult result = runPromise(() -> engine.execute(pipeline, input, defaultContext()));
 
         assertThat(result.isSuccess()).isTrue();
         assertThat(result.stagesExecuted()).isEqualTo(4);
@@ -283,7 +284,7 @@ class PipelineExecutionEngineTest {
 
         Event input = testEvent("error.test");
         PipelineExecutionContext ctx = continueOnErrorContext();
-        PipelineExecutionResult result = engine.execute(pipeline, input, ctx).getResult();
+        PipelineExecutionResult result = runPromise(() -> engine.execute(pipeline, input, ctx));
 
         // The error handler should have been invoked
         assertThat(errorHandler.getInvocationCount()).isEqualTo(1);
@@ -303,7 +304,7 @@ class PipelineExecutionEngineTest {
                 .build();
 
         Event input = testEvent("abort.test");
-        PipelineExecutionResult result = engine.execute(pipeline, input, defaultContext()).getResult();
+        PipelineExecutionResult result = runPromise(() -> engine.execute(pipeline, input, defaultContext()));
 
         assertThat(result.isSuccess()).isFalse();
         assertThat(result.errorMessage()).contains("boom");
@@ -323,7 +324,7 @@ class PipelineExecutionEngineTest {
                 .build();
 
         Event input = testEvent("continue.test");
-        PipelineExecutionResult result = engine.execute(pipeline, input, continueOnErrorContext()).getResult();
+        PipelineExecutionResult result = runPromise(() -> engine.execute(pipeline, input, continueOnErrorContext()));
 
         // Independent stage should still execute even though "fail" failed
         assertThat(next.getInvocationCount()).isEqualTo(1);
@@ -339,7 +340,7 @@ class PipelineExecutionEngineTest {
                 .build();
 
         Event input = testEvent("missing.test");
-        PipelineExecutionResult result = engine.execute(pipeline, input, defaultContext()).getResult();
+        PipelineExecutionResult result = runPromise(() -> engine.execute(pipeline, input, defaultContext()));
 
         assertThat(result.isSuccess()).isFalse();
         assertThat(result.errorMessage()).contains("Operator not found");
@@ -363,7 +364,7 @@ class PipelineExecutionEngineTest {
                 .build();
 
         Event input = testEvent("fallback.test");
-        PipelineExecutionResult result = engine.execute(pipeline, input, defaultContext()).getResult();
+        PipelineExecutionResult result = runPromise(() -> engine.execute(pipeline, input, defaultContext()));
 
         assertThat(fallback.getInvocationCount()).isEqualTo(1);
     }
@@ -389,7 +390,7 @@ class PipelineExecutionEngineTest {
                 .build();
 
         Event input = testEvent("broadcast.event");
-        PipelineExecutionResult result = engine.execute(pipeline, input, defaultContext()).getResult();
+        PipelineExecutionResult result = runPromise(() -> engine.execute(pipeline, input, defaultContext()));
 
         assertThat(result.isSuccess()).isTrue();
         assertThat(target1.getInvocationCount()).isEqualTo(1);
@@ -414,7 +415,7 @@ class PipelineExecutionEngineTest {
                 .build();
 
         Event input = testEvent("split.me");
-        PipelineExecutionResult result = engine.execute(pipeline, input, defaultContext()).getResult();
+        PipelineExecutionResult result = runPromise(() -> engine.execute(pipeline, input, defaultContext()));
 
         assertThat(result.isSuccess()).isTrue();
         // Collector should be invoked 3 times (once per output from splitter)
@@ -438,7 +439,7 @@ class PipelineExecutionEngineTest {
                 .build();
 
         Event input = testEvent("isolated.test");
-        PipelineExecutionResult result = engine.execute(pipeline, input, defaultContext()).getResult();
+        PipelineExecutionResult result = runPromise(() -> engine.execute(pipeline, input, defaultContext()));
 
         assertThat(result.isSuccess()).isTrue();
         assertThat(op1.getInvocationCount()).isEqualTo(1);
@@ -487,7 +488,7 @@ class PipelineExecutionEngineTest {
                 .build();
 
         Event input = testEvent("metadata.test");
-        PipelineExecutionResult result = engine.execute(pipeline, input, defaultContext()).getResult();
+        PipelineExecutionResult result = runPromise(() -> engine.execute(pipeline, input, defaultContext()));
 
         assertThat(result.pipelineId()).isEqualTo("meta-test");
         assertThat(result.inputEvent()).isSameAs(input);
@@ -511,7 +512,7 @@ class PipelineExecutionEngineTest {
                 .build();
 
         Event input = testEvent("integrated.test");
-        PipelineExecutionResult result = pipeline.execute(input).getResult();
+        PipelineExecutionResult result = runPromise(() -> pipeline.execute(input));
 
         assertThat(result.isSuccess()).isTrue();
         assertThat(result.outputEvents()).isNotEmpty();
@@ -527,7 +528,7 @@ class PipelineExecutionEngineTest {
                 .build();
 
         Event input = testEvent("simulated.test");
-        PipelineExecutionResult result = pipeline.execute(input).getResult();
+        PipelineExecutionResult result = runPromise(() -> pipeline.execute(input));
 
         // Simulated execution just enriches metadata
         assertThat(result.isSuccess()).isTrue();
@@ -584,17 +585,17 @@ class PipelineExecutionEngineTest {
     void catalog_registerAndLookup() {
         OperatorId id = OperatorId.of("ns", "stream", "op", "1.0.0");
         TestPassThroughOperator op = new TestPassThroughOperator(id, "test-op");
-        catalog.register(op).getResult();
+        runPromise(() -> catalog.register(op));
 
         assertThat(catalog.size()).isEqualTo(1);
-        assertThat(catalog.lookup(id).getResult()).isSameAs(op);
+        assertThat(runPromise(() -> catalog.lookup(id))).isSameAs(op);
     }
 
     @Test
     @DisplayName("Catalog get returns empty for missing operator")
     void catalog_getMissing_returnsEmpty() {
         OperatorId id = OperatorId.of("ns", "stream", "missing", "1.0.0");
-        assertThat(catalog.get(id).getResult()).isEmpty();
+        assertThat(runPromise(() -> catalog.get(id))).isEmpty();
     }
 
     @Test
@@ -602,12 +603,12 @@ class PipelineExecutionEngineTest {
     void catalog_unregister() {
         OperatorId id = OperatorId.of("ns", "stream", "op", "1.0.0");
         TestPassThroughOperator op = new TestPassThroughOperator(id, "test-op");
-        catalog.register(op).getResult();
+        runPromise(() -> catalog.register(op));
         assertThat(catalog.size()).isEqualTo(1);
 
-        catalog.unregister(id).getResult();
+        runPromise(() -> catalog.unregister(id));
         assertThat(catalog.size()).isEqualTo(0);
-        assertThat(catalog.get(id).getResult()).isEmpty();
+        assertThat(runPromise(() -> catalog.get(id))).isEmpty();
     }
 
     // ════════════════════════════════════════════════════════════════

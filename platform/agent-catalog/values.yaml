@@ -1,0 +1,98 @@
+# Platform Agent Catalog — Default Template Values
+#
+# This file is loaded by TemplateContextBuilder as the lowest-priority overlay
+# over system environment variables. It provides catalogue-wide defaults for
+# template variables used inside agent YAML descriptor files.
+#
+# Keys defined here can be overridden (in ascending priority order) by:
+#   1. System environment variables (e.g. export DEFAULT_MODEL=gpt-4o)
+#   2. This file  ← you are here
+#   3. A product-local values.yaml supplied to TemplateContextBuilder.build()
+#   4. Explicit per-request parameters passed to YamlTemplateEngine.render()
+#
+# All values must be flat strings. Nested structures are silently ignored by
+# TemplateContextBuilder.loadFlatYaml().
+
+# ---------------------------------------------------------------------------
+# LLM / AI Defaults
+# ---------------------------------------------------------------------------
+
+# Default LLM provider to use when an agent descriptor does not specify one.
+# Valid values: ANTHROPIC | OPENAI | OLLAMA
+defaultProvider: "ANTHROPIC"
+
+# Default model identifier.
+# Override via env var DEFAULT_MODEL or per-agent generator.model.
+defaultModel: "claude-3-5-sonnet-20241022"
+
+# Default LLM temperature (0.0 = deterministic, 1.0 = creative).
+defaultTemperature: "0.2"
+
+# Default maximum number of tokens to generate per LLM call.
+defaultMaxTokens: "4096"
+
+# ---------------------------------------------------------------------------
+# Agent Memory Defaults
+# ---------------------------------------------------------------------------
+
+# Default memory tier for agents that do not declare a memory block.
+# Valid values: WORKING | EPISODIC | SEMANTIC | PROCEDURAL
+defaultMemoryType: "WORKING"
+
+# Default memory scope identifier used when agents don't declare a scope.
+defaultMemoryScope: "agent_default"
+
+# Default memory retention policy.
+# Valid values: short | medium | long
+defaultMemoryRetention: "short"
+
+# ---------------------------------------------------------------------------
+# Resource Defaults
+# ---------------------------------------------------------------------------
+
+# Default JVM heap or container memory limit per agent instance.
+defaultResourceMemory: "512MB"
+
+# Default CPU allocation (vCPU or fraction thereof) per agent instance.
+defaultResourceCpu: "1"
+
+# Default wall-clock timeout for an agent turn (ISO-8601 duration).
+defaultTimeout: "PT30S"
+
+# ---------------------------------------------------------------------------
+# Cost Control Defaults
+# ---------------------------------------------------------------------------
+
+# Maximum allowed cost (USD) per agent LLM call.
+# Agents can override this with cost.maxPerCall in their descriptor.
+defaultMaxCostPerCall: "0.05"
+
+# Monthly soft-cap budget per tenant (USD). Alerts are raised when exceeded.
+defaultMonthlyBudget: "100.00"
+
+# ---------------------------------------------------------------------------
+# AEP Pipeline Defaults
+# ---------------------------------------------------------------------------
+
+# Default backpressure buffer size for AEP-integrated agents.
+defaultBackpressureBufferSize: "1000"
+
+# Default overflow strategy when the backpressure buffer is full.
+# Valid values: DROP_LATEST | DROP_OLDEST | BLOCK | UNBOUNDED | OVERFLOW_TO_DLQ
+defaultOverflowStrategy: "DROP_LATEST"
+
+# Default checkpoint interval for AEP event-sourced agents (ISO-8601 duration).
+defaultCheckpointInterval: "PT30S"
+
+# Default maximum retry count for failed AEP operator steps.
+defaultMaxRetries: "3"
+
+# ---------------------------------------------------------------------------
+# Observability Defaults
+# ---------------------------------------------------------------------------
+
+# Default log level for agent telemetry. Override per-agent in descriptor.
+defaultLogLevel: "INFO"
+
+# Default metrics scrape interval (ISO-8601 duration).
+defaultMetricsScrapeInterval: "PT15S"

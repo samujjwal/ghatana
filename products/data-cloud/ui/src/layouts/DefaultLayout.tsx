@@ -28,6 +28,10 @@ import {
     Terminal,
     Package,
     Command,
+    Activity,
+    Box,
+    Network,
+    Bot,
 } from 'lucide-react';
 import { cn, bgStyles, borderStyles, textStyles } from '../lib/theme';
 import { GlobalSearch, useGlobalSearch } from '../components/common/GlobalSearch';
@@ -77,6 +81,16 @@ const navSections: NavSection[] = [
             { to: '/alerts', label: 'Alerts', icon: <Bell className="h-4 w-4" /> },
             { to: '/plugins', label: 'Plugins', icon: <Package className="h-4 w-4" /> },
             { to: '/settings', label: 'Settings', icon: <Settings className="h-4 w-4" /> },
+        ],
+    },
+    {
+        title: 'Agentic',
+        items: [
+            { to: '/events',   label: 'Events',   icon: <Activity className="h-4 w-4" /> },
+            { to: '/memory',   label: 'Memory',   icon: <Box className="h-4 w-4" /> },
+            { to: '/entities', label: 'Entities', icon: <Database className="h-4 w-4" /> },
+            { to: '/fabric',   label: 'Fabric',   icon: <Network className="h-4 w-4" /> },
+            { to: '/agents',   label: 'Agents',   icon: <Bot className="h-4 w-4" /> },
         ],
     },
 ];

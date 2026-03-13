@@ -15,6 +15,8 @@ import com.ghatana.agent.AgentConfig;
 import com.ghatana.agent.AgentResult;
 import com.ghatana.agent.HealthStatus;
 import com.ghatana.agent.AgentType;
+import com.ghatana.catalog.adapters.eventcloud.DataCloudEventTypeRepository;
+import com.ghatana.catalog.ports.EventTypeRepository;
 import io.activej.promise.Promise;
 import com.ghatana.core.operator.catalog.DefaultOperatorCatalog;
 import com.ghatana.core.operator.catalog.OperatorCatalog;
@@ -110,6 +112,31 @@ public class AepCoreModule extends AbstractModule {
     }
 
     /**
+     * Provides the event-type repository backed by the AEP EventCloud.
+     *
+     * <p>Replaces the {@code InMemoryEventTypeRepository} with a durable,
+     * event-sourced implementation that stores {@code eventtype.registered /
+     * eventtype.updated / eventtype.deleted} events in the active EventCloud
+     * connector (gRPC, HTTP, or EventLogStore).
+     *
+     * <p>The in-memory projection is rebuilt from EventCloud on first access
+     * (lazy replay) so existing data is never lost across restarts.
+     *
+     * @param eventCloud active EventCloud connector
+     * @return durable EventTypeRepository singleton
+     * @doc.type method
+     * @doc.purpose Durable, event-sourced EventType catalog via AEP EventCloud
+     * @doc.layer product
+     * @doc.pattern Repository, EventSourced
+     */
+    @Provides
+    EventTypeRepository eventTypeRepository(EventCloud eventCloud) {
+        DataCloudEventTypeRepository repo = new DataCloudEventTypeRepository(eventCloud);
+        repo.replayFromEventCloud();
+        return repo;
+    }
+
+    /**
      * Provides the operator catalog bound to its interface.
      *
      * <p>Returns a {@link DefaultOperatorCatalog} — a thread-safe, in-memory
@@ -202,25 +229,38 @@ public class AepCoreModule extends AbstractModule {
     }
 
     /**
-     * Provides a default agent event operator for testing purposes.
+     * Provides a default agent event operator.
      *
-     * <p>This is a minimal implementation that satisfies the dependency injection
-     * requirements for the DeadLetterOperator. In production, specific agents
-     * should be provided by their respective modules.
+     * <p>This fallback implementation is activated when no product module
+     * (e.g. {@code YappcIntegrationModule}) overrides this binding with a real agent.
+     * It logs every unhandled event at ERROR level and emits a {@code _error} key
+     * in the result so downstream operators (DLQ, metrics) can detect unrouted events.
      *
-     * @return a default agent event operator
+     * <p><b>Production</b>: override this binding by providing a real
+     * {@link AgentEventOperator} in your product module (e.g. after wiring
+     * {@code YappcAgentSystem} and {@code CatalogAgentDispatcher}).
+     *
+     * @doc.type method
+     * @doc.purpose Default fallback AgentEventOperator that surfaces unrouted events as errors
+     * @doc.layer product
+     * @doc.pattern Null Object
+     * @return fallback agent event operator
      */
     @Provides
     AgentEventOperator agentEventOperator() {
-        // Create a simple no-op agent for testing
-        TypedAgent<java.util.Map<String, Object>, java.util.Map<String, Object>> noopAgent = new TypedAgent<java.util.Map<String, Object>, java.util.Map<String, Object>>() {
+        TypedAgent<java.util.Map<String, Object>, java.util.Map<String, Object>> fallback =
+                new TypedAgent<java.util.Map<String, Object>, java.util.Map<String, Object>>() {
+
+            private static final org.slf4j.Logger agentLog =
+                    org.slf4j.LoggerFactory.getLogger("aep.fallback-agent");
+
             @Override
             public AgentDescriptor descriptor() {
                 return AgentDescriptor.builder()
-                    .agentId("noop-agent")
-                    .name("No-op Agent")
+                    .agentId("fallback-agent")
+                    .name("Fallback Agent — no product agent wired")
                     .version("1.0.0")
-                    .type(com.ghatana.agent.AgentType.DETERMINISTIC)
+                    .type(AgentType.DETERMINISTIC)
                     .build();
             }
 
@@ -240,14 +280,25 @@ public class AepCoreModule extends AbstractModule {
             }
 
             @Override
-            public Promise<AgentResult<java.util.Map<String, Object>>> process(AgentContext ctx, java.util.Map<String, Object> input) {
-                java.util.Map<String, Object> result = new java.util.HashMap<>();
-                result.put("status", "processed");
-                result.put("input", input);
-                return Promise.of(AgentResult.success(result, "noop-agent", Duration.ofMillis(1)));
+            public Promise<AgentResult<java.util.Map<String, Object>>> process(
+                    AgentContext ctx, java.util.Map<String, Object> input) {
+                agentLog.error(
+                    "[AEP] No product AgentEventOperator bound. Event dropped without processing. "
+                    + "Wire a real agent via YappcIntegrationModule or override agentEventOperator() "
+                    + "in a product DI module. agentId={} turnId={}",
+                    ctx != null ? ctx.getAgentId() : "unknown",
+                    ctx != null ? ctx.getTurnId()  : "unknown");
+                java.util.Map<String, Object> errorResult = new java.util.LinkedHashMap<>(input);
+                errorResult.put("_error", "no_agent_configured");
+                errorResult.put("_status", "DROPPED");
+                return Promise.of(AgentResult.failure(
+                    new IllegalStateException(
+                        "No product agent configured — bind AgentEventOperator in your product DI module"),
+                    "fallback-agent",
+                    Duration.ZERO));
             }
         };
-        return new AgentEventOperator(noopAgent);
+        return new AgentEventOperator(fallback);
     }
 
     /**

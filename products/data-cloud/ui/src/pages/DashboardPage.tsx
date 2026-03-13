@@ -14,6 +14,7 @@ import { Link } from 'react-router';
 import { dataCloudApi, type Execution } from '../lib/api/data-cloud-api';
 import type { Collection } from '../lib/api/collections';
 import type { Workflow } from '../lib/api/workflows';
+import { governanceService, type AuditLog as GovernanceAuditLog } from '../api/governance.service';
 import {
   Database,
   Workflow as WorkflowIcon,
@@ -126,110 +127,6 @@ export function DashboardPage(): React.ReactElement {
 
   const { loading, error, stats, recentActivity } = state;
 
-  // Mock data for recent activity
-  const mockActivities = [
-    {
-      id: '1',
-      title: 'Workflow completed',
-      description: 'Data export workflow completed successfully',
-      status: 'success' as const,
-      timestamp: new Date(Date.now() - 1000 * 60 * 5).toISOString(),
-      link: '/executions/1',
-    },
-    {
-      id: '2',
-      title: 'New workflow created',
-      description: 'New data processing workflow created',
-      status: 'info' as const,
-      timestamp: new Date(Date.now() - 1000 * 60 * 30).toISOString(),
-      link: '/workflows/2',
-    },
-    {
-      id: '3',
-      title: 'Workflow failed',
-      description: 'Data sync workflow failed to complete',
-      status: 'error' as const,
-      timestamp: new Date(Date.now() - 1000 * 60 * 60 * 2).toISOString(),
-      link: '/executions/3',
-    },
-  ];
-
-  // Mock audit logs data
-  const mockAuditLogs: AuditLog[] = [
-    {
-      id: 'audit-1',
-      action: 'Created',
-      entityType: 'workflow',
-      entityId: 'wf-001',
-      entityName: 'Data Export',
-      userId: 'user-1',
-      userName: 'John Doe',
-      timestamp: new Date(Date.now() - 1000 * 60 * 5).toISOString(),
-      status: 'success',
-      ipAddress: '192.168.1.1'
-    },
-    {
-      id: 'audit-2',
-      action: 'Updated',
-      entityType: 'collection',
-      entityId: 'col-001',
-      entityName: 'Products',
-      userId: 'user-2',
-      userName: 'Jane Smith',
-      timestamp: new Date(Date.now() - 1000 * 60 * 30).toISOString(),
-      status: 'success',
-      ipAddress: '192.168.1.2'
-    },
-    {
-      id: 'audit-3',
-      action: 'Failed login',
-      entityType: 'user',
-      entityId: 'user-3',
-      entityName: 'unknown',
-      userId: 'user-3',
-      userName: 'unknown',
-      timestamp: new Date(Date.now() - 1000 * 60 * 120).toISOString(),
-      status: 'failed',
-      ipAddress: '192.168.1.100'
-    }
-  ];
-
-  // Mock compliance statuses
-  const mockComplianceStatuses: ComplianceStatus[] = [
-    {
-      id: 'comp-1',
-      name: 'Data Retention',
-      status: 'compliant',
-      lastChecked: new Date(Date.now() - 1000 * 60 * 60).toISOString(),
-      nextCheck: new Date(Date.now() + 1000 * 60 * 60 * 24).toISOString(),
-      details: 'All data retention policies are being followed'
-    },
-    {
-      id: 'comp-2',
-      name: 'Access Control',
-      status: 'compliant',
-      lastChecked: new Date(Date.now() - 1000 * 60 * 30).toISOString(),
-      nextCheck: new Date(Date.now() + 1000 * 60 * 60 * 12).toISOString(),
-      details: 'All access controls are properly configured'
-    },
-    {
-      id: 'comp-3',
-      name: 'Audit Logging',
-      status: 'warning',
-      lastChecked: new Date(Date.now() - 1000 * 60 * 15).toISOString(),
-      nextCheck: new Date(Date.now() + 1000 * 60 * 60 * 6).toISOString(),
-      details: 'Some audit logs are missing timestamps'
-    },
-    {
-      id: 'comp-4',
-      name: 'Data Encryption',
-      status: 'non-compliant',
-      lastChecked: new Date(Date.now() - 1000 * 60 * 10).toISOString(),
-      nextCheck: new Date(Date.now() + 1000 * 60 * 60).toISOString(),
-      details: 'Some data is not encrypted at rest'
-    }
-  ];
-
   useEffect(() => {
     loadDashboardData();
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -239,10 +136,12 @@ export function DashboardPage(): React.ReactElement {
     try {
       setState((prev) => ({ ...prev, loading: true, error: null }));
 
-      // First, fetch collections and workflows
-      const [collectionsRes, workflowsRes] = await Promise.all([
+      // Fetch collections, workflows, audit logs, and compliance report in parallel
+      const [collectionsRes, workflowsRes, auditLogsData, complianceReport] = await Promise.all([
         dataCloudApi.getCollections(),
         dataCloudApi.getWorkflows(),
+        governanceService.getAuditLogs(undefined, undefined, 10).catch(() => [] as GovernanceAuditLog[]),
+        governanceService.getComplianceReport().catch(() => null),
       ]);
 
       // Get executions for each workflow
@@ -268,27 +167,80 @@ export function DashboardPage(): React.ReactElement {
         )
         : '0s';
 
-      // Calculate compliance score (percentage of compliant items)
-      const compliantCount = mockComplianceStatuses.filter(c => c.status === 'compliant').length;
-      const complianceScore = Math.round((compliantCount / mockComplianceStatuses.length) * 100);
+      // Map governance audit logs to local AuditLog type
+      const auditLogs: AuditLog[] = auditLogsData.map((log) => ({
+        id: log.id,
+        action: log.action,
+        entityType: (log.resourceType?.toLowerCase() as AuditLog['entityType']) || 'system',
+        entityId: log.resourceId || '',
+        entityName: log.resourceId || log.action,
+        userId: log.userId,
+        userName: log.userName,
+        timestamp: log.timestamp,
+        status: log.outcome === 'SUCCESS' ? 'success' : log.outcome === 'BLOCKED' ? 'failed' : 'failed',
+        details: typeof log.details === 'string' ? log.details : undefined,
+      }));
+
+      // Derive compliance status entries from the compliance report
+      const now = new Date().toISOString();
+      const complianceStatuses: ComplianceStatus[] = complianceReport
+        ? [
+            {
+              id: 'pii-scan',
+              name: 'PII Compliance',
+              status: (complianceReport.details.piiScans.violations ?? 0) > 0 ? 'non-compliant' : 'compliant',
+              lastChecked: complianceReport.generatedAt,
+              nextCheck: now,
+            },
+            {
+              id: 'access-audit',
+              name: 'Access Control',
+              status: (complianceReport.details.accessAudits.unauthorizedAttempts ?? 0) > 0 ? 'warning' : 'compliant',
+              lastChecked: complianceReport.generatedAt,
+              nextCheck: now,
+            },
+            {
+              id: 'data-retention',
+              name: 'Data Retention',
+              status: (complianceReport.details.retentionCompliance.datasetsViolating ?? 0) > 0 ? 'non-compliant' : 'compliant',
+              lastChecked: complianceReport.generatedAt,
+              nextCheck: now,
+            },
+          ]
+        : [];
+
+      const complianceScore = complianceReport?.summary.complianceScore ?? 0;
+
+      // Derive recent activity from real executions
+      const recentActivity = allExecutions
+        .sort((a, b) => new Date(b.startedAt).getTime() - new Date(a.startedAt).getTime())
+        .slice(0, 5)
+        .map((e) => ({
+          id: e.id,
+          title: e.status === 'completed' ? 'Workflow completed' : e.status === 'failed' ? 'Workflow failed' : 'Workflow running',
+          description: `Workflow execution ${e.id.slice(0, 8)}… ${e.status}`,
+          status: (e.status === 'completed' ? 'success' : e.status === 'failed' ? 'error' : 'info') as 'success' | 'error' | 'warning' | 'info',
+          timestamp: e.startedAt,
+          link: `/executions/${e.id}`,
+        }));
 
       setState((prev) => ({
         ...prev,
         collections: collectionsRes.data,
         workflows: workflowsRes.data,
         executions: allExecutions,
-        auditLogs: mockAuditLogs,
-        complianceStatuses: mockComplianceStatuses,
+        auditLogs,
+        complianceStatuses,
         stats: {
           totalWorkflows: workflowsRes.data.length,
           activeWorkflows,
           totalExecutions,
           successRate: parseFloat(successRate.toFixed(1)),
           avgExecutionTime,
-          auditEvents24h: mockAuditLogs.length, // Count of events in the last 24h
+          auditEvents24h: auditLogs.length,
           complianceScore,
         },
-        recentActivity: mockActivities,
+        recentActivity,
         loading: false,
       }));
     } catch (err) {

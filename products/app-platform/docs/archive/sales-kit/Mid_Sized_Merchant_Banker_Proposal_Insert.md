@@ -5,7 +5,7 @@ Status: Tailored customer-facing insert for a realistic Nepal merchant banker pr
 Last revised: March 1, 2026
 
 Assumed prospect profile: SEBON-registered merchant banker handling recurring public issues, coordinating across ASBA and depository workflows, and carrying manual filing and evidence-pack overhead.  
-Canonical claims source: [Customer_Facing_Claims_Pack.md](../Customer_Facing_Claims_Pack.md)
+Canonical claims source: [Customer_Facing_Claims_Pack.md](../../Customer_Facing_Claims_Pack.md)
 
 ---
 

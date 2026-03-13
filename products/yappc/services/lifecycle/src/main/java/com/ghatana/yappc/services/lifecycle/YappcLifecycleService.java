@@ -3,7 +3,9 @@ package com.ghatana.yappc.services.lifecycle;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.ghatana.ai.llm.CompletionService;
 import com.ghatana.ai.llm.LLMConfiguration;
-import com.ghatana.ai.llm.OpenAICompletionService;
+import com.ghatana.ai.llm.OllamaCompletionService;
+import com.ghatana.ai.llm.ToolAwareAnthropicCompletionService;
+import com.ghatana.ai.llm.ToolAwareOpenAICompletionService;
 import com.ghatana.audit.AuditLogger;
 import com.ghatana.core.activej.launcher.UnifiedApplicationLauncher;
 import com.ghatana.governance.PolicyEngine;
@@ -114,17 +116,50 @@ public class YappcLifecycleService extends UnifiedApplicationLauncher {
             return io.activej.promise.Promise.complete();
         });
 
-        // CompletionService — backed by LLMGateway; falls back to stub in dev mode
-        String openAiKey = System.getenv("OPENAI_API_KEY");
-        LLMConfiguration llmConfig = LLMConfiguration.builder()
-                .apiKey(openAiKey != null ? openAiKey : "stub")
-                .modelName(System.getenv().getOrDefault("OPENAI_MODEL", "gpt-4o-mini"))
-                .temperature(0.7)
-                .maxTokens(2000)
-                .timeoutSeconds(30)
-                .maxRetries(3)
-                .build();
-        CompletionService completionService = new OpenAICompletionService(llmConfig, null, metrics);
+        // CompletionService — resolved from env-driven provider; fail-fast if none configured.
+        String anthropicKey  = System.getenv("ANTHROPIC_API_KEY");
+        String openAiKey     = System.getenv("OPENAI_API_KEY");
+        String ollamaHost    = System.getenv("OLLAMA_HOST");
+        CompletionService completionService;
+        if (anthropicKey != null && !anthropicKey.isBlank()) {
+            String model = System.getenv("ANTHROPIC_MODEL");
+            if (model == null || model.isBlank()) {
+                throw new IllegalStateException(
+                        "ANTHROPIC_API_KEY is set but ANTHROPIC_MODEL env var is missing.");
+            }
+            LLMConfiguration llmConfig = LLMConfiguration.builder()
+                    .apiKey(anthropicKey).modelName(model)
+                    .temperature(0.7).maxTokens(2000).timeoutSeconds(30).maxRetries(3).build();
+            completionService = new ToolAwareAnthropicCompletionService(llmConfig, null, metrics);
+            logger.info("Lifecycle service CompletionService configured with Anthropic provider");
+        } else if (openAiKey != null && !openAiKey.isBlank()) {
+            String model = System.getenv("OPENAI_MODEL");
+            if (model == null || model.isBlank()) {
+                throw new IllegalStateException(
+                        "OPENAI_API_KEY is set but OPENAI_MODEL env var is missing.");
+            }
+            LLMConfiguration llmConfig = LLMConfiguration.builder()
+                    .apiKey(openAiKey).modelName(model)
+                    .temperature(0.7).maxTokens(2000).timeoutSeconds(30).maxRetries(3).build();
+            completionService = new ToolAwareOpenAICompletionService(llmConfig, null, metrics);
+            logger.info("Lifecycle service CompletionService configured with OpenAI provider");
+        } else if (ollamaHost != null && !ollamaHost.isBlank()) {
+            String model = System.getenv("OLLAMA_MODEL");
+            if (model == null || model.isBlank()) {
+                throw new IllegalStateException(
+                        "OLLAMA_HOST is set but OLLAMA_MODEL env var is missing.");
+            }
+            LLMConfiguration llmConfig = LLMConfiguration.builder()
+                    .apiKey("ollama").baseUrl(ollamaHost).modelName(model)
+                    .temperature(0.7).maxTokens(2000).timeoutSeconds(60).maxRetries(2).build();
+            completionService = new OllamaCompletionService(llmConfig, null, metrics);
+            logger.info("Lifecycle service CompletionService configured with Ollama provider");
+        } else {
+            throw new IllegalStateException(
+                    "No LLM provider configured for YAPPC Lifecycle service. "
+                    + "Set ANTHROPIC_API_KEY (+ ANTHROPIC_MODEL), OPENAI_API_KEY (+ OPENAI_MODEL), "
+                    + "or OLLAMA_HOST (+ OLLAMA_MODEL).");
+        }
         builder.bind(CompletionService.class).toInstance(completionService);
 
         // PolicyEngine — real YAML-backed implementation (replaces always-true stub)

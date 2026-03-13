@@ -60,19 +60,21 @@ public class PlannerAgentFactory {
     /**
      * Create an agent from a YAML configuration file.
      *
-     * <p>Currently returns null as YAML agent loading requires additional
-     * infrastructure (LLM gateway, output generators). Subclass or configure
-     * to provide real implementations when the full agent runtime is available.
+     * <p>YAML-based agent creation requires a wired LLM gateway and output generators.
+     * Use {@link com.ghatana.agent.framework.loader.AgentDefinitionLoader} to load
+     * {@link com.ghatana.agent.framework.config.AgentDefinition} from YAML, then
+     * instantiate an agent via the appropriate factory for the definition's type.
      *
      * @param yamlPath path to the agent YAML definition
-     * @return the created agent, or null if creation fails
+     * @return never — always throws
+     * @throws UnsupportedOperationException YAML-based agent creation is not yet implemented;
+     *         use {@code AgentDefinitionLoader} + type-specific factories instead
      */
     public BaseAgent<?, ?> createAgent(String yamlPath) {
-        log.info("Creating agent from: {}", yamlPath);
-        // TODO: Implement YAML-based agent creation when LLM gateway is integrated.
-        // For now, return null - callers handle null gracefully.
-        log.warn("Agent creation from YAML not yet implemented: {}", yamlPath);
-        return null;
+        throw new UnsupportedOperationException(
+            "YAML-based agent creation via PlannerAgentFactory is not implemented. " +
+            "Use AgentDefinitionLoader.loadFromClasspath() or loadFromDirectory() to load " +
+            "AgentDefinition objects, then wire them through the appropriate agent factory.");
     }
 
     /**

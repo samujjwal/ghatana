@@ -26,7 +26,7 @@
 
 **Authority Sources Used:**
 
-- CURRENT_EXECUTION_PLAN.md
+- UNIFIED_IMPLEMENTATION_PLAN.md
 - Relevant LLDs for all Phase 4/5 modules
 - ADR-011_STACK_STANDARDIZATION_AND_GHATANA_PLATFORM_ALIGNMENT.md
 - Architecture specification parts 1-3
@@ -46,7 +46,7 @@
 
 | source_id         | path                                   | authority | why_it_matters                      | extracted_behaviors                     |
 | ----------------- | -------------------------------------- | --------- | ----------------------------------- | --------------------------------------- |
-| EXEC_PLAN_001     | CURRENT_EXECUTION_PLAN.md              | Primary   | Phase 4/5 sequence and dependencies | Operational hardening, launch readiness |
+| EXEC_PLAN_001     | UNIFIED_IMPLEMENTATION_PLAN.md         | Primary   | Phase 4/5 sequence and dependencies | Operational hardening, launch readiness |
 | LLD_D10_001       | LLD_D10_REGULATORY_REPORTING.md        | Primary   | Regulatory reporting                | Report generation, submission           |
 | LLD_D12_001       | LLD_D12_CORPORATE_ACTIONS.md           | Primary   | Corporate actions processing        | Entitlements, exceptions                |
 | LLD_D13_001       | LLD_D13_CLIENT_MONEY_RECONCILIATION.md | Primary   | Client money reconciliation         | Segregation, reconciliation             |

@@ -27,6 +27,7 @@ import {
   Zap,
 } from 'lucide-react';
 import { cn, cardStyles, textStyles } from '../../lib/theme';
+import { pluginService } from '../../api/plugin.service';
 
 export interface PluginPerformanceMetrics {
   pluginId: string;
@@ -82,68 +83,18 @@ export function PluginPerformanceMetrics({
 }: PluginPerformanceMetricsProps): React.ReactElement {
   const [selectedRange, setSelectedRange] = useState(timeRange);
 
-  // Fetch performance metrics
+  // Fetch performance metrics from API
   const { data: metrics, isLoading } = useQuery({
     queryKey: ['plugins', pluginId, 'performance', selectedRange],
-    queryFn: async (): Promise<PluginPerformanceMetrics> => {
-      // Mock data - in production, this would fetch from API
-      await new Promise((resolve) => setTimeout(resolve, 500));
-      
-      return {
-        pluginId,
-        timestamp: new Date().toISOString(),
-        executionTime: {
-          avg: 245,
-          min: 120,
-          max: 1850,
-          p50: 220,
-          p95: 580,
-          p99: 920,
-        },
-        memory: {
-          used: 128,
-          peak: 256,
-          average: 145,
-        },
-        throughput: {
-          requestsPerSecond: 42,
-          recordsProcessed: 158420,
-          bytesProcessed: 2.4 * 1024 * 1024 * 1024, // 2.4 GB
-        },
-        errors: {
-          count: 12,
-          rate: 0.008,
-          types: {
-            'ConnectionTimeout': 5,
-            'ValidationError': 4,
-            'RateLimitExceeded': 3,
-          },
-        },
-        cpu: {
-          usage: 34,
-          cores: 4,
-        },
-      };
-    },
+    queryFn: (): Promise<PluginPerformanceMetrics> =>
+      pluginService.getPluginPerformanceMetrics(pluginId, selectedRange),
     refetchInterval: refreshInterval,
   });
 
-  // Fetch historical data for charts
+  // Fetch historical data for charts from API
   const { data: history } = useQuery({
     queryKey: ['plugins', pluginId, 'performance', 'history', selectedRange],
-    queryFn: async () => {
-      await new Promise((resolve) => setTimeout(resolve, 300));
-      
-      // Generate mock historical data
-      const points = selectedRange === '1h' ? 12 : selectedRange === '24h' ? 24 : 30;
-      return Array.from({ length: points }, (_, i) => ({
-        timestamp: new Date(Date.now() - (points - i) * 3600000).toISOString(),
-        executionTime: 200 + Math.random() * 200,
-        memory: 120 + Math.random() * 80,
-        requests: 30 + Math.random() * 30,
-        errors: Math.random() < 0.3 ? Math.floor(Math.random() * 5) : 0,
-      }));
-    },
+    queryFn: () => pluginService.getPluginPerformanceHistory(pluginId, selectedRange),
     refetchInterval: refreshInterval,
   });
 

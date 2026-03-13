@@ -760,7 +760,7 @@ AI signals are **advisory to deterministic rules**, not replacements. If a K-03 
 ### Internal Documents
 
 - **Project Vision Document**: `/docs/All_In_One_Capital_Markets_Platform_Specification.md`
-- **Current Execution Plan**: `/CURRENT_EXECUTION_PLAN.md`
+- **Implementation Baseline**: `UNIFIED_IMPLEMENTATION_PLAN.md` and `WEEK_BY_WEEK_IMPLEMENTATION_PLAN.md`
 - **Epic Specifications**: `/epics/EPIC-*.md` (42 epics across Kernel, Domain, Workflow, Operations, Packs, Regulatory, Testing, Platform Unity layers)
 - **Regulatory Architecture Document**: `/REGULATORY_ARCHITECTURE_DOCUMENT.md`
 - **ARB Stress Test Review (Archived)**: `/archive/reviews/2026-03/ARB_STRESS_TEST_REVIEW.md`

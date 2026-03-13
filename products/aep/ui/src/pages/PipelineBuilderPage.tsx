@@ -10,7 +10,6 @@
  */
 import React, { useCallback, useEffect, useState } from 'react';
 import { useAtom, useSetAtom, useAtomValue } from 'jotai';
-import { ReactFlowProvider } from '@xyflow/react';
 import { toast, Toaster } from 'sonner';
 import {
   PipelineCanvas,
@@ -29,7 +28,8 @@ import {
   historyAtom,
   historyIndexAtom,
 } from '@/stores/pipeline.store';
-import { savePipeline, validatePipeline, exportPipelineSpec } from '@/api/pipeline.api';
+import { savePipeline, validatePipeline, exportPipelineSpec, runPipeline } from '@/api/pipeline.api';
+import { tenantIdAtom } from '@/stores/tenant.store';
 import type {
   PipelineSpec,
   PipelineStageSpec,
@@ -70,9 +70,12 @@ export function PipelineBuilderPage() {
   const [history, setHistory] = useAtom(historyAtom);
   const [historyIndex, setHistoryIndex] = useAtom(historyIndexAtom);
 
+  const tenantId = useAtomValue(tenantIdAtom);
+
   // Loading states for async actions
   const [saving, setSaving] = useState(false);
   const [validating, setValidating] = useState(false);
+  const [running, setRunning] = useState(false);
 
   // ── Dirty navigation guard ──────────────────────────────────────
 
@@ -183,6 +186,21 @@ export function PipelineBuilderPage() {
     setDirty(true);
   }, [history, historyIndex, setNodes, setEdges, setHistoryIndex, setDirty]);
 
+  // ── Run Now ─────────────────────────────────────────────────────
+
+  const handleRunNow = useCallback(async () => {
+    setRunning(true);
+    try {
+      const result = await runPipeline(pipeline.id, tenantId);
+      toast.success(`Pipeline run triggered — ${result.eventId}`);
+    } catch (err) {
+      const msg = err instanceof Error ? err.message : String(err);
+      toast.error(`Failed to trigger pipeline run: ${msg}`);
+    } finally {
+      setRunning(false);
+    }
+  }, [pipeline.id, tenantId]);
+
   // ── New Pipeline ───────────────────────────────────────────────
 
   const handleNew = useCallback(() => {
@@ -200,7 +218,7 @@ export function PipelineBuilderPage() {
   // ── Render ─────────────────────────────────────────────────────
 
   return (
-    <ReactFlowProvider>
+    <>
       <Toaster richColors position="top-right" />
       <div className="flex flex-col h-screen w-screen bg-white" data-testid="pipeline-builder">
         <PipelineToolbar
@@ -210,8 +228,10 @@ export function PipelineBuilderPage() {
           onUndo={handleUndo}
           onRedo={handleRedo}
           onNew={handleNew}
+          onRunNow={handleRunNow}
           saving={saving}
           validating={validating}
+          running={running}
         />
         <div className="flex flex-1 overflow-hidden">
           <StagePalette />
@@ -221,6 +241,6 @@ export function PipelineBuilderPage() {
           <PipelinePropertyPanel />
         </div>
       </div>
-    </ReactFlowProvider>
+    </>
   );
 }

@@ -6,7 +6,7 @@
 >
 > This index provides a single-entry reference for all user stories across 8 milestone files. Use the Epic Index, ID ranges, and team allocation tables to navigate quickly.
 
-> Execution authority: use this index together with `plans/CURRENT_EXECUTION_PLAN.md`, `epics/DEPENDENCY_MATRIX.md`, and `lld/LLD_INDEX.md` for implementation sequencing and design traceability.
+> Execution authority: use this index together with [`../UNIFIED_IMPLEMENTATION_PLAN.md`](../UNIFIED_IMPLEMENTATION_PLAN.md), [`../WEEK_BY_WEEK_IMPLEMENTATION_PLAN.md`](../WEEK_BY_WEEK_IMPLEMENTATION_PLAN.md), [`../epics/DEPENDENCY_MATRIX.md`](../epics/DEPENDENCY_MATRIX.md), and [`../lld/LLD_INDEX.md`](../lld/LLD_INDEX.md) for implementation sequencing and design traceability.
 >
 > Scope note: dynamic process definitions, human-task schemas, and value catalogs are covered within existing K-02, K-13, W-01, and O-01 story scope; the normalized counts and story-point totals remain unchanged.
 

@@ -27,7 +27,7 @@
 - High-frequency trading optimizations (future enhancement)
 
 **Authority Sources Used:**
-- CURRENT_EXECUTION_PLAN.md
+- UNIFIED_IMPLEMENTATION_PLAN.md
 - Relevant LLDs for all Phase 3 modules
 - ADR-011_STACK_STANDARDIZATION_AND_GHATANA_PLATFORM_ALIGNMENT.md
 - Architecture specification parts 1-3
@@ -46,7 +46,7 @@
 
 | source_id | path | authority | why_it_matters | extracted_behaviors |
 |-----------|------|-----------|----------------|-------------------|
-| EXEC_PLAN_001 | CURRENT_EXECUTION_PLAN.md | Primary | Phase 3 sequence and dependencies | Trading flow, performance targets |
+| EXEC_PLAN_001 | UNIFIED_IMPLEMENTATION_PLAN.md | Primary | Phase 3 sequence and dependencies | Trading flow, performance targets |
 | LLD_D11_001 | LLD_D11_REFERENCE_DATA.md | Primary | Reference data management | Instrument definitions, calendars |
 | LLD_D04_001 | LLD_D04_MARKET_DATA.md | Primary | Market data management | Feed ingestion, normalization |
 | LLD_D01_001 | LLD_D01_OMS.md | Primary | Order management system | Order lifecycle, validation |

@@ -2,14 +2,26 @@ package com.ghatana.datacloud.launcher;
 
 import com.ghatana.datacloud.DataCloud;
 import com.ghatana.datacloud.DataCloudClient;
+import com.ghatana.datacloud.brain.DataCloudBrain;
+import com.ghatana.datacloud.di.DataCloudBrainModule;
 import com.ghatana.datacloud.launcher.grpc.DataCloudGrpcServer;
 import com.ghatana.datacloud.launcher.http.DataCloudHttpServer;
+import com.ghatana.datacloud.launcher.learning.DataCloudLearningBridge;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 /**
  * Data-Cloud Standalone Launcher - Entry point for standalone deployment.
  *
+ * <p>Starts HTTP and/or gRPC server based on command-line flags or environment
+ * variables. When {@code DATACLOUD_BRAIN_ENABLED=true}, also wires the
+ * cognitive brain and learning bridge so that {@code /api/v1/brain/**} and
+ * {@code /api/v1/learning/**} endpoints are active.
+ *
+ * @doc.type class
+ * @doc.purpose Standalone launcher for Data-Cloud services
+ * @doc.layer product
+ * @doc.pattern Launcher
  * @since 1.0.0
  */
 public class DataCloudLauncher {
@@ -136,12 +148,38 @@ public class DataCloudLauncher {
         if (portEnv != null) {
             port = Integer.parseInt(portEnv);
         }
-        
+
+        // Wire optional brain + learning bridge when DATACLOUD_BRAIN_ENABLED=true
+        DataCloudBrain brain = null;
+        DataCloudLearningBridge learningBridge = null;
+
+        String brainEnabled = System.getenv("DATACLOUD_BRAIN_ENABLED");
+        if ("true".equalsIgnoreCase(brainEnabled)) {
+            try {
+                brain = DataCloudBrainModule.createStandalone(null);
+                log.info("Brain initialised (standalone mode)");
+
+                learningBridge = new DataCloudLearningBridge(brain);
+                learningBridge.start();
+                log.info("Learning bridge started (interval=5min)");
+
+                final DataCloudLearningBridge bridgeRef = learningBridge;
+                Runtime.getRuntime().addShutdownHook(new Thread(() -> {
+                    log.info("Closing learning bridge...");
+                    bridgeRef.close();
+                }));
+            } catch (Exception e) {
+                log.warn("Failed to start brain/learning bridge, continuing without: {}", e.getMessage(), e);
+                brain = null;
+                learningBridge = null;
+            }
+        }
+
         try {
-            DataCloudHttpServer httpServer = new DataCloudHttpServer(client, port);
+            DataCloudHttpServer httpServer = new DataCloudHttpServer(client, port, brain, learningBridge, null);
             httpServer.start();
             log.info("HTTP server started on port {}", port);
-            
+
             // Register shutdown hook for HTTP server
             Runtime.getRuntime().addShutdownHook(new Thread(() -> {
                 log.info("Stopping HTTP server...");

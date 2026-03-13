@@ -13,6 +13,9 @@
 
 import React, { useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
+import { brainService } from '../api/brain.service';
+import { costService } from '../api/cost.service';
+import { workflowsApi } from '../lib/api/workflows';
 import {
   Brain,
   BarChart3,
@@ -38,16 +41,6 @@ import {
 } from '../components/layout/PageLayout';
 import { SpotlightRing } from '../components/brain/SpotlightRing';
 import { AutonomyTimeline } from '../components/brain/AutonomyTimeline';
-
-// Mock brain service for development
-const mockBrainService = {
-  getBrainStats: async () => ({
-    spotlightItemsCount: 3,
-    autonomyActionsToday: 12,
-    averageConfidence: 0.85,
-    activeSubsystems: 8,
-  }),
-};
 
 // =============================================================================
 // TYPES
@@ -95,7 +88,15 @@ function TabButton({ label, icon, active, onClick }: TabButtonProps) {
 // OVERVIEW TAB
 // =============================================================================
 
-function OverviewTab({ brainStats }: { brainStats?: BrainStats }) {
+function OverviewTab({
+  brainStats,
+  activePipelines,
+  monthlyCost,
+}: {
+  brainStats?: BrainStats;
+  activePipelines?: number;
+  monthlyCost?: number;
+}) {
   return (
     <div className="space-y-6">
       {/* Stats Grid */}
@@ -116,14 +117,14 @@ function OverviewTab({ brainStats }: { brainStats?: BrainStats }) {
         />
         <StatCard
           label="Active Pipelines"
-          value="8"
+          value={activePipelines ?? '–'}
           icon={<Activity className="h-5 w-5" />}
           trend={{ value: 0, direction: 'neutral' }}
           color="green"
         />
         <StatCard
           label="Est. Monthly Cost"
-          value="$1,247"
+          value={monthlyCost != null ? `$${monthlyCost.toLocaleString()}` : '–'}
           icon={<DollarSign className="h-5 w-5" />}
           trend={{ value: 3, direction: 'down' }}
           color="yellow"
@@ -551,8 +552,22 @@ export function InsightsPage() {
   // Fetch brain stats
   const { data: brainStats } = useQuery({
     queryKey: ['brain-stats'],
-    queryFn: () => mockBrainService.getBrainStats(),
-    staleTime: 60000,
+    queryFn: () => brainService.getBrainStats(),
+    staleTime: 60_000,
+  });
+
+  // Fetch active pipeline count
+  const { data: workflowsPage } = useQuery({
+    queryKey: ['active-workflows-count'],
+    queryFn: () => workflowsApi.list({ status: 'active', pageSize: 1 }),
+    staleTime: 120_000,
+  });
+
+  // Fetch cost analysis
+  const { data: costData } = useQuery({
+    queryKey: ['cost-analysis'],
+    queryFn: () => costService.getCostAnalysis('30d'),
+    staleTime: 300_000,
   });
 
   const tabs: { id: TabType; label: string; icon: React.ReactNode }[] = [
@@ -623,7 +638,13 @@ export function InsightsPage() {
       </div>
 
       <PageContent aiSidebar={aiSidebarContent}>
-        {activeTab === 'overview' && <OverviewTab brainStats={brainStats} />}
+        {activeTab === 'overview' && (
+          <OverviewTab
+            brainStats={brainStats}
+            activePipelines={workflowsPage?.total}
+            monthlyCost={costData?.total}
+          />
+        )}
         {activeTab === 'brain' && <BrainTab />}
         {activeTab === 'analytics' && <AnalyticsTab />}
         {activeTab === 'cost' && <CostTab />}

@@ -5,7 +5,7 @@ Status: Tailored customer-facing insert for a realistic Nepal full-service broke
 Last revised: March 1, 2026
 
 Assumed prospect profile: SEBON-registered full-service broker operating a brokerage-led business with depository-participant workflows, margin-service ambition, and manual reporting pressure.  
-Canonical claims source: [Customer_Facing_Claims_Pack.md](../Customer_Facing_Claims_Pack.md)
+Canonical claims source: [Customer_Facing_Claims_Pack.md](../../Customer_Facing_Claims_Pack.md)
 
 ---
 

@@ -13,46 +13,34 @@
  * @doc.layer frontend
  */
 import React, { useMemo, useState } from 'react';
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import {
-  listAgents,
-  deregisterAgent,
-  type AgentRegistration,
-  type AgentStatus,
-} from '@/api/aep.api';
+import type { AgentRegistration } from '@/api/aep.api';
+import { useAgents, useDeregisterAgent } from '@/hooks/useAgents';
+import { AgentTable } from '@/components/agents/AgentTable';
+import { AgentStatusBadge } from '@/components/agents/AgentStatusBadge';
 
 // ─── Status styling ──────────────────────────────────────────────────
 
-const STATUS_COLORS: Record<AgentStatus, string> = {
-  ACTIVE: 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200',
-  IDLE: 'bg-gray-100 text-gray-600 dark:bg-gray-800 dark:text-gray-300',
-  ERROR: 'bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-200',
-  UNKNOWN: 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-200',
-};
+// ─── Agent Detail Panel ──────────────────────────────────────────────
 
-function StatusBadge({ status }: { status: AgentStatus }) {
+function Row({ label, value, mono = false }: { label: string; value: React.ReactNode; mono?: boolean }) {
   return (
-    <span
-      className={[
-        'inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium',
-        STATUS_COLORS[status] ?? STATUS_COLORS.UNKNOWN,
-      ].join(' ')}
-    >
-      {status}
-    </span>
+    <div>
+      <span className="text-xs font-medium text-gray-500 uppercase tracking-wider">{label}</span>
+      <div className={['mt-0.5', mono ? 'font-mono text-xs' : ''].join(' ')}>{value}</div>
+    </div>
   );
 }
-
-// ─── Agent Detail Panel ──────────────────────────────────────────────
 
 function AgentDetailPanel({
   agent,
   onClose,
   onDeregister,
+  isDeregistering,
 }: {
   agent: AgentRegistration;
   onClose: () => void;
   onDeregister: (id: string) => void;
+  isDeregistering: boolean;
 }) {
   return (
     <aside
@@ -73,14 +61,11 @@ function AgentDetailPanel({
 
       <div className="px-4 py-3 space-y-3 text-sm">
         <Row label="ID" value={agent.id} mono />
-        <Row label="Status" value={<StatusBadge status={agent.status} />} />
+        <Row label="Status" value={<AgentStatusBadge status={agent.status} />} />
         <Row label="Version" value={agent.version} />
         <Row label="Tenant" value={agent.tenantId} />
         <Row label="Memory items" value={String(agent.memoryCount)} />
-        <Row
-          label="Registered"
-          value={new Date(agent.registeredAt).toLocaleString()}
-        />
+        <Row label="Registered" value={new Date(agent.registeredAt).toLocaleString()} />
         {agent.lastSeen && (
           <Row label="Last seen" value={new Date(agent.lastSeen).toLocaleString()} />
         )}
@@ -109,45 +94,24 @@ function AgentDetailPanel({
       <div className="mt-auto px-4 py-3 border-t border-gray-200 dark:border-gray-800">
         <button
           onClick={() => onDeregister(agent.id)}
-          className="w-full px-3 py-2 text-sm font-medium rounded-md bg-red-50 dark:bg-red-950 text-red-700 dark:text-red-300 hover:bg-red-100 dark:hover:bg-red-900 transition-colors"
+          disabled={isDeregistering}
+          className="w-full px-3 py-2 text-sm font-medium rounded-md bg-red-50 dark:bg-red-950 text-red-700 dark:text-red-300 hover:bg-red-100 dark:hover:bg-red-900 disabled:opacity-50 transition-colors"
         >
-          Deregister agent
+          {isDeregistering ? 'Removing…' : 'Deregister agent'}
         </button>
       </div>
     </aside>
   );
 }
 
-function Row({ label, value, mono = false }: { label: string; value: React.ReactNode; mono?: boolean }) {
-  return (
-    <div>
-      <span className="text-xs font-medium text-gray-500 uppercase tracking-wider">{label}</span>
-      <div className={['mt-0.5', mono ? 'font-mono text-xs' : ''].join(' ')}>{value}</div>
-    </div>
-  );
-}
-
 // ─── Page ────────────────────────────────────────────────────────────
 
 export function AgentRegistryPage() {
-  const tenantId = 'default';
-  const queryClient = useQueryClient();
   const [search, setSearch] = useState('');
   const [selected, setSelected] = useState<AgentRegistration | null>(null);
 
-  const { data: agents = [], isLoading, isError } = useQuery({
-    queryKey: ['aep', 'agents', tenantId],
-    queryFn: () => listAgents(tenantId),
-    refetchInterval: 10_000,
-  });
-
-  const deregisterMut = useMutation({
-    mutationFn: (id: string) => deregisterAgent(id, tenantId),
-    onSuccess: () => {
-      void queryClient.invalidateQueries({ queryKey: ['aep', 'agents'] });
-      setSelected(null);
-    },
-  });
+  const { data: agents = [], isLoading, isError } = useAgents();
+  const deregisterMut = useDeregisterAgent();
 
   const filtered = useMemo(() => {
     if (!search) return agents;
@@ -158,6 +122,10 @@ export function AgentRegistryPage() {
         a.capabilities.some((c) => c.toLowerCase().includes(q)),
     );
   }, [agents, search]);
+
+  function handleDeregister(id: string) {
+    deregisterMut.mutate(id, { onSuccess: () => setSelected(null) });
+  }
 
   return (
     <div className="flex h-full">
@@ -179,55 +147,16 @@ export function AgentRegistryPage() {
 
         {/* Table */}
         <div className="flex-1 overflow-auto px-6 py-4">
-          {isLoading && (
-            <p className="text-center text-gray-400 py-12">Loading agents…</p>
-          )}
+          {isLoading && <p className="text-center text-gray-400 py-12">Loading agents…</p>}
           {isError && (
             <p className="text-center text-red-500 py-12">Failed to load agents. Is the AEP backend running?</p>
           )}
           {!isLoading && !isError && (
-            <table className="w-full text-sm border-collapse">
-              <thead>
-                <tr className="border-b border-gray-200 dark:border-gray-800 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  <th className="pb-2 pr-4">Name</th>
-                  <th className="pb-2 pr-4">Status</th>
-                  <th className="pb-2 pr-4">Version</th>
-                  <th className="pb-2 pr-4">Memory</th>
-                  <th className="pb-2">Last seen</th>
-                </tr>
-              </thead>
-              <tbody>
-                {filtered.length === 0 && (
-                  <tr>
-                    <td colSpan={5} className="py-8 text-center text-gray-400 italic">
-                      No agents found
-                    </td>
-                  </tr>
-                )}
-                {filtered.map((agent) => (
-                  <tr
-                    key={agent.id}
-                    onClick={() => setSelected(agent)}
-                    className={[
-                      'border-b border-gray-100 dark:border-gray-900 cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-900 transition-colors',
-                      selected?.id === agent.id ? 'bg-indigo-50 dark:bg-indigo-950' : '',
-                    ].join(' ')}
-                  >
-                    <td className="py-2 pr-4 font-medium text-gray-900 dark:text-white">{agent.name}</td>
-                    <td className="py-2 pr-4">
-                      <StatusBadge status={agent.status} />
-                    </td>
-                    <td className="py-2 pr-4 text-gray-500 font-mono">{agent.version}</td>
-                    <td className="py-2 pr-4 text-gray-500">{agent.memoryCount}</td>
-                    <td className="py-2 text-gray-400">
-                      {agent.lastSeen
-                        ? new Date(agent.lastSeen).toLocaleTimeString()
-                        : '—'}
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
+            <AgentTable
+              agents={filtered}
+              selectedId={selected?.id}
+              onSelect={setSelected}
+            />
           )}
         </div>
       </div>
@@ -237,7 +166,8 @@ export function AgentRegistryPage() {
         <AgentDetailPanel
           agent={selected}
           onClose={() => setSelected(null)}
-          onDeregister={(id) => deregisterMut.mutate(id)}
+          onDeregister={handleDeregister}
+          isDeregistering={deregisterMut.isPending}
         />
       )}
     </div>

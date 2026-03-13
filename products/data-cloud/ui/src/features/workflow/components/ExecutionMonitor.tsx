@@ -82,54 +82,23 @@ export interface ExecutionMonitorProps {
   className?: string;
 }
 
-// ============================================================================
-// Mock API - Replace with actual implementation
-// ============================================================================
+function getTenantId(): string {
+  return localStorage.getItem('tenantId') || 'default-tenant';
+}
 
 async function fetchExecutionState(executionId: string): Promise<ExecutionState> {
-  const response = await fetch(`/api/executions/${executionId}`);
-  if (!response.ok) {
-    // Mock data for development
-    return {
-      id: executionId,
-      pipelineId: 'pipe-123',
-      pipelineName: 'Customer Data Pipeline',
-      status: 'running',
-      startTime: new Date(Date.now() - 120000).toISOString(),
-      completedNodes: 3,
-      totalNodes: 8,
-      nodes: [
-        { id: 'n1', name: 'Source: Database', type: 'source', status: 'completed', startTime: new Date(Date.now() - 120000).toISOString(), endTime: new Date(Date.now() - 100000).toISOString(), duration: 20000, inputCount: 0, outputCount: 1500 },
-        { id: 'n2', name: 'Transform: Clean', type: 'transform', status: 'completed', startTime: new Date(Date.now() - 100000).toISOString(), endTime: new Date(Date.now() - 80000).toISOString(), duration: 20000, inputCount: 1500, outputCount: 1485 },
-        { id: 'n3', name: 'Transform: Enrich', type: 'transform', status: 'completed', startTime: new Date(Date.now() - 80000).toISOString(), endTime: new Date(Date.now() - 60000).toISOString(), duration: 20000, inputCount: 1485, outputCount: 1485 },
-        { id: 'n4', name: 'AI: Classify', type: 'ai', status: 'running', startTime: new Date(Date.now() - 60000).toISOString(), inputCount: 1485 },
-        { id: 'n5', name: 'Filter: Quality', type: 'filter', status: 'pending' },
-        { id: 'n6', name: 'Transform: Format', type: 'transform', status: 'pending' },
-        { id: 'n7', name: 'Sink: API', type: 'sink', status: 'pending' },
-        { id: 'n8', name: 'Sink: Database', type: 'sink', status: 'pending' },
-      ],
-    };
-  }
+  const response = await fetch(`/api/v1/executions/${executionId}`, {
+    headers: { 'X-Tenant-ID': getTenantId() },
+  });
+  if (!response.ok) throw new Error(`HTTP ${response.status}`);
   return response.json();
 }
 
 async function fetchExecutionLogs(executionId: string): Promise<LogEntry[]> {
-  const response = await fetch(`/api/executions/${executionId}/logs`);
-  if (!response.ok) {
-    return [
-      { timestamp: new Date(Date.now() - 120000).toISOString(), level: 'info', message: 'Execution started', nodeId: undefined },
-      { timestamp: new Date(Date.now() - 119000).toISOString(), level: 'info', message: 'Connecting to source database...', nodeId: 'n1' },
-      { timestamp: new Date(Date.now() - 118000).toISOString(), level: 'info', message: 'Connected. Fetching records...', nodeId: 'n1' },
-      { timestamp: new Date(Date.now() - 100000).toISOString(), level: 'info', message: 'Fetched 1500 records in 20s', nodeId: 'n1' },
-      { timestamp: new Date(Date.now() - 99000).toISOString(), level: 'info', message: 'Starting data cleaning...', nodeId: 'n2' },
-      { timestamp: new Date(Date.now() - 85000).toISOString(), level: 'warn', message: '15 records failed validation, skipped', nodeId: 'n2' },
-      { timestamp: new Date(Date.now() - 80000).toISOString(), level: 'info', message: 'Cleaning complete. 1485 records remain', nodeId: 'n2' },
-      { timestamp: new Date(Date.now() - 79000).toISOString(), level: 'info', message: 'Starting data enrichment...', nodeId: 'n3' },
-      { timestamp: new Date(Date.now() - 60000).toISOString(), level: 'info', message: 'Enrichment complete', nodeId: 'n3' },
-      { timestamp: new Date(Date.now() - 59000).toISOString(), level: 'info', message: 'Starting AI classification...', nodeId: 'n4' },
-      { timestamp: new Date(Date.now() - 30000).toISOString(), level: 'debug', message: 'Processed 500/1485 records (33%)', nodeId: 'n4' },
-    ];
-  }
+  const response = await fetch(`/api/v1/executions/${executionId}/logs`, {
+    headers: { 'X-Tenant-ID': getTenantId() },
+  });
+  if (!response.ok) throw new Error(`HTTP ${response.status}`);
   return response.json();
 }
 

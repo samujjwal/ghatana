@@ -10,7 +10,7 @@
 **Diagram Level:** C2 - Container Architecture  
 **Status:** Hardened Architecture Baseline
 
-> **Stack authority**: [ADR-011_STACK_STANDARDIZATION_AND_GHATANA_PLATFORM_ALIGNMENT.md](ADR-011_STACK_STANDARDIZATION_AND_GHATANA_PLATFORM_ALIGNMENT.md) defines the current Siddhanta stack. This diagram pack contains historical container examples; where a technology label conflicts with ADR-011, ADR-011 wins.
+> **Stack authority**: [../adr/ADR-011_STACK_STANDARDIZATION_AND_GHATANA_PLATFORM_ALIGNMENT.md](../adr/ADR-011_STACK_STANDARDIZATION_AND_GHATANA_PLATFORM_ALIGNMENT.md) defines the current Siddhanta stack. This diagram pack contains historical container examples; where a technology label conflicts with ADR-011, ADR-011 wins.
 
 ---
 

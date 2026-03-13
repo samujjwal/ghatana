@@ -32,9 +32,11 @@ import {
   Filter,
   MoreVertical,
   RefreshCw,
+  Loader2,
 } from 'lucide-react';
 import { cn } from '../lib/theme';
 import { CommandBar, CommandBarTrigger, AmbientIntelligenceBar } from '../components/core';
+import { governanceService, type Policy as GovPolicy, type AuditLog } from '../api/governance.service';
 
 /**
  * Compliance status
@@ -42,7 +44,7 @@ import { CommandBar, CommandBarTrigger, AmbientIntelligenceBar } from '../compon
 type ComplianceStatus = 'compliant' | 'warning' | 'non-compliant' | 'pending';
 
 /**
- * Policy interface
+ * Display-friendly Policy shape (mapped from GovPolicy)
  */
 interface Policy {
   id: string;
@@ -50,13 +52,13 @@ interface Policy {
   description: string;
   type: 'GDPR' | 'HIPAA' | 'SOC2' | 'PCI' | 'CUSTOM';
   status: ComplianceStatus;
-  appliedTo: number; // number of resources
+  appliedTo: number;
   lastChecked: string;
   aiSuggested?: boolean;
 }
 
 /**
- * Audit event interface
+ * Audit event interface (display-friendly, mapped from AuditLog)
  */
 interface AuditEvent {
   id: string;
@@ -65,6 +67,42 @@ interface AuditEvent {
   user: string;
   timestamp: string;
   status: 'success' | 'failed' | 'pending';
+}
+
+/** Map governance Policy type → display label */
+function mapPolicyType(type: GovPolicy['type']): Policy['type'] {
+  switch (type) {
+    case 'PRIVACY':   return 'GDPR';
+    case 'RETENTION': return 'HIPAA';
+    case 'SECURITY':  return 'SOC2';
+    case 'ACCESS':    return 'PCI';
+    default:          return 'CUSTOM';
+  }
+}
+
+/** Map governance Policy → display Policy */
+function mapPolicy(p: GovPolicy): Policy {
+  return {
+    id: p.id,
+    name: p.name,
+    description: Object.values(p.metadata ?? {}).join(' ') || p.type,
+    type: mapPolicyType(p.type),
+    status: p.enabled ? 'compliant' : 'pending',
+    appliedTo: (p.scope?.datasets?.length ?? 0) + (p.scope?.users?.length ?? 0),
+    lastChecked: new Date(p.updatedAt).toLocaleString(),
+  };
+}
+
+/** Map AuditLog → display AuditEvent */
+function mapAuditLog(log: AuditLog): AuditEvent {
+  return {
+    id: log.id,
+    action: log.action,
+    resource: `${log.resourceType}:${log.resourceId}`,
+    user: log.userName ?? log.userId,
+    timestamp: new Date(log.timestamp).toLocaleString(),
+    status: log.outcome === 'SUCCESS' ? 'success' : log.outcome === 'FAILURE' ? 'failed' : 'pending',
+  };
 }
 
 /**
@@ -297,87 +335,38 @@ function AuditLogItem({ event }: { event: AuditEvent }) {
 export function TrustCenter() {
   const [searchQuery, setSearchQuery] = useState('');
 
-  // Mock policies
-  const policies: Policy[] = [
-    {
-      id: '1',
-      name: 'GDPR Data Protection',
-      description: 'Personal data handling and retention policies',
-      type: 'GDPR',
-      status: 'compliant',
-      appliedTo: 12,
-      lastChecked: '2h ago',
-    },
-    {
-      id: '2',
-      name: 'PII Masking',
-      description: 'Automatic PII detection and masking',
-      type: 'CUSTOM',
-      status: 'compliant',
-      appliedTo: 8,
-      lastChecked: '1h ago',
-      aiSuggested: true,
-    },
-    {
-      id: '3',
-      name: 'Access Control',
-      description: 'Role-based access control policies',
-      type: 'SOC2',
-      status: 'warning',
-      appliedTo: 24,
-      lastChecked: '30m ago',
-    },
-    {
-      id: '4',
-      name: 'Data Encryption',
-      description: 'Encryption at rest and in transit',
-      type: 'PCI',
-      status: 'compliant',
-      appliedTo: 18,
-      lastChecked: '1h ago',
-    },
-  ];
+  const { data: rawPolicies = [], isLoading: policiesLoading, refetch: refetchPolicies } = useQuery({
+    queryKey: ['governance-policies'],
+    queryFn: () => governanceService.getPolicies(),
+    staleTime: 60_000,
+  });
 
-  // Mock audit events
-  const auditEvents: AuditEvent[] = [
-    {
-      id: '1',
-      action: 'Policy applied: GDPR Data Protection',
-      resource: 'customer_events',
-      user: 'system',
-      timestamp: '5m ago',
-      status: 'success',
-    },
-    {
-      id: '2',
-      action: 'Access granted to role: analyst',
-      resource: 'orders',
-      user: 'admin@example.com',
-      timestamp: '1h ago',
-      status: 'success',
-    },
-    {
-      id: '3',
-      action: 'PII scan completed',
-      resource: 'user_profiles',
-      user: 'system',
-      timestamp: '2h ago',
-      status: 'success',
-    },
-    {
-      id: '4',
-      action: 'Policy violation detected',
-      resource: 'raw_logs',
-      user: 'system',
-      timestamp: '3h ago',
-      status: 'failed',
-    },
-  ];
+  const { data: rawAuditLogs = [], isLoading: auditLoading } = useQuery({
+    queryKey: ['audit-logs'],
+    queryFn: () => governanceService.getAuditLogs(undefined, undefined, 10),
+    staleTime: 60_000,
+  });
 
-  // Calculate compliance stats
+  const { data: complianceReport } = useQuery({
+    queryKey: ['compliance-report'],
+    queryFn: () => governanceService.getComplianceReport('30d'),
+    staleTime: 120_000,
+  });
+
+  const policies: Policy[] = rawPolicies
+    .map(mapPolicy)
+    .filter(p =>
+      !searchQuery ||
+      p.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      p.type.toLowerCase().includes(searchQuery.toLowerCase())
+    );
+
+  const auditEvents: AuditEvent[] = rawAuditLogs.map(mapAuditLog);
+
   const compliantCount = policies.filter((p) => p.status === 'compliant').length;
   const warningCount = policies.filter((p) => p.status === 'warning').length;
-  const complianceScore = Math.round((compliantCount / policies.length) * 100);
+  const complianceScore = complianceReport?.summary.complianceScore
+    ?? (policies.length > 0 ? Math.round((compliantCount / policies.length) * 100) : 0);
 
   return (
     <div className="flex flex-col h-full">
@@ -430,7 +419,10 @@ export function TrustCenter() {
           <button className="p-2 hover:bg-gray-100 dark:hover:bg-gray-800 rounded-lg">
             <Filter className="h-4 w-4 text-gray-400" />
           </button>
-          <button className="p-2 hover:bg-gray-100 dark:hover:bg-gray-800 rounded-lg">
+          <button
+              onClick={() => refetchPolicies()}
+              className="p-2 hover:bg-gray-100 dark:hover:bg-gray-800 rounded-lg"
+            >
             <RefreshCw className="h-4 w-4 text-gray-400" />
           </button>
         </div>
@@ -494,13 +486,22 @@ export function TrustCenter() {
               </button>
             </div>
             <div className="space-y-4">
-              {policies.map((policy) => (
-                <PolicyCard
-                  key={policy.id}
-                  policy={policy}
-                  onApply={() => {}}
-                />
-              ))}
+              {policiesLoading ? (
+                <div className="flex items-center gap-2 text-gray-500 py-4">
+                  <Loader2 className="h-4 w-4 animate-spin" />
+                  <span className="text-sm">Loading policies...</span>
+                </div>
+              ) : policies.length === 0 ? (
+                <p className="text-sm text-gray-500 py-4">No policies found.</p>
+              ) : (
+                policies.map((policy) => (
+                  <PolicyCard
+                    key={policy.id}
+                    policy={policy}
+                    onApply={() => {}}
+                  />
+                ))
+              )}
             </div>
           </section>
 
@@ -515,11 +516,18 @@ export function TrustCenter() {
               </button>
             </div>
             <div className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl p-4">
-              <div className="divide-y divide-gray-100 dark:divide-gray-700">
-                {auditEvents.map((event) => (
-                  <AuditLogItem key={event.id} event={event} />
-                ))}
-              </div>
+              {auditLoading ? (
+                <div className="flex items-center gap-2 text-gray-500 py-2">
+                  <Loader2 className="h-4 w-4 animate-spin" />
+                  <span className="text-sm">Loading audit logs...</span>
+                </div>
+              ) : (
+                <div className="divide-y divide-gray-100 dark:divide-gray-700">
+                  {auditEvents.map((event) => (
+                    <AuditLogItem key={event.id} event={event} />
+                  ))}
+                </div>
+              )}
             </div>
           </section>
         </div>

@@ -6,7 +6,7 @@
 **Status:** Current planning baseline (aligned with UNIFIED_IMPLEMENTATION_PLAN.md)  
 **Supersedes:** `archive/reviews/2026-03/COMPREHENSIVE_REVIEW_AND_IMPLEMENTATION_PLAN.md`
 
-**Note**: This document provides detailed milestone execution. For the complete unified implementation strategy including domain pack architecture, see [UNIFIED_IMPLEMENTATION_PLAN.md](../UNIFIED_IMPLEMENTATION_PLAN.md).
+**Note**: This document provides detailed milestone execution. For the complete unified implementation strategy including domain pack architecture, see [UNIFIED_IMPLEMENTATION_PLAN.md](../../UNIFIED_IMPLEMENTATION_PLAN.md).
 
 ---
 
@@ -34,7 +34,7 @@ These assumptions drive the execution sequence below:
 1. The repo starts implementation on **Monday, March 9, 2026**.
 2. The first implementation target is a **kernel-first platform bootstrap**, not a domain UI or exchange adapter.
 3. The first business milestone is a **staging-grade trading control path**, not production launch.
-4. Standardized implementation profile per [../adr/ADR-011_STACK_STANDARDIZATION_AND_GHATANA_PLATFORM_ALIGNMENT.md](../adr/ADR-011_STACK_STANDARDIZATION_AND_GHATANA_PLATFORM_ALIGNMENT.md):
+4. Standardized implementation profile per [../adr/ADR-011_STACK_STANDARDIZATION_AND_GHATANA_PLATFORM_ALIGNMENT.md](../../adr/ADR-011_STACK_STANDARDIZATION_AND_GHATANA_PLATFORM_ALIGNMENT.md):
    - **Java 21 + ActiveJ** for kernel, domain, event, workflow, and data platform services
    - **Node.js LTS + TypeScript + Fastify + Prisma** for user-facing API and control-plane CRUD services
    - **Python 3.11 + FastAPI** only where AI/ML execution is required
@@ -148,7 +148,7 @@ Success means:
   - Branch and release conventions
   - Domain pack development guidelines
   - Multi-domain testing standards
-  - apply [../adr/ADR-011_STACK_STANDARDIZATION_AND_GHATANA_PLATFORM_ALIGNMENT.md](../adr/ADR-011_STACK_STANDARDIZATION_AND_GHATANA_PLATFORM_ALIGNMENT.md) as stack authority
+  - apply [../adr/ADR-011_STACK_STANDARDIZATION_AND_GHATANA_PLATFORM_ALIGNMENT.md](../../adr/ADR-011_STACK_STANDARDIZATION_AND_GHATANA_PLATFORM_ALIGNMENT.md) as stack authority
 
 **Phase 0 Deliverables**
 
@@ -599,4 +599,4 @@ Proceed in this exact order:
 
 Do **not** start with OMS screens, exchange adapters, or regulator portals before the kernel foundation exists.
 
-Apply [../adr/ADR-011_STACK_STANDARDIZATION_AND_GHATANA_PLATFORM_ALIGNMENT.md](../adr/ADR-011_STACK_STANDARDIZATION_AND_GHATANA_PLATFORM_ALIGNMENT.md) to all new implementation scaffolding and documentation updates.
+Apply [../adr/ADR-011_STACK_STANDARDIZATION_AND_GHATANA_PLATFORM_ALIGNMENT.md](../../adr/ADR-011_STACK_STANDARDIZATION_AND_GHATANA_PLATFORM_ALIGNMENT.md) to all new implementation scaffolding and documentation updates.

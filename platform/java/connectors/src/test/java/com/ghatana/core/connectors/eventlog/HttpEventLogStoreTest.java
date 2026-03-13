@@ -145,7 +145,7 @@ class HttpEventLogStoreTest extends EventloopTestBase {
 
             Offset offset = runPromise(() -> store().append(TENANT, entry));
 
-            assertThat(offset.value()).isEqualTo(7L);
+            assertThat(offset.value()).isEqualTo("7");
         }
 
         @Test
@@ -160,7 +160,9 @@ class HttpEventLogStoreTest extends EventloopTestBase {
 
             assertThatThrownBy(() -> runPromise(() -> store().append(TENANT, entry)))
                 .isInstanceOf(DataCloudRemoteException.class)
+                .cause()
                 .hasMessageContaining("503");
+            clearFatalError();
         }
 
         @Test
@@ -199,7 +201,7 @@ class HttpEventLogStoreTest extends EventloopTestBase {
             List<Offset> offsets = runPromise(() -> store().appendBatch(TENANT, entries));
 
             assertThat(offsets).hasSize(2);
-            assertThat(offsets.get(0).value()).isEqualTo(1L);
+            assertThat(offsets.get(0).value()).isEqualTo("1");
         }
     }
 
@@ -256,7 +258,7 @@ class HttpEventLogStoreTest extends EventloopTestBase {
                     .withBody("{\"offset\": 200}")));
 
             Offset offset = runPromise(() -> store().getLatestOffset(TENANT));
-            assertThat(offset.value()).isEqualTo(200L);
+            assertThat(offset.value()).isEqualTo("200");
         }
 
         @Test
@@ -268,7 +270,7 @@ class HttpEventLogStoreTest extends EventloopTestBase {
                     .withBody("{\"offset\": 0}")));
 
             Offset offset = runPromise(() -> store().getEarliestOffset(TENANT));
-            assertThat(offset.value()).isEqualTo(0L);
+            assertThat(offset.value()).isEqualTo("0");
         }
     }
 }

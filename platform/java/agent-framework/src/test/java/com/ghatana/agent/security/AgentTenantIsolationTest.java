@@ -12,6 +12,7 @@ import com.ghatana.agent.framework.memory.MemoryStore;
 import com.ghatana.agent.registry.InMemoryAgentFrameworkRegistry;
 import com.ghatana.platform.governance.security.Principal;
 import com.ghatana.platform.governance.security.TenantContext;
+import com.ghatana.platform.testing.activej.EventloopTestBase;
 import io.activej.promise.Promise;
 import org.junit.jupiter.api.*;
 
@@ -35,7 +36,7 @@ import static org.mockito.Mockito.*;
  * </ul>
  */
 @DisplayName("Agent Framework Tenant Isolation")
-class AgentTenantIsolationTest {
+class AgentTenantIsolationTest extends EventloopTestBase {
 
     private static final String TENANT_A = "tenant-alpha";
     private static final String TENANT_B = "tenant-beta";
@@ -117,8 +118,8 @@ class AgentTenantIsolationTest {
                     .timeout(Duration.ofSeconds(5))
                     .build();
 
-            // register returns Promise<Void> — use getResult() directly for in-memory impl
-            registry.register(agentA, configA).getResult();
+            // register returns Promise<Void> — run inside eventloop per architecture mandate
+            runPromise(() -> registry.register(agentA, configA));
             assertThat(registry.size()).isEqualTo(1);
         }
 
@@ -130,12 +131,12 @@ class AgentTenantIsolationTest {
             TypedAgent<String, String> agent1 = new TestTypedAgent("agent-1");
             TypedAgent<String, String> agent2 = new TestTypedAgent("agent-2");
 
-            registry.register(agent1, AgentConfig.builder()
+            runPromise(() -> registry.register(agent1, AgentConfig.builder()
                     .agentId("agent-1").type(AgentType.DETERMINISTIC)
-                    .timeout(Duration.ofSeconds(5)).build()).getResult();
-            registry.register(agent2, AgentConfig.builder()
+                    .timeout(Duration.ofSeconds(5)).build()));
+            runPromise(() -> registry.register(agent2, AgentConfig.builder()
                     .agentId("agent-2").type(AgentType.PROBABILISTIC)
-                    .timeout(Duration.ofSeconds(5)).build()).getResult();
+                    .timeout(Duration.ofSeconds(5)).build()));
 
             assertThat(registry.size()).isEqualTo(2);
         }
@@ -442,8 +443,7 @@ class AgentTenantIsolationTest {
                 Principal p = new Principal("svc", List.of("processor"), tenant);
                 try (AutoCloseable scope = TenantContext.scope(p)) {
                     AgentContext ctx = createAgentContext(tenant);
-                    Promise<AgentResult<String>> promise = agent.process(ctx, "input");
-                    AgentResult<String> result = promise.getResult();
+                    AgentResult<String> result = runPromise(() -> agent.process(ctx, "input"));
                     results.put(tenant, result);
                 }
             }

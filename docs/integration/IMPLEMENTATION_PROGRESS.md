@@ -24,12 +24,10 @@
 ### 0A — Event-Cloud Remote Store Impls (`platform/java/connectors/`)
 
 - ✅ `GrpcEventLogStore.java` — `EventLogStore` SPI impl over gRPC to remote Data-Cloud
-- ⬜ `GrpcEventLogStore` unit tests
+- ✅ `GrpcEventLogStore` unit tests — `GrpcEventLogStoreTest` (WireMock-based, existing)
 - ✅ `HttpEventLogStore.java` — `EventLogStore` SPI impl over HTTP to remote Data-Cloud
-- ⬜ `HttpEventLogStore` unit tests
+- ✅ `HttpEventLogStore` unit tests — `HttpEventLogStoreTest` (WireMock-based, existing)
 - ✅ `META-INF/services/com.ghatana.datacloud.spi.EventLogStore` registration
-- ✅ `GrpcEventLogStoreTest` — WireMock-based unit tests
-- ✅ `HttpEventLogStoreTest` — WireMock-based unit tests
 
 ### 0B — YAML Template Engine (`platform/java/yaml-template/`) ✅
 
@@ -77,15 +75,16 @@
 - ✅ `DataCloudStartupValidator.java` — ping Redis/PG/S3 at startup
 - ✅ `DataCloudClientFactory.fromEnvironment()` — env-var-driven mode selection
 - ✅ Modify `DataCloudStorageModule` — inject `DataCloudEnvConfig`, remove hardcoded strings
-- ⬜ Tests for `DataCloudEnvConfig` fail-fast
-- ⬜ Tests for `DataCloudClientFactory.fromEnvironment()`
+- ✅ Tests for `DataCloudEnvConfig` fail-fast — `DataCloudEnvConfigTest` (21 tests: defaults, get/getInt/require, typed accessors with and without overrides)
+- ✅ Tests for `DataCloudClientFactory.fromEnvironment()` — `DataCloudClientFactoryTest` (10 tests: EMBEDDED validator, STANDALONE missing URL/dev/prod, DISTRIBUTED missing/1-node/dev/prod, invalid mode)
+- ✅ `DataCloudStorageModule.java` import fix — corrected broken `plugins.storage.*` imports to actual `plugins.iceberg.*` / `plugins.redis.*` / `plugins.s3archive.*` package declarations
 
 ### DC-1 — WARM Tier PostgreSQL Event Log ✅
 
 - ✅ `WarmTierEventLogStore.java` — full `EventLogStore` SPI impl (append, queryByTenant, queryByTimeRange, queryByType, countByTenant)
 - ✅ `V005__create_event_log.sql` — Flyway migration for `event_log` table with GIN/partial indexes
 - ✅ Modify `DataCloudStorageModule` — `warmTierDataSource()` + `warmTierEventLogStore(DataSource)` `@Provides` methods added
-- ⬜ Integration tests
+- ✅ `WarmTierEventLogStoreTest` — 22 Testcontainers + EventloopTestBase integration tests; `@Testcontainers(disabledWithoutDocker = true)` (skips gracefully without Docker)
 
 ### DC-2 — gRPC Server ✅
 
@@ -119,14 +118,14 @@
 - ✅ **Bug 1**: Fix `.getResult()` in `AIAgentOrchestrationManagerImpl.executeChainInternal()` → rewrote using `Promises.toList()` (codebase idiom) + `.map()` + `.then()` + `.mapException()`; added `import io.activej.promise.Promises`
 - ✅ **Bug 2**: Add `TenantId tenantId` as first parameter to all `AgentRegistryService` methods; updated `AIAgentOrchestrationManagerImpl` to pass `TenantId.of(context.tenantId())`
 - ✅ **Bug 3**: `AepIngressModule` — added `setTestOnReturn(true)` + startup Redis health check via `verifyRedisReachable(pool)` to fail fast on misconfigured Redis
-- ⬜ Tests for bug fixes
+- ⬜ Tests for bug fixes — _covered by existing `AepAgentAdapterTest` (executeChain with `Promises.toList()`), `AepContextBridgeTest` (TenantId wiring), `AepIngressModuleTest` implicit via integration_
 
 ### AEP-P6 — Env Config (Deliver Early)
 
 - ✅ `EnvConfig.java` — typed accessors, `require()`, `getInt()`, `fromSystem()`, `fromMap()`
 - ✅ Modify `AepConnectorModule` — all 6 `@Provides` methods env-driven via `EnvConfig.fromSystem()`
 - ✅ Modify `AepIngressModule` — env-driven Redis config via `EnvConfig.fromSystem()`
-- ⬜ Unit tests for `EnvConfig`
+- ✅ Unit tests for `EnvConfig` — `EnvConfigTest` (21 tests: `get`/`getInt`/`require`/`isDevelopment` + all typed connector defaults + overrides)
 
 ### AEP-P1 — Framework Wiring (AgentTurnPipeline) ✅
 
@@ -138,7 +137,7 @@
 - ✅ `EnvConfig` — added `AEP_DB_URL`, `AEP_DB_USERNAME`, `AEP_DB_PASSWORD`, `AEP_DB_POOL_SIZE` accessors
 - ✅ Tests: `EnvConfigDbTest` (16 assertions), `AepContextBridgeTest` (12 assertions), `AepAgentAdapterTest` (9 assertions, extends `EventloopTestBase`)
 - ✅ Modify `AIAgentOrchestrationManagerImpl` — wired `AgentTurnPipeline` (PERCEIVE→REASON→ACT→CAPTURE→REFLECT); pipelines cached in `ConcurrentHashMap`; `buildPipeline()` uses `AgentTurnPipeline.builder()` API; `executeChainInternal()` uses `pipeline.execute(event, agentCtx)` via `AepContextBridge`; replaced `System.out.println` with structured logging
-- ⬜ `PostgresCheckpointStorageTest` (Testcontainers PostgreSQL integration test)
+- ✅ `PostgresCheckpointStorageTest` — fixed pre-existing compile errors (missing `OperatorCheckpointInfo` import + `operatorAcks(Map.of(...))` builder call); Testcontainers + PostgreSQL integration test (8 tests)
 
 ### AEP-P2 — Agent Dispatch + Catalog Loader 🔄
 
@@ -153,6 +152,7 @@
 - ✅ P7: REST endpoints — `AepHttpServer` extended with agent list/get/execute/memory, HITL pending/approve/reject, SSE stream; fixed 2 forbidden `loadBody().getResult()` blocking reads; 11 agent tests + 14 HITL tests
 - ✅ P8: gRPC hardening — `AepGrpcServer` with `TenantGrpcInterceptor.lenient()`; `ManagementService` + `ExecutionService`; `--grpc` flag; `AEP_GRPC_PORT` env
 - ✅ Schema registry wiring — `DataCloudSchemaRegistry` wired in `AepRegistryModule` + `LifecycleServiceModule`
+- ✅ `PostgresCheckpointStorageTest` — Testcontainers + PostgreSQL integration test (existing, 8 tests)
 
 ---
 
@@ -163,24 +163,24 @@
 - ✅ `DataCloudModule.java` — ActiveJ DI `AbstractModule` providing `DataCloudClient` singleton via `DataCloudClientFactory.fromEnvironment()`
 - ✅ Wired into `ProductionModule.configure()` via `install(new DataCloudModule())`
 - ✅ Wired into `DevelopmentModule.configure()` via `install(new DataCloudModule())`
-- ⬜ Integration test: `DataCloudModuleIntegrationTest` (DATACLOUD_MODE=embedded → client created; missing DC_SERVER_URL in standalone → ISE)
+- ✅ `DataCloudModuleIntegrationTest` — 9 tests: EMBEDDED/DEFAULT validation passes; STANDALONE without URL → ISE; STANDALONE with valid https:// → client created; DISTRIBUTED < 2 nodes → error; DISTRIBUTED 2+ nodes → client created; unknown mode → ISE
 
 ### YAPPC-Ph0.6 — Outbox Relay Service ✅
 
 - ✅ `OutboxRelayService.java` — polls `yappc.event_outbox`, calls `AepClient.publishEvent()`, marks entries `DELIVERED`/`FAILED` with exponential back-off (created in `com.ghatana.yappc.api.outbox`)
-- ⬜ `V010__outbox_relay_status.sql` — adds status/retry/processed_at columns (existing V10 already has these columns)
+- ✅ `V010` columns already exist (no migration needed)
 - ✅ Wired into `ProductionModule` via `@Provides OutboxRelayService outboxRelayService(DataSource, AepClient)` — calls `relay.start()` on creation
 - ✅ Eagerly instantiated at startup via `OutboxRelayService outboxRelayService` parameter in `ApiApplication.servlet()`
-- ⬜ Tests: `OutboxRelayServiceTest extends EventloopTestBase`
+- ✅ `OutboxRelayServiceTest` — 8 Mockito-based unit tests: empty queue, single delivery, AepException→markFailed, SQLException swallowed, multiple entries, mixed fail/success, start() idempotent, stop() no-op
 
 ### YAPPC-Ph1 — AEP Hardening + EventCloud Wiring
 
-- ⬜ Ph1a: Wire `EventLogStore` to Data-Cloud PostgreSQL; `tenantId` everywhere
-- ⬜ Ph1b: Verify `AepEventCloudFactory` resolves production `EventLogStore`
+- ✅ **Ph1a**: `EventLogStoreBackedEventCloud` uses `TenantContext.of(tenantId)` on all store calls; `tenantId` propagated everywhere
+- ✅ **Ph1b**: `AepEventCloudFactory.createDefault()` uses `ServiceLoader.load(EventLogStore.class)` — resolves provider from classpath; dev-mode fallback gated on `AEP_DEV_MODE=true`
 - ✅ **Ph1c**: `HttpAepEventPublisher`, `AepEventBridge`, `DurableAepEventPublisher` deleted; `DurableEventCloudPublisher` created; all callers migrated to `AepEventPublisher` via `EventCloud`
 - ✅ **Ph1d**: Swap `InMemoryCheckpointStorage` → `PostgresCheckpointStorage` — already done: `AepAgentModule.checkpointStorage()` binds `CheckpointStorage → PostgresCheckpointStorage`; `InMemoryCheckpointStorage` class retained only for testing
-- ⬜ Ph1e: Event-source `AIAgentOrchestrationManagerImpl` state
-- ⬜ Ph1f: Env-drive `AepConnectorModule` connectors
+- ✅ **Ph1e**: `AIAgentOrchestrationManagerImpl` appends state-mutation events to `EventLogStore` (append + `rebuildFromEventLog()`); optional — if `null`, falls back to in-memory
+- ✅ **Ph1f**: `AepConnectorModule` all 6 `@Provides` methods use `EnvConfig.fromSystem()` for every config value
 - ✅ **Ph1h**: `AepLibraryClient` rewritten — removed `URLClassLoader`, all reflection, and `managedClassLoader`; now calls `Aep.embedded()` directly (typed `AepEngine`); constructor no longer throws `AepException`
 - ✅ Deleted: `HttpAepEventPublisher.java`, `AepEventBridge.java`, `DurableAepEventPublisher.java`
 
@@ -237,6 +237,7 @@
 - ✅ `api/alerts.service.ts` — REST+SSE client for operational alerts (getAlerts, acknowledgeAlert, resolveAlert, getAlertGroups, resolveGroup, getResolutionSuggestions, applySuggestion, openStream)
 - ✅ `api/agent-registry.service.ts` — REST+SSE client for DC agent registry (listAgents, registerAgent, deregisterAgent, updateCapabilities, listExecutions, recordExecution, streamRegistryEvents)
 - ✅ `pages/AgentPluginManagerPage.tsx` — agent registry page with AgentCard, AgentRegistrationModal, RegistryEventsFeed; useQuery + useMutation + SSE stream; `/agents` route wired
+- ✅ `__tests__/pages/AgentPluginManagerPage.test.tsx` — 19 RTL tests: header, loading/empty/error states, agent cards + version/status badges, KPI counts, empty state link, register modal open/cancel/submit, deregister with confirm/cancel, SSE feed panel, SSE stream lifecycle, SSE event injection, capability expand/collapse
 - ✅ `pages/BrainDashboardPage.tsx` — replaced mock `fetchBrainStats` with `brainService.getBrainStats()` real API
 - ✅ `pages/AlertsPage.tsx` — replaced all mock data (mockAlerts/mockAlertGroups/mockSuggestions) with TanStack Query (useQuery × 3, useMutation × 4) + live SSE stream via `alertsService.openStream()`
 - ✅ `@ghatana/flow-canvas` — added `Handle`, `Panel` re-exports to `src/index.ts`; created `dist/index.d.ts` handwritten type declarations (DTS build fails due to React 18/19 @xyflow/react incompatibility)
@@ -318,7 +319,7 @@
 | 2026-03-19 | YAPPC: `AuthService.forgotPassword()`                                            | ✅     | POST /api/auth/forgot-password; added to AuthService                                                                               |
 | 2026-03-19 | YAPPC: routes.ts wired (register + forgot-password)                              | ✅     | Added 2 new auth routes                                                                                                             |
 | 2026-03-19 | YAPPC: Pre-existing tsconfig + vitest fixes                                      | ✅     | Fixed broken JSON in apps/web/tsconfig.json + libs/ui/tsconfig.json; fixed broken lib path aliases in vitest.config.ts             |
-| 2026-03-20 | DC: `DataCloudStorageModule.java` import fix                                     | ✅     | 6 broken imports `plugins.iceberg.*`/`plugins.redis.*`/`plugins.s3archive.*` → `plugins.storage.*` (compile-blocking)             |
+| 2026-03-20 | DC: `DataCloudStorageModule.java` import fix                                     | ✅     | 6 broken imports `plugins.storage.*` → `plugins.iceberg.*`/`plugins.redis.*`/`plugins.s3archive.*` (compile-blocking)             |
 | 2026-03-20 | DC: `EventQueryGrpcService.java` created                                         | ✅     | `ExecuteQuery` (server-streaming, type-prefix routing) + `ExplainQuery` RPCs                                                        |
 | 2026-03-20 | DC: `EventServiceGrpcService.java` created                                       | ✅     | 5 RPCs: `Ingest`, `IngestBatch`, `IngestStream` (bidir), `Query` (server-stream), `GetEvent`                                        |
 | 2026-03-20 | DC: `DataCloudGrpcServer` updated                                                | ✅     | All 3 gRPC services registered                                                                                                      |
@@ -330,3 +331,11 @@
 | 2026-03-20 | `@ghatana/flow-canvas`: added `Handle`, `Panel` to `src/index.ts` re-exports    | ✅     | Package now re-exports all needed ReactFlow primitives                                                                               |
 | 2026-03-20 | `@ghatana/flow-canvas`: hand-written `dist/index.d.ts`                          | ✅     | DTS build blocked by React 18/19 type mismatch; created manually; permissive `FlowCanvasProps` avoids contravariance errors         |
 | 2026-03-20 | DC UI: full `@xyflow/react` → `@ghatana/flow-canvas` migration (13 files)       | ✅     | Zero direct @xyflow/react imports remain; test stub extended with Handle/Panel/Node/Edge/Connection/NodeProps                        |
+| 2026-03-21 | DC: `DataCloudEnvConfigTest.java` (21 tests)                                     | ✅     | get/getInt/require methods + default and override typed accessors; all 21 pass                                                       |
+| 2026-03-21 | DC: `DataCloudClientFactoryTest.java` (10 tests)                                 | ✅     | EMBEDDED (validator only), STANDALONE (missing URL/dev/prod), DISTRIBUTED (missing/1-node/dev/prod), invalid mode; all 10 pass      |
+| 2026-03-21 | DC UI: `AgentPluginManagerPage.test.tsx` (19 tests)                              | ✅     | header, loading/empty/error states, agent cards + badges, register modal lifecycle, deregister confirm flow, SSE stream + event injection, capabilities expand |
+| 2026-03-21 | DC UI: `analytics.service.ts` — created DC-9 query client                        | ✅     | `executeAnalyticsQuery(sql, params)` → POST /api/v1/analytics/query with X-Tenant-ID header; `QueryResultData` type                 |
+| 2026-03-21 | DC UI: `DashboardPage.tsx` real API wiring                                        | ✅     | Removed 3 mock data sources; governance service for audit logs + compliance report; real executions for activity feed               |
+| 2026-03-21 | DC UI: `SqlWorkspacePage.tsx` real API wiring                                     | ✅     | Removed mockSchemas/mockQueryHistory/mockResults; real SQL via analytics service; schema from collections API                       |
+| 2026-03-21 | Platform: `GrpcEventLogStoreTest.java` (28 tests)                                 | ✅     | Fixed Offset.value() String assertions, .cause() chain; clearFatalError() after assertThatThrownBy; all 28 pass                     |
+| 2026-03-21 | Platform: `HttpEventLogStoreTest.java` (28 tests)                                 | ✅     | Fixed Offset.value() String assertions, .cause() chain; clearFatalError() after assertThatThrownBy; all 28 pass                     |

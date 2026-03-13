@@ -5,6 +5,7 @@ import com.ghatana.platform.security.auth.impl.TokenCredentials;
 import com.ghatana.platform.security.auth.impl.UsernamePasswordCredentials;
 import com.ghatana.platform.security.model.User;
 import com.ghatana.platform.security.port.JwtTokenProvider;
+import com.ghatana.platform.testing.activej.EventloopTestBase;
 import io.activej.promise.Promise;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -22,7 +23,7 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
  * Covers: SEC-01 fix (no downcast), CORR-02 fix (getRemainingValidity),
  * CORR-03 fix (roles accumulated correctly), delegate flow, unsupported type.
  */
-class JwtAuthenticationProviderTest {
+class JwtAuthenticationProviderTest extends EventloopTestBase {
 
     private static final String VALID_TOKEN   = "valid.jwt.token";
     private static final String EXPIRED_TOKEN = "expired.jwt.token";
@@ -48,7 +49,7 @@ class JwtAuthenticationProviderTest {
         // StubJwtTokenProvider is NOT the concrete jwt.JwtTokenProvider —
         // if SEC-01 downcast were still present this would throw ClassCastException
         TokenCredentials creds = new TokenCredentials(VALID_TOKEN);
-        Optional<User> result = provider.authenticate(creds).getResult();
+        Optional<User> result = runPromise(() -> provider.authenticate(creds));
         assertThat(result).isPresent();
     }
 
@@ -60,7 +61,7 @@ class JwtAuthenticationProviderTest {
     void authenticate_tokenCredentials_rolesApplied() {
         TokenCredentials creds = new TokenCredentials(VALID_TOKEN);
 
-        Optional<User> result = provider.authenticate(creds).getResult();
+        Optional<User> result = runPromise(() -> provider.authenticate(creds));
 
         assertThat(result).isPresent();
         User user = result.get();
@@ -72,7 +73,7 @@ class JwtAuthenticationProviderTest {
         stubJwt.roles = List.of();
         TokenCredentials creds = new TokenCredentials(VALID_TOKEN);
 
-        Optional<User> result = provider.authenticate(creds).getResult();
+        Optional<User> result = runPromise(() -> provider.authenticate(creds));
 
         assertThat(result).isPresent();
         assertThat(result.get().getRoles()).isEmpty();
@@ -106,20 +107,20 @@ class JwtAuthenticationProviderTest {
 
     @Test
     void authenticate_invalidToken_returnsEmpty() {
-        Optional<User> result = provider.authenticate(new TokenCredentials(BAD_TOKEN)).getResult();
+        Optional<User> result = runPromise(() -> provider.authenticate(new TokenCredentials(BAD_TOKEN)));
         assertThat(result).isEmpty();
     }
 
     @Test
     void authenticate_noUserIdInToken_returnsEmpty() {
         stubJwt.userId = null;
-        Optional<User> result = provider.authenticate(new TokenCredentials(VALID_TOKEN)).getResult();
+        Optional<User> result = runPromise(() -> provider.authenticate(new TokenCredentials(VALID_TOKEN)));
         assertThat(result).isEmpty();
     }
 
     @Test
     void authenticate_userId_setOnReturnedUser() {
-        Optional<User> result = provider.authenticate(new TokenCredentials(VALID_TOKEN)).getResult();
+        Optional<User> result = runPromise(() -> provider.authenticate(new TokenCredentials(VALID_TOKEN)));
         assertThat(result).isPresent();
         assertThat(result.get().getUserId()).isEqualTo(USER_ID);
         assertThat(result.get().isAuthenticated()).isTrue();
@@ -133,7 +134,7 @@ class JwtAuthenticationProviderTest {
     @Test
     void authenticate_unsupportedType_returnsEmpty() {
         Credentials unknownCreds = new Credentials("magic") {};
-        Optional<User> result = provider.authenticate(unknownCreds).getResult();
+        Optional<User> result = runPromise(() -> provider.authenticate(unknownCreds));
         assertThat(result).isEmpty();
     }
 
@@ -160,7 +161,7 @@ class JwtAuthenticationProviderTest {
         JwtAuthenticationProvider chained = new JwtAuthenticationProvider(stubJwt, delegate);
 
         UsernamePasswordCredentials creds = new UsernamePasswordCredentials("u", "p");
-        Optional<User> result = chained.authenticate(creds).getResult();
+        Optional<User> result = runPromise(() -> chained.authenticate(creds));
 
         assertThat(result).isPresent();
         assertThat(result.get().getAuthToken()).isNotNull();
@@ -178,7 +179,7 @@ class JwtAuthenticationProviderTest {
         };
         JwtAuthenticationProvider chained = new JwtAuthenticationProvider(stubJwt, delegate);
 
-        Optional<User> result = chained.authenticate(new UsernamePasswordCredentials("u", "p")).getResult();
+        Optional<User> result = runPromise(() -> chained.authenticate(new UsernamePasswordCredentials("u", "p")));
         assertThat(result).isEmpty();
     }
 

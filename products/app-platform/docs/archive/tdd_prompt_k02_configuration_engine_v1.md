@@ -1,15 +1,15 @@
 # Specialized TDD Prompt: K-02 Configuration Engine
 
-Use this prompt together with [tdd_test_spec_generation_prompt_v1.md](tdd_test_spec_generation_prompt_v1.md).
+Use this prompt together with [tdd_test_spec_generation_prompt_v1.md](../tdd_test_spec_generation_prompt_v1.md).
 
 Execution-plan position:
 - Phase 1
 - Build order position: 4
 
 Primary sources:
-- [../CURRENT_EXECUTION_PLAN.md](../CURRENT_EXECUTION_PLAN.md)
-- [../LLD_K02_CONFIGURATION_ENGINE.md](../LLD_K02_CONFIGURATION_ENGINE.md)
-- [../ADR-011_STACK_STANDARDIZATION_AND_GHATANA_PLATFORM_ALIGNMENT.md](../ADR-011_STACK_STANDARDIZATION_AND_GHATANA_PLATFORM_ALIGNMENT.md)
+- [../CURRENT_EXECUTION_PLAN.md](plans/CURRENT_EXECUTION_PLAN.md)
+- [../LLD_K02_CONFIGURATION_ENGINE.md](../lld/LLD_K02_CONFIGURATION_ENGINE.md)
+- [../ADR-011_STACK_STANDARDIZATION_AND_GHATANA_PLATFORM_ALIGNMENT.md](../adr/ADR-011_STACK_STANDARDIZATION_AND_GHATANA_PLATFORM_ALIGNMENT.md)
 
 ---
 

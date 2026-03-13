@@ -1,5 +1,6 @@
 package com.ghatana.virtualorg.framework.norm;
 
+import com.ghatana.platform.testing.activej.EventloopTestBase;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -13,7 +14,7 @@ import static org.assertj.core.api.Assertions.assertThat;
  * Tests for the Normative System (Norm, NormRegistry, NormativeMonitor).
  */
 @DisplayName("Normative System Tests")
-class NormativeSystemTest {
+class NormativeSystemTest extends EventloopTestBase {
 
     private InMemoryNormRegistry normRegistry;
     private NormativeMonitor monitor;
@@ -80,11 +81,11 @@ class NormativeSystemTest {
                 .action("forbidden-action")
                 .build();
 
-        normRegistry.register(obligation).getResult();
-        normRegistry.register(prohibition).getResult();
+        runPromise(() -> normRegistry.register(obligation));
+        runPromise(() -> normRegistry.register(prohibition));
 
-        List<Norm> obligations = normRegistry.getObligations(null).getResult();
-        List<Norm> prohibitions = normRegistry.getProhibitions(null).getResult();
+        List<Norm> obligations = runPromise(() -> normRegistry.getObligations(null));
+        List<Norm> prohibitions = runPromise(() -> normRegistry.getProhibitions(null));
 
         assertThat(obligations).hasSize(1);
         assertThat(prohibitions).hasSize(1);
@@ -98,7 +99,7 @@ class NormativeSystemTest {
                 .deadline(Duration.ofMillis(1)) // Very short deadline for testing
                 .build();
 
-        normRegistry.register(obligation).getResult();
+        runPromise(() -> normRegistry.register(obligation));
 
         monitor.trackObligation("agent-1", "dept-1", obligation);
 
@@ -109,7 +110,7 @@ class NormativeSystemTest {
             Thread.currentThread().interrupt();
         }
 
-        List<NormViolation> violations = monitor.checkDeadlines().getResult();
+        List<NormViolation> violations = runPromise(() -> monitor.checkDeadlines());
 
         assertThat(violations).hasSize(1);
         assertThat(violations.get(0).agentId()).isEqualTo("agent-1");
@@ -124,11 +125,11 @@ class NormativeSystemTest {
                 .action("deploy")
                 .build();
 
-        normRegistry.register(prohibition).getResult();
+        runPromise(() -> normRegistry.register(prohibition));
 
-        List<NormViolation> violations = monitor.reportAction(
+        List<NormViolation> violations = runPromise(() -> monitor.reportAction(
                 "agent-1", "deploy", java.util.Map.of("departmentId", "dept-1")
-        ).getResult();
+        ));
 
         assertThat(violations).hasSize(1);
         assertThat(violations.get(0).violationType())
@@ -143,15 +144,15 @@ class NormativeSystemTest {
                 .deadline(Duration.ofHours(1))
                 .build();
 
-        normRegistry.register(obligation).getResult();
+        runPromise(() -> normRegistry.register(obligation));
 
         String trackingId = monitor.trackObligation("agent-1", "dept-1", obligation);
 
         // Perform the required action
-        monitor.reportAction("agent-1", "respond", java.util.Map.of()).getResult();
+        runPromise(() -> monitor.reportAction("agent-1", "respond", java.util.Map.of()));
 
         // Check deadlines - should be no violations
-        List<NormViolation> violations = monitor.checkDeadlines().getResult();
+        List<NormViolation> violations = runPromise(() -> monitor.checkDeadlines());
         assertThat(violations).isEmpty();
     }
 }

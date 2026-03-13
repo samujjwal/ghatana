@@ -1,13 +1,18 @@
 package com.ghatana.datacloud.launcher.http;
 
 import com.ghatana.datacloud.DataCloudClient;
+import com.ghatana.datacloud.DataRecord;
+import com.ghatana.datacloud.EntityRecord;
 import com.ghatana.datacloud.analytics.AnalyticsQueryEngine;
 import com.ghatana.datacloud.brain.BrainConfig;
 import com.ghatana.datacloud.brain.BrainContext;
 import com.ghatana.datacloud.brain.DataCloudBrain;
+import com.ghatana.datacloud.attention.AttentionManager;
 import com.ghatana.datacloud.launcher.learning.DataCloudLearningBridge;
 import com.ghatana.datacloud.spi.EventLogStore;
 import com.ghatana.datacloud.spi.TenantContext;
+import com.ghatana.datacloud.workspace.GlobalWorkspace;
+import com.ghatana.datacloud.workspace.SpotlightItem;
 import com.ghatana.platform.types.identity.Offset;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.ghatana.platform.core.util.JsonUtils;
@@ -164,6 +169,13 @@ public class DataCloudHttpServer {
             .with(HttpMethod.GET, "/api/v1/agents/:agentId", this::handleGetAgent)
             .with(HttpMethod.DELETE, "/api/v1/agents/:agentId", this::handleDeleteAgent)
 
+            // Pipeline registry endpoints — stores AEP pipeline definitions in dc_pipelines
+            .with(HttpMethod.GET,    "/api/v1/pipelines",                this::handleListPipelines)
+            .with(HttpMethod.POST,   "/api/v1/pipelines",                this::handleSavePipeline)
+            .with(HttpMethod.GET,    "/api/v1/pipelines/:pipelineId",    this::handleGetPipeline)
+            .with(HttpMethod.PUT,    "/api/v1/pipelines/:pipelineId",    this::handleUpdatePipeline)
+            .with(HttpMethod.DELETE, "/api/v1/pipelines/:pipelineId",    this::handleDeletePipeline)
+
             // Checkpoint management endpoints (DC-3)
             .with(HttpMethod.GET, "/api/v1/checkpoints", this::handleListCheckpoints)
             .with(HttpMethod.POST, "/api/v1/checkpoints", this::handleSaveCheckpoint)
@@ -171,14 +183,24 @@ public class DataCloudHttpServer {
             .with(HttpMethod.DELETE, "/api/v1/checkpoints/:checkpointId", this::handleDeleteCheckpoint)
 
             // Agent memory plane endpoints (DC-4)
-            .with(HttpMethod.GET, "/api/v1/memory/:agentId", this::handleGetAgentMemory)
-            .with(HttpMethod.GET, "/api/v1/memory/:agentId/:tier", this::handleGetAgentMemoryByTier)
+            .with(HttpMethod.GET,    "/api/v1/memory/:agentId",                  this::handleGetAgentMemory)
+            .with(HttpMethod.GET,    "/api/v1/memory/:agentId/:tier",            this::handleGetAgentMemoryByTier)
+            .with(HttpMethod.POST,   "/api/v1/memory/:agentId/search",           this::handleSearchAgentMemory)
+            .with(HttpMethod.DELETE, "/api/v1/memory/:agentId/:memoryId",        this::handleDeleteMemory)
+            .with(HttpMethod.PUT,    "/api/v1/memory/:agentId/:memoryId/retain", this::handleRetainMemory)
 
             // Brain routes (DC-6) — active only when brain is wired
-            .with(HttpMethod.GET, "/api/v1/brain/health",      this::handleBrainHealth)
-            .with(HttpMethod.GET, "/api/v1/brain/config",      this::handleBrainConfig)
-            .with(HttpMethod.GET, "/api/v1/brain/stats",       this::handleBrainStats)
-            .with(HttpMethod.GET, "/api/v1/brain/workspace",   this::handleBrainWorkspace)
+            .with(HttpMethod.GET,  "/api/v1/brain/health",                this::handleBrainHealth)
+            .with(HttpMethod.GET,  "/api/v1/brain/config",                this::handleBrainConfig)
+            .with(HttpMethod.GET,  "/api/v1/brain/stats",                 this::handleBrainStats)
+            .with(HttpMethod.GET,  "/api/v1/brain/workspace",             this::handleBrainWorkspace)
+            .with(HttpMethod.GET,  "/api/v1/brain/workspace/stream",      this::handleBrainWorkspaceStream)
+            .with(HttpMethod.POST, "/api/v1/brain/attention/elevate",     this::handleBrainAttentionElevate)
+            .with(HttpMethod.GET,  "/api/v1/brain/attention/thresholds",  this::handleBrainAttentionThresholds)
+            .with(HttpMethod.PUT,  "/api/v1/brain/attention/thresholds",  this::handleBrainAttentionThresholdsUpdate)
+            .with(HttpMethod.GET,  "/api/v1/brain/patterns",              this::handleBrainPatterns)
+            .with(HttpMethod.POST, "/api/v1/brain/patterns/match",        this::handleBrainPatternsMatch)
+            .with(HttpMethod.GET,  "/api/v1/brain/salience/:itemId",      this::handleBrainSalience)
 
             // Learning routes (DC-8) — active only when learningBridge is wired
             .with(HttpMethod.POST, "/api/v1/learning/trigger",                    this::handleLearningTrigger)
@@ -193,8 +215,10 @@ public class DataCloudHttpServer {
             .with(HttpMethod.GET,  "/api/v1/analytics/query/:queryId/plan",       this::handleAnalyticsGetPlan)
             .with(HttpMethod.POST, "/api/v1/analytics/aggregate",                 this::handleAnalyticsAggregate)
 
-            // Server-Sent Events for real-time UI updates (DC-3)
-            .with(HttpMethod.GET, "/events/stream", this::handleSseStream)
+            // Server-Sent Events for real-time UI updates (DC-3, DC-9)
+            .with(HttpMethod.GET, "/events/stream",              this::handleSseStream)
+            .with(HttpMethod.GET, "/api/v1/agents/events/stream", this::handleAgentsEventStream)
+            .with(HttpMethod.GET, "/api/v1/learning/stream",      this::handleLearningStream)
 
             .build();
 
@@ -514,6 +538,142 @@ public class DataCloudHttpServer {
                 "tenantId", tenantId,
                 "timestamp", Instant.now().toString()
             )));
+    }
+
+    // ==================== Pipeline Registry Endpoints (AEP integration) ====================
+
+    private static final String DC_PIPELINES_COLLECTION = "aep_pipelines";
+
+    /**
+     * Lists all pipeline definitions for the requesting tenant.
+     *
+     * <p>Supports optional {@code ?tenantId=} query parameter; falls back to the
+     * {@code X-Tenant-Id} header (used by AEP's PipelineRegistryClient).
+     */
+    private Promise<HttpResponse> handleListPipelines(HttpRequest request) {
+        String tenantId = resolveQueryOrHeaderTenantId(request);
+        int limit = parseIntParam(request.getQueryParameter("limit"), 500);
+        return client.query(tenantId, DC_PIPELINES_COLLECTION, DataCloudClient.Query.limit(limit))
+                .map(entities -> {
+                    List<Map<String, Object>> pipelines = entities.stream()
+                            .map(e -> flattenPipelineEntity(e, tenantId))
+                            .toList();
+                    return jsonResponse(Map.of(
+                            "tenantId", tenantId,
+                            "pipelines", pipelines,
+                            "count", pipelines.size(),
+                            "timestamp", Instant.now().toString()));
+                });
+    }
+
+    /**
+     * Saves (creates) a new pipeline definition in Data-Cloud.
+     *
+     * <p>Request body must be valid JSON. The {@code id} field is required.
+     */
+    @SuppressWarnings("unchecked")
+    private Promise<HttpResponse> handleSavePipeline(HttpRequest request) {
+        String tenantId = resolveQueryOrHeaderTenantId(request);
+        return request.loadBody().then(buf -> {
+            try {
+                String body = buf.getString(StandardCharsets.UTF_8);
+                Map<String, Object> data = objectMapper.readValue(body, Map.class);
+                return client.save(tenantId, DC_PIPELINES_COLLECTION, data)
+                        .map(entity -> HttpResponse.ok200()
+                                .withHeader(HttpHeaders.CONTENT_TYPE, "application/json")
+                                .withBody(toJson(flattenPipelineEntity(entity, tenantId))));
+            } catch (Exception e) {
+                log.warn("[DC-Pipelines] save failed tenant={}: {}", tenantId, e.getMessage());
+                return Promise.of(errorResponse(400, "Invalid pipeline definition: " + e.getMessage()));
+            }
+        });
+    }
+
+    /**
+     * Gets a single pipeline definition by ID.
+     */
+    private Promise<HttpResponse> handleGetPipeline(HttpRequest request) {
+        String tenantId = resolveQueryOrHeaderTenantId(request);
+        String pipelineId = request.getPathParameter("pipelineId");
+        if (pipelineId == null || pipelineId.isBlank()) {
+            return Promise.of(errorResponse(400, "pipelineId path parameter is required"));
+        }
+        return client.findById(tenantId, DC_PIPELINES_COLLECTION, pipelineId)
+                .map(opt -> opt
+                        .map(e -> jsonResponse(flattenPipelineEntity(e, tenantId)))
+                        .orElse(errorResponse(404, "Pipeline not found: " + pipelineId)));
+    }
+
+    /**
+     * Updates an existing pipeline definition.
+     */
+    @SuppressWarnings("unchecked")
+    private Promise<HttpResponse> handleUpdatePipeline(HttpRequest request) {
+        String tenantId = resolveQueryOrHeaderTenantId(request);
+        String pipelineId = request.getPathParameter("pipelineId");
+        if (pipelineId == null || pipelineId.isBlank()) {
+            return Promise.of(errorResponse(400, "pipelineId path parameter is required"));
+        }
+        return request.loadBody().then(buf -> {
+            try {
+                String body = buf.getString(StandardCharsets.UTF_8);
+                Map<String, Object> data = objectMapper.readValue(body, Map.class);
+                // Ensure id consistency
+                data.put("id", pipelineId);
+                return client.save(tenantId, DC_PIPELINES_COLLECTION, data)
+                        .map(entity -> jsonResponse(flattenPipelineEntity(entity, tenantId)));
+            } catch (Exception e) {
+                log.warn("[DC-Pipelines] update failed pipelineId={} tenant={}: {}", pipelineId, tenantId, e.getMessage());
+                return Promise.of(errorResponse(400, "Invalid pipeline update: " + e.getMessage()));
+            }
+        });
+    }
+
+    /**
+     * Deletes a pipeline definition from Data-Cloud.
+     */
+    private Promise<HttpResponse> handleDeletePipeline(HttpRequest request) {
+        String tenantId = resolveQueryOrHeaderTenantId(request);
+        String pipelineId = request.getPathParameter("pipelineId");
+        if (pipelineId == null || pipelineId.isBlank()) {
+            return Promise.of(errorResponse(400, "pipelineId path parameter is required"));
+        }
+        return client.delete(tenantId, DC_PIPELINES_COLLECTION, pipelineId)
+                .map(v -> jsonResponse(Map.of(
+                        "deleted", true,
+                        "pipelineId", pipelineId,
+                        "tenantId", tenantId,
+                        "timestamp", Instant.now().toString())));
+    }
+
+    /** Flattens a DataCloud entity into a pipeline-shaped map. */
+    private Map<String, Object> flattenPipelineEntity(DataCloudClient.Entity e, String tenantId) {
+        Map<String, Object> result = new LinkedHashMap<>();
+        result.put("id", e.id());
+        result.put("tenantId", tenantId);
+        if (e.data() != null) {
+            result.putAll(e.data());
+        }
+        return result;
+    }
+
+    /** Resolves tenantId from query param first, then header, falling back to "default". */
+    private String resolveQueryOrHeaderTenantId(HttpRequest request) {
+        String fromQuery = request.getQueryParameter("tenantId");
+        if (fromQuery != null && !fromQuery.isBlank()) {
+            return fromQuery;
+        }
+        return resolveTenantId(request);
+    }
+
+    /** Parses an integer query param, returning {@code defaultValue} on null or parse failure. */
+    private int parseIntParam(String raw, int defaultValue) {
+        if (raw == null || raw.isBlank()) return defaultValue;
+        try {
+            return Integer.parseInt(raw.trim());
+        } catch (NumberFormatException e) {
+            return defaultValue;
+        }
     }
 
     // ==================== Checkpoint Endpoints (DC-3) ====================
@@ -1429,6 +1589,793 @@ public class DataCloudHttpServer {
     private static List<String> parseEventTypeFilter(String param) {
         if (param == null || param.isBlank()) return List.of();
         return Arrays.asList(param.trim().split("\\s*,\\s*"));
+    }
+
+    // ==================== Memory - Additional Endpoints (DC-4) ====================
+
+    /**
+     * Full-text / attribute search across an agent's memory.
+     *
+     * <p>Accepts a JSON body with optional {@code query} (string), {@code type} (memory tier),
+     * and {@code limit} (max results, capped at 1 000).
+     *
+     * @param request the incoming HTTP request
+     * @return 200 with matching memory items, 400 on invalid body
+     *
+     * @doc.type method
+     * @doc.purpose Memory search endpoint (DC-4)
+     * @doc.layer product
+     * @doc.pattern Query
+     */
+    private Promise<HttpResponse> handleSearchAgentMemory(HttpRequest request) {
+        String tenantId = resolveTenantId(request);
+        String agentId = request.getPathParameter("agentId");
+        if (agentId == null || agentId.isBlank()) {
+            return Promise.of(errorResponse(400, "agentId path parameter is required"));
+        }
+        return request.loadBody()
+            .then(body -> {
+                try {
+                    @SuppressWarnings("unchecked")
+                    Map<String, Object> req = objectMapper.readValue(body.asArray(), Map.class);
+                    String queryStr = (String) req.getOrDefault("query", "");
+                    String type    = (String) req.get("type");
+                    int limit = req.containsKey("limit")
+                        ? Math.min(((Number) req.get("limit")).intValue(), 1000)
+                        : 100;
+
+                    List<DataCloudClient.Filter> filters = new ArrayList<>();
+                    filters.add(DataCloudClient.Filter.eq("agentId", agentId));
+                    if (type != null && !type.isBlank()) {
+                        filters.add(DataCloudClient.Filter.eq("type", type.toUpperCase()));
+                    }
+                    if (!queryStr.isBlank()) {
+                        filters.add(DataCloudClient.Filter.like("content", "%" + queryStr + "%"));
+                    }
+
+                    DataCloudClient.Query dcQuery = DataCloudClient.Query.builder()
+                        .filters(filters)
+                        .limit(limit)
+                        .build();
+
+                    return client.query(tenantId, "dc_memory", dcQuery)
+                        .map(items -> {
+                            List<Map<String, Object>> results = items.stream()
+                                .map(e -> Map.<String, Object>of(
+                                    "id",        e.id(),
+                                    "agentId",   e.data().getOrDefault("agentId", agentId),
+                                    "type",      e.data().getOrDefault("type", ""),
+                                    "content",   e.data().getOrDefault("content", ""),
+                                    "createdAt", e.data().getOrDefault("createdAt", ""),
+                                    "metadata",  e.data().getOrDefault("metadata", Map.of())
+                                ))
+                                .toList();
+                            return jsonResponse(Map.of(
+                                "agentId",   agentId,
+                                "tenantId",  tenantId,
+                                "query",     queryStr,
+                                "results",   results,
+                                "count",     results.size(),
+                                "timestamp", Instant.now().toString()
+                            ));
+                        });
+                } catch (Exception e) {
+                    return Promise.of(errorResponse(400, "Invalid request body: " + e.getMessage()));
+                }
+            })
+            .then(Promise::of, e -> {
+                log.error("[DC-4] memory search failed for agentId={}: {}", agentId, e.getMessage(), e);
+                return Promise.of(errorResponse(500, "Memory search failed: " + e.getMessage()));
+            });
+    }
+
+    /**
+     * Deletes a specific memory item for an agent.
+     *
+     * @param request the incoming HTTP request
+     * @return 200 on success, 400 on missing params
+     *
+     * @doc.type method
+     * @doc.purpose Memory delete endpoint (DC-4)
+     * @doc.layer product
+     * @doc.pattern Command
+     */
+    private Promise<HttpResponse> handleDeleteMemory(HttpRequest request) {
+        String tenantId = resolveTenantId(request);
+        String agentId  = request.getPathParameter("agentId");
+        String memoryId = request.getPathParameter("memoryId");
+        if (agentId == null || agentId.isBlank()) {
+            return Promise.of(errorResponse(400, "agentId path parameter is required"));
+        }
+        if (memoryId == null || memoryId.isBlank()) {
+            return Promise.of(errorResponse(400, "memoryId path parameter is required"));
+        }
+        return client.delete(tenantId, "dc_memory", memoryId)
+            .map(v -> jsonResponse(Map.of(
+                "deleted",   true,
+                "memoryId",  memoryId,
+                "agentId",   agentId,
+                "tenantId",  tenantId,
+                "timestamp", Instant.now().toString()
+            )))
+            .then(Promise::of, e -> {
+                log.error("[DC-4] memory delete failed id={}: {}", memoryId, e.getMessage(), e);
+                return Promise.of(errorResponse(500, "Memory delete failed: " + e.getMessage()));
+            });
+    }
+
+    /**
+     * Marks a memory item as retained, preventing automatic eviction.
+     *
+     * <p>Accepts JSON body with {@code reason} (string) and optional {@code retainUntilEpoch} (ms).
+     * Returns 404 when the item does not exist.
+     *
+     * @param request the incoming HTTP request
+     * @return 200 on success, 404 if not found, 400 on invalid body
+     *
+     * @doc.type method
+     * @doc.purpose Memory retain endpoint (DC-4)
+     * @doc.layer product
+     * @doc.pattern Command
+     */
+    private Promise<HttpResponse> handleRetainMemory(HttpRequest request) {
+        String tenantId = resolveTenantId(request);
+        String agentId  = request.getPathParameter("agentId");
+        String memoryId = request.getPathParameter("memoryId");
+        if (agentId == null || agentId.isBlank()) {
+            return Promise.of(errorResponse(400, "agentId path parameter is required"));
+        }
+        if (memoryId == null || memoryId.isBlank()) {
+            return Promise.of(errorResponse(400, "memoryId path parameter is required"));
+        }
+        return request.loadBody()
+            .then(body -> {
+                try {
+                    @SuppressWarnings("unchecked")
+                    Map<String, Object> req = objectMapper.readValue(body.asArray(), Map.class);
+                    long retainUntilEpoch = req.containsKey("retainUntilEpoch")
+                        ? ((Number) req.get("retainUntilEpoch")).longValue() : 0L;
+                    String reason = (String) req.getOrDefault("reason", "manual-retain");
+
+                    DataCloudClient.Query query = DataCloudClient.Query.builder()
+                        .filter(DataCloudClient.Filter.eq("id", memoryId))
+                        .limit(1)
+                        .build();
+
+                    return client.query(tenantId, "dc_memory", query)
+                        .then(items -> {
+                            if (items.isEmpty()) {
+                                return Promise.of(errorResponse(404,
+                                    "Memory item not found: " + memoryId));
+                            }
+                            DataCloudClient.Entity entity = items.get(0);
+                            Map<String, Object> updated = new LinkedHashMap<>(entity.data());
+                            updated.put("retained", true);
+                            updated.put("retainReason", reason);
+                            if (retainUntilEpoch > 0L) {
+                                updated.put("retainUntil",
+                                    Instant.ofEpochMilli(retainUntilEpoch).toString());
+                            }
+                            return client.save(tenantId, "dc_memory", Map.copyOf(updated))
+                                .map(v -> jsonResponse(Map.of(
+                                    "retained",  true,
+                                    "memoryId",  memoryId,
+                                    "agentId",   agentId,
+                                    "tenantId",  tenantId,
+                                    "reason",    reason,
+                                    "timestamp", Instant.now().toString()
+                                )));
+                        });
+                } catch (Exception e) {
+                    return Promise.of(errorResponse(400, "Invalid request body: " + e.getMessage()));
+                }
+            })
+            .then(Promise::of, e -> {
+                log.error("[DC-4] retain memory failed id={}: {}", memoryId, e.getMessage(), e);
+                return Promise.of(errorResponse(500, "Memory retain failed: " + e.getMessage()));
+            });
+    }
+
+    // ==================== Brain - Additional Endpoints (DC-6) ====================
+
+    /**
+     * SSE stream of spotlight updates from the global brain workspace.
+     *
+     * <p>Immediately pushes the current spotlight snapshot for the tenant, then streams
+     * live {@code spotlight} events as items are added/evicted.  Heartbeats are sent every
+     * {@value #SSE_HEARTBEAT_TIMEOUT_SEC} seconds when idle to keep the TCP connection alive.
+     * Returns HTTP 503 when the brain or workspace is unavailable.
+     *
+     * @param request the incoming HTTP request
+     * @return SSE response, or 503 if brain unavailable
+     *
+     * @doc.type method
+     * @doc.purpose Brain workspace SSE stream (DC-6)
+     * @doc.layer product
+     * @doc.pattern Publish-Subscribe, SSE
+     */
+    private Promise<HttpResponse> handleBrainWorkspaceStream(HttpRequest request) {
+        if (brain == null) {
+            return Promise.of(errorResponse(503, "Brain not available in this deployment"));
+        }
+        Optional<GlobalWorkspace> wsOpt = brain.getWorkspace();
+        if (wsOpt.isEmpty()) {
+            return Promise.of(errorResponse(503,
+                "Workspace stream not available for this brain implementation"));
+        }
+        GlobalWorkspace workspace = wsOpt.get();
+        String tenantId = resolveTenantId(request);
+
+        LinkedBlockingQueue<Optional<byte[]>> queue =
+            new LinkedBlockingQueue<>(SSE_QUEUE_CAPACITY);
+
+        // Push current spotlight snapshot for this tenant
+        workspace.getByTenant(tenantId).forEach(item ->
+            queue.offer(Optional.of(buildWorkspaceSseFrame(item))));
+
+        // "connected" ack
+        queue.offer(Optional.of(buildSseFrame("connected", Map.of(
+            "service",   "data-cloud-brain",
+            "tenantId",  tenantId,
+            "timestamp", Instant.now().toString()
+        ))));
+
+        GlobalWorkspace.Subscription subscription = workspace.subscribe(item -> {
+            // Filter to the requested tenant (pass-through for "default")
+            if (!"default".equals(tenantId) && !tenantId.equals(item.getTenantId())) {
+                return;
+            }
+            try {
+                if (!queue.offer(Optional.of(buildWorkspaceSseFrame(item)),
+                        100L, TimeUnit.MILLISECONDS)) {
+                    log.warn("[SSE-WS] queue full for tenant={}, dropping item", tenantId);
+                }
+            } catch (InterruptedException ie) {
+                Thread.currentThread().interrupt();
+            }
+        });
+
+        ChannelSupplier<ByteBuf> bodyStream = ChannelSuppliers.ofAsyncSupplier(() -> {
+            if (!subscription.isActive()) return Promise.of(null);
+            return Promise.ofBlocking(blockingExecutor, () -> {
+                if (!subscription.isActive()) return null;
+                try {
+                    Optional<byte[]> item =
+                        queue.poll(SSE_HEARTBEAT_TIMEOUT_SEC, TimeUnit.SECONDS);
+                    if (item == null) {
+                        return ByteBuf.wrapForReading(buildSseFrame("heartbeat",
+                            Map.of("ts", Instant.now().toString())));
+                    }
+                    return item.isPresent() ? ByteBuf.wrapForReading(item.get()) : null;
+                } catch (InterruptedException ie) {
+                    Thread.currentThread().interrupt();
+                    return null;
+                }
+            });
+        });
+
+        log.info("[SSE-WS] brain workspace stream opened for tenant={}", tenantId);
+        return Promise.of(HttpResponse.ok200()
+            .withHeader(HttpHeaders.CONTENT_TYPE, HttpHeaderValue.of("text/event-stream"))
+            .withHeader(HttpHeaders.of("Cache-Control"), HttpHeaderValue.of("no-cache"))
+            .withHeader(HttpHeaders.of("X-Accel-Buffering"), HttpHeaderValue.of("no"))
+            .withHeader(HttpHeaders.of("Connection"), HttpHeaderValue.of("keep-alive"))
+            .withBodyStream(bodyStream)
+            .build());
+    }
+
+    /**
+     * Directly elevates a data record to the global workspace, bypassing salience scoring.
+     *
+     * <p>Accepts a JSON body with {@code id}, {@code content}, {@code reason}, and optional
+     * {@code emergency} (boolean).  Returns 503 when the brain or attention manager is unavailable.
+     *
+     * @param request the incoming HTTP request
+     * @return 200 with elevation result, or 503 / 400 on error
+     *
+     * @doc.type method
+     * @doc.purpose Attention elevation endpoint (DC-6)
+     * @doc.layer product
+     * @doc.pattern Command
+     */
+    private Promise<HttpResponse> handleBrainAttentionElevate(HttpRequest request) {
+        if (brain == null) {
+            return Promise.of(errorResponse(503, "Brain not available in this deployment"));
+        }
+        Optional<AttentionManager> amOpt = brain.getAttentionManager();
+        if (amOpt.isEmpty()) {
+            return Promise.of(errorResponse(503,
+                "Attention manager not available for this brain implementation"));
+        }
+        AttentionManager am = amOpt.get();
+        String tenantId = resolveTenantId(request);
+
+        return request.loadBody()
+            .then(body -> {
+                try {
+                    @SuppressWarnings("unchecked")
+                    Map<String, Object> req = objectMapper.readValue(body.asArray(), Map.class);
+                    String id       = (String) req.getOrDefault("id",
+                        java.util.UUID.randomUUID().toString());
+                    String content  = (String) req.getOrDefault("content", "");
+                    String reason   = (String) req.getOrDefault("reason", "manual-api-elevation");
+                    boolean emergency = Boolean.TRUE.equals(req.get("emergency"));
+
+                    EntityRecord record = EntityRecord.builder()
+                        .id(java.util.UUID.fromString(id))
+                        .tenantId(tenantId)
+                        .collectionName("api-elevation")
+                        .data(Map.of("content", content))
+                        .build();
+
+                    return am.elevate(record, reason, emergency)
+                        .map(result -> jsonResponse(Map.of(
+                            "elevated",  result.wasElevated(),
+                            "emergency", result.wasEmergency(),
+                            "action",    result.getAction().name(),
+                            "recordId",  id,
+                            "reason",    reason,
+                            "tenantId",  tenantId,
+                            "timestamp", Instant.now().toString()
+                        )));
+                } catch (IllegalArgumentException e) {
+                    return Promise.of(errorResponse(400,
+                        "Invalid 'id' — must be a valid UUID: " + e.getMessage()));
+                } catch (Exception e) {
+                    return Promise.of(errorResponse(400,
+                        "Invalid request body: " + e.getMessage()));
+                }
+            })
+            .then(Promise::of, e -> {
+                log.error("[DC-6] attention elevate failed: {}", e.getMessage(), e);
+                return Promise.of(errorResponse(500,
+                    "Attention elevation failed: " + e.getMessage()));
+            });
+    }
+
+    /**
+     * Returns the current attention thresholds and statistics.
+     *
+     * <p>Returns 503 when the brain is unavailable.
+     *
+     * @param request the incoming HTTP request
+     * @return 200 with threshold values
+     *
+     * @doc.type method
+     * @doc.purpose Attention thresholds read endpoint (DC-6)
+     * @doc.layer product
+     * @doc.pattern Configuration Query
+     */
+    private Promise<HttpResponse> handleBrainAttentionThresholds(HttpRequest request) {
+        if (brain == null) {
+            return Promise.of(errorResponse(503, "Brain not available in this deployment"));
+        }
+        Optional<AttentionManager> amOpt = brain.getAttentionManager();
+        BrainConfig cfg = brain.getConfig();
+        if (amOpt.isEmpty()) {
+            return Promise.of(jsonResponse(Map.of(
+                "elevationThreshold", AttentionManager.DEFAULT_ELEVATION_THRESHOLD,
+                "emergencyThreshold", AttentionManager.DEFAULT_EMERGENCY_THRESHOLD,
+                "salienceThreshold",  (double) cfg.getSalienceThreshold(),
+                "source",             "defaults",
+                "timestamp",          Instant.now().toString()
+            )));
+        }
+        AttentionManager.AttentionStats stats = amOpt.get().getStats();
+        return Promise.of(jsonResponse(Map.of(
+            "elevationThreshold", stats.elevationThreshold(),
+            "emergencyThreshold", stats.emergencyThreshold(),
+            "salienceThreshold",  (double) cfg.getSalienceThreshold(),
+            "totalProcessed",     stats.totalProcessed(),
+            "elevatedCount",      stats.elevatedCount(),
+            "emergencyCount",     stats.emergencyCount(),
+            "elevationRate",      stats.elevationRate(),
+            "timestamp",          Instant.now().toString()
+        )));
+    }
+
+    /**
+     * Acknowledges a threshold update request.
+     *
+     * <p>Because the {@link AttentionManager} is immutable after construction, live threshold
+     * changes require a restart with updated configuration.  This endpoint surfaces that
+     * constraint to callers rather than silently ignoring the request.
+     *
+     * @param request the incoming HTTP request
+     * @return 200 with acknowledgement and restart guidance
+     *
+     * @doc.type method
+     * @doc.purpose Attention thresholds update endpoint (DC-6)
+     * @doc.layer product
+     * @doc.pattern Configuration
+     */
+    private Promise<HttpResponse> handleBrainAttentionThresholdsUpdate(HttpRequest request) {
+        if (brain == null) {
+            return Promise.of(errorResponse(503, "Brain not available in this deployment"));
+        }
+        return request.loadBody()
+            .map(body -> jsonResponse(Map.of(
+                "acknowledged", true,
+                "note",         "Threshold changes require restarting the brain with updated BrainConfig. "
+                              + "Set DATACLOUD_BRAIN_ELEVATION_THRESHOLD and DATACLOUD_BRAIN_EMERGENCY_THRESHOLD env vars.",
+                "timestamp",    Instant.now().toString()
+            )));
+    }
+
+    /**
+     * Lists active patterns known to the brain.
+     *
+     * <p>Optional query parameter {@code limit} (default 100, max 1 000).
+     * Returns 503 when the brain is unavailable.
+     *
+     * @param request the incoming HTTP request
+     * @return 200 with pattern list
+     *
+     * @doc.type method
+     * @doc.purpose Brain pattern listing endpoint (DC-6)
+     * @doc.layer product
+     * @doc.pattern Query
+     */
+    private Promise<HttpResponse> handleBrainPatterns(HttpRequest request) {
+        if (brain == null) {
+            return Promise.of(errorResponse(503, "Brain not available in this deployment"));
+        }
+        String tenantId = resolveTenantId(request);
+        int limit = Math.min(parseLimitParam(request.getQueryParameter("limit"), 100), 1000);
+        BrainContext ctx = BrainContext.forTenant(tenantId);
+
+        return brain.listPatterns(limit, ctx)
+            .map(patterns -> {
+                List<Map<String, Object>> patternList = patterns.stream()
+                    .map(p -> {
+                        Map<String, Object> entry = new LinkedHashMap<>();
+                        entry.put("id",          p.getId());
+                        entry.put("name",        p.getName() != null ? p.getName() : "");
+                        entry.put("type",        p.getType() != null ? p.getType().name() : "UNKNOWN");
+                        entry.put("description", p.getDescription() != null ? p.getDescription() : "");
+                        entry.put("confidence",  p.getConfidence());
+                        entry.put("observations", p.getObservationCount());
+                        entry.put("discoveredAt", p.getDiscoveredAt().toString());
+                        entry.put("updatedAt",   p.getUpdatedAt().toString());
+                        return Map.copyOf(entry);
+                    })
+                    .toList();
+                return jsonResponse(Map.of(
+                    "patterns",  patternList,
+                    "count",     patternList.size(),
+                    "limit",     limit,
+                    "tenantId",  tenantId,
+                    "timestamp", Instant.now().toString()
+                ));
+            })
+            .then(Promise::of, e -> {
+                log.error("[DC-6] list patterns failed: {}", e.getMessage(), e);
+                return Promise.of(errorResponse(500,
+                    "Failed to list patterns: " + e.getMessage()));
+            });
+    }
+
+    /**
+     * Matches a record payload against the brain's known patterns.
+     *
+     * <p>Accepts a JSON body with {@code id} (UUID, optional), {@code content} (string),
+     * {@code type} (string), and {@code attributes} (object).
+     * Returns 503 when brain unavailable, 400 on invalid body.
+     *
+     * @param request the incoming HTTP request
+     * @return 200 with match list
+     *
+     * @doc.type method
+     * @doc.purpose Pattern-match endpoint (DC-6)
+     * @doc.layer product
+     * @doc.pattern Query
+     */
+    private Promise<HttpResponse> handleBrainPatternsMatch(HttpRequest request) {
+        if (brain == null) {
+            return Promise.of(errorResponse(503, "Brain not available in this deployment"));
+        }
+        String tenantId = resolveTenantId(request);
+        BrainContext ctx = BrainContext.forTenant(tenantId);
+
+        return request.loadBody()
+            .then(body -> {
+                try {
+                    @SuppressWarnings("unchecked")
+                    Map<String, Object> req = objectMapper.readValue(body.asArray(), Map.class);
+                    String rawId   = (String) req.get("id");
+                    java.util.UUID id = rawId != null
+                        ? java.util.UUID.fromString(rawId)
+                        : java.util.UUID.randomUUID();
+                    String content = (String) req.getOrDefault("content", "");
+                    String type    = (String) req.getOrDefault("type", "QUERY");
+                    @SuppressWarnings("unchecked")
+                    Map<String, Object> attributes =
+                        (Map<String, Object>) req.getOrDefault("attributes", Map.of());
+
+                    EntityRecord record = EntityRecord.builder()
+                        .id(id)
+                        .tenantId(tenantId)
+                        .collectionName("api-match")
+                        .data(Map.of("content", content, "type", type))
+                        .metadata(attributes)
+                        .build();
+
+                    return brain.matchPatterns(record, ctx)
+                        .map(matches -> {
+                            List<Map<String, Object>> matchList = matches.stream()
+                                .map(m -> {
+                                    Map<String, Object> entry = new LinkedHashMap<>();
+                                    if (m.getPattern() != null) {
+                                        entry.put("patternId",   m.getPattern().getId());
+                                        entry.put("patternName", m.getPattern().getName());
+                                    }
+                                    entry.put("score",       m.getScore());
+                                    entry.put("confidence",  m.getConfidence());
+                                    entry.put("explanation", m.getExplanation() != null
+                                        ? m.getExplanation() : "");
+                                    return Map.copyOf(entry);
+                                })
+                                .toList();
+                            return jsonResponse(Map.of(
+                                "recordId",  id.toString(),
+                                "matches",   matchList,
+                                "count",     matchList.size(),
+                                "tenantId",  tenantId,
+                                "timestamp", Instant.now().toString()
+                            ));
+                        });
+                } catch (IllegalArgumentException e) {
+                    return Promise.of(errorResponse(400,
+                        "Invalid 'id' — must be a valid UUID: " + e.getMessage()));
+                } catch (Exception e) {
+                    return Promise.of(errorResponse(400,
+                        "Invalid request body: " + e.getMessage()));
+                }
+            })
+            .then(Promise::of, e -> {
+                log.error("[DC-6] pattern match failed: {}", e.getMessage(), e);
+                return Promise.of(errorResponse(500,
+                    "Pattern match failed: " + e.getMessage()));
+            });
+    }
+
+    /**
+     * Returns the current salience information for a specific spotlight item.
+     *
+     * <p>Looks up the item in the global workspace spotlight by ID.
+     * Returns 404 when the item is not currently in the spotlight.
+     * Returns 503 when the brain or workspace is unavailable.
+     *
+     * @param request the incoming HTTP request
+     * @return 200 with salience details, 404 if not in spotlight, 503 if brain unavailable
+     *
+     * @doc.type method
+     * @doc.purpose Salience lookup endpoint (DC-6)
+     * @doc.layer product
+     * @doc.pattern Query
+     */
+    private Promise<HttpResponse> handleBrainSalience(HttpRequest request) {
+        if (brain == null) {
+            return Promise.of(errorResponse(503, "Brain not available in this deployment"));
+        }
+        String itemId = request.getPathParameter("itemId");
+        if (itemId == null || itemId.isBlank()) {
+            return Promise.of(errorResponse(400, "itemId path parameter is required"));
+        }
+        Optional<GlobalWorkspace> wsOpt = brain.getWorkspace();
+        if (wsOpt.isEmpty()) {
+            return Promise.of(errorResponse(503,
+                "Workspace not available for this brain implementation"));
+        }
+        Optional<SpotlightItem> item = wsOpt.get().get(itemId);
+        if (item.isEmpty()) {
+            return Promise.of(errorResponse(404,
+                "Item not found in workspace spotlight: " + itemId));
+        }
+        SpotlightItem si = item.get();
+        Map<String, Object> resp = new LinkedHashMap<>();
+        resp.put("itemId",        itemId);
+        resp.put("salienceScore", si.getSalienceScore().getScore());
+        resp.put("isHigh",        si.getSalienceScore().isHigh());
+        resp.put("isEmergency",   si.isEmergency());
+        resp.put("priority",      si.getPriority());
+        resp.put("summary",       si.getSummary() != null ? si.getSummary() : "");
+        resp.put("tenantId",      si.getTenantId());
+        resp.put("spotlightedAt", si.getSpotlightedAt().toString());
+        resp.put("timestamp",     Instant.now().toString());
+        return Promise.of(jsonResponse(Map.copyOf(resp)));
+    }
+
+    // ==================== SSE Streams - Additional (DC-9) ====================
+
+    /**
+     * SSE stream of agent-lifecycle events (create, start, stop, fail, checkpoint).
+     *
+     * <p>Tails the event log and filters to agent-specific event types.
+     * Heartbeats are sent every {@value #SSE_HEARTBEAT_TIMEOUT_SEC} seconds when idle.
+     *
+     * @param request the incoming HTTP request
+     * @return SSE response
+     *
+     * @doc.type method
+     * @doc.purpose Agent events SSE stream (DC-9)
+     * @doc.layer product
+     * @doc.pattern Publish-Subscribe, SSE
+     */
+    private Promise<HttpResponse> handleAgentsEventStream(HttpRequest request) {
+        String tenantId = resolveTenantId(request);
+        LinkedBlockingQueue<Optional<byte[]>> queue =
+            new LinkedBlockingQueue<>(SSE_QUEUE_CAPACITY);
+
+        List<String> agentEventTypes = List.of(
+            "AGENT_CREATED", "AGENT_STARTED", "AGENT_STOPPED",
+            "AGENT_FAILED", "AGENT_UPDATED", "CHECKPOINT_SAVED");
+
+        queue.offer(Optional.of(buildSseFrame("connected", Map.of(
+            "service",   "data-cloud-agents",
+            "tenantId",  tenantId,
+            "filter",    agentEventTypes,
+            "timestamp", Instant.now().toString()
+        ))));
+
+        TenantContext tenant = TenantContext.of(tenantId);
+        EventLogStore eventLogStore = client.eventLogStore();
+
+        return eventLogStore.tail(tenant, Offset.of(0L), entry -> {
+            if (!agentEventTypes.contains(entry.eventType())) return;
+            try {
+                byte[] frame = buildEventSseFrame(entry);
+                if (!queue.offer(Optional.of(frame), 100L, TimeUnit.MILLISECONDS)) {
+                    log.warn("[SSE-AGENTS] queue full for tenant={}, dropping event type={}",
+                        tenantId, entry.eventType());
+                }
+            } catch (InterruptedException ie) {
+                Thread.currentThread().interrupt();
+            } catch (Exception ex) {
+                log.warn("[SSE-AGENTS] serialization error for tenant={}: {}",
+                    tenantId, ex.getMessage());
+            }
+        }).map(subscription -> {
+            sseSubscriptions.add(subscription);
+            ChannelSupplier<ByteBuf> bodyStream = ChannelSuppliers.ofAsyncSupplier(() -> {
+                if (subscription.isCancelled()) return Promise.of(null);
+                return Promise.ofBlocking(blockingExecutor, () -> {
+                    if (subscription.isCancelled()) return null;
+                    try {
+                        Optional<byte[]> item =
+                            queue.poll(SSE_HEARTBEAT_TIMEOUT_SEC, TimeUnit.SECONDS);
+                        if (item == null) {
+                            return ByteBuf.wrapForReading(buildSseFrame("heartbeat",
+                                Map.of("ts", Instant.now().toString())));
+                        }
+                        return item.isPresent() ? ByteBuf.wrapForReading(item.get()) : null;
+                    } catch (InterruptedException ie) {
+                        Thread.currentThread().interrupt();
+                        return null;
+                    }
+                });
+            });
+            log.info("[SSE-AGENTS] agents event stream opened for tenant={}", tenantId);
+            return HttpResponse.ok200()
+                .withHeader(HttpHeaders.CONTENT_TYPE, HttpHeaderValue.of("text/event-stream"))
+                .withHeader(HttpHeaders.of("Cache-Control"), HttpHeaderValue.of("no-cache"))
+                .withHeader(HttpHeaders.of("X-Accel-Buffering"), HttpHeaderValue.of("no"))
+                .withHeader(HttpHeaders.of("Connection"), HttpHeaderValue.of("keep-alive"))
+                .withBodyStream(bodyStream)
+                .build();
+        }).mapException(e -> {
+            log.error("[SSE-AGENTS] failed to open tail for tenant={}: {}",
+                tenantId, e.getMessage(), e);
+            return new HttpException("Agents SSE subscription failed: " + e.getMessage(), e);
+        });
+    }
+
+    /**
+     * SSE stream of learning-bridge status updates, pushed every 30 seconds.
+     *
+     * <p>Returns 503 when the learning bridge is not wired.
+     * Heartbeats are sent when idle to keep the connection alive.
+     *
+     * @param request the incoming HTTP request
+     * @return SSE response, or 503 if bridge unavailable
+     *
+     * @doc.type method
+     * @doc.purpose Learning status SSE stream (DC-9)
+     * @doc.layer product
+     * @doc.pattern Publish-Subscribe, SSE
+     */
+    private Promise<HttpResponse> handleLearningStream(HttpRequest request) {
+        if (learningBridge == null) {
+            return Promise.of(errorResponse(503,
+                "Learning bridge not available in this deployment"));
+        }
+        String tenantId = resolveTenantId(request);
+        LinkedBlockingQueue<Optional<byte[]>> queue =
+            new LinkedBlockingQueue<>(SSE_QUEUE_CAPACITY);
+
+        queue.offer(Optional.of(buildSseFrame("connected", Map.of(
+            "service",   "data-cloud-learning",
+            "tenantId",  tenantId,
+            "timestamp", Instant.now().toString()
+        ))));
+
+        // Background virtual thread: push periodic status updates
+        Thread.ofVirtual().name("learning-sse-" + tenantId).start(() -> {
+            while (!Thread.currentThread().isInterrupted()) {
+                try {
+                    Thread.sleep(java.time.Duration.ofSeconds(30));
+                    Map<String, Object> status = learningBridge.getStatus();
+                    Map<String, Object> payload = new LinkedHashMap<>(status);
+                    payload.put("tenantId",  tenantId);
+                    payload.put("timestamp", Instant.now().toString());
+                    byte[] frame = buildSseFrame("learning-status", Map.copyOf(payload));
+                    if (!queue.offer(Optional.of(frame), 100L, TimeUnit.MILLISECONDS)) {
+                        log.warn("[SSE-LEARN] queue full for tenant={}", tenantId);
+                    }
+                } catch (InterruptedException ie) {
+                    Thread.currentThread().interrupt();
+                    break;
+                } catch (Exception e) {
+                    log.warn("[SSE-LEARN] error pushing status for tenant={}: {}",
+                        tenantId, e.getMessage());
+                }
+            }
+            // EOS sentinel
+            queue.offer(Optional.empty());
+        });
+
+        ChannelSupplier<ByteBuf> bodyStream = ChannelSuppliers.ofAsyncSupplier(() ->
+            Promise.ofBlocking(blockingExecutor, () -> {
+                try {
+                    Optional<byte[]> item =
+                        queue.poll(SSE_HEARTBEAT_TIMEOUT_SEC, TimeUnit.SECONDS);
+                    if (item == null) {
+                        return ByteBuf.wrapForReading(buildSseFrame("heartbeat",
+                            Map.of("ts", Instant.now().toString())));
+                    }
+                    return item.isPresent() ? ByteBuf.wrapForReading(item.get()) : null;
+                } catch (InterruptedException ie) {
+                    Thread.currentThread().interrupt();
+                    return null;
+                }
+            })
+        );
+
+        log.info("[SSE-LEARN] learning stream opened for tenant={}", tenantId);
+        return Promise.of(HttpResponse.ok200()
+            .withHeader(HttpHeaders.CONTENT_TYPE, HttpHeaderValue.of("text/event-stream"))
+            .withHeader(HttpHeaders.of("Cache-Control"), HttpHeaderValue.of("no-cache"))
+            .withHeader(HttpHeaders.of("X-Accel-Buffering"), HttpHeaderValue.of("no"))
+            .withHeader(HttpHeaders.of("Connection"), HttpHeaderValue.of("keep-alive"))
+            .withBodyStream(bodyStream)
+            .build());
+    }
+
+    /**
+     * Builds an SSE {@code spotlight} frame from a {@link SpotlightItem}.
+     *
+     * @param item spotlight item
+     * @return UTF-8 encoded SSE frame bytes
+     */
+    private byte[] buildWorkspaceSseFrame(SpotlightItem item) {
+        try {
+            Map<String, Object> data = new LinkedHashMap<>();
+            data.put("id",           item.getId());
+            data.put("tenantId",     item.getTenantId());
+            data.put("summary",      item.getSummary() != null ? item.getSummary() : "");
+            data.put("salienceScore", item.getSalienceScore().getScore());
+            data.put("isHigh",        item.getSalienceScore().isHigh());
+            data.put("isEmergency",  item.isEmergency());
+            data.put("priority",     item.getPriority());
+            data.put("spotlightedAt", item.getSpotlightedAt().toString());
+            String json = objectMapper.writeValueAsString(Map.copyOf(data));
+            return ("event: spotlight\ndata: " + json + "\n\n")
+                .getBytes(StandardCharsets.UTF_8);
+        } catch (Exception e) {
+            log.warn("[SSE-WS] frame build error: {}", e.getMessage());
+            return "event: spotlight\ndata: {\"error\":\"serialization failure\"}\n\n"
+                .getBytes(StandardCharsets.UTF_8);
+        }
     }
 
     // ==================== Helper Methods ====================

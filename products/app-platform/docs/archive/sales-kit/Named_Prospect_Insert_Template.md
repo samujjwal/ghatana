@@ -4,7 +4,7 @@ Version: 1.0
 Status: Safe customization template for a named prospect once verified context is available  
 Last revised: March 1, 2026
 
-Canonical claims source: [Customer_Facing_Claims_Pack.md](../Customer_Facing_Claims_Pack.md)
+Canonical claims source: [Customer_Facing_Claims_Pack.md](../../Customer_Facing_Claims_Pack.md)
 
 ---
 
@@ -37,7 +37,7 @@ Only fill in prospect-specific details that are:
 
 **Document status:** Tailored customer-facing insert for a named prospect with verified context  
 **Prepared on:** `<Date>`  
-**Source baseline:** [Customer_Facing_Claims_Pack.md](../Customer_Facing_Claims_Pack.md)
+**Source baseline:** [Customer_Facing_Claims_Pack.md](../../Customer_Facing_Claims_Pack.md)
 
 #### Prospect context
 

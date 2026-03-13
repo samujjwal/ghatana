@@ -59,7 +59,7 @@ Enumerate everything explicitly.
 When reviewing Siddhanta, use this precedence:
 1. ADR-011_STACK_STANDARDIZATION_AND_GHATANA_PLATFORM_ALIGNMENT.md
 2. Current accepted ADRs
-3. CURRENT_EXECUTION_PLAN.md
+3. UNIFIED_IMPLEMENTATION_PLAN.md
 4. Relevant LLDs
 5. Relevant epics and stories
 6. Architecture and C4 documents

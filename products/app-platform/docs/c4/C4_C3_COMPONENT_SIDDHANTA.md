@@ -10,7 +10,7 @@
 **Diagram Level:** C3 - Component Architecture  
 **Status:** Hardened Architecture Baseline
 
-> **Stack authority**: [ADR-011_STACK_STANDARDIZATION_AND_GHATANA_PLATFORM_ALIGNMENT.md](ADR-011_STACK_STANDARDIZATION_AND_GHATANA_PLATFORM_ALIGNMENT.md) defines the current Siddhanta stack. The component patterns here remain useful, but ingress/gateway technology choices must follow ADR-011.
+> **Stack authority**: [../adr/ADR-011_STACK_STANDARDIZATION_AND_GHATANA_PLATFORM_ALIGNMENT.md](../adr/ADR-011_STACK_STANDARDIZATION_AND_GHATANA_PLATFORM_ALIGNMENT.md) defines the current Siddhanta stack. The component patterns here remain useful, but ingress/gateway technology choices must follow ADR-011.
 
 ---
 

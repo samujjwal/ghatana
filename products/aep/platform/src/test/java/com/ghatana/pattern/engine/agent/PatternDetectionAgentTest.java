@@ -17,6 +17,7 @@ import com.ghatana.pattern.engine.nfa.NFAStateType;
 import com.ghatana.platform.domain.domain.event.Event;
 import com.ghatana.platform.domain.domain.event.EventTime;
 import com.ghatana.platform.domain.domain.event.GEvent;
+import com.ghatana.platform.testing.activej.EventloopTestBase;
 import io.activej.promise.Promise;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
@@ -39,7 +40,7 @@ import static org.assertj.core.api.Assertions.*;
  * - MapOperator: event transformation, enrichment, type rename
  * - StreamOperator: tumbling and sliding windows, aggregation, buffer overflow
  */
-class PatternDetectionAgentTest {
+class PatternDetectionAgentTest extends EventloopTestBase {
 
     // ─── Test NFA Builders ───────────────────────────────────────────────────────
 
@@ -225,21 +226,21 @@ class PatternDetectionAgentTest {
         void fullLifecycle() {
             // Initialize
             Promise<Void> initPromise = agent.initialize(OperatorConfig.empty());
-            assertThat(initPromise.getResult()).isNull(); // completed
+            assertThat(runPromise(() -> initPromise)).isNull(); // completed
             assertThat(agent.getState()).isEqualTo(OperatorState.INITIALIZED);
 
             // Start
             Promise<Void> startPromise = agent.start();
-            assertThat(startPromise.getResult()).isNull();
+            assertThat(runPromise(() -> startPromise)).isNull();
             assertThat(agent.getState()).isEqualTo(OperatorState.RUNNING);
 
             // Process
             Promise<OperatorResult> result = agent.process(makeEvent("login.attempt"));
-            assertThat(result.getResult()).isNotNull();
+            assertThat(runPromise(() -> result)).isNotNull();
 
             // Stop
             Promise<Void> stopPromise = agent.stop();
-            assertThat(stopPromise.getResult()).isNull();
+            assertThat(runPromise(() -> stopPromise)).isNull();
             assertThat(agent.getState()).isEqualTo(OperatorState.STOPPED);
         }
 
@@ -263,7 +264,7 @@ class PatternDetectionAgentTest {
             agent.start();
 
             Promise<OperatorResult> result = agent.process(makeEvent("login.attempt"));
-            OperatorResult or = result.getResult();
+            OperatorResult or = runPromise(() -> result);
 
             assertThat(or).isNotNull();
             assertThat(or.isSuccess()).isTrue();
@@ -284,7 +285,7 @@ class PatternDetectionAgentTest {
             agent.start();
 
             Promise<OperatorResult> result = agent.process(makeEvent("other.event"));
-            OperatorResult or = result.getResult();
+            OperatorResult or = runPromise(() -> result);
 
             assertThat(or).isNotNull();
             assertThat(or.isSuccess()).isTrue();
@@ -299,7 +300,7 @@ class PatternDetectionAgentTest {
             agent.start();
 
             Promise<OperatorResult> result = agent.process(null);
-            OperatorResult or = result.getResult();
+            OperatorResult or = runPromise(() -> result);
 
             assertThat(or).isNotNull();
             assertThat(or.isSuccess()).isFalse();
@@ -322,11 +323,11 @@ class PatternDetectionAgentTest {
             seqAgent.start();
 
             // First event: "login" — no match yet (needs B)
-            OperatorResult r1 = seqAgent.process(makeEvent("login")).getResult();
+            OperatorResult r1 = runPromise(() -> seqAgent.process(makeEvent("login")));
             assertThat(r1.getOutputEvents()).isEmpty();
 
             // Second event: "purchase" — should match!
-            OperatorResult r2 = seqAgent.process(makeEvent("purchase")).getResult();
+            OperatorResult r2 = runPromise(() -> seqAgent.process(makeEvent("purchase")));
             assertThat(r2.getOutputEvents()).isNotEmpty();
             assertThat(r2.getOutputEvents().getFirst().getPayload("patternName"))
                     .isEqualTo("login-then-purchase");
@@ -346,10 +347,10 @@ class PatternDetectionAgentTest {
             seqAgent.start();
 
             // B first, then A — should not match
-            OperatorResult r1 = seqAgent.process(makeEvent("B")).getResult();
+            OperatorResult r1 = runPromise(() -> seqAgent.process(makeEvent("B")));
             assertThat(r1.getOutputEvents()).isEmpty();
 
-            OperatorResult r2 = seqAgent.process(makeEvent("A")).getResult();
+            OperatorResult r2 = runPromise(() -> seqAgent.process(makeEvent("A")));
             assertThat(r2.getOutputEvents()).isEmpty();
         }
 
@@ -366,10 +367,10 @@ class PatternDetectionAgentTest {
             tripleAgent.initialize(OperatorConfig.empty());
             tripleAgent.start();
 
-            assertThat(tripleAgent.process(makeEvent("A")).getResult().getOutputEvents()).isEmpty();
-            assertThat(tripleAgent.process(makeEvent("B")).getResult().getOutputEvents()).isEmpty();
+            assertThat(runPromise(() -> tripleAgent.process(makeEvent("A"))).getOutputEvents()).isEmpty();
+            assertThat(runPromise(() -> tripleAgent.process(makeEvent("B"))).getOutputEvents()).isEmpty();
 
-            OperatorResult r3 = tripleAgent.process(makeEvent("C")).getResult();
+            OperatorResult r3 = runPromise(() -> tripleAgent.process(makeEvent("C")));
             assertThat(r3.getOutputEvents()).isNotEmpty();
             assertThat(r3.getOutputEvents().getFirst().getPayload("matchedEventCount"))
                     .isEqualTo(3);
@@ -396,7 +397,7 @@ class PatternDetectionAgentTest {
             filteredAgent.start();
 
             // Unrelated event type — should be filtered
-            OperatorResult r = filteredAgent.process(makeEvent("order.placed")).getResult();
+            OperatorResult r = runPromise(() -> filteredAgent.process(makeEvent("order.placed")));
             assertThat(r.getOutputEvents()).isEmpty();
             assertThat(filteredAgent.getAcceptedEventTypes())
                     .containsExactlyInAnyOrder("login.attempt", "login.failure");
@@ -410,7 +411,7 @@ class PatternDetectionAgentTest {
             agent.start();
 
             // Any event type should be processed (not filtered)
-            OperatorResult r = agent.process(makeEvent("login.attempt")).getResult();
+            OperatorResult r = runPromise(() -> agent.process(makeEvent("login.attempt")));
             // It's a match for our NFA
             assertThat(r.getOutputEvents()).isNotEmpty();
         }
@@ -471,7 +472,7 @@ class PatternDetectionAgentTest {
             agent.start();
 
             GEvent input = makeEvent("login.attempt", Map.of(), Map.of("correlationId", "corr-123"));
-            OperatorResult r = agent.process(input).getResult();
+            OperatorResult r = runPromise(() -> agent.process(input));
 
             assertThat(r.getOutputEvents()).isNotEmpty();
             Event match = r.getOutputEvents().getFirst();
@@ -533,7 +534,7 @@ class PatternDetectionAgentTest {
             filter.initialize(OperatorConfig.empty());
             filter.start();
 
-            OperatorResult r = filter.process(makeEvent("alert", Map.of("severity", 7))).getResult();
+            OperatorResult r = runPromise(() -> filter.process(makeEvent("alert", Map.of("severity", 7))));
             assertThat(r.isSuccess()).isTrue();
             assertThat(r.getOutputEvents()).hasSize(1);
             assertThat(filter.getPassedCount()).isEqualTo(1);
@@ -553,7 +554,7 @@ class PatternDetectionAgentTest {
             filter.initialize(OperatorConfig.empty());
             filter.start();
 
-            OperatorResult r = filter.process(makeEvent("alert", Map.of("severity", 2))).getResult();
+            OperatorResult r = runPromise(() -> filter.process(makeEvent("alert", Map.of("severity", 2))));
             assertThat(r.isSuccess()).isTrue();
             assertThat(r.getOutputEvents()).isEmpty();
             assertThat(filter.getRejectedCount()).isEqualTo(1);
@@ -568,10 +569,10 @@ class PatternDetectionAgentTest {
             filter.start();
 
             OperatorResult with = filter.process(
-                    makeEvent("x", Map.of(), Map.of("traceId", "abc"))).getResult();
+runPromise(() -> makeEvent("x", Map.of(), Map.of("traceId", "abc"))));
             assertThat(with.getOutputEvents()).hasSize(1);
 
-            OperatorResult without = filter.process(makeEvent("x")).getResult();
+            OperatorResult without = runPromise(() -> filter.process(makeEvent("x")));
             assertThat(without.getOutputEvents()).isEmpty();
         }
 
@@ -584,11 +585,11 @@ class PatternDetectionAgentTest {
             filter.start();
 
             OperatorResult match = filter.process(
-                    makeEvent("x", Map.of(), Map.of("env", "production"))).getResult();
+runPromise(() -> makeEvent("x", Map.of(), Map.of("env", "production"))));
             assertThat(match.getOutputEvents()).hasSize(1);
 
             OperatorResult noMatch = filter.process(
-                    makeEvent("x", Map.of(), Map.of("env", "staging"))).getResult();
+runPromise(() -> makeEvent("x", Map.of(), Map.of("env", "staging"))));
             assertThat(noMatch.getOutputEvents()).isEmpty();
         }
 
@@ -601,10 +602,10 @@ class PatternDetectionAgentTest {
             filter.start();
 
             OperatorResult with = filter.process(
-                    makeEvent("x", Map.of("userId", "u123"))).getResult();
+runPromise(() -> makeEvent("x", Map.of("userId", "u123"))));
             assertThat(with.getOutputEvents()).hasSize(1);
 
-            OperatorResult without = filter.process(makeEvent("x")).getResult();
+            OperatorResult without = runPromise(() -> filter.process(makeEvent("x")));
             assertThat(without.getOutputEvents()).isEmpty();
         }
 
@@ -617,11 +618,11 @@ class PatternDetectionAgentTest {
             filter.start();
 
             OperatorResult match = filter.process(
-                    makeEvent("x", Map.of("status", "active"))).getResult();
+runPromise(() -> makeEvent("x", Map.of("status", "active"))));
             assertThat(match.getOutputEvents()).hasSize(1);
 
             OperatorResult noMatch = filter.process(
-                    makeEvent("x", Map.of("status", "inactive"))).getResult();
+runPromise(() -> makeEvent("x", Map.of("status", "inactive"))));
             assertThat(noMatch.getOutputEvents()).isEmpty();
         }
 
@@ -636,7 +637,7 @@ class PatternDetectionAgentTest {
             filter.initialize(OperatorConfig.empty());
             filter.start();
 
-            OperatorResult r = filter.process(null).getResult();
+            OperatorResult r = runPromise(() -> filter.process(null));
             assertThat(r.isSuccess()).isFalse();
         }
 
@@ -651,7 +652,7 @@ class PatternDetectionAgentTest {
             filter.initialize(OperatorConfig.empty());
             filter.start();
 
-            OperatorResult r = filter.process(makeEvent("x")).getResult();
+            OperatorResult r = runPromise(() -> filter.process(makeEvent("x")));
             assertThat(r.isSuccess()).isFalse();
             assertThat(r.getErrorMessage()).contains("boom");
         }
@@ -712,10 +713,10 @@ class PatternDetectionAgentTest {
             filter.initialize(OperatorConfig.empty());
             filter.start();
 
-            OperatorResult accepted = filter.process(makeEvent("alert.critical")).getResult();
+            OperatorResult accepted = runPromise(() -> filter.process(makeEvent("alert.critical")));
             assertThat(accepted.getOutputEvents()).hasSize(1);
 
-            OperatorResult rejected = filter.process(makeEvent("alert.info")).getResult();
+            OperatorResult rejected = runPromise(() -> filter.process(makeEvent("alert.info")));
             assertThat(rejected.getOutputEvents()).isEmpty();
             assertThat(filter.getFilteredCount()).isEqualTo(1);
         }
@@ -743,7 +744,7 @@ class PatternDetectionAgentTest {
             mapper.start();
 
             OperatorResult r = mapper.process(
-                    makeEvent("x", Map.of("data", "original"))).getResult();
+runPromise(() -> makeEvent("x", Map.of("data", "original"))));
 
             assertThat(r.isSuccess()).isTrue();
             assertThat(r.getOutputEvents()).hasSize(1);
@@ -761,7 +762,7 @@ class PatternDetectionAgentTest {
             enricher.initialize(OperatorConfig.empty());
             enricher.start();
 
-            OperatorResult r = enricher.process(makeEvent("x")).getResult();
+            OperatorResult r = runPromise(() -> enricher.process(makeEvent("x")));
             assertThat(r.getOutputEvents()).hasSize(1);
             Event output = r.getOutputEvents().getFirst();
             assertThat(output.getPayload("enriched")).isEqualTo(true);
@@ -776,7 +777,7 @@ class PatternDetectionAgentTest {
             renamer.initialize(OperatorConfig.empty());
             renamer.start();
 
-            OperatorResult r = renamer.process(makeEvent("old.event.type", Map.of("k", "v"))).getResult();
+            OperatorResult r = runPromise(() -> renamer.process(makeEvent("old.event.type", Map.of("k", "v"))));
             assertThat(r.getOutputEvents()).hasSize(1);
             assertThat(r.getOutputEvents().getFirst().getType()).isEqualTo("new.event.type");
         }
@@ -795,7 +796,7 @@ class PatternDetectionAgentTest {
             transformer.start();
 
             OperatorResult r = transformer.process(
-                    makeEvent("x", Map.of("sensitive", "secret", "data", "keep"))).getResult();
+runPromise(() -> makeEvent("x", Map.of("sensitive", "secret", "data", "keep"))));
 
             assertThat(r.getOutputEvents()).hasSize(1);
             Event output = r.getOutputEvents().getFirst();
@@ -815,7 +816,7 @@ class PatternDetectionAgentTest {
             mapper.initialize(OperatorConfig.empty());
             mapper.start();
 
-            OperatorResult r = mapper.process(makeEvent("x")).getResult();
+            OperatorResult r = runPromise(() -> mapper.process(makeEvent("x")));
             assertThat(r.getOutputEvents()).isEmpty();
         }
 
@@ -830,7 +831,7 @@ class PatternDetectionAgentTest {
             mapper.initialize(OperatorConfig.empty());
             mapper.start();
 
-            OperatorResult r = mapper.process(makeEvent("x")).getResult();
+            OperatorResult r = runPromise(() -> mapper.process(makeEvent("x")));
             assertThat(r.isSuccess()).isFalse();
             assertThat(r.getErrorMessage()).contains("transform error");
         }
@@ -846,7 +847,7 @@ class PatternDetectionAgentTest {
             mapper.initialize(OperatorConfig.empty());
             mapper.start();
 
-            OperatorResult r = mapper.process(null).getResult();
+            OperatorResult r = runPromise(() -> mapper.process(null));
             assertThat(r.isSuccess()).isFalse();
         }
     }
@@ -886,7 +887,7 @@ class PatternDetectionAgentTest {
             try { Thread.sleep(5); } catch (InterruptedException ignored) {}
 
             // Second event should trigger window close
-            OperatorResult r = stream.process(makeEvent("y")).getResult();
+            OperatorResult r = runPromise(() -> stream.process(makeEvent("y")));
 
             // The window should have closed and produced an aggregate
             // (the second event might be in a new window)
@@ -931,7 +932,7 @@ class PatternDetectionAgentTest {
 
             try { Thread.sleep(5); } catch (InterruptedException ignored) {}
 
-            OperatorResult r = stream.process(makeEvent("y")).getResult();
+            OperatorResult r = runPromise(() -> stream.process(makeEvent("y")));
             // After window close, aggregator throws — should return failure
             // But only if the window was long enough to buffer events and then close
             assertThat(r).isNotNull();
@@ -949,7 +950,7 @@ class PatternDetectionAgentTest {
             stream.initialize(OperatorConfig.empty());
             stream.start();
 
-            OperatorResult r = stream.process(null).getResult();
+            OperatorResult r = runPromise(() -> stream.process(null));
             assertThat(r.isSuccess()).isFalse();
         }
 

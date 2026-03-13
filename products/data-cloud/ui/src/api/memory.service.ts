@@ -67,31 +67,61 @@ export class MemoryService {
     });
   }
 
-  /** List memory items for an agent/tenant */
-  async listMemoryItems(params: MemorySearchParams = {}): Promise<MemoryItem[]> {
-    const { data } = await this.client.get<MemoryItem[]>('/dc/memory', { params });
+  /** Get memory summary (count per tier) for an agent */
+  async getAgentMemorySummary(agentId: string, tenantId?: string): Promise<Record<string, number>> {
+    const { data } = await this.client.get<Record<string, number>>(
+      `/v1/memory/${agentId}`,
+      { params: tenantId ? { tenantId } : {} },
+    );
     return data;
   }
 
-  /** Get a single memory item */
-  async getMemoryItem(id: string, tenantId?: string): Promise<MemoryItem> {
-    const { data } = await this.client.get<MemoryItem>(`/dc/memory/${id}`, {
-      params: tenantId ? { tenantId } : {},
-    });
+  /** List memory items for an agent by tier */
+  async listMemoryByTier(agentId: string, tier: MemoryType, params: { limit?: number; offset?: number; tenantId?: string } = {}): Promise<MemoryItem[]> {
+    const { data } = await this.client.get<MemoryItem[]>(
+      `/v1/memory/${agentId}/${tier.toLowerCase()}`,
+      { params },
+    );
+    return data;
+  }
+
+  /** List memory items for an agent/tenant (all tiers) */
+  async listMemoryItems(params: MemorySearchParams = {}): Promise<MemoryItem[]> {
+    const { agentId, type, ...rest } = params;
+    if (agentId && type) {
+      return this.listMemoryByTier(agentId, type, rest);
+    }
+    if (agentId) {
+      // Default to episodic if no type specified
+      return this.listMemoryByTier(agentId, 'EPISODIC', rest);
+    }
+    const { data } = await this.client.get<MemoryItem[]>('/v1/memory', { params });
     return data;
   }
 
   /** Delete a memory item */
-  async deleteMemoryItem(id: string, tenantId?: string): Promise<void> {
-    await this.client.delete(`/dc/memory/${id}`, {
-      params: tenantId ? { tenantId } : {},
-    });
+  async deleteMemoryItem(agentId: string, memoryId: string): Promise<void> {
+    await this.client.delete(`/v1/memory/${agentId}/${memoryId}`);
+  }
+
+  /** Mark a memory item as retained (bypass decay) */
+  async retainMemoryItem(agentId: string, memoryId: string): Promise<void> {
+    await this.client.put(`/v1/memory/${agentId}/${memoryId}/retain`);
+  }
+
+  /** Semantic search across agent memory */
+  async searchMemory(agentId: string, query: string, tenantId?: string): Promise<MemoryItem[]> {
+    const { data } = await this.client.post<MemoryItem[]>(
+      `/v1/memory/${agentId}/search`,
+      { query, tenantId },
+    );
+    return data;
   }
 
   /** Get consolidation status */
   async getConsolidationStatus(tenantId?: string): Promise<MemoryConsolidationStatus> {
     const { data } = await this.client.get<MemoryConsolidationStatus>(
-      '/dc/memory/consolidation/status',
+      '/v1/learning/status',
       { params: tenantId ? { tenantId } : {} },
     );
     return data;

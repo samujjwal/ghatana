@@ -22,8 +22,10 @@ import com.ghatana.datacloud.spi.ai.PredictionCapability;
 import com.ghatana.datacloud.workspace.GlobalWorkspace;
 import com.ghatana.datacloud.client.LearningSignalStore;
 import com.ghatana.platform.observability.MetricsCollector;
+import com.ghatana.platform.observability.NoopMetricsCollector;
 import io.activej.inject.annotation.Provides;
 import io.activej.inject.module.AbstractModule;
+import io.activej.promise.Promise;
 
 /**
  * ActiveJ DI module for data-cloud brain, attention, and cognitive components.
@@ -228,5 +230,90 @@ public class DataCloudBrainModule extends AbstractModule {
                                    ReflexEngine reflex) {
         return new DefaultDataCloudBrain(
                 config, scorer, workspace, memoryRouter, catalog, reflex, null);
+    }
+
+    // ═══════════════════════════════════════════════════════════════
+    //  Standalone Factory (no external AI capability deps)
+    // ═══════════════════════════════════════════════════════════════
+
+    /**
+     * Creates a standalone brain instance suitable for use in the Data-Cloud
+     * launcher without a full DI injector.
+     *
+     * <p>No-op stubs are used for AI capabilities ({@code AnomalyDetection},
+     * {@code Prediction}) and a {@link NoopMetricsCollector} is used for
+     * observability. All cognitive components are wired with their default
+     * in-memory implementations.
+     *
+     * <p>The {@code signalStore} parameter accepts {@code null}: when {@code null},
+     * the {@link GlobalWorkspace} silently skips learning-signal persistence.
+     *
+     * @param signalStore optional in-memory learning signal store; may be {@code null}
+     * @return fully wired {@link DataCloudBrain} with no external deps
+     *
+     * @doc.type method
+     * @doc.purpose Standalone brain factory for launcher and integration tests
+     * @doc.layer product
+     * @doc.pattern Factory
+     */
+    public static DataCloudBrain createStandalone(LearningSignalStore signalStore) {
+        BrainConfig config = BrainConfig.defaults();
+        MetricsCollector metrics = new NoopMetricsCollector();
+
+        // No-op AI capabilities — never block, never throw
+        AnomalyDetectionCapability noOpAnomaly = new AnomalyDetectionCapability() {
+            @Override
+            public Promise<java.util.List<AnomalyDetectionCapability.Anomaly>> detect(
+                    AnomalyDetectionCapability.AnomalyContext ctx) {
+                return Promise.of(java.util.List.of());
+            }
+            @Override
+            public Promise<Void> updateBaseline(String tenantId, String collectionName) {
+                return Promise.complete();
+            }
+            @Override
+            public Promise<AnomalyDetectionCapability.BaselineStatistics> getBaseline(
+                    String tenantId, String collectionName, String metricName) {
+                return Promise.of(AnomalyDetectionCapability.BaselineStatistics.builder()
+                        .metricName(metricName).build());
+            }
+            @Override
+            public Promise<java.util.List<AnomalyDetectionCapability.DetectionType>> getSupportedDetectionTypes() {
+                return Promise.of(java.util.List.of());
+            }
+        };
+
+        PredictionCapability noOpPredictor = new PredictionCapability() {
+            @Override
+            public Promise<PredictionCapability.PredictionResult> predict(
+                    PredictionCapability.PredictionRequest req) {
+                return Promise.of(PredictionCapability.PredictionResult.builder()
+                        .predictionType(PredictionCapability.PredictionType.QUERY_LATENCY)
+                        .predictedValue(0.0)
+                        .confidence(0.0)
+                        .explanation("no-op predictor (standalone mode)")
+                        .evidence(java.util.Map.of())
+                        .build());
+            }
+            @Override
+            public Promise<java.util.List<PredictionCapability.PredictionType>> getSupportedPredictionTypes() {
+                return Promise.of(java.util.List.of());
+            }
+        };
+
+        SalienceScorer scorer = new DefaultSalienceScorer(noOpAnomaly, noOpPredictor, signalStore);
+
+        GlobalWorkspace workspace = GlobalWorkspace.builder()
+                .signalStore(signalStore)
+                .metricsCollector(metrics)
+                .maxSpotlightSize(100)
+                .build();
+
+        MemoryTierRouter<DataRecord> memoryRouter = new DefaultMemoryTierRouter<>();
+        PatternCatalog patternCatalog = new DefaultPatternCatalog();
+        ReflexEngine reflexEngine = new DefaultReflexEngine();
+
+        return new DefaultDataCloudBrain(
+                config, scorer, workspace, memoryRouter, patternCatalog, reflexEngine, null);
     }
 }

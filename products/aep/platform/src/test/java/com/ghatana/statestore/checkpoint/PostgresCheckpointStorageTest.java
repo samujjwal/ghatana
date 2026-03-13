@@ -1,6 +1,7 @@
 package com.ghatana.statestore.checkpoint;
 
 import com.ghatana.platform.testing.activej.EventloopTestBase;
+import com.ghatana.statestore.checkpoint.CheckpointMetadata.OperatorCheckpointInfo;
 import com.zaxxer.hikari.HikariConfig;
 import com.zaxxer.hikari.HikariDataSource;
 import org.junit.jupiter.api.*;
@@ -28,7 +29,7 @@ import static org.assertj.core.api.Assertions.*;
  * @doc.layer product
  * @doc.pattern Test
  */
-@Testcontainers
+@Testcontainers(disabledWithoutDocker = true)
 @DisplayName("PostgresCheckpointStorage")
 class PostgresCheckpointStorageTest extends EventloopTestBase {
 
@@ -159,8 +160,9 @@ class PostgresCheckpointStorageTest extends EventloopTestBase {
             CheckpointMetadata meta = CheckpointMetadata.builder(id)
                     .status(CheckpointStatus.COMPLETED)
                     .startTime(Instant.now())
-                    .operatorAck("op-1", new OperatorCheckpointInfo("op-1", "SUCCESS", Instant.now(), 100L))
-                    .operatorAck("op-2", new OperatorCheckpointInfo("op-2", "SUCCESS", Instant.now(), 200L))
+                    .operatorAcks(Map.of(
+                            "op-1", new OperatorCheckpointInfo("op-1", Instant.now(), 100L, "SUCCESS"),
+                            "op-2", new OperatorCheckpointInfo("op-2", Instant.now(), 200L, "SUCCESS")))
                     .build();
 
             runPromise(() -> storage.saveCheckpoint(meta));

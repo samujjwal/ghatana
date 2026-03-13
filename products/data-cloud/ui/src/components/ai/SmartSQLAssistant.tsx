@@ -34,6 +34,7 @@ import {
     TrendingUp,
 } from 'lucide-react';
 import { cn, textStyles, buttonStyles, cardStyles, inputStyles, badgeStyles } from '../../lib/theme';
+import { executeAnalyticsQuery } from '../../api/analytics.service';
 
 /**
  * SQL suggestion from AI
@@ -68,80 +69,71 @@ interface SmartSQLAssistantProps {
 }
 
 /**
- * Mock AI response generator (replace with real API call)
+ * Generate SQL from a natural language query using client-side pattern matching.
+ * Submits the generated SQL to the analytics engine for real cost estimation.
  */
 async function generateSQLFromNL(
     query: string,
     collectionName: string,
     _schema?: Record<string, unknown>
 ): Promise<SQLSuggestion> {
-    // Simulate API delay
-    await new Promise((resolve) => setTimeout(resolve, 800 + Math.random() * 400));
-
     const lowerQuery = query.toLowerCase();
+    let sql: string;
+    let confidence: number;
+    let explanation: string;
+    let optimizations: string[] | undefined;
 
-    // Pattern matching for common queries
     if (lowerQuery.includes('count') || lowerQuery.includes('how many')) {
-        return {
-            sql: `SELECT COUNT(*) as total\nFROM ${collectionName}\nWHERE active = true;`,
-            confidence: 0.95,
-            explanation: 'Counting all active records in the collection.',
-            optimizations: ['Consider adding an index on the "active" column for faster counts.'],
-            estimatedCost: { rows: 1, executionTimeMs: 50 },
-        };
+        sql = `SELECT COUNT(*) as total\nFROM ${collectionName}\nWHERE active = true;`;
+        confidence = 0.95;
+        explanation = 'Counting all active records in the collection.';
+        optimizations = ['Consider adding an index on the "active" column for faster counts.'];
+    } else if (lowerQuery.includes('last') && (lowerQuery.includes('week') || lowerQuery.includes('7 days'))) {
+        sql = `SELECT *\nFROM ${collectionName}\nWHERE created_at >= NOW() - INTERVAL '7 days'\nORDER BY created_at DESC\nLIMIT 100;`;
+        confidence = 0.92;
+        explanation = 'Fetching records created in the last 7 days, ordered by most recent.';
+        optimizations = [
+            'Index on created_at will improve performance.',
+            'Consider partitioning by date for large datasets.',
+        ];
+    } else if (lowerQuery.includes('top') || lowerQuery.includes('highest') || lowerQuery.includes('most')) {
+        const field = lowerQuery.includes('revenue') ? 'revenue'
+            : lowerQuery.includes('sales') ? 'sales'
+            : lowerQuery.includes('amount') ? 'amount' : 'value';
+        sql = `SELECT *\nFROM ${collectionName}\nORDER BY ${field} DESC\nLIMIT 10;`;
+        confidence = 0.88;
+        explanation = `Finding top 10 records by ${field}.`;
+        optimizations = [`Index on "${field}" column recommended for sorting.`];
+    } else if (lowerQuery.includes('group') || lowerQuery.includes('by category') || lowerQuery.includes('breakdown')) {
+        sql = `SELECT category, COUNT(*) as count, SUM(amount) as total\nFROM ${collectionName}\nGROUP BY category\nORDER BY total DESC;`;
+        confidence = 0.85;
+        explanation = 'Aggregating data by category with count and sum.';
+        optimizations = ['Composite index on (category, amount) will optimize this query.'];
+    } else {
+        sql = `SELECT *\nFROM ${collectionName}\nWHERE 1=1\n-- Add your conditions here\nLIMIT 100;`;
+        confidence = 0.7;
+        explanation = 'Generated a basic query template. Please refine your natural language description for better results.';
     }
 
-    if (lowerQuery.includes('last') && (lowerQuery.includes('week') || lowerQuery.includes('7 days'))) {
+    // Execute against the real analytics engine to get actual cost metrics
+    try {
+        const result = await executeAnalyticsQuery(sql);
         return {
-            sql: `SELECT *\nFROM ${collectionName}\nWHERE created_at >= NOW() - INTERVAL '7 days'\nORDER BY created_at DESC\nLIMIT 100;`,
-            confidence: 0.92,
-            explanation: 'Fetching records created in the last 7 days, ordered by most recent.',
-            optimizations: [
-                'Index on created_at will improve performance.',
-                'Consider partitioning by date for large datasets.',
-            ],
-            estimatedCost: { rows: 100, executionTimeMs: 120 },
+            sql,
+            confidence,
+            explanation,
+            optimizations,
+            estimatedCost: { rows: result.rowCount, executionTimeMs: result.executionTimeMs },
         };
+    } catch {
+        return { sql, confidence, explanation, optimizations };
     }
-
-    if (lowerQuery.includes('top') || lowerQuery.includes('highest') || lowerQuery.includes('most')) {
-        const field = lowerQuery.includes('revenue') ? 'revenue' :
-            lowerQuery.includes('sales') ? 'sales' :
-                lowerQuery.includes('amount') ? 'amount' : 'value';
-        return {
-            sql: `SELECT *\nFROM ${collectionName}\nORDER BY ${field} DESC\nLIMIT 10;`,
-            confidence: 0.88,
-            explanation: `Finding top 10 records by ${field}.`,
-            optimizations: [`Index on "${field}" column recommended for sorting.`],
-            estimatedCost: { rows: 10, executionTimeMs: 80 },
-        };
-    }
-
-    if (lowerQuery.includes('group') || lowerQuery.includes('by category') || lowerQuery.includes('breakdown')) {
-        return {
-            sql: `SELECT category, COUNT(*) as count, SUM(amount) as total\nFROM ${collectionName}\nGROUP BY category\nORDER BY total DESC;`,
-            confidence: 0.85,
-            explanation: 'Aggregating data by category with count and sum.',
-            optimizations: ['Composite index on (category, amount) will optimize this query.'],
-            estimatedCost: { rows: 20, executionTimeMs: 200 },
-        };
-    }
-
-    // Default response
-    return {
-        sql: `SELECT *\nFROM ${collectionName}\nWHERE 1=1\n-- Add your conditions here\nLIMIT 100;`,
-        confidence: 0.7,
-        explanation: 'Generated a basic query template. Please refine your natural language description for better results.',
-        estimatedCost: { rows: 100, executionTimeMs: 150 },
-    };
 }
 
 /**
- * Get query recommendations
+ * Get query recommendations for the given collection.
  */
-async function getRecommendations(collectionName: string): Promise<QueryRecommendation[]> {
-    await new Promise((resolve) => setTimeout(resolve, 300));
-
+function getRecommendations(collectionName: string): QueryRecommendation[] {
     return [
         {
             query: `Show me all active records from ${collectionName}`,
@@ -190,7 +182,7 @@ export function SmartSQLAssistant({
 
     // Load recommendations on mount
     useEffect(() => {
-        getRecommendations(collectionName).then(setRecommendations);
+        setRecommendations(getRecommendations(collectionName));
     }, [collectionName]);
 
     // Generate SQL from natural language

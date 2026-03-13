@@ -22,6 +22,9 @@
 import React, { useState, useCallback, useMemo } from 'react';
 import { useNavigate } from 'react-router';
 import { useQuery } from '@tanstack/react-query';
+import { brainService } from '../api/brain.service';
+import { collectionsApi } from '../lib/api/collections';
+import { workflowsApi } from '../lib/api/workflows';
 import {
   Database,
   Workflow,
@@ -42,15 +45,6 @@ import {
 } from 'lucide-react';
 import { cn } from '../lib/theme';
 import { CommandBar, CommandBarTrigger, BrainSidebar, AmbientIntelligenceBar } from '../components/core';
-// Mock brain service for development
-const mockBrainService = {
-  getBrainStats: async () => ({
-    spotlightItemsCount: 3,
-    autonomyActionsToday: 12,
-    averageConfidence: 0.85,
-    activeSubsystems: 8,
-  }),
-};
 
 // =============================================================================
 // UTILITIES
@@ -334,8 +328,22 @@ export function IntelligentHub() {
   // Fetch brain stats
   const { data: brainStats } = useQuery({
     queryKey: ['brain-stats'],
-    queryFn: () => mockBrainService.getBrainStats(),
-    staleTime: 60000,
+    queryFn: () => brainService.getBrainStats(),
+    staleTime: 60_000,
+  });
+
+  // Fetch collection count for insights
+  const { data: collectionsPage } = useQuery({
+    queryKey: ['collections-count'],
+    queryFn: () => collectionsApi.list({ pageSize: 1 }),
+    staleTime: 120_000,
+  });
+
+  // Fetch active workflow count for insights
+  const { data: workflowsPage } = useQuery({
+    queryKey: ['active-workflows-count'],
+    queryFn: () => workflowsApi.list({ status: 'active', pageSize: 1 }),
+    staleTime: 120_000,
   });
 
   // Quick actions
@@ -374,96 +382,38 @@ export function IntelligentHub() {
     },
   ];
 
-  // Insights
+  // Insights — using real data wherever available
   const insights: Insight[] = [
     {
       id: 'collections',
       title: 'Total Collections',
-      value: '24',
-      change: 12,
-      trend: 'up',
+      value: collectionsPage?.total ?? '–',
       icon: <Database className="h-5 w-5 text-blue-500" />,
     },
     {
       id: 'workflows',
       title: 'Active Pipelines',
-      value: '8',
-      change: 0,
-      trend: 'stable',
+      value: workflowsPage?.total ?? '–',
       icon: <Workflow className="h-5 w-5 text-purple-500" />,
     },
     {
-      id: 'quality',
-      title: 'Data Quality Score',
-      value: '94%',
-      change: 3,
-      trend: 'up',
+      id: 'confidence',
+      title: 'AI Confidence',
+      value: brainStats ? `${Math.round(brainStats.averageConfidence * 100)}%` : '–',
       icon: <BarChart3 className="h-5 w-5 text-green-500" />,
     },
     {
       id: 'actions',
       title: 'AI Actions Today',
-      value: brainStats?.autonomyActionsToday || 0,
+      value: brainStats?.autonomyActionsToday ?? '–',
       icon: <Sparkles className="h-5 w-5 text-amber-500" />,
     },
   ];
 
-  // Mock recent activity
-  const recentActivity: ActivityItem[] = [
-    {
-      id: '1',
-      action: 'Schema updated',
-      target: 'customer_events',
-      timestamp: '5m ago',
-      type: 'update',
-    },
-    {
-      id: '2',
-      action: 'Query executed',
-      target: 'SELECT * FROM orders...',
-      timestamp: '12m ago',
-      type: 'query',
-    },
-    {
-      id: '3',
-      action: 'Pipeline completed',
-      target: 'daily_aggregation',
-      timestamp: '1h ago',
-      type: 'create',
-    },
-    {
-      id: '4',
-      action: 'Quality alert',
-      target: 'user_profiles: 5% null values',
-      timestamp: '2h ago',
-      type: 'alert',
-    },
-  ];
-
-  // Continue working items (would come from user activity API)
-  const continueWorking: ContinueWorkingItem[] = [
-    {
-      id: '1',
-      name: 'customer_events',
-      type: 'collection',
-      lastAccessed: 'Edited 5 min ago',
-      path: '/data/collections/customer_events',
-    },
-    {
-      id: '2',
-      name: 'daily_aggregation',
-      type: 'workflow',
-      lastAccessed: 'Ran 1 hour ago',
-      path: '/pipelines/daily_aggregation',
-    },
-    {
-      id: '3',
-      name: 'Sales by Region',
-      type: 'query',
-      lastAccessed: 'Opened yesterday',
-      path: '/sql?query=sales_by_region',
-    },
-  ];
+  // Recent activity and continue-working items come from real usage patterns;
+  // these are intentionally empty until the user-activity API is wired.
+  const recentActivity: ActivityItem[] = [];
+  const continueWorking: ContinueWorkingItem[] = [];
 
   // Handle ask anything
   const handleAskAnything = useCallback((query: string) => {

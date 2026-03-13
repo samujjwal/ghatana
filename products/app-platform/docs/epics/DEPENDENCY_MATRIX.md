@@ -83,7 +83,7 @@ All referenced epic IDs in this matrix exist in the epic directory. Legacy `PU-0
 
 ### ⚠️ One Intentional Bootstrap Cycle Exists
 
-There is one controlled bootstrap cycle between **K-05 Event Bus** and **K-07 Audit Framework**. The implementation plan remains valid because `plans/CURRENT_EXECUTION_PLAN.md` explicitly breaks the cycle by shipping K-05 core bus/event-store capabilities first, then K-07 audit services, and only then enabling K-05 audit hooks.
+There is one controlled bootstrap cycle between **K-05 Event Bus** and **K-07 Audit Framework**. The implementation plan remains valid because `UNIFIED_IMPLEMENTATION_PLAN.md` and `WEEK_BY_WEEK_IMPLEMENTATION_PLAN.md` explicitly break the cycle by shipping K-05 core bus/event-store capabilities first, then K-07 audit services, and only then enabling K-05 audit hooks.
 
 ### Dependency Layers (Bottom-Up)
 

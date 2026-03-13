@@ -6,13 +6,13 @@ Version: 1.1\
 Status: Architecture Baseline\
 Date: March 10, 2026
 
-Shared terminology and policy baseline: [Documentation_Glossary_and_Policy_Appendix.md](../archive/Documentation_Glossary_and_Policy_Appendix.md)\
+Shared terminology and policy baseline: [Documentation_Glossary_and_Policy_Appendix.md](archive/Documentation_Glossary_and_Policy_Appendix.md)\
 Shared authoritative source register: [Authoritative_Source_Register.md](Authoritative_Source_Register.md)\
 Reference style for time-sensitive external facts: `ASR-*` IDs from the shared source register.\
 Strategic vision and Nepal instantiation: [siddhanta.md](siddhanta.md)\
 Nepal-specific implementation specification: [Siddhanta_Platform_Specification.md](Siddhanta_Platform_Specification.md)\
 Epic and kernel architecture reference: [capital_markets_platform_prompt_v2.1.md](capital_markets_platform_prompt_v2.1.md)\
-Implementation stack authority: [../adr/ADR-011_STACK_STANDARDIZATION_AND_GHATANA_PLATFORM_ALIGNMENT.md](../adr/ADR-011_STACK_STANDARDIZATION_AND_GHATANA_PLATFORM_ALIGNMENT.md)
+Implementation stack authority: [adr/ADR-011_STACK_STANDARDIZATION_AND_GHATANA_PLATFORM_ALIGNMENT.md](adr/ADR-011_STACK_STANDARDIZATION_AND_GHATANA_PLATFORM_ALIGNMENT.md)
 
 > **Scope note:** This document defines the global, jurisdiction-agnostic platform architecture. It is the normative reference for platform capabilities, operator models, plugin taxonomy, deployment modes, and control layers. Nepal-specific regulatory rules, exchange parameters, and market data belong in jurisdiction plugins and are specified in `Siddhanta_Platform_Specification.md`, not here.
 
@@ -93,7 +93,7 @@ The 19 Platform Kernel modules are the non-negotiable foundation. Every module i
 | K-18   | Resilience Patterns Library                     | Circuit breaker, retry, timeout, bulkhead, degraded-mode — policy-driven, consistent across all services                                |
 | K-19   | DLQ Management & Event Replay                   | Dead-letter classification, RCA workflow, quarantine, safe replay with idempotency enforcement                                          |
 
-**Build order constraint:** The Kernel (Layer 0) reaches Platform Stable before any Layer 1 or Layer 2 component begins implementation. This is enforced via Kernel Readiness Gates on all Domain Subsystem epics.
+**Execution constraint:** Layer 1 and Layer 2 work may begin only when the prerequisite Layer 0 contracts are stable. The reference Capital Markets pack is delivered side-by-side with the kernel through readiness gates; no domain or pack team may bypass incomplete kernel dependencies.
 
 ---
 

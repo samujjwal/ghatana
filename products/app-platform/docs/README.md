@@ -45,29 +45,31 @@ Each domain pack includes:
 ## Repository Structure
 
 ```
-finance/
-├── README.md                                  # Top-level orientation and authority map
-├── adr/                                       # Architecture Decision Records (ADR-001 through ADR-011)
-├── architecture/                              # Master architecture suite and sectioned specifications
-├── c4/                                        # C4 context, container, component, and code views
-├── plans/                                     # Current execution plan and delivery program plan
-├── epics/                                     # 42 implementation epics plus dependency matrix and glossary
-├── stories/                                   # Story index, milestone story packs, and backlog
-├── lld/                                       # Low-level designs for kernel and domain modules
-├── docs/                                      # Strategy, specifications, TDD expansions, and claim packs
-├── regulatory/                                # Regulatory-specific supporting documents
-└── archive/                                   # Historical reviews, prompts, and snapshots
+products/app-platform/
+├── finance-ghatana-integration-plan.md        # Capital Markets-specific Ghatana reuse plan
+└── docs/
+    ├── README.md                              # Top-level orientation and authority map
+    ├── adr/                                   # Architecture Decision Records (ADR-001 through ADR-011)
+    ├── architecture/                          # Master architecture suite and sectioned specifications
+    ├── c4/                                    # C4 context, container, component, and code views
+    ├── epics/                                 # 42 implementation epics plus dependency matrix and glossary
+    ├── stories/                               # Story index, milestone story packs, and backlog
+    ├── lld/                                   # Low-level designs for kernel and domain modules
+    ├── regulatory/                            # Regulatory-specific supporting documents
+    ├── archive/                               # Historical reviews, superseded plans, prompts, and snapshots
+    └── *.md                                   # Active strategy, specification, TDD, and traceability docs
 ```
 
 ## Document Authority Order
 
-1. `UNIFIED_IMPLEMENTATION_PLAN.md` for consolidated implementation strategy and timeline
-2. `adr/ADR-011_STACK_STANDARDIZATION_AND_GHATANA_PLATFORM_ALIGNMENT.md` for canonical stack and implementation baseline
-3. `finance-ghatana-integration-plan.md` for detailed Ghatana platform component reuse strategy
-4. `plans/CURRENT_EXECUTION_PLAN.md` for detailed milestone execution
+1. `adr/ADR-011_STACK_STANDARDIZATION_AND_GHATANA_PLATFORM_ALIGNMENT.md` for canonical stack and implementation baseline
+2. `UNIFIED_IMPLEMENTATION_PLAN.md` for canonical milestone sequencing and implementation strategy
+3. `WEEK_BY_WEEK_IMPLEMENTATION_PLAN.md` for the operational sprint and week cadence
+4. `../finance-ghatana-integration-plan.md` for Capital Markets-specific Ghatana component reuse guidance
 5. `epics/` and `lld/` for implementation scope, contracts, and design detail
-6. `stories/STORY_INDEX.md` and milestone story files for backlog execution
-7. `docs/`, `c4/`, and historical archive content for supporting context unless they explicitly override nothing above
+6. `stories/STORY_INDEX.md` and milestone story files for backlog execution and sprint-level story allocation
+7. `Authoritative_Source_Register.md`, `Legal_Claim_Citation_Appendix.md`, and `Claim_Traceability_Matrix.md` for source-backed factual and legal claims
+8. `architecture/`, `c4/`, and `archive/` for supporting context only; archived plans do not override the active baseline
 
 Detailed classification of normative versus supporting material: `docs/DOCUMENT_AUTHORITY_MAP.md`
 

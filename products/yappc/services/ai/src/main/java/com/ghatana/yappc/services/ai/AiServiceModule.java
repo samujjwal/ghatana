@@ -7,7 +7,8 @@ package com.ghatana.yappc.services.ai;
 import com.ghatana.ai.llm.DefaultLLMGateway;
 import com.ghatana.ai.llm.LLMConfiguration;
 import com.ghatana.ai.llm.LLMGateway;
-import com.ghatana.ai.llm.OpenAICompletionService;
+import com.ghatana.ai.llm.OllamaCompletionService;
+import com.ghatana.ai.llm.ToolAwareAnthropicCompletionService;
 import com.ghatana.ai.llm.ToolAwareOpenAICompletionService;
 import com.ghatana.ai.prompts.PromptTemplateManager;
 import com.ghatana.platform.observability.MetricsCollector;
@@ -75,32 +76,97 @@ public class AiServiceModule extends AbstractModule {
     /**
      * Provides LLMGateway backed by environment-configured providers.
      *
-     * <p>Reads {@code OPENAI_API_KEY} to configure an OpenAI provider.
-     * Falls back to a no-op gateway when no key is set (development mode).</p>
+     * <p>Consults, in order: {@code ANTHROPIC_API_KEY}, {@code OPENAI_API_KEY},
+     * {@code OLLAMA_HOST}. At least one must be present; if none are set the
+     * service refuses to start with a clear {@link IllegalStateException}.
+     * Model names are read from the respective {@code *_MODEL} env vars and
+     * must <b>not</b> be hardcoded in Java — all routing is config-driven.</p>
+     *
+     * @param metrics metrics collector for LLM call instrumentation
+     * @return configured {@link LLMGateway}
+     * @throws IllegalStateException if no provider env var is set
      */
     @Provides
     LLMGateway llmGateway(MetricsCollector metrics) {
-        String openAiKey = System.getenv("OPENAI_API_KEY");
         DefaultLLMGateway.Builder builder = DefaultLLMGateway.builder().metrics(metrics);
+        boolean anyConfigured = false;
 
-        if (openAiKey != null && !openAiKey.isBlank()) {
-            LLMConfiguration config = LLMConfiguration.builder()
-                    .apiKey(openAiKey)
-                    .modelName(System.getenv().getOrDefault("OPENAI_MODEL", "gpt-4o-mini"))
+        String anthropicKey = System.getenv("ANTHROPIC_API_KEY");
+        if (anthropicKey != null && !anthropicKey.isBlank()) {
+            String model = System.getenv("ANTHROPIC_MODEL");
+            if (model == null || model.isBlank()) {
+                throw new IllegalStateException(
+                        "ANTHROPIC_API_KEY is set but ANTHROPIC_MODEL env var is missing. "
+                        + "Specify the Claude model name (e.g. claude-3-5-sonnet-20241022).");
+            }
+            LLMConfiguration cfg = LLMConfiguration.builder()
+                    .apiKey(anthropicKey)
+                    .modelName(model)
                     .temperature(0.7)
                     .maxTokens(2000)
                     .timeoutSeconds(30)
                     .maxRetries(3)
                     .build();
-            builder.addProvider("openai", new ToolAwareOpenAICompletionService(config, null, metrics));
-            builder.defaultProvider("openai");
-            logger.info("AI service LLMGateway configured with OpenAI provider");
-        } else {
-            logger.warn("No OPENAI_API_KEY set — AI service running in dev mode without LLM provider");
-            // Provide a stub that returns error promises so the injector still resolves
-            builder.addProvider("stub", new ToolAwareOpenAICompletionService(
-                    LLMConfiguration.builder().apiKey("stub").modelName("stub").build(), null, metrics));
-            builder.defaultProvider("stub");
+            builder.addProvider("anthropic", new ToolAwareAnthropicCompletionService(cfg, null, metrics));
+            builder.defaultProvider("anthropic");
+            anyConfigured = true;
+            logger.info("YAPPC LLMGateway configured with Anthropic provider model={}", model);
+        }
+
+        String openAiKey = System.getenv("OPENAI_API_KEY");
+        if (openAiKey != null && !openAiKey.isBlank()) {
+            String model = System.getenv("OPENAI_MODEL");
+            if (model == null || model.isBlank()) {
+                throw new IllegalStateException(
+                        "OPENAI_API_KEY is set but OPENAI_MODEL env var is missing. "
+                        + "Specify the OpenAI model name (e.g. gpt-4o).");
+            }
+            LLMConfiguration cfg = LLMConfiguration.builder()
+                    .apiKey(openAiKey)
+                    .modelName(model)
+                    .temperature(0.7)
+                    .maxTokens(2000)
+                    .timeoutSeconds(30)
+                    .maxRetries(3)
+                    .build();
+            builder.addProvider("openai", new ToolAwareOpenAICompletionService(cfg, null, metrics));
+            if (!anyConfigured) {
+                builder.defaultProvider("openai");
+            }
+            anyConfigured = true;
+            logger.info("YAPPC LLMGateway configured with OpenAI provider model={}", model);
+        }
+
+        String ollamaHost = System.getenv("OLLAMA_HOST");
+        if (ollamaHost != null && !ollamaHost.isBlank()) {
+            String model = System.getenv("OLLAMA_MODEL");
+            if (model == null || model.isBlank()) {
+                throw new IllegalStateException(
+                        "OLLAMA_HOST is set but OLLAMA_MODEL env var is missing. "
+                        + "Specify the Ollama model name (e.g. llama3.2).");
+            }
+            LLMConfiguration cfg = LLMConfiguration.builder()
+                    .apiKey("ollama")
+                    .baseUrl(ollamaHost)
+                    .modelName(model)
+                    .temperature(0.7)
+                    .maxTokens(2000)
+                    .timeoutSeconds(60)
+                    .maxRetries(2)
+                    .build();
+            builder.addProvider("ollama", new OllamaCompletionService(cfg, null, metrics));
+            if (!anyConfigured) {
+                builder.defaultProvider("ollama");
+            }
+            anyConfigured = true;
+            logger.info("YAPPC LLMGateway configured with Ollama provider host={} model={}", ollamaHost, model);
+        }
+
+        if (!anyConfigured) {
+            throw new IllegalStateException(
+                    "No LLM provider configured for YAPPC AI service. "
+                    + "Set at least one of: ANTHROPIC_API_KEY (+ ANTHROPIC_MODEL), "
+                    + "OPENAI_API_KEY (+ OPENAI_MODEL), OLLAMA_HOST (+ OLLAMA_MODEL).");
         }
 
         return builder.build();

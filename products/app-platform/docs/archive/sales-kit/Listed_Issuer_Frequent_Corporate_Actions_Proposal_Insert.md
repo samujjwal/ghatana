@@ -5,7 +5,7 @@ Status: Tailored customer-facing insert for a realistic listed-issuer prospect p
 Last revised: March 1, 2026
 
 Assumed prospect profile: a listed Nepal issuer with recurring bonus, rights, dividend, board-notice, or record-date workflows and repeated disclosure-calendar pressure.  
-Canonical claims source: [Customer_Facing_Claims_Pack.md](../Customer_Facing_Claims_Pack.md)
+Canonical claims source: [Customer_Facing_Claims_Pack.md](../../Customer_Facing_Claims_Pack.md)
 
 ---
 

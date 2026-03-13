@@ -31,6 +31,7 @@ import {
   CheckCircle,
 } from 'lucide-react';
 import { cn, cardStyles, textStyles, buttonStyles, inputStyles } from '../../lib/theme';
+import { pluginService } from '../../api/plugin.service';
 
 export type LogLevel = 'ERROR' | 'WARN' | 'INFO' | 'DEBUG' | 'TRACE';
 
@@ -76,46 +77,14 @@ export function PluginLogsViewer({
   const logsEndRef = useRef<HTMLDivElement>(null);
   const containerRef = useRef<HTMLDivElement>(null);
 
-  // Fetch logs
+  // Fetch logs from API
   const { data: newLogs } = useQuery({
-    queryKey: ['plugins', pluginId, 'logs', selectedLevels],
-    queryFn: async (): Promise<LogEntry[]> => {
-      // Mock data - in production, this would fetch from API
-      await new Promise((resolve) => setTimeout(resolve, 200));
-
-      // Generate mock logs
-      const logLevels: LogLevel[] = ['ERROR', 'WARN', 'INFO', 'DEBUG', 'TRACE'];
-      const messages = [
-        'Connection established to data source',
-        'Processing batch of 1000 records',
-        'Data validation completed successfully',
-        'Transformed 850 records',
-        'Rate limit threshold reached, throttling requests',
-        'Retrying failed operation (attempt 2/3)',
-        'Cache miss for key: data_snapshot_xyz',
-        'Memory usage: 142MB / 256MB',
-        'Configuration updated: sync_interval=30s',
-        'Error parsing JSON response from API',
-        'Warning: High memory usage detected',
-        'Plugin health check passed',
-      ];
-
-      const numLogs = Math.floor(Math.random() * 3) + 1; // 1-3 new logs
-      return Array.from({ length: numLogs }, () => {
-        const level = logLevels[Math.floor(Math.random() * logLevels.length)];
-        return {
-          timestamp: new Date().toISOString(),
-          level,
-          message: messages[Math.floor(Math.random() * messages.length)],
-          context: {
-            pluginId,
-            threadId: `thread-${Math.floor(Math.random() * 10)}`,
-            requestId: `req-${Math.random().toString(36).slice(2, 11)}`,
-          },
-          source: `Plugin:${pluginId}`,
-        };
-      });
-    },
+    queryKey: ['plugins', pluginId, 'logs', Array.from(selectedLevels).sort().join(',')],
+    queryFn: (): Promise<LogEntry[]> =>
+      pluginService.getPluginLogs(pluginId, {
+        level: Array.from(selectedLevels).join(','),
+        limit: maxLogs,
+      }),
     refetchInterval: streaming && !isPaused ? refreshInterval : false,
   });
 

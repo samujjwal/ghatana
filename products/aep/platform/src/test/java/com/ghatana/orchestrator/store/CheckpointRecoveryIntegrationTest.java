@@ -13,6 +13,7 @@ import java.util.*;
 import java.util.stream.IntStream;
 
 import static org.assertj.core.api.Assertions.*;
+import com.ghatana.platform.testing.activej.EventloopTestBase;
 
 /**
  * Integration tests for checkpoint recovery workflows using {@link InMemoryCheckpointStore}.
@@ -20,7 +21,7 @@ import static org.assertj.core.api.Assertions.*;
  * Complements the Mockito-based {@link PostgresqlCheckpointStoreTest}.
  */
 @DisplayName("Checkpoint Recovery Integration")
-class CheckpointRecoveryIntegrationTest {
+class CheckpointRecoveryIntegrationTest extends EventloopTestBase {
 
     private static final String TENANT = "tenant-1";
     private static final String PIPELINE = "etl-pipeline";
@@ -79,7 +80,7 @@ class CheckpointRecoveryIntegrationTest {
 
             PipelineCheckpoint final_ = store.findByInstanceId("inst-1").orElseThrow();
             assertThat(final_.getStatus()).isEqualTo(PipelineCheckpointStatus.COMPLETED);
-            assertThat(final_.getResult()).containsEntry("totalRows", 950);
+            assertThat(runPromise(() -> final_)).containsEntry("totalRows", 950);
             assertThat(final_.isActive()).isFalse();
         }
 
@@ -395,7 +396,7 @@ class CheckpointRecoveryIntegrationTest {
         void pollValidatesCheckpoint() {
             queue.enqueue(TENANT, PIPELINE, Map.of(), "poll-key");
 
-            List<ExecutionJob> jobs = queue.poll(10, 30).getResult();
+            List<ExecutionJob> jobs = runPromise(() -> queue.poll(10, 30));
             assertThat(jobs).hasSize(1);
 
             // After poll, queue is empty
@@ -412,7 +413,7 @@ class CheckpointRecoveryIntegrationTest {
             store.completeExecution(cp.getInstanceId(), PipelineCheckpointStatus.COMPLETED, Map.of());
 
             // Poll should skip the job because checkpoint is no longer active
-            List<ExecutionJob> jobs = queue.poll(10, 30).getResult();
+            List<ExecutionJob> jobs = runPromise(() -> queue.poll(10, 30));
             assertThat(jobs).isEmpty();
         }
 

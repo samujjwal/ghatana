@@ -976,16 +976,16 @@ Domain pack updates and upgrades:
 ### Documentation
 
 - [Domain Pack Development Guide](DOMAIN_PACK_DEVELOPMENT_GUIDE.md)
-- [Kernel API Reference](../api/kernel-api.md)
-- [Testing Framework Guide](../testing/testing-guide.md)
-- [Security Guidelines](../security/security-guidelines.md)
+- [Platform SDK LLD](lld/LLD_K12_PLATFORM_SDK.md)
+- [Plugin Sandbox Specification](PLUGIN_SANDBOX_SPECIFICATION.md)
+- [Inter-Domain Pack Communication Spec](INTER_DOMAIN_PACK_COMMUNICATION_SPEC.md)
 
 ### Tools and SDKs
 
-- [Domain Pack SDK](../sdk/domain-pack-sdk.md)
-- [CLI Tools](../tools/cli-tools.md)
-- [Testing Framework](../testing/test-framework.md)
-- [Validation Tools](../tools/validation-tools.md)
+- [Extension Point Catalog](EXTENSION_POINT_CATALOG.md)
+- [Pack Certification Epic](epics/EPIC-P-01-Pack-Certification.md)
+- [Integration Testing Epic](epics/EPIC-T-01-Integration-Testing.md)
+- [Chaos Engineering Epic](epics/EPIC-T-02-Chaos-Engineering.md)
 
 ### Community
 

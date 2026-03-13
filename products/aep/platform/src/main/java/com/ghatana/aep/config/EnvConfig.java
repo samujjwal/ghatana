@@ -77,6 +77,9 @@ public final class EnvConfig {
     public static final String AEP_DB_PASSWORD                     = "AEP_DB_PASSWORD";
     public static final String AEP_DB_POOL_SIZE                    = "AEP_DB_POOL_SIZE";
     public static final String AEP_CONSOLIDATION_INTERVAL_HOURS    = "AEP_CONSOLIDATION_INTERVAL_HOURS";
+    public static final String EVENT_CLOUD_TRANSPORT               = "EVENT_CLOUD_TRANSPORT";
+    public static final String AEP_GRPC_ENDPOINT                   = "AEP_GRPC_ENDPOINT";
+    public static final String AEP_SCHEMA_REGISTRY_URL            = "AEP_SCHEMA_REGISTRY_URL";
 
     private final Map<String, String> env;
 
@@ -191,4 +194,22 @@ public final class EnvConfig {
 
     /** @return consolidation interval in hours (default: 6). Configurable via {@code AEP_CONSOLIDATION_INTERVAL_HOURS}. */
     public int consolidationIntervalHours() { return getInt(AEP_CONSOLIDATION_INTERVAL_HOURS, 6); }
+
+    /**
+     * @return active event-cloud transport: {@code eventlog} (default), {@code grpc}, or {@code http}.
+     *         Configurable via {@code EVENT_CLOUD_TRANSPORT}.
+     */
+    public String eventCloudTransport() { return get(EVENT_CLOUD_TRANSPORT, "eventlog").toLowerCase(); }
+
+    /**
+     * @return gRPC endpoint for the AEP event-cloud transport (default: {@code localhost:50051}).
+     *         Configurable via {@code AEP_GRPC_ENDPOINT}.
+     */
+    public String aepGrpcEndpoint() { return get(AEP_GRPC_ENDPOINT, "localhost:50051"); }
+
+    /**
+     * @return URL of the Confluent-compatible Schema Registry (default: {@code http://localhost:8081}).
+     *         Configurable via {@code AEP_SCHEMA_REGISTRY_URL}.
+     */
+    public String aepSchemaRegistryUrl() { return get(AEP_SCHEMA_REGISTRY_URL, "http://localhost:8081"); }
 }

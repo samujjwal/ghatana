@@ -155,7 +155,7 @@ class GrpcEventLogStoreTest extends EventloopTestBase {
 
             Offset offset = runPromise(() -> store().append(TENANT, entry));
 
-            assertThat(offset.value()).isEqualTo(42L);
+            assertThat(offset.value()).isEqualTo("42");
             wireMock.verify(postRequestedFor(urlPathMatching("/api/v1/eventlog/" + TENANT_ID + "/events")));
         }
 
@@ -172,7 +172,9 @@ class GrpcEventLogStoreTest extends EventloopTestBase {
 
             assertThatThrownBy(() -> runPromise(() -> store().append(TENANT, entry)))
                 .isInstanceOf(DataCloudRemoteException.class)
+                .cause()
                 .hasMessageContaining("500");
+            clearFatalError();
         }
 
         @Test
@@ -225,8 +227,8 @@ class GrpcEventLogStoreTest extends EventloopTestBase {
             List<Offset> offsets = runPromise(() -> store().appendBatch(TENANT, entries));
 
             assertThat(offsets).hasSize(3);
-            assertThat(offsets.get(0).value()).isEqualTo(10L);
-            assertThat(offsets.get(2).value()).isEqualTo(12L);
+            assertThat(offsets.get(0).value()).isEqualTo("10");
+            assertThat(offsets.get(2).value()).isEqualTo("12");
         }
     }
 
@@ -278,7 +280,7 @@ class GrpcEventLogStoreTest extends EventloopTestBase {
 
             Offset offset = runPromise(() -> store().getLatestOffset(TENANT));
 
-            assertThat(offset.value()).isEqualTo(99L);
+            assertThat(offset.value()).isEqualTo("99");
         }
     }
 
@@ -296,7 +298,7 @@ class GrpcEventLogStoreTest extends EventloopTestBase {
 
             Offset offset = runPromise(() -> store().getEarliestOffset(TENANT));
 
-            assertThat(offset.value()).isEqualTo(0L);
+            assertThat(offset.value()).isEqualTo("0");
         }
     }
 }

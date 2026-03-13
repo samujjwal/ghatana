@@ -4,7 +4,7 @@ Version: 1.0
 Status: Short outbound email snippets for each buyer type and profile  
 Last revised: March 1, 2026
 
-Canonical claims source: [Customer_Facing_Claims_Pack.md](../Customer_Facing_Claims_Pack.md)
+Canonical claims source: [Customer_Facing_Claims_Pack.md](../../Customer_Facing_Claims_Pack.md)
 
 ---
 
@@ -18,7 +18,7 @@ We put together a concise overview of Project Siddhanta as an AI-native, control
 
 Recommended attachment:
 
-- [One_Page_Proposal_Insert.md](../One_Page_Proposal_Insert.md)
+- [One_Page_Proposal_Insert.md](../../One_Page_Proposal_Insert.md)
 
 ---
 
@@ -32,7 +32,7 @@ We prepared a short broker-focused summary of how Siddhanta can tighten the work
 
 Recommended attachment:
 
-- [Broker_Proposal_Insert.md](../Broker_Proposal_Insert.md)
+- [Broker_Proposal_Insert.md](../../Broker_Proposal_Insert.md)
 
 ---
 
@@ -46,7 +46,7 @@ We prepared a merchant-banker-specific summary of how Siddhanta can improve issu
 
 Recommended attachment:
 
-- [Merchant_Banker_Proposal_Insert.md](../Merchant_Banker_Proposal_Insert.md)
+- [Merchant_Banker_Proposal_Insert.md](../../Merchant_Banker_Proposal_Insert.md)
 
 ---
 
@@ -60,7 +60,7 @@ We prepared a listed-issuer-focused summary of how Siddhanta can reduce deadline
 
 Recommended attachment:
 
-- [Issuer_Proposal_Insert.md](../Issuer_Proposal_Insert.md)
+- [Issuer_Proposal_Insert.md](../../Issuer_Proposal_Insert.md)
 
 ---
 
@@ -110,8 +110,8 @@ Recommended attachment:
 
 If the recipient asks for proof or challenges a claim, move immediately to:
 
-1. [Customer_Facing_Claims_Pack.md](../Customer_Facing_Claims_Pack.md)
-2. [Legal_Claim_Citation_Appendix.md](../Legal_Claim_Citation_Appendix.md)
-3. [Authoritative_Source_Register.md](../Authoritative_Source_Register.md)
+1. [Customer_Facing_Claims_Pack.md](../../Customer_Facing_Claims_Pack.md)
+2. [Legal_Claim_Citation_Appendix.md](../../Legal_Claim_Citation_Appendix.md)
+3. [Authoritative_Source_Register.md](../../Authoritative_Source_Register.md)
 
 Do not improvise new factual or legal claims in the email itself.

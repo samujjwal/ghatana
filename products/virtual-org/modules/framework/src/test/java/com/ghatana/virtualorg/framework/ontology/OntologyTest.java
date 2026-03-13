@@ -1,5 +1,6 @@
 package com.ghatana.virtualorg.framework.ontology;
 
+import com.ghatana.platform.testing.activej.EventloopTestBase;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -13,7 +14,7 @@ import static org.assertj.core.api.Assertions.assertThat;
  * Tests for the Organizational Ontology system.
  */
 @DisplayName("Ontology Tests")
-class OntologyTest {
+class OntologyTest extends EventloopTestBase {
 
     private Ontology ontology;
 
@@ -31,7 +32,7 @@ class OntologyTest {
 
         ontology.defineSync(agentConcept);
 
-        Optional<Concept> retrieved = ontology.get("agent").getResult();
+        Optional<Concept> retrieved = runPromise(() -> ontology.get("agent"));
         assertThat(retrieved).isPresent();
         assertThat(retrieved.get().name()).isEqualTo("Agent");
     }
@@ -57,7 +58,7 @@ class OntologyTest {
         ontology.defineSync(agent);
         ontology.defineSync(developer);
 
-        List<Concept> ancestors = ontology.getAncestors("developer").getResult();
+        List<Concept> ancestors = runPromise(() -> ontology.getAncestors("developer"));
         assertThat(ancestors).hasSize(2);
         assertThat(ancestors.stream().map(Concept::id))
                 .containsExactly("agent", "entity");
@@ -76,7 +77,7 @@ class OntologyTest {
         ontology.defineSync(developer);
         ontology.defineSync(architect);
 
-        List<Concept> agentChildren = ontology.getSubConcepts("agent").getResult();
+        List<Concept> agentChildren = runPromise(() -> ontology.getSubConcepts("agent"));
         assertThat(agentChildren).hasSize(2);
         assertThat(agentChildren.stream().map(Concept::id))
                 .containsExactlyInAnyOrder("developer", "architect");
@@ -93,9 +94,9 @@ class OntologyTest {
         ontology.defineSync(agent);
         ontology.defineSync(developer);
 
-        assertThat(ontology.isDescendantOf("developer", "agent").getResult()).isTrue();
-        assertThat(ontology.isDescendantOf("developer", "entity").getResult()).isTrue();
-        assertThat(ontology.isDescendantOf("agent", "developer").getResult()).isFalse();
+        assertThat(runPromise(() -> ontology.isDescendantOf("developer", "agent"))).isTrue();
+        assertThat(runPromise(() -> ontology.isDescendantOf("developer", "entity"))).isTrue();
+        assertThat(runPromise(() -> ontology.isDescendantOf("agent", "developer"))).isFalse();
     }
 
     @Test
@@ -107,7 +108,7 @@ class OntologyTest {
 
         ontology.defineSync(codeReview);
 
-        Optional<Concept> resolved = ontology.resolve("pr review").getResult();
+        Optional<Concept> resolved = runPromise(() -> ontology.resolve("pr review"));
         assertThat(resolved).isPresent();
         assertThat(resolved.get().id()).isEqualTo("code-review");
     }
@@ -118,7 +119,7 @@ class OntologyTest {
         Ontology coreOntology = Ontology.withCoreConceptsAsync();
 
         // Core ontology should have basic organizational concepts
-        Optional<Concept> agent = coreOntology.resolve("agent").getResult();
+        Optional<Concept> agent = runPromise(() -> coreOntology.resolve("agent"));
         assertThat(agent).isPresent();
     }
 }

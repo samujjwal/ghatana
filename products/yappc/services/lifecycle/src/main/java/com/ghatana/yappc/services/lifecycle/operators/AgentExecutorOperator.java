@@ -10,7 +10,13 @@ import com.ghatana.platform.types.identity.OperatorId;
 import com.ghatana.platform.workflow.operator.AbstractOperator;
 import com.ghatana.platform.workflow.operator.OperatorResult;
 import com.ghatana.platform.workflow.operator.OperatorType;
+import com.ghatana.yappc.agent.StepBudget;
+import com.ghatana.yappc.agent.StepContext;
+import com.ghatana.yappc.agent.StepResult;
+import com.ghatana.yappc.agent.WorkflowStep;
+import com.ghatana.yappc.agent.YappcAgentSystem;
 import io.activej.promise.Promise;
+import org.jetbrains.annotations.Nullable;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -55,10 +61,15 @@ public class AgentExecutorOperator extends AbstractOperator {
     /** Event type emitted after agent execution completes or fails. */
     public static final String EVENT_RESULT_PRODUCED    = "agent.result.produced";
 
+    @Nullable
+    private final YappcAgentSystem yappcAgentSystem;
+
     /**
-     * Creates an {@code AgentExecutorOperator}.
+     * Creates an {@code AgentExecutorOperator} with a wired {@link YappcAgentSystem}.
+     *
+     * @param yappcAgentSystem initialized YAPPC agent system for real dispatch (nullable for stub mode)
      */
-    public AgentExecutorOperator() {
+    public AgentExecutorOperator(@Nullable YappcAgentSystem yappcAgentSystem) {
         super(
             OperatorId.of("yappc", "stream", "agent-executor", "1.0.0"),
             OperatorType.STREAM,
@@ -67,6 +78,17 @@ public class AgentExecutorOperator extends AbstractOperator {
             List.of("agent.execute", "agent.result"),
             null
         );
+        this.yappcAgentSystem = yappcAgentSystem;
+    }
+
+    /**
+     * Creates an {@code AgentExecutorOperator} in stub mode (no agent dispatch).
+     *
+     * @deprecated Use {@link #AgentExecutorOperator(YappcAgentSystem)} for production use.
+     */
+    @Deprecated(since = "2.4.0", forRemoval = true)
+    public AgentExecutorOperator() {
+        this(null);
     }
 
     @Override
@@ -93,33 +115,103 @@ public class AgentExecutorOperator extends AbstractOperator {
     }
 
     /**
-     * Executes the agent identified by {@code agentId} and returns a
-     * {@code agent.result.produced} event with the execution outcome.
+     * Executes the agent identified by {@code agentId} by dispatching to the
+     * {@link YappcAgentSystem} SDLC registry.
      *
-     * <p>The current implementation is a delegation stub that marks execution
-     * as {@code success} synchronously. Full agent execution (TypedAgent lifecycle,
-     * checkpointing, retry) is injected via the agent catalog at runtime.
+     * <p>Looks up the agent by step name. When a {@link YappcAgentSystem} is injected and
+     * the agent is found, the full {@link WorkflowStep} GAA lifecycle is executed. If the
+     * system is absent or the agent is unknown, a descriptive error result is emitted so
+     * downstream operators (e.g., {@link ResultAggregatorOperator}) can handle it gracefully.
      */
+    @SuppressWarnings("unchecked")
     protected Promise<Event> executeAgent(
             String agentId, String fromStage, String toStage,
             String tenantId, String correlationId) {
 
         String resultCorrelationId = correlationId != null ? correlationId : UUID.randomUUID().toString();
+        String effectiveTenant     = tenantId != null ? tenantId : "";
 
-        Event resultEvent = GEvent.builder()
-                .typeTenantVersion(tenantId != null ? tenantId : "", EVENT_RESULT_PRODUCED, "v1")
+        if (yappcAgentSystem == null || !yappcAgentSystem.isInitialized()) {
+            log.error("[AgentExecutor] YappcAgentSystem not available or not initialized. "
+                    + "Dropping dispatch for agentId={} — wire a YappcAgentSystem via LifecycleServiceModule.",
+                    agentId);
+            return Promise.of(buildResultEvent(effectiveTenant, agentId, "error",
+                    fromStage, toStage, resultCorrelationId,
+                    Map.of("_error", "agent_system_unavailable")));
+        }
+
+        WorkflowStep<Object, Object> agent =
+                yappcAgentSystem.getSdlcRegistry().getAgent(agentId);
+
+        if (agent == null) {
+            log.error("[AgentExecutor] No SDLC agent registered for stepName='{}'. "
+                    + "Known agents: {}", agentId, yappcAgentSystem.getAllAgentIds());
+            return Promise.of(buildResultEvent(effectiveTenant, agentId, "error",
+                    fromStage, toStage, resultCorrelationId,
+                    Map.of("_error", "agent_not_found", "agentId", agentId)));
+        }
+
+        StepContext context = new StepContext(
+                resultCorrelationId,   // runId = correlationId
+                effectiveTenant,
+                extractPhase(agentId), // e.g., "architecture.intake" → "architecture"
+                null,                  // configSnapshotId — not yet in dispatch event
+                new StepBudget(30.0, 60_000L));
+
+        // Input: pass the dispatch metadata as a Map; agents that need richer input
+        // should evolve the dispatch event schema to include a typed "input" payload field.
+        Map<String, Object> input = Map.of(
+                "agentId",       agentId,
+                "fromStage",     Objects.toString(fromStage, ""),
+                "toStage",       Objects.toString(toStage, ""),
+                "tenantId",      effectiveTenant,
+                "correlationId", resultCorrelationId);
+
+        log.info("[AgentExecutor] Dispatching to agent: agentId={} fromStage={} toStage={}",
+                agentId, fromStage, toStage);
+
+        return agent.execute(input, context)
+                .map(stepResult -> {
+                    String status = stepResult != null && stepResult.isSuccess() ? "success" : "error";
+                    Map<String, Object> extra = stepResult != null && stepResult.output() != null
+                            ? Map.of("output", stepResult.output().toString())
+                            : Map.of();
+                    log.info("[AgentExecutor] Agent completed: agentId={} status={}", agentId, status);
+                    return buildResultEvent(effectiveTenant, agentId, status,
+                            fromStage, toStage, resultCorrelationId, extra);
+                })
+                .mapException(ex -> {
+                    log.error("[AgentExecutor] Agent execution failed: agentId={}", agentId, ex);
+                    return ex;
+                })
+                .then(
+                    event -> Promise.of(event),
+                    ex -> Promise.of(buildResultEvent(effectiveTenant, agentId, "error",
+                            fromStage, toStage, resultCorrelationId,
+                            Map.of("_error", ex.getMessage() != null ? ex.getMessage() : ex.getClass().getSimpleName()))));
+    }
+
+    private static Event buildResultEvent(
+            String tenantId, String agentId, String status,
+            String fromStage, String toStage, String correlationId,
+            Map<String, Object> extra) {
+        GEvent.GEventBuilder builder = GEvent.builder()
+                .typeTenantVersion(tenantId, EVENT_RESULT_PRODUCED, "v1")
                 .addPayload("agentId",       agentId)
-                .addPayload("status",        "success")
+                .addPayload("status",        status)
                 .addPayload("fromStage",     Objects.toString(fromStage, ""))
                 .addPayload("toStage",       Objects.toString(toStage, ""))
-                .addPayload("tenantId",      Objects.toString(tenantId, ""))
-                .addPayload("correlationId", resultCorrelationId)
-                .addPayload("executedAt",    Instant.now().toString())
-                .build();
+                .addPayload("tenantId",      tenantId)
+                .addPayload("correlationId", correlationId)
+                .addPayload("executedAt",    Instant.now().toString());
+        extra.forEach(builder::addPayload);
+        return builder.build();
+    }
 
-        log.debug("Agent execution result: agentId={} status=success correlationId={}",
-                agentId, resultCorrelationId);
-        return Promise.of(resultEvent);
+    private static String extractPhase(String agentId) {
+        if (agentId == null) return "unknown";
+        int dot = agentId.indexOf('.');
+        return dot > 0 ? agentId.substring(0, dot) : agentId;
     }
 
     // -------------------------------------------------------------------------

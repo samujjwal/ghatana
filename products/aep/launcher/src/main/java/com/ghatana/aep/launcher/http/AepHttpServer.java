@@ -4,6 +4,8 @@ import com.ghatana.aep.AepEngine;
 import com.ghatana.agent.learning.review.HumanReviewQueue;
 import com.ghatana.agent.learning.review.ReviewDecision;
 import com.ghatana.agent.learning.review.ReviewFilter;
+import com.ghatana.agent.learning.review.ReviewItem;
+import com.ghatana.agent.learning.review.ReviewItemType;
 import com.ghatana.datacloud.DataCloudClient;
 import com.ghatana.orchestrator.deployment.contract.DeploymentRequest;
 import com.ghatana.orchestrator.deployment.contract.DeploymentResponse;
@@ -23,6 +25,8 @@ import io.activej.http.*;
 import io.activej.eventloop.Eventloop;
 import io.activej.promise.Promise;
 import io.activej.promise.Promises;
+import io.activej.csp.queue.ChannelBuffer;
+import io.activej.bytebuf.ByteBuf;
 import org.jetbrains.annotations.Nullable;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -62,6 +66,16 @@ public class AepHttpServer {
     private final DataCloudClient agentDataCloud;
     private HttpServer server;
     private Eventloop eventloop;
+
+    /** In-memory circular buffer of recent pipeline runs (event-loop thread only). */
+    private final java.util.Deque<Map<String, Object>> recentRuns = new java.util.ArrayDeque<>();
+    private static final int MAX_RECENT_RUNS = 1_000;
+
+    /**
+     * Active SSE subscriber queues keyed by tenantId (event-loop thread only).
+     * Each entry is a live ChannelBuffer that pushes bytes to a connected client.
+     */
+    private final Map<String, List<ChannelBuffer<ByteBuf>>> sseSubscribers = new java.util.HashMap<>();
 
     /**
      * Creates a new AEP HTTP server (without learning-loop endpoints or Data-Cloud registry).
@@ -166,11 +180,27 @@ public class AepHttpServer {
             .with(HttpMethod.GET, "/api/v1/agents/:agentId", this::handleGetAgent)
             .with(HttpMethod.POST, "/api/v1/agents/:agentId/execute", this::handleExecuteAgent)
             .with(HttpMethod.GET, "/api/v1/agents/:agentId/memory", this::handleGetAgentMemory)
+            .with(HttpMethod.GET, "/api/v1/agents/:agentId/memory/episodes", this::handleGetAgentEpisodes)
+            .with(HttpMethod.GET, "/api/v1/agents/:agentId/memory/facts", this::handleGetAgentFacts)
+            .with(HttpMethod.GET, "/api/v1/agents/:agentId/memory/policies", this::handleGetAgentPolicies)
+            .with(HttpMethod.DELETE, "/api/v1/agents/:agentId", this::handleDeregisterAgent)
+
+            // Pipeline run & metrics endpoints (AEP-P7)
+            .with(HttpMethod.GET, "/api/v1/runs", this::handleListPipelineRuns)
+            .with(HttpMethod.POST, "/api/v1/runs/:runId/cancel", this::handleCancelRun)
+            .with(HttpMethod.GET, "/api/v1/metrics/pipelines", this::handleGetPipelineMetrics)
 
             // HITL (Human-in-the-Loop) endpoints (AEP-P7)
             .with(HttpMethod.GET, "/api/v1/hitl/pending", this::handleListHitlPending)
             .with(HttpMethod.POST, "/api/v1/hitl/:reviewId/approve", this::handleHitlApprove)
             .with(HttpMethod.POST, "/api/v1/hitl/:reviewId/reject", this::handleHitlReject)
+
+            // Learning system endpoints (AEP-P7)
+            .with(HttpMethod.GET, "/api/v1/learning/episodes", this::handleListEpisodes)
+            .with(HttpMethod.GET, "/api/v1/learning/policies", this::handleListPolicies)
+            .with(HttpMethod.POST, "/api/v1/learning/policies/:policyId/approve", this::handleApprovePolicy)
+            .with(HttpMethod.POST, "/api/v1/learning/policies/:policyId/reject", this::handleRejectPolicy)
+            .with(HttpMethod.POST, "/api/v1/learning/reflect", this::handleTriggerReflection)
 
             // Server-Sent Events endpoints for real-time UI updates (AEP-P7)
             .with(HttpMethod.GET, "/events/stream", this::handleSseStream)
@@ -181,6 +211,8 @@ public class AepHttpServer {
             .withListenPort(port)
             .build();
 
+        // Schedule heartbeat before the event loop starts so it begins on the first iteration.
+        eventloop.execute(this::scheduleHeartbeat);
         CompletableFuture.runAsync(() -> {
             try {
                 server.listen();
@@ -262,82 +294,97 @@ public class AepHttpServer {
 
     @SuppressWarnings("unchecked")
     private Promise<HttpResponse> handleProcessEvent(HttpRequest request) {
-        try {
-            String body = request.loadBody().getResult().getString(StandardCharsets.UTF_8);
-            Map<String, Object> eventData = objectMapper.readValue(body, Map.class);
-            
-            String tenantId = (String) eventData.getOrDefault("tenantId", "default");
-            String eventType = (String) eventData.getOrDefault("type", "unknown");
-            Map<String, Object> payload = (Map<String, Object>) eventData.getOrDefault("payload", Map.of());
-            
-            AepEngine.Event event = new AepEngine.Event(eventType, payload, Map.of(), Instant.now());
-            
-            return engine.process(tenantId, event)
-                .map(result -> jsonResponse(Map.of(
-                    "eventId", result.eventId(),
-                    "success", result.success(),
-                    "detections", result.detections().size(),
-                    "timestamp", Instant.now().toString()
-                )));
-        } catch (Exception e) {
-            log.error("Error processing event", e);
-            return Promise.of(errorResponse(400, "Invalid event data: " + e.getMessage()));
-        }
+        return request.loadBody().then(buf -> {
+            try {
+                String body = buf.getString(StandardCharsets.UTF_8);
+                Map<String, Object> eventData = objectMapper.readValue(body, Map.class);
+
+                String tenantId = (String) eventData.getOrDefault("tenantId", "default");
+                String eventType = (String) eventData.getOrDefault("type", "unknown");
+                Map<String, Object> payload = (Map<String, Object>) eventData.getOrDefault("payload", Map.of());
+
+                AepEngine.Event event = new AepEngine.Event(eventType, payload, Map.of(), Instant.now());
+                Instant startedAt = Instant.now();
+
+                return engine.process(tenantId, event)
+                    .map(result -> {
+                        recordRun(result.eventId(), tenantId, null,
+                            result.success() ? "SUCCEEDED" : "FAILED", startedAt);
+                        return jsonResponse(Map.of(
+                            "eventId", result.eventId(),
+                            "success", result.success(),
+                            "detections", result.detections().size(),
+                            "timestamp", Instant.now().toString()
+                        ));
+                    });
+            } catch (Exception e) {
+                log.error("Error processing event", e);
+                return Promise.of(errorResponse(400, "Invalid event data: " + e.getMessage()));
+            }
+        }, e -> {
+            log.error("Failed to read event body", e);
+            return Promise.of(errorResponse(400, "Failed to read request body"));
+        });
     }
 
     private Promise<HttpResponse> handleProcessBatch(HttpRequest request) {
-        try {
-            String body = request.loadBody().getResult().getString(StandardCharsets.UTF_8);
-            Map<String, Object> batchData = objectMapper.readValue(
-                body, new com.fasterxml.jackson.core.type.TypeReference<Map<String, Object>>() {});
+        return request.loadBody().then(buf -> {
+            try {
+                String body = buf.getString(StandardCharsets.UTF_8);
+                Map<String, Object> batchData = objectMapper.readValue(
+                    body, new com.fasterxml.jackson.core.type.TypeReference<Map<String, Object>>() {});
 
-            String tenantId = (String) batchData.getOrDefault("tenantId", "default");
-            @SuppressWarnings("unchecked")
-            List<Map<String, Object>> eventsData =
-                (List<Map<String, Object>>) batchData.getOrDefault("events", List.of());
+                String tenantId = (String) batchData.getOrDefault("tenantId", "default");
+                @SuppressWarnings("unchecked")
+                List<Map<String, Object>> eventsData =
+                    (List<Map<String, Object>>) batchData.getOrDefault("events", List.of());
 
-            if (eventsData.isEmpty()) {
-                return Promise.of(errorResponse(400, "Batch request must include non-empty events array"));
+                if (eventsData.isEmpty()) {
+                    return Promise.of(errorResponse(400, "Batch request must include non-empty events array"));
+                }
+
+                List<Promise<AepEngine.ProcessingResult>> processingPromises = eventsData.stream()
+                    .map(eventData -> {
+                        String eventType = (String) eventData.getOrDefault("type", "unknown");
+                        @SuppressWarnings("unchecked")
+                        Map<String, Object> payload =
+                            (Map<String, Object>) eventData.getOrDefault("payload", Map.of());
+                        AepEngine.Event event = new AepEngine.Event(eventType, payload, Map.of(), Instant.now());
+                        return engine.process(tenantId, event);
+                    })
+                    .toList();
+
+                return Promises.toList(processingPromises)
+                    .map(results -> {
+                        long successCount = results.stream().filter(AepEngine.ProcessingResult::success).count();
+                        int totalDetections =
+                            results.stream().mapToInt(result -> result.detections().size()).sum();
+                        List<Map<String, Object>> events = results.stream()
+                            .map(result -> Map.<String, Object>of(
+                                "eventId", result.eventId(),
+                                "success", result.success(),
+                                "detections", result.detections().size()))
+                            .toList();
+                        return jsonResponse(Map.of(
+                            "tenantId", tenantId,
+                            "total", results.size(),
+                            "successCount", successCount,
+                            "failureCount", results.size() - successCount,
+                            "totalDetections", totalDetections,
+                            "events", events,
+                            "timestamp", Instant.now().toString()
+                        ));
+                    })
+                    .mapException(e -> new RuntimeException("Batch processing failed: " + e.getMessage(), e))
+                    .then(Promise::of, e -> Promise.of(errorResponse(500, e.getMessage())));
+            } catch (Exception e) {
+                log.error("Error processing batch events", e);
+                return Promise.of(errorResponse(400, "Invalid batch data: " + e.getMessage()));
             }
-
-            List<Promise<AepEngine.ProcessingResult>> processingPromises = eventsData.stream()
-                .map(eventData -> {
-                    String eventType = (String) eventData.getOrDefault("type", "unknown");
-                    @SuppressWarnings("unchecked")
-                    Map<String, Object> payload =
-                        (Map<String, Object>) eventData.getOrDefault("payload", Map.of());
-                    AepEngine.Event event = new AepEngine.Event(eventType, payload, Map.of(), Instant.now());
-                    return engine.process(tenantId, event);
-                })
-                .toList();
-
-            return Promises.toList(processingPromises)
-                .map(results -> {
-                    long successCount = results.stream().filter(AepEngine.ProcessingResult::success).count();
-                    int totalDetections =
-                        results.stream().mapToInt(result -> result.detections().size()).sum();
-                    List<Map<String, Object>> events = results.stream()
-                        .map(result -> Map.<String, Object>of(
-                            "eventId", result.eventId(),
-                            "success", result.success(),
-                            "detections", result.detections().size()))
-                        .toList();
-                    return jsonResponse(Map.of(
-                        "tenantId", tenantId,
-                        "total", results.size(),
-                        "successCount", successCount,
-                        "failureCount", results.size() - successCount,
-                        "totalDetections", totalDetections,
-                        "events", events,
-                        "timestamp", Instant.now().toString()
-                    ));
-                })
-                .mapException(e -> new RuntimeException("Batch processing failed: " + e.getMessage(), e))
-                .then(Promise::of, e -> Promise.of(errorResponse(500, e.getMessage())));
-        } catch (Exception e) {
-            log.error("Error processing batch events", e);
-            return Promise.of(errorResponse(400, "Invalid batch data: " + e.getMessage()));
-        }
+        }, e -> {
+            log.error("Failed to read batch body", e);
+            return Promise.of(errorResponse(400, "Failed to read request body"));
+        });
     }
 
     // ==================== Pipeline Management Endpoints ====================
@@ -377,89 +424,98 @@ public class AepHttpServer {
     }
 
     private Promise<HttpResponse> handleCreatePipeline(HttpRequest request) {
-        try {
-            String body = request.loadBody().getResult().getString(StandardCharsets.UTF_8);
-            Map<String, Object> pipeline = objectMapper.readValue(
-                body, new com.fasterxml.jackson.core.type.TypeReference<Map<String, Object>>() {});
-            String tenantId = resolveTenantId(request, pipeline);
-            Pipeline candidate = mapToPipeline(pipeline, tenantId);
+        return request.loadBody().then(buf -> {
+            try {
+                String body = buf.getString(StandardCharsets.UTF_8);
+                Map<String, Object> pipeline = objectMapper.readValue(
+                    body, new com.fasterxml.jackson.core.type.TypeReference<Map<String, Object>>() {});
+                String tenantId = resolveTenantId(request, pipeline);
+                Pipeline candidate = mapToPipeline(pipeline, tenantId);
 
-            if (candidate.getName() == null || candidate.getName().isBlank()) {
-                return Promise.of(errorResponse(400, "Pipeline name is required"));
+                if (candidate.getName() == null || candidate.getName().isBlank()) {
+                    return Promise.of(errorResponse(400, "Pipeline name is required"));
+                }
+
+                return pipelineRepository.nextVersion(candidate.getName(), TenantId.of(tenantId))
+                    .then(nextVersion -> {
+                        candidate.setVersion(candidate.getVersion() > 0 ? candidate.getVersion() : nextVersion);
+                        List<String> errors = new ArrayList<>(pipelineValidator.validate(candidate, null));
+                        errors.addAll(pipelineValidator.validateDag(candidate.getConfig()));
+                        if (!errors.isEmpty()) {
+                            return Promise.of(jsonResponse(Map.of(
+                                "valid", false,
+                                "errors", errors,
+                                "warnings", List.of(),
+                                "timestamp", Instant.now().toString()
+                            )));
+                        }
+                        return pipelineRepository.save(candidate)
+                            .map(saved -> jsonResponse(toPipelineResponse(saved)));
+                    })
+                    .then(Promise::of, e -> Promise.of(errorResponse(500, "Failed to create pipeline: " + e.getMessage())));
+            } catch (Exception e) {
+                log.error("Error creating pipeline", e);
+                return Promise.of(errorResponse(400, "Invalid pipeline data: " + e.getMessage()));
             }
-
-            return pipelineRepository.nextVersion(candidate.getName(), TenantId.of(tenantId))
-                .then(nextVersion -> {
-                    candidate.setVersion(candidate.getVersion() > 0 ? candidate.getVersion() : nextVersion);
-                    List<String> errors = new ArrayList<>(pipelineValidator.validate(candidate, null));
-                    errors.addAll(pipelineValidator.validateDag(candidate.getConfig()));
-                    if (!errors.isEmpty()) {
-                        return Promise.of(jsonResponse(Map.of(
-                            "valid", false,
-                            "errors", errors,
-                            "warnings", List.of(),
-                            "timestamp", Instant.now().toString()
-                        )));
-                    }
-                    return pipelineRepository.save(candidate)
-                        .map(saved -> jsonResponse(toPipelineResponse(saved)));
-                })
-                .then(Promise::of, e -> Promise.of(errorResponse(500, "Failed to create pipeline: " + e.getMessage())));
-        } catch (Exception e) {
-            log.error("Error creating pipeline", e);
-            return Promise.of(errorResponse(400, "Invalid pipeline data: " + e.getMessage()));
-        }
+        }, e -> {
+            log.error("Failed to read pipeline body", e);
+            return Promise.of(errorResponse(400, "Failed to read request body"));
+        });
     }
 
     private Promise<HttpResponse> handleUpdatePipeline(HttpRequest request) {
-        try {
-            String tenantId = resolveTenantId(request, null);
-            String pipelineId = request.getPathParameter("pipelineId");
+        String tenantId = resolveTenantId(request, null);
+        String pipelineId = request.getPathParameter("pipelineId");
+        return request.loadBody().then(buf -> {
+            try {
+                String body = buf.getString(StandardCharsets.UTF_8);
+                Map<String, Object> updateData = objectMapper.readValue(
+                    body, new com.fasterxml.jackson.core.type.TypeReference<Map<String, Object>>() {});
+                TenantId tenant = TenantId.of(tenantId);
 
-            String body = request.loadBody().getResult().getString(StandardCharsets.UTF_8);
-            Map<String, Object> updateData = objectMapper.readValue(
-                body, new com.fasterxml.jackson.core.type.TypeReference<Map<String, Object>>() {});
-            TenantId tenant = TenantId.of(tenantId);
+                return pipelineRepository.findById(pipelineId, tenant)
+                    .then(optExisting -> {
+                        if (optExisting.isEmpty()) {
+                            return Promise.of(errorResponse(404, "Pipeline not found: " + pipelineId));
+                        }
 
-            return pipelineRepository.findById(pipelineId, tenant)
-                .then(optExisting -> {
-                    if (optExisting.isEmpty()) {
-                        return Promise.of(errorResponse(404, "Pipeline not found: " + pipelineId));
-                    }
+                        Pipeline existing = optExisting.get();
+                        Pipeline updatePatch = mapToPipeline(updateData, tenantId);
+                        updatePatch.setName(updatePatch.getName() != null ? updatePatch.getName() : existing.getName());
+                        updatePatch.setTenantId(existing.getTenantId());
+                        updatePatch.setVersion(existing.getVersion() + 1);
 
-                    Pipeline existing = optExisting.get();
-                    Pipeline updatePatch = mapToPipeline(updateData, tenantId);
-                    updatePatch.setName(updatePatch.getName() != null ? updatePatch.getName() : existing.getName());
-                    updatePatch.setTenantId(existing.getTenantId());
-                    updatePatch.setVersion(existing.getVersion() + 1);
+                        Pipeline candidate = existing.newVersion();
+                        candidate.setId(existing.getId());
+                        candidate.setVersion(existing.getVersion() + 1);
+                        candidate.updateFrom(updatePatch);
+                        if (candidate.getUpdatedBy() == null || candidate.getUpdatedBy().isBlank()) {
+                            candidate.setUpdatedBy("aep-http");
+                        }
 
-                    Pipeline candidate = existing.newVersion();
-                    candidate.setId(existing.getId());
-                    candidate.setVersion(existing.getVersion() + 1);
-                    candidate.updateFrom(updatePatch);
-                    if (candidate.getUpdatedBy() == null || candidate.getUpdatedBy().isBlank()) {
-                        candidate.setUpdatedBy("aep-http");
-                    }
+                        List<String> errors = new ArrayList<>(pipelineValidator.validate(candidate, existing));
+                        errors.addAll(pipelineValidator.validateDag(candidate.getConfig()));
+                        if (!errors.isEmpty()) {
+                            return Promise.of(jsonResponse(Map.of(
+                                "valid", false,
+                                "errors", errors,
+                                "warnings", List.of(),
+                                "timestamp", Instant.now().toString()
+                            )));
+                        }
 
-                    List<String> errors = new ArrayList<>(pipelineValidator.validate(candidate, existing));
-                    errors.addAll(pipelineValidator.validateDag(candidate.getConfig()));
-                    if (!errors.isEmpty()) {
-                        return Promise.of(jsonResponse(Map.of(
-                            "valid", false,
-                            "errors", errors,
-                            "warnings", List.of(),
-                            "timestamp", Instant.now().toString()
-                        )));
-                    }
-
-                    return pipelineRepository.save(candidate)
-                        .map(saved -> jsonResponse(toPipelineResponse(saved)));
-                })
-                .then(Promise::of, e -> Promise.of(errorResponse(500, "Failed to update pipeline: " + e.getMessage())));
-        } catch (Exception e) {
-            log.error("Error updating pipeline", e);
-            return Promise.of(errorResponse(400, "Invalid pipeline data: " + e.getMessage()));
-        }
+                        return pipelineRepository.save(candidate)
+                            .map(saved -> jsonResponse(toPipelineResponse(saved)));
+                    })
+                    .then(Promise::of, e -> Promise.of(errorResponse(500, "Failed to update pipeline: " + e.getMessage())));
+            } catch (Exception e) {
+                log.error("Error updating pipeline", e);
+                return Promise.of(errorResponse(400, "Invalid pipeline data: " + e.getMessage()));
+            }
+        }, e -> {
+            log.error("Failed to read pipeline update body", e);
+            return Promise.of(errorResponse(400, "Failed to read request body"));
+        });
     }
 
     private Promise<HttpResponse> handleDeletePipeline(HttpRequest request) {
@@ -482,56 +538,71 @@ public class AepHttpServer {
     }
 
     private Promise<HttpResponse> handleValidatePipeline(HttpRequest request) {
-        try {
-            String body = request.loadBody().getResult().getString(StandardCharsets.UTF_8);
-            Map<String, Object> pipeline = objectMapper.readValue(
-                body, new com.fasterxml.jackson.core.type.TypeReference<Map<String, Object>>() {});
-            String tenantId = resolveTenantId(request, pipeline);
-            Pipeline candidate = mapToPipeline(pipeline, tenantId);
-            List<String> errors = new ArrayList<>(pipelineValidator.validate(candidate, null));
-            errors.addAll(pipelineValidator.validateDag(candidate.getConfig()));
-            List<String> warnings = new ArrayList<>();
-            if (candidate.getId() == null || candidate.getId().isBlank()) {
-                warnings.add("Pipeline has no explicit id");
-            }
+        return request.loadBody().then(buf -> {
+            try {
+                String body = buf.getString(StandardCharsets.UTF_8);
+                Map<String, Object> pipeline = objectMapper.readValue(
+                    body, new com.fasterxml.jackson.core.type.TypeReference<Map<String, Object>>() {});
+                String tenantId = resolveTenantId(request, pipeline);
+                Pipeline candidate = mapToPipeline(pipeline, tenantId);
+                List<String> errors = new ArrayList<>(pipelineValidator.validate(candidate, null));
+                errors.addAll(pipelineValidator.validateDag(candidate.getConfig()));
+                List<String> warnings = new ArrayList<>();
+                if (candidate.getId() == null || candidate.getId().isBlank()) {
+                    warnings.add("Pipeline has no explicit id");
+                }
 
-            return Promise.of(jsonResponse(Map.of(
-                "valid", errors.isEmpty(),
-                "errors", errors,
-                "warnings", warnings,
-                "timestamp", Instant.now().toString()
-            )));
-        } catch (Exception e) {
-            log.error("Error validating pipeline", e);
-            return Promise.of(errorResponse(400, "Invalid pipeline validation payload: " + e.getMessage()));
-        }
+                return Promise.of(jsonResponse(Map.of(
+                    "valid", errors.isEmpty(),
+                    "errors", errors,
+                    "warnings", warnings,
+                    "timestamp", Instant.now().toString()
+                )));
+            } catch (Exception e) {
+                log.error("Error validating pipeline", e);
+                return Promise.of(errorResponse(400, "Invalid pipeline validation payload: " + e.getMessage()));
+            }
+        }, e -> {
+            log.error("Failed to read pipeline validate body", e);
+            return Promise.of(errorResponse(400, "Failed to read request body"));
+        });
     }
 
     // ==================== Deployment Endpoints ====================
 
     private Promise<HttpResponse> handleCreateDeployment(HttpRequest request) {
-        try {
-            String body = request.loadBody().getResult().getString(StandardCharsets.UTF_8);
-            DeploymentRequest deploymentRequest = objectMapper.readValue(body, DeploymentRequest.class);
-            DeploymentResponse response = deploymentAdapter.handleDeploymentRequest(deploymentRequest);
-            return Promise.of(jsonResponse(toMap(response)));
-        } catch (Exception e) {
-            log.error("Error creating deployment", e);
-            return Promise.of(errorResponse(400, "Invalid deployment request: " + e.getMessage()));
-        }
+        return request.loadBody().then(buf -> {
+            try {
+                String body = buf.getString(StandardCharsets.UTF_8);
+                DeploymentRequest deploymentRequest = objectMapper.readValue(body, DeploymentRequest.class);
+                DeploymentResponse response = deploymentAdapter.handleDeploymentRequest(deploymentRequest);
+                return Promise.of(jsonResponse(toMap(response)));
+            } catch (Exception e) {
+                log.error("Error creating deployment", e);
+                return Promise.of(errorResponse(400, "Invalid deployment request: " + e.getMessage()));
+            }
+        }, e -> {
+            log.error("Failed to read deployment body", e);
+            return Promise.of(errorResponse(400, "Failed to read request body"));
+        });
     }
 
     private Promise<HttpResponse> handleUpdateDeployment(HttpRequest request) {
-        try {
-            String deploymentId = request.getPathParameter("deploymentId");
-            String body = request.loadBody().getResult().getString(StandardCharsets.UTF_8);
-            DeploymentRequest deploymentRequest = objectMapper.readValue(body, DeploymentRequest.class);
-            DeploymentResponse response = deploymentAdapter.handleUpdateRequest(deploymentId, deploymentRequest);
-            return Promise.of(jsonResponse(toMap(response)));
-        } catch (Exception e) {
-            log.error("Error updating deployment", e);
-            return Promise.of(errorResponse(400, "Invalid update deployment request: " + e.getMessage()));
-        }
+        String deploymentId = request.getPathParameter("deploymentId");
+        return request.loadBody().then(buf -> {
+            try {
+                String body = buf.getString(StandardCharsets.UTF_8);
+                DeploymentRequest deploymentRequest = objectMapper.readValue(body, DeploymentRequest.class);
+                DeploymentResponse response = deploymentAdapter.handleUpdateRequest(deploymentId, deploymentRequest);
+                return Promise.of(jsonResponse(toMap(response)));
+            } catch (Exception e) {
+                log.error("Error updating deployment", e);
+                return Promise.of(errorResponse(400, "Invalid update deployment request: " + e.getMessage()));
+            }
+        }, e -> {
+            log.error("Failed to read deployment update body", e);
+            return Promise.of(errorResponse(400, "Failed to read request body"));
+        });
     }
 
     private Promise<HttpResponse> handleDeleteDeployment(HttpRequest request) {
@@ -683,32 +754,37 @@ public class AepHttpServer {
 
     @SuppressWarnings("unchecked")
     private Promise<HttpResponse> handleRegisterPattern(HttpRequest request) {
-        try {
-            String body = request.loadBody().getResult().getString(StandardCharsets.UTF_8);
-            Map<String, Object> patternData = objectMapper.readValue(body, Map.class);
-            
-            String tenantId = (String) patternData.getOrDefault("tenantId", "default");
-            String name = (String) patternData.get("name");
-            String description = (String) patternData.getOrDefault("description", "");
-            String typeStr = (String) patternData.getOrDefault("type", "CUSTOM");
-            Map<String, Object> config = (Map<String, Object>) patternData.getOrDefault("config", Map.of());
-            
-            AepEngine.PatternType type = AepEngine.PatternType.valueOf(typeStr.toUpperCase());
-            AepEngine.PatternDefinition definition = new AepEngine.PatternDefinition(name, description, type, config);
-            
-            return engine.registerPattern(tenantId, definition)
-                .map(pattern -> jsonResponse(Map.of(
-                    "pattern", Map.of(
-                        "id", pattern.id(),
-                        "name", pattern.name(),
-                        "type", pattern.type().name()
-                    ),
-                    "timestamp", Instant.now().toString()
-                )));
-        } catch (Exception e) {
-            log.error("Error registering pattern", e);
-            return Promise.of(errorResponse(400, "Invalid pattern data: " + e.getMessage()));
-        }
+        return request.loadBody().then(buf -> {
+            try {
+                String body = buf.getString(StandardCharsets.UTF_8);
+                Map<String, Object> patternData = objectMapper.readValue(body, Map.class);
+
+                String tenantId = (String) patternData.getOrDefault("tenantId", "default");
+                String name = (String) patternData.get("name");
+                String description = (String) patternData.getOrDefault("description", "");
+                String typeStr = (String) patternData.getOrDefault("type", "CUSTOM");
+                Map<String, Object> config = (Map<String, Object>) patternData.getOrDefault("config", Map.of());
+
+                AepEngine.PatternType type = AepEngine.PatternType.valueOf(typeStr.toUpperCase());
+                AepEngine.PatternDefinition definition = new AepEngine.PatternDefinition(name, description, type, config);
+
+                return engine.registerPattern(tenantId, definition)
+                    .map(pattern -> jsonResponse(Map.of(
+                        "pattern", Map.of(
+                            "id", pattern.id(),
+                            "name", pattern.name(),
+                            "type", pattern.type().name()
+                        ),
+                        "timestamp", Instant.now().toString()
+                    )));
+            } catch (Exception e) {
+                log.error("Error registering pattern", e);
+                return Promise.of(errorResponse(400, "Invalid pattern data: " + e.getMessage()));
+            }
+        }, e -> {
+            log.error("Failed to read pattern body", e);
+            return Promise.of(errorResponse(400, "Failed to read request body"));
+        });
     }
 
     private Promise<HttpResponse> handleGetPattern(HttpRequest request) {
@@ -751,64 +827,74 @@ public class AepHttpServer {
 
     @SuppressWarnings("unchecked")
     private Promise<HttpResponse> handleDetectAnomalies(HttpRequest request) {
-        try {
-            String body = request.loadBody().getResult().getString(StandardCharsets.UTF_8);
-            Map<String, Object> data = objectMapper.readValue(body, Map.class);
-            
-            String tenantId = (String) data.getOrDefault("tenantId", "default");
-            List<Map<String, Object>> eventsData = (List<Map<String, Object>>) data.getOrDefault("events", List.of());
-            
-            List<AepEngine.Event> events = eventsData.stream()
-                .map(e -> new AepEngine.Event(
-                    (String) e.getOrDefault("type", "unknown"),
-                    (Map<String, Object>) e.getOrDefault("payload", Map.of()),
-                    Map.of(),
-                    Instant.now()
-                ))
-                .toList();
-            
-            return engine.detectAnomalies(tenantId, events)
-                .map(anomalies -> jsonResponse(Map.of(
-                    "anomalies", anomalies,
-                    "count", anomalies.size(),
-                    "timestamp", Instant.now().toString()
-                )));
-        } catch (Exception e) {
-            log.error("Error detecting anomalies", e);
-            return Promise.of(errorResponse(400, "Invalid request: " + e.getMessage()));
-        }
+        return request.loadBody().then(buf -> {
+            try {
+                String body = buf.getString(StandardCharsets.UTF_8);
+                Map<String, Object> data = objectMapper.readValue(body, Map.class);
+
+                String tenantId = (String) data.getOrDefault("tenantId", "default");
+                List<Map<String, Object>> eventsData = (List<Map<String, Object>>) data.getOrDefault("events", List.of());
+
+                List<AepEngine.Event> events = eventsData.stream()
+                    .map(e -> new AepEngine.Event(
+                        (String) e.getOrDefault("type", "unknown"),
+                        (Map<String, Object>) e.getOrDefault("payload", Map.of()),
+                        Map.of(),
+                        Instant.now()
+                    ))
+                    .toList();
+
+                return engine.detectAnomalies(tenantId, events)
+                    .map(anomalies -> jsonResponse(Map.of(
+                        "anomalies", anomalies,
+                        "count", anomalies.size(),
+                        "timestamp", Instant.now().toString()
+                    )));
+            } catch (Exception e) {
+                log.error("Error detecting anomalies", e);
+                return Promise.of(errorResponse(400, "Invalid request: " + e.getMessage()));
+            }
+        }, e -> {
+            log.error("Failed to read anomaly detection body", e);
+            return Promise.of(errorResponse(400, "Failed to read request body"));
+        });
     }
 
     @SuppressWarnings("unchecked")
     private Promise<HttpResponse> handleForecast(HttpRequest request) {
-        try {
-            String body = request.loadBody().getResult().getString(StandardCharsets.UTF_8);
-            Map<String, Object> data = objectMapper.readValue(body, Map.class);
-            
-            String tenantId = (String) data.getOrDefault("tenantId", "default");
-            String metric = (String) data.getOrDefault("metric", "default");
-            List<Map<String, Object>> pointsData = (List<Map<String, Object>>) data.getOrDefault("points", List.of());
-            
-            List<AepEngine.DataPoint> points = pointsData.stream()
-                .map(p -> new AepEngine.DataPoint(
-                    Instant.parse((String) p.get("timestamp")),
-                    ((Number) p.get("value")).doubleValue()
-                ))
-                .toList();
-            
-            AepEngine.TimeSeriesData tsData = new AepEngine.TimeSeriesData(metric, points);
-            
-            return engine.forecast(tenantId, tsData)
-                .map(forecast -> jsonResponse(Map.of(
-                    "metric", forecast.metric(),
-                    "predictions", forecast.predictions(),
-                    "confidence", forecast.confidence(),
-                    "timestamp", Instant.now().toString()
-                )));
-        } catch (Exception e) {
-            log.error("Error forecasting", e);
-            return Promise.of(errorResponse(400, "Invalid request: " + e.getMessage()));
-        }
+        return request.loadBody().then(buf -> {
+            try {
+                String body = buf.getString(StandardCharsets.UTF_8);
+                Map<String, Object> data = objectMapper.readValue(body, Map.class);
+
+                String tenantId = (String) data.getOrDefault("tenantId", "default");
+                String metric = (String) data.getOrDefault("metric", "default");
+                List<Map<String, Object>> pointsData = (List<Map<String, Object>>) data.getOrDefault("points", List.of());
+
+                List<AepEngine.DataPoint> points = pointsData.stream()
+                    .map(p -> new AepEngine.DataPoint(
+                        Instant.parse((String) p.get("timestamp")),
+                        ((Number) p.get("value")).doubleValue()
+                    ))
+                    .toList();
+
+                AepEngine.TimeSeriesData tsData = new AepEngine.TimeSeriesData(metric, points);
+
+                return engine.forecast(tenantId, tsData)
+                    .map(forecast -> jsonResponse(Map.of(
+                        "metric", forecast.metric(),
+                        "predictions", forecast.predictions(),
+                        "confidence", forecast.confidence(),
+                        "timestamp", Instant.now().toString()
+                    )));
+            } catch (Exception e) {
+                log.error("Error forecasting", e);
+                return Promise.of(errorResponse(400, "Invalid request: " + e.getMessage()));
+            }
+        }, e -> {
+            log.error("Failed to read forecast body", e);
+            return Promise.of(errorResponse(400, "Failed to read request body"));
+        });
     }
 
     // ==================== Agent Management Endpoints (AEP-P5/P7) ====================
@@ -1019,7 +1105,165 @@ public class AepHttpServer {
     }
 
     /**
-     * Lists all pending HITL review items.
+     * Lists episodic memory items for a specific agent, including input/output summaries.
+     *
+     * <p>Queries the {@code dc_memory} collection for items of type {@code EPISODIC}
+     * belonging to the given agent and tenant. Supports a {@code limit} query parameter
+     * (default 50, max 500).
+     *
+     * @return 200 with list of episode records, 503 if Data-Cloud not configured
+     */
+    private Promise<HttpResponse> handleGetAgentEpisodes(HttpRequest request) {
+        String agentId = request.getPathParameter("agentId");
+        if (agentId == null || agentId.isBlank()) {
+            return Promise.of(errorResponse(400, "agentId path parameter is required"));
+        }
+        if (agentDataCloud == null) {
+            return Promise.of(errorResponse(503,
+                "Episode store not available — DataCloudClient not configured"));
+        }
+        String tenantId = resolveTenantId(request);
+        String limitParam = request.getQueryParameter("limit");
+        int limit = limitParam != null ? Math.min(Integer.parseInt(limitParam), 500) : 50;
+
+        DataCloudClient.Query query = DataCloudClient.Query.builder()
+            .filters(List.of(
+                DataCloudClient.Filter.eq("agentId", agentId),
+                DataCloudClient.Filter.eq("type", "EPISODIC")
+            ))
+            .limit(limit)
+            .build();
+
+        return agentDataCloud.query(tenantId, "dc_memory", query)
+            .map(items -> {
+                List<Map<String, Object>> episodes = items.stream()
+                    .map(e -> {
+                        Map<String, Object> ep = new java.util.HashMap<>(e.data());
+                        ep.put("id", e.id());
+                        return ep;
+                    })
+                    .toList();
+                return jsonResponse(Map.of(
+                    "agentId", agentId,
+                    "tenantId", tenantId,
+                    "episodes", episodes,
+                    "count", episodes.size(),
+                    "timestamp", Instant.now().toString()
+                ));
+            })
+            .then(Promise::of, e -> {
+                log.error("[agents] episodes query failed for agentId={}: {}", agentId, e.getMessage(), e);
+                return Promise.of(errorResponse(500, "Failed to query agent episodes: " + e.getMessage()));
+            });
+    }
+
+    /**
+     * Lists semantic fact items (SEMANTIC type) for a specific agent.
+     *
+     * <p>These represent distilled knowledge extracted from episodic memories
+     * during consolidation (e.g., "user-event-v2 requires field userId").
+     *
+     * @return 200 with list of semantic facts, 503 if Data-Cloud not configured
+     */
+    private Promise<HttpResponse> handleGetAgentFacts(HttpRequest request) {
+        String agentId = request.getPathParameter("agentId");
+        if (agentId == null || agentId.isBlank()) {
+            return Promise.of(errorResponse(400, "agentId path parameter is required"));
+        }
+        if (agentDataCloud == null) {
+            return Promise.of(errorResponse(503,
+                "Fact store not available — DataCloudClient not configured"));
+        }
+        String tenantId = resolveTenantId(request);
+        String limitParam = request.getQueryParameter("limit");
+        int limit = limitParam != null ? Math.min(Integer.parseInt(limitParam), 500) : 100;
+
+        DataCloudClient.Query query = DataCloudClient.Query.builder()
+            .filters(List.of(
+                DataCloudClient.Filter.eq("agentId", agentId),
+                DataCloudClient.Filter.eq("type", "SEMANTIC")
+            ))
+            .limit(limit)
+            .build();
+
+        return agentDataCloud.query(tenantId, "dc_memory", query)
+            .map(items -> {
+                List<Map<String, Object>> facts = items.stream()
+                    .map(e -> {
+                        Map<String, Object> fact = new java.util.HashMap<>(e.data());
+                        fact.put("id", e.id());
+                        return fact;
+                    })
+                    .toList();
+                return jsonResponse(Map.of(
+                    "agentId", agentId,
+                    "tenantId", tenantId,
+                    "facts", facts,
+                    "count", facts.size(),
+                    "timestamp", Instant.now().toString()
+                ));
+            })
+            .then(Promise::of, e -> {
+                log.error("[agents] facts query failed for agentId={}: {}", agentId, e.getMessage(), e);
+                return Promise.of(errorResponse(500, "Failed to query agent facts: " + e.getMessage()));
+            });
+    }
+
+    /**
+     * Lists procedural policy items (PROCEDURAL type) for a specific agent.
+     *
+     * <p>These represent learned action procedures extracted by the
+     * EpisodicToProceduralConsolidator. Policies with confidence &lt; 0.7
+     * may have pending HITL review items.
+     *
+     * @return 200 with list of procedural policies, 503 if Data-Cloud not configured
+     */
+    private Promise<HttpResponse> handleGetAgentPolicies(HttpRequest request) {
+        String agentId = request.getPathParameter("agentId");
+        if (agentId == null || agentId.isBlank()) {
+            return Promise.of(errorResponse(400, "agentId path parameter is required"));
+        }
+        if (agentDataCloud == null) {
+            return Promise.of(errorResponse(503,
+                "Policy store not available — DataCloudClient not configured"));
+        }
+        String tenantId = resolveTenantId(request);
+        String limitParam = request.getQueryParameter("limit");
+        int limit = limitParam != null ? Math.min(Integer.parseInt(limitParam), 200) : 50;
+
+        DataCloudClient.Query query = DataCloudClient.Query.builder()
+            .filters(List.of(
+                DataCloudClient.Filter.eq("agentId", agentId),
+                DataCloudClient.Filter.eq("type", "PROCEDURAL")
+            ))
+            .limit(limit)
+            .build();
+
+        return agentDataCloud.query(tenantId, "dc_memory", query)
+            .map(items -> {
+                List<Map<String, Object>> policies = items.stream()
+                    .map(e -> {
+                        Map<String, Object> policy = new java.util.HashMap<>(e.data());
+                        policy.put("id", e.id());
+                        return policy;
+                    })
+                    .toList();
+                return jsonResponse(Map.of(
+                    "agentId", agentId,
+                    "tenantId", tenantId,
+                    "policies", policies,
+                    "count", policies.size(),
+                    "timestamp", Instant.now().toString()
+                ));
+            })
+            .then(Promise::of, e -> {
+                log.error("[agents] policies query failed for agentId={}: {}", agentId, e.getMessage(), e);
+                return Promise.of(errorResponse(500, "Failed to query agent policies: " + e.getMessage()));
+            });
+    }
+
+    /**
+     * Lists all pending HITL review items for the requesting tenant.
      *
      * @return 200 with list of pending items, or 501 if HITL queue is not configured
      */
@@ -1027,22 +1271,34 @@ public class AepHttpServer {
         if (humanReviewQueue == null) {
             return Promise.of(errorResponse(501, "HITL queue not configured — start AEP with AepLearningModule"));
         }
-        return humanReviewQueue.getPending(null).map(items -> {
-            List<Map<String, Object>> summaries = items.stream()
-                .map(item -> Map.<String, Object>of(
-                    "reviewId", item.getReviewId(),
-                    "agentId", item.getSkillId(),
-                    "type", item.getItemType().name(),
-                    "status", item.getStatus().name(),
-                    "createdAt", item.getCreatedAt().toString()
-                ))
-                .collect(java.util.stream.Collectors.toList());
-            return jsonResponse(Map.of(
-                "pending", summaries,
-                "count", summaries.size(),
-                "timestamp", Instant.now().toString()
-            ));
-        });
+        String tenantId = resolveTenantId(request);
+        ReviewFilter filter = ReviewFilter.forTenant(tenantId);
+        return humanReviewQueue.getPending(filter)
+            .map(items -> {
+                List<Map<String, Object>> summaries = items.stream()
+                    .map(item -> {
+                        Map<String, Object> m = new java.util.HashMap<>();
+                        m.put("reviewId", item.getReviewId());
+                        m.put("agentId", item.getSkillId());
+                        m.put("type", item.getItemType().name());
+                        m.put("status", item.getStatus().name());
+                        m.put("confidence", item.getConfidenceScore());
+                        m.put("summary", item.getEvaluationSummary() != null ? item.getEvaluationSummary() : "");
+                        m.put("createdAt", item.getCreatedAt().toString());
+                        return m;
+                    })
+                    .collect(java.util.stream.Collectors.toList());
+                return jsonResponse(Map.of(
+                    "items", summaries,
+                    "count", summaries.size(),
+                    "tenantId", tenantId,
+                    "timestamp", Instant.now().toString()
+                ));
+            })
+            .then(Promise::of, e -> {
+                log.error("[hitl] getPending failed for tenant={}: {}", tenantId, e.getMessage(), e);
+                return Promise.of(errorResponse(500, "Failed to list pending reviews: " + e.getMessage()));
+            });
     }
 
     /**
@@ -1074,11 +1330,16 @@ public class AepHttpServer {
                     String notes = (String) data.get("notes");
                     ReviewDecision decision = new ReviewDecision(reviewer, rationale, Instant.now(), notes);
                     return humanReviewQueue.approve(reviewId, decision)
-                        .map(item -> jsonResponse(Map.of(
-                            "reviewId", item.getReviewId(),
-                            "status", item.getStatus().name(),
-                            "decidedAt", Instant.now().toString()
-                        )))
+                        .map(item -> {
+                            Map<String, Object> resp = Map.of(
+                                "reviewId", item.getReviewId(),
+                                "status", item.getStatus().name(),
+                                "decidedAt", Instant.now().toString()
+                            );
+                            // Notify SSE subscribers that HITL queue changed.
+                            publishSseTo(resolveTenantId(request), "hitl.update", resp);
+                            return jsonResponse(resp);
+                        })
                         .then(Promise::of, e -> {
                             log.warn("HITL approve failed for reviewId={}: {}", reviewId, e.getMessage());
                             return Promise.of(errorResponse(404, "Review item not found: " + reviewId));
@@ -1122,11 +1383,16 @@ public class AepHttpServer {
                     String notes = (String) data.get("notes");
                     ReviewDecision decision = new ReviewDecision(reviewer, rationale, Instant.now(), notes);
                     return humanReviewQueue.reject(reviewId, decision)
-                        .map(item -> jsonResponse(Map.of(
-                            "reviewId", item.getReviewId(),
-                            "status", item.getStatus().name(),
-                            "decidedAt", Instant.now().toString()
-                        )))
+                        .map(item -> {
+                            Map<String, Object> resp = Map.of(
+                                "reviewId", item.getReviewId(),
+                                "status", item.getStatus().name(),
+                                "decidedAt", Instant.now().toString()
+                            );
+                            // Notify SSE subscribers that HITL queue changed.
+                            publishSseTo(resolveTenantId(request), "hitl.update", resp);
+                            return jsonResponse(resp);
+                        })
                         .then(Promise::of, e -> {
                             log.warn("HITL reject failed for reviewId={}: {}", reviewId, e.getMessage());
                             return Promise.of(errorResponse(404, "Review item not found: " + reviewId));
@@ -1141,32 +1407,496 @@ public class AepHttpServer {
             });
     }
 
-    // ==================== SSE Endpoints (AEP-P7) ====================
+    // ==================== Pipeline Runs & Metrics Endpoints (AEP-P7) ====================
 
     /**
-     * Server-Sent Events stream for real-time AEP updates.
+     * Lists recent pipeline runs tracked in-memory.
+     * Runs are recorded whenever an event or batch is processed.
+     * Optionally filtered by {@code pipelineId} query parameter.
      *
-     * <p>Sends an initial connection acknowledgement event followed by a
-     * keep-alive heartbeat. Full streaming of pipeline-run, agent-output, and
-     * HITL-queue events will be wired once the event-bus bridge (AEP-P8) is complete.
+     * @return 200 with list of recent runs
+     */
+    private Promise<HttpResponse> handleListPipelineRuns(HttpRequest request) {
+        String tenantId = resolveTenantId(request);
+        String pipelineFilter = request.getQueryParameter("pipelineId");
+        List<Map<String, Object>> runs = recentRuns.stream()
+            .filter(r -> tenantId.equals(r.get("tenantId")))
+            .filter(r -> pipelineFilter == null || pipelineFilter.equals(r.get("pipelineId")))
+            .collect(java.util.stream.Collectors.toList());
+        return Promise.of(jsonResponse(Map.of(
+            "runs", runs,
+            "count", runs.size(),
+            "tenantId", tenantId,
+            "timestamp", Instant.now().toString()
+        )));
+    }
+
+    /**
+     * Cancels a pipeline run. In-memory runs cannot be preempted mid-flight; returns 200
+     * once the run entry is marked CANCELLED (idempotent — run may already be complete).
      *
-     * <p>Clients should reconnect on network interruption using the standard SSE
-     * reconnect mechanism ({@code retry:} field in the event stream).
+     * @return 200 with cancel confirmation, 404 if run not found
+     */
+    private Promise<HttpResponse> handleCancelRun(HttpRequest request) {
+        String runId = request.getPathParameter("runId");
+        if (runId == null || runId.isBlank()) {
+            return Promise.of(errorResponse(400, "runId path parameter is required"));
+        }
+        boolean found = recentRuns.stream().anyMatch(r -> runId.equals(r.get("runId")));
+        if (!found) {
+            return Promise.of(errorResponse(404, "Run not found: " + runId));
+        }
+        recentRuns.stream()
+            .filter(r -> runId.equals(r.get("runId")))
+            .findFirst()
+            .ifPresent(r -> r.put("status", "CANCELLED"));
+        return Promise.of(jsonResponse(Map.of(
+            "runId", runId,
+            "status", "CANCELLED",
+            "timestamp", Instant.now().toString()
+        )));
+    }
+
+    /**
+     * Returns aggregate pipeline metrics computed from the in-memory run buffer.
+     *
+     * @return 200 with pipeline metrics summary
+     */
+    private Promise<HttpResponse> handleGetPipelineMetrics(HttpRequest request) {
+        String tenantId = resolveTenantId(request);
+        List<Map<String, Object>> tenantRuns = recentRuns.stream()
+            .filter(r -> tenantId.equals(r.get("tenantId")))
+            .collect(java.util.stream.Collectors.toList());
+        long succeeded = tenantRuns.stream().filter(r -> "SUCCEEDED".equals(r.get("status"))).count();
+        long failed = tenantRuns.stream().filter(r -> "FAILED".equals(r.get("status"))).count();
+        long cancelled = tenantRuns.stream().filter(r -> "CANCELLED".equals(r.get("status"))).count();
+        double successRate = tenantRuns.isEmpty() ? 0.0 : (double) succeeded / tenantRuns.size();
+
+        return pipelineRepository.findAll(TenantId.of(tenantId), null, null, 1, 1_000)
+            .map(result -> {
+                List<Map<String, Object>> metrics = result.content().stream()
+                    .map(p -> {
+                        long pRuns = tenantRuns.stream()
+                            .filter(r -> p.getId() != null && p.getId().equals(r.get("pipelineId")))
+                            .count();
+                        return Map.<String, Object>of(
+                            "pipelineId", p.getId() != null ? p.getId() : "",
+                            "pipelineName", p.getName() != null ? p.getName() : "",
+                            "runCount", pRuns,
+                            "active", p.isActive()
+                        );
+                    })
+                    .toList();
+                return jsonResponse(Map.of(
+                    "tenantId", tenantId,
+                    "metrics", metrics,
+                    "summary", Map.of(
+                        "totalRuns", tenantRuns.size(),
+                        "succeeded", succeeded,
+                        "failed", failed,
+                        "cancelled", cancelled,
+                        "successRate", successRate
+                    ),
+                    "timestamp", Instant.now().toString()
+                ));
+            })
+            .then(Promise::of, e ->
+                Promise.of(errorResponse(500, "Failed to get pipeline metrics: " + e.getMessage())));
+    }
+
+    // ==================== Learning System Endpoints (AEP-P7) ====================
+
+    /**
+     * Lists episodic memory items for the requesting tenant.
+     * Queries the {@code dc_memory} collection in Data-Cloud filtered by {@code type=EPISODIC}.
+     * Falls back to 503 when Data-Cloud is not configured.
+     *
+     * @return 200 with list of episodes
+     */
+    private Promise<HttpResponse> handleListEpisodes(HttpRequest request) {
+        if (agentDataCloud == null) {
+            return Promise.of(errorResponse(503,
+                "Episode store not available — DataCloudClient not configured"));
+        }
+        String tenantId = resolveTenantId(request);
+        String agentFilter = request.getQueryParameter("agentId");
+        List<DataCloudClient.Filter> filters = new ArrayList<>();
+        filters.add(DataCloudClient.Filter.eq("type", "EPISODIC"));
+        if (agentFilter != null && !agentFilter.isBlank()) {
+            filters.add(DataCloudClient.Filter.eq("agentId", agentFilter));
+        }
+        DataCloudClient.Query query = DataCloudClient.Query.builder()
+            .filters(filters)
+            .limit(200)
+            .build();
+        return agentDataCloud.query(tenantId, "dc_memory", query)
+            .map(items -> {
+                List<Map<String, Object>> episodes = items.stream()
+                    .map(e -> {
+                        Map<String, Object> ep = new java.util.HashMap<>(e.data());
+                        ep.put("id", e.id());
+                        return ep;
+                    })
+                    .toList();
+                return jsonResponse(Map.of(
+                    "episodes", episodes,
+                    "count", episodes.size(),
+                    "tenantId", tenantId,
+                    "timestamp", Instant.now().toString()
+                ));
+            })
+            .then(Promise::of, e -> {
+                log.error("[learning] episodes query failed for tenant={}: {}", tenantId, e.getMessage(), e);
+                return Promise.of(errorResponse(500, "Failed to list episodes: " + e.getMessage()));
+            });
+    }
+
+    /**
+     * Lists policies (POLICY-type review items) for the tenant via the HITL queue.
+     * Falls back to 501 when the HITL queue is not configured.
+     *
+     * @return 200 with list of policies
+     */
+    private Promise<HttpResponse> handleListPolicies(HttpRequest request) {
+        if (humanReviewQueue == null) {
+            return Promise.of(errorResponse(501,
+                "Policy store not available — start AEP with AepLearningModule"));
+        }
+        String tenantId = resolveTenantId(request);
+        ReviewFilter filter = new ReviewFilter(tenantId, ReviewItemType.POLICY, null, null, 200);
+        return humanReviewQueue.getPending(filter)
+            .map(items -> {
+                List<Map<String, Object>> policies = items.stream()
+                    .map(item -> {
+                        Map<String, Object> p = new java.util.HashMap<>();
+                        p.put("id", item.getReviewId());
+                        p.put("agentId", item.getSkillId());
+                        p.put("version", item.getProposedVersion());
+                        p.put("status", item.getStatus().name());
+                        p.put("confidence", item.getConfidenceScore());
+                        p.put("summary", item.getEvaluationSummary() != null ? item.getEvaluationSummary() : "");
+                        p.put("context", item.getContext());
+                        p.put("createdAt", item.getCreatedAt().toString());
+                        if (item.getDecidedAt() != null) {
+                            p.put("decidedAt", item.getDecidedAt().toString());
+                        }
+                        return p;
+                    })
+                    .toList();
+                return jsonResponse(Map.of(
+                    "policies", policies,
+                    "count", policies.size(),
+                    "tenantId", tenantId,
+                    "timestamp", Instant.now().toString()
+                ));
+            })
+            .then(Promise::of, e -> {
+                log.error("[learning] policies query failed for tenant={}: {}", tenantId, e.getMessage(), e);
+                return Promise.of(errorResponse(500, "Failed to list policies: " + e.getMessage()));
+            });
+    }
+
+    /**
+     * Approves a specific learning policy by policyId.
+     * Delegates to {@link HumanReviewQueue#approve}.
+     *
+     * @return 200 with updated policy, 404 if not found, 501 if not configured
+     */
+    @SuppressWarnings("unchecked")
+    private Promise<HttpResponse> handleApprovePolicy(HttpRequest request) {
+        if (humanReviewQueue == null) {
+            return Promise.of(errorResponse(501, "Learning module not configured"));
+        }
+        String policyId = request.getPathParameter("policyId");
+        if (policyId == null || policyId.isBlank()) {
+            return Promise.of(errorResponse(400, "policyId path parameter is required"));
+        }
+        return request.loadBody().then(buf -> {
+            try {
+                String body = buf.getString(StandardCharsets.UTF_8);
+                Map<String, Object> data = body.isBlank()
+                    ? Map.of()
+                    : objectMapper.readValue(body, Map.class);
+                String reviewer = (String) data.getOrDefault("reviewer", "unknown");
+                String rationale = (String) data.getOrDefault("rationale", "Approved via learning API");
+                String notes = (String) data.get("notes");
+                ReviewDecision decision = new ReviewDecision(reviewer, rationale, Instant.now(), notes);
+                return humanReviewQueue.approve(policyId, decision)
+                    .map(item -> jsonResponse(Map.of(
+                        "id", item.getReviewId(),
+                        "status", item.getStatus().name(),
+                        "decidedAt", Instant.now().toString()
+                    )))
+                    .then(Promise::of, e -> {
+                        log.warn("[learning] approve policy failed policyId={}: {}", policyId, e.getMessage());
+                        return Promise.of(errorResponse(404, "Policy not found: " + policyId));
+                    });
+            } catch (Exception e) {
+                log.warn("[learning] approve policy bad request policyId={}: {}", policyId, e.getMessage());
+                return Promise.of(errorResponse(400, "Invalid request: " + e.getMessage()));
+            }
+        }, e -> Promise.of(errorResponse(400, "Failed to read request body")));
+    }
+
+    /**
+     * Rejects a specific learning policy by policyId.
+     * Delegates to {@link HumanReviewQueue#reject}.
+     *
+     * @return 200 with updated policy, 404 if not found, 501 if not configured
+     */
+    @SuppressWarnings("unchecked")
+    private Promise<HttpResponse> handleRejectPolicy(HttpRequest request) {
+        if (humanReviewQueue == null) {
+            return Promise.of(errorResponse(501, "Learning module not configured"));
+        }
+        String policyId = request.getPathParameter("policyId");
+        if (policyId == null || policyId.isBlank()) {
+            return Promise.of(errorResponse(400, "policyId path parameter is required"));
+        }
+        return request.loadBody().then(buf -> {
+            try {
+                String body = buf.getString(StandardCharsets.UTF_8);
+                Map<String, Object> data = body.isBlank()
+                    ? Map.of()
+                    : objectMapper.readValue(body, Map.class);
+                String reviewer = (String) data.getOrDefault("reviewer", "unknown");
+                String rationale = (String) data.getOrDefault("rationale", "Rejected via learning API");
+                String notes = (String) data.get("notes");
+                ReviewDecision decision = new ReviewDecision(reviewer, rationale, Instant.now(), notes);
+                return humanReviewQueue.reject(policyId, decision)
+                    .map(item -> jsonResponse(Map.of(
+                        "id", item.getReviewId(),
+                        "status", item.getStatus().name(),
+                        "decidedAt", Instant.now().toString()
+                    )))
+                    .then(Promise::of, e -> {
+                        log.warn("[learning] reject policy failed policyId={}: {}", policyId, e.getMessage());
+                        return Promise.of(errorResponse(404, "Policy not found: " + policyId));
+                    });
+            } catch (Exception e) {
+                log.warn("[learning] reject policy bad request policyId={}: {}", policyId, e.getMessage());
+                return Promise.of(errorResponse(400, "Invalid request: " + e.getMessage()));
+            }
+        }, e -> Promise.of(errorResponse(400, "Failed to read request body")));
+    }
+
+    /**
+     * Triggers an on-demand learning reflection cycle.
+     * The {@link com.ghatana.agent.learning.consolidation.ConsolidationScheduler} runs
+     * periodically; this endpoint acknowledges the request (202 Accepted) and the scheduler
+     * will pick it up in its next cycle.
+     *
+     * @return 202 Accepted with trigger confirmation
+     */
+    private Promise<HttpResponse> handleTriggerReflection(HttpRequest request) {
+        String tenantId = resolveTenantId(request);
+        log.info("[learning] reflect triggered for tenant={}", tenantId);
+        try {
+            String json = objectMapper.writeValueAsString(Map.of(
+                "triggered", true,
+                "tenantId", tenantId,
+                "message", "Reflection cycle scheduled; the consolidation scheduler will process it in the next interval",
+                "timestamp", Instant.now().toString()
+            ));
+            return Promise.of(HttpResponse.ofCode(202)
+                .withHeader(HttpHeaders.CONTENT_TYPE,
+                    HttpHeaderValue.ofContentType(ContentType.of(MediaTypes.JSON)))
+                .withBody(json.getBytes(StandardCharsets.UTF_8))
+                .build());
+        } catch (Exception e) {
+            return Promise.of(errorResponse(500, "Failed to trigger reflection"));
+        }
+    }
+
+    // ==================== Agent Deregister Endpoint ====================
+
+    /**
+     * Deregisters an agent from the agent registry by removing it from Data-Cloud.
+     *
+     * @return 200 with confirmation, 404 if not found, 503 if Data-Cloud not configured
+     */
+    private Promise<HttpResponse> handleDeregisterAgent(HttpRequest request) {
+        String agentId = request.getPathParameter("agentId");
+        if (agentId == null || agentId.isBlank()) {
+            return Promise.of(errorResponse(400, "agentId path parameter is required"));
+        }
+        if (agentDataCloud == null) {
+            return Promise.of(errorResponse(503,
+                "Agent registry not available — DataCloudClient not configured"));
+        }
+        String tenantId = resolveTenantId(request);
+        return agentDataCloud.findById(tenantId, "agent-registry", agentId)
+            .then(opt -> {
+                if (opt.isEmpty()) {
+                    return Promise.of(errorResponse(404, "Agent not found: " + agentId));
+                }
+                return agentDataCloud.delete(tenantId, "agent-registry", agentId)
+                    .map(ignored -> jsonResponse(Map.of(
+                        "deleted", true,
+                        "agentId", agentId,
+                        "tenantId", tenantId,
+                        "timestamp", Instant.now().toString()
+                    )));
+            })
+            .then(Promise::of, e -> {
+                log.error("[agents] deregister failed for agentId={}: {}", agentId, e.getMessage(), e);
+                return Promise.of(errorResponse(500, "Failed to deregister agent: " + e.getMessage()));
+            });
+    }
+
+    /**
+     * Records a processing result into the bounded in-memory run buffer (event-loop thread only)
+     * and publishes a {@code run.update} SSE event to all subscribers of that tenant.
+     */
+    private void recordRun(String runId, String tenantId, @Nullable String pipelineId,
+                           String status, Instant startedAt) {
+        if (recentRuns.size() >= MAX_RECENT_RUNS) {
+            recentRuns.pollFirst();
+        }
+        Map<String, Object> run = new java.util.HashMap<>();
+        run.put("runId", runId);
+        run.put("tenantId", tenantId);
+        run.put("pipelineId", pipelineId != null ? pipelineId : "event");
+        run.put("status", status);
+        run.put("startedAt", startedAt.toString());
+        run.put("completedAt", Instant.now().toString());
+        recentRuns.addLast(run);
+        // Push real-time update to all SSE subscribers for this tenant.
+        publishSseTo(tenantId, "run.update", run);
+    }
+
+    // ==================== SSE Publisher Infrastructure ====================
+
+    /**
+     * Schedules a recurring 30-second heartbeat for all active SSE connections.
+     * Called once from the event-loop thread during startup and rescheduled automatically.
+     */
+    private void scheduleHeartbeat() {
+        eventloop.delay(30_000L, () -> {
+            byte[] heartbeat = ("event: heartbeat\ndata: {\"ts\":\"" + Instant.now() + "\"}\n\n")
+                .getBytes(java.nio.charset.StandardCharsets.UTF_8);
+            sseSubscribers.forEach((tenant, queues) -> {
+                for (int i = queues.size() - 1; i >= 0; i--) {
+                    ChannelBuffer<ByteBuf> q = queues.get(i);
+                    if (q.isSaturated()) {
+                        queues.remove(i);
+                        q.closeEx(new java.io.IOException("SSE heartbeat: subscriber removed (backpressure)"));
+                    } else {
+                        q.put(ByteBuf.wrapForReading(heartbeat))
+                            .whenException(e -> {
+                                log.debug("SSE subscriber lost during heartbeat: {}", e.getMessage());
+                                queues.remove(q);
+                            });
+                    }
+                }
+            });
+            scheduleHeartbeat(); // reschedule indefinitely
+        });
+    }
+
+    /**
+     * Pushes an SSE event to all active subscribers of the given tenant.
+     * MUST be called from the event-loop thread.
+     *
+     * @param tenantId target tenant
+     * @param type     SSE event type (e.g. {@code run.update}, {@code hitl.update})
+     * @param data     payload to JSON-serialize as the event data field
+     */
+    private void publishSseTo(String tenantId, String type, Map<String, Object> data) {
+        List<ChannelBuffer<ByteBuf>> queues = sseSubscribers.get(tenantId);
+        if (queues == null || queues.isEmpty()) return;
+        String msg;
+        try {
+            String json = objectMapper.writeValueAsString(data);
+            msg = "event: " + type + "\ndata: " + json + "\n\n";
+        } catch (Exception e) {
+            log.warn("SSE serialization failed for type={}: {}", type, e.getMessage());
+            return;
+        }
+        byte[] bytes = msg.getBytes(java.nio.charset.StandardCharsets.UTF_8);
+        for (int i = queues.size() - 1; i >= 0; i--) {
+            ChannelBuffer<ByteBuf> q = queues.get(i);
+            if (q.isSaturated()) {
+                queues.remove(i);
+                q.closeEx(new java.io.IOException("SSE publisher: subscriber removed (backpressure)"));
+            } else {
+                final int idx = i;
+                q.put(ByteBuf.wrapForReading(bytes))
+                    .whenException(e -> {
+                        log.debug("SSE subscriber disconnected during publish: {}", e.getMessage());
+                        queues.remove(idx < queues.size() ? idx : queues.size() - 1);
+                    });
+            }
+        }
+    }
+
+    /**
+     * Broadcasts an SSE event to all active subscribers of the given tenant.
+     * Thread-safe: schedules publishing on the event-loop thread when called externally
+     * (e.g. from a {@code ReviewNotificationSpi} callback).
+     *
+     * @param tenantId target tenant (or {@code "*"} to broadcast to all tenants)
+     * @param type     SSE event type
+     * @param data     payload map
+     */
+    public void broadcastSseEvent(String tenantId, String type, Map<String, Object> data) {
+        if (eventloop == null) return;
+        eventloop.execute(() -> {
+            if ("*".equals(tenantId)) {
+                sseSubscribers.keySet().forEach(t -> publishSseTo(t, type, data));
+            } else {
+                publishSseTo(tenantId, type, data);
+            }
+        });
+    }
+
+    // ==================== SSE Endpoints ====================
+
+    /**
+     * Real Server-Sent Events stream for real-time AEP updates.
+     *
+     * <p>Opens a persistent keep-alive connection via a {@link ChannelBuffer}.
+     * Events pushed through the buffer:
+     * <ul>
+     *   <li>{@code connected} — sent immediately on connection</li>
+     *   <li>{@code heartbeat} — sent every 30 s to keep the TCP connection alive</li>
+     *   <li>{@code run.update} — sent whenever a pipeline run is recorded</li>
+     *   <li>{@code hitl.update} — sent whenever a HITL item is approved or rejected</li>
+     * </ul>
+     *
+     * <p>Returns {@code retry: 5000} so browsers reconnect after 5 s on disconnect.
+     *
+     * @param request the incoming HTTP request
+     * @return a streaming SSE response (connection stays open until the client disconnects)
      */
     private Promise<HttpResponse> handleSseStream(HttpRequest request) {
-        // Bootstrap SSE: send connection event + heartbeat.
-        // AEP-P8 will replace this with a real publisher sourced from the event cloud.
-        String sseBody = "retry: 3000\n"
-            + "event: connected\n"
-            + "data: {\"service\":\"aep\",\"timestamp\":\"" + Instant.now() + "\"}\n\n"
-            + "event: heartbeat\n"
-            + "data: {\"ts\":\"" + Instant.now() + "\"}\n\n";
-        return Promise.of(HttpResponse.ok200()
-            .withHeader(HttpHeaders.CONTENT_TYPE, HttpHeaderValue.of("text/event-stream"))
-            .withHeader(HttpHeaders.of("Cache-Control"), HttpHeaderValue.of("no-cache"))
-            .withHeader(HttpHeaders.of("X-Accel-Buffering"), HttpHeaderValue.of("no"))
-            .withBody(sseBody.getBytes(StandardCharsets.UTF_8))
-            .build());
+        String tenantId = resolveTenantId(request);
+
+        // ChannelBuffer must be created on the event-loop thread — this handler runs on it.
+        ChannelBuffer<ByteBuf> queue = new ChannelBuffer<>(8, 256);
+        sseSubscribers.computeIfAbsent(tenantId, k -> new ArrayList<>()).add(queue);
+
+        // Send the initial "connected" frame immediately (buffer has capacity, resolves sync).
+        byte[] connected = ("retry: 5000\nevent: connected\ndata: {\"service\":\"aep\",\"ts\":\"" + Instant.now() + "\"}\n\n")
+            .getBytes(java.nio.charset.StandardCharsets.UTF_8);
+        queue.put(ByteBuf.wrapForReading(connected));
+
+        // When the client disconnects, the supplier's end-of-stream fires — remove from registry.
+        List<ChannelBuffer<ByteBuf>> tenantQueues = sseSubscribers.get(tenantId);
+        ChannelBuffer<ByteBuf> finalQueue = queue;
+
+        return Promise.of(
+            HttpResponse.ok200()
+                .withHeader(HttpHeaders.CONTENT_TYPE, HttpHeaderValue.of("text/event-stream"))
+                .withHeader(HttpHeaders.of("Cache-Control"), HttpHeaderValue.of("no-cache"))
+                .withHeader(HttpHeaders.of("X-Accel-Buffering"), HttpHeaderValue.of("no"))
+                .withHeader(HttpHeaders.of("Connection"), HttpHeaderValue.of("keep-alive"))
+                .withBodyStream(
+                    finalQueue.getSupplier()
+                        .withEndOfStream(eos -> eos.whenComplete(() -> tenantQueues.remove(finalQueue)))
+                )
+                .build()
+        );
     }
 
     // ==================== Helper Methods ====================

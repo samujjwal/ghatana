@@ -11,12 +11,12 @@ Date: March 1, 2026
 This appendix defines the standard terminology and policy rules that all active Project Siddhanta documents should use. It exists to prevent drift across strategy, specification, research, and analysis artifacts.
 
 Active planning documents should reference this appendix rather than inventing local terminology for AI oversight, integration readiness, or data residency.
-Time-sensitive external facts should be sourced from [Authoritative_Source_Register.md](Authoritative_Source_Register.md) or an equivalent primary source with an explicit as-of date.
+Time-sensitive external facts should be sourced from [Authoritative_Source_Register.md](../Authoritative_Source_Register.md) or an equivalent primary source with an explicit as-of date.
 Reference style for time-sensitive external facts: use `ASR-*` identifiers from the source register.
-Legal-claim traceability: [Legal_Claim_Citation_Appendix.md](Legal_Claim_Citation_Appendix.md)
-Recurring refresh procedure: [ASR_Monthly_Refresh_Checklist.md](ASR_Monthly_Refresh_Checklist.md)
-Compact review artifact: [Claim_Traceability_Matrix.md](Claim_Traceability_Matrix.md)
-Customer-safe external summary: [Customer_Facing_Claims_Pack.md](Customer_Facing_Claims_Pack.md)
+Legal-claim traceability: [Legal_Claim_Citation_Appendix.md](../Legal_Claim_Citation_Appendix.md)
+Recurring refresh procedure: [ASR_Monthly_Refresh_Checklist.md](../ASR_Monthly_Refresh_Checklist.md)
+Compact review artifact: [Claim_Traceability_Matrix.md](../Claim_Traceability_Matrix.md)
+Customer-safe external summary: [Customer_Facing_Claims_Pack.md](../Customer_Facing_Claims_Pack.md)
 
 ---
 

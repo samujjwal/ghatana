@@ -11,7 +11,7 @@ This registry documents all compliance codes (LCA-_) and authoritative source re
 
 **Namespace Note:** This registry governs the semantic epic/control identifiers used in the implementation-ready architecture set, such as `LCA-AUDIT-001`, `LCA-SOD-001`, and `ASR-SEC-001`.
 
-It does **not** replace the numeric legal-claim identifiers maintained in [docs/Legal_Claim_Citation_Appendix.md](/home/samujjwal/Developments/finance/docs/Legal_Claim_Citation_Appendix.md), such as `LCA-001` through `LCA-032`. Those numeric IDs are a separate legal-claim traceability namespace for source-backed factual and clause-level assertions in the broader documentation set.
+It does **not** replace the numeric legal-claim identifiers maintained in [../Legal_Claim_Citation_Appendix.md](../Legal_Claim_Citation_Appendix.md), such as `LCA-001` through `LCA-032`. Those numeric IDs are a separate legal-claim traceability namespace for source-backed factual and clause-level assertions in the broader documentation set.
 
 ---
 

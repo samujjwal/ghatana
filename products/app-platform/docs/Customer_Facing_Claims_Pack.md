@@ -9,8 +9,8 @@ Legal-claim traceability: [Legal_Claim_Citation_Appendix.md](Legal_Claim_Citatio
 Compact traceability matrix: [Claim_Traceability_Matrix.md](Claim_Traceability_Matrix.md)
 Sales-ready summary: [One_Page_Proposal_Insert.md](One_Page_Proposal_Insert.md)
 Buyer-specific inserts: [Broker_Proposal_Insert.md](Broker_Proposal_Insert.md), [Merchant_Banker_Proposal_Insert.md](Merchant_Banker_Proposal_Insert.md), [Issuer_Proposal_Insert.md](Issuer_Proposal_Insert.md)
-Indexed bundle: [sales-kit/README.md](sales-kit/README.md)
-Routing note: [sales-kit/cover-note.md](sales-kit/cover-note.md)
+Indexed bundle: [archive/sales-kit/README.md](archive/sales-kit/README.md)
+Routing note: [archive/sales-kit/cover-note.md](archive/sales-kit/cover-note.md)
 
 ---
 

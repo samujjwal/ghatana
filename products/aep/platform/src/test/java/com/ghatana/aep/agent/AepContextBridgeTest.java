@@ -156,10 +156,11 @@ class AepContextBridgeTest {
         }
 
         @Test
-        @DisplayName("toAgentContext throws NPE when traceId is null")
+        @DisplayName("toAgentContext accepts null traceId (traceId is @Nullable)")
         void nullTraceId() {
-            assertThatNullPointerException()
-                    .isThrownBy(() -> bridge.toAgentContext(() -> "t", "agent", null));
+            AgentContext ctx = bridge.toAgentContext(() -> "t", "agent", null);
+            assertThat(ctx).isNotNull();
+            assertThat(ctx.getTraceId()).isNull();
         }
 
         @Test

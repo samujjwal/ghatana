@@ -23,7 +23,7 @@
 - Multi-region deployment strategies (future enhancement)
 
 **Authority Sources Used:**
-- CURRENT_EXECUTION_PLAN.md
+- UNIFIED_IMPLEMENTATION_PLAN.md
 - Relevant LLDs for all Phase 2 modules
 - ADR-011_STACK_STANDARDIZATION_AND_GHATANA_PLATFORM_ALIGNMENT.md
 - Architecture specification parts 1-3
@@ -42,7 +42,7 @@
 
 | source_id | path | authority | why_it_matters | extracted_behaviors |
 |-----------|------|-----------|----------------|-------------------|
-| EXEC_PLAN_001 | CURRENT_EXECUTION_PLAN.md | Primary | Phase 2 sequence and dependencies | Execution order, readiness gates |
+| EXEC_PLAN_001 | UNIFIED_IMPLEMENTATION_PLAN.md | Primary | Phase 2 sequence and dependencies | Execution order, readiness gates |
 | LLD_K01_001 | LLD_K01_IAM.md | Primary | Identity and access management | Auth, authorization, RBAC |
 | LLD_K14_001 | LLD_K14_SECRETS_MANAGEMENT.md | Primary | Secrets management | Secret storage, rotation |
 | LLD_K03_001 | LLD_K03_RULES_ENGINE.md | Primary | Rules engine | Policy evaluation, OPA integration |

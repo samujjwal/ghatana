@@ -1,10 +1,9 @@
 package com.ghatana.virtualorg.framework;
 
+import com.ghatana.platform.testing.activej.EventloopTestBase;
 import com.ghatana.virtualorg.framework.agent.AgentRegistry;
 import com.ghatana.virtualorg.framework.cnp.TaskMarket;
 import com.ghatana.virtualorg.framework.ontology.Ontology;
-import io.activej.eventloop.Eventloop;
-import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 
@@ -14,20 +13,12 @@ import static org.assertj.core.api.Assertions.assertThat;
  * Tests for VirtualOrgContext - the main orchestration container.
  */
 @DisplayName("VirtualOrgContext Tests")
-class VirtualOrgContextTest {
-
-    private Eventloop eventloop;
-
-    @BeforeEach
-    void setUp() {
-        eventloop = Eventloop.builder().withCurrentThread().build();
-    }
+class VirtualOrgContextTest extends EventloopTestBase {
 
     @Test
     @DisplayName("Should create context with all components using builder")
     void shouldCreateContextWithBuilder() {
-        VirtualOrgContext context = VirtualOrgContext.builder(eventloop)
-                .withAutoDiscovery(false)
+        VirtualOrgContext context = VirtualOrgContext.builder(eventloop())
                 .build();
 
         assertThat(context.getAgentRegistry()).isNotNull();
@@ -44,7 +35,7 @@ class VirtualOrgContextTest {
         TaskMarket customMarket = new TaskMarket();
         Ontology customOntology = Ontology.withCoreConceptsAsync();
 
-        VirtualOrgContext context = VirtualOrgContext.builder(eventloop)
+        VirtualOrgContext context = VirtualOrgContext.builder(eventloop())
                 .agentRegistry(customRegistry)
                 .taskMarket(customMarket)
                 .ontology(customOntology)
@@ -58,20 +49,20 @@ class VirtualOrgContextTest {
     @Test
     @DisplayName("Should initialize and shutdown properly")
     void shouldInitializeAndShutdown() {
-        VirtualOrgContext context = VirtualOrgContext.builder(eventloop)
+        VirtualOrgContext context = VirtualOrgContext.builder(eventloop())
                 .build();
 
-        context.initialize().getResult();
+        runPromise(() -> context.initialize());
         assertThat(context.isInitialized()).isTrue();
 
-        context.shutdown().getResult();
+        runPromise(() -> context.shutdown());
         assertThat(context.isInitialized()).isFalse();
     }
 
     @Test
     @DisplayName("Should have default values when not specified")
     void shouldHaveDefaultValues() {
-        VirtualOrgContext context = VirtualOrgContext.builder(eventloop).build();
+        VirtualOrgContext context = VirtualOrgContext.builder(eventloop()).build();
 
         assertThat(context.getAgentRegistry()).isNotNull();
         assertThat(context.getNormRegistry()).isNotNull();

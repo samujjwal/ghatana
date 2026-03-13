@@ -1,15 +1,15 @@
 # Specialized TDD Prompt: Phase 3 Trading MVP
 
-Use this prompt together with [tdd_test_spec_generation_prompt_v1.md](tdd_test_spec_generation_prompt_v1.md).
+Use this prompt together with [tdd_test_spec_generation_prompt_v1.md](../tdd_test_spec_generation_prompt_v1.md).
 
 Execution-plan position:
 - Phase 3
 - Dates: July 13, 2026 to September 18, 2026
 
 Primary sources:
-- [../CURRENT_EXECUTION_PLAN.md](../CURRENT_EXECUTION_PLAN.md)
+- [../CURRENT_EXECUTION_PLAN.md](plans/CURRENT_EXECUTION_PLAN.md)
 - relevant LLDs for D-11, D-04, D-01, D-06, D-07, D-02, D-09, D-03, D-05
-- [../ADR-011_STACK_STANDARDIZATION_AND_GHATANA_PLATFORM_ALIGNMENT.md](../ADR-011_STACK_STANDARDIZATION_AND_GHATANA_PLATFORM_ALIGNMENT.md)
+- [../ADR-011_STACK_STANDARDIZATION_AND_GHATANA_PLATFORM_ALIGNMENT.md](../adr/ADR-011_STACK_STANDARDIZATION_AND_GHATANA_PLATFORM_ALIGNMENT.md)
 
 Implementation order to honor:
 1. D-11 Reference Data

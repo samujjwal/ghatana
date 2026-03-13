@@ -79,7 +79,7 @@ export class EventsService {
 
   /** List events with optional filtering */
   async listEvents(params: EventQueryParams = {}): Promise<EventListResponse> {
-    const { data } = await this.client.get<EventListResponse>('/dc/events', {
+    const { data } = await this.client.get<EventListResponse>('/v1/events', {
       params,
     });
     return data;
@@ -87,7 +87,7 @@ export class EventsService {
 
   /** Get event statistics */
   async getStats(tenantId?: string): Promise<EventStats> {
-    const { data } = await this.client.get<EventStats>('/dc/events/stats', {
+    const { data } = await this.client.get<EventStats>('/v1/events/stats', {
       params: tenantId ? { tenantId } : {},
     });
     return data;
@@ -101,7 +101,7 @@ export class EventsService {
     if (params.tier) search.set('tier', params.tier);
     const query = search.toString();
     return new EventSource(
-      `${this.baseURL}/dc/events/stream${query ? `?${query}` : ''}`,
+      `${this.baseURL}/v1/events/stream${query ? `?${query}` : ''}`,
     );
   }
 }

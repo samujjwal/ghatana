@@ -4,6 +4,7 @@ import com.ghatana.platform.observability.MetricsCollector;
 import com.ghatana.datacloud.entity.storage.CollectionStorageProfile;
 import com.ghatana.datacloud.entity.storage.CollectionStorageProfileRepository;
 import com.ghatana.datacloud.application.storage.StorageRouterService.RoutingTarget;
+import com.ghatana.platform.testing.activej.EventloopTestBase;
 import io.activej.promise.Promise;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Disabled;
@@ -22,7 +23,7 @@ import static org.mockito.Mockito.*;
 
 @Disabled("Temporarily disabled due to assertion issues in test environment")
 @ExtendWith(MockitoExtension.class)
-class StorageRouterServiceTest {
+class StorageRouterServiceTest extends EventloopTestBase {
 
     @Mock
     CollectionStorageProfileRepository repository;
@@ -210,8 +211,6 @@ class StorageRouterServiceTest {
     }
 
     private <T> T resolve(Promise<T> promise) {
-        if (promise.isResult()) return promise.getResult();
-        if (promise.isException()) throw new RuntimeException(promise.getException());
-        throw new IllegalStateException("Promise is still pending");
+        return runPromise(() -> promise);
     }
 }

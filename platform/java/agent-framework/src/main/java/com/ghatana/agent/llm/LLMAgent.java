@@ -23,6 +23,8 @@ import java.time.Duration;
 import java.time.Instant;
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.Executor;
+import java.util.concurrent.Executors;
 
 /**
  * LLM-backed agent that uses LangChain4j for natural language processing tasks.
@@ -80,18 +82,33 @@ public class LLMAgent extends AbstractTypedAgent<String, String> {
     private final ChatLanguageModel chatModel;
     private final LLMAgentConfig llmConfig;
     private final ConcurrentHashMap<String, CacheEntry> responseCache;
+    private final Executor executor;
 
     /**
-     * Creates an LLM agent.
+     * Creates an LLM agent with a virtual-thread executor for blocking LLM calls.
      *
      * @param agentId unique agent identifier
      * @param chatModel LangChain4j chat model (OpenAI, Anthropic, etc.)
      * @param llmConfig LLM-specific configuration
      */
     public LLMAgent(String agentId, ChatLanguageModel chatModel, LLMAgentConfig llmConfig) {
+        this(agentId, chatModel, llmConfig, Executors.newVirtualThreadPerTaskExecutor());
+    }
+
+    /**
+     * Creates an LLM agent with a custom executor for blocking LLM calls.
+     *
+     * @param agentId unique agent identifier
+     * @param chatModel LangChain4j chat model (OpenAI, Anthropic, etc.)
+     * @param llmConfig LLM-specific configuration
+     * @param executor executor for offloading blocking {@code chatModel.chat()} calls
+     */
+    public LLMAgent(String agentId, ChatLanguageModel chatModel, LLMAgentConfig llmConfig,
+                    Executor executor) {
         this.agentId = Objects.requireNonNull(agentId, "agentId required");
         this.chatModel = Objects.requireNonNull(chatModel, "chatModel required");
         this.llmConfig = Objects.requireNonNull(llmConfig, "llmConfig required");
+        this.executor = Objects.requireNonNull(executor, "executor required");
         this.responseCache = new ConcurrentHashMap<>();
     }
 
@@ -115,7 +132,7 @@ public class LLMAgent extends AbstractTypedAgent<String, String> {
     protected Promise<AgentResult<String>> doProcess(AgentContext ctx, String input) {
         Instant start = Instant.now();
 
-        // Check cache first
+        // Check cache first — fast in-memory lookup stays on event loop
         if (llmConfig.isCacheEnabled()) {
             String cacheKey = computeCacheKey(input);
             CacheEntry cached = responseCache.get(cacheKey);
@@ -128,71 +145,72 @@ public class LLMAgent extends AbstractTypedAgent<String, String> {
             }
         }
 
-        try {
-            // Build prompt with token budget
-            String systemPrompt = llmConfig.getSystemPrompt();
-            String userPrompt = buildUserPrompt(input);
+        // Build prompt strings on the event loop (fast, no IO)
+        String systemPrompt = llmConfig.getSystemPrompt();
+        String userPrompt = buildUserPrompt(input);
 
-            // Validate token budget
-            int estimatedInputTokens = estimateTokens(systemPrompt) + estimateTokens(userPrompt);
-            if (estimatedInputTokens > llmConfig.getMaxTokens()) {
-                userPrompt = truncateToTokenBudget(userPrompt,
-                        llmConfig.getMaxTokens() - estimateTokens(systemPrompt));
-                log.warn("Input truncated to fit token budget: agent={}, estimated={}, max={}",
-                        agentId, estimatedInputTokens, llmConfig.getMaxTokens());
-            }
-
-            // Call LLM
-            ChatRequest request = ChatRequest.builder()
-                    .messages(List.of(
-                            new SystemMessage(systemPrompt),
-                            new UserMessage(userPrompt)
-                    ))
-                    .build();
-
-            ChatResponse response = chatModel.chat(request);
-            AiMessage aiMessage = response.aiMessage();
-            String responseText = aiMessage.text();
-            double confidence = computeConfidence(response);
-            Duration elapsed = Duration.between(start, Instant.now());
-
-            // Record token usage
-            TokenUsage tokenUsage = response.tokenUsage();
-            if (tokenUsage != null) {
-                log.info("LLM token usage: agent={}, input={}, output={}, total={}",
-                        agentId,
-                        tokenUsage.inputTokenCount(),
-                        tokenUsage.outputTokenCount(),
-                        tokenUsage.totalTokenCount());
-            }
-
-            // Cache response
-            if (llmConfig.isCacheEnabled()) {
-                responseCache.put(computeCacheKey(input),
-                        new CacheEntry(responseText, confidence, Instant.now()));
-                evictExpiredEntries();
-            }
-
-            return Promise.of(AgentResult.successWithConfidence(
-                    responseText, confidence, agentId, elapsed,
-                    "LLM response from " + (llmConfig.getModelName() != null ?
-                            llmConfig.getModelName() : "default model")));
-
-        } catch (Exception e) {
-            Duration elapsed = Duration.between(start, Instant.now());
-            log.warn("LLM call failed for agent={}, falling back to deterministic response: {}",
-                    agentId, e.getMessage());
-
-            // Fallback to deterministic response
-            String fallbackResponse = llmConfig.getFallbackResponse();
-            if (fallbackResponse != null && !fallbackResponse.isBlank()) {
-                return Promise.of(AgentResult.successWithConfidence(
-                        fallbackResponse, 0.1, agentId, elapsed,
-                        "Fallback response due to LLM failure: " + e.getMessage()));
-            }
-
-            return Promise.of(AgentResult.failure(e, agentId, elapsed));
+        int estimatedInputTokens = estimateTokens(systemPrompt) + estimateTokens(userPrompt);
+        final String finalUserPrompt;
+        if (estimatedInputTokens > llmConfig.getMaxTokens()) {
+            finalUserPrompt = truncateToTokenBudget(userPrompt,
+                    llmConfig.getMaxTokens() - estimateTokens(systemPrompt));
+            log.warn("Input truncated to fit token budget: agent={}, estimated={}, max={}",
+                    agentId, estimatedInputTokens, llmConfig.getMaxTokens());
+        } else {
+            finalUserPrompt = userPrompt;
         }
+
+        // Offload the blocking LLM network call to the executor so the event loop is not blocked
+        return Promise.ofBlocking(executor, () -> {
+            try {
+                ChatRequest request = ChatRequest.builder()
+                        .messages(List.of(
+                                new SystemMessage(systemPrompt),
+                                new UserMessage(finalUserPrompt)
+                        ))
+                        .build();
+
+                ChatResponse response = chatModel.chat(request);
+                AiMessage aiMessage = response.aiMessage();
+                String responseText = aiMessage.text();
+                double confidence = computeConfidence(response);
+                Duration elapsed = Duration.between(start, Instant.now());
+
+                TokenUsage tokenUsage = response.tokenUsage();
+                if (tokenUsage != null) {
+                    log.info("LLM token usage: agent={}, input={}, output={}, total={}",
+                            agentId,
+                            tokenUsage.inputTokenCount(),
+                            tokenUsage.outputTokenCount(),
+                            tokenUsage.totalTokenCount());
+                }
+
+                if (llmConfig.isCacheEnabled()) {
+                    responseCache.put(computeCacheKey(input),
+                            new CacheEntry(responseText, confidence, Instant.now()));
+                    evictExpiredEntries();
+                }
+
+                return AgentResult.successWithConfidence(
+                        responseText, confidence, agentId, elapsed,
+                        "LLM response from " + (llmConfig.getModelName() != null ?
+                                llmConfig.getModelName() : "default model"));
+
+            } catch (Exception e) {
+                Duration elapsed = Duration.between(start, Instant.now());
+                log.warn("LLM call failed for agent={}, falling back to deterministic response: {}",
+                        agentId, e.getMessage());
+
+                String fallbackResponse = llmConfig.getFallbackResponse();
+                if (fallbackResponse != null && !fallbackResponse.isBlank()) {
+                    return AgentResult.successWithConfidence(
+                            fallbackResponse, 0.1, agentId, elapsed,
+                            "Fallback response due to LLM failure: " + e.getMessage());
+                }
+
+                return AgentResult.failure(e, agentId, elapsed);
+            }
+        });
     }
 
     // ─────────────────── Prompt Management ───────────────────

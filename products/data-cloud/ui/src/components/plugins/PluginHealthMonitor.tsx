@@ -48,18 +48,21 @@ export function PluginHealthMonitor({
 }: PluginHealthMonitorProps): React.ReactElement {
   const { data: health, isLoading } = useQuery({
     queryKey: ['plugins', 'health', pluginId],
-    queryFn: async () => {
-      const response = await pluginService.getPluginHealth(pluginId);
-      // Transform to expected format
+    queryFn: async (): Promise<HealthMetrics> => {
+      const plugin = await pluginService.getPlugin(pluginId);
+      const h = plugin.health;
+      const s = plugin.stats;
+      const usageCount = s?.usageCount ?? 0;
+      const errorCount = s?.errorCount ?? 0;
       return {
-        status: response?.status === 'healthy' ? 'healthy' : response?.status === 'degraded' ? 'degraded' : 'down',
-        uptime: 99.9,
-        responseTime: Math.random() * 100 + 50,
-        errorRate: Math.random() * 5,
-        requestsPerMinute: Math.floor(Math.random() * 1000),
-        memoryUsage: Math.random() * 100,
-        lastChecked: new Date(),
-      } as HealthMetrics;
+        status: h?.status === 'healthy' ? 'healthy' : h?.status === 'degraded' ? 'degraded' : 'down',
+        uptime: 0,
+        responseTime: s?.averageExecutionTime ?? 0,
+        errorRate: usageCount > 0 ? (errorCount / usageCount) * 100 : 0,
+        requestsPerMinute: 0,
+        memoryUsage: 0,
+        lastChecked: h?.lastCheck ? new Date(h.lastCheck) : new Date(),
+      };
     },
     refetchInterval: autoRefresh ? refreshInterval : false,
   });

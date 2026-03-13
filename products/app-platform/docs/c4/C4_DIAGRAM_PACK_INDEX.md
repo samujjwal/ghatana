@@ -9,7 +9,7 @@
 
 > **📦 NOTE:** C4 diagrams depicting Siddhanta-specific components (C1–C4 SIDDHANTA files) describe the Capital Markets domain pack instantiation, not the generic AppPlatform Kernel.
 
-> **Stack authority**: [ADR-011_STACK_STANDARDIZATION_AND_GHATANA_PLATFORM_ALIGNMENT.md](ADR-011_STACK_STANDARDIZATION_AND_GHATANA_PLATFORM_ALIGNMENT.md) defines the canonical Siddhanta stack. The C4 pack remains valid for boundaries and interactions, but legacy technology labels must be interpreted through ADR-011.
+> **Stack authority**: [../adr/ADR-011_STACK_STANDARDIZATION_AND_GHATANA_PLATFORM_ALIGNMENT.md](../adr/ADR-011_STACK_STANDARDIZATION_AND_GHATANA_PLATFORM_ALIGNMENT.md) defines the canonical Siddhanta stack. The C4 pack remains valid for boundaries and interactions, but legacy technology labels must be interpreted through ADR-011.
 
 ---
 
@@ -466,7 +466,7 @@ Focus on: **C1 Context**
 
 ### Glossary
 
-- **File**: `docs/Documentation_Glossary_and_Policy_Appendix.md`
+- **File**: `docs/archive/Documentation_Glossary_and_Policy_Appendix.md`
 - **Purpose**: Shared terminology and policy baseline
 
 ---

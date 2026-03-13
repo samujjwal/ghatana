@@ -6,6 +6,7 @@
  * Exports:
  * - `FlowCanvas` — main self-contained canvas component
  * - Topology node components (HotTierNode, WarmTierNode, ColdTierNode, ArchiveTierNode, AgentNode)
+ * - Pipeline node components (PipelineStageNode, OperatorNode)
  * - Edge components (DataFlowEdge)
  * - `FlowControls` — zoom/pan/minimap controls panel
  * - Type definitions
@@ -23,6 +24,8 @@ export { default as WarmTierNode } from './nodes/WarmTierNode';
 export { default as ColdTierNode } from './nodes/ColdTierNode';
 export { default as ArchiveTierNode } from './nodes/ArchiveTierNode';
 export { default as AgentNode } from './nodes/AgentNode';
+export { default as PipelineStageNode } from './nodes/PipelineStageNode';
+export { default as OperatorNode } from './nodes/OperatorNode';
 
 // ==================== Edges ====================
 export { default as DataFlowEdge } from './edges/DataFlowEdge';
@@ -37,12 +40,16 @@ export type {
   NodeMetrics,
   TierNodeData,
   AgentNodeData,
+  PipelineStageNodeData,
+  OperatorNodeData,
   DataFlowEdgeData,
   HotTierNode as HotTierNodeType,
   WarmTierNode as WarmTierNodeType,
   ColdTierNode as ColdTierNodeType,
   ArchiveTierNode as ArchiveTierNodeType,
   AgentNetworkNode,
+  PipelineStageNode as PipelineStageNodeType,
+  OperatorNode as OperatorNodeType,
   FlowNode,
   FlowEdge,
 } from './types';
@@ -66,4 +73,5 @@ export {
   type OnConnect,
   type OnNodesChange,
   type OnEdgesChange,
+  type ReactFlowInstance,
 } from '@xyflow/react';

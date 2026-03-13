@@ -94,17 +94,31 @@ public class AepAgentAdapter extends BaseAgent<String, String> {
     // ─────────────────────────────────────────────────────────────────────────
 
     /**
-     * PERCEIVE phase — validate and contextualise the incoming event payload.
+     * PERCEIVE phase — validates and contextualises the incoming event payload.
      *
-     * <p>Currently returns the input unchanged. When Track 0D
-     * ({@code PersistentMemoryPlane}) is wired, this will query the 5 most recent
-     * episodes and prepend them to the input as context.
+     * <p>If the orchestrator has pre-fetched recent episodic memory for this agent
+     * (stored in {@code context.getMetadata().get("recentEpisodesSummary")}), the
+     * summaries are prepended to the input so the REASON phase has historical context.
+     * Episode pre-fetching happens asynchronously in
+     * {@link com.ghatana.orchestrator.ai.impl.AIAgentOrchestrationManagerImpl#executeChainInternal}
+     * before this method is called, ensuring perceive() remains synchronous.
      */
     @Override
     @NotNull
     protected String perceive(@NotNull String input, @NotNull AgentContext context) {
         log.debug("agent={} tenant={} turn={} phase=PERCEIVE inputLen={}",
                 definition.getId(), context.getTenantId(), context.getTurnId(), input.length());
+
+        Object episodesSummary = context.getMetadata().get("recentEpisodesSummary");
+        if (episodesSummary instanceof String summary && !summary.isBlank()) {
+            log.debug("agent={} turn={} PERCEIVE enriched with {} episode(s)",
+                    definition.getId(), context.getTurnId(),
+                    summary.lines().filter(l -> l.startsWith("[episode")).count());
+            return "[Recent memory context for " + definition.getId() + "]:\n"
+                    + summary
+                    + "\n[Current input]:\n"
+                    + input;
+        }
         return input;
     }
 

@@ -16,7 +16,7 @@ It is not a legal opinion. It is a traceability layer intended to:
 - identify where wording is supported only as a project policy baseline,
 - flag statements that still need exact clause extraction before being treated as hard legal requirements.
 
-**Namespace Note:** The numeric IDs in this appendix, such as `LCA-001` through `LCA-032`, are legal-claim identifiers for source-backed assertions in the broader documentation set. They are separate from the semantic epic/control identifiers in [epics/COMPLIANCE_CODE_REGISTRY.md](/home/samujjwal/Developments/finance/epics/COMPLIANCE_CODE_REGISTRY.md), such as `LCA-AUDIT-001` and `ASR-SEC-001`.
+**Namespace Note:** The numeric IDs in this appendix, such as `LCA-001` through `LCA-032`, are legal-claim identifiers for source-backed assertions in the broader documentation set. They are separate from the semantic epic/control identifiers in [epics/COMPLIANCE_CODE_REGISTRY.md](./epics/COMPLIANCE_CODE_REGISTRY.md), such as `LCA-AUDIT-001` and `ASR-SEC-001`.
 
 ---
 

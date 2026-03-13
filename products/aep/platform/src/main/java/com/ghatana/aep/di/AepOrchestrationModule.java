@@ -12,6 +12,12 @@ import com.ghatana.agent.dispatch.tier.DefaultServiceOrchestrationPlan;
 import com.ghatana.agent.dispatch.tier.LlmExecutionPlan;
 import com.ghatana.agent.dispatch.tier.LlmProvider;
 import com.ghatana.agent.dispatch.tier.ServiceOrchestrationPlan;
+import com.ghatana.ai.llm.CompletionRequest;
+import com.ghatana.ai.llm.CompletionService;
+import com.ghatana.ai.llm.LLMConfiguration;
+import com.ghatana.ai.llm.OllamaCompletionService;
+import com.ghatana.ai.llm.ToolAwareAnthropicCompletionService;
+import com.ghatana.ai.llm.ToolAwareOpenAICompletionService;
 import com.ghatana.orchestrator.cache.PipelineCache;
 import com.ghatana.orchestrator.config.OrchestratorConfig;
 import com.ghatana.orchestrator.core.Orchestrator;
@@ -28,6 +34,8 @@ import com.ghatana.platform.observability.MetricsCollector;
 import io.activej.inject.annotation.Provides;
 import io.activej.inject.module.AbstractModule;
 
+import java.util.LinkedHashMap;
+import java.util.Map;
 import java.time.Duration;
 
 /**
@@ -185,20 +193,77 @@ public class AepOrchestrationModule extends AbstractModule {
     }
 
     /**
-     * Provides a stub {@link LlmProvider} that throws {@link UnsupportedOperationException}.
+     * Provides an env-driven {@link LlmProvider} backed by real completion services.
      *
-     * <p><b>This is intentionally a stub.</b> LLM integration is wired in AEP-P7 when
-     * the AI inference service is connected. Any attempt to dispatch to the LLM tier
-     * before that will fail fast with an informative message.
+     * <p>Reads the following environment variables to discover available providers:
+     * <ul>
+     *   <li>{@code AEP_ANTHROPIC_API_KEY} — enables the Anthropic provider</li>
+     *   <li>{@code AEP_OPENAI_API_KEY} — enables the OpenAI provider</li>
+     *   <li>{@code AEP_OLLAMA_HOST} — enables the Ollama provider (e.g. {@code http://localhost:11434})</li>
+     * </ul>
      *
-     * @return stub LLM provider
+     * <p>Throws {@link IllegalStateException} at startup if no provider is configured.
+     * The {@code provider} argument in {@link LlmProvider#invoke} is matched
+     * case-insensitively against registered provider names.
+     *
+     * @param metrics metrics collector for LLM call instrumentation
+     * @return multi-provider LLM provider
+     * @throws IllegalStateException if no LLM provider env var is set
      */
     @Provides
-    LlmProvider llmProvider() {
+    LlmProvider llmProvider(MetricsCollector metrics) {
+        Map<String, CompletionService> services = new LinkedHashMap<>();
+
+        String anthropicKey = System.getenv("AEP_ANTHROPIC_API_KEY");
+        if (anthropicKey != null && !anthropicKey.isBlank()) {
+            String model = System.getenv().getOrDefault("AEP_ANTHROPIC_MODEL", "claude-3-5-sonnet-20241022");
+            LLMConfiguration cfg = LLMConfiguration.builder()
+                    .apiKey(anthropicKey)
+                    .modelName(model)
+                    .build();
+            services.put("anthropic", new ToolAwareAnthropicCompletionService(cfg, null, metrics));
+        }
+
+        String openaiKey = System.getenv("AEP_OPENAI_API_KEY");
+        if (openaiKey != null && !openaiKey.isBlank()) {
+            String model = System.getenv().getOrDefault("AEP_OPENAI_MODEL", "gpt-4o-mini");
+            LLMConfiguration cfg = LLMConfiguration.builder()
+                    .apiKey(openaiKey)
+                    .modelName(model)
+                    .build();
+            services.put("openai", new ToolAwareOpenAICompletionService(cfg, null, metrics));
+        }
+
+        String ollamaHost = System.getenv("AEP_OLLAMA_HOST");
+        if (ollamaHost != null && !ollamaHost.isBlank()) {
+            String model = System.getenv().getOrDefault("AEP_OLLAMA_MODEL", "llama3");
+            LLMConfiguration cfg = LLMConfiguration.builder()
+                    .apiKey("ollama")
+                    .baseUrl(ollamaHost)
+                    .modelName(model)
+                    .build();
+            services.put("ollama", new OllamaCompletionService(cfg, null, metrics));
+        }
+
+        if (services.isEmpty()) {
+            throw new IllegalStateException(
+                    "No LLM provider configured for AEP. Set at least one of: "
+                    + "AEP_ANTHROPIC_API_KEY, AEP_OPENAI_API_KEY, AEP_OLLAMA_HOST");
+        }
+
+        // Default provider is the first one registered.
+        String defaultProvider = services.keySet().iterator().next();
+
         return (provider, model, prompt, temperature, maxTokens) -> {
-            throw new UnsupportedOperationException(
-                    "LLM provider not yet configured — stub active until AEP-P7. "
-                    + "Set AEP_LLM_PROVIDER env var and wire the AI inference service.");
+            String key = provider != null ? provider.toLowerCase() : defaultProvider;
+            CompletionService service = services.getOrDefault(key, services.get(defaultProvider));
+            CompletionRequest req = CompletionRequest.builder()
+                    .prompt(prompt)
+                    .model(model)
+                    .temperature(temperature)
+                    .maxTokens(maxTokens)
+                    .build();
+            return service.complete(req).map(result -> (Object) result.getText());
         };
     }
 

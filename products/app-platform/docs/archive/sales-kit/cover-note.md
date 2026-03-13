@@ -22,7 +22,7 @@ Use it before sending any proposal excerpt so the recipient gets the shortest, m
 
 Send:
 
-- [One_Page_Proposal_Insert.md](../One_Page_Proposal_Insert.md)
+- [One_Page_Proposal_Insert.md](../../One_Page_Proposal_Insert.md)
 
 Optional support:
 
@@ -38,7 +38,7 @@ Use when:
 
 Send:
 
-- [Broker_Proposal_Insert.md](../Broker_Proposal_Insert.md)
+- [Broker_Proposal_Insert.md](../../Broker_Proposal_Insert.md)
 
 Optional support:
 
@@ -53,7 +53,7 @@ Use when:
 
 Send:
 
-- [Merchant_Banker_Proposal_Insert.md](../Merchant_Banker_Proposal_Insert.md)
+- [Merchant_Banker_Proposal_Insert.md](../../Merchant_Banker_Proposal_Insert.md)
 
 Optional support:
 
@@ -67,7 +67,7 @@ Use when:
 
 Send:
 
-- [Issuer_Proposal_Insert.md](../Issuer_Proposal_Insert.md)
+- [Issuer_Proposal_Insert.md](../../Issuer_Proposal_Insert.md)
 
 Optional support:
 
@@ -117,9 +117,9 @@ Use when:
 
 If the recipient challenges a claim or asks for proof, move to:
 
-1. [Customer_Facing_Claims_Pack.md](../Customer_Facing_Claims_Pack.md)
-2. [Legal_Claim_Citation_Appendix.md](../Legal_Claim_Citation_Appendix.md)
-3. [Authoritative_Source_Register.md](../Authoritative_Source_Register.md)
+1. [Customer_Facing_Claims_Pack.md](../../Customer_Facing_Claims_Pack.md)
+2. [Legal_Claim_Citation_Appendix.md](../../Legal_Claim_Citation_Appendix.md)
+3. [Authoritative_Source_Register.md](../../Authoritative_Source_Register.md)
 
 Do not improvise new legal or factual claims in outbound material without updating those source documents first.
 

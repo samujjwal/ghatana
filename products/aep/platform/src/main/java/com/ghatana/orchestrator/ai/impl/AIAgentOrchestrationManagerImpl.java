@@ -5,6 +5,8 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.ghatana.aep.agent.AepContextBridge;
 import com.ghatana.aep.domain.agent.registry.AgentExecutionContext;
 import com.ghatana.agent.framework.api.AgentContext;
+import com.ghatana.agent.framework.memory.Episode;
+import com.ghatana.agent.framework.memory.MemoryFilter;
 import com.ghatana.agent.framework.runtime.AgentTurnPipeline;
 import com.ghatana.agent.registry.service.AgentRegistryService;
 import com.ghatana.datacloud.spi.EventLogStore;
@@ -27,6 +29,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ExecutorService;
@@ -83,8 +86,8 @@ public class AIAgentOrchestrationManagerImpl implements AIAgentOrchestrationMana
     private final AepContextBridge contextBridge;
 
     /**
-     * Optional: when non-null, all state mutations are appended as events for
-     * durable event-sourcing (YAPPC-Ph1e).
+     * Durable event log for event-sourced orchestrator state.
+     * All state mutations are appended here; state is rebuilt from the log on startup.
      */
     private final EventLogStore eventLogStore;
 
@@ -116,7 +119,7 @@ public class AIAgentOrchestrationManagerImpl implements AIAgentOrchestrationMana
      * @param metrics              metrics collector
      * @param executorService      async executor
      * @param contextBridge        AEP context bridge
-     * @param eventLogStore        event log store for durable state sourcing (may be {@code null})
+     * @param eventLogStore        event log store for durable event-sourced state (never {@code null})
      * @param systemTenantId       tenant id for orchestration events (default: {@code "aep-system"})
      */
     public AIAgentOrchestrationManagerImpl(
@@ -136,7 +139,7 @@ public class AIAgentOrchestrationManagerImpl implements AIAgentOrchestrationMana
         this.metrics = metrics;
         this.executorService = executorService;
         this.contextBridge = contextBridge;
-        this.eventLogStore = eventLogStore;
+        this.eventLogStore = Objects.requireNonNull(eventLogStore, "eventLogStore required — use EventLogStore.noOp() for tests/dev");
         this.systemTenant = TenantContext.of(systemTenantId != null ? systemTenantId : "aep-system");
     }
 
@@ -331,12 +334,38 @@ public class AIAgentOrchestrationManagerImpl implements AIAgentOrchestrationMana
         AgentTurnPipeline<Event, List<Event>> pipeline =
                 pipelineCache.computeIfAbsent(currentAgentId, this::buildPipeline);
 
-        // Fan out: one Promise per input event, all dispatched without blocking.
-        List<Promise<List<Event>>> eventPromises = currentEvents.stream()
-                .map(event -> pipeline.execute(event, agentCtx))
-                .toList();
+        // Pre-fetch recent episodes for perceive() context enrichment (GAA PERCEIVE phase).
+        // Results are injected into the AgentContext metadata so that perceive() can prepend
+        // them to the input synchronously without violating the no-getResult() rule.
+        MemoryFilter recentFilter = MemoryFilter.builder().agentId(currentAgentId).build();
+        return agentCtx.getMemoryStore()
+                .queryEpisodes(recentFilter, 5)
+                .then(
+                    episodes -> Promise.of(episodes),
+                    e -> {
+                        // Episode pre-fetch failure is non-fatal; proceed without enrichment.
+                        log.debug("agent={} episode pre-fetch failed (non-fatal): {}", currentAgentId, e.getMessage());
+                        return Promise.of(List.<Episode>of());
+                    })
+                .then(recentEpisodes -> {
+                    if (!recentEpisodes.isEmpty()) {
+                        StringBuilder sb = new StringBuilder();
+                        for (Episode ep : recentEpisodes) {
+                            sb.append("[episode ").append(ep.getTimestamp()).append("] ")
+                              .append(truncateEpisodeText(ep.getInput(), 120))
+                              .append(" → ")
+                              .append(truncateEpisodeText(ep.getOutput(), 120))
+                              .append('\n');
+                        }
+                        agentCtx.setMetadata("recentEpisodesSummary", sb.toString());
+                    }
 
-        return Promises.toList(eventPromises)
+                    // Fan out: one Promise per input event, all dispatched without blocking.
+                    List<Promise<List<Event>>> eventPromises = currentEvents.stream()
+                            .map(event -> pipeline.execute(event, agentCtx))
+                            .toList();
+                    return Promises.toList(eventPromises);
+                })
                 .map(results -> {
                     List<Event> accumulated = new ArrayList<>();
                     for (List<Event> outEvents : results) {
@@ -366,6 +395,15 @@ public class AIAgentOrchestrationManagerImpl implements AIAgentOrchestrationMana
                     log.error("Agent chain {} failed at step {} (agent {})", chainId, stepIndex, currentAgentId, e);
                     return new RuntimeException("Chain execution failed at step " + stepIndex + " (agent " + currentAgentId + ")", e);
                 });
+    }
+
+    /**
+     * Truncates a string to {@code maxLen} characters, appending an ellipsis when cut.
+     * Used when formatting episode summaries for perceive() context injection.
+     */
+    private static String truncateEpisodeText(String text, int maxLen) {
+        if (text == null || text.length() <= maxLen) return String.valueOf(text);
+        return text.substring(0, maxLen) + "…";
     }
 
     @Override
@@ -549,8 +587,7 @@ public class AIAgentOrchestrationManagerImpl implements AIAgentOrchestrationMana
      * Appends an orchestration state-mutation event to the {@link EventLogStore}.
      *
      * <p>This method is fire-and-forget: failures are logged as warnings and never
-     * propagate to the caller. If {@code eventLogStore} is {@code null} (in-memory mode),
-     * this method is a no-op.
+     * propagate to the caller.
      *
      * @param eventType the event type string (one of the {@code EVT_*} constants)
      * @param payload   key-value data describing the mutation
@@ -559,9 +596,6 @@ public class AIAgentOrchestrationManagerImpl implements AIAgentOrchestrationMana
      * @doc.gaa.lifecycle capture
      */
     private void appendStateEvent(String eventType, Map<String, Object> payload) {
-        if (eventLogStore == null) {
-            return; // no-op when running without event log (dev/test mode)
-        }
         try {
             byte[] payloadBytes = MAPPER.writeValueAsBytes(payload);
             EventLogStore.EventEntry entry = EventLogStore.EventEntry.builder()
@@ -584,12 +618,10 @@ public class AIAgentOrchestrationManagerImpl implements AIAgentOrchestrationMana
      * Replays all orchestration events from the event log to rebuild in-memory state.
      *
      * <p>Call this during application startup <em>before</em> handling any requests.
-     * The method reads events in batches from offset 0, processes recognized event types
+     * The method reads events in batches from offset 0, processes recognised event types
      * to restore {@code agentDefinitions}, {@code agentChains}, and
      * {@code executionStatuses}, and updates the execution-ID counter to avoid
      * ID collisions after restart.
-     *
-     * <p>If {@code eventLogStore} is {@code null}, this method returns immediately.
      *
      * @return a {@link Promise} that completes when the replay is done
      *
@@ -597,58 +629,74 @@ public class AIAgentOrchestrationManagerImpl implements AIAgentOrchestrationMana
      * @doc.gaa.lifecycle perceive
      */
     public Promise<Void> rebuildFromEventLog() {
-        if (eventLogStore == null) {
-            log.debug("[EventSource] rebuildFromEventLog skipped — no event store configured");
-            return Promise.complete();
-        }
-        return Promise.ofBlocking(blockingExecutor, () -> {
-            log.info("[EventSource] Rebuilding orchestration state from event log (tenant={})", systemTenant.tenantId());
-            int batchSize = 500;
-            long offset = 0;
-            int totalReplayed = 0;
-            long maxExecutionId = 0;
+        log.info("[EventSource] Rebuilding orchestration state from event log (tenant={})", systemTenant.tenantId());
+        return rebuildFromEventLogBatch(0L, 0, 0L);
+    }
 
-            while (true) {
-                // Safe: runs on blocking executor, never on event loop
-                List<EventLogStore.EventEntry> batch = eventLogStore
-                        .read(systemTenant, Offset.of(offset), batchSize)
-                        .getResult();
-
-                if (batch == null || batch.isEmpty()) break;
-
-                for (EventLogStore.EventEntry entry : batch) {
-                    try {
-                        replayEvent(entry);
-                        totalReplayed++;
-                        // Track highest execution counter to avoid ID collisions post-restart
-                        if (entry.eventType().equals(EVT_EXECUTION_STARTED)) {
-                            Map<String, Object> data = MAPPER.readValue(
-                                    toBytes(entry.payload()), new TypeReference<Map<String, Object>>() {});
-                            String execId = (String) data.get("executionId");
-                            if (execId != null && execId.startsWith("exec_")) {
-                                try {
-                                    long counter = Long.parseLong(execId.substring(5));
-                                    if (counter > maxExecutionId) maxExecutionId = counter;
-                                } catch (NumberFormatException ignored) { /* non-numeric suffix */ }
-                            }
-                        }
-                    } catch (Exception e) {
-                        log.warn("[EventSource] failed to replay event id={} type={}: {}",
-                                entry.eventId(), entry.eventType(), e.getMessage());
+    /**
+     * Reads one batch of event-log entries and schedules the next batch recursively.
+     *
+     * <p>This approach avoids {@code .getResult()} (which blocks the calling
+     * thread and returns {@code null} on an unresolved Promise) by chaining
+     * Promises with {@link Promise#then}. Each batch processes up to
+     * {@code batchSize} entries on the event loop; the per-entry work is pure
+     * in-memory so it does not stall the loop.
+     *
+     * @param offset          log offset of the next entry to read
+     * @param totalReplayed   cumulative count of replayed entries so far
+     * @param maxExecutionId  highest execution counter seen so far
+     * @return promise that completes when all entries have been replayed
+     */
+    private Promise<Void> rebuildFromEventLogBatch(long offset, int totalReplayed, long maxExecutionId) {
+        final int batchSize = 500;
+        return eventLogStore.read(systemTenant, Offset.of(offset), batchSize)
+                .then(batch -> {
+                    if (batch == null || batch.isEmpty()) {
+                        finaliseRebuild(totalReplayed, maxExecutionId);
+                        return Promise.complete();
                     }
-                }
 
-                offset += batch.size();
-                if (batch.size() < batchSize) break; // last page
-            }
+                    int newReplayed = totalReplayed;
+                    long newMaxExecId = maxExecutionId;
 
-            if (maxExecutionId > 0) {
-                executionIdCounter.set(maxExecutionId);
-            }
-            log.info("[EventSource] Rebuilt state: {} agents, {} chains, {} executions replayed (total events={})",
-                    agentDefinitions.size(), agentChains.size(), executionStatuses.size(), totalReplayed);
-            return null;
-        });
+                    for (EventLogStore.EventEntry entry : batch) {
+                        try {
+                            replayEvent(entry);
+                            newReplayed++;
+                            // Track highest execution counter to avoid ID collisions post-restart
+                            if (entry.eventType().equals(EVT_EXECUTION_STARTED)) {
+                                Map<String, Object> data = MAPPER.readValue(
+                                        toBytes(entry.payload()), new TypeReference<Map<String, Object>>() {});
+                                String execId = (String) data.get("executionId");
+                                if (execId != null && execId.startsWith("exec_")) {
+                                    try {
+                                        long counter = Long.parseLong(execId.substring(5));
+                                        if (counter > newMaxExecId) newMaxExecId = counter;
+                                    } catch (NumberFormatException ignored) { /* non-numeric suffix */ }
+                                }
+                            }
+                        } catch (Exception e) {
+                            log.warn("[EventSource] failed to replay event id={} type={}: {}",
+                                    entry.eventId(), entry.eventType(), e.getMessage());
+                        }
+                    }
+
+                    if (batch.size() < batchSize) {
+                        // Last page — no more entries to read
+                        finaliseRebuild(newReplayed, newMaxExecId);
+                        return Promise.complete();
+                    }
+
+                    return rebuildFromEventLogBatch(offset + batch.size(), newReplayed, newMaxExecId);
+                });
+    }
+
+    private void finaliseRebuild(int totalReplayed, long maxExecutionId) {
+        if (maxExecutionId > 0) {
+            executionIdCounter.set(maxExecutionId);
+        }
+        log.info("[EventSource] Rebuilt state: {} agents, {} chains, {} executions replayed (total events={})",
+                agentDefinitions.size(), agentChains.size(), executionStatuses.size(), totalReplayed);
     }
 
     /**

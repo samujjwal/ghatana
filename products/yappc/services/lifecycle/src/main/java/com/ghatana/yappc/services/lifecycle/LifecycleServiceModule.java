@@ -35,6 +35,7 @@ import com.ghatana.core.operator.catalog.OperatorCatalog;
 import com.ghatana.core.template.YamlTemplateEngine;
 import com.ghatana.yappc.agent.AepEventPublisher;
 import com.ghatana.yappc.agent.AepHttpEventPublisher;
+import com.ghatana.yappc.agent.YappcAgentSystem;
 import com.ghatana.yappc.services.lifecycle.AepEventBridge;
 
 import javax.sql.DataSource;
@@ -69,6 +70,7 @@ import com.ghatana.agent.memory.store.semantic.SemanticMemoryManager;
 import com.ghatana.agent.memory.store.taskstate.JdbcTaskStateStore;
 import com.ghatana.agent.memory.store.taskstate.TaskStateStore;
 // ──────────────────────────────────────────────────────────────────────────
+import io.activej.eventloop.Eventloop;
 import io.activej.inject.annotation.Provides;
 import io.activej.inject.module.AbstractModule;
 import org.slf4j.Logger;
@@ -740,6 +742,37 @@ public class LifecycleServiceModule extends AbstractModule {
     }
 
     /**
+     * Provides the unified {@link YappcAgentSystem} that bootstraps all 27+ SDLC
+     * specialist agents and planner agents.
+     *
+     * <p>Initialization is deferred — callers must invoke {@code yappcAgentSystem.initialize()}
+     * at service startup (typically from {@link YappcAgentOrchestrationBootstrapper}).
+     *
+     * @param eventloop       ActiveJ eventloop for async initialization
+     * @param memoryStore     GAA memory plane for agent state
+     * @param aepEventPublisher publisher for SDLC step events (injected from DI container)
+     * @return configured but not yet initialized YappcAgentSystem
+     * @doc.type method
+     * @doc.purpose Provides unified YAPPC agent system for SDLC specialist and planner agents
+     * @doc.layer product
+     * @doc.pattern Facade
+     * @doc.gaa.lifecycle initialize
+     */
+    @Provides
+    YappcAgentSystem yappcAgentSystem(
+            Eventloop eventloop,
+            MemoryStore memoryStore,
+            AepEventPublisher aepEventPublisher) {
+        logger.info("Creating YappcAgentSystem (YAPPC-Ph9.2) — AEP publisher wired: {}",
+                aepEventPublisher.getClass().getSimpleName());
+        return YappcAgentSystem.builder()
+                .eventloop(eventloop)
+                .memoryStore(memoryStore)
+                .aepEventPublisher(aepEventPublisher)
+                .build();
+    }
+
+    /**
      * Provides {@link AgentExecutorOperator} — executes agents referenced by dispatch
      * events and emits {@code agent.result.produced} events with execution outcomes.
      *
@@ -750,9 +783,9 @@ public class LifecycleServiceModule extends AbstractModule {
      * @doc.gaa.lifecycle act
      */
     @Provides
-    AgentExecutorOperator agentExecutorOperator() {
-        logger.info("Creating AgentExecutorOperator (YAPPC-Ph6)");
-        return new AgentExecutorOperator();
+    AgentExecutorOperator agentExecutorOperator(YappcAgentSystem yappcAgentSystem) {
+        logger.info("Creating AgentExecutorOperator (YAPPC-Ph6) — wired to YappcAgentSystem");
+        return new AgentExecutorOperator(yappcAgentSystem);
     }
 
     /**

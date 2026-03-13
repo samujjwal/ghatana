@@ -18,9 +18,11 @@ package com.ghatana.datacloud.brain;
 
 import com.ghatana.datacloud.DataRecord;
 import com.ghatana.datacloud.attention.SalienceScore;
+import com.ghatana.datacloud.attention.AttentionManager;
 import com.ghatana.datacloud.pattern.PatternRecord;
 import com.ghatana.datacloud.spi.SimilaritySearchCapability;
 import com.ghatana.datacloud.reflex.ReflexOutcome;
+import com.ghatana.datacloud.workspace.GlobalWorkspace;
 import io.activej.promise.Promise;
 import lombok.Builder;
 import lombok.Value;
@@ -246,6 +248,41 @@ public interface DataCloudBrain {
      * @return Promise containing health status
      */
     Promise<HealthStatus> health();
+
+    /**
+     * Returns the underlying {@link GlobalWorkspace} when accessible.
+     *
+     * <p>Implementations that support direct workspace access (e.g. for SSE subscriptions or
+     * salience lookup) should override this default. Other implementations may return
+     * {@link Optional#empty()}.
+     *
+     * @return optional workspace reference
+     *
+     * @doc.type method
+     * @doc.purpose Workspace accessor for HTTP / SSE layer
+     * @doc.layer core
+     * @doc.pattern Accessor
+     */
+    default Optional<GlobalWorkspace> getWorkspace() {
+        return Optional.empty();
+    }
+
+    /**
+     * Returns the underlying {@link AttentionManager} when accessible.
+     *
+     * <p>Implementations that support direct attention management (e.g. for threshold inspection
+     * or manual elevation) should override this default.
+     *
+     * @return optional attention-manager reference
+     *
+     * @doc.type method
+     * @doc.purpose AttentionManager accessor for HTTP layer
+     * @doc.layer core
+     * @doc.pattern Accessor
+     */
+    default Optional<AttentionManager> getAttentionManager() {
+        return Optional.empty();
+    }
 
     // ═══════════════════════════════════════════════════════════════════════════
     // Types

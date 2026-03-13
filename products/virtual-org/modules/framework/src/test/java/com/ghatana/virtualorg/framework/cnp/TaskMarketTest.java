@@ -1,6 +1,7 @@
 package com.ghatana.virtualorg.framework.cnp;
 
 import com.ghatana.platform.domain.auth.TenantId;
+import com.ghatana.platform.testing.activej.EventloopTestBase;
 import com.ghatana.virtualorg.framework.task.TaskDefinition;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
@@ -16,7 +17,7 @@ import static org.assertj.core.api.Assertions.assertThat;
  * Tests for the Contract Net Protocol implementation.
  */
 @DisplayName("Contract Net Protocol (Task Market) Tests")
-class TaskMarketTest {
+class TaskMarketTest extends EventloopTestBase {
 
     private TaskMarket market;
     private TenantId tenantId;
@@ -40,9 +41,9 @@ class TaskMarketTest {
     void shouldAnnounceTaskAndAcceptBids() {
         TaskDefinition task = createTestTask("Code Review");
 
-        TaskAnnouncement announcement = market.announce(
+        TaskAnnouncement announcement = runPromise(() -> market.announce(
                 task, "manager-1", "engineering", Duration.ofMinutes(5)
-        ).getResult();
+        ));
 
         assertThat(announcement.id()).isNotNull();
         assertThat(announcement.task()).isEqualTo(task);
@@ -55,10 +56,10 @@ class TaskMarketTest {
                 .confidence(0.9)
                 .build();
 
-        boolean accepted = market.submitBid(bid).getResult();
+        boolean accepted = runPromise(() -> market.submitBid(bid));
         assertThat(accepted).isTrue();
 
-        List<TaskBid> bids = market.getBids(announcement.id()).getResult();
+        List<TaskBid> bids = runPromise(() -> market.getBids(announcement.id()));
         assertThat(bids).hasSize(1);
     }
 
@@ -67,9 +68,9 @@ class TaskMarketTest {
     void shouldAwardContractToBestBidder() {
         TaskDefinition task = createTestTask("Feature Implementation");
 
-        TaskAnnouncement announcement = market.announce(
+        TaskAnnouncement announcement = runPromise(() -> market.announce(
                 task, "manager-1", "engineering", Duration.ofMinutes(5)
-        ).getResult();
+        ));
 
         // Submit multiple bids with different scores
         TaskBid lowBid = TaskBid.builder(announcement.id(), "agent-low")
@@ -86,10 +87,10 @@ class TaskMarketTest {
                 .currentWorkload(1)
                 .build();
 
-        market.submitBid(lowBid).getResult();
-        market.submitBid(highBid).getResult();
+        runPromise(() -> market.submitBid(lowBid));
+        runPromise(() -> market.submitBid(highBid));
 
-        Optional<TaskBid> winner = market.awardContract(announcement.id()).getResult();
+        Optional<TaskBid> winner = runPromise(() -> market.awardContract(announcement.id()));
 
         assertThat(winner).isPresent();
         assertThat(winner.get().agentId()).isEqualTo("agent-high");
@@ -120,9 +121,9 @@ class TaskMarketTest {
     void shouldRejectBidsAfterDeadline() throws InterruptedException {
         TaskDefinition task = createTestTask("Urgent Task");
 
-        TaskAnnouncement announcement = market.announce(
+        TaskAnnouncement announcement = runPromise(() -> market.announce(
                 task, "manager-1", "engineering", Duration.ofMillis(10)
-        ).getResult();
+        ));
 
         // Wait for bidding period to end
         Thread.sleep(50);
@@ -131,7 +132,7 @@ class TaskMarketTest {
                 .confidence(0.9)
                 .build();
 
-        boolean accepted = market.submitBid(lateBid).getResult();
+        boolean accepted = runPromise(() -> market.submitBid(lateBid));
         assertThat(accepted).isFalse();
     }
 
@@ -140,11 +141,11 @@ class TaskMarketTest {
     void shouldHandleNoBidsScenario() {
         TaskDefinition task = createTestTask("Unpopular Task");
 
-        TaskAnnouncement announcement = market.announce(
+        TaskAnnouncement announcement = runPromise(() -> market.announce(
                 task, "manager-1", "engineering", Duration.ofMinutes(5)
-        ).getResult();
+        ));
 
-        Optional<TaskBid> winner = market.awardContract(announcement.id()).getResult();
+        Optional<TaskBid> winner = runPromise(() -> market.awardContract(announcement.id()));
 
         assertThat(winner).isEmpty();
     }
@@ -155,10 +156,10 @@ class TaskMarketTest {
         TaskDefinition task1 = createTestTask("Task 1");
         TaskDefinition task2 = createTestTask("Task 2");
 
-        market.announce(task1, "manager-1", "dept-1", Duration.ofMinutes(5)).getResult();
-        market.announce(task2, "manager-1", "dept-1", Duration.ofMinutes(5)).getResult();
+        runPromise(() -> market.announce(task1, "manager-1", "dept-1", Duration.ofMinutes(5)));
+        runPromise(() -> market.announce(task2, "manager-1", "dept-1", Duration.ofMinutes(5)));
 
-        List<TaskAnnouncement> openAnnouncements = market.getOpenAnnouncements().getResult();
+        List<TaskAnnouncement> openAnnouncements = runPromise(() -> market.getOpenAnnouncements());
         assertThat(openAnnouncements).hasSize(2);
     }
 }

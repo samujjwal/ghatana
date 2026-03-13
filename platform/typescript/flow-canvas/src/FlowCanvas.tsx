@@ -40,6 +40,7 @@ import ReactFlow, {
   type OnNodesChange,
   type OnEdgesChange,
   type OnConnect,
+  type ReactFlowInstance,
 } from '@xyflow/react';
 
 import HotTierNode from './nodes/HotTierNode';
@@ -47,6 +48,8 @@ import WarmTierNode from './nodes/WarmTierNode';
 import ColdTierNode from './nodes/ColdTierNode';
 import ArchiveTierNode from './nodes/ArchiveTierNode';
 import AgentNode from './nodes/AgentNode';
+import PipelineStageNode from './nodes/PipelineStageNode';
+import OperatorNode from './nodes/OperatorNode';
 import DataFlowEdge from './edges/DataFlowEdge';
 import FlowControls, { type FlowControlsProps } from './controls/FlowControls';
 import type { FlowNode, FlowEdge } from './types';
@@ -59,6 +62,8 @@ const NODE_TYPES = {
   coldTier: ColdTierNode,
   archiveTier: ArchiveTierNode,
   agent: AgentNode,
+  pipelineStage: PipelineStageNode,
+  operator: OperatorNode,
 } as const;
 
 const EDGE_TYPES = {
@@ -78,6 +83,14 @@ export interface FlowCanvasProps {
   onEdgesChange?: OnEdgesChange<FlowEdge>;
   /** Callback fired when a new connection is drawn. */
   onConnect?: OnConnect;
+  /** Callback fired when a node is clicked. */
+  onNodeClick?: (event: React.MouseEvent, node: FlowNode) => void;
+  /** Callback fired when an edge is clicked. */
+  onEdgeClick?: (event: React.MouseEvent, edge: FlowEdge) => void;
+  /** Callback fired when the canvas background (pane) is clicked. */
+  onPaneClick?: (event: React.MouseEvent) => void;
+  /** Callback fired when the ReactFlow instance is ready. */
+  onInit?: (instance: ReactFlowInstance<FlowNode, FlowEdge>) => void;
   /**
    * Whether nodes can be arranged by user drag. Default: true.
    * Set to false for read-only topology displays.
@@ -87,6 +100,15 @@ export interface FlowCanvasProps {
   panOnDrag?: boolean;
   /** Enable scroll-to-zoom. Default: true. */
   zoomOnScroll?: boolean;
+  /** Snap nodes to a grid when dragging. Default: false. */
+  snapToGrid?: boolean;
+  /** Grid size for snap. Default: [16, 16]. */
+  snapGrid?: [number, number];
+  /**
+   * Key code that deletes selected elements.
+   * Set to null to disable built-in delete behavior.
+   */
+  deleteKeyCode?: string | null;
   /** Additional custom node types merged with the built-in ones. */
   additionalNodeTypes?: Record<string, React.ComponentType<Node>>;
   /** Additional custom edge types merged with the built-in ones. */
@@ -104,6 +126,14 @@ export interface FlowCanvasProps {
   style?: React.CSSProperties;
   /** aria-label for accessibility. */
   ariaLabel?: string;
+  /** Drag-over handler for external drag-and-drop (e.g. palette → canvas). */
+  onDrop?: (event: React.DragEvent) => void;
+  /** Drag-over handler required for drop targets. */
+  onDragOver?: (event: React.DragEvent) => void;
+  /** Key-down handler on the canvas wrapper for keyboard shortcuts. */
+  onKeyDown?: (event: React.KeyboardEvent) => void;
+  /** tabIndex on the canvas wrapper; needed for keyboard focus. Default: -1 when onKeyDown is set. */
+  tabIndex?: number;
 }
 
 // ==================== Component ====================
@@ -118,9 +148,16 @@ function FlowCanvasInner({
   onNodesChange,
   onEdgesChange,
   onConnect,
+  onNodeClick,
+  onEdgeClick,
+  onPaneClick,
+  onInit,
   nodesDraggable = true,
   panOnDrag = true,
   zoomOnScroll = true,
+  snapToGrid = false,
+  snapGrid = [16, 16],
+  deleteKeyCode,
   additionalNodeTypes,
   additionalEdgeTypes,
   controls = {},
@@ -128,6 +165,10 @@ function FlowCanvasInner({
   className,
   style,
   ariaLabel = 'Flow diagram canvas',
+  onDrop,
+  onDragOver,
+  onKeyDown,
+  tabIndex,
 }: FlowCanvasProps) {
   const mergedNodeTypes = useMemo(
     () => ({ ...NODE_TYPES, ...additionalNodeTypes }),
@@ -152,6 +193,10 @@ function FlowCanvasInner({
       aria-label={ariaLabel}
       className={className}
       style={{ width: '100%', height: '100%', ...style }}
+      onDrop={onDrop}
+      onDragOver={onDragOver}
+      onKeyDown={onKeyDown}
+      tabIndex={onKeyDown !== undefined && tabIndex === undefined ? 0 : tabIndex}
     >
       <ReactFlow
         nodes={nodes}
@@ -159,11 +204,18 @@ function FlowCanvasInner({
         onNodesChange={onNodesChange}
         onEdgesChange={onEdgesChange}
         onConnect={handleConnect}
+        onNodeClick={onNodeClick as never}
+        onEdgeClick={onEdgeClick as never}
+        onPaneClick={onPaneClick}
+        onInit={onInit as never}
         nodeTypes={mergedNodeTypes}
         edgeTypes={mergedEdgeTypes}
         nodesDraggable={nodesDraggable}
         panOnDrag={panOnDrag}
         zoomOnScroll={zoomOnScroll}
+        snapToGrid={snapToGrid}
+        snapGrid={snapGrid}
+        deleteKeyCode={deleteKeyCode}
         fitView
         attributionPosition="bottom-left"
         proOptions={{ hideAttribution: true }}

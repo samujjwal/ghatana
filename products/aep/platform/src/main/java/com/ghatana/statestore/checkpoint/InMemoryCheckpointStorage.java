@@ -10,6 +10,14 @@ import java.util.concurrent.ConcurrentHashMap;
 /**
  * In-memory implementation of CheckpointStorage for testing.
  * Does not persist metadata to disk - all data is lost on restart.
+ *
+ * <p><b>Testing use only.</b> For production use, inject {@code PostgresqlCheckpointStore}
+ * via the ActiveJ DI module.
+ *
+ * @doc.type class
+ * @doc.purpose In-memory CheckpointStorage for unit and integration tests
+ * @doc.layer product
+ * @doc.pattern Null Object, Test Double
  */
 public class InMemoryCheckpointStorage implements CheckpointStorage {
     

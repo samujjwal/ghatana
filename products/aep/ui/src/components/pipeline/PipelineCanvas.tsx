@@ -1,34 +1,28 @@
 /**
- * PipelineCanvas — Main ReactFlow canvas for visual pipeline design.
+ * PipelineCanvas — Main canvas for visual pipeline design.
  *
- * Orchestrates:
+ * Built on `@ghatana/flow-canvas` (platform shared canvas). Orchestrates:
  * - Drag-and-drop from StagePalette to create stage/connector nodes
  * - Edge connections between stages (sequential pipeline flow)
  * - Selection sync with Jotai store → PipelinePropertyPanel
- * - Keyboard shortcuts (Delete, Ctrl+Z, Ctrl+Y)
- * - Minimap, controls, grid background
+ * - Keyboard shortcuts (Delete, Backspace)
  *
  * @doc.type component
- * @doc.purpose Main pipeline editor canvas
+ * @doc.purpose Main pipeline editor canvas — wraps @ghatana/flow-canvas
  * @doc.layer frontend
  */
 import React, { useCallback, useEffect, useRef, type DragEvent } from 'react';
 import { useAtom, useSetAtom } from 'jotai';
 import {
-  ReactFlow,
+  FlowCanvas,
   addEdge,
-  Background,
-  Controls,
-  MiniMap,
   useNodesState,
   useEdgesState,
-  type Connection,
   type Node,
   type Edge,
+  type Connection,
   type ReactFlowInstance,
-  BackgroundVariant,
-} from '@xyflow/react';
-import '@xyflow/react/dist/style.css';
+} from '@ghatana/flow-canvas';
 
 import { StageNode, ConnectorNode } from './nodes';
 import {
@@ -50,11 +44,11 @@ import type {
 
 type CanvasNode = Node<StageNodeData | ConnectorNodeData>;
 
-// ─── Custom node type registry ───────────────────────────────────────
+// ─── AEP-specific node types (passed as additionalNodeTypes to FlowCanvas) ────
 
-const nodeTypes = {
-  stage: StageNode,
-  connector: ConnectorNode,
+const PIPELINE_NODE_TYPES = {
+  stage: StageNode as React.ComponentType<Node>,
+  connector: ConnectorNode as React.ComponentType<Node>,
 };
 
 // ─── Helpers ─────────────────────────────────────────────────────────
@@ -67,7 +61,6 @@ function nextId(prefix: string): string {
 // ─── Component ───────────────────────────────────────────────────────
 
 export function PipelineCanvas() {
-  const reactFlowWrapper = useRef<HTMLDivElement>(null);
   const rfInstance = useRef<ReactFlowInstance | null>(null);
 
   // Jotai ↔ local state sync
@@ -79,11 +72,11 @@ export function PipelineCanvas() {
   const [history, setHistory] = useAtom(historyAtom);
   const [historyIndex, setHistoryIndex] = useAtom(historyIndexAtom);
 
-  // ReactFlow local state
+  // ReactFlow local state (using re-exported hooks from flow-canvas)
   const [nodes, setNodes, onNodesChange] = useNodesState<CanvasNode>(storeNodes);
   const [edges, setEdges, onEdgesChange] = useEdgesState(storeEdges);
 
-  // ── Reseed ReactFlow when Jotai store is mutated externally (e.g. handleNew, undo/redo)
+  // ── Reseed local state when Jotai store changes externally (undo/redo, handleNew)
   useEffect(() => {
     setNodes(storeNodes);
   }, [storeNodes, setNodes]);
@@ -161,13 +154,11 @@ export function PipelineCanvas() {
       const nodeType = e.dataTransfer.getData('application/reactflow-type');
       const rawData = e.dataTransfer.getData('application/reactflow-data');
       if (!nodeType || !rawData) return;
-
-      const bounds = reactFlowWrapper.current?.getBoundingClientRect();
-      if (!bounds || !rfInstance.current) return;
+      if (!rfInstance.current) return;
 
       const position = rfInstance.current.screenToFlowPosition({
-        x: e.clientX - bounds.left,
-        y: e.clientY - bounds.top,
+        x: e.clientX,
+        y: e.clientY,
       });
 
       let newNode: CanvasNode;
@@ -181,12 +172,7 @@ export function PipelineCanvas() {
           agentCount: palette.defaultAgents?.length ?? 0,
           description: palette.description,
         };
-        newNode = {
-          id: nextId('stage'),
-          type: 'stage',
-          position,
-          data,
-        };
+        newNode = { id: nextId('stage'), type: 'stage', position, data };
       } else {
         const palette: ConnectorPaletteItem = JSON.parse(rawData);
         const data: ConnectorNodeData = {
@@ -195,12 +181,7 @@ export function PipelineCanvas() {
           type: palette.type,
           direction: palette.direction,
         };
-        newNode = {
-          id: nextId('connector'),
-          type: 'connector',
-          position,
-          data,
-        };
+        newNode = { id: nextId('connector'), type: 'connector', position, data };
       }
 
       setNodes((nds) => {
@@ -235,48 +216,34 @@ export function PipelineCanvas() {
         });
       }
     },
-    [setNodes, setEdges, setStoreNodes, setStoreEdges, setDirty, pushHistory, nodes, edges],
+    [setNodes, setEdges, setStoreNodes, setStoreEdges, setDirty],
   );
 
   // ── Render ──────────────────────────────────────────────────────
 
   return (
-    <div
-      ref={reactFlowWrapper}
-      className="flex-1 h-full"
-      onDragOver={onDragOver}
+    <FlowCanvas
+      nodes={nodes as never}
+      edges={edges as never}
+      onNodesChange={onNodesChange as never}
+      onEdgesChange={onEdgesChange as never}
+      onConnect={onConnect}
+      onNodeClick={onNodeClick as never}
+      onEdgeClick={onEdgeClick as never}
+      onPaneClick={onPaneClick}
+      onInit={(instance) => {
+        rfInstance.current = instance as never;
+      }}
+      additionalNodeTypes={PIPELINE_NODE_TYPES}
+      snapToGrid
+      snapGrid={[16, 16]}
+      deleteKeyCode={null}
       onDrop={onDrop}
+      onDragOver={onDragOver}
       onKeyDown={onKeyDown}
-      tabIndex={0}
-      data-testid="pipeline-canvas"
-    >
-      <ReactFlow
-        nodes={nodes}
-        edges={edges}
-        onNodesChange={onNodesChange}
-        onEdgesChange={onEdgesChange}
-        onConnect={onConnect}
-        onNodeClick={onNodeClick}
-        onEdgeClick={onEdgeClick}
-        onPaneClick={onPaneClick}
-        onInit={(instance) => {
-          rfInstance.current = instance as unknown as ReactFlowInstance;
-        }}
-        nodeTypes={nodeTypes}
-        fitView
-        snapToGrid
-        snapGrid={[16, 16]}
-        deleteKeyCode={null} // We handle delete ourselves
-      >
-        <Background variant={BackgroundVariant.Dots} gap={16} size={1} />
-        <Controls position="bottom-right" />
-        <MiniMap
-          nodeStrokeWidth={3}
-          pannable
-          zoomable
-          position="bottom-left"
-        />
-      </ReactFlow>
-    </div>
+      className="flex-1 h-full"
+      ariaLabel="AEP pipeline builder canvas"
+    />
   );
 }
+

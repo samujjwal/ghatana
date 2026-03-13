@@ -7,8 +7,9 @@ This directory contains implementation-ready epics for the **Multi-Domain Operat
 - `docs/Siddhanta_Platform_Specification.md`
 - `docs/siddhanta.md`
 - `docs/capital_markets_platform_prompt_v2.1.md`
-- `plans/CURRENT_EXECUTION_PLAN.md`
-- `adr/ADR-011_STACK_STANDARDIZATION_AND_GHATANA_PLATFORM_ALIGNMENT.md`
+- `../UNIFIED_IMPLEMENTATION_PLAN.md`
+- `../WEEK_BY_WEEK_IMPLEMENTATION_PLAN.md`
+- `../adr/ADR-011_STACK_STANDARDIZATION_AND_GHATANA_PLATFORM_ALIGNMENT.md`
 - `GENERIC_PLATFORM_EXPANSION_ANALYSIS.md`
 
 The `VERSION:` header inside each epic file is authoritative. The lists below summarize module coverage and names, not a locked version matrix.
@@ -159,12 +160,12 @@ Each epic follows a standardized 16-section format:
 
 ## Implementation Order
 
-**CRITICAL**: Build order is strictly enforced:
+**CRITICAL**: Readiness gates are strictly enforced:
 
-1. **Layer 0 (Kernel)** must reach "Platform Stable" status first
-2. **Layer 1 (Domain)** can only begin after all required Kernel modules are stable
-3. **Layer 2 (Workflow)** can progress after required kernel foundations are stable and relevant domain contracts exist
-4. **Layer 3+ cross-cutting epics** progress after their prerequisite kernel/domain/workflow contracts are stable
+1. **M1A kernel foundations** (K-05, K-07, K-02, K-15) must be stable before dependent epics consume them.
+2. **Domain epics** begin side-by-side once their prerequisite kernel contracts are stable; the Capital Markets pack is the reference implementation, not a post-kernel afterthought.
+3. **Workflow, regulatory, pack-governance, and operations epics** start only after the dependencies listed in `DEPENDENCY_MATRIX.md` and the milestone story files are ready.
+4. **Cross-cutting testing and GA work** follow the story-index sprint plan and the week-by-week readiness gates.
 
 ## Jurisdiction Isolation
 
@@ -188,6 +189,6 @@ For questions or clarifications on epic specifications, refer to:
 
 - Strategic Vision: `siddhanta.md`
 - Technical Specification: `Siddhanta_Platform_Specification.md`
-- Planning Baseline: `plans/CURRENT_EXECUTION_PLAN.md`
-- Stack Baseline: `adr/ADR-011_STACK_STANDARDIZATION_AND_GHATANA_PLATFORM_ALIGNMENT.md`
+- Planning Baseline: `../UNIFIED_IMPLEMENTATION_PLAN.md` + `../WEEK_BY_WEEK_IMPLEMENTATION_PLAN.md`
+- Stack Baseline: `../adr/ADR-011_STACK_STANDARDIZATION_AND_GHATANA_PLATFORM_ALIGNMENT.md`
 - Epic Generation Rules: `capital_markets_platform_prompt_v2.1.md`

@@ -15,7 +15,7 @@
  * @doc.layer frontend
  */
 
-import React, { useState, useCallback } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import {
   Play,
   Save,
@@ -41,32 +41,21 @@ import {
   inputStyles,
     tableStyles,
 } from '../lib/theme';
-import { SavedQueries, type SavedQuery } from '../components/sql/SavedQueries';/**
- * Mock schema data
- */
-const mockSchemas = [
-  {
-    name: 'user_events',
-    tables: ['events', 'sessions', 'page_views'],
-  },
-  {
-    name: 'transactions',
-    tables: ['orders', 'payments', 'refunds'],
-  },
-  {
-    name: 'analytics',
-    tables: ['metrics', 'aggregates', 'reports'],
-  },
-];
+import { SavedQueries, type SavedQuery } from '../components/sql/SavedQueries';
+import { dataCloudApi } from '../lib/api/data-cloud-api';
+import { executeAnalyticsQuery, type QueryResultData } from '../api/analytics.service';
 
-/**
- * Mock query history
- */
-const mockQueryHistory = [
-  { id: 1, query: 'SELECT * FROM events LIMIT 100', timestamp: '2 min ago', duration: '0.23s' },
-  { id: 2, query: 'SELECT COUNT(*) FROM sessions WHERE date > ...', timestamp: '15 min ago', duration: '1.45s' },
-  { id: 3, query: 'SELECT user_id, SUM(amount) FROM orders ...', timestamp: '1 hour ago', duration: '3.21s' },
-];
+interface QueryHistoryItem {
+  id: number;
+  query: string;
+  timestamp: string;
+  duration: string;
+}
+
+interface SchemaItem {
+  name: string;
+  tables: string[];
+}
 
 /**
  * AI Query suggestions
@@ -103,19 +92,9 @@ function AIQueryAssist({
   const handleGenerate = useCallback(async () => {
     if (!naturalQuery.trim()) return;
     setIsGenerating(true);
-    // Simulate AI generation
-    await new Promise((resolve) => setTimeout(resolve, 1000));
-    setGeneratedSql(`-- Generated from: "${naturalQuery}"
-SELECT 
-  user_id,
-  event_type,
-  COUNT(*) as event_count,
-  MAX(timestamp) as last_event
-FROM events
-WHERE timestamp > NOW() - INTERVAL 7 DAY
-GROUP BY user_id, event_type
-ORDER BY event_count DESC
-LIMIT 100;`);
+    // AI SQL generation is not yet available — show the prompt as a comment
+    // so the user can refine it manually.
+    setGeneratedSql(`-- AI SQL generation coming soon.\n-- Your query: "${naturalQuery}"\n-- Please write your SQL query below.\nSELECT * FROM \n`);
     setIsGenerating(false);
   }, [naturalQuery]);
 
@@ -268,17 +247,6 @@ function AISuggestionsSidebar({ suggestions }: { suggestions: typeof AI_SUGGESTI
 /**
  * Mock result data
  */
-const mockResults = {
-  columns: ['id', 'user_id', 'event_type', 'timestamp', 'properties'],
-  rows: [
-    ['evt-001', 'usr-123', 'page_view', '2024-01-12 10:30:00', '{"page": "/home"}'],
-    ['evt-002', 'usr-456', 'click', '2024-01-12 10:31:15', '{"button": "signup"}'],
-    ['evt-003', 'usr-123', 'form_submit', '2024-01-12 10:32:00', '{"form": "contact"}'],
-    ['evt-004', 'usr-789', 'page_view', '2024-01-12 10:33:45', '{"page": "/pricing"}'],
-    ['evt-005', 'usr-456', 'purchase', '2024-01-12 10:35:00', '{"amount": 99.99}'],
-  ],
-};
-
 /**
  * SQL Workspace Page Component
  *
@@ -287,23 +255,53 @@ const mockResults = {
 export function SqlWorkspacePage(): React.ReactElement {
   const [query, setQuery] = useState('SELECT * FROM events\nWHERE timestamp > NOW() - INTERVAL 1 DAY\nLIMIT 100;');
   const [isRunning, setIsRunning] = useState(false);
-  const [hasResults, setHasResults] = useState(false);
-  const [expandedSchema, setExpandedSchema] = useState<string | null>('user_events');
+  const [queryResult, setQueryResult] = useState<QueryResultData | null>(null);
+  const [queryError, setQueryError] = useState<string | null>(null);
+  const [expandedSchema, setExpandedSchema] = useState<string | null>(null);
   const [sidebarTab, setSidebarTab] = useState<'schema' | 'saved' | 'history'>('schema');
   const [showAIAssist, setShowAIAssist] = useState(false);
+  const [schemas, setSchemas] = useState<SchemaItem[]>([]);
+  const [queryHistory, setQueryHistory] = useState<QueryHistoryItem[]>([]);
+
+  useEffect(() => {
+    dataCloudApi.getCollections().then((res) => {
+      const items: SchemaItem[] = res.data.map((col) => ({
+        name: col.name,
+        tables: [col.name],
+      }));
+      setSchemas(items);
+      if (items.length > 0) setExpandedSchema(items[0].name);
+    }).catch(() => {/* schema load is non-critical */});
+  }, []);
 
   const handleSelectSavedQuery = (savedQuery: SavedQuery) => {
     setQuery(savedQuery.sql);
   };
 
-  const handleRunQuery = () => {
+  const handleRunQuery = useCallback(async () => {
+    if (!query.trim()) return;
     setIsRunning(true);
-    // Simulate query execution
-    setTimeout(() => {
+    setQueryError(null);
+    const startMs = Date.now();
+    try {
+      const result = await executeAnalyticsQuery(query.trim());
+      setQueryResult(result);
+      setQueryHistory((prev) => [
+        {
+          id: Date.now(),
+          query: query.trim(),
+          timestamp: 'just now',
+          duration: `${result.executionTimeMs}ms`,
+        },
+        ...prev.slice(0, 19),
+      ]);
+    } catch (err) {
+      setQueryError(err instanceof Error ? err.message : 'Query failed');
+      setQueryResult(null);
+    } finally {
       setIsRunning(false);
-      setHasResults(true);
-    }, 1000);
-  };
+    }
+  }, [query]);
 
   const handleApplyAISql = useCallback((sql: string) => {
     setQuery(sql);
@@ -339,7 +337,7 @@ export function SqlWorkspacePage(): React.ReactElement {
                 Save Query
               </button>
               <button
-                onClick={handleRunQuery}
+                onClick={() => { void handleRunQuery(); }}
                 disabled={isRunning}
                 className={cn(buttonStyles.primary, 'flex items-center gap-2')}
               >
@@ -397,7 +395,7 @@ export function SqlWorkspacePage(): React.ReactElement {
               {/* Schema Tab */}
               {sidebarTab === 'schema' && (
                 <div className="p-2">
-                  {mockSchemas.map((schema) => (
+                  {schemas.map((schema) => (
                     <div key={schema.name} className="mb-1">
                       <button
                         onClick={() => setExpandedSchema(expandedSchema === schema.name ? null : schema.name)}
@@ -448,7 +446,9 @@ export function SqlWorkspacePage(): React.ReactElement {
               {/* History Tab */}
               {sidebarTab === 'history' && (
                 <div className="p-2 space-y-1">
-                  {mockQueryHistory.map((item) => (
+                  {queryHistory.length === 0 ? (
+                    <p className={cn(textStyles.xs, 'p-3 text-center')}>No queries run yet.</p>
+                  ) : queryHistory.map((item) => (
                     <button
                       key={item.id}
                       onClick={() => setQuery(item.query)}
@@ -510,13 +510,13 @@ LIMIT 100;"
               <div className={cn(cardStyles.header, 'flex items-center justify-between')}>
                 <div className="flex items-center gap-4">
                   <h3 className={textStyles.h4}>Results</h3>
-                  {hasResults && (
+                  {queryResult && (
                     <span className={textStyles.xs}>
-                      {mockResults.rows.length} rows • 0.23s
+                      {queryResult.rowCount} rows • {queryResult.executionTimeMs}ms
                     </span>
                   )}
                 </div>
-                {hasResults && (
+                {queryResult && (
                   <button className={cn(buttonStyles.ghost, buttonStyles.sm, 'flex items-center gap-1')}>
                     <Download className="h-3 w-3" />
                     Export CSV
@@ -524,22 +524,30 @@ LIMIT 100;"
                 )}
               </div>
 
-              {hasResults ? (
+              {queryError && (
+                <div className="p-4 text-sm text-red-600 bg-red-50 dark:bg-red-900/20 rounded-b-lg">
+                  {queryError}
+                </div>
+              )}
+
+              {queryResult ? (
                 <div className={tableStyles.container}>
                   <table className={tableStyles.table}>
                     <thead className={tableStyles.thead}>
                       <tr>
-                        {mockResults.columns.map((col) => (
-                          <th key={col} className={tableStyles.th}>{col}</th>
-                        ))}
+                        {queryResult.rows.length > 0
+                          ? Object.keys(queryResult.rows[0]).map((col) => (
+                              <th key={col} className={tableStyles.th}>{col}</th>
+                            ))
+                          : null}
                       </tr>
                     </thead>
                     <tbody className={tableStyles.tbody}>
-                      {mockResults.rows.map((row, i) => (
+                      {queryResult.rows.map((row, i) => (
                         <tr key={i} className={tableStyles.tr}>
-                          {row.map((cell, j) => (
+                          {Object.values(row).map((cell, j) => (
                             <td key={j} className={cn(tableStyles.td, 'font-mono text-xs')}>
-                              {cell}
+                              {cell === null || cell === undefined ? <em className="text-gray-400">null</em> : String(cell)}
                             </td>
                           ))}
                         </tr>
@@ -547,7 +555,7 @@ LIMIT 100;"
                     </tbody>
                   </table>
                 </div>
-              ) : (
+              ) : !queryError ? (
                 <div className={cn(textStyles.muted, 'text-center py-12')}>
                   {isRunning ? (
                     <div className="flex items-center justify-center gap-2">
@@ -558,7 +566,7 @@ LIMIT 100;"
                     'Run a query to see results'
                   )}
                 </div>
-              )}
+              ) : null}
             </div>
           </div>
         </div>

@@ -1,16 +1,16 @@
 # Specialized TDD Prompt: K-15 Dual-Calendar
 
-Use this prompt together with [tdd_test_spec_generation_prompt_v1.md](tdd_test_spec_generation_prompt_v1.md).
+Use this prompt together with [tdd_test_spec_generation_prompt_v1.md](../tdd_test_spec_generation_prompt_v1.md).
 
 Execution-plan position:
 - Phase 1
 - Build order position: 2
 
 Primary sources:
-- [../CURRENT_EXECUTION_PLAN.md](../CURRENT_EXECUTION_PLAN.md)
-- [../LLD_K15_DUAL_CALENDAR.md](../LLD_K15_DUAL_CALENDAR.md)
-- [../ADR-004_DUAL_CALENDAR_SYSTEM.md](../ADR-004_DUAL_CALENDAR_SYSTEM.md)
-- [../ADR-011_STACK_STANDARDIZATION_AND_GHATANA_PLATFORM_ALIGNMENT.md](../ADR-011_STACK_STANDARDIZATION_AND_GHATANA_PLATFORM_ALIGNMENT.md)
+- [../CURRENT_EXECUTION_PLAN.md](plans/CURRENT_EXECUTION_PLAN.md)
+- [../LLD_K15_DUAL_CALENDAR.md](../lld/LLD_K15_DUAL_CALENDAR.md)
+- [../ADR-004_DUAL_CALENDAR_SYSTEM.md](../adr/ADR-004_DUAL_CALENDAR_SYSTEM.md)
+- [../ADR-011_STACK_STANDARDIZATION_AND_GHATANA_PLATFORM_ALIGNMENT.md](../adr/ADR-011_STACK_STANDARDIZATION_AND_GHATANA_PLATFORM_ALIGNMENT.md)
 
 ---
 

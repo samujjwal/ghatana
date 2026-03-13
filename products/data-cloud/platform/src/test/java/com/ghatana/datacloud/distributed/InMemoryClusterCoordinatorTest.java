@@ -5,6 +5,7 @@
  */
 package com.ghatana.datacloud.distributed;
 
+import com.ghatana.platform.testing.activej.EventloopTestBase;
 import io.activej.promise.Promise;
 import org.junit.jupiter.api.*;
 
@@ -20,7 +21,7 @@ import static org.assertj.core.api.Assertions.*;
  * distributed locking, config storage, and lifecycle.
  */
 @DisplayName("InMemory ClusterCoordinator")
-class InMemoryClusterCoordinatorTest {
+class InMemoryClusterCoordinatorTest extends EventloopTestBase {
 
     private InMemoryClusterCoordinator coordinator;
 
@@ -54,9 +55,9 @@ class InMemoryClusterCoordinatorTest {
             AtomicReference<ClusterCoordinator.MembershipEvent> eventRef = new AtomicReference<>();
             coordinator.onMembershipChange(eventRef::set);
 
-            coordinator.join(nodeInfo("node-1")).getResult();
+            runPromise(() -> coordinator.join(nodeInfo("node-1")));
 
-            Set<NodeInfo> active = coordinator.getActiveNodes().getResult();
+            Set<NodeInfo> active = runPromise(() -> coordinator.getActiveNodes());
             assertThat(active).hasSize(1);
             assertThat(active.iterator().next().nodeId()).isEqualTo("node-1");
 
@@ -67,34 +68,34 @@ class InMemoryClusterCoordinatorTest {
         @Test
         @DisplayName("multiple nodes join")
         void multipleNodesJoin() {
-            coordinator.join(nodeInfo("node-1")).getResult();
-            coordinator.join(nodeInfo("node-2")).getResult();
-            coordinator.join(nodeInfo("node-3")).getResult();
+            runPromise(() -> coordinator.join(nodeInfo("node-1")));
+            runPromise(() -> coordinator.join(nodeInfo("node-2")));
+            runPromise(() -> coordinator.join(nodeInfo("node-3")));
 
-            Set<NodeInfo> active = coordinator.getActiveNodes().getResult();
+            Set<NodeInfo> active = runPromise(() -> coordinator.getActiveNodes());
             assertThat(active).hasSize(3);
         }
 
         @Test
         @DisplayName("leave removes node and fires event")
         void leaveRemovesNode() {
-            coordinator.join(nodeInfo("node-1")).getResult();
-            assertThat(coordinator.getActiveNodes().getResult()).hasSize(1);
+            runPromise(() -> coordinator.join(nodeInfo("node-1")));
+            assertThat(runPromise(() -> coordinator.getActiveNodes())).hasSize(1);
 
             AtomicReference<ClusterCoordinator.MembershipEvent> eventRef = new AtomicReference<>();
             coordinator.onMembershipChange(eventRef::set);
 
-            coordinator.leave().getResult();
+            runPromise(() -> coordinator.leave());
 
-            assertThat(coordinator.getActiveNodes().getResult()).isEmpty();
+            assertThat(runPromise(() -> coordinator.getActiveNodes())).isEmpty();
             assertThat(eventRef.get().type()).isEqualTo(ClusterCoordinator.MembershipEvent.EventType.LEFT);
         }
 
         @Test
         @DisplayName("getNode returns specific node")
         void getNodeReturnsSpecific() {
-            coordinator.join(nodeInfo("node-1")).getResult();
-            NodeInfo found = coordinator.getNode("node-1").getResult();
+            runPromise(() -> coordinator.join(nodeInfo("node-1")));
+            NodeInfo found = runPromise(() -> coordinator.getNode("node-1"));
             assertThat(found).isNotNull();
             assertThat(found.nodeId()).isEqualTo("node-1");
         }
@@ -102,7 +103,7 @@ class InMemoryClusterCoordinatorTest {
         @Test
         @DisplayName("getNode returns null for unknown")
         void getNodeUnknownReturnsNull() {
-            NodeInfo found = coordinator.getNode("unknown").getResult();
+            NodeInfo found = runPromise(() -> coordinator.getNode("unknown"));
             assertThat(found).isNull();
         }
     }
@@ -116,8 +117,8 @@ class InMemoryClusterCoordinatorTest {
         @Test
         @DisplayName("first elector becomes leader")
         void firstElectorBecomesLeader() {
-            coordinator.join(nodeInfo("node-1")).getResult();
-            LeaderLease lease = coordinator.electLeader("partition-0").getResult();
+            runPromise(() -> coordinator.join(nodeInfo("node-1")));
+            LeaderLease lease = runPromise(() -> coordinator.electLeader("partition-0"));
 
             assertThat(lease.isLeader()).isTrue();
             assertThat(lease.leaderId()).isEqualTo("node-1");
@@ -128,16 +129,16 @@ class InMemoryClusterCoordinatorTest {
         @Test
         @DisplayName("second elector for same group does not become leader")
         void secondElectorNotLeader() {
-            coordinator.join(nodeInfo("node-1")).getResult();
-            coordinator.electLeader("partition-0").getResult();
+            runPromise(() -> coordinator.join(nodeInfo("node-1")));
+            runPromise(() -> coordinator.electLeader("partition-0"));
 
             // Create a second coordinator for node-2
             InMemoryClusterCoordinator coord2 = InMemoryClusterCoordinator.create("node-2");
-            coord2.join(nodeInfo("node-2")).getResult();
+            runPromise(() -> coord2.join(nodeInfo("node-2")));
 
             // Node-2 tries to elect — but shares same leaders map (different JVM in prod)
             // For in-memory testing, the first election wins
-            LeaderLease lease2 = coordinator.electLeader("partition-0").getResult();
+            LeaderLease lease2 = runPromise(() -> coordinator.electLeader("partition-0"));
             // Same coordinator = same node ID = still leader
             assertThat(lease2.isLeader()).isTrue();
             coord2.shutdown();
@@ -146,10 +147,10 @@ class InMemoryClusterCoordinatorTest {
         @Test
         @DisplayName("electLeader for different groups returns separate leases")
         void differentGroupsSeparateLeases() {
-            coordinator.join(nodeInfo("node-1")).getResult();
+            runPromise(() -> coordinator.join(nodeInfo("node-1")));
 
-            LeaderLease lease0 = coordinator.electLeader("partition-0").getResult();
-            LeaderLease lease1 = coordinator.electLeader("partition-1").getResult();
+            LeaderLease lease0 = runPromise(() -> coordinator.electLeader("partition-0"));
+            LeaderLease lease1 = runPromise(() -> coordinator.electLeader("partition-1"));
 
             assertThat(lease0.isLeader()).isTrue();
             assertThat(lease1.isLeader()).isTrue();
@@ -159,30 +160,30 @@ class InMemoryClusterCoordinatorTest {
         @Test
         @DisplayName("getLeader returns current leader")
         void getLeaderReturns() {
-            coordinator.join(nodeInfo("node-1")).getResult();
-            coordinator.electLeader("partition-0").getResult();
+            runPromise(() -> coordinator.join(nodeInfo("node-1")));
+            runPromise(() -> coordinator.electLeader("partition-0"));
 
-            String leader = coordinator.getLeader("partition-0").getResult();
+            String leader = runPromise(() -> coordinator.getLeader("partition-0"));
             assertThat(leader).isEqualTo("node-1");
         }
 
         @Test
         @DisplayName("getLeader returns null when no election held")
         void getLeaderNullWhenNoElection() {
-            String leader = coordinator.getLeader("partition-99").getResult();
+            String leader = runPromise(() -> coordinator.getLeader("partition-99"));
             assertThat(leader).isNull();
         }
 
         @Test
         @DisplayName("releasing lease fires leader change event")
         void releaseLeaseFires() {
-            coordinator.join(nodeInfo("node-1")).getResult();
-            LeaderLease lease = coordinator.electLeader("partition-0").getResult();
+            runPromise(() -> coordinator.join(nodeInfo("node-1")));
+            LeaderLease lease = runPromise(() -> coordinator.electLeader("partition-0"));
 
             AtomicReference<ClusterCoordinator.LeaderChangeEvent> eventRef = new AtomicReference<>();
             coordinator.onLeaderChange("partition-0", eventRef::set);
 
-            lease.release().getResult();
+            runPromise(() -> lease.release());
             assertThat(lease.isLeader()).isFalse();
             assertThat(eventRef.get()).isNotNull();
             assertThat(eventRef.get().previousLeader()).isEqualTo("node-1");
@@ -192,9 +193,9 @@ class InMemoryClusterCoordinatorTest {
         @Test
         @DisplayName("lease renew returns new valid lease")
         void leaseRenew() {
-            coordinator.join(nodeInfo("node-1")).getResult();
-            LeaderLease lease = coordinator.electLeader("partition-0").getResult();
-            LeaderLease renewed = lease.renew().getResult();
+            runPromise(() -> coordinator.join(nodeInfo("node-1")));
+            LeaderLease lease = runPromise(() -> coordinator.electLeader("partition-0"));
+            LeaderLease renewed = runPromise(() -> lease.renew());
 
             assertThat(renewed.isValid()).isTrue();
             assertThat(renewed.isLeader()).isTrue();
@@ -210,7 +211,7 @@ class InMemoryClusterCoordinatorTest {
         @Test
         @DisplayName("tryLock acquires when available")
         void tryLockAcquires() {
-            DistributedLock lock = coordinator.tryLock("resource-1").getResult();
+            DistributedLock lock = runPromise(() -> coordinator.tryLock("resource-1"));
             assertThat(lock).isNotNull();
             assertThat(lock.isHeld()).isTrue();
             assertThat(lock.lockName()).isEqualTo("resource-1");
@@ -220,9 +221,9 @@ class InMemoryClusterCoordinatorTest {
         @Test
         @DisplayName("tryLock returns null when already held")
         void tryLockReturnNullWhenHeld() {
-            coordinator.tryLock("resource-1").getResult();
+            runPromise(() -> coordinator.tryLock("resource-1"));
             // Same node tries again — lock is already held
-            DistributedLock second = coordinator.tryLock("resource-1").getResult();
+            DistributedLock second = runPromise(() -> coordinator.tryLock("resource-1"));
             // putIfAbsent returns existing, which is not expired → returns null
             // BUT our impl checks if expired and re-acquires if so. With same holder it's fine.
             // However, since the lock was just acquired, it's not expired.
@@ -233,20 +234,20 @@ class InMemoryClusterCoordinatorTest {
         @Test
         @DisplayName("acquireLock with timeout succeeds after release")
         void acquireLockWithTimeout() throws Exception {
-            DistributedLock lock1 = coordinator.tryLock("resource-1").getResult();
+            DistributedLock lock1 = runPromise(() -> coordinator.tryLock("resource-1"));
             assertThat(lock1).isNotNull();
 
             // Release in background after small delay
             CompletableFuture.runAsync(() -> {
                 try {
                     Thread.sleep(50);
-                    lock1.release().getResult();
+                    runPromise(() -> lock1.release());
                 } catch (InterruptedException e) {
                     Thread.currentThread().interrupt();
                 }
             });
 
-            DistributedLock lock2 = coordinator.acquireLock("resource-1", Duration.ofSeconds(2)).getResult();
+            DistributedLock lock2 = runPromise(() -> coordinator.acquireLock("resource-1", Duration.ofSeconds(2)));
             assertThat(lock2).isNotNull();
             assertThat(lock2.isHeld()).isTrue();
         }
@@ -254,20 +255,20 @@ class InMemoryClusterCoordinatorTest {
         @Test
         @DisplayName("release frees the lock")
         void releaseFrees() {
-            DistributedLock lock = coordinator.tryLock("resource-1").getResult();
-            lock.release().getResult();
+            DistributedLock lock = runPromise(() -> coordinator.tryLock("resource-1"));
+            runPromise(() -> lock.release());
             assertThat(lock.isHeld()).isFalse();
 
             // Can re-acquire
-            DistributedLock lock2 = coordinator.tryLock("resource-1").getResult();
+            DistributedLock lock2 = runPromise(() -> coordinator.tryLock("resource-1"));
             assertThat(lock2).isNotNull();
         }
 
         @Test
         @DisplayName("extend prolongs the lock")
         void extendProlongs() {
-            DistributedLock lock = coordinator.tryLock("resource-1").getResult();
-            lock.extend().getResult();
+            DistributedLock lock = runPromise(() -> coordinator.tryLock("resource-1"));
+            runPromise(() -> lock.extend());
             assertThat(lock.isHeld()).isTrue();
         }
     }
@@ -281,25 +282,25 @@ class InMemoryClusterCoordinatorTest {
         @Test
         @DisplayName("set and get config value")
         void setAndGet() {
-            coordinator.setConfig("db.host", "localhost").getResult();
-            String value = coordinator.getConfig("db.host").getResult();
+            runPromise(() -> coordinator.setConfig("db.host", "localhost"));
+            String value = runPromise(() -> coordinator.getConfig("db.host"));
             assertThat(value).isEqualTo("localhost");
         }
 
         @Test
         @DisplayName("get returns null for unknown key")
         void getUnknownReturnsNull() {
-            assertThat(coordinator.getConfig("unknown").getResult()).isNull();
+            assertThat(runPromise(() -> coordinator.getConfig("unknown"))).isNull();
         }
 
         @Test
         @DisplayName("getConfigsByPrefix returns matching entries")
         void getByPrefix() {
-            coordinator.setConfig("db.host", "localhost").getResult();
-            coordinator.setConfig("db.port", "5432").getResult();
-            coordinator.setConfig("cache.ttl", "300").getResult();
+            runPromise(() -> coordinator.setConfig("db.host", "localhost"));
+            runPromise(() -> coordinator.setConfig("db.port", "5432"));
+            runPromise(() -> coordinator.setConfig("cache.ttl", "300"));
 
-            Map<String, String> dbConfigs = coordinator.getConfigsByPrefix("db.").getResult();
+            Map<String, String> dbConfigs = runPromise(() -> coordinator.getConfigsByPrefix("db."));
             assertThat(dbConfigs).hasSize(2);
             assertThat(dbConfigs).containsKeys("db.host", "db.port");
         }
@@ -310,7 +311,7 @@ class InMemoryClusterCoordinatorTest {
             AtomicReference<ClusterCoordinator.ConfigChangeEvent> eventRef = new AtomicReference<>();
             coordinator.watchConfig("db.host", eventRef::set);
 
-            coordinator.setConfig("db.host", "10.0.0.1").getResult();
+            runPromise(() -> coordinator.setConfig("db.host", "10.0.0.1"));
 
             assertThat(eventRef.get()).isNotNull();
             assertThat(eventRef.get().key()).isEqualTo("db.host");
@@ -320,12 +321,12 @@ class InMemoryClusterCoordinatorTest {
         @Test
         @DisplayName("watchConfig receives old and new value")
         void watchReceivesOldAndNew() {
-            coordinator.setConfig("db.host", "localhost").getResult();
+            runPromise(() -> coordinator.setConfig("db.host", "localhost"));
 
             AtomicReference<ClusterCoordinator.ConfigChangeEvent> eventRef = new AtomicReference<>();
             coordinator.watchConfig("db.host", eventRef::set);
 
-            coordinator.setConfig("db.host", "10.0.0.1").getResult();
+            runPromise(() -> coordinator.setConfig("db.host", "10.0.0.1"));
 
             assertThat(eventRef.get().oldValue()).isEqualTo("localhost");
             assertThat(eventRef.get().newValue()).isEqualTo("10.0.0.1");
@@ -341,20 +342,20 @@ class InMemoryClusterCoordinatorTest {
         @Test
         @DisplayName("isHealthy returns true when running")
         void healthyWhenRunning() {
-            assertThat(coordinator.isHealthy().getResult()).isTrue();
+            assertThat(runPromise(() -> coordinator.isHealthy())).isTrue();
         }
 
         @Test
         @DisplayName("isHealthy returns false after shutdown")
         void unhealthyAfterShutdown() {
-            coordinator.shutdown().getResult();
-            assertThat(coordinator.isHealthy().getResult()).isFalse();
+            runPromise(() -> coordinator.shutdown());
+            assertThat(runPromise(() -> coordinator.isHealthy())).isFalse();
         }
 
         @Test
         @DisplayName("operations throw after shutdown")
         void operationsThrowAfterShutdown() {
-            coordinator.shutdown().getResult();
+            runPromise(() -> coordinator.shutdown());
             assertThatThrownBy(() -> coordinator.join(nodeInfo("node-1")))
                     .isInstanceOf(IllegalStateException.class);
         }
@@ -362,26 +363,26 @@ class InMemoryClusterCoordinatorTest {
         @Test
         @DisplayName("leave releases leadership")
         void leaveReleasesLeadership() {
-            coordinator.join(nodeInfo("node-1")).getResult();
-            coordinator.electLeader("partition-0").getResult();
-            assertThat(coordinator.getLeader("partition-0").getResult()).isEqualTo("node-1");
+            runPromise(() -> coordinator.join(nodeInfo("node-1")));
+            runPromise(() -> coordinator.electLeader("partition-0"));
+            assertThat(runPromise(() -> coordinator.getLeader("partition-0"))).isEqualTo("node-1");
 
-            coordinator.leave().getResult();
-            assertThat(coordinator.getLeader("partition-0").getResult()).isNull();
+            runPromise(() -> coordinator.leave());
+            assertThat(runPromise(() -> coordinator.getLeader("partition-0"))).isNull();
         }
 
         @Test
         @DisplayName("leave releases locks")
         void leaveReleasesLocks() {
-            coordinator.join(nodeInfo("node-1")).getResult();
-            DistributedLock held = coordinator.tryLock("resource-1").getResult();
+            runPromise(() -> coordinator.join(nodeInfo("node-1")));
+            DistributedLock held = runPromise(() -> coordinator.tryLock("resource-1"));
             assertThat(held).isNotNull();
 
-            coordinator.leave().getResult();
+            runPromise(() -> coordinator.leave());
 
             // Re-join and verify lock can be re-acquired (was released on leave)
-            coordinator.join(nodeInfo("node-1")).getResult();
-            DistributedLock lock = coordinator.tryLock("resource-1").getResult();
+            runPromise(() -> coordinator.join(nodeInfo("node-1")));
+            DistributedLock lock = runPromise(() -> coordinator.tryLock("resource-1"));
             assertThat(lock).isNotNull();
             assertThat(lock.isHeld()).isTrue();
         }
@@ -411,14 +412,14 @@ class InMemoryClusterCoordinatorTest {
                 executor.submit(() -> {
                     latch.countDown();
                     try { latch.await(); } catch (InterruptedException e) { Thread.currentThread().interrupt(); }
-                    coordinator.join(nodeInfo("node-" + idx)).getResult();
+                    runPromise(() -> coordinator.join(nodeInfo("node-" + idx)));
                 });
             }
 
             executor.shutdown();
             assertThat(executor.awaitTermination(5, TimeUnit.SECONDS)).isTrue();
 
-            assertThat(coordinator.getActiveNodes().getResult()).hasSize(threadCount);
+            assertThat(runPromise(() -> coordinator.getActiveNodes())).hasSize(threadCount);
         }
     }
 

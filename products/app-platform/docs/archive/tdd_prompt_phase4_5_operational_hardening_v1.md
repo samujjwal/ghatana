@@ -1,15 +1,15 @@
 # Specialized TDD Prompt: Phase 4 and Phase 5 Operational Hardening
 
-Use this prompt together with [tdd_test_spec_generation_prompt_v1.md](tdd_test_spec_generation_prompt_v1.md).
+Use this prompt together with [tdd_test_spec_generation_prompt_v1.md](../tdd_test_spec_generation_prompt_v1.md).
 
 Execution-plan position:
 - Phase 4: September 21, 2026 to November 13, 2026
 - Phase 5: November 16, 2026 to December 24, 2026
 
 Primary sources:
-- [../CURRENT_EXECUTION_PLAN.md](../CURRENT_EXECUTION_PLAN.md)
+- [../CURRENT_EXECUTION_PLAN.md](plans/CURRENT_EXECUTION_PLAN.md)
 - relevant LLDs for D-10, D-12, D-13, D-14, W-01, W-02, O-01, P-01, R-01, R-02, T-01, T-02
-- [../ADR-011_STACK_STANDARDIZATION_AND_GHATANA_PLATFORM_ALIGNMENT.md](../ADR-011_STACK_STANDARDIZATION_AND_GHATANA_PLATFORM_ALIGNMENT.md)
+- [../ADR-011_STACK_STANDARDIZATION_AND_GHATANA_PLATFORM_ALIGNMENT.md](../adr/ADR-011_STACK_STANDARDIZATION_AND_GHATANA_PLATFORM_ALIGNMENT.md)
 
 ---
 

@@ -6,6 +6,7 @@ package com.ghatana.aep.di;
 
 import com.ghatana.aep.config.EnvConfig;
 import com.ghatana.aep.integration.registry.DataCloudAgentRegistryClient;
+import com.ghatana.aep.integration.registry.DataCloudPipelineRegistryClientImpl;
 import com.ghatana.aep.integration.registry.NoOpPipelineRegistryClient;
 import com.ghatana.orchestrator.client.AgentRegistryClient;
 import com.ghatana.orchestrator.client.PipelineRegistryClient;
@@ -43,6 +44,7 @@ import io.activej.inject.module.AbstractModule;
  * @doc.layer product
  * @doc.pattern Module
  * @see DataCloudAgentRegistryClient
+ * @see DataCloudPipelineRegistryClientImpl
  * @see NoOpPipelineRegistryClient
  * @see AepOrchestrationModule
  * @since 1.0.0
@@ -75,20 +77,31 @@ public class AepRegistryModule extends AbstractModule {
     }
 
     /**
-     * Provides a stub {@link PipelineRegistryClient} until pipelines are stored in Data-Cloud.
+     * Provides a {@link PipelineRegistryClient} backed by Data-Cloud's pipeline HTTP API.
      *
-     * <p>Replaced by a DataCloud-backed implementation in a future iteration when the
-     * {@code dc_pipelines} collection is ready.
+     * <p>The implementation is selected by the {@code AEP_PIPELINE_REGISTRY_MODE} environment
+     * variable:
+     * <ul>
+     *   <li>{@code datacloud} (default) — {@link DataCloudPipelineRegistryClientImpl} calling
+     *       {@code GET/POST /api/v1/pipelines} on the Data-Cloud service.</li>
+     *   <li>{@code noop} — {@link NoOpPipelineRegistryClient} that returns empty collections;
+     *       useful when running AEP without a Data-Cloud service.</li>
+     * </ul>
      *
-     * @return no-op pipeline registry client stub
+     * @return pipeline registry client backed by Data-Cloud, or a no-op stub
      *
      * @doc.type method
-     * @doc.purpose Provides stub PipelineRegistryClient (Null Object pattern)
+     * @doc.purpose Provides env-driven PipelineRegistryClient (datacloud vs. noop)
      * @doc.layer product
-     * @doc.pattern Factory, Null Object
+     * @doc.pattern Factory, Strategy
      */
     @Provides
     PipelineRegistryClient pipelineRegistryClient() {
-        return new NoOpPipelineRegistryClient();
+        EnvConfig env = EnvConfig.fromSystem();
+        String mode = System.getenv().getOrDefault("AEP_PIPELINE_REGISTRY_MODE", "datacloud");
+        if ("noop".equalsIgnoreCase(mode)) {
+            return new NoOpPipelineRegistryClient();
+        }
+        return new DataCloudPipelineRegistryClientImpl(env.aepDcBaseUrl());
     }
 }

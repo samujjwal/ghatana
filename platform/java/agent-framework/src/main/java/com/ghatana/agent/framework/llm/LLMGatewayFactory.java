@@ -99,13 +99,11 @@ public final class LLMGatewayFactory {
         
         log.info("Available LLM providers: {}", availableProviders.keySet());
         
-        // For now, return a stub that indicates proper configuration is needed
-        log.warn("LLMGatewayFactory.createDefault() creates stub implementations.");
-        log.warn("For production use, instantiate provider-specific services and use create(LLMGateway)");
-        
         throw new UnsupportedOperationException(
-            "Default factory requires provider-specific service implementations. " +
-            "Use create(LLMGateway) with properly instantiated provider services."
+            "LLMGatewayFactory.createDefault() requires provider-specific service implementations. " +
+            "Build a DefaultLLMGateway with OpenAICompletionService / AnthropicCompletionService " +
+            "and use LLMGatewayFactory.create(LLMGateway) to adapt it for agent-framework. " +
+            "Detected available providers (API keys present): " + availableProviders.keySet()
         );
     }
     

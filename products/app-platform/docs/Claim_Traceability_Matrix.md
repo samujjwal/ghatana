@@ -17,7 +17,7 @@ This matrix provides a compact bridge between:
 
 Use this when reviewing customer-facing requirements, investment memos, or regulator-facing summaries.
 
-**Namespace Note:** This matrix tracks the numeric legal-claim identifiers from [docs/Legal_Claim_Citation_Appendix.md](/home/samujjwal/Developments/finance/docs/Legal_Claim_Citation_Appendix.md) alongside factual source-register IDs. It is intentionally separate from the semantic epic/control code namespace maintained in [epics/COMPLIANCE_CODE_REGISTRY.md](/home/samujjwal/Developments/finance/epics/COMPLIANCE_CODE_REGISTRY.md).
+**Namespace Note:** This matrix tracks the numeric legal-claim identifiers from [Legal_Claim_Citation_Appendix.md](./Legal_Claim_Citation_Appendix.md) alongside factual source-register IDs. It is intentionally separate from the semantic epic/control code namespace maintained in [epics/COMPLIANCE_CODE_REGISTRY.md](./epics/COMPLIANCE_CODE_REGISTRY.md).
 
 ---
 

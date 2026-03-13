@@ -5,77 +5,37 @@
  *   - List pending review items with type, skill, confidence
  *   - Open detail view with proposed policy JSON diff
  *   - Approve (with optional note) / Reject (with required reason)
- *   - Color-coded confidence score meter
+ *   - Color-coded confidence score via ConfidenceBadge
+ *   - Live updates via SSE through useHitlQueue
  *
  * @doc.type page
  * @doc.purpose AEP HITL review queue
  * @doc.layer frontend
  */
 import React, { useState } from 'react';
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import {
-  listPendingReviews,
-  approveReview,
-  rejectReview,
-  type ReviewItem,
-  type ReviewItemStatus,
-} from '@/api/aep.api';
-
-// ─── Confidence meter ────────────────────────────────────────────────
-
-function ConfidenceMeter({ score }: { score?: number }) {
-  if (score == null) return <span className="text-gray-400 text-xs">—</span>;
-  const pct = Math.round(score * 100);
-  const color =
-    pct >= 80 ? 'bg-green-500' : pct >= 60 ? 'bg-yellow-500' : 'bg-red-500';
-  return (
-    <div className="flex items-center gap-2">
-      <div className="h-1.5 w-20 bg-gray-200 dark:bg-gray-700 rounded-full overflow-hidden">
-        <div className={['h-full rounded-full', color].join(' ')} style={{ width: `${pct}%` }} />
-      </div>
-      <span className="text-xs text-gray-500">{pct}%</span>
-    </div>
-  );
-}
-
-// ─── Status badge ────────────────────────────────────────────────────
-
-const STATUS_COLORS: Record<ReviewItemStatus, string> = {
-  PENDING: 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-200',
-  APPROVED: 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200',
-  REJECTED: 'bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-200',
-};
+import { useAtomValue } from 'jotai';
+import { tenantIdAtom } from '@/stores/tenant.store';
+import { useHitlQueue, useApproveItem, useRejectItem } from '@/hooks/useHitlQueue';
+import { ReviewCard } from '@/components/hitl/ReviewCard';
+import type { ReviewItem } from '@/api/aep.api';
 
 // ─── Detail / Action Panel ───────────────────────────────────────────
 
-function ReviewDetailPanel({
-  item,
-  onClose,
-}: {
-  item: ReviewItem;
-  onClose: () => void;
-}) {
-  const tenantId = 'default';
-  const queryClient = useQueryClient();
+function ReviewDetailPanel({ item, onClose }: { item: ReviewItem; onClose: () => void }) {
   const [note, setNote] = useState('');
   const [reason, setReason] = useState('');
   const [mode, setMode] = useState<'approve' | 'reject' | null>(null);
 
-  const approveMut = useMutation({
-    mutationFn: () => approveReview(item.reviewId, { note, tenantId }),
-    onSuccess: () => {
-      void queryClient.invalidateQueries({ queryKey: ['aep', 'hitl'] });
-      onClose();
-    },
-  });
+  const approveMut = useApproveItem();
+  const rejectMut = useRejectItem();
 
-  const rejectMut = useMutation({
-    mutationFn: () => rejectReview(item.reviewId, { reason, tenantId }),
-    onSuccess: () => {
-      void queryClient.invalidateQueries({ queryKey: ['aep', 'hitl'] });
-      onClose();
-    },
-  });
+  function handleApprove() {
+    approveMut.mutate({ reviewId: item.reviewId, note: note || undefined }, { onSuccess: onClose });
+  }
+
+  function handleReject() {
+    rejectMut.mutate({ reviewId: item.reviewId, reason }, { onSuccess: onClose });
+  }
 
   return (
     <aside
@@ -100,10 +60,16 @@ function ReviewDetailPanel({
           <span className="text-gray-500">Type</span>
           <span className="font-medium">{item.itemType}</span>
         </div>
-        <div className="flex justify-between items-center">
-          <span className="text-gray-500">Confidence</span>
-          <ConfidenceMeter score={item.confidenceScore} />
+        <div className="flex justify-between">
+          <span className="text-gray-500">Status</span>
+          <span className="font-medium">{item.status}</span>
         </div>
+        {item.confidenceScore != null && (
+          <div className="flex justify-between">
+            <span className="text-gray-500">Confidence</span>
+            <span className="font-medium">{Math.round(item.confidenceScore * 100)}%</span>
+          </div>
+        )}
         <div className="flex justify-between">
           <span className="text-gray-500">Submitted</span>
           <span className="text-xs">{new Date(item.createdAt).toLocaleString()}</span>
@@ -160,7 +126,7 @@ function ReviewDetailPanel({
                   Back
                 </button>
                 <button
-                  onClick={() => approveMut.mutate()}
+                  onClick={handleApprove}
                   disabled={approveMut.isPending}
                   className="flex-1 px-3 py-1.5 text-sm rounded bg-green-600 hover:bg-green-700 text-white disabled:opacity-50"
                 >
@@ -190,7 +156,7 @@ function ReviewDetailPanel({
                   Back
                 </button>
                 <button
-                  onClick={() => rejectMut.mutate()}
+                  onClick={handleReject}
                   disabled={!reason || rejectMut.isPending}
                   className="flex-1 px-3 py-1.5 text-sm rounded bg-red-600 hover:bg-red-700 text-white disabled:opacity-50"
                 >
@@ -217,15 +183,8 @@ function ReviewDetailPanel({
 // ─── Page ────────────────────────────────────────────────────────────
 
 export function HitlReviewPage() {
-  const tenantId = 'default';
-  const { data: items = [], isLoading, isError } = useQuery({
-    queryKey: ['aep', 'hitl', tenantId],
-    queryFn: () => listPendingReviews(tenantId),
-    refetchInterval: 30_000,
-  });
-
+  const { data: items = [], isLoading, isError } = useHitlQueue();
   const [selected, setSelected] = useState<ReviewItem | null>(null);
-
   const pendingCount = items.filter((i) => i.status === 'PENDING').length;
 
   return (
@@ -254,34 +213,12 @@ export function HitlReviewPage() {
                 </p>
               )}
               {items.map((item) => (
-                <button
+                <ReviewCard
                   key={item.reviewId}
+                  item={item}
+                  isSelected={selected?.reviewId === item.reviewId}
                   onClick={() => setSelected(item)}
-                  className={[
-                    'w-full text-left flex items-center gap-4 p-4 rounded-lg border transition-colors',
-                    selected?.reviewId === item.reviewId
-                      ? 'border-indigo-400 bg-indigo-50 dark:bg-indigo-950'
-                      : 'border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-900 hover:bg-gray-50 dark:hover:bg-gray-800',
-                  ].join(' ')}
-                >
-                  <div className="flex-1 min-w-0">
-                    <p className="font-medium text-gray-900 dark:text-white truncate">{item.skillId}</p>
-                    <p className="text-xs text-gray-400 font-mono mt-0.5">{item.reviewId}</p>
-                  </div>
-                  <span className="text-xs text-gray-500">{item.itemType}</span>
-                  <ConfidenceMeter score={item.confidenceScore} />
-                  <span
-                    className={[
-                      'inline-flex px-2 py-0.5 rounded-full text-xs font-medium',
-                      STATUS_COLORS[item.status],
-                    ].join(' ')}
-                  >
-                    {item.status}
-                  </span>
-                  <span className="text-xs text-gray-400 flex-shrink-0">
-                    {new Date(item.createdAt).toLocaleDateString()}
-                  </span>
-                </button>
+                />
               ))}
             </div>
           )}

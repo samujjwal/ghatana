@@ -8,12 +8,12 @@ package com.ghatana.agent.llm;
 import com.ghatana.agent.*;
 import com.ghatana.agent.framework.api.AgentContext;
 import com.ghatana.agent.framework.memory.MemoryStore;
+import com.ghatana.platform.testing.activej.EventloopTestBase;
 import dev.langchain4j.data.message.AiMessage;
 import dev.langchain4j.model.chat.ChatLanguageModel;
 import dev.langchain4j.model.chat.request.ChatRequest;
 import dev.langchain4j.model.chat.response.ChatResponse;
 import dev.langchain4j.model.output.TokenUsage;
-import io.activej.promise.Promise;
 import org.junit.jupiter.api.*;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.*;
@@ -32,7 +32,7 @@ import static org.mockito.Mockito.*;
  */
 @ExtendWith(MockitoExtension.class)
 @DisplayName("LLM Agent")
-class LLMAgentTest {
+class LLMAgentTest extends EventloopTestBase {
 
     @Mock
     ChatLanguageModel chatModel;
@@ -120,7 +120,7 @@ class LLMAgentTest {
             agent.initialize(AgentConfig.builder()
                     .agentId("test-1").type(AgentType.PROBABILISTIC).build());
 
-            AgentResult<String> result = agent.process(ctx, "CPU at 99%").getResult();
+            AgentResult<String> result = runPromise(() -> agent.process(ctx, "CPU at 99%"));
 
             assertThat(result.isSuccess()).isTrue();
             assertThat(result.getOutput()).isEqualTo("classified: HIGH_SEVERITY");
@@ -141,7 +141,7 @@ class LLMAgentTest {
             agent.initialize(AgentConfig.builder()
                     .agentId("tmpl-1").type(AgentType.PROBABILISTIC).build());
 
-            agent.process(ctx, "disk full").getResult();
+            runPromise(() -> agent.process(ctx, "disk full"));
 
             ArgumentCaptor<ChatRequest> cap = ArgumentCaptor.forClass(ChatRequest.class);
             verify(chatModel).chat(cap.capture());
@@ -163,7 +163,7 @@ class LLMAgentTest {
             agent.initialize(AgentConfig.builder()
                     .agentId("conf-1").type(AgentType.PROBABILISTIC).build());
 
-            AgentResult<String> result = agent.process(ctx, "test").getResult();
+            AgentResult<String> result = runPromise(() -> agent.process(ctx, "test"));
             assertThat(result.getConfidence()).isEqualTo(0.85);
         }
     }
@@ -186,9 +186,9 @@ class LLMAgentTest {
                     .agentId("cache-1").type(AgentType.PROBABILISTIC).build());
 
             // First call — LLM invoked
-            agent.process(ctx, "same input").getResult();
+            runPromise(() -> agent.process(ctx, "same input"));
             // Second call — cache hit
-            AgentResult<String> result = agent.process(ctx, "same input").getResult();
+            AgentResult<String> result = runPromise(() -> agent.process(ctx, "same input"));
 
             assertThat(result.isSuccess()).isTrue();
             assertThat(result.getOutput()).isEqualTo("cached result");
@@ -207,8 +207,8 @@ class LLMAgentTest {
             agent.initialize(AgentConfig.builder()
                     .agentId("cache-2").type(AgentType.PROBABILISTIC).build());
 
-            agent.process(ctx, "input-A").getResult();
-            agent.process(ctx, "input-B").getResult();
+            runPromise(() -> agent.process(ctx, "input-A"));
+            runPromise(() -> agent.process(ctx, "input-B"));
 
             assertThat(agent.cacheSize()).isEqualTo(2);
             verify(chatModel, times(2)).chat(any(ChatRequest.class));
@@ -225,8 +225,8 @@ class LLMAgentTest {
             agent.initialize(AgentConfig.builder()
                     .agentId("nocache-1").type(AgentType.PROBABILISTIC).build());
 
-            agent.process(ctx, "input").getResult();
-            agent.process(ctx, "input").getResult();
+            runPromise(() -> agent.process(ctx, "input"));
+            runPromise(() -> agent.process(ctx, "input"));
 
             verify(chatModel, times(2)).chat(any(ChatRequest.class));
             assertThat(agent.cacheSize()).isZero();
@@ -243,7 +243,7 @@ class LLMAgentTest {
             agent.initialize(AgentConfig.builder()
                     .agentId("clear-1").type(AgentType.PROBABILISTIC).build());
 
-            agent.process(ctx, "input").getResult();
+            runPromise(() -> agent.process(ctx, "input"));
             assertThat(agent.cacheSize()).isEqualTo(1);
 
             agent.clearCache();
@@ -285,7 +285,7 @@ class LLMAgentTest {
 
             // Very long input
             String longInput = "x".repeat(10000);
-            agent.process(ctx, longInput).getResult();
+            runPromise(() -> agent.process(ctx, longInput));
 
             ArgumentCaptor<ChatRequest> cap = ArgumentCaptor.forClass(ChatRequest.class);
             verify(chatModel).chat(cap.capture());
@@ -321,7 +321,7 @@ class LLMAgentTest {
             agent.initialize(AgentConfig.builder()
                     .agentId("fb-1").type(AgentType.PROBABILISTIC).build());
 
-            AgentResult<String> result = agent.process(ctx, "input").getResult();
+            AgentResult<String> result = runPromise(() -> agent.process(ctx, "input"));
 
             // Fallback has low confidence → LOW_CONFIDENCE status, not FAILED
             assertThat(result.isFailed()).isFalse();
@@ -343,7 +343,7 @@ class LLMAgentTest {
             agent.initialize(AgentConfig.builder()
                     .agentId("nofb-1").type(AgentType.PROBABILISTIC).build());
 
-            AgentResult<String> result = agent.process(ctx, "input").getResult();
+            AgentResult<String> result = runPromise(() -> agent.process(ctx, "input"));
 
             assertThat(result.isSuccess()).isFalse();
         }

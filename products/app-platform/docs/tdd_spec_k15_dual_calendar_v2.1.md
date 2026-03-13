@@ -30,7 +30,7 @@
 - LLD_K15_DUAL_CALENDAR.md
 - ADR-004_DUAL_CALENDAR_SYSTEM.md
 - ADR-011_STACK_STANDARDIZATION_AND_GHATANA_PLATFORM_ALIGNMENT.md
-- CURRENT_EXECUTION_PLAN.md
+- UNIFIED_IMPLEMENTATION_PLAN.md
 - Architecture specification parts 1-3
 
 **Assumptions:**
@@ -50,7 +50,7 @@
 | LLD_K15_001 | LLD_K15_DUAL_CALENDAR.md | Primary | Low-level design for K-15 | Conversion logic, holiday handling, settlement |
 | ADR_004_001 | ADR-004_DUAL_CALENDAR_SYSTEM.md | Primary | Dual-calendar architecture decisions | BS/Gregorian requirements, lookup tables |
 | ADR_011_001 | ADR-011_STACK_STANDARDIZATION_AND_GHATANA_PLATFORM_ALIGNMENT.md | Primary | Stack baseline | Technology choices, performance requirements |
-| EXEC_PLAN_001 | CURRENT_EXECUTION_PLAN.md | Primary | Build order and dependencies | Phase 1 positioning, K-02 integration |
+| EXEC_PLAN_001 | UNIFIED_IMPLEMENTATION_PLAN.md | Primary | Build order and dependencies | Phase 1 positioning, K-02 integration |
 | ARCH_SPEC_001 | ARCHITECTURE_SPEC_PART_1_SECTIONS_1-3.md | Secondary | Core architecture patterns | Dual-calendar invariants, data architecture |
 
 ---

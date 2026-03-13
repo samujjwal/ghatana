@@ -45,3 +45,6 @@ export { eventsService } from './events.service';
 export * from './memory.service';
 export { memoryService } from './memory.service';
 
+// Analytics — DC-9 SQL query engine
+export * from './analytics.service';
+

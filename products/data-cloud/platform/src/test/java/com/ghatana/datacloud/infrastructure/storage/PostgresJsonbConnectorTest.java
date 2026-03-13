@@ -6,6 +6,7 @@ import com.ghatana.datacloud.entity.storage.QuerySpec;
 import com.ghatana.datacloud.entity.storage.StorageConnector;
 import com.ghatana.datacloud.infrastructure.audit.DataCloudAuditLogger;
 import com.ghatana.platform.observability.MetricsCollector;
+import com.ghatana.platform.testing.activej.EventloopTestBase;
 import io.activej.promise.Promise;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Disabled;
@@ -23,7 +24,7 @@ import static org.mockito.Mockito.*;
 
 @Disabled("Temporarily disabled due to assertion issues in test environment")
 @ExtendWith(MockitoExtension.class)
-class PostgresJsonbConnectorTest {
+class PostgresJsonbConnectorTest extends EventloopTestBase {
 
     @Mock
     EntityRepository entityRepository;
@@ -224,8 +225,6 @@ class PostgresJsonbConnectorTest {
     }
 
     private <T> T resolve(Promise<T> promise) {
-        if (promise.isResult()) return promise.getResult();
-        if (promise.isException()) throw new RuntimeException(promise.getException());
-        throw new IllegalStateException("Promise is still pending");
+        return runPromise(() -> promise);
     }
 }

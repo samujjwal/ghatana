@@ -28,6 +28,7 @@ import {
     Loader2,
 } from 'lucide-react';
 import { cn, textStyles, bgStyles, buttonStyles, inputStyles, cardStyles } from '../../lib/theme';
+import { executeAnalyticsQuery } from '../../api/analytics.service';
 
 /**
  * Message role type
@@ -66,82 +67,58 @@ const suggestedPrompts = [
 ];
 
 /**
- * Mock AI response generator
+ * Route user message to the appropriate backend service.
+ * SQL-intent queries are executed via the analytics engine for real results.
+ * Other intents use local knowledge-base responses until an AI service is wired.
  */
-function generateMockResponse(userMessage: string): ChatMessage {
+async function generateResponse(userMessage: string): Promise<ChatMessage> {
     const lowerMessage = userMessage.toLowerCase();
+    const id = `msg-${Date.now()}`;
 
-    if (lowerMessage.includes('sql') || lowerMessage.includes('convert')) {
+    if (lowerMessage.includes('sql') || lowerMessage.includes('convert') || lowerMessage.includes('query')) {
+        // Extract table name heuristically from the user's message
+        const tableMatch = lowerMessage.match(/from ([a-z_]+)/) || lowerMessage.match(/in ([a-z_]+)/);
+        const table = tableMatch?.[1] ?? 'events';
+        const sql = `SELECT * FROM ${table} ORDER BY created_at DESC LIMIT 50;`;
+        const result = await executeAnalyticsQuery(sql);
         return {
-            id: `msg-${Date.now()}`,
+            id,
             role: 'assistant',
-            content: 'Here\'s the SQL query for your request:',
+            content: `Query executed — ${result.rowCount} row(s) returned in ${result.executionTimeMs}ms.`,
             type: 'sql',
             timestamp: new Date(),
-            metadata: {
-                sql: `SELECT u.id, u.email, u.created_at
-FROM users u
-WHERE u.created_at >= DATE_SUB(NOW(), INTERVAL 7 DAY)
-ORDER BY u.created_at DESC;`,
-                confidence: 0.92,
-            },
+            metadata: { sql, confidence: 0.85 },
         };
     }
 
     if (lowerMessage.includes('schema') || lowerMessage.includes('explain')) {
         return {
-            id: `msg-${Date.now()}`,
+            id,
             role: 'assistant',
-            content: `The **user_events** collection stores user activity data with the following schema:
-
-- **id** (string): Unique event identifier
-- **user_id** (string): Reference to the user
-- **event_type** (string): Type of event (page_view, click, form_submit, etc.)
-- **timestamp** (datetime): When the event occurred
-- **properties** (object): Event-specific metadata
-- **session_id** (string): Browser session identifier
-
-This collection is used for analytics and user behavior tracking.`,
+            content: 'Open the Data Fabric explorer and select a collection to inspect its live schema.',
             type: 'text',
             timestamp: new Date(),
-            metadata: {
-                collections: ['user_events'],
-            },
         };
     }
 
     if (lowerMessage.includes('lineage')) {
         return {
-            id: `msg-${Date.now()}`,
+            id,
             role: 'assistant',
-            content: `The **transactions** table has the following lineage:
-
-**Upstream Sources:**
-- Payment Gateway API → raw_payments
-- User Service → user_profiles
-
-**Downstream Dependencies:**
-- fraud_detection workflow
-- daily_revenue_report
-- customer_analytics dashboard
-
-Would you like me to show this in the Lineage Explorer?`,
+            content: 'Navigate to the Lineage view in Data Fabric to visualise upstream and downstream dependencies for any collection.',
             type: 'lineage',
             timestamp: new Date(),
-            metadata: {
-                collections: ['transactions', 'raw_payments', 'user_profiles'],
-            },
         };
     }
 
     return {
-        id: `msg-${Date.now()}`,
+        id,
         role: 'assistant',
         content: `I can help you with:
-- **SQL Generation**: Convert natural language to SQL queries
-- **Schema Exploration**: Understand your data structures
-- **Lineage Analysis**: Trace data dependencies
-- **Semantic Search**: Find relevant collections and workflows
+- **SQL Queries**: Describe what data you need and I\'ll run it against the analytics engine.
+- **Schema Exploration**: Ask about a collection to open it in the Data Fabric viewer.
+- **Lineage Analysis**: Trace data dependencies via the Lineage view.
+- **Semantic Search**: Describe a concept and I\'ll find related collections.
 
 What would you like to know?`,
         type: 'text',
@@ -193,12 +170,20 @@ export function AiAssistant({ isOpen, onClose }: AiAssistantProps): React.ReactE
         setInput('');
         setIsLoading(true);
 
-        // Simulate AI response delay
-        await new Promise((resolve) => setTimeout(resolve, 1000 + Math.random() * 1000));
-
-        const response = generateMockResponse(userMessage.content);
-        setMessages((prev) => [...prev, response]);
-        setIsLoading(false);
+        try {
+            const response = await generateResponse(userMessage.content);
+            setMessages((prev) => [...prev, response]);
+        } catch {
+            setMessages((prev) => [...prev, {
+                id: `msg-${Date.now()}`,
+                role: 'assistant',
+                content: 'Failed to process your request. Please ensure the analytics service is reachable.',
+                type: 'error',
+                timestamp: new Date(),
+            }]);
+        } finally {
+            setIsLoading(false);
+        }
     }, [input, isLoading]);
 
     // Handle copy SQL

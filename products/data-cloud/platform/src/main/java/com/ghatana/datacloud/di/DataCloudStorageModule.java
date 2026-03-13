@@ -5,12 +5,12 @@
 package com.ghatana.datacloud.di;
 
 import com.ghatana.datacloud.config.DataCloudEnvConfig;
-import com.ghatana.datacloud.plugins.storage.CoolTierStoragePlugin;
-import com.ghatana.datacloud.plugins.storage.IcebergStorageConfig;
-import com.ghatana.datacloud.plugins.storage.RedisHotTierPlugin;
-import com.ghatana.datacloud.plugins.storage.RedisStorageConfig;
-import com.ghatana.datacloud.plugins.storage.ColdTierArchivePlugin;
-import com.ghatana.datacloud.plugins.storage.S3ArchiveConfig;
+import com.ghatana.datacloud.plugins.iceberg.CoolTierStoragePlugin;
+import com.ghatana.datacloud.plugins.iceberg.IcebergStorageConfig;
+import com.ghatana.datacloud.plugins.redis.RedisHotTierPlugin;
+import com.ghatana.datacloud.plugins.redis.RedisStorageConfig;
+import com.ghatana.datacloud.plugins.s3archive.ColdTierArchivePlugin;
+import com.ghatana.datacloud.plugins.s3archive.S3ArchiveConfig;
 import com.ghatana.datacloud.spi.EventLogStore;
 import com.ghatana.datacloud.storage.WarmTierEventLogStore;
 import com.zaxxer.hikari.HikariConfig;

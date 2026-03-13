@@ -27,7 +27,7 @@
 - Multi-region deployment
 
 **Authority Sources Used:**
-- CURRENT_EXECUTION_PLAN.md (March 8, 2026)
+- UNIFIED_IMPLEMENTATION_PLAN.md (March 12, 2026)
 - ADR-011_STACK_STANDARDIZATION_AND_GHATANA_PLATFORM_ALIGNMENT.md (March 9, 2026)
 - README.md (v2.1)
 - LLD_INDEX.md
@@ -45,7 +45,7 @@
 
 | source_id | path | authority | why_it_matters | extracted_behaviors |
 |-----------|------|-----------|----------------|-------------------|
-| EXEC_PLAN_001 | CURRENT_EXECUTION_PLAN.md | Primary | Defines Phase 0 scope, dates, objectives | Repo bootstrap, service templates, runtime stack |
+| EXEC_PLAN_001 | UNIFIED_IMPLEMENTATION_PLAN.md | Primary | Defines Phase 0 scope, dates, objectives | Repo bootstrap, service templates, runtime stack |
 | ADR_011_001 | ADR-011_STACK_STANDARDIZATION_AND_GHATANA_PLATFORM_ALIGNMENT.md | Primary | Canonical stack baseline | Technology choices, Ghatana alignment |
 | README_001 | README.md | Secondary | Project overview and structure | Directory layout, module organization |
 | LLD_INDEX_001 | LLD_INDEX.md | Secondary | Low-level design index | Contract packages, shared schemas |
@@ -411,7 +411,7 @@ test_plan:
       module: repo_bootstrap
       scenario_type: happy_path
       requirement_refs: [EXEC_PLAN_001]
-      source_refs: [CURRENT_EXECUTION_PLAN.md]
+      source_refs: [UNIFIED_IMPLEMENTATION_PLAN.md]
       preconditions: [empty_directory, bootstrap_tool_available]
       fixtures: [bootstrap_config, expected_structure]
       input: {command: "bootstrap", target: "./test-repo"}
@@ -487,7 +487,7 @@ test_plan:
       module: local_runtime
       scenario_type: happy_path
       requirement_refs: [EXEC_PLAN_001]
-      source_refs: [CURRENT_EXECUTION_PLAN.md]
+      source_refs: [UNIFIED_IMPLEMENTATION_PLAN.md]
       preconditions: [bootstrap_complete, dependencies_available]
       fixtures: [docker_compose_config, test_data]
       input: {command: "start-runtime"}
@@ -514,7 +514,7 @@ test_plan:
       module: ci_pipeline
       scenario_type: happy_path
       requirement_refs: [EXEC_PLAN_001]
-      source_refs: [CURRENT_EXECUTION_PLAN.md]
+      source_refs: [UNIFIED_IMPLEMENTATION_PLAN.md]
       preconditions: [github_actions_workflow_defined]
       fixtures: [test_repository, workflow_files]
       input: {action: "push", branch: "test-feature"}

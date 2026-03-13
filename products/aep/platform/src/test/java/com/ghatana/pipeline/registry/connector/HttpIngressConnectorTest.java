@@ -4,6 +4,7 @@ import com.ghatana.platform.domain.domain.event.Event;
 import com.ghatana.platform.domain.domain.event.GEvent;
 import com.ghatana.platform.domain.domain.pipeline.ConnectorSpec;
 import com.ghatana.platform.observability.MetricsCollector;
+import com.ghatana.platform.testing.activej.EventloopTestBase;
 import io.activej.promise.Promise;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
@@ -31,7 +32,7 @@ import static org.mockito.Mockito.*;
  * - Null event rejection
  */
 @ExtendWith(MockitoExtension.class)
-class HttpIngressConnectorTest {
+class HttpIngressConnectorTest extends EventloopTestBase {
 
     @Mock
     private MetricsCollector metricsCollector;
@@ -84,7 +85,7 @@ class HttpIngressConnectorTest {
             connector.initialize();
             connector.connect();
             Promise<Boolean> healthy = connector.isHealthy();
-            assertThat(healthy.getResult()).isTrue();
+            assertThat(runPromise(() -> healthy)).isTrue();
         }
 
         @Test
@@ -95,7 +96,7 @@ class HttpIngressConnectorTest {
             connector.connect();
             connector.disconnect();
             Promise<Boolean> healthy = connector.isHealthy();
-            assertThat(healthy.getResult()).isFalse();
+            assertThat(runPromise(() -> healthy)).isFalse();
         }
 
         @Test

@@ -126,9 +126,15 @@ public class DefaultLlmExecutionPlan implements LlmExecutionPlan {
             Map<String, Object> typedMap = (Map<String, Object>) stepMap;
             String type = String.valueOf(typedMap.getOrDefault("type", ""));
             if ("LLM".equalsIgnoreCase(type)) {
+                if (!typedMap.containsKey("model")) {
+                    throw new IllegalStateException(
+                            "LLM execution plan step is missing required 'model' property — "
+                            + "set it explicitly in the agent YAML (e.g. model: claude-3-5-sonnet-20241022). "
+                            + "No hardcoded fallback is allowed.");
+                }
                 return new LlmStepConfig(
                         String.valueOf(typedMap.getOrDefault("provider", "ANTHROPIC")),
-                        String.valueOf(typedMap.getOrDefault("model", "claude-3-5-sonnet-20241022")),
+                        String.valueOf(typedMap.get("model")),
                         String.valueOf(typedMap.getOrDefault("prompt", "")),
                         parseDouble(typedMap.getOrDefault("temperature", 0.2)),
                         parseInt(typedMap.getOrDefault("max_tokens", 2000))

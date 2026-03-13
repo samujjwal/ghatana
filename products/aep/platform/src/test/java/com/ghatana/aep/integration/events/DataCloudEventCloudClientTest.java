@@ -26,6 +26,7 @@ import com.ghatana.platform.domain.auth.TenantId;
 import com.ghatana.platform.types.identity.CorrelationId;
 import com.ghatana.platform.types.identity.EventId;
 import com.ghatana.platform.types.identity.IdempotencyKey;
+import com.ghatana.platform.testing.activej.EventloopTestBase;
 import io.activej.promise.Promise;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
@@ -58,7 +59,7 @@ import static org.assertj.core.api.Assertions.*;
  *   <li>DataCloudEventCloudClient: Append, subscribe, query, scan, metrics</li>
  * </ul>
  */
-class DataCloudEventCloudClientTest {
+class DataCloudEventCloudClientTest extends EventloopTestBase {
 
     // ==================== Test Fixtures ====================
 
@@ -767,7 +768,7 @@ class DataCloudEventCloudClientTest {
                 EventRecord record = makeEventRecord("order.created", "evt-100");
                 AppendRequest request = new AppendRequest(record, AppendOptions.defaults());
 
-                AppendResult result = client.append(request).getResult();
+                AppendResult result = runPromise(() -> client.append(request));
 
                 assertThat(result).isNotNull();
                 assertThat(result.offset()).isNotNull();
@@ -782,7 +783,7 @@ class DataCloudEventCloudClientTest {
                 EventRecord record = makeEventRecord("payment.received", "evt-101");
                 AppendRequest request = new AppendRequest(record, AppendOptions.defaults());
 
-                client.append(request).getResult();
+                runPromise(() -> client.append(request));
 
                 List<EventEntry> stored = store.getAllEntries();
                 assertThat(stored).hasSize(1);
@@ -811,7 +812,7 @@ class DataCloudEventCloudClientTest {
                         AppendOptions.defaults())
                 );
 
-                List<AppendResult> results = client.appendBatch(requests).getResult();
+                List<AppendResult> results = runPromise(() -> client.appendBatch(requests));
 
                 assertThat(results).hasSize(3);
                 assertThat(store.getEntryCount()).isEqualTo(3);
@@ -821,7 +822,7 @@ class DataCloudEventCloudClientTest {
             @DisplayName("appends empty batch returns empty list")
             void appendsEmptyBatch() {
                 List<AppendResult> results =
-                    client.appendBatch(List.of()).getResult();
+                    runPromise(() -> client.appendBatch(List.of()));
                 assertThat(results).isEmpty();
             }
 
@@ -829,10 +830,10 @@ class DataCloudEventCloudClientTest {
             @DisplayName("increments append metrics")
             void incrementsAppendMetrics() {
                 EventRecord record = makeEventRecord("test", "evt-m1");
-                client.append(new AppendRequest(record, AppendOptions.defaults())).getResult();
+                runPromise(() -> client.append(new AppendRequest(record, AppendOptions.defaults())));
                 client.append(new AppendRequest(
                     makeEventRecord("test2", "evt-m2"),
-                    AppendOptions.defaults())).getResult();
+runPromise(() -> AppendOptions.defaults())));
 
                 Map<String, Object> metrics = client.getMetrics();
                 assertThat(metrics).containsEntry("append_count", 2L);
@@ -1034,7 +1035,7 @@ class DataCloudEventCloudClientTest {
                     new TimeRange(from, to),
                     EventCloud.TRUE,
                     Paging.first(10)
-                )).getResult();
+runPromise(() -> )));
 
                 assertThat(page).isNotNull();
                 assertThat(page.items()).hasSize(5);
@@ -1052,7 +1053,7 @@ class DataCloudEventCloudClientTest {
                     WIDE_TIME_RANGE,
                     EventCloud.TRUE,
                     Paging.first(10)
-                )).getResult();
+runPromise(() -> )));
 
                 assertThat(page.items()).hasSize(3);
                 assertThat(page.items())
@@ -1074,7 +1075,7 @@ class DataCloudEventCloudClientTest {
                     WIDE_TIME_RANGE,
                     EventCloud.TRUE,
                     Paging.first(10)
-                )).getResult();
+runPromise(() -> )));
 
                 assertThat(page.items()).hasSize(5);
             }
@@ -1090,7 +1091,7 @@ class DataCloudEventCloudClientTest {
                     WIDE_TIME_RANGE,
                     EventCloud.TRUE,
                     Paging.first(3)
-                )).getResult();
+runPromise(() -> )));
 
                 assertThat(page.items()).hasSize(3);
                 assertThat(page.hasMore()).isTrue();
@@ -1106,7 +1107,7 @@ class DataCloudEventCloudClientTest {
                     WIDE_TIME_RANGE,
                     EventCloud.TRUE,
                     Paging.first(10)
-                )).getResult();
+runPromise(() -> )));
 
                 assertThat(page.items()).isEmpty();
                 assertThat(page.hasMore()).isFalse();
@@ -1123,7 +1124,7 @@ class DataCloudEventCloudClientTest {
                     WIDE_TIME_RANGE,
                     EventCloud.TRUE,
                     Paging.first(100)
-                )).getResult();
+runPromise(() -> )));
 
                 assertThat(page.items()).hasSize(5);
             }
@@ -1143,7 +1144,7 @@ class DataCloudEventCloudClientTest {
                     new TimeRange(from, to),
                     EventCloud.TRUE,
                     Paging.first(10)
-                )).getResult();
+runPromise(() -> )));
 
                 assertThat(page.items()).hasSize(3);
             }
@@ -1154,7 +1155,7 @@ class DataCloudEventCloudClientTest {
                 client.query(new HistoryQuery(
                     TEST_TENANT, List.of(), WIDE_TIME_RANGE,
                     EventCloud.TRUE, Paging.first(10)
-                )).getResult();
+runPromise(() -> )));
 
                 assertThat(client.getMetrics()).containsEntry("query_count", 1L);
             }
@@ -1175,7 +1176,7 @@ class DataCloudEventCloudClientTest {
                         .timestamp(Instant.now())
                         .payload("{}")
                         .build();
-                    store.append(tc, entry).getResult();
+                    runPromise(() -> store.append(tc, entry));
                 }
             }
         }
@@ -1194,7 +1195,7 @@ class DataCloudEventCloudClientTest {
                         .eventType("scan.event")
                         .timestamp(Instant.now())
                         .payload("{}")
-                        .build()).getResult();
+runPromise(() -> .build()));
                 }
 
                 List<List<EventEnvelope>> batches = new CopyOnWriteArrayList<>();

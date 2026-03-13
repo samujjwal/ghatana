@@ -13,32 +13,16 @@
  */
 import React, { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { listPatterns, type PatternSummary } from '@/api/pipeline.api';
+import { useAtomValue } from 'jotai';
+import { tenantIdAtom } from '@/stores/tenant.store';
+import Editor from '@monaco-editor/react';
+import {
+  listPatterns,
+  createPattern,
+  deletePattern,
+  type PatternSummary,
+} from '@/api/pipeline.api';
 import type { PatternType } from '@/types/pipeline.types';
-import axios from 'axios';
-
-const BASE_URL = import.meta.env.VITE_AEP_API_URL ?? 'http://localhost:8081';
-
-async function deletePattern(id: string, tenantId = 'default'): Promise<void> {
-  await axios.delete(`${BASE_URL}/api/v1/patterns/${id}`, { params: { tenantId } });
-}
-
-interface CreatePatternPayload {
-  name: string;
-  type: PatternType;
-  threshold?: number;
-  description?: string;
-}
-
-async function createPattern(
-  payload: CreatePatternPayload,
-  tenantId = 'default',
-): Promise<PatternSummary> {
-  const { data } = await axios.post(`${BASE_URL}/api/v1/patterns`, payload, {
-    params: { tenantId },
-  });
-  return data;
-}
 
 // ─── Status badge ────────────────────────────────────────────────────
 
@@ -71,16 +55,17 @@ function PatternTypeBadge({ type }: { type: PatternType }) {
 // ─── Create form ─────────────────────────────────────────────────────
 
 function CreatePatternForm({ onClose, onCreated }: { onClose: () => void; onCreated: () => void }) {
-  const tenantId = 'default';
+  const tenantId = useAtomValue(tenantIdAtom);
   const [name, setName] = useState('');
   const [type, setType] = useState<PatternType>('THRESHOLD');
   const [threshold, setThreshold] = useState('');
   const [description, setDescription] = useState('');
+  const [config, setConfig] = useState('');
 
   const mut = useMutation({
     mutationFn: () =>
       createPattern(
-        { name, type, threshold: threshold ? Number(threshold) : undefined, description },
+        { name, type, threshold: threshold ? Number(threshold) : undefined, description, config: config.trim() || undefined },
         tenantId,
       ),
     onSuccess: () => {
@@ -144,6 +129,27 @@ function CreatePatternForm({ onClose, onCreated }: { onClose: () => void; onCrea
               onChange={(e) => setDescription(e.target.value)}
             />
           </label>
+
+          <div className="block text-sm">
+            <span className="text-gray-600 dark:text-gray-400">Config YAML (optional)</span>
+            <div className="mt-1 rounded border border-gray-300 dark:border-gray-700 overflow-hidden">
+              <Editor
+                height={160}
+                language="yaml"
+                theme="vs-dark"
+                value={config}
+                onChange={(val: string | undefined) => setConfig(val ?? '')}
+                options={{
+                  minimap: { enabled: false },
+                  lineNumbers: 'off',
+                  fontSize: 12,
+                  scrollBeyondLastLine: false,
+                  wordWrap: 'on',
+                  tabSize: 2,
+                }}
+              />
+            </div>
+          </div>
         </div>
 
         <div className="mt-5 flex justify-end gap-3">
@@ -173,7 +179,7 @@ const ALL_TYPES: Array<PatternType | 'ALL'> = [
 ];
 
 export function PatternStudioPage() {
-  const tenantId = 'default';
+  const tenantId = useAtomValue(tenantIdAtom);
   const queryClient = useQueryClient();
   const [filterType, setFilterType] = useState<PatternType | 'ALL'>('ALL');
   const [showCreate, setShowCreate] = useState(false);

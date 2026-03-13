@@ -78,6 +78,10 @@ public class YappcAgentSystem {
     // --- Observability ---
     private final AgentHeartbeatService heartbeatService;
 
+    // --- AEP integration (Phase 9.2) ---
+    @Nullable
+    private final AepEventPublisher aepEventPublisher;
+
     private boolean initialized = false;
 
     private YappcAgentSystem(
@@ -86,7 +90,8 @@ public class YappcAgentSystem {
             @NotNull YAPPCAgentRegistry sdlcRegistry,
             @NotNull MemoryStore memoryStore,
             @Nullable LLMGenerator.LLMGateway llmGateway,
-            @NotNull LLMGenerator.LLMConfig llmConfig) {
+            @NotNull LLMGenerator.LLMConfig llmConfig,
+            @Nullable AepEventPublisher aepEventPublisher) {
         this.eventloop = eventloop;
         this.configBasePath = configBasePath;
         this.agentFactory = new PlannerAgentFactory();
@@ -97,7 +102,7 @@ public class YappcAgentSystem {
         this.llmGateway = llmGateway;
         this.llmConfig = llmConfig;
         this.heartbeatService = new AgentHeartbeatService(sdlcRegistry, eventloop);
-        // AEP event publisher is wired via DI in LifecycleServiceModule (Ph1c)
+        this.aepEventPublisher = aepEventPublisher;
     }
 
     // ==================== INITIALIZATION ====================
@@ -123,6 +128,15 @@ public class YappcAgentSystem {
         log.info("Initializing unified YAPPC agent system...");
 
         return Promise.ofBlocking(eventloop, () -> {
+            // Step 0: Wire AEP publisher to global static before bootstrapping agents
+            if (aepEventPublisher != null) {
+                YAPPCAgentBase.configureAepEventPublisher(aepEventPublisher);
+                log.info("AEP event publisher wired to SDLC agents: {}",
+                        aepEventPublisher.getClass().getSimpleName());
+            } else {
+                log.warn("No AepEventPublisher configured — SDLC step events will use no-op publisher");
+            }
+
             // Step 1: SDLC specialists
             bootstrapSdlcAgents();
 
@@ -552,6 +566,7 @@ public class YappcAgentSystem {
         private LLMGenerator.LLMGateway llmGateway;
         private LLMGenerator.LLMConfig llmConfig;
         private String configBasePath = "products/yappc/config/agents";
+        private AepEventPublisher aepEventPublisher;
 
         /**
          * Sets the eventloop for async operations.
@@ -609,6 +624,17 @@ public class YappcAgentSystem {
         }
 
         /**
+         * Sets the AEP event publisher for SDLC step event emission.
+         *
+         * @param aepEventPublisher publisher for AEP integration (nullable for no-op mode)
+         * @return this builder
+         */
+        public Builder aepEventPublisher(@Nullable AepEventPublisher aepEventPublisher) {
+            this.aepEventPublisher = aepEventPublisher;
+            return this;
+        }
+
+        /**
          * Builds the unified agent system.
          *
          * @return configured YappcAgentSystem
@@ -625,7 +651,7 @@ public class YappcAgentSystem {
             LLMGenerator.LLMConfig effectiveConfig = llmConfig != null
                     ? llmConfig
                     : LLMGenerator.LLMConfig.builder()
-                            .model("llama3")
+                            .model(System.getenv().getOrDefault("YAPPC_DEFAULT_MODEL", "llama3"))
                             .temperature(0.7)
                             .maxTokens(4000)
                             .build();
@@ -633,7 +659,7 @@ public class YappcAgentSystem {
             return new YappcAgentSystem(
                     eventloop, configBasePath,
                     new YAPPCAgentRegistry(), memoryStore,
-                    llmGateway, effectiveConfig);
+                    llmGateway, effectiveConfig, aepEventPublisher);
         }
     }
 }

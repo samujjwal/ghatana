@@ -1,0 +1,73 @@
+# Platform Agent Catalog — Base Agent Template
+#
+# This is the base template that agent YAML descriptors MAY inherit by declaring:
+#   extends: base-agent-template
+#
+# Inheriting agents only need to declare the fields they want to override.
+# Required fields (id, name, version) are NOT provided here — every agent
+# descriptor must supply its own.
+#
+# Template variables ({{ varName }}) are resolved by YamlTemplateEngine using
+# TemplateContext populated from: environment → platform/agent-catalog/values.yaml
+# → product values.yaml → per-request explicit params.
+#
+# After this template is loaded by YamlTemplateEngine.render(), the resulting
+# YAML is parsed into an AgentDefinition object by the catalog loader. Any key
+# defined here is overridden by the same key in the concrete agent's descriptor.
+
+# ---------------------------------------------------------------------------
+# Versioning — every inheriting agent MUST override this
+# ---------------------------------------------------------------------------
+version: "1.0.0"
+
+# ---------------------------------------------------------------------------
+# Generator — inheriting agents should declare type and, for LLM mode, model
+# ---------------------------------------------------------------------------
+generator:
+  type: ADAPTIVE
+  provider: "{{ defaultProvider }}"
+  model: "{{ defaultModel }}"
+  temperature: "{{ defaultTemperature }}"
+  maxTokens: "{{ defaultMaxTokens }}"
+
+# ---------------------------------------------------------------------------
+# Memory defaults
+# ---------------------------------------------------------------------------
+memory:
+  type: "{{ defaultMemoryType }}"
+  scope: "{{ defaultMemoryScope }}"
+  retention: "{{ defaultMemoryRetention }}"
+
+# ---------------------------------------------------------------------------
+# Resource requirements
+# ---------------------------------------------------------------------------
+resources:
+  memory: "{{ defaultResourceMemory }}"
+  cpu: "{{ defaultResourceCpu }}"
+  timeout: "{{ defaultTimeout }}"
+
+# ---------------------------------------------------------------------------
+# Cost guard-rails
+# ---------------------------------------------------------------------------
+cost:
+  maxPerCall: "{{ defaultMaxCostPerCall }}"
+  monthlyBudget: "{{ defaultMonthlyBudget }}"
+
+# ---------------------------------------------------------------------------
+# AEP integration defaults (only meaningful for event-driven agents)
+# ---------------------------------------------------------------------------
+aep:
+  backpressure:
+    bufferSize: "{{ defaultBackpressureBufferSize }}"
+    overflowStrategy: "{{ defaultOverflowStrategy }}"
+  reliability:
+    checkpointInterval: "{{ defaultCheckpointInterval }}"
+    maxRetries: "{{ defaultMaxRetries }}"
+
+# ---------------------------------------------------------------------------
+# Observability
+# ---------------------------------------------------------------------------
+observability:
+  logLevel: "{{ defaultLogLevel }}"
+  metrics:
+    scrapeInterval: "{{ defaultMetricsScrapeInterval }}"

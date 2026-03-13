@@ -2,6 +2,7 @@ package com.ghatana.datacloud.plugins;
 
 import com.ghatana.platform.plugin.*;
 import com.ghatana.platform.plugin.impl.DefaultPluginContext;
+import com.ghatana.platform.testing.activej.EventloopTestBase;
 import io.activej.promise.Promise;
 import org.jetbrains.annotations.NotNull;
 import org.junit.jupiter.api.BeforeEach;
@@ -36,7 +37,7 @@ import static org.assertj.core.api.Assertions.*;
  * @doc.layer test
  * @doc.pattern Test
  */
-class UnifiedPluginSpiTest {
+class UnifiedPluginSpiTest extends EventloopTestBase {
 
     private PluginRegistry registry;
     private PluginContext context;
@@ -62,13 +63,13 @@ class UnifiedPluginSpiTest {
 
             assertThat(plugin.getState()).isEqualTo(PluginState.UNLOADED);
 
-            plugin.initialize(context).getResult();
+            runPromise(() -> plugin.initialize(context));
             assertThat(plugin.getState()).isEqualTo(PluginState.INITIALIZED);
 
-            plugin.start().getResult();
+            runPromise(() -> plugin.start());
             assertThat(plugin.getState()).isEqualTo(PluginState.RUNNING);
 
-            plugin.stop().getResult();
+            runPromise(() -> plugin.stop());
             assertThat(plugin.getState()).isEqualTo(PluginState.STOPPED);
         }
 
@@ -76,10 +77,10 @@ class UnifiedPluginSpiTest {
         @DisplayName("shutdown() should default to stop()")
         void shutdownDelegatesToStop() {
             TestPlugin plugin = new TestPlugin("shutdown-test");
-            plugin.initialize(context).getResult();
-            plugin.start().getResult();
+            runPromise(() -> plugin.initialize(context));
+            runPromise(() -> plugin.start());
 
-            plugin.shutdown().getResult();
+            runPromise(() -> plugin.shutdown());
             assertThat(plugin.getState()).isEqualTo(PluginState.STOPPED);
         }
 
@@ -87,7 +88,7 @@ class UnifiedPluginSpiTest {
         @DisplayName("healthCheck() default returns OK")
         void defaultHealthCheckReturnsOk() {
             DefaultHealthPlugin plugin = new DefaultHealthPlugin("health-default");
-            HealthStatus status = plugin.healthCheck().getResult();
+            HealthStatus status = runPromise(() -> plugin.healthCheck());
 
             assertThat(status.healthy()).isTrue();
             assertThat(status.message()).isEqualTo("OK");
@@ -460,7 +461,7 @@ class UnifiedPluginSpiTest {
             registry.register(new TestPlugin("healthy-1"));
             registry.register(new TestPlugin("healthy-2"));
 
-            HealthStatus aggregate = registry.aggregateHealth().getResult();
+            HealthStatus aggregate = runPromise(() -> registry.aggregateHealth());
             assertThat(aggregate.healthy()).isTrue();
         }
     }
@@ -631,20 +632,20 @@ class UnifiedPluginSpiTest {
             assertThat(plugin.metadata().capabilities())
                     .contains("pii-detection", "gdpr-compliance");
 
-            plugin.initialize(context).getResult();
+            runPromise(() -> plugin.initialize(context));
             assertThat(plugin.getState()).isEqualTo(PluginState.INITIALIZED);
 
-            plugin.start().getResult();
+            runPromise(() -> plugin.start());
             assertThat(plugin.getState()).isEqualTo(PluginState.STARTED);
 
-            HealthStatus health = plugin.healthCheck().getResult();
+            HealthStatus health = runPromise(() -> plugin.healthCheck());
             assertThat(health.healthy()).isTrue();
 
-            plugin.stop().getResult();
+            runPromise(() -> plugin.stop());
             assertThat(plugin.getState()).isEqualTo(PluginState.STOPPED);
 
             // After stop, health check should report unhealthy
-            HealthStatus stoppedHealth = plugin.healthCheck().getResult();
+            HealthStatus stoppedHealth = runPromise(() -> plugin.healthCheck());
             assertThat(stoppedHealth.healthy()).isFalse();
         }
 
@@ -659,16 +660,16 @@ class UnifiedPluginSpiTest {
             assertThat(plugin.metadata().capabilities())
                     .contains("lineage-tracking", "impact-analysis");
 
-            plugin.initialize(context).getResult();
+            runPromise(() -> plugin.initialize(context));
             assertThat(plugin.getState()).isEqualTo(PluginState.INITIALIZED);
 
-            plugin.start().getResult();
+            runPromise(() -> plugin.start());
             assertThat(plugin.getState()).isEqualTo(PluginState.STARTED);
 
-            HealthStatus health = plugin.healthCheck().getResult();
+            HealthStatus health = runPromise(() -> plugin.healthCheck());
             assertThat(health.healthy()).isTrue();
 
-            plugin.shutdown().getResult();
+            runPromise(() -> plugin.shutdown());
             assertThat(plugin.getState()).isEqualTo(PluginState.STOPPED);
         }
     }

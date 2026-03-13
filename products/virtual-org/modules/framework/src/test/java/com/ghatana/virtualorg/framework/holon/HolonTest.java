@@ -1,5 +1,6 @@
 package com.ghatana.virtualorg.framework.holon;
 
+import com.ghatana.platform.testing.activej.EventloopTestBase;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 
@@ -12,7 +13,7 @@ import static org.assertj.core.api.Assertions.assertThat;
  * Tests for the Holonic Architecture implementation.
  */
 @DisplayName("Holonic Architecture Tests")
-class HolonTest {
+class HolonTest extends EventloopTestBase {
 
     @Test
     @DisplayName("Should create holon with unique identity")
@@ -31,8 +32,8 @@ class HolonTest {
         AbstractHolon engineering = new TestHolon("engineering", "Engineering", Holon.HolonType.DEPARTMENT);
         AbstractHolon team = new TestHolon("team-alpha", "Team Alpha", Holon.HolonType.TEAM);
 
-        company.addChild(engineering).getResult();
-        engineering.addChild(team).getResult();
+        runPromise(() -> company.addChild(engineering));
+        runPromise(() -> engineering.addChild(team));
 
         assertThat(company.getChildren()).hasSize(1);
         assertThat(company.getChildren().get(0).getName()).isEqualTo("Engineering");
@@ -47,7 +48,7 @@ class HolonTest {
         AbstractHolon company = new TestHolon("company", "Company", Holon.HolonType.ORGANIZATION);
         AbstractHolon engineering = new TestHolon("engineering", "Engineering", Holon.HolonType.DEPARTMENT);
 
-        company.addChild(engineering).getResult();
+        runPromise(() -> company.addChild(engineering));
 
         assertThat(engineering.getParent()).isPresent();
         assertThat(engineering.getParent().get()).isEqualTo(company);
@@ -62,8 +63,8 @@ class HolonTest {
         AbstractHolon engineering = new TestHolon("engineering", "Engineering", Holon.HolonType.DEPARTMENT);
         AbstractHolon team = new TestHolon("team-alpha", "Team Alpha", Holon.HolonType.TEAM);
 
-        company.addChild(engineering).getResult();
-        engineering.addChild(team).getResult();
+        runPromise(() -> company.addChild(engineering));
+        runPromise(() -> engineering.addChild(team));
 
         Optional<Holon> found = company.findById("team-alpha");
         assertThat(found).isPresent();
@@ -77,8 +78,8 @@ class HolonTest {
         AbstractHolon engineering = new TestHolon("engineering", "Engineering", Holon.HolonType.DEPARTMENT);
         AbstractHolon team = new TestHolon("team-alpha", "Team Alpha", Holon.HolonType.TEAM);
 
-        company.addChild(engineering).getResult();
-        engineering.addChild(team).getResult();
+        runPromise(() -> company.addChild(engineering));
+        runPromise(() -> engineering.addChild(team));
 
         List<Holon> descendants = company.getAllDescendants();
         assertThat(descendants).hasSize(2);
@@ -90,10 +91,10 @@ class HolonTest {
         AbstractHolon company = new TestHolon("company", "Company", Holon.HolonType.ORGANIZATION);
         AbstractHolon engineering = new TestHolon("engineering", "Engineering", Holon.HolonType.DEPARTMENT);
 
-        company.addChild(engineering).getResult();
+        runPromise(() -> company.addChild(engineering));
         assertThat(company.getChildren()).hasSize(1);
 
-        company.removeChild("engineering").getResult();
+        runPromise(() -> company.removeChild("engineering"));
         assertThat(company.getChildren()).isEmpty();
     }
 
@@ -104,8 +105,8 @@ class HolonTest {
         AbstractHolon engineering = new TestHolon("engineering", "Engineering", Holon.HolonType.DEPARTMENT);
         AbstractHolon team = new TestHolon("team", "Team Alpha", Holon.HolonType.TEAM);
 
-        company.addChild(engineering).getResult();
-        engineering.addChild(team).getResult();
+        runPromise(() -> company.addChild(engineering));
+        runPromise(() -> engineering.addChild(team));
 
         assertThat(company.getDepth()).isEqualTo(0);
         assertThat(engineering.getDepth()).isEqualTo(1);

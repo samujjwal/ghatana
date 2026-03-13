@@ -16,7 +16,9 @@ import type {
   PatternType,
 } from '@/types/pipeline.types';
 
-const BASE_URL = import.meta.env.VITE_AEP_API_URL ?? 'http://localhost:8081';
+// In dev the Vite proxy (/api → localhost:8081) handles routing.
+// In production set VITE_AEP_API_URL or rely on the reverse-proxy.
+const BASE_URL = import.meta.env.VITE_AEP_API_URL ?? '';
 
 const client: AxiosInstance = axios.create({
   baseURL: BASE_URL,
@@ -87,6 +89,29 @@ export async function listPatterns(tenantId = 'default'): Promise<PatternSummary
   return data.patterns;
 }
 
+export interface CreatePatternPayload {
+  name: string;
+  type: PatternType;
+  threshold?: number;
+  description?: string;
+  /** YAML config string */
+  config?: string;
+}
+
+export async function createPattern(
+  payload: CreatePatternPayload,
+  tenantId = 'default',
+): Promise<PatternSummary> {
+  const { data } = await client.post('/api/v1/patterns', payload, {
+    params: { tenantId },
+  });
+  return data;
+}
+
+export async function deletePattern(id: string, tenantId = 'default'): Promise<void> {
+  await client.delete(`/api/v1/patterns/${id}`, { params: { tenantId } });
+}
+
 // ─── Capabilities ────────────────────────────────────────────────────
 
 export interface SchemaFormat {
@@ -119,6 +144,40 @@ export async function listEncodings(): Promise<string[]> {
 export async function listTransforms(): Promise<{ id: string; description: string }[]> {
   const { data } = await client.get('/admin/capabilities/transforms');
   return data.transforms;
+}
+
+// ─── Run pipeline (trigger test event) ───────────────────────────────
+
+export interface PipelineRunResult {
+  eventId: string;
+  pipelineId?: string;
+  status: string;
+  timestamp: string;
+}
+
+/**
+ * Triggers a test run by posting a synthetic event to the AEP backend.
+ * The backend fans it through the active pipeline for the given pipelineId (if provided).
+ */
+export async function runPipeline(
+  pipelineId: string | undefined,
+  tenantId = 'default',
+): Promise<PipelineRunResult> {
+  const { data } = await client.post(
+    '/api/v1/events',
+    {
+      type: 'pipeline.test-run',
+      tenantId,
+      payload: { pipelineId: pipelineId ?? 'default', source: 'ui-run-now' },
+    },
+    { params: { tenantId } },
+  );
+  return {
+    eventId: (data as { eventId?: string; id?: string }).eventId ?? (data as { id?: string }).id ?? 'unknown',
+    pipelineId,
+    status: (data as { success?: boolean }).success ? 'SUCCEEDED' : 'STARTED',
+    timestamp: new Date().toISOString(),
+  };
 }
 
 // ─── Export Pipeline as YAML ─────────────────────────────────────────

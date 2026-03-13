@@ -34,7 +34,7 @@ All TDD specifications have been comprehensively expanded to cover the 654 stori
 | 4   | `tdd_spec_d01_oms_expanded_v2.1.md`                  | 21      | **42**     | Phase 3  | ✅ Complete |
 | 5   | `tdd_spec_expansion_strategy_v2.1.md`                | -       | -          | Strategy | ✅ Complete |
 | 6   | `tdd_spec_expansion_summary_v2.1.md`                 | 654     | 660        | Summary  | ✅ Complete |
-| 7   | `tdd_spec_review_report_v2.1.md`                     | 294     | -          | Review   | ✅ Complete |
+| 7   | `archive/reviews/2026-03/tdd_spec_review_report_v2.1.md` | 294 | - | Review | ✅ Archived |
 
 ### Supporting Documents
 

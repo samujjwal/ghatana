@@ -5,58 +5,55 @@
  *   - Summary KPI cards (total runs, active, success rate, avg latency)
  *   - Per-pipeline metrics table
  *   - Recent run log with status, duration, error count
- *   - Auto-refresh every 15 s  (manually cancelable)
+ *   - Live run updates via SSE through useLivePipelineRuns
  *
  * @doc.type page
  * @doc.purpose AEP real-time monitoring dashboard
  * @doc.layer frontend
  */
 import React, { useState } from 'react';
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { useQuery } from '@tanstack/react-query';
+import { useAtomValue } from 'jotai';
 import {
-  listPipelineRuns,
+  BarChart,
+  Bar,
+  XAxis,
+  YAxis,
+  Tooltip,
+  Legend,
+  ResponsiveContainer,
+} from 'recharts';
+import {
   getPipelineMetrics,
-  cancelRun,
-  type PipelineRun,
   type PipelineMetrics,
 } from '@/api/aep.api';
+import { tenantIdAtom } from '@/stores/tenant.store';
+import { useLivePipelineRuns, useCancelRun } from '@/hooks/usePipelineRuns';
+import { StatCard } from '@/components/monitoring/StatCard';
+import { RunTable } from '@/components/monitoring/RunTable';
 
-// ─── Helpers ─────────────────────────────────────────────────────────
+// ─── Chart ───────────────────────────────────────────────────────────
 
-function formatDuration(start: string, end?: string): string {
-  const ms = (end ? new Date(end) : new Date()).getTime() - new Date(start).getTime();
-  if (ms < 1000) return `${ms}ms`;
-  if (ms < 60_000) return `${(ms / 1000).toFixed(1)}s`;
-  return `${Math.floor(ms / 60_000)}m ${Math.floor((ms % 60_000) / 1000)}s`;
-}
-
-const RUN_STATUS_COLORS: Record<PipelineRun['status'], string> = {
-  RUNNING: 'text-blue-600 dark:text-blue-400',
-  SUCCEEDED: 'text-green-600 dark:text-green-400',
-  FAILED: 'text-red-600 dark:text-red-400',
-  CANCELLED: 'text-gray-500',
-};
-
-// ─── KPI Card ────────────────────────────────────────────────────────
-
-function KpiCard({
-  label,
-  value,
-  sub,
-  accent,
-}: {
-  label: string;
-  value: string | number;
-  sub?: string;
-  accent?: string;
-}) {
+function SuccessRateChart({ metrics }: { metrics: PipelineMetrics[] }) {
+  if (metrics.length === 0) return null;
+  const data = metrics.map((m) => ({
+    name: m.pipelineName.length > 16 ? m.pipelineName.slice(0, 14) + '…' : m.pipelineName,
+    Succeeded: Math.round(m.totalRuns * (1 - m.errorRate)),
+    Failed: Math.round(m.totalRuns * m.errorRate),
+  }));
   return (
-    <div className="rounded-lg border border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-900 px-5 py-4">
-      <p className="text-xs font-medium uppercase tracking-wider text-gray-500">{label}</p>
-      <p className={['text-3xl font-bold mt-1', accent ?? 'text-gray-900 dark:text-white'].join(' ')}>
-        {value}
-      </p>
-      {sub && <p className="text-xs text-gray-400 mt-0.5">{sub}</p>}
+    <div className="rounded-lg border border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-900 px-4 py-4">
+      <p className="text-xs font-medium uppercase tracking-wider text-gray-500 mb-3">Pipeline success vs failure</p>
+      <ResponsiveContainer width="100%" height={180}>
+        <BarChart data={data} margin={{ top: 0, right: 8, left: -16, bottom: 0 }}>
+          <XAxis dataKey="name" tick={{ fontSize: 11 }} />
+          <YAxis allowDecimals={false} tick={{ fontSize: 11 }} />
+          <Tooltip />
+          <Legend wrapperStyle={{ fontSize: 11 }} />
+          <Bar dataKey="Succeeded" stackId="a" fill="#22c55e" radius={[0, 0, 0, 0]} />
+          <Bar dataKey="Failed" stackId="a" fill="#ef4444" radius={[3, 3, 0, 0]} />
+        </BarChart>
+      </ResponsiveContainer>
     </div>
   );
 }
@@ -64,14 +61,10 @@ function KpiCard({
 // ─── Page ────────────────────────────────────────────────────────────
 
 export function MonitoringDashboardPage() {
-  const tenantId = 'default';
-  const queryClient = useQueryClient();
+  const tenantId = useAtomValue(tenantIdAtom);
 
-  const { data: runs = [], isLoading: runsLoading } = useQuery({
-    queryKey: ['aep', 'runs', tenantId],
-    queryFn: () => listPipelineRuns(tenantId, 30),
-    refetchInterval: 15_000,
-  });
+  const { data: runs = [], isLoading: runsLoading } = useLivePipelineRuns(30);
+  const cancelRun = useCancelRun();
 
   const { data: metrics = [], isLoading: metricsLoading } = useQuery({
     queryKey: ['aep', 'metrics', tenantId],
@@ -79,19 +72,11 @@ export function MonitoringDashboardPage() {
     refetchInterval: 15_000,
   });
 
-  const cancelMut = useMutation({
-    mutationFn: (runId: string) => cancelRun(runId, tenantId),
-    onSuccess: () => {
-      void queryClient.invalidateQueries({ queryKey: ['aep', 'runs'] });
-    },
-  });
-
   // KPIs derived from runs
   const activeRuns = runs.filter((r) => r.status === 'RUNNING').length;
   const succeededRuns = runs.filter((r) => r.status === 'SUCCEEDED').length;
   const failedRuns = runs.filter((r) => r.status === 'FAILED').length;
-  const successRate =
-    runs.length > 0 ? Math.round((succeededRuns / runs.length) * 100) : 0;
+  const successRate = runs.length > 0 ? Math.round((succeededRuns / runs.length) * 100) : 0;
 
   const [tab, setTab] = useState<'runs' | 'metrics'>('runs');
 
@@ -100,30 +85,35 @@ export function MonitoringDashboardPage() {
       {/* Header */}
       <div className="px-6 py-4 border-b border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-950 flex items-center gap-3">
         <h1 className="text-lg font-semibold text-gray-900 dark:text-white">Monitoring</h1>
-        <span className="text-xs text-gray-400">Auto-refreshes every 15 s</span>
+        <span className="text-xs text-gray-400">Live via SSE · 15 s fallback</span>
       </div>
 
       <div className="flex-1 overflow-auto px-6 py-4 space-y-6">
         {/* KPI row */}
         <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
-          <KpiCard label="Total runs" value={runs.length} />
-          <KpiCard
+          <StatCard label="Total runs" value={runs.length} />
+          <StatCard
             label="Active"
             value={activeRuns}
-            accent={activeRuns > 0 ? 'text-blue-600 dark:text-blue-400' : undefined}
+            trend={activeRuns > 0 ? 'up' : 'neutral'}
           />
-          <KpiCard
+          <StatCard
             label="Success rate"
             value={`${successRate}%`}
             sub={`${succeededRuns} succeeded`}
-            accent={successRate >= 90 ? 'text-green-600' : successRate >= 70 ? 'text-yellow-600' : 'text-red-600'}
+            trend={successRate >= 90 ? 'up' : successRate >= 70 ? 'neutral' : 'down'}
           />
-          <KpiCard
+          <StatCard
             label="Failed"
             value={failedRuns}
-            accent={failedRuns > 0 ? 'text-red-600 dark:text-red-400' : undefined}
+            trend={failedRuns > 0 ? 'down' : 'neutral'}
           />
         </div>
+
+        {/* Success rate chart */}
+        {!metricsLoading && metrics.length > 0 && (
+          <SuccessRateChart metrics={metrics} />
+        )}
 
         {/* Tab selector */}
         <div className="flex gap-2 border-b border-gray-200 dark:border-gray-800">
@@ -143,79 +133,18 @@ export function MonitoringDashboardPage() {
           ))}
         </div>
 
-        {/* Runs table */}
+        {/* Runs tab */}
         {tab === 'runs' && (
-          <div>
-            {runsLoading ? (
-              <p className="text-gray-400 text-center py-8">Loading runs…</p>
-            ) : (
-              <table className="w-full text-sm border-collapse">
-                <thead>
-                  <tr className="text-left text-xs font-medium text-gray-500 uppercase tracking-wider border-b border-gray-200 dark:border-gray-800">
-                    <th className="pb-2 pr-4">Pipeline</th>
-                    <th className="pb-2 pr-4">Status</th>
-                    <th className="pb-2 pr-4">Events</th>
-                    <th className="pb-2 pr-4">Errors</th>
-                    <th className="pb-2 pr-4">Duration</th>
-                    <th className="pb-2">Started</th>
-                    <th className="pb-2" />
-                  </tr>
-                </thead>
-                <tbody>
-                  {runs.length === 0 && (
-                    <tr>
-                      <td colSpan={7} className="py-8 text-center text-gray-400 italic">
-                        No runs yet
-                      </td>
-                    </tr>
-                  )}
-                  {runs.map((run) => (
-                    <tr
-                      key={run.id}
-                      className="border-b border-gray-100 dark:border-gray-900 hover:bg-white dark:hover:bg-gray-900"
-                    >
-                      <td className="py-2 pr-4 font-medium text-gray-900 dark:text-white">
-                        {run.pipelineName}
-                      </td>
-                      <td className={['py-2 pr-4 font-medium', RUN_STATUS_COLORS[run.status]].join(' ')}>
-                        {run.status}
-                      </td>
-                      <td className="py-2 pr-4 text-gray-600 dark:text-gray-400">
-                        {run.eventsProcessed.toLocaleString()}
-                      </td>
-                      <td className={['py-2 pr-4', run.errorsCount > 0 ? 'text-red-600' : 'text-gray-400'].join(' ')}>
-                        {run.errorsCount}
-                      </td>
-                      <td className="py-2 pr-4 text-gray-500 font-mono text-xs">
-                        {formatDuration(run.startedAt, run.finishedAt)}
-                      </td>
-                      <td className="py-2 text-gray-400 text-xs">
-                        {new Date(run.startedAt).toLocaleTimeString()}
-                      </td>
-                      <td className="py-2 text-right">
-                        {run.status === 'RUNNING' && (
-                          <button
-                            onClick={() => cancelMut.mutate(run.id)}
-                            className="text-xs text-red-600 hover:underline"
-                          >
-                            Cancel
-                          </button>
-                        )}
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            )}
-          </div>
+          runsLoading
+            ? <p className="text-gray-400 text-center py-8">Loading runs…</p>
+            : <RunTable runs={runs} onCancel={(id) => cancelRun.mutate(id)} />
         )}
 
-        {/* Metrics table */}
+        {/* Metrics tab */}
         {tab === 'metrics' && (
-          <div>
-            {metricsLoading ? (
-              <p className="text-gray-400 text-center py-8">Loading metrics…</p>
-            ) : (
+          metricsLoading
+            ? <p className="text-gray-400 text-center py-8">Loading metrics…</p>
+            : (
               <table className="w-full text-sm border-collapse">
                 <thead>
                   <tr className="text-left text-xs font-medium text-gray-500 uppercase tracking-wider border-b border-gray-200 dark:border-gray-800">
@@ -240,9 +169,7 @@ export function MonitoringDashboardPage() {
                       key={m.pipelineId}
                       className="border-b border-gray-100 dark:border-gray-900 hover:bg-white dark:hover:bg-gray-900"
                     >
-                      <td className="py-2 pr-4 font-medium text-gray-900 dark:text-white">
-                        {m.pipelineName}
-                      </td>
+                      <td className="py-2 pr-4 font-medium text-gray-900 dark:text-white">{m.pipelineName}</td>
                       <td className="py-2 pr-4 font-mono text-xs">{m.throughputPerSec.toFixed(1)}</td>
                       <td className={['py-2 pr-4 font-mono text-xs', m.errorRate > 0.05 ? 'text-red-600' : 'text-gray-500'].join(' ')}>
                         {(m.errorRate * 100).toFixed(2)}%
@@ -254,8 +181,7 @@ export function MonitoringDashboardPage() {
                   ))}
                 </tbody>
               </table>
-            )}
-          </div>
+            )
         )}
       </div>
     </div>

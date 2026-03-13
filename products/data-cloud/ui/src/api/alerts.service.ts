@@ -107,7 +107,7 @@ export class AlertsService {
 
   /** Open an SSE stream for live alert events */
   openStream(): EventSource {
-    return new EventSource(`${this.baseURL}/dc/events/stream?eventType=alert.triggered`);
+    return new EventSource(`${this.baseURL}/v1/events/stream?eventType=alert.triggered`);
   }
 }
 

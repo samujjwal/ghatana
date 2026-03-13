@@ -4,6 +4,12 @@ import com.ghatana.aep.Aep;
 import com.ghatana.aep.AepEngine;
 import com.ghatana.aep.catalog.AepOperatorCatalogLoader;
 import com.ghatana.aep.launcher.grpc.AepGrpcServer;
+import com.ghatana.agent.learning.consolidation.ConsolidationScheduler;
+import com.ghatana.agent.learning.review.HumanReviewQueue;
+import com.ghatana.agent.learning.review.InMemoryHumanReviewQueue;
+import com.ghatana.agent.learning.review.ReviewItem;
+import com.ghatana.agent.learning.review.ReviewNotificationSpi;
+import com.ghatana.aep.launcher.http.AepHttpServer;
 import com.ghatana.agent.registry.InMemoryAgentFrameworkRegistry;
 import com.ghatana.core.operator.catalog.DefaultOperatorCatalog;
 import com.ghatana.core.operator.catalog.OperatorCatalog;
@@ -61,9 +67,16 @@ public class AepLauncher {
                 log.info("AEP shutdown complete");
             }));
 
+            // Start learning-loop components (HumanReviewQueue + ConsolidationScheduler)
+            // These are always created so HITL/learning endpoints are available.
+            java.util.concurrent.atomic.AtomicReference<AepHttpServer> httpServerRef =
+                new java.util.concurrent.atomic.AtomicReference<>();
+            HumanReviewQueue humanReviewQueue = createHumanReviewQueue(httpServerRef);
+            startConsolidationScheduler(humanReviewQueue);
+
             // Start HTTP server if configured
             if (shouldStartHttpServer(args)) {
-                startHttpServer(engine, config);
+                startHttpServer(engine, config, humanReviewQueue, httpServerRef);
             }
 
             // Start gRPC server if configured
@@ -162,7 +175,73 @@ public class AepLauncher {
         }
     }
 
-    private static void startHttpServer(AepEngine engine, Aep.AepConfig config) {
+    /**
+     * Creates an in-memory {@link HumanReviewQueue} wired with a {@link ReviewNotificationSpi}
+     * that broadcasts {@code hitl.new} SSE events to all connected UI clients.
+     *
+     * <p>The {@code httpServerRef} is resolved lazily so the queue can be created before
+     * the HTTP server (which gets the queue as a constructor argument).
+     *
+     * @param httpServerRef lazy reference to the HTTP server set after construction
+     * @return in-memory human-review queue
+     */
+    private static HumanReviewQueue createHumanReviewQueue(
+            java.util.concurrent.atomic.AtomicReference<AepHttpServer> httpServerRef) {
+        ReviewNotificationSpi spi = new ReviewNotificationSpi() {
+            @Override
+            public void onItemEnqueued(ReviewItem item) {
+                AepHttpServer srv = httpServerRef.get();
+                if (srv != null) {
+                    srv.broadcastSseEvent(
+                        item.getTenantId(),
+                        "hitl.new",
+                        java.util.Map.of(
+                            "itemId",    item.getReviewId(),
+                            "skillId",   item.getSkillId(),
+                            "itemType",  item.getItemType().name(),
+                            "confidence", item.getConfidenceScore()
+                        )
+                    );
+                }
+            }
+            @Override public void onItemApproved(ReviewItem item) {}
+            @Override public void onItemRejected(ReviewItem item) {}
+        };
+        log.info("Creating in-memory HumanReviewQueue with SSE notification SPI");
+        return new InMemoryHumanReviewQueue(spi);
+    }
+
+    /**
+     * Starts the {@link ConsolidationScheduler} (learning loop).
+     *
+     * <p>The scheduler periodically consolidates episodic memory into semantic
+     * facts and procedural policies. The interval is controlled by the
+     * {@code AEP_CONSOLIDATION_INTERVAL_HOURS} environment variable (default: 6 h).
+     *
+     * @param humanReviewQueue queue to which low-confidence policies are submitted
+     */
+    private static void startConsolidationScheduler(HumanReviewQueue humanReviewQueue) {
+        try {
+            // Use the AepLearningModule injector to wire all consolidation components
+            com.ghatana.aep.di.AepLearningModule learningModule = new com.ghatana.aep.di.AepLearningModule();
+            io.activej.inject.Injector injector = io.activej.inject.Injector.of(
+                    new com.ghatana.aep.di.AepCoreModule(), learningModule);
+            ConsolidationScheduler scheduler = injector.getInstance(ConsolidationScheduler.class);
+            scheduler.start();
+            log.info("ConsolidationScheduler started (learning loop active)");
+
+            Runtime.getRuntime().addShutdownHook(new Thread(() -> {
+                log.info("Stopping ConsolidationScheduler...");
+                scheduler.stop();
+            }));
+        } catch (Exception e) {
+            log.warn("ConsolidationScheduler could not start — learning loop disabled: {}", e.getMessage());
+        }
+    }
+
+    private static void startHttpServer(AepEngine engine, Aep.AepConfig config,
+                                        HumanReviewQueue humanReviewQueue,
+                                        java.util.concurrent.atomic.AtomicReference<AepHttpServer> httpServerRef) {
         int port = 8080;
         String portEnv = System.getenv("AEP_HTTP_PORT");
         if (portEnv != null) {
@@ -171,8 +250,11 @@ public class AepLauncher {
 
         try {
             DataCloudClient agentDataCloud = createAgentDataCloudClient();
-            com.ghatana.aep.launcher.http.AepHttpServer httpServer =
-                new com.ghatana.aep.launcher.http.AepHttpServer(engine, port, null, agentDataCloud);
+            AepHttpServer httpServer =
+                new AepHttpServer(engine, port, humanReviewQueue, agentDataCloud);
+            // Set the reference BEFORE start() so the ReviewNotificationSpi can use it
+            // immediately (ConsolidationScheduler may fire on startup replay).
+            httpServerRef.set(httpServer);
             httpServer.start();
             log.info("HTTP server started on port {}", port);
 

@@ -8,7 +8,7 @@
 Version: 1.0.1 | Status: Implementation-Oriented Specification | Date: March 10, 2026\  
 Jurisdiction: Nepal | Calendar: Bikram Sambat 2082 | Regulators: SEBON, NRB, Beema Samiti
 
-Shared terminology and policy baseline: [Documentation_Glossary_and_Policy_Appendix.md](../archive/Documentation_Glossary_and_Policy_Appendix.md)
+Shared terminology and policy baseline: [Documentation_Glossary_and_Policy_Appendix.md](archive/Documentation_Glossary_and_Policy_Appendix.md)
 Shared authoritative source register: [Authoritative_Source_Register.md](Authoritative_Source_Register.md)
 Reference style for time-sensitive external facts: `ASR-*` IDs from the shared source register.
 Legal-claim traceability: [Legal_Claim_Citation_Appendix.md](Legal_Claim_Citation_Appendix.md)
@@ -20,7 +20,7 @@ Compact traceability matrix: [Claim_Traceability_Matrix.md](Claim_Traceability_M
 > - **Numeric legal-claim IDs** such as `LCA-001` through `LCA-032` reference source-backed legal/regulatory claims maintained in `Legal_Claim_Citation_Appendix.md`. These are the IDs used throughout this document.
 > - **Semantic epic/control IDs** such as `LCA-AUDIT-001` or `LCA-AMLKYC-001` are engineering control-registry codes maintained in `epics/COMPLIANCE_CODE_REGISTRY.md`. These are not used in this document.
 
-> **Implementation stack authority:** For current technology choices, use [../adr/ADR-011_STACK_STANDARDIZATION_AND_GHATANA_PLATFORM_ALIGNMENT.md](../adr/ADR-011_STACK_STANDARDIZATION_AND_GHATANA_PLATFORM_ALIGNMENT.md). This specification contains logical models and Nepal-specific requirements; ADR-011 defines the active implementation baseline.
+> **Implementation stack authority:** For current technology choices, use [adr/ADR-011_STACK_STANDARDIZATION_AND_GHATANA_PLATFORM_ALIGNMENT.md](adr/ADR-011_STACK_STANDARDIZATION_AND_GHATANA_PLATFORM_ALIGNMENT.md). This specification contains logical models and Nepal-specific requirements; ADR-011 defines the active implementation baseline.
 
 ---
 

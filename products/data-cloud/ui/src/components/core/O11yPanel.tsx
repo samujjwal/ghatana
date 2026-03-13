@@ -66,82 +66,31 @@ interface O11yPanelProps {
     className?: string;
 }
 
-// Mock API functions - replace with actual API calls
+function getTenantId(): string {
+    return localStorage.getItem('tenantId') || 'default-tenant';
+}
+
 async function fetchActiveExecutions(): Promise<Execution[]> {
-    // In production, this would call the actual API
-    const response = await fetch('/api/executions?status=running,pending');
-    if (!response.ok) {
-        // Return mock data for development
-        return [
-            {
-                id: 'exec-001',
-                pipelineId: 'pipe-123',
-                pipelineName: 'Customer Data Sync',
-                status: 'running',
-                startTime: new Date(Date.now() - 120000).toISOString(),
-                progress: 65,
-                nodesCurrent: 5,
-                nodesTotal: 8,
-            },
-            {
-                id: 'exec-002',
-                pipelineId: 'pipe-456',
-                pipelineName: 'Analytics Aggregation',
-                status: 'pending',
-                startTime: new Date(Date.now() - 30000).toISOString(),
-                progress: 0,
-                nodesCurrent: 0,
-                nodesTotal: 12,
-            },
-        ];
-    }
+    const response = await fetch('/api/v1/executions?status=running,pending', {
+        headers: { 'X-Tenant-ID': getTenantId() },
+    });
+    if (!response.ok) throw new Error(`HTTP ${response.status}`);
     return response.json();
 }
 
 async function fetchRecentExecutions(): Promise<Execution[]> {
-    const response = await fetch('/api/executions?status=completed,failed&limit=5');
-    if (!response.ok) {
-        return [
-            {
-                id: 'exec-003',
-                pipelineId: 'pipe-789',
-                pipelineName: 'Daily Report Generation',
-                status: 'completed',
-                startTime: new Date(Date.now() - 3600000).toISOString(),
-                endTime: new Date(Date.now() - 3540000).toISOString(),
-                duration: 60000,
-                nodesCurrent: 6,
-                nodesTotal: 6,
-            },
-            {
-                id: 'exec-004',
-                pipelineId: 'pipe-101',
-                pipelineName: 'Data Quality Check',
-                status: 'failed',
-                startTime: new Date(Date.now() - 7200000).toISOString(),
-                endTime: new Date(Date.now() - 7140000).toISOString(),
-                duration: 60000,
-                nodesCurrent: 3,
-                nodesTotal: 5,
-                error: 'Schema validation failed on node "Validator"',
-            },
-        ];
-    }
+    const response = await fetch('/api/v1/executions?status=completed,failed&limit=5', {
+        headers: { 'X-Tenant-ID': getTenantId() },
+    });
+    if (!response.ok) throw new Error(`HTTP ${response.status}`);
     return response.json();
 }
 
 async function fetchSystemMetrics(): Promise<SystemMetrics> {
-    const response = await fetch('/api/metrics/system');
-    if (!response.ok) {
-        return {
-            cpu: 45,
-            memory: 62,
-            throughput: 1250,
-            latency: 23,
-            activeConnections: 42,
-            queueDepth: 156,
-        };
-    }
+    const response = await fetch('/api/v1/metrics/system', {
+        headers: { 'X-Tenant-ID': getTenantId() },
+    });
+    if (!response.ok) throw new Error(`HTTP ${response.status}`);
     return response.json();
 }
 

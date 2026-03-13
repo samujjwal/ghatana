@@ -550,6 +550,16 @@ public class DefaultDataCloudBrain implements DataCloudBrain {
                 .build());
     }
 
+    @Override
+    public java.util.Optional<GlobalWorkspace> getWorkspace() {
+        return java.util.Optional.ofNullable(globalWorkspace);
+    }
+
+    @Override
+    public java.util.Optional<AttentionManager> getAttentionManager() {
+        return java.util.Optional.ofNullable(attentionManager);
+    }
+
     // ═══════════════════════════════════════════════════════════════════════════
     // Helper Methods
     // ═══════════════════════════════════════════════════════════════════════════

@@ -4,7 +4,7 @@
 **Date:** March 9, 2026  
 **Status:** Current Research Analysis (Aligned with Siddhanta v2.1)
 
-Shared terminology and policy baseline: [Documentation_Glossary_and_Policy_Appendix.md](../archive/Documentation_Glossary_and_Policy_Appendix.md)
+Shared terminology and policy baseline: [Documentation_Glossary_and_Policy_Appendix.md](archive/Documentation_Glossary_and_Policy_Appendix.md)
 Shared authoritative source register: [Authoritative_Source_Register.md](Authoritative_Source_Register.md)
 Reference style for time-sensitive external facts: `ASR-*` IDs from the shared source register.
 
