@@ -1,0 +1,77 @@
+#!/bin/bash
+#
+# Tutorputor Migration Script: @ghatana/ui → @ghatana/design-system
+# Usage: ./scripts/migrate-tutorputor.sh [admin|web|student|all]
+#
+
+set -e
+
+MIGRATION_TYPE="${1:-all}"
+ROOT_DIR="$(cd "$(dirname "$0")/.." && pwd)"
+
+echo "🚀 Starting Tutorputor Migration: @ghatana/ui → @ghatana/design-system"
+echo "   Migration type: $MIGRATION_TYPE"
+echo ""
+
+# Function to migrate a single app
+migrate_app() {
+    local app_name=$1
+    local app_dir="$ROOT_DIR/apps/$app_name"
+    
+    echo "📦 Migrating $app_name..."
+    
+    if [ ! -d "$app_dir" ]; then
+        echo "   ⚠️  App directory not found: $app_dir"
+        return 1
+    fi
+    
+    # Step 1: Update package.json - remove @ghatana/ui dependency
+    echo "   📝 Updating package.json..."
+    if [ -f "$app_dir/package.json" ]; then
+        sed -i.bak '/"@ghatana\/ui":/d' "$app_dir/package.json"
+        rm -f "$app_dir/package.json.bak"
+    fi
+    
+    # Step 2: Update imports in TypeScript/TSX files
+    echo "   🔄 Updating imports..."
+    if [ -d "$app_dir/src" ]; then
+        find "$app_dir/src" -type f \( -name "*.ts" -o -name "*.tsx" \) 2>/dev/null | while read -r file; do
+            sed -i.bak 's/from "@ghatana\/ui"/from "@ghatana\/design-system"/g' "$file"
+            sed -i.bak "s/from '@ghatana\/ui'/from '@ghatana\/design-system'/g" "$file"
+            rm -f "$file.bak"
+        done
+    fi
+    
+    echo "   ✅ $app_name migration complete"
+}
+
+# Main migration logic
+case "$MIGRATION_TYPE" in
+    admin)
+        migrate_app "tutorputor-admin"
+        ;;
+    web)
+        migrate_app "tutorputor-web"
+        ;;
+    student)
+        migrate_app "tutorputor-student"
+        ;;
+    all)
+        migrate_app "tutorputor-admin"
+        migrate_app "tutorputor-web"
+        migrate_app "tutorputor-student"
+        ;;
+    *)
+        echo "❌ Unknown migration type: $MIGRATION_TYPE"
+        echo "   Usage: $0 [admin|web|student|all]"
+        exit 1
+        ;;
+esac
+
+echo ""
+echo "🎉 Tutorputor migration complete!"
+echo ""
+echo "Next steps:"
+echo "1. Run pnpm install to update dependencies"
+echo "2. Run type-check to verify: pnpm -r --filter '@ghatana/tutorputor-*' type-check"
+echo "3. Run tests to verify: pnpm -r --filter '@ghatana/tutorputor-*' test"

@@ -50,6 +50,9 @@ import com.ghatana.datacloud.entity.storage.QuerySpec;
 import com.ghatana.datacloud.infrastructure.storage.OpenSearchConnector;
 import com.ghatana.datacloud.analytics.export.EntityExportService;
 import com.ghatana.datacloud.analytics.anomaly.StatisticalAnomalyDetector;
+import com.ghatana.datacloud.analytics.report.ReportDefinition;
+import com.ghatana.datacloud.analytics.report.ReportResult;
+import com.ghatana.datacloud.analytics.report.ReportService;
 import com.ghatana.datacloud.spi.ai.AnomalyDetectionCapability.AnomalyContext;
 import com.ghatana.datacloud.spi.ai.AnomalyDetectionCapability.DetectionType;
 import com.ghatana.datacloud.entity.storage.StorageConnector;
@@ -157,6 +160,13 @@ public class DataCloudHttpServer {
      * When {@code null} the route returns HTTP 501.
      */
     private StatisticalAnomalyDetector anomalyDetector;
+
+    /**
+     * Optional report-generation service for DC-10 reporting routes.
+     * When non-null, {@code /api/v1/reports/**} routes are active.
+     * When {@code null} those routes return HTTP 503.
+     */
+    private ReportService reportService;
 
     /**
      * Creates a new Data-Cloud HTTP server without optional extensions.
@@ -279,6 +289,24 @@ public class DataCloudHttpServer {
     }
 
     /**
+     * Attaches a {@link ReportService} to enable on-demand report generation (DC-10).
+     *
+     * <p>Required for:
+     * <ul>
+     *   <li>{@code POST /api/v1/reports}            — generate a report</li>
+     *   <li>{@code GET  /api/v1/reports/:reportId}  — retrieve a cached report</li>
+     *   <li>{@code GET  /api/v1/reports}             — list cached reports</li>
+     * </ul>
+     *
+     * @param service the report service; must not be {@code null}
+     * @return {@code this} for method chaining
+     */
+    public DataCloudHttpServer withReportService(ReportService service) {
+        this.reportService = service;
+        return this;
+    }
+
+    /**
      * Starts the HTTP server.
      *
      * @throws Exception if the server fails to start
@@ -366,6 +394,11 @@ public class DataCloudHttpServer {
             .with(HttpMethod.GET,  "/api/v1/analytics/query/:queryId",            this::handleAnalyticsGetResult)
             .with(HttpMethod.GET,  "/api/v1/analytics/query/:queryId/plan",       this::handleAnalyticsGetPlan)
             .with(HttpMethod.POST, "/api/v1/analytics/aggregate",                 this::handleAnalyticsAggregate)
+
+            // Reporting routes (DC-10) — active only when reportService is wired
+            .with(HttpMethod.POST, "/api/v1/reports",             this::handleCreateReport)
+            .with(HttpMethod.GET,  "/api/v1/reports",             this::handleListReports)
+            .with(HttpMethod.GET,  "/api/v1/reports/:reportId",   this::handleGetReport)
 
             // Server-Sent Events for real-time UI updates (DC-3, DC-9)
             .with(HttpMethod.GET, "/events/stream",              this::handleSseStream)
@@ -1906,6 +1939,165 @@ public class DataCloudHttpServer {
                 log.error("[DC-9] analytics aggregate body load error: {}", e.getMessage(), e);
                 return Promise.of(errorResponse(400, "Failed to read request body: " + e.getMessage()));
             });
+    }
+
+    // ==================== Report Endpoints (DC-10) ====================
+
+    /**
+     * Generates an on-demand report from a query or entity export.
+     *
+     * <h3>Route</h3>
+     * {@code POST /api/v1/reports}
+     *
+     * <h3>Request body</h3>
+     * JSON object matching {@link ReportDefinition} fields:
+     * <ul>
+     *   <li>{@code name}       — human-readable report label (required)</li>
+     *   <li>{@code type}       — {@code QUERY} or {@code ENTITY_EXPORT} (required)</li>
+     *   <li>{@code format}     — {@code JSON}, {@code CSV}, or {@code NDJSON} (default JSON)</li>
+     *   <li>{@code query}      — SQL expression (required when type = QUERY)</li>
+     *   <li>{@code collection} — collection name (required when type = ENTITY_EXPORT)</li>
+     *   <li>{@code parameters} — named query parameters map (optional)</li>
+     *   <li>{@code limit}      — max rows (default 10 000)</li>
+     * </ul>
+     *
+     * <h3>Response</h3>
+     * <ul>
+     *   <li>200 — report result JSON with {@code reportId}, {@code rows}, {@code rowCount},
+     *       {@code contentType}, {@code executionTimeMs}</li>
+     *   <li>400 — invalid request body</li>
+     *   <li>503 — report service not wired in this deployment</li>
+     * </ul>
+     *
+     * @param request the incoming HTTP request
+     * @return promise of an {@link HttpResponse}
+     *
+     * @doc.type method
+     * @doc.purpose Generate an on-demand report (DC-10)
+     * @doc.layer product
+     * @doc.pattern Command, Facade
+     */
+    private Promise<HttpResponse> handleCreateReport(HttpRequest request) {
+        if (reportService == null) {
+            return Promise.of(errorResponse(503, "Report service not available in this deployment"));
+        }
+        return request.loadBody()
+            .then(buf -> {
+                try {
+                    String bodyStr = buf.getString(StandardCharsets.UTF_8);
+                    Map<String, Object> payload = objectMapper.readValue(bodyStr, Map.class);
+                    ReportDefinition definition;
+                    try {
+                        definition = ReportDefinition.fromMap(payload);
+                    } catch (IllegalArgumentException e) {
+                        return Promise.of(errorResponse(400, "Invalid report definition: " + e.getMessage()));
+                    }
+                    String tenantId = resolveTenantId(request);
+                    return reportService.generate(tenantId, definition)
+                        .map(result -> {
+                            Map<String, Object> response = new LinkedHashMap<>();
+                            response.put("reportId",       result.getReportId());
+                            response.put("reportName",     result.getReportName());
+                            response.put("format",         result.getFormat().name());
+                            response.put("rowCount",       result.getRowCount());
+                            response.put("contentType",    result.getContentType());
+                            response.put("executionTimeMs", result.getExecutionTime().toMillis());
+                            response.put("generatedAt",    result.getGeneratedAt().toString());
+                            if (result.getFormattedBody() != null) {
+                                response.put("body", result.getFormattedBody());
+                            } else {
+                                response.put("rows", result.getRows());
+                            }
+                            return jsonResponse(response);
+                        })
+                        .then(Promise::of, e -> {
+                            log.error("[DC-10] report generation failed name='{}': {}",
+                                    definition.getName(), e.getMessage(), e);
+                            return Promise.of(errorResponse(500, "Report generation failed: " + e.getMessage()));
+                        });
+                } catch (Exception e) {
+                    log.error("[DC-10] report request parse error: {}", e.getMessage(), e);
+                    return Promise.of(errorResponse(400, "Invalid request body: " + e.getMessage()));
+                }
+            })
+            .then(Promise::of, e -> {
+                log.error("[DC-10] report body load error: {}", e.getMessage(), e);
+                return Promise.of(errorResponse(400, "Failed to read request body: " + e.getMessage()));
+            });
+    }
+
+    /**
+     * Retrieves a cached report result by its ID.
+     *
+     * <h3>Route</h3>
+     * {@code GET /api/v1/reports/:reportId}
+     *
+     * <h3>Response</h3>
+     * <ul>
+     *   <li>200 — report result JSON</li>
+     *   <li>404 — no cached result for the given ID</li>
+     *   <li>503 — report service not wired in this deployment</li>
+     * </ul>
+     *
+     * @param request the incoming HTTP request
+     * @return promise of an {@link HttpResponse}
+     *
+     * @doc.type method
+     * @doc.purpose Retrieve a cached report by reportId (DC-10)
+     * @doc.layer product
+     * @doc.pattern Query, Cache
+     */
+    private Promise<HttpResponse> handleGetReport(HttpRequest request) {
+        if (reportService == null) {
+            return Promise.of(errorResponse(503, "Report service not available in this deployment"));
+        }
+        String reportId = request.getPathParameter("reportId");
+        ReportResult result = reportService.getResult(reportId);
+        if (result == null) {
+            return Promise.of(errorResponse(404, "No cached report found for reportId: " + reportId));
+        }
+        Map<String, Object> response = new LinkedHashMap<>();
+        response.put("reportId",        result.getReportId());
+        response.put("reportName",      result.getReportName());
+        response.put("format",          result.getFormat().name());
+        response.put("rowCount",        result.getRowCount());
+        response.put("contentType",     result.getContentType());
+        response.put("executionTimeMs", result.getExecutionTime().toMillis());
+        response.put("generatedAt",     result.getGeneratedAt().toString());
+        if (result.getFormattedBody() != null) {
+            response.put("body", result.getFormattedBody());
+        } else {
+            response.put("rows", result.getRows());
+        }
+        return Promise.of(jsonResponse(response));
+    }
+
+    /**
+     * Lists all report IDs and names currently held in the in-process cache.
+     *
+     * <h3>Route</h3>
+     * {@code GET /api/v1/reports}
+     *
+     * <h3>Response</h3>
+     * <ul>
+     *   <li>200 — JSON object of {@code {reportId: reportName}} pairs</li>
+     *   <li>503 — report service not wired in this deployment</li>
+     * </ul>
+     *
+     * @param request the incoming HTTP request
+     * @return promise of an {@link HttpResponse}
+     *
+     * @doc.type method
+     * @doc.purpose List cached report IDs and names (DC-10)
+     * @doc.layer product
+     * @doc.pattern Query, Cache
+     */
+    private Promise<HttpResponse> handleListReports(HttpRequest request) {
+        if (reportService == null) {
+            return Promise.of(errorResponse(503, "Report service not available in this deployment"));
+        }
+        Map<String, String> cached = reportService.listCachedReports();
+        return Promise.of(jsonResponse(Map.of("reports", cached, "count", cached.size())));
     }
 
     // ==================== SSE Endpoints (DC-3) ====================

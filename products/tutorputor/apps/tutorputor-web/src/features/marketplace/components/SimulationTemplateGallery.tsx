@@ -11,7 +11,7 @@
  */
 
 import { useState, useCallback, useMemo, useRef, useEffect } from "react";
-import { Button, TextField, Select } from "@ghatana/ui";
+import { Button, TextField, Select } from "@ghatana/design-system";
 import { SimulationTemplateCard } from "./SimulationTemplateCard";
 import { TemplateFilterPanel } from "./TemplateFilterPanel";
 import { useSimulationTemplates, useFeaturedTemplates, useToggleFavorite } from "../hooks";

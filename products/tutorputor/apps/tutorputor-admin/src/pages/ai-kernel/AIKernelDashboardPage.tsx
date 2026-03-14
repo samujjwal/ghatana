@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
-import { Card, Button, Tabs } from "@ghatana/ui";
+import { Card, Button, Tabs } from "@ghatana/design-system";
 import { globalRegistry } from "@ghatana/tutorputor-learning-kernel";
 import { PluginCard } from "../../components/ai-kernel/PluginCard";
 import { PluginMetadata } from "@ghatana/tutorputor-contracts/v1/plugin-interfaces";

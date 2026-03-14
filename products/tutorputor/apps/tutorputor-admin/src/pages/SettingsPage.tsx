@@ -1,7 +1,7 @@
 import { useState, useCallback } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { Card } from "../components/ui";
-import { Button, Input, Spinner } from "@ghatana/ui";
+import { Button, Input, Spinner } from "@ghatana/design-system";
 import { useAuth } from "../hooks/useAuth";
 import {
   useAnnouncer,
@@ -9,7 +9,7 @@ import {
   useConfirmDialog,
   toast,
   FormField,
-} from "@ghatana/ui";
+} from "@ghatana/design-system";
 
 interface TenantSettings {
   tenantId: string;

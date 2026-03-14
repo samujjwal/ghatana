@@ -11,7 +11,7 @@
  */
 
 import React, { useState, useCallback, useEffect, useMemo } from "react";
-import { Card, Button } from "@ghatana/ui";
+import { Card, Button } from "@ghatana/design-system";
 import type {
   SimulationManifest,
   SimKeyframe,

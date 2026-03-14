@@ -10,7 +10,7 @@
  */
 
 import { useState, useCallback, useRef } from "react";
-import { Button, TextField, Select, Badge, Stepper } from "@ghatana/ui";
+import { Button, TextField, Select, Badge, Stepper } from "@ghatana/design-system";
 import {
   usePluginSubmission,
   type PluginMetadata,

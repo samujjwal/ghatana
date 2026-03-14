@@ -1,4 +1,5 @@
 import { type ReactNode, type ComponentType } from 'react';
+import * as ReactRouter from 'react-router';
 
 // Local type declaration for Navigate props since react-router types are not resolving
 interface NavigateProps {
@@ -7,11 +8,9 @@ interface NavigateProps {
   state?: unknown;
 }
 
-// Use dynamic import pattern for react-router components to avoid type issues
-declare module 'react-router' {
-  export function Navigate(props: NavigateProps): React.ReactElement | null;
-  export function Outlet(): React.ReactElement | null;
-}
+// Runtime component references
+const Navigate = (ReactRouter as any).Navigate;
+const Outlet = (ReactRouter as any).Outlet;
 
 /**
  * Authentication check result.

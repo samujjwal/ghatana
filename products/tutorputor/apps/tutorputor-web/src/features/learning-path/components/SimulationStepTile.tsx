@@ -12,7 +12,7 @@
 
 import React from "react";
 import { useNavigate } from "react-router-dom";
-import { Button, Badge, Progress, Card } from "@ghatana/ui";
+import { Button, Badge, Progress, Card } from "@ghatana/design-system";
 import type { 
   SimulationLearningStep, 
   StepProgress, 

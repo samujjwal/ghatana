@@ -10,7 +10,7 @@
  */
 
 import { useState, useCallback } from "react";
-import { Badge, Button, Tooltip } from "@ghatana/ui";
+import { Badge, Button, Tooltip } from "@ghatana/design-system";
 import type { SimulationTemplate, TemplateDifficulty } from "../types";
 
 // =============================================================================

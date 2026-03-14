@@ -110,7 +110,6 @@ export * from './layout/Spacer';
 
 // Hooks
 export * from './hooks';
-export * from './hooks/useTheme';
 
 // Utilities
 export { cn } from '@ghatana/utils';
@@ -118,7 +117,6 @@ export * from './utils/rtl';
 export * from './utils/accessibility';
 export * from './utils/testing';
 export * from './utils/a11yTesting';
-export * from './utils/colorContrast';
 
 // Tokens
 export * from './tokens/animations';

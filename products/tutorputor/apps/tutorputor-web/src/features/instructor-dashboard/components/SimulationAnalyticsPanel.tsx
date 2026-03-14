@@ -12,7 +12,7 @@
 
 import React, { useMemo } from "react";
 import { useQuery } from "@tanstack/react-query";
-import { Card, Button } from "@ghatana/ui";
+import { Card, Button } from "@ghatana/design-system";
 
 // =============================================================================
 // Local Types (avoiding external contract dependencies)

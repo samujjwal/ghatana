@@ -12,7 +12,7 @@
 
 import { useState, useCallback } from 'react';
 import { Sparkles, BookOpen, Target, GraduationCap, Loader2, Beaker, Clock } from 'lucide-react';
-import { Button } from '@ghatana/ui';
+import { Button } from '@ghatana/design-system';
 import { Card } from '../ui';
 import { SimulationBuilder } from './SimulationBuilder';
 

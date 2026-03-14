@@ -11,7 +11,7 @@
  */
 
 import { useCallback, useMemo } from "react";
-import { Badge, Slider, Tooltip } from "@ghatana/ui";
+import { Badge, Slider, Tooltip } from "@ghatana/design-system";
 
 // =============================================================================
 // Types

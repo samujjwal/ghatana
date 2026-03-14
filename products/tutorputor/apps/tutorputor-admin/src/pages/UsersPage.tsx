@@ -8,7 +8,7 @@ import {
   ResponsiveTable,
   PullToRefresh,
   ResponsiveImage,
-} from "@ghatana/ui";
+} from "@ghatana/design-system";
 import { useAuth } from "../hooks/useAuth";
 import type {
   UserSummary,

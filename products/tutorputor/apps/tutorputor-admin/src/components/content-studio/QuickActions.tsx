@@ -4,7 +4,7 @@
  * Quick action buttons for common Content Studio operations
  */
 
-import { Button } from '@ghatana/ui';
+import { Button } from '@ghatana/design-system';
 import { Sparkles, TrendingUp, Plus } from 'lucide-react';
 
 interface QuickActionsProps {

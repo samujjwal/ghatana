@@ -20,7 +20,6 @@
     "@ghatana/realtime": "workspace:*",
     "@ghatana/theme": "workspace:*",
     "@ghatana/tokens": "workspace:*",
-    "@ghatana/ui": "workspace:*",
     "@ghatana/tutorputor-ui-shared": "workspace:*",
     "@tanstack/react-query": "^5.90.20",
     "@tanstack/react-query-devtools": "^5.91.3",

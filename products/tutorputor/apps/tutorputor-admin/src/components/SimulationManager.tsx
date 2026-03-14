@@ -13,7 +13,7 @@
 import React, { useState } from 'react';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { Card } from './ui';
-import { Input, Button, Select, Spinner } from '@ghatana/ui';
+import { Input, Button, Select, Spinner } from '@ghatana/design-system';
 import { SimulationRenderer } from './SimulationRenderer';
 import { TemplateLibrary } from './TemplateLibrary';
 

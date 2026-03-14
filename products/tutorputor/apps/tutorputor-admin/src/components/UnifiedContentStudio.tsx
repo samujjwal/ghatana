@@ -40,7 +40,7 @@ import {
   XCircle,
   AlertCircle,
 } from "lucide-react";
-import { Button } from "@ghatana/ui";
+import { Button } from "@ghatana/design-system";
 import { useContentStudioApi } from "../services/contentStudioApi";
 import { AIAssistant, SmartDashboard, aiServiceManager } from "./ai";
 import {

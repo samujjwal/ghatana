@@ -13,7 +13,7 @@
 import { useState } from 'react';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { Card } from './ui';
-import { Button, Spinner } from '@ghatana/ui';
+import { Button, Spinner } from '@ghatana/design-system';
 
 interface DomainImport {
     name: string;

@@ -14,7 +14,7 @@ import { useState } from 'react';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { useParams, useNavigate } from 'react-router-dom';
 import { Card } from '../components/ui';
-import { Input, Button, Spinner, Select, TextArea } from '@ghatana/ui';
+import { Input, Button, Spinner, Select, TextArea } from '@ghatana/design-system';
 import { SimulationManager } from '../components/SimulationManager';
 
 interface DomainDetail {

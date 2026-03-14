@@ -15,7 +15,7 @@ import {
   TabsContent,
   Progress,
   Spinner,
-} from '@ghatana/ui';
+} from '@ghatana/design-system';
 
 interface VrExperiment {
   id: string;

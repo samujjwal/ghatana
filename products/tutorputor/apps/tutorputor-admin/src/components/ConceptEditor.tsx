@@ -13,7 +13,7 @@
 import { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { Card } from '../components/ui';
-import { Input, Button, Spinner } from '@ghatana/ui';
+import { Input, Button, Spinner } from '@ghatana/design-system';
 import { RichTextEditor } from './RichTextEditor';
 
 interface Concept {

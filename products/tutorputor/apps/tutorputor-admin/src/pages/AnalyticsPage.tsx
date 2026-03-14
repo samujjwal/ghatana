@@ -7,7 +7,7 @@ import {
   ResponsiveTable,
   type TableColumn,
   PullToRefresh,
-} from "@ghatana/ui";
+} from "@ghatana/design-system";
 import { LineChart, BarChart, PieChart, AreaChart } from "@ghatana/charts";
 import { useAuth } from "../hooks/useAuth";
 import { ExternalLink, Star } from "lucide-react";

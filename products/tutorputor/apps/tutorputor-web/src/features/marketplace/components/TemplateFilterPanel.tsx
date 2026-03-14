@@ -10,7 +10,7 @@
  */
 
 import { useState, useCallback } from "react";
-import { Button, Badge, Checkbox } from "@ghatana/ui";
+import { Button, Badge, Checkbox } from "@ghatana/design-system";
 import type { TemplateFilters, TemplateDifficulty } from "../types";
 
 // Local SimulationDomain type (mirroring contracts)

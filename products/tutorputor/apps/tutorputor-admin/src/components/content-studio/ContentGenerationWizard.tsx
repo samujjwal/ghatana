@@ -6,7 +6,7 @@
 
 import { useState } from 'react';
 import { Sparkles, Globe, PenTool, QuizIcon, Settings, ArrowRight, ArrowLeft, Check } from 'lucide-react';
-import { Button } from '@ghatana/ui';
+import { Button } from '@ghatana/design-system';
 import { useContentStudioApi } from '../../services/contentStudioApi';
 
 interface ContentGenerationWizardProps {

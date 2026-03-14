@@ -11,7 +11,7 @@
  */
 
 import { useState, useEffect, useRef } from "react";
-import { Card, Button, Badge, Tabs } from "@ghatana/ui";
+import { Card, Button, Badge, Tabs } from "@ghatana/design-system";
 import {
   Activity,
   Zap,

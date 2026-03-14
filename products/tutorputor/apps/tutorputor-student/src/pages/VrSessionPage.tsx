@@ -13,7 +13,7 @@ import {
   DialogHeader,
   DialogTitle,
   DialogFooter,
-} from '@ghatana/ui';
+} from '@ghatana/design-system';
 
 interface VrExperiment {
   id: string;

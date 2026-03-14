@@ -11,7 +11,7 @@
  */
 
 import { useState, useCallback, useMemo, useEffect, useRef } from "react";
-import { Button, Badge, Tooltip, Slider } from "@ghatana/ui";
+import { Button, Badge, Tooltip, Slider } from "@ghatana/design-system";
 import type {
   SimulationManifest,
   SimulationStep,

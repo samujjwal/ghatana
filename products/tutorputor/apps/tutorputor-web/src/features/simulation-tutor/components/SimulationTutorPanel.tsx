@@ -11,7 +11,7 @@
  */
 
 import React, { useState, useRef, useEffect, useCallback } from "react";
-import { Button } from "@ghatana/ui";
+import { Button } from "@ghatana/design-system";
 import {
   useSimulationTutor,
   type TutorMessage,

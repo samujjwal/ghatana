@@ -11,7 +11,7 @@
  */
 
 import { useState, useEffect } from "react";
-import { Card, Button, Badge } from "@ghatana/ui";
+import { Card, Button, Badge } from "@ghatana/design-system";
 import {
   Brain,
   TrendingUp,

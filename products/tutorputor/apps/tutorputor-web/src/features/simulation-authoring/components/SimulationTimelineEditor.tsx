@@ -11,7 +11,7 @@
  */
 
 import { useState, useCallback, useRef, useMemo } from "react";
-import { Button, Tooltip, Badge, Slider, Chip } from "@ghatana/ui";
+import { Button, Tooltip, Badge, Slider, Chip } from "@ghatana/design-system";
 import type { 
   SimStepId, 
   SimAction, 

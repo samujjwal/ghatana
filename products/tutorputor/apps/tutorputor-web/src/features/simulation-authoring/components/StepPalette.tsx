@@ -11,7 +11,7 @@
  */
 
 import { useState, useCallback } from "react";
-import { Button, Badge, Tooltip } from "@ghatana/ui";
+import { Button, Badge, Tooltip } from "@ghatana/design-system";
 
 // =============================================================================
 // Local Types (avoiding external contract dependencies)

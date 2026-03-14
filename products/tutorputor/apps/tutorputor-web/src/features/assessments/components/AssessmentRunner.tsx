@@ -11,7 +11,7 @@
  */
 
 import React, { useState, useCallback, useMemo } from "react";
-import { Card, Button, Progress, Badge } from "@ghatana/ui";
+import { Card, Button, Progress, Badge } from "@ghatana/design-system";
 import { SimulationItemView } from "./SimulationItemView";
 import type {
   SimulationAssessmentItem,

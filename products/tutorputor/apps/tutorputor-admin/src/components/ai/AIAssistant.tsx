@@ -11,7 +11,7 @@
  */
 
 import { useState, useRef, useEffect } from "react";
-import { Button, Card, Input } from "@ghatana/ui";
+import { Button, Card, Input } from "@ghatana/design-system";
 import {
   Sparkles,
   Send,

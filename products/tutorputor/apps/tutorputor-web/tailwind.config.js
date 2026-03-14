@@ -14,7 +14,6 @@ export default {
   content: [
     join(__dirname, "index.html"),
     join(__dirname, "src/**/*.{js,ts,jsx,tsx}"),
-    join(__dirname, "../../node_modules/@ghatana/ui/dist/**/*.js"),
   ],
   darkMode: "class",
   theme: {

@@ -6,7 +6,7 @@
  */
 
 import React, { useEffect, useState, useCallback } from "react";
-import { Button, Spinner, Badge } from "@ghatana/ui";
+import { Button, Spinner, Badge } from "@ghatana/design-system";
 import type { IdentityProviderConfig } from "@ghatana/tutorputor-contracts/v1/types";
 
 // ===========================================================================

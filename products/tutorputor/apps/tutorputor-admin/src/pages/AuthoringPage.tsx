@@ -45,8 +45,8 @@ import {
   validators,
   FormField,
   PullToRefresh,
-} from "@ghatana/ui";
-import type { TourStep } from "@ghatana/ui";
+} from "@ghatana/design-system";
+import type { TourStep } from "@ghatana/design-system";
 import {
   Plus,
   Search,

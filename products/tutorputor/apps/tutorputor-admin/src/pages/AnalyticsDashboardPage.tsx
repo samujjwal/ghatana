@@ -13,7 +13,7 @@
 import { useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { Card } from '../components/ui';
-import { Spinner } from '@ghatana/ui';
+import { Spinner } from '@ghatana/design-system';
 import {
     LineChart,
     Line,

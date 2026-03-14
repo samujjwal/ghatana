@@ -396,13 +396,24 @@ public class KafkaEventLogStore implements EventLogStore {
 
             List<EventEntry> results = new ArrayList<>();
             long deadline = System.currentTimeMillis() + config.readTimeoutMs();
+            // After assign()+seek(), the very first poll() may return empty while the
+            // consumer initialises the partition metadata fetch with the broker.  We
+            // only stop polling once we have seen at least one batch of records and
+            // the next poll returns empty — i.e. we are genuinely at the end of the log.
+            boolean receivedAtLeastOneBatch = false;
 
             while (results.size() < limit && System.currentTimeMillis() < deadline) {
                 ConsumerRecords<String, byte[]> records = consumer.poll(Duration.ofMillis(200));
                 if (records.isEmpty()) {
-                    // No more records available
-                    break;
+                    if (receivedAtLeastOneBatch) {
+                        // Confirmed end-of-log: a prior batch was consumed and the
+                        // next poll returned nothing — stop reading.
+                        break;
+                    }
+                    // Still waiting for the initial metadata fetch — continue.
+                    continue;
                 }
+                receivedAtLeastOneBatch = true;
                 for (ConsumerRecord<String, byte[]> record : records) {
                     if (results.size() >= limit) break;
                     try {

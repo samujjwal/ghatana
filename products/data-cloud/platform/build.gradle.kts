@@ -191,15 +191,32 @@ dependencies {
 tasks.test {
     useJUnitPlatform()
     finalizedBy(tasks.jacocoTestReport)
-    // Docker Engine 29+ requires min API v1.44; docker-java in Testcontainers defaults
-    // to 1.32. Setting this JVM system property makes TC's shaded docker-java
-    // read and honor the api.version via overrideDockerPropertiesWithSystemProperties().
-    jvmArgs("-Dapi.version=1.44")
-    // docker.raw.sock (configured in ~/.testcontainers.properties) is a macOS-only
-    // socket path inaccessible from inside Docker containers (Linux VM). Tell TC
-    // to mount /var/run/docker.sock instead when bind-mounting into Ryuk/containers.
-    // Docker Desktop makes /var/run/docker.sock available inside containers.
+
+    // ── Testcontainers / Docker configuration ─────────────────────────────────
+    // On macOS, Docker Desktop exposes the daemon socket at both the canonical
+    // /var/run/docker.sock path (a symlink → ~/.docker/run/docker.sock) and the
+    // real ~/.docker/run/docker.sock path. Setting DOCKER_HOST explicitly makes
+    // Testcontainers' Docker detection deterministic across macOS and Linux CI.
+    //
+    // On Linux CI, DOCKER_HOST is typically not set and /var/run/docker.sock is
+    // the real socket, so the explicit value is still correct.
+    //
+    // TESTCONTAINERS_DOCKER_SOCKET_OVERRIDE tells Testcontainers which path to
+    // bind-mount into the Ryuk resource-cleanup container. Docker Desktop makes
+    // /var/run/docker.sock accessible from inside containers, so we use that.
+    //
+    // TESTCONTAINERS_HOST_OVERRIDE is required on macOS because containers that
+    // need to call back to the host must use host.docker.internal (Docker
+    // Desktop NAT) instead of localhost.
+    //
+    // ⚠️  IMPORTANT: Do NOT run this task with --configure-on-demand.
+    //     That flag is incubating and breaks multi-project classpath evaluation
+    //     in this build: platform:java:http and platform:java:database appear to
+    //     fail with "package does not exist" errors even though they compile fine
+    //     without that flag. Always use: ./gradlew :products:data-cloud:platform:test
+    environment("DOCKER_HOST",                          "unix:///var/run/docker.sock")
     environment("TESTCONTAINERS_DOCKER_SOCKET_OVERRIDE", "/var/run/docker.sock")
+    environment("TESTCONTAINERS_HOST_OVERRIDE",           "host.docker.internal")
 }
 
 // =========================================================================

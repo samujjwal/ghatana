@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { Card, Badge } from '../components/ui';
-import { Button, Input, Spinner } from '@ghatana/ui';
+import { Button, Input, Spinner } from '@ghatana/design-system';
 import { useAuth } from '../hooks/useAuth';
 
 interface AuditLogEntry {

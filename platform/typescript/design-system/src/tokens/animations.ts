@@ -11,14 +11,7 @@
  * @doc.layer core
  */
 
-/**
- * Check if user prefers reduced motion
- * @returns true if user has requested reduced motion
- */
-export function prefersReducedMotion(): boolean {
-  if (typeof window === 'undefined') return false;
-  return window.matchMedia('(prefers-reduced-motion: reduce)').matches;
-}
+import { prefersReducedMotion } from '../utils/accessibility';
 
 /**
  * Get animation duration respecting user preferences

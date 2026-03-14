@@ -12,7 +12,7 @@
 
 import { useState, useCallback, useMemo, useRef } from "react";
 import { useMutation } from "@tanstack/react-query";
-import { Button, Badge, Tooltip } from "@ghatana/ui";
+import { Button, Badge, Tooltip } from "@ghatana/design-system";
 import type {
   SimulationManifest,
   SimulationDomain,

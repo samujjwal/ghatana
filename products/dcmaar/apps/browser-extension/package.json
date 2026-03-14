@@ -19,7 +19,7 @@
     "@ghatana/dcmaar-types": "workspace:*",
     "@ghatana/dcmaar-plugin-abstractions": "workspace:*",
     "@ghatana/dcmaar-guardian-plugins": "workspace:*",
-    "@ghatana/dcmaar-shared-ui-charts": "workspace:*",
+    "@ghatana/charts": "workspace:*",
     "eventemitter3": "^5.0.4",
     "lucide-react": "^0.563.0",
     "react": "^19.2.4",

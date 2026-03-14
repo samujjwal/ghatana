@@ -51,7 +51,7 @@
   },
   "peerDependencies": {
     "react": "^19.1.0",
-    "@mui/material": "^6.3.0"
+    "@mui/material": "^7.0.0"
   },
   "dependencies": {
     "@ghatana/tokens": "workspace:*",

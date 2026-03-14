@@ -11,7 +11,7 @@
  */
 
 import { useState, useCallback } from "react";
-import { Button, Badge, Modal } from "@ghatana/ui";
+import { Button, Badge, Modal } from "@ghatana/design-system";
 import { SimulationTimelineEditor } from "./SimulationTimelineEditor";
 import { StepPalette } from "./StepPalette";
 import { useSimulationTimeline } from "../hooks/useSimulationTimeline";

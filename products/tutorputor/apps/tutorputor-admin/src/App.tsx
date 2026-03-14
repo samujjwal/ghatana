@@ -22,7 +22,7 @@ import React from "react";
 import { lazy, Suspense, ComponentType } from "react";
 import { Navigate, createBrowserRouter, redirect } from "react-router-dom";
 import { AdminLayout } from "./components/layout/AdminLayout";
-import { Skeleton } from "@ghatana/ui";
+import { Skeleton } from "@ghatana/design-system";
 import { useAuth } from "./hooks/useAuth";
 
 // Lazy load all page components for code splitting

@@ -2,7 +2,7 @@ import React from "react";
 import { Outlet, NavLink, useLocation } from "react-router-dom";
 import { useAuth } from "../../hooks/useAuth";
 import { useState, useRef } from "react";
-import { useKeyboardNavigation } from "@ghatana/ui";
+import { useKeyboardNavigation } from "@ghatana/design-system";
 
 /**
  * Consolidated Navigation - 5 Core Items

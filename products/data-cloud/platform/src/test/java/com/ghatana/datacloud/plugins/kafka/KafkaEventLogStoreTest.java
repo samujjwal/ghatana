@@ -38,7 +38,7 @@ import static org.assertj.core.api.Assertions.assertThat;
  * @doc.layer product
  * @doc.pattern Test, Integration
  */
-@Testcontainers
+@Testcontainers(disabledWithoutDocker = true)
 @DisplayName("KafkaEventLogStore Integration Tests")
 class KafkaEventLogStoreTest extends EventloopTestBase {
 
