@@ -201,6 +201,24 @@ include(":products:virtual-org:launcher")
 include(":products:security-gateway:platform:java")
 
 // =============================================================================
+// Product: App-Platform — Multi-Domain Financial Operating System (Siddhanta)
+// Sprint 1: K-05 Event Store, K-07 Audit Trail, K-15 Calendar Service, K-02 Config Engine
+// =============================================================================
+
+include(":products:app-platform:kernel:event-store")
+include(":products:app-platform:kernel:audit-trail")
+include(":products:app-platform:kernel:calendar-service")
+include(":products:app-platform:kernel:config-engine")
+include(":products:app-platform:kernel:ledger-framework")
+include(":products:app-platform:kernel:secrets-management")
+include(":products:app-platform:kernel:iam")
+include(":products:app-platform:kernel:observability-sdk")
+include(":products:app-platform:kernel:api-gateway")
+include(":products:app-platform:kernel:resilience-patterns")
+include(":products:app-platform:kernel:rules-engine")
+include(":products:app-platform:service-template")
+
+// =============================================================================
 // Shared Services — Cross-product microservices
 // =============================================================================
 

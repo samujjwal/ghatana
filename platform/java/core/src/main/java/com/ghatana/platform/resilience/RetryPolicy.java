@@ -53,7 +53,50 @@ public class RetryPolicy {
     public <T> Promise<T> execute(Eventloop eventloop, Supplier<Promise<T>> operation) {
         return executeWithRetry(eventloop, operation, 0, Instant.now());
     }
-    
+
+    /**
+     * Executes the operation with K-18 retry context propagation.
+     *
+     * <p>The context-aware function receives a {@link RetryContext} on each attempt,
+     * enabling callers to log attempt numbers, include idempotency markers, or adjust
+     * behaviour on retries.
+     *
+     * @param eventloop          ActiveJ eventloop for retry delays
+     * @param contextualOperation function that receives retry context and returns a Promise
+     * @param <T>                 result type
+     * @return promise that resolves to the operation result or final failure
+     */
+    public <T> Promise<T> executeWithContext(
+            Eventloop eventloop,
+            java.util.function.Function<RetryContext, Promise<T>> contextualOperation) {
+        return executeWithContextInternal(eventloop, contextualOperation, 1, Instant.now(), null);
+    }
+
+    private <T> Promise<T> executeWithContextInternal(
+            Eventloop eventloop,
+            java.util.function.Function<RetryContext, Promise<T>> contextualOperation,
+            int attempt,
+            Instant startTime,
+            Throwable lastError) {
+        RetryContext ctx = attempt == 1
+                ? RetryContext.first(maxRetries + 1)
+                : RetryContext.retry(attempt, maxRetries + 1, lastError);
+
+        return contextualOperation.apply(ctx)
+                .then((result, error) -> {
+                    if (error == null) {
+                        return Promise.of(result);
+                    }
+                    if (!shouldRetry(error, attempt - 1, startTime)) {
+                        return Promise.ofException(error);
+                    }
+                    Duration delay = calculateDelay(attempt - 1);
+                    return Promises.delay(delay, eventloop)
+                            .then(() -> executeWithContextInternal(
+                                    eventloop, contextualOperation, attempt + 1, startTime, error));
+                });
+    }
+
     public <T> Promise<T> executeBlocking(
             Eventloop eventloop,
             Supplier<T> operation,

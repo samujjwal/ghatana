@@ -84,6 +84,59 @@ public final class CircuitBreaker {
     }
 
     /**
+     * Execute an operation through the circuit breaker with an optional fallback.
+     *
+     * <p>When the circuit is OPEN and a fallback is provided, the fallback value is
+     * returned immediately instead of throwing {@link CircuitBreakerOpenException}.
+     * This supports the K-18 resilience profile requirement for degraded-mode responses.
+     *
+     * @param eventloop ActiveJ eventloop for scheduling half-open probes
+     * @param operation the async operation to protect
+     * @param fallback  fallback supplier executed when the circuit is OPEN (nullable)
+     * @param <T>       result type
+     * @return promise that completes with the operation result, fallback, or fails with
+     *         {@link CircuitBreakerOpenException} if the circuit is open and no fallback
+     */
+    public <T> Promise<T> execute(Eventloop eventloop, Supplier<Promise<T>> operation,
+                                  Supplier<T> fallback) {
+        totalCalls.incrementAndGet();
+
+        State current = state.get();
+
+        if (current == State.OPEN) {
+            if (shouldTransitionToHalfOpen()) {
+                if (state.compareAndSet(State.OPEN, State.HALF_OPEN)) {
+                    log.info("[{}] circuit breaker: OPEN → HALF_OPEN (probe allowed)", name);
+                    successCount.set(0);
+                    return executeProbe(eventloop, operation);
+                }
+            }
+            totalRejections.incrementAndGet();
+            if (fallback != null) {
+                return Promise.of(fallback.get());
+            }
+            return Promise.ofException(new CircuitBreakerOpenException(name, effectiveResetTimeout()));
+        }
+
+        if (current == State.HALF_OPEN) {
+            return executeProbe(eventloop, operation);
+        }
+
+        // CLOSED — normal execution
+        return operation.get()
+                .then(
+                        result -> {
+                            onSuccess();
+                            return Promise.of(result);
+                        },
+                        error -> {
+                            onFailure();
+                            return Promise.ofException(error);
+                        }
+                );
+    }
+
+    /**
      * Execute an operation through the circuit breaker.
      *
      * @param eventloop ActiveJ eventloop for scheduling half-open probes

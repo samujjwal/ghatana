@@ -45,3 +45,6 @@ packages:
   - "products/yappc/frontend/docs-site"
   - "products/yappc/frontend/packages/*"
   - "products/yappc/frontend/libs/canvas/yappc-canvas"
+
+  # App-Platform (Siddhanta) TypeScript packages
+  - "products/app-platform/libs/typescript/*"

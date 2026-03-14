@@ -1,0 +1,137 @@
+version: "3.9"
+
+# ──────────────────────────────────────────────────────────────────────────────
+# App-Platform — Local Development Stack
+#
+# Services:
+#   postgres    — primary database (finance event store + audit logs)
+#   redis       — distributed cache / pub-sub
+#   kafka       — event streaming backbone (K-05 event bus)
+#   zookeeper   — kafka dependency
+#   pgadmin     — optional browser-based DB admin (disabled by default)
+# ──────────────────────────────────────────────────────────────────────────────
+
+services:
+  # ── PostgreSQL ──────────────────────────────────────────────────────────────
+  postgres:
+    image: postgres:15-alpine
+    container_name: app-platform-postgres
+    environment:
+      POSTGRES_DB: app_platform
+      POSTGRES_USER: app_user
+      POSTGRES_PASSWORD: app_pass
+      # Ensure immutability triggers are active for audit_logs
+      POSTGRES_INITDB_ARGS: "--encoding=UTF8 --locale=C"
+    ports:
+      - "5442:5432" # Offset from default to avoid conflicts
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+      - ./scripts/init-db.sql:/docker-entrypoint-initdb.d/00-init.sql:ro
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U app_user -d app_platform"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - app-platform-net
+
+  # ── Redis ────────────────────────────────────────────────────────────────────
+  redis:
+    image: redis:7-alpine
+    container_name: app-platform-redis
+    command: redis-server --appendonly yes --requirepass redis_pass
+    ports:
+      - "6389:6379" # Offset from default
+    volumes:
+      - redis_data:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "-a", "redis_pass", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - app-platform-net
+
+  # ── Zookeeper (Kafka dependency) ─────────────────────────────────────────────
+  zookeeper:
+    image: bitnami/zookeeper:3.8
+    container_name: app-platform-zookeeper
+    environment:
+      ALLOW_ANONYMOUS_LOGIN: "yes"
+    ports:
+      - "2181:2181"
+    volumes:
+      - zookeeper_data:/bitnami/zookeeper
+    healthcheck:
+      test: ["CMD-SHELL", "zkServer.sh status"]
+      interval: 15s
+      timeout: 10s
+      retries: 5
+    networks:
+      - app-platform-net
+
+  # ── Kafka ────────────────────────────────────────────────────────────────────
+  kafka:
+    image: bitnami/kafka:3.6
+    container_name: app-platform-kafka
+    depends_on:
+      zookeeper:
+        condition: service_healthy
+    environment:
+      KAFKA_CFG_ZOOKEEPER_CONNECT: zookeeper:2181
+      KAFKA_CFG_ADVERTISED_LISTENERS: PLAINTEXT://localhost:9092,INTERNAL://kafka:29092
+      KAFKA_CFG_LISTENERS: PLAINTEXT://:9092,INTERNAL://:29092
+      KAFKA_CFG_LISTENER_SECURITY_PROTOCOL_MAP: PLAINTEXT:PLAINTEXT,INTERNAL:PLAINTEXT
+      KAFKA_CFG_INTER_BROKER_LISTENER_NAME: INTERNAL
+      KAFKA_CFG_NUM_PARTITIONS: 12
+      KAFKA_CFG_DEFAULT_REPLICATION_FACTOR: 1
+      KAFKA_CFG_AUTO_CREATE_TOPICS_ENABLE: "true"
+      ALLOW_PLAINTEXT_LISTENER: "yes"
+    ports:
+      - "9092:9092"
+    volumes:
+      - kafka_data:/bitnami/kafka
+    healthcheck:
+      test:
+        [
+          "CMD-SHELL",
+          "kafka-topics.sh --bootstrap-server localhost:9092 --list",
+        ]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+      start_period: 30s
+    networks:
+      - app-platform-net
+
+  # ── PgAdmin (optional — disabled by default) ─────────────────────────────────
+  # To enable: `docker compose --profile debug up`
+  pgadmin:
+    image: dpage/pgadmin4:7
+    container_name: app-platform-pgadmin
+    profiles:
+      - debug
+    environment:
+      PGADMIN_DEFAULT_EMAIL: dev@ghatana.local
+      PGADMIN_DEFAULT_PASSWORD: pgadmin_pass
+      PGADMIN_CONFIG_SERVER_MODE: "False"
+    ports:
+      - "5050:80"
+    volumes:
+      - pgadmin_data:/var/lib/pgadmin
+    depends_on:
+      postgres:
+        condition: service_healthy
+    networks:
+      - app-platform-net
+
+volumes:
+  postgres_data:
+  redis_data:
+  zookeeper_data:
+  kafka_data:
+  pgadmin_data:
+
+networks:
+  app-platform-net:
+    driver: bridge

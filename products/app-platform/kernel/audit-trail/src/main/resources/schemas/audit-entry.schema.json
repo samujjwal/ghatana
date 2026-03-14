@@ -1,0 +1,109 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://ghatana.io/schemas/audit-entry/v1.0.0",
+  "title": "AuditEntry",
+  "description": "Canonical audit log entry schema for K-07 platform audit trail",
+  "type": "object",
+  "required": [
+    "action",
+    "actor",
+    "resource",
+    "outcome",
+    "tenantId",
+    "timestampGregorian"
+  ],
+  "additionalProperties": false,
+  "properties": {
+    "action": {
+      "type": "string",
+      "description": "The action performed by the actor",
+      "enum": [
+        "CREATE",
+        "READ",
+        "UPDATE",
+        "DELETE",
+        "LOGIN",
+        "LOGOUT",
+        "APPROVE",
+        "REJECT"
+      ]
+    },
+    "actor": {
+      "type": "object",
+      "description": "Who performed the action",
+      "required": ["userId", "role"],
+      "additionalProperties": false,
+      "properties": {
+        "userId": {
+          "type": "string",
+          "description": "User or service account identifier",
+          "minLength": 1
+        },
+        "role": {
+          "type": "string",
+          "description": "Role or permission group of the actor",
+          "minLength": 1
+        },
+        "ipAddress": {
+          "type": "string",
+          "description": "IP address of the client (IPv4 or IPv6)"
+        },
+        "sessionId": {
+          "type": "string",
+          "description": "Session identifier"
+        }
+      }
+    },
+    "resource": {
+      "type": "object",
+      "description": "The resource the action was performed on",
+      "required": ["type", "id"],
+      "additionalProperties": false,
+      "properties": {
+        "type": {
+          "type": "string",
+          "description": "Resource type (e.g. 'order', 'user', 'portfolio')",
+          "minLength": 1
+        },
+        "id": {
+          "type": "string",
+          "description": "Resource unique identifier",
+          "minLength": 1
+        },
+        "parentId": {
+          "type": "string",
+          "description": "Parent resource identifier for nested resources"
+        }
+      }
+    },
+    "outcome": {
+      "type": "string",
+      "description": "Outcome of the action",
+      "enum": ["SUCCESS", "FAILURE", "PARTIAL"]
+    },
+    "tenantId": {
+      "type": "string",
+      "description": "Tenant isolation identifier",
+      "minLength": 1
+    },
+    "timestampGregorian": {
+      "type": "string",
+      "description": "Action timestamp in ISO-8601 UTC format",
+      "format": "date-time"
+    },
+    "timestampBs": {
+      "type": "string",
+      "description": "Action timestamp in Bikram Sambat calendar (YYYY-MM-DD). Empty when K-15 service unavailable.",
+      "pattern": "^$|^\\d{4}-\\d{2}-\\d{2}$"
+    },
+    "traceId": {
+      "type": "string",
+      "description": "Distributed trace identifier for correlation"
+    },
+    "details": {
+      "type": "object",
+      "description": "Additional context — old/new values, request metadata, etc.",
+      "additionalProperties": true
+    }
+  }
+}

@@ -1,0 +1,241 @@
+# AppPlatform Kernel CI — TC-P0-029 and TC-P0-030
+#
+# Runs on every push/PR that touches the app-platform kernel or platform libraries.
+# Jobs:
+#   1. build-and-test    — Gradle build, checkstyle, PMD, unit + integration tests
+#   2. sast-scan         — OWASP dependency-check CVE audit (gates on CVSS >= 7)
+#   3. lint-java         — Spotless format verification (no auto-fix on CI)
+#
+# Exit criteria (TC-P0-029): pipeline runs green on template service.
+# Exit criteria (TC-P0-030): SAST scan shows zero new unaddressed high/critical CVEs.
+
+name: AppPlatform Kernel CI
+
+on:
+    push:
+        branches: [main, develop]
+        paths:
+            - "products/app-platform/**"
+            - "platform/java/**"
+            - "gradle/**"
+            - "build.gradle.kts"
+            - "settings.gradle.kts"
+    pull_request:
+        branches: [main, develop]
+        paths:
+            - "products/app-platform/**"
+            - "platform/java/**"
+            - "gradle/**"
+    workflow_dispatch:
+
+env:
+    JAVA_VERSION: "21"
+    GRADLE_OPTS: "-Dorg.gradle.daemon=false -Dorg.gradle.parallel=true -Dorg.gradle.caching=true"
+
+jobs:
+    # ---------------------------------------------------------------------------
+    # Job 1 — Build, test, and quality checks (TC-P0-029)
+    # ---------------------------------------------------------------------------
+    build-and-test:
+        name: Build & Test (Java 21)
+        runs-on: ubuntu-latest
+        timeout-minutes: 30
+
+        services:
+            postgres:
+                image: postgres:15-alpine
+                env:
+                    POSTGRES_DB: appplatform_test
+                    POSTGRES_USER: appplatform
+                    POSTGRES_PASSWORD: appplatform_test_secret
+                ports:
+                    - 5432:5432
+                options: >-
+                    --health-cmd pg_isready
+                    --health-interval 10s
+                    --health-timeout 5s
+                    --health-retries 5
+
+            redis:
+                image: redis:7-alpine
+                ports:
+                    - 6379:6379
+                options: >-
+                    --health-cmd "redis-cli ping"
+                    --health-interval 10s
+                    --health-timeout 5s
+                    --health-retries 5
+
+        steps:
+            - name: Checkout
+              uses: actions/checkout@v4
+              with:
+                  fetch-depth: 0
+
+            - name: Set up Java ${{ env.JAVA_VERSION }}
+              uses: actions/setup-java@v4
+              with:
+                  java-version: ${{ env.JAVA_VERSION }}
+                  distribution: temurin
+
+            - name: Cache Gradle dependencies
+              uses: actions/cache@v4
+              with:
+                  path: |
+                      ~/.gradle/caches
+                      ~/.gradle/wrapper
+                  key: ${{ runner.os }}-gradle-${{ hashFiles('**/*.gradle.kts', '**/gradle-wrapper.properties') }}
+                  restore-keys: |
+                      ${{ runner.os }}-gradle-
+
+            - name: Validate Gradle wrapper checksum
+              uses: gradle/actions/wrapper-validation@v3
+
+            - name: Build app-platform kernel modules
+              run: |
+                  ./gradlew \
+                    :products:app-platform:kernel:event-store:build \
+                    :products:app-platform:kernel:audit-trail:build \
+                    :products:app-platform:kernel:calendar-service:build \
+                    :products:app-platform:kernel:config-engine:build \
+                    :products:app-platform:kernel:ledger-framework:build \
+                    :products:app-platform:kernel:secrets-management:build \
+                    :products:app-platform:kernel:iam:build \
+                    :products:app-platform:kernel:observability-sdk:build \
+                    :products:app-platform:kernel:api-gateway:build \
+                    :products:app-platform:kernel:resilience-patterns:build \
+                    :products:app-platform:service-template:build \
+                    --info
+              env:
+                  # Testcontainers uses the services above (JDBC URL from environment)
+                  POSTGRES_URL: jdbc:postgresql://localhost:5432/appplatform_test
+                  POSTGRES_USER: appplatform
+                  POSTGRES_PASSWORD: appplatform_test_secret
+                  REDIS_URL: redis://localhost:6379
+
+            - name: Run all kernel tests with coverage
+              run: |
+                  ./gradlew \
+                    :products:app-platform:kernel:event-store:test \
+                    :products:app-platform:kernel:audit-trail:test \
+                    :products:app-platform:kernel:calendar-service:test \
+                    :products:app-platform:kernel:config-engine:test \
+                    :products:app-platform:kernel:ledger-framework:test \
+                    :products:app-platform:kernel:iam:test \
+                    :products:app-platform:kernel:resilience-patterns:test \
+                    :products:app-platform:service-template:test \
+                    --continue
+              env:
+                  POSTGRES_URL: jdbc:postgresql://localhost:5432/appplatform_test
+                  POSTGRES_USER: appplatform
+                  POSTGRES_PASSWORD: appplatform_test_secret
+                  REDIS_URL: redis://localhost:6379
+
+            - name: Checkstyle (zero violations allowed)
+              run:
+                  ./gradlew :products:app-platform:kernel:event-store:checkstyleMain \
+                  :products:app-platform:kernel:audit-trail:checkstyleMain \
+                  :products:app-platform:kernel:calendar-service:checkstyleMain \
+                  :products:app-platform:kernel:config-engine:checkstyleMain \
+                  :products:app-platform:kernel:ledger-framework:checkstyleMain \
+                  :products:app-platform:kernel:iam:checkstyleMain
+
+            - name: PMD static analysis
+              run: ./gradlew :products:app-platform:kernel:event-store:pmdMain \
+                  :products:app-platform:kernel:audit-trail:pmdMain \
+                  :products:app-platform:kernel:calendar-service:pmdMain
+
+            - name: Upload test reports on failure
+              if: failure()
+              uses: actions/upload-artifact@v4
+              with:
+                  name: test-reports-${{ github.run_id }}
+                  path: |
+                      **/build/reports/tests/
+                      **/build/reports/checkstyle/
+                      **/build/reports/pmd/
+                  retention-days: 7
+
+            - name: Publish test results
+              if: always()
+              uses: EnricoMi/publish-unit-test-result-action@v2
+              with:
+                  files: "**/build/test-results/**/*.xml"
+                  comment_mode: off
+
+    # ---------------------------------------------------------------------------
+    # Job 2 — Spotless format check (TC-P0-029)
+    # ---------------------------------------------------------------------------
+    lint-java:
+        name: Spotless Format Check
+        runs-on: ubuntu-latest
+        timeout-minutes: 10
+        steps:
+            - uses: actions/checkout@v4
+            - uses: actions/setup-java@v4
+              with:
+                  java-version: ${{ env.JAVA_VERSION }}
+                  distribution: temurin
+            - uses: actions/cache@v4
+              with:
+                  path: |
+                      ~/.gradle/caches
+                      ~/.gradle/wrapper
+                  key: ${{ runner.os }}-gradle-${{ hashFiles('**/*.gradle.kts') }}
+            - name: Spotless check (no auto-fix)
+              run: ./gradlew spotlessCheck
+              continue-on-error: false
+
+    # ---------------------------------------------------------------------------
+    # Job 3 — OWASP dependency CVE audit (TC-P0-030)
+    # ---------------------------------------------------------------------------
+    sast-scan:
+        name: OWASP Dependency CVE Audit
+        runs-on: ubuntu-latest
+        timeout-minutes: 20
+        steps:
+            - uses: actions/checkout@v4
+            - uses: actions/setup-java@v4
+              with:
+                  java-version: ${{ env.JAVA_VERSION }}
+                  distribution: temurin
+            - uses: actions/cache@v4
+              with:
+                  path: ~/.gradle/caches
+                  key: ${{ runner.os }}-gradle-${{ hashFiles('**/*.gradle.kts') }}
+            - name: OWASP dependency check
+              run: |
+                  ./gradlew dependencyCheckAnalyze \
+                    -Pdependency.check.format=HTML,JSON \
+                    -Pdependency.check.failBuildOnCVSS=7 \
+                    --continue
+            - name: Upload OWASP report
+              if: always()
+              uses: actions/upload-artifact@v4
+              with:
+                  name: owasp-report-${{ github.run_id }}
+                  path: build/reports/dependency-check-report.*
+                  retention-days: 30
+
+    # ---------------------------------------------------------------------------
+    # Job 4 — @doc tag compliance (sprint gate)
+    # ---------------------------------------------------------------------------
+    doc-tag-check:
+        name: JavaDoc @doc.* Tag Compliance
+        runs-on: ubuntu-latest
+        timeout-minutes: 5
+        steps:
+            - uses: actions/checkout@v4
+            - uses: actions/setup-java@v4
+              with:
+                  java-version: ${{ env.JAVA_VERSION }}
+                  distribution: temurin
+            - name: Verify @doc tags on public classes
+              run: |
+                  ./gradlew \
+                    :products:app-platform:kernel:event-store:checkDocTags \
+                    :products:app-platform:kernel:audit-trail:checkDocTags \
+                    :products:app-platform:kernel:calendar-service:checkDocTags \
+                    :products:app-platform:kernel:config-engine:checkDocTags \
+                    :products:app-platform:kernel:ledger-framework:checkDocTags \
+                    || true  # doc-tag-check is advisory until Sprint 4 gate
