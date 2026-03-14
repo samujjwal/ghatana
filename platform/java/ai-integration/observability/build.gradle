@@ -9,24 +9,21 @@ version = '1.0-SNAPSHOT'
 description = 'AI Platform Observability - AI-specific metrics and monitoring'
 
 dependencies {
-    // Core infrastructure
-    api project(':libs:observability')
-    api project(':libs:types')
-    
+    // Core infrastructure (migrated from :libs:observability, :libs:types)
+    api project(':platform:java:observability')
+    api project(':platform:java:core')
+
     // Logging
     implementation libs.slf4j.api
-    implementation libs.activej.inject
-    
+
     // Testing
     testImplementation libs.junit.jupiter.api
     testRuntimeOnly libs.junit.jupiter.engine
     testRuntimeOnly libs.junit.platform.launcher
     testImplementation libs.assertj.core
-    testImplementation project(':libs:test-utils')
-    testImplementation project(':libs:activej-test-utils')
+    testImplementation project(':platform:java:testing')
 }
 
 test {
     useJUnitPlatform()
-    
 }

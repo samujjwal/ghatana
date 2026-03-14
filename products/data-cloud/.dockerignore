@@ -1,0 +1,39 @@
+# .dockerignore for data-cloud
+# Exclude build outputs, IDE files, and local configs
+
+# Gradle
+.gradle/
+build/
+**/build/
+out/
+
+# IDE
+.idea/
+*.iml
+*.ipr
+*.iws
+.vscode/
+
+# Node / frontend build artifacts
+node_modules/
+dist/
+.cache/
+ui/node_modules/
+ui/dist/
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Git
+.git/
+.gitignore
+
+# Test reports / coverage
+**/test-results/
+**/surefire-reports/
+**/jacoco/
+
+# Local env files
+.env
+.env.local

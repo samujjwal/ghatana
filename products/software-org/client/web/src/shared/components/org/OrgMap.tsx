@@ -13,7 +13,7 @@
  *   onDepartmentClick={(id) => console.log(id)}
  * />
  *
- * @package @ghatana/ui
+ * @package @ghatana/software-org-web
  */
 
 import React, { CSSProperties, useMemo } from 'react';

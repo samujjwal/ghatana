@@ -3,7 +3,9 @@ import { render } from '@testing-library/react';
 import { BrowserRouter } from 'react-router';
 import { Provider } from 'jotai';
 import { LineageExplorerPage } from '../../pages/LineageExplorerPage';
-import { LineageExplorerPage as LineageExplorerPageEnhanced } from '../../pages/LineageExplorerPageEnhanced';
+
+// Both the canonical and Enhanced variants now point to the same component
+const LineageExplorerPageEnhanced = LineageExplorerPage;
 
 const TestWrapper = ({ children }: { children: React.ReactNode }) => (
   <Provider><BrowserRouter>{children}</BrowserRouter></Provider>

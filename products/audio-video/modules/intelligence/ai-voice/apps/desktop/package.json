@@ -11,6 +11,7 @@
         "tauri": "tauri"
     },
     "dependencies": {
+        "@ghatana/design-system": "workspace:*",
         "@ghatana/ai-voice-ui-react": "workspace:*",
         "@tauri-apps/api": "^2.9.1",
         "@tauri-apps/plugin-dialog": "^2.4.2",

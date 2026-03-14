@@ -85,21 +85,21 @@ Steps:
 Expected:
 - Creator channels are judged on downstream quality, not only traffic volume.
 
-### AURA-BIZ-007 Closed beta gate requires outcome instrumentation readiness
+### AURA-BIZ-007 Internal alpha gate requires outcome instrumentation readiness
 Level: Release Gate
 Priority: P0
 Source Docs: `Aura_GTM_Strategy.md`, `Aura_Engineering_Sprint_Plan_6_Months.md`
-Preconditions: Month 3 closed beta candidate.
+Preconditions: Month 3 internal alpha candidate.
 Steps:
-1. Review release checklist before admitting beta users.
+1. Review release checklist before admitting the internal alpha cohort.
 Expected:
 - Shade feedback, adverse reaction, return, export, and deletion flows are testable before beta opens.
 
-### AURA-BIZ-008 Open beta gate requires early evidence of reduced bad outcomes
+### AURA-BIZ-008 Invite beta gate requires early evidence of reduced bad outcomes
 Level: Release Gate
 Priority: P0
 Source Docs: `Aura_GTM_Strategy.md`
-Preconditions: Month 5 open beta candidate.
+Preconditions: Month 5 invite beta candidate.
 Steps:
 1. Review beta outcome dashboards.
 Expected:

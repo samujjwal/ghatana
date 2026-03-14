@@ -2,13 +2,13 @@
  * Manager Layout Component
  *
  * Layout wrapper for Manager persona dashboard and pages.
- * Uses @ghatana/ui DashboardLayout with manager-specific navigation.
+ * Uses @ghatana/design-system DashboardLayout with manager-specific navigation.
  *
  * @package @ghatana/software-org-web
  */
 
 import { useNavigate, useLocation } from 'react-router';
-import { DashboardLayout, AppSidebar } from '@ghatana/ui';
+import { DashboardLayout, AppSidebar } from '@ghatana/design-system';
 
 /**
  * Navigation sections for Manager persona
@@ -121,4 +121,3 @@ export function ManagerLayout({ children }: ManagerLayoutProps) {
     </DashboardLayout>
   );
 }
-

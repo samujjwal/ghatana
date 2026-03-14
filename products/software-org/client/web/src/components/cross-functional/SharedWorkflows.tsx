@@ -24,7 +24,7 @@ import {
     TableRow,
     TableCell,
     LinearProgress,
-} from '@ghatana/ui';
+} from '@ghatana/design-system';
 
 /**
  * Workflow metrics
@@ -137,7 +137,7 @@ export interface SharedWorkflowsProps {
  * - Activity stream for workflow events
  * - Tab-based navigation (Workflows, Stages, Templates, Activity)
  *
- * Reuses @ghatana/ui components:
+ * Reuses @ghatana/design-system components:
  * - Card (workflow cards, template cards)
  * - Table (stages table, activity table)
  * - Chip (status, category, priority indicators)

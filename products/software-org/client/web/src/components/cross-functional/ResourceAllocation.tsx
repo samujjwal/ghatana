@@ -19,7 +19,7 @@ import {
     Typography,
     Stack,
     LinearProgress,
-} from '@ghatana/ui';
+} from '@ghatana/design-system';
 
 /**
  * Resource allocation metrics
@@ -130,7 +130,7 @@ export interface ResourceAllocationProps {
  * - Resource request management
  * - Tab-based navigation (Teams, People, Skills, Requests)
  *
- * Reuses @ghatana/ui components:
+ * Reuses @ghatana/design-system components:
  * - Card (team cards, resource cards, skill cards)
  * - LinearProgress (utilization, allocation, demand/supply bars)
  * - Chip (capacity, availability, skill, status indicators)

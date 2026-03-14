@@ -16,7 +16,7 @@ import {
     Tab,
     Tabs,
     LinearProgress,
-} from '@ghatana/ui';
+} from '@ghatana/design-system';
 
 /**
  * Time entry data

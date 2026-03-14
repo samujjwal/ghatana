@@ -2,7 +2,7 @@
  * PersonaGuard Component
  *
  * Route guard that protects routes based on persona type and permissions.
- * Uses @ghatana/ui ProtectedRoute as the base and adds persona-level authorization.
+ * Uses @ghatana/design-system ProtectedRoute as the base and adds persona-level authorization.
  * Also integrates with entry point access control.
  *
  * @package @ghatana/software-org-web
@@ -10,7 +10,7 @@
 
 import React, { useState, useEffect } from 'react';
 import { Navigate, useLocation } from 'react-router';
-import { ProtectedRoute } from '@ghatana/ui';
+import { ProtectedRoute } from '@ghatana/design-system';
 import { usePersona } from '@/hooks/usePersona';
 import { useEntryPoints } from '@/hooks/useEntryPoints';
 import type { PersonaType } from '@/state/atoms/persona.atoms';
@@ -378,4 +378,3 @@ export function EntryPointGuard({
     </ProtectedRoute>
   );
 }
-

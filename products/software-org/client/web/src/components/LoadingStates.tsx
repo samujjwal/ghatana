@@ -8,7 +8,7 @@
  */
 
 import React from 'react';
-import { Box, Card, Spinner } from '@ghatana/ui';
+import { Box, Card, Spinner } from '@ghatana/design-system';
 
 /**
  * Page Loading Spinner
@@ -103,4 +103,3 @@ export function InlineLoader({ text = 'Loading...' }: { text?: string }) {
     </div>
   );
 }
-

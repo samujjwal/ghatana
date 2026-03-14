@@ -1,0 +1,98 @@
+# Production overrides — applied on top of values.yaml
+# helm upgrade --install data-cloud ./helm/data-cloud \
+#   -f helm/data-cloud/values.yaml \
+#   -f helm/data-cloud/values-production.yaml \
+#   --namespace data-cloud
+
+replicaCount: 4
+
+image:
+  pullPolicy: IfNotPresent
+
+config:
+  logLevel: "WARN"
+
+resources:
+  requests:
+    cpu: "1"
+    memory: 1Gi
+  limits:
+    cpu: "4"
+    memory: 4Gi
+
+autoscaling:
+  enabled: true
+  minReplicas: 4
+  maxReplicas: 20
+  targetCPUUtilizationPercentage: 65
+  targetMemoryUtilizationPercentage: 75
+
+podDisruptionBudget:
+  enabled: true
+  minAvailable: 2
+
+kafka:
+  bootstrapServers: "kafka-prod.kafka.svc.cluster.local:9092"
+  partitions: "12"
+  replicationFactor: "3"
+  readTimeoutMs: "10000"
+
+clickhouse:
+  host: "clickhouse-prod.clickhouse.svc.cluster.local"
+
+opensearch:
+  host: "opensearch-prod-cluster-master.opensearch.svc.cluster.local"
+  scheme: "https"
+
+ceph:
+  endpoint: "https://rook-ceph-rgw-prod.rook-ceph.svc.cluster.local"
+  bucket: "ghatana-data-cloud-prod"
+
+ingress:
+  enabled: true
+  className: nginx
+  annotations:
+    nginx.ingress.kubernetes.io/ssl-redirect: "true"
+    nginx.ingress.kubernetes.io/proxy-body-size: "50m"
+    cert-manager.io/cluster-issuer: "letsencrypt-prod"
+  hosts:
+    - host: data-cloud.ghatana.io
+      paths:
+        - path: /
+          pathType: Prefix
+  tls:
+    - secretName: data-cloud-prod-tls
+      hosts:
+        - data-cloud.ghatana.io
+
+affinity:
+  podAntiAffinity:
+    preferredDuringSchedulingIgnoredDuringExecution:
+      - weight: 100
+        podAffinityTerm:
+          topologyKey: kubernetes.io/hostname
+          labelSelector:
+            matchLabels:
+              app.kubernetes.io/name: data-cloud
+
+metrics:
+  serviceMonitor:
+    enabled: true
+    namespace: monitoring
+    interval: 15s
+    scrapeTimeout: 10s
+
+# External Secrets Operator — pull credentials from Vault (production)
+externalSecrets:
+  enabled: true
+  refreshInterval: "5m"
+  secretStore:
+    name: data-cloud-vault-store
+    kind: SecretStore
+  vaultPaths:
+    db:         "data-cloud/production/db"
+    kafka:      "data-cloud/production/kafka"
+    clickhouse: "data-cloud/production/clickhouse"
+    jwt:        "data-cloud/production/jwt"
+  targetSecretName: data-cloud-secret
+  deletionPolicy: Retain

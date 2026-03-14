@@ -32,9 +32,14 @@ public final class InMemoryEventLogStoreProvider implements EventLogStore {
 
     @Override
     public Promise<List<Offset>> appendBatch(TenantContext tenant, List<EventEntry> entries) {
+        List<EventEntry> tenantEntries = store.computeIfAbsent(tenant.tenantId(), ignored -> new ArrayList<>());
         List<Offset> results = new ArrayList<>(entries.size());
-        for (EventEntry entry : entries) {
-            results.add(append(tenant, entry).getResult());
+        synchronized (tenantEntries) {
+            for (EventEntry entry : entries) {
+                tenantEntries.add(entry);
+                long offset = offsets.compute(tenant.tenantId(), (key, value) -> value == null ? 1L : value + 1L);
+                results.add(Offset.of(offset));
+            }
         }
         return Promise.of(results);
     }

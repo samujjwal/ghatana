@@ -1,0 +1,77 @@
+# Staging overrides — applied on top of values.yaml
+# helm upgrade --install data-cloud ./helm/data-cloud \
+#   -f helm/data-cloud/values.yaml \
+#   -f helm/data-cloud/values-staging.yaml \
+#   --namespace data-cloud-staging
+
+replicaCount: 2
+
+image:
+  pullPolicy: Always
+
+config:
+  logLevel: "DEBUG"
+
+resources:
+  requests:
+    cpu: 250m
+    memory: 256Mi
+  limits:
+    cpu: "1"
+    memory: 1Gi
+
+autoscaling:
+  enabled: false
+  minReplicas: 2
+  maxReplicas: 5
+
+kafka:
+  bootstrapServers: "kafka-staging.kafka.svc.cluster.local:9092"
+  partitions: "2"
+  replicationFactor: "1"
+
+clickhouse:
+  host: "clickhouse-staging.clickhouse.svc.cluster.local"
+
+opensearch:
+  host: "opensearch-staging.opensearch.svc.cluster.local"
+
+ceph:
+  endpoint: "http://rook-ceph-rgw-staging.rook-ceph.svc.cluster.local"
+  bucket: "ghatana-data-cloud-staging"
+
+ingress:
+  enabled: true
+  className: nginx
+  annotations:
+    nginx.ingress.kubernetes.io/ssl-redirect: "true"
+    cert-manager.io/cluster-issuer: "letsencrypt-staging"
+  hosts:
+    - host: data-cloud.staging.ghatana.internal
+      paths:
+        - path: /
+          pathType: Prefix
+  tls:
+    - secretName: data-cloud-staging-tls
+      hosts:
+        - data-cloud.staging.ghatana.internal
+
+metrics:
+  serviceMonitor:
+    enabled: true
+    namespace: monitoring
+
+# External Secrets Operator — pull credentials from Vault (staging)
+externalSecrets:
+  enabled: true
+  refreshInterval: "5m"
+  secretStore:
+    name: data-cloud-vault-store
+    kind: SecretStore
+  vaultPaths:
+    db:         "data-cloud/staging/db"
+    kafka:      "data-cloud/staging/kafka"
+    clickhouse: "data-cloud/staging/clickhouse"
+    jwt:        "data-cloud/staging/jwt"
+  targetSecretName: data-cloud-secret
+  deletionPolicy: Retain

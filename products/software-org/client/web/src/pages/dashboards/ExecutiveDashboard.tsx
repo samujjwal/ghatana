@@ -7,7 +7,8 @@
  * @package @ghatana/software-org-web
  */
 
-import { Grid, Card, KpiCard, Box, Stack, Button } from '@ghatana/ui';
+import { Grid, Card, Box, Stack, Button } from '@ghatana/design-system';
+import { KpiCard } from '@/shared/components/org';
 import { usePersona } from '@/hooks/usePersona';
 
 /**

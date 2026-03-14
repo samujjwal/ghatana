@@ -8,7 +8,7 @@
  * - Validation schema system
  * - Error message formatting
  *
- * Designed to be promoted to @ghatana/ui shared library.
+ * Designed to be promoted to a shared platform form-validation library.
  *
  * @module lib/form-validation
  * @doc.type module

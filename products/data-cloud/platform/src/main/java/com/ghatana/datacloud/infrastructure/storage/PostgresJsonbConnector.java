@@ -148,55 +148,35 @@ public class PostgresJsonbConnector implements StorageConnector {
         Objects.requireNonNull(entity.getTenantId(), "Entity tenantId must not be null");
         Objects.requireNonNull(entity.getCollectionName(), "Entity collectionName must not be null");
 
+        // Generate ID / timestamps before the async boundary so the Promise closure
+        // captures a fully initialised entity without requiring shared mutable state.
+        if (entity.getId() == null) entity.setId(UUID.randomUUID());
+        if (entity.getCreatedAt() == null) entity.setCreatedAt(Instant.now());
+        if (entity.getUpdatedAt() == null) entity.setUpdatedAt(Instant.now());
+
         long startTime = System.currentTimeMillis();
-        try {
-            // Generate ID if not present
-            if (entity.getId() == null) {
-                entity.setId(UUID.randomUUID());
-            }
-
-            // Set timestamps if not present
-            if (entity.getCreatedAt() == null) {
-                entity.setCreatedAt(Instant.now());
-            }
-            if (entity.getUpdatedAt() == null) {
-                entity.setUpdatedAt(Instant.now());
-            }
-
-            // Persist entity synchronously
-            Entity saved = entityRepository.save(entity.getTenantId(), entity)
-                    .getResult();
-
-            // Emit metrics
-            long duration = System.currentTimeMillis() - startTime;
-            metricsCollector.incrementCounter(
-                    "connector.postgres.create",
-                    "tenant", entity.getTenantId(),
-                    "collection", entity.getCollectionName());
-            metricsCollector.recordTimer(
-                    "connector.postgres.duration",
-                    duration,
-                    "operation", "create",
-                    "tenant", entity.getTenantId());
-
-            logger.debug("Created entity: tenant={}, collection={}, id={}, duration={}ms",
-                    entity.getTenantId(), entity.getCollectionName(), entity.getId(), duration);
-
-            auditLogger.logDataModification(entity.getTenantId(), "CREATE", 
-                entity.getCollectionName(), entity.getId().toString(), true);
-
-            return Promise.of(saved);
-        } catch (Exception e) {
-            long duration = System.currentTimeMillis() - startTime;
-            metricsCollector.incrementCounter(
-                    "connector.postgres.error",
-                    "operation", "create",
-                    "errorType", e.getClass().getSimpleName());
-            logger.error("Create failed: {}", e.getMessage(), e);
-            auditLogger.logDataModification(entity.getTenantId(), "CREATE", 
-                entity.getCollectionName(), entity.getId() != null ? entity.getId().toString() : "unknown", false);
-            throw new StorageException("Failed to create entity in PostgreSQL", e);
-        }
+        return entityRepository.save(entity.getTenantId(), entity)
+                .map(saved -> {
+                    long duration = System.currentTimeMillis() - startTime;
+                    metricsCollector.incrementCounter("connector.postgres.create",
+                            "tenant", entity.getTenantId(), "collection", entity.getCollectionName());
+                    metricsCollector.recordTimer("connector.postgres.duration", duration,
+                            "operation", "create", "tenant", entity.getTenantId());
+                    logger.debug("Created entity: tenant={}, collection={}, id={}, duration={}ms",
+                            entity.getTenantId(), entity.getCollectionName(), entity.getId(), duration);
+                    auditLogger.logDataModification(entity.getTenantId(), "CREATE",
+                            entity.getCollectionName(), entity.getId().toString(), true);
+                    return saved;
+                })
+                .mapException(e -> {
+                    metricsCollector.incrementCounter("connector.postgres.error",
+                            "operation", "create", "errorType", e.getClass().getSimpleName());
+                    logger.error("Create failed: {}", e.getMessage(), e);
+                    auditLogger.logDataModification(entity.getTenantId(), "CREATE",
+                            entity.getCollectionName(),
+                            entity.getId() != null ? entity.getId().toString() : "unknown", false);
+                    return new StorageException("Failed to create entity in PostgreSQL", e);
+                });
     }
 
     /**
@@ -214,38 +194,24 @@ public class PostgresJsonbConnector implements StorageConnector {
         Objects.requireNonNull(entityId, "Entity ID must not be null");
 
         long startTime = System.currentTimeMillis();
-
-        try {
-            String collectionName = "collection_" + collectionId;
-
-            Optional<Entity> result = entityRepository
-                    .findById(tenantId, collectionName, entityId)
-                    .getResult();
-
-            long duration = System.currentTimeMillis() - startTime;
-            metricsCollector.incrementCounter(
-                    "connector.postgres.read",
-                    "tenant", tenantId,
-                    "found", String.valueOf(result.isPresent()));
-            metricsCollector.recordTimer(
-                    "connector.postgres.duration",
-                    duration,
-                    "operation", "read",
-                    "tenant", tenantId);
-
-            logger.debug("Read entity: tenant={}, id={}, found={}, duration={}ms",
-                    tenantId, entityId, result.isPresent(), duration);
-
-            return Promise.of(result);
-        } catch (Exception e) {
-            long duration = System.currentTimeMillis() - startTime;
-            metricsCollector.incrementCounter(
-                    "connector.postgres.error",
-                    "operation", "read",
-                    "errorType", e.getClass().getSimpleName());
-            logger.error("Read failed: tenant={}, id={}, error={}", tenantId, entityId, e.getMessage(), e);
-            throw new StorageException("Failed to read entity from PostgreSQL", e);
-        }
+        String collectionName = collectionId.toString();
+        return entityRepository.findById(tenantId, collectionName, entityId)
+                .map(result -> {
+                    long duration = System.currentTimeMillis() - startTime;
+                    metricsCollector.incrementCounter("connector.postgres.read",
+                            "tenant", tenantId, "found", String.valueOf(result.isPresent()));
+                    metricsCollector.recordTimer("connector.postgres.duration", duration,
+                            "operation", "read", "tenant", tenantId);
+                    logger.debug("Read entity: tenant={}, id={}, found={}, duration={}ms",
+                            tenantId, entityId, result.isPresent(), duration);
+                    return result;
+                })
+                .mapException(e -> {
+                    metricsCollector.incrementCounter("connector.postgres.error",
+                            "operation", "read", "errorType", e.getClass().getSimpleName());
+                    logger.error("Read failed: tenant={}, id={}, error={}", tenantId, entityId, e.getMessage(), e);
+                    return new StorageException("Failed to read entity from PostgreSQL", e);
+                });
     }
 
     /**
@@ -260,40 +226,25 @@ public class PostgresJsonbConnector implements StorageConnector {
         Objects.requireNonNull(entity.getId(), "Entity ID must not be null");
         Objects.requireNonNull(entity.getTenantId(), "Entity tenantId must not be null");
 
+        entity.setUpdatedAt(Instant.now());
         long startTime = System.currentTimeMillis();
-
-        try {
-            // Update timestamp
-            entity.setUpdatedAt(Instant.now());
-
-            // Persist (will increment version on success)
-            Entity updated = entityRepository.save(entity.getTenantId(), entity)
-                    .getResult();
-
-            long duration = System.currentTimeMillis() - startTime;
-            metricsCollector.incrementCounter(
-                    "connector.postgres.update",
-                    "tenant", entity.getTenantId(),
-                    "collection", entity.getCollectionName());
-            metricsCollector.recordTimer(
-                    "connector.postgres.duration",
-                    duration,
-                    "operation", "update",
-                    "tenant", entity.getTenantId());
-
-            logger.debug("Updated entity: tenant={}, id={}, version={}, duration={}ms",
-                    entity.getTenantId(), entity.getId(), updated.getVersion(), duration);
-
-            return Promise.of(updated);
-        } catch (Exception e) {
-            long duration = System.currentTimeMillis() - startTime;
-            metricsCollector.incrementCounter(
-                    "connector.postgres.error",
-                    "operation", "update",
-                    "errorType", e.getClass().getSimpleName());
-            logger.error("Update failed: id={}, error={}", entity.getId(), e.getMessage(), e);
-            throw new StorageException("Failed to update entity in PostgreSQL", e);
-        }
+        return entityRepository.save(entity.getTenantId(), entity)
+                .map(updated -> {
+                    long duration = System.currentTimeMillis() - startTime;
+                    metricsCollector.incrementCounter("connector.postgres.update",
+                            "tenant", entity.getTenantId(), "collection", entity.getCollectionName());
+                    metricsCollector.recordTimer("connector.postgres.duration", duration,
+                            "operation", "update", "tenant", entity.getTenantId());
+                    logger.debug("Updated entity: tenant={}, id={}, duration={}ms",
+                            entity.getTenantId(), entity.getId(), duration);
+                    return updated;
+                })
+                .mapException(e -> {
+                    metricsCollector.incrementCounter("connector.postgres.error",
+                            "operation", "update", "errorType", e.getClass().getSimpleName());
+                    logger.error("Update failed: id={}, error={}", entity.getId(), e.getMessage(), e);
+                    return new StorageException("Failed to update entity in PostgreSQL", e);
+                });
     }
 
     /**
@@ -311,37 +262,23 @@ public class PostgresJsonbConnector implements StorageConnector {
         Objects.requireNonNull(entityId, "Entity ID must not be null");
 
         long startTime = System.currentTimeMillis();
-
-        try {
-            String collectionName = "collection_" + collectionId;
-
-            entityRepository.delete(tenantId, collectionName, entityId)
-                    .getResult();
-
-            long duration = System.currentTimeMillis() - startTime;
-            metricsCollector.incrementCounter(
-                    "connector.postgres.delete",
-                    "tenant", tenantId,
-                    "collection", collectionName);
-            metricsCollector.recordTimer(
-                    "connector.postgres.duration",
-                    duration,
-                    "operation", "delete",
-                    "tenant", tenantId);
-
-            logger.debug("Deleted entity: tenant={}, id={}, duration={}ms",
-                    tenantId, entityId, duration);
-
-            return Promise.of(null);
-        } catch (Exception e) {
-            long duration = System.currentTimeMillis() - startTime;
-            metricsCollector.incrementCounter(
-                    "connector.postgres.error",
-                    "operation", "delete",
-                    "errorType", e.getClass().getSimpleName());
-            logger.error("Delete failed: id={}, error={}", entityId, e.getMessage(), e);
-            throw new StorageException("Failed to delete entity from PostgreSQL", e);
-        }
+        String collectionName = collectionId.toString();
+        return entityRepository.delete(tenantId, collectionName, entityId)
+                .map(v -> {
+                    long duration = System.currentTimeMillis() - startTime;
+                    metricsCollector.incrementCounter("connector.postgres.delete",
+                            "tenant", tenantId, "collection", collectionName);
+                    metricsCollector.recordTimer("connector.postgres.duration", duration,
+                            "operation", "delete", "tenant", tenantId);
+                    logger.debug("Deleted entity: tenant={}, id={}, duration={}ms", tenantId, entityId, duration);
+                    return v;
+                })
+                .mapException(e -> {
+                    metricsCollector.incrementCounter("connector.postgres.error",
+                            "operation", "delete", "errorType", e.getClass().getSimpleName());
+                    logger.error("Delete failed: id={}, error={}", entityId, e.getMessage(), e);
+                    return new StorageException("Failed to delete entity from PostgreSQL", e);
+                });
     }
 
     /**
@@ -359,58 +296,29 @@ public class PostgresJsonbConnector implements StorageConnector {
         Objects.requireNonNull(spec, "QuerySpec must not be null");
 
         long startTime = System.currentTimeMillis();
-
-        try {
-            String collectionName = "collection_" + collectionId;
-
-            // Extract pagination info from spec
-            int limit = spec.getLimit();
-            int offset = spec.getOffset();
-
-            // Execute query synchronously
-            List<Entity> entities = entityRepository
-                    .findAll(tenantId, collectionName, Collections.emptyMap(),
-                            formatSort(spec), offset, limit)
-                    .getResult();
-
-            // Get total count
-            long totalCount = entityRepository
-                    .countByFilter(tenantId, collectionName, Collections.emptyMap())
-                    .getResult();
-
-            // Create result
-            QueryResult result = new QueryResult(
-                    entities,
-                    totalCount,
-                    limit,
-                    offset,
-                    System.currentTimeMillis() - startTime);
-
-            // Emit metrics
-            metricsCollector.incrementCounter(
-                    "connector.postgres.query",
-                    "tenant", tenantId,
-                    "collection", collectionName,
-                    "resultCount", String.valueOf(entities.size()));
-            metricsCollector.recordTimer(
-                    "connector.postgres.duration",
-                    System.currentTimeMillis() - startTime,
-                    "operation", "query",
-                    "tenant", tenantId);
-
-            logger.debug("Query executed: tenant={}, collection={}, results={}, totalCount={}, duration={}ms",
-                    tenantId, collectionName, entities.size(), totalCount,
-                    System.currentTimeMillis() - startTime);
-
-            return Promise.of(result);
-        } catch (Exception e) {
-            metricsCollector.incrementCounter(
-                    "connector.postgres.error",
-                    "operation", "query",
-                    "errorType", e.getClass().getSimpleName());
-            logger.error("Query failed: {}", e.getMessage(), e);
-            throw new StorageException("Failed to query entities from PostgreSQL", e);
-        }
+        String collectionName = collectionId.toString();
+        int limit = spec.getLimit();
+        int offset = spec.getOffset();
+        return entityRepository.findAll(tenantId, collectionName, Collections.emptyMap(), formatSort(spec), offset, limit)
+                .then(entities -> entityRepository.countByFilter(tenantId, collectionName, Collections.emptyMap())
+                        .map(totalCount -> {
+                            long duration = System.currentTimeMillis() - startTime;
+                            QueryResult result = new QueryResult(entities, totalCount, limit, offset, duration);
+                            metricsCollector.incrementCounter("connector.postgres.query",
+                                    "tenant", tenantId, "collection", collectionName,
+                                    "resultCount", String.valueOf(entities.size()));
+                            metricsCollector.recordTimer("connector.postgres.duration", duration,
+                                    "operation", "query", "tenant", tenantId);
+                            logger.debug("Query executed: tenant={}, collection={}, results={}, totalCount={}, duration={}ms",
+                                    tenantId, collectionName, entities.size(), totalCount, duration);
+                            return result;
+                        }))
+                .mapException(e -> {
+                    metricsCollector.incrementCounter("connector.postgres.error",
+                            "operation", "query", "errorType", e.getClass().getSimpleName());
+                    logger.error("Query failed: {}", e.getMessage(), e);
+                    return new StorageException("Failed to query entities from PostgreSQL", e);
+                });
     }
 
     /**
@@ -430,30 +338,20 @@ public class PostgresJsonbConnector implements StorageConnector {
         Objects.requireNonNull(tenantId, "Tenant ID must not be null");
 
         long startTime = System.currentTimeMillis();
-
-        try {
-            String collectionName = "collection_" + collectionId;
-
-            List<Entity> entities = entityRepository
-                    .findAll(tenantId, collectionName, Collections.emptyMap(),
-                            null, offset, limit)
-                    .getResult();
-
-            metricsCollector.recordTimer(
-                    "connector.postgres.duration",
-                    System.currentTimeMillis() - startTime,
-                    "operation", "scan",
-                    "tenant", tenantId);
-
-            return Promise.of(entities);
-        } catch (Exception e) {
-            metricsCollector.incrementCounter(
-                    "connector.postgres.error",
-                    "operation", "scan",
-                    "errorType", e.getClass().getSimpleName());
-            logger.error("Scan failed: {}", e.getMessage(), e);
-            throw new StorageException("Failed to scan entities from PostgreSQL", e);
-        }
+        String collectionName = collectionId.toString();
+        return entityRepository.findAll(tenantId, collectionName, Collections.emptyMap(), null, offset, limit)
+                .map(entities -> {
+                    metricsCollector.recordTimer("connector.postgres.duration",
+                            System.currentTimeMillis() - startTime,
+                            "operation", "scan", "tenant", tenantId);
+                    return entities;
+                })
+                .mapException(e -> {
+                    metricsCollector.incrementCounter("connector.postgres.error",
+                            "operation", "scan", "errorType", e.getClass().getSimpleName());
+                    logger.error("Scan failed: {}", e.getMessage(), e);
+                    return new StorageException("Failed to scan entities from PostgreSQL", e);
+                });
     }
 
     /**
@@ -470,29 +368,20 @@ public class PostgresJsonbConnector implements StorageConnector {
         Objects.requireNonNull(tenantId, "Tenant ID must not be null");
 
         long startTime = System.currentTimeMillis();
-
-        try {
-            String collectionName = "collection_" + collectionId;
-
-            long count = entityRepository
-                    .countByFilter(tenantId, collectionName, Collections.emptyMap())
-                    .getResult();
-
-            metricsCollector.recordTimer(
-                    "connector.postgres.duration",
-                    System.currentTimeMillis() - startTime,
-                    "operation", "count",
-                    "tenant", tenantId);
-
-            return Promise.of(count);
-        } catch (Exception e) {
-            metricsCollector.incrementCounter(
-                    "connector.postgres.error",
-                    "operation", "count",
-                    "errorType", e.getClass().getSimpleName());
-            logger.error("Count failed: {}", e.getMessage(), e);
-            throw new StorageException("Failed to count entities in PostgreSQL", e);
-        }
+        String collectionName = collectionId.toString();
+        return entityRepository.countByFilter(tenantId, collectionName, Collections.emptyMap())
+                .map(count -> {
+                    metricsCollector.recordTimer("connector.postgres.duration",
+                            System.currentTimeMillis() - startTime,
+                            "operation", "count", "tenant", tenantId);
+                    return count;
+                })
+                .mapException(e -> {
+                    metricsCollector.incrementCounter("connector.postgres.error",
+                            "operation", "count", "errorType", e.getClass().getSimpleName());
+                    logger.error("Count failed: {}", e.getMessage(), e);
+                    return new StorageException("Failed to count entities in PostgreSQL", e);
+                });
     }
 
     /**
@@ -514,52 +403,30 @@ public class PostgresJsonbConnector implements StorageConnector {
         }
 
         long startTime = System.currentTimeMillis();
-
-        try {
-            String collectionName = "collection_" + collectionId;
-
-            // Set IDs and timestamps if not present
-            for (Entity entity : entities) {
-                if (entity.getId() == null) {
-                    entity.setId(UUID.randomUUID());
-                }
-                if (entity.getCreatedAt() == null) {
-                    entity.setCreatedAt(Instant.now());
-                }
-                if (entity.getUpdatedAt() == null) {
-                    entity.setUpdatedAt(Instant.now());
-                }
-            }
-
-            // Batch persist synchronously
-            List<Entity> saved = entityRepository
-                    .saveAll(tenantId, entities)
-                    .getResult();
-
-            long duration = System.currentTimeMillis() - startTime;
-            metricsCollector.incrementCounter(
-                    "connector.postgres.bulk_create",
-                    "tenant", tenantId,
-                    "collection", collectionName,
-                    "count", String.valueOf(saved.size()));
-            metricsCollector.recordTimer(
-                    "connector.postgres.duration",
-                    duration,
-                    "operation", "bulk_create",
-                    "tenant", tenantId);
-
-            logger.debug("Bulk created: tenant={}, count={}, duration={}ms",
-                    tenantId, saved.size(), duration);
-
-            return Promise.of(saved);
-        } catch (Exception e) {
-            metricsCollector.incrementCounter(
-                    "connector.postgres.error",
-                    "operation", "bulk_create",
-                    "errorType", e.getClass().getSimpleName());
-            logger.error("Bulk create failed: {}", e.getMessage(), e);
-            throw new StorageException("Failed to bulk create entities in PostgreSQL", e);
+        String collectionName = collectionId.toString();
+        Instant now = Instant.now();
+        for (Entity entity : entities) {
+            if (entity.getId() == null) entity.setId(UUID.randomUUID());
+            if (entity.getCreatedAt() == null) entity.setCreatedAt(now);
+            if (entity.getUpdatedAt() == null) entity.setUpdatedAt(now);
         }
+        return entityRepository.saveAll(tenantId, entities)
+                .map(saved -> {
+                    long duration = System.currentTimeMillis() - startTime;
+                    metricsCollector.incrementCounter("connector.postgres.bulk_create",
+                            "tenant", tenantId, "collection", collectionName,
+                            "count", String.valueOf(saved.size()));
+                    metricsCollector.recordTimer("connector.postgres.duration", duration,
+                            "operation", "bulk_create", "tenant", tenantId);
+                    logger.debug("Bulk created: tenant={}, count={}, duration={}ms", tenantId, saved.size(), duration);
+                    return saved;
+                })
+                .mapException(e -> {
+                    metricsCollector.incrementCounter("connector.postgres.error",
+                            "operation", "bulk_create", "errorType", e.getClass().getSimpleName());
+                    logger.error("Bulk create failed: {}", e.getMessage(), e);
+                    return new StorageException("Failed to bulk create entities in PostgreSQL", e);
+                });
     }
 
     /**
@@ -581,35 +448,24 @@ public class PostgresJsonbConnector implements StorageConnector {
         }
 
         long startTime = System.currentTimeMillis();
-
-        try {
-            // Update timestamps
-            for (Entity entity : entities) {
-                entity.setUpdatedAt(Instant.now());
-            }
-
-            // Batch persist synchronously
-            List<Entity> updated = entityRepository
-                    .saveAll(tenantId, entities)
-                    .getResult();
-
-            metricsCollector.recordTimer(
-                    "connector.postgres.duration",
-                    System.currentTimeMillis() - startTime,
-                    "operation", "bulk_update",
-                    "tenant", tenantId);
-
-            logger.debug("Bulk updated: tenant={}, count={}", tenantId, updated.size());
-
-            return Promise.of(updated);
-        } catch (Exception e) {
-            metricsCollector.incrementCounter(
-                    "connector.postgres.error",
-                    "operation", "bulk_update",
-                    "errorType", e.getClass().getSimpleName());
-            logger.error("Bulk update failed: {}", e.getMessage(), e);
-            throw new StorageException("Failed to bulk update entities in PostgreSQL", e);
+        Instant now = Instant.now();
+        for (Entity entity : entities) {
+            entity.setUpdatedAt(now);
         }
+        return entityRepository.saveAll(tenantId, entities)
+                .map(updated -> {
+                    metricsCollector.recordTimer("connector.postgres.duration",
+                            System.currentTimeMillis() - startTime,
+                            "operation", "bulk_update", "tenant", tenantId);
+                    logger.debug("Bulk updated: tenant={}, count={}", tenantId, updated.size());
+                    return updated;
+                })
+                .mapException(e -> {
+                    metricsCollector.incrementCounter("connector.postgres.error",
+                            "operation", "bulk_update", "errorType", e.getClass().getSimpleName());
+                    logger.error("Bulk update failed: {}", e.getMessage(), e);
+                    return new StorageException("Failed to bulk update entities in PostgreSQL", e);
+                });
     }
 
     /**
@@ -631,30 +487,21 @@ public class PostgresJsonbConnector implements StorageConnector {
         }
 
         long startTime = System.currentTimeMillis();
-
-        try {
-            String collectionName = "collection_" + collectionId;
-
-            entityRepository.deleteAll(tenantId, collectionName, entityIds)
-                    .getResult();
-
-            metricsCollector.recordTimer(
-                    "connector.postgres.duration",
-                    System.currentTimeMillis() - startTime,
-                    "operation", "bulk_delete",
-                    "tenant", tenantId);
-
-            logger.debug("Bulk deleted: tenant={}, count={}", tenantId, entityIds.size());
-
-            return Promise.of((long) entityIds.size());
-        } catch (Exception e) {
-            metricsCollector.incrementCounter(
-                    "connector.postgres.error",
-                    "operation", "bulk_delete",
-                    "errorType", e.getClass().getSimpleName());
-            logger.error("Bulk delete failed: {}", e.getMessage(), e);
-            throw new StorageException("Failed to bulk delete entities in PostgreSQL", e);
-        }
+        String collectionName = collectionId.toString();
+        return entityRepository.deleteAll(tenantId, collectionName, entityIds)
+                .map(v -> {
+                    metricsCollector.recordTimer("connector.postgres.duration",
+                            System.currentTimeMillis() - startTime,
+                            "operation", "bulk_delete", "tenant", tenantId);
+                    logger.debug("Bulk deleted: tenant={}, count={}", tenantId, entityIds.size());
+                    return (long) entityIds.size();
+                })
+                .mapException(e -> {
+                    metricsCollector.incrementCounter("connector.postgres.error",
+                            "operation", "bulk_delete", "errorType", e.getClass().getSimpleName());
+                    logger.error("Bulk delete failed: {}", e.getMessage(), e);
+                    return new StorageException("Failed to bulk delete entities in PostgreSQL", e);
+                });
     }
 
     /**
@@ -670,51 +517,42 @@ public class PostgresJsonbConnector implements StorageConnector {
         Objects.requireNonNull(tenantId, "Tenant ID must not be null");
 
         long startTime = System.currentTimeMillis();
-
-        try {
-            String collectionName = "collection_" + collectionId;
-
-            // Get all entities for counting
-            long count = entityRepository
-                    .count(tenantId, collectionName)
-                    .getResult();
-
-            // Execute tenant-scoped truncate with safety guardrails
-            if (count > 0) {
-                // Use batch deletion to safely truncate while maintaining audit trail
-                List<Entity> allEntities = entityRepository
-                        .findAll(tenantId, collectionName, Collections.emptyMap(), null, 0, (int) count)
-                        .getResult();
-
-                List<UUID> allIds = allEntities.stream()
-                        .map(Entity::getId)
-                        .collect(Collectors.toList());
-
-                if (!allIds.isEmpty()) {
-                    entityRepository.deleteAll(tenantId, collectionName, allIds)
-                            .getResult();
-                }
-
-                auditLogger.logBulkOperation(tenantId, "TRUNCATE", collectionName, (int) count, true);
-            }
-
-            metricsCollector.recordTimer(
-                    "connector.postgres.duration",
-                    System.currentTimeMillis() - startTime,
-                    "operation", "truncate",
-                    "tenant", tenantId);
-
-            logger.debug("Truncated: tenant={}, count={}", tenantId, count);
-
-            return Promise.of(count);
-        } catch (Exception e) {
-            metricsCollector.incrementCounter(
-                    "connector.postgres.error",
-                    "operation", "truncate",
-                    "errorType", e.getClass().getSimpleName());
-            logger.error("Truncate failed: {}", e.getMessage(), e);
-            throw new StorageException("Failed to truncate collection in PostgreSQL", e);
-        }
+        String collectionName = collectionId.toString();
+        return entityRepository.count(tenantId, collectionName)
+                .then(count -> {
+                    if (count == 0) {
+                        return Promise.of(0L);
+                    }
+                    return entityRepository.findAll(tenantId, collectionName,
+                                    Collections.emptyMap(), null, 0, count.intValue())
+                            .then(allEntities -> {
+                                List<UUID> allIds = allEntities.stream()
+                                        .map(Entity::getId)
+                                        .collect(Collectors.toList());
+                                if (allIds.isEmpty()) {
+                                    return Promise.of(0L);
+                                }
+                                return entityRepository.deleteAll(tenantId, collectionName, allIds)
+                                        .map(v -> {
+                                            auditLogger.logBulkOperation(tenantId, "TRUNCATE",
+                                                    collectionName, count.intValue(), true);
+                                            return count;
+                                        });
+                            });
+                })
+                .map(count -> {
+                    metricsCollector.recordTimer("connector.postgres.duration",
+                            System.currentTimeMillis() - startTime,
+                            "operation", "truncate", "tenant", tenantId);
+                    logger.debug("Truncated: tenant={}, count={}", tenantId, count);
+                    return count;
+                })
+                .mapException(e -> {
+                    metricsCollector.incrementCounter("connector.postgres.error",
+                            "operation", "truncate", "errorType", e.getClass().getSimpleName());
+                    logger.error("Truncate failed: {}", e.getMessage(), e);
+                    return new StorageException("Failed to truncate collection in PostgreSQL", e);
+                });
     }
 
     /**
@@ -751,33 +589,23 @@ public class PostgresJsonbConnector implements StorageConnector {
      * @return Promise that completes successfully if healthy, fails otherwise
      */
     public Promise<Void> healthCheck() {
-        try {
-            // Validate connection pool liveness with a lightweight count query
-            // Uses a system-level tenant context to avoid tenant-specific issues
-            long startTime = System.currentTimeMillis();
-            entityRepository.count("_system", "_health_check")
-                    .getResult();
-
-            long duration = System.currentTimeMillis() - startTime;
-            metricsCollector.recordTimer(
-                    "connector.postgres.duration",
-                    duration,
-                    "operation", "health_check");
-
-            if (duration > 5000) {
-                logger.warn("Health check completed but took {}ms (>5s threshold)", duration);
-            }
-
-            return Promise.of(null);
-        } catch (Exception e) {
-            logger.error("Health check failed: {}", e.getMessage(), e);
-            metricsCollector.incrementCounter(
-                    "connector.postgres.error",
-                    "operation", "health_check",
-                    "errorType", e.getClass().getSimpleName());
-            return Promise.ofException(
-                    new StorageException("PostgreSQL health check failed: " + e.getMessage(), e));
-        }
+        long startTime = System.currentTimeMillis();
+        return entityRepository.count("_system", "_health_check")
+                .map(ignored -> {
+                    long duration = System.currentTimeMillis() - startTime;
+                    metricsCollector.recordTimer("connector.postgres.duration", duration,
+                            "operation", "health_check");
+                    if (duration > 5000) {
+                        logger.warn("Health check completed but took {}ms (>5s threshold)", duration);
+                    }
+                    return (Void) null;
+                })
+                .mapException(e -> {
+                    logger.error("Health check failed: {}", e.getMessage(), e);
+                    metricsCollector.incrementCounter("connector.postgres.error",
+                            "operation", "health_check", "errorType", e.getClass().getSimpleName());
+                    return new StorageException("PostgreSQL health check failed: " + e.getMessage(), e);
+                });
     }
 
     // Helper methods

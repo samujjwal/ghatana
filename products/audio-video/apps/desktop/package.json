@@ -11,6 +11,7 @@
     "tauri": "tauri"
   },
   "dependencies": {
+    "@ghatana/design-system": "workspace:*",
     "@ghatana/audio-video-client": "workspace:*",
     "@ghatana/audio-video-types": "workspace:*",
     "@ghatana/audio-video-ui": "workspace:*",

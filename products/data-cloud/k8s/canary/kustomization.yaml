@@ -1,0 +1,72 @@
+# =============================================================================
+# Kustomize overlay — Canary release (10% traffic weight)
+#
+# This overlay extends the base k8s/ configuration for the canary rollout phase.
+# It does NOT delete or replace base resources — Kubernetes server-side apply
+# merges the VirtualService and DestinationRule patches with the existing objects.
+#
+# PREREQUISITES
+# -------------
+#   1. Istio ≥ 1.19 installed and namespace injection enabled:
+#        kubectl label namespace data-cloud istio-injection=enabled
+#   2. Base stack deployed first:
+#        kubectl apply -k products/data-cloud/k8s/
+#   3. Replace the canary image tag (see images: section below).
+#
+# APPLY (canary rollout)
+# ----------------------
+#   kubectl apply -k products/data-cloud/k8s/canary/
+#
+# PROMOTE (shift more traffic)
+# ----------------------------
+#   Edit virtual-service-canary.yaml weights (stable: 50, canary: 50),
+#   then re-apply:
+#   kubectl apply -k products/data-cloud/k8s/canary/
+#
+# CLEANUP (after full promotion or rollback)
+# ------------------------------------------
+#   kubectl apply -k products/data-cloud/k8s/         # restore base VS
+#   kubectl delete deployment data-cloud-canary -n data-cloud
+# =============================================================================
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+
+namespace: data-cloud
+
+# ---------------------------------------------------------------------------
+# New resources introduced in canary phase
+# ---------------------------------------------------------------------------
+resources:
+  - deployment-canary.yaml
+  - virtual-service-canary.yaml
+  - destination-rule-canary.yaml
+
+# ---------------------------------------------------------------------------
+# Canary image tag — update BOTH tag and digest (or just tag) before each deploy.
+#
+# This is the ONLY place you need to change the canary image reference.
+# The canary Deployment manifest references `ghatana/data-cloud:canary` which
+# Kustomize replaces with the tag specified here.
+# ---------------------------------------------------------------------------
+images:
+  - name: ghatana/data-cloud
+    newName: ghatana/data-cloud
+    # Replace with the canary release tag or SHA digest:
+    #   newTag: "v2.0.0-rc1"
+    #   newTag: "sha256-abc123..."
+    newTag: "canary"
+
+# ---------------------------------------------------------------------------
+# Common labels applied to all resources in this overlay
+# ---------------------------------------------------------------------------
+commonLabels:
+  canary-phase: "10"
+
+# ---------------------------------------------------------------------------
+# Annotations added to all resources during this rollout
+# (useful for Argo CD / Flux tracking)
+# ---------------------------------------------------------------------------
+commonAnnotations:
+  canary.ghatana.io/rollout-step: "1-of-3"
+  canary.ghatana.io/stable-weight: "90"
+  canary.ghatana.io/canary-weight: "10"

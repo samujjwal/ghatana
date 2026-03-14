@@ -51,6 +51,21 @@
       "@utils/*": [
         "src/utils/*"
       ],
+      "@ghatana/design-system": [
+        "../../../platform/typescript/design-system/src/index.ts"
+      ],
+      "@ghatana/flow-canvas": [
+        "../../../platform/typescript/canvas/flow-canvas/src/index.ts"
+      ],
+      "@ghatana/theme": [
+        "../../../platform/typescript/theme/src/index.ts"
+      ],
+      "@ghatana/tokens": [
+        "../../../platform/typescript/tokens/src/index.ts"
+      ],
+      "@ghatana/utils": [
+        "../../../platform/typescript/utils/src/index.ts"
+      ],
       "@ghatana/canvas": [
         "../../../platform/typescript/canvas/src/index.ts"
       ],

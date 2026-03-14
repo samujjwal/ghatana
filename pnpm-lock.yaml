@@ -64,6 +64,9 @@ importers:
 
   platform/typescript/canvas:
     dependencies:
+      '@ghatana/design-system':
+        specifier: workspace:*
+        version: link:../design-system
       '@preact/signals-core':
         specifier: ^1.12.2
         version: 1.13.0
@@ -117,14 +120,36 @@ importers:
         specifier: ^4.0.18
         version: 4.0.18(@opentelemetry/api@1.9.0)(@types/node@25.2.0)(@vitest/ui@4.0.18)(jiti@2.6.1)(jsdom@28.1.0(@noble/hashes@1.8.0))(lightningcss@1.31.1)(msw@2.12.10(@types/node@25.2.0)(typescript@5.9.3))(terser@5.46.0)(tsx@4.21.0)(yaml@2.8.2)
 
+  platform/typescript/canvas/flow-canvas:
+    dependencies:
+      '@xyflow/react':
+        specifier: ^12.10.0
+        version: 12.10.1(@types/react@19.2.14)(immer@11.1.4)(react-dom@19.2.4(react@19.2.4))(react@19.2.4)
+    devDependencies:
+      '@types/react':
+        specifier: ^19.2.10
+        version: 19.2.14
+      '@types/react-dom':
+        specifier: ^19.2.3
+        version: 19.2.3(@types/react@19.2.14)
+      react:
+        specifier: ^19.2.4
+        version: 19.2.4
+      react-dom:
+        specifier: ^19.2.4
+        version: 19.2.4(react@19.2.4)
+      tsup:
+        specifier: ^8.3.0
+        version: 8.5.1(@microsoft/api-extractor@7.57.6(@types/node@25.2.0))(jiti@2.6.1)(postcss@8.5.8)(tsx@4.21.0)(typescript@5.9.3)(yaml@2.8.2)
+      typescript:
+        specifier: ^5.7.0
+        version: 5.9.3
+
   platform/typescript/charts:
     dependencies:
       '@ghatana/theme':
         specifier: workspace:*
         version: link:../theme
-      '@ghatana/ui':
-        specifier: workspace:*
-        version: link:../ui
       react:
         specifier: ^19.2.4
         version: 19.2.4
@@ -139,29 +164,41 @@ importers:
         specifier: ^5.9.3
         version: 5.9.3
 
-  platform/typescript/flow-canvas:
+  platform/typescript/design-system:
     dependencies:
-      '@xyflow/react':
-        specifier: ^12.10.0
-        version: 12.10.1(@types/react@18.3.28)(immer@11.1.4)(react-dom@19.2.4(react@19.2.4))(react@19.2.4)
-    devDependencies:
-      '@types/react':
-        specifier: ^18.3.0
-        version: 18.3.28
-      '@types/react-dom':
-        specifier: ^18.3.0
-        version: 18.3.7(@types/react@18.3.28)
+      '@ghatana/theme':
+        specifier: workspace:*
+        version: link:../theme
+      '@ghatana/tokens':
+        specifier: workspace:*
+        version: link:../tokens
+      '@ghatana/utils':
+        specifier: workspace:*
+        version: link:../utils
+      clsx:
+        specifier: ^2.1.1
+        version: 2.1.1
       react:
         specifier: ^19.2.4
         version: 19.2.4
       react-dom:
         specifier: ^19.2.4
         version: 19.2.4(react@19.2.4)
-      tsup:
-        specifier: ^8.3.0
-        version: 8.5.1(@microsoft/api-extractor@7.57.6(@types/node@25.2.0))(jiti@2.6.1)(postcss@8.5.8)(tsx@4.21.0)(typescript@5.9.3)(yaml@2.8.2)
+      tailwind-merge:
+        specifier: ^3.4.0
+        version: 3.5.0
+    devDependencies:
+      '@types/node':
+        specifier: ^25.2.0
+        version: 25.2.0
+      '@types/react':
+        specifier: ^19.2.10
+        version: 19.2.14
+      '@types/react-dom':
+        specifier: ^19.2.3
+        version: 19.2.3(@types/react@19.2.14)
       typescript:
-        specifier: ^5.7.0
+        specifier: ^5.9.3
         version: 5.9.3
 
   platform/typescript/i18n:
@@ -190,14 +227,14 @@ importers:
     dependencies:
       jotai:
         specifier: ^2.17.0
-        version: 2.18.0(@babel/core@7.29.0)(@babel/template@7.28.6)(@types/react@18.3.28)(react@19.2.4)
+        version: 2.18.0(@babel/core@7.29.0)(@babel/template@7.28.6)(@types/react@19.2.14)(react@19.2.4)
     devDependencies:
       '@types/react':
-        specifier: ^18.3.0
-        version: 18.3.28
+        specifier: ^19.2.10
+        version: 19.2.14
       '@types/react-dom':
-        specifier: ^18.3.0
-        version: 18.3.7(@types/react@18.3.28)
+        specifier: ^19.2.3
+        version: 19.2.3(@types/react@19.2.14)
       react:
         specifier: ^19.2.4
         version: 19.2.4
@@ -270,6 +307,49 @@ importers:
 
   platform/typescript/ui:
     dependencies:
+      '@emotion/react':
+        specifier: ^11.14.0
+        version: 11.14.0(@types/react@19.2.14)(react@19.2.4)
+      '@emotion/styled':
+        specifier: ^11.14.1
+        version: 11.14.1(@emotion/react@11.14.0(@types/react@19.2.14)(react@19.2.4))(@types/react@19.2.14)(react@19.2.4)
+      '@ghatana/design-system':
+        specifier: workspace:*
+        version: link:../design-system
+      '@ghatana/ui-integration':
+        specifier: workspace:*
+        version: link:../ui-integration
+      '@mui/material':
+        specifier: ^7.3.7
+        version: 7.3.9(@emotion/react@11.14.0(@types/react@19.2.14)(react@19.2.4))(@emotion/styled@11.14.1(@emotion/react@11.14.0(@types/react@19.2.14)(react@19.2.4))(@types/react@19.2.14)(react@19.2.4))(@types/react@19.2.14)(react-dom@19.2.4(react@19.2.4))(react@19.2.4)
+      react:
+        specifier: ^19.2.4
+        version: 19.2.4
+      react-dom:
+        specifier: ^19.2.4
+        version: 19.2.4(react@19.2.4)
+    devDependencies:
+      '@types/node':
+        specifier: ^25.2.0
+        version: 25.2.0
+      '@types/react':
+        specifier: ^19.2.10
+        version: 19.2.14
+      '@types/react-dom':
+        specifier: ^19.2.3
+        version: 19.2.3(@types/react@19.2.14)
+      react-router-dom:
+        specifier: ^7.13.0
+        version: 7.13.1(react-dom@19.2.4(react@19.2.4))(react@19.2.4)
+      typescript:
+        specifier: ^5.9.3
+        version: 5.9.3
+
+  platform/typescript/ui-integration:
+    dependencies:
+      '@ghatana/design-system':
+        specifier: workspace:*
+        version: link:../design-system
       '@ghatana/theme':
         specifier: workspace:*
         version: link:../theme
@@ -301,12 +381,6 @@ importers:
       '@types/react-dom':
         specifier: ^19.2.3
         version: 19.2.3(@types/react@19.2.14)
-      '@types/react-router-dom':
-        specifier: ^5.3.3
-        version: 5.3.3
-      react-router-dom:
-        specifier: ^7.13.0
-        version: 7.13.1(react-dom@19.2.4(react@19.2.4))(react@19.2.4)
       typescript:
         specifier: ^5.9.3
         version: 5.9.3
@@ -332,12 +406,15 @@ importers:
 
   products/aep/ui:
     dependencies:
+      '@ghatana/design-system':
+        specifier: workspace:*
+        version: link:../../../platform/typescript/design-system
+      '@ghatana/flow-canvas':
+        specifier: workspace:*
+        version: link:../../../platform/typescript/canvas/flow-canvas
       '@ghatana/theme':
         specifier: workspace:*
         version: link:../../../platform/typescript/theme
-      '@ghatana/ui':
-        specifier: workspace:*
-        version: link:../../../platform/typescript/ui
       '@monaco-editor/react':
         specifier: ^4.7.0
         version: 4.7.0(monaco-editor@0.55.1)(react-dom@19.2.4(react@19.2.4))(react@19.2.4)
@@ -415,6 +492,31 @@ importers:
         specifier: ^3.2.4
         version: 3.2.4(@types/debug@4.1.12)(@types/node@25.2.0)(jiti@2.6.1)(jsdom@25.0.1)(lightningcss@1.31.1)(msw@2.12.10(@types/node@25.2.0)(typescript@5.9.3))(terser@5.46.0)(tsx@4.21.0)(yaml@2.8.2)
 
+  products/app-platform/libs/typescript/audit-middleware:
+    dependencies:
+      fastify-plugin:
+        specifier: ^4.5.1
+        version: 4.5.1
+    devDependencies:
+      '@types/jest':
+        specifier: ^29.5.12
+        version: 29.5.14
+      '@types/node':
+        specifier: ^20.11.5
+        version: 20.19.35
+      fastify:
+        specifier: ^4.26.2
+        version: 4.29.1
+      jest:
+        specifier: ^29.7.0
+        version: 29.7.0(@types/node@20.19.35)(babel-plugin-macros@3.1.0)(ts-node@10.9.2(@types/node@20.19.35)(typescript@5.9.3))
+      ts-jest:
+        specifier: ^29.1.2
+        version: 29.4.6(@babel/core@7.29.0)(@jest/transform@30.2.0)(@jest/types@30.2.0)(babel-jest@30.2.0(@babel/core@7.29.0))(jest-util@30.2.0)(jest@29.7.0(@types/node@20.19.35)(babel-plugin-macros@3.1.0)(ts-node@10.9.2(@types/node@20.19.35)(typescript@5.9.3)))(typescript@5.9.3)
+      typescript:
+        specifier: ^5.3.3
+        version: 5.9.3
+
   products/audio-video/apps/desktop:
     dependencies:
       '@ghatana/audio-video-client':
@@ -426,6 +528,9 @@ importers:
       '@ghatana/audio-video-ui':
         specifier: workspace:*
         version: link:../../libs/audio-video-ui
+      '@ghatana/design-system':
+        specifier: workspace:*
+        version: link:../../../../platform/typescript/design-system
       '@tauri-apps/api':
         specifier: ^2.9.1
         version: 2.10.1
@@ -519,6 +624,9 @@ importers:
       '@ghatana/ai-voice-ui-react':
         specifier: workspace:*
         version: link:../../libs/ai-voice-ui-react
+      '@ghatana/design-system':
+        specifier: workspace:*
+        version: link:../../../../../../../platform/typescript/design-system
       '@tauri-apps/api':
         specifier: ^2.9.1
         version: 2.10.1
@@ -614,18 +722,18 @@ importers:
       '@ghatana/canvas':
         specifier: workspace:*
         version: link:../../../platform/typescript/canvas
+      '@ghatana/design-system':
+        specifier: workspace:*
+        version: link:../../../platform/typescript/design-system
       '@ghatana/flow-canvas':
         specifier: workspace:*
-        version: link:../../../platform/typescript/flow-canvas
+        version: link:../../../platform/typescript/canvas/flow-canvas
       '@ghatana/realtime':
         specifier: workspace:*
         version: link:../../../platform/typescript/realtime
       '@ghatana/theme':
         specifier: workspace:*
         version: link:../../../platform/typescript/theme
-      '@ghatana/ui':
-        specifier: workspace:*
-        version: link:../../../platform/typescript/ui
       '@ghatana/utils':
         specifier: workspace:*
         version: link:../../../platform/typescript/utils
@@ -669,6 +777,9 @@ importers:
         specifier: ^2.0.7
         version: 2.0.7(react-dom@19.2.4(react@19.2.4))(react@19.2.4)
     devDependencies:
+      '@axe-core/react':
+        specifier: ^4.10.2
+        version: 4.11.1
       '@emotion/react':
         specifier: ^11.14.0
         version: 11.14.0(@types/react@19.2.14)(react@19.2.4)
@@ -726,6 +837,9 @@ importers:
       eslint-plugin-react-hooks:
         specifier: ^7.0.1
         version: 7.0.1(eslint@9.39.3(jiti@2.6.1))
+      msw:
+        specifier: ^2.7.0
+        version: 2.12.10(@types/node@25.2.0)(typescript@5.9.3)
       postcss:
         specifier: ^8.5.6
         version: 8.5.8
@@ -747,6 +861,9 @@ importers:
       vitest:
         specifier: ^4.0.18
         version: 4.0.18(@opentelemetry/api@1.9.0)(@types/node@25.2.0)(@vitest/ui@4.0.18)(jiti@2.6.1)(jsdom@28.1.0(@noble/hashes@1.8.0))(lightningcss@1.31.1)(msw@2.12.10(@types/node@25.2.0)(typescript@5.9.3))(terser@5.46.0)(tsx@4.21.0)(yaml@2.8.2)
+      vitest-axe:
+        specifier: ^0.1.0
+        version: 0.1.0(vitest@4.0.18)
 
   products/dcmaar/apps/agent-core:
     dependencies:
@@ -1226,6 +1343,9 @@ importers:
       '@ghatana/dcmaar-types':
         specifier: workspace:*
         version: link:../../libs/typescript/types
+      '@ghatana/design-system':
+        specifier: workspace:*
+        version: link:../../../../platform/typescript/design-system
       '@tanstack/react-query':
         specifier: ^5.90.20
         version: 5.90.21(react@19.2.4)
@@ -1463,6 +1583,9 @@ importers:
       '@ghatana/dcmaar-dashboard-core':
         specifier: workspace:*
         version: link:../../libs/guardian-dashboard-core
+      '@ghatana/design-system':
+        specifier: workspace:*
+        version: link:../../../../platform/typescript/design-system
       '@hookform/resolvers':
         specifier: ^5.2.2
         version: 5.2.2(react-hook-form@7.71.2(react@19.2.4))
@@ -2027,9 +2150,6 @@ importers:
       '@ghatana/dcmaar-shared-ui-core':
         specifier: workspace:*
         version: link:../shared-ui-core
-      '@ghatana/ui':
-        specifier: workspace:*
-        version: link:../../../../../platform/typescript/ui
       react:
         specifier: ^19.2.4
         version: 19.2.4
@@ -2321,6 +2441,9 @@ importers:
 
   products/flashit/client/web:
     dependencies:
+      '@ghatana/design-system':
+        specifier: workspace:*
+        version: link:../../../../platform/typescript/design-system
       '@ghatana/flashit-shared':
         specifier: workspace:*
         version: link:../../libs/ts/shared
@@ -2468,6 +2591,9 @@ importers:
       '@ghatana/charts':
         specifier: workspace:*
         version: link:../../../../platform/typescript/charts
+      '@ghatana/design-system':
+        specifier: workspace:*
+        version: link:../../../../platform/typescript/design-system
       '@ghatana/theme':
         specifier: workspace:*
         version: link:../../../../platform/typescript/theme
@@ -2680,6 +2806,9 @@ importers:
       '@ghatana/charts':
         specifier: workspace:*
         version: link:../../../../platform/typescript/charts
+      '@ghatana/design-system':
+        specifier: workspace:*
+        version: link:../../../../platform/typescript/design-system
       '@ghatana/realtime':
         specifier: workspace:*
         version: link:../../../../platform/typescript/realtime
@@ -3185,9 +3314,6 @@ importers:
       '@ghatana/tutorputor-simulation-engine':
         specifier: workspace:*
         version: link:../../libs/simulation-engine
-      '@ghatana/ui':
-        specifier: workspace:*
-        version: link:../../../../platform/typescript/ui
       '@grpc/grpc-js':
         specifier: ^1.14.3
         version: 1.14.3
@@ -10782,6 +10908,9 @@ packages:
   '@types/istanbul-reports@3.0.4':
     resolution: {integrity: sha512-pk2B1NWalF9toCRu6gjBzR69syFjP4Od8WRAX+0mmf9lAjCRicLOWc+ZrxZHx/0XRjotgkF9t6iaMJ+aXcOdZQ==}
 
+  '@types/jest@29.5.14':
+    resolution: {integrity: sha512-ZN+4sdnLUbo8EVvVc2ao0GFW6oVrQRPn4K2lglySj7APvSrgzxHiNNK99us4WDMi57xxA2yggblIAMNhXOotLQ==}
+
   '@types/jest@30.0.0':
     resolution: {integrity: sha512-XTYugzhuwqWjws0CVz8QpM36+T+Dz5mTEBKhNs/esGLnCIlGdRy+Dq78NRjd7ls7r8BC8ZRMOrKlkO1hU0JOwA==}
 
@@ -10908,11 +11037,6 @@ packages:
   '@types/range-parser@1.2.7':
     resolution: {integrity: sha512-hKormJbkJqzQGhziax5PItDUTMAM9uE2XXQmM37dyd4hVM+5aVl7oVxMVUiVQn2oCQFN/LKCZdvSM0pFRqbSmQ==}
 
-  '@types/react-dom@18.3.7':
-    resolution: {integrity: sha512-MEe3UeoENYVFXzoXEWsvcpg6ZvlrFNlOQ7EOsvhI3CfAXwzPfO8Qwuxd40nepsYKqyyVQnTdEfv68q91yLcKrQ==}
-    peerDependencies:
-      '@types/react': ^18.0.0
-
   '@types/react-dom@19.1.11':
     resolution: {integrity: sha512-3BKc/yGdNTYQVVw4idqHtSOcFsgGuBbMveKCOgF8wQ5QtrYOc3jDIlzg3jef04zcXFIHLelyGlj0T+BJ8+KN+w==}
     peerDependencies:
@@ -10949,9 +11073,6 @@ packages:
     resolution: {integrity: sha512-8TV6R3h2j7a91c+1DXdJi3Syo69zzIZbz7Lg5tORM5LEJG7X/E6a1V3drRyBRZq7/utz7A+c4OgYLiLcYGHG6w==}
     peerDependencies:
       '@types/react': '*'
-
-  '@types/react@18.3.28':
-    resolution: {integrity: sha512-z9VXpC7MWrhfWipitjNdgCauoMLRdIILQsAEV+ZesIzBq/oUlxk0m3ApZuMFCXdnS4U7KrI+l3WRUEGQ8K1QKw==}
 
   '@types/react@19.1.17':
     resolution: {integrity: sha512-Qec1E3mhALmaspIrhWt9jkQMNdw6bReVu64mjvhbhq2NFPftLPVr+l1SZgmw/66WwBNpDh7ao5AT6gF5v41PFA==}
@@ -21830,6 +21951,11 @@ packages:
       yaml:
         optional: true
 
+  vitest-axe@0.1.0:
+    resolution: {integrity: sha512-jvtXxeQPg8R/2ANTY8QicA5pvvdRP4F0FsVUAHANJ46YCDASie/cuhlSzu0DGcLmZvGBSBNsNuK3HqfaeknyvA==}
+    peerDependencies:
+      vitest: '>=0.16.0'
+
   vitest@1.6.1:
     resolution: {integrity: sha512-Ljb1cnSJSivGN0LqXd/zmDbWEM0RNNg2t1QW/XUhYl/qPqyu7CsqeWtqQXHVaJsecLPuDoak2oJcZN2QoRIOag==}
     engines: {node: ^18.0.0 || >=20.0.0}
@@ -31121,7 +31247,7 @@ snapshots:
 
   '@types/bcrypt@6.0.0':
     dependencies:
-      '@types/node': 25.2.0
+      '@types/node': 20.19.35
 
   '@types/benchmark@2.1.5': {}
 
@@ -31386,6 +31512,11 @@ snapshots:
     dependencies:
       '@types/istanbul-lib-report': 3.0.3
 
+  '@types/jest@29.5.14':
+    dependencies:
+      expect: 29.7.0
+      pretty-format: 29.7.0
+
   '@types/jest@30.0.0':
     dependencies:
       expect: 30.2.0
@@ -31407,7 +31538,7 @@ snapshots:
 
   '@types/jsdom@27.0.0':
     dependencies:
-      '@types/node': 25.2.0
+      '@types/node': 20.19.35
       '@types/tough-cookie': 4.0.5
       parse5: 7.3.0
 
@@ -31418,7 +31549,7 @@ snapshots:
   '@types/jsonwebtoken@9.0.10':
     dependencies:
       '@types/ms': 2.1.0
-      '@types/node': 25.2.0
+      '@types/node': 20.19.35
 
   '@types/linkify-it@5.0.0': {}
 
@@ -31474,11 +31605,11 @@ snapshots:
 
   '@types/nodemailer@6.4.23':
     dependencies:
-      '@types/node': 25.2.0
+      '@types/node': 20.19.35
 
   '@types/nodemailer@7.0.11':
     dependencies:
-      '@types/node': 25.2.0
+      '@types/node': 20.19.35
 
   '@types/offscreencanvas@2019.3.0': {}
 
@@ -31494,7 +31625,7 @@ snapshots:
 
   '@types/pdfkit@0.13.9':
     dependencies:
-      '@types/node': 25.2.0
+      '@types/node': 20.19.35
 
   '@types/pg-pool@2.0.7':
     dependencies:
@@ -31508,7 +31639,7 @@ snapshots:
 
   '@types/pg@8.18.0':
     dependencies:
-      '@types/node': 25.2.0
+      '@types/node': 20.19.35
       pg-protocol: 1.13.0
       pg-types: 2.2.0
 
@@ -31518,7 +31649,7 @@ snapshots:
 
   '@types/qrcode@1.5.6':
     dependencies:
-      '@types/node': 25.2.0
+      '@types/node': 20.19.35
 
   '@types/qs@6.14.0': {}
 
@@ -31526,10 +31657,6 @@ snapshots:
     optional: true
 
   '@types/range-parser@1.2.7': {}
-
-  '@types/react-dom@18.3.7(@types/react@18.3.28)':
-    dependencies:
-      '@types/react': 18.3.28
 
   '@types/react-dom@19.1.11(@types/react@19.1.17)':
     dependencies:
@@ -31571,11 +31698,6 @@ snapshots:
   '@types/react-transition-group@4.4.12(@types/react@19.2.14)':
     dependencies:
       '@types/react': 19.2.14
-
-  '@types/react@18.3.28':
-    dependencies:
-      '@types/prop-types': 15.7.15
-      csstype: 3.2.3
 
   '@types/react@19.1.17':
     dependencies:
@@ -31689,7 +31811,7 @@ snapshots:
 
   '@types/ws@8.18.1':
     dependencies:
-      '@types/node': 25.2.0
+      '@types/node': 20.19.35
 
   '@types/yargs-parser@21.0.3': {}
 
@@ -32399,17 +32521,6 @@ snapshots:
   '@xtuc/ieee754@1.2.0': {}
 
   '@xtuc/long@4.2.2': {}
-
-  '@xyflow/react@12.10.1(@types/react@18.3.28)(immer@11.1.4)(react-dom@19.2.4(react@19.2.4))(react@19.2.4)':
-    dependencies:
-      '@xyflow/system': 0.0.75
-      classcat: 5.0.5
-      react: 19.2.4
-      react-dom: 19.2.4(react@19.2.4)
-      zustand: 4.5.7(@types/react@18.3.28)(immer@11.1.4)(react@19.2.4)
-    transitivePeerDependencies:
-      - '@types/react'
-      - immer
 
   '@xyflow/react@12.10.1(@types/react@19.2.14)(immer@11.1.4)(react-dom@19.2.4(react@19.2.4))(react@19.2.4)':
     dependencies:
@@ -37926,7 +38037,7 @@ snapshots:
       '@jest/environment': 30.2.0
       '@jest/environment-jsdom-abstract': 30.2.0(jsdom@26.1.0)
       '@types/jsdom': 21.1.7
-      '@types/node': 25.2.0
+      '@types/node': 20.19.35
       jsdom: 26.1.0
     transitivePeerDependencies:
       - bufferutil
@@ -37947,7 +38058,7 @@ snapshots:
       '@jest/environment': 30.2.0
       '@jest/fake-timers': 30.2.0
       '@jest/types': 30.2.0
-      '@types/node': 25.2.0
+      '@types/node': 20.19.35
       jest-mock: 30.2.0
       jest-util: 30.2.0
       jest-validate: 30.2.0
@@ -38445,13 +38556,6 @@ snapshots:
       - '@types/react'
       - react-dom
       - redux
-
-  jotai@2.18.0(@babel/core@7.29.0)(@babel/template@7.28.6)(@types/react@18.3.28)(react@19.2.4):
-    optionalDependencies:
-      '@babel/core': 7.29.0
-      '@babel/template': 7.28.6
-      '@types/react': 18.3.28
-      react: 19.2.4
 
   jotai@2.18.0(@babel/core@7.29.0)(@babel/template@7.28.6)(@types/react@19.1.17)(react@19.2.4):
     optionalDependencies:
@@ -44596,6 +44700,26 @@ snapshots:
 
   ts-interface-checker@0.1.13: {}
 
+  ts-jest@29.4.6(@babel/core@7.29.0)(@jest/transform@30.2.0)(@jest/types@30.2.0)(babel-jest@30.2.0(@babel/core@7.29.0))(jest-util@30.2.0)(jest@29.7.0(@types/node@20.19.35)(babel-plugin-macros@3.1.0)(ts-node@10.9.2(@types/node@20.19.35)(typescript@5.9.3)))(typescript@5.9.3):
+    dependencies:
+      bs-logger: 0.2.6
+      fast-json-stable-stringify: 2.1.0
+      handlebars: 4.7.8
+      jest: 29.7.0(@types/node@20.19.35)(babel-plugin-macros@3.1.0)(ts-node@10.9.2(@types/node@20.19.35)(typescript@5.9.3))
+      json5: 2.2.3
+      lodash.memoize: 4.1.2
+      make-error: 1.3.6
+      semver: 7.7.4
+      type-fest: 4.41.0
+      typescript: 5.9.3
+      yargs-parser: 21.1.1
+    optionalDependencies:
+      '@babel/core': 7.29.0
+      '@jest/transform': 30.2.0
+      '@jest/types': 30.2.0
+      babel-jest: 30.2.0(@babel/core@7.29.0)
+      jest-util: 30.2.0
+
   ts-jest@29.4.6(@babel/core@7.29.0)(@jest/transform@30.2.0)(@jest/types@30.2.0)(babel-jest@30.2.0(@babel/core@7.29.0))(jest-util@30.2.0)(jest@30.2.0(@types/node@25.2.0)(babel-plugin-macros@3.1.0)(ts-node@10.9.2(@types/node@25.2.0)(typescript@5.9.3)))(typescript@5.9.3):
     dependencies:
       bs-logger: 0.2.6
@@ -45382,6 +45506,16 @@ snapshots:
       tsx: 4.21.0
       yaml: 2.8.2
 
+  vitest-axe@0.1.0(vitest@4.0.18):
+    dependencies:
+      aria-query: 5.3.2
+      axe-core: 4.11.1
+      chalk: 5.6.2
+      dom-accessibility-api: 0.5.16
+      lodash-es: 4.17.23
+      redent: 3.0.0
+      vitest: 4.0.18(@opentelemetry/api@1.9.0)(@types/node@25.2.0)(@vitest/ui@4.0.18)(jiti@2.6.1)(jsdom@28.1.0(@noble/hashes@1.8.0))(lightningcss@1.31.1)(msw@2.12.10(@types/node@25.2.0)(typescript@5.9.3))(terser@5.46.0)(tsx@4.21.0)(yaml@2.8.2)
+
   vitest@1.6.1(@types/node@20.19.35)(jsdom@28.1.0(@noble/hashes@1.8.0))(lightningcss@1.31.1)(terser@5.46.0):
     dependencies:
       '@vitest/expect': 1.6.1
@@ -46148,14 +46282,6 @@ snapshots:
   zod@3.25.76: {}
 
   zod@4.3.6: {}
-
-  zustand@4.5.7(@types/react@18.3.28)(immer@11.1.4)(react@19.2.4):
-    dependencies:
-      use-sync-external-store: 1.6.0(react@19.2.4)
-    optionalDependencies:
-      '@types/react': 18.3.28
-      immer: 11.1.4
-      react: 19.2.4
 
   zustand@4.5.7(@types/react@19.2.14)(immer@11.1.4)(react@19.2.4):
     dependencies:

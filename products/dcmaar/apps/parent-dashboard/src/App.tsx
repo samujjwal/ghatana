@@ -1,8 +1,7 @@
 import { lazy, Suspense, useEffect } from 'react';
 import { createBrowserRouter, RouterProvider } from 'react-router-dom';
-import { ProtectedRoute } from '@ghatana/ui';
+import { ErrorBoundary, ProtectedRoute } from '@ghatana/design-system';
 import { performanceMonitor } from './utils/performance';
-import { ErrorBoundary } from '@ghatana/ui';
 import { captureException } from './config/sentry';
 import { useAtomValue } from 'jotai';
 import { isAuthenticatedAtom, userAtom } from './stores/authStore';

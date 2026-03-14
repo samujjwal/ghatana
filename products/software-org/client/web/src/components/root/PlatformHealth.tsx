@@ -12,11 +12,11 @@ import {
     Box,
     Card,
     Grid,
-    KpiCard,
     Typography,
     Chip,
     Progress,
-} from '@ghatana/ui';
+} from '@ghatana/design-system';
+import { KpiCard } from '@/shared/components/org';
 import { io, Socket } from 'socket.io-client';
 
 interface HealthData {

@@ -316,7 +316,7 @@ public class WarmTierEventLogStore implements EventLogStore {
         return result;
     }
 
-    private EventEntry rowToEntry(ResultSet rs) throws SQLException, IOException {
+    private static EventEntry rowToEntry(ResultSet rs) throws SQLException, IOException {
         UUID eventId         = (UUID) rs.getObject("event_id");
         String eventType     = rs.getString("event_type");
         String eventVersion  = rs.getString("event_version");
@@ -405,12 +405,21 @@ public class WarmTierEventLogStore implements EventLogStore {
         }
 
         private List<EventEntry> poll(DataSource dataSource) throws Exception {
-            WarmTierEventLogStore dummy = new WarmTierEventLogStore(dataSource);
-            List<EventEntry> entries = dummy.read(tenant, Offset.of(nextOffset), POLL_BATCH)
-                    .getResult(); // safe: this runs off event-loop on a blocking thread
-            if (!entries.isEmpty()) {
-                nextOffset = parseLong(
-                    dummy.getLatestOffset(tenant).getResult()) + 1;
+            // Use direct synchronous JDBC — avoids the race condition where
+            // Promise.ofBlocking(...).getResult() returns null if the task has
+            // not yet completed on the virtual-thread executor.
+            List<EventEntry> entries = new ArrayList<>();
+            try (Connection conn = dataSource.getConnection();
+                 PreparedStatement ps = conn.prepareStatement(READ_SQL)) {
+                ps.setString(1, tenant.tenantId());
+                ps.setLong(2, nextOffset);
+                ps.setInt(3, POLL_BATCH);
+                try (ResultSet rs = ps.executeQuery()) {
+                    while (rs.next()) {
+                        entries.add(rowToEntry(rs));
+                        nextOffset = rs.getLong("offset_value") + 1;
+                    }
+                }
             }
             return entries;
         }

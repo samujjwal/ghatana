@@ -2,13 +2,13 @@
  * Owner Layout Component
  *
  * Layout wrapper for Owner persona dashboard and pages.
- * Uses @ghatana/ui DashboardLayout with owner-specific navigation.
+ * Uses @ghatana/design-system DashboardLayout with owner-specific navigation.
  *
  * @package @ghatana/software-org-web
  */
 
 import { useNavigate, useLocation } from 'react-router';
-import { DashboardLayout, AppSidebar } from '@ghatana/ui';
+import { DashboardLayout, AppSidebar } from '@ghatana/design-system';
 
 /**
  * Navigation sections for Owner persona
@@ -128,4 +128,3 @@ export function OwnerLayout({ children }: OwnerLayoutProps) {
     </DashboardLayout>
   );
 }
-

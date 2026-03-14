@@ -1,9 +1,9 @@
-import { type ErrorBoundaryHOCType } from '@ghatana/ui';
+import { type ErrorBoundaryHOCType } from '@ghatana/design-system';
 
 /**
- * Re-export withErrorBoundary from @ghatana/ui for backward compatibility
- * @deprecated Import directly from '@ghatana/ui' instead
+ * Re-export withErrorBoundary from @ghatana/design-system for backward compatibility.
+ * @deprecated Import directly from '@ghatana/design-system' instead.
  */
-export { withErrorBoundary } from '@ghatana/ui';
+export { withErrorBoundary } from '@ghatana/design-system';
 
 export type { ErrorBoundaryHOCType };

@@ -1,7 +1,7 @@
 import { useEffect, Suspense, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAtomValue } from 'jotai';
-import { DashboardLayout } from '@ghatana/ui';
+import { DashboardLayout } from '@ghatana/design-system';
 import { GuardianHeader } from '../components/GuardianHeader';
 import { GuardianSidebar } from '../components/GuardianSidebar';
 import { isAuthenticatedAtom } from '../stores/authStore';

@@ -1,16 +1,55 @@
 import { expect, afterEach, beforeAll, afterAll, vi } from 'vitest';
 import '@testing-library/jest-dom';
 import { cleanup } from '@testing-library/react';
+import { configureAxe, toHaveNoViolations } from 'vitest-axe';
+import { server } from '../mocks/server';
 
 /**
  * Global test setup for CES Workflow Platform tests.
  *
  * <p><b>Purpose</b><br>
  * Configures test environment, mocks, and cleanup.
+ * Includes:
+ * - MSW (Mock Service Worker) — intercepts HTTP calls in Vitest/Node
+ * - axe-core — runs accessibility audit after every render
  *
  * @doc.type config
  * @doc.purpose Test environment setup
  */
+
+// ---------------------------------------------------------------------------
+// axe-core — Accessibility
+// ---------------------------------------------------------------------------
+
+expect.extend(toHaveNoViolations);
+
+/**
+ * Pre-configured axe runner.
+ * Disables colour-contrast (requires real CSS computed values) while
+ * enforcing the WCAG2AA rule set for all other violations.
+ */
+export const axe = configureAxe({
+  rules: [
+    // Colour-contrast cannot be evaluated against jsdom's computed styles
+    { id: 'color-contrast', enabled: false },
+  ],
+});
+
+// ---------------------------------------------------------------------------
+// MSW — API mocking
+// ---------------------------------------------------------------------------
+
+// Start before the test suite; close when done
+beforeAll(() => server.listen({ onUnhandledRequest: 'warn' }));
+
+// Reset handler overrides between tests so each test starts clean
+afterEach(() => server.resetHandlers());
+
+afterAll(() => server.close());
+
+// ---------------------------------------------------------------------------
+// Render cleanup
+// ---------------------------------------------------------------------------
 
 // Cleanup after each test
 afterEach(() => {

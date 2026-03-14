@@ -8,7 +8,7 @@ import {
   type ColumnConfig,
   type FilterConfig,
   type ToastConfig,
-} from '@ghatana/ui';
+} from '@ghatana/design-system';
 
 interface BlockNotificationsProps {
   onEventReceived?: (event: BlockEvent) => void;

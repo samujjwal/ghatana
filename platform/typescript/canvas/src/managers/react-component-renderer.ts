@@ -19,7 +19,7 @@ import {
     Spinner,
     Divider,
     Avatar
-} from '@ghatana/ui';
+} from '@ghatana/design-system';
 import {
     LineChart,
     BarChart,

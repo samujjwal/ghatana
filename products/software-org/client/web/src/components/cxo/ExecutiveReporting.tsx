@@ -11,7 +11,6 @@ import React, { useState } from 'react';
 import {
     Grid,
     Card,
-    KpiCard,
     Box,
     Chip,
     LinearProgress,
@@ -26,7 +25,8 @@ import {
     TableBody,
     TableRow,
     TableCell,
-} from '@ghatana/ui';
+} from '@ghatana/design-system';
+import { KpiCard } from '@/shared/components/org';
 
 /**
  * Quarterly performance metrics
@@ -119,7 +119,7 @@ export interface ExecutiveReportingProps {
  * - Risk indicators
  * - Tab-based navigation (Performance, Board Reports, KPIs, Risks)
  *
- * Reuses @ghatana/ui components:
+ * Reuses @ghatana/design-system components and shared org KPI cards:
  * - KpiCard (executive KPIs)
  * - Grid (responsive layouts)
  * - Card (report cards, risk cards)

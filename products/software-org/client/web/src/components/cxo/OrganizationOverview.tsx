@@ -11,7 +11,6 @@ import React, { useState } from 'react';
 import {
     Grid,
     Card,
-    KpiCard,
     Box,
     Chip,
     LinearProgress,
@@ -21,7 +20,8 @@ import {
     Button,
     Typography,
     Stack,
-} from '@ghatana/ui';
+} from '@ghatana/design-system';
+import { KpiCard } from '@/shared/components/org';
 
 /**
  * Company-wide metrics
@@ -120,7 +120,7 @@ export interface OrganizationOverviewProps {
  * - Financial summary
  * - Tab-based navigation (Departments, Objectives, Financials)
  *
- * Reuses @ghatana/ui components:
+ * Reuses @ghatana/design-system components and shared org KPI cards:
  * - KpiCard (4 company KPIs)
  * - Grid (responsive layouts)
  * - Card (department cards, objective cards)

@@ -30,7 +30,7 @@ interface Task {
   description?: string;
   status: TaskStatus;
   priority: TaskPriority;
-  phase: string;?: string;
+  phase: string;
   dueDate?: string;
   createdAt: string;
   updatedAt: string;

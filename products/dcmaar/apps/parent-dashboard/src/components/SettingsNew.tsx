@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { DynamicForm, type FieldConfig } from '@ghatana/ui';
+import { DynamicForm, type FieldConfig } from '@ghatana/design-system';
 
 /**
  * Guardian Settings Component

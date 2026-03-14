@@ -31,7 +31,7 @@
  */
 
 import { useState, useCallback } from 'react';
-import { Card, Box, Button, Chip, Grid } from '@ghatana/ui';
+import { Card, Box, Button, Chip, Grid } from '@ghatana/design-system';
 import { useAtom } from 'jotai';
 import { useExecutionContext } from '@/hooks/useUnifiedPersona';
 import { selectedExecutionToolAtom, type ExecutionToolTab } from '@/state/jotai/atoms';

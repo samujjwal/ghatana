@@ -11,7 +11,6 @@ import React, { useState } from 'react';
 import {
     Grid,
     Card,
-    KpiCard,
     Box,
     Chip,
     LinearProgress,
@@ -21,7 +20,8 @@ import {
     Button,
     Typography,
     Stack,
-} from '@ghatana/ui';
+} from '@ghatana/design-system';
+import { KpiCard } from '@/shared/components/org';
 
 /**
  * Department performance data
@@ -109,7 +109,7 @@ export interface DepartmentPortfolioProps {
  * - Department filtering (All/Healthy/Warning/Critical)
  * - Cross-department insights
  *
- * Reuses @ghatana/ui components:
+ * Reuses @ghatana/design-system components and shared org KPI cards:
  * - KpiCard (4 portfolio KPIs)
  * - Grid (responsive layouts)
  * - Card (department cards, initiatives)

@@ -16,7 +16,7 @@ import {
     LinearProgress,
     Avatar,
     Divider,
-} from '@ghatana/ui';
+} from '@ghatana/design-system';
 import {
     CheckCircle as CheckCircleIcon,
     Close as CloseIcon,
@@ -26,7 +26,7 @@ import {
     Celebration as CelebrationIcon,
     Add as AddIcon,
     Delete as DeleteIcon,
-} from '@ghatana/ui/icons';
+} from '@ghatana/design-system/icons';
 
 /**
  * Onboarding step configuration

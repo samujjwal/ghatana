@@ -2,7 +2,7 @@
  * UI Components Index
  *
  * Central export point for all UI components.
- * Temporary implementations until @ghatana/ui workspace package is fully integrated.
+ * Legacy local compatibility exports while consumers migrate to shared components.
  */
 
 export * from './components';

@@ -2,14 +2,14 @@
  * Executive Layout Component
  *
  * Layout wrapper for Executive persona (CTO, CPO, etc.) dashboard and pages.
- * Uses @ghatana/ui DashboardLayout with executive-specific navigation.
+ * Uses @ghatana/design-system DashboardLayout with executive-specific navigation.
  *
  * @package @ghatana/software-org-web
  */
 
 import React from 'react';
 import { useNavigate, useLocation } from 'react-router';
-import { DashboardLayout, AppSidebar } from '@ghatana/ui';
+import { DashboardLayout, AppSidebar } from '@ghatana/design-system';
 
 /**
  * Navigation sections for Executive persona

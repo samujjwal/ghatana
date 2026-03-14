@@ -9,7 +9,7 @@ import {
   type ExportConfig,
   type InsightItem,
   type DateRange,
-} from '@ghatana/ui';
+} from '@ghatana/design-system';
 import { exportUsageEventsToCSV, exportBlockEventsToCSV } from '../utils/csvExport';
 import { exportUsageEventsToPDF, exportBlockEventsToPDF, exportAnalyticsSummaryToPDF } from '../utils/pdfExport';
 

@@ -59,7 +59,7 @@ Where `weight_i` decreases logarithmically with ingredient list position (first 
 ## Model Maintenance
 
 - Similarity scores are computed offline as a batch job when new products are ingested or existing products are enriched.
-- The similarity graph is stored as indexed pairwise records in PostgreSQL for fast retrieval.
+- The similarity graph is stored as indexed pairwise records in a Data Cloud-managed relational dataset for fast retrieval.
 - Shade similarity is skipped (set to 0) for non-shade-bearing categories (serum, toner, sunscreen, etc.).
 - Weights are tunable via configuration. A/B tested against user engagement on the "compare" and "alternatives" surfaces.
 - Community feedback ("this isn't really a dupe") is collected and fed back into the weight calibration pipeline.

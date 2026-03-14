@@ -27,7 +27,7 @@ import {
     TableRow,
     TableCell,
     TableBody,
-} from '@ghatana/ui';
+} from '@ghatana/design-system';
 import {
     Assessment,
     Add,
@@ -41,7 +41,7 @@ import {
     Flag,
     Person,
     Comment,
-} from '@ghatana/ui/icons';
+} from '@ghatana/design-system/icons';
 
 // ============================================================================
 // Type Definitions

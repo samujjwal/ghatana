@@ -294,16 +294,17 @@ model UserOwnedProduct {
 ## Notes
 
 - **Receipt import and wearable data:** Keep in separate bounded contexts if compliance or
-  sensitivity requirements increase. Use separate Prisma schemas or databases with explicit
-  cross-context access policies.
+  sensitivity requirements increase. Use separate Prisma schemas or Data Cloud-managed datasets
+  with explicit cross-context access policies.
 
 ---
 
 ## Phase 2+ Extension: pgvector Embedding Tables
 
 When semantic retrieval becomes core to the recommendation pipeline, add pgvector-backed embedding
-tables. These use the `Unsupported("vector(1536)")` type in Prisma (raw PostgreSQL `vector` type
-from the `pgvector` extension).
+tables within the Data Cloud-managed relational/vector path. These use the `Unsupported("vector(1536)")`
+type in Prisma (raw PostgreSQL `vector` type from the `pgvector` extension) when Data Cloud's
+underlying implementation uses pgvector.
 
 ```prisma
 // Enable pgvector extension via a migration:

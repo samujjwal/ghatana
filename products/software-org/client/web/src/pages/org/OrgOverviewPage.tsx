@@ -8,7 +8,7 @@
  */
 
 import React, { useState } from 'react';
-import { Box, Grid, Button, Stack } from '@ghatana/ui';
+import { Box, Grid, Button, Stack } from '@ghatana/design-system';
 import { OrgTreeView } from '@/components/org/OrgTreeView';
 import { OrgNodeDetail } from '@/components/org/OrgNodeDetail';
 import type { OrgNode } from '@/types/org.types';
@@ -152,4 +152,3 @@ export function OrgOverviewPage() {
     </Box>
   );
 }
-

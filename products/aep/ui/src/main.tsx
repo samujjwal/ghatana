@@ -1,6 +1,6 @@
 import React from 'react';
 import ReactDOM from 'react-dom/client';
-import { ErrorBoundary } from '@ghatana/ui/components/ErrorBoundary';
+import { ErrorBoundary } from '@ghatana/design-system';
 import { App } from '@/App';
 
 ReactDOM.createRoot(document.getElementById('root')!).render(

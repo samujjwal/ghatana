@@ -2,7 +2,7 @@
  * Status Badge Component
  * 
  * Displays a status indicator badge with semantic colors.
- * Uses @ghatana/ui Badge component for consistency.
+ * Uses @ghatana/design-system Badge component for consistency.
  * 
  * @doc.type component
  * @doc.purpose Display status with semantic badge
@@ -11,7 +11,7 @@
  */
 
 import React from 'react';
-import { Badge } from '@ghatana/ui';
+import { Badge } from '@ghatana/design-system';
 
 type StatusVariant = 'success' | 'danger' | 'warning' | 'info' | 'neutral';
 
@@ -25,7 +25,7 @@ interface StatusBadgeProps {
 }
 
 /**
- * Map local variants to @ghatana/ui Badge tones
+ * Map local variants to @ghatana/design-system Badge tones.
  */
 const variantToTone: Record<StatusVariant, 'success' | 'danger' | 'warning' | 'info' | 'neutral'> = {
   success: 'success',
@@ -36,7 +36,7 @@ const variantToTone: Record<StatusVariant, 'success' | 'danger' | 'warning' | 'i
 };
 
 /**
- * Status badge component using @ghatana/ui Badge.
+ * Status badge component using @ghatana/design-system Badge.
  * 
  * @example
  * ```tsx

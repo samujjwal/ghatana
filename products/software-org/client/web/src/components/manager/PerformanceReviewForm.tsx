@@ -18,7 +18,7 @@ import {
     Switch,
     FormControlLabel,
     IconButton,
-} from '@ghatana/ui';
+} from '@ghatana/design-system';
 
 /**
  * Goal with rating

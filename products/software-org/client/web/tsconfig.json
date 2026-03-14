@@ -46,6 +46,30 @@
       ],
       "@/styles/*": [
         "./src/styles/*"
+      ],
+      "@ghatana/design-system": [
+        "../../../../platform/typescript/design-system/src/index.ts"
+      ],
+      "@ghatana/design-system/icons": [
+        "../../../../platform/typescript/design-system/src/icons/index.tsx"
+      ],
+      "@ghatana/ui-integration": [
+        "../../../../platform/typescript/ui-integration/src/index.ts"
+      ],
+      "@ghatana/tokens": [
+        "../../../../platform/typescript/tokens/src/index.ts"
+      ],
+      "@ghatana/api": [
+        "../../../../platform/typescript/api/src/index.ts"
+      ],
+      "@ghatana/realtime": [
+        "../../../../platform/typescript/realtime/src/index.ts"
+      ],
+      "@ghatana/theme": [
+        "../../../../platform/typescript/theme/src/index.ts"
+      ],
+      "@ghatana/utils": [
+        "../../../../platform/typescript/utils/src/index.ts"
       ]
     },
     "types": [

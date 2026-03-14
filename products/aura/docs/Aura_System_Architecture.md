@@ -4,11 +4,20 @@
 
 Aura follows a **7-layer platform architecture**. Each layer has a clear responsibility boundary and communicates with adjacent layers through defined APIs or event streams. This document provides an engineering-level blueprint; for detailed specifications of the intelligence layers, see [Aura_Intelligence_Platform_Architecture.md](Aura_Intelligence_Platform_Architecture.md).
 
+Aura product logic runs inside Aura deployables, but several infrastructure boundaries are not Aura-owned:
+
+- All cross-process event publication and subscription must flow through AEP.
+- All managed data handling and lifecycle operations must run through Data Cloud or an approved Data Cloud plugin.
+- Auth, security, audit, and observability are shared platform capabilities that Aura integrates, not replaces.
+
+Use `Aura_Shared_Platform_Integration_Spec.md` for the concrete AEP/Data Cloud/shared-platform
+implementation contract behind this architecture.
+
 ---
 
 ## Layer 1 — Source & Ingestion
 
-**Responsibility:** Collect, parse, normalize, and route raw external data into the platform.
+**Responsibility:** Collect, parse, normalize, and route raw external data into Aura-managed domain flows, Data Cloud-managed datasets, and AEP-managed event streams.
 
 Sources:
 
@@ -27,6 +36,8 @@ Services:
 - **Enrichment Workers** — resolve ingredients, map shades, score freshness
 - **Deduplication Service** — entity resolution across sources
 - **Catalog Merge Service** — merges new data into the canonical product record
+- **Data Cloud Writers / Plugins** — persist canonical, raw, and derived data through Data Cloud-managed interfaces
+- **AEP Publishers** — emit ingestion and catalog events through AEP only
 
 ---
 
@@ -45,10 +56,10 @@ Stores:
 
 Technology:
 
-- PostgreSQL for canonical entities and transactional data
-- pgvector for semantic similarity search
-- Object storage for raw ingestion payloads and snapshots
-- Redis for hot recommendation paths
+- Data Cloud-managed relational storage for canonical entities and transactional data
+- Data Cloud-managed vector storage for semantic similarity search
+- Data Cloud-managed object storage for raw ingestion payloads and snapshots
+- Data Cloud-managed cache for hot recommendation paths
 
 ---
 
@@ -106,7 +117,7 @@ Output per recommendation:
 
 Agents: Discovery Agent, Ingredient Safety Agent, Shade Matching Agent, Community Intelligence Agent, Commerce Agent, Explanation Agent.
 
-Coordination: event-driven, with structured intermediate outputs and traceable reasoning chain. Falls back to deterministic paths when model confidence is low.
+Coordination: event-driven through AEP, with structured intermediate outputs and traceable reasoning chain. Falls back to deterministic paths when model confidence is low.
 
 ---
 
@@ -123,7 +134,7 @@ Channels:
 
 Core experiences: personalized feed, product intelligence panel, compare view, profile dashboard, privacy and consent center.
 
-API surface: GraphQL for client queries and mutations; REST/gRPC for internal service-to-service communication.
+API surface: GraphQL for client queries and mutations; REST/gRPC for internal service-to-service communication; AEP for cross-process asynchronous communication.
 
 ---
 
@@ -142,7 +153,27 @@ Capabilities:
 - **Model Lifecycle Management** — champion/challenger evaluation, canary releases, rollback
 - **Privacy Controls** — data minimization, retention policies, data export, and right-to-deletion workflows
 
-Observability stack: Micrometer, OpenTelemetry, Prometheus, Grafana.
+Observability stack: shared o11y platform using Micrometer, OpenTelemetry, Prometheus, and Grafana integrations.
+
+## Shared Platform Boundary
+
+### AEP
+
+- Aura publishes and consumes domain events through AEP contracts and runtime integration.
+- Aura does not integrate directly with Event Cloud, Kafka, Redpanda, or similar broker infrastructure.
+- Retry, replay, DLQ, and fan-out behavior are AEP responsibilities from Aura's perspective.
+
+### Data Cloud
+
+- Aura defines logical schemas, datasets, and access patterns, but managed persistence runs through Data Cloud or approved Data Cloud plugins.
+- PostgreSQL, pgvector, Redis, and object storage may still be used underneath, but Aura should treat them as Data Cloud-managed implementations.
+- Export, deletion, backup/restore, lineage, and retention workflows should be designed against Data Cloud capabilities first.
+
+### Shared Security and Observability
+
+- Authentication and re-authentication flow through shared auth services and shared security modules.
+- Audit, telemetry, dashboards, alerting, and tracing are shared capabilities that Aura wires into product flows.
+- Aura-specific code should focus on domain rules, trust policies, and user experience rather than duplicating platform infrastructure.
 
 ---
 
@@ -157,14 +188,14 @@ Observability stack: Micrometer, OpenTelemetry, Prometheus, Grafana.
 
 ### Security
 
-- Authentication: JWT-based, issued by auth service
-- Authorization: per-user, per-scope
+- Authentication: JWT-based, issued by shared auth service
+- Authorization: per-user, per-scope, enforced with shared security modules
 - Input validation at all API boundaries
 - Secrets managed via environment or secrets manager (never hardcoded)
 
 ### Observability
 
-- All deployables emit structured logs, traces, and metrics
+- All deployables emit structured logs, traces, and metrics into shared o11y pipelines
 - Distributed tracing via OpenTelemetry across deployable boundaries
 - SLO targets defined per experience tier
 
@@ -174,3 +205,4 @@ Observability stack: Micrometer, OpenTelemetry, Prometheus, Grafana.
 - Keep profile, catalog, recommendation, explainability, community, and governance as explicit internal modules with stable contracts and test boundaries
 - Extract a module into an independent service only when runtime isolation, sustained load, compliance or security needs, or team ownership create a clear operational benefit
 - Keep explainability and consent first-class from day one, but as modules first rather than mandatory standalone services
+- Keep event, data, security, and observability infrastructure in shared platforms rather than creating Aura-specific equivalents

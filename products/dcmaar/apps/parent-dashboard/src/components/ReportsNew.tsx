@@ -1,7 +1,7 @@
 import { useState, useMemo, memo } from 'react';
 import { useAtom } from 'jotai';
 import { usageEventsAtom, blockEventsAtom } from '../stores/eventsStore';
-import { DynamicForm, type FieldConfig } from '@ghatana/ui';
+import { DynamicForm, type FieldConfig } from '@ghatana/design-system';
 import { ReportPreview } from './ReportPreview';
 import {
   type ReportPeriod,

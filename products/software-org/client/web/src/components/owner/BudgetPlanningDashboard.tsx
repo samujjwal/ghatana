@@ -23,7 +23,7 @@ import {
     IconButton,
     Tabs,
     Tab,
-} from '@ghatana/ui';
+} from '@ghatana/design-system';
 import {
     Add as AddIcon,
     Edit as EditIcon,
@@ -32,7 +32,7 @@ import {
     TrendingUp as TrendingUpIcon,
     TrendingDown as TrendingDownIcon,
     Remove as RemoveIcon,
-} from '@ghatana/ui/icons';
+} from '@ghatana/design-system/icons';
 
 /**
  * Department budget allocation

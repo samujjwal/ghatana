@@ -23,7 +23,7 @@ import {
     TableBody,
     TableRow,
     TableCell,
-} from '@ghatana/ui';
+} from '@ghatana/design-system';
 
 /**
  * Dependency metrics
@@ -131,7 +131,7 @@ export interface DependencyTrackerProps {
  * - Activity stream for dependency events
  * - Tab-based navigation (Dependencies, Blockers, Coordination, Activity)
  *
- * Reuses @ghatana/ui components:
+ * Reuses @ghatana/design-system components:
  * - Card (dependency cards, blocker cards, coordination cards)
  * - Table (dependency table, blocker table)
  * - Chip (status, priority, type, severity indicators)

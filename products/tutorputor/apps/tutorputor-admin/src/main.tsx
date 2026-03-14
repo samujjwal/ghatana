@@ -2,7 +2,7 @@ import React from 'react';
 import ReactDOM from 'react-dom/client';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { RouterProvider } from 'react-router-dom';
-import { ErrorBoundary } from '@ghatana/ui/components/ErrorBoundary';
+import { ErrorBoundary } from '@ghatana/design-system';
 import { MinimalThemeProvider } from './providers/MinimalThemeProvider';
 import { router } from './App';
 import './index.css';

@@ -20,7 +20,7 @@
  */
 
 import React, { Component, ErrorInfo, ReactNode } from 'react';
-import { Card, Button, Box } from '@ghatana/ui';
+import { Card, Button, Box } from '@ghatana/design-system';
 import { AlertTriangle, RefreshCw, Home } from 'lucide-react';
 import { captureError } from '@/lib/sentry';
 
@@ -163,4 +163,3 @@ export function useErrorHandler() {
 
   return setError;
 }
-

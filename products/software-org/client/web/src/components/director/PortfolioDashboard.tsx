@@ -12,8 +12,9 @@ import {
     Tabs,
     Tab,
     Alert,
-} from '@ghatana/ui';
-import { Grid, KpiCard } from '@ghatana/ui';
+} from '@ghatana/design-system';
+import { Grid } from '@ghatana/design-system';
+import { KpiCard } from '@/shared/components/org';
 
 // Types
 export type ProjectStatus = 'on-track' | 'at-risk' | 'behind' | 'completed' | 'on-hold';
@@ -358,7 +359,7 @@ export const PortfolioDashboard: React.FC<PortfolioDashboardProps> = ({
                 </Box>
             </Box>
 
-            {/* KPI Cards - Reusing @ghatana/ui KpiCard */}
+            {/* KPI Cards - Reusing shared org KpiCard */}
             <Grid columns={4} gap={3} sx={{ mb: 3 }}>
                 <KpiCard
                     title="Active Projects"

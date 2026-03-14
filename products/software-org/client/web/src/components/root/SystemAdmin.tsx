@@ -11,7 +11,6 @@ import React, { useState } from 'react';
 import {
     Grid,
     Card,
-    KpiCard,
     Box,
     Chip,
     Tabs,
@@ -25,7 +24,8 @@ import {
     TableBody,
     TableRow,
     TableCell,
-} from '@ghatana/ui';
+} from '@ghatana/design-system';
+import { KpiCard } from '@/shared/components/org';
 
 /**
  * System metrics
@@ -134,7 +134,7 @@ export interface SystemAdminProps {
  * - System settings management
  * - Tab-based navigation (Users, Roles, Audit Logs, Settings)
  *
- * Reuses @ghatana/ui components:
+ * Reuses @ghatana/design-system components and shared org KPI cards:
  * - KpiCard (system metrics)
  * - Grid (responsive layouts)
  * - Card (user cards, role cards, setting cards)

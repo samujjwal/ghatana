@@ -6,18 +6,20 @@
 - **Internal service-to-service APIs:** REST or gRPC where latency and clear boundaries matter.
 - **Brand analytics API:** REST with API key authentication (Phase 4).
 
+Cross-process async communication referenced by these contracts must publish through AEP, and managed persistence behind these contracts must rely on Data Cloud-managed datasets or approved Data Cloud plugins.
+
 ---
 
 ## Authentication & Authorization
 
 | Concern               | Approach                                                                                                                                                                                    |
 | --------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| Authentication        | JWT issued by the Aura auth service. Every request to the API carries a `Bearer` token in the `Authorization` header.                                                                       |
+| Authentication        | JWT issued by shared auth services. Every request to the API carries a `Bearer` token in the `Authorization` header.                                                                       |
 | Authorization         | Scoped per-user. Users can only access and modify their own data.                                                                                                                           |
 | Core service data     | Declared profile data, on-platform interactions, recommendation history, safety feedback, and data-rights actions are processed as part of operating the Aura service for the authenticated user. |
 | Consent enforcement   | Optional imports and high-sensitivity enrichment validate a current, in-scope, non-revoked consent record before proceeding. If consent is absent, the mutation returns a `CONSENT_REQUIRED` error. |
 | Brand analytics       | API key authentication. Keys are tenant-scoped and grant read-only access to anonymized aggregate data only.                                                                                |
-| Internal service auth | Service-to-service calls use short-lived internal tokens (mTLS or shared secret, environment-dependent).                                                                                    |
+| Internal service auth | Service-to-service calls use shared security patterns with short-lived internal tokens (mTLS or shared secret, environment-dependent).                                                      |
 
 **Security principles:**
 

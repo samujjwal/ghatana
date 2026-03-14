@@ -51,6 +51,9 @@ aura/
 
 - **Shared packages are the source of truth** for domain types and event contracts. Apps and domain
   modules must import from packages, not duplicate definitions.
+- **Shared platform products own cross-cutting infrastructure**: AEP is the only async event boundary,
+  Data Cloud owns managed data handling and lifecycle, and shared auth/security/o11y should be
+  integrated rather than reimplemented inside Aura.
 - **Design tokens and UI primitives** are reusable platform assets. Apply them consistently across
   web and mobile to maintain design system coherence.
 - **Frontend routing:** React Router v7 framework mode provides first-class support for data fetching,
@@ -72,3 +75,6 @@ aura/
 - **The Hybrid Backend pattern remains intact**: Node.js + Fastify handles User API (CRUD, preferences,
   real-time UI state); Java 21 + ActiveJ handles Core Domain (high-throughput event processing, heavy
   ranking, ingestion pipeline); Python handles ML inference where a separate runtime is genuinely needed.
+- **Aura code should stay product-focused**: keep event transport, storage orchestration, security, and
+  observability wiring in shared platform layers so Aura modules remain neither over-engineered nor
+  under-specified.

@@ -1,0 +1,209 @@
+# =============================================================================
+# Istio Service Mesh — Data-Cloud mTLS Configuration
+#
+# Enforces mutual TLS (ISTIO_MUTUAL) for all intra-mesh traffic to and from
+# the data-cloud workload, eliminating plaintext pod-to-pod communication.
+#
+# Prerequisites:
+#   - Istio ≥ 1.19 installed in the cluster (istioctl install --set profile=default)
+#   - data-cloud namespace labelled for sidecar injection:
+#       kubectl label namespace data-cloud istio-injection=enabled
+#
+# Apply: kubectl apply -f k8s/istio-mesh.yaml
+# =============================================================================
+---
+# -----------------------------------------------------------------------------
+# PeerAuthentication — require STRICT mTLS for all traffic in the namespace.
+#
+# Any sidecar that cannot present a valid SPIFFE X.509 certificate will have
+# its connection rejected.  The policy applies to ALL ports so there is no
+# plaintext escape hatch.
+# -----------------------------------------------------------------------------
+apiVersion: security.istio.io/v1
+kind: PeerAuthentication
+metadata:
+  name: data-cloud-strict-mtls
+  namespace: data-cloud
+  labels:
+    app: data-cloud
+    managed-by: kustomize
+spec:
+  # Scoped to the data-cloud workload specifically; namespace-wide default
+  # can be set separately if other workloads share the namespace.
+  selector:
+    matchLabels:
+      app: data-cloud
+  mtls:
+    mode: STRICT
+---
+# -----------------------------------------------------------------------------
+# DestinationRule — configure Istio-managed client-side TLS for calls TO
+# the data-cloud service.  ISTIO_MUTUAL uses the sidecar-issued certificate
+# automatically without application changes.
+# -----------------------------------------------------------------------------
+apiVersion: networking.istio.io/v1
+kind: DestinationRule
+metadata:
+  name: data-cloud-mtls
+  namespace: data-cloud
+  labels:
+    app: data-cloud
+    managed-by: kustomize
+spec:
+  # Matches the Kubernetes service DNS name
+  host: data-cloud.data-cloud.svc.cluster.local
+  trafficPolicy:
+    tls:
+      mode: ISTIO_MUTUAL
+  # Per-port overrides: gRPC uses H2 which Istio handles transparently
+  portLevelSettings:
+    - port:
+        number: 9090
+      tls:
+        mode: ISTIO_MUTUAL
+---
+# -----------------------------------------------------------------------------
+# AuthorizationPolicy — allowlist: only approved workloads may call data-cloud.
+#
+# Source principals are SPIFFE URIs derived from the calling pod's ServiceAccount.
+# Adjust the list as new services are onboarded; everything else is denied.
+# -----------------------------------------------------------------------------
+apiVersion: security.istio.io/v1
+kind: AuthorizationPolicy
+metadata:
+  name: data-cloud-allow-trusted-peers
+  namespace: data-cloud
+  labels:
+    app: data-cloud
+    managed-by: kustomize
+spec:
+  selector:
+    matchLabels:
+      app: data-cloud
+  action: ALLOW
+  rules:
+    # Agentic Event Processor (publishing events + pipeline triggers)
+    - from:
+        - source:
+            principals:
+              - "cluster.local/ns/aep/sa/aep"
+      to:
+        - operation:
+            methods: ["POST", "GET"]
+            paths:
+              - "/api/v1/events*"
+              - "/api/v1/pipelines*"
+              - "/health"
+              - "/ready"
+
+    # API Gateway / auth-service (forwarding authenticated user requests)
+    - from:
+        - source:
+            principals:
+              - "cluster.local/ns/auth-gateway/sa/auth-gateway"
+              - "cluster.local/ns/auth-service/sa/auth-service"
+      to:
+        - operation:
+            methods: ["GET", "POST", "PUT", "DELETE"]
+            paths: ["/api/v1/*"]
+
+    # Prometheus scrape (metrics endpoint only)
+    - from:
+        - source:
+            namespaces: ["monitoring"]
+      to:
+        - operation:
+            methods: ["GET"]
+            paths: ["/metrics"]
+
+    # Internal health probes from Kubernetes kubelet (bypass auth)
+    - from:
+        - source:
+            notPrincipals: []
+      to:
+        - operation:
+            methods: ["GET"]
+            paths: ["/health", "/ready", "/live"]
+---
+# -----------------------------------------------------------------------------
+# VirtualService — traffic management for canary and weighted routing.
+#
+# By default all traffic goes to the stable subset (100% weight).
+# To perform a canary release:
+#   1. Deploy the canary Deployment with label version=canary
+#   2. Adjust weights: stable 90 / canary 10
+#   3. Monitor, then shift to 100 / 0 on stable (new version)
+# -----------------------------------------------------------------------------
+apiVersion: networking.istio.io/v1
+kind: VirtualService
+metadata:
+  name: data-cloud
+  namespace: data-cloud
+  labels:
+    app: data-cloud
+    managed-by: kustomize
+spec:
+  hosts:
+    - data-cloud.data-cloud.svc.cluster.local
+  http:
+    # Inject fault for chaos testing (disabled by default — weight 0)
+    # Uncomment and adjust percentage during resilience exercises:
+    # - fault:
+    #     delay:
+    #       percentage:
+    #         value: 5
+    #       fixedDelay: 500ms
+    - route:
+        - destination:
+            host: data-cloud.data-cloud.svc.cluster.local
+            subset: stable
+            port:
+              number: 8082
+          weight: 100
+        # Canary slot — set weight > 0 during blue/green or canary rollouts
+        # - destination:
+        #     host: data-cloud.data-cloud.svc.cluster.local
+        #     subset: canary
+        #     port:
+        #       number: 8082
+        #   weight: 0
+      timeout: 30s
+      retries:
+        attempts: 3
+        perTryTimeout: 10s
+        retryOn: "5xx,reset,connect-failure,retriable-4xx"
+---
+# -----------------------------------------------------------------------------
+# DestinationRule subsets for canary routing
+# -----------------------------------------------------------------------------
+apiVersion: networking.istio.io/v1
+kind: DestinationRule
+metadata:
+  name: data-cloud-subsets
+  namespace: data-cloud
+  labels:
+    app: data-cloud
+    managed-by: kustomize
+spec:
+  host: data-cloud.data-cloud.svc.cluster.local
+  trafficPolicy:
+    tls:
+      mode: ISTIO_MUTUAL
+    connectionPool:
+      tcp:
+        maxConnections: 1000
+      http:
+        h2UpgradePolicy: UPGRADE
+        idleTimeout: 90s
+    outlierDetection:
+      consecutive5xxErrors: 5
+      interval: 30s
+      baseEjectionTime: 60s
+      maxEjectionPercent: 50
+  subsets:
+    - name: stable
+      labels:
+        version: stable
+    - name: canary
+      labels:
+        version: canary

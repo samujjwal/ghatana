@@ -1,230 +1,163 @@
 # Aura Platform — Executive Summary & Document Index
 
-Version: 2.1
+Version: 2.2
 Date: March 2026
 
 **Purpose**: Executive entry point and navigation guide for Aura platform artifacts.
 
-**⚠️ IMPORTANT**: This document is **non-authoritative** and should never be used to resolve policy or implementation conflicts. For all authoritative specifications, see `Aura_Master_Platform_Specification.md`.
+**Important**: This document is **non-authoritative** and should never be used to resolve policy,
+contract, or implementation conflicts. Use `Aura_Master_Platform_Specification.md` for all
+governing decisions.
 
-**📚 For standardized terminology**, see `Aura_Glossary.md` - the authoritative glossary for all Aura platform terms.
+**Terminology source**: `Aura_Glossary.md`
 
 ---
 
 ## Quick Reference
 
-| Topic | Authoritative Document | Section |
-|-------|------------------------|---------|
-| Product Vision & Scope | `Aura_Master_Platform_Specification.md` | §1-2 |
-| Consumer Value Delivery | `Aura_Consumer_Value_Operating_Model.md` | Complete |
-| Task Execution Detail | `Aura_Task_Execution_Matrix.md` | Complete |
-| System Architecture | `Aura_Master_Platform_Specification.md` | §3 |
-| Technical Stack | `Aura_Technical_Stack_Blueprint.md` | Complete |
-| Data Architecture | `Aura_Data_Architecture.md` | Complete |
-| AI/ML and Data Operating Model | `Aura_AI_ML_Data_Operating_Model.md` | Complete |
-| API Contracts | `Aura_API_Contracts.md` | Complete |
-| AI Engine Design | `Aura_AI_Engine_Design.md` | Complete |
-| Database Schema | `Aura_Database_Schema_Prisma.md` | Complete |
-| UI/UX Blueprint | `Aura_UI_UX_Blueprint.md` | Complete |
-| **Standardized Terminology** | `Aura_Glossary.md` | Complete |
+| Topic | Primary Document | Notes |
+| ----- | ---------------- | ----- |
+| Product vision and authority | `Aura_Master_Platform_Specification.md` | authoritative source of truth |
+| Consumer value delivery | `Aura_Consumer_Value_Operating_Model.md` | value loops and trust contract |
+| Shared platform integration | `Aura_Shared_Platform_Integration_Spec.md` | AEP, Data Cloud, security, o11y integration rules |
+| Active delivery tasks | `Aura_Task_Execution_Matrix.md` | Weeks 1-24 task detail |
+| Long-horizon delivery tasks | `Aura_Long_Horizon_Task_Execution_Matrix.md` | Weeks 25-104 task detail |
+| Full implementation sequencing | `Aura_Full_Product_Implementation_Plan_104_Weeks.md` | week-by-week sequencing view |
+| Technical stack | `Aura_Technical_Stack_Blueprint.md` | runtime and tooling decisions |
+| Data architecture | `Aura_Data_Architecture.md` | logical data model and service boundary |
+| API contracts | `Aura_API_Contracts.md` | GraphQL, REST, and auth model |
+| Event contracts | `Aura_Event_Architecture.md` | AEP topics, schemas, replay, DLQ |
+| Testing | `testing/Aura_Test_Plan_and_Traceability.md` | test-first execution rules |
 
 ---
 
-## 1. Product Vision (Summary)
+## Product Summary
 
-Aura is an AI-powered decision-support platform for beauty, fashion, and lifestyle choices that answers: **"What is right for me right now?"**
+Aura is an AI-powered decision-support platform for beauty, fashion, and wellness choices. It
+answers the question: **"What is right for me right now?"**
 
-Instead of browsing fragmented sources, Aura analyzes product intelligence, ingredient compatibility, community sentiment, personal profile attributes, and contextual signals — then delivers personalized recommendations with clear, verifiable explanations.
+Aura's current strategic posture is:
 
----
-
-## 2. Core Platform Pillars (Summary)
-
-| #   | Pillar                                  | Description                                                                  |
-| --- | --------------------------------------- | ---------------------------------------------------------------------------- |
-| 1   | **Personal Profile System (You Index)** | Unified user intelligence: declared, inferred, behavioral, and imported data |
-| 2   | **Product Intelligence Engine**         | Canonical product catalog, ingredient graph, shade ontology, style taxonomy  |
-| 3   | **Unified Content Feed**                | Personalized discovery and inspiration surface                               |
-| 4   | **Explainable Recommendation Engine**   | Ranked, reasoned, confidence-scored suggestions with reason codes            |
-| 5   | **Community Intelligence Layer**        | Aggregated reviews, sentiment signals, twin-user discovery                   |
-
-*For detailed specifications, see `Aura_Master_Platform_Specification.md` §2*
+- beauty-first trust and decision quality in Year 1
+- category expansion only after outcome and trust proof
+- shared-platform-first implementation through AEP, Data Cloud, shared auth/security, and shared o11y
+- modular-monolith-first delivery with only `api`, `core-worker`, and `ml-inference` as early deployables
 
 ---
 
-## 3. Architecture Overview (Summary)
+## Shared Platform Summary
 
-Aura uses a **7-layer platform architecture**:
+- AEP is the only Aura cross-process event communication boundary.
+- Data Cloud is the managed data plane for Aura datasets, exports, retention, restore, and lineage.
+- Shared auth, security, audit, and observability are platform capabilities, not Aura-local infrastructure.
+- Aura owns product logic, data semantics, recommendation behavior, and trust policy.
 
-| Layer                                   | Responsibility                                                                                           |
-| --------------------------------------- | -------------------------------------------------------------------------------------------------------- |
-| 1. Source & Ingestion                   | Collect and normalize product data, reviews, community feeds, optional wearable and receipt integrations |
-| 2. Canonical Knowledge                  | Product catalog, ingredient graph, shade ontology, style taxonomy, source provenance                     |
-| 3. Personal Intelligence                | You Index, context engine, ownership history, preference learning                                        |
-| 4. Decision & Recommendation            | Candidate generation, rules filtering, feature construction, ranking, explanation generation             |
-| 5. Agent Orchestration                  | Specialized AI agents coordinated through shared context and events                                      |
-| 6. Experience Delivery                  | Web, mobile, AI assistant, brand analytics                                                               |
-| 7. Observability, Governance & Learning | Consent management, audit, model monitoring, continuous learning                                         |
-
-*For detailed architecture, see `Aura_Master_Platform_Specification.md` §3*
+For implementation detail, see `Aura_Shared_Platform_Integration_Spec.md`.
 
 ---
 
-## 4. Technology Summary (Summary)
+## Technology Summary
 
-| Layer       | Technology                 | Purpose                                                                                     |
-| ----------- | -------------------------- | ------------------------------------------------------------------------------------------- |
-| Frontend    | React Router v7, Tailwind   | Web/mobile UI with SSR, data fetching, streaming                                           |
-| User API    | Node.js + Fastify + Prisma  | Profile management, preferences, feed delivery, real-time, CRUD                              |
-| Core Domain | Java 21 + ActiveJ          | Recommendation engine, ingestion workers, ranking pipeline, high-throughput event processing |
-| ML Inference| Python + FastAPI           | Model serving, feature computation, batch pipelines                                          |
-
-*For complete technology stack, see `Aura_Technical_Stack_Blueprint.md`*
-
----
-
-## 5. Document Navigation
-
-### Product & Strategy
-- `Aura_PRD_v1.md` - Product Requirements Document
-- `Aura_Consumer_Value_Operating_Model.md` - How Aura delivers concrete value and trust to consumers
-- `Aura_Task_Execution_Matrix.md` - Task-level what/how/where/validation guide for active delivery
-- `Aura_24_Month_Strategy.md` - Long-term product strategy
-- `Aura_Product_Roadmap_Epics.md` - Engineering epic breakdown
-- `Aura_GTM_Strategy.md` - Go-to-market strategy
-- `Aura_Defensibility_Strategy.md` - Competitive moats
-
-### Architecture & Technical
-- `Aura_System_Architecture.md` - Detailed system architecture
-- `Aura_Intelligence_Platform_Architecture.md` - AI platform design
-- `Aura_Data_Architecture.md` - Data model and domains
-- `Aura_Database_Schema_Prisma.md` - Complete database schema
-- `Aura_Event_Architecture.md` - Event-driven design
-- `Aura_C4_Architecture_Diagrams.md` - Visual architecture diagrams
-
-### AI & Intelligence
-- `Aura_AI_ML_Data_Operating_Model.md` - Data quality, model risk, label strategy, and learning loops
-- `Aura_AI_Engine_Design.md` - AI model architecture
-- `Aura_AI_Agent_Architecture.md` - Specialized AI agents
-- `Aura_AI_Model_Training_Pipeline.md` - ML training pipeline
-- `Aura_Personal_Intelligence_Engine_Spec.md` - Personal intelligence system
-- `Aura_Recommendation_Algorithms.md` - Recommendation algorithms
-
-### Knowledge & Ontology
-- `Aura_Knowledge_Graph.md` - Knowledge graph design
-- `Aura_Ingredient_Knowledge_Graph.md` - Ingredient relationships
-- `Aura_Shade_Color_Ontology.md` - Shade matching system
-- `Aura_Style_Archetype_Taxonomy.md` - Style classification
-- `Aura_Product_Similarity_Model.md` - Product similarity
-
-### Implementation & Operations
-- `Aura_Monorepo_Structure.md` - Code organization
-- `Aura_Task_Execution_Matrix.md` - Task execution map for active delivery work
-- `Aura_Engineering_Sprint_Plan_6_Months.md` - Development timeline
-- `Aura_UI_UX_Blueprint.md` - Design system
-- `Aura_API_Contracts.md` - API specifications
-- `Aura_Technical_Stack_Blueprint.md` - Technology choices
-
-### Business & Market
-- `Aura_Competitive_Landscape.md` - Market analysis
-- `Aura_Canonical_Platform_Specification.md` - This document
+| Layer | Technology | Purpose |
+| ----- | ---------- | ------- |
+| Frontend | React 19 + React Router v7 + Tailwind CSS | web UI, SSR, streaming, data loading |
+| Mobile | React Native | mobile experience |
+| User API | Node.js + Fastify + Prisma | client-facing GraphQL/REST and BFF flows |
+| Core Domain | Java 21 + ActiveJ | ingestion, ranking, asynchronous domain work |
+| Event Plane | AEP | cross-process async communication, replay, DLQ |
+| Data Plane | Data Cloud | managed persistence, retention, export, restore |
+| ML Runtime | Python + FastAPI | inference and ML-specific runtime |
+| CI/CD | Gitea Actions | build, test, release automation |
 
 ---
 
-## 6. Implementation Guidance
+## Launch Milestones
 
-1. **Always start with `Aura_Master_Platform_Specification.md`** for authoritative requirements
-2. **Use specialized documents** for detailed implementation guidance
-3. **Check cross-references** in each document for related specifications
-4. **Report conflicts** between documents to maintain authority hierarchy
+| Milestone | Target Timing | Scope |
+| --------- | ------------- | ----- |
+| Internal alpha | Month 3 | internal or employee-like cohort, ~50 users |
+| Invite beta | Month 5 launch with Month 5-6 ramp | invite-only external cohort, up to ~500 users |
+| Public launch | Month 8 | beauty-first public launch after hardening |
 
 ---
 
-**Status**: ✅ CURRENT - Executive summary only  
-**Authority**: ❌ NON-AUTHORITATIVE - Reference master specification  
+## Roadmap Summary
+
+| Phase | Focus | Timeline |
+| ----- | ----- | -------- |
+| Phase 1 — Curated Me | beauty MVP: ingestion, shade matching, ingredient analysis, recommendation feed | Months 1-3 |
+| Phase 2 — Aura Insights | explainability, sentiment, experimentation, AI-assisted personalization | Months 4-6 |
+| Phase 3 — Bio Sync | context-aware wellness and routine intelligence | Months 7-9 |
+| Phase 4 — Aura Collective | community, verified reviews, twin-user features, brand analytics | Months 10+ |
+
+---
+
+## Document Navigation
+
+### Strategy and Product
+
+- `Aura_Master_Platform_Specification.md`
+- `Aura_PRD_v1.md`
+- `Aura_Consumer_Value_Operating_Model.md`
+- `Aura_24_Month_Strategy.md`
+- `Aura_Product_Roadmap_Epics.md`
+- `Aura_GTM_Strategy.md`
+- `Aura_Defensibility_Strategy.md`
+- `Aura_Competitive_Landscape.md`
+
+### Architecture and Execution
+
+- `Aura_System_Architecture.md`
+- `Aura_Intelligence_Platform_Architecture.md`
+- `Aura_Shared_Platform_Integration_Spec.md`
+- `Aura_C4_Architecture_Diagrams.md`
+- `Aura_Monorepo_Structure.md`
+- `Aura_Technical_Stack_Blueprint.md`
+- `Aura_Task_Execution_Matrix.md`
+- `Aura_Long_Horizon_Task_Execution_Matrix.md`
+- `Aura_Full_Product_Implementation_Plan_104_Weeks.md`
+- `Aura_Engineering_Sprint_Plan_6_Months.md`
+
+### Data, AI, and Knowledge
+
+- `Aura_Data_Architecture.md`
+- `Aura_Database_Schema_Prisma.md`
+- `Aura_API_Contracts.md`
+- `Aura_Event_Architecture.md`
+- `Aura_AI_ML_Data_Operating_Model.md`
+- `Aura_AI_Model_Training_Pipeline.md`
+- `Aura_AI_Engine_Design.md`
+- `Aura_AI_Agent_Architecture.md`
+- `Aura_Personal_Intelligence_Engine_Spec.md`
+- `Aura_Recommendation_Algorithms.md`
+- `Aura_Knowledge_Graph.md`
+- `Aura_Ingredient_Knowledge_Graph.md`
+- `Aura_Shade_Color_Ontology.md`
+- `Aura_Style_Archetype_Taxonomy.md`
+- `Aura_Product_Similarity_Model.md`
+
+### UX and Testing
+
+- `Aura_UI_UX_Blueprint.md`
+- `testing/Aura_Test_Plan_and_Traceability.md`
+- `testing/Aura_Test_Cases_01_Product_UX_Privacy.md`
+- `testing/Aura_Test_Cases_02_Recommendation_AI_Knowledge.md`
+- `testing/Aura_Test_Cases_03_API_Data_Events.md`
+- `testing/Aura_Test_Cases_04_Platform_Architecture_Operations.md`
+- `testing/Aura_Test_Cases_05_Strategy_GTM_Business_Validation.md`
+- `testing/Aura_Test_Cases_06_Performance_Chaos_Recovery_Reuse.md`
+
+---
+
+## Governance Note
+
+1. Start with `Aura_Master_Platform_Specification.md` for any scope, consent, contract, or KPI decision.
+2. Use `Aura_Shared_Platform_Integration_Spec.md` before implementing any AEP or Data Cloud dependency.
+3. Use the task execution matrices before coding scheduled work.
+4. Update the test plan and detailed cases before implementing new behavior.
+
+---
+
+**Status**: CURRENT
+**Authority**: NON-AUTHORITATIVE
 **Last Updated**: March 2026
-
-| Layer                                                     | Technology                            |
-| --------------------------------------------------------- | ------------------------------------- |
-| User API (CRUD, preferences, real-time)                   | Node.js + Fastify + Prisma            |
-| Core Domain (recommendations, ranking, ingestion workers) | Java 21 + ActiveJ                     |
-| Frontend                                                  | React Router v7 + Tailwind CSS        |
-| Mobile                                                    | React Native                          |
-| Databases                                                 | PostgreSQL, Redis, pgvector           |
-| ML Inference                                              | Python + FastAPI inference service    |
-| Observability                                             | Micrometer, OpenTelemetry, Prometheus |
-| Infrastructure                                            | Docker, Kubernetes                    |
-
----
-
-## 5. Roadmap Summary
-
-| Phase                     | Focus                                                                           | Timeline   |
-| ------------------------- | ------------------------------------------------------------------------------- | ---------- |
-| Phase 1 — Curated Me      | Beauty MVP: ingestion, shade matching, ingredient analysis, recommendation feed | Months 1–3 |
-| Phase 2 — Aura Insights   | AI personalization: skin analysis, sentiment engine, explainability             | Months 4–6 |
-| Phase 3 — Bio Sync        | Context-aware: wearables, routine builder, mood-based styling                   | Months 7–9 |
-| Phase 4 — Aura Collective | Community: twin networks, verified reviews, shared routines                     | Months 10+ |
-
----
-
-## 6. Document Index
-
-### Strategy & Vision
-
-- [Aura_PRD_v1.md](Aura_PRD_v1.md) — Product requirements, user problems, success criteria
-- [Aura_Consumer_Value_Operating_Model.md](Aura_Consumer_Value_Operating_Model.md) — Consumer value loops, trust contract, outcome-first delivery
-- [Aura_24_Month_Strategy.md](Aura_24_Month_Strategy.md) — 24-month objectives and milestones
-- [Aura_Product_Roadmap_Epics.md](Aura_Product_Roadmap_Epics.md) — Engineering epics by phase
-- [Aura_GTM_Strategy.md](Aura_GTM_Strategy.md) — Go-to-market channels and growth loops
-- [Aura_Defensibility_Strategy.md](Aura_Defensibility_Strategy.md) — Competitive moats
-- [Aura_Competitive_Landscape.md](Aura_Competitive_Landscape.md) — Competitor analysis and positioning
-
-### Architecture
-
-- [Aura_Master_Platform_Specification.md](Aura_Master_Platform_Specification.md) — **Comprehensive platform spec (start here for deep dives)**
-- [Aura_System_Architecture.md](Aura_System_Architecture.md) — Layered architecture blueprint
-- [Aura_Intelligence_Platform_Architecture.md](Aura_Intelligence_Platform_Architecture.md) — Detailed intelligence layer design
-- [Aura_C4_Architecture_Diagrams.md](Aura_C4_Architecture_Diagrams.md) — System context, container, component, and deployment diagrams
-- [Aura_Monorepo_Structure.md](Aura_Monorepo_Structure.md) — Repository layout
-
-### AI & Intelligence
-
-- [Aura_AI_ML_Data_Operating_Model.md](Aura_AI_ML_Data_Operating_Model.md) — Data tiers, label strategy, model controls, review operations
-- [Aura_Personal_Intelligence_Engine_Spec.md](Aura_Personal_Intelligence_Engine_Spec.md) — You Index, context engine, reasoning engine
-- [Aura_Recommendation_Algorithms.md](Aura_Recommendation_Algorithms.md) — Scoring formulas, ranking pipeline
-- [Aura_AI_Engine_Design.md](Aura_AI_Engine_Design.md) — AI models for shade matching, ingredient safety, ranking
-- [Aura_AI_Model_Training_Pipeline.md](Aura_AI_Model_Training_Pipeline.md) — Model training, evaluation, deployment
-- [Aura_AI_Agent_Architecture.md](Aura_AI_Agent_Architecture.md) — Specialized agents and orchestration
-
-### Knowledge Models
-
-- [Aura_Knowledge_Graph.md](Aura_Knowledge_Graph.md) — Core entity relationships
-- [Aura_Ingredient_Knowledge_Graph.md](Aura_Ingredient_Knowledge_Graph.md) — Ingredient safety and compatibility graph
-- [Aura_Shade_Color_Ontology.md](Aura_Shade_Color_Ontology.md) — Cross-brand shade standardization
-- [Aura_Style_Archetype_Taxonomy.md](Aura_Style_Archetype_Taxonomy.md) — Fashion style classification
-- [Aura_Product_Similarity_Model.md](Aura_Product_Similarity_Model.md) — Dupe detection and alternative recommendations
-
-### Data & APIs
-
-- [Aura_Data_Architecture.md](Aura_Data_Architecture.md) — Domain data model overview
-- [Aura_Database_Schema_Prisma.md](Aura_Database_Schema_Prisma.md) — Complete Prisma/PostgreSQL schema
-- [Aura_API_Contracts.md](Aura_API_Contracts.md) — GraphQL and REST API definitions
-- [Aura_Event_Architecture.md](Aura_Event_Architecture.md) — Event streams, topics, and processing
-
-### Engineering
-
-- [Aura_Task_Execution_Matrix.md](Aura_Task_Execution_Matrix.md) — Sprint task execution map with what/how/where/validation
-- [Aura_Technical_Stack_Blueprint.md](Aura_Technical_Stack_Blueprint.md) — Technology decisions and rationale
-- [Aura_Engineering_Sprint_Plan_6_Months.md](Aura_Engineering_Sprint_Plan_6_Months.md) — Sprint-level execution plan
-
-### UX
-
-- [Aura_UI_UX_Blueprint.md](Aura_UI_UX_Blueprint.md) — Core screens and design principles
-
----
-
-## 7. Governance Note
-
-- Use [Aura_Master_Platform_Specification.md](Aura_Master_Platform_Specification.md) when defining scope, privacy boundaries, API/event/schema semantics, or success metrics.
-- Use specialized documents for detail after the Master spec has already established the governing decision.

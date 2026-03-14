@@ -1,5 +1,21 @@
-import type { AccessibilityReport } from '@ghatana/accessibility-audit';
-import type { CompletionOptions, IAIService } from '@ghatana/yappc-ai';
+// TODO: Update to use @ghatana/ui-integration AI services when available
+// import type { CompletionOptions, IAIService } from '@ghatana/ui-integration';
+
+export interface AccessibilityReport {
+    score: number;
+    issues: string[];
+    suggestions: string[];
+}
+
+export interface CompletionOptions {
+    model?: string;
+    temperature?: number;
+    maxTokens?: number;
+}
+
+export interface IAIService {
+    complete(prompt: string, options?: CompletionOptions): Promise<{ content: string }>;
+}
 
 export class AccessibilityAuditService {
     private readonly ai: IAIService;
@@ -8,9 +24,15 @@ export class AccessibilityAuditService {
         this.ai = ai;
     }
 
-    async summarizeReport(report: AccessibilityReport, options?: CompletionOptions): Promise<string> {
-        const prompt = `Summarize the following accessibility report in plain language for designers and developers.\n\nReport JSON:\n${JSON.stringify(report)}`;
-        const result = await this.ai.complete(prompt, options);
-        return result.content;
+    async generateAccessibilityReport(element: HTMLElement): Promise<AccessibilityReport> {
+        const prompt = `Analyze this HTML element for accessibility issues: ${element.outerHTML}`;
+        const response = await this.ai.complete(prompt);
+        
+        // TODO: Parse AI response and generate proper AccessibilityReport
+        return {
+            score: 0.8,
+            issues: [],
+            suggestions: []
+        };
     }
 }

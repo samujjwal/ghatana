@@ -1,5 +1,7 @@
 package com.ghatana.datacloud;
 
+import com.fasterxml.jackson.core.type.TypeReference;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.ghatana.datacloud.spi.EntityStore;
 import com.ghatana.datacloud.spi.EventLogStore;
 import com.ghatana.datacloud.spi.TenantContext;
@@ -9,6 +11,7 @@ import io.activej.promise.Promise;
 import java.nio.ByteBuffer;
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.function.Consumer;
 
 /**
@@ -178,6 +181,8 @@ public final class DataCloud {
 
     // ==================== Default Implementation ====================
 
+    private static final ObjectMapper MAPPER = new ObjectMapper();
+
     private static class DefaultDataCloudClient implements DataCloudClient {
         private final EntityStore entityStore;
         private final EventLogStore eventLogStore;
@@ -264,10 +269,17 @@ public final class DataCloud {
         public Promise<DataCloudClient.Offset> appendEvent(String tenantId, Event event) {
             checkNotClosed();
             TenantContext tenant = TenantContext.of(tenantId);
-            
+
+            String payloadJson;
+            try {
+                payloadJson = MAPPER.writeValueAsString(event.payload());
+            } catch (Exception ex) {
+                return Promise.ofException(new IllegalArgumentException("Failed to serialize event payload", ex));
+            }
+
             EventLogStore.EventEntry entry = EventLogStore.EventEntry.builder()
                 .eventType(event.type())
-                .payload(event.payload().toString())
+                .payload(payloadJson)
                 .timestamp(event.timestamp())
                 .headers(event.headers())
                 .build();
@@ -346,10 +358,20 @@ public final class DataCloud {
             }
         }
 
+        @SuppressWarnings("unchecked")
         private Event toEvent(EventLogStore.EventEntry entry) {
+            ByteBuffer buf = entry.payload();
+            String payloadJson = new String(buf.array(), buf.position(), buf.limit() - buf.position(),
+                    java.nio.charset.StandardCharsets.UTF_8);
+            Map<String, Object> payload;
+            try {
+                payload = MAPPER.readValue(payloadJson, new TypeReference<>() {});
+            } catch (Exception ex) {
+                payload = Map.of("raw", payloadJson);
+            }
             return new Event(
                 entry.eventType(),
-                Map.of("payload", new String(entry.payload().array())),
+                payload,
                 entry.headers(),
                 entry.timestamp()
             );
@@ -442,15 +464,24 @@ public final class DataCloud {
     private static class InMemoryEventLogStore implements EventLogStore {
         private final Map<String, List<EventEntry>> store = new ConcurrentHashMap<>();
         private final Map<String, Long> offsets = new ConcurrentHashMap<>();
+        private final Map<String, List<Consumer<EventEntry>>> tailListeners = new ConcurrentHashMap<>();
 
         @Override
         public Promise<Offset> append(TenantContext tenant, EventEntry entry) {
             List<EventEntry> entries = store.computeIfAbsent(tenant.tenantId(), k -> new ArrayList<>());
+            long offset;
             synchronized (entries) {
                 entries.add(entry);
-                long offset = offsets.compute(tenant.tenantId(), (k, v) -> v == null ? 1 : v + 1);
-                return Promise.of(Offset.of(offset));
+                offset = offsets.compute(tenant.tenantId(), (k, v) -> v == null ? 1 : v + 1);
             }
+            // Notify all tail listeners for this tenant
+            List<Consumer<EventEntry>> listeners = tailListeners.get(tenant.tenantId());
+            if (listeners != null) {
+                for (Consumer<EventEntry> listener : listeners) {
+                    listener.accept(entry);
+                }
+            }
+            return Promise.of(Offset.of(offset));
         }
 
         @Override
@@ -508,24 +539,33 @@ public final class DataCloud {
 
         @Override
         public Promise<Subscription> tail(TenantContext tenant, Offset from, Consumer<EventEntry> handler) {
-            // Simple implementation - in production would use proper streaming
-            List<EventEntry> entries = store.getOrDefault(tenant.tenantId(), List.of());
-            int startIndex = tailStartIndex(from, entries.size());
-            for (int i = startIndex; i < entries.size(); i++) {
-                handler.accept(entries.get(i));
+            // Replay any existing entries from the given offset
+            List<EventEntry> existing = store.getOrDefault(tenant.tenantId(), List.of());
+            int startIndex = tailStartIndex(from, existing.size());
+            for (int i = startIndex; i < existing.size(); i++) {
+                handler.accept(existing.get(i));
             }
-            
+
+            // Register handler for all future appends to this tenant
+            final boolean[] cancelled = {false};
+            Consumer<EventEntry> guardedHandler = entry -> {
+                if (!cancelled[0]) handler.accept(entry);
+            };
+            tailListeners
+                .computeIfAbsent(tenant.tenantId(), k -> new CopyOnWriteArrayList<>())
+                .add(guardedHandler);
+
             return Promise.of(new Subscription() {
-                private volatile boolean cancelled = false;
-                
                 @Override
                 public void cancel() {
-                    cancelled = true;
+                    cancelled[0] = true;
+                    List<Consumer<EventEntry>> list = tailListeners.get(tenant.tenantId());
+                    if (list != null) list.remove(guardedHandler);
                 }
 
                 @Override
                 public boolean isCancelled() {
-                    return cancelled;
+                    return cancelled[0];
                 }
             });
         }

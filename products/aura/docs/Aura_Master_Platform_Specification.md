@@ -1,6 +1,6 @@
 # Aura Master Platform Specification
 
-Version: 2.1
+Version: 2.2
 Date: March 2026
 
 ## Document Authority & Navigation
@@ -44,7 +44,10 @@ Detailed execution guidance lives in:
 
 - `Aura_Consumer_Value_Operating_Model.md` for how Aura proves value to consumers session by session
 - `Aura_AI_ML_Data_Operating_Model.md` for how Aura manages data quality, model risk, and learning loops
+- `Aura_Shared_Platform_Integration_Spec.md` for how Aura integrates AEP, Data Cloud, and shared platform services
 - `Aura_Task_Execution_Matrix.md` for task-level what/how/where/validation detail across active delivery work
+- `Aura_Long_Horizon_Task_Execution_Matrix.md` for task-level execution detail across Weeks 25-104
+- `Aura_Full_Product_Implementation_Plan_104_Weeks.md` for the long-horizon full-product sequencing and reuse-first implementation plan
 
 ---
 
@@ -63,6 +66,12 @@ Detailed execution guidance lives in:
 # 3. System Architecture
 
 Aura uses a **7-layer platform architecture**. Each layer has a clear responsibility boundary and communicates with adjacent layers through defined APIs or events.
+
+## Shared Platform Boundary Rules
+
+- **AEP is the only event communication path:** Aura publishes and consumes cross-process events through `products/aep/platform` and its contracts. Aura code must not integrate directly with Event Cloud or raw broker infrastructure.
+- **Data Cloud is the authoritative data-management plane:** Durable data handling, storage lifecycle, lineage, retention, export assembly, and plugin-managed data access run through `products/data-cloud/platform` or an approved `products/data-cloud/spi` plugin. Aura may define logical schemas and dataset contracts, but not bypass Data Cloud for managed data paths.
+- **Security, auth, audit, and observability are shared capabilities:** Aura integrates shared auth, security, governance, and o11y services/modules. Aura should not build product-local replacements for those cross-cutting concerns.
 
 ## Layer Overview
 
@@ -92,7 +101,7 @@ Collects and normalizes raw inputs. Responsibilities: source connection and sche
 
 Sources: retailer and affiliate feeds, brand product pages, ingredient databases, product reviews, community discussions, optional user-linked receipts, optional wellness integrations.
 
-Components: Source Adapters, Crawl Scheduler, Parsing Workers, Enrichment Workers, Deduplication Service, Catalog Merge Service.
+Components: Source Adapters, Crawl Scheduler, Parsing Workers, Enrichment Workers, Deduplication Service, Catalog Merge Service, Data Cloud dataset/plugin writers, AEP publishers.
 
 ### Layer 2 — Canonical Knowledge
 
@@ -100,7 +109,7 @@ Converts normalized inputs into durable, structured platform intelligence.
 
 Stores: Product Catalog, Ingredient Graph, Shade Ontology, Style Taxonomy, Review and Community Corpus, Source Provenance Store.
 
-Storage: PostgreSQL (canonical entities), pgvector (semantic retrieval), object storage (raw snapshots), Redis (hot paths).
+Storage: Data Cloud-managed relational, vector, cache, and object-storage plugins for canonical entities, semantic retrieval, raw snapshots, and hot paths.
 
 ### Layer 3 — Personal Intelligence
 
@@ -132,7 +141,7 @@ Agents: Discovery Agent, Ingredient Safety Agent, Shade Matching Agent, Communit
 
 Orchestration flow: User Intent → Intent Interpreter → Discovery Agent → Compatibility Agent → Safety Agent → Ranking Engine → Explanation Agent → Result.
 
-Principles: structured intermediate outputs, event-driven coordination, traceable reasoning chain, deterministic fallback paths.
+Principles: structured intermediate outputs, AEP-mediated coordination, traceable reasoning chain, deterministic fallback paths.
 
 ### Layer 6 — Experience Delivery
 
@@ -146,7 +155,7 @@ Core experiences: personalized feed, product detail intelligence panel, compare 
 
 Cross-cutting concerns ensuring trust, compliance, and continuous improvement.
 
-Capabilities: consent management (per-scope, revocable), audit logging (all sensitive mutations), recommendation quality monitoring, feature and score drift detection, fairness checks across skin-tone cohorts, model lifecycle management, privacy controls, and post-purchase/post-use safety outcome triage.
+Capabilities: consent management (per-scope, revocable), audit logging (all sensitive mutations), recommendation quality monitoring, feature and score drift detection, fairness checks across skin-tone cohorts, model lifecycle management, privacy controls, and post-purchase/post-use safety outcome triage, implemented through shared governance, security, and observability capabilities.
 
 ---
 
@@ -173,10 +182,12 @@ Capabilities: consent management (per-scope, revocable), audit logging (all sens
 
 ## Database Technology
 
-- **PostgreSQL**: canonical entities, transactional data, recommendation records
-- **pgvector**: product and ingredient embeddings for semantic retrieval
-- **Redis**: hot recommendation paths, session context, rate limiting
-- **Object Storage**: raw ingestion payloads, ML training snapshots, audit archives
+- **Data Cloud relational plugin**: canonical entities, transactional data, recommendation records
+- **Data Cloud vector plugin**: product and ingredient embeddings for semantic retrieval
+- **Data Cloud cache plugin**: hot recommendation paths, session context, rate limiting
+- **Data Cloud object-storage plugin**: raw ingestion payloads, ML training snapshots, audit archives
+
+Aura may reference PostgreSQL, pgvector, Redis, or S3-compatible storage as underlying Data Cloud implementations, but Aura-owned code should integrate through Data Cloud-managed interfaces and plugins.
 
 See [Aura_Database_Schema_Prisma.md](Aura_Database_Schema_Prisma.md) for the authoritative Prisma schema.
 
@@ -343,7 +354,7 @@ Aura uses an event-driven architecture for asynchronous scaling, service decoupl
 | `aura.feedback`       | FeedbackCaptured (view, click, save, dismiss, purchase, helpful, not_helpful, rating) |
 | `aura.governance`     | AuditEvent, ModelDeployed, DriftDetected, FairnessAlertTriggered |
 
-All events are immutable, versioned, and include `occurredAt` timestamps. Consumers must be idempotent.
+All events are immutable, versioned, and include `occurredAt` timestamps. Consumers must be idempotent. Cross-process publication and subscription happen through AEP only.
 
 See [Aura_Event_Architecture.md](Aura_Event_Architecture.md) for canonical event schemas.
 
@@ -370,19 +381,23 @@ Aura follows a hybrid backend strategy with clear seam between user-facing CRUD 
 | User API         | Node.js + Fastify + Prisma            |
 | Core Domain      | Java 21 + ActiveJ                     |
 | GraphQL Gateway  | Node.js + Fastify                     |
-| Primary DB       | PostgreSQL                            |
-| Vector Search    | pgvector (PostgreSQL extension)       |
-| Cache            | Redis                                 |
-| Object Storage   | S3-compatible                         |
+| Event Plane      | AEP                                   |
+| Data Plane       | Data Cloud + approved Data Cloud plugins |
+| Relational Store | Data Cloud-managed PostgreSQL plugin  |
+| Vector Search    | Data Cloud-managed pgvector plugin    |
+| Cache            | Data Cloud-managed Redis plugin       |
+| Object Storage   | Data Cloud-managed S3-compatible plugin |
 | ML Model Serving | Python + FastAPI                      |
 | ML Training      | PyTorch, scikit-learn                 |
-| Observability    | Micrometer, OpenTelemetry, Prometheus |
+| Security/Auth    | Shared auth service, security modules |
+| Observability    | Shared o11y platform via Micrometer, OpenTelemetry, Prometheus |
 | Infrastructure   | Docker, Kubernetes                    |
 | CI/CD            | Gitea Actions                         |
 
 Aura keeps the early-stage deployment surface intentionally small: `api`, `core-worker`, and
 `ml-inference`. Product domains stay modular through explicit internal boundaries and shared
-contracts, not through day-one service sprawl.
+contracts, not through day-one service sprawl. Aura owns product behavior, while AEP, Data Cloud,
+shared security, and shared o11y own the underlying event, data, and cross-cutting platform planes.
 
 See [Aura_Technical_Stack_Blueprint.md](Aura_Technical_Stack_Blueprint.md) for decisions and rationale.
 
@@ -449,6 +464,14 @@ clear operational benefit.
 | Phase 3 | Bio Sync        | Months 7–9 | Context-aware      | wearable integrations, routine builder, mood-based styling                               |
 | Phase 4 | Aura Collective | Months 10+ | Community          | twin-user discovery, verified reviews, shared routines, brand analytics                  |
 
+### Launch Milestones
+
+| Milestone | Target Timing | Scope |
+| --------- | ------------- | ----- |
+| Internal alpha | Month 3 | internal or employee-like cohort, ~50 users, trust and instrumentation validation |
+| Invite beta | Month 5 launch with Month 5-6 ramp | external invite-only cohort, up to ~500 users, trust and outcome measurement |
+| Public launch | Month 8 | broad beauty-first public availability after hardening and launch review |
+
 ### Phase 1 Success Metrics
 
 - Median time-to-decision for supported beauty tasks ≤ 10 minutes
@@ -471,8 +494,8 @@ clear operational benefit.
 
 | Stream               | Description                                                                                            | Timeline |
 | -------------------- | ------------------------------------------------------------------------------------------------------ | -------- |
-| Affiliate Commerce   | Commission on purchases made through Aura links                                                        | Phase 1  |
-| Premium Subscription | Advanced features: enhanced AI analysis, unlimited comparisons, routine automation                     | Phase 2  |
+| Affiliate Commerce   | Commission on purchases made through Aura links                                                        | Phase 2  |
+| Premium Subscription | Advanced features: enhanced AI analysis, unlimited comparisons, routine automation                     | Phase 3+ |
 | Brand Analytics      | Anonymized insights dashboard for brands: ingredient performance, shade satisfaction, sentiment trends | Phase 4  |
 
 ---

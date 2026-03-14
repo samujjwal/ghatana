@@ -1,4 +1,4 @@
-import { DynamicForm, type FieldConfig } from '@ghatana/ui';
+import { DynamicForm, type FieldConfig } from '@ghatana/design-system';
 import type { Policy } from './PolicyManagement';
 
 /**

@@ -1,0 +1,372 @@
+---
+# PostgreSQL Point-in-Time Recovery (PITR) Configuration — Data-Cloud Platform
+#
+# Provides continuous WAL archiving + scheduled base backups, enabling recovery
+# to any point in time within the configured retention window.
+#
+# Scheme:
+#   WAL archiving:   continuous (archive_command fires per WAL segment, ~16 MB)
+#   Base backup:     daily at 01:00 UTC (pg_basebackup -Ft -z)
+#   Retention:       7 daily base backups (older ones pruned by cleanup CronJob)
+#   Storage backend: S3-compatible (Ceph/MinIO configured via Secret)
+#
+# Recovery target granularity: 16 MB (one WAL segment) ≈ seconds on busy systems.
+#
+# Required Secret (create before applying):
+#   kubectl create secret generic postgres-pitr-credentials \
+#     --from-literal=AWS_ACCESS_KEY_ID=<key> \
+#     --from-literal=AWS_SECRET_ACCESS_KEY=<secret> \
+#     --from-literal=POSTGRES_PASSWORD=<pg-superuser-pw> \
+#     -n data-cloud
+#
+# Required for WAL archiving:
+#   The following lines MUST be present in the PostgreSQL server's postgresql.conf
+#   (managed via the 'postgres-pitr-wal-config' ConfigMap below and mounted into
+#   the main PostgreSQL Pod via a volumeMount on /etc/postgresql/conf.d/):
+#
+#     wal_level          = replica
+#     archive_mode       = on
+#     archive_command    = '/scripts/wal-archive.sh %p %f'
+#     archive_timeout    = 300      # force WAL switch after 5 min of inactivity
+#     max_wal_size       = 1GB
+#     wal_keep_size      = 512MB    # keep some WAL locally for standbys
+#
+# ==============================================================================
+
+# ── 1. WAL archiving configuration ConfigMap ──────────────────────────────────
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: postgres-pitr-wal-config
+  namespace: data-cloud
+  labels:
+    app.kubernetes.io/name:       postgres-pitr
+    app.kubernetes.io/component:  wal-config
+    app.kubernetes.io/part-of:    data-cloud
+    app.kubernetes.io/managed-by: argocd
+  annotations:
+    # Changing this ConfigMap requires a rolling restart of the PostgreSQL Pod
+    # to pick up the new postgresql.conf settings.
+    config.kubernetes.io/update-strategy: rolling-restart
+data:
+  # postgresql.conf snippet — merged alongside the main config via include_dir
+  pitr.conf: |
+    # ---- Point-in-Time Recovery (PITR) settings ----
+    # These lines extend the base postgresql.conf via include_dir.
+    # Do NOT duplicate settings that already exist in the base config;
+    # PostgreSQL takes the LAST occurrence of each parameter.
+    wal_level           = replica
+    archive_mode        = on
+    # wal-archive.sh is mounted from the postgres-pitr-scripts ConfigMap below.
+    archive_command     = '/scripts/wal-archive.sh %p %f'
+    # Force a WAL switch after 5 min of inactivity so PITR granularity
+    # never exceeds ~5 min even during idle periods.
+    archive_timeout     = 300
+    # Keep 512 MB of WAL locally for standbys before removing; S3 is the
+    # authoritative WAL store once archive_command has succeeded.
+    max_wal_size        = 1GB
+    wal_keep_size       = 512MB
+
+  # PostgreSQL host-based authentication — allow replication connections from
+  # within the cluster for pg_basebackup (runs as user 'replicator').
+  pg_hba_pitr.conf: |
+    # TYPE  DATABASE    USER        ADDRESS                  METHOD
+    host    replication replicator  10.0.0.0/8               scram-sha-256
+    host    replication replicator  172.16.0.0/12            scram-sha-256
+    host    replication replicator  192.168.0.0/16           scram-sha-256
+
+---
+# ── 2. Shell scripts ConfigMap ────────────────────────────────────────────────
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: postgres-pitr-scripts
+  namespace: data-cloud
+  labels:
+    app.kubernetes.io/name:       postgres-pitr
+    app.kubernetes.io/component:  scripts
+    app.kubernetes.io/part-of:    data-cloud
+    app.kubernetes.io/managed-by: argocd
+data:
+  # WAL archive script — called by PostgreSQL archive_command for every WAL segment.
+  # Arg $1 (%p) = path on disk;  Arg $2 (%f) = WAL filename.
+  # Exit 0 = success (PostgreSQL advances; local WAL may be recycled).
+  # Non-zero exit = failure (PostgreSQL retries until success).
+  wal-archive.sh: |
+    #!/bin/bash
+    set -euo pipefail
+
+    WAL_PATH="$1"
+    WAL_FILE="$2"
+    S3_BUCKET="${S3_BUCKET:-ghatana-postgres-pitr}"
+    S3_PREFIX="${S3_PREFIX:-data-cloud/wal}"
+
+    # Destination: s3://<bucket>/<prefix>/<WAL_FILE>
+    aws s3 cp \
+      --only-show-errors \
+      --storage-class STANDARD_IA \
+      "${WAL_PATH}" \
+      "s3://${S3_BUCKET}/${S3_PREFIX}/${WAL_FILE}"
+
+    echo "WAL archived: ${WAL_FILE} -> s3://${S3_BUCKET}/${S3_PREFIX}/${WAL_FILE}"
+
+  # Base backup script — run by the pg-basebackup CronJob daily.
+  # Creates a compressed, tar-format base backup uploaded to S3.
+  basebackup.sh: |
+    #!/bin/bash
+    set -euo pipefail
+
+    BACKUP_DATE=$(date -u +%Y%m%d_%H%M%S)
+    BACKUP_DIR="/tmp/pgbackup_${BACKUP_DATE}"
+    S3_BUCKET="${S3_BUCKET:-ghatana-postgres-pitr}"
+    S3_PREFIX="${S3_PREFIX:-data-cloud/basebackup}"
+    POSTGRES_HOST="${POSTGRES_HOST:-postgres}"
+    POSTGRES_PORT="${POSTGRES_PORT:-5432}"
+    REPLICATOR_USER="${REPLICATOR_USER:-replicator}"
+
+    mkdir -p "${BACKUP_DIR}"
+    trap 'rm -rf "${BACKUP_DIR}"' EXIT
+
+    echo "[PITR] Starting base backup ${BACKUP_DATE} from ${POSTGRES_HOST}:${POSTGRES_PORT}"
+
+    # pg_basebackup flags:
+    #   -Ft  = tar format (one base.tar.gz + WAL segment tar)
+    #   -z   = gzip compression
+    #   -Xs  = stream WAL during backup (ensures consistent backup without WAL gaps)
+    #   -P   = progress
+    #   -R   = write recovery configuration (recovery.signal + postgresql.auto.conf)
+    PGPASSWORD="${REPLICATOR_PASSWORD}" pg_basebackup \
+      --host="${POSTGRES_HOST}" \
+      --port="${POSTGRES_PORT}" \
+      --username="${REPLICATOR_USER}" \
+      --pgdata="${BACKUP_DIR}" \
+      --format=tar \
+      --gzip \
+      --wal-method=stream \
+      --progress \
+      --write-recovery-conf \
+      --label="pitr_${BACKUP_DATE}"
+
+    echo "[PITR] Uploading base backup to S3..."
+    aws s3 sync \
+      --only-show-errors \
+      --storage-class STANDARD_IA \
+      "${BACKUP_DIR}/" \
+      "s3://${S3_BUCKET}/${S3_PREFIX}/${BACKUP_DATE}/"
+
+    # Write a manifest so the cleanup job can enumerate valid backup timestamps
+    echo "${BACKUP_DATE}" | \
+      aws s3 cp - "s3://${S3_BUCKET}/${S3_PREFIX}/latest"
+
+    echo "[PITR] Base backup complete: s3://${S3_BUCKET}/${S3_PREFIX}/${BACKUP_DATE}/"
+
+  # Cleanup script — retains the most recent $KEEP backups, deletes older ones.
+  cleanup.sh: |
+    #!/bin/bash
+    set -euo pipefail
+
+    S3_BUCKET="${S3_BUCKET:-ghatana-postgres-pitr}"
+    S3_PREFIX="${S3_PREFIX:-data-cloud/basebackup}"
+    KEEP="${KEEP_BACKUPS:-7}"
+
+    echo "[PITR Cleanup] Retaining last ${KEEP} base backups..."
+
+    # List backup timestamps (ISO-sortable directory names like 20260119_010005)
+    BACKUPS=$(aws s3 ls "s3://${S3_BUCKET}/${S3_PREFIX}/" \
+      | grep 'PRE ' \
+      | awk '{print $2}' \
+      | sed 's|/||' \
+      | sort)
+
+    TOTAL=$(echo "${BACKUPS}" | wc -l)
+    DELETE_COUNT=$((TOTAL - KEEP))
+
+    if [ "${DELETE_COUNT}" -le 0 ]; then
+      echo "[PITR Cleanup] Nothing to prune (total=${TOTAL}, keep=${KEEP})"
+      exit 0
+    fi
+
+    echo "${BACKUPS}" | head -n "${DELETE_COUNT}" | while read -r OLD_DIR; do
+      echo "[PITR Cleanup] Deleting old backup: ${OLD_DIR}"
+      aws s3 rm --recursive "s3://${S3_BUCKET}/${S3_PREFIX}/${OLD_DIR}/"
+    done
+
+    echo "[PITR Cleanup] Done. Retained last ${KEEP} of ${TOTAL} base backups."
+
+---
+# ── 3. Daily base backup CronJob ──────────────────────────────────────────────
+apiVersion: batch/v1
+kind: CronJob
+metadata:
+  name: postgres-basebackup
+  namespace: data-cloud
+  labels:
+    app.kubernetes.io/name:       postgres-pitr
+    app.kubernetes.io/component:  base-backup
+    app.kubernetes.io/part-of:    data-cloud
+    app.kubernetes.io/managed-by: argocd
+spec:
+  # Run at 01:00 UTC daily — chosen to overlap with the ClickHouse backup window
+  # (02:00 UTC) while giving 60 min of separation to avoid I/O contention.
+  schedule:                   "0 1 * * *"
+  concurrencyPolicy:          Forbid
+  successfulJobsHistoryLimit: 3
+  failedJobsHistoryLimit:     5
+  jobTemplate:
+    spec:
+      backoffLimit: 2
+      activeDeadlineSeconds: 10800   # 3 hours max (generous for large DBs)
+      template:
+        metadata:
+          labels:
+            app.kubernetes.io/name:      postgres-pitr
+            app.kubernetes.io/component: base-backup
+        spec:
+          restartPolicy: OnFailure
+          serviceAccountName: data-cloud-workload    # pre-existing SA with IRSA/Workload-Identity
+          securityContext:
+            runAsNonRoot: true
+            runAsUser:    999     # postgres UID in official postgres image
+            fsGroup:      999
+          containers:
+            - name: pg-basebackup
+              image: postgres:16-alpine
+              imagePullPolicy: IfNotPresent
+              command:
+                - /bin/bash
+                - /scripts/basebackup.sh
+              env:
+                - name: POSTGRES_HOST
+                  value: "postgres"
+                - name: POSTGRES_PORT
+                  value: "5432"
+                - name: REPLICATOR_USER
+                  value: "replicator"
+                - name: REPLICATOR_PASSWORD
+                  valueFrom:
+                    secretKeyRef:
+                      name: postgres-pitr-credentials
+                      key:  POSTGRES_PASSWORD
+                - name: AWS_ACCESS_KEY_ID
+                  valueFrom:
+                    secretKeyRef:
+                      name: postgres-pitr-credentials
+                      key:  AWS_ACCESS_KEY_ID
+                - name: AWS_SECRET_ACCESS_KEY
+                  valueFrom:
+                    secretKeyRef:
+                      name: postgres-pitr-credentials
+                      key:  AWS_SECRET_ACCESS_KEY
+                - name: AWS_DEFAULT_REGION
+                  value: "us-east-1"
+                - name: AWS_ENDPOINT_URL
+                  value: "http://ceph-rgw.ceph-system.svc.cluster.local:7480"
+                - name: S3_BUCKET
+                  value: "ghatana-postgres-pitr"
+                - name: S3_PREFIX
+                  value: "data-cloud/basebackup"
+              volumeMounts:
+                - name: scripts
+                  mountPath: /scripts
+                  readOnly: true
+              resources:
+                requests:
+                  cpu:    "100m"
+                  memory: "256Mi"
+                limits:
+                  cpu:    "2"
+                  memory: "1Gi"
+              securityContext:
+                allowPrivilegeEscalation: false
+                readOnlyRootFilesystem:   false   # pg_basebackup writes to /tmp
+                capabilities:
+                  drop: ["ALL"]
+          volumes:
+            - name: scripts
+              configMap:
+                name:        postgres-pitr-scripts
+                defaultMode: 0755    # scripts must be executable
+
+---
+# ── 4. Weekly base-backup cleanup CronJob ─────────────────────────────────────
+apiVersion: batch/v1
+kind: CronJob
+metadata:
+  name: postgres-pitr-cleanup
+  namespace: data-cloud
+  labels:
+    app.kubernetes.io/name:       postgres-pitr
+    app.kubernetes.io/component:  cleanup
+    app.kubernetes.io/part-of:    data-cloud
+    app.kubernetes.io/managed-by: argocd
+spec:
+  # Run weekly on Monday at 03:30 UTC, well after the daily base backup finishes.
+  schedule:                   "30 3 * * 1"
+  concurrencyPolicy:          Forbid
+  successfulJobsHistoryLimit: 2
+  failedJobsHistoryLimit:     3
+  jobTemplate:
+    spec:
+      backoffLimit: 1
+      activeDeadlineSeconds: 1800    # 30 min max
+      template:
+        metadata:
+          labels:
+            app.kubernetes.io/name:      postgres-pitr
+            app.kubernetes.io/component: cleanup
+        spec:
+          restartPolicy: OnFailure
+          serviceAccountName: data-cloud-workload
+          securityContext:
+            runAsNonRoot: true
+            runAsUser:    65534   # nobody
+            fsGroup:      65534
+          containers:
+            - name: pitr-cleanup
+              image: amazon/aws-cli:2.22.0
+              imagePullPolicy: IfNotPresent
+              command:
+                - /bin/bash
+                - /scripts/cleanup.sh
+              env:
+                - name: AWS_ACCESS_KEY_ID
+                  valueFrom:
+                    secretKeyRef:
+                      name: postgres-pitr-credentials
+                      key:  AWS_ACCESS_KEY_ID
+                - name: AWS_SECRET_ACCESS_KEY
+                  valueFrom:
+                    secretKeyRef:
+                      name: postgres-pitr-credentials
+                      key:  AWS_SECRET_ACCESS_KEY
+                - name: AWS_DEFAULT_REGION
+                  value: "us-east-1"
+                - name: AWS_ENDPOINT_URL
+                  value: "http://ceph-rgw.ceph-system.svc.cluster.local:7480"
+                - name: S3_BUCKET
+                  value: "ghatana-postgres-pitr"
+                - name: S3_PREFIX
+                  value: "data-cloud/basebackup"
+                - name: KEEP_BACKUPS
+                  value: "7"
+              volumeMounts:
+                - name: scripts
+                  mountPath: /scripts
+                  readOnly: true
+              resources:
+                requests:
+                  cpu:    "50m"
+                  memory: "64Mi"
+                limits:
+                  cpu:    "200m"
+                  memory: "128Mi"
+              securityContext:
+                allowPrivilegeEscalation: false
+                readOnlyRootFilesystem:   true
+                capabilities:
+                  drop: ["ALL"]
+          volumes:
+            - name: scripts
+              configMap:
+                name:        postgres-pitr-scripts
+                defaultMode: 0755

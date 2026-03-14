@@ -1,0 +1,137 @@
+---
+# Argo CD Application — Data-Cloud Platform
+# GitOps-driven continuous delivery (Argo CD, Apache 2.0 license)
+#
+# Deploys the data-cloud platform from the Ghatana monorepo to the
+# data-cloud namespace using Kustomize overlays.
+#
+# Sync strategy:
+#   - staging:    automated sync with self-heal enabled (fast feedback)
+#   - production: requires manual sync gate (controlled rollout)
+#
+# Apply this manifest to the Argo CD control-plane cluster:
+#   kubectl apply -f argocd-application.yaml -n argocd
+
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: data-cloud
+  namespace: argocd
+  labels:
+    product:     data-cloud
+    managed-by:  argocd
+    environment: production
+  annotations:
+    argocd.argoproj.io/sync-wave: "10"
+    # Notify Gitea on sync events (requires argocd-notifications with Gitea template)
+    notifications.argoproj.io/subscribe.on-sync-succeeded.gitea: ""
+    notifications.argoproj.io/subscribe.on-sync-failed.gitea:    ""
+  finalizers:
+    - resources-finalizer.argocd.argoproj.io
+spec:
+  project: ghatana-platform
+
+  source:
+    repoURL:        https://gitea.ghatana.internal/ghatana/ghatana.git
+    targetRevision: HEAD
+    path:           products/data-cloud/k8s
+    kustomize:
+      # Kustomize overlay selects the environment-specific values
+      patches: []
+      images:
+        - name:    data-cloud
+          newName: gitea.ghatana.internal/ghatana/ghatana/data-cloud
+          newTag:  "{{ .Values.image.tag | default \"latest\" }}"
+
+  destination:
+    server:    https://kubernetes.default.svc
+    namespace: data-cloud
+
+  syncPolicy:
+    automated:
+      prune:     false      # production: never auto-prune — require manual action
+      selfHeal:  false      # production: no self-heal — deliberate deployments only
+    syncOptions:
+      - CreateNamespace=true
+      - PruneLast=true
+      - ApplyOutOfSyncOnly=true
+      - RespectIgnoreDifferences=true
+    retry:
+      limit: 3
+      backoff:
+        duration:    30s
+        factor:      2
+        maxDuration: 5m
+
+  # Ignore differences that are managed externally (e.g., HPA replica count)
+  ignoreDifferences:
+    - group: apps
+      kind:  Deployment
+      jsonPointers:
+        - /spec/replicas
+    - group: autoscaling
+      kind:  HorizontalPodAutoscaler
+      jsonPointers:
+        - /spec/minReplicas
+        - /spec/maxReplicas
+
+  # Health checks — Argo CD will mark the app as Healthy only when all
+  # Deployment pods are ready and the Service has endpoints
+  revisionHistoryLimit: 10
+
+---
+# Staging variant — automated sync + self-heal for fast developer feedback
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: data-cloud-staging
+  namespace: argocd
+  labels:
+    product:     data-cloud
+    managed-by:  argocd
+    environment: staging
+  annotations:
+    argocd.argoproj.io/sync-wave: "5"
+    notifications.argoproj.io/subscribe.on-sync-succeeded.gitea: ""
+    notifications.argoproj.io/subscribe.on-sync-failed.gitea:    ""
+  finalizers:
+    - resources-finalizer.argocd.argoproj.io
+spec:
+  project: ghatana-platform
+
+  source:
+    repoURL:        https://gitea.ghatana.internal/ghatana/ghatana.git
+    targetRevision: HEAD
+    path:           products/data-cloud/k8s
+    kustomize:
+      images:
+        - name:    data-cloud
+          newName: gitea.ghatana.internal/ghatana/ghatana/data-cloud
+          newTag:  latest
+
+  destination:
+    server:    https://kubernetes.default.svc
+    namespace: data-cloud-staging
+
+  syncPolicy:
+    automated:
+      prune:    true        # staging: auto-prune removed resources
+      selfHeal: true        # staging: auto-correct drift immediately
+    syncOptions:
+      - CreateNamespace=true
+      - PruneLast=true
+      - ApplyOutOfSyncOnly=true
+    retry:
+      limit: 5
+      backoff:
+        duration:    15s
+        factor:      2
+        maxDuration: 3m
+
+  ignoreDifferences:
+    - group: apps
+      kind:  Deployment
+      jsonPointers:
+        - /spec/replicas
+
+  revisionHistoryLimit: 5

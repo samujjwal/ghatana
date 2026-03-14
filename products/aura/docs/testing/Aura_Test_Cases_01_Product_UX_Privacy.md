@@ -525,3 +525,51 @@ Steps:
 1. Compare card and detail layouts across breakpoints.
 Expected:
 - Reason text, confidence, trust flags, and affiliate labels remain visible on all supported breakpoints.
+
+---
+
+## H. High-Sensitivity Pilot UX
+
+### AURA-PUX-039 Selfie undertone pilot requires separate explicit consent and user action
+Level: E2E
+Priority: P0
+Source Docs: `Aura_AI_Engine_Design.md`, `Aura_Data_Architecture.md`, `Aura_Task_Execution_Matrix.md`
+Preconditions: Authenticated user without selfie-analysis scope.
+Steps:
+1. Open profile builder or recommendation flow where the pilot is available.
+2. Attempt to access selfie undertone inference without granting scope.
+3. Grant the selfie-analysis scope and explicitly start the pilot.
+Expected:
+- Pilot entry is blocked before consent.
+- Consent copy clearly identifies the high-sensitivity nature of the feature.
+- Granting the selfie scope does not silently start capture; a separate user action is required.
+- Core recommendation and profile flows remain usable without the pilot.
+
+### AURA-PUX-040 Selfie pilot result is shown as inferred data with confidence and override controls
+Level: E2E
+Priority: P0
+Source Docs: `Aura_AI_Engine_Design.md`, `Aura_UI_UX_Blueprint.md`, `Aura_PRD_v1.md`
+Preconditions: User completed the opt-in selfie pilot and received an undertone inference.
+Steps:
+1. Open the profile builder after inference completes.
+2. Inspect the undertone field and its origin metadata.
+3. Override the inferred undertone with a declared value.
+Expected:
+- Selfie-derived undertone is labeled as inferred rather than declared.
+- Confidence and origin metadata are visible to the user.
+- User can replace the inferred value with a declared value.
+- Subsequent recommendation flows prefer the declared override.
+
+### AURA-PUX-041 Revoking selfie-analysis consent disables the pilot without damaging declared profile data
+Level: E2E
+Priority: P0
+Source Docs: `Aura_Data_Architecture.md`, `Aura_API_Contracts.md`, `Aura_Task_Execution_Matrix.md`
+Preconditions: User previously granted selfie-analysis scope and has either inferred or overridden undertone data.
+Steps:
+1. Revoke the selfie-analysis scope.
+2. Re-open consent center, profile builder, and recommendation flows.
+Expected:
+- Pilot entry points become unavailable or clearly inactive.
+- Selfie-derived inferred attributes stop contributing to recommendations.
+- Any user-declared undertone remains intact.
+- Core recommendation quality does not degrade into an error state.

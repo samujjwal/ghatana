@@ -54,20 +54,20 @@ Brand analytics generate revenue → fund better product catalog coverage → re
 
 ## Launch Phases
 
-### Phase 1 — Closed Beta (Month 3)
+### Phase 1 — Internal Alpha (Month 3)
 
-- Invite-only access: ~500 carefully selected users from target community
+- Internal or employee-like cohort: ~50 users
 - Focus: shade matching and ingredient analysis flows
 - Goal: median time-to-decision < 10 minutes, explanation helpfulness ≥ 4.0 / 5.0, and complete instrumentation for shade / reaction / return outcomes
 
-### Phase 2 — Open Beta (Month 5)
+### Phase 2 — Invite Beta (Month 5 launch, Month 5-6 ramp)
 
-- Unrestricted sign-ups with waitlist management
+- External invite-only access scaling toward ~500 users
 - Creator partnership activations
 - Focus: recommendation quality, trust, and retention measurement
 - Goal: show early reduction in wrong-shade, adverse-reaction, and return signals vs. self-directed baseline
 
-### Phase 3 — Public Launch (Month 7)
+### Phase 3 — Public Launch (Month 8)
 
 - Full public availability
 - Press outreach and editorial placements
@@ -80,8 +80,8 @@ Brand analytics generate revenue → fund better product catalog coverage → re
 
 | Revenue Stream           | Launch Phase   | Mechanism                                                                    |
 | ------------------------ | -------------- | ---------------------------------------------------------------------------- |
-| **Affiliate Commerce**   | Phase 1 (Beta) | Commission on purchases through Aura purchase links; disclosed to users      |
-| **Premium Subscription** | Phase 2        | Enhanced AI analysis, advanced comparison, priority support                  |
+| **Affiliate Commerce**   | Phase 2        | Commission on purchases through Aura purchase links; disclosed to users      |
+| **Premium Subscription** | Phase 3+       | Enhanced AI analysis, advanced comparison, priority support                  |
 | **Brand Analytics**      | Phase 4        | Anonymized aggregate insights sold to beauty brands and ingredient suppliers |
 
 **Important:** Affiliate placements will never influence recommendation ranking. Affiliate links are generated post-rank. This is a core trust principle and must be maintained regardless of commercial pressure.
@@ -102,9 +102,9 @@ Brand analytics generate revenue → fund better product catalog coverage → re
 
 ### Secondary Growth
 
-| KPI                     | Phase 1 Target    | Phase 2 Target |
+| KPI                     | Phase 1 Target     | Phase 2 Target |
 | ----------------------- | ----------------- | -------------- |
-| Monthly active users    | 500 (closed beta) | 5,000+         |
+| Monthly active users    | 50 (internal alpha) | 500 (invite beta ramp) |
 | Profile completion rate | ≥ 70%             | ≥ 65%          |
 | D1 retention            | ≥ 50%             | ≥ 45%          |
 
@@ -113,7 +113,7 @@ Brand analytics generate revenue → fund better product catalog coverage → re
 | KPI                       | Phase 2 Target                          |
 | ------------------------- | --------------------------------------- |
 | Affiliate conversion rate | ≥ 2% of recommendation clicks           |
-| Revenue per active user   | Tracked; benchmark TBD post-launch data |
+| Revenue per active user   | Tracked during invite beta; formal target set after 90 days of launch data |
 
 ---
 

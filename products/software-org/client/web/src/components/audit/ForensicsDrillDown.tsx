@@ -11,7 +11,7 @@
  */
 
 import React, { useState } from 'react';
-import { Box, Card, Button, Stack, Chip } from '@ghatana/ui';
+import { Box, Card, Button, Stack, Chip } from '@ghatana/design-system';
 import type { AuditEntry } from '@/types/org.types';
 
 interface ForensicsDrillDownProps {

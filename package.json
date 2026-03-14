@@ -20,7 +20,8 @@
     "lint": "pnpm -r lint",
     "format": "prettier --write \"**/*.{ts,tsx,js,jsx,json,md}\"",
     "clean": "pnpm -r --parallel exec rm -rf node_modules dist build .turbo",
-    "typecheck": "pnpm -r --parallel --filter './platform/typescript/**' --filter './products/*/ui' exec tsc --noEmit"
+    "typecheck": "pnpm -r --parallel --filter './platform/typescript/**' --filter './products/*/ui' exec tsc --noEmit",
+    "check:deprecated-ui": "./scripts/check-deprecated-ui.sh"
   },
   "devDependencies": {
     "@types/node": "^20.11.0",

@@ -44,6 +44,9 @@ jobs:
       - name: Run lint
         run: pnpm -w dlx eslint "**/*.{ts,tsx,js,jsx}" --max-warnings=0
 
+      - name: Check for deprecated @ghatana/ui usage
+        run: pnpm run check:deprecated-ui
+
       - name: Type-check backend
         run: pnpm --filter ./products/dcmaar/apps/guardian/apps/backend... -w --silent
 

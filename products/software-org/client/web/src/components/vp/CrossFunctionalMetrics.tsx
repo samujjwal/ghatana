@@ -11,7 +11,6 @@ import React, { useState } from 'react';
 import {
     Grid,
     Card,
-    KpiCard,
     Box,
     Chip,
     LinearProgress,
@@ -26,7 +25,8 @@ import {
     TableBody,
     TableRow,
     TableCell,
-} from '@ghatana/ui';
+} from '@ghatana/design-system';
+import { KpiCard } from '@/shared/components/org';
 
 /**
  * Department comparison metrics
@@ -134,7 +134,7 @@ export interface CrossFunctionalMetricsProps {
  * - Cross-functional insights and recommendations
  * - Industry benchmark comparisons
  *
- * Reuses @ghatana/ui components:
+ * Reuses @ghatana/design-system components and shared org KPI cards:
  * - KpiCard (4 summary KPIs)
  * - Grid (responsive layouts)
  * - Card (comparison table, trends, insights)

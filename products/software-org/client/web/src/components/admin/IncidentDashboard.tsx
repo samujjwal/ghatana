@@ -7,7 +7,6 @@ import {
     Typography,
     TextField,
     Select,
-    MenuItem,
     Chip,
     IconButton,
     Badge,
@@ -15,7 +14,7 @@ import {
     InputAdornment,
     FormControl,
     InputLabel,
-} from '@ghatana/ui';
+} from '@ghatana/design-system';
 import { IncidentDetailPanel } from './IncidentDetailPanel';
 
 /**
@@ -393,11 +392,11 @@ export const IncidentDashboard: React.FC<IncidentDashboardProps> = ({
                                 label="Status"
                                 onChange={(e) => setFilterStatus(e.target.value as any)}
                             >
-                                <MenuItem value="all">All</MenuItem>
-                                <MenuItem value="open">Open</MenuItem>
-                                <MenuItem value="investigating">Investigating</MenuItem>
-                                <MenuItem value="resolved">Resolved</MenuItem>
-                                <MenuItem value="closed">Closed</MenuItem>
+                                <option value="all">All</option>
+                                <option value="open">Open</option>
+                                <option value="investigating">Investigating</option>
+                                <option value="resolved">Resolved</option>
+                                <option value="closed">Closed</option>
                             </Select>
                         </FormControl>
                     </Grid>
@@ -409,11 +408,11 @@ export const IncidentDashboard: React.FC<IncidentDashboardProps> = ({
                                 label="Priority"
                                 onChange={(e) => setFilterPriority(e.target.value as any)}
                             >
-                                <MenuItem value="all">All</MenuItem>
-                                <MenuItem value="critical">Critical</MenuItem>
-                                <MenuItem value="high">High</MenuItem>
-                                <MenuItem value="medium">Medium</MenuItem>
-                                <MenuItem value="low">Low</MenuItem>
+                                <option value="all">All</option>
+                                <option value="critical">Critical</option>
+                                <option value="high">High</option>
+                                <option value="medium">Medium</option>
+                                <option value="low">Low</option>
                             </Select>
                         </FormControl>
                     </Grid>
@@ -425,13 +424,13 @@ export const IncidentDashboard: React.FC<IncidentDashboardProps> = ({
                                 label="Category"
                                 onChange={(e) => setFilterCategory(e.target.value as any)}
                             >
-                                <MenuItem value="all">All</MenuItem>
-                                <MenuItem value="security">Security</MenuItem>
-                                <MenuItem value="performance">Performance</MenuItem>
-                                <MenuItem value="availability">Availability</MenuItem>
-                                <MenuItem value="data-integrity">Data Integrity</MenuItem>
-                                <MenuItem value="compliance">Compliance</MenuItem>
-                                <MenuItem value="other">Other</MenuItem>
+                                <option value="all">All</option>
+                                <option value="security">Security</option>
+                                <option value="performance">Performance</option>
+                                <option value="availability">Availability</option>
+                                <option value="data-integrity">Data Integrity</option>
+                                <option value="compliance">Compliance</option>
+                                <option value="other">Other</option>
                             </Select>
                         </FormControl>
                     </Grid>

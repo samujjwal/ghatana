@@ -2,7 +2,7 @@
  * Basic UI Components
  *
  * Provides minimal UI components for the Software Org application.
- * These are temporary placeholders while the @ghatana/ui library is being integrated.
+ * These are legacy local compatibility components while consumers migrate to shared surfaces.
  *
  * @doc.type components
  * @doc.purpose Basic UI building blocks

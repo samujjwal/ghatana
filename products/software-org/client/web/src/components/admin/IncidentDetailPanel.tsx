@@ -7,15 +7,15 @@ import {
     Typography,
     TextField,
     Select,
-    MenuItem,
     Chip,
     IconButton,
     Divider,
     FormControl,
+    Grid,
     InputLabel,
     Tab,
     Tabs,
-} from '@ghatana/ui';
+} from '@ghatana/design-system';
 import type { Incident, IncidentStatus, IncidentComment, IncidentTimelineEvent } from './IncidentDashboard';
 
 /**
@@ -151,7 +151,7 @@ export const IncidentDetailPanel: React.FC<IncidentDetailPanelProps> = ({
                             {incident.title}
                         </Typography>
                     </Box>
-                    <IconButton size="small" onClick={onClose}>
+                    <IconButton size="small" onClick={onClose} aria-label="Close incident">
                         ✕
                     </IconButton>
                 </Stack>
@@ -263,10 +263,10 @@ export const IncidentDetailPanel: React.FC<IncidentDetailPanelProps> = ({
                             label="Status"
                             onChange={(e) => onUpdateStatus?.(e.target.value as IncidentStatus)}
                         >
-                            <MenuItem value="open">Open</MenuItem>
-                            <MenuItem value="investigating">Investigating</MenuItem>
-                            <MenuItem value="resolved">Resolved</MenuItem>
-                            <MenuItem value="closed">Closed</MenuItem>
+                            <option value="open">Open</option>
+                            <option value="investigating">Investigating</option>
+                            <option value="resolved">Resolved</option>
+                            <option value="closed">Closed</option>
                         </Select>
                     </FormControl>
 
@@ -278,11 +278,11 @@ export const IncidentDetailPanel: React.FC<IncidentDetailPanelProps> = ({
                             label="Assign To"
                             onChange={(e) => onAssign?.(e.target.value)}
                         >
-                            <MenuItem value="">Unassigned</MenuItem>
+                            <option value="">Unassigned</option>
                             {availableUsers.map((user) => (
-                                <MenuItem key={user.id} value={user.id}>
+                                <option key={user.id} value={user.id}>
                                     {user.name}
-                                </MenuItem>
+                                </option>
                             ))}
                         </Select>
                     </FormControl>
@@ -444,6 +444,3 @@ export const IncidentDetailPanel: React.FC<IncidentDetailPanelProps> = ({
         </Card>
     );
 };
-
-// Missing Grid import for TypeScript
-import { Grid } from '@ghatana/ui';

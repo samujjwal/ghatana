@@ -1,7 +1,7 @@
 import { StrictMode } from 'react'
 import { createRoot } from 'react-dom/client'
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
-import { ErrorBoundary } from '@ghatana/ui/components/ErrorBoundary'
+import { ErrorBoundary } from '@ghatana/design-system'
 import './index.css'
 import App from './App.tsx'
 import { initSentry } from './config/sentry'
@@ -61,4 +61,3 @@ try {
 } catch (error) {
   console.error('Failed to initialize monitoring:', error);
 }
-

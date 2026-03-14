@@ -10,7 +10,7 @@ import { Badge } from "@/components/ui";
  * <p><b>Features</b><br>
  * - Predefined status→tone mappings
  * - Extensible via statusMap prop
- * - Consistent styling via @ghatana/ui Badge
+ * - Consistent styling via shared badge primitives
  * - Dark mode support
  *
  * <p><b>Usage</b><br>

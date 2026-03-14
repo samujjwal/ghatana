@@ -1,0 +1,29 @@
+# Data-Cloud — Kustomize root
+# Apply all manifests in dependency order:
+#   kubectl apply -k products/data-cloud/k8s/
+#
+# Prerequisites:
+#   - External Secrets Operator installed (see secret-store.yaml header)
+#   - Vault accessible at https://vault.internal.ghatana.io
+#
+# secret.yaml is intentionally absent — secrets are managed by
+# ExternalSecret (external-secret.yaml) which instructs ESO to pull
+# live values from Vault and synthesise the `data-cloud-secret` K8s Secret.
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+
+namespace: data-cloud
+
+resources:
+  - namespace.yaml
+  - configmap.yaml
+  - secret-store.yaml
+  - external-secret.yaml
+  - deployment.yaml
+  - service.yaml
+  - ingress.yaml
+  - hpa.yaml
+  - pdb.yaml
+  - networkpolicy.yaml
+  # Istio service mesh — requires Istio ≥ 1.19 + namespace injection label
+  - istio-mesh.yaml

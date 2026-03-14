@@ -4,6 +4,7 @@
 - 2-week sprints
 - Team: 1 PM, 1 designer, 3 full-stack engineers, 1 ML engineer, 1 QA/shared automation
 - Initial focus: beauty-first MVP
+- Launch sequence target: internal alpha in Month 3, invite beta launch in Month 5, public launch in Month 8
 
 This document is the schedule view. Detailed `what`, `how`, `where`, and validation expectations for
 each task live in `Aura_Task_Execution_Matrix.md`.
@@ -62,11 +63,11 @@ each task live in `Aura_Task_Execution_Matrix.md`.
 - `S08-T02` Implement search + guided recommendation prompts
 - `S08-T03` Refine explanations and confidence display
 - `S08-T04` Add user-facing outcome reporting in product detail and saved items
-- `S08-T05` Begin external beta prep
+- `S08-T05` Complete invite beta prep
 
 ## Month 5
 ### Sprint 9
-- `S09-T01` Beta launch
+- `S09-T01` Launch invite beta
 - `S09-T02` Add experimentation framework
 - `S09-T03` Tune ranking using interaction data
 - `S09-T04` Add moderation tools for review/community ingestion
@@ -76,6 +77,7 @@ each task live in `Aura_Task_Execution_Matrix.md`.
 - `S10-T02` Conversion funnel dashboards
 - `S10-T03` Recommendation quality and safety outcome reviews
 - `S10-T04` Privacy and trust UX pass
+- `S10-T05` Pilot selfie-based undertone inference behind explicit scoped consent
 
 ## Month 6
 ### Sprint 11

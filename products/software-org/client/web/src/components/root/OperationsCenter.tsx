@@ -11,7 +11,6 @@ import React, { useState } from 'react';
 import {
     Grid,
     Card,
-    KpiCard,
     Box,
     Chip,
     LinearProgress,
@@ -26,7 +25,8 @@ import {
     TableBody,
     TableRow,
     TableCell,
-} from '@ghatana/ui';
+} from '@ghatana/design-system';
+import { KpiCard } from '@/shared/components/org';
 
 /**
  * Infrastructure metrics
@@ -136,7 +136,7 @@ export interface OperationsCenterProps {
  * - Resource utilization monitoring
  * - Tab-based navigation (Services, Deployments, Incidents, Resources)
  *
- * Reuses @ghatana/ui components:
+ * Reuses @ghatana/design-system components and shared org KPI cards:
  * - KpiCard (infrastructure metrics)
  * - Grid (responsive layouts)
  * - Card (service cards, incident cards)

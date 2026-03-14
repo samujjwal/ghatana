@@ -5,6 +5,19 @@ import path from 'path'
 import { fileURLToPath } from 'url'
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url))
+const workspaceAliases = {
+  '@': path.resolve(__dirname, './src'),
+  '@ghatana/dcmaar-dashboard-core': path.resolve(__dirname, '../../libs/guardian-dashboard-core/src'),
+  // Shared TS workspace packages are not consistently built before app/test runs.
+  // Resolve them to source so we can migrate consumers off the deprecated ui layer.
+  '@ghatana/design-system': path.resolve(__dirname, '../../../../platform/typescript/design-system/src/index.ts'),
+  '@ghatana/tokens': path.resolve(__dirname, '../../../../platform/typescript/tokens/src/index.ts'),
+  '@ghatana/theme': path.resolve(__dirname, '../../../../platform/typescript/theme/src/index.ts'),
+  '@ghatana/utils': path.resolve(__dirname, '../../../../platform/typescript/utils/src/index.ts'),
+  // Keep migrated source packages on the app's React Router v7 runtime.
+  'react-router-dom': path.resolve(__dirname, './node_modules/react-router-dom'),
+  'react-router': path.resolve(__dirname, './node_modules/react-router'),
+}
 
 // https://vite.dev/config/
 export default defineConfig({
@@ -21,10 +34,7 @@ export default defineConfig({
     postcss: './postcss.config.js',
   },
   resolve: {
-    alias: {
-      '@': path.resolve(__dirname, './src'),
-      '@ghatana/dcmaar-dashboard-core': path.resolve(__dirname, '../../libs/guardian-dashboard-core/src'),
-    },
+    alias: workspaceAliases,
   },
   build: {
     rollupOptions: {
@@ -68,6 +78,7 @@ export default defineConfig({
   test: {
     globals: true,
     environment: 'jsdom',
+    alias: workspaceAliases,
     deps: {
       inline: ['react', 'react-dom', 'react-router-dom', 'jotai'],
     },

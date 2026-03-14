@@ -8,7 +8,7 @@
  */
 
 import React, { useState } from 'react';
-import { Box, Card, Button, Stack, DataGrid, Chip, Modal, TextField, Select } from '@ghatana/ui';
+import { Box, Card, Button, Stack, DataGrid, Chip, Modal, TextField, Select } from '@ghatana/design-system';
 import type { Person } from '@/types/org.types';
 
 interface TeamMembersManagementProps {
@@ -215,4 +215,3 @@ export function TeamMembersManagement({
     </Box>
   );
 }
-

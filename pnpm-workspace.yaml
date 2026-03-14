@@ -1,6 +1,7 @@
 packages:
   # Platform TypeScript libraries
   - "platform/typescript/*"
+  - "platform/typescript/canvas/flow-canvas"
 
   # Product UIs
   - "products/data-cloud/ui"

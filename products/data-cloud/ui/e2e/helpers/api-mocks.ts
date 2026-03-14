@@ -1,5 +1,5 @@
 import { Page } from '@playwright/test';
-import { mockCollections, mockWorkflows, mockExecutions, mockEntities } from '../fixtures/test-data';
+import { mockCollections, mockWorkflows, mockExecutions, mockEntities, mockAlerts } from '../fixtures/test-data';
 
 /**
  * API Mock Helpers
@@ -161,6 +161,31 @@ export async function mockWorkflowsAPI(page: Page) {
 }
 
 /**
+ * Mock alerts API endpoints
+ */
+export async function mockAlertsAPI(page: Page) {
+  await page.route('**/api/v1/alerts', async (route) => {
+    if (route.request().method() === 'GET') {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({ items: mockAlerts, total: mockAlerts.length }),
+      });
+    }
+  });
+
+  await page.route('**/api/v1/alerts/*', async (route) => {
+    const id = route.request().url().split('/').pop()?.split('?')[0];
+    const alert = mockAlerts.find((a) => a.id === id);
+    await route.fulfill(
+      alert
+        ? { status: 200, contentType: 'application/json', body: JSON.stringify(alert) }
+        : { status: 404, contentType: 'application/json', body: JSON.stringify({ code: 'NOT_FOUND', message: 'Alert not found' }) }
+    );
+  });
+}
+
+/**
  * Mock entities API endpoints
  */
 export async function mockEntitiesAPI(page: Page, collectionId: string) {
@@ -186,6 +211,7 @@ export async function mockEntitiesAPI(page: Page, collectionId: string) {
 export async function mockAllAPIs(page: Page) {
   await mockCollectionsAPI(page);
   await mockWorkflowsAPI(page);
+  await mockAlertsAPI(page);
 }
 
 /**

@@ -508,3 +508,52 @@ Steps:
 Expected:
 - Governance/audit events exist for both.
 - Resource type and outcome values are correct.
+
+### AURA-ADE-044 Transactional outbox publishes cross-process events only after durable state commit
+Level: Integration
+Priority: P0
+Source Docs: `Aura_Shared_Platform_Integration_Spec.md`, `Aura_Event_Architecture.md`
+Preconditions: Mutation path that writes durable state and emits an AEP event.
+Steps:
+1. Execute profile, consent, or outcome mutation.
+2. Force publish retry after the durable write succeeds.
+Expected:
+- Domain state and outbox record commit atomically.
+- AEP publication occurs from the outbox relay, not inline-only best effort.
+- No event is published for rolled-back transactions.
+
+### AURA-ADE-045 AEP topic registration and schema metadata exist before producer rollout
+Level: Contract
+Priority: P1
+Source Docs: `Aura_Shared_Platform_Integration_Spec.md`, `Aura_Event_Architecture.md`
+Preconditions: New or changed Aura topic/event contract.
+Steps:
+1. Review topic registration metadata.
+2. Review schema version and ownership metadata.
+Expected:
+- Topic name, owner, schema source, ordering key, DLQ policy, and PII class are registered.
+- Producer rollout is blocked if registration is missing.
+
+### AURA-ADE-046 Data Cloud dataset registration includes retention, export, and deletion behavior
+Level: Contract
+Priority: P1
+Source Docs: `Aura_Shared_Platform_Integration_Spec.md`, `Aura_Data_Architecture.md`
+Preconditions: Production dataset used for catalog, profile, recommendation, outcome, or export flow.
+Steps:
+1. Review dataset registration metadata.
+Expected:
+- Dataset owner, schema source, retention class, export behavior, deletion behavior, and restore priority are recorded.
+- Missing registration blocks production readiness.
+
+### AURA-ADE-047 Trace and actor context propagate from API to Data Cloud and AEP boundaries
+Level: Integration
+Priority: P1
+Source Docs: `Aura_Shared_Platform_Integration_Spec.md`, `Aura_API_Contracts.md`
+Preconditions: User-initiated mutation that writes state and emits event.
+Steps:
+1. Execute mutation.
+2. Inspect trace, audit, Data Cloud write metadata, and emitted AEP event.
+Expected:
+- `traceId` is preserved end to end.
+- actor context is available in audit and event metadata where allowed.
+- telemetry allows a single mutation to be traced across API, Data Cloud, and AEP.

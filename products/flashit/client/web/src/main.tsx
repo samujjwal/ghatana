@@ -7,7 +7,7 @@ import React from 'react';
 import ReactDOM from 'react-dom/client';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { Provider as JotaiProvider } from 'jotai';
-import { ErrorBoundary } from '@ghatana/ui/components/ErrorBoundary';
+import { ErrorBoundary } from '@ghatana/design-system';
 import App from './App';
 import './index.css';
 
@@ -31,4 +31,3 @@ ReactDOM.createRoot(document.getElementById('root')!).render(
     </ErrorBoundary>
   </React.StrictMode>,
 );
-

@@ -33,6 +33,9 @@ public class DataCloudLauncher {
         
         try {
             // Parse configuration from args or environment
+            // Validate configuration before creating any resources (fail-fast)
+            DataCloudConfigValidator.fromEnvironment().validate();
+
             DataCloud.DataCloudConfig config = parseConfig(args);
             
             // Create and start client

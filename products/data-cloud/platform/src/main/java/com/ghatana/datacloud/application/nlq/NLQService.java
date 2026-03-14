@@ -37,6 +37,8 @@ import java.util.regex.Pattern;
 public class NLQService {
 
     private static final int MAX_FILTERS = 10;
+    /** Allowlist pattern for SQL identifiers (collection names, field names). */
+    private static final Pattern SAFE_IDENTIFIER = Pattern.compile("^[A-Za-z_][A-Za-z0-9_]{0,127}$");
     private static final double MIN_CONFIDENCE_THRESHOLD = 0.5;
     private static final double VALIDATION_CONFIDENCE_LOW = 0.3;
     private static final double VALIDATION_CONFIDENCE_WARN = 0.5;
@@ -98,14 +100,19 @@ public class NLQService {
             // Parse filters
             List<FilterSpec> filters = parseFilters(filterPart, fieldNames);
 
-            // Parse sorts
-            List<SortSpec> sorts = parseSorts(query);
+            // Parse sorts — fields validated against collection schema
+            List<SortSpec> sorts = parseSorts(query, fieldNames);
 
             // Calculate confidence
             double confidence = calculateQueryConfidence(query, filters, fieldNames);
 
-            // Build query spec
-            StringBuilder sql = new StringBuilder("SELECT * FROM ").append(collection.getName());
+            // Build query spec — validate collection name as a safe SQL identifier
+            String collectionName = collection.getName();
+            if (!SAFE_IDENTIFIER.matcher(collectionName).matches()) {
+                return Promise.ofException(new IllegalArgumentException(
+                    "Invalid collection name: " + collectionName));
+            }
+            StringBuilder sql = new StringBuilder("SELECT * FROM ").append(collectionName);
             Map<String, Object> params = new LinkedHashMap<>();
 
             if (!filters.isEmpty()) {
@@ -327,11 +334,15 @@ public class NLQService {
         return filters;
     }
 
-    private List<SortSpec> parseSorts(String query) {
+    private List<SortSpec> parseSorts(String query, List<String> allowedFields) {
         List<SortSpec> sorts = new ArrayList<>();
         Matcher sortMatcher = SORT_PATTERN.matcher(query);
         while (sortMatcher.find()) {
             String field = sortMatcher.group(1);
+            // Only emit a sort if the field exists in the collection schema (allowlist)
+            if (!allowedFields.contains(field)) {
+                continue;
+            }
             String dir = sortMatcher.group(2);
             String direction = (dir != null && dir.toLowerCase().startsWith("desc")) ? "DESC" : "ASC";
             sorts.add(new SortSpec(field, direction));

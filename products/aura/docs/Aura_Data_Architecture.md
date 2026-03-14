@@ -20,6 +20,21 @@ Legal basis mapping and notice language must be finalized with counsel, but the 
 
 ---
 
+## Physical Data Management Boundary
+
+Aura owns the logical data model, quality rules, and domain semantics. Data handling and management responsibilities are split as follows:
+
+- **Aura owns:** entity definitions, dataset semantics, retention requirements, access rules, trust flags, and product-facing data behavior.
+- **Data Cloud owns:** managed persistence, storage lifecycle, lineage, backups, restore, export assembly plumbing, retention execution, and plugin-based storage integration.
+- **Aura extensions:** when Aura needs specialized storage behavior, it should be implemented as an approved Data Cloud plugin or adapter through `products/data-cloud/spi`, not as a product-local storage subsystem.
+
+`data/prisma` remains the logical schema source in the Aura repo, but production-grade data paths should run through Data Cloud-managed stores and workflows.
+
+For repository boundaries, dataset registration, export/delete orchestration, and outbox usage, see
+`Aura_Shared_Platform_Integration_Spec.md`.
+
+---
+
 ## Core Data Domains
 
 ### 1. Product Intelligence
@@ -178,14 +193,16 @@ Tracks every recommendation generated, the reasoning behind it, user feedback, a
 
 ## Storage Technology Map
 
-| Data                                                 | Storage                        | Rationale                                    |
-| ---------------------------------------------------- | ------------------------------ | -------------------------------------------- |
-| Canonical product, user, and recommendation entities | PostgreSQL                     | Transactional integrity, relational querying |
-| Vector embeddings (products, ingredients)            | pgvector                       | Semantic similarity search in-database       |
-| Raw ingestion payloads                               | Object storage (S3-compatible) | Cost-efficient, append-only                  |
-| Hot recommendation paths, session context            | Redis                          | Sub-millisecond read latency                 |
-| ML training data snapshots                           | Object storage                 | Versioned dataset management                 |
-| Audit log                                            | PostgreSQL (append-only table) | Queryable compliance records                 |
+| Data                                                 | Storage                                             | Rationale                                    |
+| ---------------------------------------------------- | --------------------------------------------------- | -------------------------------------------- |
+| Canonical product, user, and recommendation entities | Data Cloud relational dataset/plugin                | Transactional integrity, relational querying |
+| Vector embeddings (products, ingredients)            | Data Cloud vector plugin                            | Semantic similarity search in managed plane  |
+| Raw ingestion payloads                               | Data Cloud object-storage plugin                    | Cost-efficient, append-only                  |
+| Hot recommendation paths, session context            | Data Cloud cache plugin                             | Sub-millisecond read latency                 |
+| ML training data snapshots                           | Data Cloud object-storage plugin                    | Versioned dataset management                 |
+| Audit log                                            | Data Cloud relational or audit dataset/plugin       | Queryable compliance records                 |
+
+Underlying implementations may use PostgreSQL, pgvector, Redis, or S3-compatible stores, but Aura should consume them through Data Cloud-managed capabilities.
 
 ---
 
@@ -195,7 +212,7 @@ Tracks every recommendation generated, the reasoning behind it, user feedback, a
 2. **Consent as a first-class record:** Optional imports and high-sensitivity enrichments require a valid, in-scope consent record. Core service operation is not blocked behind optional-consent gates.
 3. **Data minimization:** Analytics streams receive tokenized user IDs, never raw PII.
 4. **Auditability:** All profile changes and recommendation events are timestamped and immutable.
-5. **User rights:** Self-serve data export and account deletion trigger traceable workflows across all stores.
+5. **User rights:** Self-serve data export and account deletion trigger traceable workflows across Data Cloud-managed stores and datasets.
 
 ## Data Quality Operating Requirements
 
@@ -208,4 +225,5 @@ Tracks every recommendation generated, the reasoning behind it, user feedback, a
 | Outcome linkage | Post-use outcomes should be linked to recommendation, product, and model version where feasible | treat as weaker label if linkage is missing |
 
 See `Aura_AI_ML_Data_Operating_Model.md` for source-tier policy, label strategy, deletion handling,
-and human-review flows.
+and human-review flows. See AEP and Data Cloud boundary rules in
+`Aura_Master_Platform_Specification.md` for event and storage-plane ownership.

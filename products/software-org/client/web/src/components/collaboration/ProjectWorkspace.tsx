@@ -26,7 +26,7 @@ import {
     ListItemAvatar,
     ListItemSecondaryAction,
     AvatarGroup,
-} from '@ghatana/ui';
+} from '@ghatana/design-system';
 import {
     Folder,
     Add,
@@ -43,7 +43,7 @@ import {
     Edit,
     Delete,
     Visibility,
-} from '@ghatana/ui/icons';
+} from '@ghatana/design-system/icons';
 
 // ============================================================================
 // Type Definitions

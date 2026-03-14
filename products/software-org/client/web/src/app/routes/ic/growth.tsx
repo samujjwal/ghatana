@@ -20,7 +20,7 @@ import { rootApi } from '@/services/api';
 import type { GrowthPlanResponse } from '@/services/api';
 import { useGrowthPlansList } from '@/hooks/useGrowthPlansApi';
 import { useQuery } from '@tanstack/react-query';
-import { Typography } from '@ghatana/ui';
+import { Typography } from '@ghatana/design-system';
 
 export default function IcGrowthRoute() {
     const demoUserEmail = 'ic1@example.com';

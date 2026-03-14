@@ -3,8 +3,7 @@ import { render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { BrowserRouter } from 'react-router';
 import { Provider } from 'jotai';
-import { GovernancePage } from '../../pages/GovernancePage';
-import { GovernancePageEnhanced } from '../../pages/GovernancePageEnhanced';
+import { GovernancePage, GovernancePageEnhanced } from '../../pages/GovernancePage';
 
 const TestWrapper = ({ children }: { children: React.ReactNode }) => (
   <Provider><BrowserRouter>{children}</BrowserRouter></Provider>

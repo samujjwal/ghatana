@@ -1,0 +1,205 @@
+# Default values for data-cloud Helm chart.
+# Override per environment with values-staging.yaml / values-production.yaml.
+
+replicaCount: 2
+
+image:
+  repository: ghatana/data-cloud
+  pullPolicy: IfNotPresent
+  # Overridden by the CI pipeline; defaults to chart appVersion
+  tag: ""
+
+imagePullSecrets: []
+nameOverride: ""
+fullnameOverride: ""
+
+# ---------------------------------------------------------------------------
+# Service
+# ---------------------------------------------------------------------------
+service:
+  type: ClusterIP
+  httpPort: 8082
+  grpcPort: 9090
+
+# ---------------------------------------------------------------------------
+# Ingress
+# ---------------------------------------------------------------------------
+ingress:
+  enabled: false
+  className: nginx
+  annotations: {}
+  hosts:
+    - host: data-cloud.example.internal
+      paths:
+        - path: /
+          pathType: Prefix
+  tls: []
+  # TLS example (override in values-staging.yaml / values-production.yaml):
+  # tls:
+  #   - secretName: data-cloud-tls
+  #     hosts:
+  #       - data-cloud.example.internal
+  # Pair with annotation: cert-manager.io/cluster-issuer: "letsencrypt-prod"
+
+# ---------------------------------------------------------------------------
+# Resources
+# ---------------------------------------------------------------------------
+resources:
+  requests:
+    cpu: 500m
+    memory: 512Mi
+  limits:
+    cpu: "2"
+    memory: 2Gi
+
+# ---------------------------------------------------------------------------
+# Autoscaling (HPA)
+# ---------------------------------------------------------------------------
+autoscaling:
+  enabled: true
+  minReplicas: 2
+  maxReplicas: 10
+  targetCPUUtilizationPercentage: 70
+  targetMemoryUtilizationPercentage: 80
+
+# ---------------------------------------------------------------------------
+# Pod Disruption Budget
+# ---------------------------------------------------------------------------
+podDisruptionBudget:
+  enabled: true
+  minAvailable: 1
+
+# ---------------------------------------------------------------------------
+# Application configuration (injected as environment variables)
+# ---------------------------------------------------------------------------
+config:
+  # ActiveJ HTTP server port
+  httpPort: "8082"
+  # gRPC port
+  grpcPort: "9090"
+  logLevel: "INFO"
+
+# ---------------------------------------------------------------------------
+# Kafka (EventLogStore backend)
+# ---------------------------------------------------------------------------
+kafka:
+  bootstrapServers: "kafka.kafka.svc.cluster.local:9092"
+  partitions: "4"
+  replicationFactor: "3"
+  readTimeoutMs: "5000"
+
+# ---------------------------------------------------------------------------
+# ClickHouse (TimeSeries backend)
+# ---------------------------------------------------------------------------
+clickhouse:
+  host: "clickhouse.clickhouse.svc.cluster.local"
+  port: "8123"
+
+# ---------------------------------------------------------------------------
+# OpenSearch (Search backend)
+# ---------------------------------------------------------------------------
+opensearch:
+  host: "opensearch-cluster-master.opensearch.svc.cluster.local"
+  port: "9200"
+  scheme: "http"
+  # username and password are sourced from the secret; do not set here
+  username: ""
+
+# ---------------------------------------------------------------------------
+# Ceph Object Storage (BLOB backend)
+# ---------------------------------------------------------------------------
+ceph:
+  endpoint: "http://rook-ceph-rgw-my-store.rook-ceph.svc.cluster.local"
+  bucket: "ghatana-data-cloud"
+  region: "us-east-1"
+  # accessKey and secretKey are sourced from the secret; do not set here
+
+# ---------------------------------------------------------------------------
+# Secrets — populated from Kubernetes Secret; reference only
+# ---------------------------------------------------------------------------
+existingSecret: "data-cloud-secrets"
+
+# ---------------------------------------------------------------------------
+# Observability
+# ---------------------------------------------------------------------------
+metrics:
+  enabled: true
+  port: 8082
+  path: /metrics
+  serviceMonitor:
+    enabled: false
+    namespace: monitoring
+    interval: 30s
+    scrapeTimeout: 10s
+
+# ---------------------------------------------------------------------------
+# Security context
+# ---------------------------------------------------------------------------
+podSecurityContext:
+  runAsNonRoot: true
+  runAsUser: 1001
+  runAsGroup: 1001
+  fsGroup: 1001
+
+securityContext:
+  allowPrivilegeEscalation: false
+  readOnlyRootFilesystem: true
+  capabilities:
+    drop: ["ALL"]
+
+# ---------------------------------------------------------------------------
+# Probes
+# ---------------------------------------------------------------------------
+livenessProbe:
+  httpGet:
+    path: /health/live
+    port: http
+  initialDelaySeconds: 30
+  periodSeconds: 10
+  failureThreshold: 3
+
+readinessProbe:
+  httpGet:
+    path: /health/ready
+    port: http
+  initialDelaySeconds: 10
+  periodSeconds: 5
+  failureThreshold: 3
+
+# ---------------------------------------------------------------------------
+# Node scheduling
+# ---------------------------------------------------------------------------
+nodeSelector: {}
+tolerations: []
+affinity: {}
+
+# ---------------------------------------------------------------------------
+# Extra environment variables
+# ---------------------------------------------------------------------------
+extraEnv: []
+# - name: MY_VAR
+#   value: "my-value"
+
+# ---------------------------------------------------------------------------
+# External Secrets Operator (ESO)
+# When enabled, an ExternalSecret CR is created in the release namespace
+# instead of a plain Kubernetes Secret.  Set enabled=true for all
+# non-local environments and configure the store to point at Vault or AWS.
+# ---------------------------------------------------------------------------
+externalSecrets:
+  enabled: false
+  # How often ESO re-syncs with the backend (supports Go duration strings)
+  refreshInterval: "5m"
+  # The SecretStore (or ClusterSecretStore) that resolves credentials
+  secretStore:
+    name: data-cloud-vault-store
+    kind: SecretStore          # or ClusterSecretStore for cross-namespace
+  # Backend secret paths — adjust to match your Vault / ASM layout
+  vaultPaths:
+    db:         "data-cloud/db"
+    kafka:      "data-cloud/kafka"
+    clickhouse: "data-cloud/clickhouse"
+    jwt:        "data-cloud/jwt"
+  # Metadata attached to the generated Kubernetes Secret
+  targetSecretName: data-cloud-secret
+  deletionPolicy: Retain       # Retain | Delete | Merge

@@ -1,5 +1,5 @@
 import { createRoot } from 'react-dom/client';
-import { ErrorBoundary } from '@ghatana/ui/components/ErrorBoundary';
+import { ErrorBoundary } from '@ghatana/design-system';
 import App from './App';
 import { Providers } from './Providers';
 

@@ -11,8 +11,8 @@
  * @package @ghatana/software-org-web
  */
 
-import React, { useState, useMemo } from 'react';
-import { Box, Card, Button, Stack, Chip } from '@ghatana/ui';
+import React, { useId, useState, useMemo } from 'react';
+import { Box, Card, Button, Stack, Chip } from '@ghatana/design-system';
 import { useSimulatePermission } from '@/hooks';
 
 interface Permission {
@@ -46,7 +46,6 @@ interface PermissionEditorProps {
     onRoleCreate?: (role: Omit<Role, 'id'>) => void;
     onRoleDelete?: (roleId: string) => void;
     onRoleAssign?: (userId: string, roleIds: string[]) => void;
-    onTestPermission?: (userId: string, permissionId: string) => Promise<boolean>;
 }
 
 /**
@@ -106,7 +105,6 @@ export function PermissionEditor({
     onRoleCreate,
     onRoleDelete,
     onRoleAssign,
-    onTestPermission,
 }: PermissionEditorProps) {
     const [activeTab, setActiveTab] = useState<'matrix' | 'inheritance' | 'testing' | 'assignment'>(
         'matrix'
@@ -124,6 +122,9 @@ export function PermissionEditor({
     const [testResult, setTestResult] = useState<{ granted: boolean; matchedRoles: { roleName: string }[] } | null>(null);
 
     const simulatePermissionMutation = useSimulatePermission();
+    const testUserIdInputId = useId();
+    const testPermissionSelectId = useId();
+    const assignUserSelectId = useId();
 
     // Assignment panel state
     const [assignUserId, setAssignUserId] = useState('');
@@ -424,10 +425,14 @@ export function PermissionEditor({
                         </h3>
                         <div className="space-y-4">
                             <div>
-                                <label className="block text-sm font-medium text-slate-700 dark:text-neutral-300 mb-2">
+                                <label
+                                    htmlFor={testUserIdInputId}
+                                    className="block text-sm font-medium text-slate-700 dark:text-neutral-300 mb-2"
+                                >
                                     User ID
                                 </label>
                                 <input
+                                    id={testUserIdInputId}
                                     type="text"
                                     value={testUserId}
                                     onChange={(e) => setTestUserId(e.target.value)}
@@ -437,10 +442,14 @@ export function PermissionEditor({
                             </div>
 
                             <div>
-                                <label className="block text-sm font-medium text-slate-700 dark:text-neutral-300 mb-2">
+                                <label
+                                    htmlFor={testPermissionSelectId}
+                                    className="block text-sm font-medium text-slate-700 dark:text-neutral-300 mb-2"
+                                >
                                     Permission ID
                                 </label>
                                 <select
+                                    id={testPermissionSelectId}
                                     value={testPermissionId}
                                     onChange={(e) => setTestPermissionId(e.target.value)}
                                     className="w-full px-3 py-2 border border-slate-300 dark:border-neutral-600 rounded-lg"
@@ -507,10 +516,14 @@ export function PermissionEditor({
                         </h3>
                         <div className="space-y-4">
                             <div>
-                                <label className="block text-sm font-medium text-slate-700 dark:text-neutral-300 mb-2">
+                                <label
+                                    htmlFor={assignUserSelectId}
+                                    className="block text-sm font-medium text-slate-700 dark:text-neutral-300 mb-2"
+                                >
                                     User
                                 </label>
                                 <select
+                                    id={assignUserSelectId}
                                     value={assignUserId}
                                     onChange={(e) => setAssignUserId(e.target.value)}
                                     className="w-full px-3 py-2 border border-slate-300 dark:border-neutral-600 rounded-lg"

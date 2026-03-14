@@ -18,7 +18,7 @@ import {
     Button,
     Typography,
     Stack,
-} from '@ghatana/ui';
+} from '@ghatana/design-system';
 
 /**
  * Notification summary metrics
@@ -130,7 +130,7 @@ export interface NotificationCenterProps {
  * - Approval requests tracking
  * - Tab-based navigation (All, Alerts, Collaboration, Approvals)
  *
- * Reuses @ghatana/ui components:
+ * Reuses @ghatana/design-system components:
  * - Card (notification cards, alert cards, activity cards)
  * - Chip (type, priority, category, status indicators)
  * - Button (action buttons)

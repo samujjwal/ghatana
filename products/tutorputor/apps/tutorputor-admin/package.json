@@ -14,6 +14,7 @@
   },
   "dependencies": {
     "@ghatana/charts": "workspace:*",
+    "@ghatana/design-system": "workspace:*",
     "@ghatana/theme": "workspace:*",
     "@ghatana/tutorputor-ui-shared": "workspace:*",
     "@ghatana/ui": "workspace:*",

@@ -2,7 +2,7 @@
  * Loading State Component
  * 
  * Displays a loading spinner with optional message.
- * Uses @ghatana/ui Spinner component for consistency.
+ * Uses @ghatana/design-system Spinner component for consistency.
  * 
  * @doc.type component
  * @doc.purpose Display loading state with spinner
@@ -11,7 +11,7 @@
  */
 
 import React from 'react';
-import { Spinner } from '@ghatana/ui';
+import { Spinner } from '@ghatana/design-system';
 import { cn, textStyles } from '../../lib/theme';
 
 interface LoadingStateProps {

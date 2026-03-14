@@ -20,7 +20,7 @@
 
 import { useState, useCallback, useMemo, useEffect } from 'react';
 import { useNavigate, useSearchParams } from 'react-router';
-import { Box, Card, Button, Chip, Grid } from '@ghatana/ui';
+import { Box, Card, Button, Chip, Grid } from '@ghatana/design-system';
 import { KpiCard } from '@/shared/components/org';
 import { usePersonaWorkItems, useWorkSession } from '@/hooks/useUnifiedPersona';
 import { PersonaFlowStrip } from '@/shared/components/PersonaFlowStrip';

@@ -1,0 +1,241 @@
+# Ghatana Data-Cloud — Continuous Deployment
+#
+# Deploys the data-cloud product to a target Kubernetes cluster after a
+# successful CI run on the main branch or a release branch.
+#
+# Environments:
+#   staging     — auto-deployed on every push to main
+#   production  — requires manual approval gate before deploy
+#
+# Prerequisites (configured in Gitea → Settings → Secrets):
+#   KUBECONFIG_STAGING    — base64-encoded kubeconfig for the staging cluster
+#   KUBECONFIG_PRODUCTION — base64-encoded kubeconfig for the production cluster
+#   GITEA_TOKEN           — registry pull secret token
+#   SLACK_WEBHOOK_URL     — optional Slack notification
+
+name: data-cloud-cd
+
+on:
+  workflow_run:
+    workflows: ["data-cloud-ci"]
+    types:
+      - completed
+    branches:
+      - main
+      - "release/**"
+  workflow_dispatch:
+    inputs:
+      environment:
+        description: "Target environment"
+        required: true
+        default: "staging"
+        type: choice
+        options:
+          - staging
+          - production
+      image_tag:
+        description: "Image tag to deploy (default: latest SHA)"
+        required: false
+        default: ""
+
+env:
+  REGISTRY: ${{ gitea.server_url | replace('https://', '') | replace('http://', '') }}
+  IMAGE_NAME: ${{ gitea.repository }}/data-cloud
+  K8S_NAMESPACE: data-cloud
+
+jobs:
+  # ---------------------------------------------------------------------------
+  # Guard: only proceed when CI passed
+  # ---------------------------------------------------------------------------
+  gate:
+    name: CI Gate Check
+    runs-on: ubuntu-latest
+    if: >
+      github.event_name == 'workflow_dispatch' ||
+      github.event.workflow_run.conclusion == 'success'
+    outputs:
+      proceed: ${{ steps.check.outputs.proceed }}
+      image_tag: ${{ steps.resolve_tag.outputs.tag }}
+
+    steps:
+      - name: Gate check
+        id: check
+        run: echo "proceed=true" >> "$GITHUB_OUTPUT"
+
+      - name: Resolve image tag
+        id: resolve_tag
+        run: |
+          if [[ -n "${{ inputs.image_tag }}" ]]; then
+            echo "tag=${{ inputs.image_tag }}" >> "$GITHUB_OUTPUT"
+          else
+            SHA=$(echo "${{ gitea.sha }}" | cut -c1-7)
+            echo "tag=sha-${SHA}" >> "$GITHUB_OUTPUT"
+          fi
+
+  # ---------------------------------------------------------------------------
+  # Deploy to Staging
+  # ---------------------------------------------------------------------------
+  deploy-staging:
+    name: Deploy → Staging
+    runs-on: ubuntu-latest
+    needs: gate
+    if: |
+      needs.gate.outputs.proceed == 'true' &&
+      (gitea.event_name == 'workflow_dispatch' && inputs.environment == 'staging' ||
+       gitea.event_name == 'workflow_run')
+    environment:
+      name: staging
+      url: https://data-cloud.staging.ghatana.internal
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Configure kubectl (staging)
+        run: |
+          mkdir -p ~/.kube
+          echo "${{ secrets.KUBECONFIG_STAGING }}" | base64 -d > ~/.kube/config
+          chmod 600 ~/.kube/config
+
+      - name: Verify cluster connection
+        run: kubectl cluster-info --request-timeout=10s
+
+      - name: Set image tag in kustomization
+        run: |
+          IMAGE="${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}"
+          TAG="${{ needs.gate.outputs.image_tag }}"
+          cd products/data-cloud/k8s
+          kubectl kustomize . | \
+            sed "s|image: .*data-cloud.*|image: ${IMAGE}:${TAG}|g" | \
+            kubectl apply --server-side -f -
+
+      - name: Apply Kubernetes manifests (kustomize)
+        run: |
+          kubectl apply -k products/data-cloud/k8s/ \
+            --namespace=${{ env.K8S_NAMESPACE }} \
+            --server-side \
+            --force-conflicts
+
+      - name: Wait for rollout
+        run: |
+          kubectl rollout status deployment/data-cloud \
+            --namespace=${{ env.K8S_NAMESPACE }} \
+            --timeout=300s
+
+      - name: Smoke test (health check)
+        run: |
+          # Give the service 10s to register its endpoints
+          sleep 10
+          CLUSTER_IP=$(kubectl get svc data-cloud \
+            -n ${{ env.K8S_NAMESPACE }} \
+            -o jsonpath='{.spec.clusterIP}' 2>/dev/null || echo "")
+          if [[ -n "${CLUSTER_IP}" ]]; then
+            curl --fail --silent --max-time 10 \
+              "http://${CLUSTER_IP}:8080/health/ready" || true
+          fi
+
+      - name: Notify Slack on success
+        if: success() && env.SLACK_WEBHOOK_URL != ''
+        env:
+          SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
+        run: |
+          curl -s -X POST "${SLACK_WEBHOOK_URL}" \
+            -H 'Content-type: application/json' \
+            --data '{
+              "text": "✅ *data-cloud* deployed to *staging* — `${{ needs.gate.outputs.image_tag }}`",
+              "channel": "#data-cloud-deploys"
+            }'
+
+      - name: Notify Slack on failure
+        if: failure() && env.SLACK_WEBHOOK_URL != ''
+        env:
+          SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
+        run: |
+          curl -s -X POST "${SLACK_WEBHOOK_URL}" \
+            -H 'Content-type: application/json' \
+            --data '{
+              "text": "❌ *data-cloud* staging deploy FAILED — `${{ needs.gate.outputs.image_tag }}`",
+              "channel": "#data-cloud-oncall"
+            }'
+
+  # ---------------------------------------------------------------------------
+  # Deploy to Production (requires approval)
+  # ---------------------------------------------------------------------------
+  deploy-production:
+    name: Deploy → Production
+    runs-on: ubuntu-latest
+    needs: [gate, deploy-staging]
+    if: |
+      needs.gate.outputs.proceed == 'true' &&
+      startsWith(gitea.ref, 'refs/heads/release/') ||
+      (gitea.event_name == 'workflow_dispatch' && inputs.environment == 'production')
+    environment:
+      name: production
+      url: https://data-cloud.ghatana.io
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Configure kubectl (production)
+        run: |
+          mkdir -p ~/.kube
+          echo "${{ secrets.KUBECONFIG_PRODUCTION }}" | base64 -d > ~/.kube/config
+          chmod 600 ~/.kube/config
+
+      - name: Verify cluster connection
+        run: kubectl cluster-info --request-timeout=10s
+
+      - name: Apply Kubernetes manifests (kustomize)
+        run: |
+          IMAGE="${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}"
+          TAG="${{ needs.gate.outputs.image_tag }}"
+          kubectl apply -k products/data-cloud/k8s/ \
+            --namespace=${{ env.K8S_NAMESPACE }} \
+            --server-side \
+            --force-conflicts
+
+      - name: Update production image tag
+        run: |
+          IMAGE="${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:${{ needs.gate.outputs.image_tag }}"
+          kubectl set image deployment/data-cloud \
+            data-cloud="${IMAGE}" \
+            --namespace=${{ env.K8S_NAMESPACE }}
+
+      - name: Wait for production rollout
+        run: |
+          kubectl rollout status deployment/data-cloud \
+            --namespace=${{ env.K8S_NAMESPACE }} \
+            --timeout=600s
+
+      - name: Tag Git commit as released
+        run: |
+          TAG="release/${{ needs.gate.outputs.image_tag }}"
+          git config user.name  "Gitea CI"
+          git config user.email "ci@ghatana.internal"
+          git tag -a "${TAG}" -m "Production release ${TAG}"
+          git push origin "${TAG}" || true
+
+      - name: Notify Slack on success
+        if: success() && env.SLACK_WEBHOOK_URL != ''
+        env:
+          SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
+        run: |
+          curl -s -X POST "${SLACK_WEBHOOK_URL}" \
+            -H 'Content-type: application/json' \
+            --data '{
+              "text": "🚀 *data-cloud* deployed to *production* — `${{ needs.gate.outputs.image_tag }}`",
+              "channel": "#data-cloud-deploys"
+            }'
+
+      - name: Notify Slack on failure
+        if: failure() && env.SLACK_WEBHOOK_URL != ''
+        env:
+          SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
+        run: |
+          curl -s -X POST "${SLACK_WEBHOOK_URL}" \
+            -H 'Content-type: application/json' \
+            --data '{
+              "text": "🔥 *data-cloud* PRODUCTION deploy FAILED — `${{ needs.gate.outputs.image_tag }}`\n<!channel> immediate attention required!",
+              "channel": "#data-cloud-oncall"
+            }'

@@ -545,3 +545,53 @@ Steps:
 2. Compare time-to-decision, shade-miss, adverse reaction, and return outcomes.
 Expected:
 - Rollout is blocked on meaningful safety or trust regressions even if CTR rises.
+
+### AURA-AIK-047 Selfie undertone inference abstains below confidence threshold
+Level: Integration
+Priority: P0
+Source Docs: `Aura_AI_Engine_Design.md`, `Aura_Task_Execution_Matrix.md`
+Preconditions: Opt-in selfie input that produces borderline or poor-quality inference signals.
+Steps:
+1. Run the undertone inference path on low-quality or ambiguous input.
+2. Request complexion recommendations after inference attempt.
+Expected:
+- Low-confidence inference abstains rather than forcing an undertone value.
+- Recommendation flow falls back to declared data or low-confidence shade logic.
+- User-facing output does not overclaim certainty.
+
+### AURA-AIK-048 Selfie-derived undertone never overrides a declared undertone automatically
+Level: Unit
+Priority: P0
+Source Docs: `Aura_AI_Engine_Design.md`, `Aura_PRD_v1.md`
+Preconditions: User has a declared undertone and separately completes the opt-in selfie pilot.
+Steps:
+1. Merge declared profile state with selfie-derived inference result.
+Expected:
+- Declared undertone remains authoritative by default.
+- Selfie-derived result is stored, if at all, as inferred evidence or ignored according to merge rules.
+- Recommendation ranking consumes the declared value unless the user explicitly changes it.
+
+### AURA-AIK-049 Selfie-pilot rollout evaluation reports quality across skin tone cohorts before expansion
+Level: Integration
+Priority: P1
+Source Docs: `Aura_AI_ML_Data_Operating_Model.md`, `Aura_AI_Model_Training_Pipeline.md`, `Aura_24_Month_Strategy.md`
+Preconditions: Pilot evaluation dataset with opt-in participants across multiple tone-depth cohorts.
+Steps:
+1. Run the pre-expansion evaluation bundle for the selfie pilot.
+2. Inspect quality and fairness outputs by cohort.
+Expected:
+- Evaluation artifacts include cohort-sliced quality metrics rather than one aggregate score only.
+- Material quality gaps block expansion or require mitigation tracking.
+- Rollout decision is tied to documented evaluation evidence.
+
+### AURA-AIK-050 Training and evaluation datasets exclude raw selfie images and retain derived labels only where allowed
+Level: Integration
+Priority: P0
+Source Docs: `Aura_AI_Engine_Design.md`, `Aura_AI_ML_Data_Operating_Model.md`, `Aura_Data_Architecture.md`
+Preconditions: Opt-in selfie pilot has generated inference outputs and downstream training artifacts.
+Steps:
+1. Inspect the training snapshot and evaluation dataset produced from selfie-pilot activity.
+Expected:
+- Raw selfie images are absent from training and evaluation datasets.
+- Only approved derived attributes or labels appear where policy allows.
+- Dataset lineage shows the consented source and processing boundary clearly.

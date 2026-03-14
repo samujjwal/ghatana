@@ -15,7 +15,7 @@ import {
     Tab,
     Tabs,
     Typography,
-} from '@ghatana/ui';
+} from '@ghatana/design-system';
 import { PlatformHealth } from '../../components/root/PlatformHealth';
 import { TenantInspector } from '../../components/root/TenantInspector';
 import { GlobalUserSearch } from '../../components/root/GlobalUserSearch';

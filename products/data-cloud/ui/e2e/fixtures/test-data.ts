@@ -92,6 +92,39 @@ export const mockExecutions = [
   },
 ];
 
+export const mockAlerts = [
+  {
+    id: 'alert-1',
+    name: 'High Error Rate',
+    severity: 'critical',
+    status: 'firing',
+    source: 'workflow-monitor',
+    message: 'Error rate exceeded 5% threshold in wf-1 (Data Export)',
+    triggeredAt: new Date('2024-01-21T08:00:00').toISOString(),
+    resolvedAt: null,
+  },
+  {
+    id: 'alert-2',
+    name: 'Storage Capacity Warning',
+    severity: 'warning',
+    status: 'firing',
+    source: 'infrastructure',
+    message: 'Storage utilisation at 82% — consider scaling or archiving',
+    triggeredAt: new Date('2024-01-20T16:45:00').toISOString(),
+    resolvedAt: null,
+  },
+  {
+    id: 'alert-3',
+    name: 'Schema Drift Detected',
+    severity: 'info',
+    status: 'resolved',
+    source: 'governance',
+    message: 'Collection col-2 schema diverged from registered contract; auto-resolved',
+    triggeredAt: new Date('2024-01-19T12:00:00').toISOString(),
+    resolvedAt: new Date('2024-01-19T12:05:00').toISOString(),
+  },
+];
+
 export const mockEntities = [
   {
     id: 'ent-1',

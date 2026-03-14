@@ -22,13 +22,13 @@ import {
     Card,
     Chip,
     Grid,
-    KpiCard,
     LinearProgress,
     Stack,
     Tab,
     Tabs,
     Typography,
-} from '@ghatana/ui';
+} from '@ghatana/design-system';
+import { KpiCard } from '@/shared/components/org';
 
 // ============================================================================
 // TypeScript Interfaces

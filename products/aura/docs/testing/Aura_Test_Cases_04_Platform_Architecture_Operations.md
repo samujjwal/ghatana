@@ -27,7 +27,7 @@ Steps:
 2. Inspect normalized product output.
 Expected:
 - Required product fields are normalized.
-- Raw payload is preserved in snapshot/object storage path.
+- Raw payload is preserved in the Data Cloud snapshot/object-storage path.
 
 ### AURA-OPS-002 Brand page scraping failure retries and preserves diagnostics
 Level: Integration
@@ -311,11 +311,11 @@ Expected:
 
 ## E. Resilience, Deployment, and Tooling
 
-### AURA-OPS-027 Event consumer failure routes message to retry then DLQ
+### AURA-OPS-027 AEP consumer failure routes message to retry then DLQ
 Level: Integration
 Priority: P0
 Source Docs: `Aura_Event_Architecture.md`, `Aura_Technical_Stack_Blueprint.md`
-Preconditions: Consumer forced to fail persistently.
+Preconditions: AEP consumer forced to fail persistently.
 Steps:
 1. Publish event.
 Expected:
@@ -384,3 +384,29 @@ Steps:
 1. Compare running services, queues, storage, and ingress paths to docs.
 Expected:
 - Deployed topology matches documented architecture or discrepancy is recorded.
+
+### AURA-OPS-063 Selfie inference path stores derived undertone only and never retains raw image artifacts
+Level: Integration
+Priority: P0
+Source Docs: `Aura_AI_Engine_Design.md`, `Aura_Data_Architecture.md`, `Aura_Shared_Platform_Integration_Spec.md`
+Preconditions: Opt-in selfie pilot executed successfully and unsuccessfully in controlled environments.
+Steps:
+1. Run the selfie inference path with valid and invalid capture inputs.
+2. Inspect Data Cloud datasets, object paths, audit records, and retry artifacts.
+Expected:
+- Raw selfie images are not retained after processing completes or fails.
+- Only approved derived outputs and audit metadata persist.
+- Failure handling does not leak raw image artifacts into logs, queues, or storage.
+
+### AURA-OPS-064 High-sensitivity selfie pilot uses shared security and observability without exposing sensitive payloads
+Level: Integration
+Priority: P0
+Source Docs: `Aura_Shared_Platform_Integration_Spec.md`, `Aura_System_Architecture.md`, `Aura_AI_Engine_Design.md`
+Preconditions: Shared auth, audit, and observability services enabled for the pilot flow.
+Steps:
+1. Execute the opt-in selfie pilot from authenticated session to inference completion.
+2. Inspect shared security, audit, trace, and log outputs.
+Expected:
+- Auth, consent scope, and audit enforcement run through shared platform services.
+- Traces and logs remain correlated end to end without exposing selfie payload content.
+- Operators can diagnose the flow from shared o11y data without reading sensitive raw inputs.

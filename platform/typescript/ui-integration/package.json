@@ -1,0 +1,64 @@
+{
+  "name": "@ghatana/ui-integration",
+  "version": "0.1.0",
+  "description": "UI Integration layer for Ghatana platform - AI features, collaboration, page builders",
+  "type": "module",
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js"
+    },
+    "./ai": {
+      "types": "./dist/aiFeatures.d.ts",
+      "import": "./dist/aiFeatures.js"
+    },
+    "./collaboration": {
+      "types": "./dist/collaboration/index.d.ts",
+      "import": "./dist/collaboration/index.js"
+    },
+    "./page-builder": {
+      "types": "./dist/pageBuilder.d.ts",
+      "import": "./dist/pageBuilder.js"
+    }
+  },
+  "files": [
+    "dist",
+    "README.md"
+  ],
+  "scripts": {
+    "build": "tsc",
+    "dev": "tsc --watch",
+    "clean": "rm -rf dist",
+    "type-check": "tsc --noEmit"
+  },
+  "dependencies": {
+    "clsx": "^2.1.1",
+    "tailwind-merge": "^3.4.0"
+  },
+  "peerDependencies": {
+    "@ghatana/design-system": "workspace:*",
+    "@ghatana/theme": "workspace:*",
+    "@ghatana/tokens": "workspace:*",
+    "@ghatana/utils": "workspace:*",
+    "react": "^19.0.0",
+    "react-dom": "^19.0.0"
+  },
+  "devDependencies": {
+    "@types/node": "^25.2.0",
+    "@types/react": "^19.2.10",
+    "@types/react-dom": "^19.2.3",
+    "typescript": "^5.9.3"
+  },
+  "keywords": [
+    "ghatana",
+    "ui-integration",
+    "ai-features",
+    "collaboration",
+    "page-builder",
+    "react"
+  ],
+  "author": "Ghatana Team",
+  "license": "MIT"
+}

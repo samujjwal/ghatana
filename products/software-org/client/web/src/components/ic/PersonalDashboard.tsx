@@ -18,7 +18,7 @@ import {
     Alert,
     Tab,
     Tabs,
-} from '@ghatana/ui';
+} from '@ghatana/design-system';
 import {
     CheckCircle as CheckCircleIcon,
     RadioButtonUnchecked as RadioButtonUncheckedIcon,
@@ -34,7 +34,7 @@ import {
     PlayArrow as PlayArrowIcon,
     Pause as PauseIcon,
     CheckCircleOutline as CheckCircleOutlineIcon,
-} from '@ghatana/ui/icons';
+} from '@ghatana/design-system/icons';
 
 // ==================== TYPES ====================
 

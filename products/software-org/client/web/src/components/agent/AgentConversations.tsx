@@ -11,7 +11,6 @@ import React, { useState } from 'react';
 import {
     Grid,
     Card,
-    KpiCard,
     Box,
     Chip,
     Tabs,
@@ -24,7 +23,8 @@ import {
     TableBody,
     TableRow,
     TableCell,
-} from '@ghatana/ui';
+} from '@ghatana/design-system';
+import { KpiCard } from '@/shared/components/org';
 
 /**
  * Conversation metrics
@@ -130,7 +130,7 @@ export interface AgentConversationsProps {
  * - Quality scoring metrics
  * - Tab-based navigation (Conversations, Messages, Sentiment, Quality)
  *
- * Reuses @ghatana/ui components:
+ * Reuses @ghatana/design-system components and shared org KPI cards:
  * - KpiCard (metrics)
  * - Grid (responsive layouts)
  * - Card (conversation cards, sentiment cards)

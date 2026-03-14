@@ -22,7 +22,7 @@ import {
     LinearProgress,
     Divider,
     TextField,
-} from '@ghatana/ui';
+} from '@ghatana/design-system';
 import {
     Download as DownloadIcon,
     CreditCard as CreditCardIcon,
@@ -31,7 +31,7 @@ import {
     TrendingUp as TrendingUpIcon,
     Receipt as ReceiptIcon,
     Close as CloseIcon,
-} from '@ghatana/ui/icons';
+} from '@ghatana/design-system/icons';
 
 /**
  * Subscription plan information

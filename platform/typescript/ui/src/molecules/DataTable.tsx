@@ -1,2 +1,2 @@
-export { Table as DataTable } from '@ghatana/ui';
-export type { TableProps } from '@ghatana/ui';
+export { Table as DataTable } from '@ghatana/design-system';
+export type { TableProps } from '@ghatana/design-system';

@@ -1,0 +1,134 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ include "data-cloud.fullname" . }}
+  namespace: {{ .Release.Namespace }}
+  labels:
+    {{- include "data-cloud.labels" . | nindent 4 }}
+    app.kubernetes.io/component: backend
+spec:
+  replicas: {{ .Values.replicaCount }}
+  selector:
+    matchLabels:
+      {{- include "data-cloud.selectorLabels" . | nindent 6 }}
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxSurge: 1
+      maxUnavailable: 0
+  template:
+    metadata:
+      labels:
+        {{- include "data-cloud.selectorLabels" . | nindent 8 }}
+        app.kubernetes.io/version: {{ .Chart.AppVersion | quote }}
+      annotations:
+        {{- if .Values.metrics.enabled }}
+        prometheus.io/scrape: "true"
+        prometheus.io/path: {{ .Values.metrics.path | quote }}
+        prometheus.io/port: {{ .Values.metrics.port | quote }}
+        {{- end }}
+        # Force pod re-roll on configmap change
+        checksum/config: {{ include (print $.Template.BasePath "/configmap.yaml") . | sha256sum }}
+    spec:
+      {{- with .Values.imagePullSecrets }}
+      imagePullSecrets:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      securityContext:
+        {{- toYaml .Values.podSecurityContext | nindent 8 }}
+      terminationGracePeriodSeconds: 60
+      containers:
+        - name: {{ .Chart.Name }}
+          image: {{ include "data-cloud.image" . }}
+          imagePullPolicy: {{ .Values.image.pullPolicy }}
+          securityContext:
+            {{- toYaml .Values.securityContext | nindent 12 }}
+          ports:
+            - name: http
+              containerPort: {{ .Values.service.httpPort }}
+              protocol: TCP
+            - name: grpc
+              containerPort: {{ .Values.service.grpcPort }}
+              protocol: TCP
+          livenessProbe:
+            {{- toYaml .Values.livenessProbe | nindent 12 }}
+          readinessProbe:
+            {{- toYaml .Values.readinessProbe | nindent 12 }}
+          resources:
+            {{- toYaml .Values.resources | nindent 12 }}
+          env:
+            - name: HTTP_PORT
+              value: {{ .Values.config.httpPort | quote }}
+            - name: GRPC_PORT
+              value: {{ .Values.config.grpcPort | quote }}
+            - name: LOG_LEVEL
+              value: {{ .Values.config.logLevel | quote }}
+            # Kafka
+            - name: KAFKA_BOOTSTRAP_SERVERS
+              value: {{ .Values.kafka.bootstrapServers | quote }}
+            - name: KAFKA_PARTITIONS
+              value: {{ .Values.kafka.partitions | quote }}
+            - name: KAFKA_REPLICATION_FACTOR
+              value: {{ .Values.kafka.replicationFactor | quote }}
+            - name: KAFKA_READ_TIMEOUT_MS
+              value: {{ .Values.kafka.readTimeoutMs | quote }}
+            # ClickHouse
+            - name: CLICKHOUSE_HOST
+              value: {{ .Values.clickhouse.host | quote }}
+            - name: CLICKHOUSE_PORT
+              value: {{ .Values.clickhouse.port | quote }}
+            # OpenSearch
+            - name: OPENSEARCH_HOST
+              value: {{ .Values.opensearch.host | quote }}
+            - name: OPENSEARCH_PORT
+              value: {{ .Values.opensearch.port | quote }}
+            - name: OPENSEARCH_SCHEME
+              value: {{ .Values.opensearch.scheme | quote }}
+            - name: OPENSEARCH_USERNAME
+              value: {{ .Values.opensearch.username | quote }}
+            - name: OPENSEARCH_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: {{ include "data-cloud.secretName" . }}
+                  key: opensearch-password
+                  optional: true
+            # Ceph / S3
+            - name: CEPH_ENDPOINT
+              value: {{ .Values.ceph.endpoint | quote }}
+            - name: CEPH_BUCKET
+              value: {{ .Values.ceph.bucket | quote }}
+            - name: CEPH_REGION
+              value: {{ .Values.ceph.region | quote }}
+            - name: CEPH_ACCESS_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: {{ include "data-cloud.secretName" . }}
+                  key: ceph-access-key
+                  optional: true
+            - name: CEPH_SECRET_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: {{ include "data-cloud.secretName" . }}
+                  key: ceph-secret-key
+                  optional: true
+            {{- with .Values.extraEnv }}
+            {{- toYaml . | nindent 12 }}
+            {{- end }}
+          volumeMounts:
+            - name: tmp
+              mountPath: /tmp
+      volumes:
+        - name: tmp
+          emptyDir: {}
+      {{- with .Values.nodeSelector }}
+      nodeSelector:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .Values.affinity }}
+      affinity:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .Values.tolerations }}
+      tolerations:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}

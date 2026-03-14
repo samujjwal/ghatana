@@ -21,7 +21,7 @@ import {
     ListItemButton,
     Divider,
     InputAdornment,
-} from '@ghatana/ui';
+} from '@ghatana/design-system';
 
 /**
  * Review cycle

@@ -11,7 +11,6 @@ import React, { useState } from 'react';
 import {
     Grid,
     Card,
-    KpiCard,
     Box,
     Chip,
     Tabs,
@@ -20,7 +19,8 @@ import {
     Typography,
     Stack,
     Switch,
-} from '@ghatana/ui';
+} from '@ghatana/design-system';
+import { KpiCard } from '@/shared/components/org';
 
 /**
  * Agent configuration metrics
@@ -134,7 +134,7 @@ export interface AgentConfigurationProps {
  * - Integration settings
  * - Tab-based navigation (Agents, Rules, Knowledge, Integrations)
  *
- * Reuses @ghatana/ui components:
+ * Reuses @ghatana/design-system components and shared org KPI cards:
  * - KpiCard (metrics)
  * - Grid (responsive layouts)
  * - Card (agent cards, rule cards, knowledge cards)

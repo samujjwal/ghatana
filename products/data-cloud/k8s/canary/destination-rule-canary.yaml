@@ -1,0 +1,101 @@
+# =============================================================================
+# Istio DestinationRule — Canary-Phase Traffic Policy
+#
+# PURPOSE
+# -------
+# Replaces the base DestinationRule (k8s/istio-mesh.yaml) during a canary
+# rollout.  Key differences from the base:
+#
+#   stable subset  — production-grade circuit breaker (5 consecutive 5xx errors
+#                    before ejection, 30 s interval)
+#   canary subset  — tighter circuit breaker (2 consecutive 5xx errors, 10 s
+#                    interval, 100% max ejection) so a bad canary is isolated
+#                    quickly and its limited traffic share cannot contaminate
+#                    the stable majority.
+#
+# Both subsets inherit the shared ISTIO_MUTUAL TLS + connection pool policy
+# defined at the top-level trafficPolicy.
+#
+# APPLY
+# -----
+#   Included via k8s/canary/kustomization.yaml:
+#     kubectl apply -k products/data-cloud/k8s/canary/
+#
+# ROLLBACK
+# --------
+#   kubectl apply -k products/data-cloud/k8s/   # restores base DestinationRule
+# =============================================================================
+apiVersion: networking.istio.io/v1
+kind: DestinationRule
+metadata:
+  name: data-cloud-subsets
+  namespace: data-cloud
+  labels:
+    app: data-cloud
+    canary-phase: "10"
+    managed-by: kustomize
+spec:
+  host: data-cloud.data-cloud.svc.cluster.local
+
+  # ---------------------------------------------------------------------------
+  # Shared traffic policy — applies to all subsets unless overridden below
+  # ---------------------------------------------------------------------------
+  trafficPolicy:
+    tls:
+      mode: ISTIO_MUTUAL
+    connectionPool:
+      tcp:
+        maxConnections: 1000
+        connectTimeout: 5s
+      http:
+        h2UpgradePolicy: UPGRADE
+        idleTimeout: 90s
+        http1MaxPendingRequests: 100
+        http2MaxRequests: 1000
+    # Baseline outlier detection inherited by all subsets
+    outlierDetection:
+      consecutive5xxErrors: 5
+      interval: 30s
+      baseEjectionTime: 60s
+      maxEjectionPercent: 50
+      minHealthPercent: 50
+
+  # ---------------------------------------------------------------------------
+  # Subsets — matched by pod label `version`
+  #
+  # The stable Deployment has:   version: stable
+  # The canary Deployment has:   version: canary
+  # ---------------------------------------------------------------------------
+  subsets:
+    # ----- Stable -------------------------------------------------------
+    - name: stable
+      labels:
+        version: stable
+      # Stable: same as base policy but explicit override for clarity
+      trafficPolicy:
+        outlierDetection:
+          consecutive5xxErrors: 5
+          interval: 30s
+          baseEjectionTime: 60s
+          maxEjectionPercent: 50
+
+    # ----- Canary -------------------------------------------------------
+    - name: canary
+      labels:
+        version: canary
+      # Canary: fail fast — eject immediately on 2 consecutive 5xx responses.
+      # maxEjectionPercent: 100 means ALL canary pods can be ejected if they
+      # are all returning errors, ensuring zero canary traffic in that case.
+      trafficPolicy:
+        outlierDetection:
+          consecutive5xxErrors: 2   # tighter than stable (5)
+          interval: 10s             # check more frequently
+          baseEjectionTime: 30s     # shorter base ejection for faster recovery
+          maxEjectionPercent: 100   # eject entire canary fleet if broken
+        # Canary connection pool — slightly lower limits to protect stable workload
+        connectionPool:
+          tcp:
+            maxConnections: 200
+          http:
+            http1MaxPendingRequests: 20
+            http2MaxRequests: 100

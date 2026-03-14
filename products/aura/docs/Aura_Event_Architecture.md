@@ -4,6 +4,11 @@
 
 The event architecture enables asynchronous ingestion, personalization refresh, recommendation learning, agent coordination, and governance audit — without tight coupling between services. All events are immutable, versioned, and designed for idempotent consumption.
 
+All Aura cross-process event communication must happen through AEP. Aura producers and consumers should not integrate directly with Event Cloud or raw broker infrastructure.
+
+For outbox behavior, partitioning, topic registration, and producer/consumer implementation rules,
+see `Aura_Shared_Platform_Integration_Spec.md`.
+
 ---
 
 ## Design Principles
@@ -15,9 +20,15 @@ The event architecture enables asynchronous ingestion, personalization refresh, 
 5. **PII discipline:** Events do not carry raw PII. Profile events use user IDs; sensitive data is fetched from the profile service by authorized consumers.
 6. **At-least-once delivery:** Consumers are built for at-least-once semantics. Use idempotency keys for operations with side effects.
 
+## Ownership Boundary
+
+- **AEP is the runtime boundary:** topic routing, replay, dead-letter handling, fan-out, and transport integration are AEP responsibilities from Aura's point of view.
+- **Aura owns event semantics:** event names, schemas, business meaning, idempotency expectations, and consumer behavior remain Aura-owned.
+- **Shared observability applies:** AEP publication and consumption paths must emit telemetry into the shared o11y platform.
+
 ---
 
-## Event Topics
+## AEP Topics
 
 | Topic                 | Category              | Key Events                                                                 |
 | --------------------- | --------------------- | -------------------------------------------------------------------------- |
@@ -210,10 +221,10 @@ Emitted by observability systems when feature or score distribution drift exceed
 
 | Scenario                    | Strategy                                                                                 |
 | --------------------------- | ---------------------------------------------------------------------------------------- |
-| Consumer processing failure | Event remains in queue; retried with exponential backoff                                 |
-| Persistent failure          | Event moved to dead-letter topic (`*.dlq`) after max retries                             |
+| Consumer processing failure | Event remains in AEP-managed queue/stream; retried with exponential backoff              |
+| Persistent failure          | Event moved to AEP-managed dead-letter topic (`*.dlq`) after max retries                 |
 | Duplicate events            | Consumers deduplicate using `eventId` with a short-lived seen-IDs cache                  |
-| Schema version mismatch     | Consumer flags `UNSUPPORTED_SCHEMA_VERSION` error; event routed to DLQ for investigation |
+| Schema version mismatch     | Consumer flags `UNSUPPORTED_SCHEMA_VERSION` error; event routed through AEP DLQ for investigation |
 
 ---
 
@@ -228,3 +239,5 @@ Emitted by observability systems when feature or score distribution drift exceed
 | Analytics Pipeline          | `aura.recommendation`, `aura.feedback` | Feeds quality, time-to-decision, and funnel metrics (tokenized user IDs only) |
 | ML Training Pipeline        | `aura.feedback`, `aura.recommendation` | Accumulates labeled examples for ranking, shade, safety, and return-reduction models |
 | Observability Service       | `aura.governance`                      | Alerts on drift, fairness, and model events                                 |
+
+All subscriptions above are implemented through AEP consumers or handlers. No Aura module should subscribe directly to broker-native topics outside the AEP boundary.

@@ -8,7 +8,7 @@
  */
 
 import React from 'react';
-import { Card, Stack, Button, Chip, Box } from '@ghatana/ui';
+import { Card, Stack, Button, Chip, Box } from '@ghatana/design-system';
 import type { OrgNode } from '@/types/org.types';
 import { usePersona } from '@/hooks/usePersona';
 
@@ -240,4 +240,3 @@ export function OrgNodeDetail({
     </Card>
   );
 }
-

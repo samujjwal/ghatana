@@ -1,5 +1,9 @@
 import { ReactNode, useEffect } from "react";
 import { useAtom } from "jotai";
+import {
+    ThemeProvider as PlatformThemeProvider,
+    useTheme as usePlatformTheme,
+} from "@ghatana/theme";
 import { themeAtom } from "@/state/jotai/session.store";
 
 /**
@@ -30,40 +34,32 @@ import { themeAtom } from "@/state/jotai/session.store";
  * @doc.pattern Provider
  */
 
+function ThemeBridge({
+    children,
+    theme,
+}: {
+    children: ReactNode;
+    theme: "light" | "dark" | "system";
+}) {
+    const { setTheme } = usePlatformTheme();
+
+    useEffect(() => {
+        if (typeof window === "undefined") return;
+        setTheme(theme);
+        document.documentElement.setAttribute("data-theme", theme);
+    }, [setTheme, theme]);
+
+    return <>{children}</>;
+}
+
 export function ThemeProvider({ children }: { children: ReactNode }) {
     const [theme] = useAtom(themeAtom);
 
-    // Apply theme to the document root for Tailwind + tokens.css
-    useEffect(() => {
-        if (typeof window === "undefined") return;
-
-        const root = document.documentElement;
-
-        // Persist logical preference for future loads
-        window.localStorage.setItem('software-org:theme', theme);
-
-        // Resolve "system" using OS preference
-        let effective: "light" | "dark";
-        if (theme === "system") {
-            const prefersDark = window.matchMedia("(prefers-color-scheme: dark)").matches;
-            effective = prefersDark ? "dark" : "light";
-        } else {
-            effective = theme;
-        }
-
-        // Manage html classes explicitly so both Tailwind and tokens.css behave:
-        // - 'dark' enables Tailwind dark: and html.dark rules in tokens.css
-        // - 'light' prevents @media (prefers-color-scheme: dark) :root:not(.light)
-        //   from forcing dark tokens when the user has chosen light.
-        root.classList.remove("light", "dark");
-        root.classList.add(effective);
-
-        // Expose logical preference for any consumers
-        root.setAttribute("data-theme", theme);
-    }, [theme]);
-
-    // No external theme provider: rely on tokens.css + Tailwind
-    return <>{children}</>;
+    return (
+        <PlatformThemeProvider attribute="class" storageKey="software-org:theme">
+            <ThemeBridge theme={theme}>{children}</ThemeBridge>
+        </PlatformThemeProvider>
+    );
 }
 
 export default ThemeProvider;

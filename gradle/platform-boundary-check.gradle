@@ -1,0 +1,68 @@
+/**
+ * Platform Boundary Guardrails
+ * 
+ * Enforces that platform modules do not depend on products/*
+ * This prevents boundary drift and maintains clean architecture.
+ */
+
+def checkPlatformBoundary() {
+    def projectPath = project.path
+    if (!projectPath.startsWith(":platform:")) {
+        return // Only apply to platform modules
+    }
+    
+    println "Checking platform boundary for ${projectPath}"
+    
+    def violations = []
+    
+    // Check build file dependencies
+    project.buildFile.eachLine { line ->
+        if (line.contains('project(":products:')) {
+            violations << "build.gradle: ${line.trim()}"
+        }
+    }
+    
+    // Check declared project dependencies
+    project.configurations.configureEach { config ->
+        if (config.name.startsWith("compile") || config.name.startsWith("runtime") || config.name.startsWith("test")) {
+            config.allDependencies
+                .withType(org.gradle.api.artifacts.ProjectDependency)
+                .each { dep ->
+                    def depPath = dep.path
+                    if (depPath.startsWith(":products:")) {
+                        violations << "${config.name}: ${depPath}"
+                    }
+                }
+        }
+    }
+    
+    if (!violations.isEmpty()) {
+        def errorMessage = """
+        ╔══════════════════════════════════════════════════════════════╗
+        ║           PLATFORM BOUNDARY VIOLATION DETECTED              ║
+        ╠══════════════════════════════════════════════════════════════╣
+        ║ Project: ${projectPath}                                       ║
+        ║ Violations:                                                   ║
+        ║   ${violations.join('\n║   ')}                                    ║
+        ║                                                                ║
+        ║ Platform modules must not depend on products/* modules.      ║
+        ║ This creates circular dependencies and violates clean         ║
+        ║ architecture principles.                                      ║
+        ║                                                                ║
+        ║ Solutions:                                                    ║
+        ║ 1. Move the dependency to a product module                   ║
+        ║ 2. Extract shared interface to platform                       ║
+        ║ 3. Use dependency injection with product implementation        ║
+        ║                                                                ║
+        ║ See: PLATFORM_SHARED_LIBRARIES_REMEDIATION_PLAN_2026-03-13.md ║
+        ╚══════════════════════════════════════════════════════════════╝
+        """.stripMargin()
+        
+        throw new GradleException(errorMessage)
+    }
+}
+
+// Apply check after evaluation
+afterEvaluate {
+    checkPlatformBoundary()
+}

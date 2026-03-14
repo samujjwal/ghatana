@@ -26,7 +26,7 @@ Outputs:
 
 Behavior:
 
-- Uses vector similarity search (pgvector) for semantic product retrieval
+- Uses Data Cloud-managed vector similarity search for semantic product retrieval
 - Applies hard filters: category, price range, availability
 - Returns top-N candidates (e.g., 50–200) for downstream agents to refine
 

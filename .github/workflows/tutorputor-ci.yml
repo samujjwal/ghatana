@@ -38,6 +38,9 @@ jobs:
       - name: Enforce no legacy Tutorputor package references
         run: ./products/tutorputor/scripts/check-no-legacy-references.sh
 
+      - name: Check for deprecated @ghatana/ui usage
+        run: pnpm run check:deprecated-ui
+
       - name: Contracts checks
         run: |
           pnpm --filter @ghatana/tutorputor-contracts run build

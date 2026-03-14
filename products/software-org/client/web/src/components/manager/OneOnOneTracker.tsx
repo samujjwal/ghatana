@@ -27,7 +27,7 @@ import {
     ListItemText,
     ListItemAvatar,
     ListItemSecondaryAction,
-} from '@ghatana/ui';
+} from '@ghatana/design-system';
 import {
     CalendarToday,
     Add,
@@ -42,7 +42,7 @@ import {
     MoreVert,
     Schedule,
     Person,
-} from '@ghatana/ui/icons';
+} from '@ghatana/design-system/icons';
 
 // ============================================================================
 // Type Definitions

@@ -1,0 +1,31 @@
+---
+# Data-Cloud — ConfigMap for non-sensitive runtime configuration
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: data-cloud-config
+  namespace: data-cloud
+  labels:
+    app.kubernetes.io/name: data-cloud
+    app.kubernetes.io/component: config
+data:
+  DATACLOUD_HTTP_PORT: "8082"
+  DATACLOUD_GRPC_PORT: "9090"
+  DATACLOUD_MAX_CONNECTIONS: "200"
+  DATACLOUD_CACHE_ENABLED: "true"
+  DATACLOUD_METRICS_ENABLED: "true"
+  DB_HOST: "postgres.shared-services.svc.cluster.local"
+  DB_PORT: "5432"
+  DB_NAME: "datacloud"
+  KAFKA_BOOTSTRAP_SERVERS: "kafka.shared-services.svc.cluster.local:9092"
+  KAFKA_ENABLED: "true"
+  CLICKHOUSE_HOST: "clickhouse.shared-services.svc.cluster.local"
+  CLICKHOUSE_PORT: "8123"
+  CLICKHOUSE_ENABLED: "true"
+  JAVA_OPTS: >-
+    -XX:+UseZGC
+    -XX:InitialRAMPercentage=50.0
+    -XX:MaxRAMPercentage=75.0
+    -XX:+ExitOnOutOfMemoryError
+    -Dfile.encoding=UTF-8
+    -Djava.net.preferIPv4Stack=true

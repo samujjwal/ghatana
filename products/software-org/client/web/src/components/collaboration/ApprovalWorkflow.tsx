@@ -25,7 +25,7 @@ import {
     Step,
     StepLabel,
     StepContent,
-} from '@ghatana/ui';
+} from '@ghatana/design-system';
 
 // Types
 export type ApprovalStatus = 'pending' | 'approved' | 'rejected' | 'cancelled';

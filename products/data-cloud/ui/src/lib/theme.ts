@@ -1,10 +1,10 @@
 /**
  * Data Cloud Theme Configuration
  *
- * Re-exports centralized theme styles from @ghatana/ui for consistency
+ * Re-exports centralized theme styles from @ghatana/design-system for consistency
  * across the platform, plus Data-Cloud specific extensions.
  *
- * MIGRATION: Common styles now imported from @ghatana/ui (libs/typescript/ui).
+ * MIGRATION: Common styles now imported from @ghatana/design-system.
  * Only product-specific extensions are defined locally.
  *
  * @doc.type utility
@@ -14,7 +14,7 @@
  */
 
 // =============================================================================
-// RE-EXPORTS FROM @ghatana/ui (SINGLE SOURCE OF TRUTH)
+// RE-EXPORTS FROM @ghatana/design-system (SINGLE SOURCE OF TRUTH)
 // =============================================================================
 
 export {
@@ -27,15 +27,14 @@ export {
     buttonStyles,
     tableStyles,
     statusStyles,
-    // Note: ui exports `metricCardStyles`; alias to `metricStyles` for compatibility
+    // Keep the legacy alias for downstream compatibility.
     metricCardStyles,
     metricCardStyles as metricStyles,
     badgeStyles,
     modalStyles,
     toastStyles,
     navStyles,
-    // Utility function
-} from '@ghatana/ui';
+} from '@ghatana/design-system';
 
 export { cn } from '@ghatana/utils';
 

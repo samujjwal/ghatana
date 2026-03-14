@@ -8,6 +8,49 @@ const env = loadEnv(mode, process.cwd());
 const useMocks = env.VITE_USE_MOCKS === 'true';
 console.log('[Vite Config] NODE_ENV:', mode, 'VITE_USE_MOCKS:', env.VITE_USE_MOCKS, '=> useMocks:', useMocks);
 
+const workspaceAliases = [
+    {
+        find: /^@ghatana\/design-system$/,
+        replacement: path.resolve(__dirname, "../../../../platform/typescript/design-system/src/index.ts"),
+    },
+    {
+        find: /^@ghatana\/design-system\/icons$/,
+        replacement: path.resolve(__dirname, "../../../../platform/typescript/design-system/src/icons/index.tsx"),
+    },
+    {
+        find: /^@ghatana\/ui-integration$/,
+        replacement: path.resolve(__dirname, "../../../../platform/typescript/ui-integration/src/index.ts"),
+    },
+    {
+        find: /^@ghatana\/tokens$/,
+        replacement: path.resolve(__dirname, "../../../../platform/typescript/tokens/src/index.ts"),
+    },
+    {
+        find: /^@ghatana\/api$/,
+        replacement: path.resolve(__dirname, "../../../../platform/typescript/api/src/index.ts"),
+    },
+    {
+        find: /^@ghatana\/realtime$/,
+        replacement: path.resolve(__dirname, "../../../../platform/typescript/realtime/src/index.ts"),
+    },
+    {
+        find: /^@ghatana\/theme$/,
+        replacement: path.resolve(__dirname, "../../../../platform/typescript/theme/src/index.ts"),
+    },
+    {
+        find: /^@ghatana\/utils$/,
+        replacement: path.resolve(__dirname, "../../../../platform/typescript/utils/src/index.ts"),
+    },
+    {
+        find: /^react-router-dom$/,
+        replacement: path.resolve(__dirname, "./node_modules/react-router-dom"),
+    },
+    {
+        find: /^react-router$/,
+        replacement: path.resolve(__dirname, "./node_modules/react-router"),
+    },
+];
+
 export default defineConfig({
     // Provide a compile-time `process.env` shim for packages that reference
     // Node-style env variables so they don't blow up in browser runtime.
@@ -21,28 +64,29 @@ export default defineConfig({
         reactRouter(),
     ],
     resolve: {
-        alias: {
-            "@": path.resolve(__dirname, "./src"),
-            "@/app": path.resolve(__dirname, "./src/app"),
-            "@/features": path.resolve(__dirname, "./src/features"),
-            "@/shared": path.resolve(__dirname, "./src/shared"),
-            "@/hooks": path.resolve(__dirname, "./src/hooks"),
-            "@/state": path.resolve(__dirname, "./src/state"),
-            "@/services": path.resolve(__dirname, "./src/services"),
-            "@/styles": path.resolve(__dirname, "./src/styles"),
-            "@/pages": path.resolve(__dirname, "./src/pages"),
-            "@/components": path.resolve(__dirname, "./src/components"),
+        alias: [
+            ...workspaceAliases,
+            { find: "@", replacement: path.resolve(__dirname, "./src") },
+            { find: "@/app", replacement: path.resolve(__dirname, "./src/app") },
+            { find: "@/features", replacement: path.resolve(__dirname, "./src/features") },
+            { find: "@/shared", replacement: path.resolve(__dirname, "./src/shared") },
+            { find: "@/hooks", replacement: path.resolve(__dirname, "./src/hooks") },
+            { find: "@/state", replacement: path.resolve(__dirname, "./src/state") },
+            { find: "@/services", replacement: path.resolve(__dirname, "./src/services") },
+            { find: "@/styles", replacement: path.resolve(__dirname, "./src/styles") },
+            { find: "@/pages", replacement: path.resolve(__dirname, "./src/pages") },
+            { find: "@/components", replacement: path.resolve(__dirname, "./src/components") },
             // Local workspace aliases for Yappc DevSecOps store and types so
             // DevSecOpsBoardPage and related adapters can import them directly.
-            "@ghatana/yappc-store/devsecops": path.resolve(
-                __dirname,
-                "../../../yappc/app-creator/libs/store/src/devsecops",
-            ),
-            "@ghatana/yappc-types/devsecops": path.resolve(
-                __dirname,
-                "../../../yappc/app-creator/libs/types/src/devsecops",
-            ),
-        },
+            {
+                find: "@ghatana/yappc-store/devsecops",
+                replacement: path.resolve(__dirname, "../../../yappc/app-creator/libs/store/src/devsecops"),
+            },
+            {
+                find: "@ghatana/yappc-types/devsecops",
+                replacement: path.resolve(__dirname, "../../../yappc/app-creator/libs/types/src/devsecops"),
+            },
+        ],
     },
     server: {
         // Bind to 0.0.0.0 to ensure both IPv4 and IPv6 interfaces are available

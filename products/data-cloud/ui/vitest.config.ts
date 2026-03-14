@@ -4,6 +4,12 @@ import path from 'path';
 import { createRequire } from 'module';
 
 const require = createRequire(import.meta.url);
+const workspaceAliases = {
+  '@ghatana/design-system': path.resolve(__dirname, '../../../platform/typescript/design-system/src/index.ts'),
+  '@ghatana/theme': path.resolve(__dirname, '../../../platform/typescript/theme/src/index.ts'),
+  '@ghatana/tokens': path.resolve(__dirname, '../../../platform/typescript/tokens/src/index.ts'),
+  '@ghatana/utils': path.resolve(__dirname, '../../../platform/typescript/utils/src/index.ts'),
+};
 
 /**
  * Vitest configuration for CES Workflow Platform.
@@ -41,6 +47,7 @@ export default defineConfig({
   },
   resolve: {
     alias: {
+      ...workspaceAliases,
       '@': path.resolve(__dirname, './src'),
       // Redirect @ghatana/flow-canvas to a lightweight stub so jsdom tests don't
       // need ReactFlow's browser-only DOM APIs. vi.mock() calls in tests supersede this.

@@ -2,13 +2,13 @@
  * Org Tree View Component
  *
  * Interactive tree visualization of organization structure.
- * Uses @ghatana/ui TreeView for display and interaction.
+ * Uses @ghatana/design-system TreeView for display and interaction.
  *
  * @package @ghatana/software-org-web
  */
 
 import React, { useState, useMemo } from 'react';
-import { TreeView, Card, Box, Stack, TextField, Chip, Button } from '@ghatana/ui';
+import { TreeView, Card, Box, Stack, TextField, Chip, Button } from '@ghatana/design-system';
 import type { OrgNode, OrgSearchFilter, TreeViewOptions } from '@/types/org.types';
 
 /**
@@ -330,4 +330,3 @@ export function OrgTreeView({
     </Card>
   );
 }
-

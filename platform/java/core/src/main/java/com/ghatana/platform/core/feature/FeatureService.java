@@ -159,29 +159,8 @@ public final class FeatureService {
      */
     public static FeatureService withDefaults() {
         return builder()
-                // Platform defaults
+                // Platform defaults only
                 .enableByDefault(Feature.PLATFORM_ADVANCED_OBSERVABILITY)
-                
-                // AEP defaults
-                .enableByDefault(Feature.AEP_ADVANCED_PATTERNS)
-                
-                // Data-Cloud defaults
-                .enableByDefault(Feature.DATA_CLOUD_ML_INTELLIGENCE)
-                
-                // YAPPC defaults
-                .enableByDefault(Feature.YAPPC_SCAFFOLDING)
-                .enableByDefault(Feature.YAPPC_REFACTORING)
-                
-                // Flashit defaults
-                .enableByDefault(Feature.FLASHIT_AI_CLASSIFICATION)
-                
-                // Software-Org defaults
-                .enableByDefault(Feature.SOFTWARE_ORG_DEPARTMENTS)
-                
-                // Virtual-Org defaults
-                .enableByDefault(Feature.VIRTUAL_ORG_AGENTS)
-                
-                // Security-Gateway defaults
                 .enableByDefault(Feature.SECURITY_GATEWAY_OAUTH)
                 .enableByDefault(Feature.SECURITY_GATEWAY_RBAC)
                 

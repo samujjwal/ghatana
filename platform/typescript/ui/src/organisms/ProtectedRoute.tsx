@@ -1,5 +1,8 @@
-import { Navigate, Outlet, type NavigateProps } from 'react-router-dom';
+import * as ReactRouterDom from 'react-router-dom';
+import type { NavigateProps } from 'react-router-dom';
 import { type ReactNode, type ComponentType } from 'react';
+
+const { Navigate, Outlet } = ReactRouterDom;
 
 /**
  * Authentication check result.
@@ -278,6 +281,7 @@ export function ProtectedRoute({
   accessDenied,
   onAuthFail,
   navigateProps = { replace: true },
+  children,
 }: ProtectedRouteProps) {
   // Perform authentication check
   const authResult = isAuthenticated();
@@ -340,8 +344,8 @@ export function ProtectedRoute({
     }
   }
 
-  // All checks passed - render nested routes
-  return <Outlet />;
+  // All checks passed - render explicit children when provided, otherwise nested routes.
+  return children ? <>{children}</> : <Outlet />;
 }
 
 /**

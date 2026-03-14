@@ -8,7 +8,7 @@
  */
 
 import React, { useState } from 'react';
-import { Box, Grid, Card, Button, Stack, TextField, Chip, Select } from '@ghatana/ui';
+import { Box, Grid, Card, Button, Stack, TextField, Chip, Select } from '@ghatana/design-system';
 import type { AuditEntry } from '@/types/org.types';
 import { usePersona } from '@/hooks/usePersona';
 import { ForensicsDrillDown } from '@/components/audit/ForensicsDrillDown';
@@ -502,4 +502,3 @@ export function AuditPage() {
     </Box>
   );
 }
-

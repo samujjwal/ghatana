@@ -26,7 +26,7 @@ import {
     InputLabel,
     Checkbox,
     FormControlLabel,
-} from '@ghatana/ui';
+} from '@ghatana/design-system';
 import { rootApi, type RootUserSearchResult } from '@/services/api';
 import { useRoles, useCreateRoleAssignment, type RoleResponse } from '@/hooks';
 

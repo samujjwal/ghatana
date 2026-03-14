@@ -1,0 +1,1079 @@
+openapi: "3.1.0"
+
+info:
+  title: Data-Cloud Platform API
+  description: |
+    REST API for the Ghatana Data-Cloud unified data platform.
+
+    The Data-Cloud platform provides:
+    - **Entity storage** — multi-tenant JSONB entity CRUD with pluggable storage backends
+    - **Event log** — append-only event stream with push-based SSE subscriptions
+    - **Agent registry** — register and discover AI agents
+    - **Pipeline registry** — store and retrieve AEP pipeline definitions
+    - **Checkpoint management** — save/restore agent checkpoints
+    - **Agent memory plane** — read and search agent episodic/semantic/procedural memory
+    - **Brain API** — salience scoring, attention management, workspace spotlight
+    - **Learning API** — policy extraction, human-review queue
+    - **Analytics API** — ad-hoc ClickHouse-backed analytics queries
+    - **Server-Sent Events** — real-time push for events, agents, and learning updates
+
+    ## Authentication
+    All endpoints require a `tenantId` (query parameter or `X-Tenant-ID` header) to enforce
+    tenant isolation. Production deployments additionally require a bearer token via the
+    `security-gateway` proxy.
+
+    ## Versioning
+    All stable endpoints are prefixed with `/api/v1`. Utility endpoints (`/health`, `/ready`,
+    `/live`, `/info`, `/metrics`) are unprefixed.
+  version: "1.0.0-SNAPSHOT"
+  license:
+    name: Proprietary — Ghatana Internal
+  contact:
+    name: Data-Cloud Platform Team
+    email: data-cloud@ghatana.internal
+
+servers:
+  - url: http://localhost:8080
+    description: Local development
+  - url: https://data-cloud-staging.ghatana.internal
+    description: Staging
+  - url: https://data-cloud.ghatana.internal
+    description: Production
+
+tags:
+  - name: health
+    description: Liveness, readiness, and health probes.
+  - name: info
+    description: Service information and Prometheus-format metrics.
+  - name: entities
+    description: Generic JSONB entity CRUD operations.
+  - name: events
+    description: Append-only event log operations.
+  - name: agents
+    description: Agent registry — register, list, and manage AI agents.
+  - name: pipelines
+    description: AEP pipeline definition registry.
+  - name: checkpoints
+    description: Agent checkpoint save/restore.
+  - name: memory
+    description: Agent memory plane (episodic, semantic, procedural, preference).
+  - name: brain
+    description: Brain API — salience, attention, workspace spotlight.
+  - name: learning
+    description: Learning API — policy extraction and human-review queue.
+  - name: analytics
+    description: Ad-hoc analytics queries backed by ClickHouse.
+  - name: sse
+    description: Server-Sent Event streams for real-time push.
+
+# ─────────────────────────────────────────────────────────────────────────────
+# Reusable components
+# ─────────────────────────────────────────────────────────────────────────────
+components:
+  parameters:
+    tenantIdQuery:
+      name: tenantId
+      in: query
+      description: |
+        Tenant identifier. Required for all entity, event, agent, and memory operations.
+        May alternatively be supplied as the `X-Tenant-ID` request header.
+      schema:
+        type: string
+        example: "tenant-123"
+
+    collectionPath:
+      name: collection
+      in: path
+      required: true
+      description: Collection (table) name within the tenant's data space.
+      schema:
+        type: string
+        example: "products"
+
+    entityIdPath:
+      name: id
+      in: path
+      required: true
+      description: Entity UUID.
+      schema:
+        type: string
+        format: uuid
+
+    agentIdPath:
+      name: agentId
+      in: path
+      required: true
+      schema:
+        type: string
+
+    pipelineIdPath:
+      name: pipelineId
+      in: path
+      required: true
+      schema:
+        type: string
+
+    checkpointIdPath:
+      name: checkpointId
+      in: path
+      required: true
+      schema:
+        type: string
+
+    limitQuery:
+      name: limit
+      in: query
+      schema:
+        type: integer
+        default: 50
+        minimum: 1
+        maximum: 1000
+
+    offsetQuery:
+      name: offset
+      in: query
+      schema:
+        type: integer
+        default: 0
+        minimum: 0
+
+  schemas:
+    Entity:
+      type: object
+      required: [tenantId, collectionName, data]
+      properties:
+        id:
+          type: string
+          format: uuid
+          readOnly: true
+        tenantId:
+          type: string
+        collectionName:
+          type: string
+        recordType:
+          type: string
+          enum: [ENTITY, EVENT, TIMESERIES, DOCUMENT, GRAPH]
+          default: ENTITY
+        data:
+          type: object
+          description: Arbitrary JSON payload stored as JSONB.
+          additionalProperties: true
+        metadata:
+          type: object
+          additionalProperties: true
+        version:
+          type: integer
+          readOnly: true
+        active:
+          type: boolean
+          readOnly: true
+        createdAt:
+          type: string
+          format: date-time
+          readOnly: true
+        updatedAt:
+          type: string
+          format: date-time
+          readOnly: true
+
+    EntityList:
+      type: object
+      properties:
+        entities:
+          type: array
+          items:
+            $ref: "#/components/schemas/Entity"
+        total:
+          type: integer
+          format: int64
+        limit:
+          type: integer
+        offset:
+          type: integer
+
+    Event:
+      type: object
+      required: [tenantId, eventType, payload]
+      properties:
+        id:
+          type: string
+          format: uuid
+          readOnly: true
+        tenantId:
+          type: string
+        eventType:
+          type: string
+        payload:
+          type: object
+          additionalProperties: true
+        timestamp:
+          type: string
+          format: date-time
+
+    ErrorResponse:
+      type: object
+      properties:
+        error:
+          type: string
+        code:
+          type: integer
+        timestamp:
+          type: string
+          format: date-time
+
+    HealthResponse:
+      type: object
+      properties:
+        status:
+          type: string
+          enum: [UP, DOWN, READY, LIVE]
+        timestamp:
+          type: string
+          format: date-time
+        service:
+          type: string
+
+  responses:
+    NotFound:
+      description: Resource not found.
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/ErrorResponse"
+
+    BadRequest:
+      description: Invalid request parameters or body.
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/ErrorResponse"
+
+    InternalError:
+      description: Internal server error.
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/ErrorResponse"
+
+  headers:
+    X-Tenant-ID:
+      description: Alternative to the `tenantId` query parameter.
+      schema:
+        type: string
+
+# ─────────────────────────────────────────────────────────────────────────────
+# Paths
+# ─────────────────────────────────────────────────────────────────────────────
+paths:
+
+  # ── Health / utility ───────────────────────────────────────────────────────
+
+  /health:
+    get:
+      summary: Composite health check
+      tags: [health]
+      responses:
+        "200":
+          description: Service is healthy.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/HealthResponse"
+
+  /ready:
+    get:
+      summary: Readiness probe (Kubernetes)
+      tags: [health]
+      responses:
+        "200":
+          description: Service is ready to accept traffic.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/HealthResponse"
+
+  /live:
+    get:
+      summary: Liveness probe (Kubernetes)
+      tags: [health]
+      responses:
+        "200":
+          description: Service process is alive.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/HealthResponse"
+
+  /info:
+    get:
+      summary: Service metadata
+      tags: [info]
+      responses:
+        "200":
+          description: Service name, version, description.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  service:    { type: string }
+                  version:    { type: string }
+                  description:{ type: string }
+                  timestamp:  { type: string, format: date-time }
+
+  /metrics:
+    get:
+      summary: Prometheus-format JVM / service metrics
+      tags: [info]
+      responses:
+        "200":
+          description: JSON map of runtime metrics.
+          content:
+            application/json:
+              schema:
+                type: object
+                additionalProperties: true
+
+  # ── Entity CRUD ────────────────────────────────────────────────────────────
+
+  /api/v1/entities/{collection}:
+    post:
+      summary: Create (save) an entity
+      tags: [entities]
+      parameters:
+        - $ref: "#/components/parameters/collectionPath"
+        - $ref: "#/components/parameters/tenantIdQuery"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              description: Arbitrary JSON payload to store as the entity data.
+              additionalProperties: true
+      responses:
+        "200":
+          description: Entity saved successfully.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Entity"
+        "400": { $ref: "#/components/responses/BadRequest" }
+        "500": { $ref: "#/components/responses/InternalError" }
+
+    get:
+      summary: Query entities in a collection
+      tags: [entities]
+      parameters:
+        - $ref: "#/components/parameters/collectionPath"
+        - $ref: "#/components/parameters/tenantIdQuery"
+        - $ref: "#/components/parameters/limitQuery"
+        - $ref: "#/components/parameters/offsetQuery"
+        - name: filter
+          in: query
+          description: Optional filter expression (backend-specific syntax).
+          schema:
+            type: string
+        - name: sort
+          in: query
+          description: "Sort field, optionally prefixed with `-` for descending."
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Paginated entity list.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/EntityList"
+        "400": { $ref: "#/components/responses/BadRequest" }
+
+  /api/v1/entities/{collection}/{id}:
+    get:
+      summary: Get a single entity by ID
+      tags: [entities]
+      parameters:
+        - $ref: "#/components/parameters/collectionPath"
+        - $ref: "#/components/parameters/entityIdPath"
+        - $ref: "#/components/parameters/tenantIdQuery"
+      responses:
+        "200":
+          description: Entity found.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Entity"
+        "404": { $ref: "#/components/responses/NotFound" }
+
+    delete:
+      summary: Delete an entity
+      tags: [entities]
+      parameters:
+        - $ref: "#/components/parameters/collectionPath"
+        - $ref: "#/components/parameters/entityIdPath"
+        - $ref: "#/components/parameters/tenantIdQuery"
+      responses:
+        "200":
+          description: Entity deleted.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  deleted: { type: boolean }
+                  id:      { type: string, format: uuid }
+        "404": { $ref: "#/components/responses/NotFound" }
+
+  # ── Event log ──────────────────────────────────────────────────────────────
+
+  /api/v1/events:
+    post:
+      summary: Append an event to the event log
+      tags: [events]
+      parameters:
+        - $ref: "#/components/parameters/tenantIdQuery"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/Event"
+      responses:
+        "200":
+          description: Event appended.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  id:     { type: string, format: uuid }
+                  offset: { type: integer, format: int64 }
+        "400": { $ref: "#/components/responses/BadRequest" }
+
+    get:
+      summary: Query the event log
+      tags: [events]
+      parameters:
+        - $ref: "#/components/parameters/tenantIdQuery"
+        - $ref: "#/components/parameters/limitQuery"
+        - name: fromOffset
+          in: query
+          schema:
+            type: integer
+            format: int64
+        - name: eventType
+          in: query
+          schema:
+            type: string
+      responses:
+        "200":
+          description: List of events.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  events:
+                    type: array
+                    items:
+                      $ref: "#/components/schemas/Event"
+                  total: { type: integer, format: int64 }
+
+  # ── Agent registry ─────────────────────────────────────────────────────────
+
+  /api/v1/agents:
+    get:
+      summary: List registered agents
+      tags: [agents]
+      parameters:
+        - $ref: "#/components/parameters/tenantIdQuery"
+        - $ref: "#/components/parameters/limitQuery"
+        - $ref: "#/components/parameters/offsetQuery"
+      responses:
+        "200":
+          description: Paginated agent list.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  agents:
+                    type: array
+                    items:
+                      type: object
+                      additionalProperties: true
+                  total: { type: integer }
+
+    post:
+      summary: Register a new agent
+      tags: [agents]
+      parameters:
+        - $ref: "#/components/parameters/tenantIdQuery"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              additionalProperties: true
+      responses:
+        "200":
+          description: Agent registered.
+
+  /api/v1/agents/{agentId}:
+    get:
+      summary: Get agent by ID
+      tags: [agents]
+      parameters:
+        - $ref: "#/components/parameters/agentIdPath"
+        - $ref: "#/components/parameters/tenantIdQuery"
+      responses:
+        "200":
+          description: Agent definition.
+        "404": { $ref: "#/components/responses/NotFound" }
+
+    delete:
+      summary: Delete agent registration
+      tags: [agents]
+      parameters:
+        - $ref: "#/components/parameters/agentIdPath"
+        - $ref: "#/components/parameters/tenantIdQuery"
+      responses:
+        "200":
+          description: Agent deleted.
+
+  /api/v1/agents/events/stream:
+    get:
+      summary: SSE stream of agent registry events
+      tags: [sse, agents]
+      parameters:
+        - $ref: "#/components/parameters/tenantIdQuery"
+      responses:
+        "200":
+          description: SSE event stream (text/event-stream).
+          content:
+            text/event-stream:
+              schema:
+                type: string
+
+  # ── Pipeline registry ──────────────────────────────────────────────────────
+
+  /api/v1/pipelines:
+    get:
+      summary: List pipeline definitions
+      tags: [pipelines]
+      parameters:
+        - $ref: "#/components/parameters/tenantIdQuery"
+        - $ref: "#/components/parameters/limitQuery"
+        - $ref: "#/components/parameters/offsetQuery"
+      responses:
+        "200":
+          description: Paginated pipeline list.
+
+    post:
+      summary: Save a pipeline definition
+      tags: [pipelines]
+      parameters:
+        - $ref: "#/components/parameters/tenantIdQuery"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              additionalProperties: true
+      responses:
+        "200":
+          description: Pipeline saved.
+
+  /api/v1/pipelines/{pipelineId}:
+    get:
+      summary: Get pipeline by ID
+      tags: [pipelines]
+      parameters:
+        - $ref: "#/components/parameters/pipelineIdPath"
+        - $ref: "#/components/parameters/tenantIdQuery"
+      responses:
+        "200":
+          description: Pipeline definition.
+        "404": { $ref: "#/components/responses/NotFound" }
+
+    put:
+      summary: Update a pipeline definition
+      tags: [pipelines]
+      parameters:
+        - $ref: "#/components/parameters/pipelineIdPath"
+        - $ref: "#/components/parameters/tenantIdQuery"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              additionalProperties: true
+      responses:
+        "200":
+          description: Pipeline updated.
+
+    delete:
+      summary: Delete a pipeline definition
+      tags: [pipelines]
+      parameters:
+        - $ref: "#/components/parameters/pipelineIdPath"
+        - $ref: "#/components/parameters/tenantIdQuery"
+      responses:
+        "200":
+          description: Pipeline deleted.
+
+  # ── Checkpoints ────────────────────────────────────────────────────────────
+
+  /api/v1/checkpoints:
+    get:
+      summary: List agent checkpoints
+      tags: [checkpoints]
+      parameters:
+        - $ref: "#/components/parameters/tenantIdQuery"
+        - $ref: "#/components/parameters/limitQuery"
+        - $ref: "#/components/parameters/offsetQuery"
+      responses:
+        "200":
+          description: Checkpoint list.
+
+    post:
+      summary: Save a checkpoint
+      tags: [checkpoints]
+      parameters:
+        - $ref: "#/components/parameters/tenantIdQuery"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              additionalProperties: true
+      responses:
+        "200":
+          description: Checkpoint saved.
+
+  /api/v1/checkpoints/{checkpointId}:
+    get:
+      summary: Get checkpoint by ID
+      tags: [checkpoints]
+      parameters:
+        - $ref: "#/components/parameters/checkpointIdPath"
+        - $ref: "#/components/parameters/tenantIdQuery"
+      responses:
+        "200":
+          description: Checkpoint data.
+        "404": { $ref: "#/components/responses/NotFound" }
+
+    delete:
+      summary: Delete a checkpoint
+      tags: [checkpoints]
+      parameters:
+        - $ref: "#/components/parameters/checkpointIdPath"
+        - $ref: "#/components/parameters/tenantIdQuery"
+      responses:
+        "200":
+          description: Checkpoint deleted.
+
+  # ── Agent memory ───────────────────────────────────────────────────────────
+
+  /api/v1/memory/{agentId}:
+    get:
+      summary: Get all memory entries for an agent
+      tags: [memory]
+      parameters:
+        - $ref: "#/components/parameters/agentIdPath"
+        - $ref: "#/components/parameters/tenantIdQuery"
+      responses:
+        "200":
+          description: Memory entries (all tiers).
+
+  /api/v1/memory/{agentId}/{tier}:
+    get:
+      summary: Get memory entries for a specific tier
+      tags: [memory]
+      parameters:
+        - $ref: "#/components/parameters/agentIdPath"
+        - name: tier
+          in: path
+          required: true
+          schema:
+            type: string
+            enum: [episodic, semantic, procedural, preference]
+        - $ref: "#/components/parameters/tenantIdQuery"
+      responses:
+        "200":
+          description: Memory entries for the specified tier.
+
+  /api/v1/memory/{agentId}/search:
+    post:
+      summary: Semantic search over agent memory
+      tags: [memory]
+      parameters:
+        - $ref: "#/components/parameters/agentIdPath"
+        - $ref: "#/components/parameters/tenantIdQuery"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                query:
+                  type: string
+                tier:
+                  type: string
+                limit:
+                  type: integer
+                  default: 10
+      responses:
+        "200":
+          description: Matching memory entries.
+
+  /api/v1/memory/{agentId}/{memoryId}:
+    delete:
+      summary: Delete a memory entry
+      tags: [memory]
+      parameters:
+        - $ref: "#/components/parameters/agentIdPath"
+        - name: memoryId
+          in: path
+          required: true
+          schema:
+            type: string
+        - $ref: "#/components/parameters/tenantIdQuery"
+      responses:
+        "200":
+          description: Memory entry deleted.
+
+  /api/v1/memory/{agentId}/{memoryId}/retain:
+    put:
+      summary: Mark a memory entry for retention (prevent auto-expiry)
+      tags: [memory]
+      parameters:
+        - $ref: "#/components/parameters/agentIdPath"
+        - name: memoryId
+          in: path
+          required: true
+          schema:
+            type: string
+        - $ref: "#/components/parameters/tenantIdQuery"
+      responses:
+        "200":
+          description: Retention policy applied.
+
+  # ── Brain API ──────────────────────────────────────────────────────────────
+
+  /api/v1/brain/health:
+    get:
+      summary: Brain subsystem health
+      tags: [brain]
+      responses:
+        "200": { description: Brain is healthy. }
+        "503": { description: Brain not wired. }
+
+  /api/v1/brain/config:
+    get:
+      summary: Brain configuration
+      tags: [brain]
+      responses:
+        "200": { description: Current brain config. }
+
+  /api/v1/brain/stats:
+    get:
+      summary: Brain runtime statistics
+      tags: [brain]
+      responses:
+        "200": { description: Brain stats. }
+
+  /api/v1/brain/workspace:
+    get:
+      summary: Get global workspace spotlight items
+      tags: [brain]
+      parameters:
+        - $ref: "#/components/parameters/tenantIdQuery"
+      responses:
+        "200": { description: Spotlight items. }
+
+  /api/v1/brain/workspace/stream:
+    get:
+      summary: SSE stream of workspace spotlight updates
+      tags: [sse, brain]
+      parameters:
+        - $ref: "#/components/parameters/tenantIdQuery"
+      responses:
+        "200":
+          description: SSE stream.
+          content:
+            text/event-stream:
+              schema:
+                type: string
+
+  /api/v1/brain/attention/elevate:
+    post:
+      summary: Directly elevate a data record to the workspace
+      tags: [brain]
+      parameters:
+        - $ref: "#/components/parameters/tenantIdQuery"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                id:        { type: string }
+                content:   { type: string }
+                reason:    { type: string }
+                emergency: { type: boolean, default: false }
+      responses:
+        "200": { description: Elevation result. }
+        "503": { description: Brain not wired. }
+
+  /api/v1/brain/attention/thresholds:
+    get:
+      summary: Get attention score thresholds
+      tags: [brain]
+      responses:
+        "200": { description: Threshold configuration. }
+
+    put:
+      summary: Update attention score thresholds
+      tags: [brain]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              additionalProperties:
+                type: number
+      responses:
+        "200": { description: Thresholds updated. }
+
+  /api/v1/brain/patterns:
+    get:
+      summary: List learned attention patterns
+      tags: [brain]
+      parameters:
+        - $ref: "#/components/parameters/tenantIdQuery"
+      responses:
+        "200": { description: Pattern list. }
+
+  /api/v1/brain/patterns/match:
+    post:
+      summary: Test a payload against learned patterns
+      tags: [brain]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              additionalProperties: true
+      responses:
+        "200": { description: Pattern match result. }
+
+  /api/v1/brain/salience/{itemId}:
+    get:
+      summary: Get salience score for a specific item
+      tags: [brain]
+      parameters:
+        - name: itemId
+          in: path
+          required: true
+          schema:
+            type: string
+        - $ref: "#/components/parameters/tenantIdQuery"
+      responses:
+        "200": { description: Salience score details. }
+
+  # ── Learning API ───────────────────────────────────────────────────────────
+
+  /api/v1/learning/trigger:
+    post:
+      summary: Trigger a learning cycle (batch reflection)
+      tags: [learning]
+      parameters:
+        - $ref: "#/components/parameters/tenantIdQuery"
+      responses:
+        "200": { description: Learning triggered. }
+        "503": { description: Learning bridge not wired. }
+
+  /api/v1/learning/status:
+    get:
+      summary: Get learning subsystem status
+      tags: [learning]
+      responses:
+        "200": { description: Learning status. }
+
+  /api/v1/learning/review:
+    get:
+      summary: Get the human-review queue of low-confidence policies
+      tags: [learning]
+      parameters:
+        - $ref: "#/components/parameters/tenantIdQuery"
+        - $ref: "#/components/parameters/limitQuery"
+      responses:
+        "200": { description: Review queue items. }
+
+  /api/v1/learning/review/{reviewId}/approve:
+    post:
+      summary: Approve a policy from the review queue
+      tags: [learning]
+      parameters:
+        - name: reviewId
+          in: path
+          required: true
+          schema:
+            type: string
+        - $ref: "#/components/parameters/tenantIdQuery"
+      responses:
+        "200": { description: Policy approved. }
+
+  /api/v1/learning/review/{reviewId}/reject:
+    post:
+      summary: Reject a policy from the review queue
+      tags: [learning]
+      parameters:
+        - name: reviewId
+          in: path
+          required: true
+          schema:
+            type: string
+        - $ref: "#/components/parameters/tenantIdQuery"
+      responses:
+        "200": { description: Policy rejected. }
+
+  /api/v1/learning/stream:
+    get:
+      summary: SSE stream of learning status updates
+      tags: [sse, learning]
+      parameters:
+        - $ref: "#/components/parameters/tenantIdQuery"
+      responses:
+        "200":
+          description: SSE stream.
+          content:
+            text/event-stream:
+              schema:
+                type: string
+
+  # ── Analytics API ──────────────────────────────────────────────────────────
+
+  /api/v1/analytics/query:
+    post:
+      summary: Submit an analytics query
+      tags: [analytics]
+      parameters:
+        - $ref: "#/components/parameters/tenantIdQuery"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                query:
+                  type: string
+                  description: SQL or DSL query string.
+                params:
+                  type: object
+                  additionalProperties: true
+      responses:
+        "200":
+          description: Query submitted; returns queryId for polling.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  queryId: { type: string }
+                  status:  { type: string }
+        "503": { description: Analytics engine not wired. }
+
+  /api/v1/analytics/query/{queryId}:
+    get:
+      summary: Poll for query result
+      tags: [analytics]
+      parameters:
+        - name: queryId
+          in: path
+          required: true
+          schema:
+            type: string
+        - $ref: "#/components/parameters/tenantIdQuery"
+      responses:
+        "200": { description: Query result or PENDING status. }
+        "404": { $ref: "#/components/responses/NotFound" }
+
+  /api/v1/analytics/query/{queryId}/plan:
+    get:
+      summary: Get execution plan for a submitted query
+      tags: [analytics]
+      parameters:
+        - name: queryId
+          in: path
+          required: true
+          schema:
+            type: string
+        - $ref: "#/components/parameters/tenantIdQuery"
+      responses:
+        "200": { description: Query execution plan. }
+
+  /api/v1/analytics/aggregate:
+    post:
+      summary: Run an aggregation query
+      tags: [analytics]
+      parameters:
+        - $ref: "#/components/parameters/tenantIdQuery"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                collection: { type: string }
+                pipeline:
+                  type: array
+                  items:
+                    type: object
+                    additionalProperties: true
+      responses:
+        "200": { description: Aggregation result. }
+
+  # ── SSE streams ────────────────────────────────────────────────────────────
+
+  /events/stream:
+    get:
+      summary: Server-Sent Events stream — event log
+      tags: [sse, events]
+      parameters:
+        - $ref: "#/components/parameters/tenantIdQuery"
+        - name: fromOffset
+          in: query
+          description: Start streaming from this event log offset.
+          schema:
+            type: integer
+            format: int64
+        - name: eventType
+          in: query
+          description: Comma-separated list of event types to filter (empty = all).
+          schema:
+            type: string
+      responses:
+        "200":
+          description: SSE stream. Each event is a JSON payload with `type` and `data` fields.
+          content:
+            text/event-stream:
+              schema:
+                type: string
+                example: |
+                  event: EntityCreated
+                  data: {"id":"...","tenantId":"...","collection":"products"}
+
+                  event: heartbeat
+                  data: {"ts":"2025-01-01T00:00:00Z"}

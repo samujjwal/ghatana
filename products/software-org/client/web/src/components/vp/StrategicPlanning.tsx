@@ -11,7 +11,6 @@ import React, { useState } from 'react';
 import {
     Grid,
     Card,
-    KpiCard,
     Box,
     Chip,
     LinearProgress,
@@ -21,7 +20,8 @@ import {
     Button,
     Typography,
     Stack,
-} from '@ghatana/ui';
+} from '@ghatana/design-system';
+import { KpiCard } from '@/shared/components/org';
 
 /**
  * OKR (Objective and Key Result) data structure
@@ -140,7 +140,7 @@ export interface StrategicPlanningProps {
  * - Timeline visualization with milestones
  * - Tab-based navigation (OKRs, Initiatives, Timeline)
  *
- * Reuses @ghatana/ui components:
+ * Reuses @ghatana/design-system components and shared org KPI cards:
  * - KpiCard (4 planning KPIs)
  * - Grid (responsive layouts)
  * - Card (OKR cards, initiative cards)

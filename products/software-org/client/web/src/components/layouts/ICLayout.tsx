@@ -8,7 +8,7 @@
  */
 
 import { useNavigate, useLocation } from 'react-router';
-import { DashboardLayout, AppSidebar } from '@ghatana/ui';
+import { DashboardLayout, AppSidebar } from '@ghatana/design-system';
 
 /**
  * Navigation sections for IC persona
@@ -107,4 +107,3 @@ export function ICLayout({ children }: ICLayoutProps) {
     </DashboardLayout>
   );
 }
-

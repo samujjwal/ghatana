@@ -1,0 +1,122 @@
+# Promtail configuration — Data-Cloud Platform
+# Open-source Loki log collector (Apache 2.0 license)
+# https://grafana.com/docs/loki/latest/clients/promtail/
+
+server:
+  http_listen_port: 9080
+  grpc_listen_port: 0
+  log_level: info
+
+positions:
+  filename: /tmp/positions.yaml
+
+clients:
+  - url: http://loki:3100/loki/api/v1/push
+    tenant_id: ghatana
+    batchsize:   1048576   # 1 MiB
+    batchwait:   1s
+    backoff_config:
+      min_period:  500ms
+      max_period:  5m
+      max_retries: 10
+
+scrape_configs:
+  # ── Kubernetes container logs (data-cloud namespace) ─────────────────────
+  - job_name: data-cloud-containers
+    kubernetes_sd_configs:
+      - role: pod
+        namespaces:
+          names: [data-cloud, data-cloud-staging]
+    relabel_configs:
+      # Keep only pods that belong to data-cloud workloads
+      - source_labels: [__meta_kubernetes_pod_label_app_kubernetes_io_part_of]
+        regex: data-cloud
+        action: keep
+      # Use container log path
+      - source_labels: [__meta_kubernetes_pod_uid, __meta_kubernetes_pod_container_name]
+        target_label: __path__
+        replacement: /var/log/pods/*$1/$2/*.log
+      # Enrich labels
+      - source_labels: [__meta_kubernetes_namespace]
+        target_label: namespace
+      - source_labels: [__meta_kubernetes_pod_name]
+        target_label: pod
+      - source_labels: [__meta_kubernetes_pod_container_name]
+        target_label: container
+      - source_labels: [__meta_kubernetes_pod_label_app_kubernetes_io_name]
+        target_label: app
+      - source_labels: [__meta_kubernetes_pod_label_app_kubernetes_io_version]
+        target_label: version
+    pipeline_stages:
+      # Parse JSON log lines emitted by Logback/Log4j2
+      - json:
+          expressions:
+            level:      level
+            logger:     logger_name
+            thread:     thread_name
+            message:    message
+            tenant_id:  mdc.tenantId
+            trace_id:   mdc.traceId
+            span_id:    mdc.spanId
+      # Promote JSON fields to Loki labels
+      - labels:
+          level:
+          tenant_id:
+      # Drop DEBUG logs in non-staging namespaces to reduce volume
+      - match:
+          selector: '{namespace!~".*staging.*"}'
+          stages:
+            - drop:
+                expression: "level"
+                value:      DEBUG
+      # Retain structured metadata for Loki 3.x pattern ingester
+      - structured_metadata:
+          trace_id:
+          span_id:
+          logger:
+          thread:
+      # Normalise timestamp from JSON field
+      - timestamp:
+          source: "@timestamp"
+          format: RFC3339Nano
+          fallback_formats:
+            - "2006-01-02T15:04:05.999Z07:00"
+
+  # ── Docker Compose logs (local development) ──────────────────────────────
+  - job_name: data-cloud-docker
+    static_configs:
+      - targets: [localhost]
+        labels:
+          job:       data-cloud
+          product:   data-cloud
+          env:       local
+          __path__: /var/lib/docker/containers/*/*-json.log
+    relabel_configs:
+      - source_labels: [__meta_docker_container_label_com_docker_compose_service]
+        target_label: service
+    pipeline_stages:
+      - docker: {}
+      - json:
+          expressions:
+            level: level
+            tenant_id: mdc.tenantId
+      - labels:
+          level:
+          service:
+      - match:
+          selector: '{service="data-cloud"}'
+          stages:
+            - static_labels:
+                product: data-cloud
+
+  # ── System journal (node metrics context) ────────────────────────────────
+  - job_name: journal
+    journal:
+      max_age: 12h
+      labels:
+        job: systemd-journal
+    relabel_configs:
+      - source_labels: [__journal__systemd_unit]
+        target_label: unit
+      - source_labels: [__journal_priority_keyword]
+        target_label: level

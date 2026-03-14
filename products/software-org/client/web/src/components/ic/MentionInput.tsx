@@ -13,7 +13,7 @@ import {
     Typography,
     Chip,
     Stack,
-} from '@ghatana/ui';
+} from '@ghatana/design-system';
 
 /**
  * User mention

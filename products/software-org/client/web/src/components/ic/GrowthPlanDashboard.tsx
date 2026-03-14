@@ -11,7 +11,7 @@ import {
     Switch,
     Divider,
     IconButton,
-} from '@ghatana/ui';
+} from '@ghatana/design-system';
 
 /**
  * Skill proficiency levels

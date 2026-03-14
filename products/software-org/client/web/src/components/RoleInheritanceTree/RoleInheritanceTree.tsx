@@ -13,8 +13,8 @@ import ReactFlow, {
     useEdgesState,
     type NodeTypes,
     type EdgeTypes,
-} from 'reactflow';
-import 'reactflow/dist/style.css';
+} from '@xyflow/react';
+import '@xyflow/react/dist/style.css';
 
 import { RoleNode } from './RoleNode';
 import { InheritanceLink } from './InheritanceLink';

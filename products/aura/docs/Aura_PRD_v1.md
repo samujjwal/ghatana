@@ -182,8 +182,8 @@ Phase 1 focuses exclusively on **beauty**:
 
 | Stream               | Description                                                                                          | Phase   |
 | -------------------- | ---------------------------------------------------------------------------------------------------- | ------- |
-| Affiliate Commerce   | Commission on purchases made through Aura links                                                      | Phase 1 |
-| Premium Subscription | Advanced analysis, unlimited comparisons, routine automation                                         | Phase 2 |
+| Affiliate Commerce   | Commission on purchases made through Aura links                                                      | Phase 2 |
+| Premium Subscription | Advanced analysis, unlimited comparisons, routine automation                                         | Phase 3+ |
 | Brand Analytics      | Anonymized insights for beauty brands (ingredient performance, shade satisfaction, sentiment trends) | Phase 4 |
 
 ---

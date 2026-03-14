@@ -1,0 +1,14 @@
+-- Flyway V007: Checkpoint — display_name backfill phase complete
+-- ============================================================================
+-- This is a documentation-only checkpoint migration confirming that Flyway
+-- has applied V006 (ADD COLUMN display_name) and DataMigrationService has
+-- run BackfillEntitiesDisplayName.
+--
+-- The concurrent index on entities.display_name is created at application
+-- startup by DataMigrationService via ConcurrentIndexMigration, which
+-- executes CREATE INDEX CONCURRENTLY outside a transaction (a PostgreSQL
+-- requirement that Flyway SQL migrations cannot satisfy).
+--
+-- Next DDL step: V008 will add the NOT NULL constraint on display_name
+-- after the backfill has been verified complete across all tenants.
+-- ============================================================================

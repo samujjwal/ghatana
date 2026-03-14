@@ -1,0 +1,116 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+  SpotBugs Exclusion Filter — Data-Cloud Platform (Ghatana Monorepo)
+
+  Purpose: Suppress false positives and intentional patterns that SpotBugs
+  flags but are safe in the ActiveJ/Data-Cloud context.
+
+  Guidelines:
+    - Add per-class or per-package suppressions here for well-understood cases.
+    - For one-off suppressions in source code, use @SuppressFBWarnings.
+    - All suppressions MUST include a comment explaining why they are safe.
+
+  Reference: https://spotbugs.readthedocs.io/en/latest/filter.html
+-->
+<FindBugsFilter
+    xmlns="https://github.com/spotbugs/filter/3.0.0"
+    xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+    xsi:schemaLocation="https://github.com/spotbugs/filter/3.0.0
+                        https://raw.githubusercontent.com/spotbugs/spotbugs/master/spotbugs/etc/findbugsfilter.xsd">
+
+    <!-- =====================================================================
+         Protobuf generated stubs
+         SpotBugs cannot reason about generated code; exclude entirely.
+    ====================================================================== -->
+    <Match>
+        <Source name="~.*\.proto" />
+    </Match>
+    <Match>
+        <Package name="~.*\.proto\b.*" />
+    </Match>
+
+    <!-- =====================================================================
+         Lombok-generated code
+         @Data / @Builder / equals/hashCode — SpotBugs flags these as
+         RCN_REDUNDANT_NULLCHECK_OF_NONNULL_VALUE; safe to ignore.
+    ====================================================================== -->
+    <Match>
+        <Bug pattern="RCN_REDUNDANT_NULLCHECK_OF_NONNULL_VALUE" />
+        <Method name="~.*equals.*|.*hashCode.*|.*toString.*|.*canEqual.*" />
+    </Match>
+
+    <!-- =====================================================================
+         ActiveJ Eventloop thread safety
+         ActiveJ Promises execute within a single-threaded Eventloop. Fields
+         written exclusively on the eventloop thread are effectively thread-safe
+         but SpotBugs cannot prove this statically.
+         Affected patterns: IS2_INCONSISTENT_SYNC, STCAL_INVOKE_ON_STATIC_*
+    ====================================================================== -->
+    <Match>
+        <Class name="~com\.ghatana\.datacloud\.launcher\.http\.DataCloudHttpServer" />
+        <Bug pattern="IS2_INCONSISTENT_SYNC,STCAL_INVOKE_ON_STATIC_DATE_FORMAT_INSTANCE" />
+    </Match>
+
+    <!-- =====================================================================
+         CopyOnWriteArrayList — sseSubscriptions field
+         COW list is used intentionally for lock-free read-heavy SSE tracking.
+         SpotBugs may flag the iterator pattern; safe here.
+    ====================================================================== -->
+    <Match>
+        <Class name="~com\.ghatana\.datacloud\.launcher\.http\.DataCloudHttpServer" />
+        <Bug pattern="AT_OPERATION_SEQUENCE_ON_CONCURRENT_ABSTRACTION" />
+    </Match>
+
+    <!-- =====================================================================
+         Intentional blocking calls in Promise.ofBlocking executor threads
+         DataCloudHttpServer uses a dedicated blocking executor for I/O bridging
+         (SSE queue.poll, eventlog reads). SpotBugs may flag these as
+         IMSE_DONT_CATCH_IMSE or similar; they are correct usage.
+    ====================================================================== -->
+    <Match>
+        <Class name="~com\.ghatana\.datacloud\.launcher\.http\.DataCloudHttpServer" />
+        <Bug pattern="SWL_SLEEP_WITH_LOCK_HELD" />
+    </Match>
+
+    <!-- =====================================================================
+         In-memory test stores (test fixtures)
+         InMemoryEntityStore and InMemoryEventLogStore use synchronized blocks
+         intentionally. SpotBugs lock-ordering warnings are false positives
+         given the single-lock pattern.
+    ====================================================================== -->
+    <Match>
+        <Class name="~com\.ghatana\.datacloud\.DataCloud\$InMemory.*" />
+        <Bug pattern="JLM_JSR166_LOCK_MONITORENTER,UL_UNRELEASED_LOCK" />
+    </Match>
+
+    <!-- =====================================================================
+         Jackson deserialization in controlled contexts
+         ObjectMapper.readValue is called with known-type Class<T> parameters
+         (never user-supplied), so DM_DEFAULT_ENCODING and
+         OBJECT_DESERIALIZATION false-positives can be suppressed.
+    ====================================================================== -->
+    <Match>
+        <Bug pattern="OBJECT_DESERIALIZATION" />
+        <Package name="~com\.ghatana\.datacloud\.(launcher|platform|spi)\b.*" />
+    </Match>
+
+    <!-- =====================================================================
+         ConcurrentHashMap.computeIfAbsent — SpotBugs EI_EXPOSE_REP2
+         Internal maps are returned by reference intentionally within the same
+         package (not part of the public API surface).
+    ====================================================================== -->
+    <Match>
+        <Bug pattern="EI_EXPOSE_REP,EI_EXPOSE_REP2" />
+        <Package name="~com\.ghatana\.datacloud\.entity\.(validation|state)\b.*" />
+    </Match>
+
+    <!-- =====================================================================
+         Benchmark code (JMH)
+         JMH state objects hold mutable fields deliberately; no getters needed.
+    ====================================================================== -->
+    <Match>
+        <Package name="~com\.ghatana\.datacloud\b.*" />
+        <Class name="~.*Benchmark.*\$.*State" />
+    </Match>
+
+</FindBugsFilter>

@@ -30,8 +30,8 @@ dependencies {
     implementation libs.log4j.slf4j.impl
 
     // Testing
-    testImplementation project(':libs:activej-test-utils')
-    testImplementation project(':libs:test-utils')
+    testImplementation project(':platform:java:testing')
+    testImplementation project(':platform:java:testing')
     testImplementation libs.junit.jupiter.api
     testImplementation libs.junit.jupiter.engine
     testImplementation libs.assertj.core

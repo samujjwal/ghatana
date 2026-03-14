@@ -1,6 +1,10 @@
 plugins {
     id("java-library")
     id("java-test-fixtures")
+    id("jacoco")
+    alias(libs.plugins.jmh)
+    alias(libs.plugins.spotbugs)
+    alias(libs.plugins.owasp)
 }
 
 group = "com.ghatana.datacloud"
@@ -90,9 +94,21 @@ dependencies {
 
     // High-performance patterns
     implementation(libs.disruptor)      // LMAX Disruptor for Redis plugin
+    implementation(libs.caffeine)       // L1 in-process cache for CachingEntityRepository
 
     // Streaming Plugins
     implementation(libs.kafka.clients)  // Kafka
+
+    // Analytics time-series backend
+    // clickhouse-http-client provides the HTTP protocol SPI implementation; without it
+    // ClickHouseClient.newInstance(HTTP) cannot find a registered factory and throws
+    // "No client available" at runtime.
+    implementation(libs.clickhouse.client)
+    runtimeOnly(libs.clickhouse.http.client)
+
+    // Search backend (OpenSearch — Apache 2.0)
+    implementation(libs.opensearch.java)
+    implementation(libs.opensearch.rest.client)  // ClickHouse JDBC/HTTP client
 
     // SQL Parsing (replaces fragile regex-based SQL parsing)
     implementation(libs.jsqlparser)
@@ -128,6 +144,8 @@ dependencies {
     // AI INTEGRATION
     // =========================================================================
     implementation(project(":platform:java:ai-integration"))
+    implementation(project(":platform:java:ai-integration:registry"))
+    implementation(project(":platform:java:ai-integration:observability"))
     
     // =========================================================================
     // TESTING
@@ -141,14 +159,20 @@ dependencies {
     // Testcontainers for PostgreSQL integration tests (WarmTierEventLogStore)
     testImplementation(libs.testcontainers.core)
     testImplementation(libs.testcontainers.postgresql)
+    testImplementation(libs.testcontainers.kafka)
+    testImplementation(libs.testcontainers.clickhouse)
     testImplementation(libs.testcontainers.junit.jupiter)
     testImplementation(libs.hikaricp)
+    // gRPC in-process testing
+    testImplementation(libs.grpc.testing)
+    testImplementation(libs.grpc.inprocess)
     testRuntimeOnly(libs.junit.jupiter.engine)
     testRuntimeOnly(libs.junit.platform.launcher)
     
     // Test Fixtures (Shared test utilities)
     testFixturesImplementation(libs.junit.jupiter.api)
     testFixturesImplementation(libs.assertj.core)
+    testFixturesImplementation(project(":platform:java:testing"))
     
     // =========================================================================
     // LOMBOK
@@ -157,10 +181,125 @@ dependencies {
     annotationProcessor(libs.lombok)
     testCompileOnly(libs.lombok)
     testAnnotationProcessor(libs.lombok)
+
+    // =========================================================================
+    // STATIC ANALYSIS
+    // =========================================================================
+    compileOnly(libs.spotbugs.annotations)   // @SuppressFBWarnings on hot paths
 }
 
 tasks.test {
     useJUnitPlatform()
+    finalizedBy(tasks.jacocoTestReport)
+    // Docker Engine 29+ requires min API v1.44; docker-java in Testcontainers defaults
+    // to 1.32. Setting this JVM system property makes TC's shaded docker-java
+    // read and honor the api.version via overrideDockerPropertiesWithSystemProperties().
+    jvmArgs("-Dapi.version=1.44")
+    // docker.raw.sock (configured in ~/.testcontainers.properties) is a macOS-only
+    // socket path inaccessible from inside Docker containers (Linux VM). Tell TC
+    // to mount /var/run/docker.sock instead when bind-mounting into Ryuk/containers.
+    // Docker Desktop makes /var/run/docker.sock available inside containers.
+    environment("TESTCONTAINERS_DOCKER_SOCKET_OVERRIDE", "/var/run/docker.sock")
+}
+
+// =========================================================================
+// JACOCO — Test Coverage
+// =========================================================================
+jacoco {
+    toolVersion = "0.8.11"
+}
+
+tasks.jacocoTestReport {
+    dependsOn(tasks.test)
+    reports {
+        xml.required.set(true)   // consumed by CI, Sonar, Codecov
+        html.required.set(true)  // human-readable local report
+        csv.required.set(false)
+    }
+    // Exclude generated sources (protobuf stubs, Lombok, inner builders)
+    classDirectories.setFrom(
+        sourceSets.main.get().output.asFileTree.matching {
+            exclude(
+                "**/proto/**",
+                "**/*Proto.class",
+                "**/*\$Builder.class",
+                "**/generated/**"
+            )
+        }
+    )
+}
+
+// Enforced coverage gate — build fails if coverage drops below threshold
+tasks.jacocoTestCoverageVerification {
+    dependsOn(tasks.jacocoTestReport)
+    violationRules {
+        rule {
+            limit {
+                counter = "INSTRUCTION"
+                value   = "COVEREDRATIO"
+                minimum = "0.70".toBigDecimal()   // 70% instruction coverage gate
+            }
+        }
+        rule {
+            limit {
+                counter = "BRANCH"
+                value   = "COVEREDRATIO"
+                minimum = "0.60".toBigDecimal()   // 60% branch coverage gate
+            }
+        }
+    }
+    // Exclude generated / value-object code from gate enforcement
+    classDirectories.setFrom(
+        sourceSets.main.get().output.asFileTree.matching {
+            exclude(
+                "**/proto/**",
+                "**/*Proto.class",
+                "**/generated/**",
+                "**/spi/provider/**"   // in-memory impls counted separately
+            )
+        }
+    )
+}
+
+tasks.named("check") {
+    dependsOn(tasks.jacocoTestCoverageVerification)
+}
+
+// =========================================================================
+// SPOTBUGS — SAST (Static Application Security Testing)
+// Runs on every `check` / CI build; fails on HIGH + MEDIUM bugs.
+// Exclusion filter: config/spotbugs/spotbugs-exclude.xml
+// =========================================================================
+spotbugs {
+    toolVersion.set("4.8.6")
+    ignoreFailures.set(false)
+    effort.set(com.github.spotbugs.snom.Effort.MAX)
+    reportLevel.set(com.github.spotbugs.snom.Confidence.MEDIUM)
+    excludeFilter.set(rootProject.file("config/spotbugs/spotbugs-exclude.xml"))
+}
+
+tasks.withType<com.github.spotbugs.snom.SpotBugsTask>().configureEach {
+    reports.create("html") { required.set(true) }
+    reports.create("xml")  { required.set(true) }   // consumed by CI SARIF upload
+}
+
+// =========================================================================
+// OWASP Dependency Check — known-CVE scanning of all runtime dependencies
+// Run manually:  ./gradlew :products:data-cloud:platform:dependencyCheckAnalyze
+// (Not wired into `check` — requires NVD API key in CI via secret)
+// =========================================================================
+dependencyCheck {
+    failBuildOnCVSS = 7.0f          // fail on HIGH severity CVEs (CVSS ≥ 7)
+    suppressionFile = rootProject.file("config/owasp-suppressions.xml").path
+    formats = listOf("HTML", "SARIF", "JSON")
+    outputDirectory = "${project.layout.buildDirectory.get()}/reports/owasp"
+    nvd {
+        // NVD API key injected via NVD_API_KEY env var in CI
+        apiKey = System.getenv("NVD_API_KEY") ?: ""
+        delay = 4000
+    }
+    // Scan runtime + compile classpaths only; skip test deps
+    scanConfigurations = listOf("runtimeClasspath", "compileClasspath")
 }
 
 // Javadoc: tolerate Lombok-generated symbols that javadoc can't resolve
@@ -168,6 +307,27 @@ tasks.named<Javadoc>("javadoc") {
     enabled = true
     isFailOnError = false
     (options as StandardJavadocDocletOptions).addStringOption("Xdoclint:none", "-quiet")
+}
+
+// =========================================================================
+// JMH — Performance Benchmarks (src/jmh/java/)
+// =========================================================================
+dependencies {
+    jmh(libs.jmh.core)
+    jmh(libs.jmh.generator.annprocess)
+}
+
+jmh {
+    warmupIterations.set(2)
+    iterations.set(5)
+    timeOnIteration.set("1s")
+    fork.set(1)
+    benchmarkMode.set(listOf("thrpt", "avgt"))
+    timeUnit.set("ms")
+    resultFormat.set("JSON")
+    resultsFile.set(project.file("${project.layout.buildDirectory.get()}/reports/jmh/results.json"))
+    // Only run benchmarks tagged for the DataCloud module
+    includes.set(listOf("com\\.ghatana\\.datacloud\\..*Benchmark"))
 }
 
 

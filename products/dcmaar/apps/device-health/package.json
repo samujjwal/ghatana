@@ -87,6 +87,7 @@
     "test:e2e:new": "pnpm run build:testhooks && pnpm exec playwright test tests/e2e/extension-lifecycle.spec.ts tests/e2e/message-passing.spec.ts"
   },
   "dependencies": {
+    "@ghatana/design-system": "workspace:*",
     "@ghatana/dcmaar-types": "workspace:*",
     "@ghatana/dcmaar-config-presets": "workspace:*",
     "@ghatana/dcmaar-connectors": "workspace:*",

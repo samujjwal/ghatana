@@ -19,7 +19,7 @@ import {
     InputLabel,
     IconButton,
     AvatarGroup,
-} from '@ghatana/ui';
+} from '@ghatana/design-system';
 
 // Types
 export type CalendarView = 'month' | 'week' | 'day';

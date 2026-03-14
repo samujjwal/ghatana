@@ -19,7 +19,7 @@ import {
     LinearProgress,
     Tooltip,
     Alert,
-} from '@ghatana/ui';
+} from '@ghatana/design-system';
 import {
     Search as SearchIcon,
     Close as CloseIcon,
@@ -31,7 +31,7 @@ import {
     People as PeopleIcon,
     Speed as SpeedIcon,
     Security as SecurityIcon,
-} from '@ghatana/ui/icons';
+} from '@ghatana/design-system/icons';
 
 /**
  * Tenant information with resource usage and health metrics

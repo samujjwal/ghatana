@@ -264,4 +264,7 @@ function AuditTab(): React.ReactElement {
     );
 }
 
+/** @deprecated Import GovernancePage directly from this module instead. */
+export { GovernancePage as GovernancePageEnhanced };
+
 export default GovernancePage;

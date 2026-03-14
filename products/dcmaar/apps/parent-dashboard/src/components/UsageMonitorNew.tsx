@@ -6,7 +6,7 @@ import {
   type ColumnConfig,
   type FilterConfig,
   type ToastConfig,
-} from '@ghatana/ui';
+} from '@ghatana/design-system';
 import { usageEventsAtom, addUsageEventAtom } from '../stores/eventsStore';
 import { websocketService, type UsageEvent } from '../services/websocket.service';
 

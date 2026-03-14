@@ -1,7 +1,8 @@
 # Aura Product Roadmap & Engineering Epic Breakdown
 
 Detailed `what`, `how`, `where`, and validation guidance for active delivery tasks lives in
-`Aura_Task_Execution_Matrix.md`. No epic should enter implementation until it is decomposed there.
+`Aura_Task_Execution_Matrix.md` and `Aura_Long_Horizon_Task_Execution_Matrix.md`. No epic should
+enter implementation until it is decomposed there.
 
 ## Phase 1 — Curated Me (Months 1–3)
 
@@ -35,7 +36,7 @@ Detailed `what`, `how`, `where`, and validation guidance for active delivery tas
 
 ## Phase 2 — Aura Insights (Months 4–6)
 
-**Goal:** Improve personalization quality and launch the first ML-powered recommendation improvements alongside explainable AI features.
+**Goal:** Improve personalization quality, pilot opt-in AI skin analysis safely, and launch the invite beta with ML-assisted improvements.
 
 **Execution detail:** See `Aura_Task_Execution_Matrix.md` rows `S07-T01` through `S12-T04`.
 
@@ -67,8 +68,8 @@ Detailed `what`, `how`, `where`, and validation guidance for active delivery tas
 
 **Goal:** Deliver context-aware personalization through optional wellness and lifestyle integrations.
 
-**Execution rule:** Decompose each Phase 3 epic into task rows in `Aura_Task_Execution_Matrix.md`
-before implementation begins.
+**Execution rule:** Decompose each Phase 3 epic into task rows in
+`Aura_Long_Horizon_Task_Execution_Matrix.md` before implementation begins.
 
 ### Engineering Epics
 
@@ -94,8 +95,8 @@ before implementation begins.
 
 **Goal:** Activate community intelligence at scale and launch brand analytics as a B2B revenue stream.
 
-**Execution rule:** Decompose each Phase 4 epic into task rows in `Aura_Task_Execution_Matrix.md`
-before implementation begins.
+**Execution rule:** Decompose each Phase 4 epic into task rows in
+`Aura_Long_Horizon_Task_Execution_Matrix.md` before implementation begins.
 
 ### Engineering Epics
 

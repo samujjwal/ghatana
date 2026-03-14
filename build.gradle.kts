@@ -87,6 +87,11 @@ subprojects {
         maxParallelForks = (Runtime.getRuntime().availableProcessors() / 2).coerceAtLeast(1)
     }
     
+    // Apply platform boundary guardrails to platform modules
+    if (project.path.startsWith(":platform:")) {
+        apply(from = rootProject.file("gradle/platform-boundary-check.gradle"))
+    }
+    
     tasks.withType<Javadoc> {
         options.encoding = "UTF-8"
         (options as StandardJavadocDocletOptions).apply {

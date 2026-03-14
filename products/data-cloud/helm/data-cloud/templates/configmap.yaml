@@ -1,0 +1,22 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: {{ include "data-cloud.fullname" . }}-config
+  namespace: {{ .Release.Namespace }}
+  labels:
+    {{- include "data-cloud.labels" . | nindent 4 }}
+data:
+  HTTP_PORT: {{ .Values.config.httpPort | quote }}
+  GRPC_PORT: {{ .Values.config.grpcPort | quote }}
+  LOG_LEVEL: {{ .Values.config.logLevel | quote }}
+  KAFKA_BOOTSTRAP_SERVERS: {{ .Values.kafka.bootstrapServers | quote }}
+  KAFKA_PARTITIONS: {{ .Values.kafka.partitions | quote }}
+  KAFKA_REPLICATION_FACTOR: {{ .Values.kafka.replicationFactor | quote }}
+  CLICKHOUSE_HOST: {{ .Values.clickhouse.host | quote }}
+  CLICKHOUSE_PORT: {{ .Values.clickhouse.port | quote }}
+  OPENSEARCH_HOST: {{ .Values.opensearch.host | quote }}
+  OPENSEARCH_PORT: {{ .Values.opensearch.port | quote }}
+  OPENSEARCH_SCHEME: {{ .Values.opensearch.scheme | quote }}
+  CEPH_ENDPOINT: {{ .Values.ceph.endpoint | quote }}
+  CEPH_BUCKET: {{ .Values.ceph.bucket | quote }}
+  CEPH_REGION: {{ .Values.ceph.region | quote }}

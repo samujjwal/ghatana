@@ -1,0 +1,137 @@
+---
+# Data-Cloud — Deployment
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: data-cloud
+  namespace: data-cloud
+  labels:
+    app.kubernetes.io/name: data-cloud
+    app.kubernetes.io/version: "1.0.0"
+    app.kubernetes.io/component: backend
+    app.kubernetes.io/part-of: ghatana
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: data-cloud
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxSurge: 1
+      maxUnavailable: 0    # zero-downtime rolling deploy
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: data-cloud
+        app.kubernetes.io/version: "1.0.0"
+        app: data-cloud
+        version: stable   # Istio DestinationRule subset selector
+      annotations:
+        prometheus.io/scrape: "true"
+        prometheus.io/path: "/metrics"
+        prometheus.io/port: "8082"
+    spec:
+      # Security context — run as non-root (mirrors Dockerfile USER)
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 1001
+        runAsGroup: 1001
+        fsGroup: 1001
+
+      # Allow 60 s for graceful shutdown before SIGKILL
+      terminationGracePeriodSeconds: 60
+
+      containers:
+        - name: data-cloud
+          image: ghatana/data-cloud:latest
+          imagePullPolicy: IfNotPresent
+
+          ports:
+            - name: http
+              containerPort: 8082
+              protocol: TCP
+            - name: grpc
+              containerPort: 9090
+              protocol: TCP
+
+          # Non-sensitive env from ConfigMap
+          envFrom:
+            - configMapRef:
+                name: data-cloud-config
+
+          # Sensitive env from Secret
+          env:
+            - name: DB_USER
+              valueFrom:
+                secretKeyRef:
+                  name: data-cloud-secret
+                  key: DB_USER
+            - name: DB_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: data-cloud-secret
+                  key: DB_PASSWORD
+
+          # Liveness: restart if process is stuck
+          livenessProbe:
+            httpGet:
+              path: /live
+              port: http
+            initialDelaySeconds: 30
+            periodSeconds: 10
+            failureThreshold: 3
+            timeoutSeconds: 5
+
+          # Readiness: only send traffic when fully warm
+          readinessProbe:
+            httpGet:
+              path: /ready
+              port: http
+            initialDelaySeconds: 15
+            periodSeconds: 5
+            failureThreshold: 3
+            timeoutSeconds: 5
+
+          # Startup: allow up to 120 s for initial boot (Flyway migrations, etc.)
+          startupProbe:
+            httpGet:
+              path: /health
+              port: http
+            failureThreshold: 24
+            periodSeconds: 5
+
+          resources:
+            requests:
+              cpu: "500m"
+              memory: "512Mi"
+            limits:
+              cpu: "2000m"
+              memory: "2Gi"
+
+          # Read-only root filesystem for security
+          securityContext:
+            allowPrivilegeEscalation: false
+            readOnlyRootFilesystem: false   # false: app writes temp files
+            capabilities:
+              drop:
+                - ALL
+
+          volumeMounts:
+            - name: tmp
+              mountPath: /tmp
+
+      volumes:
+        - name: tmp
+          emptyDir: {}
+
+      # Spread pods across nodes for HA
+      affinity:
+        podAntiAffinity:
+          preferredDuringSchedulingIgnoredDuringExecution:
+            - weight: 100
+              podAffinityTerm:
+                labelSelector:
+                  matchLabels:
+                    app.kubernetes.io/name: data-cloud
+                topologyKey: kubernetes.io/hostname

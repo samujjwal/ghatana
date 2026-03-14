@@ -4,7 +4,7 @@
  * Department budget management and financial oversight for directors.
  * Tracks budget allocation, spending, forecasts, and variance analysis.
  *
- * REUSE: Grid, Card, KpiCard, LinearProgress, Chip from @ghatana/ui
+ * REUSE: Grid, Card, LinearProgress, Chip from @ghatana/design-system and KpiCard from shared org components
  * PATTERN: Following PortfolioDashboard and ResourcePlanner patterns
  *
  * @package @ghatana/software-org-web
@@ -17,7 +17,6 @@ import {
     Card,
     CardContent,
     Grid,
-    KpiCard,
     Button,
     Chip,
     LinearProgress,
@@ -30,7 +29,8 @@ import {
     TableContainer,
     TableHead,
     TableRow,
-} from '@ghatana/ui';
+} from '@ghatana/design-system';
+import { KpiCard } from '@/shared/components/org';
 
 // ============================================================================
 // TypeScript Interfaces

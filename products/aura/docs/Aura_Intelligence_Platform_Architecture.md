@@ -118,10 +118,10 @@ Tracks where data came from, how fresh it is, and confidence level.
 
 Hybrid storage is recommended:
 
-- PostgreSQL for canonical entities and transactional data
-- pgvector in PostgreSQL for semantic retrieval at early scale
-- Object storage for raw payloads and snapshots
-- Cache layer for hot recommendation paths
+- Data Cloud-managed relational storage for canonical entities and transactional data
+- Data Cloud-managed vector storage for semantic retrieval at early scale
+- Data Cloud-managed object storage for raw payloads and snapshots
+- Data Cloud-managed cache for hot recommendation paths
 
 ---
 
@@ -484,7 +484,7 @@ Split out only when evidence justifies it:
 
 Adopt:
 
-- event bus when fan-out, cross-process retries, or throughput require it
+- AEP fan-out when cross-process retries or throughput require it
 - independent model-serving infrastructure
 - feature store
 - distributed retrieval and caching tiers
@@ -501,11 +501,13 @@ Adopt:
 | Core Domain        | Java 21 + ActiveJ                      | High-perf event processing, ranking, ingestion            |
 | Web frontend       | React Router v7 + React + Tailwind CSS | SSR for product and feed pages                            |
 | Mobile frontend    | React Native + NativeWind              | iOS and Android                                           |
-| Relational storage | PostgreSQL                             | Primary transactional store                               |
-| Cache              | Redis                                  | Session state, recommendation cache, feature cache        |
-| Queue / event bus  | Kafka, NATS, or cloud equivalent       | Introduce when cross-process async workflows need durable fan-out |
-| Vector storage     | pgvector (embedded in PostgreSQL)      | Semantic retrieval; upgrade to Pinecone/Weaviate at scale |
-| Object storage     | S3-compatible blob store               | Raw ingestion payloads, model artifacts                   |
+| Event plane        | AEP                                    | Cross-process event communication boundary                |
+| Data plane         | Data Cloud                             | Managed storage lifecycle, lineage, retention, restore    |
+| Relational storage | Data Cloud relational plugin           | Primary transactional store                               |
+| Cache              | Data Cloud cache plugin                | Session state, recommendation cache, feature cache        |
+| Async event plane  | AEP                                    | Durable fan-out and async workflow boundary               |
+| Vector storage     | Data Cloud vector plugin               | Semantic retrieval; upgrade underlying implementation at scale |
+| Object storage     | Data Cloud object-storage plugin       | Raw ingestion payloads, model artifacts                   |
 
 ## AI / ML
 

@@ -8,7 +8,7 @@
  */
 
 import React, { useState } from 'react';
-import { Box, Grid, Card, Button, Stack, Chip, Tabs } from '@ghatana/ui';
+import { Box, Grid, Card, Button, Stack, Chip, Tabs } from '@ghatana/design-system';
 import type { RestructureProposal, ApprovalStep } from '@/types/org.types';
 import { usePersona } from '@/hooks/usePersona';
 
@@ -348,4 +348,3 @@ export function ApprovalsPage() {
     </Box>
   );
 }
-

@@ -1,0 +1,89 @@
+{
+  "name": "@ghatana/design-system",
+  "version": "0.1.0",
+  "description": "Design System components for Ghatana platform - WCAG AA compliant, Atomic Design",
+  "type": "module",
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js"
+    },
+    "./icons": {
+      "types": "./dist/icons/index.d.ts",
+      "import": "./dist/icons/index.js"
+    },
+    "./atoms/*": {
+      "types": "./dist/atoms/*.d.ts",
+      "import": "./dist/atoms/*.js"
+    },
+    "./molecules/*": {
+      "types": "./dist/molecules/*.d.ts",
+      "import": "./dist/molecules/*.js"
+    },
+    "./organisms/*": {
+      "types": "./dist/organisms/*.d.ts",
+      "import": "./dist/organisms/*.js"
+    },
+    "./hooks": {
+      "types": "./dist/hooks/index.d.ts",
+      "import": "./dist/hooks/index.js"
+    },
+    "./layout": {
+      "types": "./dist/layout/index.d.ts",
+      "import": "./dist/layout/index.js"
+    },
+    "./utils": {
+      "types": "./dist/utils/index.d.ts",
+      "import": "./dist/utils/index.js"
+    },
+    "./tokens": {
+      "types": "./dist/tokens/index.d.ts",
+      "import": "./dist/tokens/index.js"
+    },
+    "./theme": {
+      "types": "./dist/theme/index.d.ts",
+      "import": "./dist/theme/index.js"
+    }
+  },
+  "files": [
+    "dist",
+    "README.md"
+  ],
+  "scripts": {
+    "build": "tsc",
+    "dev": "tsc --watch",
+    "clean": "rm -rf dist",
+    "type-check": "tsc --noEmit"
+  },
+  "dependencies": {
+    "clsx": "^2.1.1",
+    "tailwind-merge": "^3.4.0"
+  },
+  "peerDependencies": {
+    "@ghatana/theme": "workspace:*",
+    "@ghatana/tokens": "workspace:*",
+    "@ghatana/utils": "workspace:*",
+    "react": "^19.0.0",
+    "react-dom": "^19.0.0",
+    "react-router": "^7.0.0"
+  },
+  "devDependencies": {
+    "@types/node": "^25.2.0",
+    "@types/react": "^19.2.10",
+    "@types/react-dom": "^19.2.3",
+    "typescript": "^5.9.3"
+  },
+  "keywords": [
+    "ghatana",
+    "design-system",
+    "components",
+    "react",
+    "wcag",
+    "accessible",
+    "atomic-design"
+  ],
+  "author": "Ghatana Team",
+  "license": "MIT"
+}

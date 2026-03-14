@@ -10,7 +10,7 @@ import {
   type ItemRendererConfig,
   type DataGridFilterConfig,
   type CrudConfig,
-} from '@ghatana/ui';
+} from '@ghatana/design-system';
 
 export interface Device {
   id: string;

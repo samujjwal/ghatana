@@ -127,7 +127,7 @@ export {
     type NavigationHintGroupProps,
     type ContextualHintsProps,
 } from './NavigationHint';
-// KpiCard is now imported from @ghatana/ui via @/components/ui
+// KpiCard is now imported from @/shared/components/org
 export { KpiGrid } from './KpiGrid';
 export { TimelineChart } from './TimelineChart';
 export { ModelLineage } from './ModelLineage';

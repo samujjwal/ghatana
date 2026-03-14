@@ -1,0 +1,9 @@
+---
+# Data-Cloud — Kubernetes Namespace
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: data-cloud
+  labels:
+    app.kubernetes.io/part-of: ghatana
+    app.kubernetes.io/component: data-cloud

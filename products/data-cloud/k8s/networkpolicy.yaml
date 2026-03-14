@@ -1,0 +1,48 @@
+---
+# Data-Cloud — NetworkPolicy
+# Allow inbound to HTTP/gRPC only from within the cluster.
+# Egress is unrestricted (for Kafka/PostgreSQL/ClickHouse connectivity).
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: data-cloud
+  namespace: data-cloud
+  labels:
+    app.kubernetes.io/name: data-cloud
+spec:
+  podSelector:
+    matchLabels:
+      app.kubernetes.io/name: data-cloud
+  policyTypes:
+    - Ingress
+    - Egress
+  ingress:
+    # Allow HTTP from the NGINX ingress controller namespace
+    - from:
+        - namespaceSelector:
+            matchLabels:
+              kubernetes.io/metadata.name: ingress-nginx
+      ports:
+        - protocol: TCP
+          port: 8082
+    # Allow gRPC from within the same namespace (internal service-to-service)
+    - from:
+        - namespaceSelector:
+            matchLabels:
+              kubernetes.io/metadata.name: data-cloud
+      ports:
+        - protocol: TCP
+          port: 9090
+        - protocol: TCP
+          port: 8082
+    # Allow Prometheus scraping from monitoring namespace
+    - from:
+        - namespaceSelector:
+            matchLabels:
+              kubernetes.io/metadata.name: monitoring
+      ports:
+        - protocol: TCP
+          port: 8082
+  egress:
+    # Unrestricted egress — needed for PostgreSQL, Kafka, ClickHouse, DNS
+    - {}

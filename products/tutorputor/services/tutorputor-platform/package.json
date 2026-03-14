@@ -28,7 +28,6 @@
     "@ghatana/tutorputor-learning-kernel": "workspace:*",
     "@ghatana/tutorputor-sim-renderer": "workspace:*",
     "@ghatana/tutorputor-simulation-engine": "workspace:*",
-    "@ghatana/ui": "workspace:*",
     "ioredis": "^5.9.2",
     "bullmq": "^5.67.2",
     "stripe": "^20.3.0",

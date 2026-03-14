@@ -19,7 +19,7 @@ import {
     Typography,
     Stack,
     LinearProgress,
-} from '@ghatana/ui';
+} from '@ghatana/design-system';
 
 /**
  * Goal metrics
@@ -131,7 +131,7 @@ export interface GoalTrackerProps {
  * - Activity stream for goal updates
  * - Tab-based navigation (Goals, Key Results, Teams, Activity)
  *
- * Reuses @ghatana/ui components:
+ * Reuses @ghatana/design-system components:
  * - Card (goal cards, key result cards, team cards)
  * - LinearProgress (progress bars for goals, key results, teams)
  * - Chip (status, priority, level indicators)

@@ -1,9 +1,9 @@
 import React from 'react';
 import { useForm, SubmitHandler } from 'react-hook-form';
-import { Button, TextField, TextArea, Switch } from '@ghatana/ui';
+import { Button, TextField, TextArea, Switch } from '@ghatana/design-system';
 import { Plus, Trash2 } from 'lucide-react';
 
-// Custom Label component since it's not available in @ghatana/ui
+// Local label keeps this form lightweight while the design-system field layer stays optional.
 const Label = ({ htmlFor, children }: { htmlFor: string; children: React.ReactNode }) => (
   <label className="block text-sm font-medium text-gray-700 mb-1" htmlFor={htmlFor}>
     {children}

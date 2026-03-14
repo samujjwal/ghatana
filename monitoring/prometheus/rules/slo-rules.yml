@@ -1,0 +1,232 @@
+---
+# Prometheus SLO Recording Rules — Data-Cloud Platform
+# Multi-window, multi-burn-rate alerting (Google SRE Book methodology)
+#
+# SLO Targets:
+#   Availability:  99.9% (error budget = 43.2 min/month)
+#   Error Rate:    < 1%  (max 1% of requests result in 5xx)
+#   Latency p99:   < 1 s
+
+groups:
+
+  # ─────────────────────────────────────────────────────────────────────────
+  # Availability recording rules
+  # ─────────────────────────────────────────────────────────────────────────
+  - name: data_cloud_slo_availability_recording
+    interval: 30s
+    rules:
+      # 5-minute good-request ratio (1 − error_rate)
+      - record: job:data_cloud_request_success_rate:5m
+        expr: |
+          1 - (
+            sum(rate(http_server_requests_seconds_count{job="data-cloud", status=~"5.."}[5m]))
+            /
+            sum(rate(http_server_requests_seconds_count{job="data-cloud"}[5m]))
+          )
+        labels:
+          product: data-cloud
+
+      # 30-minute good-request ratio
+      - record: job:data_cloud_request_success_rate:30m
+        expr: |
+          1 - (
+            sum(rate(http_server_requests_seconds_count{job="data-cloud", status=~"5.."}[30m]))
+            /
+            sum(rate(http_server_requests_seconds_count{job="data-cloud"}[30m]))
+          )
+        labels:
+          product: data-cloud
+
+      # 1-hour good-request ratio
+      - record: job:data_cloud_request_success_rate:1h
+        expr: |
+          1 - (
+            sum(rate(http_server_requests_seconds_count{job="data-cloud", status=~"5.."}[1h]))
+            /
+            sum(rate(http_server_requests_seconds_count{job="data-cloud"}[1h]))
+          )
+        labels:
+          product: data-cloud
+
+      # 6-hour good-request ratio
+      - record: job:data_cloud_request_success_rate:6h
+        expr: |
+          1 - (
+            sum(rate(http_server_requests_seconds_count{job="data-cloud", status=~"5.."}[6h]))
+            /
+            sum(rate(http_server_requests_seconds_count{job="data-cloud"}[6h]))
+          )
+        labels:
+          product: data-cloud
+
+      # Error budget consumed (rolling 30-day window) — percentage used 0..1
+      - record: job:data_cloud_error_budget_consumed:30d
+        expr: |
+          1 - (
+            sum(rate(http_server_requests_seconds_count{job="data-cloud", status!~"5.."}[30d]))
+            /
+            sum(rate(http_server_requests_seconds_count{job="data-cloud"}[30d]))
+          )
+          /
+          (1 - 0.999)   # 1 - SLO target
+        labels:
+          product: data-cloud
+
+  # ─────────────────────────────────────────────────────────────────────────
+  # Latency recording rules  (p50, p95, p99)
+  # ─────────────────────────────────────────────────────────────────────────
+  - name: data_cloud_slo_latency_recording
+    interval: 30s
+    rules:
+      - record: job:data_cloud_request_latency_p50:5m
+        expr: |
+          histogram_quantile(0.50,
+            sum by (le) (rate(http_server_requests_seconds_bucket{job="data-cloud"}[5m]))
+          )
+        labels:
+          product: data-cloud
+          quantile: "0.5"
+
+      - record: job:data_cloud_request_latency_p95:5m
+        expr: |
+          histogram_quantile(0.95,
+            sum by (le) (rate(http_server_requests_seconds_bucket{job="data-cloud"}[5m]))
+          )
+        labels:
+          product: data-cloud
+          quantile: "0.95"
+
+      - record: job:data_cloud_request_latency_p99:5m
+        expr: |
+          histogram_quantile(0.99,
+            sum by (le) (rate(http_server_requests_seconds_bucket{job="data-cloud"}[5m]))
+          )
+        labels:
+          product: data-cloud
+          quantile: "0.99"
+
+      - record: job:data_cloud_request_latency_p99:1h
+        expr: |
+          histogram_quantile(0.99,
+            sum by (le) (rate(http_server_requests_seconds_bucket{job="data-cloud"}[1h]))
+          )
+        labels:
+          product: data-cloud
+          quantile: "0.99"
+
+  # ─────────────────────────────────────────────────────────────────────────
+  # Event-log throughput recording rules
+  # ─────────────────────────────────────────────────────────────────────────
+  - name: data_cloud_slo_kafka_recording
+    interval: 30s
+    rules:
+      - record: job:data_cloud_kafka_append_rate:5m
+        expr: |
+          sum(rate(datacloud_event_log_appended_total{product="data-cloud"}[5m]))
+        labels:
+          product: data-cloud
+
+      - record: job:data_cloud_kafka_error_rate:5m
+        expr: |
+          sum(rate(datacloud_event_log_errors_total{product="data-cloud"}[5m]))
+          /
+          (sum(rate(datacloud_event_log_appended_total{product="data-cloud"}[5m])) + 1)
+        labels:
+          product: data-cloud
+
+  # ─────────────────────────────────────────────────────────────────────────
+  # Multi-window burn-rate alerts  (page = fast burn, ticket = slow burn)
+  # ─────────────────────────────────────────────────────────────────────────
+  - name: data_cloud_slo_burn_rate_alerts
+    rules:
+      # ── PAGE: 2% budget consumed in 1 hour  (burn rate > 14.4×) ──────────
+      - alert: DataCloudSLOFastBurnRate
+        expr: |
+          (
+            (1 - job:data_cloud_request_success_rate:5m{product="data-cloud"})  / (1 - 0.999) > 14.4
+            and
+            (1 - job:data_cloud_request_success_rate:1h{product="data-cloud"})  / (1 - 0.999) > 14.4
+          )
+        for: 2m
+        labels:
+          severity: critical
+          product: data-cloud
+          slo: availability
+        annotations:
+          summary: "Data-Cloud availability SLO fast burn rate ({{ $value | humanize }}×)"
+          description: >
+            The service is consuming error budget at {{ $value | humanize }}× the sustainable
+            rate. At this pace the monthly error budget will be exhausted within ~1 hour.
+            Current 5m success rate: {{ printf "%.3f" (index (query "job:data_cloud_request_success_rate:5m{product=\"data-cloud\"}") 0).Value }}
+          runbook_url: https://wiki.ghatana.internal/runbooks/data-cloud-slo
+
+      # ── PAGE: 5% budget consumed in 6 hours  (burn rate > 6×) ───────────
+      - alert: DataCloudSLOMediumBurnRate
+        expr: |
+          (
+            (1 - job:data_cloud_request_success_rate:30m{product="data-cloud"}) / (1 - 0.999) > 6
+            and
+            (1 - job:data_cloud_request_success_rate:6h{product="data-cloud"})  / (1 - 0.999) > 6
+          )
+        for: 15m
+        labels:
+          severity: critical
+          product: data-cloud
+          slo: availability
+        annotations:
+          summary: "Data-Cloud availability SLO medium burn rate ({{ $value | humanize }}×)"
+          description: >
+            The service is consuming error budget at {{ $value | humanize }}× the sustainable
+            rate. At this pace the monthly error budget will be exhausted within ~6 hours.
+          runbook_url: https://wiki.ghatana.internal/runbooks/data-cloud-slo
+
+      # ── TICKET: 10% budget consumed in 3 days  (burn rate > 1×) ─────────
+      - alert: DataCloudSLOSlowBurnRate
+        expr: |
+          (
+            (1 - job:data_cloud_request_success_rate:6h{product="data-cloud"})  / (1 - 0.999) > 1
+          )
+        for: 1h
+        labels:
+          severity: warning
+          product: data-cloud
+          slo: availability
+        annotations:
+          summary: "Data-Cloud availability SLO slow burn rate ({{ $value | humanize }}×)"
+          description: >
+            Error budget is being consumed faster than the 30-day replenishment rate.
+            Create a ticket to investigate the elevated error rate before the budget is exhausted.
+          runbook_url: https://wiki.ghatana.internal/runbooks/data-cloud-slo
+
+      # ── Latency SLO: p99 > 1 s for 5 minutes ────────────────────────────
+      - alert: DataCloudSLOLatencyBreach
+        expr: |
+          job:data_cloud_request_latency_p99:5m{product="data-cloud"} > 1.0
+        for: 5m
+        labels:
+          severity: warning
+          product: data-cloud
+          slo: latency
+        annotations:
+          summary: "Data-Cloud p99 latency SLO breach ({{ $value | humanizeDuration }})"
+          description: >
+            The 99th-percentile request latency has exceeded the 1 s SLO target for the
+            past 5 minutes. Current p99: {{ $value | humanizeDuration }}.
+          runbook_url: https://wiki.ghatana.internal/runbooks/data-cloud-latency
+
+      # ── Error budget nearly exhausted  (> 80% consumed) ──────────────────
+      - alert: DataCloudErrorBudgetCritical
+        expr: |
+          job:data_cloud_error_budget_consumed:30d{product="data-cloud"} > 0.80
+        for: 5m
+        labels:
+          severity: critical
+          product: data-cloud
+          slo: availability
+        annotations:
+          summary: "Data-Cloud error budget > 80% consumed this month"
+          description: >
+            The rolling 30-day error budget for the data-cloud availability SLO is
+            {{ $value | humanizePercentage }} consumed.  Freeze non-essential changes
+            and focus on reliability improvements.
+          runbook_url: https://wiki.ghatana.internal/runbooks/data-cloud-slo

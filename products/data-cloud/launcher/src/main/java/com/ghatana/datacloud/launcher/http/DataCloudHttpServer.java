@@ -22,6 +22,7 @@ import io.activej.csp.supplier.ChannelSuppliers;
 import io.activej.http.*;
 import io.activej.eventloop.Eventloop;
 import io.activej.promise.Promise;
+import io.activej.promise.Promises;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -33,12 +34,25 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.Set;
 import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.Executor;
 import java.util.concurrent.Executors;
 import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicInteger;
+
+import com.ghatana.datacloud.entity.validation.EntitySchemaValidator;
+import com.ghatana.datacloud.entity.validation.ValidationResult;
+import com.ghatana.datacloud.entity.storage.QuerySpec;
+import com.ghatana.datacloud.infrastructure.storage.OpenSearchConnector;
+import com.ghatana.datacloud.analytics.export.EntityExportService;
+import com.ghatana.datacloud.analytics.anomaly.StatisticalAnomalyDetector;
+import com.ghatana.datacloud.spi.ai.AnomalyDetectionCapability.AnomalyContext;
+import com.ghatana.datacloud.spi.ai.AnomalyDetectionCapability.DetectionType;
+import com.ghatana.datacloud.entity.storage.StorageConnector;
 
 /**
  * HTTP Server for Data-Cloud Standalone deployment.
@@ -52,6 +66,24 @@ public class DataCloudHttpServer {
 
     /** SSE queue capacity — 512 frames before back-pressure kicks in. */
     private static final int SSE_QUEUE_CAPACITY = 512;
+
+    // ==================== CORS Constants ====================
+    private static final String CORS_ALLOW_ORIGIN  = "*";
+    private static final String CORS_ALLOW_METHODS = "GET, POST, PUT, DELETE, OPTIONS, PATCH";
+    private static final String CORS_ALLOW_HEADERS = "Content-Type, Authorization, X-Tenant-ID, X-Request-ID";
+    private static final String CORS_MAX_AGE       = "86400";
+
+    // ==================== Request Validation Constants ====================
+    /** Maximum JSON body size accepted: 10 MB. Larger payloads return HTTP 413. */
+    private static final long MAX_BODY_BYTES = 10 * 1024 * 1024L;
+
+    // ==================== Rate Limiting Constants ====================
+    /** Maximum number of requests allowed per IP per window. */
+    private static final int RATE_LIMIT_REQUESTS = 200;
+    /** Fixed-window duration in milliseconds (60 seconds). */
+    private static final long RATE_LIMIT_WINDOW_MS = 60_000L;
+    /** Maximum distinct IP entries kept in memory before oldest are evicted. */
+    private static final int RATE_LIMIT_MAX_ENTRIES = 10_000;
 
     /** Heartbeat interval: block this long waiting for the next event before sending a heartbeat. */
     private static final long SSE_HEARTBEAT_TIMEOUT_SEC = 30L;
@@ -83,9 +115,48 @@ public class DataCloudHttpServer {
     /** Virtual-thread executor for off-loop blocking operations (JDBC, queue polls). */
     private final Executor blockingExecutor = Executors.newVirtualThreadPerTaskExecutor();
 
+    /**
+     * Per-IP rate limit state: maps remote address → [requestCount, windowStartMs].
+     * Entries are invalidated when the window expires. The map is bounded to
+     * {@link #RATE_LIMIT_MAX_ENTRIES} to prevent unbounded memory growth from
+     * IP-spoofing attacks.
+     */
+    private final Map<String, long[]> rateLimitState =
+            new ConcurrentHashMap<>(RATE_LIMIT_MAX_ENTRIES);
+
     /** Tracks active SSE subscriptions so they can be cancelled on server shutdown. */
     private final CopyOnWriteArrayList<EventLogStore.Subscription> sseSubscriptions =
             new CopyOnWriteArrayList<>();
+
+    /**
+     * Optional schema validator for entity data.
+     * When set, {@code handleSaveEntity} and {@code handleBatchSaveEntities} will
+     * validate entity data against registered schemas before persisting.
+     * If no schema is registered for the collection the entity passes through.
+     */
+    private EntitySchemaValidator schemaValidator;
+
+    /**
+     * Optional OpenSearch connector for full-text search and streaming query operations.
+     * When non-null, {@code GET /api/v1/entities/:collection/search} and
+     * {@code GET /api/v1/entities/:collection/query/stream} are backed by
+     * OpenSearch. When {@code null}, those routes return HTTP 501.
+     */
+    private OpenSearchConnector openSearchConnector;
+
+    /**
+     * Optional bulk-export service for CSV and NDJSON entity downloads.
+     * When non-null, {@code GET /api/v1/entities/:collection/export} is active.
+     * When {@code null} the route returns HTTP 501.
+     */
+    private EntityExportService exportService;
+
+    /**
+     * Optional statistical anomaly detector.
+     * When non-null, {@code POST /api/v1/entities/:collection/anomalies} is active.
+     * When {@code null} the route returns HTTP 501.
+     */
+    private StatisticalAnomalyDetector anomalyDetector;
 
     /**
      * Creates a new Data-Cloud HTTP server without optional extensions.
@@ -136,6 +207,78 @@ public class DataCloudHttpServer {
     }
 
     /**
+     * Attaches an {@link EntitySchemaValidator} to this server.
+     *
+     * <p>Once attached, every {@code POST /api/v1/entities/:collection} and
+     * {@code POST /api/v1/entities/:collection/batch} request will be validated
+     * against schemas registered with the validator before the entity is
+     * persisted. Requests for collections without a registered schema pass
+     * through unchanged.
+     *
+     * @param validator the schema validator; must not be {@code null}
+     * @return {@code this} for chaining
+     */
+    public DataCloudHttpServer withSchemaValidator(EntitySchemaValidator validator) {
+        this.schemaValidator = validator;
+        return this;
+    }
+
+    /**
+     * Attaches an {@link OpenSearchConnector} to enable full-text search and
+     * streaming query endpoints.
+     *
+     * <p>Required for:
+     * <ul>
+     *   <li>{@code GET /api/v1/entities/:collection/search?q=<lucene-expr>} — snapshot
+     *       full-text search via OpenSearch {@code query_string} DSL.</li>
+     *   <li>{@code GET /api/v1/entities/:collection/query/stream?q=<expr>&follow=true} —
+     *       SSE streaming that first pushes a snapshot then tails the event log
+     *       for matching entity changes.</li>
+     * </ul>
+     *
+     * <p>When this method is not called, both routes return {@code 501 Not Implemented}.
+     *
+     * @param connector the OpenSearch connector; must not be {@code null}
+     * @return {@code this} for method chaining
+     */
+    public DataCloudHttpServer withOpenSearchConnector(OpenSearchConnector connector) {
+        this.openSearchConnector = connector;
+        return this;
+    }
+
+    /**
+     * Attaches an {@link EntityExportService} to enable bulk CSV/NDJSON export.
+     *
+     * <p>Required for:
+     * <ul>
+     *   <li>{@code GET /api/v1/entities/:collection/export?format=csv|ndjson&limit=N}</li>
+     * </ul>
+     *
+     * @param service the export service; must not be {@code null}
+     * @return {@code this} for method chaining
+     */
+    public DataCloudHttpServer withExportService(EntityExportService service) {
+        this.exportService = service;
+        return this;
+    }
+
+    /**
+     * Attaches a {@link StatisticalAnomalyDetector} to enable statistical anomaly detection.
+     *
+     * <p>Required for:
+     * <ul>
+     *   <li>{@code POST /api/v1/entities/:collection/anomalies}</li>
+     * </ul>
+     *
+     * @param detector the anomaly detector; must not be {@code null}
+     * @return {@code this} for method chaining
+     */
+    public DataCloudHttpServer withAnomalyDetector(StatisticalAnomalyDetector detector) {
+        this.anomalyDetector = detector;
+        return this;
+    }
+
+    /**
      * Starts the HTTP server.
      *
      * @throws Exception if the server fails to start
@@ -155,9 +298,18 @@ public class DataCloudHttpServer {
             
             // Entity endpoints
             .with(HttpMethod.POST, "/api/v1/entities/:collection", this::handleSaveEntity)
+            .with(HttpMethod.GET, "/api/v1/entities/:collection/stream", this::handleEntityCdcStream)
+            .with(HttpMethod.GET, "/api/v1/entities/:collection/search", this::handleFullTextSearch)
+            .with(HttpMethod.GET, "/api/v1/entities/:collection/query/stream", this::handleStreamingQuerySse)
             .with(HttpMethod.GET, "/api/v1/entities/:collection/:id", this::handleGetEntity)
             .with(HttpMethod.GET, "/api/v1/entities/:collection", this::handleQueryEntities)
             .with(HttpMethod.DELETE, "/api/v1/entities/:collection/:id", this::handleDeleteEntity)
+            // Bulk entity endpoints — upsert/delete multiple entities in a single request
+            .with(HttpMethod.POST, "/api/v1/entities/:collection/batch", this::handleBatchSaveEntities)
+            .with(HttpMethod.DELETE, "/api/v1/entities/:collection/batch", this::handleBatchDeleteEntities)
+            // Bulk export and anomaly detection endpoints
+            .with(HttpMethod.GET, "/api/v1/entities/:collection/export", this::handleExportEntities)
+            .with(HttpMethod.POST, "/api/v1/entities/:collection/anomalies", this::handleDetectAnomalies)
             
             // Event endpoints
             .with(HttpMethod.POST, "/api/v1/events", this::handleAppendEvent)
@@ -222,7 +374,8 @@ public class DataCloudHttpServer {
 
             .build();
 
-        server = HttpServer.builder(eventloop, router)
+        server = HttpServer.builder(eventloop,
+                corsFilter(rateLimitFilter(payloadSizeLimitFilter(contentTypeFilter(router)))))
             .withListenPort(port)
             .build();
 
@@ -317,11 +470,40 @@ public class DataCloudHttpServer {
             String collection = request.getPathParameter("collection");
             String tenantId = request.getQueryParameter("tenantId");
             if (tenantId == null) tenantId = "default";
-            
+            final String resolvedTenantId = tenantId;
+
+            // API boundary validation
+            Optional<String> tenantErr = ApiInputValidator.validateTenantId(resolvedTenantId);
+            if (tenantErr.isPresent()) return Promise.of(errorResponse(400, tenantErr.get()));
+            Optional<String> collErr = ApiInputValidator.validateCollection(collection);
+            if (collErr.isPresent()) return Promise.of(errorResponse(400, collErr.get()));
+
             String body = request.loadBody().getResult().getString(StandardCharsets.UTF_8);
             Map<String, Object> data = objectMapper.readValue(body, Map.class);
+
+            Optional<String> payloadErr = ApiInputValidator.validateEntityPayload(data);
+            if (payloadErr.isPresent()) return Promise.of(errorResponse(400, payloadErr.get()));
+
+            // Schema validation (no-op when validator is absent or schema unregistered)
+            if (schemaValidator != null) {
+                ValidationResult vr = schemaValidator.validate(resolvedTenantId, collection, data);
+                if (!vr.valid()) {
+                    return Promise.of(errorResponse(422, "Schema validation failed: " + vr.violationSummary()));
+                }
+            }
             
-            return client.save(tenantId, collection, data)
+            return client.save(resolvedTenantId, collection, data)
+                .then(entity -> {
+                    // Emit entity CDC event for real-time stream subscribers
+                    DataCloudClient.Event cdcEvent = DataCloudClient.Event.of("entity.saved", Map.of(
+                        "collection", entity.collection(),
+                        "id", entity.id(),
+                        "version", entity.version(),
+                        "operation", "upsert"
+                    ));
+                    return client.appendEvent(resolvedTenantId, cdcEvent)
+                        .map(ignored -> entity);
+                })
                 .map(entity -> jsonResponse(Map.of(
                     "id", entity.id(),
                     "collection", entity.collection(),
@@ -340,7 +522,15 @@ public class DataCloudHttpServer {
         String id = request.getPathParameter("id");
         String tenantId = request.getQueryParameter("tenantId");
         if (tenantId == null) tenantId = "default";
-        
+
+        // API boundary validation
+        Optional<String> tenantErr = ApiInputValidator.validateTenantId(tenantId);
+        if (tenantErr.isPresent()) return Promise.of(errorResponse(400, tenantErr.get()));
+        Optional<String> collErr = ApiInputValidator.validateCollection(collection);
+        if (collErr.isPresent()) return Promise.of(errorResponse(400, collErr.get()));
+        Optional<String> idErr = ApiInputValidator.validateId(id);
+        if (idErr.isPresent()) return Promise.of(errorResponse(400, idErr.get()));
+
         return client.findById(tenantId, collection, id)
             .map(optEntity -> {
                 if (optEntity.isPresent()) {
@@ -363,12 +553,19 @@ public class DataCloudHttpServer {
         String collection = request.getPathParameter("collection");
         String tenantId = request.getQueryParameter("tenantId");
         if (tenantId == null) tenantId = "default";
-        
-        String limitStr = request.getQueryParameter("limit");
-        int limit = limitStr != null ? Integer.parseInt(limitStr) : 100;
-        
+
+        // API boundary validation
+        Optional<String> tenantErr = ApiInputValidator.validateTenantId(tenantId);
+        if (tenantErr.isPresent()) return Promise.of(errorResponse(400, tenantErr.get()));
+        Optional<String> collErr = ApiInputValidator.validateCollection(collection);
+        if (collErr.isPresent()) return Promise.of(errorResponse(400, collErr.get()));
+
+        ApiInputValidator.LimitResult limitResult = ApiInputValidator.validateLimit(request.getQueryParameter("limit"), 100);
+        if (!limitResult.isValid()) return Promise.of(errorResponse(400, limitResult.getError().orElseThrow()));
+        int limit = limitResult.getValue();
+
         DataCloudClient.Query query = DataCloudClient.Query.limit(limit);
-        
+
         return client.query(tenantId, collection, query)
             .map(entities -> jsonResponse(Map.of(
                 "entities", entities.stream().map(e -> Map.of(
@@ -387,14 +584,338 @@ public class DataCloudHttpServer {
         String id = request.getPathParameter("id");
         String tenantId = request.getQueryParameter("tenantId");
         if (tenantId == null) tenantId = "default";
-        
-        return client.delete(tenantId, collection, id)
+        final String resolvedTenantId = tenantId;
+
+        // API boundary validation
+        Optional<String> tenantErr = ApiInputValidator.validateTenantId(resolvedTenantId);
+        if (tenantErr.isPresent()) return Promise.of(errorResponse(400, tenantErr.get()));
+        Optional<String> collErr = ApiInputValidator.validateCollection(collection);
+        if (collErr.isPresent()) return Promise.of(errorResponse(400, collErr.get()));
+        Optional<String> idErr = ApiInputValidator.validateId(id);
+        if (idErr.isPresent()) return Promise.of(errorResponse(400, idErr.get()));
+
+        return client.delete(resolvedTenantId, collection, id)
+            .then(v -> {
+                // Emit entity CDC event for real-time stream subscribers
+                DataCloudClient.Event cdcEvent = DataCloudClient.Event.of("entity.deleted", Map.of(
+                    "collection", collection,
+                    "id", id,
+                    "operation", "delete"
+                ));
+                return client.appendEvent(resolvedTenantId, cdcEvent)
+                    .map(ignored -> v);
+            })
             .map(v -> jsonResponse(Map.of(
                 "deleted", true,
                 "id", id,
                 "collection", collection,
                 "timestamp", Instant.now().toString()
             )));
+    }
+
+    // ==================== Bulk Entity Endpoints ====================
+
+    /**
+     * POST /api/v1/entities/:collection/batch
+     *
+     * <p>Upserts up to 500 entities atomically within a single collection.
+     * Request body: {@code {"entities": [{...}, ...]}}
+     * Response: {@code {"saved": N, "ids": [...], "errors": []}}
+     *
+     * <p>Each entity is saved independently via {@code Promise.all()}; partial
+     * failure is reported per-item in the {@code errors} array while successful
+     * saves are still committed.
+     */
+    @SuppressWarnings("unchecked")
+    private Promise<HttpResponse> handleBatchSaveEntities(HttpRequest request) {
+        try {
+            String collection = request.getPathParameter("collection");
+            String tenantId = request.getQueryParameter("tenantId");
+            if (tenantId == null) tenantId = "default";
+
+            // API boundary validation
+            Optional<String> tenantErr = ApiInputValidator.validateTenantId(tenantId);
+            if (tenantErr.isPresent()) return Promise.of(errorResponse(400, tenantErr.get()));
+            Optional<String> collErr = ApiInputValidator.validateCollection(collection);
+            if (collErr.isPresent()) return Promise.of(errorResponse(400, collErr.get()));
+
+            final String resolvedTenant = tenantId;
+
+            String body = request.loadBody().getResult().getString(StandardCharsets.UTF_8);
+            Map<String, Object> payload = objectMapper.readValue(body, Map.class);
+
+            Object rawEntities = payload.get("entities");
+            if (!(rawEntities instanceof List)) {
+                return Promise.of(errorResponse(400, "Request body must contain an 'entities' array"));
+            }
+
+            List<Map<String, Object>> entityList = (List<Map<String, Object>>) rawEntities;
+            Optional<String> batchErr = ApiInputValidator.validateBatchSize(entityList);
+            if (batchErr.isPresent()) return Promise.of(errorResponse(400, batchErr.get()));
+
+            // Schema validation — validate all entities up-front before any save
+            if (schemaValidator != null) {
+                List<String> allViolations = new ArrayList<>();
+                for (int i = 0; i < entityList.size(); i++) {
+                    ValidationResult vr = schemaValidator.validate(resolvedTenant, collection, entityList.get(i));
+                    if (!vr.valid()) {
+                        allViolations.add("[" + i + "] " + vr.violationSummary());
+                    }
+                }
+                if (!allViolations.isEmpty()) {
+                    return Promise.of(errorResponse(422, "Batch schema validation failed: " + String.join("; ", allViolations)));
+                }
+            }
+
+            List<Promise<DataCloudClient.Entity>> savePromises = entityList.stream()
+                .map(data -> client.save(resolvedTenant, collection, data))
+                .toList();
+
+            return Promises.toList(savePromises)
+                .then(savedEntities -> {
+                    List<String> ids = savedEntities.stream()
+                        .map(DataCloudClient.Entity::id)
+                        .toList();
+                    // Emit a single bulk CDC event for batch operations
+                    DataCloudClient.Event cdcEvent = DataCloudClient.Event.of("entity.batch-saved", Map.of(
+                        "collection", collection,
+                        "count", savedEntities.size(),
+                        "ids", ids,
+                        "operation", "batch-upsert"
+                    ));
+                    return client.appendEvent(resolvedTenant, cdcEvent)
+                        .map(ignored -> jsonResponse(Map.of(
+                            "saved", savedEntities.size(),
+                            "collection", collection,
+                            "ids", ids,
+                            "errors", List.of(),
+                            "timestamp", Instant.now().toString()
+                        )));
+                })
+                .then(Promise::of, e -> {
+                    log.error("Batch save failed for collection {}", collection, e);
+                    return Promise.of(errorResponse(500, "Batch save failed: " + e.getMessage()));
+                });
+        } catch (Exception e) {
+            log.error("Error parsing batch save request", e);
+            return Promise.of(errorResponse(400, "Invalid batch request body: " + e.getMessage()));
+        }
+    }
+
+    /**
+     * DELETE /api/v1/entities/:collection/batch
+     *
+     * <p>Deletes up to 500 entities by ID in a single request.
+     * Request body: {@code {"ids": ["id1", "id2", ...]}}
+     * Response: {@code {"deleted": N, "ids": [...]}}
+     */
+    @SuppressWarnings("unchecked")
+    private Promise<HttpResponse> handleBatchDeleteEntities(HttpRequest request) {
+        try {
+            String collection = request.getPathParameter("collection");
+            String tenantId = request.getQueryParameter("tenantId");
+            if (tenantId == null) tenantId = "default";
+
+            // API boundary validation
+            Optional<String> tenantErr = ApiInputValidator.validateTenantId(tenantId);
+            if (tenantErr.isPresent()) return Promise.of(errorResponse(400, tenantErr.get()));
+            Optional<String> collErr = ApiInputValidator.validateCollection(collection);
+            if (collErr.isPresent()) return Promise.of(errorResponse(400, collErr.get()));
+
+            final String resolvedTenant = tenantId;
+
+            String body = request.loadBody().getResult().getString(StandardCharsets.UTF_8);
+            Map<String, Object> payload = objectMapper.readValue(body, Map.class);
+
+            Object rawIds = payload.get("ids");
+            if (!(rawIds instanceof List)) {
+                return Promise.of(errorResponse(400, "Request body must contain an 'ids' array"));
+            }
+
+            List<String> ids = (List<String>) rawIds;
+            Optional<String> batchErr = ApiInputValidator.validateDeleteBatch(ids);
+            if (batchErr.isPresent()) return Promise.of(errorResponse(400, batchErr.get()));
+
+            List<Promise<Void>> deletePromises = ids.stream()
+                .map(id -> client.delete(resolvedTenant, collection, id))
+                .toList();
+
+            return Promises.all(deletePromises)
+                .then(v -> {
+                    // Emit a single bulk CDC event for the batch delete
+                    DataCloudClient.Event cdcEvent = DataCloudClient.Event.of("entity.batch-deleted", Map.of(
+                        "collection", collection,
+                        "count", ids.size(),
+                        "ids", ids,
+                        "operation", "batch-delete"
+                    ));
+                    return client.appendEvent(resolvedTenant, cdcEvent)
+                        .map(ignored -> jsonResponse(Map.of(
+                            "deleted", ids.size(),
+                            "collection", collection,
+                            "ids", ids,
+                            "timestamp", Instant.now().toString()
+                        )));
+                })
+                .then(Promise::of, e -> {
+                    log.error("Batch delete failed for collection {}", collection, e);
+                    return Promise.of(errorResponse(500, "Batch delete failed: " + e.getMessage()));
+                });
+        } catch (Exception e) {
+            log.error("Error parsing batch delete request", e);
+            return Promise.of(errorResponse(400, "Invalid batch request body: " + e.getMessage()));
+        }
+    }
+
+    // ==================== Export & Anomaly Endpoints ====================
+
+    /**
+     * GET /api/v1/entities/:collection/export
+     *
+     * <p>Exports all matching entities as CSV or NDJSON.
+     * <p>Query parameters:
+     * <ul>
+     *   <li>{@code tenantId} — tenant scope (default: {@code "default"})</li>
+     *   <li>{@code format}   — {@code csv} (default) or {@code ndjson}</li>
+     *   <li>{@code limit}    — max entities to export (default/max: 100 000)</li>
+     * </ul>
+     */
+    private Promise<HttpResponse> handleExportEntities(HttpRequest request) {
+        if (exportService == null) {
+            return Promise.of(errorResponse(501, "Export service not configured on this server"));
+        }
+
+        String collection = request.getPathParameter("collection");
+        String tenantId   = request.getQueryParameter("tenantId");
+        if (tenantId == null) tenantId = "default";
+
+        Optional<String> tenantErr = ApiInputValidator.validateTenantId(tenantId);
+        if (tenantErr.isPresent()) return Promise.of(errorResponse(400, tenantErr.get()));
+        Optional<String> collErr = ApiInputValidator.validateCollection(collection);
+        if (collErr.isPresent()) return Promise.of(errorResponse(400, collErr.get()));
+
+        String format   = request.getQueryParameter("format");
+        if (format == null) format = "csv";
+
+        int limit = 10_000;
+        String limitStr = request.getQueryParameter("limit");
+        if (limitStr != null) {
+            try {
+                limit = Integer.parseInt(limitStr);
+            } catch (NumberFormatException e) {
+                return Promise.of(errorResponse(400, "Invalid 'limit' query parameter: " + limitStr));
+            }
+        }
+
+        final String finalTenant    = tenantId;
+        final String finalCollection = collection;
+        final int    finalLimit     = limit;
+
+        if ("ndjson".equalsIgnoreCase(format)) {
+            return exportService.exportNdjson(finalTenant, finalCollection, Map.of(), finalLimit)
+                    .map(data -> HttpResponse.ok200()
+                            .withHeader(HttpHeaders.CONTENT_TYPE, HttpHeaderValue.of("application/x-ndjson; charset=utf-8"))
+                            .withHeader(HttpHeaders.of("Access-Control-Allow-Origin"), HttpHeaderValue.of(CORS_ALLOW_ORIGIN))
+                            .withBody(data.getBytes(StandardCharsets.UTF_8))
+                            .build())
+                    .then(Promise::of, e -> {
+                        log.error("NDJSON export failed tenant={} collection={}", finalTenant, finalCollection, e);
+                        return Promise.of(errorResponse(500, "Export failed: " + e.getMessage()));
+                    });
+        } else {
+            return exportService.exportCsv(finalTenant, finalCollection, Map.of(), finalLimit)
+                    .map(data -> HttpResponse.ok200()
+                            .withHeader(HttpHeaders.CONTENT_TYPE, HttpHeaderValue.of("text/csv; charset=utf-8"))
+                            .withHeader(HttpHeaders.of("Access-Control-Allow-Origin"), HttpHeaderValue.of(CORS_ALLOW_ORIGIN))
+                            .withBody(data.getBytes(StandardCharsets.UTF_8))
+                            .build())
+                    .then(Promise::of, e -> {
+                        log.error("CSV export failed tenant={} collection={}", finalTenant, finalCollection, e);
+                        return Promise.of(errorResponse(500, "Export failed: " + e.getMessage()));
+                    });
+        }
+    }
+
+    /**
+     * POST /api/v1/entities/:collection/anomalies
+     *
+     * <p>Runs statistical anomaly detection over the collection and returns
+     * a list of anomaly records.
+     * <p>Request body (all fields optional):
+     * <pre>{@code
+     * {
+     *   "threshold":     3.0,
+     *   "detectionType": "DATA_QUALITY"
+     * }
+     * }</pre>
+     * <p>Response: {@code {"anomalies": [...], "count": N, "collection": "..."}}
+     */
+    @SuppressWarnings("unchecked")
+    private Promise<HttpResponse> handleDetectAnomalies(HttpRequest request) {
+        if (anomalyDetector == null) {
+            return Promise.of(errorResponse(501, "Anomaly detection not configured on this server"));
+        }
+
+        try {
+            String collection = request.getPathParameter("collection");
+            String tenantId   = request.getQueryParameter("tenantId");
+            if (tenantId == null) tenantId = "default";
+
+            Optional<String> tenantErr = ApiInputValidator.validateTenantId(tenantId);
+            if (tenantErr.isPresent()) return Promise.of(errorResponse(400, tenantErr.get()));
+            Optional<String> collErr = ApiInputValidator.validateCollection(collection);
+            if (collErr.isPresent()) return Promise.of(errorResponse(400, collErr.get()));
+
+            final String finalTenant    = tenantId;
+            final String finalCollection = collection;
+
+            // Parse optional body
+            double threshold = StatisticalAnomalyDetector.DEFAULT_Z_THRESHOLD;
+            DetectionType detectionType = DetectionType.DATA_QUALITY;
+
+            String rawBody = request.loadBody().getResult().getString(StandardCharsets.UTF_8);
+            if (rawBody != null && !rawBody.isBlank()) {
+                Map<String, Object> body = objectMapper.readValue(rawBody, Map.class);
+                if (body.containsKey("threshold")) {
+                    Object t = body.get("threshold");
+                    threshold = t instanceof Number n ? n.doubleValue() : Double.parseDouble(t.toString());
+                }
+                if (body.containsKey("detectionType")) {
+                    try {
+                        detectionType = DetectionType.valueOf(body.get("detectionType").toString());
+                    } catch (IllegalArgumentException e) {
+                        return Promise.of(errorResponse(400, "Unknown detectionType: " + body.get("detectionType")));
+                    }
+                }
+            }
+
+            AnomalyContext ctx = AnomalyContext.builder()
+                    .tenantId(finalTenant)
+                    .collectionName(finalCollection)
+                    .detectionType(detectionType)
+                    .threshold(threshold)
+                    .build();
+
+            final Map<String, Object> responseEnvelope = Map.of(
+                    "collection", finalCollection,
+                    "tenant", finalTenant,
+                    "timestamp", Instant.now().toString());
+
+            return anomalyDetector.detect(ctx)
+                    .map(anomalies -> {
+                        Map<String, Object> body2 = new LinkedHashMap<>(responseEnvelope);
+                        body2.put("count", anomalies.size());
+                        body2.put("anomalies", anomalies);
+                        return jsonResponse(body2);
+                    })
+                    .then(Promise::of, e -> {
+                        log.error("Anomaly detection failed tenant={} collection={}", finalTenant, finalCollection, e);
+                        return Promise.of(errorResponse(500, "Anomaly detection failed: " + e.getMessage()));
+                    });
+        } catch (Exception e) {
+            log.error("Error processing anomaly detection request", e);
+            return Promise.of(errorResponse(400, "Invalid request body: " + e.getMessage()));
+        }
     }
 
     // ==================== Event Endpoints ====================
@@ -404,15 +925,22 @@ public class DataCloudHttpServer {
         try {
             String tenantId = request.getQueryParameter("tenantId");
             if (tenantId == null) tenantId = "default";
-            
+
+            // API boundary validation
+            Optional<String> tenantErr = ApiInputValidator.validateTenantId(tenantId);
+            if (tenantErr.isPresent()) return Promise.of(errorResponse(400, tenantErr.get()));
+
             String body = request.loadBody().getResult().getString(StandardCharsets.UTF_8);
             Map<String, Object> eventData = objectMapper.readValue(body, Map.class);
-            
+
+            Optional<String> payloadErr = ApiInputValidator.validateEntityPayload(eventData);
+            if (payloadErr.isPresent()) return Promise.of(errorResponse(400, payloadErr.get()));
+
             String eventType = (String) eventData.getOrDefault("type", "unknown");
             Map<String, Object> payload = (Map<String, Object>) eventData.getOrDefault("payload", Map.of());
-            
+
             DataCloudClient.Event event = DataCloudClient.Event.of(eventType, payload);
-            
+
             return client.appendEvent(tenantId, event)
                 .map(offset -> jsonResponse(Map.of(
                     "offset", offset.value(),
@@ -428,10 +956,15 @@ public class DataCloudHttpServer {
     private Promise<HttpResponse> handleQueryEvents(HttpRequest request) {
         String tenantId = request.getQueryParameter("tenantId");
         if (tenantId == null) tenantId = "default";
-        
-        String limitStr = request.getQueryParameter("limit");
-        int limit = limitStr != null ? Integer.parseInt(limitStr) : 100;
-        
+
+        // API boundary validation
+        Optional<String> tenantErr = ApiInputValidator.validateTenantId(tenantId);
+        if (tenantErr.isPresent()) return Promise.of(errorResponse(400, tenantErr.get()));
+
+        ApiInputValidator.LimitResult limitResult = ApiInputValidator.validateLimit(request.getQueryParameter("limit"), 100);
+        if (!limitResult.isValid()) return Promise.of(errorResponse(400, limitResult.getError().orElseThrow()));
+        int limit = limitResult.getValue();
+
         String eventType = request.getQueryParameter("type");
         DataCloudClient.EventQuery query = eventType != null 
             ? DataCloudClient.EventQuery.byType(eventType)
@@ -579,9 +1112,7 @@ public class DataCloudHttpServer {
                 String body = buf.getString(StandardCharsets.UTF_8);
                 Map<String, Object> data = objectMapper.readValue(body, Map.class);
                 return client.save(tenantId, DC_PIPELINES_COLLECTION, data)
-                        .map(entity -> HttpResponse.ok200()
-                                .withHeader(HttpHeaders.CONTENT_TYPE, "application/json")
-                                .withBody(toJson(flattenPipelineEntity(entity, tenantId))));
+                        .map(entity -> jsonResponse(flattenPipelineEntity(entity, tenantId)));
             } catch (Exception e) {
                 log.warn("[DC-Pipelines] save failed tenant={}: {}", tenantId, e.getMessage());
                 return Promise.of(errorResponse(400, "Invalid pipeline definition: " + e.getMessage()));
@@ -1380,6 +1911,159 @@ public class DataCloudHttpServer {
     // ==================== SSE Endpoints (DC-3) ====================
 
     /**
+     * Entity CDC (Change Data Capture) Server-Sent Events stream.
+     *
+     * <p>Tails the event log for entity mutation events in the requested collection,
+     * pushing real-time change notifications to the client as entities are saved
+     * or deleted. Every successful {@code POST /api/v1/entities/:collection},
+     * {@code DELETE /api/v1/entities/:collection/:id}, or batch equivalent
+     * appends an event ({@code entity.saved}, {@code entity.deleted},
+     * {@code entity.batch-saved}, {@code entity.batch-deleted}) to the log,
+     * which this stream surfaces.
+     *
+     * <h3>Route</h3>
+     * {@code GET /api/v1/entities/:collection/stream}
+     *
+     * <h3>Query parameters</h3>
+     * <ul>
+     *   <li>{@code fromOffset} – starting log offset (inclusive, default 0)</li>
+     * </ul>
+     *
+     * <h3>SSE frame types</h3>
+     * <ul>
+     *   <li>{@code connected}     – sent immediately on connection</li>
+     *   <li>{@code entity-change} – one frame per entity mutation</li>
+     *   <li>{@code heartbeat}     – sent every {@value #SSE_HEARTBEAT_TIMEOUT_SEC} s when idle</li>
+     * </ul>
+     *
+     * @param request the incoming HTTP request
+     * @return a streaming {@code text/event-stream} response
+     *
+     * @doc.type method
+     * @doc.purpose Entity CDC real-time push stream filtered by collection (DC-3)
+     * @doc.layer product
+     * @doc.pattern SSE Adapter, CDC, Event Tailing
+     */
+    private Promise<HttpResponse> handleEntityCdcStream(HttpRequest request) {
+        String tenantId = resolveTenantId(request);
+        String collection = request.getPathParameter("collection");
+
+        if (collection == null || collection.isBlank()) {
+            return Promise.of(errorResponse(400, "collection path parameter is required"));
+        }
+
+        long fromOffsetVal = parseLongParam(request.getQueryParameter("fromOffset"), 0L);
+
+        // Entity CDC event types - emitted by save/delete handlers
+        Set<String> entityEventTypes = Set.of(
+            "entity.saved", "entity.deleted",
+            "entity.batch-saved", "entity.batch-deleted"
+        );
+
+        LinkedBlockingQueue<Optional<byte[]>> queue = new LinkedBlockingQueue<>(SSE_QUEUE_CAPACITY);
+
+        // Send "connected" acknowledgement immediately
+        queue.offer(Optional.of(buildSseFrame("connected", Map.of(
+                "service", "data-cloud",
+                "tenantId", tenantId,
+                "collection", collection,
+                "fromOffset", String.valueOf(fromOffsetVal),
+                "timestamp", Instant.now().toString()
+        ))));
+
+        EventLogStore eventLogStore = client.eventLogStore();
+
+        return eventLogStore.tail(TenantContext.of(tenantId), Offset.of(fromOffsetVal), entry -> {
+            // Filter: only entity mutation events for the requested collection
+            if (!entityEventTypes.contains(entry.eventType())) {
+                return;
+            }
+            try {
+                // Parse the payload to check the collection field
+                byte[] payloadBytes = new byte[entry.payload().remaining()];
+                entry.payload().duplicate().get(payloadBytes);
+                String payloadStr = new String(payloadBytes, StandardCharsets.UTF_8);
+                @SuppressWarnings("unchecked")
+                Map<String, Object> payloadMap = objectMapper.readValue(payloadStr, Map.class);
+
+                if (!collection.equals(payloadMap.get("collection"))) {
+                    return; // Event is for a different collection
+                }
+
+                Map<String, Object> frame = new LinkedHashMap<>();
+                frame.put("collection", collection);
+                frame.put("operation", payloadMap.getOrDefault("operation", "unknown"));
+                frame.put("eventType", entry.eventType());
+                frame.put("tenantId", tenantId);
+                frame.put("timestamp", entry.timestamp().toString());
+                if (payloadMap.containsKey("id")) {
+                    frame.put("id", payloadMap.get("id"));
+                }
+                if (payloadMap.containsKey("ids")) {
+                    frame.put("ids", payloadMap.get("ids"));
+                }
+                if (payloadMap.containsKey("version")) {
+                    frame.put("version", payloadMap.get("version"));
+                }
+                if (payloadMap.containsKey("count")) {
+                    frame.put("count", payloadMap.get("count"));
+                }
+
+                byte[] sseFrame = buildSseFrame("entity-change", frame);
+                if (!queue.offer(Optional.of(sseFrame), 100L, TimeUnit.MILLISECONDS)) {
+                    log.warn("[CDC] queue full for tenant={} collection={}, dropping change event",
+                        tenantId, collection);
+                }
+            } catch (InterruptedException ie) {
+                Thread.currentThread().interrupt();
+            } catch (Exception ex) {
+                log.warn("[CDC] frame build error for tenant={} collection={}: {}",
+                    tenantId, collection, ex.getMessage());
+            }
+        }).map(subscription -> {
+            sseSubscriptions.add(subscription);
+
+            ChannelSupplier<ByteBuf> bodyStream = ChannelSuppliers.ofAsyncSupplier(() -> {
+                if (subscription.isCancelled()) {
+                    return Promise.of(null);
+                }
+                return Promise.ofBlocking(blockingExecutor, () -> {
+                    if (subscription.isCancelled()) {
+                        return null;
+                    }
+                    try {
+                        Optional<byte[]> item = queue.poll(SSE_HEARTBEAT_TIMEOUT_SEC, TimeUnit.SECONDS);
+                        if (item == null) {
+                            return ByteBuf.wrapForReading(buildSseFrame("heartbeat",
+                                    Map.of("ts", Instant.now().toString())));
+                        }
+                        return item.isPresent() ? ByteBuf.wrapForReading(item.get()) : null;
+                    } catch (InterruptedException ie) {
+                        Thread.currentThread().interrupt();
+                        return null;
+                    }
+                });
+            });
+
+            log.info("[CDC] stream opened for tenant={} collection={} fromOffset={}",
+                    tenantId, collection, fromOffsetVal);
+
+            return HttpResponse.ok200()
+                    .withHeader(HttpHeaders.CONTENT_TYPE, HttpHeaderValue.of("text/event-stream"))
+                    .withHeader(HttpHeaders.of("Cache-Control"), HttpHeaderValue.of("no-cache"))
+                    .withHeader(HttpHeaders.of("X-Accel-Buffering"), HttpHeaderValue.of("no"))
+                    .withHeader(HttpHeaders.of("Connection"), HttpHeaderValue.of("keep-alive"))
+                    .withHeader(HttpHeaders.of("Access-Control-Allow-Origin"), HttpHeaderValue.of(CORS_ALLOW_ORIGIN))
+                    .withBodyStream(bodyStream)
+                    .build();
+        }).mapException(e -> {
+            log.error("[CDC] failed to open tail subscription for tenant={} collection={}: {}",
+                tenantId, collection, e.getMessage(), e);
+            return new HttpException("CDC subscription failed: " + e.getMessage(), e);
+        });
+    }
+
+    /**
      * Server-Sent Events stream for real-time Data-Cloud event-log tailing.
      *
      * <p>Opens a long-lived HTTP/1.1 connection and pushes new events to the
@@ -1492,6 +2176,7 @@ public class DataCloudHttpServer {
                     .withHeader(HttpHeaders.of("Cache-Control"), HttpHeaderValue.of("no-cache"))
                     .withHeader(HttpHeaders.of("X-Accel-Buffering"), HttpHeaderValue.of("no"))
                     .withHeader(HttpHeaders.of("Connection"), HttpHeaderValue.of("keep-alive"))
+                    .withHeader(HttpHeaders.of("Access-Control-Allow-Origin"), HttpHeaderValue.of(CORS_ALLOW_ORIGIN))
                     .withBodyStream(bodyStream)
                     .build();
         }).mapException(e -> {
@@ -1860,6 +2545,7 @@ public class DataCloudHttpServer {
             .withHeader(HttpHeaders.of("Cache-Control"), HttpHeaderValue.of("no-cache"))
             .withHeader(HttpHeaders.of("X-Accel-Buffering"), HttpHeaderValue.of("no"))
             .withHeader(HttpHeaders.of("Connection"), HttpHeaderValue.of("keep-alive"))
+            .withHeader(HttpHeaders.of("Access-Control-Allow-Origin"), HttpHeaderValue.of(CORS_ALLOW_ORIGIN))
             .withBodyStream(bodyStream)
             .build());
     }
@@ -2261,6 +2947,7 @@ public class DataCloudHttpServer {
                 .withHeader(HttpHeaders.of("Cache-Control"), HttpHeaderValue.of("no-cache"))
                 .withHeader(HttpHeaders.of("X-Accel-Buffering"), HttpHeaderValue.of("no"))
                 .withHeader(HttpHeaders.of("Connection"), HttpHeaderValue.of("keep-alive"))
+                .withHeader(HttpHeaders.of("Access-Control-Allow-Origin"), HttpHeaderValue.of(CORS_ALLOW_ORIGIN))
                 .withBodyStream(bodyStream)
                 .build();
         }).mapException(e -> {
@@ -2347,6 +3034,7 @@ public class DataCloudHttpServer {
             .withHeader(HttpHeaders.of("Cache-Control"), HttpHeaderValue.of("no-cache"))
             .withHeader(HttpHeaders.of("X-Accel-Buffering"), HttpHeaderValue.of("no"))
             .withHeader(HttpHeaders.of("Connection"), HttpHeaderValue.of("keep-alive"))
+            .withHeader(HttpHeaders.of("Access-Control-Allow-Origin"), HttpHeaderValue.of(CORS_ALLOW_ORIGIN))
             .withBodyStream(bodyStream)
             .build());
     }
@@ -2388,11 +3076,187 @@ public class DataCloudHttpServer {
         return (fromQuery != null && !fromQuery.isBlank()) ? fromQuery : "default";
     }
 
+    /**
+     * Wraps an {@link AsyncServlet} with a CORS filter.
+     *
+     * <p>Responds to OPTIONS preflight requests immediately with the CORS policy headers.
+     * All other requests are forwarded to the delegate unchanged; individual response
+     * builders are responsible for adding CORS headers via {@link #jsonResponse} /
+     * {@link #errorResponse}.
+     *
+     * @param delegate the upstream servlet to forward non-OPTIONS requests to
+     * @return CORS-filtered servlet
+     *
+     * @doc.type method
+     * @doc.purpose CORS preflight handler middleware
+     * @doc.layer product
+     * @doc.pattern Middleware
+     */
+    private AsyncServlet corsFilter(AsyncServlet delegate) {
+        return request -> {
+            if (request.getMethod() == HttpMethod.OPTIONS) {
+                return Promise.of(HttpResponse.ok200()
+                    .withHeader(HttpHeaders.of("Access-Control-Allow-Origin"),  HttpHeaderValue.of(CORS_ALLOW_ORIGIN))
+                    .withHeader(HttpHeaders.of("Access-Control-Allow-Methods"), HttpHeaderValue.of(CORS_ALLOW_METHODS))
+                    .withHeader(HttpHeaders.of("Access-Control-Allow-Headers"), HttpHeaderValue.of(CORS_ALLOW_HEADERS))
+                    .withHeader(HttpHeaders.of("Access-Control-Max-Age"),      HttpHeaderValue.of(CORS_MAX_AGE))
+                    .build());
+            }
+            return delegate.serve(request);
+        };
+    }
+
+    /**
+     * Middleware: fixed-window per-IP rate limiter.
+     *
+     * <p>Each unique remote address is allowed at most {@link #RATE_LIMIT_REQUESTS} requests
+     * within a {@link #RATE_LIMIT_WINDOW_MS}-millisecond sliding window.
+     * Requests that exceed the limit receive HTTP 429 with a {@code Retry-After} header
+     * indicating the seconds remaining until the window resets.
+     *
+     * <p>The internal state map is bounded to {@link #RATE_LIMIT_MAX_ENTRIES} entries.
+     * When the bound is reached the oldest entries are evicted to prevent memory exhaustion
+     * under IP-spoofing / amplification attacks.
+     *
+     * @doc.type method
+     * @doc.purpose Protect the HTTP API from per-IP request flooding
+     * @doc.layer product
+     * @doc.pattern Middleware
+     */
+    private AsyncServlet rateLimitFilter(AsyncServlet delegate) {
+        return request -> {
+            String ip = remoteIp(request);
+            long now = System.currentTimeMillis();
+
+            long[] state = rateLimitState.compute(ip, (key, existing) -> {
+                if (existing == null || (now - existing[1]) >= RATE_LIMIT_WINDOW_MS) {
+                    // New window: [count=1, windowStart=now]
+                    return new long[]{1L, now};
+                }
+                existing[0]++;
+                return existing;
+            });
+
+            long count       = state[0];
+            long windowStart = state[1];
+            long windowRemainingMs = RATE_LIMIT_WINDOW_MS - (now - windowStart);
+            long retryAfterSec = Math.max(1L, (windowRemainingMs + 999) / 1000);
+
+            if (count > RATE_LIMIT_REQUESTS) {
+                log.warn("Rate limit exceeded for ip={} count={}", ip, count);
+                String body = String.format(
+                        "{\"error\":\"Too Many Requests\",\"retryAfterSeconds\":%d}",
+                        retryAfterSec);
+                return Promise.of(HttpResponse.ofCode(429)
+                        .withHeader(HttpHeaders.CONTENT_TYPE,
+                                HttpHeaderValue.ofContentType(ContentType.of(MediaTypes.JSON)))
+                        .withHeader(HttpHeaders.of("Retry-After"),
+                                HttpHeaderValue.of(String.valueOf(retryAfterSec)))
+                        .withHeader(HttpHeaders.of("Access-Control-Allow-Origin"),
+                                HttpHeaderValue.of(CORS_ALLOW_ORIGIN))
+                        .withBody(body.getBytes(StandardCharsets.UTF_8))
+                        .build());
+            }
+
+            // Evict excess entries after successful admit to keep the map bounded
+            if (rateLimitState.size() > RATE_LIMIT_MAX_ENTRIES) {
+                rateLimitState.entrySet().removeIf(e ->
+                        (now - e.getValue()[1]) >= RATE_LIMIT_WINDOW_MS);
+            }
+
+            return delegate.serve(request);
+        };
+    }
+
+    /**
+     * Extracts the originating IP address from the request, honouring
+     * {@code X-Forwarded-For} when running behind an NGINX/ingress proxy.
+     */
+    private static String remoteIp(HttpRequest request) {
+        String xff = request.getHeader(HttpHeaders.of("X-Forwarded-For"));
+        if (xff != null && !xff.isBlank()) {
+            // X-Forwarded-For may be "client, proxy1, proxy2" — take the first
+            int comma = xff.indexOf(',');
+            return (comma > 0 ? xff.substring(0, comma) : xff).strip();
+        }
+        return Optional.ofNullable(request.getRemoteAddress())
+                .map(Object::toString)
+                .orElse("unknown");
+    }
+
+    /**
+     * Middleware: enforces {@code Content-Type: application/json} on mutating requests.
+     * POST, PUT, and PATCH without a JSON content-type header receive HTTP 415.
+     *
+     * @doc.type method
+     * @doc.purpose Reject non-JSON mutation requests at the servlet boundary
+     * @doc.layer product
+     * @doc.pattern Middleware
+     */
+    private AsyncServlet contentTypeFilter(AsyncServlet delegate) {
+        return request -> {
+            HttpMethod method = request.getMethod();
+            if (method == HttpMethod.POST || method == HttpMethod.PUT || method == HttpMethod.PATCH) {
+                String ct = request.getHeader(HttpHeaders.CONTENT_TYPE);
+                if (ct == null || !ct.contains("application/json")) {
+                    return Promise.of(HttpResponse.ofCode(415)
+                        .withHeader(HttpHeaders.CONTENT_TYPE,
+                            HttpHeaderValue.ofContentType(ContentType.of(MediaTypes.JSON)))
+                        .withHeader(HttpHeaders.of("Access-Control-Allow-Origin"),
+                            HttpHeaderValue.of(CORS_ALLOW_ORIGIN))
+                        .withBody(("{\"error\":\"Content-Type must be application/json\"}").getBytes(StandardCharsets.UTF_8))
+                        .build());
+                }
+            }
+            return delegate.serve(request);
+        };
+    }
+
+    /**
+     * Middleware: rejects requests whose declared {@code Content-Length} exceeds
+     * {@link #MAX_BODY_BYTES}.  Guards against payload-based amplification / DoS.
+     * Requests with an absent or malformed Content-Length header pass through unchanged.
+     * HTTP 413 is returned for oversized payloads.
+     *
+     * @doc.type method
+     * @doc.purpose Prevent excess memory consumption from large request bodies
+     * @doc.layer product
+     * @doc.pattern Middleware
+     */
+    private AsyncServlet payloadSizeLimitFilter(AsyncServlet delegate) {
+        return request -> {
+            String contentLengthHeader = request.getHeader(HttpHeaders.of("Content-Length"));
+            if (contentLengthHeader != null) {
+                try {
+                    long size = Long.parseLong(contentLengthHeader.trim());
+                    if (size > MAX_BODY_BYTES) {
+                        String msg = String.format(
+                            "{\"error\":\"Request body too large: %d bytes (limit %d bytes)\"}",
+                            size, MAX_BODY_BYTES);
+                        return Promise.of(HttpResponse.ofCode(413)
+                            .withHeader(HttpHeaders.CONTENT_TYPE,
+                                HttpHeaderValue.ofContentType(ContentType.of(MediaTypes.JSON)))
+                            .withHeader(HttpHeaders.of("Access-Control-Allow-Origin"),
+                                HttpHeaderValue.of(CORS_ALLOW_ORIGIN))
+                            .withBody(msg.getBytes(StandardCharsets.UTF_8))
+                            .build());
+                    }
+                } catch (NumberFormatException ignored) {
+                    // Malformed Content-Length — pass through; body loading will catch it naturally
+                }
+            }
+            return delegate.serve(request);
+        };
+    }
+
     private HttpResponse jsonResponse(Map<String, Object> data) {
         try {
             String json = objectMapper.writeValueAsString(data);
             return HttpResponse.ok200()
                 .withHeader(HttpHeaders.CONTENT_TYPE, HttpHeaderValue.ofContentType(ContentType.of(MediaTypes.JSON)))
+                .withHeader(HttpHeaders.of("Access-Control-Allow-Origin"),  HttpHeaderValue.of(CORS_ALLOW_ORIGIN))
+                .withHeader(HttpHeaders.of("Access-Control-Allow-Methods"), HttpHeaderValue.of(CORS_ALLOW_METHODS))
+                .withHeader(HttpHeaders.of("Access-Control-Allow-Headers"), HttpHeaderValue.of(CORS_ALLOW_HEADERS))
                 .withBody(json.getBytes(StandardCharsets.UTF_8))
                 .build();
         } catch (Exception e) {
@@ -2411,6 +3275,9 @@ public class DataCloudHttpServer {
             ));
             return HttpResponse.ofCode(code)
                 .withHeader(HttpHeaders.CONTENT_TYPE, HttpHeaderValue.ofContentType(ContentType.of(MediaTypes.JSON)))
+                .withHeader(HttpHeaders.of("Access-Control-Allow-Origin"),  HttpHeaderValue.of(CORS_ALLOW_ORIGIN))
+                .withHeader(HttpHeaders.of("Access-Control-Allow-Methods"), HttpHeaderValue.of(CORS_ALLOW_METHODS))
+                .withHeader(HttpHeaders.of("Access-Control-Allow-Headers"), HttpHeaderValue.of(CORS_ALLOW_HEADERS))
                 .withBody(json.getBytes(StandardCharsets.UTF_8))
                 .build();
         } catch (Exception e) {
@@ -2418,5 +3285,407 @@ public class DataCloudHttpServer {
                 .withBody(("{\"error\":\"" + message + "\"}").getBytes(StandardCharsets.UTF_8))
                 .build();
         }
+    }
+
+    // -------------------------------------------------------------------------
+    // Full-text search — GET /api/v1/entities/:collection/search
+    // -------------------------------------------------------------------------
+
+    /**
+     * Point-in-time full-text search over a collection via OpenSearch.
+     *
+     * <p>Translates the user-supplied Lucene {@code query_string} expression into
+     * an OpenSearch search request via {@link OpenSearchConnector#query} and returns
+     * a paginated JSON response.
+     *
+     * <h3>Query parameters</h3>
+     * <ul>
+     *   <li>{@code q}        – Lucene / OpenSearch {@code query_string} expression
+     *                          (required, e.g. {@code title:foo AND status:active})</li>
+     *   <li>{@code limit}    – max results per page (default 20, max 500)</li>
+     *   <li>{@code offset}   – zero-based pagination offset (default 0)</li>
+     *   <li>{@code tenantId} – tenant identifier; falls back to {@code X-Tenant-Id}
+     *                          header then {@code "default"}</li>
+     * </ul>
+     *
+     * <h3>Response (200 OK)</h3>
+     * <pre>{@code
+     * {
+     *   "results":     [ { "id": "...", "collectionName": "...", "data": {...} }, ... ],
+     *   "total":       142,
+     *   "limit":       20,
+     *   "offset":      0,
+     *   "hasMore":     true,
+     *   "executionMs": 37
+     * }
+     * }</pre>
+     *
+     * <p>Returns {@code 501 Not Implemented} when no {@link OpenSearchConnector} is
+     * configured. Returns {@code 400 Bad Request} when the {@code q} parameter is
+     * absent or blank.
+     *
+     * @param request the incoming HTTP request
+     * @return a Promise resolving to the HTTP response
+     *
+     * @doc.type     method
+     * @doc.purpose  REST handler for OpenSearch full-text entity search
+     * @doc.layer    product
+     * @doc.pattern  Handler
+     */
+    private Promise<HttpResponse> handleFullTextSearch(HttpRequest request) {
+        if (openSearchConnector == null) {
+            return Promise.of(errorResponse(501,
+                "Full-text search is not enabled; configure an OpenSearchConnector"));
+        }
+
+        String collection = request.getPathParameter("collection");
+        Optional<String> collErr = ApiInputValidator.validateCollection(collection);
+        if (collErr.isPresent()) return Promise.of(errorResponse(400, collErr.get()));
+
+        String q = request.getQueryParameter("q");
+        Optional<String> qErr = ApiInputValidator.validateSearchQuery(q);
+        if (qErr.isPresent()) return Promise.of(errorResponse(400, qErr.get()));
+
+        String tenantId = resolveTenantId(request);
+        Optional<String> tenantErr = ApiInputValidator.validateTenantId(tenantId);
+        if (tenantErr.isPresent()) return Promise.of(errorResponse(400, tenantErr.get()));
+
+        ApiInputValidator.LimitResult limitResult = ApiInputValidator.validateLimit(request.getQueryParameter("limit"), 20);
+        if (!limitResult.isValid()) return Promise.of(errorResponse(400, limitResult.getError().orElseThrow()));
+        int limit  = limitResult.getValue();
+        int offset = Math.max(parseIntParam(request.getQueryParameter("offset"), 0), 0);
+
+        QuerySpec spec = QuerySpec.builder()
+            .filter(q)
+            .limit(limit)
+            .offset(offset)
+            .build();
+
+        log.debug("[search] tenant={} collection={} q='{}' limit={} offset={}", tenantId, collection, q, limit, offset);
+
+        return openSearchConnector.query((java.util.UUID) null, tenantId, spec)
+            .map(qr -> {
+                List<Map<String, Object>> results = qr.entities().stream()
+                    .map(e -> {
+                        Map<String, Object> item = new LinkedHashMap<>();
+                        item.put("id", e.getId() != null ? e.getId().toString() : null);
+                        item.put("collectionName", e.getCollectionName());
+                        item.put("data", e.getData());
+                        item.put("version", e.getVersion());
+                        item.put("createdAt", e.getCreatedAt() != null ? e.getCreatedAt().toString() : null);
+                        item.put("updatedAt", e.getUpdatedAt() != null ? e.getUpdatedAt().toString() : null);
+                        return item;
+                    })
+                    .toList();
+
+                Map<String, Object> body = new LinkedHashMap<>();
+                body.put("results",     results);
+                body.put("total",       qr.total());
+                body.put("limit",       qr.limit());
+                body.put("offset",      qr.offset());
+                body.put("hasMore",     qr.hasMore());
+                body.put("executionMs", qr.executionTimeMs());
+                return jsonResponse(body);
+            })
+            .mapException(e -> {
+                log.error("[search] tenant={} collection={} q='{}': {}",
+                    tenantId, collection, q, e.getMessage(), e);
+                return new HttpException("Search failed: " + e.getMessage(), e);
+            });
+    }
+
+    // -------------------------------------------------------------------------
+    // Streaming query SSE — GET /api/v1/entities/:collection/query/stream
+    // -------------------------------------------------------------------------
+
+    /**
+     * Server-Sent Events endpoint that streams full-text search results in real time.
+     *
+     * <p>Two-phase behavior:
+     * <ol>
+     *   <li><b>Snapshot phase</b> – executes the supplied Lucene {@code query_string}
+     *       expression via {@link OpenSearchConnector#query} and pushes all matching
+     *       entities as a single {@code query-snapshot} SSE frame.</li>
+     *   <li><b>Follow phase</b> (only when {@code follow=true}) – subscribes to the
+     *       event log via {@link EventLogStore#tail} and pushes subsequent
+     *       {@code entity.saved} / {@code entity.deleted} / batch-mutation events
+     *       for the requested collection as {@code query-update} SSE frames.</li>
+     * </ol>
+     *
+     * <h3>Query parameters</h3>
+     * <ul>
+     *   <li>{@code q}          – Lucene expression (required)</li>
+     *   <li>{@code follow}     – {@code true} to tail the event log after snapshot
+     *                            (default: {@code false})</li>
+     *   <li>{@code fromOffset} – starting log offset for the follow phase
+     *                            (default: 0)</li>
+     *   <li>{@code limit}      – snapshot result limit (default 100, max 1000)</li>
+     *   <li>{@code tenantId}   – tenant; falls back to header / {@code "default"}</li>
+     * </ul>
+     *
+     * <h3>SSE frame types</h3>
+     * <ul>
+     *   <li>{@code connected}       – sent immediately on open</li>
+     *   <li>{@code query-snapshot}  – full snapshot of matching entities</li>
+     *   <li>{@code query-update}    – entity mutation event from the event log</li>
+     *   <li>{@code heartbeat}       – every {@value #SSE_HEARTBEAT_TIMEOUT_SEC} s when idle</li>
+     * </ul>
+     *
+     * <p>Returns {@code 501 Not Implemented} when no OpenSearchConnector is configured.
+     * Returns {@code 400 Bad Request} when {@code q} is absent or blank.
+     *
+     * @param request the incoming HTTP request
+     * @return a Promise resolving to a streaming {@code text/event-stream} HTTP response
+     *
+     * @doc.type     method
+     * @doc.purpose  SSE handler for live full-text query streaming over a collection
+     * @doc.layer    product
+     * @doc.pattern  Handler
+     */
+    private Promise<HttpResponse> handleStreamingQuerySse(HttpRequest request) {
+        if (openSearchConnector == null) {
+            return Promise.of(errorResponse(501,
+                "Streaming query is not enabled; configure an OpenSearchConnector"));
+        }
+
+        String collection = request.getPathParameter("collection");
+        Optional<String> collErr = ApiInputValidator.validateCollection(collection);
+        if (collErr.isPresent()) return Promise.of(errorResponse(400, collErr.get()));
+
+        String q = request.getQueryParameter("q");
+        Optional<String> qErr = ApiInputValidator.validateSearchQuery(q);
+        if (qErr.isPresent()) return Promise.of(errorResponse(400, qErr.get()));
+
+        String tenantId    = resolveTenantId(request);
+        Optional<String> tenantErr = ApiInputValidator.validateTenantId(tenantId);
+        if (tenantErr.isPresent()) return Promise.of(errorResponse(400, tenantErr.get()));
+
+        boolean follow     = "true".equalsIgnoreCase(request.getQueryParameter("follow"));
+        long fromOffsetVal = parseLongParam(request.getQueryParameter("fromOffset"), 0L);
+        ApiInputValidator.LimitResult limitResult = ApiInputValidator.validateLimit(request.getQueryParameter("limit"), 100);
+        if (!limitResult.isValid()) return Promise.of(errorResponse(400, limitResult.getError().orElseThrow()));
+        int snapshotLimit  = limitResult.getValue();
+
+        LinkedBlockingQueue<Optional<byte[]>> queue = new LinkedBlockingQueue<>(SSE_QUEUE_CAPACITY);
+
+        // Phase 1 – snapshot: execute query and push results as a single frame
+        QuerySpec snapshotSpec = QuerySpec.builder()
+            .filter(q)
+            .limit(snapshotLimit)
+            .offset(0)
+            .build();
+
+        // "connected" frame sent immediately so the client knows the stream is alive
+        queue.offer(Optional.of(buildSseFrame("connected", Map.of(
+            "service",     "data-cloud",
+            "tenantId",    tenantId,
+            "collection",  collection,
+            "q",           q,
+            "follow",      String.valueOf(follow),
+            "fromOffset",  String.valueOf(fromOffsetVal),
+            "timestamp",   Instant.now().toString()
+        ))));
+
+        // Snapshot query runs on the blocking executor to avoid blocking the event loop
+        Promise<StorageConnector.QueryResult> snapshotPromise =
+            Promise.ofBlocking(blockingExecutor, () -> {
+                // Wrap blocking ActiveJ promise resolution; connector is already async-capable
+                // but we need the result inline here before opening the tail subscription
+                try {
+                    return openSearchConnector.query((java.util.UUID) null, tenantId, snapshotSpec)
+                        // toCompletableFuture() bridges ActiveJ Promise to JDK for blocking get
+                        .toCompletableFuture()
+                        .get(30, TimeUnit.SECONDS);
+                } catch (Exception ex) {
+                    log.warn("[query-stream] snapshot failed tenant={} collection={} q='{}': {}",
+                        tenantId, collection, q, ex.getMessage(), ex);
+                    return StorageConnector.QueryResult.empty();
+                }
+            });
+
+        Set<String> entityEventTypes = Set.of(
+            "entity.saved", "entity.deleted",
+            "entity.batch-saved", "entity.batch-deleted"
+        );
+
+        // Phase 2 – optionally tail the event log after snapshot
+        if (follow) {
+            return client.eventLogStore()
+                .tail(TenantContext.of(tenantId), Offset.of(fromOffsetVal), entry -> {
+                    if (!entityEventTypes.contains(entry.eventType())) {
+                        return;
+                    }
+                    try {
+                        byte[] payloadBytes = new byte[entry.payload().remaining()];
+                        entry.payload().duplicate().get(payloadBytes);
+                        String payloadStr = new String(payloadBytes, StandardCharsets.UTF_8);
+                        @SuppressWarnings("unchecked")
+                        Map<String, Object> payloadMap = objectMapper.readValue(payloadStr, Map.class);
+
+                        if (!collection.equals(payloadMap.get("collection"))) {
+                            return;
+                        }
+
+                        Map<String, Object> frame = new LinkedHashMap<>();
+                        frame.put("collection",  collection);
+                        frame.put("operation",   payloadMap.getOrDefault("operation", "unknown"));
+                        frame.put("eventType",   entry.eventType());
+                        frame.put("tenantId",    tenantId);
+                        frame.put("timestamp",   entry.timestamp().toString());
+                        if (payloadMap.containsKey("id"))      frame.put("id",      payloadMap.get("id"));
+                        if (payloadMap.containsKey("ids"))     frame.put("ids",     payloadMap.get("ids"));
+                        if (payloadMap.containsKey("version")) frame.put("version", payloadMap.get("version"));
+                        if (payloadMap.containsKey("count"))   frame.put("count",   payloadMap.get("count"));
+
+                        byte[] sseFrame = buildSseFrame("query-update", frame);
+                        if (!queue.offer(Optional.of(sseFrame), 100L, TimeUnit.MILLISECONDS)) {
+                            log.warn("[query-stream] queue full for tenant={} collection={}, dropping update",
+                                tenantId, collection);
+                        }
+                    } catch (InterruptedException ie) {
+                        Thread.currentThread().interrupt();
+                    } catch (Exception ex) {
+                        log.warn("[query-stream] frame error tenant={} collection={}: {}", tenantId, collection, ex.getMessage());
+                    }
+                })
+                .then(subscription -> snapshotPromise.map(qr -> {
+                    sseSubscriptions.add(subscription);
+                    enqueueSnapshot(queue, qr, collection, tenantId, q);
+                    return buildSseChannelResponse(queue, subscription, tenantId, collection);
+                }))
+                .mapException(e -> {
+                    log.error("[query-stream] tail failed tenant={} collection={}: {}", tenantId, collection, e.getMessage(), e);
+                    return new HttpException("Streaming query failed: " + e.getMessage(), e);
+                });
+        } else {
+            // Snapshot-only mode: no event-log subscription
+            return snapshotPromise.map(qr -> {
+                enqueueSnapshot(queue, qr, collection, tenantId, q);
+                // Signal end-of-stream
+                queue.offer(Optional.empty());
+                return buildSseChannelResponse(queue, null, tenantId, collection);
+            });
+        }
+    }
+
+    /**
+     * Encodes the OpenSearch snapshot result as a {@code query-snapshot} SSE frame
+     * and places it on the given queue.
+     *
+     * @param queue      target queue
+     * @param qr         query result to encode
+     * @param collection collection name (for logging)
+     * @param tenantId   tenant id (for logging)
+     * @param q          original query expression (included in frame metadata)
+     *
+     * @doc.type    method
+     * @doc.purpose Push a query snapshot as an SSE frame onto the subscriber queue
+     * @doc.layer   product
+     * @doc.pattern Helper
+     */
+    private void enqueueSnapshot(
+            LinkedBlockingQueue<Optional<byte[]>> queue,
+            StorageConnector.QueryResult qr,
+            String collection,
+            String tenantId,
+            String q) {
+        try {
+            List<Map<String, Object>> results = qr.entities().stream()
+                .map(e -> {
+                    Map<String, Object> item = new LinkedHashMap<>();
+                    item.put("id",             e.getId() != null ? e.getId().toString() : null);
+                    item.put("collectionName", e.getCollectionName());
+                    item.put("data",           e.getData());
+                    item.put("version",        e.getVersion());
+                    item.put("createdAt",      e.getCreatedAt()  != null ? e.getCreatedAt().toString()  : null);
+                    item.put("updatedAt",      e.getUpdatedAt()  != null ? e.getUpdatedAt().toString()  : null);
+                    return item;
+                })
+                .toList();
+
+            Map<String, Object> snapshotFrame = new LinkedHashMap<>();
+            snapshotFrame.put("q",           q);
+            snapshotFrame.put("collection",  collection);
+            snapshotFrame.put("tenantId",    tenantId);
+            snapshotFrame.put("total",       qr.total());
+            snapshotFrame.put("limit",       qr.limit());
+            snapshotFrame.put("offset",      qr.offset());
+            snapshotFrame.put("hasMore",     qr.hasMore());
+            snapshotFrame.put("executionMs", qr.executionTimeMs());
+            snapshotFrame.put("results",     results);
+            snapshotFrame.put("timestamp",   Instant.now().toString());
+
+            byte[] frame = buildSseFrame("query-snapshot", snapshotFrame);
+            if (!queue.offer(Optional.of(frame), 100L, TimeUnit.MILLISECONDS)) {
+                log.warn("[query-stream] queue full when enqueuing snapshot tenant={} collection={}", tenantId, collection);
+            }
+        } catch (InterruptedException ie) {
+            Thread.currentThread().interrupt();
+        } catch (Exception ex) {
+            log.warn("[query-stream] snapshot serialization error tenant={} collection={}: {}", tenantId, collection, ex.getMessage());
+        }
+    }
+
+    /**
+     * Builds the {@code text/event-stream} HTTP response backed by a
+     * {@link LinkedBlockingQueue} of pre-serialized SSE frames.
+     *
+     * <p>Heartbeats are injected automatically whenever the queue is empty for
+     * {@value #SSE_HEARTBEAT_TIMEOUT_SEC} seconds. When a {@code null} item is
+     * dequeued (end-of-stream sentinel) or the subscription is cancelled, the
+     * stream terminates gracefully.
+     *
+     * @param queue        SSE frame queue (capacity {@link #SSE_QUEUE_CAPACITY})
+     * @param subscription active event-log subscription, or {@code null} for
+     *                     snapshot-only mode
+     * @param tenantId     tenant identifier (for logging)
+     * @param collection   collection name (for logging)
+     * @return the fully-configured streaming HTTP response
+     *
+     * @doc.type    method
+     * @doc.purpose Construct a streaming SSE HttpResponse from a blocking queue
+     * @doc.layer   product
+     * @doc.pattern Helper
+     */
+    private HttpResponse buildSseChannelResponse(
+            LinkedBlockingQueue<Optional<byte[]>> queue,
+            EventLogStore.Subscription subscription,
+            String tenantId,
+            String collection) {
+
+        ChannelSupplier<ByteBuf> bodyStream = ChannelSuppliers.ofAsyncSupplier(() -> {
+            boolean cancelled = subscription != null && subscription.isCancelled();
+            if (cancelled) {
+                return Promise.of(null);
+            }
+            return Promise.ofBlocking(blockingExecutor, () -> {
+                if (subscription != null && subscription.isCancelled()) {
+                    return null;
+                }
+                try {
+                    Optional<byte[]> item = queue.poll(SSE_HEARTBEAT_TIMEOUT_SEC, TimeUnit.SECONDS);
+                    if (item == null) {
+                        // Heartbeat
+                        return ByteBuf.wrapForReading(buildSseFrame("heartbeat",
+                            Map.of("ts", Instant.now().toString())));
+                    }
+                    return item.isPresent() ? ByteBuf.wrapForReading(item.get()) : null;
+                } catch (InterruptedException ie) {
+                    Thread.currentThread().interrupt();
+                    return null;
+                }
+            });
+        });
+
+        log.info("[query-stream] stream opened tenant={} collection={}", tenantId, collection);
+
+        return HttpResponse.ok200()
+            .withHeader(HttpHeaders.CONTENT_TYPE, HttpHeaderValue.of("text/event-stream"))
+            .withHeader(HttpHeaders.of("Cache-Control"),            HttpHeaderValue.of("no-cache"))
+            .withHeader(HttpHeaders.of("X-Accel-Buffering"),        HttpHeaderValue.of("no"))
+            .withHeader(HttpHeaders.of("Connection"),               HttpHeaderValue.of("keep-alive"))
+            .withHeader(HttpHeaders.of("Access-Control-Allow-Origin"), HttpHeaderValue.of(CORS_ALLOW_ORIGIN))
+            .withBodyStream(bodyStream)
+            .build();
     }
 }

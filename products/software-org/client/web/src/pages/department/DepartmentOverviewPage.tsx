@@ -8,7 +8,8 @@
  */
 
 import React from 'react';
-import { Grid, Card, KpiCard, Box, Stack, Button } from '@ghatana/ui';
+import { Grid, Card, Box, Stack, Button } from '@ghatana/design-system';
+import { KpiCard } from '@/shared/components/org';
 import { useParams, useNavigate } from 'react-router';
 import { usePersona } from '@/hooks/usePersona';
 
@@ -339,4 +340,3 @@ export function DepartmentOverviewPage() {
     </Box>
   );
 }
-

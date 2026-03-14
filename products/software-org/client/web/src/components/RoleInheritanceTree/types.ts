@@ -2,7 +2,7 @@
  * Type definitions for Role Inheritance Tree components
  */
 
-import type { Node, Edge } from 'reactflow';
+import type { Node, Edge } from '@xyflow/react';
 
 /**
  * Persona data with inheritance information

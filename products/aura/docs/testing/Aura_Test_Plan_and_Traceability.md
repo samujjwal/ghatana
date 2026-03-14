@@ -19,10 +19,11 @@ It has four jobs:
 
 1. Start every feature by locating the relevant source document row in the traceability matrix.
 2. If the work is scheduled, find the matching task row in `../Aura_Task_Execution_Matrix.md` before implementation.
-3. Copy the matching test cases into the implementation backlog before writing code.
-4. Implement unit and contract tests first, then integration tests, then end-to-end flows.
-5. Treat every newly introduced branch, enum value, event type, consent scope, and error mode as a trigger to extend the suite.
-6. When a source doc changes, update this matrix first, then update the detailed test documents.
+3. For Weeks 25-104 work, also use `../Aura_Long_Horizon_Task_Execution_Matrix.md`.
+4. Copy the matching test cases into the implementation backlog before writing code.
+5. Implement unit and contract tests first, then integration tests, then end-to-end flows.
+6. Treat every newly introduced branch, enum value, event type, consent scope, and error mode as a trigger to extend the suite.
+7. When a source doc changes, update this matrix first, then update the detailed test documents.
 
 ## Test Levels
 
@@ -51,10 +52,11 @@ Case numbers should be stable. If a case is retired, do not reuse its ID.
 
 | Environment | Use | Minimum Requirements |
 | ----------- | --- | -------------------- |
-| Local Dev | TDD loop for unit/contract tests | seeded DB, stubbed product catalog, fake auth, local event bus substitute |
+| Local Dev | TDD loop for unit/contract tests | seeded DB or Data Cloud test plugin, stubbed product catalog, fake auth, local AEP substitute |
 | CI | mandatory regression gate | deterministic seeds, snapshot fixtures, schema contract validation, accessibility scan |
-| Integration/Staging | service and workflow validation | real DB, Redis, event bus, object storage, auth, observability, seeded partner/catalog data |
+| Integration/Staging | service and workflow validation | Data Cloud-managed datasets/plugins, AEP, auth, security, observability, seeded partner/catalog data |
 | Pre-Launch Shadow | production-like safety checks | shadow recommendation scoring, canary support, drift dashboards, audit log verification |
+| Performance/Chaos | scale, failover, soak, and recovery validation | load generator, traffic profiles, fault injection, restore environment, AEP and Data Cloud observability |
 
 ## Required Core Personas and Fixtures
 
@@ -83,6 +85,10 @@ Case numbers should be stable. If a case is retired, do not reuse its ID.
 | Outcome coverage | Every supported post-use outcome must flow through UX, API, persistence, analytics, and learning. |
 | Trust coverage | Confidence, evidence, affiliate labels, and trust flags must be asserted in all relevant user journeys. |
 | Fairness coverage | Any cohort-sensitive logic must be validated across skin tone depth, skin type, and price preference segments. |
+| Scale coverage | Critical user and worker paths must have burst, sustained load, and backlog-recovery cases. |
+| Recovery coverage | Critical stores and dependencies must have outage, replay, backup/restore, and rollback cases. |
+| Reuse regression coverage | Shared Ghatana libraries and services used by Aura must trigger impacted contract and regression tests when they change. |
+| Shared platform boundary coverage | Async paths must use AEP, managed data paths must use Data Cloud or approved plugins, and shared security/o11y integration must be regression-tested. |
 
 ## Source Document to Test Suite Matrix
 
@@ -94,8 +100,11 @@ Case numbers should be stable. If a case is retired, do not reuse its ID.
 | `../Aura_PRD_v1.md` | `PUX`, `BIZ` | User problems, functional requirements, KPIs |
 | `../Aura_Consumer_Value_Operating_Model.md` | `PUX`, `BIZ`, `AIK` | Consumer value loops, trust contract, recovery flows, outcome-first delivery |
 | `../Aura_Task_Execution_Matrix.md` | `OPS`, `BIZ`, `PUX`, `AIK`, `ADE` | Task-level execution detail, implementation location, and validation expectations |
+| `../Aura_Long_Horizon_Task_Execution_Matrix.md` | `OPS`, `BIZ`, `PUX`, `AIK`, `ADE` | Weeks 25-104 execution detail, implementation location, and validation expectations |
+| `../Aura_Full_Product_Implementation_Plan_104_Weeks.md` | `OPS`, `BIZ` | Long-horizon sequencing, reuse-first planning, staffing, and release gating |
+| `../Aura_Shared_Platform_Integration_Spec.md` | `ADE`, `OPS` | AEP/Data Cloud transaction boundaries, topic/dataset registration, outbox, auth, telemetry |
 | `../Aura_UI_UX_Blueprint.md` | `PUX` | Screens, accessibility, trust surfaces, outcome capture UI |
-| `../Aura_System_Architecture.md` | `OPS`, `ADE` | layer behavior, privacy boundary, observability |
+| `../Aura_System_Architecture.md` | `OPS`, `ADE` | layer behavior, privacy boundary, AEP/Data Cloud/shared platform boundaries, observability |
 | `../Aura_Intelligence_Platform_Architecture.md` | `AIK`, `OPS`, `ADE` | retrieval, online/offline paths, governance |
 | `../Aura_Technical_Stack_Blueprint.md` | `OPS` | deployment, tooling, infrastructure assumptions |
 | `../Aura_Monorepo_Structure.md` | `OPS` | build/test workspace assumptions |
@@ -103,7 +112,7 @@ Case numbers should be stable. If a case is retired, do not reuse its ID.
 | `../Aura_Data_Architecture.md` | `ADE`, `OPS` | service data boundary, model coverage |
 | `../Aura_Database_Schema_Prisma.md` | `ADE` | persistence and schema contract cases |
 | `../Aura_API_Contracts.md` | `ADE`, `PUX` | GraphQL/REST contract coverage |
-| `../Aura_Event_Architecture.md` | `ADE`, `OPS` | event publication, versioning, replay, DLQ |
+| `../Aura_Event_Architecture.md` | `ADE`, `OPS` | AEP publication, versioning, replay, DLQ |
 | `../Aura_Personal_Intelligence_Engine_Spec.md` | `AIK`, `PUX` | profile learning, context, confidence |
 | `../Aura_Recommendation_Algorithms.md` | `AIK` | candidate gen, rules, ranking, fairness |
 | `../Aura_AI_Engine_Design.md` | `AIK` | model behavior, explainability, cold start |
@@ -129,8 +138,9 @@ Case numbers should be stable. If a case is retired, do not reuse its ID.
 | `Aura_Test_Cases_01_Product_UX_Privacy.md` | onboarding, feed, product detail, compare, assistant, saved items, privacy center, accessibility |
 | `Aura_Test_Cases_02_Recommendation_AI_Knowledge.md` | ranking, confidence, explainability, knowledge graph, ontology, similarity, agent flows |
 | `Aura_Test_Cases_03_API_Data_Events.md` | GraphQL, REST, database, schema, enums, events, export/delete, consent contracts |
-| `Aura_Test_Cases_04_Platform_Architecture_Operations.md` | ingestion, performance, resilience, observability, deployment, security, fairness ops |
+| `Aura_Test_Cases_04_Platform_Architecture_Operations.md` | ingestion, performance, resilience, shared observability, deployment, security, fairness ops |
 | `Aura_Test_Cases_05_Strategy_GTM_Business_Validation.md` | user-problem validation, launch gates, growth loops, monetization, brand analytics, community trust |
+| `Aura_Test_Cases_06_Performance_Chaos_Recovery_Reuse.md` | burst/load/soak, AEP/Data Cloud dependency failure, backup/restore, concurrency integrity, shared-library regression |
 
 ## Definition of Done For A Feature
 
@@ -140,6 +150,7 @@ Case numbers should be stable. If a case is retired, do not reuse its ID.
 4. Required non-functional checks for the feature class are automated or scheduled.
 5. Any new metric or event has analytics validation and dashboard coverage.
 6. Any new consented behavior has explicit deny, revoke, and audit-path tests.
+7. Any new async or durable-data path is validated against the AEP/Data Cloud shared-platform boundary.
 
 ## Definition of Done For A Release Candidate
 

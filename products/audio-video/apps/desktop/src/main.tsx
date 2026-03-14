@@ -1,7 +1,7 @@
 import React from 'react';
 import ReactDOM from 'react-dom/client';
 import { BrowserRouter } from 'react-router-dom';
-import { ErrorBoundary } from '@ghatana/ui/components/ErrorBoundary';
+import { ErrorBoundary } from '@ghatana/design-system';
 import App from './App';
 import './index.css';
 

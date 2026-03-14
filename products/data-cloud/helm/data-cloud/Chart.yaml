@@ -1,0 +1,27 @@
+apiVersion: v2
+name: data-cloud
+description: >
+  Ghatana Data-Cloud — high-performance entity storage and event sourcing
+  platform built on ActiveJ, Kafka, ClickHouse, and OpenSearch.
+type: application
+version: 0.1.0
+appVersion: "1.0.0"
+
+keywords:
+  - ghatana
+  - data-cloud
+  - event-sourcing
+  - storage
+
+home: https://github.com/ghatana/ghatana
+sources:
+  - https://github.com/ghatana/ghatana/tree/main/products/data-cloud
+
+maintainers:
+  - name: Platform Team
+    email: platform@ghatana.io
+
+annotations:
+  artifacthub.io/changes: |
+    - kind: added
+      description: Initial Helm chart wrapping Kustomize manifests

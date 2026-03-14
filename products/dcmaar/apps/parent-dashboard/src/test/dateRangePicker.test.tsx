@@ -1,6 +1,6 @@
 import { describe, it, expect, vi } from 'vitest';
 import { render, screen, fireEvent } from '@testing-library/react';
-import { DateRangePicker } from '@ghatana/ui';
+import { DateRangePicker } from '@ghatana/design-system';
 
 describe('DateRangePicker', () => {
   it('should render quick select buttons', () => {

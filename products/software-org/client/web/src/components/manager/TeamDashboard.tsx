@@ -21,7 +21,7 @@ import {
     Button,
     Alert,
     Tooltip,
-} from '@ghatana/ui';
+} from '@ghatana/design-system';
 import {
     Group,
     Person,
@@ -38,7 +38,7 @@ import {
     People,
     CalendarToday,
     MoreVert,
-} from '@ghatana/ui/icons';
+} from '@ghatana/design-system/icons';
 
 // ============================================================================
 // Type Definitions

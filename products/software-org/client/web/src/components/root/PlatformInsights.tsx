@@ -11,7 +11,6 @@ import React, { useState } from 'react';
 import {
     Grid,
     Card,
-    KpiCard,
     Box,
     Chip,
     LinearProgress,
@@ -25,7 +24,8 @@ import {
     TableBody,
     TableRow,
     TableCell,
-} from '@ghatana/ui';
+} from '@ghatana/design-system';
+import { KpiCard } from '@/shared/components/org';
 
 /**
  * Platform usage metrics
@@ -132,7 +132,7 @@ export interface PlatformInsightsProps {
  * - Optimization recommendations
  * - Tab-based navigation (Usage, Costs, Capacity, Health)
  *
- * Reuses @ghatana/ui components:
+ * Reuses @ghatana/design-system components and shared org KPI cards:
  * - KpiCard (usage metrics, cost summary)
  * - Grid (responsive layouts)
  * - Card (cost cards, capacity cards, recommendation cards)

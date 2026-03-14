@@ -1,0 +1,39 @@
+---
+# Data-Cloud — Ingress (NGINX)
+# Exposes the HTTP REST API externally.  Adjust host/tls for your environment.
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: data-cloud
+  namespace: data-cloud
+  labels:
+    app.kubernetes.io/name: data-cloud
+  annotations:
+    nginx.ingress.kubernetes.io/rewrite-target: /
+    nginx.ingress.kubernetes.io/proxy-body-size: "10m"
+    nginx.ingress.kubernetes.io/proxy-read-timeout: "60"
+    # Rate limit: 100 req/s per IP
+    nginx.ingress.kubernetes.io/limit-rps: "100"
+    # Security headers
+    nginx.ingress.kubernetes.io/configuration-snippet: |
+      more_set_headers "X-Frame-Options: DENY";
+      more_set_headers "X-Content-Type-Options: nosniff";
+      more_set_headers "Referrer-Policy: strict-origin-when-cross-origin";
+spec:
+  ingressClassName: nginx
+  rules:
+    - host: data-cloud.ghatana.internal
+      http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: data-cloud
+                port:
+                  name: http
+  # Uncomment and configure TLS for production
+  # tls:
+  #   - hosts:
+  #       - data-cloud.ghatana.internal
+  #     secretName: data-cloud-tls

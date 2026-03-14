@@ -1,0 +1,239 @@
+---
+# ClickHouse Backup CronJob — Data-Cloud Platform
+# Uses clickhouse-backup (MIT license) from https://github.com/Altinity/clickhouse-backup
+#
+# Backup scheme:
+#   - Full backup:        daily at 02:00 UTC
+#   - Incremental diff:   every 6 hours (06:00, 12:00, 18:00 UTC)
+#   - Retention:          30 daily + 7 × 6-hourly incremental
+#   - Storage backend:    S3-compatible (Ceph/MinIO configured via Secret)
+#
+# Required Secret (create before applying):
+#   kubectl create secret generic clickhouse-backup-credentials \
+#     --from-literal=S3_ACCESS_KEY=<key> \
+#     --from-literal=S3_SECRET_KEY=<secret> \
+#     -n data-cloud
+
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: clickhouse-backup-config
+  namespace: data-cloud
+  labels:
+    app.kubernetes.io/name:       clickhouse-backup
+    app.kubernetes.io/part-of:    data-cloud
+    app.kubernetes.io/managed-by: argocd
+data:
+  config.yml: |
+    general:
+      remote_storage: s3
+      max_file_size:  0          # 0 = unlimited
+      disable_progress_bar: true
+      backups_to_keep_local: 2   # keep last 2 backups on disk for quick restore
+      backups_to_keep_remote: 30 # keep last 30 remote backups
+
+    clickhouse:
+      username: backup_user
+      password: ""               # set via CLICKHOUSE_PASSWORD env var
+      host:     clickhouse
+      port:     9000
+      disk_mapping: {}
+      skip_tables:
+        - system.*
+        - INFORMATION_SCHEMA.*
+        - information_schema.*
+      tables: []                 # empty = all tables
+
+    s3:
+      access_key:         ""     # injected via S3_ACCESS_KEY env var
+      secret_key:         ""     # injected via S3_SECRET_KEY env var
+      bucket:             ghatana-clickhouse-backups
+      endpoint:           http://ceph-rgw.ceph-system.svc.cluster.local:7480
+      region:             us-east-1
+      force_path_style:   true
+      path:               data-cloud/
+      compression_level:  1
+      compression_format: tar
+      sse:                ""
+      disable_ssl:        true
+
+---
+# Full daily backup — 02:00 UTC
+apiVersion: batch/v1
+kind: CronJob
+metadata:
+  name: clickhouse-backup-full
+  namespace: data-cloud
+  labels:
+    app.kubernetes.io/name:       clickhouse-backup
+    app.kubernetes.io/component:  full-backup
+    app.kubernetes.io/part-of:    data-cloud
+    app.kubernetes.io/managed-by: argocd
+spec:
+  schedule:                   "0 2 * * *"
+  concurrencyPolicy:          Forbid
+  successfulJobsHistoryLimit: 3
+  failedJobsHistoryLimit:     5
+  jobTemplate:
+    spec:
+      backoffLimit:     2
+      activeDeadlineSeconds: 7200   # 2 hours max
+      template:
+        metadata:
+          labels:
+            app.kubernetes.io/name:      clickhouse-backup
+            app.kubernetes.io/component: full-backup
+        spec:
+          restartPolicy: OnFailure
+          serviceAccountName: data-cloud
+          securityContext:
+            runAsNonRoot: true
+            runAsUser:    1001
+            fsGroup:      1001
+          containers:
+            - name: clickhouse-backup
+              image: altinity/clickhouse-backup:2.6.3
+              imagePullPolicy: IfNotPresent
+              command:
+                - /bin/sh
+                - -c
+                - |
+                  set -e
+                  BACKUP_NAME="full-$(date +%Y-%m-%d)"
+                  echo "Creating full backup: $BACKUP_NAME"
+                  clickhouse-backup create "$BACKUP_NAME"
+                  echo "Uploading to remote storage"
+                  clickhouse-backup upload "$BACKUP_NAME"
+                  echo "Cleaning up old remote backups"
+                  clickhouse-backup delete remote --keep 30
+                  echo "Full backup $BACKUP_NAME completed successfully"
+              env:
+                - name: LOG_LEVEL
+                  value: info
+                - name: CLICKHOUSE_PASSWORD
+                  valueFrom:
+                    secretKeyRef:
+                      name: clickhouse-credentials
+                      key:  backup-password
+                      optional: true
+                - name: S3_ACCESS_KEY
+                  valueFrom:
+                    secretKeyRef:
+                      name: clickhouse-backup-credentials
+                      key:  S3_ACCESS_KEY
+                - name: S3_SECRET_KEY
+                  valueFrom:
+                    secretKeyRef:
+                      name: clickhouse-backup-credentials
+                      key:  S3_SECRET_KEY
+              volumeMounts:
+                - name:      config
+                  mountPath: /etc/clickhouse-backup
+                  readOnly:  true
+                - name:      data
+                  mountPath: /var/lib/clickhouse
+              resources:
+                requests:
+                  cpu:    200m
+                  memory: 256Mi
+                limits:
+                  cpu:    1000m
+                  memory: 1Gi
+          volumes:
+            - name: config
+              configMap:
+                name: clickhouse-backup-config
+            - name: data
+              persistentVolumeClaim:
+                claimName: clickhouse-data
+
+---
+# Incremental (diff) backup — every 6 hours except at the full-backup hour
+apiVersion: batch/v1
+kind: CronJob
+metadata:
+  name: clickhouse-backup-incremental
+  namespace: data-cloud
+  labels:
+    app.kubernetes.io/name:       clickhouse-backup
+    app.kubernetes.io/component:  incremental-backup
+    app.kubernetes.io/part-of:    data-cloud
+    app.kubernetes.io/managed-by: argocd
+spec:
+  schedule:                   "0 6,12,18 * * *"
+  concurrencyPolicy:          Forbid
+  successfulJobsHistoryLimit: 3
+  failedJobsHistoryLimit:     5
+  jobTemplate:
+    spec:
+      backoffLimit:     2
+      activeDeadlineSeconds: 3600   # 1 hour max
+      template:
+        metadata:
+          labels:
+            app.kubernetes.io/name:      clickhouse-backup
+            app.kubernetes.io/component: incremental-backup
+        spec:
+          restartPolicy: OnFailure
+          serviceAccountName: data-cloud
+          securityContext:
+            runAsNonRoot: true
+            runAsUser:    1001
+            fsGroup:      1001
+          containers:
+            - name: clickhouse-backup
+              image: altinity/clickhouse-backup:2.6.3
+              imagePullPolicy: IfNotPresent
+              command:
+                - /bin/sh
+                - -c
+                - |
+                  set -e
+                  BASE_NAME="full-$(date +%Y-%m-%d)"
+                  INCR_NAME="incr-$(date +%Y-%m-%dT%H)"
+                  echo "Creating incremental backup: $INCR_NAME (base: $BASE_NAME)"
+                  clickhouse-backup create-diff --diff-from-remote "$BASE_NAME" "$INCR_NAME"
+                  echo "Uploading incremental backup"
+                  clickhouse-backup upload "$INCR_NAME"
+                  echo "Cleaning up old incremental remote backups (keep 7)"
+                  clickhouse-backup delete remote --keep 37   # 30 full + 7 incremental
+                  echo "Incremental backup $INCR_NAME completed successfully"
+              env:
+                - name: LOG_LEVEL
+                  value: info
+                - name: CLICKHOUSE_PASSWORD
+                  valueFrom:
+                    secretKeyRef:
+                      name: clickhouse-credentials
+                      key:  backup-password
+                      optional: true
+                - name: S3_ACCESS_KEY
+                  valueFrom:
+                    secretKeyRef:
+                      name: clickhouse-backup-credentials
+                      key:  S3_ACCESS_KEY
+                - name: S3_SECRET_KEY
+                  valueFrom:
+                    secretKeyRef:
+                      name: clickhouse-backup-credentials
+                      key:  S3_SECRET_KEY
+              volumeMounts:
+                - name:      config
+                  mountPath: /etc/clickhouse-backup
+                  readOnly:  true
+                - name:      data
+                  mountPath: /var/lib/clickhouse
+              resources:
+                requests:
+                  cpu:    100m
+                  memory: 128Mi
+                limits:
+                  cpu:    500m
+                  memory: 512Mi
+          volumes:
+            - name: config
+              configMap:
+                name: clickhouse-backup-config
+            - name: data
+              persistentVolumeClaim:
+                claimName: clickhouse-data

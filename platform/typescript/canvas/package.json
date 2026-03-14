@@ -5,19 +5,44 @@
   "type": "module",
   "main": "dist/index.js",
   "exports": {
-    ".": "./src/index.ts",
-    "./react": "./src/react/index.tsx",
-    "./types": "./src/types/index.ts",
-    "./core/canvas-renderer": "./src/core/canvas-renderer.ts",
-    "./ui-builder": "./src/ui-builder/index.ts",
-    "./plugins": "./src/plugins/index.ts",
-    "./hybrid": "./src/hybrid/index.ts",
-    "./topology": "./src/topology/index.ts",
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js"
+    },
+    "./react": {
+      "types": "./dist/react/index.d.ts",
+      "import": "./dist/react/index.js"
+    },
+    "./types": {
+      "types": "./dist/types/index.d.ts",
+      "import": "./dist/types/index.js"
+    },
+    "./core/canvas-renderer": {
+      "types": "./dist/core/canvas-renderer.d.ts",
+      "import": "./dist/core/canvas-renderer.js"
+    },
+    "./ui-builder": {
+      "types": "./dist/ui-builder/index.d.ts",
+      "import": "./dist/ui-builder/index.js"
+    },
+    "./plugins": {
+      "types": "./dist/plugins/index.d.ts",
+      "import": "./dist/plugins/index.js"
+    },
+    "./hybrid": {
+      "types": "./dist/hybrid/index.d.ts",
+      "import": "./dist/hybrid/index.js"
+    },
+    "./topology": {
+      "types": "./dist/topology/index.d.ts",
+      "import": "./dist/topology/index.js"
+    },
     "./package.json": "./package.json"
   },
   "files": [
-    "src",
-    "dist"
+    "dist",
+    "README.md",
+    "LICENSE"
   ],
   "scripts": {
     "build": "tsc",
@@ -26,6 +51,7 @@
     "test:ui": "vitest --ui"
   },
   "dependencies": {
+    "@ghatana/design-system": "workspace:*",
     "@preact/signals-core": "^1.12.2",
     "@xyflow/react": "^12.10.0",
     "dagre": "^0.8.5",

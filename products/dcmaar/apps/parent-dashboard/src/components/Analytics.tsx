@@ -1,7 +1,7 @@
 import { useState, useEffect, useMemo, memo } from 'react';
 import { useAtomValue } from 'jotai';
 import { usageEventsAtom, blockEventsAtom } from '../stores/eventsStore';
-import { DateRangePicker, type DateRange } from '@ghatana/ui';
+import { DateRangePicker, type DateRange } from '@ghatana/design-system';
 import { exportUsageEventsToCSV, exportBlockEventsToCSV } from '../utils/csvExport';
 import { exportUsageEventsToPDF, exportBlockEventsToPDF, exportAnalyticsSummaryToPDF } from '../utils/pdfExport';
 

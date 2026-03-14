@@ -1,0 +1,170 @@
+# =============================================================================
+# Canary Deployment — data-cloud-canary
+#
+# PURPOSE
+# -------
+# Runs the canary image version alongside the stable Deployment.
+# Pods carry label `version: canary` so the Istio DestinationRule routes the
+# 10% canary share exclusively to these pods.
+#
+# USAGE
+# -----
+# Before applying, replace the image tag placeholder:
+#
+#   # Via Kustomize (preferred):
+#   # Update kustomization.yaml images: section with the target SHA
+#
+#   # Or inline:
+#   kubectl set image deployment/data-cloud-canary \
+#     data-cloud=ghatana/data-cloud:v2.0.0-rc1 -n data-cloud
+#
+# SIZING
+# ------
+# 1 replica handles 10% of traffic when stable has 2 replicas.
+# Adjust to 2–3 replicas for latency-sensitive services.
+#
+# CLEANUP (after promote or rollback)
+# ------
+#   kubectl delete deployment data-cloud-canary -n data-cloud
+# =============================================================================
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: data-cloud-canary
+  namespace: data-cloud
+  labels:
+    app.kubernetes.io/name: data-cloud
+    app.kubernetes.io/component: backend
+    app.kubernetes.io/part-of: ghatana
+    app: data-cloud
+    version: canary
+    track: canary
+  annotations:
+    # Git SHA of the canary image — updated by CI/CD pipeline
+    deployment.kubernetes.io/revision: "1"
+    canary.ghatana.io/started-by: "ci"
+spec:
+  # 1 pod = ~10% of stable (2 pods) for an approximate 33%/67% split.
+  # For a true 10%: scale stable to 9 pods and keep canary at 1.
+  # Istio weight= in the VirtualService provides exact percentage control
+  # regardless of replica counts.
+  replicas: 1
+  selector:
+    matchLabels:
+      app: data-cloud
+      version: canary
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxSurge: 1
+      maxUnavailable: 0
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: data-cloud
+        app: data-cloud
+        version: canary          # <- Istio subset selector
+        track: canary
+      annotations:
+        prometheus.io/scrape: "true"
+        prometheus.io/path: "/metrics"
+        prometheus.io/port: "8082"
+        # Prevents Argo CD / Flux from reconciling canary back to stable image
+        argocd.argoproj.io/compare-options: IgnoreExtraneous
+    spec:
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 1001
+        runAsGroup: 1001
+        fsGroup: 1001
+
+      terminationGracePeriodSeconds: 60
+
+      containers:
+        - name: data-cloud
+          # !! REPLACE with the canary image tag before apply !!
+          # Kustomize images: override is the recommended approach.
+          image: ghatana/data-cloud:canary
+          imagePullPolicy: Always   # Always for canary to pick up latest image
+
+          ports:
+            - name: http
+              containerPort: 8082
+              protocol: TCP
+            - name: grpc
+              containerPort: 9090
+              protocol: TCP
+
+          envFrom:
+            - configMapRef:
+                name: data-cloud-config
+          env:
+            - name: DB_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: data-cloud-secret
+                  key: DB_PASSWORD
+            - name: KAFKA_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: data-cloud-secret
+                  key: KAFKA_PASSWORD
+            # Mark this pod as canary for logging and tracing context
+            - name: INSTANCE_VERSION
+              value: "canary"
+            - name: OTEL_RESOURCE_ATTRIBUTES
+              value: "deployment.environment=production,service.version=canary"
+
+          # Canary-specific: faster readiness probes to detect bad startups quickly
+          readinessProbe:
+            httpGet:
+              path: /ready
+              port: 8082
+            initialDelaySeconds: 10
+            periodSeconds: 5
+            failureThreshold: 3
+            successThreshold: 1
+
+          livenessProbe:
+            httpGet:
+              path: /live
+              port: 8082
+            initialDelaySeconds: 30
+            periodSeconds: 10
+            failureThreshold: 3
+
+          startupProbe:
+            httpGet:
+              path: /health
+              port: 8082
+            initialDelaySeconds: 5
+            periodSeconds: 5
+            failureThreshold: 12   # 60 s total startup budget
+
+          resources:
+            requests:
+              memory: "512Mi"
+              cpu: "250m"
+            limits:
+              memory: "1Gi"
+              cpu: "1000m"
+
+          securityContext:
+            allowPrivilegeEscalation: false
+            readOnlyRootFilesystem: true
+            capabilities:
+              drop: ["ALL"]
+
+      # Prefer scheduling canary on different nodes than stable pods
+      affinity:
+        podAntiAffinity:
+          preferredDuringSchedulingIgnoredDuringExecution:
+            - weight: 80
+              podAffinityTerm:
+                labelSelector:
+                  matchExpressions:
+                    - key: version
+                      operator: In
+                      values:
+                        - stable
+                topologyKey: kubernetes.io/hostname

@@ -8,7 +8,8 @@
  */
 
 import React, { useState } from 'react';
-import { Grid, Card, KpiCard, Box, Stack, Button, DataGrid, Chip } from '@ghatana/ui';
+import { Grid, Card, Box, Stack, Button, DataGrid, Chip } from '@ghatana/design-system';
+import { KpiCard } from '@/shared/components/org';
 import { useParams, useNavigate } from 'react-router';
 import { usePersona } from '@/hooks/usePersona';
 
@@ -325,4 +326,3 @@ export function TeamOverviewPage() {
     </Box>
   );
 }
-

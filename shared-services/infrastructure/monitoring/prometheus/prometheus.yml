@@ -106,6 +106,17 @@ scrape_configs:
           layer: 'event'
     metrics_path: '/metrics'
 
+  - job_name: 'data-cloud-platform'
+    static_configs:
+      - targets: ['host.docker.internal:8082']
+        labels:
+          service: 'data-cloud-platform'
+          product: 'data-cloud'
+          layer: 'platform'
+          tech: 'java'
+    metrics_path: '/metrics'
+    scrape_interval: 15s
+
   # Infrastructure - PostgreSQL
   - job_name: 'postgres'
     static_configs:

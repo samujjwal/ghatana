@@ -30,12 +30,12 @@ Build a defensible, personalized beauty intelligence platform in Year 1. Expand 
 - Shade match v1 operational for foundations
 - Internal alpha with 50 users
 
-#### Q2 — AI Personalization & Beta Launch
+#### Q2 — AI Personalization & Invite Beta
 
 - Recommendation feed operational with explainable reason codes
-- AI skin analysis (selfie-based undertone inference) in closed beta
+- AI skin analysis (selfie-based undertone inference) in explicit opt-in pilot
 - Review sentiment pipeline ingesting community data
-- Open beta launch: invite-based, ~500 users
+- Invite beta launched and ramped toward ~500 users
 - Affiliate link instrumentation and first revenue measurements
 - Experimentation framework operational (A/B testing for ranking weights)
 - 30-day retention benchmark established
@@ -45,7 +45,7 @@ Build a defensible, personalized beauty intelligence platform in Year 1. Expand 
 - Community review contributions enabled (Phase 4 foundations)
 - Twin-user discovery signals in personalization model
 - Creator partnership program activated (10+ creator integrations)
-- Public launch
+- Public launch in Month 8
 - Press and editorial outreach
 - Product comparison feature shipped
 - First premium subscription offering tested

@@ -5,8 +5,8 @@
  */
 
 import { memo } from 'react';
-import { BaseEdge, EdgeLabelRenderer, getBezierPath } from 'reactflow';
-import type { EdgeProps } from 'reactflow';
+import { BaseEdge, EdgeLabelRenderer, getBezierPath } from '@xyflow/react';
+import type { EdgeProps } from '@xyflow/react';
 
 /**
  * InheritanceLink - Custom edge for role inheritance connections

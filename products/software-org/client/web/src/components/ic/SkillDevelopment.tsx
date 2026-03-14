@@ -33,7 +33,7 @@ import {
     TableHead,
     TableRow,
     Paper,
-} from '@ghatana/ui';
+} from '@ghatana/design-system';
 import {
     Add as AddIcon,
     Edit as EditIcon,
@@ -48,7 +48,7 @@ import {
     Verified as VerifiedIcon,
     Star as StarIcon,
     RadioButtonUnchecked as RadioButtonUncheckedIcon,
-} from '@ghatana/ui/icons';
+} from '@ghatana/design-system/icons';
 
 // ==================== TYPES ====================
 

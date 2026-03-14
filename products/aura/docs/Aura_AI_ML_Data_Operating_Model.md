@@ -30,6 +30,7 @@ If they cannot do that reliably, Aura should fall back, ask for more input, or a
 5. **Human review where harm is plausible:** Severe safety signals, ontology conflicts, and repeated model failures must enter review queues.
 6. **Smallest viable runtime surface:** Keep a small number of deployables and avoid a service-per-model architecture until evidence justifies it.
 7. **Deletion and consent must propagate:** Future training data snapshots must honor revocations and deletion requests.
+8. **Shared platform first:** Cross-process events flow through AEP and managed datasets flow through Data Cloud or approved Data Cloud plugins, not Aura-local infrastructure.
 
 ---
 
@@ -51,6 +52,8 @@ Aura should not treat all data as equally trustworthy.
 ## 3. Core Data Products
 
 Aura should manage a small number of explicit data products, each with ownership and quality gates.
+
+These are Aura-owned logical data products implemented on top of Data Cloud-managed storage and lifecycle capabilities.
 
 | Data Product | Contents | Primary Owner | Main Uses |
 | ------------ | -------- | ------------- | --------- |
@@ -217,7 +220,7 @@ Runtime controls should include:
 
 ### Phase 1
 
-- PostgreSQL + pgvector + object storage snapshots
+- Data Cloud-managed relational, vector, cache, and snapshot plugins
 - deterministic candidate generation and rules
 - weighted ranking plus lightweight ML where signal exists
 - manual review queues for high-risk failures
@@ -228,7 +231,7 @@ Runtime controls should include:
 Introduce only when evidence supports it:
 
 - deeper personalized reranking
-- controlled event-bus fan-out
+- controlled AEP fan-out
 - additional model-serving isolation for materially different workloads
 - more automated annotation and evaluation tooling
 

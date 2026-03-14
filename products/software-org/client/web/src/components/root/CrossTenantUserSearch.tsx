@@ -24,7 +24,7 @@ import {
     TableRow,
     Alert,
     Avatar,
-} from '@ghatana/ui';
+} from '@ghatana/design-system';
 import {
     Search as SearchIcon,
     Close as CloseIcon,
@@ -33,7 +33,7 @@ import {
     Warning as WarningIcon,
     Person as PersonIcon,
     AdminPanelSettings as AdminIcon,
-} from '@ghatana/ui/icons';
+} from '@ghatana/design-system/icons';
 
 /**
  * User information across tenants

@@ -22,13 +22,14 @@
 
 import { useCallback } from 'react';
 import { useNavigate } from 'react-router';
-import { Grid, Card, KpiCard, Box, Button, Chip } from '@ghatana/ui';
+import { Grid, Card, Box, Button, Chip } from '@ghatana/design-system';
 import {
     usePersonaDashboard,
     useWorkSession,
     useAvailabilityStatus,
 } from '@/hooks/useUnifiedPersona';
 import { PersonaFlowStrip } from '@/shared/components/PersonaFlowStrip';
+import { KpiCard } from '@/shared/components/org';
 import type { DevSecOpsPhaseId } from '@/shared/types/org';
 
 /**
@@ -480,4 +481,3 @@ export function ICDashboard() {
         </Box>
     );
 }
-

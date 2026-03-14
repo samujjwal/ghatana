@@ -24,7 +24,7 @@ import {
     mockSkillsData,
 } from './SkillsMatrix';
 
-// Mock @ghatana/ui components if necessary, but usually we rely on JSDOM
+// Mock shared UI components if necessary, but usually we rely on JSDOM
 // If specific components cause issues, we can mock them here.
 // For now, we assume they render standard HTML elements that we can query.
 

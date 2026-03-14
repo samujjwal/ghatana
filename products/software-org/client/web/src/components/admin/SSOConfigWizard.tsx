@@ -1,5 +1,4 @@
 import React, { useState } from 'react';
-import type { ReactNode } from 'react';
 import {
     Box,
     Card,
@@ -8,7 +7,6 @@ import {
     Typography,
     TextField,
     Select,
-    MenuItem,
     RadioGroup,
     FormControlLabel,
     Radio,
@@ -23,7 +21,7 @@ import {
     InputLabel,
     IconButton,
     Divider,
-} from '@ghatana/ui';
+} from '@ghatana/design-system';
 
 /**
  * SSO Provider types
@@ -343,7 +341,7 @@ export const SSOConfigWizard: React.FC<SSOConfigWizardProps> = ({
                             onClick={() => handleProviderSelect(provider.id)}
                         >
                             <Stack direction="row" alignItems="center" spacing={2}>
-                                <Radio checked={config.provider === provider.id} />
+                                <Radio checked={config.provider === provider.id} readOnly />
                                 <Box sx={{ flex: 1 }}>
                                     <Stack direction="row" alignItems="center" spacing={1}>
                                         <Typography variant="subtitle1">{provider.name}</Typography>
@@ -821,31 +819,24 @@ export const SSOConfigWizard: React.FC<SSOConfigWizardProps> = ({
                         </Typography>
                         <RadioGroup
                             value={config.rollout?.enabledForAll ? 'all' : 'groups'}
-                            onChange={(e: { target: { value: unknown } }) =>
+                            onChange={(value: string) =>
                                 setConfig({
                                     ...config,
                                     rollout: {
                                         ...config.rollout!,
-                                        enabledForAll: e.target.value === 'all',
+                                        enabledForAll: value === 'all',
                                         enabledGroups:
-                                            e.target.value === 'all'
+                                            value === 'all'
                                                 ? []
                                                 : config.rollout?.enabledGroups || [],
                                     },
                                 })
                             }
-                        >
-                            <FormControlLabel
-                                value="all"
-                                control={<Radio />}
-                                label="Enable for all users"
-                            />
-                            <FormControlLabel
-                                value="groups"
-                                control={<Radio />}
-                                label="Enable for specific groups"
-                            />
-                        </RadioGroup>
+                            options={[
+                                { value: 'all', label: 'Enable for all users' },
+                                { value: 'groups', label: 'Enable for specific groups' },
+                            ]}
+                        />
 
                         {!config.rollout?.enabledForAll && (
                             <FormControl fullWidth sx={{ mt: 2 }}>
@@ -867,27 +858,21 @@ export const SSOConfigWizard: React.FC<SSOConfigWizardProps> = ({
                                             },
                                         });
                                     }}
-                                    renderValue={(selected: unknown): ReactNode => {
-                                        const selectedIds = Array.isArray(selected)
-                                            ? (selected as unknown[]).map((v) => String(v))
-                                            : [];
-
-                                        return (
-                                            <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 0.5 }}>
-                                                {selectedIds.map((groupId) => {
-                                                    const group = availableGroups.find((g) => g.id === groupId);
-                                                    return <Chip key={groupId} label={group?.name || groupId} size="small" />;
-                                                })}
-                                            </Box>
-                                        );
-                                    }}
                                 >
                                     {availableGroups.map((group) => (
-                                        <MenuItem key={group.id} value={group.id}>
+                                        <option key={group.id} value={group.id}>
                                             {group.name}
-                                        </MenuItem>
+                                        </option>
                                     ))}
                                 </Select>
+                                {(config.rollout?.enabledGroups?.length ?? 0) > 0 && (
+                                    <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 0.5, mt: 2 }}>
+                                        {config.rollout?.enabledGroups.map((groupId) => {
+                                            const group = availableGroups.find((g) => g.id === groupId);
+                                            return <Chip key={groupId} label={group?.name || groupId} size="small" />;
+                                        })}
+                                    </Box>
+                                )}
                             </FormControl>
                         )}
                     </Card>

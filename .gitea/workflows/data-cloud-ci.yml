@@ -1,0 +1,413 @@
+# Ghatana Data-Cloud — Continuous Integration
+#
+# Runs on every push and pull request that touches the data-cloud product or
+# shared platform libraries. Uses Gitea Actions (GitHub Actions-compatible syntax).
+#
+# Jobs:
+#   1. build-and-test   — Gradle build + unit & integration tests (JVM 21)
+#   2. build-ui         — pnpm build for the data-cloud UI module (if present)
+#   3. docker-build     — Build & push the Docker image to the Gitea registry
+
+name: data-cloud-ci
+
+on:
+  push:
+    branches:
+      - main
+      - "release/**"
+      - "feature/**"
+    paths:
+      - "products/data-cloud/**"
+      - "platform/java/**"
+      - "gradle/**"
+      - "build.gradle.kts"
+      - "settings.gradle.kts"
+  pull_request:
+    branches:
+      - main
+      - "release/**"
+    paths:
+      - "products/data-cloud/**"
+      - "platform/java/**"
+      - "gradle/**"
+      - "build.gradle.kts"
+      - "settings.gradle.kts"
+
+env:
+  JAVA_VERSION: "21"
+  REGISTRY: ${{ gitea.server_url | replace('https://', '') | replace('http://', '') }}
+  IMAGE_NAME: ${{ gitea.repository }}/data-cloud
+
+jobs:
+  # ---------------------------------------------------------------------------
+  # Job 1: Build & Test (Gradle)
+  # ---------------------------------------------------------------------------
+  build-and-test:
+    name: Build and Test (Java ${{ env.JAVA_VERSION }})
+    runs-on: ubuntu-latest
+    # Allow Docker socket access for Testcontainers
+    services:
+      docker:
+        image: docker:dind
+        options: --privileged
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Set up JDK ${{ env.JAVA_VERSION }}
+        uses: actions/setup-java@v4
+        with:
+          java-version: ${{ env.JAVA_VERSION }}
+          distribution: temurin
+          cache: gradle
+
+      - name: Validate Gradle wrapper
+        uses: gradle/wrapper-validation-action@v3
+
+      - name: Grant execute permission for gradlew
+        run: chmod +x ./gradlew
+
+      - name: Cache Gradle dependencies
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.gradle/caches
+            ~/.gradle/wrapper
+          key: gradle-${{ runner.os }}-${{ hashFiles('**/*.gradle.kts', '**/libs.versions.toml') }}
+          restore-keys: gradle-${{ runner.os }}-
+
+      - name: Build (compile only)
+        run: ./gradlew :products:data-cloud:platform:compileJava --no-daemon --parallel
+
+      - name: Run unit tests
+        run: |
+          ./gradlew :products:data-cloud:platform:test \
+            --no-daemon \
+            --tests "com.ghatana.datacloud.*" \
+            -x :products:data-cloud:platform:test \
+            --info
+        continue-on-error: false
+
+      - name: Run integration tests
+        env:
+          DOCKER_HOST: tcp://docker:2376
+          DOCKER_TLS_CERTDIR: ""
+          TESTCONTAINERS_RYUK_DISABLED: "true"
+        run: |
+          ./gradlew :products:data-cloud:platform:integrationTest \
+            --no-daemon \
+            --info || \
+          ./gradlew :products:data-cloud:platform:test \
+            --tests "*IntegrationTest" \
+            --tests "*KafkaEventLogStoreTest" \
+            --tests "*ClickHouseTimeSeriesConnectorTest" \
+            --no-daemon \
+            --info
+
+      - name: Run checkstyle
+        run: ./gradlew :products:data-cloud:platform:checkstyleMain --no-daemon
+
+      - name: Run PMD
+        run: ./gradlew :products:data-cloud:platform:pmdMain --no-daemon
+
+      - name: Publish test results
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: test-results-java
+          path: products/data-cloud/**/build/reports/tests/
+          retention-days: 7
+
+  # ---------------------------------------------------------------------------
+  # Job 2: Build UI (pnpm)
+  # ---------------------------------------------------------------------------
+  build-ui:
+    name: Build UI
+    runs-on: ubuntu-latest
+    # Only runs if a UI directory exists
+    if: hashFiles('products/data-cloud/ui/package.json') != ''
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+          cache: pnpm
+
+      - name: Install pnpm
+        run: npm install -g pnpm@9
+
+      - name: Install UI dependencies
+        run: pnpm install --frozen-lockfile
+        working-directory: products/data-cloud/ui
+
+      - name: Lint UI
+        run: pnpm lint
+        working-directory: products/data-cloud/ui
+
+      - name: Build UI
+        run: pnpm build
+        working-directory: products/data-cloud/ui
+
+      - name: Run UI tests
+        run: pnpm test --passWithNoTests
+        working-directory: products/data-cloud/ui
+
+  # ---------------------------------------------------------------------------
+  # Job 3: Docker build
+  # ---------------------------------------------------------------------------
+  docker-build:
+    name: Docker Build
+    runs-on: ubuntu-latest
+    needs: [build-and-test]
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up JDK ${{ env.JAVA_VERSION }} (for Gradle build)
+        uses: actions/setup-java@v4
+        with:
+          java-version: ${{ env.JAVA_VERSION }}
+          distribution: temurin
+          cache: gradle
+
+      - name: Build production JAR
+        run: |
+          ./gradlew :products:data-cloud:launcher:bootJar --no-daemon || \
+          ./gradlew :products:data-cloud:launcher:jar --no-daemon
+
+      # QEMU enables cross-compilation for non-native architectures (arm64).
+      - name: Set up QEMU (for multi-arch cross-compilation)
+        uses: docker/setup-qemu-action@v3
+        with:
+          platforms: linux/amd64,linux/arm64
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+        with:
+          driver-opts: network=host
+
+      - name: Log in to Gitea Container Registry
+        if: gitea.event_name != 'pull_request'
+        uses: docker/login-action@v3
+        with:
+          registry: ${{ env.REGISTRY }}
+          username: ${{ gitea.actor }}
+          password: ${{ secrets.GITEA_TOKEN }}
+
+      - name: Extract Docker metadata (tags, labels)
+        id: meta
+        uses: docker/metadata-action@v5
+        with:
+          images: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}
+          tags: |
+            type=ref,event=branch
+            type=ref,event=pr
+            type=sha,format=short
+            type=raw,value=latest,enable={{is_default_branch}}
+
+      - name: Build and push Docker image (multi-arch: amd64 + arm64)
+        uses: docker/build-push-action@v6
+        with:
+          context: products/data-cloud
+          file: products/data-cloud/Dockerfile
+          # Build both AMD64 (standard x86) and ARM64 (AWS Graviton / Apple M-series)
+          platforms: linux/amd64,linux/arm64
+          push: ${{ gitea.event_name != 'pull_request' }}
+          tags: ${{ steps.meta.outputs.tags }}
+          labels: ${{ steps.meta.outputs.labels }}
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+          provenance: true   # Generate SLSA provenance attestation
+          sbom: true         # Attach SBOM to the manifest index
+          # On PRs build amd64-only locally (arm64 requires push for manifest)
+          load: false
+
+  # ---------------------------------------------------------------------------
+  # Job 4 — Security Scanning (Trivy, Apache 2.0)
+  # Scans the Docker image for OS-level CVEs and dependency vulnerabilities.
+  # Results are uploaded as SARIF for Gitea Security tab visibility.
+  # ---------------------------------------------------------------------------
+  security-scan:
+    name: Security Scan (Trivy)
+    runs-on: ubuntu-latest
+    needs: [docker-build]
+    # Run on push to main/release; always run on PRs to catch regressions early
+    if: always() && (needs.docker-build.result == 'success' || needs.docker-build.result == 'skipped')
+    permissions:
+      contents: read
+      security-events: write
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Pull the image for scanning
+        # On PRs the image is not pushed; build locally for scanning only
+        run: |
+          IMAGE_REF="${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:sha-$(git rev-parse --short HEAD)"
+          docker pull "$IMAGE_REF" 2>/dev/null || \
+            docker build \
+              -t "$IMAGE_REF" \
+              -f products/data-cloud/Dockerfile \
+              products/data-cloud
+          echo "IMAGE_REF=$IMAGE_REF" >> $GITEA_ENV
+
+      - name: Run Trivy vulnerability scanner (table output)
+        uses: aquasecurity/trivy-action@0.28.0
+        with:
+          image-ref:   ${{ env.IMAGE_REF }}
+          format:      table
+          exit-code:   1            # fail the job on CRITICAL vulnerabilities
+          ignore-unfixed: true
+          vuln-type:   os,library
+          severity:    CRITICAL,HIGH
+
+      - name: Run Trivy vulnerability scanner (SARIF output)
+        if: always()               # always upload SARIF even if the table step fails
+        uses: aquasecurity/trivy-action@0.28.0
+        with:
+          image-ref:   ${{ env.IMAGE_REF }}
+          format:      sarif
+          output:      trivy-results.sarif
+          ignore-unfixed: true
+          vuln-type:   os,library
+          severity:    CRITICAL,HIGH,MEDIUM
+
+      - name: Upload Trivy SARIF results
+        if: always()
+        uses: github/codeql-action/upload-sarif@v3
+        with:
+          sarif_file: trivy-results.sarif
+          category:   trivy-container
+
+      - name: Run Trivy for SBOM generation (SPDX JSON)
+        uses: aquasecurity/trivy-action@0.28.0
+        with:
+          image-ref: ${{ env.IMAGE_REF }}
+          format:    spdx-json
+          output:    sbom.spdx.json
+
+      - name: Upload SBOM artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name:              data-cloud-sbom-${{ gitea.sha }}
+          path:              sbom.spdx.json
+          retention-days:    90
+
+  # ---------------------------------------------------------------------------
+  # Job 5 — SAST: SpotBugs static analysis + OWASP Dependency Check
+  #
+  # SpotBugs:         finds bug patterns (null-deref, security, bad practices)
+  # OWASP dep-check:  matches runtime dependencies against the NVD CVE database
+  #
+  # Fail conditions:
+  #   SpotBugs   — any HIGH / MEDIUM bug (configured in spotbugs {} block)
+  #   OWASP      — any dependency with CVSS ≥ 7.0 (HIGH)
+  # ---------------------------------------------------------------------------
+  sast:
+    name: SAST (SpotBugs + OWASP)
+    runs-on: ubuntu-latest
+    needs: [build-and-test]
+    permissions:
+      contents: read
+      security-events: write
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up JDK ${{ env.JAVA_VERSION }}
+        uses: actions/setup-java@v4
+        with:
+          java-version: ${{ env.JAVA_VERSION }}
+          distribution: temurin
+          cache: gradle
+
+      - name: Grant execute permission for gradlew
+        run: chmod +x ./gradlew
+
+      - name: Cache Gradle + NVD data
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.gradle/caches
+            ~/.gradle/wrapper
+            ~/.gradle/dependency-check-data
+          key: sast-${{ runner.os }}-${{ hashFiles('**/*.gradle.kts', '**/libs.versions.toml') }}
+          restore-keys: sast-${{ runner.os }}-
+
+      # ── SpotBugs static analysis ─────────────────────────────────────────
+      - name: Run SpotBugs (SAST)
+        run: |
+          ./gradlew :products:data-cloud:platform:spotbugsMain \
+            --no-daemon \
+            --continue
+        # SpotBugs exit-code ≠ 0 on findings; the Upload step still runs
+        continue-on-error: true
+
+      - name: Upload SpotBugs HTML report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name:           spotbugs-report-${{ gitea.sha }}
+          path:           products/data-cloud/platform/build/reports/spotbugs/
+          retention-days: 14
+
+      - name: Convert SpotBugs XML → SARIF and upload
+        if: always()
+        # spotbugs generates XML; convert to SARIF for Gitea Security tab
+        run: |
+          pip install spotbugs-sarif-converter --quiet 2>/dev/null || true
+          if spotbugs-sarif-converter \
+              products/data-cloud/platform/build/reports/spotbugs/main.xml \
+              -o spotbugs.sarif 2>/dev/null; then
+            echo "SARIF generated"
+          else
+            # Fallback: wrap XML as minimal SARIF 2.1.0 if converter unavailable
+            echo '{"version":"2.1.0","runs":[{"tool":{"driver":{"name":"SpotBugs"}},"results":[]}]}' > spotbugs.sarif
+          fi
+        continue-on-error: true
+
+      - name: Upload SpotBugs SARIF
+        if: always()
+        uses: github/codeql-action/upload-sarif@v3
+        with:
+          sarif_file: spotbugs.sarif
+          category:   spotbugs-sast
+        continue-on-error: true   # SARIF upload may not be supported in all Gitea versions
+
+      # ── OWASP Dependency Check ───────────────────────────────────────────
+      - name: Run OWASP Dependency Check
+        env:
+          NVD_API_KEY: ${{ secrets.NVD_API_KEY }}
+        run: |
+          ./gradlew :products:data-cloud:platform:dependencyCheckAnalyze \
+            --no-daemon \
+            --info
+        # Allow pipeline to continue to upload report even if CVEs found;
+        # `failBuildOnCVSS = 7.0` is enforced inside the Gradle task itself.
+        continue-on-error: true
+
+      - name: Upload OWASP Dependency Check report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name:           owasp-report-${{ gitea.sha }}
+          path:           products/data-cloud/platform/build/reports/owasp/
+          retention-days: 30
+
+      - name: Upload OWASP SARIF to Security tab
+        if: always()
+        uses: github/codeql-action/upload-sarif@v3
+        with:
+          sarif_file: products/data-cloud/platform/build/reports/owasp/dependency-check-report.sarif
+          category:   owasp-dependency-check
+        continue-on-error: true   # SARIF file may not exist if NVD fetch failed

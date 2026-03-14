@@ -88,7 +88,7 @@ logback = "1.4.14"
 junit-platform = "1.10.2"
 junit-jupiter = "5.10.2"
 mockito = "5.11.0"
-testcontainers = "1.19.8"
+testcontainers = "1.20.6"
 assertj = "3.25.3"
 awaitility = "4.3.0"
 
@@ -111,6 +111,7 @@ flyway-plugin = "11.0.1"
 spring-dependency-management-plugin = "1.1.4"
 jmh-plugin = "0.7.2"
 spotless = "8.0.0"
+openapi-generator-plugin = "7.10.0"
 
 # Protocol Buffers
 protobuf = "3.25.3"
@@ -219,6 +220,7 @@ versions = { id = "com.github.ben-manes.versions", version.ref = "versions-plugi
 owasp = { id = "org.owasp.dependencycheck", version.ref = "owasp-dependencycheck-plugin" }
 flyway = { id = "org.flywaydb.flyway", version.ref = "flyway-plugin" }
 jmh = { id = "me.champeau.jmh", version.ref = "jmh-plugin" }
+openapi-generator = { id = "org.openapi.generator", version.ref = "openapi-generator-plugin" }
 
 [libraries]
 # Apache Commons
@@ -237,6 +239,7 @@ h2 = { module = "com.h2database:h2", version.ref = "h2" }
 postgresql = { module = "org.postgresql:postgresql", version.ref = "postgresql" }
 hikaricp = { module = "com.zaxxer:HikariCP", version.ref = "hikari" }
 clickhouse-client = { module = "com.clickhouse:clickhouse-client", version.ref = "clickhouse" }
+clickhouse-http-client = { module = "com.clickhouse:clickhouse-http-client", version.ref = "clickhouse" }
 jooq = { module = "org.jooq:jooq", version.ref = "jooq" }
 sqlite-jdbc = { module = "org.xerial:sqlite-jdbc", version.ref = "sqlite-jdbc" }
 
@@ -405,6 +408,10 @@ jsqlparser = { module = "com.github.jsqlparser:jsqlparser", version.ref = "jsqlp
 # Elasticsearch Java Client 8.x
 elasticsearch-java = { module = "co.elastic.clients:elasticsearch-java", version = "8.12.2" }
 elasticsearch-rest-client = { module = "org.elasticsearch.client:elasticsearch-rest-client", version = "8.12.2" }
+
+# OpenSearch Java Client 2.x (Apache 2.0)
+opensearch-java = { module = "org.opensearch.client:opensearch-java", version = "2.18.0" }
+opensearch-rest-client = { module = "org.opensearch.client:opensearch-rest-client", version = "2.18.0" }
 
 # Apache Iceberg
 iceberg-api = { module = "org.apache.iceberg:iceberg-api", version.ref = "iceberg" }

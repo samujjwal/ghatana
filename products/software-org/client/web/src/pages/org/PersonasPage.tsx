@@ -8,7 +8,7 @@
  */
 
 import React, { useState } from 'react';
-import { Box, Grid, Button, Card, Stack, TextField, Chip } from '@ghatana/ui';
+import { Box, Grid, Button, Card, Stack, TextField, Chip } from '@ghatana/design-system';
 import type { Role } from '@/types/org.types';
 import { usePersona } from '@/hooks/usePersona';
 
@@ -358,4 +358,3 @@ export function PersonasPage({ initialFilter }: PersonasPageProps = {}) {
     </Box>
   );
 }
-

@@ -1,0 +1,364 @@
+# Ghatana Data-Cloud — Release Management
+#
+# Automates semantic versioning, CHANGELOG generation, and GitHub Release
+# creation whenever a tag matching v*.*.* is pushed.
+#
+# Trigger:
+#   git tag -a v1.2.3 -m "Release v1.2.3" && git push --tags
+#
+# Jobs:
+#   1. validate   — ensure the tag follows semver and that CI passed
+#   2. changelog  — generate CHANGELOG.md from conventional commits
+#   3. release    — create a GitHub/Gitea Release with the built artefacts
+#
+# Conventional Commits subset used for CHANGELOG categories:
+#   feat:     → Features
+#   fix:      → Bug Fixes
+#   perf:     → Performance Improvements
+#   refactor: → Code Refactoring
+#   docs:     → Documentation
+#   chore:    → Maintenance
+#   BREAKING CHANGE: → ⚠ Breaking Changes
+
+name: data-cloud-release
+
+on:
+  push:
+    tags:
+      - "v[0-9]+.[0-9]+.[0-9]+"          # e.g. v1.2.3
+      - "v[0-9]+.[0-9]+.[0-9]+-rc.[0-9]+" # e.g. v1.2.3-rc.1
+
+permissions:
+  contents: write    # required to create releases and push CHANGELOG
+  packages: write    # required to publish OCI artefacts
+
+env:
+  JAVA_VERSION: "21"
+  REGISTRY: ${{ gitea.server_url | replace('https://', '') | replace('http://', '') }}
+  IMAGE_NAME: ${{ gitea.repository }}/data-cloud
+
+jobs:
+  # ---------------------------------------------------------------------------
+  # Job 1: Validate the tag
+  # ---------------------------------------------------------------------------
+  validate:
+    name: Validate Tag & Semver
+    runs-on: ubuntu-latest
+    outputs:
+      version:    ${{ steps.parse.outputs.version }}
+      major:      ${{ steps.parse.outputs.major }}
+      minor:      ${{ steps.parse.outputs.minor }}
+      patch:      ${{ steps.parse.outputs.patch }}
+      is_prerelease: ${{ steps.parse.outputs.is_prerelease }}
+
+    steps:
+      - name: Checkout tag
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0   # full history needed for changelog generation
+
+      - name: Parse semver from tag
+        id: parse
+        run: |
+          TAG="${{ gitea.ref_name }}"
+          # Strip leading 'v'
+          VERSION="${TAG#v}"
+          if ! echo "$VERSION" | grep -qE '^[0-9]+\.[0-9]+\.[0-9]+(-rc\.[0-9]+)?$'; then
+            echo "::error::Tag '$TAG' does not follow semver (vMAJOR.MINOR.PATCH[-rc.N])"
+            exit 1
+          fi
+          MAJOR=$(echo "$VERSION" | cut -d. -f1)
+          MINOR=$(echo "$VERSION" | cut -d. -f2)
+          PATCH=$(echo "$VERSION" | cut -d. -f3 | cut -d- -f1)
+          IS_PRERELEASE=$( echo "$VERSION" | grep -q '\-rc\.' && echo true || echo false )
+          echo "version=$VERSION"       >> "$GITHUB_OUTPUT"
+          echo "major=$MAJOR"           >> "$GITHUB_OUTPUT"
+          echo "minor=$MINOR"           >> "$GITHUB_OUTPUT"
+          echo "patch=$PATCH"           >> "$GITHUB_OUTPUT"
+          echo "is_prerelease=$IS_PRERELEASE" >> "$GITHUB_OUTPUT"
+          echo "Releasing: v$VERSION (pre-release: $IS_PRERELEASE)"
+
+  # ---------------------------------------------------------------------------
+  # Job 2: Build artefacts
+  # ---------------------------------------------------------------------------
+  build:
+    name: Build Release Artefacts
+    runs-on: ubuntu-latest
+    needs: [validate]
+
+    steps:
+      - name: Checkout tag
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Set up JDK ${{ env.JAVA_VERSION }}
+        uses: actions/setup-java@v4
+        with:
+          java-version: ${{ env.JAVA_VERSION }}
+          distribution: temurin
+          cache: gradle
+
+      - name: Grant execute permission for gradlew
+        run: chmod +x ./gradlew
+
+      - name: Stamp version into Gradle properties
+        run: |
+          sed -i "s/^version=.*/version=${{ needs.validate.outputs.version }}/" gradle.properties || true
+          echo "BUILD_VERSION=${{ needs.validate.outputs.version }}" >> "$GITEA_ENV"
+
+      - name: Build release JAR
+        run: |
+          ./gradlew :products:data-cloud:launcher:bootJar \
+            -Pversion=${{ needs.validate.outputs.version }} \
+            --no-daemon || \
+          ./gradlew :products:data-cloud:launcher:jar \
+            -Pversion=${{ needs.validate.outputs.version }} \
+            --no-daemon
+
+      - name: Collect JAR artefact
+        run: |
+          JAR=$(find products/data-cloud -name "*data-cloud*.jar" -not -name "*plain*" | head -1)
+          cp "$JAR" "data-cloud-${{ needs.validate.outputs.version }}.jar"
+          sha256sum "data-cloud-${{ needs.validate.outputs.version }}.jar" > "data-cloud-${{ needs.validate.outputs.version }}.jar.sha256"
+
+      - name: Upload JAR artefact
+        uses: actions/upload-artifact@v4
+        with:
+          name: release-jar
+          path: |
+            data-cloud-${{ needs.validate.outputs.version }}.jar
+            data-cloud-${{ needs.validate.outputs.version }}.jar.sha256
+          retention-days: 30
+
+      - name: Set up QEMU
+        uses: docker/setup-qemu-action@v3
+        with:
+          platforms: linux/amd64,linux/arm64
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Log in to container registry
+        uses: docker/login-action@v3
+        with:
+          registry: ${{ env.REGISTRY }}
+          username: ${{ gitea.actor }}
+          password: ${{ secrets.GITEA_TOKEN }}
+
+      - name: Build and push release image (multi-arch)
+        uses: docker/build-push-action@v6
+        with:
+          context: products/data-cloud
+          file: products/data-cloud/Dockerfile
+          platforms: linux/amd64,linux/arm64
+          push: true
+          tags: |
+            ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:${{ needs.validate.outputs.version }}
+            ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:${{ needs.validate.outputs.major }}.${{ needs.validate.outputs.minor }}
+            ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:${{ needs.validate.outputs.major }}
+            ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:latest
+          labels: |
+            org.opencontainers.image.version=${{ needs.validate.outputs.version }}
+            org.opencontainers.image.revision=${{ gitea.sha }}
+            org.opencontainers.image.source=${{ gitea.server_url }}/${{ gitea.repository }}
+          provenance: true
+          sbom: true
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+
+  # ---------------------------------------------------------------------------
+  # Job 3: Generate CHANGELOG and create Release
+  # ---------------------------------------------------------------------------
+  release:
+    name: Create GitHub Release & CHANGELOG
+    runs-on: ubuntu-latest
+    needs: [validate, build]
+
+    steps:
+      - name: Checkout tag
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          token: ${{ secrets.GITEA_TOKEN }}
+
+      - name: Configure git identity
+        run: |
+          git config user.name  "Ghatana Release Bot"
+          git config user.email "release-bot@ghatana.io"
+
+      - name: Download release artefacts
+        uses: actions/download-artifact@v4
+        with:
+          name: release-jar
+          path: release-artefacts/
+
+      - name: Generate CHANGELOG from conventional commits
+        id: changelog
+        run: |
+          TAG="${{ gitea.ref_name }}"
+          # Find the previous tag to use as the comparison base
+          PREV_TAG=$(git tag --sort=-version:refname | grep -E '^v[0-9]+\.[0-9]+\.[0-9]+' | grep -v "^$TAG$" | head -1 || echo "")
+          if [[ -z "$PREV_TAG" ]]; then
+            RANGE="$TAG"
+            echo "First release — including all commits"
+          else
+            RANGE="$PREV_TAG..$TAG"
+            echo "Comparing $PREV_TAG → $TAG"
+          fi
+
+          BREAKING=""
+          FEATURES=""
+          FIXES=""
+          PERF=""
+          REFACTOR=""
+          DOCS=""
+          CHORE=""
+          OTHER=""
+
+          while IFS= read -r line; do
+            SHORT="${line:0:7}"
+            MSG="${line:8}"
+            if echo "$MSG" | grep -q 'BREAKING CHANGE'; then
+              BREAKING="${BREAKING}\n- ${MSG} (\`${SHORT}\`)"
+            elif echo "$MSG" | grep -qiE '^feat(\(.+\))?!?:'; then
+              FEATURES="${FEATURES}\n- ${MSG} (\`${SHORT}\`)"
+            elif echo "$MSG" | grep -qiE '^fix(\(.+\))?!?:'; then
+              FIXES="${FIXES}\n- ${MSG} (\`${SHORT}\`)"
+            elif echo "$MSG" | grep -qiE '^perf(\(.+\))?!?:'; then
+              PERF="${PERF}\n- ${MSG} (\`${SHORT}\`)"
+            elif echo "$MSG" | grep -qiE '^refactor(\(.+\))?!?:'; then
+              REFACTOR="${REFACTOR}\n- ${MSG} (\`${SHORT}\`)"
+            elif echo "$MSG" | grep -qiE '^docs(\(.+\))?!?:'; then
+              DOCS="${DOCS}\n- ${MSG} (\`${SHORT}\`)"
+            elif echo "$MSG" | grep -qiE '^chore(\(.+\))?!?:'; then
+              CHORE="${CHORE}\n- ${MSG} (\`${SHORT}\`)"
+            else
+              OTHER="${OTHER}\n- ${MSG} (\`${SHORT}\`)"
+            fi
+          done < <(git log "$RANGE" --pretty=format:'%h %s' -- products/data-cloud/ platform/ 2>/dev/null)
+
+          {
+            echo "## What's Changed in [v${{ needs.validate.outputs.version }}]"
+            echo ""
+            echo "**Released:** $(date -u '+%Y-%m-%d')"
+            echo ""
+            if [[ -n "$BREAKING" ]]; then
+              echo "### ⚠ Breaking Changes"
+              echo -e "$BREAKING"
+              echo ""
+            fi
+            if [[ -n "$FEATURES" ]]; then
+              echo "### ✨ Features"
+              echo -e "$FEATURES"
+              echo ""
+            fi
+            if [[ -n "$FIXES" ]]; then
+              echo "### 🐛 Bug Fixes"
+              echo -e "$FIXES"
+              echo ""
+            fi
+            if [[ -n "$PERF" ]]; then
+              echo "### ⚡ Performance"
+              echo -e "$PERF"
+              echo ""
+            fi
+            if [[ -n "$REFACTOR" ]]; then
+              echo "### ♻️ Refactoring"
+              echo -e "$REFACTOR"
+              echo ""
+            fi
+            if [[ -n "$DOCS" ]]; then
+              echo "### 📚 Documentation"
+              echo -e "$DOCS"
+              echo ""
+            fi
+            if [[ -n "$CHORE" ]]; then
+              echo "### 🔧 Maintenance"
+              echo -e "$CHORE"
+              echo ""
+            fi
+            if [[ -n "$OTHER" ]]; then
+              echo "### 📦 Other Changes"
+              echo -e "$OTHER"
+              echo ""
+            fi
+            echo "---"
+            echo "_Full diff: [$PREV_TAG → $TAG](${{ gitea.server_url }}/${{ gitea.repository }}/compare/$PREV_TAG...$TAG)_"
+          } > RELEASE_NOTES.md
+
+          cat RELEASE_NOTES.md
+
+      - name: Prepend to CHANGELOG.md
+        run: |
+          if [[ -f products/data-cloud/CHANGELOG.md ]]; then
+            cat RELEASE_NOTES.md products/data-cloud/CHANGELOG.md > /tmp/CHANGELOG_NEW.md
+            mv /tmp/CHANGELOG_NEW.md products/data-cloud/CHANGELOG.md
+          else
+            cp RELEASE_NOTES.md products/data-cloud/CHANGELOG.md
+          fi
+
+      - name: Commit updated CHANGELOG to main
+        run: |
+          git add products/data-cloud/CHANGELOG.md
+          git commit -m "chore(release): update CHANGELOG for v${{ needs.validate.outputs.version }} [skip ci]" || echo "No changes to commit"
+          git push origin HEAD:main || echo "Push skipped (protected branch or no changes)"
+
+      - name: Create Release
+        uses: actions/create-release@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITEA_TOKEN }}
+        with:
+          tag_name:    ${{ gitea.ref_name }}
+          release_name: "Data-Cloud v${{ needs.validate.outputs.version }}"
+          body_path:   RELEASE_NOTES.md
+          draft:       false
+          prerelease:  ${{ needs.validate.outputs.is_prerelease }}
+
+      - name: Upload JAR to Release
+        uses: actions/upload-release-asset@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITEA_TOKEN }}
+        with:
+          upload_url:  ${{ steps.create_release.outputs.upload_url }}
+          asset_path:  release-artefacts/data-cloud-${{ needs.validate.outputs.version }}.jar
+          asset_name:  data-cloud-${{ needs.validate.outputs.version }}.jar
+          asset_content_type: application/java-archive
+
+      - name: Upload SHA256 checksum to Release
+        uses: actions/upload-release-asset@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITEA_TOKEN }}
+        with:
+          upload_url:  ${{ steps.create_release.outputs.upload_url }}
+          asset_path:  release-artefacts/data-cloud-${{ needs.validate.outputs.version }}.jar.sha256
+          asset_name:  data-cloud-${{ needs.validate.outputs.version }}.jar.sha256
+          asset_content_type: text/plain
+
+  # ---------------------------------------------------------------------------
+  # Job 4: Notify
+  # ---------------------------------------------------------------------------
+  notify:
+    name: Release Notification
+    runs-on: ubuntu-latest
+    needs: [validate, release]
+    if: always()
+
+    steps:
+      - name: Slack notification (optional)
+        if: env.SLACK_WEBHOOK_URL != ''
+        env:
+          SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
+        run: |
+          STATUS="${{ needs.release.result }}"
+          COLOR=$( [[ "$STATUS" == "success" ]] && echo "good" || echo "danger" )
+          curl -s -X POST "$SLACK_WEBHOOK_URL" \
+            -H 'Content-type: application/json' \
+            -d "{
+              \"attachments\": [{
+                \"color\": \"$COLOR\",
+                \"title\": \"Data-Cloud v${{ needs.validate.outputs.version }} released\",
+                \"text\": \"Status: $STATUS | <${{ gitea.server_url }}/${{ gitea.repository }}/releases/tag/${{ gitea.ref_name }}|View Release>\",
+                \"footer\": \"Ghatana Release Bot\"
+              }]
+            }"

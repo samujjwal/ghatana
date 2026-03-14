@@ -8,7 +8,7 @@
  */
 
 import React from 'react';
-import { Grid, Card, Box, Stack, Button } from '@ghatana/ui';
+import { Grid, Card, Box, Stack, Button } from '@ghatana/design-system';
 import { KpiCard } from '@/shared/components/org';
 import { usePersona } from '@/hooks/usePersona';
 
@@ -325,4 +325,3 @@ export function OwnerDashboard({ data }: OwnerDashboardProps = {}) {
     </Box>
   );
 }
-

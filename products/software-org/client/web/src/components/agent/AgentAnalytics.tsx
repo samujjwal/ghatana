@@ -11,7 +11,6 @@ import React, { useState } from 'react';
 import {
     Grid,
     Card,
-    KpiCard,
     Box,
     Chip,
     LinearProgress,
@@ -25,7 +24,8 @@ import {
     TableBody,
     TableRow,
     TableCell,
-} from '@ghatana/ui';
+} from '@ghatana/design-system';
+import { KpiCard } from '@/shared/components/org';
 
 /**
  * Agent analytics metrics
@@ -131,7 +131,7 @@ export interface AgentAnalyticsProps {
  * - Improvement recommendations
  * - Tab-based navigation (Usage, Conversations, Performance, Recommendations)
  *
- * Reuses @ghatana/ui components:
+ * Reuses @ghatana/design-system components and shared org KPI cards:
  * - KpiCard (metrics)
  * - Grid (responsive layouts)
  * - Card (trend cards, agent cards, recommendation cards)

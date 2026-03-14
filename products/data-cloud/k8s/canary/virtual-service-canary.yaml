@@ -1,0 +1,111 @@
+# =============================================================================
+# Istio VirtualService — Canary Traffic Split (Phase: 90% stable / 10% canary)
+#
+# PURPOSE
+# -------
+# This file replaces k8s/istio-mesh.yaml's VirtualService during a canary
+# rollout.  It enables two routing modes simultaneously:
+#
+#   1. Header override:  any request with "x-canary: true" goes 100% to canary.
+#      Use for internal smoke testing and integration QA before shifting weight.
+#
+#   2. Weighted split:   90% of production traffic → stable subset,
+#                        10%                        → canary subset.
+#
+# ROLLOUT LADDER
+# --------------
+#  Phase       | Stable | Canary | Command
+#  ------------|--------|--------|--------------------------------------------
+#  canary-init | 100%   |   0%   | kubectl apply -k k8s/                    (base)
+#  canary-10   |  90%   |  10%   | kubectl apply -k k8s/canary/             (this)
+#  canary-50   |  50%   |  50%   | edit weights below + kubectl apply -k k8s/canary/
+#  promote     |   0%   | 100%   | edit weights + kubectl apply -k k8s/canary/
+#  stabilise   | 100%   |   0%   | kubectl apply -k k8s/ (delete canary Deployment)
+#
+# APPLY
+# -----
+#   kubectl apply -k products/data-cloud/k8s/canary/
+#
+# ROLLBACK
+# --------
+#   kubectl apply -k products/data-cloud/k8s/
+#   kubectl delete deployment data-cloud-canary -n data-cloud
+#
+# =============================================================================
+apiVersion: networking.istio.io/v1
+kind: VirtualService
+metadata:
+  name: data-cloud
+  namespace: data-cloud
+  labels:
+    app: data-cloud
+    canary-phase: "10"
+    managed-by: kustomize
+  annotations:
+    # Record which Git SHA the canary image corresponds to (update during deploy)
+    canary.ghatana.io/image-sha: "PLACEHOLDER_SHA"
+    canary.ghatana.io/started-at: "PLACEHOLDER_TIMESTAMP"
+spec:
+  hosts:
+    - data-cloud.data-cloud.svc.cluster.local
+  http:
+    # -------------------------------------------------------------------------
+    # Route 1: Header-based canary override
+    #
+    # Any caller that sets "x-canary: true" is routed exclusively to the canary
+    # subset regardless of the weight below.  Used by:
+    #   - Internal QA / smoke tests during rollout
+    #   - Specific internal services opted in for early testing
+    #   - Curl: curl -H "x-canary: true" http://data-cloud.data-cloud.svc/health
+    # -------------------------------------------------------------------------
+    - match:
+        - headers:
+            x-canary:
+              exact: "true"
+      route:
+        - destination:
+            host: data-cloud.data-cloud.svc.cluster.local
+            subset: canary
+            port:
+              number: 8082
+          weight: 100
+      timeout: 30s
+      retries:
+        attempts: 3
+        perTryTimeout: 10s
+        retryOn: "5xx,reset,connect-failure,retriable-4xx"
+
+    # -------------------------------------------------------------------------
+    # Route 2: Weighted production split — 90% stable / 10% canary
+    #
+    # To progress the rollout, edit the `weight` fields:
+    #   canary-10:  stable=90, canary=10   (current)
+    #   canary-50:  stable=50, canary=50
+    #   promote:    stable=0,  canary=100
+    # -------------------------------------------------------------------------
+    - route:
+        - destination:
+            host: data-cloud.data-cloud.svc.cluster.local
+            subset: stable
+            port:
+              number: 8082
+          weight: 90
+        - destination:
+            host: data-cloud.data-cloud.svc.cluster.local
+            subset: canary
+            port:
+              number: 8082
+          weight: 10
+      timeout: 30s
+      retries:
+        attempts: 3
+        perTryTimeout: 10s
+        # retry on transient errors only — prevents cascading to canary on stable errors
+        retryOn: "5xx,reset,connect-failure,retriable-4xx"
+      # Mirror 10% of stable traffic to canary for shadow testing (optional).
+      # Comment out if shadow mode is not desired.
+      # mirror:
+      #   host: data-cloud.data-cloud.svc.cluster.local
+      #   subset: canary
+      # mirrorPercentage:
+      #   value: 10

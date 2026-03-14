@@ -30,7 +30,7 @@ import {
     MenuItem,
     Checkbox,
     FormControlLabel,
-} from '@ghatana/ui';
+} from '@ghatana/design-system';
 import {
     Add as AddIcon,
     Edit as EditIcon,
@@ -46,7 +46,7 @@ import {
     Assignment as AssignmentIcon,
     PlayArrow as PlayArrowIcon,
     CheckCircleOutline as CheckCircleOutlineIcon,
-} from '@ghatana/ui/icons';
+} from '@ghatana/design-system/icons';
 
 // ==================== TYPES ====================
 

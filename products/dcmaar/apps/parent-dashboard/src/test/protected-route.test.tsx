@@ -1,7 +1,7 @@
 import { describe, it, expect } from 'vitest';
 import { render, screen } from '@testing-library/react';
 import { Routes, Route, MemoryRouter } from 'react-router-dom';
-import { ProtectedRoute } from '@ghatana/ui';
+import { ProtectedRoute } from '@ghatana/design-system';
 
 describe('Protected Route', () => {
   it('should redirect to login when not authenticated', () => {

@@ -12,7 +12,7 @@ import {
     MenuItem,
     FormControl,
     InputLabel,
-} from '@ghatana/ui';
+} from '@ghatana/design-system';
 
 /**
  * Team member allocation

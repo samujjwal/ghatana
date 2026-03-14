@@ -16,6 +16,7 @@
   },
   "dependencies": {
     "@ghatana/charts": "workspace:*",
+    "@ghatana/design-system": "workspace:*",
     "@ghatana/realtime": "workspace:*",
     "@ghatana/theme": "workspace:*",
     "@ghatana/tokens": "workspace:*",

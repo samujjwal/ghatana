@@ -85,4 +85,4 @@ The knowledge graph is designed to grow incrementally:
 
 ## Storage
 
-The knowledge graph is stored relationally in PostgreSQL (normalized entity tables) with vector embeddings in pgvector for semantic similarity retrieval. Ingredient and product relationships are query-time joins rather than a separate graph database — this keeps the stack simple at early scale. A dedicated graph database (e.g., Neo4j) can be evaluated if traversal complexity warrants it in later phases.
+The knowledge graph is stored through Data Cloud-managed relational and vector plugins, typically backed initially by PostgreSQL-style normalized entity tables plus pgvector-style semantic retrieval. Ingredient and product relationships are query-time joins rather than a separate graph database — this keeps the stack simple at early scale. A dedicated graph database can be evaluated later through Data Cloud if traversal complexity warrants it.

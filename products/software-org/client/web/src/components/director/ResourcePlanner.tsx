@@ -4,7 +4,7 @@
  * Team resource allocation and workload visualization for directors.
  * Enables capacity planning, skill matrix view, and resource conflicts detection.
  *
- * REUSE: Grid, Card, KpiCard, LinearProgress, Chip, Avatar, AvatarGroup from @ghatana/ui
+ * REUSE: Grid, Card, LinearProgress, Chip, Avatar, AvatarGroup from @ghatana/design-system and KpiCard from shared org components
  * PATTERN: Following PortfolioDashboard and TeamOverviewPage patterns
  *
  * @package @ghatana/software-org-web
@@ -17,7 +17,6 @@ import {
     Card,
     CardContent,
     Grid,
-    KpiCard,
     Button,
     Chip,
     LinearProgress,
@@ -28,7 +27,8 @@ import {
     Alert,
     Tooltip,
     IconButton,
-} from '@ghatana/ui';
+} from '@ghatana/design-system';
+import { KpiCard } from '@/shared/components/org';
 
 // ============================================================================
 // TypeScript Interfaces

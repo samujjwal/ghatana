@@ -1,0 +1,240 @@
+---
+# Prometheus alerting rules for the Data-Cloud platform
+groups:
+  - name: data_cloud_availability
+    interval: 30s
+    rules:
+      - alert: DataCloudDown
+        expr: up{job="data-cloud-platform"} == 0
+        for: 1m
+        labels:
+          severity: critical
+          product: data-cloud
+        annotations:
+          summary: "Data-Cloud platform is DOWN"
+          description: "The data-cloud-platform service has been unreachable for > 1 minute."
+
+      - alert: DataCloudHighErrorRate
+        expr: |
+          sum(rate(http_server_requests_seconds_count{service="data-cloud-platform",outcome="SERVER_ERROR"}[5m]))
+          /
+          sum(rate(http_server_requests_seconds_count{service="data-cloud-platform"}[5m]))
+          > 0.05
+        for: 5m
+        labels:
+          severity: warning
+          product: data-cloud
+        annotations:
+          summary: "Data-Cloud HTTP error rate > 5%"
+          description: "5xx error rate is {{ $value | humanizePercentage }} over the last 5 minutes."
+
+      - alert: DataCloudHighLatency
+        expr: |
+          histogram_quantile(0.99, sum(rate(http_server_requests_seconds_bucket{service="data-cloud-platform"}[5m])) by (le))
+          > 1.0
+        for: 5m
+        labels:
+          severity: warning
+          product: data-cloud
+        annotations:
+          summary: "Data-Cloud p99 latency > 1 second"
+          description: "p99 HTTP latency is {{ $value | humanizeDuration }}."
+
+  - name: data_cloud_kafka
+    interval: 30s
+    rules:
+      - alert: DataCloudKafkaAppendErrors
+        expr: rate(kafka_eventlog_append_error_total{service="data-cloud-platform"}[5m]) > 0
+        for: 2m
+        labels:
+          severity: warning
+          product: data-cloud
+          component: kafka
+        annotations:
+          summary: "Data-Cloud Kafka append errors detected"
+          description: "Kafka EventLogStore append errors at {{ $value | humanize }} errors/s."
+
+  - name: data_cloud_jvm
+    interval: 60s
+    rules:
+      - alert: DataCloudHighHeapUsage
+        expr: |
+          (jvm_memory_used_bytes{service="data-cloud-platform", area="heap"}
+          / jvm_memory_max_bytes{service="data-cloud-platform", area="heap"})
+          > 0.85
+        for: 5m
+        labels:
+          severity: warning
+          product: data-cloud
+          component: jvm
+        annotations:
+          summary: "Data-Cloud JVM heap usage > 85%"
+          description: "JVM heap usage is {{ $value | humanizePercentage }}. Risk of OOM."
+
+      - alert: DataCloudHighCPU
+        expr: process_cpu_usage{service="data-cloud-platform"} > 0.85
+        for: 10m
+        labels:
+          severity: warning
+          product: data-cloud
+          component: jvm
+        annotations:
+          summary: "Data-Cloud CPU usage > 85%"
+          description: "Process CPU usage is {{ $value | humanizePercentage }} for > 10 minutes."
+
+  # =========================================================================
+  # Capacity Planning — disk, DB connection pool, event log lag, GC pressure
+  # Fires before resources are exhausted so operators can react proactively.
+  # =========================================================================
+  - name: data_cloud_capacity
+    interval: 60s
+    rules:
+
+      # ── PVC / Disk saturation ────────────────────────────────────────────
+      - alert: DataCloudPvcUsageCritical
+        expr: |
+          kubelet_volume_stats_used_bytes{namespace="data-cloud"}
+          / kubelet_volume_stats_capacity_bytes{namespace="data-cloud"}
+          > 0.85
+        for: 10m
+        labels:
+          severity: critical
+          product:   data-cloud
+          component: storage
+        annotations:
+          summary: "Data-Cloud PVC '{{ $labels.persistentvolumeclaim }}' usage > 85%"
+          description: >
+            Persistent volume '{{ $labels.persistentvolumeclaim }}' in namespace
+            '{{ $labels.namespace }}' is {{ $value | humanizePercentage }} full.
+            Current used: {{ with printf `kubelet_volume_stats_used_bytes{persistentvolumeclaim="%s"}` $labels.persistentvolumeclaim | query }}{{ . | first | value | humanize1024 }}B{{ end }}.
+            Disk exhaustion will cause write failures and service outage.
+          runbook: "https://wiki.ghatana.internal/runbooks/data-cloud/disk-full"
+
+      - alert: DataCloudPvcUsageWarning
+        expr: |
+          kubelet_volume_stats_used_bytes{namespace="data-cloud"}
+          / kubelet_volume_stats_capacity_bytes{namespace="data-cloud"}
+          > 0.70
+        for: 15m
+        labels:
+          severity: warning
+          product:   data-cloud
+          component: storage
+        annotations:
+          summary: "Data-Cloud PVC '{{ $labels.persistentvolumeclaim }}' usage > 70%"
+          description: >
+            Persistent volume '{{ $labels.persistentvolumeclaim }}' is
+            {{ $value | humanizePercentage }} full. Plan capacity expansion.
+          runbook: "https://wiki.ghatana.internal/runbooks/data-cloud/disk-full"
+
+      # ── Database connection pool exhaustion ──────────────────────────────
+      - alert: DataCloudDbPoolSaturation
+        expr: |
+          hikaricp_connections_active{service="data-cloud-platform"}
+          / hikaricp_connections_max{service="data-cloud-platform"}
+          > 0.90
+        for: 5m
+        labels:
+          severity: warning
+          product:   data-cloud
+          component: database
+        annotations:
+          summary: "Data-Cloud HikariCP connection pool > 90% utilised"
+          description: >
+            The database connection pool is {{ $value | humanizePercentage }}
+            saturated (active={{ with `hikaricp_connections_active{service="data-cloud-platform"}` | query }}{{ . | first | value | humanize }}{{ end }},
+            max={{ with `hikaricp_connections_max{service="data-cloud-platform"}` | query }}{{ . | first | value | humanize }}{{ end }}).
+            Requests will queue or fail when the pool is exhausted.
+          runbook: "https://wiki.ghatana.internal/runbooks/data-cloud/db-pool"
+
+      - alert: DataCloudDbPoolExhausted
+        expr: |
+          hikaricp_connections_pending{service="data-cloud-platform"} > 10
+        for: 2m
+        labels:
+          severity: critical
+          product:   data-cloud
+          component: database
+        annotations:
+          summary: "Data-Cloud DB connection pool exhausted — {{ $value }} threads waiting"
+          description: >
+            {{ $value }} threads are waiting for a database connection.
+            New write/read operations will fail until connections are released.
+            Immediate investigation required.
+          runbook: "https://wiki.ghatana.internal/runbooks/data-cloud/db-pool"
+
+      # ── Kafka event log consumer lag ─────────────────────────────────────
+      - alert: DataCloudEventLogLagWarning
+        expr: |
+          kafka_consumer_fetch_manager_records_lag_max{
+            service="data-cloud-platform",
+            topic=~"data-cloud.*"
+          } > 10000
+        for: 5m
+        labels:
+          severity: warning
+          product:   data-cloud
+          component: kafka
+        annotations:
+          summary: "Data-Cloud Kafka consumer lag > 10k on topic '{{ $labels.topic }}'"
+          description: >
+            Consumer group '{{ $labels.group }}' is {{ $value | humanize }}
+            messages behind on topic '{{ $labels.topic }}'. Events are
+            accumulating faster than they are being processed.
+          runbook: "https://wiki.ghatana.internal/runbooks/data-cloud/kafka-lag"
+
+      - alert: DataCloudEventLogLagCritical
+        expr: |
+          kafka_consumer_fetch_manager_records_lag_max{
+            service="data-cloud-platform",
+            topic=~"data-cloud.*"
+          } > 100000
+        for: 5m
+        labels:
+          severity: critical
+          product:   data-cloud
+          component: kafka
+        annotations:
+          summary: "Data-Cloud Kafka consumer lag CRITICAL (> 100k) on topic '{{ $labels.topic }}'"
+          description: >
+            Consumer group '{{ $labels.group }}' is {{ $value | humanize }}
+            messages behind. At this lag level data freshness SLOs are breached.
+            Scale consumers or investigate processing bottleneck immediately.
+          runbook: "https://wiki.ghatana.internal/runbooks/data-cloud/kafka-lag"
+
+      # ── JVM GC pressure (precursor to heap exhaustion) ───────────────────
+      - alert: DataCloudGcPressure
+        expr: |
+          rate(jvm_gc_pause_seconds_sum{service="data-cloud-platform"}[5m])
+          / rate(jvm_gc_pause_seconds_count{service="data-cloud-platform"}[5m])
+          > 0.5
+        for: 10m
+        labels:
+          severity: warning
+          product:   data-cloud
+          component: jvm
+        annotations:
+          summary: "Data-Cloud JVM spending >50% of time in GC pauses"
+          description: >
+            Average GC pause time is {{ $value | humanizeDuration }} over the
+            last 5 minutes. The JVM is under memory pressure; heap exhaustion
+            and OOM kills are likely without intervention.
+            Consider increasing heap size or tuning GC settings.
+          runbook: "https://wiki.ghatana.internal/runbooks/data-cloud/gc-pressure"
+
+      # ── Predictive scaling: entity write rate sustained high ─────────────
+      - alert: DataCloudEntityWriteRateSurge
+        expr: |
+          rate(datacloud_entity_saves_total{service="data-cloud-platform"}[10m]) > 5000
+        for: 15m
+        labels:
+          severity: warning
+          product:   data-cloud
+          component: capacity
+        annotations:
+          summary: "Data-Cloud entity write rate > 5k/s sustained for 15 min"
+          description: >
+            Entity save rate is {{ $value | humanize }} ops/s. At this rate
+            database write capacity and storage will be exhausted sooner than
+            projected. Consider horizontal scaling or write partitioning.
+          runbook: "https://wiki.ghatana.internal/runbooks/data-cloud/write-surge"

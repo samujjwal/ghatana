@@ -114,7 +114,9 @@ class WarmTierEventLogStoreTest extends EventloopTestBase {
     void truncate() throws Exception {
         try (Connection conn = dataSource.getConnection();
              Statement stmt = conn.createStatement()) {
-            stmt.execute("TRUNCATE TABLE event_log");
+            // RESTART IDENTITY resets the generated-identity sequence so that
+            // offset values are predictable across test methods.
+            stmt.execute("TRUNCATE TABLE event_log RESTART IDENTITY");
         }
     }
 
@@ -444,11 +446,12 @@ class WarmTierEventLogStoreTest extends EventloopTestBase {
         @Test
         @DisplayName("latestOffset is scoped per tenant")
         void tenantIsolation_latestOffset_scopedPerTenant() {
-            // Append 3 events for A and 1 for B
+            // Append 1 event for B first, then 3 for A — A's events therefore
+            // have higher global offsets, proving getLatestOffset is per-tenant scoped.
+            runPromise(() -> store().append(TENANT_B, entry("b.event")));
             for (int i = 0; i < 3; i++) {
                 runPromise(() -> store().append(TENANT_A, entry("a.event")));
             }
-            runPromise(() -> store().append(TENANT_B, entry("b.event")));
 
             Offset aLatest = runPromise(() -> store().getLatestOffset(TENANT_A));
             Offset bLatest = runPromise(() -> store().getLatestOffset(TENANT_B));

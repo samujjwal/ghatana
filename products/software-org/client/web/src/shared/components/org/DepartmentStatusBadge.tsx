@@ -8,7 +8,7 @@
  * <DepartmentStatusBadge status="active" label="Engineering" />
  * <DepartmentStatusBadge status="warning" label="QA" count={3} />
  *
- * @package @ghatana/ui
+ * @package @ghatana/software-org-web
  */
 
 import React, { CSSProperties } from 'react';

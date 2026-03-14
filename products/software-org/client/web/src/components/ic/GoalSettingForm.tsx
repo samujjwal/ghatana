@@ -14,7 +14,7 @@ import {
     Divider,
     IconButton,
     Alert,
-} from '@ghatana/ui';
+} from '@ghatana/design-system';
 import type { GoalCategory, GoalStatus, Milestone } from './GrowthPlanDashboard';
 
 /**

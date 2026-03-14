@@ -35,14 +35,9 @@ import java.util.Set;
  * </ul>
  *
  * <h2>Implementations</h2>
- * <ul>
- *   <li>{@code DataCloudAgentRegistry} — Data-Cloud-backed with write-through cache</li>
- * </ul>
- *
- * <h2>Storage Constraint</h2>
- * <p>Per the Agentic Framework Hardening Plan, agent registry storage
- * is <b>exclusively</b> backed by Data-Cloud. No separate registry
- * database or storage module should be created.</p>
+ * <p>Storage and indexing strategies are intentionally left to the
+ * implementation so product modules can choose the backing system that
+ * matches their runtime and durability requirements.</p>
  *
  * @doc.type interface
  * @doc.purpose Agent registry SPI for pluggable registration and discovery

@@ -8,7 +8,7 @@
  * <KpiCard label="Deployment Frequency" value="12" unit="/day" trend={{ value: 2.5, direction: 'up' }} />
  * <KpiCard label="MTTR" value="45" unit="min" status="warning" />
  *
- * @package @ghatana/ui
+ * @package @ghatana/software-org-web
  */
 
 import React, { CSSProperties } from 'react';

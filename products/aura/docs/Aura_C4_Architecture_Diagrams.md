@@ -45,16 +45,23 @@ flowchart TB
     Analytics[Analytics & Learning Module]
   end
 
-  subgraph Data
-    PG[(PostgreSQL)]
-    VDB[(Vector Store)]
-    Cache[(Redis)]
-    Blob[(Object Storage)]
-    MQ[(Job Queue / Event Bus)]
+  subgraph Shared["Shared Platform Capabilities"]
+    AEP[AEP]
+    DC[Data Cloud]
+    AUTH[Shared Auth / Security]
+    O11Y[Shared Observability]
+  end
+
+  subgraph Data["Data Cloud Managed Implementations"]
+    PG[(Relational Plugin)]
+    VDB[(Vector Plugin)]
+    Cache[(Cache Plugin)]
+    Blob[(Object Storage Plugin)]
   end
 
   Web --> API
   Mobile --> API
+  API --> AUTH
   API --> Profile
   API --> Catalog
   API --> Reco
@@ -77,8 +84,19 @@ flowchart TB
   Analytics --> PG
   Consent --> PG
   Reco --> ML
-  Core --> Blob
-  Core --> MQ
+  API --> AEP
+  Core --> AEP
+  Assistant --> AEP
+  API --> DC
+  Core --> DC
+  ML --> DC
+  API --> O11Y
+  Core --> O11Y
+  ML --> O11Y
+  DC --> PG
+  DC --> VDB
+  DC --> Cache
+  DC --> Blob
 ```
 
 ## 3. Component Diagram — Recommendation Module
@@ -116,17 +134,23 @@ flowchart TB
   API2 --> CORE
   API1 --> ML[ML Inference Pods]
   API2 --> ML
-  API1 --> DB[(Managed PostgreSQL)]
-  API2 --> DB
-  API1 --> REDIS[(Managed Redis)]
-  API2 --> REDIS
-  CORE --> DB
-  CORE --> REDIS
-  CORE --> VEC[(Vector DB)]
-  CORE --> OBJ[(Object Storage)]
-  CORE --> OBS[Observability Stack]
-  ML --> OBJ
+  API1 --> AEP[AEP]
+  API2 --> AEP
+  CORE --> AEP
+  API1 --> DC[Data Cloud]
+  API2 --> DC
+  CORE --> DC
+  ML --> DC
+  API1 --> AUTH[Shared Auth/Security]
+  API2 --> AUTH
+  API1 --> OBS[Shared Observability]
+  API2 --> OBS
+  CORE --> OBS
   ML --> OBS
+  DC --> DB[(Relational Plugin)]
+  DC --> REDIS[(Cache Plugin)]
+  DC --> VEC[(Vector Plugin)]
+  DC --> OBJ[(Object Storage Plugin)]
 ```
 
 ## Architectural Notes
@@ -146,5 +170,6 @@ flowchart TB
 - **Scaling path:** Split ingestion, recommendation, or community analysis into separate services only
   when throughput, latency isolation, compliance boundaries, or team ownership warrant it. Keep
   explainability and consent as first-class modules from the start, but not mandatory deployables.
-- **Vector retrieval:** pgvector (embedded in PostgreSQL) serves as the initial Vector Store. Migrate
-  to a dedicated vector database (Pinecone, Weaviate) when embedding volume exceeds ~10 M records.
+- **Shared platform boundary:** Aura communicates asynchronously through AEP and uses Data Cloud-managed plugins for relational, vector, cache, and object-storage needs. Shared auth/security and shared observability remain outside Aura-local infrastructure.
+- **Vector retrieval:** pgvector can serve as the initial vector implementation underneath Data Cloud. Migrate
+  to a dedicated vector plugin when embedding volume exceeds ~10 M records.

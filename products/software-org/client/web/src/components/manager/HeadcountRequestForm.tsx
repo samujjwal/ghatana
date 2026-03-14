@@ -17,7 +17,7 @@ import {
     FormControlLabel,
     Radio,
     Divider,
-} from '@ghatana/ui';
+} from '@ghatana/design-system';
 
 /**
  * Team utilization metrics

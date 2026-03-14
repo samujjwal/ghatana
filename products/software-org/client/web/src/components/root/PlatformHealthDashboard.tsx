@@ -23,7 +23,7 @@ import {
     TableHead,
     TableRow,
     Paper,
-} from '@ghatana/ui';
+} from '@ghatana/design-system';
 import {
     Close as CloseIcon,
     TrendingUp as TrendingUpIcon,
@@ -35,7 +35,7 @@ import {
     Storage as StorageIcon,
     Memory as MemoryIcon,
     CloudQueue as CloudIcon,
-} from '@ghatana/ui/icons';
+} from '@ghatana/design-system/icons';
 
 /**
  * System health metric data point

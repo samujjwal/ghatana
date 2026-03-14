@@ -17,7 +17,7 @@ import {
     Button,
     Progress,
     TextField,
-} from '@ghatana/ui';
+} from '@ghatana/design-system';
 
 interface Tenant {
     id: string;

@@ -11,7 +11,6 @@ import React, { useState } from 'react';
 import {
     Grid,
     Card,
-    KpiCard,
     Box,
     Chip,
     Tabs,
@@ -19,7 +18,8 @@ import {
     Button,
     Typography,
     Stack,
-} from '@ghatana/ui';
+} from '@ghatana/design-system';
+import { KpiCard } from '@/shared/components/org';
 
 /**
  * Organization-wide metrics
@@ -127,7 +127,7 @@ export interface CrossFunctionalDashboardProps {
  * - Collaboration effectiveness metrics
  * - Tab-based navigation (Layers, Teams, Initiatives, Collaboration)
  *
- * Reuses @ghatana/ui components:
+ * Reuses @ghatana/design-system components and shared org KPI cards:
  * - KpiCard (metrics)
  * - Grid (responsive layouts)
  * - Card (layer cards, team cards, initiative cards)

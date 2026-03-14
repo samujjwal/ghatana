@@ -1,0 +1,152 @@
+# Alertmanager configuration for the Ghatana monitoring stack.
+#
+# Routing strategy:
+#   • severity=critical → Slack #data-cloud-oncall + PagerDuty (immediate)
+#   • severity=warning  → Slack #data-cloud-alerts (5-min batching)
+#   • Catch-all         → Slack #platform-alerts (15-min batching)
+#
+# Receiver credentials are injected via environment variables at runtime.
+# See monitoring/docker-compose.yml for the variable mapping.
+
+global:
+  resolve_timeout: 5m
+  # Global SMTP settings (configure if email notifications are desired)
+  smtp_smarthost: "localhost:25"
+  smtp_from: "alertmanager@ghatana.internal"
+  smtp_require_tls: false
+
+  # Slack defaults
+  slack_api_url_file: "/etc/alertmanager/slack_webhook_url"
+
+# ---------------------------------------------------------------------------
+# Route tree
+# ---------------------------------------------------------------------------
+route:
+  # How long to initially wait before sending a notification for a group.
+  group_wait: 30s
+  # How long to wait before sending another notification for a group that has
+  # already fired at least one notification.
+  group_interval: 5m
+  # How long to wait before re-sending a notification for an alert that has
+  # already been sent.
+  repeat_interval: 4h
+
+  # Group by product and alert name so noisy environments are summarised.
+  group_by: ["alertname", "product", "severity"]
+
+  # Default receiver for unmatched alerts
+  receiver: platform-slack-default
+
+  routes:
+    # ------------------------------------------------------------------
+    # 1. Data-Cloud critical alerts — immediate page (< 1 min)
+    # ------------------------------------------------------------------
+    - matchers:
+        - product = "data-cloud"
+        - severity = "critical"
+      receiver: data-cloud-critical
+      group_wait: 10s
+      group_interval: 1m
+      repeat_interval: 30m
+      continue: false
+
+    # ------------------------------------------------------------------
+    # 2. Data-Cloud warning alerts — batched Slack notification
+    # ------------------------------------------------------------------
+    - matchers:
+        - product = "data-cloud"
+        - severity = "warning"
+      receiver: data-cloud-warning
+      group_wait: 1m
+      group_interval: 5m
+      repeat_interval: 2h
+      continue: false
+
+    # ------------------------------------------------------------------
+    # 3. All other data-cloud alerts (catch-all for the product)
+    # ------------------------------------------------------------------
+    - matchers:
+        - product = "data-cloud"
+      receiver: data-cloud-warning
+      group_wait: 2m
+      group_interval: 10m
+      repeat_interval: 4h
+      continue: false
+
+# ---------------------------------------------------------------------------
+# Inhibition rules — suppress lower-severity alerts when critical fires
+# ---------------------------------------------------------------------------
+inhibit_rules:
+  - source_matchers:
+      - severity = "critical"
+      - product = "data-cloud"
+    target_matchers:
+      - severity = "warning"
+      - product = "data-cloud"
+    equal: ["alertname", "product"]
+
+# ---------------------------------------------------------------------------
+# Receivers
+# ---------------------------------------------------------------------------
+receivers:
+  # ---- Data-Cloud: critical (Slack oncall + PagerDuty) ----
+  - name: data-cloud-critical
+    slack_configs:
+      - channel: "#data-cloud-oncall"
+        send_resolved: true
+        color: '{{ if eq .Status "firing" }}#cc0000{{ else }}#36a64f{{ end }}'
+        title: '🔴 [{{ .Status | toUpper }}] {{ .CommonLabels.alertname }} — data-cloud'
+        text: |
+          *Alert:* {{ .CommonLabels.alertname }}
+          *Severity:* {{ .CommonLabels.severity }}
+          *Product:* {{ .CommonLabels.product }}
+          {{ range .Alerts }}
+          *Description:* {{ .Annotations.description }}
+          *Started:* {{ .StartsAt | since }}
+          {{ end }}
+        actions:
+          - type: button
+            text: "View in Grafana"
+            url: "http://grafana.monitoring.svc.cluster.local:3000/d/data-cloud"
+
+    pagerduty_configs:
+      - routing_key_file: "/etc/alertmanager/pagerduty_integration_key"
+        description: '{{ .CommonLabels.alertname }}: {{ .CommonAnnotations.summary }}'
+        severity: critical
+        details:
+          product: '{{ .CommonLabels.product }}'
+          alert_name: '{{ .CommonLabels.alertname }}'
+          description: '{{ .CommonAnnotations.description }}'
+
+  # ---- Data-Cloud: warning (Slack alerts channel) ----
+  - name: data-cloud-warning
+    slack_configs:
+      - channel: "#data-cloud-alerts"
+        send_resolved: true
+        color: '{{ if eq .Status "firing" }}#ff9900{{ else }}#36a64f{{ end }}'
+        title: '⚠️ [{{ .Status | toUpper }}] {{ .CommonLabels.alertname }} — data-cloud'
+        text: |
+          *Alert:* {{ .CommonLabels.alertname }}
+          *Severity:* {{ .CommonLabels.severity }}
+          *Product:* {{ .CommonLabels.product }}
+          {{ range .Alerts }}
+          *Description:* {{ .Annotations.description }}
+          *Started:* {{ .StartsAt | since }}
+          {{ end }}
+
+  # ---- Platform default (catch-all) ----
+  - name: platform-slack-default
+    slack_configs:
+      - channel: "#platform-alerts"
+        send_resolved: true
+        title: '[{{ .Status | toUpper }}] {{ .CommonLabels.alertname }}'
+        text: |
+          {{ range .Alerts }}
+          *Description:* {{ .Annotations.description }}
+          {{ end }}
+
+# ---------------------------------------------------------------------------
+# Templates (inline — can also reference external .tmpl files)
+# ---------------------------------------------------------------------------
+templates:
+  - "/etc/alertmanager/templates/*.tmpl"

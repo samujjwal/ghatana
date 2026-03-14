@@ -1,56 +1,33 @@
 plugins {
     id("java-library")
+    id("com.ghatana.java-conventions")
 }
 
 group = "com.ghatana.platform"
 version = "1.0.0-SNAPSHOT"
 
-java {
-    toolchain {
-        languageVersion.set(JavaLanguageVersion.of(21))
-    }
-}
-
-// Include sub-module source directories that have compilable sources
-sourceSets {
-    main {
-        java {
-            srcDirs(
-                "src/main/java",
-                "batch/src/main/java",
-                "evaluation/src/main/java",
-                "feature-store/src/main/java",
-                "gateway/src/main/java",
-                "observability/src/main/java",
-                "promotion/src/main/java",
-                "registry/src/main/java",
-                "training/src/main/java"
-            )
-        }
-    }
-}
-
-// Avoid duplicate entries in sourcesJar from overlapping srcDirs
-tasks.withType<Jar>().configureEach {
-    duplicatesStrategy = DuplicatesStrategy.EXCLUDE
-}
+description = "AI Integration - Compatibility layer (deprecated - use ai-api and ai-experimental)"
 
 dependencies {
+    // Re-export new split modules
+    api(project(":platform:java:ai-api"))
+    api(project(":platform:java:ai-experimental"))
+    
+    // Core Platform
     api(project(":platform:java:core"))
     api(project(":platform:java:observability"))
-    api(libs.activej.promise)
-    api(libs.activej.http)
-    api(libs.activej.bytebuf)
-    implementation(libs.openai.client)
-    implementation(libs.jackson.databind)
-    compileOnly(libs.lombok)
-    annotationProcessor(libs.lombok)
-
-    // Test
-    testImplementation(project(":platform:java:testing"))
+    
+    // Logging
+    api(libs.slf4j.api)
+    
+    // Testing
     testImplementation(libs.junit.jupiter)
     testImplementation(libs.assertj.core)
     testImplementation(libs.mockito.core)
-    testRuntimeOnly(libs.junit.jupiter.engine)
-    testRuntimeOnly(libs.junit.platform.launcher)
+    testImplementation(libs.mockito.junit.jupiter)
+    testImplementation(project(":platform:java:testing"))
+}
+
+tasks.test {
+    useJUnitPlatform()
 }

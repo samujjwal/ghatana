@@ -12,6 +12,8 @@ Aura uses a **hybrid backend** strategy with a deliberate seam between user-faci
 
 This separation allows the user-facing API to iterate rapidly (with JavaScript's ecosystem advantages) while the computationally intensive recommendation and ingestion systems leverage Java / ActiveJ's performance and async event-loop model.
 
+Aura-owned deployables stop at product logic. Cross-process events go through AEP, and managed data access goes through Data Cloud or approved Data Cloud plugins. Shared auth, security, and observability remain platform capabilities, not Aura-local stacks.
+
 ### Modularity Guardrails
 
 - Start with three deployable boundaries: `apps/api`, `apps/core-worker`, and `apps/ml-inference`.
@@ -29,7 +31,7 @@ This separation allows the user-facing API to iterate rapidly (with JavaScript's
 | Technology       | Purpose                                                      | License |
 | ---------------- | ------------------------------------------------------------ | ------- |
 | React Router v7  | Modern routing with framework mode for SSR and data fetching | MIT     |
-| React 19+        | UI component library and runtime                             | MIT     |
+| React 19         | UI component library and runtime                             | MIT     |
 | Tailwind CSS     | Utility-first styling — no custom CSS frameworks             | MIT     |
 | React Native     | Mobile applications (iOS and Android)                        | MIT     |
 | Jotai            | Lightweight application state management                     | MIT     |
@@ -44,9 +46,9 @@ This separation allows the user-facing API to iterate rapidly (with JavaScript's
 
 | Technology               | Purpose                                                     |
 | ------------------------ | ----------------------------------------------------------- |
-| Node.js 22               | Runtime                                                     |
+| Node.js 24 LTS           | Runtime                                                     |
 | Fastify                  | HTTP framework (performance-optimized, plugin architecture) |
-| Prisma                   | ORM for PostgreSQL — schema, migrations, type-safe queries  |
+| Prisma                   | ORM for Data Cloud-managed relational schema access, migrations, and type-safe queries  |
 | GraphQL (Fastify plugin) | Public-facing GraphQL API endpoint                          |
 | JWT                      | Authentication tokens — verified on every request           |
 
@@ -67,47 +69,61 @@ This separation allows the user-facing API to iterate rapidly (with JavaScript's
 
 | Technology            | Purpose                                                 |
 | --------------------- | ------------------------------------------------------- |
-| Python 3.11           | ML model development and inference                      |
+| Python 3.13           | ML model development and inference                      |
 | FastAPI               | Inference endpoints for separate-runtime model serving  |
 | PyTorch               | Model training (shade matching, ranking)                |
 | scikit-learn          | Gradient boosted ranking, feature preprocessing         |
-| pgvector              | Semantic similarity via vector embeddings in PostgreSQL |
+| pgvector              | Semantic similarity when the Data Cloud vector path is backed by PostgreSQL/pgvector |
 | Sentence Transformers | Ingredient and product embedding generation             |
 
 ---
 
-## Databases
+## Data Plane
 
-| Technology                     | Role                                                                 |
-| ------------------------------ | -------------------------------------------------------------------- |
-| PostgreSQL 16                  | Primary relational store: products, users, recommendations, consents |
-| pgvector                       | Vector embeddings for semantic search (PostgreSQL extension)         |
-| Redis                          | Cache, session store, rate limiting, hot recommendation paths        |
-| Object Storage (S3-compatible) | Raw ingestion payloads, ML training snapshots, audit archives        |
+| Technology | Role |
+| ---------- | ---- |
+| Data Cloud Platform | Authoritative data-management plane for persistence, lineage, retention, restore, export, and plugin lifecycle |
+| Data Cloud relational plugin | Managed relational store for products, users, recommendations, consents, and audit data |
+| Data Cloud vector plugin | Managed vector embeddings for semantic search and retrieval |
+| Data Cloud cache plugin | Managed cache/session/rate-limit backing for hot paths |
+| Data Cloud object-storage plugin | Managed raw payload, snapshot, and archive storage |
+
+Aura may still standardize initially on PostgreSQL, pgvector, Redis, and S3-compatible storage underneath those plugins, but Aura-owned code should integrate through Data Cloud-managed interfaces rather than direct infrastructure coupling.
 
 ---
 
 ## Messaging & Events
 
-| Technology                 | Role                                              |
-| -------------------------- | ------------------------------------------------- |
-| Apache Kafka (or Redpanda) | Durable event bus when cross-process decoupling is warranted |
-| Dead-letter topics         | Failed event retry and investigation              |
+| Technology | Role |
+| ---------- | ---- |
+| AEP Platform | Exclusive event communication boundary for Aura cross-process event publication, subscription, replay, and fan-out |
+| AEP contracts and schemas | Versioned event definitions, validation, idempotency, and routing agreements |
+| AEP-managed DLQ / replay | Failed event retry, replay, and investigation path |
 
 All event consumers must be idempotent. All events are immutable and versioned. Start with in-process
-domain events and durable job execution where possible; introduce Kafka or Redpanda once fan-out,
-independent retries, or throughput make a dedicated bus worthwhile.
+domain events and durable job execution where possible; once Aura needs cross-process asynchronous
+communication, it should use AEP rather than wiring directly to Kafka, Redpanda, Event Cloud, or a
+product-local broker abstraction.
 
 ---
 
 ## Observability
 
-| Technology    | Role                                                                     |
-| ------------- | ------------------------------------------------------------------------ |
-| Micrometer    | JVM metrics instrumentation (Java deployables)                           |
-| OpenTelemetry | Distributed tracing and structured logging across deployable boundaries  |
-| Prometheus    | Metrics collection and alerting rules                                    |
-| Grafana       | Dashboards for service health, recommendation quality, model performance |
+| Technology | Role |
+| ---------- | ---- |
+| Shared o11y platform | Cross-product telemetry, dashboards, alerting, and operational visibility |
+| Micrometer | JVM metrics instrumentation (Java deployables) into the shared o11y plane |
+| OpenTelemetry | Distributed tracing and structured logging across deployable boundaries |
+| Prometheus | Metrics collection and alerting rules within the shared o11y stack |
+| Grafana | Dashboards for service health, recommendation quality, model performance |
+
+## Shared Security and Auth
+
+| Technology | Role |
+| ---------- | ---- |
+| Shared auth services | Authentication, session handling, token issuance, re-authentication |
+| Shared security modules | Authorization helpers, request security, secret handling patterns |
+| Shared governance/audit modules | Consent, audit, policy, and compliance support |
 
 ---
 
@@ -146,15 +162,26 @@ Fastify has significantly lower overhead and better raw throughput for the user-
 
 The recommendation engine, ingestion workers, and ranking pipeline are high-throughput, latency-sensitive components. ActiveJ's event loop model (similar to Vert.x and Netty) handles concurrency without OS thread overhead. Java 21's virtual threads provide an additional concurrency option for blocking I/O paths.
 
-### Why PostgreSQL + pgvector over a separate vector database?
+Java 21 remains the Aura baseline because it matches the current shared-platform runtime used by AEP
+and Data Cloud. Aura should move to Java 25 only as a coordinated shared-platform upgrade, not as a
+product-local fork.
 
-Consolidating relational and vector storage reduces operational complexity significantly during early stages. pgvector is production-ready and avoids synchronization issues between separate stores. A dedicated vector database (e.g., Weaviate, Pinecone) can be added if retrieval scale warrants it later.
+### Why Data Cloud-managed PostgreSQL + pgvector over a separate vector database?
+
+Consolidating relational and vector storage inside Data Cloud-managed plugins reduces operational complexity significantly during early stages. pgvector is production-ready and avoids synchronization issues between separate stores. A dedicated vector database can be added later through Data Cloud if retrieval scale warrants it.
+
+### Why AEP instead of direct broker integration?
+
+AEP gives Aura one supported event boundary for contracts, replay, fan-out, and operational handling. That keeps Aura focused on product behavior rather than broker-specific wiring and prevents event infrastructure logic from spreading across Aura deployables.
 
 ### Why Python for ML inference?
 
 The ML ecosystem (PyTorch, scikit-learn, HuggingFace) is Python-native. Keep ML inference behind a
 small FastAPI runtime boundary because the Python toolchain is distinct, but avoid fragmenting models
 into many deployables until traffic or ownership clearly requires it.
+
+Python 3.13 is the preferred baseline so Aura stays current without outrunning the ML dependency
+matrix unnecessarily. Upgrade beyond that should follow library compatibility validation.
 
 ### Why React Router v7 eliminates Next.js?
 
@@ -169,9 +196,9 @@ Aura's technology stack prioritizes **open-source tools with permissive licenses
 | Category                     | Licensing Approach                                                      |
 | ---------------------------- | ----------------------------------------------------------------------- |
 | **Core Application Stack**   | MIT and Apache 2.0 (React, React Router v7, Fastify, ActiveJ, FastAPI)  |
-| **Databases & Caching**      | PostgreSQL-licensed and Apache 2.0 (PostgreSQL, pgvector, Redis, Kafka) |
+| **Databases & Caching**      | PostgreSQL-licensed and Apache 2.0 via Data Cloud-managed implementations |
 | **Frontend Routing & State** | MIT (React Router v7, Jotai, TanStack Query)                            |
-| **Observability**            | Apache 2.0 (Micrometer, OpenTelemetry, Prometheus)                      |
+| **Observability**            | Apache 2.0 shared-platform stack (Micrometer, OpenTelemetry, Prometheus) |
 | **Infrastructure**           | Apache 2.0 and permissive (Docker, Kubernetes, Helm)                    |
 | **Build & Deployment**       | Permissive open-source (Gitea, Gradle, pnpm, Terraform)                 |
 

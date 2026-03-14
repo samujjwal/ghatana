@@ -8,7 +8,7 @@
  * <AgentAvatar role="orchestrator" agentId="agent-123" name="Orchestrator" />
  * <AgentAvatar role="task" status="active" name="Task Runner" size="lg" />
  *
- * @package @ghatana/ui
+ * @package @ghatana/software-org-web
  */
 
 import React, { CSSProperties } from 'react';
