@@ -27,3 +27,5 @@ resources:
   - networkpolicy.yaml
   # Istio service mesh — requires Istio ≥ 1.19 + namespace injection label
   - istio-mesh.yaml
+  # PostgreSQL read replica (hot standby) for analytics read-scale (DC-9)
+  - postgres-read-replica.yaml

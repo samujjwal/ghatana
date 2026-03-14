@@ -80,6 +80,7 @@ public final class ReportService implements AutoCloseable {
     private static final int CACHE_MAX_SIZE = 500;
 
     private final AnalyticsQueryEngine analyticsEngine;
+    /** Nullable — when absent, ENTITY_EXPORT reports return an error. */
     private final EntityExportService exportService;
 
     /**
@@ -105,7 +106,24 @@ public final class ReportService implements AutoCloseable {
      */
     public ReportService(AnalyticsQueryEngine analyticsEngine, EntityExportService exportService) {
         this.analyticsEngine = Objects.requireNonNull(analyticsEngine, "analyticsEngine");
-        this.exportService   = Objects.requireNonNull(exportService,   "exportService");
+        this.exportService   = exportService; // nullable — ENTITY_EXPORT reports fail gracefully when absent
+    }
+
+    /**
+     * Creates a query-only {@link ReportService} for standalone / analytics-only deployments.
+     *
+     * <p>With this constructor, {@code ENTITY_EXPORT} report requests will fail with an
+     * {@link IllegalStateException}. Use the two-arg constructor when entity export is required.
+     *
+     * @param analyticsEngine engine for SQL-based QUERY reports (required)
+     *
+     * @doc.type method
+     * @doc.purpose Standalone analytics-only ReportService factory (no export service)
+     * @doc.layer product
+     * @doc.pattern Factory
+     */
+    public ReportService(AnalyticsQueryEngine analyticsEngine) {
+        this(analyticsEngine, null);
     }
 
     /**
@@ -233,6 +251,11 @@ public final class ReportService implements AutoCloseable {
                                                       String tenantId,
                                                       ReportDefinition definition,
                                                       Instant startTime) {
+        if (exportService == null) {
+            log.warn("[REPORT] ENTITY_EXPORT report id={} rejected: export service not configured", reportId);
+            return Promise.ofException(new IllegalStateException(
+                    "ENTITY_EXPORT reports are not available in this deployment — EntityExportService is not configured"));
+        }
         // For JSON output we export as NDJSON then convert to row maps in-process.
         // CSV and NDJSON are passed through as-is.
         Promise<String> exportPromise = definition.getFormat() == ReportFormat.CSV

@@ -1,0 +1,293 @@
+---
+# PostgreSQL Streaming Read Replica — Data-Cloud Platform
+#
+# Provisions a single hot-standby PostgreSQL 16 replica via streaming
+# replication from the primary. The standby is suitable for:
+#   - Read-scale: offloading SELECT workloads (analytics queries, reports)
+#   - HA readiness: fast promotion (< 30 s) if the primary fails
+#
+# Prerequisites:
+#   1. Primary PostgreSQL must have been started with the settings supplied
+#      by postgres-pitr.yaml (wal_level=replica, wal_keep_size=512MB).
+#   2. A replication user + slot must exist on the primary:
+#        CREATE USER replicator WITH REPLICATION PASSWORD '<pw>';
+#        SELECT pg_create_physical_replication_slot('dc_replica_slot');
+#   3. Primary pg_hba.conf must allow replication connections:
+#        host replication replicator <replica-pod-CIDR>/32 scram-sha-256
+#   4. The Secret 'postgres-replica-credentials' must exist before applying:
+#        kubectl create secret generic postgres-replica-credentials \
+#          --from-literal=POSTGRES_PASSWORD=<replica-superuser-pw> \
+#          --from-literal=REPLICATOR_PASSWORD=<replication-user-pw> \
+#          -n data-cloud
+#
+# Network topology:
+#   Primary writes  →  data-cloud-postgres        (ClusterIP, port 5432)
+#   Replica reads   →  data-cloud-postgres-read   (ClusterIP, port 5432)
+#
+# Scaling:
+#   Set StatefulSet replicas to 2+ for additional read nodes. Each replica
+#   streams WAL from the primary independently; they do NOT form a chain.
+#
+# ==============================================================================
+
+# ── 1. Replica postgresql.conf ConfigMap ──────────────────────────────────────
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: postgres-replica-config
+  namespace: data-cloud
+  labels:
+    app.kubernetes.io/name:       postgres-read-replica
+    app.kubernetes.io/component:  config
+    app.kubernetes.io/part-of:    data-cloud
+    app.kubernetes.io/managed-by: argocd
+  annotations:
+    # Changes here require a rolling restart of the replica StatefulSet.
+    config.kubernetes.io/update-strategy: rolling-restart
+data:
+  # Appended to PostgreSQL config via include_dir=/etc/postgresql/conf.d/
+  replica.conf: |
+    # ---- Streaming Replication (Standby) Settings ----
+    hot_standby             = on          # allow read queries while replaying WAL
+    hot_standby_feedback    = on          # inform primary of oldest xmin to prevent vacuum conflicts
+    wal_receiver_timeout    = 60s         # detect failed primary within 60 s
+    recovery_min_apply_delay = 0          # apply WAL immediately (set to e.g. 5min for lagged replica)
+    max_standby_streaming_delay = 30s    # how long to wait for conflicting read queries before cancelling
+    max_standby_archive_delay  = 30s     # same for archive recovery
+
+  # pg_hba.conf — allow local connections from the application and health probes
+  pg_hba.conf: |
+    # TYPE  DATABASE  USER        ADDRESS      METHOD
+    local   all       all                      trust
+    host    all       all         127.0.0.1/32 md5
+    host    all       all         ::1/128      md5
+    # Allow app pods in the same namespace (adjust CIDR to match your pod network)
+    host    all       all         10.0.0.0/8   md5
+
+---
+# ── 2. Read-Replica StatefulSet ───────────────────────────────────────────────
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: data-cloud-postgres-read
+  namespace: data-cloud
+  labels:
+    app.kubernetes.io/name:       postgres-read-replica
+    app.kubernetes.io/component:  database
+    app.kubernetes.io/part-of:    data-cloud
+    app.kubernetes.io/managed-by: argocd
+    app.kubernetes.io/version:    "16"
+  annotations:
+    # Prevent ArgoCD from pruning if replica count is manually scaled.
+    argocd.argoproj.io/sync-options: PruneLast=true
+spec:
+  serviceName: data-cloud-postgres-read-headless
+  replicas: 1
+  selector:
+    matchLabels:
+      app.kubernetes.io/name:      postgres-read-replica
+      app.kubernetes.io/component: database
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name:      postgres-read-replica
+        app.kubernetes.io/component: database
+        app.kubernetes.io/part-of:   data-cloud
+      annotations:
+        # Re-roll replicas when the config ConfigMap changes.
+        checksum/config: "placeholder-updated-by-argocd-or-helm"
+    spec:
+      # Prefer scheduling replicas on different nodes from primary for HA.
+      affinity:
+        podAntiAffinity:
+          preferredDuringSchedulingIgnoredDuringExecution:
+            - weight: 100
+              podAffinityTerm:
+                labelSelector:
+                  matchLabels:
+                    app.kubernetes.io/name: postgres
+                topologyKey: kubernetes.io/hostname
+
+      terminationGracePeriodSeconds: 60
+
+      initContainers:
+        # ── pg_basebackup: clone primary data directory before starting standby ──
+        - name: pg-basebackup
+          image: postgres:16-alpine
+          imagePullPolicy: IfNotPresent
+          command:
+            - /bin/sh
+            - -ec
+            - |
+              # Skip clone if PGDATA already populated (e.g. after a Pod restart).
+              if [ -s "$PGDATA/PG_VERSION" ]; then
+                echo "PGDATA already initialised — skipping pg_basebackup"
+                exit 0
+              fi
+
+              echo "Cloning primary at postgres.data-cloud.svc.cluster.local:5432 ..."
+              PGPASSWORD="$REPLICATOR_PASSWORD" pg_basebackup \
+                --host=postgres.data-cloud.svc.cluster.local \
+                --port=5432 \
+                --username=replicator \
+                --pgdata="$PGDATA" \
+                --format=plain \
+                --write-recovery-conf \
+                --slot=dc_replica_slot \
+                --wal-method=stream \
+                --checkpoint=fast \
+                --progress \
+                --verbose
+
+              # Overlay replica-specific configuration
+              cp /etc/postgresql-replica-conf/replica.conf "$PGDATA/conf.d/replica.conf"
+              cp /etc/postgresql-replica-conf/pg_hba.conf  "$PGDATA/pg_hba.conf"
+
+              echo "pg_basebackup complete. Standby ready."
+          env:
+            - name: PGDATA
+              value: /var/lib/postgresql/data/pgdata
+            - name: REPLICATOR_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: postgres-replica-credentials
+                  key: REPLICATOR_PASSWORD
+          volumeMounts:
+            - name: pgdata
+              mountPath: /var/lib/postgresql/data
+            - name: replica-config
+              mountPath: /etc/postgresql-replica-conf
+              readOnly: true
+
+      containers:
+        - name: postgres
+          image: postgres:16-alpine
+          imagePullPolicy: IfNotPresent
+
+          ports:
+            - name: postgres
+              containerPort: 5432
+              protocol: TCP
+
+          env:
+            - name: PGDATA
+              value: /var/lib/postgresql/data/pgdata
+            - name: POSTGRES_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: postgres-replica-credentials
+                  key: POSTGRES_PASSWORD
+
+          # ── Health probes ──────────────────────────────────────────────────
+          readinessProbe:
+            exec:
+              command:
+                - /bin/sh
+                - -c
+                - |
+                  pg_isready -U postgres -h 127.0.0.1 -p 5432 && \
+                  psql -U postgres -c "SELECT pg_is_in_recovery();" | grep -q "t"
+            initialDelaySeconds: 15
+            periodSeconds: 10
+            failureThreshold: 3
+
+          livenessProbe:
+            exec:
+              command:
+                - pg_isready
+                - -U
+                - postgres
+                - -h
+                - "127.0.0.1"
+            initialDelaySeconds: 30
+            periodSeconds: 15
+            failureThreshold: 5
+
+          # ── Resource requests/limits ───────────────────────────────────────
+          resources:
+            requests:
+              cpu:    "250m"
+              memory: "512Mi"
+            limits:
+              cpu:    "1000m"
+              memory: "2Gi"
+
+          volumeMounts:
+            - name: pgdata
+              mountPath: /var/lib/postgresql/data
+            - name: replica-config
+              mountPath: /etc/postgresql/conf.d
+              readOnly: true
+
+      volumes:
+        - name: replica-config
+          configMap:
+            name: postgres-replica-config
+
+  # ── Persistent storage for the replica's data directory ───────────────────
+  volumeClaimTemplates:
+    - metadata:
+        name: pgdata
+        labels:
+          app.kubernetes.io/name:      postgres-read-replica
+          app.kubernetes.io/component: database
+      spec:
+        accessModes:
+          - ReadWriteOnce
+        storageClassName: standard     # replace with your fast SSD StorageClass
+        resources:
+          requests:
+            storage: 50Gi
+
+---
+# ── 3. Headless Service for stable DNS (required by StatefulSet) ───────────────
+apiVersion: v1
+kind: Service
+metadata:
+  name: data-cloud-postgres-read-headless
+  namespace: data-cloud
+  labels:
+    app.kubernetes.io/name:      postgres-read-replica
+    app.kubernetes.io/component: database
+    app.kubernetes.io/part-of:   data-cloud
+spec:
+  clusterIP: None
+  selector:
+    app.kubernetes.io/name:      postgres-read-replica
+    app.kubernetes.io/component: database
+  ports:
+    - name: postgres
+      port: 5432
+      targetPort: postgres
+      protocol: TCP
+
+---
+# ── 4. ClusterIP Service for read traffic load-balancing ──────────────────────
+#
+# Point analytics clients at this service:
+#   jdbc:postgresql://data-cloud-postgres-read.data-cloud.svc.cluster.local:5432/datacloud
+#
+# When replicas > 1, kube-proxy will round-robin across all healthy replica Pods.
+apiVersion: v1
+kind: Service
+metadata:
+  name: data-cloud-postgres-read
+  namespace: data-cloud
+  labels:
+    app.kubernetes.io/name:      postgres-read-replica
+    app.kubernetes.io/component: database
+    app.kubernetes.io/part-of:   data-cloud
+    app.kubernetes.io/managed-by: argocd
+  annotations:
+    # Declare that this service only targets read-only (hot-standby) nodes.
+    service.beta.kubernetes.io/aws-load-balancer-type: internal
+spec:
+  type: ClusterIP
+  selector:
+    app.kubernetes.io/name:      postgres-read-replica
+    app.kubernetes.io/component: database
+  ports:
+    - name: postgres
+      port: 5432
+      targetPort: postgres
+      protocol: TCP

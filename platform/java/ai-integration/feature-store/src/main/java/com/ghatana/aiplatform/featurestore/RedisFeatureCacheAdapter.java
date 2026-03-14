@@ -270,6 +270,25 @@ public class RedisFeatureCacheAdapter {
             tenantId, hitCount, missCount, evictions.get(), cache.size());
     }
 
+    /**
+     * Clears all cache entries.
+     * Useful for testing or admin-triggered cache invalidation.
+     */
+    public void clearAll() {
+        cache.clear();
+        log.debug("All feature cache entries cleared");
+    }
+
+    /**
+     * Returns the total number of entries currently in the cache
+     * (including potentially expired-but-not-yet-evicted entries).
+     *
+     * @return cache entry count
+     */
+    public int size() {
+        return cache.size();
+    }
+
     private void recordHit(String tenantId, String featureName) {
         hits.incrementAndGet();
         metrics.incrementCounter(

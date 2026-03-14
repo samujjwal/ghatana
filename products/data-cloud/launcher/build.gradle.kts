@@ -13,6 +13,14 @@ dependencies {
     implementation(project(":platform:java:http"))
     implementation(project(":platform:java:governance"))
 
+    // AI platform integration — model registry, feature store, observability (DC-11)
+    implementation(project(":platform:java:ai-integration:registry"))
+    implementation(project(":platform:java:ai-integration:observability"))
+    implementation(project(":platform:java:ai-integration:feature-store"))
+
+    // HikariCP for AI service DataSource creation in standalone launcher
+    implementation(libs.hikaricp)
+
     // gRPC transport (runtime) — needed to start the gRPC server
     implementation(libs.grpc.netty.shaded)
     

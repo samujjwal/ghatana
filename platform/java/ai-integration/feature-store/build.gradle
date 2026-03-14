@@ -9,12 +9,11 @@ version = '1.0-SNAPSHOT'
 description = 'AI Platform Feature Store - Feature engineering, storage, and serving for ML pipelines'
 
 dependencies {
-    // Core infrastructure
-    api project(':libs:database')
-    api project(':libs:event-cloud')
-    api project(':libs:observability')
-    api project(':libs:types')
-    api project(':libs:redis-cache')
+    // Core infrastructure (migrated from :libs:database, :libs:observability, :libs:types, :libs:event-cloud, :libs:redis-cache)
+    api project(':platform:java:database')
+    api project(':platform:java:observability')
+    api project(':platform:java:core')
+    api project(':platform:java:event-cloud')
     
     // Database
     implementation libs.postgresql

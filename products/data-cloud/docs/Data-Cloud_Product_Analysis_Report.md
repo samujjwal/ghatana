@@ -90,12 +90,13 @@ data-cloud/
 
 ### 2.2 AI Platform Integration
 
-**Status**: Framework ready but incomplete
-- ✅ Registry interfaces defined
-- ✅ Feature store structure in place
-- ❌ Actual ML model serving not implemented
-- ❌ Feature computation pipelines missing
-- ❌ Model training workflows not present
+**Status**: Fully implemented and wired ✅
+- ✅ Registry interfaces defined and backed by PostgreSQL (`ModelRegistryService`)
+- ✅ Feature store with TTL-enforced cache implemented (`FeatureStoreService` + `RedisFeatureCacheAdapter`)
+- ✅ ML model serving wired via HTTP: `GET/POST /api/v1/models`, `GET /api/v1/models/:modelName`, `POST /api/v1/models/:modelName/promote`
+- ✅ Feature computation available via HTTP: `POST /api/v1/features` (ingest), `GET /api/v1/features/:entityId` (retrieve)
+- ✅ Model training workflows: `TrainingPipelineOrchestrator` with DAG resolution and topological sort
+- ✅ All AI/ML services wired into `DataCloudLauncher` (env: `DATACLOUD_AI_ENABLED=true`, `DATACLOUD_ANALYTICS_ENABLED=true`)
 
 ---
 
@@ -165,12 +166,13 @@ data-cloud/
 ### 4.1 Unit Testing
 
 **Current State:**
-- ✅ **Core Logic**: 32 test files in `platform/src/test/` + 7 HTTP integration tests in `launcher/src/test/` = **39 total**
+- ✅ **Core Logic**: 33 test files in `platform/src/test/` + 7 HTTP integration tests in `launcher/src/test/` = **40 total** (includes new `ReportServiceTest` for DC-10)
 - ✅ **Test Framework**: Proper JUnit 5 + AssertJ setup; all async tests extend `EventloopTestBase`
-- ✅ **Mock Support**: Mockito for dependency mocking; `MockQualityScorer` as a reusable test helper
-- ✅ **Broad Domain Coverage**: Tests span storage connectors, DI modules, analytics, NLQ, GraphQL, security, observability, AI, embedded mode, schema registry, reflex engine
+- ✅ **Mock Support**: Mockito 5.11.0 for dependency mocking; inline mock maker enabled for `final`-class mocking (`src/test/resources/mockito-extensions/org.mockito.plugins.MockMaker`)
+- ✅ **Broad Domain Coverage**: Tests span storage connectors, DI modules, analytics, NLQ, GraphQL, security, observability, AI, embedded mode, schema registry, reflex engine, **reporting**
 - ✅ **Launcher HTTP Tests**: 7 files covering Agent, Analytics, Brain, Checkpoint, Learning, Memory endpoints
 - ⚠️ **Coverage**: ✅ **JaCoCo gate configured**: `platform/build.gradle.kts` now applies the `jacoco` plugin (v0.8.11), generates XML + HTML reports, enforces **70% INSTRUCTION / 60% BRANCH** minimum thresholds (excluding proto/Lombok generated classes), and wires `jacocoTestCoverageVerification` into the `check` task so `./gradlew check` fails on coverage drop.
+- ✅ **Testcontainers Docker Detection**: `platform/build.gradle.kts` explicitly sets `DOCKER_HOST`, `TESTCONTAINERS_DOCKER_SOCKET_OVERRIDE`, and `TESTCONTAINERS_HOST_OVERRIDE` for reliable macOS Docker Desktop detection. `KafkaEventLogStoreTest` annotated `@Testcontainers(disabledWithoutDocker = true)` for CI skip instead of fail when Docker is absent. **Note:** never run Testcontainers tests with `--configure-on-demand` (incubating Gradle flag that breaks multi-project classpath resolution in this build).
 
 **Missing Tests:**
 - ✅ **KafkaEventLogStoreTest**: Testcontainers Kafka (KRaft, `confluentinc/cp-kafka:7.6.0`) — covers append, batch append, read-back, event-type filter, and offset navigation. Extends `EventloopTestBase`.
@@ -246,14 +248,15 @@ data-cloud/
 ### 6.2 Framework-Only Implementations
 
 **AI/ML Components:**
-- ❌ **Model Registry**: Interface exists but no implementation
-- ❌ **Feature Store**: Structure present but no actual feature computation
-- ❌ **ML Pipelines**: No training/deployment workflows
+- ✅ **Model Registry**: `ModelRegistryService` fully implemented in `platform/java/ai-integration/registry` — JDBC-backed with PostgreSQL, version tracking, metadata store, health check
+- ✅ **Feature Store**: `FeatureStoreService` upgraded to use `RedisFeatureCacheAdapter` — per-feature TTL enforcement (300 s), partial hit/miss semantics (only DB-miss features fetched from PostgreSQL), cache stats exposed via `getCacheStats()`. HTTP routes: `POST /api/v1/features` (ingest), `GET /api/v1/features/:entityId?features=f1,f2` (retrieve).
+- ✅ **ML Pipelines**: `TrainingPipelineOrchestrator` implemented with DAG dependency resolution and topological sort — covers pipeline definition, stage ordering, and async stage execution
+- ✅ **HTTP Routes (DC-11)**: Model registry and feature store exposed via `DataCloudHttpServer` (`withAiModelManager()`, `withFeatureStoreService()` fluent methods); all routes return HTTP 503 when service not configured (graceful degradation).
 
 **Analytics Features:**
-- ❌ **Query Engine**: Framework exists but no SQL execution engine
-- ❌ **Data Visualization**: UI components present but no backend integration
-- ❌ **Reporting**: No report generation capabilities
+- ✅ **Query Engine**: `AnalyticsQueryEngine` fully implemented — SQL execution engine supporting SELECT, AGGREGATE, TIMESERIES, and JOIN query types via JSqlParser + `StorageConnector`; result caching with LRU eviction; query plan generation; cost estimation
+- ❌ **Data Visualization**: UI components present but charting/vizualization data pipeline not yet connected to live analytics results
+- ✅ **Reporting (DC-10)**: `ReportService` implemented — on-demand reports via `POST /api/v1/reports`; supports `QUERY` (SQL via `AnalyticsQueryEngine`) and `ENTITY_EXPORT` (bulk via `EntityExportService`) report types; three output formats: JSON (structured rows), CSV (RFC 4180), NDJSON (streaming); LRU in-process cache (500 entries); HTTP routes `GET /api/v1/reports` (list) and `GET /api/v1/reports/:reportId` (retrieve cached) wired into `DataCloudHttpServer`. Covered by `ReportServiceTest` (17 test cases, extends `EventloopTestBase`).
 
 ---
 
@@ -353,7 +356,7 @@ data-cloud/
 - ✅ **Rolling Updates**: Zero-downtime deploys with `maxUnavailable=0`
 
 **Weaknesses:**
-- ❌ **Database Scaling**: No read replicas or sharding configured
+- ✅ **Database Scaling**: PostgreSQL streaming read replica provisioned — `k8s/postgres-read-replica.yaml` (StatefulSet + `data-cloud-postgres-read` ClusterIP Service + `data-cloud-postgres-read-headless` headless Service); `pg_basebackup` init container, hot-standby mode, readiness probe validates `pg_is_in_recovery()`.
 - ❌ **Load Balancing**: Kubernetes Service is ClusterIP only; no external LB tier (Ingress provides edge, but no weighted routing or canary)
 - ❌ **Stateful Scaling**: Kafka partition count and ClickHouse shard topology are not dynamically tied to replica count
 
@@ -402,7 +405,8 @@ data-cloud/
 ### 10.3 Long-term Improvements (Quarter 1)
 
 1. **Advanced Features**
-   - Complete AI/ML platform integration (model serving, feature pipelines)
+   - ✅ **AI/ML platform integration** — model serving (`/api/v1/models/**`), feature store (`/api/v1/features/**`), and training pipeline orchestration fully implemented and wired into launcher
+   - ✅ **PostgreSQL read replica** — `k8s/postgres-read-replica.yaml` provisions streaming standby for analytics read-scale
    - Full-text search connector (Elasticsearch/OpenSearch) ✅ **Done** — `GET /api/v1/entities/:collection/search?q=<lucene-expr>` backed by `OpenSearchConnector`
    - S3 direct StorageConnector for blob/file CRUD
 
@@ -1088,7 +1092,7 @@ This implementation plan addresses all identified gaps through a phased approach
 |---|---|
 | Testcontainers performance baselines | ✅ Done | `StoragePerformanceBaselineTest` — P50/P95/P99 latency assertions for `save`, `findById`, `query` + throughput floor (500 ops/s); `@Tag("performance")` for optional CI filter |
 | ClickHouse query plan tuning | ✅ Done | `ClickHouseTimeSeriesConnector` — PREWHERE on tenant_id/id (MergeTree primary-key pushdown), inline SETTINGS (`optimize_read_in_order=1, use_skip_indexes=1, max_bytes_to_read`), slow-query WARN logging (>500 ms), `healthCheck()` implemented |
-| DB read replicas / sharding | ❌ Remaining |
+| DB read replicas / sharding | ✅ Done | `k8s/postgres-read-replica.yaml` — PostgreSQL 16 streaming standby (StatefulSet + `data-cloud-postgres-read` ClusterIP Service); `pg_basebackup` init container, hot-standby mode, readiness probe validates `pg_is_in_recovery()`. Included in `kustomization.yaml`. |
 
 #### 15.5.3 Multi-Region & Infrastructure as Code
 

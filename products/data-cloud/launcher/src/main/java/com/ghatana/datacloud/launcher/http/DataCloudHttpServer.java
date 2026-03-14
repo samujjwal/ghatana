@@ -53,6 +53,11 @@ import com.ghatana.datacloud.analytics.anomaly.StatisticalAnomalyDetector;
 import com.ghatana.datacloud.analytics.report.ReportDefinition;
 import com.ghatana.datacloud.analytics.report.ReportResult;
 import com.ghatana.datacloud.analytics.report.ReportService;
+import com.ghatana.datacloud.ai.AIModelManager;
+import com.ghatana.aiplatform.featurestore.Feature;
+import com.ghatana.aiplatform.featurestore.FeatureStoreService;
+import com.ghatana.aiplatform.registry.ModelMetadata;
+import com.ghatana.aiplatform.registry.DeploymentStatus;
 import com.ghatana.datacloud.spi.ai.AnomalyDetectionCapability.AnomalyContext;
 import com.ghatana.datacloud.spi.ai.AnomalyDetectionCapability.DetectionType;
 import com.ghatana.datacloud.entity.storage.StorageConnector;
@@ -167,6 +172,20 @@ public class DataCloudHttpServer {
      * When {@code null} those routes return HTTP 503.
      */
     private ReportService reportService;
+
+    /**
+     * Optional AI model manager for DC-11 model-registry routes.
+     * When non-null, {@code /api/v1/models/**} routes are active.
+     * When {@code null} those routes return HTTP 503.
+     */
+    private AIModelManager aiModelManager;
+
+    /**
+     * Optional feature store service for DC-11 feature-store routes.
+     * When non-null, {@code /api/v1/features/**} routes are active.
+     * When {@code null} those routes return HTTP 503.
+     */
+    private FeatureStoreService featureStoreService;
 
     /**
      * Creates a new Data-Cloud HTTP server without optional extensions.
@@ -307,6 +326,52 @@ public class DataCloudHttpServer {
     }
 
     /**
+     * Attaches an {@link AIModelManager} to enable ML model-registry routes (DC-11).
+     *
+     * <p>Required for:
+     * <ul>
+     *   <li>{@code GET  /api/v1/models}                       — list models</li>
+     *   <li>{@code POST /api/v1/models}                       — register a model</li>
+     *   <li>{@code GET  /api/v1/models/:modelName}            — get active model</li>
+     *   <li>{@code POST /api/v1/models/:modelName/promote}    — promote to production</li>
+     * </ul>
+     *
+     * @param manager the AI model manager; {@code null} disables model routes
+     * @return {@code this} for method chaining
+     *
+     * @doc.type method
+     * @doc.purpose Attach AI model manager to enable DC-11 model-registry routes
+     * @doc.layer product
+     * @doc.pattern Builder
+     */
+    public DataCloudHttpServer withAiModelManager(AIModelManager manager) {
+        this.aiModelManager = manager;
+        return this;
+    }
+
+    /**
+     * Attaches a {@link FeatureStoreService} to enable ML feature-store routes (DC-11).
+     *
+     * <p>Required for:
+     * <ul>
+     *   <li>{@code POST /api/v1/features}             — ingest a feature vector</li>
+     *   <li>{@code GET  /api/v1/features/:entityId}   — retrieve features for an entity</li>
+     * </ul>
+     *
+     * @param service the feature store service; {@code null} disables feature routes
+     * @return {@code this} for method chaining
+     *
+     * @doc.type method
+     * @doc.purpose Attach feature store service to enable DC-11 feature routes
+     * @doc.layer product
+     * @doc.pattern Builder
+     */
+    public DataCloudHttpServer withFeatureStoreService(FeatureStoreService service) {
+        this.featureStoreService = service;
+        return this;
+    }
+
+    /**
      * Starts the HTTP server.
      *
      * @throws Exception if the server fails to start
@@ -399,6 +464,16 @@ public class DataCloudHttpServer {
             .with(HttpMethod.POST, "/api/v1/reports",             this::handleCreateReport)
             .with(HttpMethod.GET,  "/api/v1/reports",             this::handleListReports)
             .with(HttpMethod.GET,  "/api/v1/reports/:reportId",   this::handleGetReport)
+
+            // AI/ML — Model Registry routes (DC-11) — active only when aiModelManager is wired
+            .with(HttpMethod.GET,  "/api/v1/models",                          this::handleListAiModels)
+            .with(HttpMethod.POST, "/api/v1/models",                          this::handleRegisterAiModel)
+            .with(HttpMethod.GET,  "/api/v1/models/:modelName",               this::handleGetAiModel)
+            .with(HttpMethod.POST, "/api/v1/models/:modelName/promote",       this::handlePromoteAiModel)
+
+            // AI/ML — Feature Store routes (DC-11) — active only when featureStoreService is wired
+            .with(HttpMethod.POST, "/api/v1/features",                        this::handleIngestFeature)
+            .with(HttpMethod.GET,  "/api/v1/features/:entityId",              this::handleGetFeatures)
 
             // Server-Sent Events for real-time UI updates (DC-3, DC-9)
             .with(HttpMethod.GET, "/events/stream",              this::handleSseStream)
@@ -2098,6 +2173,395 @@ public class DataCloudHttpServer {
         }
         Map<String, String> cached = reportService.listCachedReports();
         return Promise.of(jsonResponse(Map.of("reports", cached, "count", cached.size())));
+    }
+
+    // ==================== AI/ML — Model Registry (DC-11) ====================
+
+    /**
+     * Registers a new ML model for the tenant.
+     *
+     * <h3>Route</h3>
+     * {@code POST /api/v1/models}
+     *
+     * <h3>Request body</h3>
+     * JSON object containing {@code tenantId}, {@code name}, {@code version},
+     * {@code framework} (optional), and {@code deploymentStatus} (optional).
+     *
+     * <h3>Response</h3>
+     * <ul>
+     *   <li>201 — registered model metadata JSON</li>
+     *   <li>400 — missing or invalid fields</li>
+     *   <li>503 — AI model manager not available in this deployment</li>
+     * </ul>
+     *
+     * @doc.type method
+     * @doc.purpose Register a versioned ML model (DC-11)
+     * @doc.layer product
+     * @doc.pattern Command
+     */
+    private Promise<HttpResponse> handleRegisterAiModel(HttpRequest request) {
+        if (aiModelManager == null) {
+            return Promise.of(errorResponse(503, "AI model manager not available in this deployment"));
+        }
+        return request.loadBody()
+            .then(buf -> {
+                try {
+                    String bodyStr = buf.getString(StandardCharsets.UTF_8);
+                    @SuppressWarnings("unchecked")
+                    Map<String, Object> payload = objectMapper.readValue(bodyStr, Map.class);
+
+                    String tenantId = resolveTenantId(request);
+                    String name = (String) payload.get("name");
+                    String version = (String) payload.get("version");
+                    if (name == null || name.isBlank()) {
+                        return Promise.of(errorResponse(400, "Missing required field: name"));
+                    }
+                    if (version == null || version.isBlank()) {
+                        return Promise.of(errorResponse(400, "Missing required field: version"));
+                    }
+
+                    DeploymentStatus status = DeploymentStatus.STAGED;
+                    if (payload.containsKey("deploymentStatus")) {
+                        try {
+                            status = DeploymentStatus.valueOf(((String) payload.get("deploymentStatus")).toUpperCase());
+                        } catch (IllegalArgumentException e) {
+                            return Promise.of(errorResponse(400, "Invalid deploymentStatus: " + payload.get("deploymentStatus")));
+                        }
+                    }
+
+                    ModelMetadata model = ModelMetadata.builder()
+                            .id(java.util.UUID.randomUUID())
+                            .tenantId(tenantId)
+                            .name(name)
+                            .version(version)
+                            .framework((String) payload.getOrDefault("framework", "unknown"))
+                            .deploymentStatus(status)
+                            .createdAt(java.time.Instant.now())
+                            .updatedAt(java.time.Instant.now())
+                            .build();
+
+                    return aiModelManager.registerModel(tenantId, model)
+                        .map(registered -> {
+                            Map<String, Object> response = modelMetadataToMap(registered);
+                            try {
+                                return HttpResponse.ofCode(201)
+                                        .withHeader(io.activej.http.HttpHeaders.CONTENT_TYPE, "application/json")
+                                        .withBody(ByteBuf.wrapForReading(
+                                                objectMapper.writeValueAsBytes(response)))
+                                        .build();
+                            } catch (Exception ex) {
+                                throw new RuntimeException(ex);
+                            }
+                        })
+                        .then(Promise::of, e -> {
+                            log.error("[DC-11] model registration failed: {}", e.getMessage(), e);
+                            return Promise.of(errorResponse(500, "Model registration failed: " + e.getMessage()));
+                        });
+                } catch (Exception e) {
+                    log.warn("[DC-11] invalid model registration request: {}", e.getMessage());
+                    return Promise.of(errorResponse(400, "Invalid request body: " + e.getMessage()));
+                }
+            })
+            .then(Promise::of, e -> Promise.of(errorResponse(400, "Failed to read request body: " + e.getMessage())));
+    }
+
+    /**
+     * Lists all ML models registered for the tenant across all deployment statuses.
+     *
+     * <h3>Route</h3>
+     * {@code GET /api/v1/models}
+     *
+     * <h3>Response</h3>
+     * <ul>
+     *   <li>200 — JSON array of model metadata objects</li>
+     *   <li>503 — AI model manager not available in this deployment</li>
+     * </ul>
+     *
+     * @doc.type method
+     * @doc.purpose List all tenant ML models across statuses (DC-11)
+     * @doc.layer product
+     * @doc.pattern Query
+     */
+    private Promise<HttpResponse> handleListAiModels(HttpRequest request) {
+        if (aiModelManager == null) {
+            return Promise.of(errorResponse(503, "AI model manager not available in this deployment"));
+        }
+        String tenantId = resolveTenantId(request);
+        return aiModelManager.getAllModels(tenantId)
+            .map(models -> {
+                List<Map<String, Object>> modelList = models.stream()
+                        .map(this::modelMetadataToMap)
+                        .toList();
+                return jsonResponse(Map.of("models", modelList, "count", modelList.size()));
+            })
+            .then(Promise::of, e -> {
+                log.error("[DC-11] failed to list models for tenant={}: {}", tenantId, e.getMessage(), e);
+                return Promise.of(errorResponse(500, "Failed to list models: " + e.getMessage()));
+            });
+    }
+
+    /**
+     * Retrieves the active (PRODUCTION) ML model by name for the tenant.
+     *
+     * <h3>Route</h3>
+     * {@code GET /api/v1/models/:modelName}
+     *
+     * <h3>Response</h3>
+     * <ul>
+     *   <li>200 — model metadata JSON</li>
+     *   <li>404 — no active model found with the given name</li>
+     *   <li>503 — AI model manager not available in this deployment</li>
+     * </ul>
+     *
+     * @doc.type method
+     * @doc.purpose Retrieve active production ML model by name (DC-11)
+     * @doc.layer product
+     * @doc.pattern Query
+     */
+    private Promise<HttpResponse> handleGetAiModel(HttpRequest request) {
+        if (aiModelManager == null) {
+            return Promise.of(errorResponse(503, "AI model manager not available in this deployment"));
+        }
+        String tenantId = resolveTenantId(request);
+        String modelName = request.getPathParameter("modelName");
+        return aiModelManager.getActiveModel(tenantId, modelName)
+            .map(model -> jsonResponse(modelMetadataToMap(model)))
+            .then(Promise::of, e -> {
+                if (e instanceof IllegalStateException && e.getMessage() != null
+                        && e.getMessage().contains("No active model")) {
+                    return Promise.of(errorResponse(404, "No active model found: " + modelName));
+                }
+                log.error("[DC-11] failed to get model '{}'  tenant={}: {}", modelName, tenantId, e.getMessage(), e);
+                return Promise.of(errorResponse(500, "Failed to get model: " + e.getMessage()));
+            });
+    }
+
+    /**
+     * Promotes a staged ML model to PRODUCTION status.
+     *
+     * <h3>Route</h3>
+     * {@code POST /api/v1/models/:modelName/promote}
+     *
+     * <h3>Request body</h3>
+     * JSON object containing {@code version} (required).
+     *
+     * <h3>Response</h3>
+     * <ul>
+     *   <li>200 — promoted model metadata JSON</li>
+     *   <li>400 — missing version or model is not in STAGED status</li>
+     *   <li>404 — model not found</li>
+     *   <li>503 — AI model manager not available in this deployment</li>
+     * </ul>
+     *
+     * @doc.type method
+     * @doc.purpose Promote staged ML model to production (DC-11)
+     * @doc.layer product
+     * @doc.pattern Command
+     */
+    private Promise<HttpResponse> handlePromoteAiModel(HttpRequest request) {
+        if (aiModelManager == null) {
+            return Promise.of(errorResponse(503, "AI model manager not available in this deployment"));
+        }
+        return request.loadBody()
+            .then(buf -> {
+                try {
+                    String bodyStr = buf.getString(StandardCharsets.UTF_8);
+                    @SuppressWarnings("unchecked")
+                    Map<String, Object> payload = objectMapper.readValue(bodyStr, Map.class);
+                    String tenantId = resolveTenantId(request);
+                    String modelName = request.getPathParameter("modelName");
+                    String version = (String) payload.get("version");
+                    if (version == null || version.isBlank()) {
+                        return Promise.of(errorResponse(400, "Missing required field: version"));
+                    }
+                    return aiModelManager.promoteToProduction(tenantId, modelName, version)
+                        .map(model -> jsonResponse(modelMetadataToMap(model)))
+                        .then(Promise::of, e -> {
+                            String msg = e.getMessage() != null ? e.getMessage() : e.getClass().getSimpleName();
+                            if (msg.contains("not found")) {
+                                return Promise.of(errorResponse(404, msg));
+                            }
+                            if (msg.contains("STAGED")) {
+                                return Promise.of(errorResponse(400, msg));
+                            }
+                            log.error("[DC-11] promote failed model='{}' version='{}': {}", modelName, version, msg, e);
+                            return Promise.of(errorResponse(500, "Promotion failed: " + msg));
+                        });
+                } catch (Exception e) {
+                    return Promise.of(errorResponse(400, "Invalid request body: " + e.getMessage()));
+                }
+            })
+            .then(Promise::of, e -> Promise.of(errorResponse(400, "Failed to read request body: " + e.getMessage())));
+    }
+
+    // ==================== AI/ML — Feature Store (DC-11) ====================
+
+    /**
+     * Ingests a feature vector for a given entity into the feature store.
+     *
+     * <h3>Route</h3>
+     * {@code POST /api/v1/features}
+     *
+     * <h3>Request body</h3>
+     * JSON object with {@code entityId} (required), {@code name} (required),
+     * {@code value} (required double), and optional {@code version} and {@code metadata}.
+     *
+     * <h3>Response</h3>
+     * <ul>
+     *   <li>201 — feature ingested successfully</li>
+     *   <li>400 — missing or invalid fields</li>
+     *   <li>503 — feature store not available in this deployment</li>
+     * </ul>
+     *
+     * @doc.type method
+     * @doc.purpose Ingest a feature vector into the feature store (DC-11)
+     * @doc.layer product
+     * @doc.pattern Command
+     */
+    private Promise<HttpResponse> handleIngestFeature(HttpRequest request) {
+        if (featureStoreService == null) {
+            return Promise.of(errorResponse(503, "Feature store not available in this deployment"));
+        }
+        return request.loadBody()
+            .then(buf -> {
+                try {
+                    String bodyStr = buf.getString(StandardCharsets.UTF_8);
+                    @SuppressWarnings("unchecked")
+                    Map<String, Object> payload = objectMapper.readValue(bodyStr, Map.class);
+                    String tenantId = resolveTenantId(request);
+
+                    String entityId = (String) payload.get("entityId");
+                    String name = (String) payload.get("name");
+                    Object valueObj = payload.get("value");
+                    if (entityId == null || entityId.isBlank()) {
+                        return Promise.of(errorResponse(400, "Missing required field: entityId"));
+                    }
+                    if (name == null || name.isBlank()) {
+                        return Promise.of(errorResponse(400, "Missing required field: name"));
+                    }
+                    if (valueObj == null) {
+                        return Promise.of(errorResponse(400, "Missing required field: value"));
+                    }
+                    double value;
+                    try {
+                        value = ((Number) valueObj).doubleValue();
+                    } catch (ClassCastException e) {
+                        return Promise.of(errorResponse(400, "Field 'value' must be a number"));
+                    }
+
+                    Feature.Builder fb = Feature.builder()
+                            .entityId(entityId)
+                            .name(name)
+                            .value(value)
+                            .timestamp(java.time.Instant.now());
+
+                    if (payload.containsKey("version")) {
+                        fb.version((String) payload.get("version"));
+                    }
+                    @SuppressWarnings("unchecked")
+                    Map<String, String> meta = (Map<String, String>) payload.get("metadata");
+                    if (meta != null) {
+                        fb.metadata(meta);
+                    }
+
+                    Feature feature = fb.build();
+                    return Promise.ofBlocking(blockingExecutor, () -> {
+                        featureStoreService.ingest(tenantId, feature);
+                        return null;
+                    }).map(ignored -> {
+                        Map<String, Object> resp = new LinkedHashMap<>();
+                        resp.put("entityId", entityId);
+                        resp.put("name", name);
+                        resp.put("value", value);
+                        resp.put("status", "ingested");
+                        try {
+                            return HttpResponse.ofCode(201)
+                                    .withHeader(io.activej.http.HttpHeaders.CONTENT_TYPE, "application/json")
+                                    .withBody(ByteBuf.wrapForReading(objectMapper.writeValueAsBytes(resp)))
+                                    .build();
+                        } catch (Exception ex) {
+                            throw new RuntimeException(ex);
+                        }
+                    }).then(Promise::of, e -> {
+                        log.error("[DC-11] feature ingest failed entity={} name={}: {}", entityId, name, e.getMessage(), e);
+                        return Promise.of(errorResponse(500, "Feature ingest failed: " + e.getMessage()));
+                    });
+                } catch (Exception e) {
+                    return Promise.of(errorResponse(400, "Invalid request body: " + e.getMessage()));
+                }
+            })
+            .then(Promise::of, e -> Promise.of(errorResponse(400, "Failed to read request body: " + e.getMessage())));
+    }
+
+    /**
+     * Retrieves feature values for a given entity from the feature store.
+     *
+     * <h3>Route</h3>
+     * {@code GET /api/v1/features/:entityId}
+     *
+     * <h3>Query parameters</h3>
+     * <ul>
+     *   <li>{@code features} — comma-separated list of feature names to retrieve (required)</li>
+     * </ul>
+     *
+     * <h3>Response</h3>
+     * <ul>
+     *   <li>200 — JSON map of feature name → value</li>
+     *   <li>400 — missing {@code features} query parameter</li>
+     *   <li>503 — feature store not available in this deployment</li>
+     * </ul>
+     *
+     * @doc.type method
+     * @doc.purpose Retrieve feature vector for an entity (DC-11)
+     * @doc.layer product
+     * @doc.pattern Query
+     */
+    private Promise<HttpResponse> handleGetFeatures(HttpRequest request) {
+        if (featureStoreService == null) {
+            return Promise.of(errorResponse(503, "Feature store not available in this deployment"));
+        }
+        String tenantId = resolveTenantId(request);
+        String entityId = request.getPathParameter("entityId");
+        String featuresParam = request.getQueryParameter("features");
+        if (featuresParam == null || featuresParam.isBlank()) {
+            return Promise.of(errorResponse(400, "Query parameter 'features' is required (comma-separated feature names)"));
+        }
+        List<String> featureNames = Arrays.asList(featuresParam.split(","));
+
+        return Promise.ofBlocking(blockingExecutor, () ->
+                featureStoreService.getFeatures(tenantId, entityId, featureNames))
+            .map(features -> {
+                Map<String, Object> response = new LinkedHashMap<>();
+                response.put("entityId", entityId);
+                response.put("features", features);
+                response.put("count", features.size());
+                return jsonResponse(response);
+            })
+            .then(Promise::of, e -> {
+                log.error("[DC-11] feature retrieval failed entity={}: {}", entityId, e.getMessage(), e);
+                return Promise.of(errorResponse(500, "Feature retrieval failed: " + e.getMessage()));
+            });
+    }
+
+    /**
+     * Converts a {@link ModelMetadata} value object to a plain JSON-serializable map.
+     *
+     * @param model the model metadata
+     * @return map representation suitable for JSON serialization
+     */
+    private Map<String, Object> modelMetadataToMap(ModelMetadata model) {
+        Map<String, Object> map = new LinkedHashMap<>();
+        map.put("id",               model.getId().toString());
+        map.put("tenantId",         model.getTenantId());
+        map.put("name",             model.getName());
+        map.put("version",          model.getVersion());
+        map.put("framework",        model.getFramework());
+        map.put("deploymentStatus", model.getDeploymentStatus().name());
+        map.put("trainingMetrics",  model.getTrainingMetrics());
+        map.put("createdAt",        model.getCreatedAt().toString());
+        map.put("updatedAt",        model.getUpdatedAt().toString());
+        model.getDeployedAt().ifPresent(t -> map.put("deployedAt", t.toString()));
+        return map;
     }
 
     // ==================== SSE Endpoints (DC-3) ====================

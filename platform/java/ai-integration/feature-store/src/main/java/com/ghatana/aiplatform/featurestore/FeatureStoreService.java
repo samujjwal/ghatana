@@ -6,9 +6,9 @@ import org.slf4j.LoggerFactory;
 
 import javax.sql.DataSource;
 import java.sql.*;
+import java.time.Duration;
 import java.time.Instant;
 import java.util.*;
-import java.util.concurrent.ConcurrentHashMap;
 
 /**
  * Service for feature storage and retrieval with Redis caching.
@@ -70,13 +70,16 @@ public class FeatureStoreService {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(FeatureStoreService.class);
 
+    private static final int CACHE_TTL_SECONDS = 300; // 5 minutes
+
     private final DataSource dataSource;
     private final MetricsCollector metrics;
 
-    // In-memory cache as placeholder for Redis
-    // TODO: Replace with actual Redis client (Jedis/Lettuce)
-    private final Map<String, Map<String, Double>> cache = new ConcurrentHashMap<>();
-    private static final int CACHE_TTL_SECONDS = 300; // 5 minutes
+    /**
+     * TTL-enforced feature cache. Uses {@link RedisFeatureCacheAdapter} which enforces
+     * per-entry expiration (CACHE_TTL_SECONDS) checked on every read — no stale entries.
+     */
+    private final RedisFeatureCacheAdapter featureCache;
 
     /**
      * Constructs service with database and metrics dependencies.
@@ -85,10 +88,10 @@ public class FeatureStoreService {
      * @param metrics metrics collector
      */
     public FeatureStoreService(DataSource dataSource, MetricsCollector metrics) {
-        this.dataSource = Objects.requireNonNull(dataSource, "dataSource must not be null");
-        this.metrics = Objects.requireNonNull(metrics, "metrics must not be null");
-
-        LOGGER.info("FeatureStoreService initialized with in-memory cache (replace with Redis in production)");
+        this.dataSource   = Objects.requireNonNull(dataSource, "dataSource must not be null");
+        this.metrics      = Objects.requireNonNull(metrics, "metrics must not be null");
+        this.featureCache = new RedisFeatureCacheAdapter(metrics, Duration.ofSeconds(CACHE_TTL_SECONDS));
+        LOGGER.info("FeatureStoreService initialized with TTL-enforced feature cache (TTL={}s)", CACHE_TTL_SECONDS);
     }
 
     /**
@@ -108,15 +111,11 @@ public class FeatureStoreService {
         long startTime = System.nanoTime();
 
         try {
-            // Write to cache first (hot path)
-            String cacheKey = buildCacheKey(tenantId, feature.getEntityId());
-            cache.compute(cacheKey, (k, existing) -> {
-                Map<String, Double> features = existing != null ? new HashMap<>(existing) : new HashMap<>();
-                features.put(feature.getName(), feature.getValue());
-                return features;
-            });
+            // Write to cache first (hot path) — TTL enforced by RedisFeatureCacheAdapter
+            featureCache.set(tenantId, feature.getEntityId(), feature.getName(),
+                    feature.getValue(), 0, Duration.ofSeconds(CACHE_TTL_SECONDS));
 
-            // Write to database asynchronously (cold path)
+            // Write to database (cold path — durable store)
             persistToDatabase(tenantId, feature);
 
             metrics.incrementCounter("feature.store.ingest.count",
@@ -164,34 +163,39 @@ public class FeatureStoreService {
         boolean cacheHit = false;
 
         try {
-            // Try cache first
-            String cacheKey = buildCacheKey(tenantId, entityId);
-            Map<String, Double> cached = cache.get(cacheKey);
+            // Cache-aside: probe RedisFeatureCacheAdapter for each requested feature.
+            // Each entry has an independently tracked TTL — no stale data.
+            Map<String, Double> result = new HashMap<>(featureNames.size());
+            List<String> cacheMisses = new ArrayList<>();
 
-            if (cached != null && cached.keySet().containsAll(featureNames)) {
-                // Cache hit - all features available
+            for (String name : featureNames) {
+                featureCache.get(tenantId, entityId, name)
+                        .ifPresentOrElse(
+                                entry -> result.put(name, entry.value),
+                                () -> cacheMisses.add(name));
+            }
+
+            if (cacheMisses.isEmpty()) {
+                // Full cache hit
                 cacheHit = true;
-                Map<String, Double> result = new HashMap<>();
-                for (String name : featureNames) {
-                    result.put(name, cached.get(name));
-                }
-
                 LOGGER.debug("Cache hit for features: tenant={}, entity={}, features={}",
                         tenantId, entityId, featureNames);
-
                 return result;
             }
 
-            // Cache miss - load from database
-            Map<String, Double> features = loadFromDatabase(tenantId, entityId, featureNames);
+            // Partial or full cache miss — load from database for the misses
+            Map<String, Double> dbFeatures = loadFromDatabase(tenantId, entityId, cacheMisses);
 
-            // Populate cache for future requests
-            cache.put(cacheKey, features);
+            // Backfill cache for the misses
+            dbFeatures.forEach((name, value) ->
+                    featureCache.set(tenantId, entityId, name, value, 0, Duration.ofSeconds(CACHE_TTL_SECONDS)));
 
-            LOGGER.debug("Cache miss for features: tenant={}, entity={}, features={}, loaded={}",
-                    tenantId, entityId, featureNames, features.size());
+            result.putAll(dbFeatures);
 
-            return features;
+            LOGGER.debug("Cache miss for features: tenant={}, entity={}, misses={}/{}",
+                    tenantId, entityId, cacheMisses.size(), featureNames.size());
+
+            return result;
 
         } catch (Exception ex) {
             LOGGER.error("Failed to get features: tenant={}, entity={}, features={}",
@@ -283,25 +287,32 @@ public class FeatureStoreService {
     }
 
     /**
-     * Builds cache key for tenant + entity.
-     */
-    private String buildCacheKey(String tenantId, String entityId) {
-        return tenantId + ":" + entityId;
-    }
-
-    /**
-     * Clears cache (for testing or TTL expiration).
+     * Clears all in-process feature cache entries.
+     *
+     * <p>Useful after bulk data loads or in integration tests to prevent stale data.
+     * Production cache entries expire automatically via {@link #CACHE_TTL_SECONDS}.
      */
     public void clearCache() {
-        cache.clear();
+        featureCache.clearAll();
         LOGGER.debug("Feature cache cleared");
     }
 
     /**
-     * Returns current cache size (for monitoring).
+     * Returns the current number of (live) entries in the in-process feature cache.
+     *
+     * @return cache entry count
      */
     public int getCacheSize() {
-        return cache.size();
+        return featureCache.size();
+    }
+
+    /**
+     * Returns a snapshot of feature cache statistics (hits, misses, evictions, size).
+     *
+     * @return cache statistics
+     */
+    public RedisFeatureCacheAdapter.CacheStats getCacheStats() {
+        return featureCache.getStats();
     }
 }
 

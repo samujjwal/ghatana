@@ -75,11 +75,11 @@ class ReportServiceTest extends EventloopTestBase {
         }
 
         @Test
-        @DisplayName("Should throw NullPointerException when exportService is null")
-        void shouldRejectNullExportService() {
-            assertThatNullPointerException()
-                    .isThrownBy(() -> new ReportService(analyticsEngine, null))
-                    .withMessageContaining("exportService");
+        @DisplayName("Should accept null exportService (standalone mode without export)")
+        void shouldAcceptNullExportService() {
+            // null is intentionally allowed — ENTITY_EXPORT reports will return an error at runtime
+            assertThatCode(() -> new ReportService(analyticsEngine, null))
+                    .doesNotThrowAnyException();
         }
     }
 
@@ -183,11 +183,11 @@ class ReportServiceTest extends EventloopTestBase {
         @Test
         @DisplayName("Should include reportId in listCachedReports() after generation")
         void shouldListCachedReportAfterGeneration() {
-            ReportDefinition def = queryDef("SELECT 1", ReportFormat.JSON);
-            def = ReportDefinition.builder().name("my-report").type(ReportType.QUERY)
+            ReportDefinition namedDef = ReportDefinition.builder()
+                    .name("my-report").type(ReportType.QUERY)
                     .format(ReportFormat.JSON).query("SELECT 1").build();
 
-            ReportResult result = runPromise(() -> reportService.generate(TENANT, def));
+            ReportResult result = runPromise(() -> reportService.generate(TENANT, namedDef));
 
             Map<String, String> listing = reportService.listCachedReports();
             assertThat(listing).containsKey(result.getReportId());

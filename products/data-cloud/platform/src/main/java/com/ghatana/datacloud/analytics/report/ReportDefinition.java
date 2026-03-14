@@ -145,17 +145,26 @@ public final class ReportDefinition {
     public static ReportDefinition fromMap(Map<String, Object> payload) {
         Objects.requireNonNull(payload, "payload must not be null");
 
-        String rawType   = (String) payload.get("type");
+        String name = (String) payload.get("name");
+        if (name == null || name.isBlank()) {
+            throw new IllegalArgumentException("Missing required field: 'name'");
+        }
+
+        String rawType = (String) payload.get("type");
+        if (rawType == null || rawType.isBlank()) {
+            throw new IllegalArgumentException("Missing required field: 'type'");
+        }
+
         String rawFormat = (String) payload.get("format");
 
-        ReportType   type   = rawType   != null ? ReportType.valueOf(rawType.toUpperCase())   : null;
+        ReportType   type   = ReportType.valueOf(rawType.toUpperCase());
         ReportFormat format = rawFormat != null ? ReportFormat.valueOf(rawFormat.toUpperCase()) : ReportFormat.JSON;
 
         Object rawLimit = payload.get("limit");
         int limit = rawLimit instanceof Number num ? num.intValue() : DEFAULT_LIMIT;
 
         return builder()
-            .name((String) payload.get("name"))
+            .name(name)
             .type(type)
             .format(format)
             .query((String) payload.get("query"))
