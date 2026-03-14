@@ -97,7 +97,7 @@ public final class PostgresCurrencyRegistry implements CurrencyRegistry {
     }
 
     @Override
-    public Promise<Void> register(Currency currency) {
+    public Promise<Currency> register(Currency currency) {
         return Promise.ofBlocking(executor, () -> {
             try (Connection conn = dataSource.getConnection();
                  PreparedStatement ps = conn.prepareStatement(UPSERT)) {
@@ -108,7 +108,7 @@ public final class PostgresCurrencyRegistry implements CurrencyRegistry {
                 ps.setString(5, currency.roundingMode().name());
                 ps.executeUpdate();
             }
-            return null;
+            return currency;
         });
     }
 

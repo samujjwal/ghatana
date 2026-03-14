@@ -6,12 +6,10 @@ package com.ghatana.appplatform.ledger.adapter;
 
 import com.ghatana.appplatform.ledger.domain.Account;
 import com.ghatana.appplatform.ledger.domain.AccountType;
-import com.ghatana.appplatform.ledger.domain.Currency;
 import com.ghatana.appplatform.ledger.port.AccountStore;
 import io.activej.promise.Promise;
 
 import javax.sql.DataSource;
-import java.math.RoundingMode;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
@@ -96,10 +94,10 @@ public final class PostgresAccountStore implements AccountStore {
                 ps.setString(2, account.code());
                 ps.setString(3, account.name());
                 ps.setString(4, account.type().name());
-                ps.setObject(5, account.parentId().orElse(null));
-                ps.setString(6, account.currency().code());
+                ps.setObject(5, account.parentId());
+                ps.setString(6, account.currency());
                 ps.setString(7, account.status().name());
-                ps.setString(8, account.jurisdiction().orElse(null));
+                ps.setString(8, account.jurisdiction());
                 ps.setObject(9, account.tenantId());
                 ps.setTimestamp(10, Timestamp.from(account.createdAt()));
                 ps.executeUpdate();
@@ -178,14 +176,6 @@ public final class PostgresAccountStore implements AccountStore {
     // ─────────────────────────────────────────────────────────────────────────
 
     private static Account mapRow(ResultSet rs) throws SQLException {
-        Currency currency = new Currency(
-                rs.getString("currency_code"),
-                rs.getString("cur_name"),
-                rs.getString("cur_symbol"),
-                rs.getInt("decimal_places"),
-                RoundingMode.valueOf(rs.getString("rounding_mode"))
-        );
-
         UUID parentId = (UUID) rs.getObject("parent_id");
         String jurisdiction = rs.getString("jurisdiction");
         Instant createdAt = rs.getTimestamp("created_at").toInstant();
@@ -195,10 +185,10 @@ public final class PostgresAccountStore implements AccountStore {
                 rs.getString("code"),
                 rs.getString("name"),
                 AccountType.valueOf(rs.getString("account_type")),
-                Optional.ofNullable(parentId),
-                currency,
+                parentId,
+                rs.getString("currency_code"),
                 Account.AccountStatus.valueOf(rs.getString("status")),
-                Optional.ofNullable(jurisdiction),
+                jurisdiction,
                 (UUID) rs.getObject("tenant_id"),
                 createdAt
         );

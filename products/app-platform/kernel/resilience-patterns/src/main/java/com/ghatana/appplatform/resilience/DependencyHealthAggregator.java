@@ -69,10 +69,9 @@ public final class DependencyHealthAggregator {
             HealthCheck p = entry.getValue();
             promises.add(
                 p.check()
-                 .mapException(e -> new RuntimeException(name + " check failed: " + e.getMessage(), e))
-                 .map(r -> new NamedResult(name, r))
-                 .mapException(e -> new NamedResult(name, new CheckResult(
-                     Status.CRITICAL, e.getMessage(), Instant.now())))
+                 .then(r -> Promise.of(new NamedResult(name, r)),
+                       e -> Promise.of(new NamedResult(name, new CheckResult(
+                           Status.CRITICAL, e.getMessage(), Instant.now()))))
             );
         }
 

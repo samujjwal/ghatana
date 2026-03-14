@@ -59,7 +59,6 @@ public final class KafkaEventOutboxRelay {
      * @param maxAttempts relay attempts before DLQ routing (default: 5)
      */
     public KafkaEventOutboxRelay(
-    public KafkaEventOutboxRelay(
             AggregateEventStore eventStore,
             KafkaEventPublisher publisher,
             KafkaEventPublisher dlqPublisher,

@@ -298,7 +298,7 @@ public final class PostgresLedgerStore implements LedgerStore {
             ps.setString(5, journal.postedAtBs());
             ps.setTimestamp(6, Timestamp.from(journal.postedAtUtc()));
             ps.setObject(7, journal.tenantId());
-            ps.setString(8, journal.createdBy());
+            ps.setObject(8, journal.createdBy());
             ps.executeUpdate();
         }
     }

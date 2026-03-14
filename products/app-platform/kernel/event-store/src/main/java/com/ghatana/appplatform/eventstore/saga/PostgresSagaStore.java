@@ -220,4 +220,28 @@ public class PostgresSagaStore implements SagaStore {
         sb.append("]");
         return sb.toString();
     }
+
+    // ── STORY-K05-019: Timeout finder ─────────────────────────────────────────
+
+    @Override
+    public List<SagaInstance> findTimedOutInstances(Instant cutoff) {
+        String sql = """
+            SELECT saga_id, saga_type, saga_version, tenant_id, correlation_id,
+                   saga_state, current_step, retry_count, last_error, started_at, updated_at
+              FROM saga_instances
+             WHERE saga_state = 'STEP_PENDING'
+               AND updated_at < ?
+            """;
+        try (Connection conn = dataSource.getConnection();
+             PreparedStatement ps = conn.prepareStatement(sql)) {
+            ps.setTimestamp(1, Timestamp.from(cutoff));
+            List<SagaInstance> results = new ArrayList<>();
+            try (ResultSet rs = ps.executeQuery()) {
+                while (rs.next()) results.add(mapInstance(rs));
+            }
+            return results;
+        } catch (SQLException e) {
+            throw new RuntimeException("Failed to query timed-out saga instances", e);
+        }
+    }
 }

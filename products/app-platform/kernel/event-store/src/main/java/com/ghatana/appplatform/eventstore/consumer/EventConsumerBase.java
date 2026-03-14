@@ -70,7 +70,7 @@ public abstract class EventConsumerBase {
         config.put("value.deserializer", "org.apache.kafka.common.serialization.StringDeserializer");
 
         this.consumer = new KafkaConsumer<>(config);
-        this.executor = Executors.newSingleThreadExecutor(r -> {
+        this.executor = Executors.newSingleThreadScheduledExecutor(r -> {
             Thread t = new Thread(r, "event-consumer-" + groupId);
             t.setDaemon(true);
             return t;

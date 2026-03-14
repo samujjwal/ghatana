@@ -85,6 +85,8 @@ dependencies {
     testImplementation(project(":platform:java:testing"))
     testImplementation(libs.junit.jupiter)
     testImplementation(libs.assertj.core)
+    testImplementation(libs.mockito.core)
+    testImplementation(libs.mockito.junit.jupiter)
     testImplementation(libs.testcontainers.junit.jupiter)
     testImplementation(libs.testcontainers.postgresql)
     testRuntimeOnly(libs.postgresql)

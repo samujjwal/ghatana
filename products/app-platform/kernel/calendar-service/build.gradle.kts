@@ -36,6 +36,7 @@ dependencies {
     // -------------------------------------------------------------------------
     api(libs.activej.promise)
     implementation(libs.activej.eventloop)
+    implementation(libs.activej.http)
     implementation(libs.activej.inject)
 
     // -------------------------------------------------------------------------

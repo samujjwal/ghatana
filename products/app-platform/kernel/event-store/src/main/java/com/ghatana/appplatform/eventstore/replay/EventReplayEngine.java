@@ -1,13 +1,15 @@
 package com.ghatana.appplatform.eventstore.replay;
 
+import com.fasterxml.jackson.core.type.TypeReference;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.ghatana.appplatform.eventstore.domain.AggregateEventRecord;
-import com.ghatana.appplatform.eventstore.port.AggregateEventStore;
 
 import javax.sql.DataSource;
 import java.sql.*;
 import java.time.Instant;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 import java.util.UUID;
 import java.util.function.Consumer;
 import java.util.logging.Level;
@@ -31,6 +33,10 @@ public class EventReplayEngine {
 
     private static final Logger LOG = Logger.getLogger(EventReplayEngine.class.getName());
     private static final int BATCH_SIZE = 500;
+
+    private static final TypeReference<Map<String, Object>> MAP_TYPE =
+        new TypeReference<>() {};
+    private static final ObjectMapper OBJECT_MAPPER = new ObjectMapper();
 
     private final DataSource dataSource;
 
@@ -67,7 +73,7 @@ public class EventReplayEngine {
                 try {
                     handler.accept(record);
                     replayed++;
-                    lastEventAt = record.createdAt();
+                    lastEventAt = record.createdAtUtc();
                     lastSequence = record.sequenceNumber() + 1;
                 } catch (Exception e) {
                     failed++;
@@ -158,14 +164,25 @@ public class EventReplayEngine {
 
     private AggregateEventRecord mapRecord(ResultSet rs) throws SQLException {
         return AggregateEventRecord.builder()
-            .eventId(rs.getString("event_id"))
-            .aggregateId(rs.getString("aggregate_id"))
+            .eventId(UUID.fromString(rs.getString("event_id")))
+            .aggregateId(UUID.fromString(rs.getString("aggregate_id")))
             .aggregateType(rs.getString("aggregate_type"))
             .eventType(rs.getString("event_type"))
-            .tenantId(rs.getString("tenant_id"))
             .sequenceNumber(rs.getLong("sequence_number"))
-            .payload(rs.getString("payload"))
-            .metadata(rs.getString("metadata"))
+            .data(parseJson(rs.getString("data")))
+            .metadata(parseJson(rs.getString("metadata")))
+            .createdAtUtc(rs.getTimestamp("created_at_utc").toInstant())
+            .createdAtBs(rs.getString("created_at_bs"))
             .build();
+    }
+
+    private Map<String, Object> parseJson(String json) {
+        if (json == null || json.isBlank()) return Map.of();
+        try {
+            return OBJECT_MAPPER.readValue(json, MAP_TYPE);
+        } catch (Exception e) {
+            LOG.warning("[EventReplayEngine] Failed to parse JSON field: " + e.getMessage());
+            return Map.of();
+        }
     }
 }

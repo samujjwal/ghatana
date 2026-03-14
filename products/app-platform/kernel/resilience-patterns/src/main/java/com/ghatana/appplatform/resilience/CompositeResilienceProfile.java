@@ -96,7 +96,7 @@ public final class CompositeResilienceProfile {
                 .build();
 
         // ── BACKGROUND_JOB ──
-        this.backgroundCb = CircuitBreakerProfiles.lenient("profile.background" + suffix);
+        this.backgroundCb = CircuitBreakerProfiles.relaxed("profile.background" + suffix);
         this.backgroundBulkhead = Bulkhead.of("profile.background" + suffix, 10);
         this.backgroundRetry = RetryPolicy.builder()
                 .maxRetries(5)

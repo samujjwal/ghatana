@@ -5,7 +5,7 @@
 package com.ghatana.appplatform.resilience;
 
 import com.ghatana.platform.resilience.CircuitBreaker;
-import com.ghatana.platform.testing.EventloopTestBase;
+import com.ghatana.platform.testing.activej.EventloopTestBase;
 import io.activej.promise.Promise;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -36,7 +36,7 @@ class KernelResilienceFactoryTest extends EventloopTestBase {
     @DisplayName("ledgerTransact — CLOSED circuit returns operation result")
     void ledgerTransact_closed_returnsResult() {
         String result = runPromise(() ->
-                factory.ledgerTransact(eventloop, () -> Promise.of("journal-posted")));
+                factory.ledgerTransact(eventloop(), () -> Promise.of("journal-posted")));
         assertThat(result).isEqualTo("journal-posted");
     }
 
@@ -44,7 +44,7 @@ class KernelResilienceFactoryTest extends EventloopTestBase {
     @DisplayName("iamOperation — CLOSED circuit returns operation result")
     void iamOperation_closed_returnsResult() {
         String result = runPromise(() ->
-                factory.iamOperation(eventloop, () -> Promise.of("token-issued")));
+                factory.iamOperation(eventloop(), () -> Promise.of("token-issued")));
         assertThat(result).isEqualTo("token-issued");
     }
 
@@ -52,7 +52,7 @@ class KernelResilienceFactoryTest extends EventloopTestBase {
     @DisplayName("calendarQuery — CLOSED circuit returns operation result")
     void calendarQuery_closed_returnsResult() {
         Integer days = runPromise(() ->
-                factory.calendarQuery(eventloop, () -> Promise.of(5)));
+                factory.calendarQuery(eventloop(), () -> Promise.of(5)));
         assertThat(days).isEqualTo(5);
     }
 
@@ -60,7 +60,7 @@ class KernelResilienceFactoryTest extends EventloopTestBase {
     @DisplayName("secretAccess — CLOSED circuit returns secret value")
     void secretAccess_closed_returnsResult() {
         String secret = runPromise(() ->
-                factory.secretAccess(eventloop, () -> Promise.of("secret-value")));
+                factory.secretAccess(eventloop(), () -> Promise.of("secret-value")));
         assertThat(secret).isEqualTo("secret-value");
     }
 
@@ -99,13 +99,13 @@ class KernelResilienceFactoryTest extends EventloopTestBase {
         // Exhaust STANDARD threshold (5 failures)
         for (int i = 0; i < 6; i++) {
             try {
-                runPromise(() -> localFactory.calendarQuery(eventloop, () -> Promise.ofException(boom)));
+                runPromise(() -> localFactory.calendarQuery(eventloop(), () -> Promise.ofException(boom)));
             } catch (Exception ignored) { /* expected */ }
         }
 
         // Now with fallback — should return fallback value instead of exception
         Integer result = runPromise(() ->
-                localFactory.calendarQuery(eventloop, () -> Promise.ofException(boom), () -> -1));
+                localFactory.calendarQuery(eventloop(), () -> Promise.ofException(boom), () -> -1));
         assertThat(result).isEqualTo(-1);
     }
 
@@ -117,7 +117,7 @@ class KernelResilienceFactoryTest extends EventloopTestBase {
         // Use a shared counter to simulate one transient failure then success
         int[] attempts = {0};
         String result = runPromise(() ->
-                factory.ledgerTransact(eventloop, () -> {
+                factory.ledgerTransact(eventloop(), () -> {
                     attempts[0]++;
                     if (attempts[0] == 1) {
                         return Promise.ofException(new RuntimeException("transient-db-error"));

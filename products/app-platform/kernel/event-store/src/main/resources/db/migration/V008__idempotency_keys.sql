@@ -1,4 +1,4 @@
--- V006: Idempotency keys table — PostgreSQL fallback dedup store (STORY-K05-015)
+-- V008: Idempotency keys table — PostgreSQL fallback dedup store (STORY-K05-015)
 --
 -- Used when Redis is unavailable. Each (idempotency_key, tenant_id) pair is stored
 -- with the response payload hash and a TTL timestamp so expired keys can be cleaned up.
