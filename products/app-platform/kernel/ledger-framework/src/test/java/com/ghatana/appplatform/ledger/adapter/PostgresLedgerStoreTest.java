@@ -79,6 +79,22 @@ class PostgresLedgerStoreTest extends EventloopTestBase {
         var executor = Executors.newFixedThreadPool(4);
         store = new PostgresLedgerStore(dataSource, executor);
         currencyRegistry = new PostgresCurrencyRegistry(dataSource, executor);
+
+        // Insert test accounts required by FK constraint on ledger_journal_entry
+        try (Connection conn = dataSource.getConnection()) {
+            conn.createStatement().execute("""
+                INSERT INTO chart_of_accounts
+                    (account_id, code, name, account_type, currency, tenant_id)
+                VALUES
+                    ('aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa', 'TEST-ASSET', 'Test Assets Account',
+                     'ASSET'::account_type, 'NPR', 'cccccccc-cccc-cccc-cccc-cccccccccccc'),
+                    ('bbbbbbbb-bbbb-bbbb-bbbb-bbbbbbbbbbbb', 'TEST-INCOME', 'Test Income Account',
+                     'REVENUE'::account_type, 'NPR', 'cccccccc-cccc-cccc-cccc-cccccccccccc')
+                ON CONFLICT (account_id) DO NOTHING
+            """);
+        } catch (Exception e) {
+            throw new RuntimeException("Failed to insert test accounts", e);
+        }
     }
 
     @AfterAll

@@ -282,6 +282,38 @@ public final class KernelResilienceFactory {
         return calendarBreaker.getState();
     }
 
+    // ─── Bulkhead utilization (K18-011 monitoring) ────────────────────────────
+
+    /**
+     * Returns the fraction of ledger bulkhead slots in use (0.0 = empty, 1.0 = saturated).
+     *
+     * @return utilization ratio between 0.0 and 1.0
+     */
+    public double ledgerBulkheadUtilization() {
+        int used = ledgerBulkhead.getMaxConcurrency() - ledgerBulkhead.availablePermits();
+        return (double) used / ledgerBulkhead.getMaxConcurrency();
+    }
+
+    /**
+     * Returns the fraction of IAM bulkhead slots in use (0.0 = empty, 1.0 = saturated).
+     *
+     * @return utilization ratio between 0.0 and 1.0
+     */
+    public double iamBulkheadUtilization() {
+        int used = iamBulkhead.getMaxConcurrency() - iamBulkhead.availablePermits();
+        return (double) used / iamBulkhead.getMaxConcurrency();
+    }
+
+    /**
+     * Returns the fraction of calendar bulkhead slots in use (0.0 = empty, 1.0 = saturated).
+     *
+     * @return utilization ratio between 0.0 and 1.0
+     */
+    public double calendarBulkheadUtilization() {
+        int used = calendarBulkhead.getMaxConcurrency() - calendarBulkhead.availablePermits();
+        return (double) used / calendarBulkhead.getMaxConcurrency();
+    }
+
     // ─── Builder (K18-003 profile customization) ──────────────────────────────
 
     /**

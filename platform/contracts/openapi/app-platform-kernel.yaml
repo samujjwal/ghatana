@@ -1,0 +1,766 @@
+openapi: "3.1.0"
+info:
+  title: AppPlatform Kernel API
+  description: |
+    REST API contracts for the AppPlatform (Siddhanta) kernel services.
+
+    Covered kernel modules:
+    - K-03 Policy/Rules Engine
+    - K-04 Plugin Runtime
+    - K-15 Calendar Service
+    - K-01 IAM (token endpoint surface)
+    - K-11 API Gateway health
+
+    These stubs are the contract-first authority for TC-P0-019 to TC-P0-024.
+  version: "1.0.0"
+  contact:
+    name: AppPlatform Platform Team
+    email: platform@ghatana.com
+
+servers:
+  - url: "http://localhost:8080"
+    description: Local development
+  - url: "https://api.siddhanta.ghatana.com"
+    description: Production
+
+tags:
+  - name: rules
+    description: K-03 Policy / Rules Engine
+  - name: plugins
+    description: K-04 Plugin Runtime
+  - name: calendar
+    description: K-15 Calendar Service
+  - name: auth
+    description: K-01 IAM Authentication
+  - name: health
+    description: Health and readiness probes
+
+# ---------------------------------------------------------------------------
+# Reusable schemas
+# ---------------------------------------------------------------------------
+components:
+  securitySchemes:
+    BearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+
+  schemas:
+    ErrorResponse:
+      type: object
+      required: [error, message, code]
+      properties:
+        error:
+          type: string
+          example: RULE_E001
+        message:
+          type: string
+          example: Invalid policy input
+        code:
+          type: string
+          example: RULE_E001
+
+    CalendarDate:
+      type: object
+      description: Dual-calendar date with Bikram Sambat (BS) and Gregorian representations
+      required: [bs, gregorian]
+      properties:
+        bs:
+          type: string
+          pattern: "^\\d{4}-\\d{2}-\\d{2}$"
+          example: "2081-11-17"
+        gregorian:
+          type: string
+          format: date-time
+          example: "2025-03-02T00:00:00Z"
+
+    # ── K-03 Rules Engine ───────────────────────────────────────────────────
+    PolicyDecision:
+      type: object
+      required: [allow, deny, warnings, policyVersion, evaluationTimeMs]
+      properties:
+        allow:
+          type: boolean
+        deny:
+          type: array
+          items:
+            type: string
+        warnings:
+          type: array
+          items:
+            type: string
+        metadata:
+          type: object
+          additionalProperties: true
+        policyVersion:
+          type: string
+          example: "np_order_validation_v2.1.0"
+        evaluationTimeMs:
+          type: number
+          format: double
+          example: 3.2
+
+    EvaluateRuleRequest:
+      type: object
+      required: [policyId, input, tenantId]
+      properties:
+        policyId:
+          type: string
+          example: "order_validation"
+        input:
+          type: object
+          additionalProperties: true
+        tenantId:
+          type: string
+          example: "tenant_np_1"
+        jurisdiction:
+          type: string
+          example: "NP"
+        traceId:
+          type: string
+          example: "abc-123"
+
+    EvaluateRuleResponse:
+      type: object
+      required: [decision, policyVersion, evaluationTimeMs, traceId]
+      properties:
+        decision:
+          $ref: "#/components/schemas/PolicyDecision"
+        policyVersion:
+          type: string
+        evaluationTimeMs:
+          type: number
+          format: double
+        traceId:
+          type: string
+
+    RulePackRequest:
+      type: object
+      required:
+        [
+          packId,
+          jurisdiction,
+          policyId,
+          regoCode,
+          testCases,
+          makerId,
+          effectiveDate,
+        ]
+      properties:
+        packId:
+          type: string
+          example: "np_order_validation_v2.1.0"
+        jurisdiction:
+          type: string
+          example: "NP"
+        policyId:
+          type: string
+          example: "order_validation"
+        regoCode:
+          type: string
+          description: Rego DSL policy source code
+        testCases:
+          type: array
+          items:
+            type: object
+            additionalProperties: true
+        makerId:
+          type: string
+        effectiveDate:
+          $ref: "#/components/schemas/CalendarDate"
+
+    RulePackResponse:
+      type: object
+      required: [packId, status, testResults]
+      properties:
+        packId:
+          type: string
+        status:
+          type: string
+          enum: [PENDING_APPROVAL, APPROVED, ACTIVE, DEPRECATED]
+        testResults:
+          type: object
+          properties:
+            passed:
+              type: integer
+            failed:
+              type: integer
+
+    # ── K-04 Plugin Runtime ─────────────────────────────────────────────────
+    PluginTier:
+      type: string
+      enum: [T1, T2, T3]
+      description: |
+        T1: Validation hooks (in-process, no sandbox)
+        T2: Declarative / scripted plugins (OPA/Rego sandbox)
+        T3: Executable plugins (isolated process/container)
+
+    PluginManifest:
+      type: object
+      required: [name, sdkVersion, entryPoint]
+      properties:
+        name:
+          type: string
+        description:
+          type: string
+        author:
+          type: string
+        sdkVersion:
+          type: string
+          example: "1.0.0"
+        entryPoint:
+          type: string
+          example: "index.js"
+        dependencies:
+          type: object
+          additionalProperties:
+            type: string
+
+    RegisterPluginRequest:
+      type: object
+      required:
+        [pluginId, version, tier, capabilities, manifest, signature, publicKey]
+      properties:
+        pluginId:
+          type: string
+          example: "np_settlement_calculator"
+        version:
+          type: string
+          example: "1.2.0"
+        tier:
+          $ref: "#/components/schemas/PluginTier"
+        capabilities:
+          type: array
+          items:
+            type: string
+          example: ["SETTLEMENT_CALCULATION"]
+        manifest:
+          $ref: "#/components/schemas/PluginManifest"
+        signature:
+          type: string
+          description: Ed25519 signature of the artifact (hex-encoded)
+        publicKey:
+          type: string
+          description: Ed25519 public key (hex-encoded)
+        artifactUrl:
+          type: string
+          format: uri
+          description: Pre-uploaded artifact URL (object storage)
+        validFrom:
+          $ref: "#/components/schemas/CalendarDate"
+        validUntil:
+          $ref: "#/components/schemas/CalendarDate"
+
+    RegisterPluginResponse:
+      type: object
+      required: [pluginId, version, status, verificationStatus, registeredAt]
+      properties:
+        pluginId:
+          type: string
+        version:
+          type: string
+        status:
+          type: string
+          enum: [REGISTERED, ENABLED, DISABLED, DEPRECATED]
+        verificationStatus:
+          type: string
+          enum: [VERIFIED, VERIFICATION_FAILED]
+        registeredAt:
+          type: string
+          format: date-time
+
+    InvokePluginRequest:
+      type: object
+      required: [method, params]
+      properties:
+        method:
+          type: string
+          example: "calculate_settlement"
+        params:
+          type: object
+          additionalProperties: true
+        timeoutMs:
+          type: integer
+          default: 5000
+        traceId:
+          type: string
+
+    InvokePluginResponse:
+      type: object
+      required: [result, executionTimeMs, pluginVersion]
+      properties:
+        result:
+          type: object
+          additionalProperties: true
+        executionTimeMs:
+          type: number
+          format: double
+        pluginVersion:
+          type: string
+
+    PluginSummary:
+      type: object
+      required: [pluginId, version, tier, status, capabilities]
+      properties:
+        pluginId:
+          type: string
+        version:
+          type: string
+        tier:
+          $ref: "#/components/schemas/PluginTier"
+        status:
+          type: string
+          enum: [REGISTERED, ENABLED, DISABLED, DEPRECATED]
+        capabilities:
+          type: array
+          items:
+            type: string
+
+    # ── K-15 Calendar ───────────────────────────────────────────────────────
+    ConversionRequest:
+      type: object
+      required: [date]
+      properties:
+        date:
+          type: string
+          pattern: "^\\d{4}-\\d{2}-\\d{2}$"
+          example: "2081-11-17"
+
+    ConversionResult:
+      type: object
+      required: [bs, gregorian]
+      properties:
+        bs:
+          type: string
+          example: "2081-11-17"
+        gregorian:
+          type: string
+          format: date
+          example: "2025-03-02"
+
+    # ── K-01 IAM ────────────────────────────────────────────────────────────
+    TokenRequest:
+      type: object
+      required: [grantType, clientId, clientSecret]
+      properties:
+        grantType:
+          type: string
+          enum: [client_credentials, authorization_code, refresh_token]
+        clientId:
+          type: string
+        clientSecret:
+          type: string
+        code:
+          type: string
+          description: For authorization_code grant
+        codeVerifier:
+          type: string
+          description: PKCE code verifier for authorization_code grant
+        refreshToken:
+          type: string
+          description: For refresh_token grant
+
+    TokenResponse:
+      type: object
+      required: [accessToken, tokenType, expiresIn]
+      properties:
+        accessToken:
+          type: string
+        tokenType:
+          type: string
+          default: "Bearer"
+        expiresIn:
+          type: integer
+          example: 3600
+        refreshToken:
+          type: string
+        scope:
+          type: string
+
+    # ── Health ──────────────────────────────────────────────────────────────
+    HealthResponse:
+      type: object
+      required: [status, service, version]
+      properties:
+        status:
+          type: string
+          enum: [UP, DOWN, DEGRADED]
+        service:
+          type: string
+        version:
+          type: string
+        timestamp:
+          type: string
+          format: date-time
+
+# ---------------------------------------------------------------------------
+# Paths
+# ---------------------------------------------------------------------------
+paths:
+  # ── K-03 Rules Engine ─────────────────────────────────────────────────────
+  /api/v1/rules/evaluate:
+    post:
+      operationId: evaluatePolicy
+      summary: Evaluate a policy against an input document
+      description: |
+        Evaluates the named policy (identified by policyId + jurisdiction)
+        against the provided input document using the OPA/Rego engine.
+        All decisions are audited asynchronously to K-07.
+      tags: [rules]
+      security:
+        - BearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/EvaluateRuleRequest"
+      responses:
+        "200":
+          description: Policy evaluation result
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/EvaluateRuleResponse"
+        "400":
+          description: Invalid policy input or policy not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "503":
+          description: Rules engine unavailable (circuit breaker open — degraded mode)
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+  /api/v1/rules/packs:
+    post:
+      operationId: deployRulePack
+      summary: Submit a new rule pack for maker-checker approval
+      description: |
+        Submits a Rego rule pack for validation and maker-checker approval.
+        The pack is compiled and run against the provided test cases.
+        Status transitions: PENDING_APPROVAL → APPROVED → ACTIVE.
+      tags: [rules]
+      security:
+        - BearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/RulePackRequest"
+      responses:
+        "202":
+          description: Rule pack accepted for approval
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/RulePackResponse"
+        "400":
+          description: Rego syntax error or test failures
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+  /api/v1/rules/packs/{packId}/approve:
+    put:
+      operationId: approveRulePack
+      summary: Approve a pending rule pack (checker step)
+      tags: [rules]
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: packId
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Pack approved
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/RulePackResponse"
+        "400":
+          description: Checker cannot be same as maker
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "404":
+          description: Pack not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+  # ── K-04 Plugin Runtime ────────────────────────────────────────────────────
+  /api/v1/plugins:
+    get:
+      operationId: listPlugins
+      summary: List all registered plugins
+      tags: [plugins]
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: status
+          in: query
+          schema:
+            type: string
+            enum: [REGISTERED, ENABLED, DISABLED, DEPRECATED]
+        - name: tier
+          in: query
+          schema:
+            $ref: "#/components/schemas/PluginTier"
+      responses:
+        "200":
+          description: Plugin list
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/PluginSummary"
+
+  /api/v1/plugins/register:
+    post:
+      operationId: registerPlugin
+      summary: Register and verify a new plugin
+      description: |
+        Registers a plugin after verifying its Ed25519 signature and validating
+        SDK version compatibility. The artifact must be pre-uploaded to object
+        storage; provide its URL in `artifactUrl`.
+      tags: [plugins]
+      security:
+        - BearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/RegisterPluginRequest"
+      responses:
+        "201":
+          description: Plugin registered
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/RegisterPluginResponse"
+        "400":
+          description: Signature verification failed or SDK incompatible
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "409":
+          description: Plugin version conflict
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+  /api/v1/plugins/{pluginId}/invoke:
+    post:
+      operationId: invokePlugin
+      summary: Invoke a plugin method
+      tags: [plugins]
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: pluginId
+          in: path
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/InvokePluginRequest"
+      responses:
+        "200":
+          description: Plugin invocation result
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/InvokePluginResponse"
+        "404":
+          description: Plugin not found or not enabled
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "504":
+          description: Plugin execution timeout
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+  /api/v1/plugins/{pluginId}/enable:
+    put:
+      operationId: enablePlugin
+      summary: Enable a registered plugin
+      tags: [plugins]
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: pluginId
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Plugin enabled
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/PluginSummary"
+        "404":
+          description: Plugin not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+  /api/v1/plugins/{pluginId}/disable:
+    put:
+      operationId: disablePlugin
+      summary: Disable an active plugin
+      tags: [plugins]
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: pluginId
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Plugin disabled
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/PluginSummary"
+
+  # ── K-15 Calendar Service ──────────────────────────────────────────────────
+  /api/v1/calendar/bs-to-gregorian:
+    get:
+      operationId: bsToGregorian
+      summary: Convert a Bikram Sambat date to Gregorian
+      tags: [calendar]
+      parameters:
+        - name: date
+          in: query
+          required: true
+          schema:
+            type: string
+            pattern: "^\\d{4}-\\d{2}-\\d{2}$"
+          example: "2081-11-17"
+      responses:
+        "200":
+          description: Conversion result
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ConversionResult"
+        "400":
+          description: BS date out of supported range (2070–2100)
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+  /api/v1/calendar/gregorian-to-bs:
+    get:
+      operationId: gregorianToBs
+      summary: Convert a Gregorian date to Bikram Sambat
+      tags: [calendar]
+      parameters:
+        - name: date
+          in: query
+          required: true
+          schema:
+            type: string
+            format: date
+          example: "2025-03-02"
+      responses:
+        "200":
+          description: Conversion result
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ConversionResult"
+        "400":
+          description: Date out of supported range
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+  # ── K-01 IAM ─────────────────────────────────────────────────────────────
+  /auth/token:
+    post:
+      operationId: issueToken
+      summary: Issue an OAuth 2.0 access token
+      tags: [auth]
+      requestBody:
+        required: true
+        content:
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: "#/components/schemas/TokenRequest"
+      responses:
+        "200":
+          description: Access token issued
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/TokenResponse"
+        "401":
+          description: Invalid credentials
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+  # ── Health probes ─────────────────────────────────────────────────────────
+  /health:
+    get:
+      operationId: healthCheck
+      summary: Liveness probe
+      tags: [health]
+      responses:
+        "200":
+          description: Service is alive
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/HealthResponse"
+
+  /ready:
+    get:
+      operationId: readinessCheck
+      summary: Readiness probe — checks DB + Redis connectivity
+      tags: [health]
+      responses:
+        "200":
+          description: Service is ready to receive traffic
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/HealthResponse"
+        "503":
+          description: Dependencies not ready
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/HealthResponse"

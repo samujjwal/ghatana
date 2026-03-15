@@ -75,7 +75,7 @@ public final class PostgresLedgerStore implements LedgerStore {
 
     private static final String INSERT_ENTRY = """
             INSERT INTO ledger_journal_entry
-                (entry_id, journal_id, account_id, direction, amount, currency_code,
+                (entry_id, journal_id, account_id, direction, amount, currency,
                  description, entry_hash, sequence_num)
             VALUES (?, ?, ?, ?::journal_direction, ?, ?, ?, ?, ?)
             """;
@@ -89,13 +89,13 @@ public final class PostgresLedgerStore implements LedgerStore {
     private static final String SELECT_JOURNAL = """
             SELECT j.journal_id, j.reference, j.description, j.fiscal_year,
                    j.posted_at_bs, j.posted_at_utc, j.tenant_id, j.created_by,
-                   e.entry_id, e.account_id, e.direction, e.amount, e.currency_code,
+                   e.entry_id, e.account_id, e.direction, e.amount, e.currency AS currency_code,
                    cr.name AS cur_name, cr.symbol AS cur_symbol,
                    cr.decimal_places, cr.rounding_mode,
                    e.description AS entry_desc, e.entry_hash, e.sequence_num
               FROM ledger_journal j
               JOIN ledger_journal_entry e ON e.journal_id = j.journal_id
-              JOIN currency_registry cr ON cr.code = e.currency_code
+              JOIN currency_registry cr ON cr.code = e.currency
              WHERE j.journal_id = ?
              ORDER BY e.sequence_num
             """;
@@ -103,30 +103,30 @@ public final class PostgresLedgerStore implements LedgerStore {
     private static final String SELECT_BY_REFERENCE = """
             SELECT j.journal_id, j.reference, j.description, j.fiscal_year,
                    j.posted_at_bs, j.posted_at_utc, j.tenant_id, j.created_by,
-                   e.entry_id, e.account_id, e.direction, e.amount, e.currency_code,
+                   e.entry_id, e.account_id, e.direction, e.amount, e.currency AS currency_code,
                    cr.name AS cur_name, cr.symbol AS cur_symbol,
                    cr.decimal_places, cr.rounding_mode,
                    e.description AS entry_desc, e.entry_hash, e.sequence_num
               FROM ledger_journal j
               JOIN ledger_journal_entry e ON e.journal_id = j.journal_id
-              JOIN currency_registry cr ON cr.code = e.currency_code
+              JOIN currency_registry cr ON cr.code = e.currency
              WHERE j.reference = ? AND j.tenant_id = ?
              ORDER BY j.posted_at_utc, e.sequence_num
             """;
 
     private static final String SELECT_BALANCE = """
-            SELECT ab.net_balance,
+            SELECT ab.balance AS net_balance,
                    cr.code, cr.name AS cur_name, cr.symbol AS cur_symbol,
                    cr.decimal_places, cr.rounding_mode
               FROM account_balance ab
-              JOIN currency_registry cr ON cr.code = ab.currency_code
-             WHERE ab.account_id = ? AND ab.currency_code = ?
+              JOIN currency_registry cr ON cr.code = ab.currency
+             WHERE ab.account_id = ? AND ab.currency = ?
             """;
 
     private static final String SELECT_RECENT_JOURNALS = """
             SELECT j.journal_id, j.reference, j.description, j.fiscal_year,
                    j.posted_at_bs, j.posted_at_utc, j.tenant_id, j.created_by,
-                   e.entry_id, e.account_id, e.direction, e.amount, e.currency_code,
+                   e.entry_id, e.account_id, e.direction, e.amount, e.currency AS currency_code,
                    cr.name AS cur_name, cr.symbol AS cur_symbol,
                    cr.decimal_places, cr.rounding_mode,
                    e.description AS entry_desc, e.entry_hash, e.sequence_num
@@ -137,7 +137,7 @@ public final class PostgresLedgerStore implements LedgerStore {
                      LIMIT ?) recent
               JOIN ledger_journal j ON j.journal_id = recent.journal_id
               JOIN ledger_journal_entry e ON e.journal_id = j.journal_id
-              JOIN currency_registry cr ON cr.code = e.currency_code
+              JOIN currency_registry cr ON cr.code = e.currency
              ORDER BY recent.posted_at_utc DESC, e.sequence_num
             """;
 
@@ -150,9 +150,9 @@ public final class PostgresLedgerStore implements LedgerStore {
                    cr.decimal_places, cr.rounding_mode
               FROM ledger_journal_entry e
               JOIN ledger_journal j ON j.journal_id = e.journal_id
-              JOIN currency_registry cr ON cr.code = e.currency_code
+              JOIN currency_registry cr ON cr.code = e.currency
              WHERE e.account_id = ?
-               AND e.currency_code = ?
+               AND e.currency = ?
                AND j.posted_at_utc <= ?
              GROUP BY cr.code, cr.name, cr.symbol, cr.decimal_places, cr.rounding_mode
             """;

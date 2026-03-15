@@ -110,8 +110,8 @@ public final class RuleCacheService {
         return Promise.ofBlocking(executor, () -> {
             long deleted = 0L;
             try (var jedis = jedisPool.getResource()) {
-                var cursor = redis.clients.jedis.ScanParams.SCAN_POINTER_START;
-                var params = new redis.clients.jedis.ScanParams().match(KEY_PREFIX + "*").count(100);
+                var cursor = redis.clients.jedis.params.ScanParams.SCAN_POINTER_START;
+                var params = new redis.clients.jedis.params.ScanParams().match(KEY_PREFIX + "*").count(100);
                 do {
                     var result = jedis.scan(cursor, params);
                     cursor = result.getCursor();
@@ -119,7 +119,7 @@ public final class RuleCacheService {
                     if (!keys.isEmpty()) {
                         deleted += jedis.del(keys.toArray(new String[0]));
                     }
-                } while (!cursor.equals(redis.clients.jedis.ScanParams.SCAN_POINTER_START));
+                } while (!cursor.equals(redis.clients.jedis.params.ScanParams.SCAN_POINTER_START));
             }
             log.info("Invalidated {} cached rule entries", deleted);
             return deleted;

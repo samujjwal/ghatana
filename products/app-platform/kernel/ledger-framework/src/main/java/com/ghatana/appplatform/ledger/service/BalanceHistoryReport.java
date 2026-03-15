@@ -68,7 +68,7 @@ public final class BalanceHistoryReport {
     private static final String SQL_DAILY_MOVEMENTS = """
             SELECT
                 DATE(je.created_at_utc AT TIME ZONE 'UTC') AS bucket_date,
-                je.currency_code,
+                je.currency AS currency_code,
                 SUM(CASE WHEN je.direction = 'CREDIT' THEN je.amount
                          WHEN je.direction = 'DEBIT'  THEN -je.amount
                          ELSE 0 END)                         AS net_movement
@@ -78,7 +78,7 @@ public final class BalanceHistoryReport {
               AND  j.tenant_id   = ?
               AND  je.created_at_utc >= ?
               AND  je.created_at_utc <  ?
-            GROUP  BY bucket_date, je.currency_code
+            GROUP  BY bucket_date, je.currency
             ORDER  BY bucket_date
             """;
 
@@ -86,7 +86,7 @@ public final class BalanceHistoryReport {
     private static final String SQL_MONTHLY_MOVEMENTS = """
             SELECT
                 DATE_TRUNC('month', je.created_at_utc AT TIME ZONE 'UTC') AS bucket_date,
-                je.currency_code,
+                je.currency AS currency_code,
                 SUM(CASE WHEN je.direction = 'CREDIT' THEN je.amount
                          WHEN je.direction = 'DEBIT'  THEN -je.amount
                          ELSE 0 END) AS net_movement

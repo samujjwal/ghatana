@@ -9,7 +9,7 @@ CREATE TABLE ledger_balance_snapshots (
     snapshot_at   TIMESTAMPTZ  NOT NULL,
     tenant_id     UUID         NOT NULL,
     CONSTRAINT fk_lbs_account FOREIGN KEY (account_id)
-        REFERENCES ledger_account (account_id)
+        REFERENCES chart_of_accounts (account_id)
 );
 
 CREATE INDEX idx_lbs_account_currency

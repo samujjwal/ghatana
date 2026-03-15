@@ -36,6 +36,12 @@ dependencies {
     api(project(":platform:java:observability"))
 
     // -------------------------------------------------------------------------
+    // Kernel dependencies
+    // -------------------------------------------------------------------------
+    // event-store: DTC saga policies registered into K-05 saga registry (K17-007)
+    implementation(project(":products:app-platform:kernel:event-store"))
+
+    // -------------------------------------------------------------------------
     // ActiveJ async runtime
     // -------------------------------------------------------------------------
     api(libs.activej.promise)
