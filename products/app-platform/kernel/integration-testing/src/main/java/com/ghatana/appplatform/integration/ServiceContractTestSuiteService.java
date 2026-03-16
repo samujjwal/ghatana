@@ -1,5 +1,7 @@
 package com.ghatana.appplatform.integration;
 
+import com.ghatana.platform.audit.AuditBusPort;
+import com.ghatana.platform.audit.AuditEvent;
 import io.activej.promise.Promise;
 import io.micrometer.core.instrument.*;
 
@@ -36,10 +38,6 @@ public class ServiceContractTestSuiteService {
 
     public record ContractResult(boolean passed, List<String> violations, String consumer, String provider) {}
 
-    public interface AuditPort {
-        void audit(String event, String detail) throws Exception;
-    }
-
     // ── Contract definitions (consumer→provider pairs) ────────────────────────
 
     private static final String[][] CONTRACTS = {
@@ -54,7 +52,7 @@ public class ServiceContractTestSuiteService {
 
     private final javax.sql.DataSource ds;
     private final ContractVerificationPort contractPort;
-    private final AuditPort audit;
+    private final AuditBusPort audit;
     private final Executor executor;
     private final Counter suitesPassed;
     private final Counter suitesFailed;
@@ -63,7 +61,7 @@ public class ServiceContractTestSuiteService {
     public ServiceContractTestSuiteService(
         javax.sql.DataSource ds,
         ContractVerificationPort contractPort,
-        AuditPort audit,
+        AuditBusPort audit,
         MeterRegistry registry,
         Executor executor
     ) {
@@ -92,7 +90,7 @@ public class ServiceContractTestSuiteService {
             long passed = results.stream().filter(r -> r.passed).count();
             long failed = results.size() - passed;
             if (failed == 0) suitesPassed.increment(); else suitesFailed.increment();
-            audit.audit("SERVICE_CONTRACT_SUITE", "passed=" + passed + " failed=" + failed);
+            audit.emit(AuditEvent.builder().eventType("SERVICE_CONTRACT_SUITE").details(Map.of("detail", "passed=" + passed + " failed=" + failed)).build());
             return new SuiteResult("ServiceContract", results, passed, failed);
         });
     }

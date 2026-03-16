@@ -1,5 +1,7 @@
 package com.ghatana.appplatform.certification;
 
+import com.ghatana.platform.audit.AuditBusPort;
+import com.ghatana.platform.audit.AuditEvent;
 import io.activej.promise.Promise;
 import io.micrometer.core.instrument.*;
 
@@ -46,10 +48,6 @@ public class CertificationPolicyEngineService {
 
     // ── Inner port interfaces ─────────────────────────────────────────────────
 
-    public interface AuditPort {
-        void record(String actorId, String action, String detail) throws Exception;
-    }
-
     // ── Value types ───────────────────────────────────────────────────────────
 
     public record PolicyConstraints(
@@ -82,14 +80,14 @@ public class CertificationPolicyEngineService {
     // ── Fields ────────────────────────────────────────────────────────────────
 
     private final javax.sql.DataSource ds;
-    private final AuditPort audit;
+    private final AuditBusPort audit;
     private final Executor executor;
     private final Counter policyPassCounter;
     private final Counter policyFailCounter;
 
     public CertificationPolicyEngineService(
         javax.sql.DataSource ds,
-        AuditPort audit,
+        AuditBusPort audit,
         MeterRegistry registry,
         Executor executor
     ) {
@@ -136,7 +134,7 @@ public class CertificationPolicyEngineService {
                  )) {
                 ps.setString(1, tier); ps.setString(2, policyYaml); ps.executeUpdate();
             }
-            audit.record(operatorId, "POLICY_UPDATED", "tier=" + tier);
+            audit.emit(AuditEvent.builder().principal(operatorId).eventType("POLICY_UPDATED").details(Map.of("detail", "tier=" + tier)).build());
             return null;
         });
     }

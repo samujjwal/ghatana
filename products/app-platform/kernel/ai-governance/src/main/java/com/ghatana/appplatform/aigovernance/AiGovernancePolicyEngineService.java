@@ -1,6 +1,10 @@
 package com.ghatana.appplatform.aigovernance;
 
-import com.zaxxer.hikari.HikariDataSource;
+import com.ghatana.governance.PolicyEngine;
+import com.ghatana.platform.audit.AuditBusPort;
+import com.ghatana.platform.audit.AuditEvent;
+import com.ghatana.platform.governance.DataClassification;
+import javax.sql.DataSource;
 import io.activej.promise.Promise;
 import io.micrometer.core.instrument.Counter;
 import io.micrometer.core.instrument.MeterRegistry;
@@ -24,20 +28,22 @@ import java.util.concurrent.Executor;
  */
 public class AiGovernancePolicyEngineService {
 
-    private final HikariDataSource  dataSource;
+    private final DataSource  dataSource;
     private final Executor          executor;
     private final PolicyCheckPort   policyCheckPort;
     private final DeploymentGatePort deploymentGatePort;
-    private final AuditPort         auditPort;
+    private final AuditBusPort         auditPort;
     private final PolicyEventPort   policyEventPort;
+    private final PolicyEngine      policyEngine;
     private final Counter           evaluationsCounter;
     private final Counter           violationsCounter;
 
-    public AiGovernancePolicyEngineService(HikariDataSource dataSource, Executor executor,
+    public AiGovernancePolicyEngineService(DataSource dataSource, Executor executor,
                                             PolicyCheckPort policyCheckPort,
                                             DeploymentGatePort deploymentGatePort,
-                                            AuditPort auditPort,
+                                            AuditBusPort auditPort,
                                             PolicyEventPort policyEventPort,
+                                            PolicyEngine policyEngine,
                                             MeterRegistry registry) {
         this.dataSource          = dataSource;
         this.executor            = executor;
@@ -45,6 +51,7 @@ public class AiGovernancePolicyEngineService {
         this.deploymentGatePort  = deploymentGatePort;
         this.auditPort           = auditPort;
         this.policyEventPort     = policyEventPort;
+        this.policyEngine        = policyEngine;
         this.evaluationsCounter   = Counter.builder("aigovernance.policy.evaluations_total").register(registry);
         this.violationsCounter    = Counter.builder("aigovernance.policy.violations_total").register(registry);
     }
@@ -64,11 +71,6 @@ public class AiGovernancePolicyEngineService {
     public interface DeploymentGatePort {
         void blockDeployment(String modelId, String version, List<String> violations);
         void allowDeployment(String modelId, String version);
-    }
-
-    /** K-07 audit trail. */
-    public interface AuditPort {
-        void log(String action, String resourceType, String resourceId, Map<String, Object> details);
     }
 
     /** Publishes PolicyViolation events. */
@@ -140,9 +142,13 @@ public class AiGovernancePolicyEngineService {
             boolean passed = violations.isEmpty();
             persistResult(modelId, version, modelTier, passed, violations, now);
 
-            auditPort.log("POLICY_EVALUATED", "Model", modelId,
-                Map.of("version", version, "tier", modelTier,
-                        "passed", passed, "violations", violations.size()));
+            auditPort.emit(AuditEvent.builder()
+                .eventType("POLICY_EVALUATED")
+                .resourceType("Model")
+                .resourceId(modelId)
+                .details(Map.of("version", version, "tier", modelTier,
+                        "passed", String.valueOf(passed), "violations", String.valueOf(violations.size())))
+                .build());
 
             if (passed) {
                 deploymentGatePort.allowDeployment(modelId, version);
@@ -190,8 +196,12 @@ public class AiGovernancePolicyEngineService {
             if (!passed) {
                 violationsCounter.increment(violations.size());
                 policyEventPort.publishPolicyViolation(modelId, version, violations);
-                auditPort.log("ONGOING_POLICY_VIOLATION", "Model", modelId,
-                    Map.of("version", version, "violations", violations.size()));
+                auditPort.emit(AuditEvent.builder()
+                    .eventType("ONGOING_POLICY_VIOLATION")
+                    .resourceType("Model")
+                    .resourceId(modelId)
+                    .details(Map.of("version", version, "violations", String.valueOf(violations.size())))
+                    .build());
             }
 
             return new PolicyEvaluationResult(modelId, version, passed, violations, now);

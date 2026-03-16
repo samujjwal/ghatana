@@ -1,6 +1,6 @@
 package com.ghatana.appplatform.pms.service;
 
-import com.zaxxer.hikari.HikariDataSource;
+import javax.sql.DataSource;
 import io.activej.promise.Promise;
 import io.micrometer.core.instrument.Timer;
 import io.micrometer.core.instrument.MeterRegistry;
@@ -32,12 +32,12 @@ public class PerformanceAttributionService {
 
     private static final Logger log = LoggerFactory.getLogger(PerformanceAttributionService.class);
 
-    private final HikariDataSource dataSource;
+    private final DataSource dataSource;
     private final Executor         executor;
     private final BenchmarkPort    benchmarkPort;
     private final Timer            attrTimer;
 
-    public PerformanceAttributionService(HikariDataSource dataSource, Executor executor,
+    public PerformanceAttributionService(DataSource dataSource, Executor executor,
                                          BenchmarkPort benchmarkPort, MeterRegistry registry) {
         this.dataSource     = dataSource;
         this.executor       = executor;

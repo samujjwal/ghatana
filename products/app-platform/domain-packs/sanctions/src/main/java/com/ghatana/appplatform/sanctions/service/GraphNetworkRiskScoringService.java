@@ -1,5 +1,7 @@
 package com.ghatana.appplatform.sanctions.service;
 
+
+import com.ghatana.platform.core.event.EventBusPort;
 import io.micrometer.core.instrument.Counter;
 import io.micrometer.core.instrument.MeterRegistry;
 import io.micrometer.core.instrument.Timer;
@@ -9,7 +11,6 @@ import org.slf4j.LoggerFactory;
 import java.time.Instant;
 import java.util.List;
 import java.util.Map;
-import java.util.function.Consumer;
 
 /**
  * @doc.type      Service
@@ -33,17 +34,17 @@ public class GraphNetworkRiskScoringService {
 
     private final GraphPort         graphPort;
     private final GnnModelPort      gnnModelPort;
-    private final Consumer<Object>  eventPublisher;
+    private final EventBusPort  eventBusPort;
     private final Counter           highRiskEntitiesDetected;
     private final Timer             scoringTimer;
 
     public GraphNetworkRiskScoringService(GraphPort graphPort,
                                            GnnModelPort gnnModelPort,
-                                           Consumer<Object> eventPublisher,
+                                           EventBusPort eventBusPort,
                                            MeterRegistry meterRegistry) {
         this.graphPort               = graphPort;
         this.gnnModelPort            = gnnModelPort;
-        this.eventPublisher          = eventPublisher;
+        this.eventBusPort          = eventBusPort;
         this.highRiskEntitiesDetected = meterRegistry.counter("sanctions.graph.high_risk_detected");
         this.scoringTimer            = meterRegistry.timer("sanctions.graph.scoring_latency");
     }
@@ -66,7 +67,7 @@ public class GraphNetworkRiskScoringService {
                 highRiskEntitiesDetected.increment();
                 log.warn("GraphRisk HIGH: entityId={} score={} flaggedNeighbours={}",
                         entityId, result.riskScore(), result.flaggedNeighbours());
-                eventPublisher.accept(new HighNetworkRiskEvent(entityId, result.riskScore(),
+                eventBusPort.publish(new HighNetworkRiskEvent(entityId, result.riskScore(),
                         result.flaggedNeighbours(), result.nodeContributions()));
             }
 

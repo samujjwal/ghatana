@@ -1,5 +1,7 @@
 package com.ghatana.appplatform.operator;
 
+import com.ghatana.platform.audit.AuditBusPort;
+import com.ghatana.platform.audit.AuditEvent;
 import io.activej.promise.Promise;
 import io.micrometer.core.instrument.*;
 
@@ -48,10 +50,6 @@ public class JurisdictionRegistryService {
 
     // ── Inner port interfaces ─────────────────────────────────────────────────
 
-    public interface AuditPort {
-        void record(String actorId, String action, String detail) throws Exception;
-    }
-
     // ── Value types ───────────────────────────────────────────────────────────
 
     public record Jurisdiction(
@@ -65,14 +63,14 @@ public class JurisdictionRegistryService {
     // ── Fields ────────────────────────────────────────────────────────────────
 
     private final javax.sql.DataSource ds;
-    private final AuditPort audit;
+    private final AuditBusPort audit;
     private final Executor executor;
     private final Counter createCounter;
     private final Counter assignCounter;
 
     public JurisdictionRegistryService(
         javax.sql.DataSource ds,
-        AuditPort audit,
+        AuditBusPort audit,
         MeterRegistry registry,
         Executor executor
     ) {
@@ -140,7 +138,7 @@ public class JurisdictionRegistryService {
                  )) {
                 ps.setString(1, jurisdictionId); ps.executeUpdate();
             }
-            audit.record(operatorId, "JURISDICTION_DEACTIVATED", "id=" + jurisdictionId);
+            audit.emit(AuditEvent.builder().principal(operatorId).eventType("JURISDICTION_DEACTIVATED").details(Map.of("detail", "id=" + jurisdictionId)).build());
             return null;
         });
     }
@@ -187,8 +185,7 @@ public class JurisdictionRegistryService {
                 ps.setString(1, tenantId); ps.setString(2, jurisdictionId); ps.executeUpdate();
             }
             assignCounter.increment();
-            audit.record(operatorId, "TENANT_JURISDICTION_ASSIGNED",
-                "tenant=" + tenantId + " jurisdiction=" + jurisdictionId);
+            audit.emit(AuditEvent.builder().principal(operatorId).eventType("TENANT_JURISDICTION_ASSIGNED").details(Map.of("detail", "tenant=" + tenantId + " jurisdiction=" + jurisdictionId)).build());
             return null;
         });
     }

@@ -3,6 +3,7 @@ package com.ghatana.appplatform.refdata.feed;
 import com.ghatana.appplatform.refdata.domain.Instrument;
 import com.ghatana.appplatform.refdata.domain.InstrumentStatus;
 import com.ghatana.appplatform.refdata.service.InstrumentService;
+import io.activej.eventloop.Eventloop;
 import io.activej.promise.Promise;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -11,9 +12,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.Executor;
-import java.util.concurrent.Executors;
-import java.util.concurrent.ScheduledExecutorService;
-import java.util.concurrent.TimeUnit;
 
 /**
  * @doc.type       Application Service
@@ -35,12 +33,13 @@ public class RefDataFeedAdapterRegistry {
     private final Map<String, RefDataFeedAdapter> adapters = new ConcurrentHashMap<>();
     private final InstrumentService instrumentService;
     private final Executor executor;
-    private final ScheduledExecutorService scheduler = Executors.newSingleThreadScheduledExecutor(
-            r -> { Thread t = new Thread(r, "refdata-feed-scheduler"); t.setDaemon(true); return t; });
+    private final Eventloop eventloop;
 
-    public RefDataFeedAdapterRegistry(InstrumentService instrumentService, Executor executor) {
+    public RefDataFeedAdapterRegistry(InstrumentService instrumentService, Executor executor,
+                                       Eventloop eventloop) {
         this.instrumentService = instrumentService;
         this.executor = executor;
+        this.eventloop = eventloop;
     }
 
     /** Register an adapter and schedule periodic sync. */
@@ -57,9 +56,19 @@ public class RefDataFeedAdapterRegistry {
         adapter.connect();
         log.info("refdata.adapter.registered id={} url={}", adapter.adapterId(), adapter.feedUrl());
 
-        scheduler.scheduleAtFixedRate(
-                () -> syncWithRetry(adapter, 1),
-                0, syncIntervalMinutes, TimeUnit.MINUTES);
+        long intervalMs = syncIntervalMinutes * 60_000L;
+        eventloop.delay(0, () -> scheduleSyncLoop(adapter, intervalMs));
+    }
+
+    private void scheduleSyncLoop(RefDataFeedAdapter adapter, long intervalMs) {
+        Promise.ofBlocking(executor, () -> {
+            syncWithRetry(adapter, 1);
+            return null;
+        }).whenComplete(() -> {
+            if (adapters.containsKey(adapter.adapterId())) {
+                eventloop.delay(intervalMs, () -> scheduleSyncLoop(adapter, intervalMs));
+            }
+        });
     }
 
     /** Deregister and disconnect an adapter. */
@@ -86,8 +95,12 @@ public class RefDataFeedAdapterRegistry {
                     adapter.adapterId(), attempt, ex.getMessage());
             if (attempt < MAX_RETRY_ATTEMPTS) {
                 long backoffMs = (long) Math.pow(2, attempt) * 1000L;
-                scheduler.schedule(() -> syncWithRetry(adapter, attempt + 1),
-                        backoffMs, TimeUnit.MILLISECONDS);
+                eventloop.delay(backoffMs, () -> {
+                    Promise.ofBlocking(executor, () -> {
+                        syncWithRetry(adapter, attempt + 1);
+                        return null;
+                    });
+                });
             } else {
                 log.error("refdata.adapter.sync.failed id={} maxRetries={}; alert triggered",
                         adapter.adapterId(), MAX_RETRY_ATTEMPTS);

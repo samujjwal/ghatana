@@ -4,8 +4,8 @@ import io.activej.promise.Promise;
 import io.micrometer.core.instrument.Counter;
 import io.micrometer.core.instrument.MeterRegistry;
 
-import java.sql.*;
 import java.util.*;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.Executor;
 
 /**
@@ -80,7 +80,9 @@ public class SubWorkflowCompositionService {
 
     // ── Fields ───────────────────────────────────────────────────────────────
 
-    private final javax.sql.DataSource ds;
+    private record InvocationEntry(String childInstanceId, String parentInstanceId, String parentStepId) {}
+
+    private final Map<String, InvocationEntry> invocations = new ConcurrentHashMap<>();
     private final WorkflowLaunchPort workflowLaunch;
     private final WorkflowInstancePort workflowInstance;
     private final Executor executor;
@@ -90,13 +92,11 @@ public class SubWorkflowCompositionService {
     private final Counter loopDetectedCounter;
 
     public SubWorkflowCompositionService(
-        javax.sql.DataSource ds,
         WorkflowLaunchPort workflowLaunch,
         WorkflowInstancePort workflowInstance,
         MeterRegistry registry,
         Executor executor
     ) {
-        this.ds               = ds;
         this.workflowLaunch   = workflowLaunch;
         this.workflowInstance = workflowInstance;
         this.executor         = executor;
@@ -127,16 +127,13 @@ public class SubWorkflowCompositionService {
                 return new SubInvocationResult(null, null, config.mode(), null, false, err);
             }
 
-            // Persist invocation record
-            String invocationId = persistInvocation(parentInstanceId, parentStepId, config, parentDepth + 1);
+            String invocationId = UUID.randomUUID().toString();
 
             // Launch child workflow
             String childInstanceId;
             try {
                 childInstanceId = workflowLaunch.launch(config.childWorkflowName(), config.inputContext());
-                updateChildInstanceId(invocationId, childInstanceId);
             } catch (Exception e) {
-                updateStatus(invocationId, "LAUNCH_FAILED", null, e.getMessage());
                 subWorkflowErrorCounter.increment();
                 if (config.propagateError()) {
                     workflowInstance.failStep(parentInstanceId, parentStepId, "Child launch failed: " + e.getMessage());
@@ -144,9 +141,11 @@ public class SubWorkflowCompositionService {
                 return new SubInvocationResult(invocationId, null, config.mode(), null, false, e.getMessage());
             }
 
+            // Track invocation for async child checking
+            invocations.put(invocationId, new InvocationEntry(childInstanceId, parentInstanceId, parentStepId));
+
             if (config.mode() == SubWorkflowMode.ASYNC) {
                 subWorkflowAsyncCounter.increment();
-                updateStatus(invocationId, "ASYNC_RUNNING", null, null);
                 workflowInstance.completeStep(parentInstanceId, parentStepId,
                     Map.of("childInstanceId", childInstanceId, "mode", "ASYNC"));
                 return new SubInvocationResult(invocationId, childInstanceId, SubWorkflowMode.ASYNC, null, true, null);
@@ -155,13 +154,13 @@ public class SubWorkflowCompositionService {
             // SYNC: poll for child completion
             try {
                 Map<String, Object> childOutput = workflowLaunch.getOutput(childInstanceId, config.syncTimeoutMs());
-                updateStatus(invocationId, "COMPLETED", childOutput, null);
+                invocations.remove(invocationId);
                 workflowInstance.completeStep(parentInstanceId, parentStepId,
                     Map.of("childInstanceId", childInstanceId, "output", childOutput));
                 subWorkflowSyncCounter.increment();
                 return new SubInvocationResult(invocationId, childInstanceId, SubWorkflowMode.SYNC, childOutput, true, null);
             } catch (Exception e) {
-                updateStatus(invocationId, "CHILD_FAILED", null, e.getMessage());
+                invocations.remove(invocationId);
                 subWorkflowErrorCounter.increment();
                 if (config.propagateError()) {
                     workflowInstance.failStep(parentInstanceId, parentStepId, "Child failed: " + e.getMessage());
@@ -177,78 +176,19 @@ public class SubWorkflowCompositionService {
     /** Check the status of an async child workflow and update the parent if complete. */
     public Promise<String> checkAsyncChild(String invocationId) {
         return Promise.ofBlocking(executor, () -> {
-            Optional<String[]> inv = loadInvocation(invocationId);
-            if (inv.isEmpty()) return "NOT_FOUND";
-            String[] row = inv.get();
-            String childInstanceId = row[0];
-            String parentInstanceId = row[1];
-            String parentStepId = row[2];
+            InvocationEntry entry = invocations.get(invocationId);
+            if (entry == null) return "NOT_FOUND";
 
-            String status = workflowLaunch.getStatus(childInstanceId);
+            String status = workflowLaunch.getStatus(entry.childInstanceId());
             if ("COMPLETED".equals(status)) {
-                Map<String, Object> output = workflowLaunch.getOutput(childInstanceId, 0);
-                updateStatus(invocationId, "COMPLETED", output, null);
-                workflowInstance.completeStep(parentInstanceId, "_async_child_complete:" + parentStepId, output);
+                Map<String, Object> output = workflowLaunch.getOutput(entry.childInstanceId(), 0);
+                invocations.remove(invocationId);
+                workflowInstance.completeStep(entry.parentInstanceId(),
+                    "_async_child_complete:" + entry.parentStepId(), output);
             } else if ("FAILED".equals(status) || "CANCELLED".equals(status)) {
-                updateStatus(invocationId, "CHILD_FAILED", null, "Child " + status);
+                invocations.remove(invocationId);
             }
             return status;
         });
-    }
-
-    // ── Private helpers ──────────────────────────────────────────────────────
-
-    private String persistInvocation(String parentId, String stepId, SubWorkflowConfig config, int depth) throws SQLException {
-        try (Connection c = ds.getConnection();
-             PreparedStatement ps = c.prepareStatement(
-                 "INSERT INTO workflow_sub_invocations " +
-                 "(parent_instance_id, parent_step_id, child_workflow_name, mode, propagate_error, depth) " +
-                 "VALUES (?,?,?,?,?,?) RETURNING invocation_id"
-             )) {
-            ps.setString(1, parentId);
-            ps.setString(2, stepId);
-            ps.setString(3, config.childWorkflowName());
-            ps.setString(4, config.mode().name());
-            ps.setBoolean(5, config.propagateError());
-            ps.setInt(6, depth);
-            try (ResultSet rs = ps.executeQuery()) { rs.next(); return rs.getString(1); }
-        }
-    }
-
-    private void updateChildInstanceId(String invocationId, String childInstanceId) {
-        try (Connection c = ds.getConnection();
-             PreparedStatement ps = c.prepareStatement(
-                 "UPDATE workflow_sub_invocations SET child_instance_id=?, status='RUNNING' WHERE invocation_id=?"
-             )) {
-            ps.setString(1, childInstanceId);
-            ps.setString(2, invocationId);
-            ps.executeUpdate();
-        } catch (Exception ignored) {}
-    }
-
-    private void updateStatus(String invocationId, String status, Map<String, Object> output, String error) {
-        try (Connection c = ds.getConnection();
-             PreparedStatement ps = c.prepareStatement(
-                 "UPDATE workflow_sub_invocations SET status=?, child_output=?::jsonb, child_error=?, completed_at=NOW() WHERE invocation_id=?"
-             )) {
-            ps.setString(1, status);
-            ps.setString(2, output != null ? output.toString() : null);
-            ps.setString(3, error);
-            ps.setString(4, invocationId);
-            ps.executeUpdate();
-        } catch (Exception ignored) {}
-    }
-
-    private Optional<String[]> loadInvocation(String invocationId) {
-        try (Connection c = ds.getConnection();
-             PreparedStatement ps = c.prepareStatement(
-                 "SELECT child_instance_id, parent_instance_id, parent_step_id FROM workflow_sub_invocations WHERE invocation_id=?"
-             )) {
-            ps.setString(1, invocationId);
-            try (ResultSet rs = ps.executeQuery()) {
-                if (rs.next()) return Optional.of(new String[]{rs.getString(1), rs.getString(2), rs.getString(3)});
-                return Optional.empty();
-            }
-        } catch (Exception e) { return Optional.empty(); }
     }
 }

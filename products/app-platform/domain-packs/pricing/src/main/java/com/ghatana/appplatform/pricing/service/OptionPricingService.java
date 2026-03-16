@@ -1,6 +1,6 @@
 package com.ghatana.appplatform.pricing.service;
 
-import com.zaxxer.hikari.HikariDataSource;
+import javax.sql.DataSource;
 import io.activej.promise.Promise;
 import io.micrometer.core.instrument.Timer;
 import io.micrometer.core.instrument.MeterRegistry;
@@ -31,11 +31,11 @@ public class OptionPricingService {
     private static final int         IV_MAX_ITER    = 200;
     private static final double      IV_TOLERANCE   = 1e-8;
 
-    private final HikariDataSource dataSource;
+    private final DataSource dataSource;
     private final Executor         executor;
     private final Timer            pricingTimer;
 
-    public OptionPricingService(HikariDataSource dataSource, Executor executor,
+    public OptionPricingService(DataSource dataSource, Executor executor,
                                  MeterRegistry registry) {
         this.dataSource  = dataSource;
         this.executor    = executor;

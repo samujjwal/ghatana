@@ -3,7 +3,7 @@ package com.ghatana.appplatform.eventstore.adapter;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
+import com.ghatana.platform.core.json.PlatformObjectMapper;
 import com.ghatana.appplatform.eventstore.domain.AggregateEventRecord;
 import com.ghatana.appplatform.eventstore.kafka.KafkaEventOutboxRelay;
 import com.ghatana.appplatform.eventstore.kafka.KafkaOutboxCursor;
@@ -78,7 +78,7 @@ public final class PostgresKafkaOutboxCursor implements KafkaOutboxCursor {
      */
     public PostgresKafkaOutboxCursor(DataSource dataSource) {
         this.dataSource = dataSource;
-        this.mapper     = new ObjectMapper().registerModule(new JavaTimeModule());
+        this.mapper     = PlatformObjectMapper.instance();
     }
 
     /**

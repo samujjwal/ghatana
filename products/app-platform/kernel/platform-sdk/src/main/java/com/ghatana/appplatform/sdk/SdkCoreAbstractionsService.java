@@ -1,7 +1,10 @@
 package com.ghatana.appplatform.sdk;
 
 import com.ghatana.platform.core.util.PlatformVersion;
+import com.ghatana.platform.core.json.PlatformObjectMapper;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import io.activej.promise.Promise;
+import io.activej.promise.Promises;
 import io.micrometer.core.instrument.Counter;
 import io.micrometer.core.instrument.MeterRegistry;
 
@@ -192,31 +195,31 @@ public class SdkCoreAbstractionsService {
 
     /**
      * Create a typed SDK client bundle for a service.
-     * Auto-discovers downstream endpoints from K-02.
+     * Auto-discovers downstream endpoints from K-02 via SdkEndpointRegistryPort.
      */
     public Promise<SdkClientBundle> createClientBundle(String callerServiceName) {
-        return Promise.ofBlocking(executor, () -> {
-            String endpointsJson = resolveEndpointsBlocking(callerServiceName);
-            persistRegistration(callerServiceName, endpointsJson);
-            sdkClientCreatedTotal.increment();
-            return new SdkClientBundle(
-                new EventClientFacade(eventBusPort),
-                new ConfigClientFacade(configBusPort),
-                new AuditClientFacade(auditBusPort),
-                new RulesClientFacade(rulesBusPort),
-                new AuthClientFacade(authBusPort)
-            );
-        });
+        return resolveEndpointsAsync()
+            .then(endpointsJson -> Promise.ofBlocking(executor, () -> {
+                persistRegistration(callerServiceName, endpointsJson);
+                sdkClientCreatedTotal.increment();
+                return new SdkClientBundle(
+                    new EventClientFacade(eventBusPort),
+                    new ConfigClientFacade(configBusPort),
+                    new AuditClientFacade(auditBusPort),
+                    new RulesClientFacade(rulesBusPort),
+                    new AuthClientFacade(authBusPort)
+                );
+            }));
     }
 
     /** Force refresh of service endpoint cache from K-02. */
     public Promise<Void> refreshEndpoints(String callerServiceName) {
-        return Promise.ofBlocking(executor, () -> {
-            String endpointsJson = resolveEndpointsBlocking(callerServiceName);
-            updateEndpointsBlocking(callerServiceName, endpointsJson);
-            sdkEndpointRefreshTotal.increment();
-            return null;
-        });
+        return resolveEndpointsAsync()
+            .then(endpointsJson -> Promise.ofBlocking(executor, () -> {
+                updateEndpointsBlocking(callerServiceName, endpointsJson);
+                sdkEndpointRefreshTotal.increment();
+                return null;
+            }));
     }
 
     /** Return all SDK registrations (for operator tooling). */
@@ -228,13 +231,27 @@ public class SdkCoreAbstractionsService {
     // Private helpers
     // -----------------------------------------------------------------------
 
-    private String resolveEndpointsBlocking(String serviceName) {
-        // In production this resolves K-02 config keys like
-        // "sdk.endpoints.<eventbus>", "sdk.endpoints.<config>", etc.
-        // Returning a stub JSON here for the framework skeleton.
-        return "{\"event_bus\":\"http://event-bus:8080\",\"config\":\"http://config-engine:8080\"," +
-               "\"audit\":\"http://audit-trail:8080\",\"rules\":\"http://rules-engine:8080\"," +
-               "\"auth\":\"http://iam:8080\"}";
+    private static final ObjectMapper MAPPER = PlatformObjectMapper.instance();
+
+    private static final List<String> SERVICE_NAMES = List.of(
+        "event_bus", "config", "audit", "rules", "auth"
+    );
+
+    private Promise<String> resolveEndpointsAsync() {
+        return Promises.toList(SERVICE_NAMES.stream()
+                .map(endpointRegistryPort::resolveEndpoint)
+                .toList())
+            .map(urls -> {
+                Map<String, String> endpoints = new java.util.LinkedHashMap<>();
+                for (int i = 0; i < SERVICE_NAMES.size(); i++) {
+                    endpoints.put(SERVICE_NAMES.get(i), urls.get(i));
+                }
+                try {
+                    return MAPPER.writeValueAsString(endpoints);
+                } catch (Exception e) {
+                    throw new RuntimeException("Failed to serialize endpoints", e);
+                }
+            });
     }
 
     private void persistRegistration(String serviceName, String endpointsJson) {

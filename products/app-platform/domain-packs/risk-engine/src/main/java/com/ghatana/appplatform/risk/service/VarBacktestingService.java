@@ -1,6 +1,6 @@
 package com.ghatana.appplatform.risk.service;
 
-import com.zaxxer.hikari.HikariDataSource;
+import javax.sql.DataSource;
 import io.activej.promise.Promise;
 import io.micrometer.core.instrument.Counter;
 import io.micrometer.core.instrument.MeterRegistry;
@@ -36,13 +36,13 @@ public class VarBacktestingService {
     private static final int RED_THRESHOLD    = 10;
     private static final int BACKTEST_WINDOW  = 250;  // trading days
 
-    private final HikariDataSource dataSource;
+    private final DataSource dataSource;
     private final Executor executor;
     private final Counter backtestGreenCounter;
     private final Counter backtestYellowCounter;
     private final Counter backtestRedCounter;
 
-    public VarBacktestingService(HikariDataSource dataSource, Executor executor, MeterRegistry registry) {
+    public VarBacktestingService(DataSource dataSource, Executor executor, MeterRegistry registry) {
         this.dataSource           = dataSource;
         this.executor             = executor;
         this.backtestGreenCounter  = registry.counter("risk.var.backtest", "zone", "green");

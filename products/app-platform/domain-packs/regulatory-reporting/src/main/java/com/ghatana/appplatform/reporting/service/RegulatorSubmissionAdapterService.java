@@ -1,6 +1,6 @@
 package com.ghatana.appplatform.reporting.service;
 
-import com.zaxxer.hikari.HikariDataSource;
+import javax.sql.DataSource;
 import io.activej.promise.Promise;
 import io.micrometer.core.instrument.Counter;
 import io.micrometer.core.instrument.MeterRegistry;
@@ -26,14 +26,14 @@ import java.util.concurrent.Executor;
  */
 public class RegulatorSubmissionAdapterService {
 
-    private final HikariDataSource    dataSource;
+    private final DataSource    dataSource;
     private final Executor            executor;
     private final AdapterRegistryPort adapterRegistry;
     private final CredentialVaultPort credentialVault;
     private final Counter             submittedCounter;
     private final Counter             failedCounter;
 
-    public RegulatorSubmissionAdapterService(HikariDataSource dataSource, Executor executor,
+    public RegulatorSubmissionAdapterService(DataSource dataSource, Executor executor,
                                               AdapterRegistryPort adapterRegistry,
                                               CredentialVaultPort credentialVault,
                                               MeterRegistry registry) {

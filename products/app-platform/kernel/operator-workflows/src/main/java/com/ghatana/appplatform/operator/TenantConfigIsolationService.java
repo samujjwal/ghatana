@@ -1,5 +1,7 @@
 package com.ghatana.appplatform.operator;
 
+import com.ghatana.platform.audit.AuditBusPort;
+import com.ghatana.platform.audit.AuditEvent;
 import io.activej.promise.Promise;
 import io.micrometer.core.instrument.Counter;
 import io.micrometer.core.instrument.MeterRegistry;
@@ -62,10 +64,6 @@ public class TenantConfigIsolationService {
         List<String> listKeys(String tenantId) throws Exception;
     }
 
-    public interface AuditPort {
-        void record(String actorId, String action, String detail) throws Exception;
-    }
-
     // ── Value types ───────────────────────────────────────────────────────────
 
     public record ConfigBound(
@@ -86,7 +84,7 @@ public class TenantConfigIsolationService {
 
     private final javax.sql.DataSource ds;
     private final ConfigNamespacePort configNamespace;
-    private final AuditPort audit;
+    private final AuditBusPort audit;
     private final Executor executor;
     private final Counter boundViolationCounter;
     private final Counter overrideCounter;
@@ -94,7 +92,7 @@ public class TenantConfigIsolationService {
     public TenantConfigIsolationService(
         javax.sql.DataSource ds,
         ConfigNamespacePort configNamespace,
-        AuditPort audit,
+        AuditBusPort audit,
         MeterRegistry registry,
         Executor executor
     ) {
@@ -136,8 +134,7 @@ public class TenantConfigIsolationService {
             configNamespace.set(tenantId, key, value);
             persistOverride(tenantId, key, value, setBy);
             overrideCounter.increment();
-            audit.record(setBy, "TENANT_CONFIG_SET",
-                "tenant=" + tenantId + " key=" + key + " value=" + value);
+            audit.emit(AuditEvent.builder().principal(setBy).eventType("TENANT_CONFIG_SET").details(Map.of("detail", "tenant=" + tenantId + " key=" + key + " value=" + value)).build());
             return null;
         });
     }
@@ -148,7 +145,7 @@ public class TenantConfigIsolationService {
     public Promise<Void> setPlatformDefault(String key, String value, String operatorId) {
         return Promise.ofBlocking(executor, () -> {
             configNamespace.setPlatformDefault(key, value);
-            audit.record(operatorId, "PLATFORM_CONFIG_SET", "key=" + key + " value=" + value);
+            audit.emit(AuditEvent.builder().principal(operatorId).eventType("PLATFORM_CONFIG_SET").details(Map.of("detail", "key=" + key + " value=" + value)).build());
             return null;
         });
     }

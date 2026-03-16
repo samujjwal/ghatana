@@ -1,6 +1,8 @@
 package com.ghatana.appplatform.dlq;
 
-import com.zaxxer.hikari.HikariDataSource;
+import com.ghatana.platform.audit.AuditBusPort;
+import com.ghatana.platform.audit.AuditEvent;
+import javax.sql.DataSource;
 import io.activej.promise.Promise;
 import io.micrometer.core.instrument.Counter;
 import io.micrometer.core.instrument.MeterRegistry;
@@ -27,16 +29,16 @@ public class DlqArchiveRetentionService {
     private static final int DEFAULT_RETENTION_DAYS = 90;
     private static final int GRACE_PERIOD_DAYS       = 7;
 
-    private final HikariDataSource dataSource;
+    private final DataSource dataSource;
     private final Executor         executor;
     private final ArchivePort      archivePort;
-    private final AuditPort        auditPort;
+    private final AuditBusPort        auditPort;
     private final Counter          archivedCounter;
     private final Counter          deletedCounter;
 
-    public DlqArchiveRetentionService(HikariDataSource dataSource, Executor executor,
+    public DlqArchiveRetentionService(DataSource dataSource, Executor executor,
                                        ArchivePort archivePort,
-                                       AuditPort auditPort,
+                                       AuditBusPort auditPort,
                                        MeterRegistry registry) {
         this.dataSource     = dataSource;
         this.executor       = executor;
@@ -51,11 +53,6 @@ public class DlqArchiveRetentionService {
     /** Cold-storage archive delegation. */
     public interface ArchivePort {
         String archiveBatch(List<String> deadLetterIds, String storageClass);
-    }
-
-    /** K-07 audit trail. */
-    public interface AuditPort {
-        void log(String action, String resourceType, String resourceId, Map<String, Object> details);
     }
 
     // ─── Domain records ──────────────────────────────────────────────────────

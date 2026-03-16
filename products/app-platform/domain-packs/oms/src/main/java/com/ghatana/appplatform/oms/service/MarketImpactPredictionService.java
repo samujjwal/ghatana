@@ -1,5 +1,7 @@
 package com.ghatana.appplatform.oms.service;
 
+
+import com.ghatana.platform.core.event.EventBusPort;
 import io.micrometer.core.instrument.Counter;
 import io.micrometer.core.instrument.MeterRegistry;
 import io.micrometer.core.instrument.Timer;
@@ -7,7 +9,6 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.math.BigDecimal;
-import java.util.function.Consumer;
 
 /**
  * @doc.type      Service
@@ -32,19 +33,19 @@ public class MarketImpactPredictionService {
 
     private final MlModelPort      modelPort;
     private final MarketInputPort  marketPort;
-    private final Consumer<Object> eventPublisher;
+    private final EventBusPort eventBusPort;
     private final double           impactThresholdBps;
     private final Counter          escalations;
     private final Timer            predictionLatency;
 
     public MarketImpactPredictionService(MlModelPort modelPort,
                                           MarketInputPort marketPort,
-                                          Consumer<Object> eventPublisher,
+                                          EventBusPort eventBusPort,
                                           double impactThresholdBps,
                                           MeterRegistry meterRegistry) {
         this.modelPort          = modelPort;
         this.marketPort         = marketPort;
-        this.eventPublisher     = eventPublisher;
+        this.eventBusPort     = eventBusPort;
         this.impactThresholdBps = impactThresholdBps;
         this.escalations        = meterRegistry.counter("oms.impact.escalations");
         this.predictionLatency  = meterRegistry.timer("oms.impact.prediction.latency");
@@ -79,7 +80,7 @@ public class MarketImpactPredictionService {
             escalations.increment();
             log.info("ImpactPrediction: escalating orderId={} impactBps={} > threshold={}",
                     orderId, prediction.impactBps(), impactThresholdBps);
-            eventPublisher.accept(new HighImpactOrderEscalatedEvent(
+            eventBusPort.publish(new HighImpactOrderEscalatedEvent(
                     orderId, clientId, instrumentId, prediction.impactBps(),
                     impactThresholdBps, prediction.shapExplanation()));
         }

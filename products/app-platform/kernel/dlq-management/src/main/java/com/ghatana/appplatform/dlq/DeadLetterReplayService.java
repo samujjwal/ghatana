@@ -1,6 +1,6 @@
 package com.ghatana.appplatform.dlq;
 
-import com.zaxxer.hikari.HikariDataSource;
+import javax.sql.DataSource;
 import io.activej.promise.Promise;
 import io.micrometer.core.instrument.Counter;
 import io.micrometer.core.instrument.Timer;
@@ -26,7 +26,7 @@ import java.util.concurrent.Executor;
  */
 public class DeadLetterReplayService {
 
-    private final HikariDataSource    dataSource;
+    private final DataSource    dataSource;
     private final Executor            executor;
     private final EventPublishPort    publishPort;
     private final ValidationPort      validationPort;
@@ -35,7 +35,7 @@ public class DeadLetterReplayService {
     private final Counter             replaysFailedCounter;
     private final Timer               replayTimer;
 
-    public DeadLetterReplayService(HikariDataSource dataSource, Executor executor,
+    public DeadLetterReplayService(DataSource dataSource, Executor executor,
                                     EventPublishPort publishPort, ValidationPort validationPort,
                                     MeterRegistry registry) {
         this.dataSource              = dataSource;

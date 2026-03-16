@@ -1,6 +1,6 @@
 package com.ghatana.appplatform.risk.service;
 
-import com.zaxxer.hikari.HikariDataSource;
+import javax.sql.DataSource;
 import io.activej.promise.Promise;
 import io.micrometer.core.instrument.Counter;
 import io.micrometer.core.instrument.MeterRegistry;
@@ -32,7 +32,7 @@ public class StressTestingService {
     private static final Logger log = LoggerFactory.getLogger(StressTestingService.class);
     private static final ZoneId NST = ZoneId.of("Asia/Kathmandu");
 
-    private final HikariDataSource   dataSource;
+    private final DataSource   dataSource;
     private final Executor           executor;
     private final ScenarioPricingPort scenarioPricer;
     private final Counter            stressTestCounter;
@@ -46,7 +46,7 @@ public class StressTestingService {
         new StressScenario("CURRENCY_DEVALUATION","Currency devaluation -10%",      0.0,  0.0,    -0.10,  0.0)
     );
 
-    public StressTestingService(HikariDataSource dataSource, Executor executor,
+    public StressTestingService(DataSource dataSource, Executor executor,
                                 ScenarioPricingPort scenarioPricer, MeterRegistry registry) {
         this.dataSource       = dataSource;
         this.executor         = executor;

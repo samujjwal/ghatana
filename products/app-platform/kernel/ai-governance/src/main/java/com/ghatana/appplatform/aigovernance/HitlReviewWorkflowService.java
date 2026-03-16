@@ -1,6 +1,6 @@
 package com.ghatana.appplatform.aigovernance;
 
-import com.zaxxer.hikari.HikariDataSource;
+import javax.sql.DataSource;
 import io.activej.promise.Promise;
 import io.micrometer.core.instrument.Counter;
 import io.micrometer.core.instrument.Gauge;
@@ -26,7 +26,7 @@ import java.util.concurrent.atomic.AtomicLong;
  */
 public class HitlReviewWorkflowService {
 
-    private final HikariDataSource  dataSource;
+    private final DataSource  dataSource;
     private final Executor          executor;
     private final ShapPort          shapPort;
     private final SlaConfigPort     slaConfigPort;
@@ -37,7 +37,7 @@ public class HitlReviewWorkflowService {
     private final Counter           reviewsEscalatedCounter;
     private final AtomicLong        pendingCount = new AtomicLong(0);
 
-    public HitlReviewWorkflowService(HikariDataSource dataSource, Executor executor,
+    public HitlReviewWorkflowService(DataSource dataSource, Executor executor,
                                       ShapPort shapPort,
                                       SlaConfigPort slaConfigPort,
                                       NotificationPort notificationPort,

@@ -1,6 +1,6 @@
 package com.ghatana.appplatform.pms.service;
 
-import com.zaxxer.hikari.HikariDataSource;
+import javax.sql.DataSource;
 import io.activej.promise.Promise;
 import io.micrometer.core.instrument.Counter;
 import io.micrometer.core.instrument.MeterRegistry;
@@ -26,12 +26,12 @@ import java.util.concurrent.Executor;
  */
 public class PortfolioTransactionHistoryService {
 
-    private final HikariDataSource dataSource;
+    private final DataSource dataSource;
     private final Executor         executor;
     private final ExportPort       exportPort;
     private final Counter          exportCounter;
 
-    public PortfolioTransactionHistoryService(HikariDataSource dataSource, Executor executor,
+    public PortfolioTransactionHistoryService(DataSource dataSource, Executor executor,
                                                ExportPort exportPort, MeterRegistry registry) {
         this.dataSource    = dataSource;
         this.executor      = executor;

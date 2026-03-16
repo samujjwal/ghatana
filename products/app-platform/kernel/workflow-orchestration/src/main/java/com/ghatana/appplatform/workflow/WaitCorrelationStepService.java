@@ -1,11 +1,13 @@
 package com.ghatana.appplatform.workflow;
 
+import com.ghatana.platform.workflow.WorkflowWaitCoordinator;
+import com.ghatana.platform.workflow.WorkflowWaitCoordinator.WaitCondition;
 import io.activej.promise.Promise;
 import io.micrometer.core.instrument.Counter;
-import io.micrometer.core.instrument.Gauge;
 import io.micrometer.core.instrument.MeterRegistry;
 
-import java.sql.*;
+import java.time.Duration;
+import java.time.Instant;
 import java.util.*;
 import java.util.concurrent.Executor;
 
@@ -99,7 +101,7 @@ public class WaitCorrelationStepService {
 
     // ── Fields ───────────────────────────────────────────────────────────────
 
-    private final javax.sql.DataSource ds;
+    private final WorkflowWaitCoordinator waitCoordinator;
     private final CronSchedulerPort cronScheduler;
     private final EventBusPort eventBus;
     private final WorkflowResumePort resumePort;
@@ -109,29 +111,21 @@ public class WaitCorrelationStepService {
     private final Counter waitExpiredCounter;
 
     public WaitCorrelationStepService(
-        javax.sql.DataSource ds,
+        WorkflowWaitCoordinator waitCoordinator,
         CronSchedulerPort cronScheduler,
         EventBusPort eventBus,
         WorkflowResumePort resumePort,
         MeterRegistry registry,
         Executor executor
     ) {
-        this.ds           = ds;
-        this.cronScheduler = cronScheduler;
-        this.eventBus     = eventBus;
-        this.resumePort   = resumePort;
-        this.executor     = executor;
-        this.waitCreatedCounter  = Counter.builder("workflow.wait.created").register(registry);
+        this.waitCoordinator = waitCoordinator;
+        this.cronScheduler   = cronScheduler;
+        this.eventBus        = eventBus;
+        this.resumePort      = resumePort;
+        this.executor        = executor;
+        this.waitCreatedCounter   = Counter.builder("workflow.wait.created").register(registry);
         this.waitSignalledCounter = Counter.builder("workflow.wait.signalled").register(registry);
-        this.waitExpiredCounter  = Counter.builder("workflow.wait.expired").register(registry);
-
-        Gauge.builder("workflow.wait.active", ds, d -> {
-            try (Connection c = d.getConnection(); PreparedStatement ps = c.prepareStatement(
-                     "SELECT COUNT(*) FROM workflow_wait_states WHERE status='WAITING'");
-                 ResultSet rs = ps.executeQuery()) {
-                return rs.next() ? rs.getDouble(1) : 0;
-            } catch (Exception e) { return 0; }
-        }).register(registry);
+        this.waitExpiredCounter   = Counter.builder("workflow.wait.expired").register(registry);
     }
 
     // ── Public API ───────────────────────────────────────────────────────────
@@ -149,39 +143,18 @@ public class WaitCorrelationStepService {
         long timeoutMs,
         ExpiryAction expiry
     ) {
-        return Promise.ofBlocking(executor, () -> {
-            String timeoutAt = timeoutMs > 0
-                ? java.time.Instant.now().plusMillis(timeoutMs).toString()
-                : null;
+        String waitId = UUID.randomUUID().toString();
+        String now = Instant.now().toString();
+        String timeoutAt = timeoutMs > 0 ? Instant.now().plusMillis(timeoutMs).toString() : null;
 
-            try (Connection c = ds.getConnection();
-                 PreparedStatement ps = c.prepareStatement(
-                     "INSERT INTO workflow_wait_states " +
-                     "(instance_id, step_id, wait_type, correlation_key, correlation_expr, timeout_at, expiry_action) " +
-                     "VALUES (?,?,?,?,?,?::timestamptz,?) RETURNING wait_id, created_at"
-                 )) {
-                ps.setString(1, instanceId);
-                ps.setString(2, stepId);
-                ps.setString(3, WaitType.EVENT.name());
-                ps.setString(4, correlationKey);
-                ps.setString(5, correlationExpr);
-                ps.setString(6, timeoutAt);
-                ps.setString(7, expiry.name());
-
-                try (ResultSet rs = ps.executeQuery()) {
-                    rs.next();
-                    String waitId = rs.getString("wait_id");
-                    String createdAt = rs.getTimestamp("created_at").toString();
-
-                    // Subscribe to incoming event bus
-                    eventBus.subscribe(eventType, correlationKey, waitId);
-                    waitCreatedCounter.increment();
-
-                    return loadWaitState(waitId, instanceId, stepId, WaitType.EVENT, correlationKey,
-                        correlationExpr, null, timeoutAt, expiry, WaitStatus.WAITING, null, null, createdAt);
-                }
-            }
-        });
+        WaitCondition condition = WaitCondition.forEvent(eventType, correlationKey);
+        return waitCoordinator.registerWait(instanceId, condition)
+            .then(v -> Promise.ofBlocking(executor, () -> {
+                eventBus.subscribe(eventType, correlationKey, waitId);
+                waitCreatedCounter.increment();
+                return loadWaitState(waitId, instanceId, stepId, WaitType.EVENT, correlationKey,
+                    correlationExpr, null, timeoutAt, expiry, WaitStatus.WAITING, null, null, now);
+            }));
     }
 
     /**
@@ -193,34 +166,19 @@ public class WaitCorrelationStepService {
         String cronExpression,
         ExpiryAction expiry
     ) {
-        return Promise.ofBlocking(executor, () -> {
-            try (Connection c = ds.getConnection();
-                 PreparedStatement ps = c.prepareStatement(
-                     "INSERT INTO workflow_wait_states " +
-                     "(instance_id, step_id, wait_type, cron_expression, expiry_action) " +
-                     "VALUES (?,?,?,?,?) RETURNING wait_id, created_at"
-                 )) {
-                ps.setString(1, instanceId);
-                ps.setString(2, stepId);
-                ps.setString(3, WaitType.SCHEDULE.name());
-                ps.setString(4, cronExpression);
-                ps.setString(5, expiry.name());
+        String waitId = UUID.randomUUID().toString();
+        String now = Instant.now().toString();
 
-                try (ResultSet rs = ps.executeQuery()) {
-                    rs.next();
-                    String waitId = rs.getString("wait_id");
-                    String createdAt = rs.getTimestamp("created_at").toString();
-
-                    // Register cron trigger
-                    cronScheduler.scheduleOnce(cronExpression, "workflow.schedule.signal",
-                        "{\"waitId\":\"" + waitId + "\"}");
-                    waitCreatedCounter.increment();
-
-                    return loadWaitState(waitId, instanceId, stepId, WaitType.SCHEDULE, null, null,
-                        cronExpression, null, expiry, WaitStatus.WAITING, null, null, createdAt);
-                }
-            }
-        });
+        // Register as manual-approval wait; the cron scheduler signals externally when it fires
+        WaitCondition condition = WaitCondition.forManualApproval();
+        return waitCoordinator.registerWait(instanceId, condition)
+            .then(v -> Promise.ofBlocking(executor, () -> {
+                cronScheduler.scheduleOnce(cronExpression, "workflow.schedule.signal",
+                    "{\"waitId\":\"" + waitId + "\"}");
+                waitCreatedCounter.increment();
+                return loadWaitState(waitId, instanceId, stepId, WaitType.SCHEDULE, null, null,
+                    cronExpression, null, expiry, WaitStatus.WAITING, null, null, now);
+            }));
     }
 
     /**
@@ -232,102 +190,58 @@ public class WaitCorrelationStepService {
         long timeoutMs,
         ExpiryAction expiry
     ) {
-        return Promise.ofBlocking(executor, () -> {
-            String timeoutAt = timeoutMs > 0
-                ? java.time.Instant.now().plusMillis(timeoutMs).toString()
-                : null;
+        String waitId = UUID.randomUUID().toString();
+        String now = Instant.now().toString();
+        String timeoutAt = timeoutMs > 0 ? Instant.now().plusMillis(timeoutMs).toString() : null;
 
-            try (Connection c = ds.getConnection();
-                 PreparedStatement ps = c.prepareStatement(
-                     "INSERT INTO workflow_wait_states " +
-                     "(instance_id, step_id, wait_type, timeout_at, expiry_action) " +
-                     "VALUES (?,?,?,?::timestamptz,?) RETURNING wait_id, created_at"
-                 )) {
-                ps.setString(1, instanceId);
-                ps.setString(2, stepId);
-                ps.setString(3, WaitType.MANUAL.name());
-                ps.setString(4, timeoutAt);
-                ps.setString(5, expiry.name());
-
-                try (ResultSet rs = ps.executeQuery()) {
-                    rs.next();
-                    String waitId = rs.getString("wait_id");
-                    String createdAt = rs.getTimestamp("created_at").toString();
-                    waitCreatedCounter.increment();
-                    return loadWaitState(waitId, instanceId, stepId, WaitType.MANUAL, null, null,
-                        null, timeoutAt, expiry, WaitStatus.WAITING, null, null, createdAt);
-                }
-            }
-        });
+        // Use timer-based wait if timeout is specified (enables expiry detection), else manual
+        WaitCondition condition = timeoutMs > 0
+            ? WaitCondition.forTimer(Duration.ofMillis(timeoutMs))
+            : WaitCondition.forManualApproval();
+        return waitCoordinator.registerWait(instanceId, condition)
+            .map(v -> {
+                waitCreatedCounter.increment();
+                return loadWaitState(waitId, instanceId, stepId, WaitType.MANUAL, null, null,
+                    null, timeoutAt, expiry, WaitStatus.WAITING, null, null, now);
+            });
     }
 
     /**
      * Send an event signal that may resolve waiting instances via correlation.
      */
     public Promise<Integer> signal(SignalRequest request) {
-        return Promise.ofBlocking(executor, () -> {
-            // Find matching wait states by correlation key
-            List<String[]> matches = new ArrayList<>();
-            try (Connection c = ds.getConnection();
-                 PreparedStatement ps = c.prepareStatement(
-                     "SELECT wait_id, instance_id, step_id, expiry_action FROM workflow_wait_states " +
-                     "WHERE wait_type='EVENT' AND correlation_key=? AND status='WAITING'"
-                 )) {
-                ps.setString(1, request.correlationKey());
-                try (ResultSet rs = ps.executeQuery()) {
-                    while (rs.next()) {
-                        matches.add(new String[]{
-                            rs.getString("wait_id"), rs.getString("instance_id"),
-                            rs.getString("step_id"), rs.getString("expiry_action")
-                        });
+        return waitCoordinator.signal(request.instanceId(), request.eventType(), request.payload())
+            .map(resolved -> {
+                if (resolved) {
+                    try {
+                        resumePort.resume(request.instanceId(), null, request.payload());
+                    } catch (Exception e) {
+                        throw new RuntimeException("Failed to resume instance " + request.instanceId(), e);
                     }
+                    waitSignalledCounter.increment();
+                    return 1;
                 }
-            }
-
-            int resolved = 0;
-            for (String[] match : matches) {
-                try (Connection c = ds.getConnection();
-                     PreparedStatement ps = c.prepareStatement(
-                         "UPDATE workflow_wait_states SET status='SIGNALLED', signalled_at=NOW(), signal_payload=?::jsonb " +
-                         "WHERE wait_id=?"
-                     )) {
-                    ps.setString(1, mapToJson(request.payload()));
-                    ps.setString(2, match[0]);
-                    ps.executeUpdate();
-                }
-                resumePort.resume(match[1], match[2], request.payload());
-                waitSignalledCounter.increment();
-                resolved++;
-            }
-            return resolved;
-        });
+                return 0;
+            });
     }
 
     /**
      * Process expired wait states (called by a scheduled job every minute).
      */
     public Promise<Integer> processExpiredWaits() {
-        return Promise.ofBlocking(executor, () -> {
-            List<String[]> expired = new ArrayList<>();
-            try (Connection c = ds.getConnection();
-                 PreparedStatement ps = c.prepareStatement(
-                     "UPDATE workflow_wait_states SET status='EXPIRED' " +
-                     "WHERE status='WAITING' AND timeout_at IS NOT NULL AND timeout_at < NOW() " +
-                     "RETURNING wait_id, instance_id, step_id, expiry_action"
-                 );
-                 ResultSet rs = ps.executeQuery()) {
-                while (rs.next()) {
-                    expired.add(new String[]{rs.getString("wait_id"), rs.getString("instance_id"),
-                        rs.getString("step_id"), rs.getString("expiry_action")});
+        return waitCoordinator.findFirableWaits(Instant.now())
+            .map(firableRunIds -> {
+                for (String runId : firableRunIds) {
+                    waitCoordinator.cancel(runId);
+                    try {
+                        resumePort.handleExpiry(runId, null, ExpiryAction.FAIL.name());
+                    } catch (Exception e) {
+                        throw new RuntimeException("Failed to handle expiry for run " + runId, e);
+                    }
+                    waitExpiredCounter.increment();
                 }
-            }
-
-            for (String[] e : expired) {
-                resumePort.handleExpiry(e[1], e[2], e[3]);
-                waitExpiredCounter.increment();
-            }
-            return expired.size();
-        });
+                return firableRunIds.size();
+            });
     }
 
     // ── Private helpers ──────────────────────────────────────────────────────
@@ -338,17 +252,5 @@ public class WaitCorrelationStepService {
     ) {
         return new WaitState(waitId, instanceId, stepId, waitType, corrKey, corrExpr, cron,
             timeout, expiry, status, signalledAt, payload, createdAt);
-    }
-
-    private String mapToJson(Map<String, Object> map) {
-        if (map == null) return "null";
-        StringBuilder sb = new StringBuilder("{");
-        boolean first = true;
-        for (Map.Entry<String, Object> e : map.entrySet()) {
-            if (!first) sb.append(",");
-            sb.append("\"").append(e.getKey()).append("\":\"").append(e.getValue()).append("\"");
-            first = false;
-        }
-        return sb.append("}").toString();
     }
 }

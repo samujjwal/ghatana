@@ -1,5 +1,7 @@
 package com.ghatana.appplatform.integration;
 
+import com.ghatana.platform.audit.AuditBusPort;
+import com.ghatana.platform.audit.AuditEvent;
 import io.activej.promise.Promise;
 import io.micrometer.core.instrument.*;
 
@@ -57,10 +59,6 @@ public class SecurityPenetrationTestReportService {
         boolean isAuditTamperResistant() throws Exception;
     }
 
-    public interface AuditPort {
-        void audit(String event, String detail) throws Exception;
-    }
-
     public record PentestFinding(String findingId, String severity, String title, String status) {}
 
     // ── Fields ────────────────────────────────────────────────────────────────
@@ -68,7 +66,7 @@ public class SecurityPenetrationTestReportService {
     private final javax.sql.DataSource ds;
     private final PentestResultsPort pentestResults;
     private final SecurityScanPort securityScan;
-    private final AuditPort audit;
+    private final AuditBusPort audit;
     private final Executor executor;
     private final Counter suitesPassed;
     private final Counter suitesFailed;
@@ -77,7 +75,7 @@ public class SecurityPenetrationTestReportService {
         javax.sql.DataSource ds,
         PentestResultsPort pentestResults,
         SecurityScanPort securityScan,
-        AuditPort audit,
+        AuditBusPort audit,
         MeterRegistry registry,
         Executor executor
     ) {
@@ -105,7 +103,7 @@ public class SecurityPenetrationTestReportService {
             long passed = results.stream().filter(r -> r.passed).count();
             long failed = results.size() - passed;
             if (failed == 0) suitesPassed.increment(); else suitesFailed.increment();
-            audit.audit("GA_PENTEST_SUITE", "passed=" + passed + " failed=" + failed);
+            audit.emit(AuditEvent.builder().eventType("GA_PENTEST_SUITE").details(Map.of("detail", "passed=" + passed + " failed=" + failed)).build());
             return new SuiteResult("SecurityPenetrationTestReport", results, passed, failed);
         });
     }
@@ -167,7 +165,7 @@ public class SecurityPenetrationTestReportService {
         boolean signedOff = pentestResults.isReportSignedOff();
         assertStep(runId, "report_signed_off", "pentest report has security sign-off",
             "true", signedOff, signedOff);
-        audit.audit("GA_PENTEST_SIGN_OFF", "Penetration test report signed off for GA");
+        audit.emit(AuditEvent.builder().eventType("GA_PENTEST_SIGN_OFF").details(Map.of("detail", "Penetration test report signed off for GA")).build());
     }
 
     private void persistFinding(PentestFinding f) {

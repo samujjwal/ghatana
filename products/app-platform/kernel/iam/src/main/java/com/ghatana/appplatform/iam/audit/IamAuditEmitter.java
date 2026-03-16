@@ -78,7 +78,7 @@ public final class IamAuditEmitter {
             .outcome(success ? Outcome.SUCCESS : Outcome.FAILURE)
             .tenantId(tenantId)
             .build();
-        return store.log(entry).map(_ -> null);
+        return store.log(entry).map(v -> null);
     }
 
     // ──────────────────────────────────────────────────────────────────────
@@ -102,7 +102,7 @@ public final class IamAuditEmitter {
             .outcome(Outcome.SUCCESS)
             .tenantId(tenantId)
             .build();
-        return store.log(entry).map(_ -> null);
+        return store.log(entry).map(v -> null);
     }
 
     /**
@@ -124,7 +124,7 @@ public final class IamAuditEmitter {
             .outcome(Outcome.SUCCESS)
             .tenantId(tenantId)
             .build();
-        return store.log(entry).map(_ -> null);
+        return store.log(entry).map(v -> null);
     }
 
     // ──────────────────────────────────────────────────────────────────────
@@ -148,7 +148,7 @@ public final class IamAuditEmitter {
             .outcome(Outcome.SUCCESS)
             .tenantId(tenantId)
             .build();
-        return store.log(entry).map(_ -> null);
+        return store.log(entry).map(v -> null);
     }
 
     /**
@@ -170,7 +170,7 @@ public final class IamAuditEmitter {
             .outcome(success ? Outcome.SUCCESS : Outcome.FAILURE)
             .tenantId(tenantId)
             .build();
-        return store.log(entry).map(_ -> null);
+        return store.log(entry).map(v -> null);
     }
 
     // ──────────────────────────────────────────────────────────────────────
@@ -197,7 +197,7 @@ public final class IamAuditEmitter {
             .outcome(Outcome.SUCCESS)
             .tenantId(tenantId)
             .build();
-        return store.log(entry).map(_ -> null);
+        return store.log(entry).map(v -> null);
     }
 
     // ──────────────────────────────────────────────────────────────────────
@@ -223,7 +223,7 @@ public final class IamAuditEmitter {
             .outcome(Outcome.SUCCESS)
             .tenantId(tenantId)
             .build();
-        return store.log(entry).map(_ -> null);
+        return store.log(entry).map(v -> null);
     }
 
     // ──────────────────────────────────────────────────────────────────────
@@ -247,7 +247,7 @@ public final class IamAuditEmitter {
             .outcome(Outcome.FAILURE)
             .tenantId(tenantId)
             .build();
-        return store.log(entry).map(_ -> null);
+        return store.log(entry).map(v -> null);
     }
 
     // ──────────────────────────────────────────────────────────────────────
@@ -276,7 +276,7 @@ public final class IamAuditEmitter {
             .build();
         log.warn("[audit] break-glass activated: elevatedBy={} target={} session={}",
                 elevatedBy, targetUserId, sessionId);
-        return store.log(entry).map(_ -> null);
+        return store.log(entry).map(v -> null);
     }
 
     /**
@@ -297,7 +297,7 @@ public final class IamAuditEmitter {
             .outcome(Outcome.SUCCESS)
             .tenantId(tenantId)
             .build();
-        return store.log(entry).map(_ -> null);
+        return store.log(entry).map(v -> null);
     }
 
     // ──────────────────────────────────────────────────────────────────────
@@ -326,6 +326,6 @@ public final class IamAuditEmitter {
             .build();
         log.warn("[security] login anomaly: userId={} type={} ip={} action={}",
                 principalId, anomalyType, sourceIp, action);
-        return store.log(entry).map(_ -> null);
+        return store.log(entry).map(v -> null);
     }
 }

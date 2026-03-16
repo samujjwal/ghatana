@@ -1,5 +1,7 @@
 package com.ghatana.appplatform.certification;
 
+import com.ghatana.platform.audit.AuditBusPort;
+import com.ghatana.platform.audit.AuditEvent;
 import io.activej.promise.Promise;
 import io.micrometer.core.instrument.*;
 
@@ -57,10 +59,6 @@ public class PluginCertificationAuthorityService {
         void publish(String eventType, Map<String, Object> payload) throws Exception;
     }
 
-    public interface AuditPort {
-        void record(String actorId, String action, String detail) throws Exception;
-    }
-
     // ── Value types ───────────────────────────────────────────────────────────
 
     public enum Tier { T1, T2, T3 }
@@ -85,7 +83,7 @@ public class PluginCertificationAuthorityService {
     private final javax.sql.DataSource ds;
     private final HsmSigningPort hsm;
     private final EventPublishPort events;
-    private final AuditPort audit;
+    private final AuditBusPort audit;
     private final Executor executor;
     private final Counter issuedCounter;
     private final Counter revokedCounter;
@@ -95,7 +93,7 @@ public class PluginCertificationAuthorityService {
         javax.sql.DataSource ds,
         HsmSigningPort hsm,
         EventPublishPort events,
-        AuditPort audit,
+        AuditBusPort audit,
         MeterRegistry registry,
         Executor executor
     ) {
@@ -141,8 +139,7 @@ public class PluginCertificationAuthorityService {
                     issuedCounter.increment();
                     events.publish("CertificateIssued", Map.of(
                         "certId", certId, "pluginId", pluginId, "version", version, "tier", tier.name()));
-                    audit.record(issuer, "CERTIFICATE_ISSUED",
-                        "plugin=" + pluginId + " version=" + version + " tier=" + tier);
+                    audit.emit(AuditEvent.builder().principal(issuer).eventType("CERTIFICATE_ISSUED").details(Map.of("detail", "plugin=" + pluginId + " version=" + version + " tier=" + tier)).build());
                     return cert;
                 }
             }
@@ -165,7 +162,7 @@ public class PluginCertificationAuthorityService {
             }
             revokedCounter.increment();
             events.publish("CertificateRevoked", Map.of("certId", certId, "reason", reason));
-            audit.record(operatorId, "CERTIFICATE_REVOKED", "certId=" + certId + " reason=" + reason);
+            audit.emit(AuditEvent.builder().principal(operatorId).eventType("CERTIFICATE_REVOKED").details(Map.of("detail", "certId=" + certId + " reason=" + reason)).build());
             return null;
         });
     }

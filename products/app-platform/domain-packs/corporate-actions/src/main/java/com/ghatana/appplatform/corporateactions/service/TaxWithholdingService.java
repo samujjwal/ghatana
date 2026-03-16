@@ -1,6 +1,6 @@
 package com.ghatana.appplatform.corporateactions.service;
 
-import com.zaxxer.hikari.HikariDataSource;
+import javax.sql.DataSource;
 import io.activej.promise.Promise;
 import io.micrometer.core.instrument.Counter;
 import io.micrometer.core.instrument.MeterRegistry;
@@ -31,13 +31,13 @@ public class TaxWithholdingService {
     private static final BigDecimal RESIDENT_RATE     = new BigDecimal("0.05");
     private static final BigDecimal NON_RESIDENT_RATE = new BigDecimal("0.15");
 
-    private final HikariDataSource dataSource;
+    private final DataSource dataSource;
     private final Executor         executor;
     private final TaxRulePort      taxRulePort;
     private final EventPort        eventPort;
     private final Counter          taxWithheldCounter;
 
-    public TaxWithholdingService(HikariDataSource dataSource, Executor executor,
+    public TaxWithholdingService(DataSource dataSource, Executor executor,
                                   TaxRulePort taxRulePort, EventPort eventPort,
                                   MeterRegistry registry) {
         this.dataSource        = dataSource;

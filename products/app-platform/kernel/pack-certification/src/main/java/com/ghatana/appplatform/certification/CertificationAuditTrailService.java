@@ -1,5 +1,7 @@
 package com.ghatana.appplatform.certification;
 
+import com.ghatana.platform.audit.AuditBusPort;
+import com.ghatana.platform.audit.AuditEvent;
 import io.activej.promise.Promise;
 import io.micrometer.core.instrument.*;
 
@@ -51,10 +53,6 @@ import java.util.concurrent.Executor;
 public class CertificationAuditTrailService {
 
     // ── Inner port interfaces ─────────────────────────────────────────────────
-
-    public interface K07AuditPort {
-        void append(String pluginId, String version, String eventType, String actor, String summary) throws Exception;
-    }
 
     // ── Fields ────────────────────────────────────────────────────────────────
 

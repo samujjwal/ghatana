@@ -1,5 +1,7 @@
 package com.ghatana.appplatform.sanctions.service;
 
+
+import com.ghatana.platform.core.event.EventBusPort;
 import com.ghatana.appplatform.sanctions.domain.*;
 import io.activej.promise.Promise;
 import io.micrometer.core.instrument.MeterRegistry;
@@ -13,7 +15,6 @@ import java.util.List;
 import java.util.UUID;
 import java.util.concurrent.Executor;
 import java.util.concurrent.atomic.AtomicReference;
-import java.util.function.Consumer;
 
 /**
  * @doc.type    Service (Application)
@@ -37,20 +38,20 @@ public class ScreeningEngineService {
     private final JaroWinklerMatchingService jaroWinkler;
     private final NameTransliterationService transliteration;
     private final Executor executor;
-    private final Consumer<Object> eventPublisher;
+    private final EventBusPort eventBusPort;
     private final Timer screeningTimer;
 
     public ScreeningEngineService(LevenshteinMatchingService levenshtein,
                                    JaroWinklerMatchingService jaroWinkler,
                                    NameTransliterationService transliteration,
                                    Executor executor,
-                                   Consumer<Object> eventPublisher,
+                                   EventBusPort eventBusPort,
                                    MeterRegistry meterRegistry) {
         this.levenshtein = levenshtein;
         this.jaroWinkler = jaroWinkler;
         this.transliteration = transliteration;
         this.executor = executor;
-        this.eventPublisher = eventPublisher;
+        this.eventBusPort = eventBusPort;
         this.screeningTimer = meterRegistry.timer("sanctions.screening.duration");
     }
 
@@ -106,7 +107,7 @@ public class ScreeningEngineService {
             screeningTimer.record(elapsed, java.util.concurrent.TimeUnit.MILLISECONDS);
 
             if (matchFound) {
-                eventPublisher.accept(new ScreeningMatchFoundEvent(result));
+                eventBusPort.publish(new ScreeningMatchFoundEvent(result));
                 log.info("Screening match: requestId={} referenceId={} decision={} score={}",
                         request.requestId(), referenceId, decision, highestScore);
             }

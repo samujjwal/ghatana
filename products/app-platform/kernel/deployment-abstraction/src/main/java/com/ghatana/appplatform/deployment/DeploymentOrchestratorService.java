@@ -1,6 +1,6 @@
 package com.ghatana.appplatform.deployment;
 
-import com.zaxxer.hikari.HikariDataSource;
+import javax.sql.DataSource;
 import io.activej.promise.Promise;
 import io.micrometer.core.instrument.Counter;
 import io.micrometer.core.instrument.Timer;
@@ -26,7 +26,7 @@ import java.util.concurrent.Executor;
  */
 public class DeploymentOrchestratorService {
 
-    private final HikariDataSource dataSource;
+    private final DataSource dataSource;
     private final Executor         executor;
     private final HelmPort         helmPort;
     private final EventPort        eventPort;
@@ -35,7 +35,7 @@ public class DeploymentOrchestratorService {
     private final Counter          rollbacksCounter;
     private final Timer            deployTimer;
 
-    public DeploymentOrchestratorService(HikariDataSource dataSource, Executor executor,
+    public DeploymentOrchestratorService(DataSource dataSource, Executor executor,
                                           HelmPort helmPort, EventPort eventPort,
                                           MeterRegistry registry) {
         this.dataSource                = dataSource;

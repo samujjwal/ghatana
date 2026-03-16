@@ -1,6 +1,6 @@
 package com.ghatana.appplatform.deployment;
 
-import com.zaxxer.hikari.HikariDataSource;
+import javax.sql.DataSource;
 import io.activej.promise.Promise;
 import io.micrometer.core.instrument.Counter;
 import io.micrometer.core.instrument.Gauge;
@@ -24,7 +24,7 @@ import java.util.concurrent.atomic.AtomicLong;
  */
 public class ResourceQuotaManagementService {
 
-    private final HikariDataSource dataSource;
+    private final DataSource dataSource;
     private final Executor         executor;
     private final LiveResourcePort liveResourcePort;
     private final Counter          quotaCheckPassedCounter;
@@ -33,7 +33,7 @@ public class ResourceQuotaManagementService {
     private final AtomicLong       memoryQuotaUtilization = new AtomicLong(0);
     private final AtomicLong       storageQuotaUtilization = new AtomicLong(0);
 
-    public ResourceQuotaManagementService(HikariDataSource dataSource, Executor executor,
+    public ResourceQuotaManagementService(DataSource dataSource, Executor executor,
                                            LiveResourcePort liveResourcePort,
                                            MeterRegistry registry) {
         this.dataSource              = dataSource;

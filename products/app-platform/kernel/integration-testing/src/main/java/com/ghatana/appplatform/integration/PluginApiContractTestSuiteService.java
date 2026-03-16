@@ -1,5 +1,7 @@
 package com.ghatana.appplatform.integration;
 
+import com.ghatana.platform.audit.AuditBusPort;
+import com.ghatana.platform.audit.AuditEvent;
 import io.activej.promise.Promise;
 import io.micrometer.core.instrument.*;
 
@@ -42,10 +44,6 @@ public class PluginApiContractTestSuiteService {
         boolean tryCertify(String pluginId, String tier) throws Exception;
     }
 
-    public interface AuditPort {
-        void audit(String event, String detail) throws Exception;
-    }
-
     public record VerificationResult(boolean passed, List<String> violations) {}
 
     // ── Fields ────────────────────────────────────────────────────────────────
@@ -53,7 +51,7 @@ public class PluginApiContractTestSuiteService {
     private final javax.sql.DataSource ds;
     private final PluginSdkVerificationPort sdkVerification;
     private final PluginCertificationPort certificationPort;
-    private final AuditPort audit;
+    private final AuditBusPort audit;
     private final Executor executor;
     private final Counter suitesPassed;
     private final Counter suitesFailed;
@@ -62,7 +60,7 @@ public class PluginApiContractTestSuiteService {
         javax.sql.DataSource ds,
         PluginSdkVerificationPort sdkVerification,
         PluginCertificationPort certificationPort,
-        AuditPort audit,
+        AuditBusPort audit,
         MeterRegistry registry,
         Executor executor
     ) {
@@ -91,7 +89,7 @@ public class PluginApiContractTestSuiteService {
             long passed = results.stream().filter(r -> r.passed).count();
             long failed = results.size() - passed;
             if (failed == 0) suitesPassed.increment(); else suitesFailed.increment();
-            audit.audit("PLUGIN_CONTRACT_SUITE", "passed=" + passed + " failed=" + failed);
+            audit.emit(AuditEvent.builder().eventType("PLUGIN_CONTRACT_SUITE").details(Map.of("detail", "passed=" + passed + " failed=" + failed)).build());
             return new SuiteResult("PluginApiContract", results, passed, failed);
         });
     }

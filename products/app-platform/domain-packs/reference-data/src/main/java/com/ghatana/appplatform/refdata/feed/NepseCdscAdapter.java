@@ -3,6 +3,7 @@ package com.ghatana.appplatform.refdata.feed;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.ghatana.platform.core.json.PlatformObjectMapper;
 import com.ghatana.appplatform.refdata.domain.Instrument;
 import com.ghatana.appplatform.refdata.domain.InstrumentStatus;
 import com.ghatana.appplatform.refdata.domain.InstrumentType;
@@ -42,7 +43,7 @@ public class NepseCdscAdapter implements RefDataFeedAdapter {
     private static final Logger log = LoggerFactory.getLogger(NepseCdscAdapter.class);
     private static final String ADAPTER_ID = "nepse-cdsc";
     private static final Duration HTTP_TIMEOUT = Duration.ofSeconds(30);
-    private static final ObjectMapper MAPPER = new ObjectMapper();
+    private static final ObjectMapper MAPPER = PlatformObjectMapper.instance();
 
     /** In dev/test this is overridden to a mock URL via K-02 config. */
     private final String nepseApiUrl;

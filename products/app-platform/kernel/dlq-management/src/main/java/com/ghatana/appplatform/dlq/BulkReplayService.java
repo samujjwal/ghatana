@@ -1,6 +1,8 @@
 package com.ghatana.appplatform.dlq;
 
-import com.zaxxer.hikari.HikariDataSource;
+import com.ghatana.platform.audit.AuditBusPort;
+import com.ghatana.platform.audit.AuditEvent;
+import javax.sql.DataSource;
 import io.activej.promise.Promise;
 import io.micrometer.core.instrument.Counter;
 import io.micrometer.core.instrument.MeterRegistry;
@@ -26,16 +28,16 @@ public class BulkReplayService {
     private static final int DEFAULT_BATCH_SIZE        = 50;
     private static final int DEFAULT_RATE_LIMIT_PER_SEC = 20;
 
-    private final HikariDataSource dataSource;
+    private final DataSource dataSource;
     private final Executor         executor;
     private final ReplayPort       replayPort;
-    private final AuditPort        auditPort;
+    private final AuditBusPort        auditPort;
     private final Counter          bulkJobsStartedCounter;
     private final Counter          bulkJobsCompletedCounter;
     private final Counter          messagesReplayedCounter;
 
-    public BulkReplayService(HikariDataSource dataSource, Executor executor,
-                              ReplayPort replayPort, AuditPort auditPort,
+    public BulkReplayService(DataSource dataSource, Executor executor,
+                              ReplayPort replayPort, AuditBusPort auditPort,
                               MeterRegistry registry) {
         this.dataSource             = dataSource;
         this.executor               = executor;
@@ -51,11 +53,6 @@ public class BulkReplayService {
     /** Replays a single dead-letter message. */
     public interface ReplayPort {
         void replayMessage(String deadLetterId, String bulkJobId);
-    }
-
-    /** K-07 audit trail. */
-    public interface AuditPort {
-        void log(String action, String resourceType, String resourceId, Map<String, Object> details);
     }
 
     // ─── Domain records ──────────────────────────────────────────────────────

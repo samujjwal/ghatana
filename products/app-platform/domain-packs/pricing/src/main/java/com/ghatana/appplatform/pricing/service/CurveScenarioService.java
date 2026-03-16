@@ -1,6 +1,6 @@
 package com.ghatana.appplatform.pricing.service;
 
-import com.zaxxer.hikari.HikariDataSource;
+import javax.sql.DataSource;
 import io.activej.promise.Promise;
 import io.micrometer.core.instrument.Counter;
 import io.micrometer.core.instrument.MeterRegistry;
@@ -30,12 +30,12 @@ import java.util.concurrent.Executor;
  */
 public class CurveScenarioService {
 
-    private final HikariDataSource     dataSource;
+    private final DataSource     dataSource;
     private final Executor             executor;
     private final DiscountFactorService dfService;
     private final Counter              scenarioCounter;
 
-    public CurveScenarioService(HikariDataSource dataSource, Executor executor,
+    public CurveScenarioService(DataSource dataSource, Executor executor,
                                  DiscountFactorService dfService, MeterRegistry registry) {
         this.dataSource      = dataSource;
         this.executor        = executor;

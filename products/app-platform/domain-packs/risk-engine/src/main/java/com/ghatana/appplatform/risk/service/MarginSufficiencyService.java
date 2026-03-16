@@ -1,5 +1,7 @@
 package com.ghatana.appplatform.risk.service;
 
+
+import com.ghatana.platform.core.event.EventBusPort;
 import com.ghatana.appplatform.risk.domain.*;
 import com.ghatana.appplatform.risk.domain.RiskCheckResult.RiskStatus;
 import com.ghatana.appplatform.risk.port.MarginStore;
@@ -13,7 +15,6 @@ import java.math.BigDecimal;
 import java.math.RoundingMode;
 import java.util.Map;
 import java.util.concurrent.Executor;
-import java.util.function.Consumer;
 
 /**
  * @doc.type    Service (Application)
@@ -42,16 +43,16 @@ public class MarginSufficiencyService {
 
     private final MarginStore marginStore;
     private final Executor executor;
-    private final Consumer<Object> eventPublisher;
+    private final EventBusPort eventBusPort;
     private final Counter insufficientMarginCounter;
 
     public MarginSufficiencyService(MarginStore marginStore,
                                      Executor executor,
-                                     Consumer<Object> eventPublisher,
+                                     EventBusPort eventBusPort,
                                      MeterRegistry meterRegistry) {
         this.marginStore = marginStore;
         this.executor = executor;
-        this.eventPublisher = eventPublisher;
+        this.eventBusPort = eventBusPort;
         this.insufficientMarginCounter = meterRegistry.counter("risk.margin.insufficient");
     }
 
@@ -99,7 +100,7 @@ public class MarginSufficiencyService {
             }
 
             var updated = reserved.get();
-            eventPublisher.accept(new MarginReservedEvent(
+            eventBusPort.publish(new MarginReservedEvent(
                     request.orderId(), request.clientId(), required));
             return new RiskCheckResult(RiskStatus.APPROVE, null,
                     required, updated.available(), updated.utilizationRatio());
@@ -111,7 +112,7 @@ public class MarginSufficiencyService {
                                   BigDecimal reservedAmount, String orderId) {
         return Promise.ofBlocking(executor, () -> {
             marginStore.release(clientId, accountId, reservedAmount);
-            eventPublisher.accept(new MarginReleasedEvent(orderId, clientId, reservedAmount));
+            eventBusPort.publish(new MarginReleasedEvent(orderId, clientId, reservedAmount));
             return (Void) null;
         });
     }

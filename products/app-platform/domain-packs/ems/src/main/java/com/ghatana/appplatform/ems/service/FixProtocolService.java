@@ -1,6 +1,10 @@
 package com.ghatana.appplatform.ems.service;
 
+
+import com.ghatana.platform.core.event.EventBusPort;
 import com.ghatana.appplatform.ems.domain.*;
+import com.ghatana.appplatform.ems.domain.FixSessionConfig;
+import io.activej.eventloop.Eventloop;
 import io.micrometer.core.instrument.Counter;
 import io.micrometer.core.instrument.MeterRegistry;
 import org.slf4j.Logger;
@@ -9,11 +13,9 @@ import org.slf4j.LoggerFactory;
 import java.time.Instant;
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.Executors;
-import java.util.concurrent.ScheduledExecutorService;
-import java.util.concurrent.TimeUnit;
+import java.util.concurrent.Executor;
+import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
-import java.util.function.Consumer;
 
 /**
  * @doc.type      Service
@@ -34,31 +36,78 @@ import java.util.function.Consumer;
 public class FixProtocolService {
 
     private static final Logger log = LoggerFactory.getLogger(FixProtocolService.class);
-    private static final int HEARTBEAT_INTERVAL_SECONDS = 30;
-    private static final int SESSION_TIMEOUT_SECONDS    = 60;
     private static final char FIELD_DELIM               = '\u0001'; // SOH
 
     private final ConcurrentHashMap<String, FixSession> sessions = new ConcurrentHashMap<>();
     private final ConcurrentHashMap<String, List<FixMessage>> sentMessageLog = new ConcurrentHashMap<>();
-    private final Consumer<Object> eventPublisher;
-    private final ScheduledExecutorService scheduler;
+    private final EventBusPort eventBusPort;
+    private final Eventloop eventloop;
+    private final Executor blockingExecutor;
+    private final AtomicBoolean heartbeatRunning = new AtomicBoolean(false);
     private final Counter heartbeatsSent;
     private final Counter gapFillsIssued;
     private final Counter logonCount;
 
-    public FixProtocolService(Consumer<Object> eventPublisher, MeterRegistry meterRegistry) {
-        this.eventPublisher = eventPublisher;
-        this.scheduler = Executors.newSingleThreadScheduledExecutor(r -> {
-            Thread t = new Thread(r, "fix-heartbeat");
-            t.setDaemon(true);
-            return t;
-        });
+    /** Default config used when no per-session config is registered. */
+    private volatile FixSessionConfig defaultConfig;
+    /** Per-session config overrides (sessionId → config). */
+    private final ConcurrentHashMap<String, FixSessionConfig> sessionConfigs = new ConcurrentHashMap<>();
+
+    public FixProtocolService(EventBusPort eventBusPort, MeterRegistry meterRegistry,
+                              Eventloop eventloop, Executor blockingExecutor) {
+        this(eventBusPort, meterRegistry, eventloop, blockingExecutor, FixSessionConfig.DEFAULT);
+    }
+
+    public FixProtocolService(EventBusPort eventBusPort, MeterRegistry meterRegistry,
+                              Eventloop eventloop, Executor blockingExecutor,
+                              FixSessionConfig defaultConfig) {
+        this.eventBusPort = eventBusPort;
+        this.eventloop = eventloop;
+        this.blockingExecutor = blockingExecutor;
+        this.defaultConfig = defaultConfig;
         this.heartbeatsSent = meterRegistry.counter("fix.heartbeats.sent");
         this.gapFillsIssued = meterRegistry.counter("fix.gapfill.issued");
         this.logonCount     = meterRegistry.counter("fix.sessions.logon");
 
-        scheduler.scheduleAtFixedRate(this::processHeartbeats,
-                HEARTBEAT_INTERVAL_SECONDS, HEARTBEAT_INTERVAL_SECONDS, TimeUnit.SECONDS);
+        heartbeatRunning.set(true);
+        eventloop.delay(configFor(null).heartbeatIntervalSeconds() * 1000L, this::scheduleHeartbeat);
+    }
+
+    /**
+     * Registers a per-session (per-counterparty) configuration override.
+     *
+     * @param sessionId the FIX session identifier
+     * @param config    the session-specific config
+     */
+    public void setSessionConfig(String sessionId, FixSessionConfig config) {
+        sessionConfigs.put(sessionId, config);
+    }
+
+    /**
+     * Updates the default config at runtime (e.g. from config-engine hot-reload).
+     */
+    public void setDefaultConfig(FixSessionConfig config) {
+        this.defaultConfig = Objects.requireNonNull(config);
+    }
+
+    private FixSessionConfig configFor(String sessionId) {
+        if (sessionId != null) {
+            FixSessionConfig override = sessionConfigs.get(sessionId);
+            if (override != null) return override;
+        }
+        return defaultConfig;
+    }
+
+    private void scheduleHeartbeat() {
+        if (!heartbeatRunning.get()) return;
+        io.activej.promise.Promise.ofBlocking(blockingExecutor, () -> {
+            processHeartbeats();
+            return null;
+        }).whenComplete(() -> {
+            if (heartbeatRunning.get()) {
+                eventloop.delay(defaultConfig.heartbeatIntervalSeconds() * 1000L, this::scheduleHeartbeat);
+            }
+        });
     }
 
     /**
@@ -81,7 +130,7 @@ public class FixProtocolService {
         fields.put(FixMessage.TAG_SENDER_COMP,  senderCompId);
         fields.put(FixMessage.TAG_TARGET_COMP,  targetCompId);
         fields.put(FixMessage.TAG_SENDING_TIME, Instant.now().toString());
-        fields.put(108, String.valueOf(HEARTBEAT_INTERVAL_SECONDS)); // HeartBtInt
+        fields.put(108, String.valueOf(configFor(sessionId).heartbeatIntervalSeconds())); // HeartBtInt
         fields.put(141, "Y");  // ResetOnLogon
 
         FixMessage logon = new FixMessage(FixMessage.LOGON, session.nextSendSeqNum(), fields, Instant.now());
@@ -223,7 +272,7 @@ public class FixProtocolService {
     private Optional<String> handleLogon(String sessionId, FixSession session, FixMessage msg) {
         sessions.put(sessionId, session.withState(FixSessionState.LOGGED_ON));
         log.info("FIX session logged on: {}", sessionId);
-        eventPublisher.accept(new FixSessionLogonEvent(sessionId));
+        eventBusPort.publish(new FixSessionLogonEvent(sessionId));
 
         // Echo back heartbeat acknowledgement
         Map<Integer, String> fields = new LinkedHashMap<>();
@@ -238,7 +287,7 @@ public class FixProtocolService {
     private Optional<String> handleLogout(String sessionId, FixSession session) {
         sessions.put(sessionId, session.withState(FixSessionState.LOGGED_OUT));
         log.info("FIX session logged out: {}", sessionId);
-        eventPublisher.accept(new FixSessionLogoutEvent(sessionId));
+        eventBusPort.publish(new FixSessionLogoutEvent(sessionId));
         return Optional.empty();
     }
 
@@ -257,7 +306,7 @@ public class FixProtocolService {
 
         log.info("FIX ExecReport: session={} execId={} clOrdId={} execType={}",
                 sessionId, execId, clOrdId, execType);
-        eventPublisher.accept(new FixExecReportEvent(sessionId, execId, clOrdId, execType,
+        eventBusPort.publish(new FixExecReportEvent(sessionId, execId, clOrdId, execType,
                 lastQtyStr != null ? Long.parseLong(lastQtyStr) : 0,
                 lastPxStr));
     }
@@ -302,11 +351,12 @@ public class FixProtocolService {
         Instant now = Instant.now();
         sessions.forEach((id, session) -> {
             if (session.state() != FixSessionState.LOGGED_ON) return;
+            FixSessionConfig cfg = configFor(id);
             Instant lastHb = session.lastHeartbeatAt();
-            if (lastHb != null && lastHb.plusSeconds(SESSION_TIMEOUT_SECONDS).isBefore(now)) {
+            if (lastHb != null && lastHb.plusSeconds(cfg.sessionTimeoutSeconds()).isBefore(now)) {
                 log.warn("FIX session timeout detected: {}", id);
                 sessions.put(id, session.withState(FixSessionState.DISCONNECTED));
-                eventPublisher.accept(new FixSessionTimeoutEvent(id));
+                eventBusPort.publish(new FixSessionTimeoutEvent(id));
                 return;
             }
             // Send heartbeat

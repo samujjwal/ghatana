@@ -1,5 +1,7 @@
 package com.ghatana.appplatform.integration;
 
+import com.ghatana.platform.audit.AuditBusPort;
+import com.ghatana.platform.audit.AuditEvent;
 import io.activej.promise.Promise;
 import io.micrometer.core.instrument.*;
 
@@ -91,10 +93,6 @@ public class PostGaHypercarePeriodTrackingService {
         void recordWeek4ExitDone() throws Exception;
     }
 
-    public interface AuditPort {
-        void audit(String event, String detail) throws Exception;
-    }
-
     public record HypercareIncident(String incidentId, String severity, long mttrMinutes) {}
 
     // ── Constants ─────────────────────────────────────────────────────────────
@@ -109,7 +107,7 @@ public class PostGaHypercarePeriodTrackingService {
     private final OnCallPort onCall;
     private final ChaosPort chaos;
     private final HypercareStatePort statePort;
-    private final AuditPort audit;
+    private final AuditBusPort audit;
     private final Executor executor;
     private final Counter suitesPassed;
     private final Counter suitesFailed;
@@ -123,7 +121,7 @@ public class PostGaHypercarePeriodTrackingService {
         OnCallPort onCall,
         ChaosPort chaos,
         HypercareStatePort statePort,
-        AuditPort audit,
+        AuditBusPort audit,
         MeterRegistry registry,
         Executor executor
     ) {
@@ -156,7 +154,7 @@ public class PostGaHypercarePeriodTrackingService {
             long passed = results.stream().filter(r -> r.passed).count();
             long failed = results.size() - passed;
             if (failed == 0) suitesPassed.increment(); else suitesFailed.increment();
-            audit.audit("GA_HYPERCARE_SUITE", "passed=" + passed + " failed=" + failed);
+            audit.emit(AuditEvent.builder().eventType("GA_HYPERCARE_SUITE").details(Map.of("detail", "passed=" + passed + " failed=" + failed)).build());
             return new SuiteResult("PostGaHypercarePeriodTracking", results, passed, failed);
         });
     }
@@ -255,7 +253,7 @@ public class PostGaHypercarePeriodTrackingService {
         hypercareActiveFlag = was ? 1.0 : 0.0;
         LocalDate exitDate = LocalDate.now().plusDays(28); // Week 4 from GA
         statePort.recordExitDate(exitDate);
-        audit.audit("GA_HYPERCARE_EXIT", "hypercare exit recorded: exitDate=" + exitDate);
+        audit.emit(AuditEvent.builder().eventType("GA_HYPERCARE_EXIT").details(Map.of("detail", "hypercare exit recorded: exitDate=" + exitDate)).build());
         assertStep(runId, "exit_date_recorded", "hypercare exit date recorded", "non-null", true, exitDate);
     }
 

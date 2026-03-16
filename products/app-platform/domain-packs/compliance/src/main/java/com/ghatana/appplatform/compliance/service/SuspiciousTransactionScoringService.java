@@ -1,5 +1,7 @@
 package com.ghatana.appplatform.compliance.service;
 
+
+import com.ghatana.platform.core.event.EventBusPort;
 import io.micrometer.core.instrument.Counter;
 import io.micrometer.core.instrument.MeterRegistry;
 import org.slf4j.Logger;
@@ -10,7 +12,6 @@ import java.sql.*;
 import java.time.Instant;
 import java.util.Map;
 import java.util.UUID;
-import java.util.function.Consumer;
 
 /**
  * @doc.type      Service
@@ -31,17 +32,17 @@ public class SuspiciousTransactionScoringService {
 
     private final StrModelPort     strModelPort;
     private final DataSource       dataSource;
-    private final Consumer<Object> eventPublisher;
+    private final EventBusPort eventBusPort;
     private final Counter          strAutoEscalated;
     private final Counter          strFalsePositiveFlagged;
 
     public SuspiciousTransactionScoringService(StrModelPort strModelPort,
                                                 DataSource dataSource,
-                                                Consumer<Object> eventPublisher,
+                                                EventBusPort eventBusPort,
                                                 MeterRegistry meterRegistry) {
         this.strModelPort          = strModelPort;
         this.dataSource            = dataSource;
-        this.eventPublisher        = eventPublisher;
+        this.eventBusPort        = eventBusPort;
         this.strAutoEscalated      = meterRegistry.counter("compliance.str.auto_escalated");
         this.strFalsePositiveFlagged = meterRegistry.counter("compliance.str.false_positive");
     }
@@ -68,11 +69,11 @@ public class SuspiciousTransactionScoringService {
             caseId = createStrCase(transactionId, clientId, instrumentId, score, shap);
             strAutoEscalated.increment();
             log.warn("STR auto-escalated txn={} client={} score={}", transactionId, clientId, score);
-            eventPublisher.accept(new StrAutoEscalatedEvent(caseId, transactionId, clientId,
+            eventBusPort.publish(new StrAutoEscalatedEvent(caseId, transactionId, clientId,
                     instrumentId, score, shap));
         } else if (score >= STR_REVIEW_THRESHOLD) {
             log.info("STR review-required txn={} client={} score={}", transactionId, clientId, score);
-            eventPublisher.accept(new StrReviewRequiredEvent(transactionId, clientId, instrumentId, score));
+            eventBusPort.publish(new StrReviewRequiredEvent(transactionId, clientId, instrumentId, score));
         }
 
         saveScore(transactionId, clientId, instrumentId, score, shap, caseId);

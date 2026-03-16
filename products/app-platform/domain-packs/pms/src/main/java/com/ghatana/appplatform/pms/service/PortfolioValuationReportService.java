@@ -1,6 +1,6 @@
 package com.ghatana.appplatform.pms.service;
 
-import com.zaxxer.hikari.HikariDataSource;
+import javax.sql.DataSource;
 import io.activej.promise.Promise;
 import io.micrometer.core.instrument.Timer;
 import io.micrometer.core.instrument.MeterRegistry;
@@ -27,13 +27,13 @@ import java.util.concurrent.Executor;
  */
 public class PortfolioValuationReportService {
 
-    private final HikariDataSource dataSource;
+    private final DataSource dataSource;
     private final Executor         executor;
     private final CalendarPort     calendarPort;
     private final ExportPort       exportPort;
     private final Timer            reportTimer;
 
-    public PortfolioValuationReportService(HikariDataSource dataSource, Executor executor,
+    public PortfolioValuationReportService(DataSource dataSource, Executor executor,
                                             CalendarPort calendarPort, ExportPort exportPort,
                                             MeterRegistry registry) {
         this.dataSource   = dataSource;

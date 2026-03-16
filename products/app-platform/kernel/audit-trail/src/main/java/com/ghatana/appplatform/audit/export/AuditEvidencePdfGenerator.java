@@ -2,6 +2,7 @@ package com.ghatana.appplatform.audit.export;
 
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.ghatana.platform.core.json.PlatformObjectMapper;
 import com.ghatana.appplatform.audit.chain.HashChainService;
 import org.apache.pdfbox.pdmodel.PDDocument;
 import org.apache.pdfbox.pdmodel.PDPage;
@@ -86,7 +87,7 @@ public class AuditEvidencePdfGenerator {
     public AuditEvidencePdfGenerator(DataSource dataSource, HashChainService hashChainService) {
         this.dataSource       = dataSource;
         this.hashChainService = hashChainService;
-        this.jsonMapper       = new ObjectMapper();
+        this.jsonMapper       = PlatformObjectMapper.instance();
     }
 
     // ── Internal row model ───────────────────────────────────────────────────

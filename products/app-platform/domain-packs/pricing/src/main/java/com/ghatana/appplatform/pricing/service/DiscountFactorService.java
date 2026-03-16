@@ -1,6 +1,6 @@
 package com.ghatana.appplatform.pricing.service;
 
-import com.zaxxer.hikari.HikariDataSource;
+import javax.sql.DataSource;
 import io.activej.promise.Promise;
 import io.micrometer.core.instrument.Timer;
 import io.micrometer.core.instrument.MeterRegistry;
@@ -31,11 +31,11 @@ public class DiscountFactorService {
 
     private static final MathContext MC = MathContext.DECIMAL128;
 
-    private final HikariDataSource dataSource;
+    private final DataSource dataSource;
     private final Executor         executor;
     private final Timer            pvTimer;
 
-    public DiscountFactorService(HikariDataSource dataSource, Executor executor,
+    public DiscountFactorService(DataSource dataSource, Executor executor,
                                   MeterRegistry registry) {
         this.dataSource = dataSource;
         this.executor   = executor;

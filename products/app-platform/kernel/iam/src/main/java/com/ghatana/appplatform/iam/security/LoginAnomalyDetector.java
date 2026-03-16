@@ -148,7 +148,7 @@ public final class LoginAnomalyDetector {
     private List<LoginEntry> readHistory(String key) {
         List<LoginEntry> entries = new ArrayList<>();
         try (var j = jedis.getResource()) {
-            Set<String> members = j.zrange(key, 0, -1);
+            List<String> members = j.zrange(key, 0, -1);
             for (String m : members) {
                 LoginEntry e = decodeEntry(m);
                 if (e != null) entries.add(e);

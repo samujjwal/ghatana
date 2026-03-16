@@ -1,6 +1,6 @@
 package com.ghatana.appplatform.reporting.service;
 
-import com.zaxxer.hikari.HikariDataSource;
+import javax.sql.DataSource;
 import io.activej.promise.Promise;
 import io.micrometer.core.instrument.Counter;
 import io.micrometer.core.instrument.MeterRegistry;
@@ -27,14 +27,14 @@ import java.util.concurrent.Executor;
  */
 public class XbrlRendererService {
 
-    private final HikariDataSource dataSource;
+    private final DataSource dataSource;
     private final Executor         executor;
     private final XbrlTaxonomyPort taxonomyPort;
     private final StoragePort      storagePort;
     private final Counter          xbrlRenderedCounter;
     private final Counter          ixbrlRenderedCounter;
 
-    public XbrlRendererService(HikariDataSource dataSource, Executor executor,
+    public XbrlRendererService(DataSource dataSource, Executor executor,
                                 XbrlTaxonomyPort taxonomyPort, StoragePort storagePort,
                                 MeterRegistry registry) {
         this.dataSource           = dataSource;

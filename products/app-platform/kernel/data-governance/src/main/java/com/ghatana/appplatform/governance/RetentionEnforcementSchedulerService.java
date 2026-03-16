@@ -1,6 +1,8 @@
 package com.ghatana.appplatform.governance;
 
-import com.zaxxer.hikari.HikariDataSource;
+import com.ghatana.platform.audit.AuditBusPort;
+import com.ghatana.platform.audit.AuditEvent;
+import javax.sql.DataSource;
 import io.activej.promise.Promise;
 import io.micrometer.core.instrument.Counter;
 import io.micrometer.core.instrument.MeterRegistry;
@@ -27,17 +29,17 @@ public class RetentionEnforcementSchedulerService {
 
     private static final int GRACE_PERIOD_DAYS = 7;
 
-    private final HikariDataSource dataSource;
+    private final DataSource dataSource;
     private final Executor         executor;
     private final StorageTierPort  storageTierPort;
-    private final AuditPort        auditPort;
+    private final AuditBusPort        auditPort;
     private final Counter          assetsArchivedCounter;
     private final Counter          assetsDeletedCounter;
     private final Counter          assetsAnonymizedCounter;
 
-    public RetentionEnforcementSchedulerService(HikariDataSource dataSource, Executor executor,
+    public RetentionEnforcementSchedulerService(DataSource dataSource, Executor executor,
                                                  StorageTierPort storageTierPort,
-                                                 AuditPort auditPort,
+                                                 AuditBusPort auditPort,
                                                  MeterRegistry registry) {
         this.dataSource              = dataSource;
         this.executor                = executor;
@@ -54,11 +56,6 @@ public class RetentionEnforcementSchedulerService {
     public interface StorageTierPort {
         String archiveAsset(String assetId, String storageClass);
         String archiveJobStatus(String jobId);
-    }
-
-    /** K-07 audit trail. */
-    public interface AuditPort {
-        void log(String action, String resourceType, String resourceId, Map<String, Object> details);
     }
 
     // ─── Domain enums and records ────────────────────────────────────────────

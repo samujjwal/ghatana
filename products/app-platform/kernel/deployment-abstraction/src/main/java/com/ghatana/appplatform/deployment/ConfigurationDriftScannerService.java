@@ -1,6 +1,6 @@
 package com.ghatana.appplatform.deployment;
 
-import com.zaxxer.hikari.HikariDataSource;
+import javax.sql.DataSource;
 import io.activej.promise.Promise;
 import io.micrometer.core.instrument.Counter;
 import io.micrometer.core.instrument.Gauge;
@@ -25,7 +25,7 @@ import java.util.concurrent.atomic.AtomicLong;
  */
 public class ConfigurationDriftScannerService {
 
-    private final HikariDataSource   dataSource;
+    private final DataSource   dataSource;
     private final Executor           executor;
     private final LiveConfigPort     liveConfigPort;
     private final BaselineConfigPort baselineConfigPort;
@@ -33,7 +33,7 @@ public class ConfigurationDriftScannerService {
     private final Counter            driftItemsDetectedCounter;
     private final AtomicLong         openDriftCount = new AtomicLong(0);
 
-    public ConfigurationDriftScannerService(HikariDataSource dataSource, Executor executor,
+    public ConfigurationDriftScannerService(DataSource dataSource, Executor executor,
                                              LiveConfigPort liveConfigPort,
                                              BaselineConfigPort baselineConfigPort,
                                              AlertPort alertPort, MeterRegistry registry) {

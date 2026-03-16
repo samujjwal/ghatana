@@ -1,5 +1,7 @@
 package com.ghatana.appplatform.ems.service;
 
+
+import com.ghatana.platform.core.event.EventBusPort;
 import com.ghatana.appplatform.ems.domain.*;
 import com.ghatana.appplatform.ems.port.ExchangeAdapterPort;
 import io.micrometer.core.instrument.Counter;
@@ -11,7 +13,6 @@ import java.math.BigDecimal;
 import java.time.Instant;
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
-import java.util.function.Consumer;
 
 /**
  * @doc.type      Service
@@ -37,15 +38,15 @@ public class SmartOrderRouterService {
     private final ConcurrentHashMap<String, RoutedOrder>         routedOrders = new ConcurrentHashMap<>();
     private final ConcurrentHashMap<String, SplitOrder>          splitOrders  = new ConcurrentHashMap<>();
     private final RoutingStore                                    routingStore;
-    private final Consumer<Object>                                eventPublisher;
+    private final EventBusPort                                eventBusPort;
     private final Counter ordersRouted;
     private final Counter routingFailures;
 
     public SmartOrderRouterService(RoutingStore routingStore,
-                                   Consumer<Object> eventPublisher,
+                                   EventBusPort eventBusPort,
                                    MeterRegistry meterRegistry) {
         this.routingStore   = routingStore;
-        this.eventPublisher = eventPublisher;
+        this.eventBusPort = eventBusPort;
         this.ordersRouted   = meterRegistry.counter("ems.orders.routed");
         this.routingFailures = meterRegistry.counter("ems.routing.failures");
     }
@@ -98,7 +99,7 @@ public class SmartOrderRouterService {
         } catch (ExchangeAdapterPort.ExchangeRejectException e) {
             routingFailures.increment();
             log.warn("SOR: exchange rejected order orderId={} reason={}", orderId, e.rejectReason());
-            eventPublisher.accept(new OrderRoutingRejectedEvent(orderId, routingId, e.rejectReason()));
+            eventBusPort.publish(new OrderRoutingRejectedEvent(orderId, routingId, e.rejectReason()));
             throw new RoutingException("Exchange rejected: " + e.rejectReason(), e);
         }
 
@@ -116,7 +117,7 @@ public class SmartOrderRouterService {
 
         log.info("SOR: order routed orderId={} routingId={} exchange={} externalId={}",
                 orderId, routingId, adapter.exchangeId(), externalId);
-        eventPublisher.accept(new OrderRoutedEvent(orderId, routingId, adapter.exchangeId()));
+        eventBusPort.publish(new OrderRoutedEvent(orderId, routingId, adapter.exchangeId()));
         return routed;
     }
 
@@ -151,7 +152,7 @@ public class SmartOrderRouterService {
 
         splitOrders.put(orderId, split);
         log.info("SOR: split order created orderId={} childCount={}", orderId, childIds.size());
-        eventPublisher.accept(new SplitOrderCreatedEvent(orderId, childIds));
+        eventBusPort.publish(new SplitOrderCreatedEvent(orderId, childIds));
         return split;
     }
 
@@ -200,7 +201,7 @@ public class SmartOrderRouterService {
         }
 
         routingStore.save(existing);
-        eventPublisher.accept(new FillAppliedEvent(fill.routingId(), existing.parentOrderId(), fill));
+        eventBusPort.publish(new FillAppliedEvent(fill.routingId(), existing.parentOrderId(), fill));
 
         // Update split order aggregate if applicable
         updateSplitAggregate(existing.parentOrderId());

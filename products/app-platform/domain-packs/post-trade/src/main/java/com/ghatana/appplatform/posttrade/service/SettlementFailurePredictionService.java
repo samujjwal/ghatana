@@ -1,6 +1,6 @@
 package com.ghatana.appplatform.posttrade.service;
 
-import com.zaxxer.hikari.HikariDataSource;
+import javax.sql.DataSource;
 import io.activej.promise.Promise;
 import io.micrometer.core.instrument.Counter;
 import io.micrometer.core.instrument.MeterRegistry;
@@ -36,13 +36,13 @@ public class SettlementFailurePredictionService {
     private static final Logger log  = LoggerFactory.getLogger(SettlementFailurePredictionService.class);
     private static final double HIGH_RISK_THRESHOLD = 0.70;
 
-    private final HikariDataSource dataSource;
+    private final DataSource dataSource;
     private final Executor         executor;
     private final AiModelPort      aiModel;
     private final Counter          scoredCounter;
     private final Counter          highRiskCounter;
 
-    public SettlementFailurePredictionService(HikariDataSource dataSource, Executor executor,
+    public SettlementFailurePredictionService(DataSource dataSource, Executor executor,
                                               AiModelPort aiModel, MeterRegistry registry) {
         this.dataSource      = dataSource;
         this.executor        = executor;

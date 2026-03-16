@@ -1,5 +1,7 @@
 package com.ghatana.appplatform.ems.service;
 
+
+import com.ghatana.platform.core.event.EventBusPort;
 import com.ghatana.appplatform.ems.port.ExchangeAdapterPort;
 import io.micrometer.core.instrument.*;
 import org.slf4j.Logger;
@@ -9,7 +11,6 @@ import java.math.BigDecimal;
 import java.time.Instant;
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
-import java.util.function.Consumer;
 
 /**
  * @doc.type      Service
@@ -39,11 +40,11 @@ public class AdapterHealthMonitoringService {
 
     private final ConcurrentHashMap<String, ExchangeAdapterPort> adapters = new ConcurrentHashMap<>();
     private final ConcurrentHashMap<String, AdapterMetrics>      metrics  = new ConcurrentHashMap<>();
-    private final Consumer<Object>                                eventPublisher;
+    private final EventBusPort                                eventBusPort;
     private final MeterRegistry                                   meterRegistry;
 
-    public AdapterHealthMonitoringService(Consumer<Object> eventPublisher, MeterRegistry meterRegistry) {
-        this.eventPublisher = eventPublisher;
+    public AdapterHealthMonitoringService(EventBusPort eventBusPort, MeterRegistry meterRegistry) {
+        this.eventBusPort = eventBusPort;
         this.meterRegistry  = meterRegistry;
     }
 
@@ -80,7 +81,7 @@ public class AdapterHealthMonitoringService {
 
         if (latencyMs > LATENCY_ALERT_MS) {
             log.warn("AdapterHealthMonitor: high latency detected exchange={} latencyMs={}", exchangeId, latencyMs);
-            eventPublisher.accept(new AdapterHighLatencyEvent(exchangeId, latencyMs));
+            eventBusPort.publish(new AdapterHighLatencyEvent(exchangeId, latencyMs));
         }
     }
 
@@ -98,7 +99,7 @@ public class AdapterHealthMonitoringService {
         if (rate > REJECTION_RATE_THRESHOLD) {
             log.warn("AdapterHealthMonitor: rejection spike exchange={} rate={}%",
                     exchangeId, String.format("%.1f", rate * 100));
-            eventPublisher.accept(new AdapterRejectionSpikeEvent(exchangeId, rate));
+            eventBusPort.publish(new AdapterRejectionSpikeEvent(exchangeId, rate));
         }
     }
 
@@ -117,10 +118,10 @@ public class AdapterHealthMonitoringService {
 
             if (wasConnected && !ok) {
                 log.error("AdapterHealthMonitor: adapter disconnected exchangeId={}", id);
-                eventPublisher.accept(new AdapterDisconnectedEvent(id, Instant.now()));
+                eventBusPort.publish(new AdapterDisconnectedEvent(id, Instant.now()));
             } else if (!wasConnected && ok) {
                 log.info("AdapterHealthMonitor: adapter reconnected exchangeId={}", id);
-                eventPublisher.accept(new AdapterReconnectedEvent(id, Instant.now()));
+                eventBusPort.publish(new AdapterReconnectedEvent(id, Instant.now()));
             }
         });
     }

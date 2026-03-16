@@ -1,5 +1,7 @@
 package com.ghatana.appplatform.oms.service;
 
+
+import com.ghatana.platform.core.event.EventBusPort;
 import io.micrometer.core.instrument.Counter;
 import io.micrometer.core.instrument.MeterRegistry;
 import io.micrometer.core.instrument.Timer;
@@ -7,7 +9,6 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.math.BigDecimal;
-import java.util.function.Consumer;
 
 /**
  * @doc.type      Service
@@ -28,15 +29,15 @@ public class RiskCheckIntegrationService {
     private static final Logger log = LoggerFactory.getLogger(RiskCheckIntegrationService.class);
 
     private final RiskPort      riskPort;
-    private final Consumer<Object> eventPublisher;
+    private final EventBusPort eventBusPort;
     private final Counter riskDenials;
     private final Timer   riskLatency;
 
     public RiskCheckIntegrationService(RiskPort riskPort,
-                                       Consumer<Object> eventPublisher,
+                                       EventBusPort eventBusPort,
                                        MeterRegistry meterRegistry) {
         this.riskPort      = riskPort;
-        this.eventPublisher = eventPublisher;
+        this.eventBusPort = eventBusPort;
         this.riskDenials   = meterRegistry.counter("oms.risk.denials");
         this.riskLatency   = meterRegistry.timer("oms.risk.latency");
     }
@@ -65,7 +66,7 @@ public class RiskCheckIntegrationService {
         if (!outcome.approved()) {
             riskDenials.increment();
             log.info("Risk DENY orderId={} reason={}", orderId, outcome.reason());
-            eventPublisher.accept(new OrderRiskDeniedEvent(orderId, clientId, outcome.reason()));
+            eventBusPort.publish(new OrderRiskDeniedEvent(orderId, clientId, outcome.reason()));
         } else {
             log.debug("Risk APPROVE orderId={}", orderId);
         }

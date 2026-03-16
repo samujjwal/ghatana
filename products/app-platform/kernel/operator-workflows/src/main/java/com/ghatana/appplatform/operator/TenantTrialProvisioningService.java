@@ -1,5 +1,7 @@
 package com.ghatana.appplatform.operator;
 
+import com.ghatana.platform.audit.AuditBusPort;
+import com.ghatana.platform.audit.AuditEvent;
 import io.activej.promise.Promise;
 import io.micrometer.core.instrument.*;
 
@@ -57,10 +59,6 @@ public class TenantTrialProvisioningService {
         void sendOffboarded(String toEmail, String name) throws Exception;
     }
 
-    public interface AuditPort {
-        void record(String actorId, String action, String detail) throws Exception;
-    }
-
     // ── Value types ───────────────────────────────────────────────────────────
 
     public record TrialRecord(
@@ -73,7 +71,7 @@ public class TenantTrialProvisioningService {
     private final javax.sql.DataSource ds;
     private final NamespaceProvisionPort namespace;
     private final EmailPort emailPort;
-    private final AuditPort audit;
+    private final AuditBusPort audit;
     private final Executor executor;
     private final Counter trialsStartedCounter;
     private final Counter trialsConvertedCounter;
@@ -83,7 +81,7 @@ public class TenantTrialProvisioningService {
         javax.sql.DataSource ds,
         NamespaceProvisionPort namespace,
         EmailPort emailPort,
-        AuditPort audit,
+        AuditBusPort audit,
         MeterRegistry registry,
         Executor executor
     ) {
@@ -141,7 +139,7 @@ public class TenantTrialProvisioningService {
             namespace.provisionSandbox(tenantId);
             emailPort.sendWelcome(requesterEmail, requesterName, tenantId, "See portal for credentials");
             trialsStartedCounter.increment();
-            audit.record("system", "TRIAL_STARTED", "tenantId=" + tenantId + " requester=" + requesterEmail);
+            audit.emit(AuditEvent.builder().principal("system").eventType("TRIAL_STARTED").details(Map.of("detail", "tenantId=" + tenantId + " requester=" + requesterEmail)).build());
             return tenantId;
         });
     }
@@ -165,7 +163,7 @@ public class TenantTrialProvisioningService {
             }
             namespace.liftSandboxRestrictions(tenantId);
             trialsConvertedCounter.increment();
-            audit.record(convertedBy, "TRIAL_CONVERTED", "tenantId=" + tenantId + " to=" + targetLicenseType);
+            audit.emit(AuditEvent.builder().principal(convertedBy).eventType("TRIAL_CONVERTED").details(Map.of("detail", "tenantId=" + tenantId + " to=" + targetLicenseType)).build());
             return null;
         });
     }
@@ -225,6 +223,6 @@ public class TenantTrialProvisioningService {
         namespace.deprovision(tenantId);
         emailPort.sendOffboarded(email, name);
         trialsOffboardedCounter.increment();
-        audit.record("system", "TRIAL_OFFBOARDED", "tenantId=" + tenantId);
+        audit.emit(AuditEvent.builder().principal("system").eventType("TRIAL_OFFBOARDED").details(Map.of("detail", "tenantId=" + tenantId)).build());
     }
 }

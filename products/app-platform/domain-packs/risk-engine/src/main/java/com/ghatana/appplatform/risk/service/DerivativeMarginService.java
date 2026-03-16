@@ -1,6 +1,6 @@
 package com.ghatana.appplatform.risk.service;
 
-import com.zaxxer.hikari.HikariDataSource;
+import javax.sql.DataSource;
 import io.activej.promise.Promise;
 import io.micrometer.core.instrument.Counter;
 import io.micrometer.core.instrument.MeterRegistry;
@@ -37,13 +37,13 @@ public class DerivativeMarginService {
     private static final int    PRICE_SCENARIOS    = 16;
     private static final double SPREAD_CREDIT_RATE = 0.50;  // 50% credit for spread positions
 
-    private final HikariDataSource    dataSource;
+    private final DataSource    dataSource;
     private final Executor            executor;
     private final DerivativePricerPort pricer;
     private final Counter             initialMarginCounter;
     private final Counter             variationMarginCounter;
 
-    public DerivativeMarginService(HikariDataSource dataSource, Executor executor,
+    public DerivativeMarginService(DataSource dataSource, Executor executor,
                                    DerivativePricerPort pricer, MeterRegistry registry) {
         this.dataSource            = dataSource;
         this.executor              = executor;

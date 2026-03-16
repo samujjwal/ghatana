@@ -1,6 +1,6 @@
 package com.ghatana.appplatform.ems.service;
 
-import com.zaxxer.hikari.HikariDataSource;
+import javax.sql.DataSource;
 import io.activej.promise.Promise;
 import io.micrometer.core.instrument.Counter;
 import io.micrometer.core.instrument.MeterRegistry;
@@ -35,7 +35,7 @@ public class RlExecutionOptimizerService {
     private static final double EPSILON_EXPLORATION = 0.05;  // ε-greedy in production
     private static final double SHADOW_MODE_DEFAULT  = true;  // start in shadow mode
 
-    private final HikariDataSource dataSource;
+    private final DataSource dataSource;
     private final Executor         executor;
     private final RlPolicyPort     rlPolicyPort;
     private final ShadowModePort   shadowModePort;
@@ -43,7 +43,7 @@ public class RlExecutionOptimizerService {
     private final Counter          overrideCounter;
     private final Counter          hitlApprovalCounter;
 
-    public RlExecutionOptimizerService(HikariDataSource dataSource, Executor executor,
+    public RlExecutionOptimizerService(DataSource dataSource, Executor executor,
                                        RlPolicyPort rlPolicyPort, ShadowModePort shadowModePort,
                                        MeterRegistry registry) {
         this.dataSource          = dataSource;

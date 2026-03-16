@@ -1,6 +1,6 @@
 package com.ghatana.appplatform.dlq;
 
-import com.zaxxer.hikari.HikariDataSource;
+import javax.sql.DataSource;
 import io.activej.promise.Promise;
 import io.micrometer.core.instrument.Counter;
 import io.micrometer.core.instrument.Gauge;
@@ -29,14 +29,14 @@ public class DlqTopicRoutingService {
 
     private static final int DEFAULT_MAX_CAPACITY = 10_000;
 
-    private final HikariDataSource            dataSource;
+    private final DataSource            dataSource;
     private final Executor                    executor;
     private final EventPort                   eventPort;
     private final Counter                     routedCounter;
     private final ConcurrentHashMap<String, AtomicInteger> topicSizes = new ConcurrentHashMap<>();
     private final MeterRegistry               registry;
 
-    public DlqTopicRoutingService(HikariDataSource dataSource, Executor executor,
+    public DlqTopicRoutingService(DataSource dataSource, Executor executor,
                                    EventPort eventPort, MeterRegistry registry) {
         this.dataSource   = dataSource;
         this.executor     = executor;

@@ -1,6 +1,6 @@
 package com.ghatana.appplatform.surveillance.service;
 
-import com.zaxxer.hikari.HikariDataSource;
+import javax.sql.DataSource;
 import io.activej.promise.Promise;
 import io.micrometer.core.instrument.Counter;
 import io.micrometer.core.instrument.Gauge;
@@ -32,14 +32,14 @@ public class OrderCancelRatioService {
     private static final double DEFAULT_CANCEL_THRESHOLD = 0.80;
     private static final int    SUSTAINED_HOURS          = 2;
 
-    private final HikariDataSource dataSource;
+    private final DataSource dataSource;
     private final Executor         executor;
     private final ConfigPort       configPort;
     private final AlertPort        alertPort;
     private final Counter          alertCounter;
     private final AtomicLong       highCancelClientCount = new AtomicLong(0);
 
-    public OrderCancelRatioService(HikariDataSource dataSource, Executor executor,
+    public OrderCancelRatioService(DataSource dataSource, Executor executor,
                                     ConfigPort configPort, AlertPort alertPort,
                                     MeterRegistry registry) {
         this.dataSource   = dataSource;

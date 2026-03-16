@@ -1,6 +1,6 @@
 package com.ghatana.appplatform.ems.service;
 
-import com.zaxxer.hikari.HikariDataSource;
+import javax.sql.DataSource;
 import io.activej.promise.Promise;
 import io.micrometer.core.instrument.Counter;
 import io.micrometer.core.instrument.MeterRegistry;
@@ -29,12 +29,12 @@ public class TcaReportingService {
 
     private static final Logger log = LoggerFactory.getLogger(TcaReportingService.class);
 
-    private final HikariDataSource dataSource;
+    private final DataSource dataSource;
     private final Executor         executor;
     private final ReportRenderPort renderPort;
     private final Counter          reportGeneratedCounter;
 
-    public TcaReportingService(HikariDataSource dataSource, Executor executor,
+    public TcaReportingService(DataSource dataSource, Executor executor,
                                ReportRenderPort renderPort, MeterRegistry registry) {
         this.dataSource              = dataSource;
         this.executor                = executor;

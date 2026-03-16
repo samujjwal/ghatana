@@ -1,5 +1,7 @@
 package com.ghatana.appplatform.sanctions.service;
 
+
+import com.ghatana.platform.core.event.EventBusPort;
 import com.ghatana.appplatform.sanctions.domain.*;
 import io.activej.promise.Promise;
 import org.slf4j.Logger;
@@ -18,7 +20,6 @@ import java.time.Duration;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.Executor;
-import java.util.function.Consumer;
 
 /**
  * @doc.type    Service (Application)
@@ -38,19 +39,19 @@ public class SanctionsListIngestionService {
     private final SanctionsEntryStore entryStore;
     private final HttpClient httpClient;
     private final Executor executor;
-    private final Consumer<Object> eventPublisher;
+    private final EventBusPort eventBusPort;
 
     public SanctionsListIngestionService(ScreeningEngineService engine,
                                           SanctionsEntryStore entryStore,
                                           Executor executor,
-                                          Consumer<Object> eventPublisher) {
+                                          EventBusPort eventBusPort) {
         this.engine = engine;
         this.entryStore = entryStore;
         this.httpClient = HttpClient.newBuilder()
                 .connectTimeout(HTTP_TIMEOUT)
                 .build();
         this.executor = executor;
-        this.eventPublisher = eventPublisher;
+        this.eventBusPort = eventBusPort;
     }
 
     /** Ingest all configured lists and perform atomic swap (D14-009). */
@@ -82,7 +83,7 @@ public class SanctionsListIngestionService {
             entryStore.replaceAll(all);
             engine.loadList(all);
 
-            eventPublisher.accept(new SanctionsListRefreshedEvent(all.size()));
+            eventBusPort.publish(new SanctionsListRefreshedEvent(all.size()));
             log.info("Sanctions list atomic swap complete: total={}", all.size());
             return (Void) null;
         });

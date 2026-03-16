@@ -1,5 +1,7 @@
 package com.ghatana.appplatform.compliance.service;
 
+
+import com.ghatana.platform.core.event.EventBusPort;
 import io.micrometer.core.instrument.Counter;
 import io.micrometer.core.instrument.MeterRegistry;
 import org.slf4j.Logger;
@@ -10,7 +12,6 @@ import java.math.BigDecimal;
 import java.sql.*;
 import java.time.Instant;
 import java.util.*;
-import java.util.function.Consumer;
 
 /**
  * @doc.type      Service
@@ -36,15 +37,15 @@ public class EnhancedDueDiligenceService {
 
     private final DataSource    dataSource;
     private final PepListPort   pepListPort;
-    private final Consumer<Object> eventPublisher;
+    private final EventBusPort eventBusPort;
     private final Counter eddCasesCreated;
     private final Counter eddBlocks;
 
     public EnhancedDueDiligenceService(DataSource dataSource, PepListPort pepListPort,
-                                        Consumer<Object> eventPublisher, MeterRegistry meterRegistry) {
+                                        EventBusPort eventBusPort, MeterRegistry meterRegistry) {
         this.dataSource      = dataSource;
         this.pepListPort     = pepListPort;
-        this.eventPublisher  = eventPublisher;
+        this.eventBusPort  = eventBusPort;
         this.eddCasesCreated = meterRegistry.counter("compliance.edd.cases.created");
         this.eddBlocks       = meterRegistry.counter("compliance.edd.blocks");
     }
@@ -104,10 +105,10 @@ public class EnhancedDueDiligenceService {
 
         if (isCritical) {
             eddBlocks.increment();
-            eventPublisher.accept(new EddCaseCreatedEvent(caseId, clientId, orderId, triggers, true));
+            eventBusPort.publish(new EddCaseCreatedEvent(caseId, clientId, orderId, triggers, true));
             return EddResult.blocked(caseId, triggers);
         } else {
-            eventPublisher.accept(new EddCaseCreatedEvent(caseId, clientId, orderId, triggers, false));
+            eventBusPort.publish(new EddCaseCreatedEvent(caseId, clientId, orderId, triggers, false));
             return EddResult.flagged(caseId, triggers);
         }
     }
@@ -130,7 +131,7 @@ public class EnhancedDueDiligenceService {
             log.error("EDD resolve case error caseId={}", caseId, e);
         }
         log.info("EDD case resolved: caseId={} decision={} reviewer={}", caseId, decision, reviewerId);
-        eventPublisher.accept(new EddCaseResolvedEvent(caseId, decision, reviewerId));
+        eventBusPort.publish(new EddCaseResolvedEvent(caseId, decision, reviewerId));
     }
 
     // ─── Internal helpers ─────────────────────────────────────────────────────

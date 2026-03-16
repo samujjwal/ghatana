@@ -1,6 +1,6 @@
 package com.ghatana.appplatform.corporateactions.service;
 
-import com.zaxxer.hikari.HikariDataSource;
+import javax.sql.DataSource;
 import io.activej.promise.Promise;
 import io.micrometer.core.instrument.Counter;
 import io.micrometer.core.instrument.MeterRegistry;
@@ -28,12 +28,12 @@ import java.util.concurrent.Executor;
  */
 public class HolderSnapshotService {
 
-    private final HikariDataSource dataSource;
+    private final DataSource dataSource;
     private final Executor         executor;
     private final Counter          snapshotCapturedCounter;
     private final Counter          holdersSnapshotedCounter;
 
-    public HolderSnapshotService(HikariDataSource dataSource, Executor executor,
+    public HolderSnapshotService(DataSource dataSource, Executor executor,
                                   MeterRegistry registry) {
         this.dataSource               = dataSource;
         this.executor                 = executor;

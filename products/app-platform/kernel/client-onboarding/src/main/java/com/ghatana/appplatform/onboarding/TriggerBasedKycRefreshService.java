@@ -1,5 +1,7 @@
 package com.ghatana.appplatform.onboarding;
 
+import com.ghatana.platform.audit.AuditBusPort;
+import com.ghatana.platform.audit.AuditEvent;
 import io.activej.promise.Promise;
 import io.micrometer.core.instrument.Counter;
 import io.micrometer.core.instrument.MeterRegistry;
@@ -51,10 +53,6 @@ public class TriggerBasedKycRefreshService {
         String launchRefresh(String clientId, String existingInstanceId, String triggerType, String detail) throws Exception;
     }
 
-    public interface AuditPort {
-        void record(String clientId, String action, String detail) throws Exception;
-    }
-
     public interface DuplicateSuppressPort {
         /**
          * Return true if an equivalent refresh workflow is already in-progress
@@ -94,7 +92,7 @@ public class TriggerBasedKycRefreshService {
 
     private final javax.sql.DataSource ds;
     private final KycRefreshWorkflowPort refreshWorkflow;
-    private final AuditPort audit;
+    private final AuditBusPort audit;
     private final DuplicateSuppressPort duplicateSuppress;
     private final Executor executor;
     private final Counter launchedCounter;
@@ -103,7 +101,7 @@ public class TriggerBasedKycRefreshService {
     public TriggerBasedKycRefreshService(
         javax.sql.DataSource ds,
         KycRefreshWorkflowPort refreshWorkflow,
-        AuditPort audit,
+        AuditBusPort audit,
         DuplicateSuppressPort duplicateSuppress,
         MeterRegistry registry,
         Executor executor

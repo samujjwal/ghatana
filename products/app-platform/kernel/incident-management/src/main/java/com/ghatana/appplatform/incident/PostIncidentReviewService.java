@@ -1,5 +1,7 @@
 package com.ghatana.appplatform.incident;
 
+import com.ghatana.platform.audit.AuditBusPort;
+import com.ghatana.platform.audit.AuditEvent;
 import io.activej.promise.Promise;
 import io.micrometer.core.instrument.*;
 
@@ -53,17 +55,13 @@ public class PostIncidentReviewService {
         void notifySlaWarning(String authorId, String pirId, long hoursRemaining) throws Exception;
     }
 
-    public interface AuditPort {
-        void record(String actorId, String action, String detail) throws Exception;
-    }
-
     // ── Fields ────────────────────────────────────────────────────────────────
 
     private static final int PIR_SLA_HOURS = 72;
 
     private final javax.sql.DataSource ds;
     private final NotificationPort notify;
-    private final AuditPort audit;
+    private final AuditBusPort audit;
     private final Executor executor;
     private final Counter pirsPublished;
     private final Counter slaMisses;
@@ -71,7 +69,7 @@ public class PostIncidentReviewService {
     public PostIncidentReviewService(
         javax.sql.DataSource ds,
         NotificationPort notify,
-        AuditPort audit,
+        AuditBusPort audit,
         MeterRegistry registry,
         Executor executor
     ) {
@@ -97,7 +95,7 @@ public class PostIncidentReviewService {
                 ps.setString(1, incidentId); ps.setString(2, severity); ps.setString(3, authorId);
                 try (ResultSet rs = ps.executeQuery()) { rs.next(); pirId = rs.getString(1); }
             }
-            audit.record(authorId, "PIR_CREATED", "pirId=" + pirId + " incidentId=" + incidentId + " severity=" + severity);
+            audit.emit(AuditEvent.builder().principal(authorId).eventType("PIR_CREATED").details(Map.of("detail", "pirId=" + pirId + " incidentId=" + incidentId + " severity=" + severity)).build());
             return pirId;
         });
     }
@@ -129,7 +127,7 @@ public class PostIncidentReviewService {
                     if (ps.executeUpdate() == 0) throw new IllegalStateException("Cannot submit: PIR not in DRAFT");
                  }
             notify.notifyReviewer(reviewerId, pirId, getPirIncidentId(pirId));
-            audit.record(authorId, "PIR_SUBMITTED_FOR_REVIEW", "pirId=" + pirId);
+            audit.emit(AuditEvent.builder().principal(authorId).eventType("PIR_SUBMITTED_FOR_REVIEW").details(Map.of("detail", "pirId=" + pirId)).build());
             return null;
         });
     }
@@ -143,7 +141,7 @@ public class PostIncidentReviewService {
                  )) { ps.setString(1, approverId); ps.setString(2, pirId);
                     if (ps.executeUpdate() == 0) throw new IllegalStateException("Cannot approve: PIR not in REVIEWED");
                  }
-            audit.record(approverId, "PIR_APPROVED", "pirId=" + pirId);
+            audit.emit(AuditEvent.builder().principal(approverId).eventType("PIR_APPROVED").details(Map.of("detail", "pirId=" + pirId)).build());
             return null;
         });
     }
@@ -162,7 +160,7 @@ public class PostIncidentReviewService {
                     }
                  }
             notify.notifyAffectedTenants(incidentId, pirId);
-            audit.record(publishedBy, "PIR_PUBLISHED", "pirId=" + pirId);
+            audit.emit(AuditEvent.builder().principal(publishedBy).eventType("PIR_PUBLISHED").details(Map.of("detail", "pirId=" + pirId)).build());
             pirsPublished.increment();
             return null;
         });

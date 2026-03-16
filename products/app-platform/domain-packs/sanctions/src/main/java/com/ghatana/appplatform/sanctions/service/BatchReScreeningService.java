@@ -1,5 +1,7 @@
 package com.ghatana.appplatform.sanctions.service;
 
+
+import com.ghatana.platform.core.event.EventBusPort;
 import com.ghatana.appplatform.sanctions.domain.*;
 import com.ghatana.appplatform.sanctions.service.ScreeningApiService.ScreeningResultStore;
 import io.activej.promise.Promise;
@@ -10,7 +12,6 @@ import java.util.List;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.atomic.AtomicLong;
-import java.util.function.Consumer;
 
 /**
  * @doc.type    Service (Application)
@@ -29,16 +30,16 @@ public class BatchReScreeningService {
     private final ScreeningEngineService engine;
     private final ScreeningResultStore resultStore;
     private final ClientNameRepository clientNameRepository;
-    private final Consumer<Object> eventPublisher;
+    private final EventBusPort eventBusPort;
 
     public BatchReScreeningService(ScreeningEngineService engine,
                                     ScreeningResultStore resultStore,
                                     ClientNameRepository clientNameRepository,
-                                    Consumer<Object> eventPublisher) {
+                                    EventBusPort eventBusPort) {
         this.engine = engine;
         this.resultStore = resultStore;
         this.clientNameRepository = clientNameRepository;
-        this.eventPublisher = eventPublisher;
+        this.eventBusPort = eventBusPort;
     }
 
     /**
@@ -95,7 +96,7 @@ public class BatchReScreeningService {
             }
 
             BatchSummary summary = new BatchSummary(processed.get(), matches.get());
-            eventPublisher.accept(new BatchReScreeningCompletedEvent(summary));
+            eventBusPort.publish(new BatchReScreeningCompletedEvent(summary));
             log.info("Batch re-screening complete: {}", summary);
             return summary;
         }).whenComplete(pool::shutdown);

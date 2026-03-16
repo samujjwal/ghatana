@@ -1,6 +1,6 @@
 package com.ghatana.appplatform.posttrade.service;
 
-import com.zaxxer.hikari.HikariDataSource;
+import javax.sql.DataSource;
 import io.activej.promise.Promise;
 import io.micrometer.core.instrument.Counter;
 import io.micrometer.core.instrument.MeterRegistry;
@@ -32,13 +32,13 @@ public class CsdReconciliationService {
 
     private static final Logger log = LoggerFactory.getLogger(CsdReconciliationService.class);
 
-    private final HikariDataSource dataSource;
+    private final DataSource dataSource;
     private final Executor         executor;
     private final CsdAdapterPort   csdAdapter;
     private final Counter          matchCounter;
     private final Counter          breakCounter;
 
-    public CsdReconciliationService(HikariDataSource dataSource, Executor executor,
+    public CsdReconciliationService(DataSource dataSource, Executor executor,
                                     CsdAdapterPort csdAdapter, MeterRegistry registry) {
         this.dataSource    = dataSource;
         this.executor      = executor;

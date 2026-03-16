@@ -1,6 +1,6 @@
 package com.ghatana.appplatform.corporateactions.service;
 
-import com.zaxxer.hikari.HikariDataSource;
+import javax.sql.DataSource;
 import io.activej.promise.Promise;
 import io.micrometer.core.instrument.Counter;
 import io.micrometer.core.instrument.MeterRegistry;
@@ -27,7 +27,7 @@ import java.util.concurrent.Executor;
  */
 public class ElectionManagementService {
 
-    private final HikariDataSource dataSource;
+    private final DataSource dataSource;
     private final Executor         executor;
     private final WorkflowPort     workflowPort;
     private final NotificationPort notificationPort;
@@ -35,7 +35,7 @@ public class ElectionManagementService {
     private final Counter          electionApprovedCounter;
     private final Counter          electionLapsedCounter;
 
-    public ElectionManagementService(HikariDataSource dataSource, Executor executor,
+    public ElectionManagementService(DataSource dataSource, Executor executor,
                                       WorkflowPort workflowPort, NotificationPort notificationPort,
                                       MeterRegistry registry) {
         this.dataSource               = dataSource;

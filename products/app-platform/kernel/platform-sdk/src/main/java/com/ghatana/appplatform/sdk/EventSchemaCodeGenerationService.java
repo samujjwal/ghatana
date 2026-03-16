@@ -2,6 +2,7 @@ package com.ghatana.appplatform.sdk;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.ghatana.platform.core.json.PlatformObjectMapper;
 import io.activej.promise.Promise;
 import io.micrometer.core.instrument.Counter;
 import io.micrometer.core.instrument.MeterRegistry;
@@ -96,7 +97,7 @@ public class EventSchemaCodeGenerationService {
     private final Counter generationTotal;
     private final Counter compatIssueTotal;
 
-    private static final ObjectMapper MAPPER = new ObjectMapper();
+    private static final ObjectMapper MAPPER = PlatformObjectMapper.instance();
 
     private static final List<String> TARGET_LANGUAGES = List.of("TYPESCRIPT", "PYTHON", "JAVA");
 

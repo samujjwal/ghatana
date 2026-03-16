@@ -1,5 +1,7 @@
 package com.ghatana.appplatform.certification;
 
+import com.ghatana.platform.audit.AuditBusPort;
+import com.ghatana.platform.audit.AuditEvent;
 import io.activej.promise.Promise;
 import io.micrometer.core.instrument.*;
 
@@ -50,10 +52,6 @@ public class CertificateRevocationKillService {
         void publish(String topic, Map<String, String> payload) throws Exception;
     }
 
-    public interface K07AuditPort {
-        void record(String actorId, String action, String detail) throws Exception;
-    }
-
     // ── Fields ────────────────────────────────────────────────────────────────
 
     private static final long PROPAGATION_SLA_MS = 60_000L;
@@ -61,7 +59,7 @@ public class CertificateRevocationKillService {
     private final javax.sql.DataSource ds;
     private final K04PropagationPort propagation;
     private final EventBusPort eventBus;
-    private final K07AuditPort audit;
+    private final AuditBusPort audit;
     private final Executor executor;
     private final Counter revocationsCounter;
     private final Counter emergencyKillsCounter;
@@ -70,7 +68,7 @@ public class CertificateRevocationKillService {
         javax.sql.DataSource ds,
         K04PropagationPort propagation,
         EventBusPort eventBus,
-        K07AuditPort audit,
+        AuditBusPort audit,
         MeterRegistry registry,
         Executor executor
     ) {
@@ -120,13 +118,12 @@ public class CertificateRevocationKillService {
 
             long elapsed = System.currentTimeMillis() - start;
             if (elapsed > PROPAGATION_SLA_MS) {
-                audit.record(requestedBy, "EMERGENCY_KILL_SLA_BREACH",
-                    "pluginId=" + pluginId + " elapsedMs=" + elapsed);
+                audit.emit(AuditEvent.builder().principal(requestedBy).eventType("EMERGENCY_KILL_SLA_BREACH").details(Map.of("detail", "pluginId=" + pluginId + " elapsedMs=" + elapsed)).build());
             }
 
             persistRevocation(pluginId, "*", "EMERGENCY_KILL", reason, requestedBy, elapsed);
             publishEvent(pluginId, "*", "EMERGENCY_KILL", reason);
-            audit.record(requestedBy, "EMERGENCY_KILL", "pluginId=" + pluginId + " reason=" + reason);
+            audit.emit(AuditEvent.builder().principal(requestedBy).eventType("EMERGENCY_KILL").details(Map.of("detail", "pluginId=" + pluginId + " reason=" + reason)).build());
             emergencyKillsCounter.increment();
             return null;
         });
@@ -150,8 +147,7 @@ public class CertificateRevocationKillService {
             long elapsed = System.currentTimeMillis() - start;
             persistRevocation(pluginId, version, type, reason, revokedBy, elapsed);
             publishEvent(pluginId, version, type, reason);
-            audit.record(revokedBy, "CERTIFICATE_REVOKED",
-                "pluginId=" + pluginId + " version=" + version + " type=" + type);
+            audit.emit(AuditEvent.builder().principal(revokedBy).eventType("CERTIFICATE_REVOKED").details(Map.of("detail", "pluginId=" + pluginId + " version=" + version + " type=" + type)).build());
             revocationsCounter.increment();
             return null;
         });

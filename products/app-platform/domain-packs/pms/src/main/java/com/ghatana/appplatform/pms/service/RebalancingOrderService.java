@@ -1,6 +1,6 @@
 package com.ghatana.appplatform.pms.service;
 
-import com.zaxxer.hikari.HikariDataSource;
+import javax.sql.DataSource;
 import io.activej.promise.Promise;
 import io.micrometer.core.instrument.Counter;
 import io.micrometer.core.instrument.MeterRegistry;
@@ -36,7 +36,7 @@ public class RebalancingOrderService {
     private static final Logger      log              = LoggerFactory.getLogger(RebalancingOrderService.class);
     private static final BigDecimal  MIN_ORDER_VALUE  = new BigDecimal("1000.00"); // filter tiny orders
 
-    private final HikariDataSource dataSource;
+    private final DataSource dataSource;
     private final Executor         executor;
     private final PricePort        pricePort;
     private final OrderSagaPort    orderSagaPort;
@@ -44,7 +44,7 @@ public class RebalancingOrderService {
     private final Counter          approvedCounter;
     private final Counter          rejectedCounter;
 
-    public RebalancingOrderService(HikariDataSource dataSource, Executor executor,
+    public RebalancingOrderService(DataSource dataSource, Executor executor,
                                     PricePort pricePort, OrderSagaPort orderSagaPort,
                                     MeterRegistry registry) {
         this.dataSource      = dataSource;

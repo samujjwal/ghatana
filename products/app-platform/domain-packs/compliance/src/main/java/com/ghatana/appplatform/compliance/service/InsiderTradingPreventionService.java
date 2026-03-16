@@ -1,5 +1,7 @@
 package com.ghatana.appplatform.compliance.service;
 
+
+import com.ghatana.platform.core.event.EventBusPort;
 import io.micrometer.core.instrument.Counter;
 import io.micrometer.core.instrument.MeterRegistry;
 import org.slf4j.Logger;
@@ -11,7 +13,6 @@ import java.time.Instant;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
-import java.util.function.Consumer;
 
 /**
  * @doc.type      Service
@@ -29,16 +30,16 @@ public class InsiderTradingPreventionService {
 
     private final InsiderListPort  insiderListPort;
     private final DataSource       dataSource;
-    private final Consumer<Object> eventPublisher;
+    private final EventBusPort eventBusPort;
     private final Counter          tradesBlocked;
 
     public InsiderTradingPreventionService(InsiderListPort insiderListPort,
                                             DataSource dataSource,
-                                            Consumer<Object> eventPublisher,
+                                            EventBusPort eventBusPort,
                                             MeterRegistry meterRegistry) {
         this.insiderListPort = insiderListPort;
         this.dataSource      = dataSource;
-        this.eventPublisher  = eventPublisher;
+        this.eventBusPort  = eventBusPort;
         this.tradesBlocked   = meterRegistry.counter("compliance.insider.trades.blocked");
     }
 
@@ -68,7 +69,7 @@ public class InsiderTradingPreventionService {
         BlackoutWindow window = active.get(0);
         log.warn("Insider trade blocked: client={} instrument={} window={}", clientId, instrumentId, window.windowId());
         tradesBlocked.increment();
-        eventPublisher.accept(new InsiderTradeBlockedEvent(orderId, clientId, instrumentId,
+        eventBusPort.publish(new InsiderTradeBlockedEvent(orderId, clientId, instrumentId,
                 window.windowId(), window.reason(), tradeTime));
         return InsiderCheckResult.blocked("Insider blackout window active: " + window.reason());
     }
@@ -100,7 +101,7 @@ public class InsiderTradingPreventionService {
             throw new RuntimeException("Failed to open blackout window for " + instrumentId, e);
         }
         log.info("Blackout window opened={} instrument={} reason={}", windowId, instrumentId, reason);
-        eventPublisher.accept(new BlackoutWindowCreatedEvent(windowId, instrumentId, startsAt, endsAt, reason));
+        eventBusPort.publish(new BlackoutWindowCreatedEvent(windowId, instrumentId, startsAt, endsAt, reason));
         return windowId;
     }
 

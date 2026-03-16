@@ -78,6 +78,7 @@ public final class JwksEndpointHandler implements AsyncServlet {
         return HttpResponse.ok200()
             .withHeader(io.activej.http.HttpHeaders.of("Content-Type"), CONTENT_TYPE_JWKS)
             .withHeader(io.activej.http.HttpHeaders.of("Cache-Control"), "public, max-age=3600")
-            .withBody(json.getBytes(java.nio.charset.StandardCharsets.UTF_8));
+            .withBody(json.getBytes(java.nio.charset.StandardCharsets.UTF_8))
+            .build();
     }
 }

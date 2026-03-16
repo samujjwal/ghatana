@@ -1,6 +1,6 @@
 package com.ghatana.appplatform.pricing.service;
 
-import com.zaxxer.hikari.HikariDataSource;
+import javax.sql.DataSource;
 import io.activej.promise.Promise;
 import io.micrometer.core.instrument.Counter;
 import io.micrometer.core.instrument.MeterRegistry;
@@ -32,14 +32,14 @@ public class YieldCurveService {
 
     private static final Logger log = LoggerFactory.getLogger(YieldCurveService.class);
 
-    private final HikariDataSource dataSource;
+    private final DataSource dataSource;
     private final Executor         executor;
     private final ConfigPort       configPort;
     private final CalendarPort     calendarPort;
     private final YieldCurveEventPort eventPort;
     private final Counter          builtCounter;
 
-    public YieldCurveService(HikariDataSource dataSource, Executor executor,
+    public YieldCurveService(DataSource dataSource, Executor executor,
                               ConfigPort configPort, CalendarPort calendarPort,
                               YieldCurveEventPort eventPort, MeterRegistry registry) {
         this.dataSource   = dataSource;

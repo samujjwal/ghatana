@@ -1,5 +1,7 @@
 package com.ghatana.appplatform.integration;
 
+import com.ghatana.platform.audit.AuditBusPort;
+import com.ghatana.platform.audit.AuditEvent;
 import io.activej.promise.Promise;
 import io.micrometer.core.instrument.*;
 
@@ -36,10 +38,6 @@ public class OrderProcessingPerformanceBaselineService {
         long getMemoryUsedMb() throws Exception;
     }
 
-    public interface AuditPort {
-        void audit(String event, String detail) throws Exception;
-    }
-
     // ── Constants ─────────────────────────────────────────────────────────────
 
     private static final int STEADY_ORDERS_PER_HOUR = 10_000;
@@ -53,7 +51,7 @@ public class OrderProcessingPerformanceBaselineService {
     private final javax.sql.DataSource ds;
     private final OrderSubmissionPort orderPort;
     private final MetricsCollectionPort metricsPort;
-    private final AuditPort audit;
+    private final AuditBusPort audit;
     private final Executor executor;
     private final Timer orderLatency;
     private final Counter suitesPassed;
@@ -63,7 +61,7 @@ public class OrderProcessingPerformanceBaselineService {
         javax.sql.DataSource ds,
         OrderSubmissionPort orderPort,
         MetricsCollectionPort metricsPort,
-        AuditPort audit,
+        AuditBusPort audit,
         MeterRegistry registry,
         Executor executor
     ) {
@@ -93,7 +91,7 @@ public class OrderProcessingPerformanceBaselineService {
             long passed = results.stream().filter(r -> r.passed).count();
             long failed = results.size() - passed;
             if (failed == 0) suitesPassed.increment(); else suitesFailed.increment();
-            audit.audit("ORDER_PERF_SUITE", "passed=" + passed + " failed=" + failed);
+            audit.emit(AuditEvent.builder().eventType("ORDER_PERF_SUITE").details(Map.of("detail", "passed=" + passed + " failed=" + failed)).build());
             return new SuiteResult("OrderProcessingPerformanceBaseline", results, passed, failed);
         });
     }

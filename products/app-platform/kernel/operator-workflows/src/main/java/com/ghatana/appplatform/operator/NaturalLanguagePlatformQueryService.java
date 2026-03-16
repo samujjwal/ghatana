@@ -1,5 +1,7 @@
 package com.ghatana.appplatform.operator;
 
+import com.ghatana.platform.audit.AuditBusPort;
+import com.ghatana.platform.audit.AuditEvent;
 import io.activej.promise.Promise;
 import io.micrometer.core.instrument.*;
 
@@ -59,10 +61,6 @@ public class NaturalLanguagePlatformQueryService {
         List<Map<String, Object>> query(String dslJson, String index) throws Exception;
     }
 
-    public interface AuditPort {
-        void record(String actorId, String action, String detail) throws Exception;
-    }
-
     // ── Value types ───────────────────────────────────────────────────────────
 
     public record NlqResult(
@@ -80,7 +78,7 @@ public class NaturalLanguagePlatformQueryService {
     private final LlmTranslatorPort llm;
     private final PrometheusPort prometheus;
     private final ElasticsearchPort elasticsearch;
-    private final AuditPort audit;
+    private final AuditBusPort audit;
     private final Executor executor;
     private final Counter queriesCounter;
     private final Timer queryDurationTimer;
@@ -90,7 +88,7 @@ public class NaturalLanguagePlatformQueryService {
         LlmTranslatorPort llm,
         PrometheusPort prometheus,
         ElasticsearchPort elasticsearch,
-        AuditPort audit,
+        AuditBusPort audit,
         MeterRegistry registry,
         Executor executor
     ) {

@@ -1,5 +1,7 @@
 package com.ghatana.appplatform.integration;
 
+import com.ghatana.platform.audit.AuditBusPort;
+import com.ghatana.platform.audit.AuditEvent;
 import io.activej.promise.Promise;
 import io.micrometer.core.instrument.*;
 
@@ -49,16 +51,12 @@ public class EventSchemaContractTestSuiteService {
         boolean handleUnknownSchemagracefully(String topic, String unknownPayload) throws Exception;
     }
 
-    public interface AuditPort {
-        void audit(String event, String detail) throws Exception;
-    }
-
     // ── Fields ────────────────────────────────────────────────────────────────
 
     private final javax.sql.DataSource ds;
     private final SchemaRegistryPort schemaRegistry;
     private final EventConsumerPort consumerPort;
-    private final AuditPort audit;
+    private final AuditBusPort audit;
     private final Executor executor;
     private final Counter suitesPassed;
     private final Counter suitesFailed;
@@ -67,7 +65,7 @@ public class EventSchemaContractTestSuiteService {
         javax.sql.DataSource ds,
         SchemaRegistryPort schemaRegistry,
         EventConsumerPort consumerPort,
-        AuditPort audit,
+        AuditBusPort audit,
         MeterRegistry registry,
         Executor executor
     ) {
@@ -96,7 +94,7 @@ public class EventSchemaContractTestSuiteService {
             long passed = results.stream().filter(r -> r.passed).count();
             long failed = results.size() - passed;
             if (failed == 0) suitesPassed.increment(); else suitesFailed.increment();
-            audit.audit("EVENT_SCHEMA_CONTRACT_SUITE", "passed=" + passed + " failed=" + failed);
+            audit.emit(AuditEvent.builder().eventType("EVENT_SCHEMA_CONTRACT_SUITE").details(Map.of("detail", "passed=" + passed + " failed=" + failed)).build());
             return new SuiteResult("EventSchemaContract", results, passed, failed);
         });
     }

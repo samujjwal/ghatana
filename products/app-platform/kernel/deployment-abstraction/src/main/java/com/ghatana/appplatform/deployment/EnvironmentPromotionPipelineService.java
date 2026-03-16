@@ -1,6 +1,8 @@
 package com.ghatana.appplatform.deployment;
 
-import com.zaxxer.hikari.HikariDataSource;
+import com.ghatana.platform.audit.AuditBusPort;
+import com.ghatana.platform.audit.AuditEvent;
+import javax.sql.DataSource;
 import io.activej.promise.Promise;
 import io.micrometer.core.instrument.Counter;
 import io.micrometer.core.instrument.MeterRegistry;
@@ -24,18 +26,18 @@ public class EnvironmentPromotionPipelineService {
 
     static final List<String> STAGE_ORDER = List.of("DEV", "QA", "STAGING", "PROD");
 
-    private final HikariDataSource dataSource;
+    private final DataSource dataSource;
     private final Executor         executor;
     private final PromotionGatePort promotionGatePort;
     private final WorkflowPort      workflowPort;
-    private final AuditPort         auditPort;
+    private final AuditBusPort         auditPort;
     private final Counter           promotionsStartedCounter;
     private final Counter           promotionsCompletedCounter;
     private final Counter           promotionsFailedCounter;
 
-    public EnvironmentPromotionPipelineService(HikariDataSource dataSource, Executor executor,
+    public EnvironmentPromotionPipelineService(DataSource dataSource, Executor executor,
                                                 PromotionGatePort promotionGatePort,
-                                                WorkflowPort workflowPort, AuditPort auditPort,
+                                                WorkflowPort workflowPort, AuditBusPort auditPort,
                                                 MeterRegistry registry) {
         this.dataSource               = dataSource;
         this.executor                 = executor;
@@ -56,10 +58,6 @@ public class EnvironmentPromotionPipelineService {
     public interface WorkflowPort {
         WorkflowApproval requestApproval(String entityType, String entityId, String requestedBy, String reason);
         Optional<WorkflowApproval> getApproval(String approvalId);
-    }
-
-    public interface AuditPort {
-        void record(String entityType, String entityId, String event, String actor, String detail);
     }
 
     // ─── Domain records ──────────────────────────────────────────────────────

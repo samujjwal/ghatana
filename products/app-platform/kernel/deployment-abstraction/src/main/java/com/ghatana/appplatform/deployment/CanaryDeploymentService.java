@@ -1,6 +1,6 @@
 package com.ghatana.appplatform.deployment;
 
-import com.zaxxer.hikari.HikariDataSource;
+import javax.sql.DataSource;
 import io.activej.promise.Promise;
 import io.micrometer.core.instrument.Counter;
 import io.micrometer.core.instrument.Gauge;
@@ -29,7 +29,7 @@ public class CanaryDeploymentService {
     /** Canary traffic progression stages in percentage. Final stage = full cutover. */
     private static final int[] STAGES = {5, 25, 50, 100};
 
-    private final HikariDataSource   dataSource;
+    private final DataSource   dataSource;
     private final Executor           executor;
     private final TrafficSplitPort   trafficSplitPort;
     private final MetricsPort        metricsPort;
@@ -38,7 +38,7 @@ public class CanaryDeploymentService {
     private final Counter            rollbacksCounter;
     private final AtomicInteger      activeCanaries = new AtomicInteger(0);
 
-    public CanaryDeploymentService(HikariDataSource dataSource, Executor executor,
+    public CanaryDeploymentService(DataSource dataSource, Executor executor,
                                     TrafficSplitPort trafficSplitPort, MetricsPort metricsPort,
                                     EventPort eventPort, MeterRegistry registry) {
         this.dataSource      = dataSource;

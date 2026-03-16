@@ -1,5 +1,7 @@
 package com.ghatana.appplatform.compliance.service;
 
+
+import com.ghatana.platform.core.event.EventBusPort;
 import io.micrometer.core.instrument.Counter;
 import io.micrometer.core.instrument.MeterRegistry;
 import org.slf4j.Logger;
@@ -10,7 +12,6 @@ import java.math.BigDecimal;
 import java.math.RoundingMode;
 import java.sql.*;
 import java.time.Instant;
-import java.util.function.Consumer;
 
 /**
  * @doc.type      Service
@@ -34,19 +35,19 @@ public class BeneficialOwnershipCalculationService {
     private final EntityGroupPort  entityGroupPort;
     private final PositionPort     positionPort;
     private final DataSource       dataSource;
-    private final Consumer<Object> eventPublisher;
+    private final EventBusPort eventBusPort;
     private final Counter disclosureTriggered;
     private final Counter enhancedMonitoringTriggered;
 
     public BeneficialOwnershipCalculationService(EntityGroupPort entityGroupPort,
                                                   PositionPort positionPort,
                                                   DataSource dataSource,
-                                                  Consumer<Object> eventPublisher,
+                                                  EventBusPort eventBusPort,
                                                   MeterRegistry meterRegistry) {
         this.entityGroupPort           = entityGroupPort;
         this.positionPort              = positionPort;
         this.dataSource                = dataSource;
-        this.eventPublisher            = eventPublisher;
+        this.eventBusPort            = eventBusPort;
         this.disclosureTriggered        = meterRegistry.counter("compliance.ownership.disclosure.triggered");
         this.enhancedMonitoringTriggered = meterRegistry.counter("compliance.ownership.enhanced.triggered");
     }
@@ -89,15 +90,15 @@ public class BeneficialOwnershipCalculationService {
         if (pct >= THRESHOLD_BOARD) {
             log.warn("BeneficialOwnership: BOARD NOTIFICATION threshold crossed client={} {}%",
                     clientId, String.format("%.2f", pct * 100));
-            eventPublisher.accept(new OwnershipThresholdEvent(clientId, instrumentId,
+            eventBusPort.publish(new OwnershipThresholdEvent(clientId, instrumentId,
                     "BOARD_NOTIFICATION", pct, totalHeld));
         } else if (pct >= THRESHOLD_ENHANCED) {
             enhancedMonitoringTriggered.increment();
-            eventPublisher.accept(new OwnershipThresholdEvent(clientId, instrumentId,
+            eventBusPort.publish(new OwnershipThresholdEvent(clientId, instrumentId,
                     "ENHANCED_MONITORING", pct, totalHeld));
         } else if (pct >= THRESHOLD_DISCLOSURE) {
             disclosureTriggered.increment();
-            eventPublisher.accept(new OwnershipThresholdEvent(clientId, instrumentId,
+            eventBusPort.publish(new OwnershipThresholdEvent(clientId, instrumentId,
                     "DISCLOSURE_REQUIRED", pct, totalHeld));
         }
     }

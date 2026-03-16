@@ -1,6 +1,8 @@
 package com.ghatana.appplatform.recon.service;
 
-import com.zaxxer.hikari.HikariDataSource;
+import com.ghatana.platform.audit.AuditBusPort;
+import com.ghatana.platform.audit.AuditEvent;
+import javax.sql.DataSource;
 import io.activej.promise.Promise;
 import io.micrometer.core.instrument.Counter;
 import io.micrometer.core.instrument.MeterRegistry;
@@ -32,14 +34,14 @@ public class BreakResolutionRecommendationService {
 
     private static final Logger log = LoggerFactory.getLogger(BreakResolutionRecommendationService.class);
 
-    private final HikariDataSource dataSource;
+    private final DataSource dataSource;
     private final Executor         executor;
     private final LlmPort          llm;
-    private final AuditPort        audit;
+    private final AuditBusPort        audit;
     private final Counter          recommendationCounter;
 
-    public BreakResolutionRecommendationService(HikariDataSource dataSource, Executor executor,
-                                                LlmPort llm, AuditPort audit,
+    public BreakResolutionRecommendationService(DataSource dataSource, Executor executor,
+                                                LlmPort llm, AuditBusPort audit,
                                                 MeterRegistry registry) {
         this.dataSource            = dataSource;
         this.executor              = executor;
@@ -53,13 +55,6 @@ public class BreakResolutionRecommendationService {
     /** K-09 advisory LLM port — local model in K-04 T2 sandbox. */
     public interface LlmPort {
         String generateRecommendations(String context, String query);
-    }
-
-    /** K-07 audit port — retrieve past resolutions for RAG context. */
-    public interface AuditPort {
-        List<String> retrieveSimilarResolutions(String breakType, String counterpartyId,
-                                                String currency, int limit);
-        void logInteraction(String sessionId, String query, String context, String response);
     }
 
     // ─── Records ─────────────────────────────────────────────────────────────

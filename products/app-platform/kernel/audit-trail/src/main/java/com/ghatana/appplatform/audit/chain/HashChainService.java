@@ -2,7 +2,7 @@ package com.ghatana.appplatform.audit.chain;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.SerializationFeature;
-import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
+import com.ghatana.platform.core.json.PlatformObjectMapper;
 import com.ghatana.appplatform.audit.domain.AuditEntry;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -45,10 +45,7 @@ public final class HashChainService {
     private final ObjectMapper canonicalMapper;
 
     public HashChainService() {
-        this.canonicalMapper = new ObjectMapper()
-            .registerModule(new JavaTimeModule())
-            .configure(SerializationFeature.WRITE_DATES_AS_TIMESTAMPS, false)
-            // Sorted keys ensure canonical JSON regardless of insertion order
+        this.canonicalMapper = PlatformObjectMapper.copy()
             .configure(SerializationFeature.ORDER_MAP_ENTRIES_BY_KEYS, true);
     }
 

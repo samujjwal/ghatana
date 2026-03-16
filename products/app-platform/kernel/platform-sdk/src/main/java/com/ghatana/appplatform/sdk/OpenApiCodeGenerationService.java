@@ -1,5 +1,7 @@
 package com.ghatana.appplatform.sdk;
 
+import com.ghatana.platform.audit.AuditBusPort;
+import com.ghatana.platform.audit.AuditEvent;
 import io.activej.promise.Promise;
 import io.micrometer.core.instrument.Counter;
 import io.micrometer.core.instrument.MeterRegistry;
@@ -53,11 +55,6 @@ public class OpenApiCodeGenerationService {
                                 ClientGeneratorPort.SdkLanguage language);
     }
 
-    public interface AuditPort {
-        Promise<Void> log(String action, String actor, String entityId, String entityType,
-                          String beforeJson, String afterJson);
-    }
-
     // -----------------------------------------------------------------------
     // Records
     // -----------------------------------------------------------------------
@@ -90,7 +87,7 @@ public class OpenApiCodeGenerationService {
     private final ClientGeneratorPort clientGenerator;
     private final TypeCheckerPort typeChecker;
     private final PackageRegistryPort packageRegistry;
-    private final AuditPort auditPort;
+    private final AuditBusPort auditPort;
 
     private final Counter generationRunTotal;
     private final Counter generationPassedTotal;
@@ -107,7 +104,7 @@ public class OpenApiCodeGenerationService {
                                         ClientGeneratorPort clientGenerator,
                                         TypeCheckerPort typeChecker,
                                         PackageRegistryPort packageRegistry,
-                                        AuditPort auditPort) {
+                                        AuditBusPort auditPort) {
         this.dataSource     = dataSource;
         this.executor       = executor;
         this.specValidator  = specValidator;

@@ -1,5 +1,7 @@
 package com.ghatana.appplatform.marketdata.service;
 
+
+import com.ghatana.platform.core.event.EventBusPort;
 import com.ghatana.appplatform.marketdata.domain.MarketTick;
 import io.activej.promise.Promise;
 import org.slf4j.Logger;
@@ -14,7 +16,6 @@ import java.time.LocalDate;
 import java.util.*;
 import java.util.concurrent.Executor;
 import java.util.concurrent.atomic.AtomicLong;
-import java.util.function.Consumer;
 
 /**
  * @doc.type    Service (Application)
@@ -33,14 +34,14 @@ public class TickBackfillService {
 
     private final MarketDataStore marketDataStore;
     private final Executor executor;
-    private final Consumer<Object> eventPublisher;
+    private final EventBusPort eventBusPort;
 
     public TickBackfillService(MarketDataStore marketDataStore,
                                 Executor executor,
-                                Consumer<Object> eventPublisher) {
+                                EventBusPort eventBusPort) {
         this.marketDataStore = marketDataStore;
         this.executor = executor;
-        this.eventPublisher = eventPublisher;
+        this.eventBusPort = eventBusPort;
     }
 
     /**
@@ -76,7 +77,7 @@ public class TickBackfillService {
                     if (lastSeq != null && seq != lastSeq + 1) {
                         long gapSize = seq - lastSeq - 1;
                         gaps.addAndGet(gapSize);
-                        eventPublisher.accept(new GapDetectedEvent(instrumentId, lastSeq + 1, seq - 1, source));
+                        eventBusPort.publish(new GapDetectedEvent(instrumentId, lastSeq + 1, seq - 1, source));
                         log.warn("Tick gap: instrument={} from={} to={} size={}",
                                 instrumentId, lastSeq + 1, seq - 1, gapSize);
                     }
@@ -95,7 +96,7 @@ public class TickBackfillService {
             }
 
             var summary = new BackfillSummary(source, imported.get(), gaps.get());
-            eventPublisher.accept(new BackfillCompletedEvent(summary));
+            eventBusPort.publish(new BackfillCompletedEvent(summary));
             log.info("Backfill complete: {}", summary);
             return summary;
         });

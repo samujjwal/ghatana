@@ -1,6 +1,8 @@
 package com.ghatana.appplatform.surveillance.service;
 
-import com.zaxxer.hikari.HikariDataSource;
+import com.ghatana.platform.audit.AuditBusPort;
+import com.ghatana.platform.audit.AuditEvent;
+import javax.sql.DataSource;
 import io.activej.promise.Promise;
 import io.micrometer.core.instrument.Counter;
 import io.micrometer.core.instrument.Gauge;
@@ -32,17 +34,17 @@ public class SurveillanceCaseService {
 
     private static final int DEFAULT_SLA_DAYS = 30;
 
-    private final HikariDataSource dataSource;
+    private final DataSource dataSource;
     private final Executor         executor;
     private final WorkflowPort     workflowPort;
-    private final AuditPort        auditPort;
+    private final AuditBusPort        auditPort;
     private final ConfigPort       configPort;
     private final Counter          caseOpenedCounter;
     private final Counter          slaBreachedCounter;
     private final AtomicLong       openCaseCount = new AtomicLong();
 
-    public SurveillanceCaseService(HikariDataSource dataSource, Executor executor,
-                                    WorkflowPort workflowPort, AuditPort auditPort,
+    public SurveillanceCaseService(DataSource dataSource, Executor executor,
+                                    WorkflowPort workflowPort, AuditBusPort auditPort,
                                     ConfigPort configPort, MeterRegistry registry) {
         this.dataSource     = dataSource;
         this.executor       = executor;
@@ -62,11 +64,6 @@ public class SurveillanceCaseService {
         String createCaseTask(String caseId, String subjectClient, CasePriority priority,
                               int slaDays, LocalDateTime deadline);
         void escalateCaseTask(String taskId, String reason);
-    }
-
-    /** K-07 immutable audit trail. */
-    public interface AuditPort {
-        void logCaseTransition(String caseId, String fromState, String toState, String analyst);
     }
 
     /** K-02 configurable thresholds. */

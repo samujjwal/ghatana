@@ -1,19 +1,26 @@
 package com.ghatana.appplatform.workflow;
 
+import com.ghatana.platform.audit.AuditBusPort;
+import com.ghatana.platform.audit.AuditEvent;
+import com.ghatana.platform.workflow.SagaPolicy;
+import com.ghatana.platform.workflow.runtime.WorkflowDefinitionRegistry;
+import com.ghatana.platform.workflow.runtime.WorkflowStepDefinition;
+import com.ghatana.platform.workflow.runtime.WorkflowStepKind;
+import com.ghatana.platform.workflow.runtime.WorkflowTriggerType;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.ghatana.platform.core.json.PlatformObjectMapper;
 import io.activej.promise.Promise;
 import io.micrometer.core.instrument.Counter;
 import io.micrometer.core.instrument.MeterRegistry;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import javax.sql.DataSource;
-import java.sql.Connection;
-import java.sql.PreparedStatement;
-import java.sql.ResultSet;
+import java.time.Duration;
+import java.time.Instant;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 import java.util.concurrent.Executor;
 
 /**
@@ -31,7 +38,7 @@ import java.util.concurrent.Executor;
 public class WorkflowDefinitionService {
 
     private static final Logger log = LoggerFactory.getLogger(WorkflowDefinitionService.class);
-    private static final ObjectMapper MAPPER = new ObjectMapper();
+    private static final ObjectMapper MAPPER = PlatformObjectMapper.instance();
 
     // -----------------------------------------------------------------------
     // Inner Ports
@@ -54,11 +61,6 @@ public class WorkflowDefinitionService {
 
     public interface EventBusPort {
         Promise<Void> publish(String topic, String eventType, String payloadJson);
-    }
-
-    public interface AuditPort {
-        Promise<Void> log(String action, String actor, String entityId, String entityType,
-                          String beforeJson, String afterJson);
     }
 
     // -----------------------------------------------------------------------
@@ -101,13 +103,13 @@ public class WorkflowDefinitionService {
     // Fields
     // -----------------------------------------------------------------------
 
-    private final DataSource dataSource;
+    private final WorkflowDefinitionRegistry definitionRegistry;
     private final Executor executor;
     private final DslParserPort dslParser;
     private final StepTemplateRegistryPort templateRegistry;
     private final ValueCatalogPort valueCatalog;
     private final EventBusPort eventBus;
-    private final AuditPort auditPort;
+    private final AuditBusPort auditPort;
 
     private final Counter definedTotal;
     private final Counter parseFailedTotal;
@@ -118,15 +120,15 @@ public class WorkflowDefinitionService {
     // Constructor
     // -----------------------------------------------------------------------
 
-    public WorkflowDefinitionService(DataSource dataSource,
+    public WorkflowDefinitionService(WorkflowDefinitionRegistry definitionRegistry,
                                       Executor executor,
                                       MeterRegistry meterRegistry,
                                       DslParserPort dslParser,
                                       StepTemplateRegistryPort templateRegistry,
                                       ValueCatalogPort valueCatalog,
                                       EventBusPort eventBus,
-                                      AuditPort auditPort) {
-        this.dataSource      = dataSource;
+                                      AuditBusPort auditPort) {
+        this.definitionRegistry = definitionRegistry;
         this.executor        = executor;
         this.dslParser       = dslParser;
         this.templateRegistry = templateRegistry;
@@ -171,238 +173,227 @@ public class WorkflowDefinitionService {
                         return Promise.ofException(new IllegalArgumentException(
                             "Unresolved value catalog references: " + unresolvedCatalogs));
                     }
-                    return Promise.ofBlocking(executor, () -> {
-                        int version = nextVersionBlocking(workflowId);
-                        String definitionId = insertDefinitionBlocking(workflowId, name, version,
-                            definitionJson, triggerType, triggerConfigJson, timeoutIso, createdBy);
-                        definedTotal.increment();
-                        WorkflowDefinition def = queryDefinitionById(definitionId);
-                        eventBus.publish(TOPIC_WORKFLOW_EVENTS, "WorkflowDefined",
-                            buildDefinedEventJson(definitionId, workflowId, name, version));
-                        auditPort.log("WORKFLOW_DEFINED", createdBy, definitionId, "WORKFLOW_DEFINITION",
-                                      null, definitionJson);
-                        return def;
-                    });
+                    List<WorkflowStepDefinition> platformSteps = toPlatformSteps(definitionJson);
+                    String entryStepId = resolveEntryStepId(definitionJson, platformSteps);
+                    return definitionRegistry.findLatest(workflowId)
+                        .then(existing -> {
+                            int version = existing.map(d -> d.version() + 1).orElse(1);
+                            var platformDef = new com.ghatana.platform.workflow.runtime.WorkflowDefinition(
+                                workflowId, name, version,
+                                toPlatformTrigger(triggerType), triggerConfigJson,
+                                platformSteps, entryStepId,
+                                timeoutIso != null ? Duration.parse(timeoutIso) : null,
+                                SagaPolicy.NONE, Map.of("createdBy", createdBy), Instant.now(), true);
+                            return definitionRegistry.register(platformDef).map(v -> {
+                                definedTotal.increment();
+                                var appDef = toAppDefinition(platformDef, definitionJson);
+                                eventBus.publish(TOPIC_WORKFLOW_EVENTS, "WorkflowDefined",
+                                    buildDefinedEventJson(workflowId + "@" + version, workflowId, name, version));
+                                auditPort.emit(AuditEvent.builder()
+                                    .eventType("WORKFLOW_DEFINED").principal(createdBy)
+                                    .resourceId(workflowId + "@" + version)
+                                    .resourceType("WORKFLOW_DEFINITION")
+                                    .details(Map.of("version", String.valueOf(version)))
+                                    .build());
+                                return appDef;
+                            });
+                        });
                 }));
     }
 
     /** Activate a specific version (marks it as the default for new instances). */
     public Promise<Void> activateVersion(String workflowId, int version, String activatedBy) {
-        return Promise.ofBlocking(executor, () -> {
-            setVersionStatus(workflowId, version, "ACTIVE");
-            auditPort.log("WORKFLOW_ACTIVATED", activatedBy, workflowId + "@" + version,
-                          "WORKFLOW_DEFINITION", null, null);
-            return null;
-        });
+        return definitionRegistry.findByVersion(workflowId, version)
+            .then(opt -> {
+                if (opt.isEmpty()) {
+                    return Promise.ofException(new RuntimeException(
+                        "Definition not found: " + workflowId + "@" + version));
+                }
+                var def = opt.get();
+                var enabled = new com.ghatana.platform.workflow.runtime.WorkflowDefinition(
+                    def.workflowId(), def.name(), def.version(), def.triggerType(),
+                    def.triggerFilter(), def.steps(), def.entryStepId(), def.timeout(),
+                    def.sagaPolicy(), def.metadata(), def.createdAt(), true);
+                return definitionRegistry.register(enabled).map(v -> {
+                    auditPort.emit(AuditEvent.builder().eventType("WORKFLOW_ACTIVATED")
+                        .principal(activatedBy).resourceId(workflowId + "@" + version)
+                        .resourceType("WORKFLOW_DEFINITION").details(Map.of()).build());
+                    return (Void) null;
+                });
+            });
     }
 
     /** Deprecate a version: existing instances on that version continue, new triggers rejected. */
     public Promise<Void> deprecateVersion(String workflowId, int version, String deprecatedBy) {
-        return Promise.ofBlocking(executor, () -> {
-            setVersionStatus(workflowId, version, "DEPRECATED");
-            auditPort.log("WORKFLOW_DEPRECATED", deprecatedBy, workflowId + "@" + version,
-                          "WORKFLOW_DEFINITION", null, null);
-            return null;
-        });
+        return definitionRegistry.findByVersion(workflowId, version)
+            .then(opt -> {
+                if (opt.isEmpty()) {
+                    return Promise.ofException(new RuntimeException(
+                        "Definition not found: " + workflowId + "@" + version));
+                }
+                var def = opt.get();
+                var disabled = new com.ghatana.platform.workflow.runtime.WorkflowDefinition(
+                    def.workflowId(), def.name(), def.version(), def.triggerType(),
+                    def.triggerFilter(), def.steps(), def.entryStepId(), def.timeout(),
+                    def.sagaPolicy(), def.metadata(), def.createdAt(), false);
+                return definitionRegistry.register(disabled).map(v -> {
+                    auditPort.emit(AuditEvent.builder().eventType("WORKFLOW_DEPRECATED")
+                        .principal(deprecatedBy).resourceId(workflowId + "@" + version)
+                        .resourceType("WORKFLOW_DEFINITION").details(Map.of()).build());
+                    return (Void) null;
+                });
+            });
     }
 
     /** Get a specific workflow definition version. */
     public Promise<WorkflowDefinition> getDefinition(String workflowId, int version) {
-        return Promise.ofBlocking(executor, () -> queryDefinitionByVersion(workflowId, version));
+        return definitionRegistry.findByVersion(workflowId, version)
+            .map(opt -> opt.map(this::toAppDefinitionSimple).orElseThrow(
+                () -> new RuntimeException("Definition not found: " + workflowId + "@" + version)));
     }
 
     /** Get the active (latest ACTIVE) version of a workflow. */
     public Promise<WorkflowDefinition> getActiveDefinition(String workflowId) {
-        return Promise.ofBlocking(executor, () -> queryActiveDefinition(workflowId));
+        return definitionRegistry.findLatest(workflowId)
+            .map(opt -> opt.filter(com.ghatana.platform.workflow.runtime.WorkflowDefinition::enabled)
+                .map(this::toAppDefinitionSimple)
+                .orElseThrow(() -> new RuntimeException("No active definition for: " + workflowId)));
     }
 
-    /** List all versions of a workflow with their statuses. */
+    /** List all versions of a workflow (returns latest only via platform registry). */
     public Promise<List<WorkflowDefinition>> listVersions(String workflowId) {
-        return Promise.ofBlocking(executor, () -> queryAllVersions(workflowId));
+        return definitionRegistry.listAll()
+            .map(all -> all.stream()
+                .filter(d -> d.workflowId().equals(workflowId))
+                .map(this::toAppDefinitionSimple)
+                .toList());
     }
 
     // -----------------------------------------------------------------------
-    // Private helpers
+    // Private helpers — platform model conversion
     // -----------------------------------------------------------------------
 
-    private int nextVersionBlocking(String workflowId) {
-        String sql = "SELECT COALESCE(MAX(version), 0) + 1 FROM workflow_definitions WHERE workflow_id = ?";
-        try (Connection conn = dataSource.getConnection();
-             PreparedStatement ps = conn.prepareStatement(sql)) {
-            ps.setString(1, workflowId);
-            try (ResultSet rs = ps.executeQuery()) {
-                rs.next();
-                return rs.getInt(1);
+    private WorkflowTriggerType toPlatformTrigger(TriggerType appTrigger) {
+        return switch (appTrigger) {
+            case EVENT       -> WorkflowTriggerType.EVENT;
+            case SCHEDULE    -> WorkflowTriggerType.SCHEDULE;
+            case MANUAL      -> WorkflowTriggerType.MANUAL;
+            case API_WEBHOOK -> WorkflowTriggerType.API;
+        };
+    }
+
+    private TriggerType toAppTrigger(WorkflowTriggerType platformTrigger) {
+        return switch (platformTrigger) {
+            case EVENT        -> TriggerType.EVENT;
+            case SCHEDULE     -> TriggerType.SCHEDULE;
+            case MANUAL       -> TriggerType.MANUAL;
+            case API          -> TriggerType.API_WEBHOOK;
+            case SUB_WORKFLOW -> TriggerType.API_WEBHOOK;
+        };
+    }
+
+    private StepType toAppStepType(WorkflowStepKind kind) {
+        return switch (kind) {
+            case ACTION, COMPENSATION, LOOP, END -> StepType.TASK;
+            case DECISION    -> StepType.DECISION;
+            case PARALLEL    -> StepType.PARALLEL;
+            case WAIT        -> StepType.WAIT;
+            case SUB_WORKFLOW -> StepType.SUB_WORKFLOW;
+        };
+    }
+
+    private WorkflowStepKind toPlatformStepKind(StepType appType) {
+        return switch (appType) {
+            case TASK         -> WorkflowStepKind.ACTION;
+            case DECISION     -> WorkflowStepKind.DECISION;
+            case PARALLEL     -> WorkflowStepKind.PARALLEL;
+            case WAIT         -> WorkflowStepKind.WAIT;
+            case SUB_WORKFLOW -> WorkflowStepKind.SUB_WORKFLOW;
+        };
+    }
+    private List<WorkflowStepDefinition> toPlatformSteps(String definitionJson) {
+        List<WorkflowStepDefinition> result = new ArrayList<>();
+        if (definitionJson == null || definitionJson.isBlank()) return result;
+        try {
+            JsonNode root = MAPPER.readTree(definitionJson);
+            JsonNode stepsArr = root.path("steps");
+            if (!stepsArr.isArray()) return result;
+            for (JsonNode s : stepsArr) {
+                String stepId = s.path("stepId").asText("unknown");
+                String stepName = s.path("name").asText(stepId);
+                String stepType = s.path("type").asText("TASK");
+                WorkflowStepKind kind = toPlatformStepKind(StepType.valueOf(stepType));
+                String operatorId = s.path("taskRef").asText(null);
+                String condition = s.path("condition").asText(null);
+                String subWorkflowId = s.path("subWorkflowId").asText(null);
+
+                // Resolve next step
+                JsonNode nextNode = s.path("next");
+                String nextStep = null;
+                String nextOnTrue = null;
+                String nextOnFalse = null;
+                if (nextNode.isTextual()) {
+                    nextStep = nextNode.asText();
+                } else if (nextNode.isObject()) {
+                    nextOnTrue = nextNode.path("true").asText(null);
+                    nextOnFalse = nextNode.path("false").asText(null);
+                }
+
+                result.add(new WorkflowStepDefinition(
+                    stepId, stepName, kind, operatorId, condition,
+                    nextOnTrue, nextOnFalse, nextStep, subWorkflowId,
+                    0, null, null, null, Map.of()));
             }
         } catch (Exception e) {
-            throw new RuntimeException("Failed to compute next version for " + workflowId, e);
+            log.warn("[WorkflowDefinition] Failed to parse steps: {}", e.getMessage());
         }
+        return result;
     }
 
-    private String insertDefinitionBlocking(String workflowId, String name, int version,
-                                             String definitionJson, TriggerType triggerType,
-                                             String triggerConfigJson, String timeoutIso,
-                                             String createdBy) {
-        String sql = """
-            INSERT INTO workflow_definitions
-                (definition_id, workflow_id, name, version, definition_json, trigger_type,
-                 trigger_config, timeout_iso, status, created_by, created_at)
-            VALUES (gen_random_uuid()::text, ?, ?, ?, ?::jsonb, ?, ?::jsonb, ?, 'DRAFT', ?, now())
-            RETURNING definition_id
-            """;
-        try (Connection conn = dataSource.getConnection();
-             PreparedStatement ps = conn.prepareStatement(sql)) {
-            ps.setString(1, workflowId);
-            ps.setString(2, name);
-            ps.setInt(3, version);
-            ps.setString(4, definitionJson);
-            ps.setString(5, triggerType.name());
-            ps.setString(6, triggerConfigJson);
-            ps.setString(7, timeoutIso);
-            ps.setString(8, createdBy);
-            try (ResultSet rs = ps.executeQuery()) {
-                rs.next();
-                return rs.getString("definition_id");
-            }
-        } catch (Exception e) {
-            throw new RuntimeException("Failed to insert workflow definition for " + workflowId, e);
-        }
+    private String resolveEntryStepId(String definitionJson, List<WorkflowStepDefinition> steps) {
+        try {
+            JsonNode root = MAPPER.readTree(definitionJson);
+            JsonNode startNode = root.path("startStepId");
+            if (!startNode.isMissingNode()) return startNode.asText();
+        } catch (Exception ignored) { }
+        return steps.isEmpty() ? "start" : steps.getFirst().stepId();
     }
 
-    private void setVersionStatus(String workflowId, int version, String status) {
-        String sql = """
-            UPDATE workflow_definitions SET status = ?
-             WHERE workflow_id = ? AND version = ?
-            """;
-        try (Connection conn = dataSource.getConnection();
-             PreparedStatement ps = conn.prepareStatement(sql)) {
-            ps.setString(1, status);
-            ps.setString(2, workflowId);
-            ps.setInt(3, version);
-            ps.executeUpdate();
-        } catch (Exception e) {
-            throw new RuntimeException("Failed to set status for " + workflowId + "@" + version, e);
-        }
-    }
-
-    private WorkflowDefinition queryDefinitionById(String definitionId) {
-        String sql = """
-            SELECT definition_id, workflow_id, name, version, trigger_type, trigger_config::text,
-                   timeout_iso, status, created_by, created_at::text
-              FROM workflow_definitions
-             WHERE definition_id = ?
-            """;
-        try (Connection conn = dataSource.getConnection();
-             PreparedStatement ps = conn.prepareStatement(sql)) {
-            ps.setString(1, definitionId);
-            try (ResultSet rs = ps.executeQuery()) {
-                if (!rs.next()) throw new RuntimeException("Definition not found: " + definitionId);
-                return mapDefinition(rs);
-            }
-        } catch (Exception e) {
-            throw new RuntimeException("Failed to query definition " + definitionId, e);
-        }
-    }
-
-    private WorkflowDefinition queryDefinitionByVersion(String workflowId, int version) {
-        String sql = """
-            SELECT definition_id, workflow_id, name, version, trigger_type, trigger_config::text,
-                   timeout_iso, status, created_by, created_at::text
-              FROM workflow_definitions
-             WHERE workflow_id = ? AND version = ?
-            """;
-        try (Connection conn = dataSource.getConnection();
-             PreparedStatement ps = conn.prepareStatement(sql)) {
-            ps.setString(1, workflowId);
-            ps.setInt(2, version);
-            try (ResultSet rs = ps.executeQuery()) {
-                if (!rs.next()) throw new RuntimeException(
-                    "Definition not found: " + workflowId + "@" + version);
-                return mapDefinition(rs);
-            }
-        } catch (Exception e) {
-            throw new RuntimeException("Failed to query definition " + workflowId + "@" + version, e);
-        }
-    }
-
-    private WorkflowDefinition queryActiveDefinition(String workflowId) {
-        String sql = """
-            SELECT definition_id, workflow_id, name, version, trigger_type, trigger_config::text,
-                   timeout_iso, status, created_by, created_at::text
-              FROM workflow_definitions
-             WHERE workflow_id = ? AND status = 'ACTIVE'
-             ORDER BY version DESC
-             LIMIT 1
-            """;
-        try (Connection conn = dataSource.getConnection();
-             PreparedStatement ps = conn.prepareStatement(sql)) {
-            ps.setString(1, workflowId);
-            try (ResultSet rs = ps.executeQuery()) {
-                if (!rs.next()) throw new RuntimeException("No active definition for: " + workflowId);
-                return mapDefinition(rs);
-            }
-        } catch (Exception e) {
-            throw new RuntimeException("Failed to query active definition for " + workflowId, e);
-        }
-    }
-
-    private List<WorkflowDefinition> queryAllVersions(String workflowId) {
-        String sql = """
-            SELECT definition_id, workflow_id, name, version, trigger_type, trigger_config::text,
-                   timeout_iso, status, created_by, created_at::text
-              FROM workflow_definitions
-             WHERE workflow_id = ?
-             ORDER BY version DESC
-            """;
-        try (Connection conn = dataSource.getConnection();
-             PreparedStatement ps = conn.prepareStatement(sql)) {
-            ps.setString(1, workflowId);
-            try (ResultSet rs = ps.executeQuery()) {
-                List<WorkflowDefinition> result = new ArrayList<>();
-                while (rs.next()) result.add(mapDefinition(rs));
-                return result;
-            }
-        } catch (Exception e) {
-            throw new RuntimeException("Failed to list versions for " + workflowId, e);
-        }
-    }
-
-    private WorkflowDefinition mapDefinition(ResultSet rs) throws Exception {
-        String definitionJson = rs.getString("definition_json");
-        List<WorkflowStep> steps = parseStepsFromDefinitionJson(definitionJson);
+    private WorkflowDefinition toAppDefinition(
+            com.ghatana.platform.workflow.runtime.WorkflowDefinition platformDef,
+            String definitionJson) {
+        List<WorkflowStep> appSteps = parseStepsFromJson(definitionJson);
         return new WorkflowDefinition(
-            rs.getString("definition_id"),
-            rs.getString("workflow_id"),
-            rs.getString("name"),
-            rs.getInt("version"),
-            TriggerType.valueOf(rs.getString("trigger_type")),
-            rs.getString("trigger_config"),
-            steps,
-            null, null,
-            rs.getString("status"),
-            rs.getString("created_by"),
-            rs.getString("created_at")
-        );
+            platformDef.workflowId() + "@" + platformDef.version(),
+            platformDef.workflowId(), platformDef.name(), platformDef.version(),
+            toAppTrigger(platformDef.triggerType()), platformDef.triggerFilter(),
+            appSteps, null,
+            platformDef.timeout() != null ? platformDef.timeout().toString() : null,
+            platformDef.enabled() ? "ACTIVE" : "DEPRECATED",
+            platformDef.metadata().getOrDefault("createdBy", "system"),
+            platformDef.createdAt().toString());
     }
 
-    /**
-     * Parse the {@code steps} array from a definition JSON document.
-     *
-     * <p>Expected format:
-     * <pre>{@code
-     * {
-     *   "startStepId": "step-001",
-     *   "steps": [
-     *     { "stepId": "step-001", "type": "TASK", "name": "...", "taskRef": "...", "next": "step-002" },
-     *     { "stepId": "step-002", "type": "DECISION", "condition": "...",
-     *       "next": { "true": "step-003", "false": "step-004" } }
-     *   ]
-     * }
-     * }</pre>
-     *
-     * <p>Unknown or missing fields default to null/empty — they are simply ignored.
-     */
-    static List<WorkflowStep> parseStepsFromDefinitionJson(String definitionJson) {
+    private WorkflowDefinition toAppDefinitionSimple(
+            com.ghatana.platform.workflow.runtime.WorkflowDefinition platformDef) {
+        List<WorkflowStep> appSteps = platformDef.steps().stream()
+            .map(s -> new WorkflowStep(
+                s.stepId(), toAppStepType(s.kind()), s.name(),
+                s.operatorId(), s.celCondition(), List.of(),
+                null, null, s.subWorkflowId(), null))
+            .toList();
+        return new WorkflowDefinition(
+            platformDef.workflowId() + "@" + platformDef.version(),
+            platformDef.workflowId(), platformDef.name(), platformDef.version(),
+            toAppTrigger(platformDef.triggerType()), platformDef.triggerFilter(),
+            appSteps, null,
+            platformDef.timeout() != null ? platformDef.timeout().toString() : null,
+            platformDef.enabled() ? "ACTIVE" : "DEPRECATED",
+            platformDef.metadata().getOrDefault("createdBy", "system"),
+            platformDef.createdAt().toString());
+    }
+
+    private List<WorkflowStep> parseStepsFromJson(String definitionJson) {
         List<WorkflowStep> result = new ArrayList<>();
         if (definitionJson == null || definitionJson.isBlank()) return result;
         try {

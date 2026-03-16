@@ -1,6 +1,6 @@
 package com.ghatana.appplatform.corporateactions.service;
 
-import com.zaxxer.hikari.HikariDataSource;
+import javax.sql.DataSource;
 import io.activej.promise.Promise;
 import io.micrometer.core.instrument.Counter;
 import io.micrometer.core.instrument.MeterRegistry;
@@ -31,14 +31,14 @@ public class CaBreakClassificationService {
 
     private static final int TOP_SHAP_FEATURES = 3;
 
-    private final HikariDataSource    dataSource;
+    private final DataSource    dataSource;
     private final Executor            executor;
     private final ModelInferencePort  modelPort;
     private final RemediationPort     remediationPort;
     private final Counter             classifiedCounter;
     private final Counter             autoRemediatedCounter;
 
-    public CaBreakClassificationService(HikariDataSource dataSource, Executor executor,
+    public CaBreakClassificationService(DataSource dataSource, Executor executor,
                                          ModelInferencePort modelPort,
                                          RemediationPort remediationPort,
                                          MeterRegistry registry) {

@@ -1,6 +1,6 @@
 package com.ghatana.appplatform.dlq;
 
-import com.zaxxer.hikari.HikariDataSource;
+import javax.sql.DataSource;
 import io.activej.promise.Promise;
 import io.micrometer.core.instrument.*;
 
@@ -28,14 +28,14 @@ public class DlqMetricsService {
     private static final long   MAX_AGE_HOURS_ALERT    = 24;
     private static final double GROWTH_RATE_ALERT_PCT  = 20.0; // > 20% growth triggers alert
 
-    private final HikariDataSource              dataSource;
+    private final DataSource              dataSource;
     private final Executor                      executor;
     private final DashboardPort                 dashboardPort;
     private final EventPort                     eventPort;
     private final ConcurrentHashMap<String, AtomicLong> topicSizeCache = new ConcurrentHashMap<>();
     private final MeterRegistry                 registry;
 
-    public DlqMetricsService(HikariDataSource dataSource, Executor executor,
+    public DlqMetricsService(DataSource dataSource, Executor executor,
                               DashboardPort dashboardPort, EventPort eventPort,
                               MeterRegistry registry) {
         this.dataSource    = dataSource;

@@ -1,6 +1,9 @@
 package com.ghatana.appplatform.corporateactions.service;
 
-import com.zaxxer.hikari.HikariDataSource;
+import com.ghatana.platform.audit.AuditBusPort;
+import com.ghatana.platform.audit.AuditEvent;
+import java.util.Map;
+import javax.sql.DataSource;
 import io.activej.promise.Promise;
 import io.micrometer.core.instrument.Counter;
 import io.micrometer.core.instrument.MeterRegistry;
@@ -30,19 +33,19 @@ public class CaInstructionNarrativeService {
     private static final int MIN_WORD_COUNT = 150;
     private static final int MAX_WORD_COUNT = 300;
 
-    private final HikariDataSource dataSource;
+    private final DataSource dataSource;
     private final Executor         executor;
     private final LlmSandboxPort   llmPort;
     private final WorkflowPort     workflowPort;
     private final CalendarPort     calendarPort;
-    private final AuditPort        auditPort;
+    private final AuditBusPort        auditPort;
     private final Counter          draftCounter;
     private final Counter          approvedCounter;
     private final Counter          rejectedCounter;
 
-    public CaInstructionNarrativeService(HikariDataSource dataSource, Executor executor,
+    public CaInstructionNarrativeService(DataSource dataSource, Executor executor,
                                           LlmSandboxPort llmPort, WorkflowPort workflowPort,
-                                          CalendarPort calendarPort, AuditPort auditPort,
+                                          CalendarPort calendarPort, AuditBusPort auditPort,
                                           MeterRegistry registry) {
         this.dataSource       = dataSource;
         this.executor         = executor;
@@ -74,13 +77,6 @@ public class CaInstructionNarrativeService {
         LocalDate addBusinessDays(LocalDate from, int days);
     }
 
-    /** K-07 audit. */
-    public interface AuditPort {
-        void logNarrativeDraft(String narrativeId, String caId, String prompt, String draft);
-        void logNarrativeApproval(String narrativeId, String caId, String approvedBy,
-                                   String outcome, String comments);
-    }
-
     // ─── Records ─────────────────────────────────────────────────────────────
 
     public record CaNarrative(String narrativeId, String caId, String status,
@@ -104,11 +100,10 @@ public class CaInstructionNarrativeService {
             draft         = enforceWordCount(draft);
 
             String narrativeId = UUID.randomUUID().toString();
-            auditPort.logNarrativeDraft(narrativeId, caId, prompt, draft);
+            audit.emit(AuditEvent.builder().eventType("NARRATIVE_DRAFT").resourceType("narrative").resourceId(narrativeId).details(Map.of("alertId", caId, "prompt", prompt, "draft", draft);
             draftCounter.increment();
 
-            String taskId = workflowPort.createApprovalTask(narrativeId, "CA_NARRATIVE",
-                    approverRole, "Review CA instruction narrative for " + caId);
+            String taskId = workflowPort.createApprovalTask(narrativeId)).build());
 
             return persistNarrative(narrativeId, caId, "DRAFT", draft, null, taskId);
         });
@@ -122,8 +117,7 @@ public class CaInstructionNarrativeService {
             if (!"DRAFT".equals(existing.status())) {
                 throw new IllegalStateException("Narrative " + narrativeId + " is not in DRAFT status");
             }
-            auditPort.logNarrativeApproval(narrativeId, existing.caId(), approvedBy,
-                    "APPROVED", comments);
+            audit.emit(AuditEvent.builder().eventType("NARRATIVE_APPROVED").resourceType("narrative").resourceId(narrativeId).principal(existing.caId()).build());
             approvedCounter.increment();
             return updateNarrativeStatus(narrativeId, "APPROVED", existing.draftText());
         });
@@ -137,8 +131,7 @@ public class CaInstructionNarrativeService {
             if (!"DRAFT".equals(existing.status())) {
                 throw new IllegalStateException("Narrative " + narrativeId + " is not in DRAFT status");
             }
-            auditPort.logNarrativeApproval(narrativeId, existing.caId(), rejectedBy,
-                    "REJECTED", comments);
+            audit.emit(AuditEvent.builder().eventType("NARRATIVE_APPROVED").resourceType("narrative").resourceId(narrativeId).principal(existing.caId()).build());
             rejectedCounter.increment();
             return updateNarrativeStatus(narrativeId, "REJECTED", null);
         });

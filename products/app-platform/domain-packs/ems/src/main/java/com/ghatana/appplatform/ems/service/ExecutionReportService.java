@@ -1,6 +1,6 @@
 package com.ghatana.appplatform.ems.service;
 
-import com.zaxxer.hikari.HikariDataSource;
+import javax.sql.DataSource;
 import io.activej.promise.Promise;
 import io.micrometer.core.instrument.Counter;
 import io.micrometer.core.instrument.MeterRegistry;
@@ -32,13 +32,13 @@ public class ExecutionReportService {
 
     private static final int DEFAULT_SETTLEMENT_DAYS = 2;  // T+2 equities
 
-    private final HikariDataSource    dataSource;
+    private final DataSource    dataSource;
     private final Executor            executor;
     private final PostTradeNotifyPort postTradePort;
     private final CalendarPort        calendarPort;
     private final Counter             reportCounter;
 
-    public ExecutionReportService(HikariDataSource dataSource, Executor executor,
+    public ExecutionReportService(DataSource dataSource, Executor executor,
                                   PostTradeNotifyPort postTradePort, CalendarPort calendarPort,
                                   MeterRegistry registry) {
         this.dataSource    = dataSource;

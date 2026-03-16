@@ -4,11 +4,14 @@ import com.ghatana.appplatform.config.domain.ConfigEntry;
 import com.ghatana.appplatform.config.domain.ConfigHierarchyLevel;
 import com.ghatana.appplatform.config.port.ConfigStore;
 import com.ghatana.appplatform.config.temporal.TemporalConfigStore;
+import com.ghatana.platform.audit.AuditBusPort;
+import com.ghatana.platform.audit.AuditEvent;
 import io.activej.promise.Promise;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.time.Instant;
+import java.util.Map;
 import java.util.Objects;
 
 /**
@@ -36,14 +39,17 @@ public final class ConfigCommandHandler {
 
     private final ConfigStore store;
     private final TemporalConfigStore temporalStore;
+    private final AuditBusPort audit;
 
     /**
      * @param store         primary config store (writes + schema validation)
      * @param temporalStore temporal store for rollback operations against version history
+     * @param audit         audit bus for emitting config change events
      */
-    public ConfigCommandHandler(ConfigStore store, TemporalConfigStore temporalStore) {
+    public ConfigCommandHandler(ConfigStore store, TemporalConfigStore temporalStore, AuditBusPort audit) {
         this.store         = Objects.requireNonNull(store, "store");
         this.temporalStore = Objects.requireNonNull(temporalStore, "temporalStore");
+        this.audit         = Objects.requireNonNull(audit, "audit");
     }
 
     // ─── Commands ─────────────────────────────────────────────────────────────
@@ -161,7 +167,15 @@ public final class ConfigCommandHandler {
             cmd.levelId(),
             cmd.schemaNamespace()
         );
-        return store.setEntry(entry);
+        return store.setEntry(entry).whenResult(() -> audit.emit(AuditEvent.builder()
+                .tenantId(cmd.levelId())
+                .eventType("CONFIG_CHANGED")
+                .principal(cmd.changedBy())
+                .resourceType("config")
+                .resourceId(cmd.namespace() + "/" + cmd.key())
+                .success(true)
+                .details(Map.of("operation", "set", "level", cmd.level().name()))
+                .build()));
     }
 
     /**
@@ -187,7 +201,15 @@ public final class ConfigCommandHandler {
             cmd.levelId(),
             cmd.namespace()  // use namespace as schemaNamespace for deletion tombstone
         );
-        return store.setEntry(tombstone);
+        return store.setEntry(tombstone).whenResult(() -> audit.emit(AuditEvent.builder()
+                .tenantId(cmd.levelId())
+                .eventType("CONFIG_CHANGED")
+                .principal(cmd.deletedBy())
+                .resourceType("config")
+                .resourceId(cmd.namespace() + "/" + cmd.key())
+                .success(true)
+                .details(Map.of("operation", "delete", "level", cmd.level().name()))
+                .build()));
     }
 
     /**
@@ -213,6 +235,17 @@ public final class ConfigCommandHandler {
                     cmd.rolledBackBy()
                 );
                 cb.set(result);
+                audit.emit(AuditEvent.builder()
+                        .tenantId(cmd.levelId())
+                        .eventType("CONFIG_CHANGED")
+                        .principal(cmd.rolledBackBy())
+                        .resourceType("config")
+                        .resourceId(cmd.namespace() + "/" + cmd.key())
+                        .success(true)
+                        .details(Map.of("operation", "rollback",
+                                "level", cmd.level().name(),
+                                "rollbackTo", cmd.rollbackTo().toString()))
+                        .build());
             } catch (Exception e) {
                 cb.setException(e);
             }

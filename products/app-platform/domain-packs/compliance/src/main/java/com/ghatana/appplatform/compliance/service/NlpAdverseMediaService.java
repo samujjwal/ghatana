@@ -1,5 +1,7 @@
 package com.ghatana.appplatform.compliance.service;
 
+
+import com.ghatana.platform.core.event.EventBusPort;
 import io.micrometer.core.instrument.Counter;
 import io.micrometer.core.instrument.MeterRegistry;
 import org.slf4j.Logger;
@@ -8,7 +10,6 @@ import org.slf4j.LoggerFactory;
 import java.time.Instant;
 import java.util.List;
 import java.util.Map;
-import java.util.function.Consumer;
 
 /**
  * @doc.type      Service
@@ -30,17 +31,17 @@ public class NlpAdverseMediaService {
 
     private final NewsSourcePort          newsSourcePort;
     private final ClassificationModelPort modelPort;
-    private final Consumer<Object>        eventPublisher;
+    private final EventBusPort        eventBusPort;
     private final Counter articlesAnalysed;
     private final Counter highSignalsDetected;
 
     public NlpAdverseMediaService(NewsSourcePort newsSourcePort,
                                    ClassificationModelPort modelPort,
-                                   Consumer<Object> eventPublisher,
+                                   EventBusPort eventBusPort,
                                    MeterRegistry meterRegistry) {
         this.newsSourcePort     = newsSourcePort;
         this.modelPort          = modelPort;
-        this.eventPublisher     = eventPublisher;
+        this.eventBusPort     = eventBusPort;
         this.articlesAnalysed   = meterRegistry.counter("compliance.adverse_media.articles_analysed");
         this.highSignalsDetected = meterRegistry.counter("compliance.adverse_media.high_signals");
     }
@@ -78,7 +79,7 @@ public class NlpAdverseMediaService {
                 highSignalsDetected.increment();
                 log.warn("AdverseMedia HIGH signal: entityId={} article={} category={} score={}",
                         entityId, article.articleId(), result.category(), result.score());
-                eventPublisher.accept(new AdverseMediaHighSignalEvent(
+                eventBusPort.publish(new AdverseMediaHighSignalEvent(
                         entityId, article.articleId(), result.category(), result.score(),
                         result.shapContributions()));
             }

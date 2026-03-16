@@ -2,6 +2,7 @@ package com.ghatana.appplatform.eventstore.validation;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.ghatana.platform.core.json.PlatformObjectMapper;
 import com.ghatana.appplatform.eventstore.domain.CompatibilityType;
 
 import java.util.ArrayList;
@@ -48,7 +49,7 @@ import java.util.Set;
  */
 public final class SchemaCompatibilityChecker {
 
-    private static final ObjectMapper MAPPER = new ObjectMapper();
+    private static final ObjectMapper MAPPER = PlatformObjectMapper.instance();
 
     /**
      * Result of a compatibility check.

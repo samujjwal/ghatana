@@ -1,6 +1,6 @@
 package com.ghatana.appplatform.dlq;
 
-import com.zaxxer.hikari.HikariDataSource;
+import javax.sql.DataSource;
 import io.activej.promise.Promise;
 import io.micrometer.core.instrument.Counter;
 import io.micrometer.core.instrument.MeterRegistry;
@@ -24,14 +24,14 @@ import java.util.concurrent.Executor;
  */
 public class ScheduledAutoRetryService {
 
-    private final HikariDataSource dataSource;
+    private final DataSource dataSource;
     private final Executor         executor;
     private final RetryExecutorPort retryExecutorPort;
     private final DiscardHandoffPort discardHandoffPort;
     private final Counter           autoRetriedCounter;
     private final Counter           exhaustedCounter;
 
-    public ScheduledAutoRetryService(HikariDataSource dataSource, Executor executor,
+    public ScheduledAutoRetryService(DataSource dataSource, Executor executor,
                                       RetryExecutorPort retryExecutorPort,
                                       DiscardHandoffPort discardHandoffPort,
                                       MeterRegistry registry) {

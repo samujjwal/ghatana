@@ -79,7 +79,7 @@ public class RedisSessionStore implements SessionStore {
             long count = jedis.zcard(indexKey);
             if (count > maxConcurrentSessions) {
                 long toEvict = count - maxConcurrentSessions;
-                List<Tuple> oldest = jedis.zpopmin(indexKey, toEvict);
+                List<Tuple> oldest = jedis.zpopmin(indexKey, (int) toEvict);
                 for (Tuple t : oldest) {
                     String evictedId = t.getElement();
                     jedis.del(key(evictedId));

@@ -1,5 +1,7 @@
 package com.ghatana.appplatform.integration;
 
+import com.ghatana.platform.audit.AuditBusPort;
+import com.ghatana.platform.audit.AuditEvent;
 import io.activej.promise.Promise;
 import io.micrometer.core.instrument.*;
 
@@ -56,11 +58,6 @@ public class PluginExecutionE2eTestSuiteService {
         boolean isQuotaExceeded(String pluginId) throws Exception;
     }
 
-    public interface AuditPort {
-        boolean hasAuditEvent(String eventType, String entityId) throws Exception;
-        void audit(String event, String detail) throws Exception;
-    }
-
     // ── Fields ────────────────────────────────────────────────────────────────
 
     private final javax.sql.DataSource ds;
@@ -69,7 +66,7 @@ public class PluginExecutionE2eTestSuiteService {
     private final PluginReportPort reportPort;
     private final AlgoPluginPort algoPort;
     private final PluginMetricsPort metricsPort;
-    private final AuditPort audit;
+    private final AuditBusPort audit;
     private final Executor executor;
     private final Counter suitesPassed;
     private final Counter suitesFailed;
@@ -81,7 +78,7 @@ public class PluginExecutionE2eTestSuiteService {
         PluginReportPort reportPort,
         AlgoPluginPort algoPort,
         PluginMetricsPort metricsPort,
-        AuditPort audit,
+        AuditBusPort audit,
         MeterRegistry registry2,
         Executor executor
     ) {
@@ -114,7 +111,7 @@ public class PluginExecutionE2eTestSuiteService {
             long passed = results.stream().filter(r -> r.passed).count();
             long failed = results.size() - passed;
             if (failed == 0) suitesPassed.increment(); else suitesFailed.increment();
-            audit.audit("PLUGIN_E2E_SUITE", "passed=" + passed + " failed=" + failed);
+            audit.emit(AuditEvent.builder().eventType("PLUGIN_E2E_SUITE").details(Map.of("detail", "passed=" + passed + " failed=" + failed)).build());
             return new SuiteResult("PluginExecutionE2e", results, passed, failed);
         });
     }

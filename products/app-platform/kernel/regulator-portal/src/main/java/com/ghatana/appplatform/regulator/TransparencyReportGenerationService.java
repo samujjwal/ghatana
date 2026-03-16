@@ -1,5 +1,7 @@
 package com.ghatana.appplatform.regulator;
 
+import com.ghatana.platform.audit.AuditBusPort;
+import com.ghatana.platform.audit.AuditEvent;
 import io.activej.promise.Promise;
 import io.micrometer.core.instrument.*;
 
@@ -56,17 +58,13 @@ public class TransparencyReportGenerationService {
                                   String jurisdiction, String storageRef) throws Exception;
     }
 
-    public interface AuditPort {
-        void record(String actorId, String action, String detail) throws Exception;
-    }
-
     // ── Fields ────────────────────────────────────────────────────────────────
 
     private final javax.sql.DataSource ds;
     private final ReportBuilderPort builder;
     private final SecureStoragePort storage;
     private final RegulatoryDeliveryPort delivery;
-    private final AuditPort audit;
+    private final AuditBusPort audit;
     private final Executor executor;
     private final Counter reportsGenerated;
     private final Counter reportsFailed;
@@ -76,7 +74,7 @@ public class TransparencyReportGenerationService {
         ReportBuilderPort builder,
         SecureStoragePort storage,
         RegulatoryDeliveryPort delivery,
-        AuditPort audit,
+        AuditBusPort audit,
         MeterRegistry registry,
         Executor executor
     ) {
@@ -170,8 +168,7 @@ public class TransparencyReportGenerationService {
                          PreparedStatement ps = c.prepareStatement(
                              "UPDATE transparency_reports SET status='SUBMITTED', submitted_at=NOW() WHERE report_id=?"
                          )) { ps.setString(1, reportIdFinal); ps.executeUpdate(); }
-                    audit.record("system", "TRANSPARENCY_REPORT_SUBMITTED",
-                        "reportId=" + reportIdFinal + " type=" + reportType + " period=" + periodLabel);
+                    audit.emit(AuditEvent.builder().principal("system").eventType("TRANSPARENCY_REPORT_SUBMITTED").details(Map.of("detail", "reportId=" + reportIdFinal + " type=" + reportType + " period=" + periodLabel)).build());
                     reportsGenerated.increment();
                 } catch (Exception ex) {
                     try (Connection c = ds.getConnection();

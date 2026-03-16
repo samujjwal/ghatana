@@ -1,5 +1,7 @@
 package com.ghatana.appplatform.risk.service;
 
+
+import com.ghatana.platform.core.event.EventBusPort;
 import com.ghatana.appplatform.risk.domain.*;
 import com.ghatana.appplatform.risk.domain.RiskCheckResult.RiskStatus;
 import com.ghatana.appplatform.risk.port.MarginStore;
@@ -11,7 +13,6 @@ import java.math.BigDecimal;
 import java.math.RoundingMode;
 import java.util.List;
 import java.util.concurrent.Executor;
-import java.util.function.Consumer;
 
 /**
  * @doc.type    Service (Application)
@@ -30,16 +31,16 @@ public class InitialMarginService {
     private final MarginStore marginStore;
     private final OpenPositionsPort openPositionsPort;
     private final Executor executor;
-    private final Consumer<Object> eventPublisher;
+    private final EventBusPort eventBusPort;
 
     public InitialMarginService(MarginStore marginStore,
                                  OpenPositionsPort openPositionsPort,
                                  Executor executor,
-                                 Consumer<Object> eventPublisher) {
+                                 EventBusPort eventBusPort) {
         this.marginStore = marginStore;
         this.openPositionsPort = openPositionsPort;
         this.executor = executor;
-        this.eventPublisher = eventPublisher;
+        this.eventBusPort = eventBusPort;
     }
 
     /**
@@ -72,7 +73,7 @@ public class InitialMarginService {
             boolean marginCallTriggered = utilization >= MARGIN_CALL_THRESHOLD;
             if (marginCallTriggered) {
                 log.warn("Margin call triggered: clientId={} utilization={}", clientId, utilization);
-                eventPublisher.accept(new MarginCallEvent(clientId, accountId,
+                eventBusPort.publish(new MarginCallEvent(clientId, accountId,
                         margin.deposited(), totalRequired, utilization));
             }
 

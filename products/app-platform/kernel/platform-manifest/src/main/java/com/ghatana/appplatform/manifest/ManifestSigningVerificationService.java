@@ -1,5 +1,7 @@
 package com.ghatana.appplatform.manifest;
 
+import com.ghatana.platform.audit.AuditBusPort;
+import com.ghatana.platform.audit.AuditEvent;
 import io.activej.promise.Promise;
 import io.micrometer.core.instrument.*;
 
@@ -60,10 +62,6 @@ public class ManifestSigningVerificationService {
         byte[] canonicalYaml(String manifestId) throws Exception;
     }
 
-    public interface AuditPort {
-        void record(String actorId, String action, String detail) throws Exception;
-    }
-
     // ── Constants ─────────────────────────────────────────────────────────────
 
     private static final String KEY_ALIAS = "platform-manifest-ca-v1";
@@ -74,7 +72,7 @@ public class ManifestSigningVerificationService {
     private final HsmSigningPort hsm;
     private final ManifestContentPort content;
     private final ReleaseManifestService manifestService;
-    private final AuditPort audit;
+    private final AuditBusPort audit;
     private final Executor executor;
     private final Counter signaturesCounter;
     private final Counter verificationFailuresCounter;
@@ -84,7 +82,7 @@ public class ManifestSigningVerificationService {
         HsmSigningPort hsm,
         ManifestContentPort content,
         ReleaseManifestService manifestService,
-        AuditPort audit,
+        AuditBusPort audit,
         MeterRegistry registry,
         Executor executor
     ) {
@@ -126,7 +124,7 @@ public class ManifestSigningVerificationService {
                     manifestService.markSigned(manifestId).get();
                     signaturesCounter.increment();
                     logVerification(manifestId, true, signedBy, "signed sigId=" + sigId);
-                    audit.record(signedBy, "MANIFEST_SIGNED", "manifestId=" + manifestId + " hash=" + hash);
+                    audit.emit(AuditEvent.builder().principal(signedBy).eventType("MANIFEST_SIGNED").details(Map.of("detail", "manifestId=" + manifestId + " hash=" + hash)).build());
                     return sigId;
                 }
             }
@@ -148,8 +146,7 @@ public class ManifestSigningVerificationService {
             if (!recomputedHash.equals(sig.contentHash())) {
                 verificationFailuresCounter.increment();
                 logVerification(manifestId, false, verifiedBy, "content_hash_mismatch");
-                audit.record(verifiedBy, "MANIFEST_VERIFY_FAIL",
-                    "manifestId=" + manifestId + " reason=content_hash_mismatch");
+                audit.emit(AuditEvent.builder().principal(verifiedBy).eventType("MANIFEST_VERIFY_FAIL").details(Map.of("detail", "manifestId=" + manifestId + " reason=content_hash_mismatch")).build());
                 return false;
             }
 
@@ -157,10 +154,9 @@ public class ManifestSigningVerificationService {
             logVerification(manifestId, valid, verifiedBy, valid ? "ok" : "invalid_signature");
             if (!valid) {
                 verificationFailuresCounter.increment();
-                audit.record(verifiedBy, "MANIFEST_VERIFY_FAIL",
-                    "manifestId=" + manifestId + " reason=invalid_signature");
+                audit.emit(AuditEvent.builder().principal(verifiedBy).eventType("MANIFEST_VERIFY_FAIL").details(Map.of("detail", "manifestId=" + manifestId + " reason=invalid_signature")).build());
             } else {
-                audit.record(verifiedBy, "MANIFEST_VERIFY_OK", "manifestId=" + manifestId);
+                audit.emit(AuditEvent.builder().principal(verifiedBy).eventType("MANIFEST_VERIFY_OK").details(Map.of("detail", "manifestId=" + manifestId)).build());
             }
             return valid;
         });

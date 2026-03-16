@@ -1,5 +1,7 @@
 package com.ghatana.appplatform.compliance.service;
 
+
+import com.ghatana.platform.core.event.EventBusPort;
 import io.micrometer.core.instrument.Counter;
 import io.micrometer.core.instrument.Gauge;
 import io.micrometer.core.instrument.MeterRegistry;
@@ -14,7 +16,6 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
 import java.util.concurrent.atomic.AtomicInteger;
-import java.util.function.Consumer;
 
 /**
  * @doc.type      Service
@@ -35,15 +36,15 @@ public class ComplianceAttestationService {
     private final AtomicInteger pendingCount = new AtomicInteger(0);
 
     private final DataSource       dataSource;
-    private final Consumer<Object> eventPublisher;
+    private final EventBusPort eventBusPort;
     private final Counter          attestationsSigned;
     private final Counter          attestationsExpired;
 
     public ComplianceAttestationService(DataSource dataSource,
-                                         Consumer<Object> eventPublisher,
+                                         EventBusPort eventBusPort,
                                          MeterRegistry meterRegistry) {
         this.dataSource          = dataSource;
-        this.eventPublisher      = eventPublisher;
+        this.eventBusPort      = eventBusPort;
         this.attestationsSigned  = meterRegistry.counter("compliance.attestations.signed");
         this.attestationsExpired = meterRegistry.counter("compliance.attestations.expired");
         Gauge.builder("compliance.attestations.pending", pendingCount, AtomicInteger::get)
@@ -81,7 +82,7 @@ public class ComplianceAttestationService {
         }
         pendingCount.incrementAndGet();
         log.info("Attestation created={} user={} dueAt={}", attestationId, userId, dueAt);
-        eventPublisher.accept(new AttestationCreatedEvent(attestationId, userId, policyVersion, dueAt));
+        eventBusPort.publish(new AttestationCreatedEvent(attestationId, userId, policyVersion, dueAt));
         return attestationId;
     }
 
@@ -113,7 +114,7 @@ public class ComplianceAttestationService {
         pendingCount.decrementAndGet();
         attestationsSigned.increment();
         log.info("Attestation signed={} user={}", attestationId, userId);
-        eventPublisher.accept(new AttestationSignedEvent(attestationId, userId, Instant.now()));
+        eventBusPort.publish(new AttestationSignedEvent(attestationId, userId, Instant.now()));
     }
 
     /**
@@ -131,7 +132,7 @@ public class ComplianceAttestationService {
         } catch (SQLException e) {
             throw new RuntimeException("Failed to review attestation " + attestationId, e);
         }
-        eventPublisher.accept(new AttestationReviewedEvent(attestationId, reviewerId, Instant.now()));
+        eventBusPort.publish(new AttestationReviewedEvent(attestationId, reviewerId, Instant.now()));
     }
 
     /**
@@ -161,7 +162,7 @@ public class ComplianceAttestationService {
                 }
                 for (OverdueEntry e : entries) {
                     log.warn("Attestation overdue escalation id={} user={}", e.id(), e.userId());
-                    eventPublisher.accept(new AttestationOverdueEvent(e.id(), e.userId(), e.dueAt()));
+                    eventBusPort.publish(new AttestationOverdueEvent(e.id(), e.userId(), e.dueAt()));
                 }
             }
             // Expire those more than ESCALATION_DAYS overdue

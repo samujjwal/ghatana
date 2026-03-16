@@ -1,6 +1,6 @@
 package com.ghatana.appplatform.pms.service;
 
-import com.zaxxer.hikari.HikariDataSource;
+import javax.sql.DataSource;
 import io.activej.promise.Promise;
 import io.micrometer.core.instrument.Counter;
 import io.micrometer.core.instrument.MeterRegistry;
@@ -35,14 +35,14 @@ public class AllocationConstraintService {
 
     private static final double WEIGHT_SUM_TOLERANCE = 0.001;
 
-    private final HikariDataSource    dataSource;
+    private final DataSource    dataSource;
     private final Executor            executor;
     private final InstrumentCatalogPort catalogPort;
     private final Counter             submittedCounter;
     private final Counter             approvedCounter;
     private final Counter             rejectedCounter;
 
-    public AllocationConstraintService(HikariDataSource dataSource, Executor executor,
+    public AllocationConstraintService(DataSource dataSource, Executor executor,
                                        InstrumentCatalogPort catalogPort, MeterRegistry registry) {
         this.dataSource       = dataSource;
         this.executor         = executor;

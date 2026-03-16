@@ -1,6 +1,6 @@
 package com.ghatana.appplatform.corporateactions.service;
 
-import com.zaxxer.hikari.HikariDataSource;
+import javax.sql.DataSource;
 import io.activej.promise.Promise;
 import io.micrometer.core.instrument.Counter;
 import io.micrometer.core.instrument.MeterRegistry;
@@ -28,7 +28,7 @@ import java.util.concurrent.Executor;
  */
 public class RightsIssueEntitlementService {
 
-    private final HikariDataSource dataSource;
+    private final DataSource dataSource;
     private final Executor         executor;
     private final OrderPort        orderPort;
     private final EventPort        eventPort;
@@ -36,7 +36,7 @@ public class RightsIssueEntitlementService {
     private final Counter          lapsedCounter;
     private final Counter          soldCounter;
 
-    public RightsIssueEntitlementService(HikariDataSource dataSource, Executor executor,
+    public RightsIssueEntitlementService(DataSource dataSource, Executor executor,
                                           OrderPort orderPort, EventPort eventPort,
                                           MeterRegistry registry) {
         this.dataSource       = dataSource;

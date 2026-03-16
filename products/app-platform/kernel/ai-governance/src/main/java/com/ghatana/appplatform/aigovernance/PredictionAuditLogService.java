@@ -1,6 +1,8 @@
 package com.ghatana.appplatform.aigovernance;
 
-import com.zaxxer.hikari.HikariDataSource;
+import com.ghatana.platform.audit.AuditBusPort;
+import com.ghatana.platform.audit.AuditEvent;
+import javax.sql.DataSource;
 import io.activej.promise.Promise;
 import io.micrometer.core.instrument.Counter;
 import io.micrometer.core.instrument.MeterRegistry;
@@ -26,13 +28,13 @@ import java.util.concurrent.Executor;
  */
 public class PredictionAuditLogService {
 
-    private final HikariDataSource dataSource;
+    private final DataSource dataSource;
     private final Executor         executor;
-    private final AuditPort        auditPort;
+    private final AuditBusPort        auditPort;
     private final Counter          predictionLoggedCounter;
 
-    public PredictionAuditLogService(HikariDataSource dataSource, Executor executor,
-                                      AuditPort auditPort,
+    public PredictionAuditLogService(DataSource dataSource, Executor executor,
+                                      AuditBusPort auditPort,
                                       MeterRegistry registry) {
         this.dataSource              = dataSource;
         this.executor                = executor;
@@ -41,11 +43,6 @@ public class PredictionAuditLogService {
     }
 
     // ─── Inner port ──────────────────────────────────────────────────────────
-
-    /** K-07 audit trail for compliance events triggered from audit log queries. */
-    public interface AuditPort {
-        void log(String action, String resourceType, String resourceId, Map<String, Object> details);
-    }
 
     // ─── Domain records ──────────────────────────────────────────────────────
 
@@ -91,9 +88,8 @@ public class PredictionAuditLogService {
             }
 
             predictionLoggedCounter.increment();
-            auditPort.log("PREDICTION_LOGGED", "Model", modelId,
-                Map.of("predictionId", predictionId, "version", modelVersion,
-                        "confidence", confidence, "requestedBy", requestedBy));
+            audit.emit(AuditEvent.builder().eventType("PREDICTION_LOGGED").resourceType("Model").resourceId(modelId).details(Map.of("predictionId", predictionId, "version", modelVersion,
+                        "confidence", confidence, "requestedBy", requestedBy)).build());
 
             return predictionId;
         });

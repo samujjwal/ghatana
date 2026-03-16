@@ -1,6 +1,6 @@
 package com.ghatana.appplatform.pricing.service;
 
-import com.zaxxer.hikari.HikariDataSource;
+import javax.sql.DataSource;
 import io.activej.promise.Promise;
 import io.micrometer.core.instrument.Counter;
 import io.micrometer.core.instrument.MeterRegistry;
@@ -31,14 +31,14 @@ public class PriceCrossValidationService {
 
     private static final double DEFAULT_THRESHOLD = 0.02; // 2%
 
-    private final HikariDataSource    dataSource;
+    private final DataSource    dataSource;
     private final Executor            executor;
     private final ConfigPort          configPort;
     private final PriceChallengeService challengeService;
     private final Counter             warningCounter;
     private final Counter             flaggedCounter;
 
-    public PriceCrossValidationService(HikariDataSource dataSource, Executor executor,
+    public PriceCrossValidationService(DataSource dataSource, Executor executor,
                                         ConfigPort configPort,
                                         PriceChallengeService challengeService,
                                         MeterRegistry registry) {

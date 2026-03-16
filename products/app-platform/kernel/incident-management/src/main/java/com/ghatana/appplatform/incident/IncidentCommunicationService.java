@@ -1,5 +1,7 @@
 package com.ghatana.appplatform.incident;
 
+import com.ghatana.platform.audit.AuditBusPort;
+import com.ghatana.platform.audit.AuditEvent;
 import io.activej.promise.Promise;
 import io.micrometer.core.instrument.*;
 
@@ -63,10 +65,6 @@ public class IncidentCommunicationService {
         List<String> externalRecipients(List<String> tenantIds) throws Exception;
     }
 
-    public interface AuditPort {
-        void record(String actorId, String action, String detail) throws Exception;
-    }
-
     // ── Value types ───────────────────────────────────────────────────────────
 
     public record Communication(
@@ -80,7 +78,7 @@ public class IncidentCommunicationService {
     private final javax.sql.DataSource ds;
     private final DispatchPort dispatch;
     private final AudienceResolverPort audienceResolver;
-    private final AuditPort audit;
+    private final AuditBusPort audit;
     private final Executor executor;
     private final Counter dispatchedCounter;
 
@@ -88,7 +86,7 @@ public class IncidentCommunicationService {
         javax.sql.DataSource ds,
         DispatchPort dispatch,
         AudienceResolverPort audienceResolver,
-        AuditPort audit,
+        AuditBusPort audit,
         MeterRegistry registry,
         Executor executor
     ) {
@@ -127,7 +125,7 @@ public class IncidentCommunicationService {
                 }
             }
             dispatchedCounter.increment();
-            audit.record("system", "INCIDENT_AUTO_NOTIFY", "incidentId=" + incidentId + " severity=" + severity);
+            audit.emit(AuditEvent.builder().principal("system").eventType("INCIDENT_AUTO_NOTIFY").details(Map.of("detail", "incidentId=" + incidentId + " severity=" + severity)).build());
             return null;
         });
     }
@@ -142,7 +140,7 @@ public class IncidentCommunicationService {
             TemplateData tmpl = loadTemplate(templateType);
             String commId = persistComm(incidentId, templateType, audience,
                 tmpl.subjectTmpl(), tmpl.bodyTmpl(), draftedBy, "DRAFT");
-            audit.record(draftedBy, "COMM_DRAFTED", "incidentId=" + incidentId + " type=" + templateType);
+            audit.emit(AuditEvent.builder().principal(draftedBy).eventType("COMM_DRAFTED").details(Map.of("detail", "incidentId=" + incidentId + " type=" + templateType)).build());
             return new Communication(commId, incidentId, templateType, audience,
                 tmpl.subjectTmpl(), tmpl.bodyTmpl(), "DRAFT", draftedBy);
         });
@@ -159,7 +157,7 @@ public class IncidentCommunicationService {
                  )) {
                 ps.setString(1, reviewedBy); ps.setString(2, commId); ps.executeUpdate();
             }
-            audit.record(reviewedBy, "COMM_REVIEWED", "commId=" + commId);
+            audit.emit(AuditEvent.builder().principal(reviewedBy).eventType("COMM_REVIEWED").details(Map.of("detail", "commId=" + commId)).build());
             return null;
         });
     }
@@ -185,7 +183,7 @@ public class IncidentCommunicationService {
                 ps.setString(1, commId); ps.executeUpdate();
             }
             dispatchedCounter.increment();
-            audit.record(sentBy, "COMM_SENT", "commId=" + commId);
+            audit.emit(AuditEvent.builder().principal(sentBy).eventType("COMM_SENT").details(Map.of("detail", "commId=" + commId)).build());
             return null;
         });
     }

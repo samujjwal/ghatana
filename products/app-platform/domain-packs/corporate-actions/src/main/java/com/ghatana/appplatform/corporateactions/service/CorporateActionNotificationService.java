@@ -1,6 +1,6 @@
 package com.ghatana.appplatform.corporateactions.service;
 
-import com.zaxxer.hikari.HikariDataSource;
+import javax.sql.DataSource;
 import io.activej.promise.Promise;
 import io.micrometer.core.instrument.Counter;
 import io.micrometer.core.instrument.MeterRegistry;
@@ -28,14 +28,14 @@ import java.util.concurrent.Executor;
  */
 public class CorporateActionNotificationService {
 
-    private final HikariDataSource  dataSource;
+    private final DataSource  dataSource;
     private final Executor          executor;
     private final NotificationPort  notificationPort;
     private final ConfigPort        configPort;
     private final Counter           notificationSentCounter;
     private final Counter           electionReminderCounter;
 
-    public CorporateActionNotificationService(HikariDataSource dataSource, Executor executor,
+    public CorporateActionNotificationService(DataSource dataSource, Executor executor,
                                                NotificationPort notificationPort,
                                                ConfigPort configPort, MeterRegistry registry) {
         this.dataSource              = dataSource;

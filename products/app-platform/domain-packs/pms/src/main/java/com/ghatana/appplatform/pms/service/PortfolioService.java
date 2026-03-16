@@ -1,6 +1,6 @@
 package com.ghatana.appplatform.pms.service;
 
-import com.zaxxer.hikari.HikariDataSource;
+import javax.sql.DataSource;
 import io.activej.promise.Promise;
 import io.micrometer.core.instrument.Counter;
 import io.micrometer.core.instrument.MeterRegistry;
@@ -32,13 +32,13 @@ public class PortfolioService {
 
     private static final Logger log = LoggerFactory.getLogger(PortfolioService.class);
 
-    private final HikariDataSource dataSource;
+    private final DataSource dataSource;
     private final Executor         executor;
     private final CalendarPort     calendarPort;
     private final Counter          createdCounter;
     private final Counter          updatedCounter;
 
-    public PortfolioService(HikariDataSource dataSource, Executor executor,
+    public PortfolioService(DataSource dataSource, Executor executor,
                             CalendarPort calendarPort, MeterRegistry registry) {
         this.dataSource     = dataSource;
         this.executor       = executor;

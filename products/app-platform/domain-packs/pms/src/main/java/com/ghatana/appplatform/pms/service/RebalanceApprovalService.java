@@ -1,6 +1,6 @@
 package com.ghatana.appplatform.pms.service;
 
-import com.zaxxer.hikari.HikariDataSource;
+import javax.sql.DataSource;
 import io.activej.promise.Promise;
 import io.micrometer.core.instrument.Counter;
 import io.micrometer.core.instrument.MeterRegistry;
@@ -27,14 +27,14 @@ import java.util.concurrent.Executor;
  */
 public class RebalanceApprovalService {
 
-    private final HikariDataSource dataSource;
+    private final DataSource dataSource;
     private final Executor         executor;
     private final WorkflowPort     workflowPort;
     private final Counter          approveCounter;
     private final Counter          rejectCounter;
     private final Counter          modifyCounter;
 
-    public RebalanceApprovalService(HikariDataSource dataSource, Executor executor,
+    public RebalanceApprovalService(DataSource dataSource, Executor executor,
                                      WorkflowPort workflowPort, MeterRegistry registry) {
         this.dataSource     = dataSource;
         this.executor       = executor;

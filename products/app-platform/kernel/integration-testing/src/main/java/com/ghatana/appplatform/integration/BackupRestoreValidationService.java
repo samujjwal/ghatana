@@ -1,5 +1,7 @@
 package com.ghatana.appplatform.integration;
 
+import com.ghatana.platform.audit.AuditBusPort;
+import com.ghatana.platform.audit.AuditEvent;
 import io.activej.promise.Promise;
 import io.micrometer.core.instrument.*;
 
@@ -68,10 +70,6 @@ public class BackupRestoreValidationService {
         boolean verifyMetadataIntegrity(int expectedConfigCount) throws Exception;
     }
 
-    public interface AuditPort {
-        void audit(String event, String detail) throws Exception;
-    }
-
     // ── Constants ─────────────────────────────────────────────────────────────
 
     private static final int  PITR_ACCURACY_SECONDS  = 30;
@@ -87,7 +85,7 @@ public class BackupRestoreValidationService {
     private final KafkaReplayPort kafka;
     private final SecretsBackupPort secrets;
     private final MetadataBackupPort metadata;
-    private final AuditPort audit;
+    private final AuditBusPort audit;
     private final Executor executor;
     private final Counter suitesPassed;
     private final Counter suitesFailed;
@@ -98,7 +96,7 @@ public class BackupRestoreValidationService {
         KafkaReplayPort kafka,
         SecretsBackupPort secrets,
         MetadataBackupPort metadata,
-        AuditPort audit,
+        AuditBusPort audit,
         MeterRegistry registry,
         Executor executor
     ) {
@@ -128,7 +126,7 @@ public class BackupRestoreValidationService {
             long passed = results.stream().filter(r -> r.passed).count();
             long failed = results.size() - passed;
             if (failed == 0) suitesPassed.increment(); else suitesFailed.increment();
-            audit.audit("BACKUP_RESTORE_SUITE", "passed=" + passed + " failed=" + failed);
+            audit.emit(AuditEvent.builder().eventType("BACKUP_RESTORE_SUITE").details(Map.of("detail", "passed=" + passed + " failed=" + failed)).build());
             return new SuiteResult("BackupRestoreValidation", results, passed, failed);
         });
     }
@@ -200,7 +198,7 @@ public class BackupRestoreValidationService {
 
     /** Procedure documented: all restore types logged to audit. */
     private void procedureDocumented(String runId) throws Exception {
-        audit.audit("BACKUP_PROCEDURE", "PITR, Kafka 7-day replay, K-14 secrets, K-08 metadata restore procedures verified");
+        audit.emit(AuditEvent.builder().eventType("BACKUP_PROCEDURE").details(Map.of("detail", "PITR, Kafka 7-day replay, K-14 secrets, K-08 metadata restore procedures verified")).build());
         // If audit() doesn't throw, documentation event is persisted
         assertStep(runId, "procedure_audit_logged", "restore procedure logged to audit", "no-throw", true, "ok");
     }

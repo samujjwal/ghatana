@@ -1,5 +1,7 @@
 package com.ghatana.appplatform.marketdata.service;
 
+
+import com.ghatana.platform.core.event.EventBusPort;
 import io.activej.promise.Promise;
 import io.micrometer.core.instrument.Counter;
 import io.micrometer.core.instrument.MeterRegistry;
@@ -11,7 +13,6 @@ import java.time.Instant;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.Executor;
-import java.util.function.Consumer;
 
 /**
  * @doc.type    Service (Application)
@@ -41,16 +42,16 @@ public class CircuitBreakerDetectionService {
 
     private final HaltedInstrumentPort haltedInstrumentPort;
     private final Executor executor;
-    private final Consumer<Object> eventPublisher;
+    private final EventBusPort eventBusPort;
     private final Counter haltCounter;
 
     public CircuitBreakerDetectionService(HaltedInstrumentPort haltedInstrumentPort,
                                            Executor executor,
-                                           Consumer<Object> eventPublisher,
+                                           EventBusPort eventBusPort,
                                            MeterRegistry meterRegistry) {
         this.haltedInstrumentPort = haltedInstrumentPort;
         this.executor = executor;
-        this.eventPublisher = eventPublisher;
+        this.eventBusPort = eventBusPort;
         this.haltCounter = meterRegistry.counter("marketdata.circuit_breaker.halts");
     }
 
@@ -91,7 +92,7 @@ public class CircuitBreakerDetectionService {
                 haltedInstruments.put(instrumentId, record);
                 haltedInstrumentPort.markHalted(instrumentId);
 
-                eventPublisher.accept(isIndex
+                eventBusPort.publish(isIndex
                         ? new MarketHaltedEvent(instrumentId, currentPrice, changeRatio, true)
                         : new MarketHaltedEvent(instrumentId, currentPrice, changeRatio, false));
             }
@@ -105,7 +106,7 @@ public class CircuitBreakerDetectionService {
             HaltRecord removed = haltedInstruments.remove(instrumentId);
             if (removed != null) {
                 haltedInstrumentPort.markActive(instrumentId);
-                eventPublisher.accept(new MarketResumedEvent(instrumentId, Instant.now()));
+                eventBusPort.publish(new MarketResumedEvent(instrumentId, Instant.now()));
                 log.info("Circuit breaker resumed: instrumentId={}", instrumentId);
             }
             return (Void) null;

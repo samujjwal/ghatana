@@ -1,6 +1,6 @@
 package com.ghatana.appplatform.corporateactions.service;
 
-import com.zaxxer.hikari.HikariDataSource;
+import javax.sql.DataSource;
 import io.activej.promise.Promise;
 import io.micrometer.core.instrument.Counter;
 import io.micrometer.core.instrument.Gauge;
@@ -31,13 +31,13 @@ import java.util.concurrent.atomic.AtomicLong;
  */
 public class CorporateActionReconciliationService {
 
-    private final HikariDataSource dataSource;
+    private final DataSource dataSource;
     private final Executor         executor;
     private final EventPort        eventPort;
     private final Counter          breaksDetectedCounter;
     private final AtomicLong       openBreaksGaugeValue = new AtomicLong(0);
 
-    public CorporateActionReconciliationService(HikariDataSource dataSource, Executor executor,
+    public CorporateActionReconciliationService(DataSource dataSource, Executor executor,
                                                  EventPort eventPort, MeterRegistry registry) {
         this.dataSource           = dataSource;
         this.executor             = executor;

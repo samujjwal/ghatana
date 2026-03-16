@@ -1,6 +1,6 @@
 package com.ghatana.appplatform.recon.service;
 
-import com.zaxxer.hikari.HikariDataSource;
+import javax.sql.DataSource;
 import io.activej.promise.Promise;
 import io.micrometer.core.instrument.Counter;
 import io.micrometer.core.instrument.MeterRegistry;
@@ -36,14 +36,14 @@ public class ReconFailureForecastService {
 
     private static final double HIGH_PROB_THRESHOLD = 0.70;
 
-    private final HikariDataSource dataSource;
+    private final DataSource dataSource;
     private final Executor         executor;
     private final LstmModelPort    lstmModel;
     private final CalendarPort     calendarPort;
     private final AlertPort        alertPort;
     private final Counter          highProbForecastCounter;
 
-    public ReconFailureForecastService(HikariDataSource dataSource, Executor executor,
+    public ReconFailureForecastService(DataSource dataSource, Executor executor,
                                        LstmModelPort lstmModel, CalendarPort calendarPort,
                                        AlertPort alertPort, MeterRegistry registry) {
         this.dataSource              = dataSource;

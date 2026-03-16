@@ -1,6 +1,6 @@
 package com.ghatana.appplatform.dlq;
 
-import com.zaxxer.hikari.HikariDataSource;
+import javax.sql.DataSource;
 import io.activej.promise.Promise;
 import io.micrometer.core.instrument.Counter;
 import io.micrometer.core.instrument.Gauge;
@@ -26,14 +26,14 @@ import java.util.concurrent.atomic.AtomicInteger;
  */
 public class DeadLetterCaptureService {
 
-    private final HikariDataSource dataSource;
+    private final DataSource dataSource;
     private final Executor         executor;
     private final EventPort        eventPort;
     private final Counter          capturedCounter;
     private final Counter          resolvedCounter;
     private final AtomicInteger    pendingCount = new AtomicInteger(0);
 
-    public DeadLetterCaptureService(HikariDataSource dataSource, Executor executor,
+    public DeadLetterCaptureService(DataSource dataSource, Executor executor,
                                      EventPort eventPort, MeterRegistry registry) {
         this.dataSource     = dataSource;
         this.executor       = executor;

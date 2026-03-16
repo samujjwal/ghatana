@@ -1,6 +1,6 @@
 package com.ghatana.appplatform.governance;
 
-import com.zaxxer.hikari.HikariDataSource;
+import javax.sql.DataSource;
 import io.activej.promise.Promise;
 import io.micrometer.core.instrument.Counter;
 import io.micrometer.core.instrument.MeterRegistry;
@@ -25,14 +25,14 @@ import java.util.concurrent.Executor;
  */
 public class DataQualityRuleEngineService {
 
-    private final HikariDataSource  dataSource;
+    private final DataSource  dataSource;
     private final Executor          executor;
     private final RuleExecutionPort rulePort;
     private final EventPort         eventPort;
     private final Counter           rulesExecutedCounter;
     private final Counter           breaksCounter;
 
-    public DataQualityRuleEngineService(HikariDataSource dataSource, Executor executor,
+    public DataQualityRuleEngineService(DataSource dataSource, Executor executor,
                                          RuleExecutionPort rulePort, EventPort eventPort,
                                          MeterRegistry registry) {
         this.dataSource          = dataSource;

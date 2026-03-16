@@ -31,6 +31,10 @@ dependencies {
     api(project(":platform:java:observability"))
     api(project(":platform:java:agent-framework"))
 
+    // ─── Platform workflow ────────────────────────────────────────────────────
+    implementation(project(":platform:java:workflow-runtime"))
+    implementation(project(":platform:java:workflow-jdbc"))
+
     // ─── Kernel dependencies ──────────────────────────────────────────────────
     implementation(project(":products:app-platform:kernel:event-store"))
     implementation(project(":products:app-platform:kernel:audit-trail"))

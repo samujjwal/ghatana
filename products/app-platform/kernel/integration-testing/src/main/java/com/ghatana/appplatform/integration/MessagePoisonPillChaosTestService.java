@@ -1,5 +1,7 @@
 package com.ghatana.appplatform.integration;
 
+import com.ghatana.platform.audit.AuditBusPort;
+import com.ghatana.platform.audit.AuditEvent;
 import io.activej.promise.Promise;
 import io.micrometer.core.instrument.*;
 
@@ -40,10 +42,6 @@ public class MessagePoisonPillChaosTestService {
         boolean hasK06DlqAlert(String topic) throws Exception;
     }
 
-    public interface AuditPort {
-        void audit(String event, String detail) throws Exception;
-    }
-
     public record DlqEntry(String msgId, String reason, int retryCount) {}
 
     // ── Constants ─────────────────────────────────────────────────────────────
@@ -56,7 +54,7 @@ public class MessagePoisonPillChaosTestService {
     private final javax.sql.DataSource ds;
     private final EventBusPort eventBus;
     private final AlertPort alertPort;
-    private final AuditPort audit;
+    private final AuditBusPort audit;
     private final Executor executor;
     private final Counter suitesPassed;
     private final Counter suitesFailed;
@@ -65,7 +63,7 @@ public class MessagePoisonPillChaosTestService {
         javax.sql.DataSource ds,
         EventBusPort eventBus,
         AlertPort alertPort,
-        AuditPort audit,
+        AuditBusPort audit,
         MeterRegistry registry,
         Executor executor
     ) {
@@ -93,7 +91,7 @@ public class MessagePoisonPillChaosTestService {
             long passed = results.stream().filter(r -> r.passed).count();
             long failed = results.size() - passed;
             if (failed == 0) suitesPassed.increment(); else suitesFailed.increment();
-            audit.audit("POISON_PILL_SUITE", "passed=" + passed + " failed=" + failed);
+            audit.emit(AuditEvent.builder().eventType("POISON_PILL_SUITE").details(Map.of("detail", "passed=" + passed + " failed=" + failed)).build());
             return new SuiteResult("MessagePoisonPillChaos", results, passed, failed);
         });
     }

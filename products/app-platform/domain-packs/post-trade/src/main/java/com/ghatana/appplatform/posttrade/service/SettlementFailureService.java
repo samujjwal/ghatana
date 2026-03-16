@@ -1,6 +1,6 @@
 package com.ghatana.appplatform.posttrade.service;
 
-import com.zaxxer.hikari.HikariDataSource;
+import javax.sql.DataSource;
 import io.activej.promise.Promise;
 import io.micrometer.core.instrument.Counter;
 import io.micrometer.core.instrument.MeterRegistry;
@@ -34,14 +34,14 @@ public class SettlementFailureService {
 
     private static final int DEFAULT_GRACE_DAYS = 2;
 
-    private final HikariDataSource dataSource;
+    private final DataSource dataSource;
     private final Executor         executor;
     private final ConfigPort       configPort;
     private final BuyInPort        buyInPort;
     private final Counter          failureCounter;
     private final Counter          buyInCounter;
 
-    public SettlementFailureService(HikariDataSource dataSource, Executor executor,
+    public SettlementFailureService(DataSource dataSource, Executor executor,
                                     ConfigPort configPort, BuyInPort buyInPort,
                                     MeterRegistry registry) {
         this.dataSource     = dataSource;

@@ -1,6 +1,6 @@
 package com.ghatana.appplatform.pricing.service;
 
-import com.zaxxer.hikari.HikariDataSource;
+import javax.sql.DataSource;
 import io.activej.promise.Promise;
 import io.micrometer.core.instrument.Counter;
 import io.micrometer.core.instrument.MeterRegistry;
@@ -31,14 +31,14 @@ public class EodPriceCaptureService {
 
     private static final Logger log = LoggerFactory.getLogger(EodPriceCaptureService.class);
 
-    private final HikariDataSource dataSource;
+    private final DataSource dataSource;
     private final Executor         executor;
     private final CalendarPort     calendarPort;
     private final EodEventPort     eventPort;
     private final Counter          capturedCounter;
     private final Counter          carryForwardCounter;
 
-    public EodPriceCaptureService(HikariDataSource dataSource, Executor executor,
+    public EodPriceCaptureService(DataSource dataSource, Executor executor,
                                   CalendarPort calendarPort, EodEventPort eventPort,
                                   MeterRegistry registry) {
         this.dataSource        = dataSource;

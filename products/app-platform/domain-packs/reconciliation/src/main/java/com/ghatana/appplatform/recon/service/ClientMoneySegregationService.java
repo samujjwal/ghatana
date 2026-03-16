@@ -1,6 +1,6 @@
 package com.ghatana.appplatform.recon.service;
 
-import com.zaxxer.hikari.HikariDataSource;
+import javax.sql.DataSource;
 import io.activej.promise.Promise;
 import io.micrometer.core.instrument.Counter;
 import io.micrometer.core.instrument.Gauge;
@@ -37,14 +37,14 @@ public class ClientMoneySegregationService {
 
     private static final BigDecimal MIN_RATIO = BigDecimal.ONE;
 
-    private final HikariDataSource dataSource;
+    private final DataSource dataSource;
     private final Executor         executor;
     private final LedgerPort       ledger;
     private final EscalationPort   escalation;
     private final Counter          breachCounter;
     private final AtomicLong       latestRatioBps = new AtomicLong(10000);
 
-    public ClientMoneySegregationService(HikariDataSource dataSource, Executor executor,
+    public ClientMoneySegregationService(DataSource dataSource, Executor executor,
                                          LedgerPort ledger, EscalationPort escalation,
                                          MeterRegistry registry) {
         this.dataSource   = dataSource;

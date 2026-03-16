@@ -1,5 +1,7 @@
 package com.ghatana.appplatform.regulator;
 
+import com.ghatana.platform.audit.AuditBusPort;
+import com.ghatana.platform.audit.AuditEvent;
 import io.activej.promise.Promise;
 import io.micrometer.core.instrument.*;
 
@@ -60,10 +62,6 @@ public class AiRegulatoryQueryCopilotService {
         LlmResponse generate(String systemPrompt, String userPrompt) throws Exception;
     }
 
-    public interface K07AuditPort {
-        void record(String regulatorId, String action, String detail) throws Exception;
-    }
-
     public record DocChunk(String docId, String title, String snippet) {}
     public record LlmResponse(String text, int inputTokens, int outputTokens) {}
 
@@ -83,7 +81,7 @@ public class AiRegulatoryQueryCopilotService {
     private final LocalEmbeddingPort embedding;
     private final RegulatoryDocStorePort docStore;
     private final LocalLlmPort llm;
-    private final K07AuditPort audit;
+    private final AuditBusPort audit;
     private final Executor executor;
     private final Counter queries;
     private final Counter rbacRejections;
@@ -95,7 +93,7 @@ public class AiRegulatoryQueryCopilotService {
         LocalEmbeddingPort embedding,
         RegulatoryDocStorePort docStore,
         LocalLlmPort llm,
-        K07AuditPort audit,
+        AuditBusPort audit,
         MeterRegistry registry,
         Executor executor
     ) {
@@ -152,8 +150,7 @@ public class AiRegulatoryQueryCopilotService {
             String sessionId = persistSession(regulatorId, jurisdiction, question, docsJson,
                 response.text(), response.inputTokens(), response.outputTokens(), elapsed);
 
-            audit.record(regulatorId, "COPILOT_QUERY",
-                "sessionId=" + sessionId + " jurisdiction=" + jurisdiction + " durationMs=" + elapsed);
+            audit.emit(AuditEvent.builder().principal(regulatorId).eventType("COPILOT_QUERY").details(Map.of("detail", "sessionId=" + sessionId + " jurisdiction=" + jurisdiction + " durationMs=" + elapsed)).build());
             queries.increment();
 
             Map<String, Object> result = new LinkedHashMap<>();

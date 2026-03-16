@@ -1,6 +1,6 @@
 package com.ghatana.appplatform.pms.service;
 
-import com.zaxxer.hikari.HikariDataSource;
+import javax.sql.DataSource;
 import io.activej.promise.Promise;
 import io.micrometer.core.instrument.Counter;
 import io.micrometer.core.instrument.MeterRegistry;
@@ -34,7 +34,7 @@ public class NavCalculationService {
     private static final Logger log  = LoggerFactory.getLogger(NavCalculationService.class);
     private static final ZoneId NST  = ZoneId.of("Asia/Kathmandu");
 
-    private final HikariDataSource dataSource;
+    private final DataSource dataSource;
     private final Executor         executor;
     private final CalendarPort     calendarPort;
     private final PricePort        pricePort;
@@ -42,7 +42,7 @@ public class NavCalculationService {
     private final Counter          calculatedCounter;
     private final Counter          errorCounter;
 
-    public NavCalculationService(HikariDataSource dataSource, Executor executor,
+    public NavCalculationService(DataSource dataSource, Executor executor,
                                  CalendarPort calendarPort, PricePort pricePort,
                                  NavEventPort eventPort, MeterRegistry registry) {
         this.dataSource        = dataSource;

@@ -1,6 +1,6 @@
 package com.ghatana.appplatform.reporting.service;
 
-import com.zaxxer.hikari.HikariDataSource;
+import javax.sql.DataSource;
 import io.activej.promise.Promise;
 import io.micrometer.core.instrument.Gauge;
 import io.micrometer.core.instrument.MeterRegistry;
@@ -27,11 +27,11 @@ import java.util.concurrent.atomic.AtomicLong;
  */
 public class ReportingAnalyticsService {
 
-    private final HikariDataSource dataSource;
+    private final DataSource dataSource;
     private final Executor         executor;
     private final AtomicLong       complianceRateBps = new AtomicLong();  // basis points × 10000
 
-    public ReportingAnalyticsService(HikariDataSource dataSource, Executor executor,
+    public ReportingAnalyticsService(DataSource dataSource, Executor executor,
                                       MeterRegistry registry) {
         this.dataSource = dataSource;
         this.executor   = executor;

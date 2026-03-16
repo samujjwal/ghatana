@@ -106,7 +106,7 @@ public final class DatabaseCredentialRotator {
             return null;
 
         // Phase 2: async — write new credential to secret store
-        }).then(_ -> secretProvider.putSecret(
+        }).then(ignored -> secretProvider.putSecret(
                 secretPath,
                 password,
                 SecretMetadata.autoRotating(Duration.ofDays(90), "vault")

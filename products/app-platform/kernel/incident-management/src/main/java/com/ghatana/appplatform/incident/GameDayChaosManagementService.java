@@ -1,5 +1,7 @@
 package com.ghatana.appplatform.incident;
 
+import com.ghatana.platform.audit.AuditBusPort;
+import com.ghatana.platform.audit.AuditEvent;
 import io.activej.promise.Promise;
 import io.micrometer.core.instrument.*;
 
@@ -59,17 +61,13 @@ public class GameDayChaosManagementService {
         long getAlertFiredTime(String drillId) throws Exception;
     }
 
-    public interface AuditPort {
-        void record(String actorId, String action, String detail) throws Exception;
-    }
-
     // ── Fields ────────────────────────────────────────────────────────────────
 
     private final javax.sql.DataSource ds;
     private final ChaosRunnerPort chaosRunner;
     private final MaintenanceWindowPort maintenanceWindow;
     private final AlertMonitorPort alertMonitor;
-    private final AuditPort audit;
+    private final AuditBusPort audit;
     private final Executor executor;
     private final Counter drillsPassed;
     private final Counter drillsFailed;
@@ -79,7 +77,7 @@ public class GameDayChaosManagementService {
         ChaosRunnerPort chaosRunner,
         MaintenanceWindowPort maintenanceWindow,
         AlertMonitorPort alertMonitor,
-        AuditPort audit,
+        AuditBusPort audit,
         MeterRegistry registry,
         Executor executor
     ) {
@@ -111,7 +109,7 @@ public class GameDayChaosManagementService {
                 ps.setInt(5, expectedRecoveryMin);
                 try (ResultSet rs = ps.executeQuery()) { rs.next(); drillId = rs.getString(1); }
             }
-            audit.record(scheduledBy, "CHAOS_DRILL_SCHEDULED", "drillId=" + drillId + " window=" + maintenanceWindowId);
+            audit.emit(AuditEvent.builder().principal(scheduledBy).eventType("CHAOS_DRILL_SCHEDULED").details(Map.of("detail", "drillId=" + drillId + " window=" + maintenanceWindowId)).build());
             return drillId;
         });
     }
@@ -158,7 +156,7 @@ public class GameDayChaosManagementService {
             }
 
             markCompleted(drillId, outcome, detectionMs, responseMs, recoveryMs, passed);
-            audit.record(executedBy, "CHAOS_DRILL_EXECUTED", "drillId=" + drillId + " passed=" + passed);
+            audit.emit(AuditEvent.builder().principal(executedBy).eventType("CHAOS_DRILL_EXECUTED").details(Map.of("detail", "drillId=" + drillId + " passed=" + passed)).build());
             if (passed) drillsPassed.increment(); else drillsFailed.increment();
 
             Map<String, Object> result = new LinkedHashMap<>();

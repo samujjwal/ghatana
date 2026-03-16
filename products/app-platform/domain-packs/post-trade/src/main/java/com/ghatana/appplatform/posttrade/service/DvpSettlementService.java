@@ -1,6 +1,6 @@
 package com.ghatana.appplatform.posttrade.service;
 
-import com.zaxxer.hikari.HikariDataSource;
+import javax.sql.DataSource;
 import io.activej.promise.Promise;
 import io.micrometer.core.instrument.Counter;
 import io.micrometer.core.instrument.MeterRegistry;
@@ -31,7 +31,7 @@ public class DvpSettlementService {
     private static final Logger log = LoggerFactory.getLogger(DvpSettlementService.class);
     private static final ZoneId NST = ZoneId.of("Asia/Kathmandu");
 
-    private final HikariDataSource       dataSource;
+    private final DataSource       dataSource;
     private final Executor               executor;
     private final SecuritiesReservationPort securitiesPort;
     private final CashReservationPort    cashPort;
@@ -39,7 +39,7 @@ public class DvpSettlementService {
     private final Counter                dvpSuccessCounter;
     private final Counter                dvpCompensationCounter;
 
-    public DvpSettlementService(HikariDataSource dataSource, Executor executor,
+    public DvpSettlementService(DataSource dataSource, Executor executor,
                                 SecuritiesReservationPort securitiesPort,
                                 CashReservationPort cashPort, LedgerPort ledgerPort,
                                 MeterRegistry registry) {

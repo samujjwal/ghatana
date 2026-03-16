@@ -36,6 +36,7 @@ dependencies {
     api(project(":platform:java:core"))
     api(project(":platform:java:database"))
     api(project(":platform:java:observability"))
+    api(project(":platform:java:governance"))
 
     // ─── Kernel dependencies ──────────────────────────────────────────────────
     implementation(project(":products:app-platform:kernel:audit-trail"))

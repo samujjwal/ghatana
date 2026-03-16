@@ -1,6 +1,8 @@
 package com.ghatana.appplatform.deployment;
 
-import com.zaxxer.hikari.HikariDataSource;
+import com.ghatana.platform.audit.AuditBusPort;
+import com.ghatana.platform.audit.AuditEvent;
+import javax.sql.DataSource;
 import io.activej.promise.Promise;
 import io.micrometer.core.instrument.Counter;
 import io.micrometer.core.instrument.MeterRegistry;
@@ -25,17 +27,17 @@ import java.util.concurrent.Executor;
  */
 public class DeploymentApprovalService {
 
-    private final HikariDataSource dataSource;
+    private final DataSource dataSource;
     private final Executor         executor;
     private final WorkflowPort     workflowPort;
-    private final AuditPort        auditPort;
+    private final AuditBusPort        auditPort;
     private final EventPort        eventPort;
     private final Counter          approvalsGrantedCounter;
     private final Counter          approvalsRejectedCounter;
     private final Counter          emergencyBypassCounter;
 
-    public DeploymentApprovalService(HikariDataSource dataSource, Executor executor,
-                                      WorkflowPort workflowPort, AuditPort auditPort,
+    public DeploymentApprovalService(DataSource dataSource, Executor executor,
+                                      WorkflowPort workflowPort, AuditBusPort auditPort,
                                       EventPort eventPort, MeterRegistry registry) {
         this.dataSource              = dataSource;
         this.executor                = executor;
@@ -53,11 +55,6 @@ public class DeploymentApprovalService {
         String submitForApproval(String resourceId, String resourceType,
                                   String submittedBy, String rationale);
         void createReviewTask(String resourceId, String taskType, String assignee, String reason);
-    }
-
-    public interface AuditPort {
-        void record(String actorId, String action, String resourceId, String resourceType,
-                    Map<String, Object> context);
     }
 
     public interface EventPort {

@@ -1,6 +1,6 @@
 package com.ghatana.appplatform.surveillance.service;
 
-import com.zaxxer.hikari.HikariDataSource;
+import javax.sql.DataSource;
 import io.activej.promise.Promise;
 import io.micrometer.core.instrument.Counter;
 import io.micrometer.core.instrument.MeterRegistry;
@@ -30,14 +30,14 @@ public class AnomalyModelTrainingService {
     private static final double MIN_AUC_ROC         = 0.70;
     private static final int    TRAINING_DAYS        = 90;
 
-    private final HikariDataSource    dataSource;
+    private final DataSource    dataSource;
     private final Executor            executor;
     private final ModelTrainingPort   trainingPort;
     private final ModelRegistryPort   registryPort;
     private final Counter             trainingCounter;
     private final Counter             driftCounter;
 
-    public AnomalyModelTrainingService(HikariDataSource dataSource, Executor executor,
+    public AnomalyModelTrainingService(DataSource dataSource, Executor executor,
                                         ModelTrainingPort trainingPort,
                                         ModelRegistryPort registryPort,
                                         MeterRegistry registry) {

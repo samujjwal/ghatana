@@ -2,8 +2,7 @@ package com.ghatana.appplatform.refdata.service;
 
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.fasterxml.jackson.databind.SerializationFeature;
-import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
+import com.ghatana.platform.core.json.PlatformObjectMapper;
 import com.ghatana.appplatform.refdata.domain.Instrument;
 import com.ghatana.appplatform.refdata.domain.InstrumentStatus;
 import com.ghatana.appplatform.refdata.domain.InstrumentType;
@@ -51,9 +50,7 @@ public class InstrumentService {
         this.jedisPool = jedisPool;
         this.executor = executor;
         this.eventloop = eventloop;
-        this.objectMapper = new ObjectMapper()
-                .registerModule(new JavaTimeModule())
-                .disable(SerializationFeature.WRITE_DATES_AS_TIMESTAMPS);
+        this.objectMapper = PlatformObjectMapper.instance();
     }
 
     /**

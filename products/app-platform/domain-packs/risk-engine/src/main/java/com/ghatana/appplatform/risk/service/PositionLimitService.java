@@ -1,5 +1,7 @@
 package com.ghatana.appplatform.risk.service;
 
+
+import com.ghatana.platform.core.event.EventBusPort;
 import com.ghatana.appplatform.risk.domain.*;
 import com.ghatana.appplatform.risk.domain.RiskCheckResult.RiskStatus;
 import com.ghatana.appplatform.risk.port.PositionLimitStore;
@@ -9,7 +11,6 @@ import org.slf4j.LoggerFactory;
 
 import java.math.BigDecimal;
 import java.util.concurrent.Executor;
-import java.util.function.Consumer;
 
 /**
  * @doc.type    Service (Application)
@@ -28,14 +29,14 @@ public class PositionLimitService {
 
     private final PositionLimitStore limitStore;
     private final Executor executor;
-    private final Consumer<Object> eventPublisher;
+    private final EventBusPort eventBusPort;
 
     public PositionLimitService(PositionLimitStore limitStore,
                                  Executor executor,
-                                 Consumer<Object> eventPublisher) {
+                                 EventBusPort eventBusPort) {
         this.limitStore = limitStore;
         this.executor = executor;
-        this.eventPublisher = eventPublisher;
+        this.eventBusPort = eventBusPort;
     }
 
     /** Check position limits for the given order (D06-002). */

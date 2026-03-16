@@ -1,6 +1,6 @@
 package com.ghatana.appplatform.aigovernance;
 
-import com.zaxxer.hikari.HikariDataSource;
+import javax.sql.DataSource;
 import io.activej.promise.Promise;
 import io.micrometer.core.instrument.Counter;
 import io.micrometer.core.instrument.Timer;
@@ -25,13 +25,13 @@ import java.util.concurrent.Executor;
  */
 public class ShapExplainabilityService {
 
-    private final HikariDataSource dataSource;
+    private final DataSource dataSource;
     private final Executor         executor;
     private final ShapEnginePort   shapEngine;
     private final Counter          explanationsCounter;
     private final Timer            computeTimer;
 
-    public ShapExplainabilityService(HikariDataSource dataSource, Executor executor,
+    public ShapExplainabilityService(DataSource dataSource, Executor executor,
                                       ShapEnginePort shapEngine, MeterRegistry registry) {
         this.dataSource          = dataSource;
         this.executor            = executor;

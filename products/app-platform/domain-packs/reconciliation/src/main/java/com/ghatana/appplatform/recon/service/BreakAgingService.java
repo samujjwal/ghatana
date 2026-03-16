@@ -1,6 +1,6 @@
 package com.ghatana.appplatform.recon.service;
 
-import com.zaxxer.hikari.HikariDataSource;
+import javax.sql.DataSource;
 import io.activej.promise.Promise;
 import io.micrometer.core.instrument.Gauge;
 import io.micrometer.core.instrument.MeterRegistry;
@@ -32,12 +32,12 @@ public class BreakAgingService {
 
     private static final Logger log = LoggerFactory.getLogger(BreakAgingService.class);
 
-    private final HikariDataSource dataSource;
+    private final DataSource dataSource;
     private final Executor         executor;
     private final AtomicLong       criticalBreakCount = new AtomicLong(0);
     private final AtomicLong       overdueBreakCount  = new AtomicLong(0);
 
-    public BreakAgingService(HikariDataSource dataSource, Executor executor,
+    public BreakAgingService(DataSource dataSource, Executor executor,
                              MeterRegistry registry) {
         this.dataSource = dataSource;
         this.executor   = executor;

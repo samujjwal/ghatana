@@ -1,6 +1,6 @@
 package com.ghatana.appplatform.pms.service;
 
-import com.zaxxer.hikari.HikariDataSource;
+import javax.sql.DataSource;
 import io.activej.promise.Promise;
 import io.micrometer.core.instrument.Counter;
 import io.micrometer.core.instrument.MeterRegistry;
@@ -35,14 +35,14 @@ public class PortfolioDriftService {
     private static final Logger log = LoggerFactory.getLogger(PortfolioDriftService.class);
     private static final BigDecimal DEFAULT_DRIFT_THRESHOLD = new BigDecimal("0.05");
 
-    private final HikariDataSource dataSource;
+    private final DataSource dataSource;
     private final Executor         executor;
     private final ConfigPort       configPort;
     private final DriftAlertPort   alertPort;
     private final Counter          driftEventCounter;
     private final Counter          criticalDriftCounter;
 
-    public PortfolioDriftService(HikariDataSource dataSource, Executor executor,
+    public PortfolioDriftService(DataSource dataSource, Executor executor,
                                   ConfigPort configPort, DriftAlertPort alertPort,
                                   MeterRegistry registry) {
         this.dataSource          = dataSource;

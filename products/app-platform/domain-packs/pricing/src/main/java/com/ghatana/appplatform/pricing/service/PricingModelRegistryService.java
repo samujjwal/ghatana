@@ -1,6 +1,6 @@
 package com.ghatana.appplatform.pricing.service;
 
-import com.zaxxer.hikari.HikariDataSource;
+import javax.sql.DataSource;
 import io.activej.promise.Promise;
 import io.micrometer.core.instrument.Counter;
 import io.micrometer.core.instrument.MeterRegistry;
@@ -29,14 +29,14 @@ import java.util.concurrent.Executor;
  */
 public class PricingModelRegistryService {
 
-    private final HikariDataSource dataSource;
+    private final DataSource dataSource;
     private final Executor         executor;
     private final T3SandboxPort    t3SandboxPort;
     private final Counter          registerCounter;
     private final Counter          activateCounter;
     private final Counter          deprecateCounter;
 
-    public PricingModelRegistryService(HikariDataSource dataSource, Executor executor,
+    public PricingModelRegistryService(DataSource dataSource, Executor executor,
                                         T3SandboxPort t3SandboxPort, MeterRegistry registry) {
         this.dataSource       = dataSource;
         this.executor         = executor;

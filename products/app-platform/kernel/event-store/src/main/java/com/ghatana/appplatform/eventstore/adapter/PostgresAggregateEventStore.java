@@ -3,7 +3,7 @@ package com.ghatana.appplatform.eventstore.adapter;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
+import com.ghatana.platform.core.json.PlatformObjectMapper;
 import com.ghatana.appplatform.eventstore.domain.AggregateEventRecord;
 import com.ghatana.appplatform.eventstore.domain.ConflictError;
 import com.ghatana.appplatform.eventstore.port.AggregateEventStore;
@@ -85,7 +85,7 @@ public final class PostgresAggregateEventStore implements AggregateEventStore {
                                        CalendarDateEnricher calendarDateEnricher) {
         this.dataSource            = dataSource;
         this.blockingExecutor      = blockingExecutor;
-        this.mapper                = new ObjectMapper().registerModule(new JavaTimeModule());
+        this.mapper                = PlatformObjectMapper.instance();
         this.calendarDateEnricher  = calendarDateEnricher != null
                 ? calendarDateEnricher : CalendarDateEnricher.DEGRADED;
     }

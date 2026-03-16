@@ -1,5 +1,7 @@
 package com.ghatana.appplatform.sanctions.service;
 
+
+import com.ghatana.platform.core.event.EventBusPort;
 import io.micrometer.core.instrument.Counter;
 import io.micrometer.core.instrument.MeterRegistry;
 import io.micrometer.core.instrument.Timer;
@@ -9,7 +11,6 @@ import org.slf4j.LoggerFactory;
 import java.time.Instant;
 import java.util.List;
 import java.util.Map;
-import java.util.function.Consumer;
 
 /**
  * @doc.type      Service
@@ -31,18 +32,18 @@ public class TransformerEmbeddingMatchingService {
 
     private final EmbeddingModelPort    embeddingModel;
     private final VectorSearchPort      vectorSearch;
-    private final Consumer<Object>      eventPublisher;
+    private final EventBusPort      eventBusPort;
     private final Counter               matchesFound;
     private final Counter               queriesRan;
     private final Timer                 queryLatency;
 
     public TransformerEmbeddingMatchingService(EmbeddingModelPort embeddingModel,
                                                 VectorSearchPort vectorSearch,
-                                                Consumer<Object> eventPublisher,
+                                                EventBusPort eventBusPort,
                                                 MeterRegistry meterRegistry) {
         this.embeddingModel = embeddingModel;
         this.vectorSearch   = vectorSearch;
-        this.eventPublisher = eventPublisher;
+        this.eventBusPort = eventBusPort;
         this.matchesFound   = meterRegistry.counter("sanctions.embedding.matches_found");
         this.queriesRan     = meterRegistry.counter("sanctions.embedding.queries");
         this.queryLatency   = meterRegistry.timer("sanctions.embedding.query_latency");
@@ -71,7 +72,7 @@ public class TransformerEmbeddingMatchingService {
                 matchesFound.increment(accepted.size());
                 log.info("EmbeddingMatch found: clientId={} queryName={} hits={}",
                         clientId, queryName, accepted.size());
-                eventPublisher.accept(new EmbeddingMatchFoundEvent(clientId, queryName, accepted));
+                eventBusPort.publish(new EmbeddingMatchFoundEvent(clientId, queryName, accepted));
             }
             return new EmbeddingScreenResult(clientId, queryName, accepted, Instant.now());
         });

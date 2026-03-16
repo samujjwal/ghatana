@@ -1,6 +1,6 @@
 package com.ghatana.appplatform.aigovernance;
 
-import com.zaxxer.hikari.HikariDataSource;
+import javax.sql.DataSource;
 import io.activej.promise.Promise;
 import io.micrometer.core.instrument.Gauge;
 import io.micrometer.core.instrument.MeterRegistry;
@@ -28,7 +28,7 @@ public class FairnessMonitoringService {
     private static final int[]    WINDOWS_DAYS      = {7, 30, 90};
     private static final double   DEGRADATION_THRESHOLD = 0.1;
 
-    private final HikariDataSource    dataSource;
+    private final DataSource    dataSource;
     private final Executor            executor;
     private final FairnessPort        fairnessPort;
     private final HitlTriggerPort     hitlTriggerPort;
@@ -36,7 +36,7 @@ public class FairnessMonitoringService {
     private final AtomicReference<Double> latestDisparity30d = new AtomicReference<>(0.0);
     private final AtomicReference<Double> latestDisparity90d = new AtomicReference<>(0.0);
 
-    public FairnessMonitoringService(HikariDataSource dataSource, Executor executor,
+    public FairnessMonitoringService(DataSource dataSource, Executor executor,
                                       FairnessPort fairnessPort,
                                       HitlTriggerPort hitlTriggerPort,
                                       MeterRegistry registry) {

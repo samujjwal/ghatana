@@ -1,5 +1,7 @@
 package com.ghatana.appplatform.certification;
 
+import com.ghatana.platform.audit.AuditBusPort;
+import com.ghatana.platform.audit.AuditEvent;
 import io.activej.promise.Promise;
 import io.micrometer.core.instrument.*;
 
@@ -50,10 +52,6 @@ public class ComplianceVerificationChecklistService {
 
     // ── Inner port interfaces ─────────────────────────────────────────────────
 
-    public interface AuditPort {
-        void record(String actorId, String action, String detail) throws Exception;
-    }
-
     // ── Canonical checklist items per tier ────────────────────────────────────
 
     private static final Map<String, List<ChecklistTemplate>> TIER_TEMPLATES;
@@ -98,14 +96,14 @@ public class ComplianceVerificationChecklistService {
     // ── Fields ────────────────────────────────────────────────────────────────
 
     private final javax.sql.DataSource ds;
-    private final AuditPort audit;
+    private final AuditBusPort audit;
     private final Executor executor;
     private final Counter checklistsPassed;
     private final Counter checklistsFailed;
 
     public ComplianceVerificationChecklistService(
         javax.sql.DataSource ds,
-        AuditPort audit,
+        AuditBusPort audit,
         MeterRegistry registry,
         Executor executor
     ) {
@@ -142,7 +140,7 @@ public class ComplianceVerificationChecklistService {
                     }
                 }
                 c.commit();
-                audit.record(requestedBy, "CHECKLIST_CREATED", "checklistId=" + checklistId + " tier=" + tier);
+                audit.emit(AuditEvent.builder().principal(requestedBy).eventType("CHECKLIST_CREATED").details(Map.of("detail", "checklistId=" + checklistId + " tier=" + tier)).build());
                 return checklistId;
             }
         });
@@ -161,7 +159,7 @@ public class ComplianceVerificationChecklistService {
                 ps.setString(3, reviewerId); ps.setString(4, itemId);
                 ps.executeUpdate();
             }
-            audit.record(reviewerId, "CHECKLIST_ITEM_REVIEWED", "itemId=" + itemId + " outcome=" + outcome);
+            audit.emit(AuditEvent.builder().principal(reviewerId).eventType("CHECKLIST_ITEM_REVIEWED").details(Map.of("detail", "itemId=" + itemId + " outcome=" + outcome)).build());
             return null;
         });
     }
@@ -197,7 +195,7 @@ public class ComplianceVerificationChecklistService {
                 }
                 if ("PASSED".equals(finalStatus)) checklistsPassed.increment();
                 else checklistsFailed.increment();
-                audit.record(finalisedBy, "CHECKLIST_FINALISED", "checklistId=" + checklistId + " status=" + finalStatus);
+                audit.emit(AuditEvent.builder().principal(finalisedBy).eventType("CHECKLIST_FINALISED").details(Map.of("detail", "checklistId=" + checklistId + " status=" + finalStatus)).build());
                 return finalStatus;
             }
         });
@@ -216,7 +214,7 @@ public class ComplianceVerificationChecklistService {
                     "UPDATE certification_checklists SET status='RESUBMITTED', completed_at=NULL WHERE checklist_id=?"
                 )) { ps.setString(1, checklistId); ps.executeUpdate(); }
             }
-            audit.record(requestedBy, "CHECKLIST_RESUBMITTED", "checklistId=" + checklistId);
+            audit.emit(AuditEvent.builder().principal(requestedBy).eventType("CHECKLIST_RESUBMITTED").details(Map.of("detail", "checklistId=" + checklistId)).build());
             return null;
         });
     }

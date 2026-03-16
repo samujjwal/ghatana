@@ -1,6 +1,6 @@
 package com.ghatana.appplatform.recon.service;
 
-import com.zaxxer.hikari.HikariDataSource;
+import javax.sql.DataSource;
 import io.activej.promise.Promise;
 import io.micrometer.core.instrument.Counter;
 import io.micrometer.core.instrument.MeterRegistry;
@@ -31,13 +31,13 @@ public class SegregationReportingService {
 
     private static final Logger log = LoggerFactory.getLogger(SegregationReportingService.class);
 
-    private final HikariDataSource dataSource;
+    private final DataSource dataSource;
     private final Executor         executor;
     private final ReportExportPort reportExport;
     private final ArchivalPort     archival;
     private final Counter          reportCounter;
 
-    public SegregationReportingService(HikariDataSource dataSource, Executor executor,
+    public SegregationReportingService(DataSource dataSource, Executor executor,
                                        ReportExportPort reportExport, ArchivalPort archival,
                                        MeterRegistry registry) {
         this.dataSource   = dataSource;

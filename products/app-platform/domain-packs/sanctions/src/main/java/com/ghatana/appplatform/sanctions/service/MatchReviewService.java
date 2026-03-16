@@ -1,5 +1,7 @@
 package com.ghatana.appplatform.sanctions.service;
 
+
+import com.ghatana.platform.core.event.EventBusPort;
 import io.micrometer.core.instrument.Counter;
 import io.micrometer.core.instrument.MeterRegistry;
 import org.slf4j.Logger;
@@ -11,7 +13,6 @@ import java.time.Instant;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
-import java.util.function.Consumer;
 
 /**
  * @doc.type      Service
@@ -28,16 +29,16 @@ public class MatchReviewService {
     private static final Logger log = LoggerFactory.getLogger(MatchReviewService.class);
 
     private final DataSource       dataSource;
-    private final Consumer<Object> eventPublisher;
+    private final EventBusPort eventBusPort;
     private final Counter          matchesConfirmed;
     private final Counter          matchesDismissed;
     private final Counter          matchesEscalated;
 
     public MatchReviewService(DataSource dataSource,
-                               Consumer<Object> eventPublisher,
+                               EventBusPort eventBusPort,
                                MeterRegistry meterRegistry) {
         this.dataSource       = dataSource;
-        this.eventPublisher   = eventPublisher;
+        this.eventBusPort   = eventBusPort;
         this.matchesConfirmed = meterRegistry.counter("sanctions.match.confirmed");
         this.matchesDismissed = meterRegistry.counter("sanctions.match.dismissed");
         this.matchesEscalated = meterRegistry.counter("sanctions.match.escalated");
@@ -108,7 +109,7 @@ public class MatchReviewService {
         if ("DISMISS".equals(decision))   matchesDismissed.increment();
         if ("ESCALATE".equals(decision))  matchesEscalated.increment();
 
-        eventPublisher.accept(new MatchReviewedEvent(reviewId, reviewerId, decision, newStatus, Instant.now()));
+        eventBusPort.publish(new MatchReviewedEvent(reviewId, reviewerId, decision, newStatus, Instant.now()));
         log.info("MatchReview id={} decision={} newStatus={}", reviewId, decision, newStatus);
     }
 
@@ -149,7 +150,7 @@ public class MatchReviewService {
         }
 
         matchesConfirmed.increment();
-        eventPublisher.accept(new MatchConfirmedEvent(reviewId, secondReviewerId, Instant.now()));
+        eventBusPort.publish(new MatchConfirmedEvent(reviewId, secondReviewerId, Instant.now()));
         log.warn("MatchReview CONFIRMED (dual approval) id={} approver2={}", reviewId, secondReviewerId);
     }
 
@@ -175,7 +176,7 @@ public class MatchReviewService {
         } catch (SQLException e) {
             throw new RuntimeException("Failed to create review for " + clientId, e);
         }
-        eventPublisher.accept(new MatchReviewCreatedEvent(reviewId, clientId, entityRef, matchScore));
+        eventBusPort.publish(new MatchReviewCreatedEvent(reviewId, clientId, entityRef, matchScore));
         return reviewId;
     }
 

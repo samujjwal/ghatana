@@ -1,5 +1,7 @@
 package com.ghatana.appplatform.oms.service;
 
+
+import com.ghatana.platform.core.event.EventBusPort;
 import io.micrometer.core.instrument.Gauge;
 import io.micrometer.core.instrument.MeterRegistry;
 import org.slf4j.Logger;
@@ -35,14 +37,14 @@ public class PositionLimitMonitoringService {
     private static final double DEFAULT_MAX_CONCENTRATION = 0.10;
 
     private final LimitConfigPort  limitConfig;
-    private final Consumer<Object> eventPublisher;
+    private final EventBusPort eventBusPort;
     private final ConcurrentHashMap<String, PositionSummary> positionCache = new ConcurrentHashMap<>();
 
     public PositionLimitMonitoringService(LimitConfigPort limitConfig,
-                                           Consumer<Object> eventPublisher,
+                                           EventBusPort eventBusPort,
                                            MeterRegistry meterRegistry) {
         this.limitConfig    = limitConfig;
-        this.eventPublisher = eventPublisher;
+        this.eventBusPort = eventBusPort;
 
         Gauge.builder("oms.position.instruments.monitored",
                 positionCache, ConcurrentHashMap::size).register(meterRegistry);
@@ -73,12 +75,12 @@ public class PositionLimitMonitoringService {
             if (utilization >= 1.0) {
                 log.warn("PositionLimitMonitor: BREACH quantity {}>{} client={} instrument={}",
                         newQuantity, limits.maxQuantity(), clientId, instrumentId);
-                eventPublisher.accept(new PositionLimitBreachEvent(
+                eventBusPort.publish(new PositionLimitBreachEvent(
                         clientId, instrumentId, "QUANTITY", newQuantity, limits.maxQuantity()));
             } else if (utilization >= WARNING_THRESHOLD) {
                 log.info("PositionLimitMonitor: WARNING quantity {}/{}({:.0f}%) client={} instrument={}",
                         newQuantity, limits.maxQuantity(), utilization * 100, clientId, instrumentId);
-                eventPublisher.accept(new PositionLimitWarningEvent(
+                eventBusPort.publish(new PositionLimitWarningEvent(
                         clientId, instrumentId, "QUANTITY", utilization));
             }
         }
@@ -88,11 +90,11 @@ public class PositionLimitMonitoringService {
             double valueUtil = marketValue.divide(limits.maxValue(), 4, java.math.RoundingMode.HALF_EVEN)
                     .doubleValue();
             if (valueUtil >= 1.0) {
-                eventPublisher.accept(new PositionLimitBreachEvent(
+                eventBusPort.publish(new PositionLimitBreachEvent(
                         clientId, instrumentId, "VALUE",
                         marketValue.longValue(), limits.maxValue().longValue()));
             } else if (valueUtil >= WARNING_THRESHOLD) {
-                eventPublisher.accept(new PositionLimitWarningEvent(
+                eventBusPort.publish(new PositionLimitWarningEvent(
                         clientId, instrumentId, "VALUE", valueUtil));
             }
         }
@@ -105,11 +107,11 @@ public class PositionLimitMonitoringService {
             double maxConcentration = limits.maxConcentration() != null
                     ? limits.maxConcentration() : DEFAULT_MAX_CONCENTRATION;
             if (concentration >= maxConcentration) {
-                eventPublisher.accept(new PositionLimitBreachEvent(
+                eventBusPort.publish(new PositionLimitBreachEvent(
                         clientId, instrumentId, "CONCENTRATION",
                         (long)(concentration * 10000), (long)(maxConcentration * 10000)));
             } else if (concentration >= maxConcentration * WARNING_THRESHOLD) {
-                eventPublisher.accept(new PositionLimitWarningEvent(
+                eventBusPort.publish(new PositionLimitWarningEvent(
                         clientId, instrumentId, "CONCENTRATION", concentration / maxConcentration));
             }
         }

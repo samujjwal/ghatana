@@ -1,7 +1,7 @@
 package com.ghatana.appplatform.eventstore.kafka;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
+import com.ghatana.platform.core.json.PlatformObjectMapper;
 import com.ghatana.appplatform.eventstore.domain.AggregateEventRecord;
 import org.apache.kafka.clients.producer.KafkaProducer;
 import org.apache.kafka.clients.producer.ProducerRecord;
@@ -75,7 +75,7 @@ public final class KafkaEventPublisher implements AutoCloseable {
         props.put("value.serializer", StringSerializer.class.getName());
 
         this.producer = new KafkaProducer<>(props);
-        this.mapper   = new ObjectMapper().registerModule(new JavaTimeModule());
+        this.mapper   = PlatformObjectMapper.instance();
     }
 
     /**
@@ -83,7 +83,7 @@ public final class KafkaEventPublisher implements AutoCloseable {
      */
     KafkaEventPublisher(KafkaProducer<String, String> producer) {
         this.producer = producer;
-        this.mapper   = new ObjectMapper().registerModule(new JavaTimeModule());
+        this.mapper   = PlatformObjectMapper.instance();
     }
 
     /**

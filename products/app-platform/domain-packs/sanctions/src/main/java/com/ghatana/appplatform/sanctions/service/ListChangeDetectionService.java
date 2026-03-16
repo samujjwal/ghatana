@@ -1,5 +1,7 @@
 package com.ghatana.appplatform.sanctions.service;
 
+
+import com.ghatana.platform.core.event.EventBusPort;
 import io.micrometer.core.instrument.Counter;
 import io.micrometer.core.instrument.MeterRegistry;
 import org.slf4j.Logger;
@@ -10,7 +12,6 @@ import java.sql.*;
 import java.time.Instant;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.function.Consumer;
 
 /**
  * @doc.type      Service
@@ -27,16 +28,16 @@ public class ListChangeDetectionService {
     private static final Logger log = LoggerFactory.getLogger(ListChangeDetectionService.class);
 
     private final DataSource       dataSource;
-    private final Consumer<Object> eventPublisher;
+    private final EventBusPort eventBusPort;
     private final Counter          addedEntries;
     private final Counter          removedEntries;
     private final Counter          modifiedEntries;
 
     public ListChangeDetectionService(DataSource dataSource,
-                                       Consumer<Object> eventPublisher,
+                                       EventBusPort eventBusPort,
                                        MeterRegistry meterRegistry) {
         this.dataSource      = dataSource;
-        this.eventPublisher  = eventPublisher;
+        this.eventBusPort  = eventBusPort;
         this.addedEntries    = meterRegistry.counter("sanctions.list_change.added");
         this.removedEntries  = meterRegistry.counter("sanctions.list_change.removed");
         this.modifiedEntries = meterRegistry.counter("sanctions.list_change.modified");
@@ -76,7 +77,7 @@ public class ListChangeDetectionService {
         ListDiff diff = new ListDiff(listId, prevVersion, newVersion, added, removed, modified, Instant.now());
 
         if (!added.isEmpty() || !removed.isEmpty() || !modified.isEmpty()) {
-            eventPublisher.accept(new ListChangedEvent(listId, newVersion, added.size(),
+            eventBusPort.publish(new ListChangedEvent(listId, newVersion, added.size(),
                     removed.size(), modified.size()));
         }
         return diff;

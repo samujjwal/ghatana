@@ -1,6 +1,6 @@
 package com.ghatana.appplatform.aigovernance;
 
-import com.zaxxer.hikari.HikariDataSource;
+import javax.sql.DataSource;
 import io.activej.promise.Promise;
 import io.micrometer.core.instrument.Counter;
 import io.micrometer.core.instrument.MeterRegistry;
@@ -23,7 +23,7 @@ import java.util.concurrent.Executor;
  */
 public class ModelRetrainingPipelineService {
 
-    private final HikariDataSource  dataSource;
+    private final DataSource  dataSource;
     private final Executor          executor;
     private final TrainingRunPort   trainingRunPort;
     private final ValidationGatePort validationGatePort;
@@ -33,7 +33,7 @@ public class ModelRetrainingPipelineService {
     private final Counter           pipelinesPromotedCounter;
     private final Counter           pipelinesFailedCounter;
 
-    public ModelRetrainingPipelineService(HikariDataSource dataSource, Executor executor,
+    public ModelRetrainingPipelineService(DataSource dataSource, Executor executor,
                                            TrainingRunPort trainingRunPort,
                                            ValidationGatePort validationGatePort,
                                            BiasGatePort biasGatePort,

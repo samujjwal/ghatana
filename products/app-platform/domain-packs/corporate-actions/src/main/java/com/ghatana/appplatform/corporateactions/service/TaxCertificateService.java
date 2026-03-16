@@ -1,6 +1,6 @@
 package com.ghatana.appplatform.corporateactions.service;
 
-import com.zaxxer.hikari.HikariDataSource;
+import javax.sql.DataSource;
 import io.activej.promise.Promise;
 import io.micrometer.core.instrument.Counter;
 import io.micrometer.core.instrument.MeterRegistry;
@@ -28,14 +28,14 @@ import java.util.concurrent.Executor;
  */
 public class TaxCertificateService {
 
-    private final HikariDataSource dataSource;
+    private final DataSource dataSource;
     private final Executor         executor;
     private final PdfRenderPort    pdfRenderPort;
     private final StoragePort      storagePort;
     private final CalendarPort     calendarPort;
     private final Counter          certificateIssuedCounter;
 
-    public TaxCertificateService(HikariDataSource dataSource, Executor executor,
+    public TaxCertificateService(DataSource dataSource, Executor executor,
                                   PdfRenderPort pdfRenderPort, StoragePort storagePort,
                                   CalendarPort calendarPort, MeterRegistry registry) {
         this.dataSource                = dataSource;

@@ -1,5 +1,7 @@
 package com.ghatana.appplatform.oms.service;
 
+
+import com.ghatana.platform.core.event.EventBusPort;
 import com.ghatana.appplatform.oms.domain.*;
 import com.ghatana.appplatform.oms.port.OrderStore;
 import com.ghatana.appplatform.refdata.port.InstrumentStore;
@@ -14,7 +16,6 @@ import java.math.BigDecimal;
 import java.time.Instant;
 import java.util.UUID;
 import java.util.concurrent.Executor;
-import java.util.function.Consumer;
 
 /**
  * @doc.type    Service (Application)
@@ -32,19 +33,19 @@ public class OrderCaptureService {
     private final L1Cache l1Cache;
     private final OrderValidationService validationService;
     private final Executor executor;
-    private final Consumer<Object> eventPublisher;
+    private final EventBusPort eventBusPort;
     private final Counter ordersPlacedCounter;
 
     public OrderCaptureService(OrderStore orderStore, InstrumentStore instrumentStore,
                                 L1Cache l1Cache, OrderValidationService validationService,
-                                Executor executor, Consumer<Object> eventPublisher,
+                                Executor executor, EventBusPort eventBusPort,
                                 MeterRegistry meterRegistry) {
         this.orderStore = orderStore;
         this.instrumentStore = instrumentStore;
         this.l1Cache = l1Cache;
         this.validationService = validationService;
         this.executor = executor;
-        this.eventPublisher = eventPublisher;
+        this.eventBusPort = eventBusPort;
         this.ordersPlacedCounter = meterRegistry.counter("oms.orders.placed");
     }
 
@@ -100,7 +101,7 @@ public class OrderCaptureService {
 
             orderStore.save(order).get();
 
-            eventPublisher.accept(new OrderPlacedEvent(order.orderId(), request.clientId(),
+            eventBusPort.publish(new OrderPlacedEvent(order.orderId(), request.clientId(),
                     request.instrumentId(), request.side(), request.quantity(), now));
 
             ordersPlacedCounter.increment();

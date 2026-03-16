@@ -1,6 +1,6 @@
 package com.ghatana.appplatform.reporting.service;
 
-import com.zaxxer.hikari.HikariDataSource;
+import javax.sql.DataSource;
 import io.activej.promise.Promise;
 import io.micrometer.core.instrument.Counter;
 import io.micrometer.core.instrument.MeterRegistry;
@@ -29,7 +29,7 @@ public class RealtimeTradeReportService {
 
     private static final int SUBMISSION_WINDOW_MINUTES = 15;
 
-    private final HikariDataSource            dataSource;
+    private final DataSource            dataSource;
     private final Executor                    executor;
     private final TradeReportBuilderPort      reportBuilder;
     private final RegulatorSubmissionAdapterService submissionAdapter;
@@ -37,7 +37,7 @@ public class RealtimeTradeReportService {
     private final Counter                     windowBreachedCounter;
     private final Timer                       submissionLatency;
 
-    public RealtimeTradeReportService(HikariDataSource dataSource, Executor executor,
+    public RealtimeTradeReportService(DataSource dataSource, Executor executor,
                                        TradeReportBuilderPort reportBuilder,
                                        RegulatorSubmissionAdapterService submissionAdapter,
                                        MeterRegistry registry) {

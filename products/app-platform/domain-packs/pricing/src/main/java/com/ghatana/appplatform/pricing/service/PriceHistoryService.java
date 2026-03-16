@@ -1,6 +1,6 @@
 package com.ghatana.appplatform.pricing.service;
 
-import com.zaxxer.hikari.HikariDataSource;
+import javax.sql.DataSource;
 import io.activej.promise.Promise;
 import io.micrometer.core.instrument.MeterRegistry;
 import io.micrometer.core.instrument.Timer;
@@ -31,12 +31,12 @@ public class PriceHistoryService {
 
     private static final Logger log = LoggerFactory.getLogger(PriceHistoryService.class);
 
-    private final HikariDataSource dataSource;
+    private final DataSource dataSource;
     private final Executor         executor;
     private final CalendarPort     calendarPort;
     private final Timer            queryTimer;
 
-    public PriceHistoryService(HikariDataSource dataSource, Executor executor,
+    public PriceHistoryService(DataSource dataSource, Executor executor,
                                CalendarPort calendarPort, MeterRegistry registry) {
         this.dataSource   = dataSource;
         this.executor     = executor;

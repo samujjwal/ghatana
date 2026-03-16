@@ -1,6 +1,6 @@
 package com.ghatana.appplatform.risk.service;
 
-import com.zaxxer.hikari.HikariDataSource;
+import javax.sql.DataSource;
 import io.activej.promise.Promise;
 import io.micrometer.core.instrument.Counter;
 import io.micrometer.core.instrument.MeterRegistry;
@@ -35,14 +35,14 @@ public class ForcedLiquidationService {
 
     private static final double LIQUIDATION_BUFFER = 0.10;  // 10% extra buffer over deficit
 
-    private final HikariDataSource    dataSource;
+    private final DataSource    dataSource;
     private final Executor            executor;
     private final OmsOrderPort        omsOrderPort;
     private final LiquidityRankingPort liquidityRankingPort;
     private final Counter             liquidationInitiatedCounter;
     private final Counter             ordersCreatedCounter;
 
-    public ForcedLiquidationService(HikariDataSource dataSource, Executor executor,
+    public ForcedLiquidationService(DataSource dataSource, Executor executor,
                                     OmsOrderPort omsOrderPort,
                                     LiquidityRankingPort liquidityRankingPort,
                                     MeterRegistry registry) {

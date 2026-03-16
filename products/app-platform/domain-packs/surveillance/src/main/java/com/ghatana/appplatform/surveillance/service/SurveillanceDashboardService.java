@@ -1,6 +1,6 @@
 package com.ghatana.appplatform.surveillance.service;
 
-import com.zaxxer.hikari.HikariDataSource;
+import javax.sql.DataSource;
 import io.activej.promise.Promise;
 import io.micrometer.core.instrument.Gauge;
 import io.micrometer.core.instrument.MeterRegistry;
@@ -28,13 +28,13 @@ import java.util.concurrent.atomic.AtomicLong;
  */
 public class SurveillanceDashboardService {
 
-    private final HikariDataSource dataSource;
+    private final DataSource dataSource;
     private final Executor         executor;
     private final DashboardPort    dashboardPort;
     private final AtomicLong       openCasesGauge    = new AtomicLong();
     private final AtomicLong       activeAlertsGauge = new AtomicLong();
 
-    public SurveillanceDashboardService(HikariDataSource dataSource, Executor executor,
+    public SurveillanceDashboardService(DataSource dataSource, Executor executor,
                                          DashboardPort dashboardPort, MeterRegistry registry) {
         this.dataSource    = dataSource;
         this.executor      = executor;

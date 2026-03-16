@@ -1,6 +1,6 @@
 package com.ghatana.appplatform.governance;
 
-import com.zaxxer.hikari.HikariDataSource;
+import javax.sql.DataSource;
 import io.activej.promise.Promise;
 import io.micrometer.core.instrument.Counter;
 import io.micrometer.core.instrument.MeterRegistry;
@@ -26,13 +26,13 @@ import java.util.concurrent.Executor;
  */
 public class SchemaEvolutionService {
 
-    private final HikariDataSource dataSource;
+    private final DataSource dataSource;
     private final Executor         executor;
     private final EventPort        eventPort;
     private final Counter          schemaRegisteredCounter;
     private final Counter          breakingChangeCounter;
 
-    public SchemaEvolutionService(HikariDataSource dataSource, Executor executor,
+    public SchemaEvolutionService(DataSource dataSource, Executor executor,
                                    EventPort eventPort, MeterRegistry registry) {
         this.dataSource             = dataSource;
         this.executor               = executor;

@@ -1,6 +1,6 @@
 package com.ghatana.appplatform.governance;
 
-import com.zaxxer.hikari.HikariDataSource;
+import javax.sql.DataSource;
 import io.activej.promise.Promise;
 import io.micrometer.core.instrument.Gauge;
 import io.micrometer.core.instrument.MeterRegistry;
@@ -24,12 +24,12 @@ import java.util.concurrent.atomic.AtomicLong;
  */
 public class DataQualityDashboardService {
 
-    private final HikariDataSource dataSource;
+    private final DataSource dataSource;
     private final Executor         executor;
     private final DashboardPort    dashboardPort;
     private final AtomicLong       avgScoreGauge = new AtomicLong(0);
 
-    public DataQualityDashboardService(HikariDataSource dataSource, Executor executor,
+    public DataQualityDashboardService(DataSource dataSource, Executor executor,
                                         DashboardPort dashboardPort, MeterRegistry registry) {
         this.dataSource    = dataSource;
         this.executor      = executor;

@@ -1,6 +1,6 @@
 package com.ghatana.appplatform.posttrade.service;
 
-import com.zaxxer.hikari.HikariDataSource;
+import javax.sql.DataSource;
 import io.activej.promise.Promise;
 import io.micrometer.core.instrument.Counter;
 import io.micrometer.core.instrument.MeterRegistry;
@@ -37,13 +37,13 @@ public class SettlementCalendarService {
     private static final int DEFAULT_T_PLUS_EQUITIES = 2;
     private static final int DEFAULT_T_PLUS_GOVBONDS = 0;
 
-    private final HikariDataSource dataSource;
+    private final DataSource dataSource;
     private final Executor         executor;
     private final CalendarPort     calendarPort;
     private final Counter          scheduledCounter;
     private final Counter          retriedCounter;
 
-    public SettlementCalendarService(HikariDataSource dataSource, Executor executor,
+    public SettlementCalendarService(DataSource dataSource, Executor executor,
                                      CalendarPort calendarPort, MeterRegistry registry) {
         this.dataSource       = dataSource;
         this.executor         = executor;

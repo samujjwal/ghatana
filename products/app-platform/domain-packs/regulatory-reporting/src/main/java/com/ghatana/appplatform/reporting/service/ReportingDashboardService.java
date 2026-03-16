@@ -1,6 +1,6 @@
 package com.ghatana.appplatform.reporting.service;
 
-import com.zaxxer.hikari.HikariDataSource;
+import javax.sql.DataSource;
 import io.activej.promise.Promise;
 import io.micrometer.core.instrument.Gauge;
 import io.micrometer.core.instrument.MeterRegistry;
@@ -26,14 +26,14 @@ import java.util.concurrent.atomic.AtomicLong;
  */
 public class ReportingDashboardService {
 
-    private final HikariDataSource dataSource;
+    private final DataSource dataSource;
     private final Executor         executor;
     private final DashboardPort    dashboardPort;
     private final CalendarPort     calendarPort;
     private final AtomicLong       overdueCount = new AtomicLong();
     private final AtomicLong       pendingAckCount = new AtomicLong();
 
-    public ReportingDashboardService(HikariDataSource dataSource, Executor executor,
+    public ReportingDashboardService(DataSource dataSource, Executor executor,
                                       DashboardPort dashboardPort, CalendarPort calendarPort,
                                       MeterRegistry registry) {
         this.dataSource      = dataSource;

@@ -1,5 +1,7 @@
 package com.ghatana.appplatform.oms.service;
 
+
+import com.ghatana.platform.core.event.EventBusPort;
 import com.ghatana.appplatform.oms.service.ComplianceCheckIntegrationService.ComplianceOutcome;
 import com.ghatana.appplatform.oms.service.RiskCheckIntegrationService.RiskOutcome;
 import io.micrometer.core.instrument.Counter;
@@ -10,7 +12,6 @@ import org.slf4j.LoggerFactory;
 import java.math.BigDecimal;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.function.Consumer;
 
 /**
  * @doc.type      Service
@@ -36,7 +37,7 @@ public class PreTradePipelineService {
     private final RiskCheckIntegrationService       riskService;
     private final PipelineConfig                    defaultConfig;
     private final JurisdictionConfigPort            jurisdictionConfig;
-    private final Consumer<Object>                  eventPublisher;
+    private final EventBusPort                  eventBusPort;
     private final Counter pipelinePassed;
     private final Counter pipelineFailed;
 
@@ -44,13 +45,13 @@ public class PreTradePipelineService {
                                    RiskCheckIntegrationService riskService,
                                    PipelineConfig defaultConfig,
                                    JurisdictionConfigPort jurisdictionConfig,
-                                   Consumer<Object> eventPublisher,
+                                   EventBusPort eventBusPort,
                                    MeterRegistry meterRegistry) {
         this.complianceService  = complianceService;
         this.riskService        = riskService;
         this.defaultConfig      = defaultConfig;
         this.jurisdictionConfig = jurisdictionConfig;
-        this.eventPublisher     = eventPublisher;
+        this.eventBusPort     = eventBusPort;
         this.pipelinePassed     = meterRegistry.counter("oms.pipeline.passed");
         this.pipelineFailed     = meterRegistry.counter("oms.pipeline.failed");
     }

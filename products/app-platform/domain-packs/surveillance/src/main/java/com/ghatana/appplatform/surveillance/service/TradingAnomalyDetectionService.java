@@ -1,6 +1,6 @@
 package com.ghatana.appplatform.surveillance.service;
 
-import com.zaxxer.hikari.HikariDataSource;
+import javax.sql.DataSource;
 import io.activej.promise.Promise;
 import io.micrometer.core.instrument.Counter;
 import io.micrometer.core.instrument.MeterRegistry;
@@ -30,13 +30,13 @@ public class TradingAnomalyDetectionService {
 
     private static final double HIGH_ANOMALY_THRESHOLD = 0.80;
 
-    private final HikariDataSource dataSource;
+    private final DataSource dataSource;
     private final Executor         executor;
     private final AiModelPort      aiModelPort;
     private final AlertPort        alertPort;
     private final Counter          anomalyCounter;
 
-    public TradingAnomalyDetectionService(HikariDataSource dataSource, Executor executor,
+    public TradingAnomalyDetectionService(DataSource dataSource, Executor executor,
                                            AiModelPort aiModelPort, AlertPort alertPort,
                                            MeterRegistry registry) {
         this.dataSource    = dataSource;

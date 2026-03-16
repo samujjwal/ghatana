@@ -30,6 +30,7 @@ dependencies {
     api(project(":platform:java:core"))
     api(project(":platform:java:database"))
     api(project(":platform:java:observability"))
+    implementation(project(":platform:java:audit"))
 
     // -------------------------------------------------------------------------
     // ActiveJ async runtime

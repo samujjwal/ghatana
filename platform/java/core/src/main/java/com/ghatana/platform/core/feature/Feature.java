@@ -33,5 +33,21 @@ public enum Feature {
     SECURITY_GATEWAY_ABAC,
     
     /** Zero-trust security model */
-    SECURITY_GATEWAY_ZERO_TRUST
+    SECURITY_GATEWAY_ZERO_TRUST,
+
+    // ==========================================================================
+    // Product Features
+    // ==========================================================================
+
+    /** AEP advanced event-processing patterns */
+    AEP_ADVANCED_PATTERNS,
+
+    /** AEP machine-learning pipelines */
+    AEP_MACHINE_LEARNING,
+
+    /** YAPPC code scaffolding */
+    YAPPC_SCAFFOLDING,
+
+    /** Data-Cloud knowledge graph */
+    DATA_CLOUD_KNOWLEDGE_GRAPH
 }

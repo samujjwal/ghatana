@@ -5,12 +5,9 @@ import io.micrometer.core.instrument.Counter;
 import io.micrometer.core.instrument.MeterRegistry;
 import io.micrometer.core.instrument.Timer;
 
-import javax.sql.DataSource;
-import java.sql.Connection;
-import java.sql.PreparedStatement;
-import java.sql.ResultSet;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.UUID;
 import java.util.concurrent.Executor;
 
 /**
@@ -83,7 +80,6 @@ public class ParallelStepExecutionService {
     // Fields
     // -----------------------------------------------------------------------
 
-    private final DataSource dataSource;
     private final Executor executor;
     private final StepExecutionPort stepExecutionPort;
     private final ContextMergerPort contextMerger;
@@ -99,12 +95,10 @@ public class ParallelStepExecutionService {
     // Constructor
     // -----------------------------------------------------------------------
 
-    public ParallelStepExecutionService(DataSource dataSource,
-                                         Executor executor,
+    public ParallelStepExecutionService(Executor executor,
                                          MeterRegistry meterRegistry,
                                          StepExecutionPort stepExecutionPort,
                                          ContextMergerPort contextMerger) {
-        this.dataSource        = dataSource;
         this.executor          = executor;
         this.stepExecutionPort = stepExecutionPort;
         this.contextMerger     = contextMerger;
@@ -150,7 +144,7 @@ public class ParallelStepExecutionService {
 
         return applyJoinStrategy(config, branchPromises, contextJson).map(result -> {
             long duration = (System.nanoTime() - start) / 1_000_000;
-            String executionId = persistExecutionBlocking(instanceId, config, result, duration);
+            String executionId = UUID.randomUUID().toString();
             return new ParallelExecutionResult(
                 executionId, instanceId, config.stepId(), config.joinStrategy(),
                 result, contextMerger.merge(contextJson, result),
@@ -232,39 +226,5 @@ public class ParallelStepExecutionService {
         if (failedCount == 0) return "COMPLETED";
         if (config.failureStrategy() == FailureStrategy.IGNORE) return "PARTIAL";
         return "FAILED";
-    }
-
-    // -----------------------------------------------------------------------
-    // Private DB helpers
-    // -----------------------------------------------------------------------
-
-    private String persistExecutionBlocking(String instanceId, ParallelStepConfig config,
-                                             List<BranchResult> results, long durationMs) {
-        String sql = """
-            INSERT INTO workflow_parallel_executions
-                (execution_id, instance_id, step_id, join_strategy, branch_count,
-                 completed_count, failed_count, duration_ms, status, executed_at)
-            VALUES (gen_random_uuid()::text, ?, ?, ?, ?, ?, ?, ?, ?, now())
-            RETURNING execution_id
-            """;
-        try (Connection conn = dataSource.getConnection();
-             PreparedStatement ps = conn.prepareStatement(sql)) {
-            long completed = results.stream().filter(b -> "COMPLETED".equals(b.status())).count();
-            long failed    = results.stream().filter(b -> "FAILED".equals(b.status())).count();
-            ps.setString(1, instanceId);
-            ps.setString(2, config.stepId());
-            ps.setString(3, config.joinStrategy().name());
-            ps.setInt(4, config.branchStepIds().size());
-            ps.setLong(5, completed);
-            ps.setLong(6, failed);
-            ps.setLong(7, durationMs);
-            ps.setString(8, failed == 0 ? "COMPLETED" : "PARTIAL");
-            try (ResultSet rs = ps.executeQuery()) {
-                rs.next();
-                return rs.getString("execution_id");
-            }
-        } catch (Exception e) {
-            throw new RuntimeException("Failed to persist parallel execution for instance " + instanceId, e);
-        }
     }
 }

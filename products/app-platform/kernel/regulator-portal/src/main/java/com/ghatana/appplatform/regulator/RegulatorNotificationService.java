@@ -1,5 +1,7 @@
 package com.ghatana.appplatform.regulator;
 
+import com.ghatana.platform.audit.AuditBusPort;
+import com.ghatana.platform.audit.AuditEvent;
 import io.activej.promise.Promise;
 import io.micrometer.core.instrument.*;
 
@@ -52,16 +54,12 @@ public class RegulatorNotificationService {
         void post(String regulatorId, Map<String, String> payload) throws Exception;
     }
 
-    public interface AuditPort {
-        void record(String actorId, String action, String detail) throws Exception;
-    }
-
     // ── Fields ────────────────────────────────────────────────────────────────
 
     private final javax.sql.DataSource ds;
     private final EmailDeliveryPort email;
     private final WebhookDeliveryPort webhook;
-    private final AuditPort audit;
+    private final AuditBusPort audit;
     private final Executor executor;
     private final Counter criticalSent;
     private final Counter digestsSent;
@@ -70,7 +68,7 @@ public class RegulatorNotificationService {
         javax.sql.DataSource ds,
         EmailDeliveryPort email,
         WebhookDeliveryPort webhook,
-        AuditPort audit,
+        AuditBusPort audit,
         MeterRegistry registry,
         Executor executor
     ) {

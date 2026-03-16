@@ -1,5 +1,7 @@
 package com.ghatana.appplatform.regulator;
 
+import com.ghatana.platform.audit.AuditBusPort;
+import com.ghatana.platform.audit.AuditEvent;
 import io.activej.promise.Promise;
 import io.micrometer.core.instrument.*;
 
@@ -67,10 +69,6 @@ public class RegulatoryInvestigationCaseService {
         void notifyOperator(String subject, String body) throws Exception;
     }
 
-    public interface AuditPort {
-        void record(String actorId, String action, String detail) throws Exception;
-    }
-
     // ── Fields ────────────────────────────────────────────────────────────────
 
     private static final int SLA_BUSINESS_DAYS = 5;
@@ -78,7 +76,7 @@ public class RegulatoryInvestigationCaseService {
     private final javax.sql.DataSource ds;
     private final EscalationPort escalation;
     private final NotificationPort notify;
-    private final AuditPort audit;
+    private final AuditBusPort audit;
     private final Executor executor;
     private final Counter casesOpened;
     private final Counter casesClosed;
@@ -88,7 +86,7 @@ public class RegulatoryInvestigationCaseService {
         javax.sql.DataSource ds,
         EscalationPort escalation,
         NotificationPort notify,
-        AuditPort audit,
+        AuditBusPort audit,
         MeterRegistry registry,
         Executor executor
     ) {
@@ -121,7 +119,7 @@ public class RegulatoryInvestigationCaseService {
                 try (ResultSet rs = ps.executeQuery()) { rs.next(); caseId = rs.getString(1); }
             }
             notify.notifyOperator("New investigation case opened: " + title, "Case ID: " + caseId);
-            audit.record(regulatorId, "INVESTIGATION_OPENED", "caseId=" + caseId + " jurisdiction=" + jurisdiction);
+            audit.emit(AuditEvent.builder().principal(regulatorId).eventType("INVESTIGATION_OPENED").details(Map.of("detail", "caseId=" + caseId + " jurisdiction=" + jurisdiction)).build());
             casesOpened.increment();
             return caseId;
         });
@@ -143,7 +141,7 @@ public class RegulatoryInvestigationCaseService {
                     "UPDATE investigation_cases SET status=?, sla_deadline=NOW()+INTERVAL '7 days' WHERE case_id=?"
                 )) { ps.setString(1, next); ps.setString(2, caseId); ps.executeUpdate(); }
             }
-            audit.record(actorId, "INVESTIGATION_ADVANCED", "caseId=" + caseId);
+            audit.emit(AuditEvent.builder().principal(actorId).eventType("INVESTIGATION_ADVANCED").details(Map.of("detail", "caseId=" + caseId)).build());
             return null;
         });
     }
@@ -157,7 +155,7 @@ public class RegulatoryInvestigationCaseService {
                  )) {
                 ps.setString(1, finding); ps.setString(2, caseId); ps.executeUpdate();
             }
-            audit.record(closedBy, "INVESTIGATION_CLOSED", "caseId=" + caseId);
+            audit.emit(AuditEvent.builder().principal(closedBy).eventType("INVESTIGATION_CLOSED").details(Map.of("detail", "caseId=" + caseId)).build());
             casesClosed.increment();
             return null;
         });
@@ -187,7 +185,7 @@ public class RegulatoryInvestigationCaseService {
                  )) {
                 ps.setString(1, caseId); ps.setString(2, authorId); ps.setString(3, body);
                 try (ResultSet rs = ps.executeQuery()) { rs.next(); String id = rs.getString(1);
-                    audit.record(authorId, "INVESTIGATION_RESPONSE_SUBMITTED", "caseId=" + caseId);
+                    audit.emit(AuditEvent.builder().principal(authorId).eventType("INVESTIGATION_RESPONSE_SUBMITTED").details(Map.of("detail", "caseId=" + caseId)).build());
                     return id;
                 }
             }

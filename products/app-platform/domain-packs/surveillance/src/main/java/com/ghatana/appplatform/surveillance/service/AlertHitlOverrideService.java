@@ -1,6 +1,8 @@
 package com.ghatana.appplatform.surveillance.service;
 
-import com.zaxxer.hikari.HikariDataSource;
+import com.ghatana.platform.audit.AuditBusPort;
+import com.ghatana.platform.audit.AuditEvent;
+import javax.sql.DataSource;
 import io.activej.promise.Promise;
 import io.micrometer.core.instrument.Counter;
 import io.micrometer.core.instrument.MeterRegistry;
@@ -29,16 +31,16 @@ import java.util.concurrent.Executor;
  */
 public class AlertHitlOverrideService {
 
-    private final HikariDataSource dataSource;
+    private final DataSource dataSource;
     private final Executor         executor;
-    private final AuditPort        auditPort;
+    private final AuditBusPort        auditPort;
     private final FeedbackPort     feedbackPort;
     private final Counter          truePositiveCounter;
     private final Counter          falsePositiveCounter;
     private final Counter          investigationCounter;
 
-    public AlertHitlOverrideService(HikariDataSource dataSource, Executor executor,
-                                     AuditPort auditPort, FeedbackPort feedbackPort,
+    public AlertHitlOverrideService(DataSource dataSource, Executor executor,
+                                     AuditBusPort auditPort, FeedbackPort feedbackPort,
                                      MeterRegistry registry) {
         this.dataSource          = dataSource;
         this.executor            = executor;
@@ -50,12 +52,6 @@ public class AlertHitlOverrideService {
     }
 
     // ─── Inner ports ──────────────────────────────────────────────────────────
-
-    /** K-07 immutable audit trail. */
-    public interface AuditPort {
-        void logOverride(String alertId, String analystId, String classification,
-                         String reason, LocalDateTime at);
-    }
 
     /** K-09 feedback loop: push analyst label back to model registry. */
     public interface FeedbackPort {

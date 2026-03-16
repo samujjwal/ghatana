@@ -1,5 +1,7 @@
 package com.ghatana.appplatform.operator;
 
+import com.ghatana.platform.audit.AuditBusPort;
+import com.ghatana.platform.audit.AuditEvent;
 import io.activej.promise.Promise;
 import io.micrometer.core.instrument.Counter;
 import io.micrometer.core.instrument.Gauge;
@@ -63,10 +65,6 @@ public class TenantRegistryService {
         void publish(String eventType, Map<String, Object> payload) throws Exception;
     }
 
-    public interface AuditPort {
-        void record(String actorId, String action, String entityId, String detail) throws Exception;
-    }
-
     // ── Value types ───────────────────────────────────────────────────────────
 
     public enum LicenseType { BROKER, ASSET_MANAGER, CUSTODIAN }
@@ -100,7 +98,7 @@ public class TenantRegistryService {
     private final MakerCheckerPort makerChecker;
     private final NamespaceProvisionPort namespaceProvision;
     private final EventPublishPort eventPublish;
-    private final AuditPort audit;
+    private final AuditBusPort audit;
     private final Executor executor;
     private final Counter createdCounter;
     private final Counter suspendedCounter;
@@ -112,7 +110,7 @@ public class TenantRegistryService {
         MakerCheckerPort makerChecker,
         NamespaceProvisionPort namespaceProvision,
         EventPublishPort eventPublish,
-        AuditPort audit,
+        AuditBusPort audit,
         MeterRegistry registry,
         Executor executor
     ) {

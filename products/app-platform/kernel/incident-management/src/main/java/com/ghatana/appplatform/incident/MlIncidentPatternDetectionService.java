@@ -1,5 +1,7 @@
 package com.ghatana.appplatform.incident;
 
+import com.ghatana.platform.audit.AuditBusPort;
+import com.ghatana.platform.audit.AuditEvent;
 import io.activej.promise.Promise;
 import io.micrometer.core.instrument.*;
 
@@ -78,10 +80,6 @@ public class MlIncidentPatternDetectionService {
         void alertHighRisk(double riskScore, String featuresJson) throws Exception;
     }
 
-    public interface AuditPort {
-        void record(String actorId, String action, String detail) throws Exception;
-    }
-
     // ── Constants ─────────────────────────────────────────────────────────────
 
     private static final double RISK_THRESHOLD = 0.70;
@@ -93,7 +91,7 @@ public class MlIncidentPatternDetectionService {
     private final HdbscanPort hdbscan;
     private final LogisticRegressionPort logRegression;
     private final AlertDispatchPort alertDispatch;
-    private final AuditPort audit;
+    private final AuditBusPort audit;
     private final Executor executor;
     private final Counter patternsDetected;
     private final Counter highRiskAlerts;
@@ -104,7 +102,7 @@ public class MlIncidentPatternDetectionService {
         HdbscanPort hdbscan,
         LogisticRegressionPort logRegression,
         AlertDispatchPort alertDispatch,
-        AuditPort audit,
+        AuditBusPort audit,
         MeterRegistry registry,
         Executor executor
     ) {

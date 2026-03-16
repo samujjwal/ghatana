@@ -1,5 +1,7 @@
 package com.ghatana.appplatform.manifest;
 
+import com.ghatana.platform.audit.AuditBusPort;
+import com.ghatana.platform.audit.AuditEvent;
 import io.activej.promise.Promise;
 import io.micrometer.core.instrument.*;
 
@@ -64,10 +66,6 @@ public class TenantUpgradeSchedulingService {
         void notifyOperators(String message) throws Exception;
     }
 
-    public interface AuditPort {
-        void audit(String event, String detail) throws Exception;
-    }
-
     // ── Checklist Items ───────────────────────────────────────────────────────
 
     private static final List<String> CHECKLIST = List.of(
@@ -84,7 +82,7 @@ public class TenantUpgradeSchedulingService {
     private final TenantHealthPort health;
     private final UpgradeOrchestratorPort orchestrator;
     private final NotificationPort notifier;
-    private final AuditPort audit;
+    private final AuditBusPort audit;
     private final Executor executor;
     private final Counter upgradesScheduled;
     private final Counter upgradesForced;
@@ -95,7 +93,7 @@ public class TenantUpgradeSchedulingService {
         TenantHealthPort health,
         UpgradeOrchestratorPort orchestrator,
         NotificationPort notifier,
-        AuditPort audit,
+        AuditBusPort audit,
         MeterRegistry registry,
         Executor executor
     ) {
@@ -123,8 +121,7 @@ public class TenantUpgradeSchedulingService {
             if (forceUpgrade) upgradesForced.increment();
             upgradesScheduled.increment();
             notifier.notifyTenant(tenantId, "Platform upgrade to " + toVersion + " scheduled (track=" + track + ").");
-            audit.audit("TENANT_UPGRADE_SCHEDULED",
-                "tenantId=" + tenantId + " version=" + toVersion + " track=" + track);
+            audit.emit(AuditEvent.builder().eventType("TENANT_UPGRADE_SCHEDULED").details(Map.of("detail", "tenantId=" + tenantId + " version=" + toVersion + " track=" + track)).build());
             if ("IMMEDIATE".equals(track)) kickOff(scheduleId, tenantId, toVersion);
             return scheduleId;
         });
@@ -169,7 +166,7 @@ public class TenantUpgradeSchedulingService {
             markStatus(scheduleId, "FAILED");
             notifier.notifyOperators("Tenant " + tenantId + " upgrade checklist failed for version " + toVersion);
             updateChecklistPassed(scheduleId, false);
-            audit.audit("TENANT_UPGRADE_CHECKLIST_FAILED", "scheduleId=" + scheduleId);
+            audit.emit(AuditEvent.builder().eventType("TENANT_UPGRADE_CHECKLIST_FAILED").details(Map.of("detail", "scheduleId=" + scheduleId)).build());
             return;
         }
         updateChecklistPassed(scheduleId, true);
@@ -178,7 +175,7 @@ public class TenantUpgradeSchedulingService {
         setUpgradeId(scheduleId, upgradeId);
         markStatus(scheduleId, "COMPLETED");
         notifier.notifyTenant(tenantId, "Platform upgrade to " + toVersion + " completed.");
-        audit.audit("TENANT_UPGRADE_KICKED_OFF", "scheduleId=" + scheduleId + " upgradeId=" + upgradeId);
+        audit.emit(AuditEvent.builder().eventType("TENANT_UPGRADE_KICKED_OFF").details(Map.of("detail", "scheduleId=" + scheduleId + " upgradeId=" + upgradeId)).build());
     }
 
     private void runChecklist(String scheduleId, String tenantId) throws Exception {

@@ -60,7 +60,7 @@ public final class NepalNidAdapter implements NationalIdVerificationPlugin {
      * @param timeoutMs  HTTP connection + read timeout in milliseconds
      */
     public NepalNidAdapter(String apiBaseUrl, long timeoutMs) {
-        this.apiBaseUrl = Objects.requireNonNull(apiBaseUrl, "apiBaseUrl").stripTrailing("/");
+        this.apiBaseUrl = Objects.requireNonNull(apiBaseUrl, "apiBaseUrl").replaceAll("/+$", "");
         this.httpClient = HttpClient.newBuilder()
                 .connectTimeout(Duration.ofMillis(timeoutMs))
                 .build();

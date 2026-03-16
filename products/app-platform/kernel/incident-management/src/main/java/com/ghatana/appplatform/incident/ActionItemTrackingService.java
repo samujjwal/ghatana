@@ -1,5 +1,7 @@
 package com.ghatana.appplatform.incident;
 
+import com.ghatana.platform.audit.AuditBusPort;
+import com.ghatana.platform.audit.AuditEvent;
 import io.activej.promise.Promise;
 import io.micrometer.core.instrument.*;
 
@@ -43,15 +45,11 @@ public class ActionItemTrackingService {
         void notifyOwner(String ownerId, String subject, String body) throws Exception;
     }
 
-    public interface AuditPort {
-        void record(String actorId, String action, String detail) throws Exception;
-    }
-
     // ── Fields ────────────────────────────────────────────────────────────────
 
     private final javax.sql.DataSource ds;
     private final NotificationPort notify;
-    private final AuditPort audit;
+    private final AuditBusPort audit;
     private final Executor executor;
     private final Counter itemsCompleted;
     private final Counter itemsOverdue;
@@ -59,7 +57,7 @@ public class ActionItemTrackingService {
     public ActionItemTrackingService(
         javax.sql.DataSource ds,
         NotificationPort notify,
-        AuditPort audit,
+        AuditBusPort audit,
         MeterRegistry registry,
         Executor executor
     ) {
@@ -88,7 +86,7 @@ public class ActionItemTrackingService {
                 try (ResultSet rs = ps.executeQuery()) { rs.next(); itemId = rs.getString(1); }
             }
             notify.notifyOwner(ownerId, "New action item assigned: " + title, "Due: " + dueAt + "\nPIR: " + pirId);
-            audit.record(requestedBy, "ACTION_ITEM_CREATED", "itemId=" + itemId + " pirId=" + pirId + " owner=" + ownerId);
+            audit.emit(AuditEvent.builder().principal(requestedBy).eventType("ACTION_ITEM_CREATED").details(Map.of("detail", "itemId=" + itemId + " pirId=" + pirId + " owner=" + ownerId)).build());
             return itemId;
         });
     }
@@ -97,7 +95,7 @@ public class ActionItemTrackingService {
     public Promise<Void> startWork(String itemId, String actorId) {
         return Promise.ofBlocking(executor, () -> {
             transition(itemId, "OPEN", "IN_PROGRESS");
-            audit.record(actorId, "ACTION_ITEM_STARTED", "itemId=" + itemId);
+            audit.emit(AuditEvent.builder().principal(actorId).eventType("ACTION_ITEM_STARTED").details(Map.of("detail", "itemId=" + itemId)).build());
             return null;
         });
     }
@@ -112,7 +110,7 @@ public class ActionItemTrackingService {
                 ps.setString(1, itemId);
                 if (ps.executeUpdate() == 0) throw new IllegalStateException("Cannot complete: not IN_PROGRESS");
             }
-            audit.record(actorId, "ACTION_ITEM_COMPLETED", "itemId=" + itemId);
+            audit.emit(AuditEvent.builder().principal(actorId).eventType("ACTION_ITEM_COMPLETED").details(Map.of("detail", "itemId=" + itemId)).build());
             itemsCompleted.increment();
             return null;
         });
@@ -127,7 +125,7 @@ public class ActionItemTrackingService {
                  )) {
                 ps.setString(1, itemId); ps.executeUpdate();
             }
-            audit.record(actorId, "ACTION_ITEM_CANCELLED", "itemId=" + itemId + " reason=" + reason);
+            audit.emit(AuditEvent.builder().principal(actorId).eventType("ACTION_ITEM_CANCELLED").details(Map.of("detail", "itemId=" + itemId + " reason=" + reason)).build());
             return null;
         });
     }

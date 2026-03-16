@@ -1,5 +1,7 @@
 package com.ghatana.appplatform.eventstore.saga;
 
+import io.activej.eventloop.Eventloop;
+import io.activej.promise.Promise;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -7,10 +9,7 @@ import java.time.Duration;
 import java.time.Instant;
 import java.util.List;
 import java.util.Objects;
-import java.util.concurrent.Executors;
-import java.util.concurrent.ScheduledExecutorService;
-import java.util.concurrent.ScheduledFuture;
-import java.util.concurrent.TimeUnit;
+import java.util.concurrent.Executor;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 /**
@@ -50,36 +49,39 @@ public final class SagaTimeoutMonitor {
     /** How often the monitor polls for timed-out instances. */
     private final Duration pollInterval;
 
-    private final ScheduledExecutorService scheduler;
+    private final Eventloop eventloop;
+    private final Executor blockingExecutor;
     private final AtomicBoolean running = new AtomicBoolean(false);
-    private ScheduledFuture<?> scheduledTask;
 
     /**
-     * @param sagaStore    persistence port to query for timed-out instances
-     * @param orchestrator called with the saga ID when a timeout is detected
-     * @param stepTimeout  maximum allowed time for a step to remain STEP_PENDING
-     * @param pollInterval how often the monitor checks for timed-out steps
+     * @param sagaStore        persistence port to query for timed-out instances
+     * @param orchestrator     called with the saga ID when a timeout is detected
+     * @param stepTimeout      maximum allowed time for a step to remain STEP_PENDING
+     * @param pollInterval     how often the monitor checks for timed-out steps
+     * @param eventloop        ActiveJ eventloop for scheduling
+     * @param blockingExecutor executor for blocking I/O (saga store queries)
      */
     public SagaTimeoutMonitor(SagaStore sagaStore,
                               SagaOrchestrator orchestrator,
                               Duration stepTimeout,
-                              Duration pollInterval) {
-        this.sagaStore    = Objects.requireNonNull(sagaStore,    "sagaStore");
-        this.orchestrator = Objects.requireNonNull(orchestrator, "orchestrator");
-        this.stepTimeout  = Objects.requireNonNull(stepTimeout,  "stepTimeout");
-        this.pollInterval = Objects.requireNonNull(pollInterval, "pollInterval");
-        this.scheduler    = Executors.newSingleThreadScheduledExecutor(r -> {
-            Thread t = new Thread(r, "saga-timeout-monitor");
-            t.setDaemon(true);
-            return t;
-        });
+                              Duration pollInterval,
+                              Eventloop eventloop,
+                              Executor blockingExecutor) {
+        this.sagaStore        = Objects.requireNonNull(sagaStore,        "sagaStore");
+        this.orchestrator     = Objects.requireNonNull(orchestrator,     "orchestrator");
+        this.stepTimeout      = Objects.requireNonNull(stepTimeout,      "stepTimeout");
+        this.pollInterval     = Objects.requireNonNull(pollInterval,     "pollInterval");
+        this.eventloop        = Objects.requireNonNull(eventloop,        "eventloop");
+        this.blockingExecutor = Objects.requireNonNull(blockingExecutor, "blockingExecutor");
     }
 
     /**
      * Convenience constructor using a 5-minute step timeout and 30-second poll interval.
      */
-    public SagaTimeoutMonitor(SagaStore sagaStore, SagaOrchestrator orchestrator) {
-        this(sagaStore, orchestrator, Duration.ofMinutes(5), Duration.ofSeconds(30));
+    public SagaTimeoutMonitor(SagaStore sagaStore, SagaOrchestrator orchestrator,
+                              Eventloop eventloop, Executor blockingExecutor) {
+        this(sagaStore, orchestrator, Duration.ofMinutes(5), Duration.ofSeconds(30),
+             eventloop, blockingExecutor);
     }
 
     /** Starts the background poll loop. Safe to call once. */
@@ -88,31 +90,15 @@ public final class SagaTimeoutMonitor {
             log.warn("[SagaTimeoutMonitor] Already running — ignoring duplicate start()");
             return;
         }
-        scheduledTask = scheduler.scheduleAtFixedRate(
-            this::checkForTimeouts,
-            0,
-            pollInterval.toMillis(),
-            TimeUnit.MILLISECONDS
-        );
+        eventloop.delay(0, this::scheduleNextPoll);
         log.info("[SagaTimeoutMonitor] Started — stepTimeout={} pollInterval={}",
             stepTimeout, pollInterval);
     }
 
-    /** Stops the monitor. Waits up to 10 seconds for the current check to complete. */
+    /** Stops the monitor. */
     public void stop() {
         if (!running.compareAndSet(true, false)) {
             return;
-        }
-        if (scheduledTask != null) {
-            scheduledTask.cancel(false);
-        }
-        scheduler.shutdown();
-        try {
-            if (!scheduler.awaitTermination(10, TimeUnit.SECONDS)) {
-                scheduler.shutdownNow();
-            }
-        } catch (InterruptedException e) {
-            Thread.currentThread().interrupt();
         }
         log.info("[SagaTimeoutMonitor] Stopped");
     }
@@ -122,6 +108,18 @@ public final class SagaTimeoutMonitor {
     }
 
     // ── Internal ──────────────────────────────────────────────────────────────
+
+    private void scheduleNextPoll() {
+        if (!running.get()) return;
+        Promise.ofBlocking(blockingExecutor, () -> {
+            checkForTimeouts();
+            return null;
+        }).whenComplete(() -> {
+            if (running.get()) {
+                eventloop.delay(pollInterval.toMillis(), this::scheduleNextPoll);
+            }
+        });
+    }
 
     /**
      * Single poll cycle: finds timed-out instances and triggers compensation for each.

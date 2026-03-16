@@ -1,6 +1,6 @@
 package com.ghatana.appplatform.recon.service;
 
-import com.zaxxer.hikari.HikariDataSource;
+import javax.sql.DataSource;
 import io.activej.promise.Promise;
 import io.micrometer.core.instrument.Counter;
 import io.micrometer.core.instrument.MeterRegistry;
@@ -37,14 +37,14 @@ public class FuzzyMatchingService {
     private static final double AMOUNT_TOLERANCE        = 0.01;
     private static final int    DATE_TOLERANCE_DAYS     = 2;
 
-    private final HikariDataSource dataSource;
+    private final DataSource dataSource;
     private final Executor         executor;
     private final ConfigPort       configPort;
     private final Counter          fuzzyMatchedCounter;
     private final Counter          residualCounter;
     private final Timer            fuzzyTimer;
 
-    public FuzzyMatchingService(HikariDataSource dataSource, Executor executor,
+    public FuzzyMatchingService(DataSource dataSource, Executor executor,
                                 ConfigPort configPort, MeterRegistry registry) {
         this.dataSource         = dataSource;
         this.executor           = executor;

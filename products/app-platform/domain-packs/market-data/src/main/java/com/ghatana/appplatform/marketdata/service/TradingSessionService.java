@@ -1,5 +1,7 @@
 package com.ghatana.appplatform.marketdata.service;
 
+
+import com.ghatana.platform.core.event.EventBusPort;
 import com.ghatana.appplatform.marketdata.domain.TradingSession;
 import io.activej.promise.Promise;
 import org.slf4j.Logger;
@@ -12,7 +14,6 @@ import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.Executor;
 import java.util.concurrent.atomic.AtomicReference;
-import java.util.function.Consumer;
 
 /**
  * @doc.type    Service (Application)
@@ -47,22 +48,22 @@ public class TradingSessionService {
     private final SessionSchedule schedule;
     private final HolidayCalendarPort holidayCalendar;
     private final Executor executor;
-    private final Consumer<Object> eventPublisher;
+    private final EventBusPort eventBusPort;
 
     public TradingSessionService(HolidayCalendarPort holidayCalendar,
                                   Executor executor,
-                                  Consumer<Object> eventPublisher) {
-        this(DEFAULT_SCHEDULE, holidayCalendar, executor, eventPublisher);
+                                  EventBusPort eventBusPort) {
+        this(DEFAULT_SCHEDULE, holidayCalendar, executor, eventBusPort);
     }
 
     public TradingSessionService(SessionSchedule schedule,
                                   HolidayCalendarPort holidayCalendar,
                                   Executor executor,
-                                  Consumer<Object> eventPublisher) {
+                                  EventBusPort eventBusPort) {
         this.schedule = schedule;
         this.holidayCalendar = holidayCalendar;
         this.executor = executor;
-        this.eventPublisher = eventPublisher;
+        this.eventBusPort = eventBusPort;
     }
 
     /**
@@ -112,7 +113,7 @@ public class TradingSessionService {
         TradingSession prev = current.getAndSet(next);
         if (prev != next) {
             log.info("Trading session changed: {} → {}", prev, next);
-            eventPublisher.accept(new SessionStateChangedEvent(prev, next));
+            eventBusPort.publish(new SessionStateChangedEvent(prev, next));
         }
         return next;
     }

@@ -1,6 +1,8 @@
 package com.ghatana.appplatform.surveillance.service;
 
-import com.zaxxer.hikari.HikariDataSource;
+import com.ghatana.platform.audit.AuditBusPort;
+import com.ghatana.platform.audit.AuditEvent;
+import javax.sql.DataSource;
 import io.activej.promise.Promise;
 import io.micrometer.core.instrument.Counter;
 import io.micrometer.core.instrument.MeterRegistry;
@@ -35,17 +37,17 @@ public class GraphCollusionDetectionService {
     private static final double HIGH_COLLUSION_THRESHOLD = 0.75;
     private static final int    CO_TRADE_WINDOW_MINUTES  = 30;
 
-    private final HikariDataSource dataSource;
+    private final DataSource dataSource;
     private final Executor         executor;
     private final GnnModelPort     gnnModelPort;
     private final EventPort        eventPort;
-    private final AuditPort        auditPort;
+    private final AuditBusPort        auditPort;
     private final Counter          clusterDetectedCounter;
     private final Counter          collusionAlertCounter;
 
-    public GraphCollusionDetectionService(HikariDataSource dataSource, Executor executor,
+    public GraphCollusionDetectionService(DataSource dataSource, Executor executor,
                                            GnnModelPort gnnModelPort, EventPort eventPort,
-                                           AuditPort auditPort, MeterRegistry registry) {
+                                           AuditBusPort auditPort, MeterRegistry registry) {
         this.dataSource             = dataSource;
         this.executor               = executor;
         this.gnnModelPort           = gnnModelPort;
@@ -65,10 +67,6 @@ public class GraphCollusionDetectionService {
 
     public interface EventPort {
         void publish(String topic, Object payload);
-    }
-
-    public interface AuditPort {
-        void logCollusionRun(LocalDate runDate, int clusters, int alerts, LocalDateTime at);
     }
 
     // ─── Records ─────────────────────────────────────────────────────────────

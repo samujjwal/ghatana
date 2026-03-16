@@ -1,6 +1,6 @@
 package com.ghatana.appplatform.pms.service;
 
-import com.zaxxer.hikari.HikariDataSource;
+import javax.sql.DataSource;
 import io.activej.promise.Promise;
 import io.micrometer.core.instrument.Gauge;
 import io.micrometer.core.instrument.MeterRegistry;
@@ -31,13 +31,13 @@ public class PortfolioRiskSummaryService {
 
     private static final double RISK_FREE_RATE = 0.05;
 
-    private final HikariDataSource dataSource;
+    private final DataSource dataSource;
     private final Executor         executor;
     private final RiskPort         riskPort;
     private final AtomicLong       latestVar95Bps   = new AtomicLong(0);
     private final AtomicLong       latestConcentBps  = new AtomicLong(0);
 
-    public PortfolioRiskSummaryService(HikariDataSource dataSource, Executor executor,
+    public PortfolioRiskSummaryService(DataSource dataSource, Executor executor,
                                         RiskPort riskPort, MeterRegistry registry) {
         this.dataSource = dataSource;
         this.executor   = executor;

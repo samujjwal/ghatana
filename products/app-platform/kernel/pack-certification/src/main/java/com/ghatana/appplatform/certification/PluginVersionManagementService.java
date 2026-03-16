@@ -1,5 +1,7 @@
 package com.ghatana.appplatform.certification;
 
+import com.ghatana.platform.audit.AuditBusPort;
+import com.ghatana.platform.audit.AuditEvent;
 import io.activej.promise.Promise;
 import io.micrometer.core.instrument.*;
 
@@ -60,16 +62,12 @@ public class PluginVersionManagementService {
         void notifyTenant(String tenantId, String subject, String body) throws Exception;
     }
 
-    public interface AuditPort {
-        void record(String actorId, String action, String detail) throws Exception;
-    }
-
     // ── Fields ────────────────────────────────────────────────────────────────
 
     private final javax.sql.DataSource ds;
     private final SandboxUpgradePort upgradePort;
     private final NotificationPort notify;
-    private final AuditPort audit;
+    private final AuditBusPort audit;
     private final Executor executor;
     private final Counter autoUpgradesCounter;
 
@@ -77,7 +75,7 @@ public class PluginVersionManagementService {
         javax.sql.DataSource ds,
         SandboxUpgradePort upgradePort,
         NotificationPort notify,
-        AuditPort audit,
+        AuditBusPort audit,
         MeterRegistry registry,
         Executor executor
     ) {
@@ -114,8 +112,7 @@ public class PluginVersionManagementService {
                 }
                 c.commit();
             }
-            audit.record(publishedBy, "PLUGIN_VERSION_PUBLISHED",
-                "pluginId=" + pluginId + " version=" + version + " breaking=" + hasBreakingChanges);
+            audit.emit(AuditEvent.builder().principal(publishedBy).eventType("PLUGIN_VERSION_PUBLISHED").details(Map.of("detail", "pluginId=" + pluginId + " version=" + version + " breaking=" + hasBreakingChanges)).build());
             return null;
         });
     }
@@ -165,7 +162,7 @@ public class PluginVersionManagementService {
                 ps.setString(1, version); ps.setString(2, pluginId); ps.setString(3, tenantId);
                 ps.executeUpdate();
             }
-            audit.record(requestedBy, "PLUGIN_VERSION_PINNED", "pluginId=" + pluginId + " tenantId=" + tenantId + " version=" + version);
+            audit.emit(AuditEvent.builder().principal(requestedBy).eventType("PLUGIN_VERSION_PINNED").details(Map.of("detail", "pluginId=" + pluginId + " tenantId=" + tenantId + " version=" + version)).build());
             return null;
         });
     }
@@ -176,8 +173,7 @@ public class PluginVersionManagementService {
             String current = getActiveVersion(pluginId, tenantId);
             upgradePort.rollbackPlugin(tenantId, pluginId, targetVersion);
             updateActiveVersionByTenant(pluginId, tenantId, targetVersion);
-            audit.record(requestedBy, "PLUGIN_VERSION_ROLLBACK",
-                "pluginId=" + pluginId + " tenantId=" + tenantId + " from=" + current + " to=" + targetVersion);
+            audit.emit(AuditEvent.builder().principal(requestedBy).eventType("PLUGIN_VERSION_ROLLBACK").details(Map.of("detail", "pluginId=" + pluginId + " tenantId=" + tenantId + " from=" + current + " to=" + targetVersion)).build());
             return null;
         });
     }

@@ -1,6 +1,8 @@
 package com.ghatana.appplatform.surveillance.service;
 
-import com.zaxxer.hikari.HikariDataSource;
+import com.ghatana.platform.audit.AuditBusPort;
+import com.ghatana.platform.audit.AuditEvent;
+import javax.sql.DataSource;
 import io.activej.promise.Promise;
 import io.micrometer.core.instrument.Counter;
 import io.micrometer.core.instrument.MeterRegistry;
@@ -30,15 +32,15 @@ public class AlertNarrativeGenerationService {
     private static final int MIN_WORD_COUNT = 200;
     private static final int MAX_WORD_COUNT = 400;
 
-    private final HikariDataSource dataSource;
+    private final DataSource dataSource;
     private final Executor         executor;
     private final LlmSandboxPort   llmSandboxPort;
-    private final AuditPort        auditPort;
+    private final AuditBusPort        auditPort;
     private final Counter          narrativeDraftedCounter;
     private final Counter          narrativeApprovedCounter;
 
-    public AlertNarrativeGenerationService(HikariDataSource dataSource, Executor executor,
-                                            LlmSandboxPort llmSandboxPort, AuditPort auditPort,
+    public AlertNarrativeGenerationService(DataSource dataSource, Executor executor,
+                                            LlmSandboxPort llmSandboxPort, AuditBusPort auditPort,
                                             MeterRegistry registry) {
         this.dataSource               = dataSource;
         this.executor                 = executor;
@@ -53,13 +55,6 @@ public class AlertNarrativeGenerationService {
     /** K-04 T2 local LLM sandbox — no external API calls. */
     public interface LlmSandboxPort {
         String generate(String prompt, int minWords, int maxWords);
-    }
-
-    /** K-07 immutable audit of prompts and drafts. */
-    public interface AuditPort {
-        void logNarrativeDraft(String narrativeId, String alertId, String prompt, String draft,
-                               LocalDateTime at);
-        void logNarrativeApproval(String narrativeId, String approverAnalystId, LocalDateTime at);
     }
 
     // ─── Records ─────────────────────────────────────────────────────────────

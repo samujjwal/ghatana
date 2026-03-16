@@ -1,11 +1,12 @@
 package com.ghatana.appplatform.compliance.service;
 
+
+import com.ghatana.platform.core.event.EventBusPort;
 import io.micrometer.core.instrument.Counter;
 import io.micrometer.core.instrument.MeterRegistry;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.util.function.Consumer;
 
 /**
  * @doc.type      Service
@@ -29,15 +30,15 @@ public class AmlRiskScoringService {
 
     private final AmlRiskStore     riskStore;
     private final AmlProviderPort  providerPort;
-    private final Consumer<Object> eventPublisher;
+    private final EventBusPort eventBusPort;
     private final Counter          riskEscalations;
     private final Counter          criticalSuspensions;
 
     public AmlRiskScoringService(AmlRiskStore riskStore, AmlProviderPort providerPort,
-                                  Consumer<Object> eventPublisher, MeterRegistry meterRegistry) {
+                                  EventBusPort eventBusPort, MeterRegistry meterRegistry) {
         this.riskStore          = riskStore;
         this.providerPort       = providerPort;
-        this.eventPublisher     = eventPublisher;
+        this.eventBusPort     = eventBusPort;
         this.riskEscalations    = meterRegistry.counter("compliance.aml.escalations");
         this.criticalSuspensions = meterRegistry.counter("compliance.aml.suspensions");
     }
@@ -58,12 +59,12 @@ public class AmlRiskScoringService {
         if (updated != current) {
             riskEscalations.increment();
             log.info("AmlRiskScoring: risk changed client={} {} → {}", clientId, current, updated);
-            eventPublisher.accept(new ClientRiskChangedEvent(clientId, current, updated));
+            eventBusPort.publish(new ClientRiskChangedEvent(clientId, current, updated));
         }
 
         if (updated == AmlRiskLevel.CRITICAL) {
             criticalSuspensions.increment();
-            eventPublisher.accept(new TradingSuspendedEvent(clientId, "AML risk CRITICAL"));
+            eventBusPort.publish(new TradingSuspendedEvent(clientId, "AML risk CRITICAL"));
         }
 
         return updated;

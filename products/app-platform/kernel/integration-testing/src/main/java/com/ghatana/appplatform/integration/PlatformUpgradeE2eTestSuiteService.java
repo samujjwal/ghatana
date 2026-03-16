@@ -1,5 +1,7 @@
 package com.ghatana.appplatform.integration;
 
+import com.ghatana.platform.audit.AuditBusPort;
+import com.ghatana.platform.audit.AuditEvent;
 import io.activej.promise.Promise;
 import io.micrometer.core.instrument.*;
 
@@ -61,10 +63,6 @@ public class PlatformUpgradeE2eTestSuiteService {
         boolean connectWithOldProtocol(String clientVersion) throws Exception;
     }
 
-    public interface AuditPort {
-        void audit(String event, String detail) throws Exception;
-    }
-
     // ── Constants ─────────────────────────────────────────────────────────────
 
     private static final String OLD_VERSION = "2.5.0";
@@ -80,7 +78,7 @@ public class PlatformUpgradeE2eTestSuiteService {
     private final ConfigPreservationPort configPort;
     private final PluginCertificationPort certPort;
     private final ProtocolGatewayPort protocolPort;
-    private final AuditPort audit;
+    private final AuditBusPort audit;
     private final Executor executor;
     private final Counter suitesPassed;
     private final Counter suitesFailed;
@@ -94,7 +92,7 @@ public class PlatformUpgradeE2eTestSuiteService {
         ConfigPreservationPort configPort,
         PluginCertificationPort certPort,
         ProtocolGatewayPort protocolPort,
-        AuditPort audit,
+        AuditBusPort audit,
         MeterRegistry registry,
         Executor executor
     ) {
@@ -128,7 +126,7 @@ public class PlatformUpgradeE2eTestSuiteService {
             long passed = results.stream().filter(r -> r.passed).count();
             long failed = results.size() - passed;
             if (failed == 0) suitesPassed.increment(); else suitesFailed.increment();
-            audit.audit("UPGRADE_E2E_SUITE", "passed=" + passed + " failed=" + failed);
+            audit.emit(AuditEvent.builder().eventType("UPGRADE_E2E_SUITE").details(Map.of("detail", "passed=" + passed + " failed=" + failed)).build());
             return new SuiteResult("PlatformUpgradeE2e", results, passed, failed);
         });
     }

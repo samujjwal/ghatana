@@ -2,8 +2,7 @@ package com.ghatana.appplatform.config.bundle;
 
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.fasterxml.jackson.databind.SerializationFeature;
-import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
+import com.ghatana.platform.core.json.PlatformObjectMapper;
 import com.ghatana.appplatform.config.domain.ConfigHierarchyLevel;
 import com.ghatana.appplatform.config.domain.ConfigSchema;
 
@@ -56,9 +55,7 @@ public class ConfigBundleExporter {
 
     private static final Logger LOG = Logger.getLogger(ConfigBundleExporter.class.getName());
 
-    private static final ObjectMapper MAPPER = new ObjectMapper()
-        .registerModule(new JavaTimeModule())
-        .configure(SerializationFeature.WRITE_DATES_AS_TIMESTAMPS, false)
+    private static final ObjectMapper MAPPER = PlatformObjectMapper.copy()
         .setSerializationInclusion(JsonInclude.Include.NON_NULL);
 
     private static final String QUERY_SCHEMAS =

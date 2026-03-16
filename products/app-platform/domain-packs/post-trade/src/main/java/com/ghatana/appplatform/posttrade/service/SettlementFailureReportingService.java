@@ -1,6 +1,6 @@
 package com.ghatana.appplatform.posttrade.service;
 
-import com.zaxxer.hikari.HikariDataSource;
+import javax.sql.DataSource;
 import io.activej.promise.Promise;
 import io.micrometer.core.instrument.Counter;
 import io.micrometer.core.instrument.Gauge;
@@ -33,12 +33,12 @@ public class SettlementFailureReportingService {
 
     private static final Logger log = LoggerFactory.getLogger(SettlementFailureReportingService.class);
 
-    private final HikariDataSource dataSource;
+    private final DataSource dataSource;
     private final Executor         executor;
     private final AtomicLong       successRateGaugeValue = new AtomicLong(0);
     private final Counter          reportCounter;
 
-    public SettlementFailureReportingService(HikariDataSource dataSource, Executor executor,
+    public SettlementFailureReportingService(DataSource dataSource, Executor executor,
                                              MeterRegistry registry) {
         this.dataSource    = dataSource;
         this.executor      = executor;

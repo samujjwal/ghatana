@@ -1,6 +1,7 @@
 package com.ghatana.appplatform.eventstore.validation;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.ghatana.platform.core.json.PlatformObjectMapper;
 import com.networknt.schema.JsonSchemaFactory;
 import com.networknt.schema.SpecVersion;
 import com.networknt.schema.ValidationMessage;
@@ -43,7 +44,7 @@ public final class ValidatingAggregateEventStore implements AggregateEventStore 
 
     private static final Logger log = LoggerFactory.getLogger(ValidatingAggregateEventStore.class);
 
-    private static final ObjectMapper MAPPER = new ObjectMapper();
+    private static final ObjectMapper MAPPER = PlatformObjectMapper.instance();
     private static final JsonSchemaFactory SCHEMA_FACTORY =
         JsonSchemaFactory.getInstance(SpecVersion.VersionFlag.V7);
 

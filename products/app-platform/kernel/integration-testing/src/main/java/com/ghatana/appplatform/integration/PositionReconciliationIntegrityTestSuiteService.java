@@ -1,5 +1,7 @@
 package com.ghatana.appplatform.integration;
 
+import com.ghatana.platform.audit.AuditBusPort;
+import com.ghatana.platform.audit.AuditEvent;
 import io.activej.promise.Promise;
 import io.micrometer.core.instrument.*;
 
@@ -52,10 +54,6 @@ public class PositionReconciliationIntegrityTestSuiteService {
         double getRevaluedPosition(String clientId, String symbol) throws Exception;
     }
 
-    public interface AuditPort {
-        void audit(String event, String detail) throws Exception;
-    }
-
     // ── Tolerance constant ────────────────────────────────────────────────────
 
     private static final double TOLERANCE = 0.01; // 1% tolerance allowed
@@ -68,7 +66,7 @@ public class PositionReconciliationIntegrityTestSuiteService {
     private final ReconciliationEnginePort reconciliation;
     private final CorporateActionPort corporateActions;
     private final CurrencyRevaluationPort revaluation;
-    private final AuditPort audit;
+    private final AuditBusPort audit;
     private final Executor executor;
     private final Counter suitesPassed;
     private final Counter suitesFailed;
@@ -81,7 +79,7 @@ public class PositionReconciliationIntegrityTestSuiteService {
         ReconciliationEnginePort reconciliation,
         CorporateActionPort corporateActions,
         CurrencyRevaluationPort revaluation,
-        AuditPort audit,
+        AuditBusPort audit,
         MeterRegistry registry,
         Executor executor
     ) {
@@ -115,7 +113,7 @@ public class PositionReconciliationIntegrityTestSuiteService {
             long passed = results.stream().filter(r -> r.passed).count();
             long failed = results.size() - passed;
             if (failed == 0) suitesPassed.increment(); else suitesFailed.increment();
-            audit.audit("RECON_INTEGRITY_SUITE", "passed=" + passed + " failed=" + failed);
+            audit.emit(AuditEvent.builder().eventType("RECON_INTEGRITY_SUITE").details(Map.of("detail", "passed=" + passed + " failed=" + failed)).build());
             return new SuiteResult("PositionReconciliation", results, passed, failed);
         });
     }

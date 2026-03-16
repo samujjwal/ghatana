@@ -1,5 +1,7 @@
 package com.ghatana.appplatform.integration;
 
+import com.ghatana.platform.audit.AuditBusPort;
+import com.ghatana.platform.audit.AuditEvent;
 import io.activej.promise.Promise;
 import io.micrometer.core.instrument.*;
 
@@ -57,10 +59,6 @@ public class AuditCompletenessTestSuiteService {
         int getRetentionDays() throws Exception;
     }
 
-    public interface AuditPort {
-        void audit(String event, String detail) throws Exception;
-    }
-
     // ── Fields ────────────────────────────────────────────────────────────────
 
     private final javax.sql.DataSource ds;
@@ -68,7 +66,7 @@ public class AuditCompletenessTestSuiteService {
     private final AuditLogPort auditLog;
     private final WriteOperationPort writeOps;
     private final RetentionPolicyPort retentionPolicy;
-    private final AuditPort audit;
+    private final AuditBusPort audit;
     private final Executor executor;
     private final Counter suitesPassed;
     private final Counter suitesFailed;
@@ -80,7 +78,7 @@ public class AuditCompletenessTestSuiteService {
         AuditLogPort auditLog,
         WriteOperationPort writeOps,
         RetentionPolicyPort retentionPolicy,
-        AuditPort audit,
+        AuditBusPort audit,
         MeterRegistry registry,
         Executor executor
     ) {
@@ -112,7 +110,7 @@ public class AuditCompletenessTestSuiteService {
             long passed = results.stream().filter(r -> r.passed).count();
             long failed = results.size() - passed;
             if (failed == 0) suitesPassed.increment(); else suitesFailed.increment();
-            audit.audit("AUDIT_COMPLETENESS_SUITE", "passed=" + passed + " failed=" + failed);
+            audit.emit(AuditEvent.builder().eventType("AUDIT_COMPLETENESS_SUITE").details(Map.of("detail", "passed=" + passed + " failed=" + failed)).build());
             return new SuiteResult("AuditCompleteness", results, passed, failed);
         });
     }

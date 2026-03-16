@@ -1,6 +1,6 @@
 package com.ghatana.appplatform.surveillance.service;
 
-import com.zaxxer.hikari.HikariDataSource;
+import javax.sql.DataSource;
 import io.activej.promise.Promise;
 import io.micrometer.core.instrument.Counter;
 import io.micrometer.core.instrument.MeterRegistry;
@@ -42,13 +42,13 @@ public class WashTradePatternService {
     private static final int    MAX_RING_SIZE         = 6;
     private static final double MIN_COMPLEXITY_SCORE  = 0.50;
 
-    private final HikariDataSource dataSource;
+    private final DataSource dataSource;
     private final Executor         executor;
     private final RulesEnginePort  rulesEngine;
     private final Counter          ringsDetectedCounter;
     private final Counter          instrumentsScannedCounter;
 
-    public WashTradePatternService(HikariDataSource dataSource, Executor executor,
+    public WashTradePatternService(DataSource dataSource, Executor executor,
                                    RulesEnginePort rulesEngine, MeterRegistry registry) {
         this.dataSource              = dataSource;
         this.executor                = executor;

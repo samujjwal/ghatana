@@ -1,5 +1,7 @@
 package com.ghatana.appplatform.manifest;
 
+import com.ghatana.platform.audit.AuditBusPort;
+import com.ghatana.platform.audit.AuditEvent;
 import io.activej.promise.Promise;
 import io.micrometer.core.instrument.*;
 
@@ -50,18 +52,9 @@ public class UpgradeHistoryAuditService {
 
     // ── Inner port interfaces ─────────────────────────────────────────────────
 
-    public interface K07AuditPort {
-        /** Appends an immutable K-07 event. */
-        void append(String eventType, String entityId, String detail) throws Exception;
-    }
-
     public interface SecureStoragePort {
         /** Stores export bytes and returns a storage reference (e.g., S3 path). */
         String store(String filename, byte[] content) throws Exception;
-    }
-
-    public interface AuditPort {
-        void audit(String event, String detail) throws Exception;
     }
 
     // ── Fields ────────────────────────────────────────────────────────────────
@@ -69,7 +62,7 @@ public class UpgradeHistoryAuditService {
     private final javax.sql.DataSource ds;
     private final K07AuditPort k07;
     private final SecureStoragePort storage;
-    private final AuditPort audit;
+    private final AuditBusPort audit;
     private final Executor executor;
     private final Counter recordsAppended;
     private final Counter exportsGenerated;
@@ -78,7 +71,7 @@ public class UpgradeHistoryAuditService {
         javax.sql.DataSource ds,
         K07AuditPort k07,
         SecureStoragePort storage,
-        AuditPort audit,
+        AuditBusPort audit,
         MeterRegistry registry,
         Executor executor
     ) {

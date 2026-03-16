@@ -1,6 +1,6 @@
 package com.ghatana.appplatform.aigovernance;
 
-import com.zaxxer.hikari.HikariDataSource;
+import javax.sql.DataSource;
 import io.activej.promise.Promise;
 import io.micrometer.core.instrument.Counter;
 import io.micrometer.core.instrument.Timer;
@@ -28,14 +28,14 @@ public class ModelArtifactStorageService {
 
     private static final String BUCKET = "model-artifacts";
 
-    private final HikariDataSource dataSource;
+    private final DataSource dataSource;
     private final Executor         executor;
     private final StoragePort      storagePort;
     private final Counter          uploadsCounter;
     private final Counter          integrityFailuresCounter;
     private final Timer            uploadTimer;
 
-    public ModelArtifactStorageService(HikariDataSource dataSource, Executor executor,
+    public ModelArtifactStorageService(DataSource dataSource, Executor executor,
                                         StoragePort storagePort, MeterRegistry registry) {
         this.dataSource              = dataSource;
         this.executor                = executor;

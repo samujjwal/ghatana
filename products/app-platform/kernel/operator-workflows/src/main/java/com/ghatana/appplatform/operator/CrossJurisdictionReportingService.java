@@ -1,5 +1,7 @@
 package com.ghatana.appplatform.operator;
 
+import com.ghatana.platform.audit.AuditBusPort;
+import com.ghatana.platform.audit.AuditEvent;
 import io.activej.promise.Promise;
 import io.micrometer.core.instrument.*;
 
@@ -56,10 +58,6 @@ public class CrossJurisdictionReportingService {
         void send(List<String> recipients, String subject, String storagePath) throws Exception;
     }
 
-    public interface AuditPort {
-        void record(String actorId, String action, String detail) throws Exception;
-    }
-
     // ── Value types ───────────────────────────────────────────────────────────
 
     public record JurisdictionReportResult(
@@ -72,7 +70,7 @@ public class CrossJurisdictionReportingService {
     private final javax.sql.DataSource ds;
     private final ReportExportPort exporter;
     private final EmailDeliveryPort email;
-    private final AuditPort audit;
+    private final AuditBusPort audit;
     private final Executor executor;
     private final Counter reportsGeneratedCounter;
 
@@ -80,7 +78,7 @@ public class CrossJurisdictionReportingService {
         javax.sql.DataSource ds,
         ReportExportPort exporter,
         EmailDeliveryPort email,
-        AuditPort audit,
+        AuditBusPort audit,
         MeterRegistry registry,
         Executor executor
     ) {
@@ -126,7 +124,7 @@ public class CrossJurisdictionReportingService {
                 }
             }
             String path = exportData("SETTLEMENT_VOLUME", rows, from, to, format);
-            audit.record(requestedBy, "CROSSJURIS_REPORT_GENERATED", "type=SETTLEMENT_VOLUME period=" + from + "/" + to);
+            audit.emit(AuditEvent.builder().principal(requestedBy).eventType("CROSSJURIS_REPORT_GENERATED").details(Map.of("detail", "type=SETTLEMENT_VOLUME period=" + from + "/" + to)).build());
             reportsGeneratedCounter.increment();
             return new JurisdictionReportResult("SETTLEMENT_VOLUME", from.toString(), to.toString(), rows, path);
         });
@@ -165,7 +163,7 @@ public class CrossJurisdictionReportingService {
                 }
             }
             String path = exportData("SUBMISSION_COMPLIANCE", rows, from, to, format);
-            audit.record(requestedBy, "CROSSJURIS_REPORT_GENERATED", "type=SUBMISSION_COMPLIANCE");
+            audit.emit(AuditEvent.builder().principal(requestedBy).eventType("CROSSJURIS_REPORT_GENERATED").details(Map.of("detail", "type=SUBMISSION_COMPLIANCE")).build());
             reportsGeneratedCounter.increment();
             return new JurisdictionReportResult("SUBMISSION_COMPLIANCE", from.toString(), to.toString(), rows, path);
         });

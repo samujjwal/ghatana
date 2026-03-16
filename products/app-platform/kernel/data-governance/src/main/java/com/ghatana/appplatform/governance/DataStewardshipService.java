@@ -1,11 +1,12 @@
 package com.ghatana.appplatform.governance;
 
-import com.zaxxer.hikari.HikariDataSource;
+import com.ghatana.platform.audit.AuditBusPort;
+import com.ghatana.platform.audit.AuditEvent;
+import com.ghatana.appplatform.governance.port.StewardshipStore;
 import io.activej.promise.Promise;
 import io.micrometer.core.instrument.Gauge;
 import io.micrometer.core.instrument.MeterRegistry;
 
-import java.sql.*;
 import java.time.Instant;
 import java.util.*;
 import java.util.concurrent.Executor;
@@ -25,19 +26,19 @@ import java.util.concurrent.atomic.AtomicLong;
  */
 public class DataStewardshipService {
 
-    private final HikariDataSource   dataSource;
+    private final StewardshipStore stewardshipStore;
     private final Executor           executor;
     private final RbacPort           rbacPort;
     private final NotificationPort   notificationPort;
-    private final AuditPort          auditPort;
+    private final AuditBusPort          auditPort;
     private final AtomicLong         overdueCount = new AtomicLong(0);
 
-    public DataStewardshipService(HikariDataSource dataSource, Executor executor,
+    public DataStewardshipService(StewardshipStore stewardshipStore, Executor executor,
                                    RbacPort rbacPort,
                                    NotificationPort notificationPort,
-                                   AuditPort auditPort,
+                                   AuditBusPort auditPort,
                                    MeterRegistry registry) {
-        this.dataSource       = dataSource;
+        this.stewardshipStore = stewardshipStore;
         this.executor         = executor;
         this.rbacPort         = rbacPort;
         this.notificationPort = notificationPort;
@@ -58,11 +59,6 @@ public class DataStewardshipService {
     public interface NotificationPort {
         void notifySteward(String stewardId, String message);
         void notifyOwner(String ownerId, String message);
-    }
-
-    /** K-07 audit trail. */
-    public interface AuditPort {
-        void log(String action, String resourceType, String resourceId, Map<String, Object> details);
     }
 
     // ─── Domain records ──────────────────────────────────────────────────────
@@ -98,28 +94,14 @@ public class DataStewardshipService {
             Instant now         = Instant.now();
             Instant slaDeadline = now.plusSeconds((long) slaDays * 86400);
 
-            try (Connection c = dataSource.getConnection();
-                 PreparedStatement ps = c.prepareStatement(
-                     "INSERT INTO data_steward_assignments " +
-                     "(assignment_id, scope, domain_id, asset_id, steward_id, sla_days, assigned_at, sla_deadline) " +
-                     "VALUES (?, 'DOMAIN', ?, NULL, ?, ?, NOW(), ?) " +
-                     "ON CONFLICT (domain_id) WHERE scope = 'DOMAIN' DO UPDATE SET " +
-                     "steward_id = EXCLUDED.steward_id, sla_days = EXCLUDED.sla_days, " +
-                     "sla_deadline = EXCLUDED.sla_deadline, assigned_at = NOW()")) {
-                ps.setString(1, assignmentId);
-                ps.setString(2, domainId);
-                ps.setString(3, stewardId);
-                ps.setInt(4, slaDays);
-                ps.setTimestamp(5, Timestamp.from(slaDeadline));
-                ps.executeUpdate();
-            }
+            stewardshipStore.upsertDomainAssignment(assignmentId, domainId, stewardId,
+                    slaDays, slaDeadline);
 
             notificationPort.notifySteward(stewardId,
                 "You have been assigned as steward for domain " + domainId +
                 " with a " + slaDays + "-day SLA.");
 
-            auditPort.log("STEWARD_ASSIGNED", "Domain", domainId,
-                Map.of("stewardId", stewardId, "slaDays", slaDays, "assignedBy", assignedBy));
+            auditPort.emit(AuditEvent.builder().eventType("STEWARD_ASSIGNED").resourceType("Domain").resourceId(domainId).details(Map.of("stewardId", stewardId, "slaDays", slaDays, "assignedBy", assignedBy)).build());
 
             return new StewardAssignment(assignmentId, AssignmentScope.DOMAIN,
                 domainId, null, stewardId, slaDays, now, slaDeadline);
@@ -141,25 +123,10 @@ public class DataStewardshipService {
             Instant now         = Instant.now();
             Instant slaDeadline = now.plusSeconds((long) slaDays * 86400);
 
-            try (Connection c = dataSource.getConnection();
-                 PreparedStatement ps = c.prepareStatement(
-                     "INSERT INTO data_steward_assignments " +
-                     "(assignment_id, scope, domain_id, asset_id, steward_id, sla_days, assigned_at, sla_deadline) " +
-                     "VALUES (?, 'ASSET', ?, ?, ?, ?, NOW(), ?) " +
-                     "ON CONFLICT (asset_id) WHERE scope = 'ASSET' DO UPDATE SET " +
-                     "steward_id = EXCLUDED.steward_id, sla_days = EXCLUDED.sla_days, " +
-                     "sla_deadline = EXCLUDED.sla_deadline, assigned_at = NOW()")) {
-                ps.setString(1, assignmentId);
-                ps.setString(2, domainId);
-                ps.setString(3, assetId);
-                ps.setString(4, stewardId);
-                ps.setInt(5, slaDays);
-                ps.setTimestamp(6, Timestamp.from(slaDeadline));
-                ps.executeUpdate();
-            }
+            stewardshipStore.upsertAssetAssignment(assignmentId, domainId, assetId,
+                    stewardId, slaDays, slaDeadline);
 
-            auditPort.log("STEWARD_ASSIGNED", "DataAsset", assetId,
-                Map.of("stewardId", stewardId, "slaDays", slaDays, "assignedBy", assignedBy));
+            auditPort.emit(AuditEvent.builder().eventType("STEWARD_ASSIGNED").resourceType("DataAsset").resourceId(assetId).details(Map.of("stewardId", stewardId, "slaDays", slaDays, "assignedBy", assignedBy)).build());
 
             return new StewardAssignment(assignmentId, AssignmentScope.ASSET,
                 domainId, assetId, stewardId, slaDays, now, slaDeadline);
@@ -175,20 +142,9 @@ public class DataStewardshipService {
             String actionId = UUID.randomUUID().toString();
             Instant now     = Instant.now();
 
-            try (Connection c = dataSource.getConnection();
-                 PreparedStatement ps = c.prepareStatement(
-                     "INSERT INTO steward_action_log " +
-                     "(action_id, assignment_id, steward_id, action_type, status, created_at) " +
-                     "VALUES (?, ?, ?, ?, 'IN_PROGRESS', NOW())")) {
-                ps.setString(1, actionId);
-                ps.setString(2, assignmentId);
-                ps.setString(3, stewardId);
-                ps.setString(4, actionType);
-                ps.executeUpdate();
-            }
+            stewardshipStore.insertAction(actionId, assignmentId, stewardId, actionType);
 
-            auditPort.log("STEWARD_ACTION_RECORDED", "StewardAssignment", assignmentId,
-                Map.of("actionId", actionId, "stewardId", stewardId, "actionType", actionType));
+            auditPort.emit(AuditEvent.builder().eventType("STEWARD_ACTION_RECORDED").resourceType("StewardAssignment").resourceId(assignmentId).details(Map.of("actionId", actionId, "stewardId", stewardId, "actionType", actionType)).build());
 
             return new StewardAction(actionId, assignmentId, stewardId, actionType,
                 ActionStatus.IN_PROGRESS, now, now.plusSeconds(86400));
@@ -201,7 +157,7 @@ public class DataStewardshipService {
      */
     public Promise<Integer> escalateSlaBreaches() {
         return Promise.ofBlocking(executor, () -> {
-            List<Map<String, String>> overdueAssignments = fetchOverdueAssignments();
+            List<Map<String, String>> overdueAssignments = stewardshipStore.fetchOverdueAssignments();
             overdueCount.set(overdueAssignments.size());
 
             for (Map<String, String> assignment : overdueAssignments) {
@@ -214,16 +170,9 @@ public class DataStewardshipService {
                     String.format("Steward %s has exceeded SLA for domain %s. Escalating.",
                         stewardId, domainId));
 
-                try (Connection c = dataSource.getConnection();
-                     PreparedStatement ps = c.prepareStatement(
-                         "UPDATE data_steward_assignments SET escalated = TRUE, " +
-                         "escalated_at = NOW() WHERE assignment_id = ? AND NOT escalated")) {
-                    ps.setString(1, assignmentId);
-                    ps.executeUpdate();
-                }
+                stewardshipStore.escalateAssignment(assignmentId);
 
-                auditPort.log("STEWARD_SLA_ESCALATED", "StewardAssignment", assignmentId,
-                    Map.of("stewardId", stewardId, "domainId", domainId, "escalatedTo", ownerId));
+                auditPort.emit(AuditEvent.builder().eventType("STEWARD_SLA_ESCALATED").resourceType("StewardAssignment").resourceId(assignmentId).details(Map.of("stewardId", stewardId, "domainId", domainId, "escalatedTo", ownerId)).build());
             }
 
             return overdueAssignments.size();
@@ -234,40 +183,6 @@ public class DataStewardshipService {
      * Retrieve the effective steward for a given asset (asset-level beats domain-level).
      */
     public Promise<Optional<String>> resolveEffectiveSteward(String assetId, String domainId) {
-        return Promise.ofBlocking(executor, () -> {
-            try (Connection c = dataSource.getConnection();
-                 PreparedStatement ps = c.prepareStatement(
-                     "SELECT steward_id FROM data_steward_assignments " +
-                     "WHERE (asset_id = ? AND scope = 'ASSET') OR (domain_id = ? AND scope = 'DOMAIN') " +
-                     "ORDER BY scope DESC LIMIT 1")) {
-                ps.setString(1, assetId);
-                ps.setString(2, domainId);
-                try (ResultSet rs = ps.executeQuery()) {
-                    if (rs.next()) return Optional.of(rs.getString("steward_id"));
-                }
-            }
-            return Optional.empty();
-        });
-    }
-
-    // ─── Private helpers ─────────────────────────────────────────────────────
-
-    private List<Map<String, String>> fetchOverdueAssignments() throws SQLException {
-        List<Map<String, String>> results = new ArrayList<>();
-        try (Connection c = dataSource.getConnection();
-             PreparedStatement ps = c.prepareStatement(
-                 "SELECT assignment_id, steward_id, domain_id FROM data_steward_assignments " +
-                 "WHERE sla_deadline < NOW() AND NOT escalated")) {
-            try (ResultSet rs = ps.executeQuery()) {
-                while (rs.next()) {
-                    Map<String, String> row = new HashMap<>();
-                    row.put("assignment_id", rs.getString("assignment_id"));
-                    row.put("steward_id",    rs.getString("steward_id"));
-                    row.put("domain_id",     rs.getString("domain_id"));
-                    results.add(row);
-                }
-            }
-        }
-        return results;
+        return Promise.ofBlocking(executor, () -> stewardshipStore.resolveEffectiveSteward(assetId, domainId));
     }
 }

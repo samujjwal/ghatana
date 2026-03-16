@@ -1,6 +1,6 @@
 package com.ghatana.appplatform.surveillance.service;
 
-import com.zaxxer.hikari.HikariDataSource;
+import javax.sql.DataSource;
 import io.activej.promise.Promise;
 import io.micrometer.core.instrument.Counter;
 import io.micrometer.core.instrument.MeterRegistry;
@@ -30,13 +30,13 @@ public class LayeringDetectionService {
 
     private static final double DEFAULT_DEPTH_THRESHOLD = 0.30; // 30% of one side
 
-    private final HikariDataSource dataSource;
+    private final DataSource dataSource;
     private final Executor         executor;
     private final ConfigPort       configPort;
     private final AlertPort        alertPort;
     private final Counter          alertCounter;
 
-    public LayeringDetectionService(HikariDataSource dataSource, Executor executor,
+    public LayeringDetectionService(DataSource dataSource, Executor executor,
                                      ConfigPort configPort, AlertPort alertPort,
                                      MeterRegistry registry) {
         this.dataSource   = dataSource;

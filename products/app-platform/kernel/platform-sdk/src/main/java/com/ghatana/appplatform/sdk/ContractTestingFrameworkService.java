@@ -1,7 +1,11 @@
 package com.ghatana.appplatform.sdk;
 
+import com.ghatana.platform.audit.AuditBusPort;
+import com.ghatana.platform.audit.AuditEvent;
+import java.util.Map;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.ghatana.platform.core.json.PlatformObjectMapper;
 import io.activej.promise.Promise;
 import io.micrometer.core.instrument.Counter;
 import io.micrometer.core.instrument.MeterRegistry;
@@ -46,11 +50,6 @@ public class ContractTestingFrameworkService {
         record VerificationResult(boolean passed, List<String> failures) {}
     }
 
-    public interface AuditPort {
-        Promise<Void> log(String action, String actor, String entityId, String entityType,
-                          String beforeJson, String afterJson);
-    }
-
     // -----------------------------------------------------------------------
     // Records
     // -----------------------------------------------------------------------
@@ -82,9 +81,9 @@ public class ContractTestingFrameworkService {
     private final DataSource dataSource;
     private final Executor executor;
     private final ContractVerifierPort verifier;
-    private final AuditPort auditPort;
+    private final AuditBusPort auditPort;
 
-    private static final ObjectMapper MAPPER = new ObjectMapper();
+    private static final ObjectMapper MAPPER = PlatformObjectMapper.instance();
 
     private final Counter contractPublishedTotal;
     private final Counter verificationPassedTotal;
@@ -98,7 +97,7 @@ public class ContractTestingFrameworkService {
                                             Executor executor,
                                             MeterRegistry meterRegistry,
                                             ContractVerifierPort verifier,
-                                            AuditPort auditPort) {
+                                            AuditBusPort auditPort) {
         this.dataSource  = dataSource;
         this.executor    = executor;
         this.verifier    = verifier;
@@ -127,8 +126,7 @@ public class ContractTestingFrameworkService {
             String contractId = insertContractBlocking(consumerService, providerService,
                                                        contractType, specJson, contractVersion);
             contractPublishedTotal.increment();
-            auditPort.log("CONTRACT_PUBLISHED", publishedBy, contractId, "SDK_CONTRACT",
-                          null, specJson);
+            audit.emit(AuditEvent.builder().eventType("CONTRACT_PUBLISHED").principal(publishedBy).resourceId(contractId).resourceType("SDK_CONTRACT").details(Map.of("before", String.valueOf(null), "after", String.valueOf(specJson))).build());
             return new Contract(contractId, consumerService, providerService, contractType,
                                 specJson, contractVersion, "ACTIVE", null);
         });
@@ -160,7 +158,7 @@ public class ContractTestingFrameworkService {
     public Promise<Void> deprecateContract(String contractId, String deprecatedBy) {
         return Promise.ofBlocking(executor, () -> {
             setContractStatus(contractId, "DEPRECATED");
-            auditPort.log("CONTRACT_DEPRECATED", deprecatedBy, contractId, "SDK_CONTRACT", null, null);
+            audit.emit(AuditEvent.builder().eventType("CONTRACT_DEPRECATED").principal(deprecatedBy).resourceId(contractId).resourceType("SDK_CONTRACT").details(Map.of("before", String.valueOf(null), "after", String.valueOf(null))).build());
             return null;
         });
     }

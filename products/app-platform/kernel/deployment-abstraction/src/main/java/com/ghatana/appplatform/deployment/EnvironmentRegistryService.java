@@ -1,6 +1,6 @@
 package com.ghatana.appplatform.deployment;
 
-import com.zaxxer.hikari.HikariDataSource;
+import javax.sql.DataSource;
 import io.activej.promise.Promise;
 import io.micrometer.core.instrument.Counter;
 import io.micrometer.core.instrument.Gauge;
@@ -26,14 +26,14 @@ import java.util.concurrent.atomic.AtomicInteger;
  */
 public class EnvironmentRegistryService {
 
-    private final HikariDataSource   dataSource;
+    private final DataSource   dataSource;
     private final Executor           executor;
     private final InfraProvisionPort infraPort;
     private final EventPort          eventPort;
     private final Counter            environmentsProvisionedCounter;
     private final AtomicInteger      activeEnvironmentsCount = new AtomicInteger(0);
 
-    public EnvironmentRegistryService(HikariDataSource dataSource, Executor executor,
+    public EnvironmentRegistryService(DataSource dataSource, Executor executor,
                                        InfraProvisionPort infraPort, EventPort eventPort,
                                        MeterRegistry registry) {
         this.dataSource                    = dataSource;

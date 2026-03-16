@@ -1,5 +1,7 @@
 package com.ghatana.appplatform.integration;
 
+import com.ghatana.platform.audit.AuditBusPort;
+import com.ghatana.platform.audit.AuditEvent;
 import io.activej.promise.Promise;
 import io.micrometer.core.instrument.*;
 
@@ -58,10 +60,6 @@ public class GaReadinessChecklistGateService {
         boolean isApprovalImmutable() throws Exception;
     }
 
-    public interface AuditPort {
-        void audit(String event, String detail) throws Exception;
-    }
-
     public record ChecklistItem(String category, String itemName, String signedOffBy, boolean isCritical) {
         public boolean isSigned() { return signedOffBy != null && !signedOffBy.isBlank(); }
     }
@@ -98,7 +96,7 @@ public class GaReadinessChecklistGateService {
 
     private final javax.sql.DataSource ds;
     private final ChecklistPort checklist;
-    private final AuditPort audit;
+    private final AuditBusPort audit;
     private final Executor executor;
     private final Counter suitesPassed;
     private final Counter suitesFailed;
@@ -106,7 +104,7 @@ public class GaReadinessChecklistGateService {
     public GaReadinessChecklistGateService(
         javax.sql.DataSource ds,
         ChecklistPort checklist,
-        AuditPort audit,
+        AuditBusPort audit,
         MeterRegistry registry,
         Executor executor
     ) {
@@ -133,7 +131,7 @@ public class GaReadinessChecklistGateService {
             long passed = results.stream().filter(r -> r.passed).count();
             long failed = results.size() - passed;
             if (failed == 0) suitesPassed.increment(); else suitesFailed.increment();
-            audit.audit("GA_GATE_SUITE", "passed=" + passed + " failed=" + failed);
+            audit.emit(AuditEvent.builder().eventType("GA_GATE_SUITE").details(Map.of("detail", "passed=" + passed + " failed=" + failed)).build());
             return new SuiteResult("GaReadinessChecklistGate", results, passed, failed);
         });
     }
@@ -243,7 +241,7 @@ public class GaReadinessChecklistGateService {
                     "pending", true, "not-all-signed");
             }
         }
-        audit.audit("GA_DATE_RECORDED", "GA readiness gate validated");
+        audit.emit(AuditEvent.builder().eventType("GA_DATE_RECORDED").details(Map.of("detail", "GA readiness gate validated")).build());
     }
 
     private ScenarioResult runScenario(String name, ThrowingConsumer<String> fn) {

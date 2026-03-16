@@ -1,5 +1,7 @@
 package com.ghatana.appplatform.integration;
 
+import com.ghatana.platform.audit.AuditBusPort;
+import com.ghatana.platform.audit.AuditEvent;
 import io.activej.promise.Promise;
 import io.micrometer.core.instrument.*;
 
@@ -56,10 +58,6 @@ public class ResilienceScorecardService {
         void publishScorecardReport(String reportId, double compositeScore, List<String> gaBlockers) throws Exception;
     }
 
-    public interface AuditPort {
-        void audit(String event, String detail) throws Exception;
-    }
-
     public record ChaosScenarioMetrics(
         String suiteName,
         String scenario,
@@ -83,7 +81,7 @@ public class ResilienceScorecardService {
     private final javax.sql.DataSource ds;
     private final ChaosResultsPort chaosResults;
     private final ReportPort reportPort;
-    private final AuditPort audit;
+    private final AuditBusPort audit;
     private final Executor executor;
     private final Counter suitesPassed;
     private final Counter suitesFailed;
@@ -94,7 +92,7 @@ public class ResilienceScorecardService {
         javax.sql.DataSource ds,
         ChaosResultsPort chaosResults,
         ReportPort reportPort,
-        AuditPort audit,
+        AuditBusPort audit,
         MeterRegistry registry,
         Executor executor
     ) {
@@ -124,7 +122,7 @@ public class ResilienceScorecardService {
             long passed = results.stream().filter(r -> r.passed).count();
             long failed = results.size() - passed;
             if (failed == 0) suitesPassed.increment(); else suitesFailed.increment();
-            audit.audit("RESILIENCE_SCORECARD", "composite=" + lastCompositeScore + " passed=" + passed);
+            audit.emit(AuditEvent.builder().eventType("RESILIENCE_SCORECARD").details(Map.of("detail", "composite=" + lastCompositeScore + " passed=" + passed)).build());
             return new SuiteResult("ResilienceScorecard", results, passed, failed);
         });
     }
@@ -178,7 +176,7 @@ public class ResilienceScorecardService {
 
     /** Owner must be assigned to each GA-blocking scenario (validated in audit log). */
     private void ownerAssignment(String runId) throws Exception {
-        audit.audit("SCORECARD_OWNER", "All red-item scenarios require owner assignment before GA");
+        audit.emit(AuditEvent.builder().eventType("SCORECARD_OWNER").details(Map.of("detail", "All red-item scenarios require owner assignment before GA")).build());
         assertStep(runId, "owner_audit_logged", "owner assignment requirement logged", "no-throw", true, "ok");
     }
 

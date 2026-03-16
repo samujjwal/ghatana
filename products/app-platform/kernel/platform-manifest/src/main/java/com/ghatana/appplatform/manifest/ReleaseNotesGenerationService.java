@@ -1,5 +1,7 @@
 package com.ghatana.appplatform.manifest;
 
+import com.ghatana.platform.audit.AuditBusPort;
+import com.ghatana.platform.audit.AuditEvent;
 import io.activej.promise.Promise;
 import io.micrometer.core.instrument.*;
 
@@ -61,10 +63,6 @@ public class ReleaseNotesGenerationService {
         void notifyAllTenants(String version, String summary, boolean hasBreakingChanges) throws Exception;
     }
 
-    public interface AuditPort {
-        void audit(String event, String details) throws Exception;
-    }
-
     // ── Conventional commit pattern ───────────────────────────────────────────
 
     private static final Pattern FEAT     = Pattern.compile("^feat(\\(.+\\))?!?:\\s*(.+)", Pattern.CASE_INSENSITIVE);
@@ -80,7 +78,7 @@ public class ReleaseNotesGenerationService {
     private final ComponentVersionPort versions;
     private final PortalPublishPort portal;
     private final TenantNotificationPort notifier;
-    private final AuditPort audit;
+    private final AuditBusPort audit;
     private final Executor executor;
     private final Counter notesGenerated;
     private final Counter notesPublished;
@@ -91,7 +89,7 @@ public class ReleaseNotesGenerationService {
         ComponentVersionPort versions,
         PortalPublishPort portal,
         TenantNotificationPort notifier,
-        AuditPort audit,
+        AuditBusPort audit,
         MeterRegistry registry,
         Executor executor
     ) {
@@ -146,7 +144,7 @@ public class ReleaseNotesGenerationService {
             String notesId = insertDraft(version, summary, highlights, features, fixes, breaking,
                 security, migrationNotes == null ? "" : migrationNotes, versionTable);
             notesGenerated.increment();
-            audit.audit("RELEASE_NOTES_GENERATED", "version=" + version + " id=" + notesId);
+            audit.emit(AuditEvent.builder().eventType("RELEASE_NOTES_GENERATED").details(Map.of("detail", "version=" + version + " id=" + notesId)).build());
             return notesId;
         });
     }
@@ -167,7 +165,7 @@ public class ReleaseNotesGenerationService {
             markNotified(notesId);
 
             notesPublished.increment();
-            audit.audit("RELEASE_NOTES_PUBLISHED", "version=" + version);
+            audit.emit(AuditEvent.builder().eventType("RELEASE_NOTES_PUBLISHED").details(Map.of("detail", "version=" + version)).build());
             return null;
         });
     }

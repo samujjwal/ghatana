@@ -1,6 +1,6 @@
 package com.ghatana.appplatform.dlq;
 
-import com.zaxxer.hikari.HikariDataSource;
+import javax.sql.DataSource;
 import io.activej.promise.Promise;
 import io.micrometer.core.instrument.Counter;
 import io.micrometer.core.instrument.MeterRegistry;
@@ -24,12 +24,12 @@ import java.util.concurrent.Executor;
  */
 public class AiDlqRecommendationService {
 
-    private final HikariDataSource            dataSource;
+    private final DataSource            dataSource;
     private final Executor                    executor;
     private final RecommendationEnginePort    recommendationEnginePort;
     private final Counter                     recommendationsGeneratedCounter;
 
-    public AiDlqRecommendationService(HikariDataSource dataSource, Executor executor,
+    public AiDlqRecommendationService(DataSource dataSource, Executor executor,
                                        RecommendationEnginePort recommendationEnginePort,
                                        MeterRegistry registry) {
         this.dataSource                     = dataSource;

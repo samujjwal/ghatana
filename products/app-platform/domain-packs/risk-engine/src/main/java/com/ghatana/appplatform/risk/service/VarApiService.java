@@ -1,6 +1,6 @@
 package com.ghatana.appplatform.risk.service;
 
-import com.zaxxer.hikari.HikariDataSource;
+import javax.sql.DataSource;
 import io.activej.promise.Promise;
 import io.micrometer.core.instrument.Counter;
 import io.micrometer.core.instrument.MeterRegistry;
@@ -32,13 +32,13 @@ public class VarApiService {
     private static final Logger log = LoggerFactory.getLogger(VarApiService.class);
     private static final ZoneId NST = ZoneId.of("Asia/Kathmandu");
 
-    private final HikariDataSource    dataSource;
+    private final DataSource    dataSource;
     private final Executor            executor;
     private final VarCalculationService varCalculationService;
     private final Counter             eodBatchCounter;
     private final Counter             apiQueryCounter;
 
-    public VarApiService(HikariDataSource dataSource,
+    public VarApiService(DataSource dataSource,
                          Executor executor,
                          VarCalculationService varCalculationService,
                          MeterRegistry registry) {

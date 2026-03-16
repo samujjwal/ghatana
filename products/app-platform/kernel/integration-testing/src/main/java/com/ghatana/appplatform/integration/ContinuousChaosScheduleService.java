@@ -1,5 +1,7 @@
 package com.ghatana.appplatform.integration;
 
+import com.ghatana.platform.audit.AuditBusPort;
+import com.ghatana.platform.audit.AuditEvent;
 import io.activej.promise.Promise;
 import io.micrometer.core.instrument.*;
 
@@ -63,10 +65,6 @@ public class ContinuousChaosScheduleService {
         boolean isMaintenanceWindowActive() throws Exception;
     }
 
-    public interface AuditPort {
-        void audit(String event, String detail) throws Exception;
-    }
-
     // ── Constants ─────────────────────────────────────────────────────────────
 
     private static final double REGRESSION_THRESHOLD = 0.20; // 20% worsening triggers alert
@@ -80,7 +78,7 @@ public class ContinuousChaosScheduleService {
     private final SchedulerPort scheduler;
     private final AlertPort alertPort;
     private final K10IntegrationPort k10;
-    private final AuditPort audit;
+    private final AuditBusPort audit;
     private final Executor executor;
     private final Counter suitesPassed;
     private final Counter suitesFailed;
@@ -90,7 +88,7 @@ public class ContinuousChaosScheduleService {
         SchedulerPort scheduler,
         AlertPort alertPort,
         K10IntegrationPort k10,
-        AuditPort audit,
+        AuditBusPort audit,
         MeterRegistry registry,
         Executor executor
     ) {
@@ -119,7 +117,7 @@ public class ContinuousChaosScheduleService {
             long passed = results.stream().filter(r -> r.passed).count();
             long failed = results.size() - passed;
             if (failed == 0) suitesPassed.increment(); else suitesFailed.increment();
-            audit.audit("CHAOS_SCHEDULE_SUITE", "passed=" + passed + " failed=" + failed);
+            audit.emit(AuditEvent.builder().eventType("CHAOS_SCHEDULE_SUITE").details(Map.of("detail", "passed=" + passed + " failed=" + failed)).build());
             return new SuiteResult("ContinuousChaosSchedule", results, passed, failed);
         });
     }
@@ -229,7 +227,7 @@ public class ContinuousChaosScheduleService {
         boolean podKillInK10 = k10.isScheduledInK10("POD_KILL");
         assertStep(runId, "post_ga_pod_kill_scheduled", "post-GA pod kill schedule active in K-10",
             "true", podKillInK10, podKillInK10);
-        audit.audit("POST_GA_CHAOS_SCHEDULE", "continuous chaos schedule is active post-GA");
+        audit.emit(AuditEvent.builder().eventType("POST_GA_CHAOS_SCHEDULE").details(Map.of("detail", "continuous chaos schedule is active post-GA")).build());
     }
 
     private void persistScheduleEntry(String scheduleId, String chaosType, String frequency) {

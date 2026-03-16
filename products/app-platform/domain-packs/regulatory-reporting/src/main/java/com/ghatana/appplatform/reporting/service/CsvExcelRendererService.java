@@ -1,6 +1,6 @@
 package com.ghatana.appplatform.reporting.service;
 
-import com.zaxxer.hikari.HikariDataSource;
+import javax.sql.DataSource;
 import io.activej.promise.Promise;
 import io.micrometer.core.instrument.Counter;
 import io.micrometer.core.instrument.MeterRegistry;
@@ -32,14 +32,14 @@ public class CsvExcelRendererService {
 
     private static final byte[] UTF8_BOM = new byte[]{(byte) 0xEF, (byte) 0xBB, (byte) 0xBF};
 
-    private final HikariDataSource dataSource;
+    private final DataSource dataSource;
     private final Executor         executor;
     private final ExcelPort        excelPort;
     private final StoragePort      storagePort;
     private final Counter          csvRenderedCounter;
     private final Counter          excelRenderedCounter;
 
-    public CsvExcelRendererService(HikariDataSource dataSource, Executor executor,
+    public CsvExcelRendererService(DataSource dataSource, Executor executor,
                                     ExcelPort excelPort, StoragePort storagePort,
                                     MeterRegistry registry) {
         this.dataSource           = dataSource;

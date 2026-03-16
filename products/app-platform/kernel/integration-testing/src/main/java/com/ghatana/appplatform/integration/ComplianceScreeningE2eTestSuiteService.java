@@ -1,5 +1,7 @@
 package com.ghatana.appplatform.integration;
 
+import com.ghatana.platform.audit.AuditBusPort;
+import com.ghatana.platform.audit.AuditEvent;
 import io.activej.promise.Promise;
 import io.micrometer.core.instrument.*;
 
@@ -64,10 +66,6 @@ public class ComplianceScreeningE2eTestSuiteService {
         List<String> getAuditEvents(String entityId) throws Exception;
     }
 
-    public interface AuditPort {
-        void audit(String event, String detail) throws Exception;
-    }
-
     // ── Fields ────────────────────────────────────────────────────────────────
 
     private final javax.sql.DataSource ds;
@@ -77,7 +75,7 @@ public class ComplianceScreeningE2eTestSuiteService {
     private final AmlAlertPort amlAlert;
     private final RegulatoryReportPort regulatoryReport;
     private final K07AuditVerificationPort k07Audit;
-    private final AuditPort audit;
+    private final AuditBusPort audit;
     private final Executor executor;
     private final Counter scenariosPassed;
     private final Counter scenariosFailed;
@@ -90,7 +88,7 @@ public class ComplianceScreeningE2eTestSuiteService {
         AmlAlertPort amlAlert,
         RegulatoryReportPort regulatoryReport,
         K07AuditVerificationPort k07Audit,
-        AuditPort audit,
+        AuditBusPort audit,
         MeterRegistry registry,
         Executor executor
     ) {

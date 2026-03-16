@@ -1,6 +1,6 @@
 package com.ghatana.appplatform.dlq;
 
-import com.zaxxer.hikari.HikariDataSource;
+import javax.sql.DataSource;
 import io.activej.promise.Promise;
 import io.micrometer.core.instrument.Counter;
 import io.micrometer.core.instrument.Gauge;
@@ -32,7 +32,7 @@ public class PoisonPillDetectionService {
     private static final int    DETECTION_WINDOW_MINUTES  = 30;
     private static final double CB_OPEN_RATE_THRESHOLD    = 0.05; // 5% of topic events
 
-    private final HikariDataSource      dataSource;
+    private final DataSource      dataSource;
     private final Executor              executor;
     private final EventPort             eventPort;
     private final CircuitBreakerPort    circuitBreakerPort;
@@ -40,7 +40,7 @@ public class PoisonPillDetectionService {
     private final Counter               circuitBreakerOpenCounter;
     private final AtomicInteger         activePoisonPills = new AtomicInteger(0);
 
-    public PoisonPillDetectionService(HikariDataSource dataSource, Executor executor,
+    public PoisonPillDetectionService(DataSource dataSource, Executor executor,
                                        EventPort eventPort, CircuitBreakerPort circuitBreakerPort,
                                        MeterRegistry registry) {
         this.dataSource                 = dataSource;

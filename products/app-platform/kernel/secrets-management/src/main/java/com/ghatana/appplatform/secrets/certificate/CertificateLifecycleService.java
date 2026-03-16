@@ -4,6 +4,8 @@
  */
 package com.ghatana.appplatform.secrets.certificate;
 
+import com.ghatana.platform.audit.AuditBusPort;
+import com.ghatana.platform.audit.AuditEvent;
 import io.activej.promise.Promise;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -44,13 +46,34 @@ public final class CertificateLifecycleService {
     /** Default renewal threshold: renew when fewer than 30 days remain. */
     public static final Duration DEFAULT_RENEWAL_THRESHOLD = Duration.ofDays(30);
 
+    /**
+     * SPI for certificate issuance. In production this calls Vault PKI
+     * {@code pki/issue/{role}} or an ACME endpoint.
+     */
+    public interface CertificateRenewalPort {
+        /**
+         * Issue a new certificate for the given logical name.
+         *
+         * @param name        logical name (e.g. "api-gateway-tls")
+         * @param currentCert the expiring certificate being replaced
+         * @return the freshly issued X.509 certificate
+         * @throws Exception on CA / network failure
+         */
+        X509Certificate issue(String name, X509Certificate currentCert) throws Exception;
+    }
+
     private final Map<String, CertificateEntry> certificates = new ConcurrentHashMap<>();
     private final Duration renewalThreshold;
     private final Executor executor;
+    private final AuditBusPort audit;
+    private final CertificateRenewalPort renewalPort;
 
-    public CertificateLifecycleService(Duration renewalThreshold, Executor executor) {
+    public CertificateLifecycleService(Duration renewalThreshold, Executor executor,
+                                        AuditBusPort audit, CertificateRenewalPort renewalPort) {
         this.renewalThreshold = Objects.requireNonNull(renewalThreshold, "renewalThreshold");
         this.executor         = Objects.requireNonNull(executor, "executor");
+        this.audit            = Objects.requireNonNull(audit, "audit");
+        this.renewalPort      = Objects.requireNonNull(renewalPort, "renewalPort");
     }
 
     /** Registers a certificate under a logical name. */
@@ -72,8 +95,8 @@ public final class CertificateLifecycleService {
     }
 
     /**
-     * Renews the certificate identified by {@code name}. The renewal call is a stub that
-     * logs the intent; in production this would call Vault PKI or an ACME endpoint.
+     * Renews the certificate identified by {@code name} via the configured
+     * {@link CertificateRenewalPort} (Vault PKI, ACME, etc.).
      */
     public Promise<Void> renew(String name) {
         Objects.requireNonNull(name, "name");
@@ -82,7 +105,18 @@ public final class CertificateLifecycleService {
             if (entry == null) throw new IllegalArgumentException("Certificate not registered: " + name);
             log.info("Certificate renewal triggered: name={} daysRemaining={}",
                     name, daysUntilExpiry(name));
-            // Stub: production implementation calls Vault PKI `pki/issue/{role}` endpoint
+            X509Certificate renewed = renewalPort.issue(name, entry.certificate());
+            certificates.put(name, new CertificateEntry(name, renewed, CertificateStatus.ACTIVE, Instant.now()));
+            log.info("Certificate renewed: name={} newExpires={}", name, renewed.getNotAfter());
+            audit.emit(AuditEvent.builder()
+                    .tenantId("SYSTEM")
+                    .eventType("CERTIFICATE_RENEWED")
+                    .principal("CertificateLifecycleService")
+                    .resourceType("certificate")
+                    .resourceId(name)
+                    .success(true)
+                    .details(Map.of("daysRemaining", String.valueOf(daysUntilExpiry(name))))
+                    .build());
             return null;
         });
     }

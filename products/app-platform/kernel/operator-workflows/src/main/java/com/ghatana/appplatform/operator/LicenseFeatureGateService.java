@@ -1,5 +1,7 @@
 package com.ghatana.appplatform.operator;
 
+import com.ghatana.platform.audit.AuditBusPort;
+import com.ghatana.platform.audit.AuditEvent;
 import io.activej.promise.Promise;
 import io.micrometer.core.instrument.*;
 
@@ -51,10 +53,6 @@ public class LicenseFeatureGateService {
         void publish(String eventType, Map<String, Object> payload) throws Exception;
     }
 
-    public interface AuditPort {
-        void record(String actorId, String action, String detail) throws Exception;
-    }
-
     // ── Value types ───────────────────────────────────────────────────────────
 
     public enum Feature {
@@ -79,7 +77,7 @@ public class LicenseFeatureGateService {
 
     private final javax.sql.DataSource ds;
     private final EventPublishPort events;
-    private final AuditPort audit;
+    private final AuditBusPort audit;
     private final Executor executor;
     private final Counter licenseExpiredCounter;
     private final Counter featureGrantCounter;
@@ -88,7 +86,7 @@ public class LicenseFeatureGateService {
     public LicenseFeatureGateService(
         javax.sql.DataSource ds,
         EventPublishPort events,
-        AuditPort audit,
+        AuditBusPort audit,
         MeterRegistry registry,
         Executor executor
     ) {
@@ -140,8 +138,7 @@ public class LicenseFeatureGateService {
                     }
                 }
                 c.commit();
-                audit.record(operatorId, "LICENSE_ISSUED",
-                    "tenant=" + tenantId + " type=" + licenseType + " expires=" + expiresAt);
+                audit.emit(AuditEvent.builder().principal(operatorId).eventType("LICENSE_ISSUED").details(Map.of("detail", "tenant=" + tenantId + " type=" + licenseType + " expires=" + expiresAt)).build());
                 return new TenantLicense(licenseId, tenantId, licenseType,
                     Instant.now(), expiresAt, "ACTIVE");
             }

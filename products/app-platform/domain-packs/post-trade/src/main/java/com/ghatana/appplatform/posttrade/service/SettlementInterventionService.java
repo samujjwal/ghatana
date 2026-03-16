@@ -1,6 +1,8 @@
 package com.ghatana.appplatform.posttrade.service;
 
-import com.zaxxer.hikari.HikariDataSource;
+import com.ghatana.platform.audit.AuditBusPort;
+import com.ghatana.platform.audit.AuditEvent;
+import javax.sql.DataSource;
 import io.activej.promise.Promise;
 import io.micrometer.core.instrument.Counter;
 import io.micrometer.core.instrument.MeterRegistry;
@@ -32,18 +34,18 @@ public class SettlementInterventionService {
 
     private static final Logger log = LoggerFactory.getLogger(SettlementInterventionService.class);
 
-    private final HikariDataSource dataSource;
+    private final DataSource dataSource;
     private final Executor         executor;
     private final LendingDeskPort  lendingDesk;
     private final NotificationPort notifications;
-    private final AuditPort        audit;
+    private final AuditBusPort        audit;
     private final Counter          interventionCounter;
     private final Counter          preventedCounter;
 
-    public SettlementInterventionService(HikariDataSource dataSource, Executor executor,
+    public SettlementInterventionService(DataSource dataSource, Executor executor,
                                          LendingDeskPort lendingDesk,
                                          NotificationPort notifications,
-                                         AuditPort audit,
+                                         AuditBusPort audit,
                                          MeterRegistry registry) {
         this.dataSource          = dataSource;
         this.executor            = executor;
@@ -63,11 +65,6 @@ public class SettlementInterventionService {
     public interface NotificationPort {
         void sendEarlyWarning(String counterpartyId, String tradeId, String message);
         void escalateToManager(String tradeId, String reason, double riskScore);
-    }
-
-    /** K-07 immutable audit trail. */
-    public interface AuditPort {
-        void record(String entityId, String action, String actor, String detail);
     }
 
     // ─── Public API ──────────────────────────────────────────────────────────

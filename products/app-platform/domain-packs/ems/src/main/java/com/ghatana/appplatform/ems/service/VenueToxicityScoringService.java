@@ -1,6 +1,6 @@
 package com.ghatana.appplatform.ems.service;
 
-import com.zaxxer.hikari.HikariDataSource;
+import javax.sql.DataSource;
 import io.activej.promise.Promise;
 import io.micrometer.core.instrument.Counter;
 import io.micrometer.core.instrument.MeterRegistry;
@@ -36,14 +36,14 @@ public class VenueToxicityScoringService {
     private static final int    ROLLING_WINDOW            = 5;     // trades window for feature computation
     private static final long   SCORE_REFRESH_INTERVAL_MS = 5_000; // 5 seconds
 
-    private final HikariDataSource    dataSource;
+    private final DataSource    dataSource;
     private final Executor            executor;
     private final VenueScoringModelPort modelPort;
     private final Counter             scoringCounter;
     private final Counter             toxicVenueCounter;
     private final Counter             overrideCounter;
 
-    public VenueToxicityScoringService(HikariDataSource dataSource, Executor executor,
+    public VenueToxicityScoringService(DataSource dataSource, Executor executor,
                                        VenueScoringModelPort modelPort, MeterRegistry registry) {
         this.dataSource       = dataSource;
         this.executor         = executor;

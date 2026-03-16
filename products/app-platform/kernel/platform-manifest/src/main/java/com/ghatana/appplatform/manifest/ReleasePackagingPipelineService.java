@@ -1,5 +1,7 @@
 package com.ghatana.appplatform.manifest;
 
+import com.ghatana.platform.audit.AuditBusPort;
+import com.ghatana.platform.audit.AuditEvent;
 import io.activej.promise.Promise;
 import io.micrometer.core.instrument.*;
 
@@ -64,10 +66,6 @@ public class ReleasePackagingPipelineService {
         void publish(String eventType, Map<String, String> payload) throws Exception;
     }
 
-    public interface AuditPort {
-        void record(String actorId, String action, String detail) throws Exception;
-    }
-
     // ── Value types ───────────────────────────────────────────────────────────
 
     public record PipelineRun(
@@ -87,7 +85,7 @@ public class ReleasePackagingPipelineService {
     private final ManifestSigningVerificationService signingService;
     private final ReleaseManifestService manifestService;
     private final EventPublishPort events;
-    private final AuditPort audit;
+    private final AuditBusPort audit;
     private final Executor executor;
     private final Counter pipelineSuccessCounter;
     private final Counter pipelineFailureCounter;
@@ -100,7 +98,7 @@ public class ReleasePackagingPipelineService {
         ManifestSigningVerificationService signingService,
         ReleaseManifestService manifestService,
         EventPublishPort events,
-        AuditPort audit,
+        AuditBusPort audit,
         MeterRegistry registry,
         Executor executor
     ) {
@@ -126,8 +124,7 @@ public class ReleasePackagingPipelineService {
     public Promise<String> trigger(String manifestId, String releaseId, String gitTag, String triggeredBy) {
         return Promise.ofBlocking(executor, () -> {
             String runId = createRun(manifestId, releaseId, gitTag, triggeredBy);
-            audit.record(triggeredBy, "PIPELINE_TRIGGERED",
-                "runId=" + runId + " manifestId=" + manifestId + " gitTag=" + gitTag);
+            audit.emit(AuditEvent.builder().principal(triggeredBy).eventType("PIPELINE_TRIGGERED").details(Map.of("detail", "runId=" + runId + " manifestId=" + manifestId + " gitTag=" + gitTag)).build());
 
             Timer.Sample timerSample = Timer.start();
             try {
@@ -167,7 +164,7 @@ public class ReleasePackagingPipelineService {
 
                 markRunCompleted(runId);
                 pipelineSuccessCounter.increment();
-                audit.record(triggeredBy, "PIPELINE_COMPLETED", "runId=" + runId + " releaseId=" + releaseId);
+                audit.emit(AuditEvent.builder().principal(triggeredBy).eventType("PIPELINE_COMPLETED").details(Map.of("detail", "runId=" + runId + " releaseId=" + releaseId)).build());
 
             } catch (Exception e) {
                 markRunFailed(runId, e.getMessage());

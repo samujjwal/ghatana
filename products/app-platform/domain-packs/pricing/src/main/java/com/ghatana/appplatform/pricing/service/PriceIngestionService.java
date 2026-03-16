@@ -1,6 +1,6 @@
 package com.ghatana.appplatform.pricing.service;
 
-import com.zaxxer.hikari.HikariDataSource;
+import javax.sql.DataSource;
 import io.activej.promise.Promise;
 import io.micrometer.core.instrument.Counter;
 import io.micrometer.core.instrument.Gauge;
@@ -36,7 +36,7 @@ public class PriceIngestionService {
     private static final String REDIS_PRICE_HASH = "latest_price";
     private static final long   STALENESS_THRESHOLD_MS = 5 * 60 * 1_000; // 5 minutes
 
-    private final HikariDataSource dataSource;
+    private final DataSource dataSource;
     private final Executor         executor;
     private final JedisPool        jedisPool;
     private final PriceEventPort   eventPort;
@@ -45,7 +45,7 @@ public class PriceIngestionService {
     private final Counter          staleCounter;
     private final AtomicLong       liveInstrumentCount = new AtomicLong(0);
 
-    public PriceIngestionService(HikariDataSource dataSource, Executor executor,
+    public PriceIngestionService(DataSource dataSource, Executor executor,
                                  JedisPool jedisPool, PriceEventPort eventPort,
                                  MeterRegistry registry) {
         this.dataSource     = dataSource;

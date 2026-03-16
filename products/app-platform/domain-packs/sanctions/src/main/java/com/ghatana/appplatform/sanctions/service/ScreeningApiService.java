@@ -1,12 +1,13 @@
 package com.ghatana.appplatform.sanctions.service;
 
+
+import com.ghatana.platform.core.event.EventBusPort;
 import com.ghatana.appplatform.sanctions.domain.*;
 import io.activej.promise.Promise;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.util.concurrent.Executor;
-import java.util.function.Consumer;
 
 /**
  * @doc.type    Service (Application)
@@ -23,16 +24,16 @@ public class ScreeningApiService {
     private final ScreeningEngineService engine;
     private final ScreeningResultStore resultStore;
     private final Executor executor;
-    private final Consumer<Object> eventPublisher;
+    private final EventBusPort eventBusPort;
 
     public ScreeningApiService(ScreeningEngineService engine,
                                 ScreeningResultStore resultStore,
                                 Executor executor,
-                                Consumer<Object> eventPublisher) {
+                                EventBusPort eventBusPort) {
         this.engine = engine;
         this.resultStore = resultStore;
         this.executor = executor;
-        this.eventPublisher = eventPublisher;
+        this.eventBusPort = eventBusPort;
     }
 
     /**
@@ -60,11 +61,11 @@ public class ScreeningApiService {
                 if (result.decision().requiresBlock()) {
                     log.warn("OMS sanctions block: orderId={} clientId={} decision={}",
                             orderId, clientId, result.decision());
-                    eventPublisher.accept(new OrderBlockedEvent(orderId, clientId, result));
+                    eventBusPort.publish(new OrderBlockedEvent(orderId, clientId, result));
                 } else if (result.decision().requiresReview()) {
                     log.info("OMS sanctions review: orderId={} clientId={} decision={}",
                             orderId, clientId, result.decision());
-                    eventPublisher.accept(new OrderFlaggedForReviewEvent(orderId, clientId, result));
+                    eventBusPort.publish(new OrderFlaggedForReviewEvent(orderId, clientId, result));
                 }
                 return result;
             });

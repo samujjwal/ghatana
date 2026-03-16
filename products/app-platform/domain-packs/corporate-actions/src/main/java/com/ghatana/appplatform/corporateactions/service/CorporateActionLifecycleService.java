@@ -1,6 +1,6 @@
 package com.ghatana.appplatform.corporateactions.service;
 
-import com.zaxxer.hikari.HikariDataSource;
+import javax.sql.DataSource;
 import io.activej.promise.Promise;
 import io.micrometer.core.instrument.Counter;
 import io.micrometer.core.instrument.MeterRegistry;
@@ -28,7 +28,7 @@ import java.util.concurrent.Executor;
  */
 public class CorporateActionLifecycleService {
 
-    private final HikariDataSource dataSource;
+    private final DataSource dataSource;
     private final Executor         executor;
     private final CalendarPort     calendarPort;
     private final WorkflowPort     workflowPort;
@@ -36,7 +36,7 @@ public class CorporateActionLifecycleService {
     private final Counter          announcedCounter;
     private final Counter          completedCounter;
 
-    public CorporateActionLifecycleService(HikariDataSource dataSource, Executor executor,
+    public CorporateActionLifecycleService(DataSource dataSource, Executor executor,
                                             CalendarPort calendarPort, WorkflowPort workflowPort,
                                             EventPort eventPort, MeterRegistry registry) {
         this.dataSource        = dataSource;

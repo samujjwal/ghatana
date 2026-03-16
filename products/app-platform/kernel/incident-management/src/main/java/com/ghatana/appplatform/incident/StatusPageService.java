@@ -1,5 +1,7 @@
 package com.ghatana.appplatform.incident;
 
+import com.ghatana.platform.audit.AuditBusPort;
+import com.ghatana.platform.audit.AuditEvent;
 import io.activej.promise.Promise;
 import io.micrometer.core.instrument.*;
 
@@ -53,10 +55,6 @@ public class StatusPageService {
         void publish(String eventType, Map<String, String> payload) throws Exception;
     }
 
-    public interface AuditPort {
-        void record(String actorId, String action, String detail) throws Exception;
-    }
-
     // ── Enums ─────────────────────────────────────────────────────────────────
 
     public enum ComponentStatus {
@@ -78,14 +76,14 @@ public class StatusPageService {
 
     private final javax.sql.DataSource ds;
     private final EventPublishPort events;
-    private final AuditPort audit;
+    private final AuditBusPort audit;
     private final Executor executor;
     private final Counter degradationsCounter;
 
     public StatusPageService(
         javax.sql.DataSource ds,
         EventPublishPort events,
-        AuditPort audit,
+        AuditBusPort audit,
         MeterRegistry registry,
         Executor executor
     ) {
@@ -116,8 +114,7 @@ public class StatusPageService {
                     degradationsCounter.increment();
                 }
             }
-            audit.record("system", "STATUS_INCIDENT_DEGRADATION",
-                "incidentId=" + incidentId + " severity=" + severity);
+            audit.emit(AuditEvent.builder().principal("system").eventType("STATUS_INCIDENT_DEGRADATION").details(Map.of("detail", "incidentId=" + incidentId + " severity=" + severity)).build());
             return null;
         });
     }
@@ -133,7 +130,7 @@ public class StatusPageService {
                 String current = currentStatus(componentId);
                 changeStatus(componentId, null, current, "OPERATIONAL", "system");
             }
-            audit.record("system", "STATUS_INCIDENT_RESOLVED", "incidentId=" + incidentId);
+            audit.emit(AuditEvent.builder().principal("system").eventType("STATUS_INCIDENT_RESOLVED").details(Map.of("detail", "incidentId=" + incidentId)).build());
             return null;
         });
     }
@@ -156,8 +153,7 @@ public class StatusPageService {
             recordHistory(componentId, null, current, newStatus, operatorId);
             events.publish("ComponentStatusOverridden",
                 Map.of("componentId", componentId, "status", newStatus, "by", operatorId));
-            audit.record(operatorId, "STATUS_OVERRIDE",
-                "componentId=" + componentId + " from=" + current + " to=" + newStatus);
+            audit.emit(AuditEvent.builder().principal(operatorId).eventType("STATUS_OVERRIDE").details(Map.of("detail", "componentId=" + componentId + " from=" + current + " to=" + newStatus)).build());
             return null;
         });
     }

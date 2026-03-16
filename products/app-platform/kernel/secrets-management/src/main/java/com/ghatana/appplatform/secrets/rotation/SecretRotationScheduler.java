@@ -3,12 +3,16 @@ package com.ghatana.appplatform.secrets.rotation;
 import com.ghatana.appplatform.secrets.domain.SecretMetadata;
 import com.ghatana.appplatform.secrets.domain.SecretValue;
 import com.ghatana.appplatform.secrets.port.SecretProvider;
+import com.ghatana.platform.audit.AuditBusPort;
+import com.ghatana.platform.audit.AuditEvent;
+import io.activej.eventloop.Eventloop;
+import io.activej.promise.Promise;
 
 import java.time.Instant;
 import java.util.List;
-import java.util.concurrent.Executors;
-import java.util.concurrent.ScheduledExecutorService;
-import java.util.concurrent.TimeUnit;
+import java.util.Map;
+import java.util.concurrent.Executor;
+import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.logging.Logger;
 
 /**
@@ -32,40 +36,52 @@ public class SecretRotationScheduler {
     private final SecretProvider secretProvider;
     private final String monitoredPrefix;     // e.g. "/data-cloud/prod/"
     private final long rotationThresholdDays; // rotate if < N days to expiry
-    private final ScheduledExecutorService scheduler;
+    private final Eventloop eventloop;
+    private final Executor blockingExecutor;
+    private final AuditBusPort audit;
+    private final AtomicBoolean running = new AtomicBoolean(false);
+    private long intervalMs;
 
     public SecretRotationScheduler(SecretProvider secretProvider,
                                    String monitoredPrefix,
-                                   long rotationThresholdDays) {
+                                   long rotationThresholdDays,
+                                   AuditBusPort audit,
+                                   Eventloop eventloop,
+                                   Executor blockingExecutor) {
         this.secretProvider = secretProvider;
         this.monitoredPrefix = monitoredPrefix;
         this.rotationThresholdDays = rotationThresholdDays;
-        this.scheduler = Executors.newSingleThreadScheduledExecutor(r -> {
-            Thread t = new Thread(r, "secret-rotation-scheduler");
-            t.setDaemon(true);
-            return t;
-        });
+        this.audit = audit;
+        this.eventloop = eventloop;
+        this.blockingExecutor = blockingExecutor;
     }
 
     /**
      * Start the scheduler, checking for rotation every {@code intervalHours} hours.
      */
     public void start(long intervalHours) {
-        scheduler.scheduleAtFixedRate(this::runRotationCheck, 0, intervalHours, TimeUnit.HOURS);
+        this.intervalMs = intervalHours * 3_600_000L;
+        running.set(true);
+        eventloop.delay(0, this::scheduleNextCheck);
         LOG.info("[SecretRotationScheduler] Started — checking every " + intervalHours + "h prefix=" + monitoredPrefix);
     }
 
     /** Stop the scheduler gracefully. */
     public void stop() {
-        scheduler.shutdown();
-        try {
-            if (!scheduler.awaitTermination(10, TimeUnit.SECONDS)) {
-                scheduler.shutdownNow();
-            }
-        } catch (InterruptedException e) {
-            Thread.currentThread().interrupt();
-        }
+        running.set(false);
         LOG.info("[SecretRotationScheduler] Stopped");
+    }
+
+    private void scheduleNextCheck() {
+        if (!running.get()) return;
+        Promise.ofBlocking(blockingExecutor, () -> {
+            runRotationCheck();
+            return null;
+        }).whenComplete(() -> {
+            if (running.get()) {
+                eventloop.delay(intervalMs, this::scheduleNextCheck);
+            }
+        });
     }
 
     // ── Private ───────────────────────────────────────────────────────────────
@@ -99,6 +115,15 @@ public class SecretRotationScheduler {
             LOG.info("[SecretRotationScheduler] Rotating path=" + path + " daysToExpiry=" + daysToExpiry);
             secretProvider.rotateSecret(path).getResult();
             LOG.info("[SecretRotationScheduler] Rotated path=" + path);
+            audit.emit(AuditEvent.builder()
+                    .tenantId("SYSTEM")
+                    .eventType("SECRET_ROTATED")
+                    .principal("SecretRotationScheduler")
+                    .resourceType("secret")
+                    .resourceId(path)
+                    .success(true)
+                    .details(Map.of("daysToExpiry", String.valueOf(daysToExpiry)))
+                    .build());
         }
     }
 }

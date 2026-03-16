@@ -2,6 +2,7 @@ package com.ghatana.appplatform.rules;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.ghatana.platform.core.json.PlatformObjectMapper;
 import io.activej.promise.Promise;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -33,7 +34,7 @@ import java.util.concurrent.Executor;
 public final class OpaEvaluationService {
 
     private static final Logger log = LoggerFactory.getLogger(OpaEvaluationService.class);
-    private static final ObjectMapper MAPPER = new ObjectMapper();
+    private static final ObjectMapper MAPPER = PlatformObjectMapper.instance();
     private static final Duration DEFAULT_TIMEOUT = Duration.ofSeconds(5);
 
     /**

@@ -1,6 +1,6 @@
 package com.ghatana.appplatform.deployment;
 
-import com.zaxxer.hikari.HikariDataSource;
+import javax.sql.DataSource;
 import io.activej.promise.Promise;
 import io.micrometer.core.instrument.Gauge;
 import io.micrometer.core.instrument.MeterRegistry;
@@ -24,7 +24,7 @@ import java.util.concurrent.atomic.AtomicReference;
  */
 public class DeploymentOperationsDashboardService {
 
-    private final HikariDataSource dataSource;
+    private final DataSource dataSource;
     private final Executor         executor;
     private final DashboardPort    dashboardPort;
 
@@ -33,7 +33,7 @@ public class DeploymentOperationsDashboardService {
     private final AtomicReference<Double> mttrHours                 = new AtomicReference<>(0.0);
     private final AtomicReference<Double> changeFailureRatePercent  = new AtomicReference<>(0.0);
 
-    public DeploymentOperationsDashboardService(HikariDataSource dataSource, Executor executor,
+    public DeploymentOperationsDashboardService(DataSource dataSource, Executor executor,
                                                  DashboardPort dashboardPort, MeterRegistry registry) {
         this.dataSource    = dataSource;
         this.executor      = executor;

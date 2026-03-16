@@ -1,6 +1,6 @@
 package com.ghatana.appplatform.surveillance.service;
 
-import com.zaxxer.hikari.HikariDataSource;
+import javax.sql.DataSource;
 import io.activej.promise.Promise;
 import io.micrometer.core.instrument.Counter;
 import io.micrometer.core.instrument.MeterRegistry;
@@ -40,13 +40,13 @@ public class SpoofingDetectionService {
     private static final long   DEFAULT_REACTION_WINDOW_MS       = 60_000; // 1 minute
     private static final double DEFAULT_SPOOF_SIZE_MULTIPLE       = 5.0;   // spoof order ≥ 5× avg
 
-    private final HikariDataSource dataSource;
+    private final DataSource dataSource;
     private final Executor         executor;
     private final RulesEnginePort  rulesEngine;
     private final Counter          detectedCounter;
     private final Counter          screenedCounter;
 
-    public SpoofingDetectionService(HikariDataSource dataSource, Executor executor,
+    public SpoofingDetectionService(DataSource dataSource, Executor executor,
                                     RulesEnginePort rulesEngine, MeterRegistry registry) {
         this.dataSource      = dataSource;
         this.executor        = executor;

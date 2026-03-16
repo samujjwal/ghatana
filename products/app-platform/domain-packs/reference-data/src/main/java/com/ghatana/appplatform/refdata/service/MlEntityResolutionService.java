@@ -1,5 +1,7 @@
 package com.ghatana.appplatform.refdata.service;
 
+
+import com.ghatana.platform.core.event.EventBusPort;
 import io.micrometer.core.instrument.Counter;
 import io.micrometer.core.instrument.MeterRegistry;
 import io.micrometer.core.instrument.Timer;
@@ -12,7 +14,6 @@ import java.time.Instant;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
-import java.util.function.Consumer;
 
 /**
  * @doc.type      Service
@@ -37,18 +38,18 @@ public class MlEntityResolutionService {
 
     private final EmbeddingModelPort embeddingModel;
     private final DataSource         dataSource;
-    private final Consumer<Object>   eventPublisher;
+    private final EventBusPort   eventBusPort;
     private final Counter            entitiesLinked;
     private final Counter            candidatePairsEvaluated;
     private final Timer              resolutionTimer;
 
     public MlEntityResolutionService(EmbeddingModelPort embeddingModel,
                                       DataSource dataSource,
-                                      Consumer<Object> eventPublisher,
+                                      EventBusPort eventBusPort,
                                       MeterRegistry meterRegistry) {
         this.embeddingModel          = embeddingModel;
         this.dataSource              = dataSource;
-        this.eventPublisher          = eventPublisher;
+        this.eventBusPort          = eventBusPort;
         this.entitiesLinked          = meterRegistry.counter("refdata.entity_resolution.linked");
         this.candidatePairsEvaluated = meterRegistry.counter("refdata.entity_resolution.pairs_evaluated");
         this.resolutionTimer         = meterRegistry.timer("refdata.entity_resolution.batch_duration");
@@ -83,7 +84,7 @@ public class MlEntityResolutionService {
                 saveLink(entityId, match.entityId(), match.name());
                 entitiesLinked.increment();
                 log.info("EntityResolution LINKED entityId={} to clusterId={}", entityId, match.entityId());
-                eventPublisher.accept(new EntityLinkedEvent(entityId, match.entityId(), name, match.name()));
+                eventBusPort.publish(new EntityLinkedEvent(entityId, match.entityId(), name, match.name()));
                 return ResolutionResult.linked(entityId, match.entityId());
             } else {
                 // No match — register as new cluster root
@@ -116,7 +117,7 @@ public class MlEntityResolutionService {
         } catch (SQLException e) {
             log.error("recordOverride DB error entityId={}", entityId, e);
         }
-        eventPublisher.accept(new EntityLinkOverriddenEvent(entityId, correctLink, reviewerId));
+        eventBusPort.publish(new EntityLinkOverriddenEvent(entityId, correctLink, reviewerId));
         log.info("EntityResolution OVERRIDE entityId={} correctLink={}", entityId, correctLink);
     }
 

@@ -1,5 +1,7 @@
 package com.ghatana.appplatform.compliance.service;
 
+
+import com.ghatana.platform.core.event.EventBusPort;
 import io.micrometer.core.instrument.Counter;
 import io.micrometer.core.instrument.MeterRegistry;
 import org.slf4j.Logger;
@@ -10,7 +12,6 @@ import java.sql.*;
 import java.time.Instant;
 import java.time.temporal.ChronoUnit;
 import java.util.UUID;
-import java.util.function.Consumer;
 
 /**
  * @doc.type      Service
@@ -32,15 +33,15 @@ public class BeneficialOwnershipDisclosureService {
     private static final int DAYS_BOARD_NOTIFICATION   = 1;
 
     private final DataSource       dataSource;
-    private final Consumer<Object> eventPublisher;
+    private final EventBusPort eventBusPort;
     private final Counter disclosureGenerated;
     private final Counter disclosureOverdue;
 
     public BeneficialOwnershipDisclosureService(DataSource dataSource,
-                                                 Consumer<Object> eventPublisher,
+                                                 EventBusPort eventBusPort,
                                                  MeterRegistry meterRegistry) {
         this.dataSource         = dataSource;
-        this.eventPublisher     = eventPublisher;
+        this.eventBusPort     = eventBusPort;
         this.disclosureGenerated = meterRegistry.counter("compliance.disclosure.generated");
         this.disclosureOverdue  = meterRegistry.counter("compliance.disclosure.overdue");
     }
@@ -83,7 +84,7 @@ public class BeneficialOwnershipDisclosureService {
         disclosureGenerated.increment();
         DisclosureObligation obligation = new DisclosureObligation(disclosureId, clientId, instrumentId,
                 thresholdType, ownershipPct, "PENDING", dueAt, null, Instant.now());
-        eventPublisher.accept(new DisclosureGeneratedEvent(disclosureId, clientId, instrumentId,
+        eventBusPort.publish(new DisclosureGeneratedEvent(disclosureId, clientId, instrumentId,
                 thresholdType, ownershipPct, dueAt));
         log.info("Disclosure created={} client={} threshold={} dueAt={}", disclosureId, clientId, thresholdType, dueAt);
         return obligation;
@@ -112,7 +113,7 @@ public class BeneficialOwnershipDisclosureService {
         } catch (SQLException e) {
             throw new RuntimeException("Failed to submit disclosure " + disclosureId, e);
         }
-        eventPublisher.accept(new DisclosureSubmittedEvent(disclosureId, regulatorRefId, Instant.now()));
+        eventBusPort.publish(new DisclosureSubmittedEvent(disclosureId, regulatorRefId, Instant.now()));
         log.info("Disclosure submitted={} regulatorRef={}", disclosureId, regulatorRefId);
     }
 
@@ -136,7 +137,7 @@ public class BeneficialOwnershipDisclosureService {
                     Instant due = rs.getTimestamp("due_at").toInstant();
                     disclosureOverdue.increment();
                     log.warn("Disclosure overdue id={} client={} instrument={} due={}", id, cId, iId, due);
-                    eventPublisher.accept(new DisclosureOverdueEvent(id, cId, iId, type, due));
+                    eventBusPort.publish(new DisclosureOverdueEvent(id, cId, iId, type, due));
                 }
             }
         } catch (SQLException e) {

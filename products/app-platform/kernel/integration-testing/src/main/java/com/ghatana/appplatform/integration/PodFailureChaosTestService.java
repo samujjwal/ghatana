@@ -1,5 +1,7 @@
 package com.ghatana.appplatform.integration;
 
+import com.ghatana.platform.audit.AuditBusPort;
+import com.ghatana.platform.audit.AuditEvent;
 import io.activej.promise.Promise;
 import io.micrometer.core.instrument.*;
 
@@ -49,10 +51,6 @@ public class PodFailureChaosTestService {
         boolean hasNoCorruptedOrders() throws Exception;
     }
 
-    public interface AuditPort {
-        void audit(String event, String detail) throws Exception;
-    }
-
     // ── SLA constants ─────────────────────────────────────────────────────────
 
     private static final long RESTART_SLA_MS = 30_000L; // pods must restart within 30s
@@ -65,7 +63,7 @@ public class PodFailureChaosTestService {
     private final ServiceHealthPort health;
     private final OrderPort orderPort;
     private final DataIntegrityPort dataIntegrity;
-    private final AuditPort audit;
+    private final AuditBusPort audit;
     private final Executor executor;
     private final Counter suitesPassed;
     private final Counter suitesFailed;
@@ -77,7 +75,7 @@ public class PodFailureChaosTestService {
         ServiceHealthPort health,
         OrderPort orderPort,
         DataIntegrityPort dataIntegrity,
-        AuditPort audit,
+        AuditBusPort audit,
         MeterRegistry registry,
         Executor executor
     ) {
@@ -109,7 +107,7 @@ public class PodFailureChaosTestService {
             long passed = results.stream().filter(r -> r.passed).count();
             long failed = results.size() - passed;
             if (failed == 0) suitesPassed.increment(); else suitesFailed.increment();
-            audit.audit("POD_FAILURE_CHAOS_SUITE", "passed=" + passed + " failed=" + failed);
+            audit.emit(AuditEvent.builder().eventType("POD_FAILURE_CHAOS_SUITE").details(Map.of("detail", "passed=" + passed + " failed=" + failed)).build());
             return new SuiteResult("PodFailureChaos", results, passed, failed);
         });
     }

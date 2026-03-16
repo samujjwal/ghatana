@@ -1,6 +1,8 @@
 package com.ghatana.appplatform.dlq;
 
-import com.zaxxer.hikari.HikariDataSource;
+import com.ghatana.platform.audit.AuditBusPort;
+import com.ghatana.platform.audit.AuditEvent;
+import javax.sql.DataSource;
 import io.activej.promise.Promise;
 import io.micrometer.core.instrument.Counter;
 import io.micrometer.core.instrument.MeterRegistry;
@@ -24,17 +26,17 @@ import java.util.concurrent.Executor;
  */
 public class DeadLetterDiscardWorkflowService {
 
-    private final HikariDataSource  dataSource;
+    private final DataSource  dataSource;
     private final Executor          executor;
     private final ApprovalPort      approvalPort;
-    private final AuditPort         auditPort;
+    private final AuditBusPort         auditPort;
     private final Counter           discardRequestedCounter;
     private final Counter           discardedCounter;
     private final Counter           rejectedCounter;
 
-    public DeadLetterDiscardWorkflowService(HikariDataSource dataSource, Executor executor,
+    public DeadLetterDiscardWorkflowService(DataSource dataSource, Executor executor,
                                              ApprovalPort approvalPort,
-                                             AuditPort auditPort,
+                                             AuditBusPort auditPort,
                                              MeterRegistry registry) {
         this.dataSource              = dataSource;
         this.executor                = executor;
@@ -52,11 +54,6 @@ public class DeadLetterDiscardWorkflowService {
         boolean requiresApproval(String topicName, long payloadSizeBytes);
         String requestApproval(String resourceId, String resourceType, String reason, String requestedBy);
         boolean isApproved(String approvalRequestId);
-    }
-
-    /** K-07 audit trail. */
-    public interface AuditPort {
-        void log(String action, String resourceType, String resourceId, Map<String, Object> details);
     }
 
     // ─── Domain records ──────────────────────────────────────────────────────
@@ -94,8 +91,7 @@ public class DeadLetterDiscardWorkflowService {
                 persistRequest(requestId, deadLetterId, DiscardStatus.AWAITING_APPROVAL,
                     justification, requestedBy, approvalId, now);
 
-                auditPort.log("DISCARD_REQUEST_AWAITING_APPROVAL", "DeadLetter", deadLetterId,
-                    Map.of("requestId", requestId, "approvalId", approvalId, "requestedBy", requestedBy));
+                audit.emit(AuditEvent.builder().eventType("DISCARD_REQUEST_AWAITING_APPROVAL").resourceType("DeadLetter").resourceId(deadLetterId).details(Map.of("requestId", requestId, "approvalId", approvalId, "requestedBy", requestedBy)).build());
 
                 return new DiscardRequest(requestId, deadLetterId, DiscardStatus.AWAITING_APPROVAL,
                     justification, requestedBy, approvalId, now, null);
@@ -141,8 +137,7 @@ public class DeadLetterDiscardWorkflowService {
 
             DiscardRequest request = fetchRequest(requestId);
             if (request != null) {
-                auditPort.log("DISCARD_REJECTED", "DeadLetter", request.deadLetterId(),
-                    Map.of("requestId", requestId, "rejectedBy", rejectedBy, "reason", reason));
+                audit.emit(AuditEvent.builder().eventType("DISCARD_REJECTED").resourceType("DeadLetter").resourceId(request.deadLetterId()).details(Map.of("requestId", requestId, "rejectedBy", rejectedBy, "reason", reason)).build());
             }
             return request;
         });
@@ -160,8 +155,7 @@ public class DeadLetterDiscardWorkflowService {
             ps.setString(2, deadLetterId);
             ps.executeUpdate();
         }
-        auditPort.log("DEAD_LETTER_DISCARDED", "DeadLetter", deadLetterId,
-            Map.of("requestId", requestId, "operatorId", operatorId));
+        audit.emit(AuditEvent.builder().eventType("DEAD_LETTER_DISCARDED").resourceType("DeadLetter").resourceId(deadLetterId).details(Map.of("requestId", requestId, "operatorId", operatorId)).build());
     }
 
     private void persistRequest(String requestId, String deadLetterId, DiscardStatus status,

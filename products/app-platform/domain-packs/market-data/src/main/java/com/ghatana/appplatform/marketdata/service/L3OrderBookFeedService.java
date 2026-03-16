@@ -1,5 +1,7 @@
 package com.ghatana.appplatform.marketdata.service;
 
+
+import com.ghatana.platform.core.event.EventBusPort;
 import com.ghatana.appplatform.marketdata.domain.MarketTick;
 import io.activej.promise.Promise;
 import org.slf4j.Logger;
@@ -9,7 +11,6 @@ import java.math.BigDecimal;
 import java.util.List;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.Executor;
-import java.util.function.Consumer;
 
 /**
  * @doc.type    Service (Application)
@@ -28,11 +29,11 @@ public class L3OrderBookFeedService {
     private final ConcurrentHashMap<String, RateBucket> rateBuckets = new ConcurrentHashMap<>();
 
     private final Executor executor;
-    private final Consumer<Object> eventPublisher;
+    private final EventBusPort eventBusPort;
 
-    public L3OrderBookFeedService(Executor executor, Consumer<Object> eventPublisher) {
+    public L3OrderBookFeedService(Executor executor, EventBusPort eventBusPort) {
         this.executor = executor;
-        this.eventPublisher = eventPublisher;
+        this.eventBusPort = eventBusPort;
     }
 
     /**
@@ -48,7 +49,7 @@ public class L3OrderBookFeedService {
                 log.debug("L3 rate limit exceeded for subscriber={}", subscriberId);
                 return false;
             }
-            eventPublisher.accept(event);
+            eventBusPort.publish(event);
             return true;
         });
     }

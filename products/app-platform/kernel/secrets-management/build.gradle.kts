@@ -26,6 +26,7 @@ dependencies {
     // ─── Platform ────────────────────────────────────────────────────────────
     api(project(":platform:java:core"))
     api(project(":platform:java:observability"))
+    implementation(project(":platform:java:audit"))
 
     // ─── ActiveJ async runtime ────────────────────────────────────────────────
     api(libs.activej.promise)

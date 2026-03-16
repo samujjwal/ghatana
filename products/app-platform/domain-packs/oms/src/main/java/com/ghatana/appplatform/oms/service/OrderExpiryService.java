@@ -1,5 +1,7 @@
 package com.ghatana.appplatform.oms.service;
 
+
+import com.ghatana.platform.core.event.EventBusPort;
 import io.micrometer.core.instrument.Counter;
 import io.micrometer.core.instrument.MeterRegistry;
 import org.slf4j.Logger;
@@ -10,7 +12,6 @@ import java.sql.*;
 import java.time.Instant;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.function.Consumer;
 
 /**
  * @doc.type      Service
@@ -30,13 +31,13 @@ public class OrderExpiryService {
     private static final long   IOC_EXPIRY_SECONDS = 5;
 
     private final DataSource    dataSource;
-    private final Consumer<Object> eventPublisher;
+    private final EventBusPort eventBusPort;
     private final Counter ordersExpired;
 
-    public OrderExpiryService(DataSource dataSource, Consumer<Object> eventPublisher,
+    public OrderExpiryService(DataSource dataSource, EventBusPort eventBusPort,
                                MeterRegistry meterRegistry) {
         this.dataSource     = dataSource;
-        this.eventPublisher = eventPublisher;
+        this.eventBusPort = eventBusPort;
         this.ordersExpired  = meterRegistry.counter("oms.orders.expired");
     }
 
@@ -115,7 +116,7 @@ public class OrderExpiryService {
             int rows = ps.executeUpdate();
             if (rows > 0) {
                 ordersExpired.increment();
-                eventPublisher.accept(new OrderExpiredEvent(orderId, tif, reason, Instant.now()));
+                eventBusPort.publish(new OrderExpiredEvent(orderId, tif, reason, Instant.now()));
                 log.info("OrderExpiry: expired orderId={} tif={} reason={}", orderId, tif, reason);
             }
         } catch (SQLException e) {

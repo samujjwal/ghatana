@@ -1,6 +1,6 @@
 package com.ghatana.appplatform.aigovernance;
 
-import com.zaxxer.hikari.HikariDataSource;
+import javax.sql.DataSource;
 import io.activej.promise.Promise;
 import io.micrometer.core.instrument.Counter;
 import io.micrometer.core.instrument.MeterRegistry;
@@ -24,12 +24,12 @@ import java.util.concurrent.Executor;
  */
 public class ModelRiskAssessmentReportService {
 
-    private final HikariDataSource dataSource;
+    private final DataSource dataSource;
     private final Executor         executor;
     private final RiskDataPort     riskDataPort;
     private final Counter          reportsGeneratedCounter;
 
-    public ModelRiskAssessmentReportService(HikariDataSource dataSource, Executor executor,
+    public ModelRiskAssessmentReportService(DataSource dataSource, Executor executor,
                                              RiskDataPort riskDataPort,
                                              MeterRegistry registry) {
         this.dataSource             = dataSource;

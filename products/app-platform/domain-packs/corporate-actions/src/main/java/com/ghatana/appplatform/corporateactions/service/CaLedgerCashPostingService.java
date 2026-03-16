@@ -1,6 +1,6 @@
 package com.ghatana.appplatform.corporateactions.service;
 
-import com.zaxxer.hikari.HikariDataSource;
+import javax.sql.DataSource;
 import io.activej.promise.Promise;
 import io.micrometer.core.instrument.Counter;
 import io.micrometer.core.instrument.MeterRegistry;
@@ -28,12 +28,12 @@ import java.util.concurrent.Executor;
  */
 public class CaLedgerCashPostingService {
 
-    private final HikariDataSource dataSource;
+    private final DataSource dataSource;
     private final Executor         executor;
     private final LedgerPort       ledgerPort;
     private final Counter          journalPostedCounter;
 
-    public CaLedgerCashPostingService(HikariDataSource dataSource, Executor executor,
+    public CaLedgerCashPostingService(DataSource dataSource, Executor executor,
                                        LedgerPort ledgerPort, MeterRegistry registry) {
         this.dataSource           = dataSource;
         this.executor             = executor;

@@ -1,5 +1,7 @@
 package com.ghatana.appplatform.operator;
 
+import com.ghatana.platform.audit.AuditBusPort;
+import com.ghatana.platform.audit.AuditEvent;
 import io.activej.promise.Promise;
 import io.micrometer.core.instrument.*;
 
@@ -65,10 +67,6 @@ public class MaintenanceWindowManagementService {
         String formatBs(java.time.Instant instant) throws Exception;
     }
 
-    public interface AuditPort {
-        void record(String actorId, String action, String detail) throws Exception;
-    }
-
     // ── Value types ───────────────────────────────────────────────────────────
 
     public record MaintenanceWindow(
@@ -83,7 +81,7 @@ public class MaintenanceWindowManagementService {
     private final NotificationPort notifications;
     private final HealthProbePort healthProbe;
     private final CalendarPort calendar;
-    private final AuditPort audit;
+    private final AuditBusPort audit;
     private final Executor executor;
     private final Counter windowsCreatedCounter;
     private final Counter healthCheckFailuresCounter;
@@ -93,7 +91,7 @@ public class MaintenanceWindowManagementService {
         NotificationPort notifications,
         HealthProbePort healthProbe,
         CalendarPort calendar,
-        AuditPort audit,
+        AuditBusPort audit,
         MeterRegistry registry,
         Executor executor
     ) {
@@ -119,8 +117,7 @@ public class MaintenanceWindowManagementService {
             String windowId = createWindow(title, startTime, endTime, affectedComponents,
                 expectedImpact, notificationMinsBefore, false, createdBy);
             windowsCreatedCounter.increment();
-            audit.record(createdBy, "MAINTENANCE_WINDOW_SCHEDULED",
-                "windowId=" + windowId + " start=" + startTime + " components=" + affectedComponents);
+            audit.emit(AuditEvent.builder().principal(createdBy).eventType("MAINTENANCE_WINDOW_SCHEDULED").details(Map.of("detail", "windowId=" + windowId + " start=" + startTime + " components=" + affectedComponents)).build());
 
             // Notify tenants immediately if window is within 24h
             long minutesUntilStart = java.time.Duration.between(java.time.Instant.now(), startTime).toMinutes();
@@ -141,8 +138,7 @@ public class MaintenanceWindowManagementService {
                 expectedImpact, 0, true, createdBy);
             activateWindow(windowId);
             windowsCreatedCounter.increment();
-            audit.record(createdBy, "EMERGENCY_MAINTENANCE_STARTED",
-                "windowId=" + windowId + " components=" + affectedComponents);
+            audit.emit(AuditEvent.builder().principal(createdBy).eventType("EMERGENCY_MAINTENANCE_STARTED").details(Map.of("detail", "windowId=" + windowId + " components=" + affectedComponents)).build());
             sendWindowNotification(windowId, title, now, endTime, affectedComponents, expectedImpact, true);
             return windowId;
         });
@@ -155,7 +151,7 @@ public class MaintenanceWindowManagementService {
             MaintenanceWindow w = loadWindow(windowId);
             sendWindowNotification(windowId, w.title(), w.startTime(), w.endTime(),
                 w.affectedComponents(), w.expectedImpact(), w.emergency());
-            audit.record("system", "MAINTENANCE_WINDOW_ACTIVATED", "windowId=" + windowId);
+            audit.emit(AuditEvent.builder().principal("system").eventType("MAINTENANCE_WINDOW_ACTIVATED").details(Map.of("detail", "windowId=" + windowId)).build());
             return null;
         });
     }
@@ -189,7 +185,7 @@ public class MaintenanceWindowManagementService {
 
             MaintenanceWindow w = loadWindow(windowId);
             List<Map<String, String>> results = runHealthChecks(windowId, w.affectedComponents());
-            audit.record(completedBy, "MAINTENANCE_WINDOW_COMPLETED", "windowId=" + windowId);
+            audit.emit(AuditEvent.builder().principal(completedBy).eventType("MAINTENANCE_WINDOW_COMPLETED").details(Map.of("detail", "windowId=" + windowId)).build());
 
             boolean allHealthy = results.stream().allMatch(r -> "PASS".equals(r.get("status")));
             String body = allHealthy
@@ -210,7 +206,7 @@ public class MaintenanceWindowManagementService {
                 ps.setString(1, windowId);
                 if (ps.executeUpdate() == 0) throw new IllegalStateException("Window not in SCHEDULED status");
             }
-            audit.record(cancelledBy, "MAINTENANCE_WINDOW_CANCELLED", "windowId=" + windowId);
+            audit.emit(AuditEvent.builder().principal(cancelledBy).eventType("MAINTENANCE_WINDOW_CANCELLED").details(Map.of("detail", "windowId=" + windowId)).build());
             notifications.notifyAllTenants("[Platform] Maintenance Cancelled",
                 "The scheduled maintenance window has been cancelled.");
             return null;

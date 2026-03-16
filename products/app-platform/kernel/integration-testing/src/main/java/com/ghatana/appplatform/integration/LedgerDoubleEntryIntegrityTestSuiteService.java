@@ -1,5 +1,7 @@
 package com.ghatana.appplatform.integration;
 
+import com.ghatana.platform.audit.AuditBusPort;
+import com.ghatana.platform.audit.AuditEvent;
 import io.activej.promise.Promise;
 import io.micrometer.core.instrument.*;
 
@@ -53,10 +55,6 @@ public class LedgerDoubleEntryIntegrityTestSuiteService {
         double getUsdLegBalance(String tradeId) throws Exception;
     }
 
-    public interface AuditPort {
-        void audit(String event, String detail) throws Exception;
-    }
-
     // ── Fields ────────────────────────────────────────────────────────────────
 
     private final javax.sql.DataSource ds;
@@ -64,7 +62,7 @@ public class LedgerDoubleEntryIntegrityTestSuiteService {
     private final LedgerQueryPort ledgerQuery;
     private final SettlementSimPort settlementSim;
     private final CurrencyConversionPort crossCurrency;
-    private final AuditPort audit;
+    private final AuditBusPort audit;
     private final Executor executor;
     private final Counter suitesPassed;
     private final Counter suitesFailed;
@@ -76,7 +74,7 @@ public class LedgerDoubleEntryIntegrityTestSuiteService {
         LedgerQueryPort ledgerQuery,
         SettlementSimPort settlementSim,
         CurrencyConversionPort crossCurrency,
-        AuditPort audit,
+        AuditBusPort audit,
         MeterRegistry registry,
         Executor executor
     ) {
@@ -106,7 +104,7 @@ public class LedgerDoubleEntryIntegrityTestSuiteService {
             long passed = results.stream().filter(r -> r.passed).count();
             long failed = results.size() - passed;
             if (failed > 0) suitesFailed.increment(); else suitesPassed.increment();
-            audit.audit("LEDGER_INTEGRITY_SUITE", "passed=" + passed + " failed=" + failed);
+            audit.emit(AuditEvent.builder().eventType("LEDGER_INTEGRITY_SUITE").details(Map.of("detail", "passed=" + passed + " failed=" + failed)).build());
             return new SuiteResult("LedgerDoubleEntry", results, passed, failed);
         });
     }

@@ -2,6 +2,7 @@ package com.ghatana.appplatform.config.notification;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.ghatana.platform.core.json.PlatformObjectMapper;
 import org.postgresql.PGConnection;
 import org.postgresql.PGNotification;
 import org.slf4j.Logger;
@@ -45,7 +46,7 @@ public final class ConfigChangeNotifier {
     private final DataSource dataSource;
     private final long pollIntervalMs;
     private final List<ConfigChangeListener> listeners = new CopyOnWriteArrayList<>();
-    private final ObjectMapper mapper = new ObjectMapper();
+    private final ObjectMapper mapper = PlatformObjectMapper.instance();
     private final AtomicBoolean running = new AtomicBoolean(false);
 
     private ScheduledExecutorService scheduler;

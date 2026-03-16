@@ -1,6 +1,6 @@
 package com.ghatana.appplatform.posttrade.service;
 
-import com.zaxxer.hikari.HikariDataSource;
+import javax.sql.DataSource;
 import io.activej.promise.Promise;
 import io.micrometer.core.instrument.Counter;
 import io.micrometer.core.instrument.Gauge;
@@ -35,14 +35,14 @@ public class PositionProjectionService {
 
     private static final String REDIS_HASH_PREFIX = "position:";
 
-    private final HikariDataSource dataSource;
+    private final DataSource dataSource;
     private final Executor         executor;
     private final JedisPool        jedisPool;
     private final Counter          settlementUpdates;
     private final Counter          corpActionUpdates;
     private final AtomicLong       cachedPositionCount = new AtomicLong(0);
 
-    public PositionProjectionService(HikariDataSource dataSource, Executor executor,
+    public PositionProjectionService(DataSource dataSource, Executor executor,
                                      JedisPool jedisPool, MeterRegistry registry) {
         this.dataSource        = dataSource;
         this.executor          = executor;

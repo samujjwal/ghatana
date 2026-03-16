@@ -1,6 +1,8 @@
 package com.ghatana.appplatform.dlq;
 
-import com.zaxxer.hikari.HikariDataSource;
+import com.ghatana.platform.audit.AuditBusPort;
+import com.ghatana.platform.audit.AuditEvent;
+import javax.sql.DataSource;
 import io.activej.promise.Promise;
 import io.micrometer.core.instrument.Counter;
 import io.micrometer.core.instrument.MeterRegistry;
@@ -25,15 +27,15 @@ import java.util.concurrent.Executor;
  */
 public class DeadLetterPayloadTransformationService {
 
-    private final HikariDataSource  dataSource;
+    private final DataSource  dataSource;
     private final Executor          executor;
     private final TransformPort     transformPort;
-    private final AuditPort         auditPort;
+    private final AuditBusPort         auditPort;
     private final Counter           transformAppliedCounter;
 
-    public DeadLetterPayloadTransformationService(HikariDataSource dataSource, Executor executor,
+    public DeadLetterPayloadTransformationService(DataSource dataSource, Executor executor,
                                                    TransformPort transformPort,
-                                                   AuditPort auditPort,
+                                                   AuditBusPort auditPort,
                                                    MeterRegistry registry) {
         this.dataSource              = dataSource;
         this.executor                = executor;
@@ -51,11 +53,6 @@ public class DeadLetterPayloadTransformationService {
         String schemaVersionBump(String payload, String versionField, String targetVersion);
         String envelopeUnwrap(String payload, String wrapperKey);
         String applyCustomScript(String payload, String scriptName);
-    }
-
-    /** K-07 audit trail. */
-    public interface AuditPort {
-        void log(String action, String resourceType, String resourceId, Map<String, Object> details);
     }
 
     // ─── Domain records ──────────────────────────────────────────────────────
@@ -131,8 +128,7 @@ public class DeadLetterPayloadTransformationService {
                 ps.setString(1, deadLetterId);
                 ps.executeUpdate();
             }
-            auditPort.log("DLQ_PAYLOAD_RESTORED", "DeadLetter", deadLetterId,
-                Map.of("operatorId", operatorId));
+            audit.emit(AuditEvent.builder().eventType("DLQ_PAYLOAD_RESTORED").resourceType("DeadLetter").resourceId(deadLetterId).details(Map.of("operatorId", operatorId)).build());
             return null;
         });
     }

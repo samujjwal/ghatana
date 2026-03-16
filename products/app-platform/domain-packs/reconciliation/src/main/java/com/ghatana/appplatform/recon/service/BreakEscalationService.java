@@ -1,6 +1,6 @@
 package com.ghatana.appplatform.recon.service;
 
-import com.zaxxer.hikari.HikariDataSource;
+import javax.sql.DataSource;
 import io.activej.promise.Promise;
 import io.micrometer.core.instrument.Counter;
 import io.micrometer.core.instrument.MeterRegistry;
@@ -33,13 +33,13 @@ public class BreakEscalationService {
 
     private static final Logger log = LoggerFactory.getLogger(BreakEscalationService.class);
 
-    private final HikariDataSource dataSource;
+    private final DataSource dataSource;
     private final Executor         executor;
     private final ConfigPort       configPort;
     private final NotificationPort notifications;
     private final Counter          escalationCounter;
 
-    public BreakEscalationService(HikariDataSource dataSource, Executor executor,
+    public BreakEscalationService(DataSource dataSource, Executor executor,
                                   ConfigPort configPort, NotificationPort notifications,
                                   MeterRegistry registry) {
         this.dataSource        = dataSource;

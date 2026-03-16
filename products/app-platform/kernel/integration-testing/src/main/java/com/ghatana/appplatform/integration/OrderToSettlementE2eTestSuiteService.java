@@ -1,5 +1,7 @@
 package com.ghatana.appplatform.integration;
 
+import com.ghatana.platform.audit.AuditBusPort;
+import com.ghatana.platform.audit.AuditEvent;
 import io.activej.promise.Promise;
 import io.micrometer.core.instrument.*;
 
@@ -92,10 +94,6 @@ public class OrderToSettlementE2eTestSuiteService {
         String computeSettlementDate(String tradeDate, int tPlusN, String currency) throws Exception;
     }
 
-    public interface AuditPort {
-        void audit(String event, String detail) throws Exception;
-    }
-
     // ── Fields ────────────────────────────────────────────────────────────────
 
     private final javax.sql.DataSource ds;
@@ -106,7 +104,7 @@ public class OrderToSettlementE2eTestSuiteService {
     private final ReconciliationPort reconciliation;
     private final LedgerPort ledger;
     private final CalendarPort calendar;
-    private final AuditPort audit;
+    private final AuditBusPort audit;
     private final Executor executor;
     private final Counter scenariosPassed;
     private final Counter scenariosFailed;
@@ -120,7 +118,7 @@ public class OrderToSettlementE2eTestSuiteService {
         ReconciliationPort reconciliation,
         LedgerPort ledger,
         CalendarPort calendar,
-        AuditPort audit,
+        AuditBusPort audit,
         MeterRegistry registry,
         Executor executor
     ) {
@@ -152,7 +150,7 @@ public class OrderToSettlementE2eTestSuiteService {
 
             long passed = results.stream().filter(r -> r.passed).count();
             long failed = results.size() - passed;
-            audit.audit("E2E_ORDER_SETTLEMENT_SUITE", "passed=" + passed + " failed=" + failed);
+            audit.emit(AuditEvent.builder().eventType("E2E_ORDER_SETTLEMENT_SUITE").details(Map.of("detail", "passed=" + passed + " failed=" + failed)).build());
             return new SuiteResult("OrderToSettlement", results, passed, failed);
         });
     }

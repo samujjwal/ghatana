@@ -32,6 +32,9 @@ dependencies {
     // ─── Secrets (K-14 integration for signing keys) ──────────────────────────
     implementation(project(":products:app-platform:kernel:secrets-management"))
 
+    // ─── Audit (K-07 integration) ────────────────────────────────────────────
+    implementation(project(":products:app-platform:kernel:audit-trail"))
+
     // ─── ActiveJ async runtime ────────────────────────────────────────────────
     api(libs.activej.promise)
     implementation(libs.activej.eventloop)
@@ -60,6 +63,9 @@ dependencies {
 
     // ─── Redis (session store) ────────────────────────────────────────────────
     implementation(libs.jedis)
+
+    // ─── GeoIP ────────────────────────────────────────────────────────────────
+    implementation(libs.maxmind.geoip2)
 
     // ─── Testing ─────────────────────────────────────────────────────────────
     testImplementation(project(":platform:java:testing"))

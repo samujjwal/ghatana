@@ -1,6 +1,6 @@
 package com.ghatana.appplatform.governance;
 
-import com.zaxxer.hikari.HikariDataSource;
+import javax.sql.DataSource;
 import io.activej.promise.Promise;
 import io.micrometer.core.instrument.Counter;
 import io.micrometer.core.instrument.MeterRegistry;
@@ -26,11 +26,11 @@ import java.util.concurrent.Executor;
  */
 public class DataTaggingService {
 
-    private final HikariDataSource dataSource;
+    private final DataSource dataSource;
     private final Executor         executor;
     private final Counter          tagsAddedCounter;
 
-    public DataTaggingService(HikariDataSource dataSource, Executor executor, MeterRegistry registry) {
+    public DataTaggingService(DataSource dataSource, Executor executor, MeterRegistry registry) {
         this.dataSource     = dataSource;
         this.executor       = executor;
         this.tagsAddedCounter = Counter.builder("governance.tagging.tags_added_total").register(registry);

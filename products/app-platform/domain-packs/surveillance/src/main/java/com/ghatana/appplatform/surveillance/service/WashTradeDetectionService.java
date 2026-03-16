@@ -1,6 +1,6 @@
 package com.ghatana.appplatform.surveillance.service;
 
-import com.zaxxer.hikari.HikariDataSource;
+import javax.sql.DataSource;
 import io.activej.promise.Promise;
 import io.micrometer.core.instrument.Counter;
 import io.micrometer.core.instrument.MeterRegistry;
@@ -35,13 +35,13 @@ public class WashTradeDetectionService {
     private static final int    DEFAULT_WINDOW_MINUTES  = 5;
     private static final double MIN_CONFIDENCE          = 0.60;
 
-    private final HikariDataSource dataSource;
+    private final DataSource dataSource;
     private final Executor         executor;
     private final RulesEnginePort  rulesEngine;
     private final Counter          detectedCounter;
     private final Counter          screenedCounter;
 
-    public WashTradeDetectionService(HikariDataSource dataSource, Executor executor,
+    public WashTradeDetectionService(DataSource dataSource, Executor executor,
                                      RulesEnginePort rulesEngine, MeterRegistry registry) {
         this.dataSource      = dataSource;
         this.executor        = executor;

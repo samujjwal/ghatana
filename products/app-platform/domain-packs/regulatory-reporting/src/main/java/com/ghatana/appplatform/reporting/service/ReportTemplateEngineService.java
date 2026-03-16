@@ -1,6 +1,6 @@
 package com.ghatana.appplatform.reporting.service;
 
-import com.zaxxer.hikari.HikariDataSource;
+import javax.sql.DataSource;
 import io.activej.promise.Promise;
 import io.micrometer.core.instrument.Counter;
 import io.micrometer.core.instrument.MeterRegistry;
@@ -32,13 +32,13 @@ public class ReportTemplateEngineService {
 
     private static final Pattern PLACEHOLDER = Pattern.compile("\\{\\{(\\w+)\\}\\}");
 
-    private final HikariDataSource dataSource;
+    private final DataSource dataSource;
     private final Executor         executor;
     private final StoragePort      storagePort;
     private final Counter          templatePublishedCounter;
     private final Counter          previewRenderedCounter;
 
-    public ReportTemplateEngineService(HikariDataSource dataSource, Executor executor,
+    public ReportTemplateEngineService(DataSource dataSource, Executor executor,
                                         StoragePort storagePort, MeterRegistry registry) {
         this.dataSource               = dataSource;
         this.executor                 = executor;

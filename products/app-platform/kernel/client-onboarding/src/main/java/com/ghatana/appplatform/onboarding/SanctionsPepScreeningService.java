@@ -1,5 +1,7 @@
 package com.ghatana.appplatform.onboarding;
 
+import com.ghatana.platform.audit.AuditBusPort;
+import com.ghatana.platform.audit.AuditEvent;
 import io.activej.promise.Promise;
 import io.micrometer.core.instrument.Counter;
 import io.micrometer.core.instrument.MeterRegistry;
@@ -59,10 +61,6 @@ public class SanctionsPepScreeningService {
         void unblockInstance(String instanceId) throws Exception;
     }
 
-    public interface AuditPort {
-        void log(String eventType, String instanceId, String clientId, Map<String, Object> detail) throws Exception;
-    }
-
     // ── Value types ──────────────────────────────────────────────────────────
 
     public enum ScreeningOutcome { CLEAR, HIT, PEP_MATCH, REVIEW_REQUIRED }
@@ -91,7 +89,7 @@ public class SanctionsPepScreeningService {
     private final ComplianceNotificationPort complianceNotification;
     private final MonitoringEnrollmentPort monitoringEnrollment;
     private final WorkflowBlockPort workflowBlock;
-    private final AuditPort audit;
+    private final AuditBusPort audit;
     private final Executor executor;
     private final Counter screenedCounter;
     private final Counter hitCounter;
@@ -106,7 +104,7 @@ public class SanctionsPepScreeningService {
         ComplianceNotificationPort complianceNotification,
         MonitoringEnrollmentPort monitoringEnrollment,
         WorkflowBlockPort workflowBlock,
-        AuditPort audit,
+        AuditBusPort audit,
         MeterRegistry registry,
         Executor executor
     ) {

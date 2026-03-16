@@ -6,12 +6,14 @@ import com.ghatana.appplatform.marketdata.service.MarketDataIngestionService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import io.activej.eventloop.Eventloop;
+import io.activej.promise.Promise;
+
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.ScheduledExecutorService;
-import java.util.concurrent.ScheduledFuture;
-import java.util.concurrent.TimeUnit;
+import java.util.concurrent.Executor;
+import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.function.Consumer;
 
 /**
@@ -40,21 +42,24 @@ public class MarketDataFeedAdapterRegistry {
     private static final int RECONNECT_INTERVAL_SECONDS = 30;
 
     private final MarketDataIngestionService ingestionService;
-    private final ScheduledExecutorService scheduler;
+    private final Eventloop eventloop;
+    private final Executor blockingExecutor;
 
     /** adapterId → adapter */
     private final Map<String, MarketDataFeedAdapter> adapters = new ConcurrentHashMap<>();
     /** adapterId → TickSource tier */
     private final Map<String, TickSource> tiers = new ConcurrentHashMap<>();
-    /** adapterId → reconnect future (only set when the adapter is down) */
-    private final Map<String, ScheduledFuture<?>> reconnectTasks = new ConcurrentHashMap<>();
+    /** adapterId → reconnect running flag (only set when the adapter is down) */
+    private final Map<String, AtomicBoolean> reconnectFlags = new ConcurrentHashMap<>();
 
     private volatile String activeAdapterId;
 
     public MarketDataFeedAdapterRegistry(MarketDataIngestionService ingestionService,
-                                         ScheduledExecutorService scheduler) {
+                                         Eventloop eventloop,
+                                         Executor blockingExecutor) {
         this.ingestionService = ingestionService;
-        this.scheduler = scheduler;
+        this.eventloop = eventloop;
+        this.blockingExecutor = blockingExecutor;
     }
 
     /**
@@ -95,10 +100,23 @@ public class MarketDataFeedAdapterRegistry {
                 });
 
         // Schedule PRIMARY reconnect probe
-        ScheduledFuture<?> future = scheduler.scheduleAtFixedRate(
-                () -> attemptReconnect(failedAdapterId),
-                RECONNECT_INTERVAL_SECONDS, RECONNECT_INTERVAL_SECONDS, TimeUnit.SECONDS);
-        reconnectTasks.put(failedAdapterId, future);
+        AtomicBoolean running = new AtomicBoolean(true);
+        reconnectFlags.put(failedAdapterId, running);
+        eventloop.delay(RECONNECT_INTERVAL_SECONDS * 1000L,
+                () -> scheduleReconnectProbe(failedAdapterId, running));
+    }
+
+    private void scheduleReconnectProbe(String adapterId, AtomicBoolean running) {
+        if (!running.get()) return;
+        Promise.ofBlocking(blockingExecutor, () -> {
+            attemptReconnect(adapterId);
+            return null;
+        }).whenComplete(() -> {
+            if (running.get()) {
+                eventloop.delay(RECONNECT_INTERVAL_SECONDS * 1000L,
+                        () -> scheduleReconnectProbe(adapterId, running));
+            }
+        });
     }
 
     private void attemptReconnect(String adapterId) {
@@ -121,11 +139,11 @@ public class MarketDataFeedAdapterRegistry {
     }
 
     private void cancelReconnect(String adapterId) {
-        ScheduledFuture<?> f = reconnectTasks.remove(adapterId);
-        if (f != null) f.cancel(false);
+        AtomicBoolean flag = reconnectFlags.remove(adapterId);
+        if (flag != null) flag.set(false);
     }
 
-    /** Deregister and disconnect an adapter. */
+    /** Deregister and disconnect an adapter. Cancels any reconnect probes in progress. */
     public void deregister(String adapterId) {
         cancelReconnect(adapterId);
         MarketDataFeedAdapter adapter = adapters.remove(adapterId);

@@ -1,5 +1,7 @@
 package com.ghatana.appplatform.refdata.service;
 
+
+import com.ghatana.platform.core.event.EventBusPort;
 import io.micrometer.core.instrument.Counter;
 import io.micrometer.core.instrument.MeterRegistry;
 import org.slf4j.Logger;
@@ -10,7 +12,6 @@ import java.sql.*;
 import java.time.Instant;
 import java.util.List;
 import java.util.Map;
-import java.util.function.Consumer;
 
 /**
  * @doc.type      Service
@@ -33,18 +34,18 @@ public class AiInstrumentClassificationService {
 
     private final ClassificationModelPort modelPort;
     private final DataSource              dataSource;
-    private final Consumer<Object>        eventPublisher;
+    private final EventBusPort        eventBusPort;
     private final Counter                 autoApplied;
     private final Counter                 pendingReview;
     private final Counter                 overrides;
 
     public AiInstrumentClassificationService(ClassificationModelPort modelPort,
                                               DataSource dataSource,
-                                              Consumer<Object> eventPublisher,
+                                              EventBusPort eventBusPort,
                                               MeterRegistry meterRegistry) {
         this.modelPort     = modelPort;
         this.dataSource    = dataSource;
-        this.eventPublisher = eventPublisher;
+        this.eventBusPort = eventBusPort;
         this.autoApplied   = meterRegistry.counter("refdata.classification.auto_applied");
         this.pendingReview = meterRegistry.counter("refdata.classification.pending_review");
         this.overrides     = meterRegistry.counter("refdata.classification.overrides");
@@ -74,12 +75,12 @@ public class AiInstrumentClassificationService {
             autoApplied.increment();
             log.info("Classification AUTO_APPLIED instrumentId={} assetClass={} sector={} conf={}",
                     instrumentId, prediction.assetClass(), prediction.sector(), prediction.confidence());
-            eventPublisher.accept(new InstrumentClassifiedEvent(instrumentId, prediction.assetClass(),
+            eventBusPort.publish(new InstrumentClassifiedEvent(instrumentId, prediction.assetClass(),
                     prediction.sector(), prediction.confidence(), true));
         } else {
             pendingReview.increment();
             log.info("Classification PENDING_REVIEW instrumentId={} conf={}", instrumentId, prediction.confidence());
-            eventPublisher.accept(new InstrumentClassificationPendingEvent(instrumentId,
+            eventBusPort.publish(new InstrumentClassificationPendingEvent(instrumentId,
                     prediction.assetClass(), prediction.sector(), prediction.confidence()));
         }
 
@@ -139,7 +140,7 @@ public class AiInstrumentClassificationService {
         overrides.increment();
         log.info("Classification OVERRIDDEN instrumentId={} assetClass={} sector={}",
                 instrumentId, overrideAssetClass, overrideSector);
-        eventPublisher.accept(new ClassificationOverriddenEvent(instrumentId, overrideAssetClass,
+        eventBusPort.publish(new ClassificationOverriddenEvent(instrumentId, overrideAssetClass,
                 overrideSector, reviewerId));
     }
 

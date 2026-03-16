@@ -1,6 +1,6 @@
 package com.ghatana.appplatform.aigovernance;
 
-import com.zaxxer.hikari.HikariDataSource;
+import javax.sql.DataSource;
 import io.activej.promise.Promise;
 import io.micrometer.core.instrument.Counter;
 import io.micrometer.core.instrument.MeterRegistry;
@@ -37,7 +37,7 @@ public class ModelLifecycleService {
             "RETIRED",     Set.of()
     );
 
-    private final HikariDataSource      dataSource;
+    private final DataSource      dataSource;
     private final Executor              executor;
     private final ModelRegistryService  registryService;
     private final WorkflowPort          workflowPort;
@@ -45,7 +45,7 @@ public class ModelLifecycleService {
     private final Counter               promotionsCounter;
     private final Counter               rollbacksCounter;
 
-    public ModelLifecycleService(HikariDataSource dataSource, Executor executor,
+    public ModelLifecycleService(DataSource dataSource, Executor executor,
                                   ModelRegistryService registryService,
                                   WorkflowPort workflowPort, EventPort eventPort,
                                   MeterRegistry registry) {

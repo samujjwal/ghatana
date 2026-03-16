@@ -1,5 +1,7 @@
 package com.ghatana.appplatform.marketdata.service;
 
+
+import com.ghatana.platform.core.event.EventBusPort;
 import com.ghatana.appplatform.marketdata.domain.TickSource;
 import io.activej.promise.Promise;
 import io.micrometer.core.instrument.Counter;
@@ -12,7 +14,6 @@ import java.time.Instant;
 import java.util.Map;
 import java.util.concurrent.Executor;
 import java.util.concurrent.atomic.AtomicReference;
-import java.util.function.Consumer;
 
 /**
  * @doc.type    Service (Application)
@@ -43,26 +44,26 @@ public class FeedArbitrationService {
     private final Duration staleThreshold;
     private final Duration stabilityWindow;
     private final Executor executor;
-    private final Consumer<Object> eventPublisher;
+    private final EventBusPort eventBusPort;
     private final Counter failoverCounter;
     private final Counter recoveryCounter;
 
     public FeedArbitrationService(Executor executor,
-                                   Consumer<Object> eventPublisher,
+                                   EventBusPort eventBusPort,
                                    MeterRegistry meterRegistry) {
         this(DEFAULT_STALE_THRESHOLD, DEFAULT_STABILITY_WINDOW, executor,
-                eventPublisher, meterRegistry);
+                eventBusPort, meterRegistry);
     }
 
     public FeedArbitrationService(Duration staleThreshold,
                                    Duration stabilityWindow,
                                    Executor executor,
-                                   Consumer<Object> eventPublisher,
+                                   EventBusPort eventBusPort,
                                    MeterRegistry meterRegistry) {
         this.staleThreshold = staleThreshold;
         this.stabilityWindow = stabilityWindow;
         this.executor = executor;
-        this.eventPublisher = eventPublisher;
+        this.eventBusPort = eventBusPort;
         this.lastHeartbeats = new java.util.concurrent.ConcurrentHashMap<>();
         this.failoverCounter = meterRegistry.counter("marketdata.feed.failover");
         this.recoveryCounter = meterRegistry.counter("marketdata.feed.recovery");
@@ -100,7 +101,7 @@ public class FeedArbitrationService {
                         primaryRecoveredAt = null;
                         failoverCounter.increment();
                         log.warn("Primary feed stale — failing over to SECONDARY");
-                        eventPublisher.accept(new FeedFailoverEvent(TickSource.PRIMARY, TickSource.SECONDARY));
+                        eventBusPort.publish(new FeedFailoverEvent(TickSource.PRIMARY, TickSource.SECONDARY));
                     }
                     yield primaryStale ? TickSource.SECONDARY : TickSource.PRIMARY;
                 }
@@ -116,7 +117,7 @@ public class FeedArbitrationService {
                             primaryRecoveredAt = null;
                             recoveryCounter.increment();
                             log.info("Primary feed stable for {}s — returning to PRIMARY", stable.toSeconds());
-                            eventPublisher.accept(new FeedRecoveryEvent(TickSource.SECONDARY, TickSource.PRIMARY));
+                            eventBusPort.publish(new FeedRecoveryEvent(TickSource.SECONDARY, TickSource.PRIMARY));
                             yield TickSource.PRIMARY;
                         }
                     } else if (primaryStale) {

@@ -1,6 +1,6 @@
 package com.ghatana.appplatform.pms.service;
 
-import com.zaxxer.hikari.HikariDataSource;
+import javax.sql.DataSource;
 import io.activej.promise.Promise;
 import io.micrometer.core.instrument.Timer;
 import io.micrometer.core.instrument.MeterRegistry;
@@ -35,12 +35,12 @@ public class PortfolioReturnService {
     private static final int    MWR_MAX_ITERATIONS = 200;
     private static final double MWR_TOLERANCE       = 1e-8;
 
-    private final HikariDataSource dataSource;
+    private final DataSource dataSource;
     private final Executor         executor;
     private final CalendarPort     calendarPort;
     private final Timer            calcTimer;
 
-    public PortfolioReturnService(HikariDataSource dataSource, Executor executor,
+    public PortfolioReturnService(DataSource dataSource, Executor executor,
                                   CalendarPort calendarPort, MeterRegistry registry) {
         this.dataSource   = dataSource;
         this.executor     = executor;

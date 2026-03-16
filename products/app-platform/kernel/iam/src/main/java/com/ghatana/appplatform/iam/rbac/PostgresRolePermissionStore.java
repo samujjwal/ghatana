@@ -1,5 +1,7 @@
 package com.ghatana.appplatform.iam.rbac;
 
+import com.ghatana.appplatform.iam.audit.IamAuditEmitter;
+
 import javax.sql.DataSource;
 import java.sql.*;
 import java.util.*;
@@ -16,9 +18,11 @@ import java.util.*;
 public class PostgresRolePermissionStore implements RolePermissionStore {
 
     private final DataSource dataSource;
+    private final IamAuditEmitter audit;
 
-    public PostgresRolePermissionStore(DataSource dataSource) {
+    public PostgresRolePermissionStore(DataSource dataSource, IamAuditEmitter audit) {
         this.dataSource = dataSource;
+        this.audit = audit;
     }
 
     @Override
@@ -112,6 +116,7 @@ public class PostgresRolePermissionStore implements RolePermissionStore {
             ps.setString(2, principalId);
             ps.setString(3, roleName);
             ps.executeUpdate();
+            audit.onRoleChange("system", principalId, tenantId, roleName, true);
         } catch (SQLException e) {
             throw new RuntimeException("Failed to assign role=" + roleName + " to principal=" + principalId, e);
         }
@@ -129,6 +134,7 @@ public class PostgresRolePermissionStore implements RolePermissionStore {
             ps.setString(2, principalId);
             ps.setString(3, roleName);
             ps.executeUpdate();
+            audit.onRoleChange("system", principalId, tenantId, roleName, false);
         } catch (SQLException e) {
             throw new RuntimeException("Failed to revoke role", e);
         }

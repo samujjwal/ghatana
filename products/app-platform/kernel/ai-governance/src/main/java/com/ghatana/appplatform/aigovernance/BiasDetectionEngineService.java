@@ -1,6 +1,6 @@
 package com.ghatana.appplatform.aigovernance;
 
-import com.zaxxer.hikari.HikariDataSource;
+import javax.sql.DataSource;
 import io.activej.promise.Promise;
 import io.micrometer.core.instrument.Counter;
 import io.micrometer.core.instrument.MeterRegistry;
@@ -27,14 +27,14 @@ public class BiasDetectionEngineService {
     // Bias tolerance: disparity > this triggers BiasDetected event
     private static final double DEFAULT_BIAS_TOLERANCE = 0.1;
 
-    private final HikariDataSource  dataSource;
+    private final DataSource  dataSource;
     private final Executor          executor;
     private final BiasEventPort     biasEventPort;
     private final BiasGatePort      biasGatePort;
     private final Counter           biasDetectedCounter;
     private final Counter           deploymentBlockedCounter;
 
-    public BiasDetectionEngineService(HikariDataSource dataSource, Executor executor,
+    public BiasDetectionEngineService(DataSource dataSource, Executor executor,
                                        BiasEventPort biasEventPort,
                                        BiasGatePort biasGatePort,
                                        MeterRegistry registry) {

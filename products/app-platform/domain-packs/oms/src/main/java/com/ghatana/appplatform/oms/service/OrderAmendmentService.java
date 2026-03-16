@@ -1,5 +1,7 @@
 package com.ghatana.appplatform.oms.service;
 
+
+import com.ghatana.platform.core.event.EventBusPort;
 import com.ghatana.appplatform.oms.domain.*;
 import com.ghatana.appplatform.oms.port.OrderStore;
 import io.activej.promise.Promise;
@@ -10,7 +12,6 @@ import java.math.BigDecimal;
 import java.time.Instant;
 import java.util.UUID;
 import java.util.concurrent.Executor;
-import java.util.function.Consumer;
 
 /**
  * @doc.type    Service (Application)
@@ -27,14 +28,14 @@ public class OrderAmendmentService {
     private final OrderStore orderStore;
     private final OrderValidationService validationService;
     private final Executor executor;
-    private final Consumer<Object> eventPublisher;
+    private final EventBusPort eventBusPort;
 
     public OrderAmendmentService(OrderStore orderStore, OrderValidationService validationService,
-                                  Executor executor, Consumer<Object> eventPublisher) {
+                                  Executor executor, EventBusPort eventBusPort) {
         this.orderStore = orderStore;
         this.validationService = validationService;
         this.executor = executor;
-        this.eventPublisher = eventPublisher;
+        this.eventBusPort = eventBusPort;
     }
 
     /**
@@ -70,7 +71,7 @@ public class OrderAmendmentService {
                     requestedBy, Instant.now(), needsMakerChecker
             );
 
-            eventPublisher.accept(new OrderAmendedEvent(orderId, amendment, Instant.now()));
+            eventBusPort.publish(new OrderAmendedEvent(orderId, amendment, Instant.now()));
             log.info("Order amended: orderId={} requiresMakerChecker={}", orderId, needsMakerChecker);
             return amendment;
         });

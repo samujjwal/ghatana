@@ -1,6 +1,6 @@
 package com.ghatana.appplatform.recon.service;
 
-import com.zaxxer.hikari.HikariDataSource;
+import javax.sql.DataSource;
 import io.activej.promise.Promise;
 import io.micrometer.core.instrument.Counter;
 import io.micrometer.core.instrument.MeterRegistry;
@@ -33,7 +33,7 @@ public class StatementFetchService {
 
     private static final Logger log = LoggerFactory.getLogger(StatementFetchService.class);
 
-    private final HikariDataSource  dataSource;
+    private final DataSource  dataSource;
     private final Executor          executor;
     private final StatementFetchPort fetchPort;
     private final CredentialPort    credentialPort;
@@ -41,7 +41,7 @@ public class StatementFetchService {
     private final Counter           duplicateCounter;
     private final Counter           errorCounter;
 
-    public StatementFetchService(HikariDataSource dataSource, Executor executor,
+    public StatementFetchService(DataSource dataSource, Executor executor,
                                  StatementFetchPort fetchPort, CredentialPort credentialPort,
                                  MeterRegistry registry) {
         this.dataSource       = dataSource;

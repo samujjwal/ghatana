@@ -1,6 +1,6 @@
 package com.ghatana.appplatform.pricing.service;
 
-import com.zaxxer.hikari.HikariDataSource;
+import javax.sql.DataSource;
 import io.activej.promise.Promise;
 import io.micrometer.core.instrument.Counter;
 import io.micrometer.core.instrument.MeterRegistry;
@@ -40,13 +40,13 @@ public class PriceValidationService {
     /** Default daily change limit: ±15% of previous EOD close. */
     private static final double DEFAULT_DAILY_CHANGE_LIMIT   = 0.15;
 
-    private final HikariDataSource dataSource;
+    private final DataSource dataSource;
     private final Executor         executor;
     private final ConfigPort       configPort;
     private final Counter          acceptedCounter;
     private final Counter          quarantinedCounter;
 
-    public PriceValidationService(HikariDataSource dataSource, Executor executor,
+    public PriceValidationService(DataSource dataSource, Executor executor,
                                   ConfigPort configPort, MeterRegistry registry) {
         this.dataSource        = dataSource;
         this.executor          = executor;

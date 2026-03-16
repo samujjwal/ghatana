@@ -1,5 +1,7 @@
 package com.ghatana.appplatform.regulator;
 
+import com.ghatana.platform.audit.AuditBusPort;
+import com.ghatana.platform.audit.AuditEvent;
 import io.activej.promise.Promise;
 import io.micrometer.core.instrument.*;
 
@@ -45,10 +47,6 @@ public class RegulatorAccessProvisioningService {
         void notifyTenant(String tenantId, String message) throws Exception;
     }
 
-    public interface AuditPort {
-        void record(String actorId, String action, String detail) throws Exception;
-    }
-
     // ── Value types ───────────────────────────────────────────────────────────
 
     public record AccessGrant(
@@ -60,7 +58,7 @@ public class RegulatorAccessProvisioningService {
 
     private final javax.sql.DataSource ds;
     private final NotificationPort notification;
-    private final AuditPort audit;
+    private final AuditBusPort audit;
     private final Executor executor;
     private final Counter grantCounter;
     private final Counter renewalCounter;
@@ -69,7 +67,7 @@ public class RegulatorAccessProvisioningService {
     public RegulatorAccessProvisioningService(
         javax.sql.DataSource ds,
         NotificationPort notification,
-        AuditPort audit,
+        AuditBusPort audit,
         MeterRegistry registry,
         Executor executor
     ) {
@@ -106,8 +104,7 @@ public class RegulatorAccessProvisioningService {
                     grantCounter.increment();
                     notification.notifyTenant(tenantId,
                         "Regulator access granted (mandate: " + mandateRef + ") until " + validUntil);
-                    audit.record(operatorId, "REGULATOR_ACCESS_GRANTED",
-                        "user=" + userId + " tenant=" + tenantId + " mandate=" + mandateRef);
+                    audit.emit(AuditEvent.builder().principal(operatorId).eventType("REGULATOR_ACCESS_GRANTED").details(Map.of("detail", "user=" + userId + " tenant=" + tenantId + " mandate=" + mandateRef)).build());
                     return new AccessGrant(grantId, userId, tenantId, mandateRef, grantedAt, validUntil, "ACTIVE", 0);
                 }
             }
@@ -130,7 +127,7 @@ public class RegulatorAccessProvisioningService {
             }
             renewalCounter.increment();
             notification.notifyTenant(tenantId, "Regulator access renewed until " + newValidUntil);
-            audit.record(operatorId, "REGULATOR_ACCESS_RENEWED", "grantId=" + grantId + " until=" + newValidUntil);
+            audit.emit(AuditEvent.builder().principal(operatorId).eventType("REGULATOR_ACCESS_RENEWED").details(Map.of("detail", "grantId=" + grantId + " until=" + newValidUntil)).build());
             return null;
         });
     }
@@ -149,7 +146,7 @@ public class RegulatorAccessProvisioningService {
             }
             revokeCounter.increment();
             notification.notifyTenant(tenantId, "Regulator access has been revoked.");
-            audit.record(operatorId, "REGULATOR_ACCESS_REVOKED", "grantId=" + grantId);
+            audit.emit(AuditEvent.builder().principal(operatorId).eventType("REGULATOR_ACCESS_REVOKED").details(Map.of("detail", "grantId=" + grantId)).build());
             return null;
         });
     }

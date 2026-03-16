@@ -1,5 +1,7 @@
 package com.ghatana.appplatform.regulator;
 
+import com.ghatana.platform.audit.AuditBusPort;
+import com.ghatana.platform.audit.AuditEvent;
 import io.activej.promise.Promise;
 import io.micrometer.core.instrument.*;
 
@@ -56,10 +58,6 @@ public class RegulatoryQueryResponseWorkflowService {
         void escalate(String queryId, String regulatorId, String reason) throws Exception;
     }
 
-    public interface AuditPort {
-        void record(String actorId, String action, String detail) throws Exception;
-    }
-
     // ── Priority → SLA hours mapping ─────────────────────────────────────────
 
     private static final Map<String, Integer> DEADLINE_HOURS = Map.of(
@@ -73,7 +71,7 @@ public class RegulatoryQueryResponseWorkflowService {
     private final javax.sql.DataSource ds;
     private final NotificationPort notify;
     private final EscalationPort escalation;
-    private final AuditPort audit;
+    private final AuditBusPort audit;
     private final Executor executor;
     private final Counter queriesSubmitted;
     private final Counter deadlineBreaches;
@@ -82,7 +80,7 @@ public class RegulatoryQueryResponseWorkflowService {
         javax.sql.DataSource ds,
         NotificationPort notify,
         EscalationPort escalation,
-        AuditPort audit,
+        AuditBusPort audit,
         MeterRegistry registry,
         Executor executor
     ) {
@@ -115,7 +113,7 @@ public class RegulatoryQueryResponseWorkflowService {
             }
             appendMessage(queryId, "REGULATOR", regulatorId, body);
             notify.notifyOperator("Regulatory query received [" + priority + "]: " + subject, "Query ID: " + queryId);
-            audit.record(regulatorId, "REGULATORY_QUERY_SUBMITTED", "queryId=" + queryId + " priority=" + priority);
+            audit.emit(AuditEvent.builder().principal(regulatorId).eventType("REGULATORY_QUERY_SUBMITTED").details(Map.of("detail", "queryId=" + queryId + " priority=" + priority)).build());
             queriesSubmitted.increment();
             return queryId;
         });
@@ -125,7 +123,7 @@ public class RegulatoryQueryResponseWorkflowService {
     public Promise<Void> acknowledge(String queryId, String operatorId) {
         return Promise.ofBlocking(executor, () -> {
             transition(queryId, "SUBMITTED", "ACKNOWLEDGED");
-            audit.record(operatorId, "QUERY_ACKNOWLEDGED", "queryId=" + queryId);
+            audit.emit(AuditEvent.builder().principal(operatorId).eventType("QUERY_ACKNOWLEDGED").details(Map.of("detail", "queryId=" + queryId)).build());
             return null;
         });
     }
@@ -137,7 +135,7 @@ public class RegulatoryQueryResponseWorkflowService {
             transition(queryId, "ACKNOWLEDGED", "ANSWERED");
             String regulatorId = getRegulatorId(queryId);
             notify.notifyRegulator(regulatorId, "Query answered", "Query ID: " + queryId);
-            audit.record(operatorId, "QUERY_ANSWERED", "queryId=" + queryId);
+            audit.emit(AuditEvent.builder().principal(operatorId).eventType("QUERY_ANSWERED").details(Map.of("detail", "queryId=" + queryId)).build());
             return null;
         });
     }
@@ -153,7 +151,7 @@ public class RegulatoryQueryResponseWorkflowService {
                      "UPDATE regulatory_queries SET status='FOLLOW_UP', response_deadline=NOW()+(? || ' hours')::INTERVAL WHERE query_id=?"
                  )) { ps.setInt(1, hours); ps.setString(2, queryId); ps.executeUpdate(); }
             notify.notifyOperator("Regulatory follow-up on query " + queryId, followUpBody);
-            audit.record(regulatorId, "QUERY_FOLLOW_UP", "queryId=" + queryId);
+            audit.emit(AuditEvent.builder().principal(regulatorId).eventType("QUERY_FOLLOW_UP").details(Map.of("detail", "queryId=" + queryId)).build());
             return null;
         });
     }
@@ -165,7 +163,7 @@ public class RegulatoryQueryResponseWorkflowService {
                  PreparedStatement ps = c.prepareStatement(
                      "UPDATE regulatory_queries SET status='CLOSED', closed_at=NOW() WHERE query_id=?"
                  )) { ps.setString(1, queryId); ps.executeUpdate(); }
-            audit.record(closedBy, "QUERY_CLOSED", "queryId=" + queryId);
+            audit.emit(AuditEvent.builder().principal(closedBy).eventType("QUERY_CLOSED").details(Map.of("detail", "queryId=" + queryId)).build());
             return null;
         });
     }

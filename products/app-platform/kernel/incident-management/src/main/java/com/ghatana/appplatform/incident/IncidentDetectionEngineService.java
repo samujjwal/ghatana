@@ -1,5 +1,7 @@
 package com.ghatana.appplatform.incident;
 
+import com.ghatana.platform.audit.AuditBusPort;
+import com.ghatana.platform.audit.AuditEvent;
 import io.activej.promise.Promise;
 import io.micrometer.core.instrument.*;
 
@@ -60,10 +62,6 @@ public class IncidentDetectionEngineService {
         void publish(String eventType, Map<String, Object> payload) throws Exception;
     }
 
-    public interface AuditPort {
-        void record(String actorId, String action, String detail) throws Exception;
-    }
-
     // ── Value types ───────────────────────────────────────────────────────────
 
     /** Incoming alert from K-06. */
@@ -95,7 +93,7 @@ public class IncidentDetectionEngineService {
 
     private final javax.sql.DataSource ds;
     private final EventPublishPort events;
-    private final AuditPort audit;
+    private final AuditBusPort audit;
     private final Executor executor;
     private final Counter incidentCreatedCounter;
     private final Counter alertReceivedCounter;
@@ -103,7 +101,7 @@ public class IncidentDetectionEngineService {
     public IncidentDetectionEngineService(
         javax.sql.DataSource ds,
         EventPublishPort events,
-        AuditPort audit,
+        AuditBusPort audit,
         MeterRegistry registry,
         Executor executor
     ) {
@@ -169,7 +167,7 @@ public class IncidentDetectionEngineService {
                 ps.setString(1, incidentId); ps.executeUpdate();
             }
             events.publish("IncidentResolved", Map.of("incidentId", incidentId));
-            audit.record(resolvedBy, "INCIDENT_RESOLVED", "incidentId=" + incidentId);
+            audit.emit(AuditEvent.builder().principal(resolvedBy).eventType("INCIDENT_RESOLVED").details(Map.of("detail", "incidentId=" + incidentId)).build());
             return null;
         });
     }

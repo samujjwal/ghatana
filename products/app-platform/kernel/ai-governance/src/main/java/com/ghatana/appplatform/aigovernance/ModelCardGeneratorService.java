@@ -1,6 +1,6 @@
 package com.ghatana.appplatform.aigovernance;
 
-import com.zaxxer.hikari.HikariDataSource;
+import javax.sql.DataSource;
 import io.activej.promise.Promise;
 import io.micrometer.core.instrument.Counter;
 import io.micrometer.core.instrument.MeterRegistry;
@@ -24,12 +24,12 @@ import java.util.concurrent.Executor;
  */
 public class ModelCardGeneratorService {
 
-    private final HikariDataSource   dataSource;
+    private final DataSource   dataSource;
     private final Executor           executor;
     private final ModelRegistryPort  registryPort;
     private final Counter            cardsGeneratedCounter;
 
-    public ModelCardGeneratorService(HikariDataSource dataSource, Executor executor,
+    public ModelCardGeneratorService(DataSource dataSource, Executor executor,
                                       ModelRegistryPort registryPort,
                                       MeterRegistry registry) {
         this.dataSource           = dataSource;

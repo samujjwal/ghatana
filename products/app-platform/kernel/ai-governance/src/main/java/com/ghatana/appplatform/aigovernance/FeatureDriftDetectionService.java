@@ -1,6 +1,6 @@
 package com.ghatana.appplatform.aigovernance;
 
-import com.zaxxer.hikari.HikariDataSource;
+import javax.sql.DataSource;
 import io.activej.promise.Promise;
 import io.micrometer.core.instrument.Counter;
 import io.micrometer.core.instrument.Gauge;
@@ -32,13 +32,13 @@ public class FeatureDriftDetectionService {
     private static final double JSD_ALERT_THRESHOLD = 0.1;
     private static final int    NUM_BINS = 10;
 
-    private final HikariDataSource dataSource;
+    private final DataSource dataSource;
     private final Executor         executor;
     private final EventPort        eventPort;
     private final Counter          driftEventsCounter;
     private final AtomicInteger    driftedFeaturesCount = new AtomicInteger(0);
 
-    public FeatureDriftDetectionService(HikariDataSource dataSource, Executor executor,
+    public FeatureDriftDetectionService(DataSource dataSource, Executor executor,
                                          EventPort eventPort, MeterRegistry registry) {
         this.dataSource        = dataSource;
         this.executor          = executor;

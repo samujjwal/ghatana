@@ -1,5 +1,7 @@
 package com.ghatana.appplatform.oms.service;
 
+
+import com.ghatana.platform.core.event.EventBusPort;
 import io.micrometer.core.instrument.Counter;
 import io.micrometer.core.instrument.Gauge;
 import io.micrometer.core.instrument.MeterRegistry;
@@ -10,7 +12,6 @@ import org.slf4j.LoggerFactory;
 import java.math.BigDecimal;
 import java.math.RoundingMode;
 import java.util.concurrent.atomic.AtomicReference;
-import java.util.function.Consumer;
 
 /**
  * @doc.type      Service
@@ -35,18 +36,18 @@ public class PreTradeCostEstimationService {
 
     private final CostModelPort        costModelPort;
     private final MandateLimitPort     mandatePort;
-    private final Consumer<Object>     eventPublisher;
+    private final EventBusPort     eventBusPort;
     private final AtomicReference<Double> runningRmse = new AtomicReference<>(0.0);
     private final Counter  mandateBreaches;
     private final Timer    estimationLatency;
 
     public PreTradeCostEstimationService(CostModelPort costModelPort,
                                           MandateLimitPort mandatePort,
-                                          Consumer<Object> eventPublisher,
+                                          EventBusPort eventBusPort,
                                           MeterRegistry meterRegistry) {
         this.costModelPort     = costModelPort;
         this.mandatePort       = mandatePort;
-        this.eventPublisher    = eventPublisher;
+        this.eventBusPort    = eventBusPort;
         this.mandateBreaches   = meterRegistry.counter("oms.cost.mandate.breaches");
         this.estimationLatency = meterRegistry.timer("oms.cost.estimation.latency");
 
@@ -89,7 +90,7 @@ public class PreTradeCostEstimationService {
             mandateBreaches.increment();
             log.info("PreTradeCost: mandate breach orderId={} totalCostBps={} limit={}",
                     orderId, totalCostBps, mandateLimit);
-            eventPublisher.accept(new MandateCostLimitBreachedEvent(
+            eventBusPort.publish(new MandateCostLimitBreachedEvent(
                     orderId, clientId, instrumentId, totalCostBps, mandateLimit));
         }
 
@@ -116,7 +117,7 @@ public class PreTradeCostEstimationService {
                 estimatedBps, actualBps, newRmse);
 
         if (newRmse > 20.0) { // RMSE > 20bps triggers K-09 drift alert
-            eventPublisher.accept(new ModelDriftDetectedEvent("PRETRADE_COST", newRmse));
+            eventBusPort.publish(new ModelDriftDetectedEvent("PRETRADE_COST", newRmse));
         }
     }
 

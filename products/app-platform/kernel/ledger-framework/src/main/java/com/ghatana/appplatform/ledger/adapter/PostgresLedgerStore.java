@@ -5,8 +5,7 @@
 package com.ghatana.appplatform.ledger.adapter;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.fasterxml.jackson.databind.SerializationFeature;
-import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
+import com.ghatana.platform.core.json.PlatformObjectMapper;
 import com.ghatana.appplatform.ledger.domain.Currency;
 import com.ghatana.appplatform.ledger.domain.Direction;
 import com.ghatana.appplatform.ledger.domain.Journal;
@@ -166,9 +165,7 @@ public final class PostgresLedgerStore implements LedgerStore {
     public PostgresLedgerStore(DataSource dataSource, Executor executor) {
         this.dataSource = dataSource;
         this.executor = executor;
-        this.mapper = new ObjectMapper()
-                .registerModule(new JavaTimeModule())
-                .disable(SerializationFeature.WRITE_DATES_AS_TIMESTAMPS);
+        this.mapper = PlatformObjectMapper.instance();
     }
 
     // ── LedgerStore implementation ─────────────────────────────────────────────

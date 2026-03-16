@@ -1,6 +1,6 @@
 package com.ghatana.appplatform.posttrade.service;
 
-import com.zaxxer.hikari.HikariDataSource;
+import javax.sql.DataSource;
 import io.activej.promise.Promise;
 import io.micrometer.core.instrument.Counter;
 import io.micrometer.core.instrument.MeterRegistry;
@@ -31,14 +31,14 @@ public class CsdAdapterRegistryService {
 
     private static final int CIRCUIT_BREAKER_THRESHOLD = 5;  // consecutive failures before open
 
-    private final HikariDataSource    dataSource;
+    private final DataSource    dataSource;
     private final Executor            executor;
     private final Map<String, ICsdAdapter> adapters;    // marketCode → adapter
     private final Map<String, Integer>     failureCounts = new HashMap<>();
     private final Counter             submitCounter;
     private final Counter             circuitBreakerCounter;
 
-    public CsdAdapterRegistryService(HikariDataSource dataSource, Executor executor,
+    public CsdAdapterRegistryService(DataSource dataSource, Executor executor,
                                      MeterRegistry registry) {
         this.dataSource            = dataSource;
         this.executor              = executor;

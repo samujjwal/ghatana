@@ -1,6 +1,6 @@
 package com.ghatana.appplatform.dlq;
 
-import com.zaxxer.hikari.HikariDataSource;
+import javax.sql.DataSource;
 import io.activej.promise.Promise;
 import io.micrometer.core.instrument.Counter;
 import io.micrometer.core.instrument.Gauge;
@@ -34,13 +34,13 @@ public class DlqSlaTrackingService {
     );
     private static final double AT_RISK_FRACTION = 0.75; // 75% of SLA elapsed = AT_RISK
 
-    private final HikariDataSource  dataSource;
+    private final DataSource  dataSource;
     private final Executor          executor;
     private final NotificationPort  notificationPort;
     private final Counter           slaBreachedCounter;
     private final AtomicLong        atRiskCount = new AtomicLong(0);
 
-    public DlqSlaTrackingService(HikariDataSource dataSource, Executor executor,
+    public DlqSlaTrackingService(DataSource dataSource, Executor executor,
                                   NotificationPort notificationPort,
                                   MeterRegistry registry) {
         this.dataSource         = dataSource;

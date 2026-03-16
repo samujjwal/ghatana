@@ -1,5 +1,7 @@
 package com.ghatana.appplatform.sanctions.service;
 
+
+import com.ghatana.platform.core.event.EventBusPort;
 import io.micrometer.core.instrument.Counter;
 import io.micrometer.core.instrument.MeterRegistry;
 import org.slf4j.Logger;
@@ -9,7 +11,6 @@ import javax.sql.DataSource;
 import java.sql.*;
 import java.time.Instant;
 import java.util.UUID;
-import java.util.function.Consumer;
 
 /**
  * @doc.type      Service
@@ -30,19 +31,19 @@ public class BundleImportWorkflowService {
     private final AirGapBundleSigningService signingService;
     private final SanctionsListIngestionService ingestionService;
     private final DataSource               dataSource;
-    private final Consumer<Object>         eventPublisher;
+    private final EventBusPort         eventBusPort;
     private final Counter                  bundlesImported;
     private final Counter                  bundlesRejected;
 
     public BundleImportWorkflowService(AirGapBundleSigningService signingService,
                                         SanctionsListIngestionService ingestionService,
                                         DataSource dataSource,
-                                        Consumer<Object> eventPublisher,
+                                        EventBusPort eventBusPort,
                                         MeterRegistry meterRegistry) {
         this.signingService    = signingService;
         this.ingestionService  = ingestionService;
         this.dataSource        = dataSource;
-        this.eventPublisher    = eventPublisher;
+        this.eventBusPort    = eventBusPort;
         this.bundlesImported   = meterRegistry.counter("sanctions.bundle.imported");
         this.bundlesRejected   = meterRegistry.counter("sanctions.bundle.rejected");
     }
@@ -78,7 +79,7 @@ public class BundleImportWorkflowService {
             throw new RuntimeException("Failed to submit bundle for approval", e);
         }
 
-        eventPublisher.accept(new BundleSubmittedEvent(importId, bundle.bundleId(), uploaderId, Instant.now()));
+        eventBusPort.publish(new BundleSubmittedEvent(importId, bundle.bundleId(), uploaderId, Instant.now()));
         log.info("BundleImport submitted for approval importId={} bundleId={}", importId, bundle.bundleId());
         return importId;
     }
@@ -108,7 +109,7 @@ public class BundleImportWorkflowService {
         ingestionService.ingestFromBytes(req.bundleId(), req.payload());
 
         bundlesImported.increment();
-        eventPublisher.accept(new BundleApprovedEvent(importId, req.bundleId(), approverId, Instant.now()));
+        eventBusPort.publish(new BundleApprovedEvent(importId, req.bundleId(), approverId, Instant.now()));
         log.info("BundleImport approved importId={} bundleId={} approver={}", importId, req.bundleId(), approverId);
     }
 
@@ -118,7 +119,7 @@ public class BundleImportWorkflowService {
     public void reject(String importId, String reviewerId, String reason) {
         updateStatus(importId, "REJECTED", reviewerId);
         bundlesRejected.increment();
-        eventPublisher.accept(new BundleRejectedEvent(importId, reviewerId, reason, Instant.now()));
+        eventBusPort.publish(new BundleRejectedEvent(importId, reviewerId, reason, Instant.now()));
         log.warn("BundleImport rejected importId={} reviewer={} reason={}", importId, reviewerId, reason);
     }
 

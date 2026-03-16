@@ -1,6 +1,6 @@
 package com.ghatana.appplatform.deployment;
 
-import com.zaxxer.hikari.HikariDataSource;
+import javax.sql.DataSource;
 import io.activej.promise.Promise;
 import io.micrometer.core.instrument.Counter;
 import io.micrometer.core.instrument.Gauge;
@@ -25,7 +25,7 @@ import java.util.concurrent.atomic.AtomicLong;
  */
 public class HorizontalPodAutoscalingService {
 
-    private final HikariDataSource dataSource;
+    private final DataSource dataSource;
     private final Executor         executor;
     private final MetricsPort      metricsPort;
     private final HpaExecutorPort  hpaExecutorPort;
@@ -33,7 +33,7 @@ public class HorizontalPodAutoscalingService {
     private final Counter          scaleDownCounter;
     private final AtomicLong       currentReplicasSample = new AtomicLong(0);
 
-    public HorizontalPodAutoscalingService(HikariDataSource dataSource, Executor executor,
+    public HorizontalPodAutoscalingService(DataSource dataSource, Executor executor,
                                             MetricsPort metricsPort, HpaExecutorPort hpaExecutorPort,
                                             MeterRegistry registry) {
         this.dataSource      = dataSource;

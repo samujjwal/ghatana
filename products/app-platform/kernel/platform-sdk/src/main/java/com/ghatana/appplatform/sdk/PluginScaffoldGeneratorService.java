@@ -1,5 +1,7 @@
 package com.ghatana.appplatform.sdk;
 
+import com.ghatana.platform.audit.AuditBusPort;
+import com.ghatana.platform.audit.AuditEvent;
 import io.activej.promise.Promise;
 import io.micrometer.core.instrument.Counter;
 import io.micrometer.core.instrument.MeterRegistry;
@@ -37,11 +39,6 @@ public class PluginScaffoldGeneratorService {
     public interface FileSystemPort {
         /** Extract the generated zip archive to the target directory. */
         Promise<String> extractTo(String archivePath, String targetDirectory);
-    }
-
-    public interface AuditPort {
-        Promise<Void> log(String action, String actor, String entityId, String entityType,
-                          String beforeJson, String afterJson);
     }
 
     // -----------------------------------------------------------------------
@@ -124,7 +121,7 @@ public class PluginScaffoldGeneratorService {
     private final Executor executor;
     private final ScaffoldTemplatePort templatePort;
     private final FileSystemPort fileSystemPort;
-    private final AuditPort auditPort;
+    private final AuditBusPort auditPort;
 
     private final Counter scaffoldGeneratedTotal;
     private final Counter scaffoldFailedTotal;
@@ -138,7 +135,7 @@ public class PluginScaffoldGeneratorService {
                                           MeterRegistry meterRegistry,
                                           ScaffoldTemplatePort templatePort,
                                           FileSystemPort fileSystemPort,
-                                          AuditPort auditPort) {
+                                          AuditBusPort auditPort) {
         this.dataSource    = dataSource;
         this.executor      = executor;
         this.templatePort  = templatePort;

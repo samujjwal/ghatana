@@ -1,5 +1,7 @@
 package com.ghatana.appplatform.manifest;
 
+import com.ghatana.platform.audit.AuditBusPort;
+import com.ghatana.platform.audit.AuditEvent;
 import io.activej.promise.Promise;
 import io.micrometer.core.instrument.*;
 
@@ -58,10 +60,6 @@ public class ReleaseManifestService {
         String serialize(Map<String, Object> data) throws Exception;
     }
 
-    public interface AuditPort {
-        void record(String actorId, String action, String detail) throws Exception;
-    }
-
     // ── Value types ───────────────────────────────────────────────────────────
 
     public record ServiceEntry(String name, String imageTag, int minReplicas) {}
@@ -84,7 +82,7 @@ public class ReleaseManifestService {
 
     private final javax.sql.DataSource ds;
     private final YamlParserPort yaml;
-    private final AuditPort audit;
+    private final AuditBusPort audit;
     private final Executor executor;
     private final Counter manifestsCreatedCounter;
     private final Counter manifestsPublishedCounter;
@@ -92,7 +90,7 @@ public class ReleaseManifestService {
     public ReleaseManifestService(
         javax.sql.DataSource ds,
         YamlParserPort yaml,
-        AuditPort audit,
+        AuditBusPort audit,
         MeterRegistry registry,
         Executor executor
     ) {
@@ -140,7 +138,7 @@ public class ReleaseManifestService {
                     String manifestId = rs.getString("manifest_id");
                     manifestsCreatedCounter.increment();
                     auditAction(c, manifestId, "MANIFEST_CREATED", createdBy, "releaseId=" + releaseId);
-                    audit.record(createdBy, "MANIFEST_CREATED", "manifestId=" + manifestId + " releaseId=" + releaseId);
+                    audit.emit(AuditEvent.builder().principal(createdBy).eventType("MANIFEST_CREATED").details(Map.of("detail", "manifestId=" + manifestId + " releaseId=" + releaseId)).build());
                     return new ReleaseManifest(manifestId, releaseId, semver, description,
                         services, plugins, configChanges, migrationScripts, breakingChanges,
                         "DRAFT", createdBy);
@@ -158,7 +156,7 @@ public class ReleaseManifestService {
             try (Connection c = ds.getConnection()) {
                 auditAction(c, manifestId, "MANIFEST_PUBLISHED", publishedBy, null);
             }
-            audit.record(publishedBy, "MANIFEST_PUBLISHED", "manifestId=" + manifestId);
+            audit.emit(AuditEvent.builder().principal(publishedBy).eventType("MANIFEST_PUBLISHED").details(Map.of("detail", "manifestId=" + manifestId)).build());
             manifestsPublishedCounter.increment();
             return null;
         });
@@ -168,7 +166,7 @@ public class ReleaseManifestService {
     public Promise<Void> deprecate(String manifestId, String operatorId) {
         return Promise.ofBlocking(executor, () -> {
             transition(manifestId, "PUBLISHED", "DEPRECATED");
-            audit.record(operatorId, "MANIFEST_DEPRECATED", "manifestId=" + manifestId);
+            audit.emit(AuditEvent.builder().principal(operatorId).eventType("MANIFEST_DEPRECATED").details(Map.of("detail", "manifestId=" + manifestId)).build());
             return null;
         });
     }

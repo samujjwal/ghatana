@@ -1,5 +1,7 @@
 package com.ghatana.appplatform.oms.service;
 
+
+import com.ghatana.platform.core.event.EventBusPort;
 import io.micrometer.core.instrument.Counter;
 import io.micrometer.core.instrument.MeterRegistry;
 import io.micrometer.core.instrument.Timer;
@@ -7,7 +9,6 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.util.List;
-import java.util.function.Consumer;
 
 /**
  * @doc.type      Service
@@ -32,16 +33,16 @@ public class ComplianceCheckIntegrationService {
     private static final long   TIMEOUT_MS = 2_000;
 
     private final CompliancePort  compliancePort;
-    private final Consumer<Object> eventPublisher;
+    private final EventBusPort eventBusPort;
     private final Counter complianceFails;
     private final Counter complianceReviews;
     private final Timer   complianceLatency;
 
     public ComplianceCheckIntegrationService(CompliancePort compliancePort,
-                                              Consumer<Object> eventPublisher,
+                                              EventBusPort eventBusPort,
                                               MeterRegistry meterRegistry) {
         this.compliancePort    = compliancePort;
-        this.eventPublisher    = eventPublisher;
+        this.eventBusPort    = eventBusPort;
         this.complianceFails   = meterRegistry.counter("oms.compliance.fails");
         this.complianceReviews = meterRegistry.counter("oms.compliance.reviews");
         this.complianceLatency = meterRegistry.timer("oms.compliance.latency");
@@ -73,12 +74,12 @@ public class ComplianceCheckIntegrationService {
             case FAIL -> {
                 complianceFails.increment();
                 log.info("Compliance FAIL orderId={} reasons={}", orderId, outcome.reasons());
-                eventPublisher.accept(new OrderComplianceFailedEvent(orderId, clientId, outcome.reasons()));
+                eventBusPort.publish(new OrderComplianceFailedEvent(orderId, clientId, outcome.reasons()));
             }
             case REVIEW -> {
                 complianceReviews.increment();
                 log.info("Compliance REVIEW orderId={} reasons={}", orderId, outcome.reasons());
-                eventPublisher.accept(new OrderFlaggedForReviewEvent(orderId, clientId, outcome.reasons()));
+                eventBusPort.publish(new OrderFlaggedForReviewEvent(orderId, clientId, outcome.reasons()));
             }
             case PASS -> log.debug("Compliance PASS orderId={}", orderId);
         }

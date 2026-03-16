@@ -1,6 +1,6 @@
 package com.ghatana.appplatform.dlq;
 
-import com.zaxxer.hikari.HikariDataSource;
+import javax.sql.DataSource;
 import io.activej.promise.Promise;
 import io.micrometer.core.instrument.Counter;
 import io.micrometer.core.instrument.MeterRegistry;
@@ -27,14 +27,14 @@ public class DeadLetterPayloadInspectorService {
 
     private static final Set<String> COMPLIANCE_ROLES = Set.of("COMPLIANCE", "AUDIT_ADMIN");
 
-    private final HikariDataSource dataSource;
+    private final DataSource dataSource;
     private final Executor         executor;
     private final SchemaPort       schemaPort;
     private final WorkflowPort     workflowPort;
     private final Counter          inspectionsCounter;
     private final Counter          unmaskRequestsCounter;
 
-    public DeadLetterPayloadInspectorService(HikariDataSource dataSource, Executor executor,
+    public DeadLetterPayloadInspectorService(DataSource dataSource, Executor executor,
                                               SchemaPort schemaPort, WorkflowPort workflowPort,
                                               MeterRegistry registry) {
         this.dataSource           = dataSource;

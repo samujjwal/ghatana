@@ -1,5 +1,7 @@
 package com.ghatana.appplatform.certification;
 
+import com.ghatana.platform.audit.AuditBusPort;
+import com.ghatana.platform.audit.AuditEvent;
 import io.activej.promise.Promise;
 import io.micrometer.core.instrument.*;
 
@@ -52,10 +54,6 @@ public class PluginRatingReviewService {
         boolean hasInstalled(String tenantId, String pluginId) throws Exception;
     }
 
-    public interface AuditPort {
-        void record(String actorId, String action, String detail) throws Exception;
-    }
-
     // ── Value types ───────────────────────────────────────────────────────────
 
     public record Review(
@@ -67,14 +65,14 @@ public class PluginRatingReviewService {
 
     private final javax.sql.DataSource ds;
     private final InstallationCheckPort installCheck;
-    private final AuditPort audit;
+    private final AuditBusPort audit;
     private final Executor executor;
     private final Counter reviewsPublishedCounter;
 
     public PluginRatingReviewService(
         javax.sql.DataSource ds,
         InstallationCheckPort installCheck,
-        AuditPort audit,
+        AuditBusPort audit,
         MeterRegistry registry,
         Executor executor
     ) {
@@ -111,7 +109,7 @@ public class PluginRatingReviewService {
             String pluginId = transitionStatus(reviewId, "PENDING", "PUBLISHED");
             recalculateRating(pluginId);
             reviewsPublishedCounter.increment();
-            audit.record(moderatorId, "REVIEW_APPROVED", "reviewId=" + reviewId);
+            audit.emit(AuditEvent.builder().principal(moderatorId).eventType("REVIEW_APPROVED").details(Map.of("detail", "reviewId=" + reviewId)).build());
             return null;
         });
     }
@@ -120,7 +118,7 @@ public class PluginRatingReviewService {
     public Promise<Void> reject(String reviewId, String moderatorId) {
         return Promise.ofBlocking(executor, () -> {
             transitionStatus(reviewId, "PENDING", "REJECTED");
-            audit.record(moderatorId, "REVIEW_REJECTED", "reviewId=" + reviewId);
+            audit.emit(AuditEvent.builder().principal(moderatorId).eventType("REVIEW_REJECTED").details(Map.of("detail", "reviewId=" + reviewId)).build());
             return null;
         });
     }
@@ -134,7 +132,7 @@ public class PluginRatingReviewService {
                  )) {
                 ps.setString(1, response); ps.setString(2, reviewId); ps.executeUpdate();
             }
-            audit.record(developerId, "REVIEW_DEVELOPER_RESPONSE", "reviewId=" + reviewId);
+            audit.emit(AuditEvent.builder().principal(developerId).eventType("REVIEW_DEVELOPER_RESPONSE").details(Map.of("detail", "reviewId=" + reviewId)).build());
             return null;
         });
     }
@@ -148,7 +146,7 @@ public class PluginRatingReviewService {
                  )) {
                 ps.setString(1, reviewId); ps.executeUpdate();
             }
-            audit.record(reportedBy, "REVIEW_ABUSE_REPORTED", "reviewId=" + reviewId);
+            audit.emit(AuditEvent.builder().principal(reportedBy).eventType("REVIEW_ABUSE_REPORTED").details(Map.of("detail", "reviewId=" + reviewId)).build());
             return null;
         });
     }

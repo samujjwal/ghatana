@@ -1,5 +1,7 @@
 package com.ghatana.appplatform.operator;
 
+import com.ghatana.platform.audit.AuditBusPort;
+import com.ghatana.platform.audit.AuditEvent;
 import io.activej.promise.Promise;
 import io.micrometer.core.instrument.*;
 
@@ -75,10 +77,6 @@ public class CapacityPlanningPredictiveAlertService {
         void alertSre(String subject, String body) throws Exception;
     }
 
-    public interface AuditPort {
-        void record(String actorId, String action, String detail) throws Exception;
-    }
-
     // ── Constants ─────────────────────────────────────────────────────────────
 
     private static final List<String> METRIC_TYPES = List.of("CPU", "MEMORY", "KAFKA_LAG", "DB_CONNECTIONS", "STORAGE");
@@ -90,7 +88,7 @@ public class CapacityPlanningPredictiveAlertService {
     private final TimeSeriesModelPort model;
     private final MetricsCollectorPort collector;
     private final AlertDispatchPort alertDispatch;
-    private final AuditPort audit;
+    private final AuditBusPort audit;
     private final Executor executor;
     private final Counter predictiveAlertsCounter;
     private final Counter growthAnomalyAlertsCounter;
@@ -100,7 +98,7 @@ public class CapacityPlanningPredictiveAlertService {
         TimeSeriesModelPort model,
         MetricsCollectorPort collector,
         AlertDispatchPort alertDispatch,
-        AuditPort audit,
+        AuditBusPort audit,
         MeterRegistry registry,
         Executor executor
     ) {

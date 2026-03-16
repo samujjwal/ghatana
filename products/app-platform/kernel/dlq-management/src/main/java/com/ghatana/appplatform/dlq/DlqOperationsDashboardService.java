@@ -1,6 +1,6 @@
 package com.ghatana.appplatform.dlq;
 
-import com.zaxxer.hikari.HikariDataSource;
+import javax.sql.DataSource;
 import io.activej.promise.Promise;
 import io.micrometer.core.instrument.Gauge;
 import io.micrometer.core.instrument.MeterRegistry;
@@ -24,7 +24,7 @@ import java.util.concurrent.atomic.AtomicReference;
  */
 public class DlqOperationsDashboardService {
 
-    private final HikariDataSource dataSource;
+    private final DataSource dataSource;
     private final Executor         executor;
     private final DashboardPort    dashboardPort;
     private final AtomicReference<Double> totalBacklog        = new AtomicReference<>(0.0);
@@ -32,7 +32,7 @@ public class DlqOperationsDashboardService {
     private final AtomicReference<Double> mttrSeconds         = new AtomicReference<>(0.0);
     private final AtomicReference<Double> autoRetrySuccessRate = new AtomicReference<>(0.0);
 
-    public DlqOperationsDashboardService(HikariDataSource dataSource, Executor executor,
+    public DlqOperationsDashboardService(DataSource dataSource, Executor executor,
                                           DashboardPort dashboardPort,
                                           MeterRegistry registry) {
         this.dataSource    = dataSource;

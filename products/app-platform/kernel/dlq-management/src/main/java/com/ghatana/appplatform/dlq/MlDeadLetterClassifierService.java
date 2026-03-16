@@ -1,6 +1,8 @@
 package com.ghatana.appplatform.dlq;
 
-import com.zaxxer.hikari.HikariDataSource;
+import com.ghatana.platform.audit.AuditBusPort;
+import com.ghatana.platform.audit.AuditEvent;
+import javax.sql.DataSource;
 import io.activej.promise.Promise;
 import io.micrometer.core.instrument.Counter;
 import io.micrometer.core.instrument.MeterRegistry;
@@ -28,17 +30,17 @@ public class MlDeadLetterClassifierService {
     private static final double AUTO_APPLY_THRESHOLD  = 0.90;
     private static final double HUMAN_REVIEW_THRESHOLD = 0.60;
 
-    private final HikariDataSource  dataSource;
+    private final DataSource  dataSource;
     private final Executor          executor;
     private final ClassifierPort    classifierPort;
-    private final AuditPort         auditPort;
+    private final AuditBusPort         auditPort;
     private final Counter           classifiedCounter;
     private final Counter           autoAppliedCounter;
     private final Counter           humanFlaggedCounter;
 
-    public MlDeadLetterClassifierService(HikariDataSource dataSource, Executor executor,
+    public MlDeadLetterClassifierService(DataSource dataSource, Executor executor,
                                           ClassifierPort classifierPort,
-                                          AuditPort auditPort,
+                                          AuditBusPort auditPort,
                                           MeterRegistry registry) {
         this.dataSource          = dataSource;
         this.executor            = executor;
@@ -54,11 +56,6 @@ public class MlDeadLetterClassifierService {
     /** ML inference endpoint for DLQ classification. */
     public interface ClassifierPort {
         ClassificationResult classify(Map<String, Object> features);
-    }
-
-    /** K-07 audit trail. */
-    public interface AuditPort {
-        void log(String action, String resourceType, String resourceId, Map<String, Object> details);
     }
 
     // ─── Domain records ──────────────────────────────────────────────────────

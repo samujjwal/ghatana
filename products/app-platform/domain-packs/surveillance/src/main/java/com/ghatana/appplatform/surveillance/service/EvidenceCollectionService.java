@@ -1,6 +1,8 @@
 package com.ghatana.appplatform.surveillance.service;
 
-import com.zaxxer.hikari.HikariDataSource;
+import com.ghatana.platform.audit.AuditBusPort;
+import com.ghatana.platform.audit.AuditEvent;
+import javax.sql.DataSource;
 import io.activej.promise.Promise;
 import io.micrometer.core.instrument.Counter;
 import io.micrometer.core.instrument.MeterRegistry;
@@ -31,15 +33,15 @@ import java.util.concurrent.Executor;
  */
 public class EvidenceCollectionService {
 
-    private final HikariDataSource dataSource;
+    private final DataSource dataSource;
     private final Executor         executor;
     private final StoragePort      storagePort;
-    private final AuditPort        auditPort;
+    private final AuditBusPort        auditPort;
     private final Counter          packageCollectedCounter;
     private final Counter          evidenceItemCounter;
 
-    public EvidenceCollectionService(HikariDataSource dataSource, Executor executor,
-                                      StoragePort storagePort, AuditPort auditPort,
+    public EvidenceCollectionService(DataSource dataSource, Executor executor,
+                                      StoragePort storagePort, AuditBusPort auditPort,
                                       MeterRegistry registry) {
         this.dataSource              = dataSource;
         this.executor                = executor;
@@ -54,11 +56,6 @@ public class EvidenceCollectionService {
     public interface StoragePort {
         String store(String bucket, String key, byte[] data, String contentType);
         byte[] retrieve(String bucket, String key);
-    }
-
-    public interface AuditPort {
-        void logEvidenceLinked(String caseId, String evidenceId, String sourceSystem,
-                               String contentHash, LocalDateTime at);
     }
 
     // ─── Records ─────────────────────────────────────────────────────────────

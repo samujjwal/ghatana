@@ -1,6 +1,6 @@
 package com.ghatana.appplatform.aigovernance;
 
-import com.zaxxer.hikari.HikariDataSource;
+import javax.sql.DataSource;
 import io.activej.promise.Promise;
 import io.micrometer.core.instrument.Counter;
 import io.micrometer.core.instrument.MeterRegistry;
@@ -28,13 +28,13 @@ public class ConceptDriftDetectionService {
     private static final double PAGE_HINKLEY_LAMBDA      = 50.0;
     private static final int    ADWIN_WINDOW_MIN         = 30;
 
-    private final HikariDataSource     dataSource;
+    private final DataSource     dataSource;
     private final Executor             executor;
     private final DriftEventPort       driftEventPort;
     private final RetrainingTriggerPort retrainingPort;
     private final Counter              driftDetectedCounter;
 
-    public ConceptDriftDetectionService(HikariDataSource dataSource, Executor executor,
+    public ConceptDriftDetectionService(DataSource dataSource, Executor executor,
                                          DriftEventPort driftEventPort,
                                          RetrainingTriggerPort retrainingPort,
                                          MeterRegistry registry) {

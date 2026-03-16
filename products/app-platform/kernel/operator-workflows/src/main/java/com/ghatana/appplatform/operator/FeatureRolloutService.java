@@ -1,5 +1,7 @@
 package com.ghatana.appplatform.operator;
 
+import com.ghatana.platform.audit.AuditBusPort;
+import com.ghatana.platform.audit.AuditEvent;
 import io.activej.promise.Promise;
 import io.micrometer.core.instrument.*;
 
@@ -45,10 +47,6 @@ public class FeatureRolloutService {
 
     // ── Inner port interfaces ─────────────────────────────────────────────────
 
-    public interface AuditPort {
-        void record(String actorId, String action, String detail) throws Exception;
-    }
-
     // ── Value types ───────────────────────────────────────────────────────────
 
     public record RolloutPlan(
@@ -62,14 +60,14 @@ public class FeatureRolloutService {
     // ── Fields ────────────────────────────────────────────────────────────────
 
     private final javax.sql.DataSource ds;
-    private final AuditPort audit;
+    private final AuditBusPort audit;
     private final Executor executor;
     private final Counter killSwitchActivations;
     private final Counter eligibilityEvaluations;
 
     public FeatureRolloutService(
         javax.sql.DataSource ds,
-        AuditPort audit,
+        AuditBusPort audit,
         MeterRegistry registry,
         Executor executor
     ) {
@@ -120,7 +118,7 @@ public class FeatureRolloutService {
                 ps.setString(1, featureKey); ps.executeUpdate();
             }
             killSwitchActivations.increment();
-            audit.record(operatorId, "KILL_SWITCH_ACTIVATED", "feature=" + featureKey);
+            audit.emit(AuditEvent.builder().principal(operatorId).eventType("KILL_SWITCH_ACTIVATED").details(Map.of("detail", "feature=" + featureKey)).build());
             return null;
         });
     }

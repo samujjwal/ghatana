@@ -1,5 +1,7 @@
 package com.ghatana.appplatform.regulator;
 
+import com.ghatana.platform.audit.AuditBusPort;
+import com.ghatana.platform.audit.AuditEvent;
 import io.activej.promise.Promise;
 import io.micrometer.core.instrument.*;
 
@@ -54,10 +56,6 @@ public class RegulatoryDocumentVaultService {
         boolean exists(String storagePath) throws Exception;
     }
 
-    public interface AuditPort {
-        void record(String actorId, String action, String detail) throws Exception;
-    }
-
     // ── Value types ───────────────────────────────────────────────────────────
 
     public record DocumentDescriptor(
@@ -73,7 +71,7 @@ public class RegulatoryDocumentVaultService {
 
     private final javax.sql.DataSource ds;
     private final BlobStorePort blobStore;
-    private final AuditPort audit;
+    private final AuditBusPort audit;
     private final Executor executor;
     private final Counter previewCounter;
     private final Counter downloadCounter;
@@ -82,7 +80,7 @@ public class RegulatoryDocumentVaultService {
     public RegulatoryDocumentVaultService(
         javax.sql.DataSource ds,
         BlobStorePort blobStore,
-        AuditPort audit,
+        AuditBusPort audit,
         MeterRegistry registry,
         Executor executor
     ) {
@@ -140,7 +138,7 @@ public class RegulatoryDocumentVaultService {
             byte[] bytes = blobStore.read(path);
             logAccess(documentId, userId, "PREVIEW");
             previewCounter.increment();
-            audit.record(userId, "DOCUMENT_PREVIEWED", "documentId=" + documentId);
+            audit.emit(AuditEvent.builder().principal(userId).eventType("DOCUMENT_PREVIEWED").details(Map.of("detail", "documentId=" + documentId)).build());
             return bytes;
         });
     }
@@ -154,7 +152,7 @@ public class RegulatoryDocumentVaultService {
             byte[] bytes = blobStore.read(path);
             logAccess(documentId, userId, "DOWNLOAD");
             downloadCounter.increment();
-            audit.record(userId, "DOCUMENT_DOWNLOADED", "documentId=" + documentId);
+            audit.emit(AuditEvent.builder().principal(userId).eventType("DOCUMENT_DOWNLOADED").details(Map.of("detail", "documentId=" + documentId)).build());
             return bytes;
         });
     }

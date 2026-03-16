@@ -1,6 +1,8 @@
 package com.ghatana.appplatform.pricing.service;
 
-import com.zaxxer.hikari.HikariDataSource;
+import com.ghatana.platform.audit.AuditBusPort;
+import com.ghatana.platform.audit.AuditEvent;
+import javax.sql.DataSource;
 import io.activej.promise.Promise;
 import io.micrometer.core.instrument.Counter;
 import io.micrometer.core.instrument.MeterRegistry;
@@ -33,17 +35,17 @@ public class PriceChallengeService {
 
     private static final double DEFAULT_DEVIATION_THRESHOLD = 0.05; // 5%
 
-    private final HikariDataSource   dataSource;
+    private final DataSource   dataSource;
     private final Executor           executor;
     private final ConfigPort         configPort;
-    private final AuditPort          auditPort;
+    private final AuditBusPort          auditPort;
     private final MtmBatchEngineService mtmEngine;
     private final Counter            autoFlagCounter;
     private final Counter            overrideCounter;
     private final Counter            acceptedCounter;
 
-    public PriceChallengeService(HikariDataSource dataSource, Executor executor,
-                                  ConfigPort configPort, AuditPort auditPort,
+    public PriceChallengeService(DataSource dataSource, Executor executor,
+                                  ConfigPort configPort, AuditBusPort auditPort,
                                   MtmBatchEngineService mtmEngine, MeterRegistry registry) {
         this.dataSource      = dataSource;
         this.executor        = executor;
@@ -60,12 +62,6 @@ public class PriceChallengeService {
     /** K-02 configurable deviation threshold per instrument. */
     public interface ConfigPort {
         double getDeviationThreshold(String instrumentId);
-    }
-
-    /** K-07 audit trail. */
-    public interface AuditPort {
-        void logOverride(String challengeId, String actorId, String action, String reason,
-                         BigDecimal oldPrice, BigDecimal newPrice);
     }
 
     // ─── Records ─────────────────────────────────────────────────────────────

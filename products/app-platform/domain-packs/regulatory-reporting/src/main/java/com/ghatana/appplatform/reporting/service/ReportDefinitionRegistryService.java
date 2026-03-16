@@ -1,6 +1,6 @@
 package com.ghatana.appplatform.reporting.service;
 
-import com.zaxxer.hikari.HikariDataSource;
+import javax.sql.DataSource;
 import io.activej.promise.Promise;
 import io.micrometer.core.instrument.Counter;
 import io.micrometer.core.instrument.Gauge;
@@ -30,14 +30,14 @@ import java.util.concurrent.atomic.AtomicLong;
  */
 public class ReportDefinitionRegistryService {
 
-    private final HikariDataSource dataSource;
+    private final DataSource dataSource;
     private final Executor         executor;
     private final CalendarPort     calendarPort;
     private final WorkflowPort     workflowPort;
     private final Counter          definitionActivatedCounter;
     private final AtomicLong       activeDefinitionCount = new AtomicLong();
 
-    public ReportDefinitionRegistryService(HikariDataSource dataSource, Executor executor,
+    public ReportDefinitionRegistryService(DataSource dataSource, Executor executor,
                                             CalendarPort calendarPort, WorkflowPort workflowPort,
                                             MeterRegistry registry) {
         this.dataSource                = dataSource;

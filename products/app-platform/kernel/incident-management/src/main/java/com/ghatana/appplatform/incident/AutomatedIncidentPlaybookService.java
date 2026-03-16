@@ -1,5 +1,7 @@
 package com.ghatana.appplatform.incident;
 
+import com.ghatana.platform.audit.AuditBusPort;
+import com.ghatana.platform.audit.AuditEvent;
 import io.activej.promise.Promise;
 import io.micrometer.core.instrument.*;
 
@@ -75,10 +77,6 @@ public class AutomatedIncidentPlaybookService {
         String createIncident(String title, String severity, String source) throws Exception;
     }
 
-    public interface AuditPort {
-        void record(String actorId, String action, String detail) throws Exception;
-    }
-
     // ── Fields ────────────────────────────────────────────────────────────────
 
     private final javax.sql.DataSource ds;
@@ -88,7 +86,7 @@ public class AutomatedIncidentPlaybookService {
     private final ServiceRestartPort serviceRestart;
     private final OncallPort oncall;
     private final IncidentCreationPort incidentCreation;
-    private final AuditPort audit;
+    private final AuditBusPort audit;
     private final Executor executor;
     private final Counter playbooksTriggered;
     private final Counter playbooksFailed;
@@ -101,7 +99,7 @@ public class AutomatedIncidentPlaybookService {
         ServiceRestartPort serviceRestart,
         OncallPort oncall,
         IncidentCreationPort incidentCreation,
-        AuditPort audit,
+        AuditBusPort audit,
         MeterRegistry registry,
         Executor executor
     ) {
@@ -140,7 +138,7 @@ public class AutomatedIncidentPlaybookService {
                  )) {
                 ps.setString(1, name); ps.setString(2, triggerCondition); ps.setString(3, actionsJson);
                 try (ResultSet rs = ps.executeQuery()) { rs.next(); String id = rs.getString(1);
-                    audit.record(createdBy, "PLAYBOOK_CREATED", "playbookId=" + id + " name=" + name);
+                    audit.emit(AuditEvent.builder().principal(createdBy).eventType("PLAYBOOK_CREATED").details(Map.of("detail", "playbookId=" + id + " name=" + name)).build());
                     return id;
                 }
             }

@@ -1,6 +1,6 @@
 package com.ghatana.appplatform.risk.service;
 
-import com.zaxxer.hikari.HikariDataSource;
+import javax.sql.DataSource;
 import io.activej.promise.Promise;
 import io.micrometer.core.instrument.Counter;
 import io.micrometer.core.instrument.Gauge;
@@ -33,12 +33,12 @@ public class RiskDashboardService {
     private static final Logger log = LoggerFactory.getLogger(RiskDashboardService.class);
     private static final ZoneId NST = ZoneId.of("Asia/Kathmandu");
 
-    private final HikariDataSource dataSource;
+    private final DataSource dataSource;
     private final Executor         executor;
     private final AtomicInteger    openMarginCallsGauge;
     private final Counter          dashboardQueryCounter;
 
-    public RiskDashboardService(HikariDataSource dataSource, Executor executor,
+    public RiskDashboardService(DataSource dataSource, Executor executor,
                                 MeterRegistry registry) {
         this.dataSource           = dataSource;
         this.executor             = executor;

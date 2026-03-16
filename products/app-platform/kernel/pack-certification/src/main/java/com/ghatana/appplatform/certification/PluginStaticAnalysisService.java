@@ -1,5 +1,7 @@
 package com.ghatana.appplatform.certification;
 
+import com.ghatana.platform.audit.AuditBusPort;
+import com.ghatana.platform.audit.AuditEvent;
 import io.activej.promise.Promise;
 import io.micrometer.core.instrument.*;
 
@@ -50,10 +52,6 @@ public class PluginStaticAnalysisService {
         void publish(String eventType, Map<String, Object> payload) throws Exception;
     }
 
-    public interface AuditPort {
-        void record(String actorId, String action, String detail) throws Exception;
-    }
-
     // ── Value types ───────────────────────────────────────────────────────────
 
     public record RawFinding(
@@ -71,7 +69,7 @@ public class PluginStaticAnalysisService {
     private final javax.sql.DataSource ds;
     private final List<ScanToolPort> tools;
     private final EventPublishPort events;
-    private final AuditPort audit;
+    private final AuditBusPort audit;
     private final Executor executor;
     private final Counter blockedCounter;
     private final Counter criticalFindingCounter;
@@ -80,7 +78,7 @@ public class PluginStaticAnalysisService {
         javax.sql.DataSource ds,
         List<ScanToolPort> tools,
         EventPublishPort events,
-        AuditPort audit,
+        AuditBusPort audit,
         MeterRegistry registry,
         Executor executor
     ) {
@@ -125,9 +123,8 @@ public class PluginStaticAnalysisService {
                     "criticalCount", critical, "highCount", high));
             }
 
-            audit.record(requestedBy, "PLUGIN_STATIC_ANALYSIS",
-                "plugin=" + pluginId + " version=" + version +
-                " critical=" + critical + " blocked=" + blocked);
+            audit.emit(AuditEvent.builder().principal(requestedBy).eventType("PLUGIN_STATIC_ANALYSIS").details(Map.of("detail", "plugin=" + pluginId + " version=" + version +
+                " critical=" + critical + " blocked=" + blocked)).build());
 
             return new ScanSummary(pluginId, version, critical, high, medium, low, info, blocked);
         });

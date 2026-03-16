@@ -1,5 +1,7 @@
 package com.ghatana.appplatform.regulator;
 
+import com.ghatana.platform.audit.AuditBusPort;
+import com.ghatana.platform.audit.AuditEvent;
 import io.activej.promise.Promise;
 import io.micrometer.core.instrument.*;
 
@@ -56,10 +58,6 @@ public class RegulatoryDataExportPackagingService {
         void sendDownloadLink(String regulatorId, String exportId, String downloadUrl, String sha256) throws Exception;
     }
 
-    public interface AuditPort {
-        void record(String actorId, String action, String detail) throws Exception;
-    }
-
     // ── Fields ────────────────────────────────────────────────────────────────
 
     private static final int DOWNLOAD_TTL_HOURS = 72;
@@ -68,7 +66,7 @@ public class RegulatoryDataExportPackagingService {
     private final DataExtractPort extractor;
     private final SecureStoragePort storage;
     private final EmailPort email;
-    private final AuditPort audit;
+    private final AuditBusPort audit;
     private final Executor executor;
     private final Counter exportsReady;
     private final Counter exportsFailed;
@@ -78,7 +76,7 @@ public class RegulatoryDataExportPackagingService {
         DataExtractPort extractor,
         SecureStoragePort storage,
         EmailPort email,
-        AuditPort audit,
+        AuditBusPort audit,
         MeterRegistry registry,
         Executor executor
     ) {
@@ -99,8 +97,7 @@ public class RegulatoryDataExportPackagingService {
                                           String dateFrom, String dateTo, String jurisdiction) {
         return Promise.ofBlocking(executor, () -> {
             String exportId = insertRequest(regulatorId, exportType, dateFrom, dateTo, jurisdiction);
-            audit.record(regulatorId, "EXPORT_REQUESTED",
-                "exportId=" + exportId + " type=" + exportType + " from=" + dateFrom + " to=" + dateTo);
+            audit.emit(AuditEvent.builder().principal(regulatorId).eventType("EXPORT_REQUESTED").details(Map.of("detail", "exportId=" + exportId + " type=" + exportType + " from=" + dateFrom + " to=" + dateTo)).build());
             processAsync(exportId, regulatorId, exportType, dateFrom, dateTo, jurisdiction);
             return exportId;
         });

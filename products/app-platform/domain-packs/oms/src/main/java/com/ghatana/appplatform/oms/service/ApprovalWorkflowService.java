@@ -1,5 +1,7 @@
 package com.ghatana.appplatform.oms.service;
 
+
+import com.ghatana.platform.core.event.EventBusPort;
 import com.ghatana.appplatform.oms.domain.*;
 import com.ghatana.appplatform.oms.port.OrderStore;
 import io.activej.promise.Promise;
@@ -10,7 +12,6 @@ import java.time.Instant;
 import java.util.List;
 import java.util.UUID;
 import java.util.concurrent.Executor;
-import java.util.function.Consumer;
 
 /**
  * @doc.type    Service (Application)
@@ -26,14 +27,14 @@ public class ApprovalWorkflowService {
     private final OrderStore orderStore;
     private final OrderLifecycleService lifecycleService;
     private final Executor executor;
-    private final Consumer<Object> eventPublisher;
+    private final EventBusPort eventBusPort;
 
     public ApprovalWorkflowService(OrderStore orderStore, OrderLifecycleService lifecycleService,
-                                    Executor executor, Consumer<Object> eventPublisher) {
+                                    Executor executor, EventBusPort eventBusPort) {
         this.orderStore = orderStore;
         this.lifecycleService = lifecycleService;
         this.executor = executor;
-        this.eventPublisher = eventPublisher;
+        this.eventBusPort = eventBusPort;
     }
 
     /**
@@ -50,7 +51,7 @@ public class ApprovalWorkflowService {
     public Promise<Order> approve(String orderId, String approverId, String notes) {
         return Promise.ofBlocking(executor, () -> {
             Order updated = lifecycleService.transition(orderId, OrderStatus.APPROVED, null).get();
-            eventPublisher.accept(new ApprovalDecisionEvent(
+            eventBusPort.publish(new ApprovalDecisionEvent(
                     UUID.randomUUID().toString(), orderId, "APPROVED", approverId, notes, Instant.now()));
             log.info("Order approved: orderId={} approver={}", orderId, approverId);
             return updated;
@@ -63,7 +64,7 @@ public class ApprovalWorkflowService {
     public Promise<Order> reject(String orderId, String approverId, String reason) {
         return Promise.ofBlocking(executor, () -> {
             Order updated = lifecycleService.transition(orderId, OrderStatus.REJECTED, reason).get();
-            eventPublisher.accept(new ApprovalDecisionEvent(
+            eventBusPort.publish(new ApprovalDecisionEvent(
                     UUID.randomUUID().toString(), orderId, "REJECTED", approverId, reason, Instant.now()));
             log.info("Order rejected: orderId={} approver={} reason={}", orderId, approverId, reason);
             return updated;

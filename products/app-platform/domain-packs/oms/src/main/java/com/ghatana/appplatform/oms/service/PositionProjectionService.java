@@ -1,5 +1,7 @@
 package com.ghatana.appplatform.oms.service;
 
+
+import com.ghatana.platform.core.event.EventBusPort;
 import com.ghatana.appplatform.oms.domain.*;
 import com.ghatana.appplatform.oms.port.PositionStore;
 import io.activej.promise.Promise;
@@ -10,7 +12,6 @@ import org.slf4j.LoggerFactory;
 import java.math.BigDecimal;
 import java.time.Instant;
 import java.util.concurrent.Executor;
-import java.util.function.Consumer;
 
 /**
  * @doc.type    Service (Application)
@@ -25,14 +26,14 @@ public class PositionProjectionService {
 
     private final PositionStore positionStore;
     private final Executor executor;
-    private final Consumer<Object> eventPublisher;
+    private final EventBusPort eventBusPort;
 
     public PositionProjectionService(PositionStore positionStore, Executor executor,
-                                      Consumer<Object> eventPublisher,
+                                      EventBusPort eventBusPort,
                                       MeterRegistry meterRegistry) {
         this.positionStore = positionStore;
         this.executor = executor;
-        this.eventPublisher = eventPublisher;
+        this.eventBusPort = eventBusPort;
     }
 
     /** Apply fill to the position read model (called from FillReceived event handler). */

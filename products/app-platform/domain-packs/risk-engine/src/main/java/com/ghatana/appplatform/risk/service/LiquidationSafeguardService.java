@@ -1,6 +1,6 @@
 package com.ghatana.appplatform.risk.service;
 
-import com.zaxxer.hikari.HikariDataSource;
+import javax.sql.DataSource;
 import io.activej.promise.Promise;
 import io.micrometer.core.instrument.Counter;
 import io.micrometer.core.instrument.MeterRegistry;
@@ -34,12 +34,12 @@ public class LiquidationSafeguardService {
     private static final double MARKET_IMPACT_CAP_PCT     = 0.05;  // 5% of daily volume
     private static final double DEFAULT_MAX_DAILY_AMOUNT  = 5_000_000.0;  // NPR 50 lakhs
 
-    private final HikariDataSource dataSource;
+    private final DataSource dataSource;
     private final Executor         executor;
     private final Counter          allowedCounter;
     private final Counter          blockedCounter;
 
-    public LiquidationSafeguardService(HikariDataSource dataSource, Executor executor,
+    public LiquidationSafeguardService(DataSource dataSource, Executor executor,
                                        MeterRegistry registry) {
         this.dataSource     = dataSource;
         this.executor       = executor;

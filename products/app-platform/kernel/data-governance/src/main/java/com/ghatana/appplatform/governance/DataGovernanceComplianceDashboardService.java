@@ -1,6 +1,6 @@
 package com.ghatana.appplatform.governance;
 
-import com.zaxxer.hikari.HikariDataSource;
+import javax.sql.DataSource;
 import io.activej.promise.Promise;
 import io.micrometer.core.instrument.Gauge;
 import io.micrometer.core.instrument.MeterRegistry;
@@ -29,7 +29,7 @@ public class DataGovernanceComplianceDashboardService {
     private static final double GREEN_THRESHOLD  = 90.0;
     private static final double YELLOW_THRESHOLD = 70.0;
 
-    private final HikariDataSource dataSource;
+    private final DataSource dataSource;
     private final Executor         executor;
     private final DashboardPort    dashboardPort;
     private final AtomicReference<Double> latestCatalogCoverage       = new AtomicReference<>(0.0);
@@ -38,7 +38,7 @@ public class DataGovernanceComplianceDashboardService {
     private final AtomicReference<Double> latestRetentionCompliance    = new AtomicReference<>(0.0);
     private final AtomicReference<Double> latestLineageCoverage        = new AtomicReference<>(0.0);
 
-    public DataGovernanceComplianceDashboardService(HikariDataSource dataSource, Executor executor,
+    public DataGovernanceComplianceDashboardService(DataSource dataSource, Executor executor,
                                                      DashboardPort dashboardPort,
                                                      MeterRegistry registry) {
         this.dataSource    = dataSource;

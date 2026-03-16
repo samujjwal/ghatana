@@ -1,5 +1,7 @@
 package com.ghatana.appplatform.compliance.service;
 
+
+import com.ghatana.platform.core.event.EventBusPort;
 import com.ghatana.appplatform.compliance.domain.*;
 import io.activej.promise.Promise;
 import io.micrometer.core.instrument.Counter;
@@ -13,7 +15,6 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
 import java.util.concurrent.Executor;
-import java.util.function.Consumer;
 
 /**
  * @doc.type    Service (Application)
@@ -31,7 +32,7 @@ public class ComplianceOrchestrationService {
     private final RestrictedListService restrictedListService;
     private final JurisdictionRuleRouterService jurisdictionRouter;
     private final Executor executor;
-    private final Consumer<Object> eventPublisher;
+    private final EventBusPort eventBusPort;
     private final Counter checksPassedCounter;
     private final Counter checksFailedCounter;
     private final Timer pipelineTimer;
@@ -41,14 +42,14 @@ public class ComplianceOrchestrationService {
                                            RestrictedListService restrictedListService,
                                            JurisdictionRuleRouterService jurisdictionRouter,
                                            Executor executor,
-                                           Consumer<Object> eventPublisher,
+                                           EventBusPort eventBusPort,
                                            MeterRegistry meterRegistry) {
         this.lockInService = lockInService;
         this.kycService = kycService;
         this.restrictedListService = restrictedListService;
         this.jurisdictionRouter = jurisdictionRouter;
         this.executor = executor;
-        this.eventPublisher = eventPublisher;
+        this.eventBusPort = eventBusPort;
         this.checksPassedCounter = meterRegistry.counter("compliance.checks.passed");
         this.checksFailedCounter = meterRegistry.counter("compliance.checks.failed");
         this.pipelineTimer = meterRegistry.timer("compliance.pipeline.duration");
@@ -130,7 +131,7 @@ public class ComplianceOrchestrationService {
                 checksFailedCounter.increment();
             }
 
-            eventPublisher.accept(new ComplianceCheckCompletedEvent(result));
+            eventBusPort.publish(new ComplianceCheckCompletedEvent(result));
             log.info("Compliance check: orderId={} status={} duration={}ms rules={}",
                     request.orderId(), overallStatus, durationMs, details.size());
             return result;

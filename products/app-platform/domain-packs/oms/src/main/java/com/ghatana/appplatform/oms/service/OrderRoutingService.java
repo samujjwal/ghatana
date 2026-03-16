@@ -1,5 +1,7 @@
 package com.ghatana.appplatform.oms.service;
 
+
+import com.ghatana.platform.core.event.EventBusPort;
 import io.micrometer.core.instrument.Counter;
 import io.micrometer.core.instrument.MeterRegistry;
 import org.slf4j.Logger;
@@ -10,7 +12,6 @@ import java.math.BigDecimal;
 import java.sql.*;
 import java.time.Instant;
 import java.util.*;
-import java.util.function.Consumer;
 
 /**
  * @doc.type      Service
@@ -28,15 +29,15 @@ public class OrderRoutingService {
 
     private final EmsPort       emsPort;
     private final DataSource    dataSource;
-    private final Consumer<Object> eventPublisher;
+    private final EventBusPort eventBusPort;
     private final Counter ordersRouted;
     private final Counter emsRejections;
 
     public OrderRoutingService(EmsPort emsPort, DataSource dataSource,
-                                Consumer<Object> eventPublisher, MeterRegistry meterRegistry) {
+                                EventBusPort eventBusPort, MeterRegistry meterRegistry) {
         this.emsPort        = emsPort;
         this.dataSource     = dataSource;
-        this.eventPublisher = eventPublisher;
+        this.eventBusPort = eventBusPort;
         this.ordersRouted   = meterRegistry.counter("oms.orders.routed");
         this.emsRejections  = meterRegistry.counter("oms.ems.rejections");
     }
@@ -74,7 +75,7 @@ public class OrderRoutingService {
             emsRejections.increment();
             log.warn("EMS rejected orderId={} reason={}", orderId, e.getMessage());
             updateOrderStatus(orderId, "REJECTED", e.getMessage());
-            eventPublisher.accept(new OrderEmsRejectedEvent(orderId, clientId, e.getMessage()));
+            eventBusPort.publish(new OrderEmsRejectedEvent(orderId, clientId, e.getMessage()));
             return null;
         }
 
@@ -83,7 +84,7 @@ public class OrderRoutingService {
         ordersRouted.increment();
 
         log.info("OrderRouting: routed orderId={} routingId={} exchange={}", orderId, routingId, exchange);
-        eventPublisher.accept(new OrderRoutedEvent(orderId, clientId, routingId, exchange));
+        eventBusPort.publish(new OrderRoutedEvent(orderId, clientId, routingId, exchange));
         return routingId;
     }
 

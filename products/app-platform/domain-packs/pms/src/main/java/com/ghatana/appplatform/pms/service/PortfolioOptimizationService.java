@@ -1,6 +1,6 @@
 package com.ghatana.appplatform.pms.service;
 
-import com.zaxxer.hikari.HikariDataSource;
+import javax.sql.DataSource;
 import io.activej.promise.Promise;
 import io.micrometer.core.instrument.Timer;
 import io.micrometer.core.instrument.MeterRegistry;
@@ -38,12 +38,12 @@ public class PortfolioOptimizationService {
     private static final double CONVERGENCE_TOL  = 1e-6;
     private static final double RISK_FREE_RATE   = 0.05; // 5% per annum
 
-    private final HikariDataSource       dataSource;
+    private final DataSource       dataSource;
     private final Executor               executor;
     private final OptimizationModelPort  customModel;
     private final Timer                  optimizationTimer;
 
-    public PortfolioOptimizationService(HikariDataSource dataSource, Executor executor,
+    public PortfolioOptimizationService(DataSource dataSource, Executor executor,
                                         OptimizationModelPort customModel, MeterRegistry registry) {
         this.dataSource        = dataSource;
         this.executor          = executor;

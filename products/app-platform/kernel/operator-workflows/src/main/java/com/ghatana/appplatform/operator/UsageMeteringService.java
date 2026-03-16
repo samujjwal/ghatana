@@ -1,5 +1,7 @@
 package com.ghatana.appplatform.operator;
 
+import com.ghatana.platform.audit.AuditBusPort;
+import com.ghatana.platform.audit.AuditEvent;
 import io.activej.promise.Promise;
 import io.micrometer.core.instrument.*;
 
@@ -55,10 +57,6 @@ public class UsageMeteringService {
         String exportUsageCsv(String tenantId, String period, List<Map<String, Object>> rows) throws Exception;
     }
 
-    public interface AuditPort {
-        void record(String actorId, String action, String detail) throws Exception;
-    }
-
     // ── Value types ───────────────────────────────────────────────────────────
 
     public record BillingReport(
@@ -71,14 +69,14 @@ public class UsageMeteringService {
 
     private final javax.sql.DataSource ds;
     private final BillingExportPort exporter;
-    private final AuditPort audit;
+    private final AuditBusPort audit;
     private final Executor executor;
     private final Counter meteringEventsCounter;
 
     public UsageMeteringService(
         javax.sql.DataSource ds,
         BillingExportPort exporter,
-        AuditPort audit,
+        AuditBusPort audit,
         MeterRegistry registry,
         Executor executor
     ) {
@@ -158,7 +156,7 @@ public class UsageMeteringService {
                 ? exporter.exportInvoicePdf(tenantId, month, billData)
                 : exporter.exportUsageCsv(tenantId, month, rows);
 
-            audit.record(requestedBy, "BILLING_REPORT_GENERATED", "tenantId=" + tenantId + " period=" + month);
+            audit.emit(AuditEvent.builder().principal(requestedBy).eventType("BILLING_REPORT_GENERATED").details(Map.of("detail", "tenantId=" + tenantId + " period=" + month)).build());
             return new BillingReport(tenantId, month, totals, plan.flatFee(), overage, total, exportPath);
         });
     }

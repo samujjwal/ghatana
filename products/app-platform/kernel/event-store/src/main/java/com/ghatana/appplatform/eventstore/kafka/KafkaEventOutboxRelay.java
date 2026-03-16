@@ -2,13 +2,14 @@ package com.ghatana.appplatform.eventstore.kafka;
 
 import com.ghatana.appplatform.eventstore.domain.AggregateEventRecord;
 import com.ghatana.appplatform.eventstore.port.AggregateEventStore;
+import io.activej.eventloop.Eventloop;
+import io.activej.promise.Promise;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.util.List;
-import java.util.concurrent.Executors;
-import java.util.concurrent.ScheduledExecutorService;
-import java.util.concurrent.TimeUnit;
+import java.util.concurrent.Executor;
+import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicLong;
 
 /**
@@ -43,40 +44,15 @@ public final class KafkaEventOutboxRelay {
     private final KafkaOutboxCursor cursor;
     private final int batchSize;
     private final int maxAttempts;
-    private final ScheduledExecutorService scheduler;
+    private final Eventloop eventloop;
+    private final Executor blockingExecutor;
     /** Optional backpressure monitor; null when not configured (K05-026). */
     private final KafkaProducerFlowControl flowControl;
 
+    private final AtomicBoolean running = new AtomicBoolean(false);
     private final AtomicLong totalPublished = new AtomicLong();
     private final AtomicLong totalDlqRouted  = new AtomicLong();
 
-    /**
-     * @param eventStore  source of unpublished events
-     * @param publisher   Kafka publisher for successful deliveries
-     * @param dlqPublisher publisher used to route failed events to DLQ topics
-     * @param cursor      tracks the last-published sequence per aggregate type
-     * @param batchSize   events processed per poll cycle (default: 100)
-     * @param maxAttempts relay attempts before DLQ routing (default: 5)
-     */
-    public KafkaEventOutboxRelay(
-            AggregateEventStore eventStore,
-            KafkaEventPublisher publisher,
-            KafkaEventPublisher dlqPublisher,
-            KafkaOutboxCursor cursor,
-            int batchSize,
-            int maxAttempts) {
-        this(eventStore, publisher, dlqPublisher, cursor, batchSize, maxAttempts, null);
-    }
-
-    /**
-     * @param eventStore   source of unpublished events
-     * @param publisher    Kafka publisher for successful deliveries
-     * @param dlqPublisher publisher used to route failed events to DLQ topics
-     * @param cursor       tracks the last-published sequence per aggregate type
-     * @param batchSize    events processed per poll cycle (default: 100)
-     * @param maxAttempts  relay attempts before DLQ routing (default: 5)
-     * @param flowControl  optional producer buffer monitor; null to disable flow control (K05-026)
-     */
     public KafkaEventOutboxRelay(
             AggregateEventStore eventStore,
             KafkaEventPublisher publisher,
@@ -84,41 +60,46 @@ public final class KafkaEventOutboxRelay {
             KafkaOutboxCursor cursor,
             int batchSize,
             int maxAttempts,
-            KafkaProducerFlowControl flowControl) {
-        this.eventStore   = eventStore;
-        this.publisher    = publisher;
-        this.dlqPublisher = dlqPublisher;
-        this.cursor       = cursor;
-        this.batchSize    = batchSize;
-        this.maxAttempts  = maxAttempts;
-        this.flowControl  = flowControl;
-        this.scheduler    = Executors.newSingleThreadScheduledExecutor(r -> {
-            Thread t = new Thread(r, "kafka-outbox-relay");
-            t.setDaemon(true);
-            return t;
-        });
+            Eventloop eventloop,
+            Executor blockingExecutor) {
+        this(eventStore, publisher, dlqPublisher, cursor, batchSize, maxAttempts, null,
+             eventloop, blockingExecutor);
+    }
+
+    public KafkaEventOutboxRelay(
+            AggregateEventStore eventStore,
+            KafkaEventPublisher publisher,
+            KafkaEventPublisher dlqPublisher,
+            KafkaOutboxCursor cursor,
+            int batchSize,
+            int maxAttempts,
+            KafkaProducerFlowControl flowControl,
+            Eventloop eventloop,
+            Executor blockingExecutor) {
+        this.eventStore       = eventStore;
+        this.publisher        = publisher;
+        this.dlqPublisher     = dlqPublisher;
+        this.cursor           = cursor;
+        this.batchSize        = batchSize;
+        this.maxAttempts      = maxAttempts;
+        this.flowControl      = flowControl;
+        this.eventloop        = eventloop;
+        this.blockingExecutor = blockingExecutor;
     }
 
     /** Starts the relay with the specified polling interval in milliseconds. */
     public void start(long pollIntervalMs) {
         log.info("KafkaEventOutboxRelay starting: batchSize={}, pollIntervalMs={}, maxAttempts={}",
                 batchSize, pollIntervalMs, maxAttempts);
-        scheduler.scheduleWithFixedDelay(this::processBatch, 0, pollIntervalMs, TimeUnit.MILLISECONDS);
+        running.set(true);
+        scheduleNextBatch(pollIntervalMs);
     }
 
-    /** Stops the relay gracefully, waiting up to 5 seconds for the current batch. */
+    /** Stops the relay gracefully. */
     public void stop() {
         log.info("KafkaEventOutboxRelay stopping (totalPublished={}, totalDlqRouted={})",
                 totalPublished.get(), totalDlqRouted.get());
-        scheduler.shutdown();
-        try {
-            if (!scheduler.awaitTermination(5, TimeUnit.SECONDS)) {
-                scheduler.shutdownNow();
-            }
-        } catch (InterruptedException e) {
-            Thread.currentThread().interrupt();
-            scheduler.shutdownNow();
-        }
+        running.set(false);
     }
 
     /** Returns total events successfully published to Kafka since start. */
@@ -126,6 +107,27 @@ public final class KafkaEventOutboxRelay {
 
     /** Returns total events forwarded to DLQ topics since start. */
     public long totalDlqRouted() { return totalDlqRouted.get(); }
+
+    // ─── Private ─────────────────────────────────────────────────────────────
+
+    private long currentPollIntervalMs;
+
+    private void scheduleNextBatch(long pollIntervalMs) {
+        this.currentPollIntervalMs = pollIntervalMs;
+        eventloop.delay(0, this::doScheduledBatch);
+    }
+
+    private void doScheduledBatch() {
+        if (!running.get()) return;
+        Promise.ofBlocking(blockingExecutor, () -> {
+            processBatch();
+            return null;
+        }).whenComplete(() -> {
+            if (running.get()) {
+                eventloop.delay(currentPollIntervalMs, this::doScheduledBatch);
+            }
+        });
+    }
 
     // ─── Private ─────────────────────────────────────────────────────────────
 

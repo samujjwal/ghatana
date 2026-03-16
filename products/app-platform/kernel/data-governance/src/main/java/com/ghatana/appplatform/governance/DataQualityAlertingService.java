@@ -1,6 +1,8 @@
 package com.ghatana.appplatform.governance;
 
-import com.zaxxer.hikari.HikariDataSource;
+import com.ghatana.platform.audit.AuditBusPort;
+import com.ghatana.platform.audit.AuditEvent;
+import javax.sql.DataSource;
 import io.activej.promise.Promise;
 import io.micrometer.core.instrument.Counter;
 import io.micrometer.core.instrument.MeterRegistry;
@@ -28,16 +30,16 @@ public class DataQualityAlertingService {
     private static final int    TREND_DECLINE_WINDOW       = 3;   // consecutive checks
     private static final int    DEFAULT_SLA_DAYS           = 5;
 
-    private final HikariDataSource         dataSource;
+    private final DataSource         dataSource;
     private final Executor                 executor;
-    private final AuditPort                auditPort;
+    private final AuditBusPort                auditPort;
     private final RemediationWorkflowPort  remediationPort;
     private final Counter                  breaksAlertedCounter;
     private final Counter                  autoRemediatedCounter;
     private final Counter                  slaBreachCounter;
 
-    public DataQualityAlertingService(HikariDataSource dataSource, Executor executor,
-                                       AuditPort auditPort,
+    public DataQualityAlertingService(DataSource dataSource, Executor executor,
+                                       AuditBusPort auditPort,
                                        RemediationWorkflowPort remediationPort,
                                        MeterRegistry registry) {
         this.dataSource           = dataSource;
@@ -50,11 +52,6 @@ public class DataQualityAlertingService {
     }
 
     // ─── Inner ports ─────────────────────────────────────────────────────────
-
-    /** K-07 audit trail for remediation evidence. */
-    public interface AuditPort {
-        void log(String action, String resourceType, String resourceId, Map<String, Object> details);
-    }
 
     /** Steward assignment and escalation workflow. */
     public interface RemediationWorkflowPort {
@@ -122,8 +119,7 @@ public class DataQualityAlertingService {
             recordScoreHistory(assetId, ruleId, score);
             breaksAlertedCounter.increment();
 
-            auditPort.log("QUALITY_BREAK_RAISED", "DataAsset", assetId,
-                Map.of("breakId", breakId, "score", score, "threshold", threshold, "actor", actorId));
+            audit.emit(AuditEvent.builder().eventType("QUALITY_BREAK_RAISED").resourceType("DataAsset").resourceId(assetId).details(Map.of("breakId", breakId, "score", score, "threshold", threshold, "actor", actorId)).build());
 
             QualityBreak qb = new QualityBreak(breakId, assetId, ruleId, score, threshold,
                 BreakStatus.OPEN, now, null, slaDue);
@@ -198,8 +194,7 @@ public class DataQualityAlertingService {
                 ps.executeUpdate();
             }
 
-            auditPort.log("QUALITY_BREAK_ASSIGNED", "DataAsset", assetId,
-                Map.of("breakId", breakId, "assignedTo", assigneeId, "assignedBy", assignedBy));
+            audit.emit(AuditEvent.builder().eventType("QUALITY_BREAK_ASSIGNED").resourceType("DataAsset").resourceId(assetId).details(Map.of("breakId", breakId, "assignedTo", assigneeId, "assignedBy", assignedBy)).build());
             return null;
         });
     }

@@ -1,5 +1,7 @@
 package com.ghatana.appplatform.marketdata.service;
 
+
+import com.ghatana.platform.core.event.EventBusPort;
 import com.ghatana.appplatform.marketdata.domain.L2OrderBook;
 import io.activej.promise.Promise;
 import io.micrometer.core.instrument.MeterRegistry;
@@ -11,7 +13,6 @@ import java.time.Instant;
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.Executor;
-import java.util.function.Consumer;
 
 /**
  * @doc.type    Service (Application)
@@ -31,18 +32,18 @@ public class L2OrderBookService {
     private final ConcurrentHashMap<String, InstrumentBook> books = new ConcurrentHashMap<>();
     private final int depth;
     private final Executor executor;
-    private final Consumer<Object> eventPublisher;
+    private final EventBusPort eventBusPort;
 
-    public L2OrderBookService(Executor executor, Consumer<Object> eventPublisher,
+    public L2OrderBookService(Executor executor, EventBusPort eventBusPort,
                                MeterRegistry meterRegistry) {
-        this(DEFAULT_DEPTH, executor, eventPublisher, meterRegistry);
+        this(DEFAULT_DEPTH, executor, eventBusPort, meterRegistry);
     }
 
-    public L2OrderBookService(int depth, Executor executor, Consumer<Object> eventPublisher,
+    public L2OrderBookService(int depth, Executor executor, EventBusPort eventBusPort,
                                MeterRegistry meterRegistry) {
         this.depth = depth;
         this.executor = executor;
-        this.eventPublisher = eventPublisher;
+        this.eventBusPort = eventBusPort;
         meterRegistry.gaugeMapSize("marketdata.l2.instruments", Tags.empty(), books);
     }
 
@@ -52,7 +53,7 @@ public class L2OrderBookService {
             var book = books.computeIfAbsent(event.instrumentId(), InstrumentBook::new);
             book.apply(event);
             var snapshot = book.snapshot(depth);
-            eventPublisher.accept(new L2BookUpdatedEvent(snapshot));
+            eventBusPort.publish(new L2BookUpdatedEvent(snapshot));
             return snapshot;
         });
     }

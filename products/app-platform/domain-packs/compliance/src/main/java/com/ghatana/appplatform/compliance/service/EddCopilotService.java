@@ -1,5 +1,7 @@
 package com.ghatana.appplatform.compliance.service;
 
+
+import com.ghatana.platform.core.event.EventBusPort;
 import io.micrometer.core.instrument.Counter;
 import io.micrometer.core.instrument.MeterRegistry;
 import org.slf4j.Logger;
@@ -7,7 +9,6 @@ import org.slf4j.LoggerFactory;
 
 import java.time.Instant;
 import java.util.List;
-import java.util.function.Consumer;
 
 /**
  * @doc.type      Service
@@ -28,19 +29,19 @@ public class EddCopilotService {
     private final RagContextPort   ragContextPort;
     private final LlmInferencePort llmPort;
     private final AuditLogPort     auditLogPort;
-    private final Consumer<Object> eventPublisher;
+    private final EventBusPort eventBusPort;
     private final Counter          draftsGenerated;
     private final Counter          queriesAnswered;
 
     public EddCopilotService(RagContextPort ragContextPort,
                               LlmInferencePort llmPort,
                               AuditLogPort auditLogPort,
-                              Consumer<Object> eventPublisher,
+                              EventBusPort eventBusPort,
                               MeterRegistry meterRegistry) {
         this.ragContextPort = ragContextPort;
         this.llmPort        = llmPort;
         this.auditLogPort   = auditLogPort;
-        this.eventPublisher = eventPublisher;
+        this.eventBusPort = eventBusPort;
         this.draftsGenerated = meterRegistry.counter("compliance.edd_copilot.drafts_generated");
         this.queriesAnswered = meterRegistry.counter("compliance.edd_copilot.queries_answered");
     }
@@ -65,7 +66,7 @@ public class EddCopilotService {
         EddDraft draft = new EddDraft(caseId, response.text(), context.relevantChunks(),
                 response.modelId(), Instant.now());
 
-        eventPublisher.accept(new EddDraftGeneratedEvent(caseId, requesterId,
+        eventBusPort.publish(new EddDraftGeneratedEvent(caseId, requesterId,
                 context.relevantChunks().size(), response.modelId()));
         log.info("EDD draft generated caseId={} requester={} modelId={}", caseId, requesterId, response.modelId());
         return draft;

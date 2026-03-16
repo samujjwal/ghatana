@@ -1,5 +1,7 @@
 package com.ghatana.appplatform.marketdata.service;
 
+
+import com.ghatana.platform.core.event.EventBusPort;
 import io.activej.promise.Promise;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -11,7 +13,6 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.Executor;
-import java.util.function.Consumer;
 
 /**
  * @doc.type    Service (Application)
@@ -32,16 +33,16 @@ public class EodReconciliationService {
     private final StoredOhlcvPort storedOhlcvPort;
     private final ExchangeEodPort exchangeEodPort;
     private final Executor executor;
-    private final Consumer<Object> eventPublisher;
+    private final EventBusPort eventBusPort;
 
     public EodReconciliationService(StoredOhlcvPort storedOhlcvPort,
                                      ExchangeEodPort exchangeEodPort,
                                      Executor executor,
-                                     Consumer<Object> eventPublisher) {
+                                     EventBusPort eventBusPort) {
         this.storedOhlcvPort = storedOhlcvPort;
         this.exchangeEodPort = exchangeEodPort;
         this.executor = executor;
-        this.eventPublisher = eventPublisher;
+        this.eventBusPort = eventBusPort;
     }
 
     /**
@@ -80,7 +81,7 @@ public class EodReconciliationService {
                 }
             }
 
-            eventPublisher.accept(new ReconciliationCompletedEvent(date, results));
+            eventBusPort.publish(new ReconciliationCompletedEvent(date, results));
             log.info("EOD reconciliation complete: date={} total={} breaks={}",
                     date, results.size(), results.stream().filter(r -> !r.matched()).count());
             return results;

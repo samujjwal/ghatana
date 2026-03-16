@@ -1,5 +1,7 @@
 package com.ghatana.appplatform.integration;
 
+import com.ghatana.platform.audit.AuditBusPort;
+import com.ghatana.platform.audit.AuditEvent;
 import io.activej.promise.Promise;
 import io.micrometer.core.instrument.*;
 
@@ -45,10 +47,6 @@ public class EventBusThroughputPerformanceTestService {
         long getPublishedInWindow() throws Exception;
     }
 
-    public interface AuditPort {
-        void audit(String event, String detail) throws Exception;
-    }
-
     // ── Constants ─────────────────────────────────────────────────────────────
 
     private static final String TOPIC         = "platform.perf.events";
@@ -60,7 +58,7 @@ public class EventBusThroughputPerformanceTestService {
 
     private final javax.sql.DataSource ds;
     private final EventBusPort eventBus;
-    private final AuditPort audit;
+    private final AuditBusPort audit;
     private final Executor executor;
     private final Counter suitesPassed;
     private final Counter suitesFailed;
@@ -69,7 +67,7 @@ public class EventBusThroughputPerformanceTestService {
     public EventBusThroughputPerformanceTestService(
         javax.sql.DataSource ds,
         EventBusPort eventBus,
-        AuditPort audit,
+        AuditBusPort audit,
         MeterRegistry registry,
         Executor executor
     ) {
@@ -99,7 +97,7 @@ public class EventBusThroughputPerformanceTestService {
             long passed = results.stream().filter(r -> r.passed).count();
             long failed = results.size() - passed;
             if (failed == 0) suitesPassed.increment(); else suitesFailed.increment();
-            audit.audit("EVENTBUS_PERF_SUITE", "passed=" + passed + " failed=" + failed);
+            audit.emit(AuditEvent.builder().eventType("EVENTBUS_PERF_SUITE").details(Map.of("detail", "passed=" + passed + " failed=" + failed)).build());
             return new SuiteResult("EventBusThroughputPerformance", results, passed, failed);
         });
     }

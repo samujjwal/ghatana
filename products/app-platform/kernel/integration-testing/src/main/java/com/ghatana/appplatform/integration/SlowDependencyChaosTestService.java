@@ -1,5 +1,7 @@
 package com.ghatana.appplatform.integration;
 
+import com.ghatana.platform.audit.AuditBusPort;
+import com.ghatana.platform.audit.AuditEvent;
 import io.activej.promise.Promise;
 import io.micrometer.core.instrument.*;
 
@@ -51,10 +53,6 @@ public class SlowDependencyChaosTestService {
         long sendRequestAndMeasureMs(String tenantId, String operation) throws Exception;
     }
 
-    public interface AuditPort {
-        void audit(String event, String detail) throws Exception;
-    }
-
     // ── Constants ─────────────────────────────────────────────────────────────
 
     private static final long INJECTED_LATENCY_MS      = 2_000L;   // 2s injected
@@ -70,7 +68,7 @@ public class SlowDependencyChaosTestService {
     private final ResiliencePort resilience;
     private final ConfigCachePort configCache;
     private final ApiGatewayPort apiGateway;
-    private final AuditPort audit;
+    private final AuditBusPort audit;
     private final Executor executor;
     private final Counter suitesPassed;
     private final Counter suitesFailed;
@@ -83,7 +81,7 @@ public class SlowDependencyChaosTestService {
         ResiliencePort resilience,
         ConfigCachePort configCache,
         ApiGatewayPort apiGateway,
-        AuditPort audit,
+        AuditBusPort audit,
         MeterRegistry registry,
         Executor executor
     ) {
@@ -114,7 +112,7 @@ public class SlowDependencyChaosTestService {
             long passed = results.stream().filter(r -> r.passed).count();
             long failed = results.size() - passed;
             if (failed == 0) suitesPassed.increment(); else suitesFailed.increment();
-            audit.audit("SLOW_DEP_SUITE", "passed=" + passed + " failed=" + failed);
+            audit.emit(AuditEvent.builder().eventType("SLOW_DEP_SUITE").details(Map.of("detail", "passed=" + passed + " failed=" + failed)).build());
             return new SuiteResult("SlowDependencyChaos", results, passed, failed);
         });
     }

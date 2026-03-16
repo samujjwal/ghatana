@@ -1,6 +1,6 @@
 package com.ghatana.appplatform.pricing.service;
 
-import com.zaxxer.hikari.HikariDataSource;
+import javax.sql.DataSource;
 import io.activej.promise.Promise;
 import io.micrometer.core.instrument.Counter;
 import io.micrometer.core.instrument.Gauge;
@@ -31,13 +31,13 @@ import java.util.concurrent.atomic.AtomicLong;
  */
 public class MtmBatchEngineService {
 
-    private final HikariDataSource dataSource;
+    private final DataSource dataSource;
     private final Executor         executor;
     private final Timer            batchTimer;
     private final Counter          positionsValued;
     private final AtomicLong       lastBatchPositions = new AtomicLong(0);
 
-    public MtmBatchEngineService(HikariDataSource dataSource, Executor executor,
+    public MtmBatchEngineService(DataSource dataSource, Executor executor,
                                   MeterRegistry registry) {
         this.dataSource      = dataSource;
         this.executor        = executor;

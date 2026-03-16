@@ -1,5 +1,7 @@
 package com.ghatana.appplatform.manifest;
 
+import com.ghatana.platform.audit.AuditBusPort;
+import com.ghatana.platform.audit.AuditEvent;
 import io.activej.promise.Promise;
 import io.micrometer.core.instrument.*;
 
@@ -67,17 +69,13 @@ public class PostUpgradeSmokeTestSuiteService {
         void notifyOperators(String message) throws Exception;
     }
 
-    public interface AuditPort {
-        void audit(String event, String detail) throws Exception;
-    }
-
     // ── Fields ────────────────────────────────────────────────────────────────
 
     private final javax.sql.DataSource ds;
     private final SmokeTestProbePort probe;
     private final RollbackTriggerPort rollback;
     private final NotificationPort notifier;
-    private final AuditPort audit;
+    private final AuditBusPort audit;
     private final Executor executor;
     private final Counter suitesPassed;
     private final Counter suitesFailed;
@@ -89,7 +87,7 @@ public class PostUpgradeSmokeTestSuiteService {
         SmokeTestProbePort probe,
         RollbackTriggerPort rollback,
         NotificationPort notifier,
-        AuditPort audit,
+        AuditBusPort audit,
         MeterRegistry registry,
         Executor executor
     ) {
@@ -146,7 +144,7 @@ public class PostUpgradeSmokeTestSuiteService {
             if (failed.isEmpty()) {
                 markOverall(runId, "PASSED", false, elapsed);
                 suitesPassed.increment();
-                audit.audit("SMOKE_SUITE_PASSED", "upgradeId=" + upgradeId + " version=" + version);
+                audit.emit(AuditEvent.builder().eventType("SMOKE_SUITE_PASSED").details(Map.of("detail", "upgradeId=" + upgradeId + " version=" + version)).build());
             } else {
                 markOverall(runId, "FAILED", true, elapsed);
                 suitesFailed.increment();
@@ -154,7 +152,7 @@ public class PostUpgradeSmokeTestSuiteService {
                 rollbacksTriggered.increment();
                 rollback.triggerRollback(upgradeId, reason);
                 notifier.notifyOperators("Post-upgrade smoke FAILED for version " + version + ". Rollback triggered. Failed: " + failed);
-                audit.audit("SMOKE_SUITE_FAILED_ROLLBACK", "upgradeId=" + upgradeId + " failed=" + failed);
+                audit.emit(AuditEvent.builder().eventType("SMOKE_SUITE_FAILED_ROLLBACK").details(Map.of("detail", "upgradeId=" + upgradeId + " failed=" + failed)).build());
             }
             return runId;
         });

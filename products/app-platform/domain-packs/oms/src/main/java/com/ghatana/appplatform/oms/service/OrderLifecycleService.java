@@ -1,5 +1,7 @@
 package com.ghatana.appplatform.oms.service;
 
+
+import com.ghatana.platform.core.event.EventBusPort;
 import com.ghatana.appplatform.oms.domain.*;
 import com.ghatana.appplatform.oms.port.OrderStore;
 import io.activej.promise.Promise;
@@ -13,7 +15,6 @@ import java.math.RoundingMode;
 import java.time.Instant;
 import java.util.UUID;
 import java.util.concurrent.Executor;
-import java.util.function.Consumer;
 
 /**
  * @doc.type    Service (Application)
@@ -41,14 +42,14 @@ public class OrderLifecycleService {
 
     private final OrderStore orderStore;
     private final Executor executor;
-    private final Consumer<Object> eventPublisher;
+    private final EventBusPort eventBusPort;
     private final Counter fillsProcessedCounter;
 
     public OrderLifecycleService(OrderStore orderStore, Executor executor,
-                                  Consumer<Object> eventPublisher, MeterRegistry meterRegistry) {
+                                  EventBusPort eventBusPort, MeterRegistry meterRegistry) {
         this.orderStore = orderStore;
         this.executor = executor;
-        this.eventPublisher = eventPublisher;
+        this.eventBusPort = eventBusPort;
         this.fillsProcessedCounter = meterRegistry.counter("oms.fills.processed");
     }
 
@@ -61,7 +62,7 @@ public class OrderLifecycleService {
                     ? order.withRejection(reason)
                     : order.withStatus(newStatus);
             orderStore.update(updated).get();
-            eventPublisher.accept(new OrderStatusChangedEvent(orderId, order.status(), newStatus, Instant.now()));
+            eventBusPort.publish(new OrderStatusChangedEvent(orderId, order.status(), newStatus, Instant.now()));
             log.info("Order transitioned: orderId={} {}→{}", orderId, order.status(), newStatus);
             return updated;
         });
@@ -93,7 +94,7 @@ public class OrderLifecycleService {
             Order updated = order.withFill(fill, newAvgPrice);
             orderStore.update(updated).get();
 
-            eventPublisher.accept(new FillReceivedEvent(orderId, execId, fillQty, fillPrice, newAvgPrice, Instant.now()));
+            eventBusPort.publish(new FillReceivedEvent(orderId, execId, fillQty, fillPrice, newAvgPrice, Instant.now()));
             fillsProcessedCounter.increment();
             log.info("Fill applied: orderId={} execId={} qty={} price={} avgPrice={}",
                     orderId, execId, fillQty, fillPrice, newAvgPrice);
@@ -108,7 +109,7 @@ public class OrderLifecycleService {
             assertTransitionAllowed(order.status(), OrderStatus.CANCELLED);
             Order updated = order.withRejection(reason).withStatus(OrderStatus.CANCELLED);
             orderStore.update(updated).get();
-            eventPublisher.accept(new OrderCancelledEvent(orderId, reason, Instant.now()));
+            eventBusPort.publish(new OrderCancelledEvent(orderId, reason, Instant.now()));
             log.info("Order cancelled: orderId={} reason={}", orderId, reason);
             return updated;
         });

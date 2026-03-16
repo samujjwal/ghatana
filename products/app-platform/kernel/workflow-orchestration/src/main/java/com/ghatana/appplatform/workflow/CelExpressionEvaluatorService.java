@@ -1,5 +1,8 @@
 package com.ghatana.appplatform.workflow;
 
+import com.ghatana.platform.workflow.WorkflowContext;
+import com.ghatana.platform.workflow.WorkflowExpressionEvaluator;
+import com.ghatana.platform.workflow.runtime.MapWorkflowContext;
 import io.activej.promise.Promise;
 import io.micrometer.core.instrument.Counter;
 import io.micrometer.core.instrument.MeterRegistry;
@@ -68,7 +71,7 @@ public class CelExpressionEvaluatorService {
     // Fields
     // -----------------------------------------------------------------------
 
-    private final CelEnginePort celEngine;
+    private final WorkflowExpressionEvaluator platformEvaluator;
     private final CustomFunctionRegistryPort functionRegistry;
     private final Timer evalTimer;
     private final Counter evalTotal;
@@ -80,10 +83,10 @@ public class CelExpressionEvaluatorService {
     // -----------------------------------------------------------------------
 
     public CelExpressionEvaluatorService(MeterRegistry meterRegistry,
-                                          CelEnginePort celEngine,
+                                          WorkflowExpressionEvaluator platformEvaluator,
                                           CustomFunctionRegistryPort functionRegistry) {
-        this.celEngine        = celEngine;
-        this.functionRegistry = functionRegistry;
+        this.platformEvaluator = platformEvaluator;
+        this.functionRegistry  = functionRegistry;
 
         this.evalTimer            = Timer.builder("workflow.cel.eval_duration_ns")
                 .description("CEL expression evaluation duration in nanoseconds")
@@ -109,9 +112,9 @@ public class CelExpressionEvaluatorService {
      */
     public TypeCheckResult typeCheck(String celExpression, String typeSchemaJson) {
         try {
-            celEngine.typeCheck(celExpression, typeSchemaJson);
+            platformEvaluator.validate(celExpression);
             return new TypeCheckResult(true, List.of());
-        } catch (CelEnginePort.CelEvaluationException e) {
+        } catch (Exception e) {
             typeCheckFailureTotal.increment();
             return new TypeCheckResult(false, List.of(e.getMessage()));
         }
@@ -176,13 +179,15 @@ public class CelExpressionEvaluatorService {
     private EvaluationResult evaluate(String celExpression, String contextJson) {
         long start = System.nanoTime();
         try {
-            boolean result = celEngine.evaluate(celExpression, contextJson);
+            WorkflowContext ctx = new MapWorkflowContext("", "", "",
+                contextJson != null ? Map.of("context", contextJson) : Map.of());
+            boolean result = platformEvaluator.evaluateBoolean(celExpression, ctx);
             long elapsed = System.nanoTime() - start;
             evalTimer.record(elapsed, TimeUnit.NANOSECONDS);
             evalTotal.increment();
             if (elapsed < 1_000_000L) evalFastPathTotal.increment();  // under 1ms
             return new EvaluationResult(result, elapsed, false);
-        } catch (CelEnginePort.CelEvaluationException e) {
+        } catch (Exception e) {
             throw new RuntimeException("CEL evaluation failed for expression: " + celExpression, e);
         }
     }

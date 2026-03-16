@@ -1,5 +1,8 @@
 package com.ghatana.appplatform.workflow;
 
+import com.ghatana.platform.audit.AuditBusPort;
+import com.ghatana.platform.audit.AuditEvent;
+import java.util.Map;
 import io.activej.promise.Promise;
 import io.micrometer.core.instrument.Counter;
 import io.micrometer.core.instrument.MeterRegistry;
@@ -61,11 +64,6 @@ public class WorkflowTriggerService {
         boolean verify(String payload, String signature, String secret);
     }
 
-    public interface AuditPort {
-        Promise<Void> log(String action, String actor, String entityId, String entityType,
-                          String beforeJson, String afterJson);
-    }
-
     // -----------------------------------------------------------------------
     // Records
     // -----------------------------------------------------------------------
@@ -104,7 +102,7 @@ public class WorkflowTriggerService {
     private final CelEvaluatorPort cel;
     private final WorkflowInstanceLaunchPort launcher;
     private final HmacVerifierPort hmacVerifier;
-    private final AuditPort auditPort;
+    private final AuditBusPort auditPort;
 
     private final Counter triggerFiredTotal;
     private final Counter eventFilterPassedTotal;
@@ -123,7 +121,7 @@ public class WorkflowTriggerService {
                                    CelEvaluatorPort cel,
                                    WorkflowInstanceLaunchPort launcher,
                                    HmacVerifierPort hmacVerifier,
-                                   AuditPort auditPort) {
+                                   AuditBusPort auditPort) {
         this.dataSource          = dataSource;
         this.executor            = executor;
         this.eventBusSubscriber  = eventBusSubscriber;
@@ -201,7 +199,7 @@ public class WorkflowTriggerService {
         return Promise.ofBlocking(executor, () -> {
             setTriggerStatus(triggerId, "PAUSED");
             scheduler.unscheduleCron(triggerId);
-            auditPort.log("TRIGGER_PAUSED", pausedBy, triggerId, "WORKFLOW_TRIGGER", null, null);
+            audit.emit(AuditEvent.builder().eventType("TRIGGER_PAUSED").principal(pausedBy).resourceId(triggerId).resourceType("WORKFLOW_TRIGGER").details(Map.of("before", String.valueOf(null), "after", String.valueOf(null))).build());
             return null;
         });
     }

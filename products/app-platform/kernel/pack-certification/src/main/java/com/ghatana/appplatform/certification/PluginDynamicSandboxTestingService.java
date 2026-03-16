@@ -1,5 +1,7 @@
 package com.ghatana.appplatform.certification;
 
+import com.ghatana.platform.audit.AuditBusPort;
+import com.ghatana.platform.audit.AuditEvent;
 import io.activej.promise.Promise;
 import io.micrometer.core.instrument.*;
 
@@ -49,10 +51,6 @@ public class PluginDynamicSandboxTestingService {
         boolean isSandboxHealthy(String sandboxId) throws Exception;
     }
 
-    public interface AuditPort {
-        void record(String actorId, String action, String detail) throws Exception;
-    }
-
     // ── Value types ───────────────────────────────────────────────────────────
 
     public record ScenarioResult(String scenario, String outcome, String evidence, long durationMs) {}
@@ -76,7 +74,7 @@ public class PluginDynamicSandboxTestingService {
 
     private final javax.sql.DataSource ds;
     private final SandboxRunnerPort sandbox;
-    private final AuditPort audit;
+    private final AuditBusPort audit;
     private final Executor executor;
     private final Counter testsPassedCounter;
     private final Counter testsFailedCounter;
@@ -84,7 +82,7 @@ public class PluginDynamicSandboxTestingService {
     public PluginDynamicSandboxTestingService(
         javax.sql.DataSource ds,
         SandboxRunnerPort sandbox,
-        AuditPort audit,
+        AuditBusPort audit,
         MeterRegistry registry,
         Executor executor
     ) {
@@ -132,8 +130,7 @@ public class PluginDynamicSandboxTestingService {
             String reportId = persistReport(pluginId, version, sandboxId, outcome, results, totalMs);
 
             if (overallPass) testsPassedCounter.increment(); else testsFailedCounter.increment();
-            audit.record("system", "DYNAMIC_TEST_COMPLETED",
-                "pluginId=" + pluginId + " version=" + version + " outcome=" + outcome);
+            audit.emit(AuditEvent.builder().principal("system").eventType("DYNAMIC_TEST_COMPLETED").details(Map.of("detail", "pluginId=" + pluginId + " version=" + version + " outcome=" + outcome)).build());
             return new DynamicTestReport(reportId, pluginId, version, outcome, results);
         });
     }

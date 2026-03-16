@@ -1,6 +1,6 @@
 package com.ghatana.appplatform.surveillance.service;
 
-import com.zaxxer.hikari.HikariDataSource;
+import javax.sql.DataSource;
 import io.activej.promise.Promise;
 import io.micrometer.core.instrument.Counter;
 import io.micrometer.core.instrument.MeterRegistry;
@@ -34,13 +34,13 @@ public class VolumeManipulationService {
     private static final double DEFAULT_VOLUME_RATIO_THRESHOLD   = 5.0;
     private static final double DEFAULT_ORDER_TO_TRADE_THRESHOLD = 10.0;
 
-    private final HikariDataSource dataSource;
+    private final DataSource dataSource;
     private final Executor         executor;
     private final ConfigPort       configPort;
     private final AlertPort        alertPort;
     private final Counter          alertCounter;
 
-    public VolumeManipulationService(HikariDataSource dataSource, Executor executor,
+    public VolumeManipulationService(DataSource dataSource, Executor executor,
                                       ConfigPort configPort, AlertPort alertPort,
                                       MeterRegistry registry) {
         this.dataSource   = dataSource;

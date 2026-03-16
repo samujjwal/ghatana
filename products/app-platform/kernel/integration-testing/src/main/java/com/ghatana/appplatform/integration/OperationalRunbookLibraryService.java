@@ -1,5 +1,7 @@
 package com.ghatana.appplatform.integration;
 
+import com.ghatana.platform.audit.AuditBusPort;
+import com.ghatana.platform.audit.AuditEvent;
 import io.activej.promise.Promise;
 import io.micrometer.core.instrument.*;
 
@@ -54,10 +56,6 @@ public class OperationalRunbookLibraryService {
         boolean rehearsedWithin90Days(String runbookName) throws Exception;
     }
 
-    public interface AuditPort {
-        void audit(String event, String detail) throws Exception;
-    }
-
     public record Runbook(String name, String severity, String ownerTeam) {}
 
     // ── Constants ─────────────────────────────────────────────────────────────
@@ -78,7 +76,7 @@ public class OperationalRunbookLibraryService {
     private final javax.sql.DataSource ds;
     private final RunbookRegistryPort registry;
     private final RunbookRehearsalPort rehearsal;
-    private final AuditPort audit;
+    private final AuditBusPort audit;
     private final Executor executor;
     private final Counter suitesPassed;
     private final Counter suitesFailed;
@@ -87,7 +85,7 @@ public class OperationalRunbookLibraryService {
         javax.sql.DataSource ds,
         RunbookRegistryPort registry,
         RunbookRehearsalPort rehearsal,
-        AuditPort audit,
+        AuditBusPort audit,
         MeterRegistry registry2,
         Executor executor
     ) {
@@ -115,7 +113,7 @@ public class OperationalRunbookLibraryService {
             long passed = results.stream().filter(r -> r.passed).count();
             long failed = results.size() - passed;
             if (failed == 0) suitesPassed.increment(); else suitesFailed.increment();
-            audit.audit("GA_RUNBOOK_SUITE", "passed=" + passed + " failed=" + failed);
+            audit.emit(AuditEvent.builder().eventType("GA_RUNBOOK_SUITE").details(Map.of("detail", "passed=" + passed + " failed=" + failed)).build());
             return new SuiteResult("OperationalRunbookLibrary", results, passed, failed);
         });
     }

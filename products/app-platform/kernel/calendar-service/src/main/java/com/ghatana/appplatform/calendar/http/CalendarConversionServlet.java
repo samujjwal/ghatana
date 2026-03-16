@@ -2,6 +2,7 @@ package com.ghatana.appplatform.calendar.http;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.ObjectNode;
+import com.ghatana.platform.core.json.PlatformObjectMapper;
 import com.ghatana.appplatform.calendar.conversion.BsCalendarConversion;
 import com.ghatana.appplatform.calendar.conversion.BsCalendarConversion.BsDateComponents;
 import com.ghatana.appplatform.calendar.conversion.CalendarRangeException;
@@ -38,7 +39,7 @@ public final class CalendarConversionServlet {
     private final ObjectMapper mapper;
 
     public CalendarConversionServlet() {
-        this.mapper = new ObjectMapper();
+        this.mapper = PlatformObjectMapper.instance();
     }
 
     /**

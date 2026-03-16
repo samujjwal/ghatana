@@ -1,6 +1,6 @@
 package com.ghatana.appplatform.deployment;
 
-import com.zaxxer.hikari.HikariDataSource;
+import javax.sql.DataSource;
 import io.activej.promise.Promise;
 import io.micrometer.core.instrument.Counter;
 import io.micrometer.core.instrument.MeterRegistry;
@@ -24,7 +24,7 @@ import java.util.concurrent.Executor;
  */
 public class IacValidationService {
 
-    private final HikariDataSource   dataSource;
+    private final DataSource   dataSource;
     private final Executor           executor;
     private final IacLinterPort      linterPort;
     private final SecurityPolicyPort securityPolicyPort;
@@ -33,7 +33,7 @@ public class IacValidationService {
     private final Counter            validationsPassedCounter;
     private final Counter            validationsFailedCounter;
 
-    public IacValidationService(HikariDataSource dataSource, Executor executor,
+    public IacValidationService(DataSource dataSource, Executor executor,
                                  IacLinterPort linterPort, SecurityPolicyPort securityPolicyPort,
                                  CostEstimatorPort costEstimatorPort, MeterRegistry registry) {
         this.dataSource               = dataSource;

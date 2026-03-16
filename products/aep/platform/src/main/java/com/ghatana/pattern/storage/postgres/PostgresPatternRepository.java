@@ -6,7 +6,6 @@ import com.ghatana.pattern.api.model.PatternMetadata;
 import com.ghatana.pattern.api.model.PatternSpecification;
 import com.ghatana.pattern.api.model.PatternStatus;
 import com.ghatana.pattern.storage.PatternRepository;
-import com.zaxxer.hikari.HikariDataSource;
 import io.activej.promise.Promise;
 import io.activej.promise.Promises;
 import io.micrometer.core.instrument.MeterRegistry;

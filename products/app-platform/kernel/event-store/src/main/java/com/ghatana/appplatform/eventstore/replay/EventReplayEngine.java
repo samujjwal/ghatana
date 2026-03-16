@@ -2,6 +2,7 @@ package com.ghatana.appplatform.eventstore.replay;
 
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.ghatana.platform.core.json.PlatformObjectMapper;
 import com.ghatana.appplatform.eventstore.domain.AggregateEventRecord;
 
 import javax.sql.DataSource;
@@ -36,7 +37,7 @@ public class EventReplayEngine {
 
     private static final TypeReference<Map<String, Object>> MAP_TYPE =
         new TypeReference<>() {};
-    private static final ObjectMapper OBJECT_MAPPER = new ObjectMapper();
+    private static final ObjectMapper OBJECT_MAPPER = PlatformObjectMapper.instance();
 
     private final DataSource dataSource;
 

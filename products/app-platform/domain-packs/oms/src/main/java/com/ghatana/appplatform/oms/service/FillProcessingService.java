@@ -1,5 +1,7 @@
 package com.ghatana.appplatform.oms.service;
 
+
+import com.ghatana.platform.core.event.EventBusPort;
 import io.micrometer.core.instrument.Counter;
 import io.micrometer.core.instrument.MeterRegistry;
 import org.slf4j.Logger;
@@ -30,14 +32,14 @@ public class FillProcessingService {
     private static final Logger log = LoggerFactory.getLogger(FillProcessingService.class);
 
     private final DataSource    dataSource;
-    private final Consumer<Object> eventPublisher;
+    private final EventBusPort eventBusPort;
     private final Counter fullFills;
     private final Counter partialFills;
 
-    public FillProcessingService(DataSource dataSource, Consumer<Object> eventPublisher,
+    public FillProcessingService(DataSource dataSource, EventBusPort eventBusPort,
                                   MeterRegistry meterRegistry) {
         this.dataSource     = dataSource;
-        this.eventPublisher = eventPublisher;
+        this.eventBusPort = eventBusPort;
         this.fullFills      = meterRegistry.counter("oms.fills.full");
         this.partialFills   = meterRegistry.counter("oms.fills.partial");
     }
@@ -91,12 +93,12 @@ public class FillProcessingService {
                 if ("FILLED".equals(newStatus)) {
                     fullFills.increment();
                     log.info("FillProcessing: order FULLY FILLED orderId={} avgPrice={}", orderId, newAvgPrice);
-                    eventPublisher.accept(new OrderFilledEvent(orderId, newFilled, newAvgPrice));
+                    eventBusPort.publish(new OrderFilledEvent(orderId, newFilled, newAvgPrice));
                 } else {
                     partialFills.increment();
                     log.info("FillProcessing: partial fill orderId={} filled={}/{} avgPrice={}",
                             orderId, newFilled, current.totalQuantity(), newAvgPrice);
-                    eventPublisher.accept(new OrderPartiallyFilledEvent(
+                    eventBusPort.publish(new OrderPartiallyFilledEvent(
                             orderId, filledQty, newFilled, current.totalQuantity(), fillPrice, newAvgPrice));
                 }
 

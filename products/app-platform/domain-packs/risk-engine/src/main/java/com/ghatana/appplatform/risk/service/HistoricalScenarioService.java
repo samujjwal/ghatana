@@ -1,6 +1,6 @@
 package com.ghatana.appplatform.risk.service;
 
-import com.zaxxer.hikari.HikariDataSource;
+import javax.sql.DataSource;
 import io.activej.promise.Promise;
 import io.micrometer.core.instrument.Counter;
 import io.micrometer.core.instrument.MeterRegistry;
@@ -46,12 +46,12 @@ public class HistoricalScenarioService {
     private static final LocalDate EARTHQUAKE_START = LocalDate.of(2015, 4, 25);
     private static final LocalDate EARTHQUAKE_END   = LocalDate.of(2015, 7, 31);
 
-    private final HikariDataSource                    dataSource;
+    private final DataSource                    dataSource;
     private final Executor                            executor;
     private final StressTestingService.ScenarioPricingPort scenarioPricer;
     private final Counter                             replayCounter;
 
-    public HistoricalScenarioService(HikariDataSource dataSource, Executor executor,
+    public HistoricalScenarioService(DataSource dataSource, Executor executor,
                                      StressTestingService.ScenarioPricingPort scenarioPricer,
                                      MeterRegistry registry) {
         this.dataSource     = dataSource;

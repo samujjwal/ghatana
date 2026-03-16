@@ -1,5 +1,7 @@
 package com.ghatana.appplatform.sanctions.service;
 
+
+import com.ghatana.platform.core.event.EventBusPort;
 import io.micrometer.core.instrument.Counter;
 import io.micrometer.core.instrument.Gauge;
 import io.micrometer.core.instrument.MeterRegistry;
@@ -15,7 +17,6 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
 import java.util.concurrent.atomic.AtomicInteger;
-import java.util.function.Consumer;
 
 /**
  * @doc.type      Service
@@ -34,7 +35,7 @@ public class BatchScreeningSchedulerService {
 
     private final DataSource              dataSource;
     private final ScreeningEngineService  screeningEngine;
-    private final Consumer<Object>        eventPublisher;
+    private final EventBusPort        eventBusPort;
     private final AtomicInteger           inFlightRuns = new AtomicInteger(0);
     private final Counter                 runsStarted;
     private final Counter                 runsCompleted;
@@ -42,11 +43,11 @@ public class BatchScreeningSchedulerService {
 
     public BatchScreeningSchedulerService(DataSource dataSource,
                                            ScreeningEngineService screeningEngine,
-                                           Consumer<Object> eventPublisher,
+                                           EventBusPort eventBusPort,
                                            MeterRegistry meterRegistry) {
         this.dataSource      = dataSource;
         this.screeningEngine = screeningEngine;
-        this.eventPublisher  = eventPublisher;
+        this.eventBusPort  = eventBusPort;
         this.runsStarted     = meterRegistry.counter("sanctions.batch.runs_started");
         this.runsCompleted   = meterRegistry.counter("sanctions.batch.runs_completed");
         this.runsFailed      = meterRegistry.counter("sanctions.batch.runs_failed");
@@ -85,12 +86,12 @@ public class BatchScreeningSchedulerService {
             completeRunRecord(runId, screened, hits, null);
             runsCompleted.increment();
             log.info("BatchScreening completed runId={} screened={} hits={}", runId, screened, hits);
-            eventPublisher.accept(new BatchRunCompletedEvent(runId, screened, hits, startedAt, Instant.now()));
+            eventBusPort.publish(new BatchRunCompletedEvent(runId, screened, hits, startedAt, Instant.now()));
         } catch (Exception e) {
             log.error("BatchScreening: run failed runId={}", runId, e);
             completeRunRecord(runId, screened, hits, e.getMessage());
             runsFailed.increment();
-            eventPublisher.accept(new BatchRunFailedEvent(runId, e.getMessage(), Instant.now()));
+            eventBusPort.publish(new BatchRunFailedEvent(runId, e.getMessage(), Instant.now()));
         } finally {
             inFlightRuns.decrementAndGet();
         }

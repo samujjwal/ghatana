@@ -1,6 +1,6 @@
 package com.ghatana.appplatform.reporting.service;
 
-import com.zaxxer.hikari.HikariDataSource;
+import javax.sql.DataSource;
 import io.activej.promise.Promise;
 import io.micrometer.core.instrument.Counter;
 import io.micrometer.core.instrument.MeterRegistry;
@@ -30,14 +30,14 @@ public class AckNackProcessorService {
 
     private static final int MAX_RETRY_COUNT = 3;
 
-    private final HikariDataSource dataSource;
+    private final DataSource dataSource;
     private final Executor         executor;
     private final NotificationPort notificationPort;
     private final Counter          ackCounter;
     private final Counter          nackCounter;
     private final Counter          resubmitCounter;
 
-    public AckNackProcessorService(HikariDataSource dataSource, Executor executor,
+    public AckNackProcessorService(DataSource dataSource, Executor executor,
                                     NotificationPort notificationPort, MeterRegistry registry) {
         this.dataSource         = dataSource;
         this.executor           = executor;

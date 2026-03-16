@@ -1,5 +1,7 @@
 package com.ghatana.appplatform.integration;
 
+import com.ghatana.platform.audit.AuditBusPort;
+import com.ghatana.platform.audit.AuditEvent;
 import io.activej.promise.Promise;
 import io.micrometer.core.instrument.*;
 
@@ -54,10 +56,6 @@ public class ResourceExhaustionChaosTestService {
         boolean isPoolHealthy() throws Exception;
     }
 
-    public interface AuditPort {
-        void audit(String event, String detail) throws Exception;
-    }
-
     // ── Constants ─────────────────────────────────────────────────────────────
 
     private static final int HPA_MIN_PODS    = 2;
@@ -71,7 +69,7 @@ public class ResourceExhaustionChaosTestService {
     private final AlertPort alertPort;
     private final DataIntegrityPort dataIntegrity;
     private final ConnectionPoolPort poolPort;
-    private final AuditPort audit;
+    private final AuditBusPort audit;
     private final Executor executor;
     private final Counter suitesPassed;
     private final Counter suitesFailed;
@@ -82,7 +80,7 @@ public class ResourceExhaustionChaosTestService {
         AlertPort alertPort,
         DataIntegrityPort dataIntegrity,
         ConnectionPoolPort poolPort,
-        AuditPort audit,
+        AuditBusPort audit,
         MeterRegistry registry,
         Executor executor
     ) {
@@ -111,7 +109,7 @@ public class ResourceExhaustionChaosTestService {
             long passed = results.stream().filter(r -> r.passed).count();
             long failed = results.size() - passed;
             if (failed == 0) suitesPassed.increment(); else suitesFailed.increment();
-            audit.audit("RESOURCE_EXHAUSTION_SUITE", "passed=" + passed + " failed=" + failed);
+            audit.emit(AuditEvent.builder().eventType("RESOURCE_EXHAUSTION_SUITE").details(Map.of("detail", "passed=" + passed + " failed=" + failed)).build());
             return new SuiteResult("ResourceExhaustionChaos", results, passed, failed);
         });
     }

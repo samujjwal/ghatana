@@ -1,5 +1,8 @@
 package com.ghatana.appplatform.onboarding;
 
+import com.ghatana.platform.audit.AuditBusPort;
+import com.ghatana.platform.audit.AuditEvent;
+import java.util.Map;
 import io.activej.promise.Promise;
 import io.micrometer.core.instrument.Counter;
 import io.micrometer.core.instrument.MeterRegistry;
@@ -57,11 +60,6 @@ public class DocumentRequestReminderService {
         Promise<Void> cancel(String jobId);
     }
 
-    public interface AuditPort {
-        Promise<Void> log(String action, String actor, String entityId, String entityType,
-                          String beforeJson, String afterJson);
-    }
-
     // -----------------------------------------------------------------------
     // Records
     // -----------------------------------------------------------------------
@@ -105,7 +103,7 @@ public class DocumentRequestReminderService {
     private final NotificationPort notifier;
     private final UploadLinkGeneratorPort linkGenerator;
     private final SchedulerPort scheduler;
-    private final AuditPort auditPort;
+    private final AuditBusPort auditPort;
 
     private final Counter requestsSentTotal;
     private final Counter remindersSentTotal;
@@ -122,7 +120,7 @@ public class DocumentRequestReminderService {
                                           NotificationPort notifier,
                                           UploadLinkGeneratorPort linkGenerator,
                                           SchedulerPort scheduler,
-                                          AuditPort auditPort) {
+                                          AuditBusPort auditPort) {
         this.dataSource    = dataSource;
         this.executor      = executor;
         this.notifier      = notifier;
@@ -229,8 +227,7 @@ public class DocumentRequestReminderService {
                 String uploadUrl = UPLOAD_BASE_URL + token;
                 updateUploadToken(instanceId, documentType, token, uploadUrl);
                 linksRegeneratedTotal.increment();
-                auditPort.log("UPLOAD_LINK_REGENERATED", "system", instanceId, "KYC_DOCUMENT",
-                              null, "{\"documentType\":\"" + documentType + "\"}");
+                audit.emit(AuditEvent.builder().eventType("UPLOAD_LINK_REGENERATED").principal("system").resourceId(instanceId).resourceType("KYC_DOCUMENT").details(Map.of("before", String.valueOf(null), "after", String.valueOf("{\"documentType\":\"" + documentType + "\"}"))).build());
                 return uploadUrl;
             }));
     }

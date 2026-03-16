@@ -3,6 +3,7 @@ package com.ghatana.appplatform.config.cqrs;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.ghatana.platform.core.json.PlatformObjectMapper;
 import com.ghatana.appplatform.config.domain.ConfigHierarchyLevel;
 import com.ghatana.appplatform.config.domain.ConfigValue;
 import com.ghatana.appplatform.config.notification.ConfigChangeListener;
@@ -80,7 +81,7 @@ public final class RedisConfigProjection implements ConfigChangeListener {
         this.jedisPool       = Objects.requireNonNull(jedisPool, "jedisPool");
         this.blockingExecutor = Objects.requireNonNull(blockingExecutor, "blockingExecutor");
         this.ttlSeconds      = ttlSeconds;
-        this.mapper          = new ObjectMapper();
+        this.mapper          = PlatformObjectMapper.instance();
     }
 
     /**

@@ -1,5 +1,7 @@
 package com.ghatana.appplatform.incident;
 
+import com.ghatana.platform.audit.AuditBusPort;
+import com.ghatana.platform.audit.AuditEvent;
 import io.activej.promise.Promise;
 import io.micrometer.core.instrument.*;
 
@@ -58,10 +60,6 @@ public class IncidentRunbookService {
         boolean execute(String automationKey, String incidentId) throws Exception;
     }
 
-    public interface AuditPort {
-        void record(String actorId, String action, String detail) throws Exception;
-    }
-
     // ── Value types ───────────────────────────────────────────────────────────
 
     public record RunbookStep(int ordinal, String type, String description, String automationKey) {}
@@ -85,7 +83,7 @@ public class IncidentRunbookService {
 
     private final javax.sql.DataSource ds;
     private final AutomationPort automation;
-    private final AuditPort audit;
+    private final AuditBusPort audit;
     private final Executor executor;
     private final Counter completionCounter;
     private final Timer stepExecutionTimer;
@@ -93,7 +91,7 @@ public class IncidentRunbookService {
     public IncidentRunbookService(
         javax.sql.DataSource ds,
         AutomationPort automation,
-        AuditPort audit,
+        AuditBusPort audit,
         MeterRegistry registry,
         Executor executor
     ) {
@@ -161,8 +159,7 @@ public class IncidentRunbookService {
                     }
                 }
                 c.commit();
-                audit.record(startedBy, "RUNBOOK_EXECUTION_STARTED",
-                    "incident=" + incidentId + " runbook=" + runbookId);
+                audit.emit(AuditEvent.builder().principal(startedBy).eventType("RUNBOOK_EXECUTION_STARTED").details(Map.of("detail", "incident=" + incidentId + " runbook=" + runbookId)).build());
                 return new RunbookExecution(execId, incidentId, runbookId, "IN_PROGRESS", steps);
             }
         });
@@ -182,7 +179,7 @@ public class IncidentRunbookService {
                 ps.setString(1, completedBy); ps.setString(2, notes); ps.setString(3, stepId);
                 ps.executeUpdate();
             }
-            audit.record(completedBy, "RUNBOOK_STEP_COMPLETED", "stepId=" + stepId);
+            audit.emit(AuditEvent.builder().principal(completedBy).eventType("RUNBOOK_STEP_COMPLETED").details(Map.of("detail", "stepId=" + stepId)).build());
             stepExecutionTimer.record(System.currentTimeMillis() - start, java.util.concurrent.TimeUnit.MILLISECONDS);
             checkAndMarkExecutionComplete(stepId);
             return null;

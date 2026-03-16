@@ -1,6 +1,8 @@
 package com.ghatana.appplatform.deployment;
 
-import com.zaxxer.hikari.HikariDataSource;
+import com.ghatana.platform.audit.AuditBusPort;
+import com.ghatana.platform.audit.AuditEvent;
+import javax.sql.DataSource;
 import io.activej.promise.Promise;
 import io.micrometer.core.instrument.Counter;
 import io.micrometer.core.instrument.MeterRegistry;
@@ -24,22 +26,22 @@ import java.util.concurrent.Executor;
  */
 public class InstantRollbackService {
 
-    private final HikariDataSource    dataSource;
+    private final DataSource    dataSource;
     private final Executor            executor;
     private final DeploymentExecutorPort executorPort;
     private final TrafficSwitchPort   trafficSwitchPort;
     private final HealthCheckPort     healthCheckPort;
-    private final AuditPort           auditPort;
+    private final AuditBusPort           auditPort;
     private final Counter             rollbackInitiatedCounter;
     private final Counter             rollbackSucceededCounter;
     private final Counter             rollbackFailedCounter;
     private final Timer               rollbackDurationTimer;
 
-    public InstantRollbackService(HikariDataSource dataSource, Executor executor,
+    public InstantRollbackService(DataSource dataSource, Executor executor,
                                    DeploymentExecutorPort executorPort,
                                    TrafficSwitchPort trafficSwitchPort,
                                    HealthCheckPort healthCheckPort,
-                                   AuditPort auditPort, MeterRegistry registry) {
+                                   AuditBusPort auditPort, MeterRegistry registry) {
         this.dataSource              = dataSource;
         this.executor                = executor;
         this.executorPort            = executorPort;
@@ -64,10 +66,6 @@ public class InstantRollbackService {
 
     public interface HealthCheckPort {
         boolean isHealthy(String envId, String version);
-    }
-
-    public interface AuditPort {
-        void record(String entityType, String entityId, String event, String actor, String detail);
     }
 
     // ─── Domain records ──────────────────────────────────────────────────────
@@ -141,12 +139,11 @@ public class InstantRollbackService {
 
                 if (healthy) {
                     completeRollback(rollbackId, RollbackStatus.SUCCEEDED, null, durationMs);
-                    auditPort.record("ROLLBACK", rollbackId, "SUCCEEDED", initiatedBy,
-                        "durationMs=" + durationMs);
+                    audit.emit(AuditEvent.builder().eventType("SUCCEEDED").principal(initiatedBy).resourceType("ROLLBACK").resourceId(rollbackId).details(Map.of("detail", "durationMs=" + durationMs)).build());
                     rollbackSucceededCounter.increment();
                 } else {
                     completeRollback(rollbackId, RollbackStatus.FAILED, "Health check failed post-rollback", durationMs);
-                    auditPort.record("ROLLBACK", rollbackId, "HEALTH_CHECK_FAILED", initiatedBy, "");
+                    audit.emit(AuditEvent.builder().eventType("HEALTH_CHECK_FAILED").principal(initiatedBy).resourceType("ROLLBACK").resourceId(rollbackId).details(Map.of("detail", "")).build());
                     rollbackFailedCounter.increment();
                 }
             } catch (Exception e) {

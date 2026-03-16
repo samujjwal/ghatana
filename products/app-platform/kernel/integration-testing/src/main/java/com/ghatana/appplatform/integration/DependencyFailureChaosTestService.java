@@ -1,5 +1,7 @@
 package com.ghatana.appplatform.integration;
 
+import com.ghatana.platform.audit.AuditBusPort;
+import com.ghatana.platform.audit.AuditEvent;
 import io.activej.promise.Promise;
 import io.micrometer.core.instrument.*;
 
@@ -58,10 +60,6 @@ public class DependencyFailureChaosTestService {
         String getOrderStatus(String orderId) throws Exception;   // ACCEPTED, REJECTED, PENDING
     }
 
-    public interface AuditPort {
-        void audit(String event, String detail) throws Exception;
-    }
-
     // ── Constants ─────────────────────────────────────────────────────────────
 
     private static final long MAX_CACHE_TTL_MS = 60_000L; // 60s fallback window
@@ -75,7 +73,7 @@ public class DependencyFailureChaosTestService {
     private final CustodianPort custodian;
     private final AlertPort alertPort;
     private final OrderSubmissionPort orderPort;
-    private final AuditPort audit;
+    private final AuditBusPort audit;
     private final Executor executor;
     private final Counter suitesPassed;
     private final Counter suitesFailed;
@@ -88,7 +86,7 @@ public class DependencyFailureChaosTestService {
         CustodianPort custodian,
         AlertPort alertPort,
         OrderSubmissionPort orderPort,
-        AuditPort audit,
+        AuditBusPort audit,
         MeterRegistry registry,
         Executor executor
     ) {
@@ -120,7 +118,7 @@ public class DependencyFailureChaosTestService {
             long passed = results.stream().filter(r -> r.passed).count();
             long failed = results.size() - passed;
             if (failed == 0) suitesPassed.increment(); else suitesFailed.increment();
-            audit.audit("DEP_FAILURE_SUITE", "passed=" + passed + " failed=" + failed);
+            audit.emit(AuditEvent.builder().eventType("DEP_FAILURE_SUITE").details(Map.of("detail", "passed=" + passed + " failed=" + failed)).build());
             return new SuiteResult("DependencyFailureChaos", results, passed, failed);
         });
     }
